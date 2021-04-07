@@ -15,7 +15,31 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
 ### 已支持的Paddle模型
 
+#### 模型
 - [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid.tar.gz)
+
+#### 性能
+- 测试环境
+  - 编译环境
+    - Ubuntu 16.04，NDK-r17c with GCC for Android armeabi-v7a
+
+  - 硬件环境
+    - MT8168
+      - MT8168-P2V1 Tablet
+      - CPU：4 x Cortex-A53 2.0 GHz
+      - APU：0.3 TOPs
+
+- 测试方法
+  - warmup=10，repeats=30，统计平均时间，单位是ms
+  - 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
+  - 分类模型的输入图像维度是{1，3，224，224}
+
+- 测试结果
+
+  |模型 |MT8168||
+  |---|---|---|
+  |  |CPU(ms) | NPU(ms) |
+  |MobileNetV1-int8|  131.622305|  31.453601|
 
 ### 已支持（或部分支持）的Paddle算子
 

@@ -125,7 +125,7 @@
 - **硬件接入时需要做哪些代码改动？**
   - 参考最近接入的Imagination NNA的Pull Request(PR)的代码修改[https://github.com/PaddlePaddle/Paddle-Lite/pull/4335](https://github.com/PaddlePaddle/Paddle-Lite/pull/4335)
 
-- **代码提交、Review、合入机制、CI机制**
+## 代码提交、Review、合入机制、CI机制
   - 参考[编译环境准备](../source_compile/compile_env)中的Docker开发环境（由于代码提交时会使用git pre-commit hooks，对clang-format版本约束）
   - 注册[github](https://www.github.com/)账户，将[Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite)代码仓库Fork到自己的账户.
   - 将自己github账户的Paddle-Lite仓库克隆到本地。
@@ -268,8 +268,10 @@
   - PR Review：每个PR需要至少一个评审人apporve后才能进行代码合入，而且在请评审人review代码前，必须保证CI测试完成并通过全部测试项，否则评审人一般不做评审。根据PR修改的模块不同，代码评审人选择也不一样。例如：涉及到Core和API模块，需要@Superjomn进行Review，涉及到Subgraph相关的修改，需要@hong19860320或@zhupengyang进行Review。评审人的每个意见都必须回复，同意评审意见且按其修改完的，给个简单的Done即可，对评审意见不同意的，请给出您自己的反驳理由。
   - PR 合入：一般PR会有多次commit，原则上是尽量少的commit，且每个commit的内容不能太随意。在合入代码时，需要对多个commit进行squash commits after push，该PR在评审人approve且CI完全通过后，会出现"Squash and Merge"按钮，如上图所示，届时可以联系Paddle同学完成PR的合入。
 
-- **硬件接入完成标志**
+## 硬件接入完成标志
   - 代码合入到develop分支
   - 提供完善的文档和Demo
-  - 厂商提供至少3台测试设备，增加CI流水线（由Paddle同学负责）
+    - 参考[ImaginationNNA](../demo_guides/imagination_nna)的格式编写文档并提供Demo压缩包（由Paddle同学上传到百度云）
+    - 如果编译环境的docker镜像与PaddleLite所提供的不一致，需要额外提供构建docker镜像的docker file，保证用户能顺利编译获得产出
+  - 厂商提供测试设备，增加CI流水线（由Paddle同学负责）
   - 双方兼容性认证
