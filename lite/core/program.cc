@@ -97,10 +97,10 @@ void RuntimeProgram::SaveToProgram(
               v->SetShape(tensor->dims().data());
               auto precision = tensor->precision();
               switch (precision) {
-#define SET_DATATYPE(precision__, data_type)           \
-  case PrecisionType::precision__:                     \
-    v->SetDataType(data_type);                         \
-    LOG(INFO) << "Update var " << var_name << " done"; \
+#define SET_DATATYPE(precision__, data_type)         \
+  case PrecisionType::precision__:                   \
+    v->SetDataType(data_type);                       \
+    VLOG(1) << "Update var " << var_name << " done"; \
     break
                 SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
                 SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
