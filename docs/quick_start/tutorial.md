@@ -7,7 +7,8 @@ Lite是一种轻量级、灵活性强、易于扩展的高性能的深度学习�
 
 **一. 准备模型**
 
-Paddle Lite框架直接支持模型结构为[PaddlePaddle](https://github.com/PaddlePaddle/Paddle)深度学习框架产出的模型格式。目前PaddlePaddle用于推理的模型是通过[save_inference_model](https://www.paddlepaddle.org.cn/documentation/docs/zh/api_cn/io_cn/save_inference_model_cn.html#save-inference-model)这个API保存下来的。
+Paddle-Lite框架直接支持模型结构为[PaddlePaddle](https://www.paddlepaddle.org.cn/)深度学习框架产出的模型格式。在PaddlePaddle静态图模式下，使用save_inference_model这个API保存预测模型，Paddle-Lite对此类预测模型已经做了充分支持。在PaddlePaddle动态图模式下，使用paddle.jit.save这个API保存预测模型，Paddle-Lite可以支持绝大部分此类预测模型了。
+
 如果您手中的模型是由诸如Caffe、Tensorflow、PyTorch等框架产出的，那么您可以使用 [X2Paddle](https://github.com/PaddlePaddle/X2Paddle) 工具将模型转换为PadddlePaddle格式。
 
 **二. 模型优化**

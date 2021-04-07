@@ -25,6 +25,8 @@ WITH_CV=OFF
 WITH_LOG=ON
 # controls whether to throw the exception when error occurs, default is OFF
 WITH_EXCEPTION=OFF
+# controls whether to include FP16 kernels, default is OFF
+BUILD_ARM82_FP16=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
@@ -177,6 +179,10 @@ function make_tiny_publish_so {
   if [ "${WITH_STRIP}" == "ON" ]; then
       WITH_EXTRA=ON
   fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      ARCH=armv8
+  fi
 
   # android api level for android version
   set_android_api_level
@@ -196,6 +202,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
   cmake $workspace \
@@ -236,7 +243,10 @@ function make_full_publish_so {
   if [ "${WITH_STRIP}" == "ON" ]; then
       WITH_EXTRA=ON
   fi
-
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      ARCH=armv8
+  fi
   # android api level for android version
   set_android_api_level
 
@@ -257,6 +267,7 @@ function make_full_publish_so {
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_TRAIN=$WITH_TRAIN \
       -DLITE_WITH_PROFILE=$WITH_PROFILE \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
@@ -296,6 +307,8 @@ function print_usage {
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|     --with_profile: (OFF|ON); controls whether to support time profile, default is OFF                                               |"
     echo -e "|     --with_precision_profile: (OFF|ON); controls whether to support precision profile, default is OFF                                |"
+    echo -e "|     --with_arm82_fp16: (OFF|ON); controls whether to include FP16 kernels, default is OFF                                            |"
+    echo -e "|                                  warning: when --with_arm82_fp16=ON, toolchain will be set as clang, arch will be set as armv8.      |"
     echo -e "|     --android_api_level: (16~27); control android api level, default is 16 on armv7 and 21 on armv8. You could set a specific        |"
     echo -e "|             android_api_level as you need.                                                                                           |"
     echo -e "|                       | Paddle-Lite Requird / ARM ABI      | armv7 | armv8 |                                                         |"
@@ -448,6 +461,11 @@ function main {
             # compiling lib with precision profile, default OFF.
             --with_precision_profile=*)
                 WITH_PRECISION_PROFILE="${i#*=}"
+                shift
+                ;;
+            # controls whether to include FP16 kernels, default is OFF
+            --with_arm82_fp16=*)
+                BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
             help)

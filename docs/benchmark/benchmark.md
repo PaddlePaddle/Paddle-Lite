@@ -1,6 +1,6 @@
 # 性能数据
 
-可以参考[benchmark_tools](benchmark_tools)，推荐**一键benchmark**。
+大家可以参考[测试方法文档](benchmark_tools)对模型进行测试。
 
 ## ARM测试环境
 

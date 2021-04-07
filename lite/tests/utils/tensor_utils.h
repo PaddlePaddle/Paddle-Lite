@@ -29,6 +29,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <random>
+#include <string>
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -169,42 +170,18 @@ void fill_tensor_rand(Tensor& tensor, float vstart, float vend) {  // NOLINT
 }
 
 template <typename Dtype>
-void print_tensor_host_impl(const Dtype* din, int64_t size, int64_t width);
-
-template <>
-void print_tensor_host_impl(const float* din, int64_t size, int64_t width) {
+void print_tensor_host_impl(const Dtype* din, int64_t size, int64_t width) {
+  std::ostringstream os;
   for (int i = 0; i < size; ++i) {
-    printf("%.6f ", din[i]);
+    os << din[i] << " ";
     if ((i + 1) % width == 0) {
-      printf("\n");
+      VLOG(4) << os.str();
+      os.str("");
     }
   }
-  printf("\n");
+  VLOG(4) << "\n";
 }
 
-template <>
-void print_tensor_host_impl(const int* din, int64_t size, int64_t width) {
-  for (int i = 0; i < size; ++i) {
-    printf("%d ", din[i]);
-    if ((i + 1) % width == 0) {
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
-
-template <>
-void print_tensor_host_impl(const signed char* din,
-                            int64_t size,
-                            int64_t width) {
-  for (int i = 0; i < size; ++i) {
-    printf("%d ", din[i]);
-    if ((i + 1) % width == 0) {
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
 /**
  *  \brief Print the data in host tensor.
  *  \param tensor  The reference of input tensor.
@@ -322,7 +299,7 @@ void tensor_diff_kernel(const dtype* src1,
     case PRECISION(kFloat):
     case PRECISION(kInt32):
       for (int i = 0; i < size; ++i) {
-        LOG(INFO) << i << "   " << src1[i] << "  " << src2[i];
+        VLOG(4) << i << "   " << src1[i] << "  " << src2[i];
         dst[i] = src1[i] - src2[i];
       }
       return;
@@ -330,8 +307,8 @@ void tensor_diff_kernel(const dtype* src1,
       for (int i = 0; i < size; ++i) {
         dst[i] = src1[i] - src2[i];
         if (static_cast<int>(abs(dst[i])) > 0.1) {
-          LOG(INFO) << i << "   " << static_cast<int>(src1[i]) << "  "
-                    << static_cast<int>(src2[i]);
+          VLOG(4) << i << "   " << static_cast<int>(src1[i]) << "  "
+                  << static_cast<int>(src2[i]);
         }
       }
       return;

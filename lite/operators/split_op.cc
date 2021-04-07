@@ -88,7 +88,7 @@ bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.sections = opdesc.GetAttr<std::vector<int>>("sections");
 
   param_.x = scope->FindTensor(opdesc.Input("X").front());
-  if (opdesc.HasInput("AxisTensor")) {
+  if (opdesc.HasInput("AxisTensor") && !opdesc.Input("AxisTensor").empty()) {
     param_.axis_tensor = scope->FindTensor(opdesc.Input("AxisTensor").front());
   }
   param_.sections_tensor_list.clear();
