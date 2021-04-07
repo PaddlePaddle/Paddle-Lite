@@ -78,7 +78,6 @@ USE_MIR_PASS(lite_scale_activation_fuse_pass);
 USE_MIR_PASS(lite_instance_norm_activation_fuse_pass);
 USE_MIR_PASS(lite_fc_prelu_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
-USE_MIR_PASS(__xpu__resnet_d_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_cbam_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_fuse_pass);
 USE_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass);

@@ -13,29 +13,21 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
-#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-class XPUResNet50Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class FillConstantBatchSizeLikeCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
  public:
-  using param_t = operators::XPUResNet50Param;
-
-  virtual void PrepareForRun();
+  using param_t = operators::FillConstantBatchSizeLikeParam;
 
   virtual void Run();
 
- private:
-  std::vector<const int16_t *> arg_filter_;
-  std::vector<const float *> arg_max_filter_;
-  std::vector<const float *> arg_bias_;
+  virtual ~FillConstantBatchSizeLikeCompute() = default;
 };
 
 }  // namespace xpu
