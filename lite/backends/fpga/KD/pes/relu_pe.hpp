@@ -24,7 +24,7 @@ class ReluPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(param_.input->aligned());
-    output->setDataLocation(CPU);
+    output->setDataLocation(Device);
     return true;
   }
 
