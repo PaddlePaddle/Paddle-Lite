@@ -410,7 +410,7 @@ void CheckIfModelSupported() {
   if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
     is_combined_params_form = true;
   }
-  const std::string prog_path = lite::FindModelFileName(
+  std::string prog_path = lite::FindModelFileName(
       FLAGS_model_dir, FLAGS_model_file, is_combined_params_form);
 
   lite::cpp::ProgramDesc cpp_prog;

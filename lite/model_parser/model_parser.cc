@@ -154,9 +154,9 @@ void PrintPbModelErrorMessage() {
              << "              |-- set_params_file('custom_params_name')'\n";
 }
 // Find correct model filename
-const std::string FindModelFileName(const std::string &model_dir,
-                                    const std::string &model_file,
-                                    bool combined) {
+std::string FindModelFileName(const std::string &model_dir,
+                              const std::string &model_file,
+                              bool combined) {
   std::string prog_path;
   if (!combined) {
     // format 1. model_dir/__model__
@@ -236,8 +236,7 @@ void LoadModelPb(const std::string &model_dir,
   cpp_prog->ClearBlocks();
 
   // Load model topology data from file.
-  const std::string prog_path =
-      FindModelFileName(model_dir, model_file, combined);
+  std::string prog_path = FindModelFileName(model_dir, model_file, combined);
   std::cout << "Start load model topology data from " << prog_path << std::endl;
   framework::proto::ProgramDesc pb_proto_prog =
       *LoadProgram(prog_path, model_buffer);

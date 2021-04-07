@@ -130,9 +130,9 @@ bool FileExist(const std::string& file_name);
 // Print error message about LoadModelPb.
 void PrintPbModelErrorMessage();
 // Find correct model filename.
-const std::string FindModelFileName(const std::string& model_dir,
-                                    const std::string& model_file,
-                                    bool combined);
+std::string FindModelFileName(const std::string& model_dir,
+                              const std::string& model_file,
+                              bool combined);
 // load noncombined params from directory.
 void LoadNonCombinedParamsPb(const std::string& model_dir,
                              cpp::ProgramDesc* cpp_prog,

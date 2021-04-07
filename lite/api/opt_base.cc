@@ -444,10 +444,9 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
       !(opt_config_.param_file()).empty()) {
     is_combined_params_form = true;
   }
-  const std::string prog_path =
-      lite::FindModelFileName(opt_config_.model_dir(),
-                              (opt_config_.model_file()),
-                              is_combined_params_form);
+  std::string prog_path = lite::FindModelFileName(opt_config_.model_dir(),
+                                                  (opt_config_.model_file()),
+                                                  is_combined_params_form);
 
   lite::cpp::ProgramDesc cpp_prog;
   framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
