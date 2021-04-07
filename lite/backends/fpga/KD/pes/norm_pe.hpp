@@ -63,7 +63,9 @@ class NormPE : public PE {
         input_shape.height() * input_shape.width();
     bypass_args_.inplace.normalize_param.enabled = true;
 
-    cpu_compute_ = true;
+    if (DLEngine::get_instance().isZU3()) {
+      cpu_compute_ = true;
+    }
   }
 
   void cpu_compute() {
