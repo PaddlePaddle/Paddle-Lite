@@ -38,7 +38,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ### 准备设备环境
 
-- 需要依赖特定版本的firmware，请联系Imagination相关研发同学；
+- 需要依赖特定版本的firmware，请联系Imagination相关研发同学 jason.wang@imgtec.com；
 - 确定能够通过SSH方式远程登录Roc 1开发板；
 - 由于Roc 1的ARM CPU能力较弱，示例程序和PaddleLite库的编译均采用交叉编译方式。
 

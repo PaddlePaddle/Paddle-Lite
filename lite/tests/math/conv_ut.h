@@ -45,7 +45,7 @@ DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
-DEFINE_int32(in_channel, 3, "input channel");
+DEFINE_int32(in_channel, 32, "input channel");
 DEFINE_int32(in_height, 112, "input height");
 DEFINE_int32(in_width, 112, "input width");
 
