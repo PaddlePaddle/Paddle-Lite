@@ -6,8 +6,8 @@ if [ $# -lt  3 ];
 then
     echo "Input error"
     echo "Usage:"
-    echo "  sh benchmark.sh <benchmark_bin_path> <benchmark_models_path> <result_filename>"
-    echo "  sh benchmark.sh <benchmark_bin_path> <benchmark_models_path> <result_filename> <is_run_model_optimize: [true|false]>"
+    echo "  sh benchmark.sh <benchmark_bin_path> <benchmark_models_path> <result_path>"
+    echo "  sh benchmark.sh <benchmark_bin_path> <benchmark_models_path> <result_path> <is_run_model_optimize: [true|false]>"
     exit
 fi
 
@@ -48,14 +48,14 @@ for threads in ${NUM_THREADS_LIST[@]}; do
                    --warmup=$WARMUP \
                    --repeats=$REPEATS \
                    --threads=$threads \
-                   --result_filename=$ANDROID_DIR/$RESULT_FILENAME"
+                   --result_path=$ANDROID_DIR/$RESULT_FILENAME"
       else
           adb shell "$ANDROID_DIR/benchmark_bin \
                    --optimized_model_path=$ANDROID_DIR/${MODELS_DIR}/$model_name \
                    --warmup=$WARMUP \
                    --repeats=$REPEATS \
                    --threads=$threads \
-                   --result_filename=$ANDROID_DIR/$RESULT_FILENAME"
+                   --result_path=$ANDROID_DIR/$RESULT_FILENAME"
       fi
     done
     adb shell "echo >> $ANDROID_DIR/$RESULT_FILENAME"

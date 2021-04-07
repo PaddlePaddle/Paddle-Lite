@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fstream>
 #include <iostream>
 #include <vector>
 #include "opencv2/core.hpp"
@@ -28,28 +29,17 @@
 
 using namespace paddle::lite_api;  // NOLINT
 
-void load_labels(std::string path, std::vector<std::string>* labels) {
-  FILE* fp = fopen(path.c_str(), "r");
-  if (fp == nullptr) {
-    printf("load label file failed \n");
-    return;
+void load_labels(const std::string& path, std::vector<std::string>* labels) {
+  std::ifstream ifs(path);
+  if (!ifs.is_open()) {
+    std::cerr << "Load input label file error." << std::endl;
+    exit(1);
   }
-  while (!feof(fp)) {
-    char str[1024];
-    fgets(str, 1024, fp);
-    std::string str_s(str);
-
-    if (str_s.length() > 0) {
-      for (int i = 0; i < str_s.length(); i++) {
-        if (str_s[i] == ' ') {
-          std::string strr = str_s.substr(i, str_s.length() - i - 1);
-          labels->push_back(strr);
-          i = str_s.length();
-        }
-      }
-    }
+  std::string line;
+  while (getline(ifs, line)) {
+    labels->push_back(line);
   }
-  fclose(fp);
+  ifs.close();
 }
 
 void print_topk(const float* scores,
@@ -71,7 +61,7 @@ void print_topk(const float* scores,
   for (int i = 0; i < topk; i++) {
     float score = vec[i].first;
     int index = vec[i].second;
-    printf("i: %d, index: %d, name: %s, score: %f \n",
+    printf("i: %d,  index: %d,  name: %s,  score: %f \n",
            i,
            index,
            labels[index].c_str(),
