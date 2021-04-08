@@ -1019,8 +1019,8 @@ struct PriorBoxParam : ParamBase {
   std::vector<float> variances_;
   int img_w{0};
   int img_h{0};
-  float step_w{0f};
-  float step_h{0f};
+  float step_w{0.f};
+  float step_h{0.f};
   float offset{0.5f};
   int prior_num{0};
   // priortype: prior_min, prior_max, prior_com
@@ -1180,7 +1180,7 @@ struct TopkParam : ParamBase {
 struct IncrementParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  float step{1f};
+  float step{1.f};
 };
 
 struct WriteToArrayParam : ParamBase {
@@ -2079,7 +2079,7 @@ struct XPUGenerateSequenceParam : ParamBase {
 
   int axis{-1};
   bool flatten{false};
-  float value{0f};
+  float value{0.f};
   int dtype{-1};
 };
 
