@@ -277,7 +277,6 @@ class PrecisionProfiler {
         }
 #endif
         case PRECISION(kBool): {
-          auto ptr = in->data<bool>();
           *mean = -333333333333;
           *std_dev = -33333333333;
           *ave_grow_rate = -33333333333;
