@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/correlation_op.h"
+#include <cmath>
 
 namespace paddle {
 namespace lite {
