@@ -41,13 +41,15 @@ lite_cc_library(mir_passes
       fusion/__xpu__fc_fuse_pass.cc
       fusion/__xpu__mmdnn_fuse_pass.cc
       fusion/__xpu__conv2d_fuse_pass.cc
-      fusion/__xpu__conv2d_link_previous_out_max_pass.cc
+      fusion/__xpu__link_previous_out_max_pass.cc
       fusion/__xpu__sfa_head_meanstd_fuse_pass.cc
       fusion/__xpu__sfa_head_moment_fuse_pass.cc
       fusion/__xpu__softmax_topk_fuse_pass.cc
       fusion/__xpu__multi_encoder_slice_link_fuse_pass.cc
+      fusion/__xpu__multi_encoder_adaptive_seqlen_fuse_pass.cc
       fusion/__xpu__generate_sequence_fuse_pass.cc
       fusion/__xpu__logit_fuse_pass.cc
+      fusion/__xpu__squeeze_excitation_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc
@@ -61,6 +63,7 @@ lite_cc_library(mir_passes
       elimination/remove_scale1_pass.cc
       adaptive_1x1_pool2d_convert_global_pass.cc
       elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.cc
+      control_flow_op_shared_inputs_and_outputs_place_sync_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       fpga_kernel_place_correct_pass.cc

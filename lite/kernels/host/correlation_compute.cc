@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/host/correlation_compute.h"
-#include "lite/backends/host/math/pad2d.h"
 
 namespace paddle {
 namespace lite {

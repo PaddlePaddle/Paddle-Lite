@@ -69,8 +69,10 @@ struct FetchParam : ParamBase {
 
 // Helper op for lite framework
 struct IoCopyParam : ParamBase {
-  const lite::Tensor* x{};
-  lite::Tensor* y{};
+  const lite::Tensor* x{nullptr};
+  const std::vector<lite::Tensor>* x_array{nullptr};
+  lite::Tensor* y{nullptr};
+  std::vector<lite::Tensor>* y_array{nullptr};
   int process_type{0};
 };
 
@@ -596,9 +598,9 @@ struct PadConstantLikeParam : ParamBase {
 
 // For Split op
 struct SplitParam : ParamBase {
-  lite::Tensor* x{};
+  const lite::Tensor* x{nullptr};
   std::vector<lite::Tensor*> output{};
-  lite::Tensor* axis_tensor{};
+  const lite::Tensor* axis_tensor{nullptr};
   std::vector<lite::Tensor*> sections_tensor_list{};
 
   int axis{-1};
@@ -1865,26 +1867,30 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int axis{-1};
   int K{1};
 };
+
 struct XPUBlockFuseParam : ParamBase {
-  const lite::Tensor* input{};
-  const lite::Tensor* filter;
-  const lite::Tensor* max_filter;
-  const lite::Tensor* bias;
-  const lite::Tensor* input_max{};
-  lite::Tensor* output{};
-  lite::Tensor* output_max{};
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* filter{nullptr};
+  const lite::Tensor* bias{nullptr};
+  const lite::Tensor* branch{nullptr};
+  const lite::Tensor* input_max{nullptr};
+  lite::Tensor* output{nullptr};
+  lite::Tensor* output_max{nullptr};
   std::vector<int> op_type;
   std::vector<int> place_x;
   std::vector<int> place_y;
   std::vector<int> place_z;
   std::vector<int> filter_dims;
   std::vector<int> strides;
-  std::vector<int> paddings;
-  std::vector<int> dilations;
+  std::shared_ptr<std::vector<int>> paddings;
+  std::shared_ptr<std::vector<int>> dilations;
   std::vector<int> groups;
   std::vector<int> act_type;
   std::vector<float> act_param;
+  std::vector<int> conv_bias;
   std::vector<int> block_lod;
+  bool has_bias{false};
+  bool has_branch{false};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -1894,8 +1900,9 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
   lite::Tensor* fc_weight_max{};
-  lite::Tensor* mask{};
-  lite::Tensor* output{};
+  const lite::Tensor* mask{nullptr};
+  const lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* output{nullptr};
 
   std::vector<int> slice_axes{};
   std::vector<int> slice_starts{};
@@ -1907,12 +1914,15 @@ struct XPUMultiEncoderParam : ParamBase {
   std::string precision{};
   bool enable_qkv_fusion{false};
   bool norm_before{false};
+  bool adaptive_seqlen{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;
   std::vector<lite::Tensor*> Tables;
-  lite::Tensor* Out{};
+  const lite::Tensor* Mask{nullptr};
+  lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
 };
 
@@ -2054,26 +2064,6 @@ struct XPUMmdnnMergeAllParam : ParamBase {
   float fc2_w_max{0.0f};
 
   lite::Tensor* out{};
-};
-
-struct XPUConv2dParam : ParamBase {
-  lite::Tensor* Input{nullptr};
-  lite::Tensor* Filter{nullptr};
-  lite::Tensor* FilterMax{nullptr};
-  lite::Tensor* Output{nullptr};
-  lite::Tensor* OutputMax{nullptr};
-  lite::Tensor* InputMax{nullptr};
-  lite::Tensor* Bias{nullptr};
-  lite::Tensor* Branch{nullptr};
-
-  int act_type{0};
-  float act_param{0.0f};
-  std::vector<int> filter_dims;
-  std::vector<int> strides;
-  std::shared_ptr<std::vector<int>> paddings;
-  std::shared_ptr<std::vector<int>> dilations;
-  int groups{1};
-  bool has_branch{false};
 };
 
 struct XPUSfaHeadParam : ParamBase {
@@ -2236,7 +2226,7 @@ struct RnnParam : ParamBase {
   lite::Tensor* Input;
   std::vector<lite::Tensor*> PreState;
   std::vector<lite::Tensor*> WeightList;
-  lite::Tensor* SequenceLength;
+  const lite::Tensor* SequenceLength{nullptr};
   lite::Tensor* DropoutState;
   lite::Tensor* Reserve;
   lite::Tensor* Out;
@@ -2347,6 +2337,15 @@ struct CorrelationParam : ParamBase {
   int stride1;
   int stride2;
   int corr_type_multiply{1};
+};
+
+struct ArgsortParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Indices{};
+
+  int axis{-1};
+  bool descending{false};
 };
 
 }  // namespace operators

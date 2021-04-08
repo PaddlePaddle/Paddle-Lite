@@ -215,8 +215,9 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
              "and you have Write&Read permission. Jump to build program "
              "from source.";
     } else {
-      ret = Deserialize(bin_file, &programs_precompiled_binary_);
-      CHECK(ret) << "Deserialize failed.";
+      LOG(INFO) << "Load opencl kernel bin file: " << bin_file;
+      bool success = Deserialize(bin_file, &programs_precompiled_binary_);
+      CHECK(success) << "Deserialize failed!";
 
       VLOG(3) << "sn_key: " << sn_key_;
       VLOG(3) << "map size: " << programs_precompiled_binary_.size();
@@ -236,9 +237,12 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
       } else if (host::memcmp(((sn_iter->second)[0]).data(),
                               GetSN(build_option).data(),
                               GetSN(build_option).length())) {
-        LOG(INFO) << "size of sn_info: " << ((sn_iter->second)[0]).size();
-        LOG(INFO) << "size of GetSN: " << GetSN(build_option).length();
-        LOG(INFO) << "GetSN: " << GetSN(build_option);
+        std::string sn_str(reinterpret_cast<char*>((sn_iter->second)[0].data()),
+                           (sn_iter->second)[0].size());
+        LOG(INFO) << "\nSN required: " << GetSN(build_option)
+                  << "\tsize: " << GetSN(build_option).length()
+                  << "\nSN in bin file: " << sn_str
+                  << "\tsize: " << ((sn_iter->second)[0]).size();
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is invalid!";
         delete_bin_flag = true;
@@ -249,13 +253,12 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
 #endif
         // loop all programs of the binary file
         cl_int status{CL_SUCCESS};
-        const std::vector<cl::Device> device{*device_};
         for (auto& ins : programs_precompiled_binary_) {
           std::string prog_key = ins.first;
           if (prog_key == sn_key_) continue;  // skip sn_key
 
           cl::Program program(
-              *context_, {*device_}, ins.second, nullptr, &status);
+              context(), {device()}, ins.second, nullptr, &status);
           CL_CHECK_FATAL_SOLID(status);
           auto pos_start = prog_key.find_first_of("-D");
           std::string options = prog_key.substr(pos_start);
@@ -264,24 +267,24 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
           std::unique_ptr<cl::Program> ptr(new cl::Program(program));
           programs_[prog_key] = std::move(ptr);
         }
-      }
 
-      auto it = programs_.find(program_key);
-      if (it != programs_.end()) {
-#ifdef LITE_WITH_LOG
-        VLOG(3) << " --- program -> " << program_key
-                << " has been built in binary --- ";
-#endif
-        gotten_bin_flag_ = true;
-        ret = true;
-      } else {
-        delete_bin_flag = true;
-        // Jump to build from source
+        auto it = programs_.find(program_key);
+        if (it != programs_.end()) {
+          VLOG(3) << " --- program -> " << program_key
+                  << " has been built in binary --- ";
+          gotten_bin_flag_ = true;
+          ret = true;
+        } else {
+          delete_bin_flag = true;
+          // Jump to build from source
+        }
       }
     }
 
     if (delete_bin_flag) {
       remove_file(bin_file);
+      programs_precompiled_binary_.clear();
+      programs_.clear();
     }
   } else if (gotten_bin_flag_) {
     // This case happened when model has updated. Bin file should be updated
@@ -297,7 +300,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
 bool CLRuntime::CheckFromSource(const std::string& file_name,
                                 const std::string& program_key,
                                 const std::string& build_option) {
-  auto ptr = CreateProgramFromSource(*context_, file_name);
+  auto ptr = CreateProgramFromSource(context(), file_name);
   auto program = ptr.get();
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- begin build program from source -> " << program_key
@@ -354,7 +357,7 @@ std::unique_ptr<cl::Program> CLRuntime::CreateProgramFromSource(
 }
 
 bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
-  status_ = program->build({*device_}, options.c_str());
+  status_ = program->build({device()}, options.c_str());
   CL_CHECK_ERROR(status_);
 
   if (status_ != CL_SUCCESS) {
@@ -379,6 +382,13 @@ void CLRuntime::SaveProgram() {
     bool ret = Serialize(binary_file, programs_precompiled_binary_);
     CHECK(ret) << "Serialize failed for opencl binary_file:" << binary_file;
 #ifdef LITE_WITH_LOG
+    if (programs_precompiled_binary_.find(sn_key_) !=
+        programs_precompiled_binary_.end()) {
+      std::string sn_str(reinterpret_cast<char*>(
+                             programs_precompiled_binary_[sn_key_][0].data()),
+                         programs_precompiled_binary_[sn_key_][0].size());
+      LOG(INFO) << "SN stored: " << sn_str;
+    }
     LOG(INFO) << "Programs have been serialized to disk successfully. File: "
               << binary_file;
 #endif
@@ -474,14 +484,31 @@ std::string CLRuntime::GetSN(const std::string options) {
   // Identifier info(Serial Number) for each binary file: lite version,
   // build options, platform info, device version, driver version
   STL::stringstream sn_ss;
-  std::string lite_version = lite::version() + "; ";
-  std::string platform_info = platform_->getInfo<CL_PLATFORM_NAME>() + ", " +
-                              platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";
-  std::string device_version = device_->getInfo<CL_DEVICE_VERSION>() + "; ";
-  std::string driver_version = device_->getInfo<CL_DRIVER_VERSION>() + "; ";
-  std::string place_holder{"place_holder"};
-  sn_ss << lite_version << options << platform_info << device_version
-        << driver_version << place_holder;
+
+  const std::string aarch =
+#if defined(__aarch64__)
+      "android_armv8";
+#else
+      "android_armv7";
+#endif
+#if defined(_WIN64)
+  "win64";
+#elif defined(_WIN32)
+  "win32";
+#endif
+
+  const std::string aarch_info = aarch + "; ";
+  const std::string lite_version = lite::version() + "; ";
+  const std::string platform_info =
+      platform_->getInfo<CL_PLATFORM_NAME>() + ", " +
+      platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";
+  const std::string device_version =
+      device_->getInfo<CL_DEVICE_VERSION>() + "; ";
+  const std::string driver_version =
+      device_->getInfo<CL_DRIVER_VERSION>() + "; ";
+  const std::string place_holder{"place_holder"};
+  sn_ss << aarch_info << lite_version << options << platform_info
+        << device_version << driver_version << place_holder;
   return sn_ss.str();
 }
 

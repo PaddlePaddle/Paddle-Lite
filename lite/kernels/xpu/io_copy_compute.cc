@@ -27,21 +27,33 @@ namespace xpu {
 class IoCopyHostToXPUCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  void Run() override {
-    auto& param = Param<operators::IoCopyParam>();
-    if (param.x->target() == TARGET(kHost) ||
-        param.x->target() == TARGET(kX86) ||
-        param.x->target() == TARGET(kARM)) {
-      auto mem_size = param.x->memory_size();
+  void IoCopyHostToDevice(const Tensor* x, Tensor* y) {
+    if (x->target() == TARGET(kHost) || x->target() == TARGET(kX86) ||
+        x->target() == TARGET(kARM)) {
+      auto mem_size = x->memory_size();
       VLOG(4) << "host to xpu, copy size " << mem_size;
-      auto* data = param.y->mutable_data(TARGET(kXPU), mem_size);
-      TargetWrapperXPU::MemcpySync(
-          data, param.x->raw_data(), mem_size, IoDirection::HtoD);
-    } else if (param.x->target() == TARGET(kXPU)) {
-      param.y->ShareDataWith(*(param.x));
+      auto* data = y->mutable_data(TARGET(kXPU), mem_size);
+      if (mem_size > 0) {
+        TargetWrapperXPU::MemcpySync(
+            data, x->raw_data(), mem_size, IoDirection::HtoD);
+      }
+    } else if (x->target() == TARGET(kXPU)) {
+      y->ShareDataWith(*x);
     } else {
       LOG(FATAL) << "IoCopyHostToXPU can not handle with the input target: "
-                 << static_cast<int>(param.x->target());
+                 << lite_api::TargetToStr(x->target());
+    }
+  }
+
+  void Run() override {
+    auto& param = Param<operators::IoCopyParam>();
+    if (param.x != nullptr) {
+      IoCopyHostToDevice(param.x, param.y);
+    }
+    if (param.x_array != nullptr) {
+      for (size_t i = 0; i < param.x_array->size(); i++) {
+        IoCopyHostToDevice(&(param.x_array->at(i)), &(param.y_array->at(i)));
+      }
     }
   }
 
@@ -74,17 +86,33 @@ class IoCopyHostToXPUCompute
 class IoCopyXPUToHostCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
+  void IoCopyDeviceToHost(const Tensor* x, Tensor* y) {
+    if (x->target() == TARGET(kXPU)) {
+      auto mem_size = x->memory_size();
+      VLOG(4) << "xpu to host, copy size " << mem_size;
+      auto* data = y->mutable_data(TARGET(kHost), mem_size);
+      if (mem_size > 0) {
+        TargetWrapperXPU::MemcpySync(
+            data, x->raw_data(), mem_size, IoDirection::DtoH);
+      }
+    } else if (x->target() == TARGET(kHost) || x->target() == TARGET(kX86) ||
+               x->target() == TARGET(kARM)) {
+      y->ShareDataWith(*x);
+    } else {
+      LOG(FATAL) << "IoCopyXPUToHost can not handle with the input target: "
+                 << lite_api::TargetToStr(x->target());
+    }
+  }
+
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
-    CHECK(param.x->target() == TARGET(kXPU));
-    auto mem_size = param.x->memory_size();
-    if (param.y->target() != TARGET(kXPU)) {
-      VLOG(4) << "xpu to host, copy size " << mem_size;
-      auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
-      TargetWrapperXPU::MemcpySync(
-          data, param.x->raw_data(), mem_size, IoDirection::DtoH);
-    } else {
-      param.y->ShareDataWith(*(param.x));
+    if (param.x != nullptr) {
+      IoCopyDeviceToHost(param.x, param.y);
+    }
+    if (param.x_array != nullptr) {
+      for (size_t i = 0; i < param.x_array->size(); i++) {
+        IoCopyDeviceToHost(&(param.x_array->at(i)), &(param.y_array->at(i)));
+      }
     }
   }
 
@@ -106,10 +134,18 @@ REGISTER_LITE_KERNEL(io_copy,
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
+    .BindInput("InputArray",
+               {LiteType::GetTensorListTy(TARGET(kHost),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kXPU),
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
+    .BindOutput("OutArray",
+                {LiteType::GetTensorListTy(TARGET(kXPU),
+                                           PRECISION(kAny),
+                                           DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
@@ -122,10 +158,18 @@ REGISTER_LITE_KERNEL(io_copy,
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
+    .BindInput("InputArray",
+               {LiteType::GetTensorListTy(TARGET(kXPU),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
+    .BindOutput("OutArray",
+                {LiteType::GetTensorListTy(TARGET(kHost),
+                                           PRECISION(kAny),
+                                           DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -138,10 +182,18 @@ REGISTER_LITE_KERNEL(io_copy_once,
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
+    .BindInput("InputArray",
+               {LiteType::GetTensorListTy(TARGET(kHost),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kXPU),
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
+    .BindOutput("OutArray",
+                {LiteType::GetTensorListTy(TARGET(kXPU),
+                                           PRECISION(kAny),
+                                           DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -154,8 +206,16 @@ REGISTER_LITE_KERNEL(io_copy_once,
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
+    .BindInput("InputArray",
+               {LiteType::GetTensorListTy(TARGET(kXPU),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
+    .BindOutput("OutArray",
+                {LiteType::GetTensorListTy(TARGET(kHost),
+                                           PRECISION(kAny),
+                                           DATALAYOUT(kAny))})
     .Finalize();

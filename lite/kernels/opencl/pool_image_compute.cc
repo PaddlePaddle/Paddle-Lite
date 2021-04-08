@@ -27,8 +27,6 @@
 #endif
 #include "lite/backends/opencl/cl_utility.h"
 
-#undef LITE_WITH_LOG
-
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -44,7 +42,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     const auto& param = *param_.get_mutable<param_t>();
-
     kernel_func_name_ += param.pooling_type;
     const bool global_pooling = param.global_pooling;
     const bool exclusive = param.exclusive;
@@ -93,6 +90,8 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       }
     }
 
+    cl_int4 pad = {paddings[0], paddings[1], paddings[2], paddings[3]};
+
 #ifdef LITE_WITH_LOG
     VLOG(4) << "in_dims : [" << in_dims.size() << "]" << in_dims[0] << "  "
             << in_dims[1] << "  " << in_dims[2] << "  " << in_dims[3];
@@ -108,12 +107,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
             << paddings[1] << "  " << paddings[2] << "  " << paddings[3];
 #endif
 
-    bool pads_equal =
-        (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
-    if (!pads_equal) {
-      LOG(FATAL)
-          << "padding requires pad_left == pad_right, pad_top == pad_bottom";
-    }
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
@@ -162,9 +155,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, static_cast<const int>(strides[1]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[2]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
+    status = kernel.setArg(++arg_idx, pad);
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,
@@ -203,4 +194,3 @@ REGISTER_LITE_KERNEL(pool2d,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
-#define LITE_WITH_LOG

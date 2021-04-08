@@ -55,16 +55,6 @@ struct ModFunctor {
 };
 
 template <typename T>
-struct MaxFunctor {
-  inline HOSTDEVICE T operator()(T a, T b) const { return a > b ? a : b; }
-};
-
-template <typename T>
-struct MinFunctor {
-  inline HOSTDEVICE T operator()(T a, T b) const { return a < b ? a : b; }
-};
-
-template <typename T>
 class ElementwiseSubCompute
     : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
@@ -150,38 +140,6 @@ class ElementwiseModCompute
   }
 
   virtual ~ElementwiseModCompute() = default;
-};
-
-template <typename T>
-class ElementwiseMaxCompute
-    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    auto& context = ctx_->As<X86Context>();
-    param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<MaxFunctor<T>, lite::TargetType::kX86, T>(
-        context, param.X, param.Y, param.axis, MaxFunctor<T>(), param.Out);
-  }
-
-  virtual ~ElementwiseMaxCompute() = default;
-};
-
-template <typename T>
-class ElementwiseMinCompute
-    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    auto& context = ctx_->As<X86Context>();
-    param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<MinFunctor<T>, lite::TargetType::kX86, T>(
-        context, param.X, param.Y, param.axis, MinFunctor<T>(), param.Out);
-  }
-
-  virtual ~ElementwiseMinCompute() = default;
 };
 
 }  // namespace x86
