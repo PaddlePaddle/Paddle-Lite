@@ -79,6 +79,42 @@ bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
     param_.bias =
         scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();
   }
+
+  // shape check
+  int op_num = param_.op_type.size();
+  CHECK_EQ(op_num, param_.place_x.size());
+  CHECK_EQ(op_num, param_.place_y.size());
+  CHECK_EQ(op_num, param_.place_z.size());
+  int f_n = 0, s_n = 0, p_n = 0, d_n = 0, g_n = 0, act_n = 0, act_param_n = 0,
+      bias_n = 0;
+  for (size_t i = 0; i < op_num; i++) {
+    if (param_.op_type[i] == 0) {
+      f_n += 4;
+      s_n += 2;
+      p_n += 4;
+      d_n += 2;
+      g_n += 1;
+      act_n += 1;
+      act_param_n += 1;
+      bias_n += 1;
+    } else if (param_.op_type[i] <= 3) {
+      f_n += 2;
+      s_n += 2;
+      p_n += 4;
+    } else if (param_.op_type[i] == 4) {
+      f_n += 2;
+      act_n += 3;
+      act_param_n += 3;
+    }
+  }
+  CHECK_EQ(f_n, param_.filter_dims.size());
+  CHECK_EQ(s_n, param_.strides.size());
+  CHECK_EQ(p_n, paddings.size());
+  CHECK_EQ(d_n, dilations.size());
+  CHECK_EQ(g_n, param_.groups.size());
+  CHECK_EQ(act_n, param_.act_type.size());
+  CHECK_EQ(act_param_n, param_.act_param.size());
+  CHECK_EQ(bias_n, param_.conv_bias.size());
   return true;
 }
 
