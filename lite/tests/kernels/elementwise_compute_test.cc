@@ -372,6 +372,9 @@ TEST(elementwise_x86, precison) {
   Place place(TARGET(kX86));
   float abs_error = 1e-5;
 
+  TestEltX86<float>(place, abs_error, "mul", "def");
+  TestEltX86<int>(place, abs_error, "mul", "int32");
+  TestEltX86<int64_t>(place, abs_error, "mul", "int64");
   TestEltX86<float>(place, abs_error, "floordiv", "float32");
   TestEltX86<int32_t>(place, abs_error, "floordiv", "int32");
   TestEltX86<int64_t>(place, abs_error, "floordiv", "int64");
