@@ -18,6 +18,7 @@ add_kernel(stack_compute_host Host basic SRCS stack_compute.cc DEPS ${lite_kerne
 add_kernel(lod_array_length_compute_host Host basic SRCS lod_array_length_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(unbind_compute_host Host basic SRCS unbind_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(argmax_compute_host Host basic SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(assign_value_compute_host Host basic SRCS assign_value_compute.cc DEPS ${lite_kernel_deps})
 
 # extra kernels
 add_kernel(reduce_all_compute_host Host extra SRCS reduce_all_compute.cc DEPS ${lite_kernel_deps} math_host)
@@ -33,7 +34,6 @@ add_kernel(polygon_box_transform_compute_host Host extra SRCS polygon_box_transf
 add_kernel(write_to_array_compute_host Host extra SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(read_from_array_compute_host Host extra SRCS read_from_array_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(assign_compute_host Host extra SRCS assign_compute.cc DEPS ${lite_kernel_deps})
-add_kernel(assign_value_compute_host Host extra SRCS assign_value_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(retinanet_detection_output_compute_host Host extra SRCS retinanet_detection_output_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(where_index_compute_host Host extra SRCS where_index_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(where_compute_host Host extra SRCS where_compute.cc DEPS ${lite_kernel_deps})
