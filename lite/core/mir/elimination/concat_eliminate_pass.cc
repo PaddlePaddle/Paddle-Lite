@@ -20,6 +20,7 @@
 namespace paddle {
 namespace lite {
 namespace mir {
+
 std::vector<size_t> ConcatEliminator::StrideNumel(const DDim& ddim) {
   std::vector<size_t> strides(ddim.size());
   strides[ddim.size() - 1] = ddim[ddim.size() - 1];
@@ -28,6 +29,7 @@ std::vector<size_t> ConcatEliminator::StrideNumel(const DDim& ddim) {
   }
   return strides;
 }
+
 void ConcatEliminator::ComputeConcat(const std::vector<lite::Tensor*> inputs,
                                      lite::Tensor* output) {
   size_t output_offset = 0;
@@ -36,7 +38,7 @@ void ConcatEliminator::ComputeConcat(const std::vector<lite::Tensor*> inputs,
     auto out_stride = StrideNumel(output->dims());
     void* dst = output->mutable_data<float>() + output_offset;
     const void* src = in->data<float>();
-    // src and dst tensor should have the same dims size.
+    // Src and dst tensor should have the same dims size.
     CHECK(in_stride.size() == out_stride.size());
     std::memcpy(dst, src, sizeof(float) * in_stride[0]);
     output_offset += in_stride[0];
@@ -61,12 +63,11 @@ void ConcatEliminator::BuildPattern() {
   auto* reshape2_output_5 = VarNode("reshape2_output_5")
                                 ->assert_is_op_nth_input("concat", "X", 5)
                                 ->assert_is_persistable_var();
-  // concat #0 node
+
   auto* concat = OpNode("concat", "concat");
   auto* concat_output_0 =
       VarNode("concat_output_0")->assert_is_op_output("concat", "Out");
 
-  // concat topology
   std::vector<PMNode*> concat_inputs_0{reshape2_output_0,
                                        reshape2_output_1,
                                        reshape2_output_2,
@@ -86,7 +87,7 @@ void ConcatEliminator::InsertNewNode(SSAGraph* graph,
   auto op_desc = concat_instruct->mutable_op_info();
   auto* scope = concat_instruct->op()->scope();
 
-  // get concat's input tensor
+  // Get concat's input tensor
   std::vector<lite::Tensor*> inputs_tensors;
   inputs_tensors.push_back(
       scope->FindVar(matched.at("reshape2_output_0")->arg()->name)
@@ -107,7 +108,7 @@ void ConcatEliminator::InsertNewNode(SSAGraph* graph,
       scope->FindVar(matched.at("reshape2_output_5")->arg()->name)
           ->GetMutable<lite::Tensor>());
 
-  // get concat's output tensor
+  // Get concat's output tensor
   auto output_var = scope->FindVar(op_desc->Output("Out").front());
   auto output_t = output_var->GetMutable<lite::Tensor>();
 
@@ -117,10 +118,10 @@ void ConcatEliminator::InsertNewNode(SSAGraph* graph,
     LOG(WARNING) << "the ssd priorbox concat's axis must be 0 ";
   }
 
-  // calcu concat
+  // Calc the concat offline
   ComputeConcat(inputs_tensors, output_t);
 
-  // set the output as persistable-tensor
+  // Offline calc concat, only retain output tensor as persistable tensor
   output_t->set_persistable(true);
   auto concat_output_node = matched.at("concat_output_0");
   concat_output_node->arg()->is_weight = true;
@@ -143,6 +144,5 @@ void ConcatEliminatePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_concat_eliminate_pass,
-                  paddle::lite::mir::ConcatEliminatePass)
+REGISTER_MIR_PASS(concat_eliminate_pass, paddle::lite::mir::ConcatEliminatePass)
     .BindTargets({TARGET(kNPU), TARGET(kRKNPU)});

@@ -26,6 +26,34 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+// In SSD, the concat after prior-box and reshape ops, the prior-box and reshape
+// can be calculate offline in "priorbox eliminate pass" and "reshape eliminate
+// pass"
+// so the concat can be calculate offline, too. we support concat which link 6
+// reshape
+// at present.
+//
+// For example:
+// reshape-output     reshape-output     ..other reshape-output..
+//       |                    |                     |
+//       |                    |                     |
+//       |                    |                     |
+//       |                    |                     |
+//       -------------- OP: concat ---------------
+//                            |
+//                            |
+//                            |
+//                            |
+//                            v
+//
+// After the pass is applied:
+//                      concat-output
+//                            |
+//                            |
+//                            |
+//                            |
+//                            v
+
 class ConcatEliminator : public FuseBase {
  public:
   void BuildPattern() override;

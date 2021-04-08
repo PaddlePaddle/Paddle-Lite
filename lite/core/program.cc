@@ -77,9 +77,13 @@ void RuntimeProgram::SaveToProgram(
           v->SetType(it->second.GetType());
           v->SetPersistable(it->second.Persistable());
           if (it->second.GetType() == cpp::VarDesc::Type::LOD_TENSOR) {
-            auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
-            if (tensor->persistable()) {
-              v->SetPersistable(tensor->persistable());
+            auto var = scope->FindVar(var_name);
+            if (var != nullptr) {
+              auto tensor = var->GetMutable<Tensor>();
+              if (tensor != nullptr && tensor->persistable() &&
+                  (!v->Persistable())) {
+                v->SetPersistable(tensor->persistable());
+              }
             }
           }
           if (var_name != "feed" && var_name != "fetch") {

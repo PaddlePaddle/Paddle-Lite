@@ -20,6 +20,7 @@
 namespace paddle {
 namespace lite {
 namespace mir {
+
 void ReshapeEliminator::ComputeReshape(const lite::Tensor* in,
                                        lite::Tensor* out) {
   // In CopyDataFrom, the target tensor's dims will be set to the source
@@ -30,7 +31,6 @@ void ReshapeEliminator::ComputeReshape(const lite::Tensor* in,
 }
 
 void ReshapeEliminator::BuildPattern() {
-  // reshape2 #0 node
   auto* reshape_input = VarNode("reshape_input")
                             ->assert_is_op_input("reshape2", "X")
                             ->assert_is_persistable_var();
@@ -38,7 +38,6 @@ void ReshapeEliminator::BuildPattern() {
   auto* reshape2_output_out =
       VarNode("reshape2_output_out")->assert_is_op_output("reshape2", "Out");
 
-  // reshape2 topology
   *reshape_input >> *reshape2 >> *reshape2_output_out;
 }
 
@@ -51,17 +50,16 @@ void ReshapeEliminator::InsertNewNode(SSAGraph* graph,
   auto reshape_instruct = matched.at("reshape2")->stmt();
   auto op_desc = reshape_instruct->mutable_op_info();
   auto* scope = reshape_instruct->op()->scope();
-  // get reshape's input tensor
+
   auto input_var = scope->FindVar(op_desc->Input("X").front());
   auto input_t = &(input_var->Get<lite::Tensor>());
-  // get reshape's output tensor
+
   auto output_var = scope->FindVar(op_desc->Output("Out").front());
   auto output_t = output_var->GetMutable<lite::Tensor>();
-  // get reshape's other attr
 
-  // calcu reshape
+  // Calc reshape offline
   ComputeReshape(input_t, output_t);
-  // set the output as persistable-tensor
+  // Offline calc reshape, only retain output tensor as persistable tensor
   output_t->set_persistable(true);
   auto reshape_output_node = matched.at("reshape2_output_out");
   reshape_output_node->arg()->is_weight = true;
@@ -79,6 +77,6 @@ void ReshapeEliminatePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_reshape_eliminate_pass,
+REGISTER_MIR_PASS(reshape_eliminate_pass,
                   paddle::lite::mir::ReshapeEliminatePass)
     .BindTargets({TARGET(kNPU), TARGET(kRKNPU)});

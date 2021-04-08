@@ -26,6 +26,28 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+// In SSD, the reshape ops after prior-box, the prior-box can be calculate
+// offline
+// in "priorbox eliminate pass", so the reshape can be calculate offline, too
+//
+// For example:
+//     boxes                             variances
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//   OP: reshape                         OP: reshape
+//       |                                   |
+//       v                                   v
+//
+// After the pass is applied:
+// reshape's output                    reshape's output
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//       v                                   v
+
 class ReshapeEliminator : public FuseBase {
  public:
   void BuildPattern() override;

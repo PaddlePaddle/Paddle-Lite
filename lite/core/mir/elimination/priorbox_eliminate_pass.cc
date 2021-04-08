@@ -18,30 +18,11 @@
 #include <memory>
 #include <set>
 #include <vector>
+#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
-const int MALLOC_ALIGN = 64;
-
-void* PriorboxEliminator::fast_malloc(size_t size) {
-  size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
-  char* p = static_cast<char*>(malloc(offset + size));
-  if (!p) {
-    return nullptr;
-  }
-  void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) &
-                                    (~(MALLOC_ALIGN - 1)));
-  static_cast<void**>(r)[-1] = p;
-  memset(r, 0, size);
-  return r;
-}
-
-void PriorboxEliminator::fast_free(void* ptr) {
-  if (ptr) {
-    free(static_cast<void**>(ptr)[-1]);
-  }
-}
 
 void PriorboxEliminator::ExpandAspectRatios(
     const std::vector<float>& input_aspect_ratior,
@@ -87,7 +68,7 @@ void PriorboxEliminator::ComputePriorbox(
     bool is_clip_,
     const std::vector<std::string>& order_,
     bool min_max_aspect_ratios_order) {
-  // compute output shape
+  // Compute output shape
   int win1 = input->dims()[3];
   int hin1 = input->dims()[2];
   DDim shape_out({hin1, win1, prior_num_, 4});
@@ -120,17 +101,19 @@ void PriorboxEliminator::ComputePriorbox(
       float center_y = (h + offset) * step_h;
       float box_width;
       float box_height;
-      float* min_buf = reinterpret_cast<float*>(fast_malloc(sizeof(float) * 4));
-      float* max_buf = reinterpret_cast<float*>(fast_malloc(sizeof(float) * 4));
+      float* min_buf =
+          reinterpret_cast<float*>(host::malloc(sizeof(float) * 4));
+      float* max_buf =
+          reinterpret_cast<float*>(host::malloc(sizeof(float) * 4));
       float* com_buf = reinterpret_cast<float*>(
-          fast_malloc(sizeof(float) * aspect_ratio_.size() * 4));
+          host::malloc(sizeof(float) * aspect_ratio_.size() * 4));
 
       for (int s = 0; s < min_size_.size(); ++s) {
         int min_idx = 0;
         int max_idx = 0;
         int com_idx = 0;
         int min_size = min_size_[s];
-        // first prior: aspect_ratio = 1, size = min_size
+        // First prior: aspect_ratio = 1, size = min_size
         box_width = box_height = min_size;
         //! xmin
         min_buf[min_idx++] = (center_x - box_width / 2.f) / img_width;
@@ -143,7 +126,7 @@ void PriorboxEliminator::ComputePriorbox(
 
         if (max_size_.size() > 0) {
           int max_size = max_size_[s];
-          //! second prior: aspect_ratio = 1, size = sqrt(min_size * max_size)
+          //! Second prior: aspect_ratio = 1, size = sqrt(min_size * max_size)
           box_width = box_height = sqrtf(min_size * max_size);
           //! xmin
           max_buf[max_idx++] = (center_x - box_width / 2.f) / img_width;
@@ -155,7 +138,7 @@ void PriorboxEliminator::ComputePriorbox(
           max_buf[max_idx++] = (center_y + box_height / 2.f) / img_height;
         }
 
-        //! rest of priors
+        //! Rest of priors
         for (int r = 0; r < aspect_ratio_.size(); ++r) {
           float ar = aspect_ratio_[r];
           if (fabs(ar - 1.) < 1e-6) {
@@ -188,18 +171,18 @@ void PriorboxEliminator::ComputePriorbox(
           idx += max_idx;
         }
       }
-      fast_free(min_buf);
-      fast_free(max_buf);
-      fast_free(com_buf);
+      host::free(min_buf);
+      host::free(max_buf);
+      host::free(com_buf);
     }
   }
-  //! clip the prior's coordinate such that it is within [0, 1]
+  //! Clip the prior's coordinate such that it is within [0, 1]
   if (is_clip_) {
     for (int d = 0; d < channel_size; ++d) {
       _cpu_data[d] = std::min(std::max(_cpu_data[d], 0.f), 1.f);
     }
   }
-  //! set the variance.
+  //! Set the variance.
   int count = 0;
   for (int h = 0; h < height; ++h) {
     for (int w = 0; w < width; ++w) {
@@ -214,14 +197,14 @@ void PriorboxEliminator::ComputePriorbox(
 }
 
 void PriorboxEliminator::BuildPattern() {
-  // prior_box #0 node
+  // Prior_box node
   auto* prior_box = OpNode("prior_box", "prior_box");
-  // prior_box #0 input
+  // Prior_box input
   auto* prior_box_input_x =
       VarNode("prior_box_input_x")->assert_is_op_input("prior_box", "Input");
   auto* prior_box_input_image = VarNode("prior_box_input_image")
                                     ->assert_is_op_input("prior_box", "Image");
-  // prior_box #0 output
+  // Prior_box output
   auto* prior_box_output_boxes =
       VarNode("prior_box_output_boxes")
           ->assert_is_op_output("prior_box", "Boxes");
@@ -229,7 +212,6 @@ void PriorboxEliminator::BuildPattern() {
       VarNode("prior_box_output_var")
           ->assert_is_op_output("prior_box", "Variances");
 
-  // prior_box #0 topology
   std::vector<PMNode*> prior_box_inputs{prior_box_input_x,
                                         prior_box_input_image};
   std::vector<PMNode*> prior_box_outputs{prior_box_output_boxes,
@@ -246,19 +228,19 @@ void PriorboxEliminator::InsertNewNode(SSAGraph* graph,
   auto priorbox_instruct = matched.at("prior_box")->stmt();
   auto op_desc = priorbox_instruct->mutable_op_info();
   auto* scope = priorbox_instruct->op()->scope();
-  // get priorbox's input tensor
+  // Get priorbox's input tensor
   auto image_var = scope->FindVar(op_desc->Input("Image").front());
   auto image_t = &(image_var->Get<lite::Tensor>());
   auto input_var = scope->FindVar(op_desc->Input("Input").front());
   auto input_t = &(input_var->Get<lite::Tensor>());
   auto img_h = image_t->dims()[2];
   auto img_w = image_t->dims()[3];
-  // get priorbox's output tensor
+  // Get priorbox's output tensor
   auto boxes_var = scope->FindVar(op_desc->Output("Boxes").front());
   auto boxes_t = boxes_var->GetMutable<lite::Tensor>();
   auto variances_var = scope->FindVar(op_desc->Output("Variances").front());
   auto variances_t = variances_var->GetMutable<lite::Tensor>();
-  // get priorbox's other attr
+  // Get priorbox's other attr
   auto is_clip = op_desc->GetAttr<bool>("clip");
   auto is_flip = op_desc->GetAttr<bool>("flip");
   auto min_max_aspect_ratios_order =
@@ -275,7 +257,7 @@ void PriorboxEliminator::InsertNewNode(SSAGraph* graph,
   int prior_num =
       (aspect_ratios_vec.size() * min_sizes.size()) + max_sizes.size();
   const std::vector<std::string> order_tmp;
-  // calcu priorbox
+  // Calc priorbox
   ComputePriorbox(input_t,
                   image_t,
                   &boxes_t,
@@ -294,7 +276,7 @@ void PriorboxEliminator::InsertNewNode(SSAGraph* graph,
                   is_clip,
                   order_tmp,
                   min_max_aspect_ratios_order);
-  // set the output as persistable-tensor
+  // Offline calc priorbox, only retain output tensor as persistable tensor
   boxes_t->set_persistable(true);
   variances_t->set_persistable(true);
   auto output_boxes_node = matched.at("prior_box_output_boxes");
@@ -313,6 +295,6 @@ void PriorboxEliminatePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_priorbox_eliminate_pass,
+REGISTER_MIR_PASS(priorbox_eliminate_pass,
                   paddle::lite::mir::PriorboxEliminatePass)
     .BindTargets({TARGET(kNPU), TARGET(kRKNPU)});

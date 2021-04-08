@@ -26,6 +26,40 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+// Prior-box don't depend on feature-map data, only depend on image &
+// feature-map
+// size, so if the shape is determined, we can calculate it offline in opt stage
+//
+// For example:
+//   image-size                        feature-size
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//       ------------ OP: prior box ----------
+//                          |
+//                          |
+//                          |
+//                          |
+//     boxes-----------------------------variances
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//   OP: reshape                         OP: reshape
+//       |                                   |
+//       v                                   v
+//
+// After the pass is applied:
+//     boxes                              variances
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//       |                                   |
+//   OP: reshape                         OP: reshape
+//       |                                   |
+//       v                                   v
+
 class PriorboxEliminator : public FuseBase {
  public:
   void BuildPattern() override;
