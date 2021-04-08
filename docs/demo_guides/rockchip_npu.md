@@ -9,7 +9,8 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
 - RK1808/1806
 - RV1126/1109
-注意：暂时不支持RK3399Pro
+
+注意：支持RK3399Pro需要瑞芯微进行底层代码的重构，其工作量巨大，因此，暂不支持该款芯片。
 
 ### 已支持的设备
 
@@ -19,8 +20,36 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
 ### 已支持的Paddle模型
 
+#### 模型
 - [MobileNetV1-int8全量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
 - [ResNet50-int8全量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/resnet50_int8_224_fluid.tar.gz)
+
+#### 性能
+- 测试环境
+  - 编译环境
+    - Ubuntu 16.04，GCC 5.4 for ARMLinux armhf and aarch64
+
+  - 硬件环境
+    - RK1808EVB/TB-RK1808S0 AI计算棒
+      - CPU：2 x Cortex-A35 1.6 GHz
+      - NPU：3 TOPs for INT8 / 300 GOPs for INT16 / 100 GFLOPs for FP16
+
+    - RV1109EVB
+      - CPU：2 x Cortex-A7 1.2 GHz
+      - NPU：1.2Tops，support INT8/ INT16
+
+- 测试方法
+  - warmup=10, repeats=30，统计平均时间，单位是ms
+  - 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
+  - 分类模型的输入图像维度是{1, 3, 224, 224}
+
+- 测试结果
+
+  |模型 |RK1808EVB||TB-RK1808S0 AI计算棒||RV1109EVB||
+  |---|---|---|---|---|---|---|
+  |  |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |
+  |MobileNetV1-int8|  266.623505|  6.139|  359.007996|  9.4335|  335.03993|  6.6995|
+  |ResNet50-int8|  1488.346999|  18.19899|  1983.601501|  23.5935|  1960.27252|  29.8895|
 
 ### 已支持（或部分支持）的Paddle算子
 
