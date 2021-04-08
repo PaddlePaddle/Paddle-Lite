@@ -1,6 +1,6 @@
 # Python 完整示例
 
-Python仅支持服务器端预测，目前支持 Windows / macOS / Ubuntu /ArmLinux。
+Python 支持的平台包括：Windows X86_CPU / macOS X86_CPU / Linux X86_CPU / Linux ARM_CPU (ARM Linux)。
 
 本章节包含2部分内容：(1) [Python 示例程序](python_demo.html#id1)；(2) [Python 应用开发说明](python_demo.html#id6)。
 
@@ -10,16 +10,20 @@ Python仅支持服务器端预测，目前支持 Windows / macOS / Ubuntu /ArmLi
 
 ### 1. 环境准备
 
-要编译和运行Android Python 示例程序，你需要准备一台可以编译运行PaddleLite的电脑。
+如果是Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台，不需要进行特定环境准备。
+
+如果是ARM Linux平台，需要编译PaddleLite，环境配置参考[文档](../source_compile/compile_env)，推荐使用docker。
 
 ### 2. 安装python预测库
 
+PyPI源目前仅提供Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台的pip安装包，执行如下命令。
+
 ```shell
-# 当前最新版本是 2.8rc0
+# 假定版本是 2.8rc0
 python -m pip install paddlelite==2.8rc0
 ```
 
-**注意：** PyPI源目前仅提供Windows / Mac / Linux (x86) 三个平台pip安装包，如果您需要使用AMRLinux平台的Python预测功能，请参考[源码编译(ARMLinux)](../source_compile/compile_linux)。
+如果您需要使用AMRLinux平台的Python预测功能，请参考[源码编译(ARMLinux)](../source_compile/compile_linux)编译、安装PaddleLite的python包。
 
 ### 3. 准备预测部署模型
 
@@ -33,7 +37,7 @@ tar zxf mobilenet_v1.tar.gz
 
 (2) 模型转换：Paddle的原生模型需要经过[opt](../user_guides/model_optimize_tool)工具转化为Paddle-Lite可以支持的naive_buffer格式。
 
-- Linux环境：通过pip安装paddlelite，即可获得paddle_lite_opt命令工具
+- Linux X86_CPU 平台：通过pip安装paddlelite，即可获得paddle_lite_opt命令工具
 
   ```shell
   paddle_lite_opt --model_dir=./mobilenet_v1  \
@@ -41,8 +45,9 @@ tar zxf mobilenet_v1.tar.gz
                   --optimize_out_type=naive_buffer \
                   --valid_targets=x86
   ```
+- MAC X86_CPU 平台: paddle_lite_opt工具使用方式同Linux。
 
-- windows环境：windows 暂不支持命令行方式直接运行模型转换器，需要编写python脚本
+- Windows X86_CPU 平台：windows 暂不支持命令行方式直接运行模型转换器，需要编写python脚本
 
   ```python
   import paddlelite.lite as lite
@@ -51,7 +56,7 @@ tar zxf mobilenet_v1.tar.gz
   # 非combined形式
   a.set_model_dir("D:\\YOU_MODEL_PATH\\mobilenet_v1")
 
-  # conmbined形式
+  # conmbined形式，具体模型和参数名称，请根据实际修改
   # a.set_model_file("D:\\YOU_MODEL_PATH\\mobilenet_v1\\__model__")
   # a.set_param_file("D:\\YOU_MODEL_PATH\\mobilenet_v1\\__params__")
 
@@ -61,7 +66,24 @@ tar zxf mobilenet_v1.tar.gz
   a.run()
   ```
 
-- MAC环境: paddle_lite_opt工具使用方式同Linux。
+- ARMLinux 平台：编写python脚本转换模型
+
+  ```python
+  import paddlelite.lite as lite
+
+  a=lite.Opt()
+  # 非combined形式
+  a.set_model_dir("D:\\YOU_MODEL_PATH\\mobilenet_v1")
+
+  # conmbined形式，具体模型和参数名称，请根据实际修改
+  # a.set_model_file("D:\\YOU_MODEL_PATH\\mobilenet_v1\\__model__")
+  # a.set_param_file("D:\\YOU_MODEL_PATH\\mobilenet_v1\\__params__")
+
+  a.set_optimize_out("mobilenet_v1_opt")
+  a.set_valid_places("arm")   # 设置为arm
+
+  a.run()
+  ```
 
 以上命令执行成功之后将在同级目录生成名为`mobilenet_v1_opt.nb`的优化后模型文件。
 
@@ -80,6 +102,7 @@ python mobilenetv1_full_api.py --model_dir=./mobilenet_v1
 [1L, 1000L]
 [0.00019130950386170298, 0.0005920541007071733, 0.00011230241216253489, 6.27333574811928e-05, 0.0001275067188544199, 0.0013214796781539917, 3.138116153422743e-05, 6.52207963867113e-05, 4.780858944286592e-05, 0.0002588215284049511]
 ```
+
 ## Python 应用开发说明
 
 Python代码调用Paddle-Lite执行预测库仅需以下六步：
