@@ -127,7 +127,8 @@ void RunModel(std::string model_dir,
               size_t repeats,
               size_t warmup,
               size_t print_output_elem,
-              size_t power_mode) {
+              size_t power_mode,
+              size_t thread_num) {
   // 1. Set MobileConfig
   MobileConfig config;
   config.set_model_from_file(model_dir);
@@ -186,7 +187,7 @@ void RunModel(std::string model_dir,
   // release/v2.3.0, plese use `set_model_dir` API as listed below.
   // config.set_model_dir(model_dir);
   config.set_power_mode(static_cast<paddle::lite_api::PowerMode>(power_mode));
-
+  config.set_threads(thread_num);
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<MobileConfig>(config);
@@ -290,6 +291,8 @@ int main(int argc, char** argv) {
 
   int repeats = 10;
   int warmup = 10;
+  size_t power_mode = 0;
+  size_t thread_num = 1;
   int print_output_elem = 0;
 
   if (argc > 2 && argc < 6) {
@@ -299,12 +302,14 @@ int main(int argc, char** argv) {
                  "1,3,224,224:1,5 for 2 inputs\n"
               << "  <repeats>\n"
               << "  <warmup>\n"
+              << "  <power_mode>\n"
+              << "  <thread_num>\n"
               << "  <print_output>" << std::endl;
     return 0;
   }
 
   std::string model_dir = argv[1];
-  if (argc >= 6) {
+  if (argc >= 8) {
     input_shapes.clear();
     std::string raw_input_shapes = argv[2];
     std::cout << "raw_input_shapes: " << raw_input_shapes << std::endl;
@@ -316,17 +321,23 @@ int main(int argc, char** argv) {
 
     repeats = atoi(argv[3]);
     warmup = atoi(argv[4]);
-    print_output_elem = atoi(argv[5]);
+    power_mode = atoi(argv[5]);
+    thread_num = atoi(argv[6]);
+    print_output_elem = atoi(argv[7]);
   }
   // set arm power mode:
   // 0 for big cluster, high performance
   // 1 for little cluster
   // 2 for all cores
   // 3 for no bind
-  size_t power_mode = 0;
 
-  RunModel(
-      model_dir, input_shapes, repeats, warmup, print_output_elem, power_mode);
+  RunModel(model_dir,
+           input_shapes,
+           repeats,
+           warmup,
+           print_output_elem,
+           power_mode,
+           thread_num);
 
   return 0;
 }
