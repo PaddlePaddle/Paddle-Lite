@@ -121,14 +121,12 @@ class XPUFcFuser : public FuseBase {
                                        {"relu6", 17}};
 
     float act_param_ = 0.0f;
-    if (act_type_ != "linear") {
-      if (act_type_ == "leaky_relu") {
-        auto act_op_desc = *matched.at("act")->stmt()->op_info();
-        act_param_ = act_op_desc.GetAttr<float>("alpha");
-      } else if (act_type_ == "hard_sigmoid") {
-        auto act_op_desc = *matched.at("act")->stmt()->op_info();
-        act_param_ = act_op_desc.GetAttr<float>("slope");
-      }
+    if (act_type_ == "leaky_relu") {
+      auto act_op_desc = *matched.at("act")->stmt()->op_info();
+      act_param_ = act_op_desc.GetAttr<float>("alpha");
+    } else if (act_type_ == "hard_sigmoid") {
+      auto act_op_desc = *matched.at("act")->stmt()->op_info();
+      act_param_ = act_op_desc.GetAttr<float>("slope");
     }
     op_desc.SetAttr<int>("act_type", act_map[act_type_]);
     op_desc.SetAttr<float>("act_param", act_param_);

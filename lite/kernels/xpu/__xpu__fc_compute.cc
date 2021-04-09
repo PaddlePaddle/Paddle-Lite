@@ -164,7 +164,7 @@ void XPUFcCompute::Run() {
         act /* act_type */);
     CHECK_EQ(r, 0);
   } else {
-    LOG(FATAL) << "Unsupport XPUFC Precision";
+    LOG(FATAL) << "Unsupport XPUFC Precision: " << param.precision;
   }
 }
 
