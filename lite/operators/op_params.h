@@ -2327,6 +2327,18 @@ struct RoiPerspectiveTransformParam : ParamBase {
   int transformed_width{1};
 };
 
+struct CorrelationParam : ParamBase {
+  const lite::Tensor* input1{nullptr};
+  const lite::Tensor* input2{nullptr};
+  lite::Tensor* output{nullptr};
+  int pad_size;
+  int kernel_size;
+  int max_displacement;
+  int stride1;
+  int stride2;
+  int corr_type_multiply{1};
+};
+
 struct ArgsortParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
