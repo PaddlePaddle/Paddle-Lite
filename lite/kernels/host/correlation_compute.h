@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,32 +13,25 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace xpu {
+namespace host {
 
-class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <class T>
+class CorrelationCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUFcParam;
+  using param_t = operators::CorrelationParam;
 
-  void PrepareForRun() override;
+  void Run() override;
 
-  virtual void Run();
-
-  virtual ~XPUFcCompute() = default;
-
- private:
-  XPUScratchPadGuard quant_weight_guard_;
-  XPUScratchPadGuard weight_max_guard_;
-  // TODO(weihaoji): remove cpu w_max after xpu fc wrapper refactor
-  float w_max;
+  virtual ~CorrelationCompute() = default;
 };
 
-}  // namespace xpu
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

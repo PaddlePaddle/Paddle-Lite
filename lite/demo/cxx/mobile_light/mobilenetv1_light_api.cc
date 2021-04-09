@@ -126,9 +126,10 @@ void RunModel(std::string model_dir,
               const std::vector<shape_t>& input_shapes,
               size_t repeats,
               size_t warmup,
-              size_t print_output_elem,
+              size_t power_mode,
+              size_t thread_num,
               size_t accelerate_opencl,
-              size_t power_mode) {
+              size_t print_output_elem) {
   // 1. Set MobileConfig
   MobileConfig config;
   config.set_model_from_file(model_dir);
@@ -187,7 +188,7 @@ void RunModel(std::string model_dir,
   // release/v2.3.0, plese use `set_model_dir` API as listed below.
   // config.set_model_dir(model_dir);
   config.set_power_mode(static_cast<paddle::lite_api::PowerMode>(power_mode));
-
+  config.set_threads(thread_num);
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<MobileConfig>(config);
@@ -245,6 +246,8 @@ void RunModel(std::string model_dir,
             << "model_dir:" << model_dir << "\n"
             << "warmup:" << warmup << "\n"
             << "repeats:" << repeats << "\n"
+            << "power_mode:" << power_mode << "\n"
+            << "thread_num:" << thread_num << "\n"
             << "*** time info(ms) ***\n"
             << "1st_duration:" << first_duration << "\n"
             << "max_duration:" << max_duration << "\n"
@@ -291,24 +294,41 @@ int main(int argc, char** argv) {
 
   int repeats = 10;
   int warmup = 10;
-  int print_output_elem = 0;
+  // set arm power mode:
+  // 0 for big cluster, high performance
+  // 1 for little cluster
+  // 2 for all cores
+  // 3 for no bind
+  size_t power_mode = 0;
+  size_t thread_num = 1;
   int accelerate_opencl = 1;
+  int print_output_elem = 0;
 
-  if (argc > 2 && argc < 6) {
-    std::cerr << "usage: ./" << argv[0] << "\n"
-              << "  <naive_buffer_model_dir>\n"
-              << "  <raw_input_shapes>, eg: 1,3,224,224 for 1 input; "
-                 "1,3,224,224:1,5 for 2 inputs\n"
-              << "  <repeats>\n"
-              << "  <warmup>\n"
-              << "  <print_output>\n"
-              << "  <accelerate_opencl>\n"
-              << std::endl;
+  if (argc > 2 && argc < 9) {
+    std::cerr
+        << "usage: ./" << argv[0] << "\n"
+        << "  <naive_buffer_model_dir>\n"
+        << "  <raw_input_shapes>, eg: 1,3,224,224 for 1 input; "
+           "1,3,224,224:1,5 for 2 inputs\n"
+        << "  <repeats>, eg: 100\n"
+        << "  <warmup>, eg: 10\n"
+        << "  <power_mode>, 0: big cluster, high performance\n"
+           "                1: little cluster\n"
+           "                2: all cores\n"
+           "                3: no bind\n"
+        << "  <thread_num>, eg: 1 for single thread \n"
+        << "  <accelerate_opencl>, this option takes effect only when model "
+           "can be running on opencl backend.\n"
+           "                       0: disable opencl kernel cache & tuning\n"
+           "                       1: enable opencl kernel cache & tuning\n"
+        << "  <print_output>, 0: disable print outputs to stdout\n"
+           "                  1: enable print outputs to stdout\n"
+        << std::endl;
     return 0;
   }
 
   std::string model_dir = argv[1];
-  if (argc >= 6) {
+  if (argc >= 9) {
     input_shapes.clear();
     std::string raw_input_shapes = argv[2];
     std::cout << "raw_input_shapes: " << raw_input_shapes << std::endl;
@@ -320,25 +340,20 @@ int main(int argc, char** argv) {
 
     repeats = atoi(argv[3]);
     warmup = atoi(argv[4]);
-    print_output_elem = atoi(argv[5]);
-    if (argc > 6) {
-      accelerate_opencl = atoi(argv[6]);
-    }
+    power_mode = atoi(argv[5]);
+    thread_num = atoi(argv[6]);
+    accelerate_opencl = atoi(argv[7]);
+    print_output_elem = atoi(argv[8]);
   }
-  // set arm power mode:
-  // 0 for big cluster, high performance
-  // 1 for little cluster
-  // 2 for all cores
-  // 3 for no bind
-  size_t power_mode = 0;
 
   RunModel(model_dir,
            input_shapes,
            repeats,
            warmup,
-           print_output_elem,
+           power_mode,
+           thread_num,
            accelerate_opencl,
-           power_mode);
+           print_output_elem);
 
   return 0;
 }

@@ -1927,17 +1927,19 @@ struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
 };
 
 struct XPUFcParam : ParamBase {
-  lite::Tensor* input{nullptr};
-  lite::Tensor* w{nullptr};
-  lite::Tensor* bias{nullptr};
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* w{nullptr};
+  const lite::Tensor* bias{nullptr};
+  const lite::Tensor* input_max{nullptr};
   lite::Tensor* output{nullptr};
-
-  int in_num_col_dims{1};
+  lite::Tensor* output_max{nullptr};
   lite::DDim in_mat_dims;
-  float w_max{0.0f};
-  bool transpose_w{true};
-  std::string activation_type{""};
+
+  int act_type;
+  float act_param;
   std::string precision{};
+  bool has_bias{false};
+  int in_num_col_dims{1};
 };
 
 struct XPUResNetCbamParam : ParamBase {
@@ -2325,6 +2327,18 @@ struct RoiPerspectiveTransformParam : ParamBase {
   float spatial_scale{1.f};
   int transformed_height{1};
   int transformed_width{1};
+};
+
+struct CorrelationParam : ParamBase {
+  const lite::Tensor* input1{nullptr};
+  const lite::Tensor* input2{nullptr};
+  lite::Tensor* output{nullptr};
+  int pad_size;
+  int kernel_size;
+  int max_displacement;
+  int stride1;
+  int stride2;
+  int corr_type_multiply{1};
 };
 
 struct ArgsortParam : ParamBase {
