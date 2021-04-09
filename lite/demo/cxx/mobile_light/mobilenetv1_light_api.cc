@@ -127,6 +127,7 @@ void RunModel(std::string model_dir,
               size_t repeats,
               size_t warmup,
               size_t print_output_elem,
+              size_t accelerate_opencl,
               size_t power_mode) {
   // 1. Set MobileConfig
   MobileConfig config;
@@ -142,45 +143,45 @@ void RunModel(std::string model_dir,
       ::IsOpenCLBackendValid(/*check_fp16_valid = false*/);
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
-  //  Uncomment code below to enable OpenCL
-  /*
   if (is_opencl_backend_valid) {
-    // Set opencl kernel binary.
-    // Large addtitional prepare time is cost due to algorithm selecting and
-    // building kernel from source code.
-    // Prepare time can be reduced dramitically after building algorithm file
-    // and OpenCL kernel binary on the first running.
-    // The 1st running time will be a bit longer due to the compiling time if
-    // you don't call `set_opencl binary_path_name` explicitly.
-    // So call `set_opencl binary_path_name` explicitly is strongly recommended.
+    if (accelerate_opencl != 0) {
+      // Set opencl kernel binary.
+      // Large addtitional prepare time is cost due to algorithm selecting and
+      // building kernel from source code.
+      // Prepare time can be reduced dramitically after building algorithm file
+      // and OpenCL kernel binary on the first running.
+      // The 1st running time will be a bit longer due to the compiling time if
+      // you don't call `set_opencl_binary_path_name` explicitly.
+      // So call `set_opencl_binary_path_name` explicitly is strongly
+      // recommended.
 
-    // Make sure you have write permission of the binary path.
-    // We strongly recommend each model has a unique binary name.
-    const std::string bin_path = "/data/local/tmp/";
-    const std::string bin_name = "lite_opencl_kernel.bin";
-    config.set_opencl_binary_path_name(bin_path, bin_name);
+      // Make sure you have write permission of the binary path.
+      // We strongly recommend each model has a unique binary name.
+      const std::string bin_path = "/data/local/tmp/";
+      const std::string bin_name = "lite_opencl_kernel.bin";
+      config.set_opencl_binary_path_name(bin_path, bin_name);
 
-    // opencl tune option
-    // CL_TUNE_NONE: 0
-    // CL_TUNE_RAPID: 1
-    // CL_TUNE_NORMAL: 2
-    // CL_TUNE_EXHAUSTIVE: 3
-    const std::string tuned_path = "/data/local/tmp/";
-    const std::string tuned_name = "lite_opencl_tuned.bin";
-    config.set_opencl_tune(CL_TUNE_NORMAL, tuned_path, tuned_name);
+      // opencl tune option
+      // CL_TUNE_NONE: 0
+      // CL_TUNE_RAPID: 1
+      // CL_TUNE_NORMAL: 2
+      // CL_TUNE_EXHAUSTIVE: 3
+      const std::string tuned_path = "/data/local/tmp/";
+      const std::string tuned_name = "lite_opencl_tuned.bin";
+      config.set_opencl_tune(CL_TUNE_NORMAL, tuned_path, tuned_name);
 
-    // opencl precision option
-    // CL_PRECISION_AUTO: 0, first fp16 if valid, default
-    // CL_PRECISION_FP32: 1, force fp32
-    // CL_PRECISION_FP16: 2, force fp16
-    config.set_opencl_precision(CL_PRECISION_FP16);
+      // opencl precision option
+      // CL_PRECISION_AUTO: 0, first fp16 if valid, default
+      // CL_PRECISION_FP32: 1, force fp32
+      // CL_PRECISION_FP16: 2, force fp16
+      config.set_opencl_precision(CL_PRECISION_FP16);
+    }
   } else {
     std::cout << "Unsupport opencl nb model." << std::endl;
     exit(1);
     // you can give backup cpu nb model instead
     // config.set_model_from_file(cpu_nb_model_dir);
   }
-  */
 
   // NOTE: To load model transformed by model_optimize_tool before
   // release/v2.3.0, plese use `set_model_dir` API as listed below.
@@ -291,6 +292,7 @@ int main(int argc, char** argv) {
   int repeats = 10;
   int warmup = 10;
   int print_output_elem = 0;
+  int accelerate_opencl = 1;
 
   if (argc > 2 && argc < 6) {
     std::cerr << "usage: ./" << argv[0] << "\n"
@@ -299,7 +301,9 @@ int main(int argc, char** argv) {
                  "1,3,224,224:1,5 for 2 inputs\n"
               << "  <repeats>\n"
               << "  <warmup>\n"
-              << "  <print_output>" << std::endl;
+              << "  <print_output>\n"
+              << "  <accelerate_opencl>\n"
+              << std::endl;
     return 0;
   }
 
@@ -317,6 +321,9 @@ int main(int argc, char** argv) {
     repeats = atoi(argv[3]);
     warmup = atoi(argv[4]);
     print_output_elem = atoi(argv[5]);
+    if (argc > 6) {
+      accelerate_opencl = atoi(argv[6]);
+    }
   }
   // set arm power mode:
   // 0 for big cluster, high performance
@@ -325,8 +332,13 @@ int main(int argc, char** argv) {
   // 3 for no bind
   size_t power_mode = 0;
 
-  RunModel(
-      model_dir, input_shapes, repeats, warmup, print_output_elem, power_mode);
+  RunModel(model_dir,
+           input_shapes,
+           repeats,
+           warmup,
+           print_output_elem,
+           accelerate_opencl,
+           power_mode);
 
   return 0;
 }
