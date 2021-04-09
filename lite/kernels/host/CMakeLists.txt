@@ -49,6 +49,7 @@ add_kernel(sin_compute_host Host extra SRCS sin_compute.cc DEPS ${lite_kernel_de
 add_kernel(cos_compute_host Host extra SRCS cos_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(crop_compute_host Host extra SRCS crop_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(crop_tensor_compute_host Host extra SRCS crop_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(sequence_pad_compute_host Host extra SRCS sequence_pad_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(sequence_expand_compute_host Host extra SRCS sequence_expand_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_softmax_compute_host Host extra SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps})
