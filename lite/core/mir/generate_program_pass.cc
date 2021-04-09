@@ -61,6 +61,31 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       insts_.back().emplace_back(stmt.op(), std::move(stmt.kernels().front()));
     }
   }
+
+  // record the copied node.
+  std::vector<std::string> skip_ops = {
+      "while", "conditional_block", "feed", "fetch"};
+
+  for (auto& node : nodes_in_order) {
+    auto op_type = node->AsStmt().op_type();
+    auto iter = std::find(skip_ops.begin(), skip_ops.end(), op_type);
+    if (!node->IsStmt() || iter != skip_ops.end()) continue;
+    // complement inputs precisions
+    auto inlinks = node->inlinks;
+    for (auto* in : inlinks) {
+      // Create the new var manually.
+      auto in_arg_name = in->AsArg().name;
+      auto* tmp_tensor = node->AsStmt()
+                             .op()
+                             ->scope()
+                             ->Var(in_arg_name)
+                             ->GetMutable<lite::Tensor>();
+      if (!(in->AsArg().is_weight) && in->AsArg().type->IsTensor() &&
+          (tmp_tensor->precision() != in->AsArg().type->precision())) {
+        tmp_tensor->set_precision(in->AsArg().type->precision());
+      }
+    }
+  }
 }
 
 }  // namespace mir

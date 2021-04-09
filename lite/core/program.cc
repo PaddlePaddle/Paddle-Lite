@@ -31,6 +31,7 @@ namespace lite {
 
 void RuntimeProgram::SaveToProgram(
     std::shared_ptr<cpp::ProgramDesc> program_desc) {
+  LOG(INFO) << "Into SaveToProgram";
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
   CHECK_GT(block_size, 0) << "No block found!";
@@ -73,7 +74,7 @@ void RuntimeProgram::SaveToProgram(
         auto* v = block_desc->AddVar<cpp::VarDesc>();
         v->SetName(var_name);
         auto it = origin_var_maps.find(var_name);
-        if (it != origin_var_maps.end()) {
+        if (it != origin_var_maps.end() && (it->second.Persistable())) {
           v->SetType(it->second.GetType());
           v->SetPersistable(it->second.Persistable());
           if (var_name != "feed" && var_name != "fetch") {
@@ -97,13 +98,13 @@ void RuntimeProgram::SaveToProgram(
               v->SetShape(tensor->dims().data());
               auto precision = tensor->precision();
               switch (precision) {
-#define SET_DATATYPE(precision__, data_type)         \
-  case PrecisionType::precision__:                   \
-    v->SetDataType(data_type);                       \
-    VLOG(1) << "Update var " << var_name << " done"; \
+#define SET_DATATYPE(precision__, data_type) \
+  case PrecisionType::precision__:           \
+    v->SetDataType(data_type);               \
     break
                 SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
                 SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
+                SET_DATATYPE(kUnk, VarDescAPI::VarDataType::FP32);
                 SET_DATATYPE(kFP16, VarDescAPI::VarDataType::FP16);
                 SET_DATATYPE(kInt8, VarDescAPI::VarDataType::INT8);
                 SET_DATATYPE(kInt16, VarDescAPI::VarDataType::INT16);
@@ -151,6 +152,7 @@ void RuntimeProgram::SaveToProgram(
       }
     }
   }
+  LOG(INFO) << "SaveToProgram done";
 }
 
 // Create runtime program from sub_block desc according to block_idx and

@@ -89,6 +89,9 @@ class VariablePlaceInferencePass : public DebugPass {
     if (precision == PRECISION(kUnk)) {
       precision = b->precision();
     }
+    if (b->precision() == PRECISION(kAny)) {
+      precision = PRECISION(kUnk);
+    }
     if (layout == DATALAYOUT(kUnk)) {
       layout = b->layout();
     }
