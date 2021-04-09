@@ -156,6 +156,7 @@ void SSAGraph::Build(const Program &program,
                      const std::vector<Place> &valid_places,
                      int block_idx) {
   CHECK(node_storage_.empty());
+  block_desc_ = program.program_desc()->GetBlock<cpp::BlockDesc>(block_idx);
 
   auto weights = program.weights();
   auto is_weight = [&](const std::string &name) -> bool {

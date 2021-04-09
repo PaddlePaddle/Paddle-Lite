@@ -58,6 +58,7 @@ struct Program {
     VLOG(4) << "build desc";
     Build(program_desc);
     VLOG(4) << "build desc finished";
+    program_desc_ = program_desc;
   }
 
   std::unique_ptr<Program> Clone() const {
@@ -82,6 +83,7 @@ struct Program {
 
   Scope* exec_scope() { return exec_scope_; }
   Scope* scope() { return scope_.get(); }
+  cpp::ProgramDesc* program_desc() const { return program_desc_.get(); }
 
   const std::map<std::string, const Type*>& var_type_map() const {
     return var_type_map_;
@@ -104,6 +106,7 @@ struct Program {
   std::vector<Place> valid_places_;
   // Runtime scope.
   Scope* exec_scope_{};
+  std::shared_ptr<cpp::ProgramDesc> program_desc_;
 };
 
 struct Instruction {
