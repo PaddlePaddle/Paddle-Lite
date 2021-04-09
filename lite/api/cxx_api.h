@@ -162,7 +162,16 @@ class LITE_API Predictor {
       GenRuntimeProgram();
     }
     CheckInputValid();
+
+#ifdef LITE_WITH_XPU
+    lite::TargetWrapperXPU::MallocL3Cache();
+#endif
+
     program_->Run();
+
+#ifdef LITE_WITH_XPU
+    lite::TargetWrapperXPU::FreeL3Cache();
+#endif
   }
 
   // Get offset-th col of feed inputs.
