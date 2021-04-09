@@ -29,10 +29,10 @@ void SequencePadCompute<T>::Run() {
   auto* pad_value = param.PadValue;
   auto* len_t = param.Length;
   auto* out = param.Out;
-  CHECK(!x->lod().empty()) << "Input X's should have lod data.";
+  CHECK(!x->lod().empty()) << "Input X should have lod data.";
   int padded_length = param.padded_length;
 
-  lite::host::math::PaddingLoDTensorFunctor<T>(
+  lite::host::math::PaddingLoDTensorFunctor<lite::TargetType::kHost, T>()(
       ctx,
       *x,
       out,
@@ -44,7 +44,7 @@ void SequencePadCompute<T>::Run() {
 
   auto* len_data = len_t->template mutable_data<int64_t>();
   auto x_lod = x->lod();
-  for (size_t i = 1; i < x_lod.size(); i++) {
+  for (size_t i = 1; i < x_lod[0].size(); i++) {
     len_data[i - 1] = x_lod[0][i] - x_lod[0][i - 1];
   }
 }

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <cstring>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
@@ -28,55 +29,74 @@ class SequencePadTester : public arena::TestCase {
   std::string pad_value_ = "pad_value";
   std::string out_ = "out";
   std::string length_ = "length";
-  DDim x_dims_{{5, 2, 3, 4}};
-  LoD x_lod_{{{0, 2, 5}}};
+  DDim x_dims_{{9, 2, 3, 4}};
+  LoD x_lod_{{{0, 2, 5, 9}}};
   T value_ = 0;
-  int padded_length = 4;
+  int padded_length_ = 4;
 
  public:
-  SequencePadTester(const Place& place,
-                    const std::string& alias,
-                    const DDim& x_dims)
-      : TestCase(place, alias), x_dims_(x_dims) {}
+  SequencePadTester(const Place& place, const std::string& alias)
+      : TestCase(place, alias) {}
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(out_);
-    out->Resize(x_dims_);
-    auto* x = scope->FindTensor(x_);
-    const float* x_data = x->data<float>();
-    float* out_data = out->mutable_data<float>();
+    auto out_shape = x_dims_.Vectorize();
+    out_shape[0] = padded_length_;
+    out_shape.insert(out_shape.begin(),
+                     static_cast<int64_t>(x_lod_[0].size() - 1));
+    out->Resize(out_shape);
+    auto* out_data = out->template mutable_data<T>();
+    for (int64_t i = 0; i < out->numel(); i++) {
+      out_data[i] = value_;
+    }
 
-    int batch_size = x_dims_[0];
-    int geo_channel = x_dims_[1];
-    int height = x_dims_[2];
-    int width = x_dims_[3];
-    int id = 0;
-    for (int id_n = 0; id_n < batch_size * geo_channel; ++id_n) {
-      for (int id_h = 0; id_h < height; ++id_h) {
-        for (int id_w = 0; id_w < width; ++id_w) {
-          id = id_n * height * width + width * id_h + id_w;
-          if (id_n % 2 == 0) {
-            out_data[id] = id_w * 4 - x_data[id];
-          } else {
-            out_data[id] = id_h * 4 - x_data[id];
-          }
-        }
-      }
+    int n = x_dims_.production() / x_dims_[0];
+    int out_step = padded_length_ * n;
+    auto* x = scope->FindTensor(x_);
+    auto* x_data = x->template data<T>();
+    for (size_t i = 1; i < x_lod_[0].size(); i++) {
+      int x_step = (x_lod_[0][i] - x_lod_[0][i - 1]) * n;
+      memcpy(out_data, x_data, sizeof(T) * x_step);
+      x_data += x_step;
+      out_data += out_step;
+    }
+
+    auto* length = scope->NewTensor(length_);
+    length->Resize({static_cast<int64_t>(x_lod_[0].size() - 1)});
+    int64_t* length_data = length->template mutable_data<int64_t>();
+    for (size_t i = 1; i < x_lod_[0].size(); i++) {
+      length_data[i - 1] = x_lod_[0][i] - x_lod_[0][i - 1];
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("sequence_pad");
-    op_desc->SetInput("Input", {x_});
-    op_desc->SetOutput("Output", {out_});
+    op_desc->SetInput("X", {x_});
+    op_desc->SetInput("PadValue", {pad_value_});
+    op_desc->SetOutput("Out", {out_});
+    op_desc->SetOutput("Length", {length_});
+    op_desc->SetAttr("padded_length", padded_length_);
   }
 
   void PrepareData() override {
-    std::vector<float> x_data(x_dims_.production());
-    fill_data_rand(x_data.data(), -1.f, 1.f, x_dims_.production());
-    SetCommonTensor(x_, x_dims_, x_data.data());
+    std::vector<T> x_data(x_dims_.production());
+    fill_data_rand<T>(x_data.data(), -10, 10, x_dims_.production());
+    SetCommonTensor(x_, x_dims_, x_data.data(), x_lod_);
+
+    std::vector<T> pad_value_data{0};
+    SetCommonTensor(pad_value_, DDim{{1}}, pad_value_data.data());
   }
 };
+
+template <class T>
+void TestSequencePad(const Place place,
+                     const float abs_error,
+                     const std::string alias) {
+  std::unique_ptr<arena::TestCase> tester(
+      new SequencePadTester<T>(place, alias));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
 
 TEST(sequence_pad, precision) {
   Place place;
@@ -87,13 +107,9 @@ TEST(sequence_pad, precision) {
   return;
 #endif
 
-  for (auto x_shape :
-       std::vector<std::vector<int64_t>>{{1, 5, 6, 7}, {10, 5, 8, 2}}) {
-    std::unique_ptr<arena::TestCase> tester(
-        new SequencePadTester(place, "def", DDim(x_shape)));
-    arena::Arena arena(std::move(tester), place, abs_error);
-    arena.TestPrecision();
-  }
+  TestSequencePad<float>(place, abs_error, "def");
+  TestSequencePad<int>(place, abs_error, "int32");
+  TestSequencePad<int64_t>(place, abs_error, "int64");
 }
 
 }  // namespace lite
