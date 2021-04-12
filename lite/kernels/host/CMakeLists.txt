@@ -53,6 +53,7 @@ add_kernel(sequence_pad_compute_host Host extra SRCS sequence_pad_compute.cc DEP
 add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(sequence_expand_compute_host Host extra SRCS sequence_expand_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_softmax_compute_host Host extra SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(sequence_mask_compute_host Host extra SRCS sequence_mask_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(flatten_contiguous_range_compute_host Host extra SRCS flatten_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_host)
