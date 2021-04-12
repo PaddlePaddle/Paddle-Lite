@@ -15,8 +15,8 @@ Python仅支持服务器端预测，目前支持 Windows / macOS / Ubuntu /ArmLi
 ### 2. 安装python预测库
 
 ```shell
-# 当前最新版本是 2.8rc0
-python -m pip install paddlelite==2.8rc0
+# 当前最新版本是 2.8
+python -m pip install paddlelite==2.8
 ```
 
 **注意：** PyPI源目前仅提供Windows / Mac / Linux (x86) 三个平台pip安装包，如果您需要使用AMRLinux平台的Python预测功能，请参考[源码编译(ARMLinux)](../source_compile/compile_linux)。
