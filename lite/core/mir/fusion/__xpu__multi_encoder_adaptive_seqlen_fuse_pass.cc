@@ -114,7 +114,7 @@ class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
     auto* embedding_seq_lod_node =
         graph->NewArgumentNode(embedding_seq_lod_name);
     embedding_seq_lod_node->arg()->type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+        TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW));
     scope->NewTensor(embedding_seq_lod_name);
     embedding_op_desc.SetOutput("SeqLod", {embedding_seq_lod_name});
     encoder_op_desc.SetInput("SeqLod", {embedding_seq_lod_name});
