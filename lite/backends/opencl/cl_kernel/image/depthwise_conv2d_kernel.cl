@@ -67,7 +67,6 @@ __kernel void depth_conv2d_3x3(
 
   int filter_x = pos_in_filter_block.x;
   int filter_y = pos_in_filter_block.y;
-
   CL_DTYPE4 inputs[9];
 
   inputs[0] = SELECT(
@@ -182,29 +181,34 @@ __kernel void depth_conv2d_3x3(
                  in_pos_in_one_block.y + dilation >= input_height)
                 ));
 
-  CL_DTYPE4 filters[9];
-  filters[0] =
+  CL_DTYPE4 filters_0 =
       READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x, filter_y));
-  filters[1] = READ_IMG_TYPE(
+  CL_DTYPE4  filters_1 = READ_IMG_TYPE(
       CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x + 1, filter_y));
-  filters[2] = READ_IMG_TYPE(
+  CL_DTYPE4  filters_2 = READ_IMG_TYPE(
       CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x + 2, filter_y));
-  filters[3] = READ_IMG_TYPE(
+  CL_DTYPE4  filters_3 = READ_IMG_TYPE(
       CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x, filter_y + 1));
-  filters[4] = READ_IMG_TYPE(
+  CL_DTYPE4  filters_4 = READ_IMG_TYPE(
       CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x + 1, filter_y + 1));
-  filters[5] = READ_IMG_TYPE(
+  CL_DTYPE4  filters_5 = READ_IMG_TYPE(
       CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x + 2, filter_y + 1));
-  filters[6] = READ_IMG_TYPE(
+  CL_DTYPE4  filters_6 = READ_IMG_TYPE(
       CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x, filter_y + 2));
-  filters[7] = READ_IMG_TYPE(
+  CL_DTYPE4  filters_7 = READ_IMG_TYPE(
       CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x + 1, filter_y + 2));
-  filters[8] = READ_IMG_TYPE(
+  CL_DTYPE4  filters_8 = READ_IMG_TYPE(
       CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x + 2, filter_y + 2));
 
-  for (int i = 0; i < 9; i++) {
-    output += inputs[i] * filters[i];
-  }
+  output += inputs[0] * filters_0;
+  output += inputs[1] * filters_1;
+  output += inputs[2] * filters_2;
+  output += inputs[3] * filters_3;
+  output += inputs[4] * filters_4;
+  output += inputs[5] * filters_5;
+  output += inputs[6] * filters_6;
+  output += inputs[7] * filters_7;
+  output += inputs[8] * filters_8;
 
 CL_DTYPE4 alpha0;
 #ifdef PRELU_CH //{

@@ -87,7 +87,9 @@ void TestReadFromArray(Place place, float abs_error) {
 TEST(ReadFromArray, precision) {
   Place place;
   float abs_error = 1e-5;
-#ifdef LITE_WITH_ARM
+#if 0 && defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else
   return;

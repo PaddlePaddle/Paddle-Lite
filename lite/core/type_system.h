@@ -212,15 +212,19 @@ static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
            a.precision() == PRECISION(kAny)));
 }
 static bool PrecisionCompatible(const Type& a, const Type& b) {
-  return a.IsVoid() || b.IsVoid() ||                                          //
-         (a.IsTensor() && b.IsTensor() && (a.precision() == b.precision() ||  //
-                                           b.precision() == PRECISION(kAny) ||
-                                           a.precision() == PRECISION(kAny)));
+  return a.IsVoid() || b.IsVoid() ||  //
+         (((a.IsTensor() && b.IsTensor()) ||
+           (a.IsTensorList() && b.IsTensorList())) &&
+          (a.precision() == b.precision() ||  //
+           b.precision() == PRECISION(kAny) ||
+           a.precision() == PRECISION(kAny)));
 }
 
 static bool DeviceCompatibleTo(const Type& a, const Type& b) {
   return a.IsVoid() ||  //
-         (a.IsTensor() && b.IsTensor() && (a.device() == b.device()));
+         (((a.IsTensor() && b.IsTensor()) ||
+           (a.IsTensorList() && b.IsTensorList())) &&  //
+          (a.device() == b.device()));
 }
 
 // Can type 'a' be passed to 'b' directly.

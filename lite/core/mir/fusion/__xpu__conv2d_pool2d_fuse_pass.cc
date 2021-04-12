@@ -172,14 +172,13 @@ class XPUConv2dPool2dFuser : public FuseBase {
                              ->GetAttr<std::vector<int>>("block_lod");
     block_lod.insert(
         block_lod.begin(), old_block_lod.begin(), old_block_lod.end());
-    std::vector<int> conv_bias{with_conv_bias_};
+    std::vector<int> conv_bias;
     auto old_conv_bias = matched.at("xpu_conv")
                              ->stmt()
                              ->op_info()
                              ->GetAttr<std::vector<int>>("conv_bias");
     conv_bias.insert(
         conv_bias.begin(), old_conv_bias.begin(), old_conv_bias.end());
-
     int pooling_type = -1;
     if (matched.at("pool2d")->stmt()->op_info()->GetAttr<std::string>(
             "pooling_type") == "avg") {

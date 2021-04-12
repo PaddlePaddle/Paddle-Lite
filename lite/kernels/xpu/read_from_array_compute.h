@@ -13,25 +13,25 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
-#include "lite/core/op_lite.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace xpu {
 
-template <typename T>
-void split_cpy(const T* din, T* dout, int num);
+class ReadFromArrayCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  void Run() override;
 
-template <typename T>
-void split(const T* din,
-           const std::vector<lite::Tensor*>& dout,
-           const int axis,
-           const std::vector<int>& in_strides);
+  ~ReadFromArrayCompute() {}
 
-}  // namespace math
-}  // namespace arm
+ private:
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

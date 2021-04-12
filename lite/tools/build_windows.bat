@@ -173,6 +173,7 @@ goto:eof
     if  EXIST "%workspace%\third-party" (
         if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
             echo "The directory of third_party exists, the third-party-ea5576.tar.gz not exists."
+            git submodule update --init --recursive
         ) else (
                echo "The directory of third_party exists, the third-party-ea5576.tar.gz exists."
                call:rm_rebuild_dir "%workspace%\third-party"
@@ -191,13 +192,11 @@ goto:eof
             echo "The directory of third_party not exists, the third-party-ea5576.tar.gz exists."
             !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
         )
-
     )
-    git submodule update --init --recursive
 goto:eof
 
 :download_third_party
-powershell.exe (new-object System.Net.WebClient).DownloadFile('https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-ea5576.tar.gz', ^
+powershell.exe (new-object System.Net.WebClient).DownloadFile('%THIRDPARTY_TAR%', ^
 '%workspace%\third-party-ea5576.tar.gz')
 goto:eof
 

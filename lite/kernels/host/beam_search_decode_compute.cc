@@ -248,6 +248,19 @@ void BeamSearchDecodeCompute::Run() {
   auto& param = this->Param<param_t>();
   auto ids = param.ids;
   auto scores = param.scores;
+  // if ids/scores is from io_copy kernel, it may contains useless tensor
+  for (size_t i = 0; i < ids->size(); i++) {
+    if (ids->at(i).numel() == 0) {
+      ids->resize(i + 1);
+      break;
+    }
+  }
+  for (size_t i = 0; i < scores->size(); i++) {
+    if (scores->at(i).numel() == 0) {
+      scores->resize(i + 1);
+      break;
+    }
+  }
   auto sentence_ids = param.sentence_ids;
   auto sentence_scores = param.sentence_scores;
 
