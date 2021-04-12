@@ -6,8 +6,8 @@
 ### 安装Paddle-Lite
 
 ```
-# 当前最新版本是 2.8rc0
-python -m pip install paddlelite==2.8rc0
+# 当前最新版本是 2.8
+python -m pip install paddlelite==2.8
 ```
 
 ### 帮助信息

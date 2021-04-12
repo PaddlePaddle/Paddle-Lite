@@ -19,8 +19,8 @@ Python 支持的平台包括：Windows X86_CPU / macOS X86_CPU / Linux X86_CPU /
 PyPI源目前仅提供Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台的pip安装包，执行如下命令。
 
 ```shell
-# 假定版本是 2.8rc0
-python -m pip install paddlelite==2.8rc0
+# 当前最新版本是 2.8
+python -m pip install paddlelite==2.8
 ```
 
 如果您需要使用AMRLinux平台的Python预测功能，请参考[源码编译(ARMLinux)](../source_compile/compile_linux)编译、安装PaddleLite的python包。
