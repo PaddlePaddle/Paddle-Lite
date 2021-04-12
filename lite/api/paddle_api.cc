@@ -210,6 +210,7 @@ template void Tensor::CopyFromCpu<int8_t, TargetType::kMLU>(const int8_t *);
 
 template void Tensor::CopyToCpu(float *) const;
 template void Tensor::CopyToCpu(int *) const;
+template void Tensor::CopyToCpu(int64_t *) const;
 template void Tensor::CopyToCpu(int8_t *) const;
 template void Tensor::CopyToCpu(uint8_t *) const;
 

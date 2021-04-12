@@ -223,14 +223,12 @@ class XPUResBlockNormalFuser : public FuseBase {
       place_y = {9, 9, 0};
       place_z = {1, 2, 10};
       block_lod = {3};
-      conv_bias = {1, 1, 1};
     } else {
       op_type = {0, last_op_type};
       place_x = {0, 1};
       place_y = {9, 0};
       place_z = {1, 10};
       block_lod = {2};
-      conv_bias = {1, 1};
     }
     std::vector<int> filter_dims;
     std::vector<int> conv_strides;
@@ -263,6 +261,9 @@ class XPUResBlockNormalFuser : public FuseBase {
       auto cur_act_param =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<float>>(
               "act_param");
+      auto cur_conv_bias =
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "conv_bias");
       conv_strides.insert(
           conv_strides.end(), cur_strides.begin(), cur_strides.end());
       conv_dilations.insert(
@@ -274,6 +275,8 @@ class XPUResBlockNormalFuser : public FuseBase {
           act_param.end(), cur_act_param.begin(), cur_act_param.end());
       filter_dims.insert(
           filter_dims.end(), cur_filter_dims.begin(), cur_filter_dims.end());
+      conv_bias.insert(
+          conv_bias.end(), cur_conv_bias.begin(), cur_conv_bias.end());
       if (name != "left_conv3" ||
           branch_op_type_ != "__xpu__squeeze_excitation_block") {
         encode_filter_size.push_back(encode_filter_size.back() +

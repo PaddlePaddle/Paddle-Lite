@@ -22,41 +22,87 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T>
-void IncrementXpu(const Tensor& x, const T step, Tensor* out, XPUContext* ctx) {
-  const size_t x_size = static_cast<size_t>(x.numel());
-  std::vector<T> data(x_size);
-  TargetWrapperXPU::MemcpySync(
-      &(data[0]), x.raw_data(), x_size * sizeof(T), IoDirection::DtoH);
-  for (size_t i = 0; i < x_size; i++) {
-    data[i] += step;
+void IncrementCompute::PrepareForRun() {
+  auto& param = this->Param<operators::IncrementParam>();
+  auto* x = param.X;
+  step_guard_ = TargetWrapperXPU::MallocScratchPad(1 * 4);
+  cast_out_guard_ = TargetWrapperXPU::MallocScratchPad(1 * 4);
+  switch (x->precision()) {
+    case PRECISION(kFloat): {
+      float step = static_cast<float>(param.step);
+      XPU_CALL(xpu_memcpy(
+          step_guard_->addr_, &step, sizeof(float), XPU_HOST_TO_DEVICE));
+      break;
+    }
+    case PRECISION(kInt32): {
+      int step = static_cast<int>(param.step);
+      XPU_CALL(xpu_memcpy(
+          step_guard_->addr_, &step, sizeof(int), XPU_HOST_TO_DEVICE));
+      break;
+    }
+    case PRECISION(kInt64): {
+      int step = static_cast<int>(param.step);
+      XPU_CALL(xpu_memcpy(
+          step_guard_->addr_, &step, sizeof(int), XPU_HOST_TO_DEVICE));
+      break;
+    }
+    default: {
+      LOG(FATAL) << "unsupport input type: " << PrecisionToStr(x->precision());
+    }
   }
-  TargetWrapperXPU::MemcpySync(out->template mutable_data<T>(TARGET(kXPU)),
-                               data.data(),
-                               x_size * sizeof(T),
-                               IoDirection::HtoD);
 }
 
 void IncrementCompute::Run() {
   auto& param = this->Param<operators::IncrementParam>();
   auto& ctx = this->ctx_->As<XPUContext>();
-
   auto* x = param.X;
   auto* out = param.Out;
+
   switch (x->precision()) {
     case PRECISION(kFloat): {
-      float step = static_cast<float>(param.step);
-      IncrementXpu(*x, step, out, &ctx);
+      int ret = xdnn::broadcast_add<float>(
+          ctx.GetRawContext(),
+          x->data<float>(),
+          reinterpret_cast<float*>(step_guard_->addr_),
+          out->mutable_data<float>(TARGET(kXPU)),
+          {static_cast<int>(x->numel())},
+          {1});
+      CHECK_EQ(ret, 0);
       break;
     }
     case PRECISION(kInt32): {
-      int step = static_cast<int>(param.step);
-      IncrementXpu(*x, step, out, &ctx);
+      int ret =
+          xdnn::broadcast_add<int>(ctx.GetRawContext(),
+                                   x->data<int>(),
+                                   reinterpret_cast<int*>(step_guard_->addr_),
+                                   out->mutable_data<int>(TARGET(kXPU)),
+                                   {static_cast<int>(x->numel())},
+                                   {1});
+      CHECK_EQ(ret, 0);
       break;
     }
     case PRECISION(kInt64): {
-      int64_t step = static_cast<int64_t>(param.step);
-      IncrementXpu(*x, step, out, &ctx);
+      cast_out_guard_->Reserve(x->numel() * sizeof(int));
+      int ret = xdnn::cast_v2<int64_t, int>(
+          ctx.GetRawContext(),
+          x->data<int64_t>(),
+          reinterpret_cast<int*>(cast_out_guard_->addr_),
+          static_cast<int>(x->numel()));
+      CHECK_EQ(ret, 0);
+      ret = xdnn::broadcast_add<int>(
+          ctx.GetRawContext(),
+          reinterpret_cast<int*>(cast_out_guard_->addr_),
+          reinterpret_cast<int*>(step_guard_->addr_),
+          reinterpret_cast<int*>(cast_out_guard_->addr_),
+          {static_cast<int>(x->numel())},
+          {1});
+      CHECK_EQ(ret, 0);
+      ret = xdnn::cast_v2<int, int64_t>(
+          ctx.GetRawContext(),
+          reinterpret_cast<int*>(cast_out_guard_->addr_),
+          out->mutable_data<int64_t>(TARGET(kXPU)),
+          static_cast<int>(x->numel()));
+      CHECK_EQ(ret, 0);
       break;
     }
     default:

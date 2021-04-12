@@ -124,8 +124,17 @@ void TypeTargetTransformPass::AddIoCopyInst(
     // to.target()
     // The precision and layout should be equal to from.precision(),
     // from.layout()
-    io_copy_output_arg->AsArg().type =
-        LiteType::GetTensorTy(to.target(), from.precision(), from.layout());
+    bool is_tensor = from.IsTensor();
+    if (!is_tensor) {
+      CHECK(from.IsTensorList()) << "only support tensor or tensor_array.";
+    }
+    if (is_tensor) {
+      io_copy_output_arg->AsArg().type =
+          LiteType::GetTensorTy(to.target(), from.precision(), from.layout());
+    } else {
+      io_copy_output_arg->AsArg().type = LiteType::GetTensorListTy(
+          to.target(), from.precision(), from.layout());
+    }
     auto* io_copy_inst = graph->NewInstructNode();
 
     bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
@@ -141,8 +150,13 @@ void TypeTargetTransformPass::AddIoCopyInst(
     // Create IoCopy Instruction.
     cpp::OpDesc op_desc;
     op_desc.SetType(io_copy_type);
-    op_desc.SetInput("Input", {in->AsArg().name});
-    op_desc.SetOutput("Out", {io_copy_output_name});
+    if (is_tensor) {
+      op_desc.SetInput("Input", {in->AsArg().name});
+      op_desc.SetOutput("Out", {io_copy_output_name});
+    } else {
+      op_desc.SetInput("InputArray", {in->AsArg().name});
+      op_desc.SetOutput("OutArray", {io_copy_output_name});
+    }
 
     io_copy_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
     auto kernels = io_copy_op->CreateKernels(valid_places);
@@ -150,8 +164,15 @@ void TypeTargetTransformPass::AddIoCopyInst(
     bool is_found = false;
     std::vector<std::unique_ptr<KernelBase>> selected_kernels;
     for (auto& kernel : kernels) {
-      const Type* in_arg_ty = kernel->GetInputDeclType("Input");
-      const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+      const Type* in_arg_ty = nullptr;
+      const Type* out_arg_ty = nullptr;
+      if (is_tensor) {
+        in_arg_ty = kernel->GetInputDeclType("Input");
+        out_arg_ty = kernel->GetOutputDeclType("Out");
+      } else {
+        in_arg_ty = kernel->GetInputDeclType("InputArray");
+        out_arg_ty = kernel->GetOutputDeclType("OutArray");
+      }
 
       VLOG(4) << "------ kernel info -------";
       VLOG(4) << "*in_arg_ty(io_copy kernel input):" << *in_arg_ty;
