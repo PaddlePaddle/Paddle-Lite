@@ -14,11 +14,9 @@
 
 #include "lite/kernels/x86/sequence_reverse_compute.h"
 
-typedef paddle::lite::kernels::x86::SequenceReverseCompute<float,
-                                                           PRECISION(kFloat)>
-    ReverseFp32;
-typedef paddle::lite::kernels::x86::SequenceReverseCompute<int64_t,
-                                                           PRECISION(kInt64)>
+typedef paddle::lite::kernels::x86::SequenceReverseCompute<float> ReverseFp32;
+typedef paddle::lite::kernels::x86::SequenceReverseCompute<int> ReverseInt32;
+typedef paddle::lite::kernels::x86::SequenceReverseCompute<int64_t>
     ReverseInt64;
 
 REGISTER_LITE_KERNEL(sequence_reverse, kX86, kFloat, kNCHW, ReverseFp32, def)
@@ -26,7 +24,12 @@ REGISTER_LITE_KERNEL(sequence_reverse, kX86, kFloat, kNCHW, ReverseFp32, def)
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(sequence_reverse, kX86, kInt64, kNCHW, ReverseInt64, def)
+REGISTER_LITE_KERNEL(sequence_reverse, kX86, kFloat, kNCHW, ReverseInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(sequence_reverse, kX86, kFloat, kNCHW, ReverseInt64, int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
