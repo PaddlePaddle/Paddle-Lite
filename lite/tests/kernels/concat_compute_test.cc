@@ -135,13 +135,11 @@ class ConcateComputeTester : public arena::TestCase {
 
     if (is_use_axis_tensor_) {
       SetCommonTensor(axis_tensor_, DDim({1}), &axis_);
-      LOG(INFO) << "set axis tensor";
     }
   }
 };
 
 TEST(Concat, precision) {
-  LOG(INFO) << "test concat op, kARM";
   Place place;
   float abs_error = 2e-5;
 #if defined(LITE_WITH_NPU)
@@ -163,8 +161,6 @@ TEST(Concat, precision) {
 #ifdef LITE_WITH_NPU
       if (is_use_axis_tensor) continue;
 #endif
-      LOG(INFO) << "axis:" << axis
-                << ", is_use_axis_tensor:" << is_use_axis_tensor;
       std::unique_ptr<arena::TestCase> tester(
           new ConcateComputeTester(place, "def", axis, is_use_axis_tensor));
       arena::Arena arena(std::move(tester), place, abs_error);
