@@ -22,6 +22,8 @@ REGISTER_LITE_KERNEL(var_conv_2d,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("COLUMN", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("ROW", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
