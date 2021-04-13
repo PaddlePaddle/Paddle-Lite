@@ -172,7 +172,7 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            # repeats=100, warmup=10
            # power_mode=0 绑定大核, thread_num=1
            # accelerate_opencl=1 开启 opencl kernel cache & tuning，仅当模型运行在 opencl 后端时该选项才会生效
-           # print_output=0 打印模型输出 tensors
+           # print_output=0 不打印模型输出 tensors 详细数
 ```
 
 
