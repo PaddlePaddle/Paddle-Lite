@@ -43,7 +43,7 @@ class ReluPE : public PE {
     bypass_args_.output.address = param_.output->data<void>();
     bypass_args_.output.scale_address = param_.output->max();
 
-    bypass_args_.inplace.active_param.type = param_.activeParam.type;
+    bypass_args_.inplace.active_param.type = TYPE_RELU;
     bypass_args_.inplace.active_param.leaky_relu_factor =
         float_to_half(param_.activeParam.leaky_relu_factor);
   }

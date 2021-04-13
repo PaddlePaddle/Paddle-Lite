@@ -95,6 +95,7 @@ class PoolingPE : public PE {
       args.out_width = 1;
       args.image.address = input->data<float16>();
       args.output.address = mid_out_.data<void>();
+      args.output.scale_address = mid_out_.max();
       param_.poolingArgs = args;
 
       args.kernel_reciprocal = *(reinterpret_cast<uint32_t*>(&kh_reciprocal));
@@ -106,6 +107,8 @@ class PoolingPE : public PE {
       args.out_width = 1;
       args.image.address = mid_data;
       args.output.address = output->mutableData<float16>();
+      args.image.scale_address = mid_out_.max();
+      args.output.scale_address = output->max();
       param_divide_.poolingArgs = args;
     } else {
       args.kernel_reciprocal =

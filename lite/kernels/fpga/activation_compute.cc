@@ -29,6 +29,7 @@ void ReluCompute::PrepareForRun() {
 
   relu_param.input = param.X->ZynqTensor();
   relu_param.output = param.Out->ZynqTensor();
+  relu_param.activeParam.type = zynqmp::TYPE_RELU;
   pe_.init();
   pe_.apply();
 }
