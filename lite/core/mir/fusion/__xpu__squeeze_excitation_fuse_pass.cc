@@ -418,18 +418,17 @@ class XPUSqueezeExcitationFuser : public FuseBase {
     if (mul_1_w_dims[0] != mul_2_w_dims[1] ||
         mul_1_w_dims[1] != mul_2_w_dims[0] ||
         mul_1_w_len != mul_1_w_dims[0] * mul_1_w_dims[1]) {
-      LOG(FATAL) << "Error: Dims of excitation mul1 weight is: "
-                 << mul_1_w_dims[0] << ", " << mul_1_w_dims[1]
+      LOG(FATAL) << "Error: Dims of excitation mul1 weight is: " << mul_1_w_dims
                  << ", but get dims of excitation mul2 weight is: "
-                 << mul_2_w_dims[0] << ", " << mul_2_w_dims[1];
+                 << mul_2_w_dims;
     }
     std::unique_ptr<float[]> encode_filter_float(
         new float[mul_1_w_len + mul_2_w_len]);
     if (op_type_ == "__xpu__fc") {
-      if (mul_1_w_dims[0] % mul_2_w_dims[1] != 0) {
-        LOG(FATAL)
-            << "Error: Reduction ratio of excitation is not and integer.";
-      }
+      CHECK(mul_1_w_dims[0] % mul_2_w_dims[1] == 0)
+          << "Error: Reduction ratio of excitation is not an integer."
+          << "Received mul_1_w_dims[0]: " << mul_1_w_dims[0]
+          << ", mul_2_w_dims[1]: " << mul_2_w_dims[1];
       op_desc.SetAttr<std::vector<int>>(
           "filter_dims",
           {static_cast<int>(mul_1_w_dims[0] / mul_1_w_dims[1]),
@@ -441,10 +440,10 @@ class XPUSqueezeExcitationFuser : public FuseBase {
              mul_2_w_on_host,
              mul_2_w_len * sizeof(float));
     } else if (op_type_ == "__xpu__conv2d") {
-      if (mul_1_w_dims[1] % mul_2_w_dims[0] != 0) {
-        LOG(FATAL)
-            << "Error: Reduction ratio of excitation is not and integer.";
-      }
+      CHECK(mul_1_w_dims[1] % mul_2_w_dims[0] == 0)
+          << "Error: Reduction ratio of excitation is not an integer."
+          << "Received mul_1_w_dims[1]: " << mul_1_w_dims[1]
+          << ", mul_2_w_dims[0]: " << mul_2_w_dims[0];
       op_desc.SetAttr<std::vector<int>>(
           "filter_dims",
           {static_cast<int>(mul_1_w_dims[1] / mul_1_w_dims[0]),
