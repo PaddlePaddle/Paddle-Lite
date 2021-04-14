@@ -1807,9 +1807,9 @@ struct GroupNormParam : ParamBase {
 
 /// --------------------- grid sampler operators --------------------
 struct GridSamplerParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* out{};
-  lite::Tensor* grid{};
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* grid{nullptr};
+  lite::Tensor* out{nullptr};
   bool align_corners{true};
   std::string padding_mode{"zeros"};
   std::string mode{"bilinear"};
