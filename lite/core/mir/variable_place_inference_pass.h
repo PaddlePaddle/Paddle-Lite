@@ -214,13 +214,16 @@ class VariablePlaceInferencePass : public DebugPass {
   //     will be updated:
   //     reshape op_info: X:var1(precisionFloat16), Out:var2(precsionFloat16)
   void InferenceKernelWithUncertainPrecision(SSAGraph* graph) {
+    std::vector<std::string> skiped_ops = {"feed", "fetch", "while"};
     for (auto& node : graph->StmtTopologicalOrder()) {
       auto& inst = node->AsStmt();
       const auto* op_info = inst.op_info();
       const auto& op_type = op_info->Type();
       auto& kernel = inst.picked_kernel();
-      if (op_type != "feed" && op_type != "fetch" && op_info->HasInput("X") &&
-          op_info->HasOutput("Out") && !op_info->HasAttr("dtype")) {
+      if (std::find(skiped_ops.begin(), skiped_ops.end(), op_type) ==
+              skiped_ops.end() &&
+          op_info->HasInput("X") && op_info->HasOutput("Out") &&
+          !op_info->HasAttr("dtype")) {
         const auto* decl_input_type = kernel.GetInputDeclType("X");
         const auto* decl_output_type = kernel.GetOutputDeclType("Out");
         if (decl_input_type->precision() == PRECISION(kAny) &&
