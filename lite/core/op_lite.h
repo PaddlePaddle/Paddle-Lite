@@ -74,6 +74,7 @@ class OpLite : public Registry {
     LOG(FATAL) << "Error! " << op_type_
                << "::InferType() function must be registered for op "
                << op_type_;
+    return false;
   }
 #endif
   // Run this operator.
