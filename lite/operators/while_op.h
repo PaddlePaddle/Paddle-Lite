@@ -46,6 +46,10 @@ class WhileOp : public OpLite {
     return param_.program_desc;
   }
 
+#ifndef LITE_ON_TINY_PUBLISH
+  bool InferType() override { return true; }
+#endif
+
  private:
   mutable WhileParam param_;
 };

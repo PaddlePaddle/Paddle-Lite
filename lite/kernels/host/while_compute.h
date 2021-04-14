@@ -35,9 +35,7 @@ class WhileCompute
   void PrepareForRun() override;
 
   virtual ~WhileCompute() = default;
-#ifndef LITE_ON_TINY_PUBLISH
-  bool InferType() override { return true; }
-#endif
+
  private:
   std::unique_ptr<RuntimeProgram> program_;
 };
