@@ -1,6 +1,9 @@
 lite_cc_library(fuse_fc
         SRCS fc_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_fpga_concat
+        SRCS fpga_concat_fuser.cc
+        DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_reshape2_matmul
         SRCS reshape2_matmul_fuser.cc
         DEPS pattern_matcher_high_api)
@@ -92,6 +95,7 @@ set(mir_fusers
     fuse_instance_norm_activation
     fuse_elementwise_add_scale
     fuse_conv_scale
+    fuse_fpga_concat
     CACHE INTERNAL "fusers")
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)

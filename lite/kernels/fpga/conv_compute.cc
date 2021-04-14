@@ -29,12 +29,14 @@ using lite_api::ActivationType;
 
 void ConvCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
+
   if (param.enable_int8) {
     input_max_ = zynqmp::float_to_half(127 * param.input_scale);
   }
   param.output->mutable_data<float16>();
   int pad_h = (*param.paddings)[0];
   int pad_w = (*param.paddings)[2];
+  // add jump write support
 
   zynqmp::ActivationType active_type = zynqmp::TYPE_NONE;
   float leaky_relu_factor = 0;
@@ -90,6 +92,23 @@ void ConvCompute::PrepareForRun() {
     dw_conv_pe_.apply();
   } else {
     zynqmp::ConvParam& conv_param = conv_pe_.param();
+    // pass jump write info to pe params
+    if(stride_info_.wd_enable_) {
+        conv_param.fuse_idx = stride_info_.fuse_idx_;
+        conv_param.wd_enable = stride_info_.wd_enable_;
+        conv_param.original_out_channel = stride_info_.original_out_channel_;
+        conv_param.wd_offset = stride_info_.wd_offset_;
+    }
+
+//    // add jump write support
+//    conv_param.wd_enable = param.wd_enable_;
+//
+//    if(conv_param.wd_enable) {
+//        conv_param.fuse_idx = param.fuse_idx_;
+//        conv_param.wd_offset = param.wd_offset_;
+//        conv_param.original_out_channel = param.original_out_channel_;
+//    }
+
     conv_param.input = param.x->ZynqTensor();
     conv_param.output = param.output->ZynqTensor();
     conv_param.filter = param.filter->ZynqTensor();
@@ -135,6 +154,21 @@ void ConvCompute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(
+    fpga_conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ConvCompute, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .BindPaddleOpVersion("fpga_conv2d", 1)
+    .Finalize();
 
 REGISTER_LITE_KERNEL(
     conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ConvCompute, def)

@@ -66,7 +66,8 @@ inline int get_pack_num(Tensor* filter, int group_num) {
 }
 
 inline void fill_scale_bias_const(ConvParam* param_) {
-  int channel = param_->output->shape().channel();
+  // int channel = param_->output->shape().channel();
+  int channel = param_->filter->shape().num();
   Shape sb_shape(N, {channel});
   float* new_scale_ptr = param_->scale()->mutableData<float>(FP32, sb_shape);
   float* new_bias_ptr = param_->bias()->mutableData<float>(FP32, sb_shape);
@@ -334,7 +335,7 @@ inline void split_filter_num(const ConvParam& c_param) {
   Tensor* input = param.input;
   Tensor* out = param.output;
   Tensor* filter = param.filter;
-  auto out_channel = out->shape().channel();
+  auto out_channel = filter->shape().num();
   int split_num = get_split_num(param.filter);
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
   param.cpu_concat =
@@ -347,11 +348,15 @@ inline void split_filter_num(const ConvParam& c_param) {
   float max = find_max(*filter);
   Shape& out_shape = out->shape();
 
+  // support jump write
+    int jump_out_start_offset = param.original_out_channel;
+    int fuse_idx = param.fuse_idx;
+    bool enable_jump = param.wd_enable;
+
   for (int i = 0; i < split_num; i++) {
     BasicConvParam* conv_param = new BasicConvParam();
     conv_param->output.setDataLocation(Device);
     conv_param->output.setAligned(true);
-
     int filter_num = filter->shape().num();
     float16* out_address = nullptr;
     float16* out_scale_address = nullptr;
@@ -382,9 +387,14 @@ inline void split_filter_num(const ConvParam& c_param) {
       } else {
         out_address = conv_param->output.data<float16>() + offset;
       }
-    } else {
+    } else if(!enable_jump) {
       out_address = out->data<float16>() + offset;
     }
+    else {
+        // support jump write
+       out_address = out->data<float16>() + offset + jump_out_start_offset;
+    }
+
     out_scale_address = &conv_param->output_max;
 
     Shape f_shape(NCHW,
@@ -446,10 +456,19 @@ inline void split_filter_num(const ConvParam& c_param) {
     args.dilation = param.dilations[0];
     args.deconv.enabled = false;
     args.stride.rd_enabled = false;
-    args.stride.wr_enabled =
+
+    // support jump write
+    if(enable_jump) {
+      args.stride.wr_enabled = true;
+      args.stride.wr_offset = param.wd_offset;
+    }
+    else {
+      args.stride.wr_enabled =
         (split_num != 1 && (param.cpu_concat == false || i != split_num - 1));
-    args.stride.wr_offset =
+      args.stride.wr_offset =
         param.cpu_concat ? filter_num_per_div * (split_num - 1) : out_channel;
+    }
+
 
     args.output.address = out_address;
     args.output.scale_address = out_scale_address;

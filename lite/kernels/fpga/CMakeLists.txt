@@ -48,6 +48,8 @@ add_kernel(batch_norm_compute_fpga FPGA basic SRCS batch_norm_compute.cc DEPS ${
 add_kernel(slice_compute_fpga FPGA basic SRCS slice_compute.cc DEPS ${fpga_deps})
 add_kernel(density_prior_box_compute_fpga FPGA basic SRCS density_prior_box_compute.cc DEPS ${fpga_deps} math_arm)
 
+add_kernel(subgraph_compute_fpga FPGA basic SRCS subgraph_compute.cc DEPS ${fpga_deps})
+
 # add_kernel(while_compute_fpga FPGA extra SRCS while_compute.cc DEPS ${fpga_deps})
 # add_kernel(write_to_array_compute_fpga FPGA extra SRCS write_to_array_compute.cc DEPS ${fpga_deps})
 
