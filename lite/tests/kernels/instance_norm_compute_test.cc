@@ -178,6 +178,8 @@ TEST(InstanceNorm, precision) {
   ignored_outs = {"saved_mean", "saved_variance"};
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #else
   return;
 #endif

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,31 +14,24 @@
 
 #pragma once
 
-#include <memory>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
-#include "lite/core/kernel.h"
-
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace x86 {
+namespace math {
 
-template <typename T>
-class SequenceReverseCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::SequenceReverseParam;
+void instance_norm(const float* in,
+                   float* out,
+                   const int n,
+                   const int c,
+                   const int height,
+                   const int width,
+                   const float epsilon,
+                   const float* scale,
+                   const float* bias,
+                   float* saved_mean,
+                   float* saved_variance);
 
-  void PrepareForRun() override;
-
-  void Run() override;
-
- private:
-  XPUScratchPadGuard lod_xpu_guard_;
-  std::unique_ptr<int[]> lod_cpu;
-};
-
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace math
+}  // namespace x86
 }  // namespace lite
 }  // namespace paddle

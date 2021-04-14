@@ -13,32 +13,28 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace xpu {
+namespace x86 {
 
-template <typename T>
-class SequenceReverseCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class InstanceNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
-  using param_t = operators::SequenceReverseParam;
+  using param_t = operators::InstanceNormParam;
 
   void PrepareForRun() override;
 
   void Run() override;
 
+  virtual ~InstanceNormCompute() = default;
+
  private:
-  XPUScratchPadGuard lod_xpu_guard_;
-  std::unique_ptr<int[]> lod_cpu;
 };
 
-}  // namespace xpu
+}  // namespace x86
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
