@@ -30,6 +30,9 @@ class FlattenOp : public OpLite {
 
   bool CheckShape() const override;
 
+#ifndef LITE_ON_TINY_PUBLISH
+  bool InferType() override;
+#endif
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
@@ -48,7 +51,9 @@ class Flatten2Op : public FlattenOp {
   explicit Flatten2Op(const std::string &op_type) : FlattenOp(op_type) {}
 
   bool CheckShape() const override;
-
+#ifndef LITE_ON_TINY_PUBLISH
+  bool InferType() override;
+#endif
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
@@ -64,7 +69,9 @@ class FlattenContiguousRangeOp : public OpLite {
       : OpLite(op_type) {}
 
   bool CheckShape() const override;
-
+#ifndef LITE_ON_TINY_PUBLISH
+  bool InferType() override;
+#endif
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;

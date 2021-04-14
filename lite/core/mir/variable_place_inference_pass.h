@@ -226,19 +226,10 @@ class VariablePlaceInferencePass : public DebugPass {
           !op_info->HasAttr("dtype")) {
         const auto* decl_input_type = kernel.GetInputDeclType("X");
         const auto* decl_output_type = kernel.GetOutputDeclType("Out");
-        if (decl_input_type->precision() == PRECISION(kAny) &&
+        if (decl_input_type->IsTensor() && decl_output_type->IsTensor() &&
+            decl_input_type->precision() == PRECISION(kAny) &&
             decl_output_type->precision() == PRECISION(kAny)) {
-          auto inputs = op_info->inputs();
-          auto x_var_name = inputs["X"].front();
-
-          auto* x_var_tensor =
-              inst.op()->scope()->Var(x_var_name)->GetMutable<lite::Tensor>();
-
-          auto outputs = op_info->outputs();
-          auto out_var_name = outputs["Out"].front();
-          auto* out_var_tensor =
-              inst.op()->scope()->Var(out_var_name)->GetMutable<lite::Tensor>();
-          out_var_tensor->set_precision(x_var_tensor->precision());
+          inst.op()->InferType();
         }
       }
     }

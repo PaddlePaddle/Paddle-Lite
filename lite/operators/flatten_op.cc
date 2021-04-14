@@ -158,7 +158,24 @@ bool FlattenContiguousRangeOp::InferShapeImpl() const {
 
   return true;
 }
+#ifndef LITE_ON_TINY_PUBLISH
+bool FlattenOp::InferType() {
+  param_.output->set_precision(param_.x->precision());
+  return true;
+}
 
+bool Flatten2Op::InferType() {
+  param_.output->set_precision(param_.x->precision());
+  param_.xshape->set_precision(PRECISION(kInt64));
+  return true;
+}
+
+bool FlattenContiguousRangeOp::InferType() {
+  param_.out->set_precision(param_.x->precision());
+  param_.xshape->set_precision(PRECISION(kInt64));
+  return true;
+}
+#endif
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
