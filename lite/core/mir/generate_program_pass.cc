@@ -62,7 +62,7 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     }
   }
 
-  // record the copied node.
+  // Update precision info after opt optimizations are operated.
   std::vector<std::string> skip_ops = {
       "while", "conditional_block", "feed", "fetch"};
 
