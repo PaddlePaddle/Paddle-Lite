@@ -1384,8 +1384,8 @@ struct CastParam : ParamBase {
 };
 
 struct SliceParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* X{nullptr};
+  lite::Tensor* Out{nullptr};
   std::vector<int> axes{};
   std::vector<int> starts{};
   std::vector<int> ends{};
@@ -1393,8 +1393,8 @@ struct SliceParam : ParamBase {
   std::vector<int> infer_flags{};
   std::vector<lite::Tensor*> StartsTensorList{};
   std::vector<lite::Tensor*> EndsTensorList{};
-  lite::Tensor* StartsTensor{nullptr};
-  lite::Tensor* EndsTensor{nullptr};
+  const lite::Tensor* StartsTensor{nullptr};
+  const lite::Tensor* EndsTensor{nullptr};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
