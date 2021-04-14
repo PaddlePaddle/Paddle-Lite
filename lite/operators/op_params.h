@@ -1530,6 +1530,7 @@ struct MatMulParam : ParamBase {
   bool transpose_X{false};
   bool transpose_Y{false};
   float alpha{1.0f};
+  WITH_INT8_CONFIG
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
