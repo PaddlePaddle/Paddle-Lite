@@ -26,6 +26,9 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+#define POOL_IN_PARAM                                                        \
+  din, dout, out_dims[0], out_dims[1], out_dims[2], out_dims[3], in_dims[1], \
+      in_dims[2], in_dims[3]
 template <>
 void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = Param<operators::PoolParam>();
@@ -69,26 +72,10 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       ksize[i] = static_cast<int>(in_dims[i + 2]);
     }
     if (pooling_type == "max") {
-      lite::arm::math::pooling_global_max(din,
-                                          dout,
-                                          out_dims[0],
-                                          out_dims[1],
-                                          out_dims[2],
-                                          out_dims[3],
-                                          in_dims[1],
-                                          in_dims[2],
-                                          in_dims[3]);
+      lite::arm::math::pooling_global_max(POOL_IN_PARAM);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::pooling_global_avg(din,
-                                          dout,
-                                          out_dims[0],
-                                          out_dims[1],
-                                          out_dims[2],
-                                          out_dims[3],
-                                          in_dims[1],
-                                          in_dims[2],
-                                          in_dims[3]);
+      lite::arm::math::pooling_global_avg(POOL_IN_PARAM);
       return;
     }
   } else {
@@ -96,211 +83,80 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
         kps_equal) {
       // auto& ctx = this->ctx_->template As<ARMContext>();
       if (pooling_type == "max") {
-        lite::arm::math::pooling1x1s2p0_max(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling1x1s2p0_max(
+            POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       }
     } else if (w_in > 8 && ksize[0] == 2 && strides[0] == 2 &&
                paddings[0] == 0 && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling2x2s2p0_max(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling2x2s2p0_max(
+            POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling2x2s2p0_avg(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            exclusive,
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling2x2s2p0_avg(
+            POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (w_in > 8 && ksize[0] == 2 && strides[0] == 2 &&
                paddings[0] == 1 && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling2x2s2p1_max(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling2x2s2p1_max(
+            POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling2x2s2p1_avg(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            exclusive,
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling2x2s2p1_avg(
+            POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 1 &&
                pads_equal && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling3x3s1p1_max(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling3x3s1p1_max(
+            POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling3x3s1p1_avg(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            exclusive,
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling3x3s1p1_avg(
+            POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 0 &&
                pads_equal && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling3x3s1p0_max(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling3x3s1p0_max(
+            POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling3x3s1p0_avg(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            exclusive,
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling3x3s1p0_avg(
+            POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 0 &&
                pads_equal && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling3x3s2p0_max(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling3x3s2p0_max(
+            POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling3x3s2p0_avg(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            exclusive,
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling3x3s2p0_avg(
+            POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 1 &&
                pads_equal && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling3x3s2p1_max(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling3x3s2p1_max(
+            POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling3x3s2p1_avg(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
-                                            exclusive,
-                                            paddings[1],
-                                            paddings[3]);
+        lite::arm::math::pooling3x3s2p1_avg(
+            POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     }
   }
 
-  lite::arm::math::pooling_basic(din,
-                                 dout,
-                                 out_dims[0],
-                                 out_dims[1],
-                                 out_dims[2],
-                                 out_dims[3],
-                                 in_dims[1],
-                                 in_dims[2],
-                                 in_dims[3],
+  lite::arm::math::pooling_basic(POOL_IN_PARAM,
                                  ksize,
                                  strides,
                                  paddings,
@@ -348,9 +204,6 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto x_dims = param.x->dims();
   auto w_in = x_dims[x_dims.size() - 1];
 
-#define POOL_IN_PARAM                                                        \
-  din, dout, out_dims[0], out_dims[1], out_dims[2], out_dims[3], in_dims[1], \
-      in_dims[2], in_dims[3]
   if (global_pooling) {
     for (size_t i = 0; i < ksize.size(); ++i) {
       paddings[2 * i] = 0;
@@ -410,8 +263,8 @@ typedef paddle::lite::kernels::arm::PoolCompute<PRECISION(kFP16),
                                                 PRECISION(kFP16)>
     PoolFp16;
 REGISTER_LITE_KERNEL(pool2d, kARM, kFP16, kNCHW, PoolFp16, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindPaddleOpVersion("pool2d", 1)
     .Finalize();
 #endif  // ENABLE_ARM_FP16

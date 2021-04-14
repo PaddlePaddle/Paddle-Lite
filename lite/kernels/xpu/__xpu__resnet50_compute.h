@@ -38,21 +38,6 @@ class XPUResNet50Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   std::vector<const float *> arg_bias_;
 };
 
-class XPUResNet50DtypeCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::XPUResNet50Param;
-
-  virtual void PrepareForRun();
-
-  virtual void Run();
-
- private:
-  std::vector<const int16_t *> arg_filter_;
-  std::vector<const float *> arg_max_filter_;
-  std::vector<const float *> arg_bias_;
-};
-
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite

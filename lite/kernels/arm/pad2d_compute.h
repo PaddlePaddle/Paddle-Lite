@@ -24,7 +24,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class Pad2dCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class Pad2dCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   using param_t = operators::Pad2dParam;
 

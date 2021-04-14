@@ -69,6 +69,7 @@ using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
 using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
 using ImaginationNNAContext = Context<TargetType::kImaginationNNA>;
+using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -331,6 +332,21 @@ class Context<TargetType::kFPGA> {
 };
 #endif
 
+#ifdef LITE_WITH_INTEL_FPGA
+// TODO(xbeu): add needed implementation to context
+template <>
+class Context<TargetType::kIntelFPGA> {
+ public:
+  void InitOnce() {}
+
+  IntelFPGAContext& operator=(const IntelFPGAContext& ctx) {}
+
+  void CopySharedTo(IntelFPGAContext* ctx) {}
+
+  std::string name() const { return "IntelFPGAContext"; }
+};
+#endif
+
 #ifdef LITE_WITH_MLU
 template <>
 class Context<TargetType::kMLU> {
@@ -557,6 +573,13 @@ class ContextScheduler {
             &ctx->As<FPGAContext>());
         break;
 #endif
+#ifdef LITE_WITH_INTEL_FPGA
+      case TARGET(kIntelFPGA):
+        kernel_contexts_[TargetType::kIntelFPGA]
+            .As<IntelFPGAContext>()
+            .CopySharedTo(&ctx->As<IntelFPGAContext>());
+        break;
+#endif
 #ifdef LITE_WITH_BM
       case TARGET(kBM):
         kernel_contexts_[TargetType::kBM].As<BMContext>().CopySharedTo(
@@ -614,6 +637,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_FPGA
     InitContext<TargetType::kFPGA, FPGAContext>();
+#endif
+#ifdef LITE_WITH_INTEL_FPGA
+    InitContext<TargetType::kIntelFPGA, IntelFPGAContext>();
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();

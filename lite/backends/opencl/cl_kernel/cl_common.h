@@ -93,7 +93,7 @@ __constant sampler_t SAMPLER =
 inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
   CL_DTYPE output = in;
 #ifdef PRELU
-  output = select(prelu_alpha * in, in, in >= (CL_DTYPE)0);
+  output = select(prelu_alpha * in, in, (ushort)(isgreaterequal(in, 0)));
 #endif
 
 #ifdef RELU

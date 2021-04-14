@@ -288,10 +288,6 @@ void RuntimeProgram::Run() {
   TargetWrapperMetal::CreateCommandBuffer(this);
 #endif
 
-#ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::MallocL3Cache();
-#endif
-
   int idx = -1;
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
@@ -309,6 +305,11 @@ void RuntimeProgram::Run() {
 #ifdef LITE_WITH_CUDA
     if (inst.need_sync()) {
       inst.Sync();
+    }
+#endif
+#ifdef LITE_WITH_OPENCL
+    if (inst.need_flush(idx)) {
+      inst.Flush();
     }
 #endif
 
@@ -335,10 +336,6 @@ void RuntimeProgram::Run() {
   LOG(INFO) << "\n"
             << precision_profiler_summary
             << inst_precision_profiler.GetSummaryTail();
-#endif
-
-#ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::FreeL3Cache();
 #endif
 }
 

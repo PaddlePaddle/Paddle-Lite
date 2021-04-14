@@ -69,8 +69,10 @@ struct FetchParam : ParamBase {
 
 // Helper op for lite framework
 struct IoCopyParam : ParamBase {
-  const lite::Tensor* x{};
-  lite::Tensor* y{};
+  const lite::Tensor* x{nullptr};
+  const std::vector<lite::Tensor>* x_array{nullptr};
+  lite::Tensor* y{nullptr};
+  std::vector<lite::Tensor>* y_array{nullptr};
   int process_type{0};
 };
 
@@ -242,7 +244,7 @@ struct PowParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
 
-  float factor{1.};
+  float factor{1.f};
 };
 
 // For Sign Op
@@ -278,12 +280,12 @@ struct ScaleParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
 
-  float scale{1.};
+  float scale{1.f};
   float bias{};
   bool bias_after_scale{true};
   std::string activation_type{""};
   bool fuse_relu{false};
-  float alpha{6.};
+  float alpha{6.f};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -397,8 +399,8 @@ struct ActivationParam : ParamBase {
   lite::Tensor* Out{};
   lite_api::ActivationType active_type{lite_api::ActivationType::kIndentity};
   bool has_active{false};
-  float Leaky_relu_alpha{0};   // leaky_relu param
-  float Relu_clipped_coef{6};  // relu_clipped param
+  float Leaky_relu_alpha{0.f};   // leaky_relu param
+  float Relu_clipped_coef{6.f};  // relu_clipped param
   std::string Prelu_mode{
       "channel"};  // prelu param, can be "all", "channel" or "element"
   lite::Tensor* Prelu_alpha{};  // prelu param
@@ -407,9 +409,9 @@ struct ActivationParam : ParamBase {
   float hard_sigmoid_slope{0.2f};
   float hard_sigmoid_offset{0.5f};
   // hard_swish param
-  float hard_swish_threshold{6.0};
-  float hard_swish_scale{6.0};
-  float hard_swish_offset{3.0};
+  float hard_swish_threshold{6.0f};
+  float hard_swish_scale{6.0f};
+  float hard_swish_offset{3.0f};
   // thresholded_relu
   float relu_threshold{1.0f};
   // elu
@@ -600,9 +602,9 @@ struct PadConstantLikeParam : ParamBase {
 
 // For Split op
 struct SplitParam : ParamBase {
-  lite::Tensor* x{};
+  const lite::Tensor* x{nullptr};
   std::vector<lite::Tensor*> output{};
-  lite::Tensor* axis_tensor{};
+  const lite::Tensor* axis_tensor{nullptr};
   std::vector<lite::Tensor*> sections_tensor_list{};
 
   int axis{-1};
@@ -689,14 +691,14 @@ struct ElementwiseParam : ParamBase {
   int axis{-1};  // for broadcasting.
   // for int8
   WITH_INT8_CONFIG
-  float x_input_scale{1.0};
-  float y_input_scale{1.0};
+  float x_input_scale{1.0f};
+  float y_input_scale{1.0f};
   // fuse ScaleParam
   bool fuse_scale{false};
-  float scale{1.};
+  float scale{1.f};
   float bias{0.f};
   bool bias_after_scale{true};
-  float alpha{6.};
+  float alpha{6.f};
   std::string activation_type{""};
 
   ///////////////////////////////////////////////////////////////////////////////////
@@ -1021,9 +1023,9 @@ struct PriorBoxParam : ParamBase {
   std::vector<float> variances_;
   int img_w{0};
   int img_h{0};
-  float step_w{0};
-  float step_h{0};
-  float offset{0.5};
+  float step_w{0.f};
+  float step_h{0.f};
+  float offset{0.5f};
   int prior_num{0};
   // priortype: prior_min, prior_max, prior_com
   std::vector<std::string> order;
@@ -1182,7 +1184,7 @@ struct TopkParam : ParamBase {
 struct IncrementParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
-  float step{1};
+  float step{1.f};
 };
 
 struct WriteToArrayParam : ParamBase {
@@ -1217,7 +1219,7 @@ struct SequencePoolParam : ParamBase {
   lite::Tensor* MaxIndex{};
   std::string pool_type{"AVERAGE"};
 #ifdef LITE_WITH_X86
-  float pad_value{0.0};
+  float pad_value{0.0f};
 #endif
 };
 
@@ -1240,7 +1242,7 @@ struct SequencePoolGradParam : ParamBase {
   const lite::Tensor* X{};
   std::string pool_type{"AVERAGE"};
 #ifdef LITE_WITH_X86
-  float pad_value{0.0};
+  float pad_value{0.0f};
 #endif
   // for backward
   const lite::Tensor* Out_Grad{};
@@ -1622,7 +1624,7 @@ struct RoiAlignParam : ParamBase {
   lite::Tensor* RoisLod{};
   lite::Tensor* RoisNum{};
   lite::Tensor* Out{};
-  float spatial_scale{1.0};
+  float spatial_scale{1.0f};
   int pooled_height{1};
   int pooled_width{1};
   int sampling_ratio{-1};
@@ -1791,7 +1793,7 @@ struct InstanceNormParam : ParamBase {
   float epsilon;
   bool fuse_relu{false};
   std::string activation_type{""};
-  float alpha{6.};
+  float alpha{6.f};
 };
 /// --------------------- group_norm operators --------------------
 struct GroupNormParam : ParamBase {
@@ -1902,8 +1904,9 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
   lite::Tensor* fc_weight_max{};
-  lite::Tensor* mask{};
-  lite::Tensor* output{};
+  const lite::Tensor* mask{nullptr};
+  const lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* output{nullptr};
 
   std::vector<int> slice_axes{};
   std::vector<int> slice_starts{};
@@ -1915,27 +1918,32 @@ struct XPUMultiEncoderParam : ParamBase {
   std::string precision{};
   bool enable_qkv_fusion{false};
   bool norm_before{false};
+  bool adaptive_seqlen{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;
   std::vector<lite::Tensor*> Tables;
-  lite::Tensor* Out{};
+  const lite::Tensor* Mask{nullptr};
+  lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
 };
 
 struct XPUFcParam : ParamBase {
-  lite::Tensor* input{nullptr};
-  lite::Tensor* w{nullptr};
-  lite::Tensor* bias{nullptr};
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* w{nullptr};
+  const lite::Tensor* bias{nullptr};
+  const lite::Tensor* input_max{nullptr};
   lite::Tensor* output{nullptr};
-
-  int in_num_col_dims{1};
+  lite::Tensor* output_max{nullptr};
   lite::DDim in_mat_dims;
-  float w_max{0.0f};
-  bool transpose_w{true};
-  std::string activation_type{""};
+
+  int act_type;
+  float act_param;
   std::string precision{};
+  bool has_bias{false};
+  int in_num_col_dims{1};
 };
 
 struct XPUResNetCbamParam : ParamBase {
@@ -2077,14 +2085,14 @@ struct XPUGenerateSequenceParam : ParamBase {
 
   int axis{-1};
   bool flatten{false};
-  float value{0};
+  float value{0.f};
   int dtype{-1};
 };
 
 struct XPULogitParam : ParamBase {
   const lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
-  float eps{1e-7};
+  float eps{1e-7f};
 };
 
 // For DeformableConvolution op
@@ -2229,7 +2237,7 @@ struct RnnParam : ParamBase {
   lite::Tensor* Reserve;
   lite::Tensor* Out;
   std::vector<lite::Tensor*> State;
-  float dropout_prob{0.0};
+  float dropout_prob{0.0f};
   bool is_bidirec{false};
   int input_size{10};
   int hidden_size{100};
@@ -2323,6 +2331,18 @@ struct RoiPerspectiveTransformParam : ParamBase {
   float spatial_scale{1.f};
   int transformed_height{1};
   int transformed_width{1};
+};
+
+struct CorrelationParam : ParamBase {
+  const lite::Tensor* input1{nullptr};
+  const lite::Tensor* input2{nullptr};
+  lite::Tensor* output{nullptr};
+  int pad_size;
+  int kernel_size;
+  int max_displacement;
+  int stride1;
+  int stride2;
+  int corr_type_multiply{1};
 };
 
 struct ArgsortParam : ParamBase {

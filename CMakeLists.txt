@@ -100,6 +100,7 @@ lite_option(LITE_WITH_OPENMP    "Enable OpenMP in lite framework" ON)
 lite_option(LITE_WITH_OPENCL    "Enable OpenCL support in lite" OFF)
 lite_option(LITE_WITH_METAL     "Enable Metal support in lite" OFF)
 lite_option(LITE_WITH_FPGA      "Enable FPGA support in lite" OFF)
+lite_option(LITE_WITH_INTEL_FPGA      "Enable Intel FPGA support in lite" OFF)
 lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 lite_option(LITE_WITH_PROFILE   "Enable profile mode in lite framework"  OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF)
@@ -183,6 +184,10 @@ endif()
 
 if(LITE_WITH_IMAGINATION_NNA)
 	include(device/imagination_nna)
+endif()
+
+if(LITE_WITH_INTEL_FPGA)
+	include(device/intel_fpga)
 endif()
 
 # flatbuffer module for loading model

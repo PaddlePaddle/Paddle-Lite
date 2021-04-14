@@ -12,41 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/beam_search_compute.h"
-#include "lite/backends/arm/math/funcs.h"
-
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
-
-void BeamSearchCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = this->Param<operators::BeamSearchParam>();
-  lite::arm::math::beam_search(param.pre_ids,
-                               param.pre_scores,
-                               param.ids,
-                               param.scores,
-                               param.selected_ids,
-                               param.selected_scores,
-                               param.parent_idx,
-                               param.level,
-                               param.beam_size,
-                               param.end_id,
-                               param.is_accumulated,
-                               &ctx);
-}
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+#include "lite/kernels/host/beam_search_compute.h"
 
 REGISTER_LITE_KERNEL(beam_search,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::BeamSearchCompute,
+                     paddle::lite::kernels::host::BeamSearchCompute,
                      def)
     .BindInput("pre_ids",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})

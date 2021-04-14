@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -32,7 +33,12 @@ class ConditionalBlockCompute
   using param_t = operators::ConditionalBlockParam;
 
   void PrepareForRun() override;
+
   void Run() override;
+
+  void SetRuntimeProgram(std::unique_ptr<RuntimeProgram>* program) {
+    program_ = std::move(*program);
+  }
 
  private:
   std::unique_ptr<RuntimeProgram> program_;

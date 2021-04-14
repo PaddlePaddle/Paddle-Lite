@@ -34,7 +34,9 @@ void XPUScratchPadDeleter::operator()(XPUScratchPad* sp) const {
 
 void* TargetWrapperXPU::Malloc(size_t size) {
   void* ptr{nullptr};
-  XPU_CALL(xpu_malloc(&ptr, size));
+  if (size > 0) {
+    XPU_CALL(xpu_malloc(&ptr, size));
+  }
   return ptr;
 }
 
@@ -118,6 +120,7 @@ LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{0};
 LITE_THREAD_LOCAL bool TargetWrapperXPU::conv_autotune{false};
 LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;  // NOLINT
 LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
+LITE_THREAD_LOCAL bool TargetWrapperXPU::multi_encoder_adaptive_seqlen{false};
 size_t TargetWrapperXPU::shared_l3_size{0};
 void* TargetWrapperXPU::shared_l3_ptr_{nullptr};
 std::mutex TargetWrapperXPU::mutex_l3_;

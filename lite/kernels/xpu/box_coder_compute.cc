@@ -30,8 +30,10 @@ void BoxCoderCompute::Run() {
   auto prior_box_var_size = 0;
   auto* prior_box = param.prior_box;
   auto* prior_box_var = param.prior_box_var;
+  const float* prior_box_var_ptr = nullptr;
   if (prior_box_var) {
     prior_box_var_size = prior_box_var->dims().size();
+    prior_box_var_ptr = prior_box_var->data<float>();
   }
   auto* target_box = param.target_box;
   auto* output_box = param.proposals;
@@ -52,7 +54,7 @@ void BoxCoderCompute::Run() {
   if (code_type == "encode_center_size") {
     int r = xdnn::box_coder_encode(ctx.GetRawContext(),
                                    prior_box->data<float>(),
-                                   prior_box_var->data<float>(),
+                                   prior_box_var_ptr,
                                    target_box->data<float>(),
                                    row,
                                    col,
@@ -66,7 +68,7 @@ void BoxCoderCompute::Run() {
   } else if (code_type == "decode_center_size") {
     int r = xdnn::box_coder_decode(ctx.GetRawContext(),
                                    prior_box->data<float>(),
-                                   prior_box_var->data<float>(),
+                                   prior_box_var_ptr,
                                    target_box->data<float>(),
                                    row,
                                    col,
