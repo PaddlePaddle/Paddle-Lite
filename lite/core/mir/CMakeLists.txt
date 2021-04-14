@@ -29,6 +29,7 @@ lite_cc_library(mir_passes
       fusion/scale_activation_fuse_pass.cc
       fusion/inplace_fuse_pass.cc
       fusion/__xpu__resblock_reduction_fuse_pass.cc
+      fusion/__xpu__concat_conv2d_fuse_pass.cc
       fusion/__xpu__resblock_normal_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
       fusion/__xpu__resnet_cbam_fuse_pass.cc
