@@ -33,51 +33,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class DepthwiseConv2dImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ConvParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("depthwise_conv2d", output_buffer_);
-  };
-
- private:
-  const MetalImage* input_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-
-  static std::string KernelFunctionName(
-      const param_t& param, bool use_aggressive_optimization = false);
-
-  static bool IsWinoGrad(std::string function_name);
-
- private:
-  void SetupWithMPS();
-  void SetupWithoutMPS();
-
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> filter_buffer_;
-  std::shared_ptr<MetalBuffer> params_buffer_;
-  const MetalImage* bias_buffer_;
-
-  Tensor blank_tensor_;
-  std::string function_name_;
-  bool useWinoGrad;
-  int16_t activate_type_ = 0;
-  int16_t relu6_thredhold_ = 6;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
-
-class DepthwiseConv2dImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
+                        PTYPE,
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ConvParam;
 

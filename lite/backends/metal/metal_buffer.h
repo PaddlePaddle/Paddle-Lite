@@ -29,9 +29,20 @@
 namespace paddle {
 namespace lite {
 
+class MetalBufferDescriptor;
+
 class MetalBuffer {
  public:
-  enum class TYPE { kCommonBuffer, kTensorBuffer };
+  enum class TYPE { kCommonBuffer, kTensorBuffer, kUnknownBuffer };
+
+  MetalBuffer(const MetalDevice& device, const MetalBufferDescriptor& desc);
+
+#ifdef __OBJC__
+  MetalBuffer(const MetalDevice& device, id<MTLBuffer> buffer);
+#else
+  MetalBuffer(const MetalDevice& device, void* buffer);
+#endif
+
   MetalBuffer(const MetalDevice& device,
               size_t size,
               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
@@ -41,8 +52,6 @@ class MetalBuffer {
               size_t size,
               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
-  MetalBuffer(const MetalDevice& device, void* buffer);
-
   MetalBuffer(const MetalDevice& device,
               const DDim& in_dim,
               METAL_PRECISION_TYPE precision = METAL_PRECISION_TYPE::FLOAT,
@@ -51,6 +60,7 @@ class MetalBuffer {
               bool with_transpose = false,
               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
+ public:
   MetalBuffer() = delete;
   ~MetalBuffer();
 
@@ -133,6 +143,16 @@ class MetalBuffer {
   METAL_PRECISION_TYPE precision_;
   METAL_ACCESS_FLAG flags_;
   TYPE type_;
+};
+
+struct MetalBufferDescriptor {
+  DDim dim_;
+  MetalBuffer::TYPE type_ = MetalBuffer::TYPE::kTensorBuffer;
+  METAL_PRECISION_TYPE precision_ = METAL_PRECISION_TYPE::FLOAT;
+  bool pad_when_one_c_ = false;
+  bool convert_to_NHWC_ = true;
+  bool with_transpose_ = false;
+  METAL_ACCESS_FLAG flag_ = METAL_ACCESS_FLAG::CPUReadWrite;
 };
 
 }  // namespace lite

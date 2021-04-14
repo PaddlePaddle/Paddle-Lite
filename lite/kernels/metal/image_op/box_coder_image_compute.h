@@ -32,35 +32,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class BoxCoderImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::BoxCoderParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("box_coder", output_buffer_);
-  };
-
- private:
-  const MetalImage* prior_box_buffer_;
-  const MetalImage* prior_box_var_buffer_;
-  const MetalImage* target_box_buffer_;
-
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
-
-class BoxCoderImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
+                        PTYPE,
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::BoxCoderParam;
 

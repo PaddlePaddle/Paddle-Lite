@@ -25,12 +25,13 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-void DropoutImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+template <typename P, PrecisionType PTYPE>
+void DropoutImageCompute<P, PTYPE>::PrepareForRun() {
+  auto& context = this->ctx_->template As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
   auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->Param<param_t>();
+  const auto& param = this->template Param<param_t>();
   auto output_dims = param.output->dims();
 
   float prob_data = param.dropout_prob;
@@ -39,7 +40,7 @@ void DropoutImageCompute::PrepareForRun() {
     scale = 1.0f - prob_data;
   }
 
-  input_buffer_ = param.x->data<float, MetalImage>();
+  input_buffer_ = param.x->template data<P, MetalImage>();
 
   DropoutMetalParam metal_param{scale};
 
@@ -47,68 +48,23 @@ void DropoutImageCompute::PrepareForRun() {
                                         &metal_param,
                                         sizeof(metal_param),
                                         METAL_ACCESS_FLAG::CPUWriteOnly);
-  output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
+  output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
 
-  string function_name = "dropout";
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
-
-}
-
-void DropoutImageCompute::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
-
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
-
-  kernel_->Execute(*encoder, global_work_size, false);
-}
-
-void DropoutImageComputeHalf::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
-
-  const auto& param = this->Param<param_t>();
-  auto output_dims = param.output->dims();
-
-  float prob_data = param.dropout_prob;
-  float scale = 1.0f;
-  if (param.dropout_implementation == "downgrade_in_infer") {
-    scale = 1.0f - prob_data;
+  std::string function_name = "";
+  if (std::is_same<float, P>::value) {
+    function_name = "dropout";
+  } else if (std::is_same<MetalHalf, P>::value) {
+    function_name = "dropout_half";
   }
-
-  input_buffer_ = param.x->data<float, MetalImage>();
-
-  DropoutMetalParam metal_param{scale};
-
-  param_buffer_ = metal_context_->CreateBuffer(*device,
-                                        &metal_param,
-                                        sizeof(metal_param),
-                                        METAL_ACCESS_FLAG::CPUWriteOnly);
-  output_buffer_ =
-      param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
-
-  string function_name = "dropout_half";
-
   queue_ = metal_context_->GetDefaultQueue(*device);
   kernel_ = metal_context_->GetKernel(*device, function_name);
 }
 
-void DropoutImageComputeHalf::Run() {
+template <typename P, PrecisionType PTYPE>
+void DropoutImageCompute<P, PTYPE>::Run() {
   auto output_width = output_buffer_->texture_width_;
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto mtl_dev = metal_context_->GetDefaultDevice();
 
   auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
@@ -126,11 +82,18 @@ void DropoutImageComputeHalf::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+template class paddle::lite::kernels::metal::DropoutImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::DropoutImageCompute<MetalHalf, PRECISION(kFP16)>;
+
+typedef paddle::lite::kernels::metal::DropoutImageCompute<float, PRECISION(kFloat)> MetalDropoutFp32;
+typedef paddle::lite::kernels::metal::DropoutImageCompute<MetalHalf, PRECISION(kFP16)> MetalDropoutFp16;
+
+
 REGISTER_LITE_KERNEL(dropout,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::DropoutImageCompute,
+                     MetalDropoutFp32,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -147,7 +110,7 @@ REGISTER_LITE_KERNEL(dropout,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::DropoutImageComputeHalf,
+                     MetalDropoutFp16,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),

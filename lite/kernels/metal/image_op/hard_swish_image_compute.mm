@@ -26,28 +26,37 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-void HardSwishImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+template <typename P, PrecisionType PTYPE>
+void HardSwishImageCompute<P, PTYPE>::PrepareForRun() {
+  auto& context = this->ctx_->template As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
   auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->Param<param_t>();
+  const auto& param = this->template Param<param_t>();
   auto output_dims = param.Out->dims();
 
-  input_buffer_ = param.X->data<float, MetalImage>();
-  output_buffer_ = param.Out->mutable_data<float, MetalImage>(output_dims);
+  input_buffer_ = param.X->template data<P, MetalImage>();
+  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
 
   HardSwishMetalParam metal_param{
       param.hard_swish_offset, param.hard_swish_threshold, param.hard_swish_scale};
   param_buffer_ = metal_context_->CreateBuffer(
       *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  std::string function_name = "hard_swish_float";
+  std::string function_name = "";
+  if (std::is_same<float, P>::value) {
+    function_name = "hard_swish_float";
+  } else if (std::is_same<MetalHalf, P>::value) {
+    function_name = "hard_swish_half";
+  }
+  assert(!function_name.empty());
+
   queue_ = metal_context_->GetDefaultQueue(*device);
   kernel_ = metal_context_->GetKernel(*device, function_name);
 }
 
-void HardSwishImageCompute::Run() {
+template <typename P, PrecisionType PTYPE>
+void HardSwishImageCompute<P, PTYPE>::Run() {
   auto output_width = output_buffer_->texture_width_;
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
@@ -59,45 +68,7 @@ void HardSwishImageCompute::Run() {
 
   [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
   [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(0)];
-  kernel_->Execute(*encoder, global_work_size, false);
-}
-
-void HardSwishImageComputeHalf::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
-
-  const auto& param = this->Param<param_t>();
-  auto output_dims = param.Out->dims();
-
-  input_buffer_ = param.X->data<MetalHalf, MetalImage>();
-  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
-  HardSwishMetalParam metal_param{
-      param.hard_swish_offset, param.hard_swish_threshold, param.hard_swish_scale};
-  param_buffer_ = metal_context_->CreateBuffer(
-      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
-
-  std::string function_name = "hard_swish_half";
-
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
-
-}
-
-void HardSwishImageComputeHalf::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
-
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(0)];
-
+  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
   kernel_->Execute(*encoder, global_work_size, false);
 }
 
@@ -106,11 +77,18 @@ void HardSwishImageComputeHalf::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+template class paddle::lite::kernels::metal::HardSwishImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::HardSwishImageCompute<MetalHalf, PRECISION(kFP16)>;
+
+typedef paddle::lite::kernels::metal::HardSwishImageCompute<float, PRECISION(kFloat)> MetalHardSwishFp32;
+typedef paddle::lite::kernels::metal::HardSwishImageCompute<MetalHalf, PRECISION(kFP16)> MetalHardSwishFp16;
+
+
 REGISTER_LITE_KERNEL(hard_swish,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::HardSwishImageCompute,
+                     MetalHardSwishFp32,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
@@ -125,7 +103,7 @@ REGISTER_LITE_KERNEL(hard_swish,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::HardSwishImageComputeHalf,
+                     MetalHardSwishFp16,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                PRECISION(kFP16),

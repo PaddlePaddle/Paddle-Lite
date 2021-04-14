@@ -32,9 +32,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class BilinearInterpImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
+                        PTYPE,
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::InterpolateParam;
 
@@ -55,28 +56,6 @@ class BilinearInterpImageCompute
   MetalContext* metal_context_;
 };
 
-class BilinearInterpImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::InterpolateParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("bilinear_interp", output_buffer_);
-  };
-
- private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
 }  // namespace metal
 }  // namespace kernels
 }  // namespace lite

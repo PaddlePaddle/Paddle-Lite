@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/metal/metal_kernel.h"
+#include "lite/backends/metal/metal_queue.h"
 #include <algorithm>
 
 namespace paddle {

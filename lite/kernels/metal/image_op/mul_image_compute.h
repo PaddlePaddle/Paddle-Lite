@@ -35,11 +35,11 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class MulImageCompute : public KernelLite<TARGET(kMetal),
-                                          PRECISION(kFloat),
+                                          PTYPE,
                                           DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::MulParam;
-  using param_reshape_t = operators::ReshapeParam;
 
  public:
   void PrepareForRun() override;
@@ -60,36 +60,7 @@ class MulImageCompute : public KernelLite<TARGET(kMetal),
   MetalContext* metal_context_;
   DDim input_x_mul_dim_;
 
-  ReshapeImageCompute reshape_;
-  Tensor shape_out_dev;
-  bool insert_shape = false;
-};
-
-class MulImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::MulParam;
-  using param_reshape_t = operators::ReshapeParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override { MetalDebug::SaveOutput("mul", output_buffer_); };
-
- private:
-  const MetalImage* input_buffer_x_;
-  const MetalImage* input_buffer_y_;
-
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> params_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-
-  DDim input_x_mul_dim_;
-  ReshapeImageComputeHalf reshape_;
+  ReshapeImageCompute<P, PTYPE> reshape_;
   Tensor shape_out_dev;
   bool insert_shape = false;
 };

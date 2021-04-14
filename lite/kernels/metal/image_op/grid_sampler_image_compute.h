@@ -33,9 +33,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class GridSamplerImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
+                        PTYPE,
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::GridSamplerParam;
 
@@ -56,37 +57,7 @@ class GridSamplerImageCompute
   std::shared_ptr<MetalEncoder> encoder_;
   MetalContext* metal_context_;
 
-  DDim input_x_mul_dim_;
-  ReshapeImageCompute reshape_;
-  Tensor shape_out_dev;
-  bool insert_shape = false;
-};
-
-class GridSamplerImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::GridSamplerParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("grid_sampler", output_buffer_);
-  };
-
- private:
-  const MetalImage* input_buffer_;
-  const MetalImage* grid_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-
-  DDim input_x_mul_dim_;
-  ReshapeImageComputeHalf reshape_;
+  ReshapeImageCompute<float, PRECISION(kFloat)> reshape_;
   Tensor shape_out_dev;
   bool insert_shape = false;
 };

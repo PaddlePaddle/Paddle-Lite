@@ -115,6 +115,7 @@ Tensor* LightPredictor::GetInputByName(const std::string& name) {
   }
 }
 
+#if !defined(LITE_WITH_METAL)
 const Tensor* LightPredictor::GetOutput(size_t offset) {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"
@@ -124,6 +125,16 @@ const Tensor* LightPredictor::GetOutput(size_t offset) {
                  << " in exec_scope";
   return out_var->GetMutable<lite::Tensor>();
 }
+#else
+const lite::Tensor* LightPredictor::GetOutput(size_t offset) {
+  auto* _fetch_list = program_->exec_scope()->FindVar("fetch");
+  CHECK(_fetch_list) << "no fetch variable in exec_scope";
+  auto& fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+  CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
+  return &fetch_list.at(offset);
+}
+#endif
+
 // get inputs names
 std::vector<std::string> LightPredictor::GetInputNames() {
   return input_names_;

@@ -32,33 +32,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class ElementwiseMaxImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ElementwiseParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("elementwise_max", output_buffer_);
-  };
-
- private:
-  const MetalImage* input_buffer_x_;
-  const MetalImage* input_buffer_y_;
-  std::shared_ptr<MetalBuffer> params_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
-
-class ElementwiseMaxImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
+                        PTYPE,
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ElementwiseParam;
 

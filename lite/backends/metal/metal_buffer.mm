@@ -32,6 +32,16 @@ static MTLResourceOptions OptionForAccess(METAL_ACCESS_FLAG flag) {
   }
 }
 
+MetalBuffer::MetalBuffer(const MetalDevice &device, const MetalBufferDescriptor &desc) {
+  MetalBuffer(device,
+              desc.dim_,
+              desc.precision_,
+              desc.pad_when_one_c_,
+              desc.convert_to_NHWC_,
+              desc.with_transpose_,
+              desc.flag_);
+}
+
 MetalBuffer::MetalBuffer(const MetalDevice &device, size_t size, const METAL_ACCESS_FLAG flag)
     : flags_(flag), type_(TYPE::kCommonBuffer), data_length_(size) {
   mtl_device_ = const_cast<MetalDevice *>(&device);
@@ -529,10 +539,19 @@ void MetalBuffer::Copy(const MetalQueue &queue,
   Copy(src, size, src_offset, dst_offset);
 }
 
+#ifdef __OBJC__
+MetalBuffer::MetalBuffer(const MetalDevice &device, id<MTLBuffer> buffer) {
+  buffer_ = buffer;
+  mtl_device_ = const_cast<MetalDevice *>(&device);
+  type_ = TYPE::kUnknownBuffer;
+}
+#else
 MetalBuffer::MetalBuffer(const MetalDevice &device, void *mtl_buffer) {
   buffer_ = (__bridge id<MTLBuffer>)mtl_buffer;
   mtl_device_ = const_cast<MetalDevice *>(&device);
+  type_ = TYPE::kUnknownBuffer;
 }
+#endif
 
 void MetalBuffer::Copy(const MetalBuffer &src,
                        size_t size,

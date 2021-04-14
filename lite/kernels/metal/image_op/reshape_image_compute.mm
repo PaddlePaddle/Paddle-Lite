@@ -22,28 +22,36 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-void ReshapeImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+
+template <typename P, PrecisionType PTYPE>
+void ReshapeImageCompute<P, PTYPE>::PrepareForRun() {
+  auto& context = this->ctx_->template As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
   auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->Param<param_t>();
+  const auto& param = this->template Param<param_t>();
   auto output_dims = param.output->dims();
   auto transpose = param.excepted_transpose_;
 
   if(transpose.empty()){
-      output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
+      output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
   } else {
-    output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims, transpose);
+    output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims, transpose);
   }
-  input_buffer_ = param.x->data<float, MetalImage>();
+  input_buffer_ = param.x->template data<P, MetalImage>();
 
-  int irank = input_buffer_->tensor_dim_.size();
-  int orank = output_buffer_->tensor_dim_.size();
+  auto irank = input_buffer_->tensor_dim_.size();
+  auto orank = output_buffer_->tensor_dim_.size();
 
-  std::string func_name = "reshape_" + std::to_string(irank) + "_" +
-                          std::to_string(orank) + "_float";
-  kernel_ = metal_context_->GetKernel(*device, func_name);
+  std::string function_name = "";
+  if (std::is_same<P, float>::value) {
+    function_name = "reshape_" + std::to_string(irank) + "_" + std::to_string(orank) + "_float";
+  } else if (std::is_same<P, MetalHalf>::value) {
+    function_name = "reshape_" + std::to_string(irank) + "_" + std::to_string(orank) + "_half";
+  }
+  assert(!function_name.empty());
+
+  kernel_ = metal_context_->GetKernel(*device, function_name);
 
   std::vector<int> it = input_buffer_->transpose_;
   std::vector<int> ot = output_buffer_->transpose_;
@@ -71,75 +79,9 @@ void ReshapeImageCompute::PrepareForRun() {
 
 }
 
-void ReshapeImageCompute::Run() {
-  const auto& param = this->Param<param_t>();
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
-
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
-
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
-
-  kernel_->Execute(*encoder, global_work_size, false);
-}
-
-void ReshapeImageComputeHalf::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
-
-  const auto& param = this->Param<param_t>();
-  auto output_dims = param.output->dims();
-  auto transpose = param.excepted_transpose_;
-
-  if (transpose.empty()){
-    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
-  } else {
-    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims, transpose);
-  }
-  input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-
-  int irank = input_buffer_->tensor_dim_.size();
-  int orank = output_buffer_->tensor_dim_.size();
-
-  std::string func_name = "reshape_" + std::to_string(irank) + "_" +
-                          std::to_string(orank) + "_half";
-  kernel_ = metal_context_->GetKernel(*device, func_name);
-
-  std::vector<int> it = input_buffer_->transpose_;
-  std::vector<int> ot = output_buffer_->transpose_;
-  std::vector<int> id = {1, 1, 1, 1};
-  std::vector<int> od = {1, 1, 1, 1};
-
-  for (int i = 0; i < irank; i++) {
-    id[4 - irank + i] = (int)input_buffer_->tensor_dim_[i];
-  }
-
-  for (int i = 0; i < orank; i++) {
-    od[4 - orank + i] = (int)(output_buffer_->tensor_dim_[i]);
-  }
-
-  ReshapeMetalParam reshape_params{{id[0], id[1], id[2], id[3]},
-                                   {it[0], it[1], it[2], it[3]},
-                                   {od[0], od[1], od[2], od[3]},
-                                   {ot[0], ot[1], ot[2], ot[3]}};
-
-  params_buffer_ = metal_context_->CreateBuffer(*device,
-                                         &reshape_params,
-                                         sizeof(reshape_params),
-                                         METAL_ACCESS_FLAG::CPUWriteOnly);
-  queue_ = metal_context_->GetDefaultQueue(*device);
-
-}
-
-void ReshapeImageComputeHalf::Run() {
-  const auto& param = this->Param<param_t>();
+template<typename P, PrecisionType PTYPE>
+void ReshapeImageCompute<P, PTYPE>::Run() {
+  const auto& param = this->template Param<param_t>();
   auto output_width = output_buffer_->texture_width_;
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
@@ -161,11 +103,17 @@ void ReshapeImageComputeHalf::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+template class paddle::lite::kernels::metal::ReshapeImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::ReshapeImageCompute<MetalHalf, PRECISION(kFP16)>;
+
+typedef paddle::lite::kernels::metal::ReshapeImageCompute<float, PRECISION(kFloat)> MetalReshapeFp32;
+typedef paddle::lite::kernels::metal::ReshapeImageCompute<MetalHalf, PRECISION(kFP16)> MetalReshapeFp16;
+
 REGISTER_LITE_KERNEL(reshape2,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ReshapeImageCompute,
+                     MetalReshapeFp32,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -187,7 +135,7 @@ REGISTER_LITE_KERNEL(reshape2,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ReshapeImageComputeHalf,
+                     MetalReshapeFp16,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -209,7 +157,7 @@ REGISTER_LITE_KERNEL(flatten,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ReshapeImageComputeHalf,
+                     MetalReshapeFp16,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -227,7 +175,7 @@ REGISTER_LITE_KERNEL(flatten,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ReshapeImageCompute,
+                     MetalReshapeFp32,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -245,7 +193,7 @@ REGISTER_LITE_KERNEL(flatten2,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ReshapeImageComputeHalf,
+                     MetalReshapeFp16,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -265,7 +213,7 @@ REGISTER_LITE_KERNEL(flatten2,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ReshapeImageCompute,
+                     MetalReshapeFp32,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),

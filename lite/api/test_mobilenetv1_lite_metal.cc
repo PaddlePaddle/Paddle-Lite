@@ -34,7 +34,7 @@ TEST(Mobilenet_v1, test_mobilenetv1_lite_metal) {
   config.set_metal_dir(FLAGS_metal_dir);
   config.set_valid_places(
       {lite_api::Place{
-           TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)},
+           TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)},
        lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
        lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   auto predictor = lite_api::CreatePaddlePredictor(config);

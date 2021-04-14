@@ -16,7 +16,7 @@
 #define LITE_BACKENDS_METAL_METAL_DEVICE_H_
 
 #if defined(__OBJC__)
-#include <Metal/Metal.h>
+#import <Metal/Metal.h>
 #endif
 
 #include <memory>

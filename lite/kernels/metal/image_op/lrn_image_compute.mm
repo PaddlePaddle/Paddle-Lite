@@ -12,84 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#include "lite/kernels/metal/image_op/lrn_image_compute.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/kernels/metal/image_op/lrn_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
-#include "lite/backends/metal/metal_debug.h"
-
-using namespace std;
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-void LrnImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+template <typename P, PrecisionType PTYPE>
+void LrnImageCompute<P, PTYPE>::PrepareForRun() {
+  auto& context = this->ctx_->template As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
   auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->Param<param_t>();
+  const auto& param = this->template Param<param_t>();
   auto output_dims = param.Out->dims();
 
-  input_buffer_ = param.X->data<float, MetalImage>();
-  output_buffer_ = param.Out->mutable_data<float, MetalImage>(output_dims);
+  input_buffer_ = param.X->template data<P, MetalImage>();
+  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
   int output_channel = output_dims[1];
   LrnMetalParam metal_param{param.n, output_channel, param.alpha, param.beta};
   param_buffer_ = metal_context_->CreateBuffer(
       *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  string function_name = "lrn";
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
+  std::string function_name = "";
+  if (std::is_same<float, P>::value) {
+    function_name = "lrn";
+  } else if (std::is_same<MetalHalf, P>::value) {
+    function_name = "lrn_half";
+  }
+  assert(!function_name.empty());
 
-}
-
-void LrnImageCompute::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
-
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
-
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(0)];
-  kernel_->Execute(*encoder, global_work_size, false);
-}
-
-void LrnImageComputeHalf::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
-
-  const auto& param = this->Param<param_t>();
-  auto output_dims = param.Out->dims();
-
-  input_buffer_ = param.X->data<MetalHalf, MetalImage>();
-  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
-
-  int output_channel = output_dims[1];
-  LrnMetalParam metal_param{param.n, output_channel, param.alpha, param.beta};
-  param_buffer_ = metal_context_->CreateBuffer(
-      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
-
-  string function_name = "lrn_half";
   queue_ = metal_context_->GetDefaultQueue(*device);
   kernel_ = metal_context_->GetKernel(*device, function_name);
 }
 
-void LrnImageComputeHalf::Run() {
+template <typename P, PrecisionType PTYPE>
+void LrnImageCompute<P, PTYPE>::Run() {
   auto output_width = output_buffer_->texture_width_;
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
+
+  auto& context = this->ctx_->template As<ContextMetal>();
+  metal_context_ = (MetalContext*)context.context();
 
   auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
@@ -106,12 +75,17 @@ void LrnImageComputeHalf::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+template class paddle::lite::kernels::metal::LrnImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::LrnImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::LrnImageCompute<float, PRECISION(kFloat)> MetalLrnFp32;
+typedef paddle::lite::kernels::metal::LrnImageCompute<MetalHalf, PRECISION(kFP16)> MetalLrnFp16;
+
 // TODO: (lzy) no op
 REGISTER_LITE_KERNEL(lrn,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::LrnImageCompute,
+                     MetalLrnFp32,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
@@ -126,7 +100,7 @@ REGISTER_LITE_KERNEL(lrn,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::LrnImageComputeHalf,
+                     MetalLrnFp16,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                PRECISION(kFP16),

@@ -49,11 +49,11 @@ void MetalContext::PrepareDevices() {
 
   best_metal_device_ = devices_[0].get();
   got_devices_ = true;
-  if(mtl_devices != nil){
-#if (!__has_feature(objc_arc)) 
-      [mtl_devices release];
+  if (mtl_devices != nil) {
+#if (!__has_feature(objc_arc))
+    [mtl_devices release];
 #endif
-      mtl_devices = nil;
+    mtl_devices = nil;
   }
 }
 
@@ -73,14 +73,13 @@ MetalDevice* MetalContext::GetDeviceByID(int id) {
   if (id < devices_.size())
     return devices_[id].get();
   else {
-    LOG(ERROR) << "ERROR: cannot find the metal device id " << id
-               << "in our device"
+    LOG(ERROR) << "ERROR: cannot find the metal device id " << id << "in our device"
                << "\n";
     return nullptr;
   }
 }
 
-void MetalContext::CreateCommandBuffer(RuntimeProgram* program ) {
+void MetalContext::CreateCommandBuffer(RuntimeProgram* program) {
   auto device = GetDefaultDevice();
   auto queue = device->GetDefaultQueue();
 
@@ -88,7 +87,7 @@ void MetalContext::CreateCommandBuffer(RuntimeProgram* program ) {
   cmd_buf_ = queue->CreateCommandBuffer(program);
 }
 
-void MetalContext::WaitUntilCompleted(){
+void MetalContext::WaitUntilCompleted() {
   if (cmd_buf_->have_command_) {
     [cmd_buf_->metal_command_buffer_ commit];
     [cmd_buf_->metal_command_buffer_ waitUntilCompleted];
@@ -103,7 +102,14 @@ const MetalDevice* MetalContext::GetDefaultDevice() {
   return best_metal_device_;
 }
 
-void MetalContext::set_metal_path(std::string path) { metal_path_ = path; }
+void MetalContext::set_metal_path(std::string path) {
+  metal_path_ = path;
+  if (library_ == nil) {
+    PrepareDevices();
+    auto device = GetDefaultDevice();
+    CreateLibraryWithFile(*device);
+  }
+}
 
 void MetalContext::set_use_aggressive_optimization(bool flag) {
   use_aggressive_optimization_ = flag;
@@ -111,91 +117,83 @@ void MetalContext::set_use_aggressive_optimization(bool flag) {
 
 void MetalContext::set_use_mps(bool flag) { use_mps_ = flag; }
 
-__unused std::shared_ptr<MetalQueue> MetalContext::CreateQueue(
-    const MetalDevice& device) {
+__unused std::shared_ptr<MetalQueue> MetalContext::CreateQueue(const MetalDevice& device) {
   return device.CreateQueue();
 }
 
-std::shared_ptr<MetalQueue> MetalContext::GetDefaultQueue(
-    const MetalDevice& device) {
+std::shared_ptr<MetalQueue> MetalContext::GetDefaultQueue(const MetalDevice& device) {
   return device.GetDefaultQueue();
 }
 
-
-// TODO: (lzy) extract the load library
-std::shared_ptr<MetalKernel> MetalContext::GetKernel(
-    const MetalDevice& device,
-    const std::string function_name,
-    const std::string library_path) {
+void MetalContext::CreateLibraryWithFile(const MetalDevice& device, std::string library_path) {
   std::string library_name = library_path;
   if (library_name.empty()) {
     library_name = metal_path_;
   }
 
-  NSError* error = Nil;
-  id<MTLLibrary> library = [device.device()
-      newLibraryWithFile:[NSString stringWithUTF8String:library_name.c_str()]
-                   error:&error];
-  if (!library) {
-    auto err_str = error != nullptr ? [[error localizedDescription] UTF8String]
-                                    : "unknown error";
-    LOG(ERROR) << "ERROR: load library error: " << err_str << "\n";
-    return std::shared_ptr<MetalKernel>{};
+  assert(!library_name.empty());
+  auto key = std::hash<std::string>()(library_name);
+
+  if (!library_map_.count(key)) {
+    NSError* error = nil;
+    auto library =
+        [device.device() newLibraryWithFile:[NSString stringWithUTF8String:library_name.c_str()]
+                                      error:&error];
+    if (!library) {
+      auto err_str = error != nullptr ? [[error localizedDescription] UTF8String] : "unknown error";
+      throw std::logic_error(err_str);
+    }
+    library_map_[key] = library;
   }
 
+  // use first device and first library as default library
+  library_ = library_map_.begin()->second;
+}
+
+std::shared_ptr<MetalKernel> MetalContext::GetKernel(const MetalDevice& device,
+                                                     const std::string function_name) {
+  assert(library_ != nil);
+  NSError* error = nil;
   MetalKernelProgram program;
 
-  program.function_ = [library newFunctionWithName:[NSString stringWithUTF8String:function_name.c_str()]];
+  program.function_ =
+      [library_ newFunctionWithName:[NSString stringWithUTF8String:function_name.c_str()]];
   if (!program.function_) {
-    auto err_str = error != nullptr ? [[error localizedDescription] UTF8String]
-                                    : "unknown error";
-    LOG(ERROR) << "ERROR: load function " << function_name
-               << "from library error: " << err_str << "\n";
+    auto err_str = error != nullptr ? [[error localizedDescription] UTF8String] : "unknown error";
+    LOG(ERROR) << "ERROR: load function " << function_name << "from library error: " << err_str
+               << "\n";
     return std::shared_ptr<MetalKernel>{};
   }
-  
-#if (!__has_feature(objc_arc)) 
-  [program.function_ autorelease];
-#endif
 
-  program.pipeline_state_ =
-      [device.device() newComputePipelineStateWithFunction:program.function_
-                                                     error:&error];
+  program.pipeline_state_ = [device.device() newComputePipelineStateWithFunction:program.function_
+                                                                           error:&error];
 
   if (!program.pipeline_state_) {
-    auto err_str = error != nullptr ? [[error localizedDescription] UTF8String]
-                                    : "unknown error";
-    LOG(ERROR) << "ERROR: failed to create pipeline state" << function_name
-               << err_str << "\n";
+    auto err_str = error != nullptr ? [[error localizedDescription] UTF8String] : "unknown error";
+    LOG(ERROR) << "ERROR: failed to create pipeline state" << function_name << err_str << "\n";
     return std::shared_ptr<MetalKernel>{};
   }
 
-#if (!__has_feature(objc_arc)) 
+#if (!__has_feature(objc_arc))
+  [program.function_ autorelease];
   [program.pipeline_state_ autorelease];
 #endif
-
-  if (nil != library) {
-#if (!__has_feature(objc_arc)) 
-    [library release];
-#endif
-    library = nil;
-  }
 
   auto ret = std::make_shared<MetalKernel>(program);
 
   return ret;
 }
 
-std::shared_ptr<MetalBuffer> MetalContext::CreateBuffer(
-    const MetalDevice& device, size_t length, const METAL_ACCESS_FLAG flags) {
+std::shared_ptr<MetalBuffer> MetalContext::CreateBuffer(const MetalDevice& device,
+                                                        size_t length,
+                                                        const METAL_ACCESS_FLAG flags) {
   return std::make_shared<MetalBuffer>(device, length, flags);
 }
 
-std::shared_ptr<MetalBuffer> MetalContext::CreateBuffer(
-    const MetalDevice& device,
-    void* data,
-    size_t length,
-    const METAL_ACCESS_FLAG flags) {
+std::shared_ptr<MetalBuffer> MetalContext::CreateBuffer(const MetalDevice& device,
+                                                        void* data,
+                                                        size_t length,
+                                                        const METAL_ACCESS_FLAG flags) {
   return std::make_shared<MetalBuffer>(device, data, length, flags);
 }
 }

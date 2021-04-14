@@ -32,32 +32,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class HardSwishImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ActivationParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("hard_swish", output_buffer_);
-  };
-
- private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
-
-class HardSwishImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
+                        PTYPE,
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ActivationParam;
 

@@ -32,9 +32,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class BatchNormImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
+                        PTYPE,
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::BatchNormParam;
 
@@ -56,38 +57,6 @@ class BatchNormImageCompute
   std::shared_ptr<MetalBuffer> bias_buffer_;
   std::shared_ptr<MetalBuffer> scale_buffer_;
 
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
-
-class BatchNormImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::BatchNormParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("batch_norm", output_buffer_);
-  };
-
- private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-
-  int output_tensor_n_{-1};
-
-  std::shared_ptr<MetalBuffer> bias_buffer_;
-  std::shared_ptr<MetalBuffer> mean_buffer_;
-  std::shared_ptr<MetalBuffer> scale_buffer_;
-  std::shared_ptr<MetalBuffer> variance_buffer_;
-  std::shared_ptr<MetalBuffer> params_buffer_;
-  float epsilon_;
-  float momentum_;
   std::shared_ptr<MetalKernel> kernel_;
   std::shared_ptr<MetalQueue> queue_;
   std::shared_ptr<MetalEncoder> encoder_;

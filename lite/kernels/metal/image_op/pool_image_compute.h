@@ -33,33 +33,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class PoolImageCompute : public KernelLite<TARGET(kMetal),
-                                           PRECISION(kFloat),
+                                           PTYPE,
                                            DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::PoolParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("pool", output_buffer_);
-  };
-
- private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-
-  std::shared_ptr<MetalBuffer> params_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
-
-class PoolImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::PoolParam;
 
  public:

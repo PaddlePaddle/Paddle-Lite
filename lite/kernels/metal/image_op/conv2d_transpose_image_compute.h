@@ -33,9 +33,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class Conv2dTransposeImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
+                        PTYPE,
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ConvParam;
 
@@ -71,50 +72,6 @@ class Conv2dTransposeImageCompute
   int16_t activate_type_ = 0;
   int16_t relu6_thredhold_ = 6;
 
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
-
-class Conv2dTransposeImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ConvParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("conv2d_transpose", output_buffer_);
-  };
-
- private:
-  const MetalImage* input_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-
-  static std::string KernelFunctionName(
-      const param_t& param, bool use_aggressive_optimization = false);
-
-  static bool HasPrefix(const std::string& function_name,
-                        const std::string& prefix);
-
- private:
-  void SetupWithMPS();
-  void SetupWithoutMPS();
-
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> filter_buffer_;
-  std::shared_ptr<MetalBuffer> params_buffer_;
-  const MetalImage* bias_buffer_;
-
-  Tensor blank_tensor_;
-  std::string function_name_;
-  bool use_winograd_;
-
-  int16_t activate_type_ = 0;
-  int16_t relu6_thredhold_ = 6;
   std::shared_ptr<MetalKernel> kernel_;
   std::shared_ptr<MetalQueue> queue_;
   std::shared_ptr<MetalEncoder> encoder_;

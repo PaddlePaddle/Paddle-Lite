@@ -20,6 +20,7 @@
 #include "lite/backends/metal/metal_context.h"
 #include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -35,6 +36,8 @@ class TargetWrapper<TARGET(kMetal)> {
     return dev_id;
   }
 
+  static bool MPSVersionRequired();
+
   static void CreateCommandBuffer(RuntimeProgram* program) {
     assert(program);
     ctx_.CreateCommandBuffer(program);
@@ -47,6 +50,12 @@ class TargetWrapper<TARGET(kMetal)> {
 
   static void set_metal_use_aggressive_optimization(bool flag) {
     ctx_.set_use_aggressive_optimization(flag);
+  }
+
+  static bool use_mps() { return ctx_.use_mps(); }
+
+  static bool use_aggressive_optimization() {
+    return ctx_.use_aggressive_optimization();
   }
 
   static void set_metal_use_mps(bool flag) { ctx_.set_use_mps(flag); }

@@ -15,6 +15,7 @@
 #ifndef LITE_BACKENDS_METAL_METAL_CONTEXT_H_
 #define LITE_BACKENDS_METAL_METAL_CONTEXT_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,6 +23,7 @@
 #include "lite/backends/metal/metal_buffer.h"
 #include "lite/backends/metal/metal_common.h"
 #include "lite/backends/metal/metal_device.h"
+#include "lite/backends/metal/metal_image.h"
 #include "lite/backends/metal/metal_kernel.h"
 #include "lite/backends/metal/metal_queue.h"
 
@@ -54,8 +56,10 @@ class MetalContext {
 
   /// program
   std::shared_ptr<MetalKernel> GetKernel(const MetalDevice& device,
-                                         std::string function_name,
-                                         std::string library_name = "");
+                                         const std::string function_name);
+
+  void CreateLibraryWithFile(const MetalDevice& device,
+                             std::string library_name = "");
 
   /// buffer_and_image
   std::shared_ptr<MetalBuffer> CreateBuffer(
@@ -73,6 +77,14 @@ class MetalContext {
   mutable std::vector<std::shared_ptr<MetalDevice>> devices_ = {};
 
   std::unique_ptr<MetalCommandBuffer> cmd_buf_;
+
+#if defined(__OBJC__)
+  id<MTLLibrary> library_ = nil;
+  std::map<size_t, id<MTLLibrary>> library_map_;
+#else
+  void* library_ = nullptr;
+  std::map<size_t, void*> library_map_;
+#endif
 
  private:
   bool got_devices_{false};

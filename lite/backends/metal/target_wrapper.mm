@@ -22,6 +22,19 @@ namespace lite {
 
 size_t TargetWrapperMetal::num_devices() { return ctx_.GetDevicesNum(); }
 
+bool TargetWrapperMetal::MPSVersionRequired() {
+#ifdef TARGET_IOS
+  if (@available(iOS 11.0, *)) {
+    return true;
+  }
+#else
+  if (@available(macos 10.13, *)) {
+    return true;
+  }
+#endif
+  return false;
+};
+
 void* TargetWrapperMetal::Malloc(size_t size) {
   void* ptr{};
   auto device = ctx_.GetDefaultDevice();
@@ -60,8 +73,15 @@ template <>
 void* TargetWrapperMetal::MallocBuffer<float>(
     const DDim dim, bool transpose, bool to_nhwc, bool pad_when_one_c, void* host_ptr) {
   auto device = ctx_.GetDefaultDevice();
-  auto buffer = new MetalBuffer(
-      *device, dim, METAL_PRECISION_TYPE::FLOAT, pad_when_one_c, to_nhwc, transpose);
+
+  MetalBufferDescriptor desc;
+  desc.dim_ = dim;
+  desc.precision_ = METAL_PRECISION_TYPE::FLOAT;
+  desc.pad_when_one_c_ = pad_when_one_c;
+  desc.convert_to_NHWC_ = to_nhwc;
+  desc.with_transpose_ = transpose;
+  auto buffer = new MetalBuffer(*device, desc);
+
   if (host_ptr) buffer->CopyFromNCHW<float>((float*)host_ptr);
   return (void*)buffer;
 }
@@ -70,8 +90,13 @@ template <>
 void* TargetWrapperMetal::MallocBuffer<MetalHalf>(
     const DDim dim, bool transpose, bool to_nhwc, bool pad_when_one_c, void* host_ptr) {
   auto device = ctx_.GetDefaultDevice();
-  auto buffer =
-      new MetalBuffer(*device, dim, METAL_PRECISION_TYPE::HALF, pad_when_one_c, to_nhwc, transpose);
+  MetalBufferDescriptor desc;
+  desc.dim_ = dim;
+  desc.precision_ = METAL_PRECISION_TYPE::HALF;
+  desc.pad_when_one_c_ = pad_when_one_c;
+  desc.convert_to_NHWC_ = to_nhwc;
+  desc.with_transpose_ = transpose;
+  auto buffer = new MetalBuffer(*device, desc);
   if (host_ptr) buffer->CopyFromNCHW<MetalHalf>((MetalHalf*)host_ptr);
   return (void*)buffer;
 }

@@ -17,6 +17,9 @@
 
 #include <algorithm>
 
+typedef uint32_t MetalUint;
+typedef uint16_t MetalHalf;
+
 namespace paddle {
 namespace lite {
 
@@ -29,9 +32,6 @@ enum class METAL_PRECISION_TYPE {
 };
 
 enum class METAL_ACCESS_FLAG { CPUReadWrite = 0, CPUWriteOnly, CPUTransparent };
-
-typedef uint32_t MetalUint;
-typedef uint16_t MetalHalf;
 
 struct MetalUint2 {
  public:

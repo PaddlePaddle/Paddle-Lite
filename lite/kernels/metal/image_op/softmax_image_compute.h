@@ -16,6 +16,7 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_SOFTMAX_IMAGE_COMPUTE_H_
 
 #include <memory>
+#include <string>
 
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
@@ -33,9 +34,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class SoftmaxImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
+                        PTYPE,
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::SoftmaxParam;
 
@@ -48,29 +50,7 @@ class SoftmaxImageCompute
   };
 
  private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
-
-class SoftmaxImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::SoftmaxParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("softmax", output_buffer_);
-  };
-
- private:
+  std::string GetFunctionName(const DDimLite& input_dims, int axis) const;
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;

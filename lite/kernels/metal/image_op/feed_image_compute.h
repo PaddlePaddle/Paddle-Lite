@@ -32,8 +32,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class FeedImageCompute : public KernelLite<TARGET(kMetal),
-                                           PRECISION(kFloat),
+                                           PTYPE,
                                            DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::FeedParam;
 
@@ -48,30 +49,6 @@ class FeedImageCompute : public KernelLite<TARGET(kMetal),
   std::shared_ptr<MetalBuffer> input_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   MetalImage* output_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-  const MetalDevice* device_;
-};
-
-class FeedImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::FeedParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("feed", output_buffer_);
-  };
-
- private:
-  std::shared_ptr<MetalBuffer> input_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
   std::shared_ptr<MetalQueue> queue_;
   std::shared_ptr<MetalEncoder> encoder_;

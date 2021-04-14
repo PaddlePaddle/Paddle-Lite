@@ -51,6 +51,7 @@ TEST(MobileNetV1, test_mobilenet_v1_metal) {
   mobile_config.set_threads(FLAGS_threads);
   mobile_config.set_power_mode(
       static_cast<lite_api::PowerMode>(FLAGS_power_mode));
+  //  mobile_config.set_metal_dir(FLAGS_metal_dir);
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
@@ -69,7 +70,7 @@ TEST(MobileNetV1, test_mobilenet_v1_metal) {
         std::vector<int64_t>(input_shape.begin(), input_shape.end()));
     auto* data = input_tensor->mutable_data<float>();
     for (int j = 0; j < input_size; j++) {
-      data[j] = 0.f;
+      data[j] = 1.f;
     }
     predictor->Run();
   }

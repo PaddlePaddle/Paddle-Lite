@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "lite/backends/metal/metal_common.h"
-#include "lite/backends/metal/metal_kernel_arg.h"
 
 namespace paddle {
 namespace lite {

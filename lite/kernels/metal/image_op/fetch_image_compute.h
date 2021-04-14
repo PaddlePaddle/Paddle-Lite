@@ -15,8 +15,9 @@
 #pragma once
 
 #include <memory>
-
+#include <vector>
 #include "lite/core/kernel.h"
+#include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
 
 #ifdef LITE_WITH_PROFILE
@@ -25,6 +26,7 @@
 
 #include "lite/backends/metal/metal_context.h"
 #include "lite/backends/metal/metal_debug.h"
+#include "lite/kernels/metal/image_op/reshape_image_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -32,26 +34,29 @@ namespace kernels {
 namespace metal {
 
 template <typename P, PrecisionType PTYPE>
-class TanhImageCompute : public KernelLite<TARGET(kMetal),
-                                           PTYPE,
-                                           DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ActivationParam;
+class FetchImageCompute : public KernelLite<TARGET(kMetal),
+                                            PTYPE,
+                                            DATALAYOUT(kMetalTexture2DArray)> {
+  using param_t = operators::FetchParam;
 
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("tanh", output_buffer_);
-  };
+  void SaveOutput() override { ; };
 
  private:
+  std::shared_ptr<MetalBuffer> output_buffer_;
   const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
   std::shared_ptr<MetalQueue> queue_;
   std::shared_ptr<MetalEncoder> encoder_;
   MetalContext* metal_context_;
+  const MetalDevice* device_;
+  std::vector<int> expected_transpose_ = {};
+
+  ReshapeImageCompute<P, PTYPE> reshape_;
+  Tensor shape_out_dev;
+  bool insert_shape = false;
 };
 
 }  // namespace metal

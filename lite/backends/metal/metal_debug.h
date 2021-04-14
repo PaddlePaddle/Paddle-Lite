@@ -23,8 +23,6 @@
 #include "lite/backends/metal/metal_image.h"
 #include "lite/utils/macros.h"
 
-#define LITE_METAL_SAVE_TENSOR 0
-
 namespace paddle {
 namespace lite {
 

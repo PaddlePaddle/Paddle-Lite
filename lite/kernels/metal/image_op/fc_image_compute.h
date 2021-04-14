@@ -33,8 +33,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class FCImageCompute : public KernelLite<TARGET(kMetal),
-                                         PRECISION(kFloat),
+                                         PTYPE,
                                          DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::FcParam;
 
@@ -56,35 +57,8 @@ class FCImageCompute : public KernelLite<TARGET(kMetal),
   MetalContext* metal_context_;
 
   Tensor shape_out_dev_;
-  ReshapeImageCompute reshape_;
+  ReshapeImageCompute<P, PTYPE> reshape_;
 
-  DDim input_x_mul_dim_;
-  bool insert_shape = false;
-};
-
-class FCImageComputeHalf : public KernelLite<TARGET(kMetal),
-                                             PRECISION(kFP16),
-                                             DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::FcParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override { MetalDebug::SaveOutput("fc", output_buffer_); };
-
- private:
-  const MetalImage* input_buffer_;
-  const MetalImage* weight_buffer_;
-  const MetalImage* bias_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-
-  Tensor shape_out_dev_;
-  ReshapeImageComputeHalf reshape_;
   DDim input_x_mul_dim_;
   bool insert_shape = false;
 };

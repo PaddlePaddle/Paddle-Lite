@@ -25,18 +25,20 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-void ElementwiseSubImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+
+template <typename P, PrecisionType PTYPE>
+void ElementwiseSubImageCompute<P, PTYPE>::PrepareForRun() {
+  auto& context = this->ctx_->template As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
   auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->Param<param_t>();
+  const auto& param = this->template Param<param_t>();
   auto output_dims = param.Out->dims();
   auto input_dims = param.X->dims();
 
-  output_buffer_ = param.Out->mutable_data<float, MetalImage>(output_dims);
-  input_buffer_x_ = param.X->data<float, MetalImage>();
-  input_buffer_y_ = param.Y->data<float, MetalImage>();
+  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
+  input_buffer_x_ = param.X->template data<P, MetalImage>();
+  input_buffer_y_ = param.Y->template data<P, MetalImage>();
 
   bool valid = false;
   int by_channel = 0;
@@ -65,14 +67,21 @@ void ElementwiseSubImageCompute::PrepareForRun() {
   params_buffer_ = metal_context_->CreateBuffer(
       *device, &element_params, sizeof(element_params), METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  std::string function_name = "elementwise_sub";
+  std::string function_name = "";
+  if (std::is_same<float, P>::value) {
+    function_name = "elementwise_sub";
+  } else if (std::is_same<MetalHalf, P>::value) {
+    function_name = "elementwise_sub_half";
+  }
+
+  assert(!function_name.empty());
   queue_ = metal_context_->GetDefaultQueue(*device);
   kernel_ = metal_context_->GetKernel(*device, function_name);
-
 }
 
-void ElementwiseSubImageCompute::Run() {
-  const auto& param = this->Param<param_t>();
+template <typename P, PrecisionType PTYPE>
+void ElementwiseSubImageCompute<P, PTYPE>::Run() {
+  const auto& param = this->template Param<param_t>();
   auto output_width = output_buffer_->texture_width_;
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
@@ -87,72 +96,6 @@ void ElementwiseSubImageCompute::Run() {
   [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
   [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
-  kernel_->Execute(*encoder, global_work_size, false);
-}
-
-void ElementwiseSubImageComputeHalf::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
-
-  const auto& param = this->Param<param_t>();
-  auto output_dims = param.Out->dims();
-  auto input_dims = param.X->dims();
-
-  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
-  input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
-  input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
-
-  bool valid = false;
-  int by_channel = 0;
-  if (input_buffer_x_->tensor_dim_.size() == 4 && input_buffer_y_->tensor_dim_.size() == 4 &&
-      param.axis == -1 && input_buffer_y_->tensor_dim_[2] == 1 &&
-      input_buffer_y_->tensor_dim_[3] == 1) {
-    by_channel = 1;
-    valid = true;
-  } else if (input_buffer_x_->tensor_dim_.size() == input_buffer_y_->tensor_dim_.size()) {
-    valid = true;
-    for (int i = 0; i < input_buffer_x_->tensor_dim_.size(); i++) {
-      if (input_buffer_x_->tensor_dim_[i] != input_buffer_y_->tensor_dim_[i]) {
-        valid = false;
-        break;
-      }
-    }
-    if (valid) {
-      by_channel = 0;
-    }
-  }
-  if (!valid) {
-    throw std::logic_error("ERROR: elementwise_sub only supports : 1. input shapes are the same. "
-                           "2. multiply by channel.");
-  }
-
-  ElementwiseMetalParam element_params = {by_channel};
-  params_buffer_ = metal_context_->CreateBuffer(*device,
-                                         &element_params,
-                                         sizeof(element_params),
-                                         METAL_ACCESS_FLAG::CPUWriteOnly);
-
-  std::string function_name = "elementwise_sub_half";
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
-}
-
-void ElementwiseSubImageComputeHalf::Run() {
-  const auto& param = this->Param<param_t>();
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
-
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
-
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_x_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
-  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
   kernel_->Execute(*encoder, global_work_size, false);
 }
 
@@ -161,11 +104,17 @@ void ElementwiseSubImageComputeHalf::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+template class paddle::lite::kernels::metal::ElementwiseSubImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::ElementwiseSubImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::ElementwiseSubImageCompute<float, PRECISION(kFloat)> MetalElementwiseSubFp32;
+typedef paddle::lite::kernels::metal::ElementwiseSubImageCompute<MetalHalf, PRECISION(kFP16)> MetalElementwiseSubFp16;
+
+
 REGISTER_LITE_KERNEL(elementwise_sub,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ElementwiseSubImageCompute,
+                     MetalElementwiseSubFp32,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -181,13 +130,12 @@ REGISTER_LITE_KERNEL(elementwise_sub,
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    elementwise_sub,
-    kMetal,
-    kFP16,
-    kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ElementwiseSubImageComputeHalf,
-    def)
+REGISTER_LITE_KERNEL(elementwise_sub,
+                     kMetal,
+                     kFP16,
+                     kMetalTexture2DArray,
+                     MetalElementwiseSubFp16,
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),

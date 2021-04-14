@@ -32,8 +32,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
+template <typename P, PrecisionType PTYPE>
 class ScaleImageCompute : public KernelLite<TARGET(kMetal),
-                                            PRECISION(kFloat),
+                                            PTYPE,
                                             DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ScaleParam;
 
@@ -48,30 +49,6 @@ class ScaleImageCompute : public KernelLite<TARGET(kMetal),
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-};
-
-class ScaleImageComputeHalf
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ScaleParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("scale", output_buffer_);
-  };
-
- private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-
   std::shared_ptr<MetalKernel> kernel_;
   std::shared_ptr<MetalQueue> queue_;
   std::shared_ptr<MetalEncoder> encoder_;

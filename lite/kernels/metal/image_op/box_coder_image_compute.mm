@@ -24,77 +24,44 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-void BoxCoderImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+template <typename P, PrecisionType PTYPE>
+void BoxCoderImageCompute<P, PTYPE>::PrepareForRun() {
+  auto& context = this->ctx_->template As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
   auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->Param<param_t>();
+  const auto& param = this->template Param<param_t>();
   auto output_dims = param.proposals->dims();
   auto prior_box_dims = param.prior_box->dims();
 
   assert(param.code_type == "decode_center_size" && param.box_normalized == true);
 
-  prior_box_buffer_ = param.prior_box->data<float, MetalImage>();
-  prior_box_var_buffer_ = param.prior_box_var->data<float, MetalImage>();
-  target_box_buffer_ = param.target_box->data<float, MetalImage>();
-  output_buffer_ = param.proposals->mutable_data<float, MetalImage>(output_dims);
+  prior_box_buffer_ = param.prior_box->template data<P, MetalImage>();
+  prior_box_var_buffer_ = param.prior_box_var->template data<P, MetalImage>();
+  target_box_buffer_ = param.target_box->template data<P, MetalImage>();
+  output_buffer_ = param.proposals->template mutable_data<P, MetalImage>(output_dims);
+
+  std::string function_name = "";
+  if (std::is_same<float, P>::value) {
+    function_name = "boxcoder_float";
+  } else if (std::is_same<MetalHalf, P>::value) {
+    function_name = "boxcoder_half";
+  }
+  assert(!function_name.empty());
 
   queue_ = metal_context_->GetDefaultQueue(*device);
-  std::string function_name = "boxcoder_float";
   kernel_ = metal_context_->GetKernel(*device, function_name);
-
 }
 
-void BoxCoderImageCompute::Run() {
+
+template <typename P, PrecisionType PTYPE>
+void BoxCoderImageCompute<P, PTYPE>::Run() {
   auto output_width = output_buffer_->texture_width_;
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
+  auto& context = this->ctx_->template As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
-
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
-
-  [encoder->metal_command_encoder_ setTexture:(prior_box_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(prior_box_var_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setTexture:(target_box_buffer_->image()) atIndex:(2)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(3)];
-
-  kernel_->Execute(*encoder, global_work_size, false);
-}
-
-void BoxCoderImageComputeHalf::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
-
-  const auto& param = this->Param<param_t>();
-  auto output_dims = param.proposals->dims();
-  auto prior_box_dims = param.prior_box->dims();
-
-  prior_box_buffer_ = param.prior_box->data<MetalHalf, MetalImage>();
-  prior_box_var_buffer_ = param.prior_box_var->data<MetalHalf, MetalImage>();
-  target_box_buffer_ = param.target_box->data<MetalHalf, MetalImage>();
-  output_buffer_ = param.proposals->mutable_data<MetalHalf, MetalImage>(output_dims);
-
-  std::string function_name = "boxcoder_half";
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
-
-}
-
-void BoxCoderImageComputeHalf::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
-
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto mtl_dev = metal_context_->GetDefaultDevice();
 
   auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
@@ -114,11 +81,18 @@ void BoxCoderImageComputeHalf::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+template class paddle::lite::kernels::metal::BoxCoderImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::BoxCoderImageCompute<MetalHalf, PRECISION(kFP16)>;
+
+typedef paddle::lite::kernels::metal::BoxCoderImageCompute<float, PRECISION(kFloat)> MetalBoxCoderFp32;
+typedef paddle::lite::kernels::metal::BoxCoderImageCompute<MetalHalf, PRECISION(kFP16)> MetalBoxCoderFp16;
+
+
 REGISTER_LITE_KERNEL(box_coder,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::BoxCoderImageCompute,
+                     MetalBoxCoderFp32,
                      def)
         .BindInput("PriorBox",
                    {LiteType::GetTensorTy(TARGET(kMetal),
@@ -142,7 +116,7 @@ REGISTER_LITE_KERNEL(box_coder,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::BoxCoderImageComputeHalf,
+                     MetalBoxCoderFp16,
                      def)
         .BindInput("PriorBox",
                {LiteType::GetTensorTy(TARGET(kMetal),

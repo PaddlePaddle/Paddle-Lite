@@ -45,7 +45,6 @@ class IoCopyHostToMetalTexture
       std::string function_name = "buffer_to_texture_array_n_channel_kernel";
       queue_ = metal_context_->GetDefaultQueue(*device);
       kernel_ = metal_context_->GetKernel(*device, function_name);
-
     }
   }
 
@@ -68,19 +67,16 @@ class IoCopyHostToMetalTexture
       auto output_height = output_buffer_->texture_height_;
       auto output_array_length = output_buffer_->array_length_;
 
-      {
-        auto encoder =
-            std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-        MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                       static_cast<MetalUint>(output_height),
-                                       static_cast<MetalUint>(output_array_length)};
+      auto encoder =
+          std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+      MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                     static_cast<MetalUint>(output_height),
+                                     static_cast<MetalUint>(output_array_length)};
 
-        [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer()) offset:(0) atIndex:(0)];
-        [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(0)];
+      [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer()) offset:(0)atIndex:(0)];
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(0)];
 
-        auto args = {MetalKernelArgument{src_buffer_}, MetalKernelArgument{output_buffer_}};
-        kernel_->Execute(*encoder, global_work_size, false);
-      }
+      kernel_->Execute(*encoder, global_work_size, false);
     } else {
       output_buffer_->CopyFromNCHW<float>(src);
     }
@@ -160,7 +156,6 @@ class IoCopyHostToMetalTextureHalf
       std::string function_name = "buffer_to_texture_array_n_channel_kernel_half";
       queue_ = metal_context_->CreateQueue(*device);
       kernel_ = metal_context_->GetKernel(*device, function_name);
-
     }
   }
 
@@ -181,18 +176,16 @@ class IoCopyHostToMetalTextureHalf
       auto output_width = output_buffer_->texture_width_;
       auto output_height = output_buffer_->texture_height_;
       auto output_array_length = output_buffer_->array_length_;
-      {
-        auto encoder =
-            std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-        MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                       static_cast<MetalUint>(output_height),
-                                       static_cast<MetalUint>(output_array_length)};
 
-        [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer()) offset:(0) atIndex:(0)];
-        [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(0)];
+      auto encoder =
+          std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+      MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                     static_cast<MetalUint>(output_height),
+                                     static_cast<MetalUint>(output_array_length)};
 
-        kernel_->Execute(*encoder, global_work_size, false);
-      }
+      [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer()) offset:(0)atIndex:(0)];
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(0)];
+      kernel_->Execute(*encoder, global_work_size, false);
     } else {
       output_buffer_->CopyFromNCHW<float>(src);
     }
@@ -270,7 +263,6 @@ class IoCopyHostToMetalTextureHalf2Half
       std::string function_name = "buffer_to_texture_array_n_channel_kernel_half";
       queue_ = metal_context_->CreateQueue(*device);
       kernel_ = metal_context_->GetKernel(*device, function_name);
-
     }
   }
 
