@@ -87,6 +87,11 @@ void ConcatCompute::Run() {
     case PRECISION(kFloat):
       ConcatFunc<float>(inputs, axis, out);
       break;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      ConcatFunc<__fp16>(inputs, axis, out);
+      break;
+#endif
     case PRECISION(kInt32):
       ConcatFunc<int32_t>(inputs, axis, out);
       break;
