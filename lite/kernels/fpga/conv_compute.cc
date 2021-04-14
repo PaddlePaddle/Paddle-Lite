@@ -98,16 +98,10 @@ void ConvCompute::PrepareForRun() {
         conv_param.wd_enable = stride_info_.wd_enable_;
         conv_param.original_out_channel = stride_info_.original_out_channel_;
         conv_param.wd_offset = stride_info_.wd_offset_;
-    }
+        conv_param.start_idx = stride_info_.start_idx_;
+        conv_param.end_idx = stride_info_.end_idx_;
 
-//    // add jump write support
-//    conv_param.wd_enable = param.wd_enable_;
-//
-//    if(conv_param.wd_enable) {
-//        conv_param.fuse_idx = param.fuse_idx_;
-//        conv_param.wd_offset = param.wd_offset_;
-//        conv_param.original_out_channel = param.original_out_channel_;
-//    }
+    }
 
     conv_param.input = param.x->ZynqTensor();
     conv_param.output = param.output->ZynqTensor();

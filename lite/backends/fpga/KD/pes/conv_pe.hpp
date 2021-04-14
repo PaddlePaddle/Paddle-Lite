@@ -149,6 +149,17 @@ class ConvPE : public PE {
     }
     if (!param_.deconv & !split_channel) {
       float16 max_val = 0.0;
+
+      // The final max value is count by a conv dispatch
+      // If output tensor is writed by multiple kernels, the max value should be counted across kernels
+      if(param_.wd_enable) {
+          int cur_idx = param_.fuse_idx;
+          if(cur_idx == param_.start_idx)
+              max_val = 0;
+          else if(cur_idx <= param_.end_idx)
+              max_val = param_.output->max()[0];
+      }
+
       for (auto conv_param : param_.splitParams()) {
         max_val = std::max(max_val, conv_param->output_max);
       }

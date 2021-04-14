@@ -31,6 +31,8 @@ NodeInfo(Node* node, bool wd_enable, int wd_offset, int fuse_idx=-1,  int origin
         int wd_offset_;
         int fuse_idx_;
         int original_out_channel_ = 0;
+        int start_idx_ = 0;
+        int end_idx_ = 0;
 };
 
 class FpgaConcatFuser : public FuseBase {

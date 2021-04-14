@@ -81,6 +81,8 @@ void FpgaConcatFuser::fuse_accumulate(std::vector<std::vector<NodeInfo>>& groups
         int total_output_channel = 0;
         int start_offset = 0;
         std::vector<int> ori_channel;
+        int start_idx = group[0].fuse_idx_;
+        int end_idx = group[group.size() - 1].fuse_idx_;
 
         ori_channel.push_back(0);
         for(NodeInfo& nodeinfo : group) {
@@ -92,6 +94,8 @@ void FpgaConcatFuser::fuse_accumulate(std::vector<std::vector<NodeInfo>>& groups
             nodeinfo.wd_offset_ = total_output_channel;
             start_offset += ori_channel[i];
             nodeinfo.original_out_channel_ = start_offset;
+            nodeinfo.start_idx_ = start_idx;
+            nodeinfo.end_idx_ = end_idx;
             ++i;
         }
     }
@@ -242,6 +246,8 @@ void FpgaConcatFuser::InsertNewNode(SSAGraph *graph, std::vector<std::vector<Nod
                     sub_opdesc->SetAttr<int>("wd_offset", nodeinfo.wd_offset_);
                     sub_opdesc->SetAttr<int>("fuse_idx", nodeinfo.fuse_idx_);
                     sub_opdesc->SetAttr<int>("original_out_channel", nodeinfo.original_out_channel_);
+                    sub_opdesc->SetAttr<int>("start_idx", nodeinfo.start_idx_);
+                    sub_opdesc->SetAttr<int>("end_idx", nodeinfo.end_idx_);
                     // set the output of each conv to the output of concat
 	            // TODO "Output" is a common attr name?
                     sub_opdesc->SetOutput("Output", out_arg_name);

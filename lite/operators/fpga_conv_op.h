@@ -219,10 +219,14 @@ class FpgaConvOpLite : public ConvOpLite {
     auto wd_offset = op_desc.GetAttr<int>("wd_offset");
     auto fuse_idx = op_desc.GetAttr<int>("fuse_idx");
     auto original_out_channel = op_desc.GetAttr<int>("original_out_channel");
+    auto start_idx = op_desc.GetAttr<int>("start_idx");
+    auto end_idx = op_desc.GetAttr<int>("end_idx");
     stride_info_.wd_enable_ = wd_enable;
     stride_info_.wd_offset_ = wd_offset;
     stride_info_.fuse_idx_ = fuse_idx;
     stride_info_.original_out_channel_ = original_out_channel;
+    stride_info_.start_idx_ = start_idx;
+    stride_info_.end_idx_ = end_idx;
   }
 
   void AttachKernel(KernelBase* kernel) override {
