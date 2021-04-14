@@ -30,7 +30,12 @@ class WhereOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "where_op"; }
-
+#ifndef LITE_ON_TINY_PUBLISH
+  bool InferType() override {
+    param_.out->set_precision(param_.x->precision());
+    return true;
+  }
+#endif
  private:
   mutable WhereParam param_;
 };
