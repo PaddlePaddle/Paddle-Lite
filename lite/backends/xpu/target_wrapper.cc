@@ -116,7 +116,7 @@ void TargetWrapperXPU::FreeL3Cache() {
 
 LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
-LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{0};
+LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{0xfffc00};
 LITE_THREAD_LOCAL bool TargetWrapperXPU::conv_autotune{false};
 LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;  // NOLINT
 LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
