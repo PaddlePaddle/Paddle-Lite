@@ -57,7 +57,7 @@ add_kernel(sequence_softmax_compute_host Host extra SRCS sequence_softmax_comput
 add_kernel(sequence_mask_compute_host Host extra SRCS sequence_mask_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(flatten_contiguous_range_compute_host Host extra SRCS flatten_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_host)
-add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(activation_compute_host Host extra SRCS activation_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(box_coder_compute_host Host basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(gather_compute_host Host extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(gather_nd_compute_host Host extra SRCS gather_nd_compute.cc DEPS ${lite_kernel_deps})
