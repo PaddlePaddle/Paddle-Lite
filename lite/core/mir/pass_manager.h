@@ -34,7 +34,7 @@ class PassManager {
 
   void Run(const std::unique_ptr<SSAGraph>& graph) {
     for (auto& pass : passes_) {
-      VLOG(1) << "Running MIR pass " << pass->name();
+      LOG(INFO) << "Running MIR pass " << pass->name();
       pass->Apply(graph);
     }
   }

@@ -27,7 +27,7 @@ class IoCopyKernelPickPass : public StmtPass {
       auto& inst = node.AsStmt();
       if (inst.op_type() != "io_copy") continue;
 
-      VLOG(1) << "....> picking a IO COPY kernel";
+      LOG(INFO) << "....> picking a IO COPY kernel";
 
       auto& kernels = node.AsStmt().kernels();
       CHECK(!kernels.empty()) << "No valid kernels found for IoCopy Op";
@@ -35,11 +35,11 @@ class IoCopyKernelPickPass : public StmtPass {
       const auto* outy = node.outlinks.front()->AsArg().type;
       CHECK((inty->IsTensor() && outy->IsTensor()) ||
             (inty->IsTensorList() && outy->IsTensorList()));
-      VLOG(1) << "input type " << *inty;
-      VLOG(1) << "output type " << *outy;
+      LOG(INFO) << "input type " << *inty;
+      LOG(INFO) << "output type " << *outy;
 
       bool is_found = false;
-      VLOG(1) << "kernels size " << kernels.size();
+      LOG(INFO) << "kernels size " << kernels.size();
       for (auto& kernel : kernels) {
         CHECK_EQ(node.inlinks.size(), 1UL);
         CHECK_EQ(node.outlinks.size(), 1UL);
@@ -53,14 +53,14 @@ class IoCopyKernelPickPass : public StmtPass {
           in_arg_ty = kernel->GetInputDeclType("InputArray");
           out_arg_ty = kernel->GetOutputDeclType("OutArray");
         }
-        VLOG(1) << "checking kernel candidate " << *in_arg_ty << "->"
-                << *out_arg_ty;
+        LOG(INFO) << "checking kernel candidate " << *in_arg_ty << "->"
+                  << *out_arg_ty;
 
         if (TargetCompatibleTo(*inty, *in_arg_ty)) {
           // Both the input and output type matches, remove other kernels
           // directly.
           if (TargetCompatibleTo(*outy, *out_arg_ty)) {
-            VLOG(1) << "get a IOCopy kernel";
+            LOG(INFO) << "get a IOCopy kernel";
 
             if (kernel->target() == TargetType::kFPGA) {
               node.outlinks.front()->AsArg().type = LiteType::GetTensorTy(

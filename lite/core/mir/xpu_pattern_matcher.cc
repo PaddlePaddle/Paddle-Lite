@@ -39,7 +39,7 @@ void XPUPatternMatcher::operator()(SSAGraph *graph,
   ValidateByNodeRole(&subgraphs);
 
   if (subgraphs.empty()) return;
-  VLOG(1) << "detected " << subgraphs.size() << " subgraph";
+  LOG(INFO) << "detected " << subgraphs.size() << " subgraph";
   int id = 0;
   for (auto &g : subgraphs) {
     VLOG(3) << "optimizing #" << id++ << " subgraph";

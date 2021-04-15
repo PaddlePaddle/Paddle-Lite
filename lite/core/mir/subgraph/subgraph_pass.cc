@@ -59,7 +59,7 @@ void APUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) \
   supported_lists.insert(#op_type);          \
-  VLOG(1) << #op_type
+  LOG(INFO) << #op_type
 #include "lite/kernels/apu/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
   auto teller = [&](Node* node) {

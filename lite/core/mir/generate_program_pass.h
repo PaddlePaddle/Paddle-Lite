@@ -38,7 +38,7 @@ class GenerateProgramPass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
   std::unique_ptr<RuntimeProgram> GenProgram() {
-    VLOG(1) << "insts.size " << insts_.size();
+    LOG(INFO) << "insts.size: " << insts_.size();
 
 #ifdef LITE_WITH_XPU
     // generate RuntimeProgram for sub_block and set RuntimeProgram into
