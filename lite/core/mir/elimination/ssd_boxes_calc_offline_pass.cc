@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/elimination/offline_calc_ssd_boxes_pass.h"
+#include "lite/core/mir/elimination/ssd_boxes_calc_offline_pass.h"
 #include <algorithm>
 #include <cmath>
 #include <memory>
@@ -27,13 +27,13 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-void OfflineCalcSSDBoxesPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void SSDBoxesOfflineCalcPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   RemovePriorboxPattern(graph);
   RemoveReshapePattern(graph);
   RemoveConcatPattern(graph);
 }
 
-void OfflineCalcSSDBoxesPass::RemovePriorboxPattern(
+void SSDBoxesOfflineCalcPass::RemovePriorboxPattern(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
     if (node->AsStmt().picked_kernel().op_type() != "prior_box") continue;
@@ -103,7 +103,7 @@ void OfflineCalcSSDBoxesPass::RemovePriorboxPattern(
   }
 }
 
-void OfflineCalcSSDBoxesPass::RemoveReshapePattern(
+void SSDBoxesOfflineCalcPass::RemoveReshapePattern(
     const std::unique_ptr<SSAGraph>& graph) {
   auto check_reshape_after_priorbox = [](Node* p) -> bool {
     auto check_reshape_inlinks = p->inlinks;
@@ -146,7 +146,7 @@ void OfflineCalcSSDBoxesPass::RemoveReshapePattern(
   }
 }
 
-void OfflineCalcSSDBoxesPass::RemoveConcatPattern(
+void SSDBoxesOfflineCalcPass::RemoveConcatPattern(
     const std::unique_ptr<SSAGraph>& graph) {
   auto check_concat_after_reshape = [](Node* p) -> bool {
     auto check_concat_inlinks = p->inlinks;
@@ -203,7 +203,7 @@ void OfflineCalcSSDBoxesPass::RemoveConcatPattern(
   }
 }
 
-void OfflineCalcSSDBoxesPass::ExpandAspectRatios(
+void SSDBoxesOfflineCalcPass::ExpandAspectRatios(
     const std::vector<float>& input_aspect_ratior,
     bool flip,
     std::vector<float>* output_aspect_ratior) {
@@ -228,7 +228,7 @@ void OfflineCalcSSDBoxesPass::ExpandAspectRatios(
   }
 }
 
-void OfflineCalcSSDBoxesPass::ComputePriorbox(
+void SSDBoxesOfflineCalcPass::ComputePriorbox(
     const lite::Tensor* input,
     const lite::Tensor* image,
     lite::Tensor** boxes,
@@ -375,7 +375,7 @@ void OfflineCalcSSDBoxesPass::ComputePriorbox(
   }
 }
 
-void OfflineCalcSSDBoxesPass::ComputeReshape(const lite::Tensor* in,
+void SSDBoxesOfflineCalcPass::ComputeReshape(const lite::Tensor* in,
                                              lite::Tensor* out) {
   // In CopyDataFrom, the target tensor's dims will be set to the source
   // tensor's dims.
@@ -384,7 +384,7 @@ void OfflineCalcSSDBoxesPass::ComputeReshape(const lite::Tensor* in,
   out->Resize(out_dims);
 }
 
-std::vector<size_t> OfflineCalcSSDBoxesPass::StrideNumel(const DDim& ddim) {
+std::vector<size_t> SSDBoxesOfflineCalcPass::StrideNumel(const DDim& ddim) {
   std::vector<size_t> strides(ddim.size());
   strides[ddim.size() - 1] = ddim[ddim.size() - 1];
   for (int i = ddim.size() - 2; i >= 0; --i) {
@@ -393,7 +393,7 @@ std::vector<size_t> OfflineCalcSSDBoxesPass::StrideNumel(const DDim& ddim) {
   return strides;
 }
 
-void OfflineCalcSSDBoxesPass::ComputeConcat(
+void SSDBoxesOfflineCalcPass::ComputeConcat(
     const std::vector<lite::Tensor*> inputs, lite::Tensor* output) {
   size_t output_offset = 0;
   for (auto* in : inputs) {
@@ -412,6 +412,6 @@ void OfflineCalcSSDBoxesPass::ComputeConcat(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(offline_calc_ssd_boxes_pass,
-                  paddle::lite::mir::OfflineCalcSSDBoxesPass)
+REGISTER_MIR_PASS(ssd_boxes_calc_offline_pass,
+                  paddle::lite::mir::SSDBoxesOfflineCalcPass)
     .BindTargets({TARGET(kRKNPU), TARGET(kNPU)});
