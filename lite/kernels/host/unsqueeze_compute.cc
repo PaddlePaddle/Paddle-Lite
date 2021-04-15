@@ -26,12 +26,14 @@ void UnsqueezeCompute::Run() {
   auto x = param.X;
   auto output = param.Out;
   auto output_dims = output->dims();
-  if (param.inplace) {
-    output->ShareDataWith(*x);
-  } else {
-    output->CopyDataFrom(*x);
-  }
+  // if (param.inplace) {
+  //   output->ShareDataWith(*x);
+  // } else {
+  //   output->CopyDataFrom(*x);
+  // }
   output->Resize(output_dims);
+  output->mutable_data<int64_t>();
+  output->CopyDataFrom(*x);
 }
 
 }  // namespace host
