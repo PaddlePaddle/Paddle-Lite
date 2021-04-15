@@ -1346,6 +1346,9 @@ void ConvImageCompute::Run() {
   (this->*impl_)();
 
   auto& context = ctx_->As<OpenCLContext>();
+  status_ = context.cl_context()->RunKernel(
+      kernel_, global_work_size_, local_work_size_, &event_);
+  /*
   status_ = EnqueueNDRangeKernel(context,
                                  kernel_,
                                  cl::NullRange,
@@ -1353,6 +1356,7 @@ void ConvImageCompute::Run() {
                                  local_work_size_,
                                  nullptr,
                                  event_);
+  */
   CL_CHECK_FATAL(status_);
 }
 

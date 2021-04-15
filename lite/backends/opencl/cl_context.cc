@@ -71,6 +71,25 @@ cl::Kernel &CLContext::GetKernel(const std::string &name) {
   return GetKernel(it->second);
 }
 
+cl_int CLContext::RunKernel(const cl::Kernel &kernel,
+                            const cl::NDRange &global,
+                            const cl::NDRange &local,
+                            cl::Event *event) {
+  cl_int ret = GetCommandQueue().enqueueNDRangeKernel(
+      kernel, cl::NullRange, global, local, nullptr, event);
+  CL_CHECK_FATAL(ret);
+
+  static int cnt = 0;
+  const int flush_period = 10000;
+  if (cnt % flush_period == 0) {
+    ret = GetCommandQueue().flush();
+    CL_CHECK_FATAL(ret);
+  }
+  cnt++;
+
+  return ret;
+}
+
 cl::NDRange CLContext::DefaultGlobalWorkSize(const CLImage &image) {
   // n c h w
   auto image_dim = image.tensor_dims();
