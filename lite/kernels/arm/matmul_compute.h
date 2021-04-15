@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
@@ -22,7 +23,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class MatMulCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType PType, PrecisionType OutType>
+class MatMulCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::MatMulParam;
 
@@ -34,6 +36,8 @@ class MatMulCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
  private:
   int m_, n_, k_;
+  std::vector<float> scale_;
+  std::vector<float> scale_one;
 };
 
 }  // namespace arm

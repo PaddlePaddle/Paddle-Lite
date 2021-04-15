@@ -93,7 +93,8 @@ class XPULinkMaxPass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
 
-    for (auto op_type : {"__xpu__conv2d", "__xpu__block_fuse_op"}) {
+    for (auto op_type :
+         {"__xpu__fc", "__xpu__conv2d", "__xpu__block_fuse_op"}) {
       fusion::XPULinkMaxFuser fuser(op_type);
       fuser(graph.get());
     }

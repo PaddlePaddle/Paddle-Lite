@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,25 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/operators/assign_value_op.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace x86 {
+namespace math {
 
-class AssignValueCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  using param_t = operators::AssignValueParam;
+void instance_norm(const float* in,
+                   float* out,
+                   const int n,
+                   const int c,
+                   const int height,
+                   const int width,
+                   const float epsilon,
+                   const float* scale,
+                   const float* bias,
+                   float* saved_mean,
+                   float* saved_variance);
 
-  void Run() override;
-
-  virtual ~AssignValueCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace math
+}  // namespace x86
 }  // namespace lite
 }  // namespace paddle

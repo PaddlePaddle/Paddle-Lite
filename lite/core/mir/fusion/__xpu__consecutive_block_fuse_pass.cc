@@ -354,9 +354,26 @@ class XPUConsecutiveBlockFuser : public FuseBase {
 class XPUConsecutiveBlockFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    fusion::XPUConsecutiveBlockFuser fuser0(
-        "__xpu__conv2d", "__xpu__squeeze_excitation_block", true, false);
-    fuser0(graph.get());
+    for (auto block0_with_bias : {true, false}) {
+      for (auto block1_with_bias : {true, false}) {
+        fusion::XPUConsecutiveBlockFuser fuser(
+            "__xpu__conv2d",
+            "__xpu__squeeze_excitation_block",
+            block1_with_bias,
+            block0_with_bias);
+        fuser(graph.get());
+      }
+    }
+    for (auto block0_with_bias : {true, false}) {
+      for (auto block1_with_bias : {true, false}) {
+        fusion::XPUConsecutiveBlockFuser fuser(
+            "__xpu__block_fuse_op",
+            "__xpu__squeeze_excitation_block",
+            block1_with_bias,
+            block0_with_bias);
+        fuser(graph.get());
+      }
+    }
     bool changed = true;
     while (changed) {
       changed = false;

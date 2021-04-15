@@ -18,6 +18,7 @@ add_kernel(stack_compute_host Host basic SRCS stack_compute.cc DEPS ${lite_kerne
 add_kernel(lod_array_length_compute_host Host basic SRCS lod_array_length_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(unbind_compute_host Host basic SRCS unbind_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(argmax_compute_host Host basic SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(assign_value_compute_host Host basic SRCS assign_value_compute.cc DEPS ${lite_kernel_deps})
 
 # extra kernels
 add_kernel(reduce_all_compute_host Host extra SRCS reduce_all_compute.cc DEPS ${lite_kernel_deps} math_host)
@@ -39,6 +40,7 @@ add_kernel(where_compute_host Host extra SRCS where_compute.cc DEPS ${lite_kerne
 add_kernel(print_compute_host Host extra SRCS print_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(while_compute_host Host extra SRCS while_compute.cc DEPS ${lite_kernel_deps} program)
 add_kernel(conditional_block_compute_host Host extra SRCS conditional_block_compute.cc DEPS ${lite_kernel_deps} program)
+add_kernel(correlation_compute_host Host extra SRCS correlation_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(activation_grad_compute_host Host train SRCS activation_grad_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(pixel_shuffle_compute_host Host extra SRCS pixel_shuffle_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(one_hot_compute_host Host extra SRCS one_hot_compute.cc DEPS ${lite_kernel_deps})
@@ -48,9 +50,11 @@ add_kernel(sin_compute_host Host extra SRCS sin_compute.cc DEPS ${lite_kernel_de
 add_kernel(cos_compute_host Host extra SRCS cos_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(crop_compute_host Host extra SRCS crop_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(crop_tensor_compute_host Host extra SRCS crop_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(sequence_pad_compute_host Host extra SRCS sequence_pad_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(sequence_expand_compute_host Host extra SRCS sequence_expand_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_softmax_compute_host Host extra SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(sequence_mask_compute_host Host extra SRCS sequence_mask_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(flatten_contiguous_range_compute_host Host extra SRCS flatten_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_host)

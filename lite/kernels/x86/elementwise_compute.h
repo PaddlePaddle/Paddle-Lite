@@ -39,6 +39,11 @@ struct MulFunctor {
 };
 
 template <typename T>
+struct DivFunctor {
+  inline HOSTDEVICE T operator()(T a, T b) const { return a / b; }
+};
+
+template <typename T>
 struct FloorDivFunctor {
   inline HOSTDEVICE T operator()(T a, T b) const {
     return static_cast<T>(std::trunc(a / b));
@@ -52,6 +57,34 @@ struct ModFunctor {
     if ((res != 0) && ((res < 0) != (b < 0))) res += b;
     return res;
   }
+};
+
+template <typename T>
+struct MaxFunctor {
+  inline HOSTDEVICE T operator()(T a, T b) const { return a > b ? a : b; }
+};
+
+template <typename T>
+struct MinFunctor {
+  inline HOSTDEVICE T operator()(T a, T b) const { return a < b ? a : b; }
+};
+
+template <typename T>
+class ElementwiseAddCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto& context = ctx_->As<X86Context>();
+    param.Out->template mutable_data<T>();
+    paddle::lite::kernels::x86::ElementwiseComputeEx<AddFunctor<T>,
+                                                     lite::TargetType::kX86,
+                                                     T>(
+        context, param.X, param.Y, param.axis, AddFunctor<T>(), param.Out);
+  }
+
+  virtual ~ElementwiseAddCompute() = default;
 };
 
 template <typename T>
@@ -75,24 +108,6 @@ class ElementwiseSubCompute
 };
 
 template <typename T>
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    auto& context = ctx_->As<X86Context>();
-    param.Out->template mutable_data<T>();
-    paddle::lite::kernels::x86::ElementwiseComputeEx<AddFunctor<T>,
-                                                     lite::TargetType::kX86,
-                                                     T>(
-        context, param.X, param.Y, param.axis, AddFunctor<T>(), param.Out);
-  }
-
-  virtual ~ElementwiseAddCompute() = default;
-};
-
-template <typename T>
 class ElementwiseMulCompute
     : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
@@ -108,6 +123,24 @@ class ElementwiseMulCompute
   }
 
   virtual ~ElementwiseMulCompute() = default;
+};
+
+template <typename T>
+class ElementwiseDivCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto& context = ctx_->As<X86Context>();
+    param.Out->template mutable_data<T>();
+    paddle::lite::kernels::x86::ElementwiseComputeEx<DivFunctor<T>,
+                                                     lite::TargetType::kX86,
+                                                     T>(
+        context, param.X, param.Y, param.axis, DivFunctor<T>(), param.Out);
+  }
+
+  virtual ~ElementwiseDivCompute() = default;
 };
 
 template <typename T>
@@ -140,6 +173,38 @@ class ElementwiseModCompute
   }
 
   virtual ~ElementwiseModCompute() = default;
+};
+
+template <typename T>
+class ElementwiseMaxCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto& context = ctx_->As<X86Context>();
+    param.Out->template mutable_data<T>();
+    ElementwiseComputeEx<MaxFunctor<T>, lite::TargetType::kX86, T>(
+        context, param.X, param.Y, param.axis, MaxFunctor<T>(), param.Out);
+  }
+
+  virtual ~ElementwiseMaxCompute() = default;
+};
+
+template <typename T>
+class ElementwiseMinCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto& context = ctx_->As<X86Context>();
+    param.Out->template mutable_data<T>();
+    ElementwiseComputeEx<MinFunctor<T>, lite::TargetType::kX86, T>(
+        context, param.X, param.Y, param.axis, MinFunctor<T>(), param.Out);
+  }
+
+  virtual ~ElementwiseMinCompute() = default;
 };
 
 }  // namespace x86
