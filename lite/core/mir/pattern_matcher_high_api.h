@@ -67,7 +67,7 @@ class FuseBase {
   void PerformPatternMatcher(SSAGraph* graph);
 
   // Delete nodes that are marked as Intermediate
-  virtual void DeleteInterNodes(SSAGraph* graph);
+  void DeleteInterNodes(SSAGraph* graph);
 
   PMNode* GetOrCreateNode(const std::string& key);
 

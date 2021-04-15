@@ -140,9 +140,7 @@ class Optimizer {
          "__xpu__multi_encoder_slice_link_fuse_pass",
          "__xpu__generate_sequence_fuse_pass",
          "__xpu__logit_fuse_pass",
-         "priorbox_eliminate_pass",
-         "reshape_eliminate_pass",
-         "concat_eliminate_pass",
+         "offline_calc_ssd_boxes_pass",
          // Only for fully quantized model, infer the output scale and fix the
          // attribute 'enable_int8' for all of the quantized ops.
          "quantized_op_attributes_inference_pass",
