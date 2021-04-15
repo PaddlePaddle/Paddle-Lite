@@ -319,12 +319,6 @@ struct FpgaResetArgs {
 #define IOCTL_CONFIG_DWCONV _IOW(IOCTL_FPGA_MAGIC, 31, struct DWconvArgs)
 
 #define IOCTL_CONFIG_INPLACE _IOW(IOCTL_FPGA_MAGIC, 40, struct InplaceArgs)
-#define IOCTL_CONFIG_POWER_PARAMETER \
-  _IOW(IOCTL_FPGA_MAGIC, 41, struct PowerParameterArgs)
-#define IOCTL_CONFIG_NORMALIZE_PARAMETER \
-  _IOW(IOCTL_FPGA_MAGIC, 42, struct NormalizeParameterArgs)
-#define IOCTL_CONFIG_ACTIVATION_PARAMETER \
-  _IOW(IOCTL_FPGA_MAGIC, 43, struct ActiveParamterArgs)
 
 #define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 50, struct FpgaRegReadArgs)
 #define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 51, struct FpgaRegWriteArgs)

@@ -475,6 +475,11 @@ struct ConvParam : ParamBase {
   // only used in conv_transpose.
   std::vector<int> output_size;
   std::vector<int> output_padding;
+
+#ifdef LITE_WITH_FPGA
+  lite::Tensor* scale{nullptr};
+#endif
+
   // for int8
   WITH_INT8_CONFIG
   // for Conv2d+Scale fusion
