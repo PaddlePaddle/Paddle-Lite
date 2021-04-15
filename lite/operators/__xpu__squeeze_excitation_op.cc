@@ -79,12 +79,16 @@ bool XPUSqueezeExcitationOp::AttachImpl(const cpp::OpDesc& op_desc,
   CHECK_EQ(param_.act_param.size(), 3UL);
   param_.has_branch = op_desc.GetAttr<bool>("has_branch");
   param_.has_bias = op_desc.GetAttr<bool>("has_bias");
-  CHECK_EQ(param_.has_bias, false) << "Squeeze Excitation should have no bias";
 
   if (op_desc.GetAttr<bool>("has_branch")) {
     CHECK(scope->FindVar(op_desc.Input("Branch").front()));
     param_.branch =
         scope->FindVar(op_desc.Input("Branch").front())->GetMutable<Tensor>();
+  }
+  if (op_desc.GetAttr<bool>("has_bias")) {
+    CHECK(scope->FindVar(op_desc.Input("Bias").front()));
+    param_.bias =
+        scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();
   }
   return true;
 }
