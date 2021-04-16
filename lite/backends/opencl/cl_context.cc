@@ -80,7 +80,7 @@ cl_int CLContext::RunKernel(const cl::Kernel &kernel,
   CL_CHECK_FATAL(ret);
 
   static int cnt = 0;
-  const int flush_period = 10000;
+  const int flush_period = 10;
   if (cnt % flush_period == 0) {
     ret = GetCommandQueue().flush();
     CL_CHECK_FATAL(ret);
