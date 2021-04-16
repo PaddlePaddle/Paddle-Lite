@@ -344,9 +344,8 @@ void PrintHelpInfo() {
       "`"
       "  Display operators in the input model\n"
       "  How to print detailed information: export GLOG_v=1 \n";
-  std::cout << "opt version:" << opt_version << std::endl
-            << help_info << std::endl;
-  exit(1);
+  OPT_LOG << "opt version:" << opt_version;
+  OPT_LOG_FATAL << help_info;
 }
 
 // Parse Input command
@@ -359,8 +358,8 @@ void ParseInputCommand() {
   }
 
   if (FLAGS_print_all_ops) {
-    std::cout << "All OPs supported by Paddle-Lite: " << supported_ops.size()
-              << " ops in total." << std::endl;
+    OPT_LOG << "All OPs supported by Paddle-Lite: " << supported_ops.size()
+            << " ops in total.";
     PrintOpsInfo();
     exit(1);
   } else if (FLAGS_print_supported_ops) {
@@ -375,7 +374,7 @@ void ParseInputCommand() {
       targets_str = targets_str + TargetToStr(target_types[i]);
     }
 
-    std::cout << "Supported OPs on '" << targets_str << "': " << std::endl;
+    OPT_LOG << "Supported OPs on '" << targets_str << "': ";
     target_types.push_back(TARGET(kHost));
     target_types.push_back(TARGET(kUnk));
 
@@ -434,7 +433,7 @@ void CheckIfModelSupported() {
   }
   // 3. Print ops_info of input model and check if this model is supported
   if (FLAGS_print_model_ops) {
-    std::cout << "OPs in the input model include:\n";
+    OPT_LOG << "OPs in the input model include:";
     PrintOpsInfo(input_model_ops);
   }
   if (!unsupported_ops.empty()) {
@@ -455,14 +454,13 @@ void CheckIfModelSupported() {
       targets_str = targets_str + "," + TargetToStr(targets[i]);
     }
 
-    LOG(ERROR) << "Error: This model is not supported, because "
-               << unsupported_ops.size() << " ops are not supported on '"
-               << targets_str << "'. These unsupported ops are: '"
-               << unsupported_ops_str << "'.";
-    exit(1);
+    OPT_LOG_FATAL << "Error: This model is not supported, because "
+                  << unsupported_ops.size() << " ops are not supported on '"
+                  << targets_str << "'. These unsupported ops are: '"
+                  << unsupported_ops_str << "'.";
   }
   if (FLAGS_print_model_ops) {
-    std::cout << "Paddle-Lite supports this model!" << std::endl;
+    OPT_LOG << "Paddle-Lite supports this model!";
     exit(1);
   }
 }
@@ -517,7 +515,7 @@ void Main() {
           lite::Join<std::string>({input_model_dir, FLAGS_param_filename}, "/");
     }
 
-    LOG(INFO) << "Start optimize model: " << input_model_dir;
+    OPT_LOG << "Start transformation ... ";
     RunOptimize(input_model_dir,
                 model_file,
                 param_file,
@@ -527,7 +525,7 @@ void Main() {
                 FLAGS_record_tailoring_info,
                 FLAGS_quant_model,
                 FLAGS_quant_type);
-    LOG(INFO) << "Optimize done. ";
+    OPT_LOG << "Transformation done. ";
   }
 
   // Collect all models information
