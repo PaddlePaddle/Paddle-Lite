@@ -373,7 +373,7 @@ TEST(elementwise_x86, precison) {
   float abs_error = 1e-5;
 
   for (auto op : std::vector<std::string>{
-           "add", "sub", "mul", "floordiv", "max", "min"}) {
+           "add", "sub", "mul", "div", "floordiv", "max", "min"}) {
     TestEltX86<float>(place, abs_error, op, "def");
     TestEltX86<int>(place, abs_error, op, "int32");
     TestEltX86<int64_t>(place, abs_error, op, "int64");

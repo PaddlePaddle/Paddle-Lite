@@ -90,6 +90,25 @@ void XPUSqueezeExcitationCompute::Run() {
   const auto* branch =
       param.has_branch ? param.branch->template data<float>() : nullptr;
   auto filter_dims = param.filter_dims;
+  const float* bias1_ptr =
+      param.has_bias ? param.bias->template data<float>() : nullptr;
+  const float* bias2_ptr =
+      (bias1_ptr != nullptr)
+          ? (bias1_ptr + param.filter_dims[1] / param.filter_dims[0])
+          : nullptr;
+
+  std::vector<xdnn::Activation_t> act;
+  for (size_t i = 0; i < 3; i++) {
+    xdnn::Activation_t cur_act =
+        (xdnn::Activation_t::act_enum)param.act_type[i];
+    if (param.act_type[i] == 5) {
+      cur_act.leaky_alpha = param.act_param[i];
+      CHECK(cur_act.leaky_alpha >= 0.0001 && cur_act.leaky_alpha <= 10);
+    } else if (param.act_type[i] == 15) {
+      cur_act.hard_sigmoid_slope = param.act_param[i];
+    }
+    act.push_back(cur_act);
+  }
   int r = xdnn::squeeze_excitation_block<float, int16_t, int16_t>(
       ctx.GetRawContext(),
       param.input->data<float>(),
@@ -103,10 +122,12 @@ void XPUSqueezeExcitationCompute::Run() {
       filter_dims[0],
       weight1_maxptr_,
       weight2_maxptr_,
+      bias1_ptr,
+      bias2_ptr,
       branch,
-      (xdnn::Activation_t::act_enum)param.act_type[0],
-      (xdnn::Activation_t::act_enum)param.act_type[1],
-      (xdnn::Activation_t::act_enum)param.act_type[2]);
+      act[0],
+      act[1],
+      act[2]);
 
   CHECK_EQ(r, 0);
 }
@@ -124,6 +145,7 @@ REGISTER_LITE_KERNEL(__xpu__squeeze_excitation_block,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Branch", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})

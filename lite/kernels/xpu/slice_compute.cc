@@ -59,25 +59,31 @@ void SliceCompute<T>::Run() {
 }  // namespace paddle
 
 using SliceFloat32 = paddle::lite::kernels::xpu::SliceCompute<float>;
-REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceFloat32, float32)
+REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceFloat32, def)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kXPU),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kXPU),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();
 
 using SliceInt32 = paddle::lite::kernels::xpu::SliceCompute<int32_t>;
 REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt32, int32)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kXPU),
-                                      PRECISION(kInt32),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kXPU),
-                                       PRECISION(kInt32),
-                                       DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
