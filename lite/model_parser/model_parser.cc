@@ -126,17 +126,6 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
   LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
 }
 
-// Judge if file exists.
-bool FileExist(const std::string &file_name) {
-  std::FILE *fh = std::fopen(file_name.c_str(), "r");
-  if (fh == nullptr) {
-    VLOG(1) << file_name << "doesn't exist";
-    return false;
-  } else {
-    VLOG(1) << file_name << "exits";
-    return true;
-  }
-}
 // Print error message about LoadModelPb
 void PrintPbModelErrorMessage() {
   LOG(FATAL) << "\n Error, Unsupported model format!\n"
@@ -161,17 +150,17 @@ std::string FindModelFileName(const std::string &model_dir,
     // format 1. model_dir/__model__
     // format 2. model_dir/model
     // format 3. model_dir/pdmodel
-    if (FileExist(model_dir + "/__model__")) {
+    if (IsFileExists(model_dir + "/__model__")) {
       prog_path = model_dir + "/__model__";
-    } else if (FileExist(model_dir + "/model")) {
+    } else if (IsFileExists(model_dir + "/model")) {
       prog_path = model_dir + "/model";
-    } else if (FileExist(model_dir + "/pdmodel")) {
+    } else if (IsFileExists(model_dir + "/pdmodel")) {
       prog_path = model_dir + "/pdmodel";
     } else {
       PrintPbModelErrorMessage();
     }
   } else {
-    if (FileExist(model_file)) {
+    if (IsFileExists(model_file)) {
       prog_path = model_file;
     } else {
       LOG(FATAL) << "\nError, the model file '" << model_file
@@ -191,7 +180,7 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
   // Check param files format
   for (auto &var : main_block->GetVars()) {
     if (var.Name() != "feed" && var.Name() != "fetch" && var.Persistable()) {
-      if (FileExist(model_dir + "/" + var.Name())) {
+      if (IsFileExists(model_dir + "/" + var.Name())) {
         VLOG(4) << "reading weight " << var.Name();
         model_parser::BinaryFileReader reader(model_dir + "/" + var.Name());
         model_parser::pb::LoDTensorDeserializer loader;
@@ -207,11 +196,11 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
         // format 1. model_dir/params
         // format 2. model_dir/weights
         // format 3. model_dir/pdiparams
-        if (FileExist(model_dir + "/params")) {
+        if (IsFileExists(model_dir + "/params")) {
           params_path = model_dir + "/params";
-        } else if (FileExist(model_dir + "/weights")) {
+        } else if (IsFileExists(model_dir + "/weights")) {
           params_path = model_dir + "/weights";
-        } else if (FileExist(model_dir + "/pdiparams")) {
+        } else if (IsFileExists(model_dir + "/pdiparams")) {
           params_path = model_dir + "/pdiparams";
         } else {
           PrintPbModelErrorMessage();
@@ -253,7 +242,7 @@ void LoadModelPb(const std::string &model_dir,
   if (!combined) {
     LoadNonCombinedParamsPb(model_dir, cpp_prog, model_buffer, scope);
   } else {
-    if (!FileExist(param_file)) {
+    if (!IsFileExists(param_file)) {
       LOG(FATAL) << "\nError, the param file '" << param_file
                  << "' is not existed. Please confirm that you have inputed "
                     "correct param file path.\n";
