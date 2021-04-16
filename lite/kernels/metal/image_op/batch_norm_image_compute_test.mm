@@ -94,7 +94,7 @@ TEST(batch_norm_metal, retrive_op) {
 }
 
 TEST(batch_norm_metal, init) {
-  BatchNormImageCompute batch_norm;
+  BatchNormImageCompute<float, PRECISION(kFloat)> batch_norm;
   ASSERT_EQ(batch_norm.precision(), PRECISION(kFloat));
   ASSERT_EQ(batch_norm.target(), TARGET(kMetal));
 }
@@ -195,7 +195,7 @@ TEST(batch_norm_metal, compute) {
                     }
 
                     // prepare kernel params and run
-                    BatchNormImageCompute batch_norm;
+                    BatchNormImageCompute<float, PRECISION(kFloat)> batch_norm;
                     std::unique_ptr<KernelContext> ctx(new KernelContext);
                     ctx->As<ContextMetal>().InitOnce();
                     auto mt = (MetalContext*)ctx->As<ContextMetal>().context();

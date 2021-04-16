@@ -63,7 +63,7 @@ TEST(relu_metal, retrive_op) {
 }
 
 TEST(relu_metal, init) {
-  ReluImageCompute relu;
+  ReluImageCompute<float, PRECISION(kFloat)> relu;
   ASSERT_EQ(relu.precision(), PRECISION(kFloat));
   ASSERT_EQ(relu.target(), TARGET(kMetal));
 }
@@ -149,7 +149,7 @@ TEST(relu_metal, compute) {
                     }
 
                     // prepare kernel params and run
-                    ReluImageCompute relu;
+                    ReluImageCompute<float, PRECISION(kFloat)> relu;
                     std::unique_ptr<KernelContext> ctx(new KernelContext);
                     ctx->As<ContextMetal>().InitOnce();
 
@@ -200,7 +200,7 @@ TEST(relu_metal_half, retrive_op_half) {
 }
 
 TEST(relu_metal_half, init) {
-  ReluImageComputeHalf relu_half;
+  ReluImageCompute<MetalHalf, PRECISION(kFP16)> relu_half;
   ASSERT_EQ(relu_half.precision(), PRECISION(kFP16));
   ASSERT_EQ(relu_half.target(), TARGET(kMetal));
 }
@@ -292,7 +292,7 @@ TEST(relu_metal_half, compute) {
                     }
 
                     // prepare kernel params and run
-                    ReluImageComputeHalf relu;
+                    ReluImageCompute<MetalHalf, PRECISION(kFP16)> relu;
                     std::unique_ptr<KernelContext> ctx(new KernelContext);
                     ctx->As<ContextMetal>().InitOnce();
                     relu.SetContext(std::move(ctx));

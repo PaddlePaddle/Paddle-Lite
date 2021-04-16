@@ -181,7 +181,7 @@ TEST(pool_metal, retrive_op) {
 }
 
 TEST(pool_metal, init) {
-  PoolImageCompute pool;
+  PoolImageCompute<float, PRECISION(kFloat)> pool;
   ASSERT_EQ(pool.precision(), PRECISION(kFloat));
   ASSERT_EQ(pool.target(), TARGET(kMetal));
 }
@@ -266,7 +266,7 @@ TEST(pool_metal, compute) {
                         }
 
                         // prepare kernel params and run
-                        PoolImageCompute pool;
+                        PoolImageCompute<float, PRECISION(kFloat)> pool;
                         std::unique_ptr<KernelContext> ctx(new KernelContext);
                         ctx->As<ContextMetal>().InitOnce();
                         auto mt = (MetalContext*)ctx->As<ContextMetal>().context();
