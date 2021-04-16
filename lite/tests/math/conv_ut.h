@@ -50,7 +50,7 @@ DEFINE_int32(in_height, 112, "input height");
 DEFINE_int32(in_width, 112, "input width");
 
 DEFINE_int32(out_channel, 32, "output channel");
-DEFINE_int32(group, 1, "group");
+DEFINE_int32(group, 32, "group");
 DEFINE_int32(kernel_h, 3, "kernel height");
 DEFINE_int32(kernel_w, 3, "kernel width");
 DEFINE_int32(pad_h0, 1, "pad top");
