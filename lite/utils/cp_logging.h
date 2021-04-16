@@ -46,9 +46,9 @@
 
 #ifdef LITE_ON_MODEL_OPTIMIZE_TOOL
 // OPT_LOG SYSTEM
-#define OPT_LOG OptPrinter()
-#define OPT_LOG_ERROR OptErrorPrinter()
-#define OPT_LOG_FATAL OptFatalPrinter()
+#define OPT_LOG paddle::lite::OptPrinter()
+#define OPT_LOG_ERROR paddle::lite::OptErrorPrinter()
+#define OPT_LOG_FATAL paddle::lite::OptFatalPrinter()
 #define OPT_LOG_DEBUG VLOG(1)
 #include <iostream>
 namespace paddle {
