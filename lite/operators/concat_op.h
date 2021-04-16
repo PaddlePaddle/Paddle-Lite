@@ -39,7 +39,7 @@ class ConcatOpLite : public OpLite {
 
 #ifndef LITE_ON_TINY_PUBLISH
   bool InferType() override {
-    param_.out->set_precision(param_.in.front()->precision());
+    param_.output->set_precision(param_.x.front()->precision());
     return true;
   }
 #endif
