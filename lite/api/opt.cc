@@ -160,7 +160,7 @@ std::vector<Place> ParserValidPlaces(bool enable_fp16) {
       valid_places.emplace_back(
           Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else {
-      LOG(FATAL) << lite::string_format(
+      OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
           "'valid_targets'",
           target_repr.c_str());
@@ -199,7 +199,7 @@ void RunOptimize(const std::string& model_dir,
   } else if (quant_type == "QUANT_INT16") {
     config.set_quant_type(QuantType::QUANT_INT16);
   } else {
-    LOG(FATAL) << "Unsupported quant type: " << quant_type;
+    OPT_LOG_FATAL << "Unsupported quant type: " << quant_type;
   }
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
@@ -209,7 +209,7 @@ void RunOptimize(const std::string& model_dir,
   } else if (optimize_out_type == "naive_buffer") {
     model_type = LiteModelType::kNaiveBuffer;
   } else {
-    LOG(FATAL) << "Unsupported Model type :" << optimize_out_type;
+    OPT_LOG_FATAL << "Unsupported Model type :" << optimize_out_type;
   }
 
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
@@ -353,7 +353,7 @@ void PrintHelpInfo() {
 void ParseInputCommand() {
   if (FLAGS_quant_model) {
     if (FLAGS_quant_type != "QUANT_INT8" && FLAGS_quant_type != "QUANT_INT16") {
-      LOG(FATAL)
+      OPT_LOG_FATAL
           << "quant_type should be `QUANT_INT8` or `QUANT_INT16` for now.";
     }
   }
@@ -497,7 +497,8 @@ void Main() {
   lite::MkDirRecur(FLAGS_optimize_out);
   auto model_dirs = lite::ListDir(FLAGS_model_set_dir, true);
   if (model_dirs.size() == 0) {
-    LOG(FATAL) << "[" << FLAGS_model_set_dir << "] does not contain any model";
+    OPT_LOG_FATAL << "[" << FLAGS_model_set_dir
+                  << "] does not contain any model";
   }
   // Optimize models in FLAGS_model_set_dir
   for (const auto& name : model_dirs) {
