@@ -90,7 +90,7 @@ namespace mir {
 //                                     |
 //                                     v
 
-class SSDBoxesOfflineCalcPass : public mir::StmtPass {
+class SSDBoxesCalcOfflinePass : public mir::StmtPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
   void RemovePriorboxPattern(const std::unique_ptr<SSAGraph>& graph);
