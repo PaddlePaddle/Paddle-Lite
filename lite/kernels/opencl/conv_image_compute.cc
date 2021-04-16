@@ -568,12 +568,6 @@ void ConvImageCompute::PrepareForRun() {
                                     build_options_[i],
                                     time_stamp_);
   }
-  if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1") {
-    context.cl_context()->AddKernel("conv2d_1x1_h1w5c1",
-                                    kernel_func_paths_[0],
-                                    build_options_[0],
-                                    time_stamp_);
-  }
   SetLocalWorkSize(CLRuntime::Global()->lws_repeats());
 }
 
