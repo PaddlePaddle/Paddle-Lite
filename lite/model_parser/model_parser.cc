@@ -139,18 +139,18 @@ bool FileExist(const std::string &file_name) {
 }
 // Print error message about LoadModelPb
 void PrintPbModelErrorMessage() {
-  OPT_LOG_FATAL << "\n Error, Unsupported model format!\n"
-                << "      1. contents in model directory should be in one of "
-                   "these formats:\n"
-                << "          (1) __model__ + var1 + var2 + etc.\n"
-                << "          (2) model + var1 + var2 + etc.\n"
-                << "          (3) pdmodel + pdiparams\n"
-                << "          (4) model + params\n"
-                << "          (5) model + weights\n"
-                << "      2. You can also appoint the model and params file in "
-                   "custom format:\n"
-                << "          eg. |-- set_model_file('custom_model_name')\n"
-                << "              |-- set_params_file('custom_params_name')'\n";
+  LOG(FATAL) << "\n Error, Unsupported model format!\n"
+             << "      1. contents in model directory should be in one of "
+                "these formats:\n"
+             << "          (1) __model__ + var1 + var2 + etc.\n"
+             << "          (2) model + var1 + var2 + etc.\n"
+             << "          (3) pdmodel + pdiparams\n"
+             << "          (4) model + params\n"
+             << "          (5) model + weights\n"
+             << "      2. You can also appoint the model and params file in "
+                "custom format:\n"
+             << "          eg. |-- set_model_file('custom_model_name')\n"
+             << "              |-- set_params_file('custom_params_name')'\n";
 }
 // Find correct model filename
 std::string FindModelFileName(const std::string &model_dir,
@@ -174,9 +174,9 @@ std::string FindModelFileName(const std::string &model_dir,
     if (FileExist(model_file)) {
       prog_path = model_file;
     } else {
-      OPT_LOG_FATAL << "\nError, the model file '" << model_file
-                    << "' is not existed. Please confirm that you have inputed "
-                       "correct model file path.\n";
+      LOG(FATAL) << "\nError, the model file '" << model_file
+                 << "' is not existed. Please confirm that you have inputed "
+                    "correct model file path.\n";
     }
   }
   return prog_path;
@@ -254,9 +254,9 @@ void LoadModelPb(const std::string &model_dir,
     LoadNonCombinedParamsPb(model_dir, cpp_prog, model_buffer, scope);
   } else {
     if (!FileExist(param_file)) {
-      OPT_LOG_FATAL << "\nError, the param file '" << param_file
-                    << "' is not existed. Please confirm that you have inputed "
-                       "correct param file path.\n";
+      LOG(FATAL) << "\nError, the param file '" << param_file
+                 << "' is not existed. Please confirm that you have inputed "
+                    "correct param file path.\n";
     }
 
     LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_buffer);
@@ -301,9 +301,8 @@ void SaveModelPb(const std::string &model_dir,
       auto *var = exec_scope.FindVar(item.name());
       const auto &tensor = var->Get<lite::Tensor>();
       if (tensor.target() == TARGET(kCUDA)) {
-        OPT_LOG_FATAL
-            << "The storage of the device Tensor is to be implemented, "
-               "please copy it to the Host Tensor temporarily.";
+        LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
+                      "please copy it to the Host Tensor temporarily.";
       }
       saver.ForwardWrite(tensor, &file);
     }
@@ -333,8 +332,8 @@ void SaveCombinedParamsPb(const std::string &path,
     auto *var = exec_scope.FindVar(paramlist[i]);
     const auto &tensor = var->Get<lite::Tensor>();
     if (tensor.target() == TARGET(kCUDA)) {
-      OPT_LOG_FATAL << "The storage of the device Tensor is to be implemented, "
-                       "please copy it to the Host Tensor temporarily.";
+      LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
+                    "please copy it to the Host Tensor temporarily.";
     }
     saver.ForwardWrite(tensor, &file);
   }
@@ -375,8 +374,8 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
     SET_DATA_TYPE(PRECISION(kInt64), VarDescAPI::VarDataType::INT64);
 #undef SET_DATA_TYPE
     default:
-      OPT_LOG_FATAL << "unknown precision type: "
-                    << PrecisionToStr(tensor.precision());
+      LOG(FATAL) << "unknown precision type: "
+                 << PrecisionToStr(tensor.precision());
   }
   desc.SetDim(tensor.dims().Vectorize());
   uint64_t size = tensor.memory_size();
@@ -402,8 +401,8 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
       DO(PRECISION(kInt64), int64_t);
 #undef DO
       default:
-        OPT_LOG_FATAL << "unknown precision type: "
-                      << PrecisionToStr(tensor.precision());
+        LOG(FATAL) << "unknown precision type: "
+                   << PrecisionToStr(tensor.precision());
     }
   } else  // NOLINT
 #endif    // LITE_WITH_CUDA
@@ -420,8 +419,8 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
       DO(PRECISION(kInt64), int64_t);
 #undef DO
       default:
-        OPT_LOG_FATAL << "unknown precision type: "
-                      << PrecisionToStr(tensor.precision());
+        LOG(FATAL) << "unknown precision type: "
+                   << PrecisionToStr(tensor.precision());
     }
   }
 }
@@ -489,7 +488,7 @@ void AppendToFile(const std::string &filename,
   if (fwrite(reinterpret_cast<const char *>(src), 1, byte_size, fp) !=
       byte_size) {
     fclose(fp);
-    OPT_LOG_FATAL << "Write file error: " << filename;
+    LOG(FATAL) << "Write file error: " << filename;
   }
   fclose(fp);
 }
@@ -560,8 +559,8 @@ void SaveModelNaive(const std::string &model_file,
       break;
     }
     default: {
-      OPT_LOG_FATAL << "Error: Unsupported opt meta_version, "
-                       "meta_version should be set as 1 or 2.";
+      LOG(FATAL) << "Error: Unsupported opt meta_version, "
+                    "meta_version should be set as 1 or 2.";
       break;
     }
   }
@@ -617,7 +616,7 @@ void GetParamInfoNaive(const naive_buffer::ParamDesc &desc,
     SET_TENSOR(INT64, int64_t, PRECISION(kInt64));
 #undef SET_TENSOR
     default:
-      OPT_LOG_FATAL << "unknown type";
+      LOG(FATAL) << "unknown type";
   }
   tensor->set_persistable(true);
 }
@@ -791,9 +790,9 @@ void LoadModelNaiveFromFile(const std::string &filename,
 #ifndef LITE_ON_TINY_PUBLISH
       LoadModelNaiveV0FromFile(filename, scope, cpp_prog);
 #else
-      OPT_LOG_FATAL << "Paddle-Lite v2.7 has upgraded the naive-buffer model "
-                       "format. Please use the OPT to generate a new model. "
-                       "Thanks!";
+      LOG(FATAL) << "Paddle-Lite v2.7 has upgraded the naive-buffer model "
+                    "format. Please use the OPT to generate a new model. "
+                    "Thanks!";
 #endif
       break;
     case 1:
@@ -803,9 +802,8 @@ void LoadModelNaiveFromFile(const std::string &filename,
       LoadModelFbsFromFile(&reader, scope, cpp_prog, 2);
       break;
     default:
-      OPT_LOG_FATAL
-          << "The model format cannot be recognized. Please make sure "
-             "you use the correct interface and model file.";
+      LOG(FATAL) << "The model format cannot be recognized. Please make sure "
+                    "you use the correct interface and model file.";
       break;
   }
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
@@ -899,9 +897,8 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader *reader,
   reader->Read(buf.data(), topo_size);
   cpp_prog->Init(std::move(buf));
 #elif LITE_ON_TINY_PUBLISH
-  OPT_LOG_FATAL
-      << "Since no data structure of Flatbuffers has been constructed, "
-         "the model cannot be loaded.";
+  LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
+                "the model cannot be loaded.";
 #else
   lite::model_parser::Buffer buf(topo_size);
   reader->Read(buf.data(), topo_size);
@@ -926,7 +923,7 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader *reader,
       break;
     }
     default:
-      OPT_LOG_FATAL << "Unspported model meta_version " << meta_version;
+      LOG(FATAL) << "Unspported model meta_version " << meta_version;
       break;
   }
 }
@@ -949,9 +946,9 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 #ifndef LITE_ON_TINY_PUBLISH
       LoadModelNaiveV0FromMemory(model_buffer, scope, cpp_prog);
 #else
-      OPT_LOG_FATAL << "Paddle-Lite v2.7 has upgraded the naive-buffer model "
-                       "format. Please use the OPT to generate a new model. "
-                       "Thanks!";
+      LOG(FATAL) << "Paddle-Lite v2.7 has upgraded the naive-buffer model "
+                    "format. Please use the OPT to generate a new model. "
+                    "Thanks!";
 #endif
       break;
     case 1:
@@ -961,9 +958,8 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
       LoadModelFbsFromMemory(&reader, scope, cpp_prog, 2);
       break;
     default:
-      OPT_LOG_FATAL
-          << "The model format cannot be recognized. Please make sure "
-             "you use the correct interface and model file.";
+      LOG(FATAL) << "The model format cannot be recognized. Please make sure "
+                    "you use the correct interface and model file.";
       break;
   }
 }
@@ -1027,9 +1023,8 @@ void LoadModelFbsFromMemory(model_parser::StringBufferReader *reader,
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   cpp_prog->Init(std::move(prog_data));
 #elif LITE_ON_TINY_PUBLISH
-  OPT_LOG_FATAL
-      << "Since no data structure of Flatbuffers has been constructed, "
-         "the model cannot be loaded.";
+  LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
+                "the model cannot be loaded.";
 #else
   fbs::ProgramDesc program(prog_data);
   TransformProgramDescAnyToCpp(program, cpp_prog);
@@ -1050,7 +1045,7 @@ void LoadModelFbsFromMemory(model_parser::StringBufferReader *reader,
       break;
     }
     default:
-      OPT_LOG_FATAL << "Unspported model meta_version " << meta_version;
+      LOG(FATAL) << "Unspported model meta_version " << meta_version;
       break;
   }
   VLOG(4) << "Load model from naive buffer memory successfully";

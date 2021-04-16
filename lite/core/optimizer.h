@@ -316,10 +316,10 @@ class Optimizer {
   // Specify the passes and run them.
   void RunPasses(const std::vector<std::string>& passes) {
     for (auto& x : passes) {
-      VLOG(1) << "== Running pass: " << x;
+      LOG(INFO) << "== Running pass: " << x;
       mir::Pass* pass = mir::PassManager::Global().LookUp(x);
       if (!pass) {
-        VLOG(1) << "   - Skip " << x << " because the pass isn't found.";
+        LOG(INFO) << "   - Skip " << x << " because the pass isn't found.";
         continue;
       }
       std::set<TargetType> targets;
@@ -329,8 +329,8 @@ class Optimizer {
       bool matched =
           PassMatchesTarget(*pass, targets) && PassMatchesKernels(*pass);
       if (!matched) {
-        VLOG(1) << "   - Skip " << x
-                << " because the target or kernel does not match.";
+        LOG(INFO) << "   - Skip " << x
+                  << " because the target or kernel does not match.";
       } else {
         // Check the pass whether it is supported for processing subblocks
         if (kSubblockUnsupportedPasses.count(x)) {
@@ -340,7 +340,7 @@ class Optimizer {
             pass->Apply(graph);
           }
         }
-        VLOG(1) << "== Finished running: " << x;
+        LOG(INFO) << "== Finished running: " << x;
       }
     }
   }
