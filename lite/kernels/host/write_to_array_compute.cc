@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/host/write_to_array_compute.h"
-
+#include "lite/core/base.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -29,6 +29,23 @@ void WriteToArrayCompute::Run() {
     param.Out->resize(id + 1);
   }
   param.Out->at(id).CopyDataFrom(*param.X);
+  LOG(INFO) << "len:" << param.X->numel();
+  /*
+  for(int i = 0; i< param.X->numel(); i++){
+  LOG(INFO)<<param.X->data<int64_t>()[i];
+  LOG(INFO)<<param.X->data<float>()[i];
+  }
+  */
+  // my_print(std::string name, T* ptr, const paddle::lite::DDim& dims,
+  // paddle::lite::LoD lod = {{}}) {
+  my_print("write_to_array",
+           param.X->data<int64_t>(),
+           param.X->dims(),
+           param.X->lod());
+  my_print("write_to_array",
+           param.X->data<float>(),
+           param.X->dims(),
+           param.X->lod());
 }
 
 }  // namespace host

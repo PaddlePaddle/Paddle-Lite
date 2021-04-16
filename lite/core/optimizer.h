@@ -79,112 +79,127 @@ class Optimizer {
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
     InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
-
+#if 0
+    std::vector<std::string> passes_local{{"memory_optimize_pass"}};
+#else
     std::vector<std::string> passes_local{
-        {"lite_quant_dequant_fuse_pass",             //
-         "weight_quantization_preprocess_pass",      //
-         "adaptive_1x1_pool2d_convert_global_pass",  //
-         "lite_conv_elementwise_fuse_pass",          // conv-elemwise-bn
-         "lite_conv_bn_fuse_pass",                   //
-         "lite_conv_elementwise_fuse_pass",          // conv-bn-elemwise
-         "lite_conv_conv_fuse_pass",                 //
-         // TODO(Superjomn) Refine the fusion related design to select fusion
-         // kernels for devices automatically.
-         "lite_conv_activation_fuse_pass",              //
-         "lite_var_conv_2d_activation_fuse_pass",       //
-         "lite_match_matrix_activation_fuse_pass",      //
-         "lite_squeeze2_matmul_fuse_pass",              //
-         "lite_reshape2_matmul_fuse_pass",              //
-         "lite_matmul_fuse_pass",                       //
-         "lite_fc_fuse_pass",                           //
-         "lite_shuffle_channel_fuse_pass",              //
-         "lite_transpose_softmax_transpose_fuse_pass",  //
-         "lite_interpolate_fuse_pass",                  //
-         "identity_scale_eliminate_pass",               //
-         "lite_scales_fuse_pass",                       //
-         "lite_sequence_reverse_embedding_fuse_pass",   //
-         "elementwise_mul_constant_eliminate_pass",     //
-         "lite_sequence_pool_concat_fuse_pass",         //
-         "lite_scale_activation_fuse_pass",             //
-         "lite_instance_norm_activation_fuse_pass",     //
-#if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
-    (defined LITE_WITH_ARM)
-         "lite_elementwise_activation_fuse_pass",  //
-#endif
-         "identity_dropout_eliminate_pass",
-         "__xpu__resnet_fuse_pass",
-         "__xpu__resnet_d_fuse_pass",
-         "__xpu__resnet_cbam_fuse_pass",
-         "__xpu__conv2d_fuse_pass",
-         "__xpu__resblock_reduction_fuse_pass",
-         "__xpu__resblock_normal_fuse_pass",
-         "__xpu__conv2d_link_previous_out_max_pass",
-         "__xpu__sfa_head_meanstd_fuse_pass",
-         "__xpu__sfa_head_moment_fuse_pass",
-         "__xpu__mmdnn_fuse_pass",
-         "__xpu__multi_encoder_fuse_pass",
-         "__xpu__embedding_with_eltwise_add_fuse_pass",
-         "__xpu__fc_fuse_pass",
-         "__xpu__softmax_topk_fuse_pass",
-         "__xpu__multi_encoder_slice_link_fuse_pass",
-         // Only for fully quantized model, infer the output scale and fix the
-         // attribute 'enable_int8' for all of the quantized ops.
-         "quantized_op_attributes_inference_pass",
-         // Apply the constraints for the quantized ops(such as concat) that the
-         // inputs and outputs must have the same scale.
-         "restrict_quantized_op_with_same_input_output_scale_pass",
-         "npu_subgraph_pass",
-         "huawei_ascend_npu_subgraph_pass",
-         "imagination_nna_subgraph_pass",
-         "xpu_subgraph_pass",
-         "bm_subgraph_pass",
-         "apu_subgraph_pass",
-         "rknpu_subgraph_pass",
-         "mlu_subgraph_pass",
-         "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
+        {//"lite_quant_dequant_fuse_pass",             //
+         /*         "weight_quantization_preprocess_pass",      //
+                  "adaptive_1x1_pool2d_convert_global_pass",  //
+                  "lite_conv_elementwise_fuse_pass",          //
+         conv-elemwise-bn
+                  "lite_conv_bn_fuse_pass",                   //
+                  "lite_conv_elementwise_fuse_pass",          //
+         conv-bn-elemwise
+                  "lite_conv_conv_fuse_pass",                 //
+                  // TODO(Superjomn) Refine the fusion related design to select
+         fusion
+                  // kernels for devices automatically.
+                  "lite_conv_activation_fuse_pass",              //
+                  "lite_var_conv_2d_activation_fuse_pass",       //
+                  "lite_match_matrix_activation_fuse_pass",      //
+                  "lite_squeeze2_matmul_fuse_pass",              //
+                  "lite_reshape2_matmul_fuse_pass",              //
+                  "lite_matmul_fuse_pass",                       //
+                  "lite_fc_fuse_pass",                           //
+                  "lite_shuffle_channel_fuse_pass",              //
+                  "lite_transpose_softmax_transpose_fuse_pass",  //
+                  "lite_interpolate_fuse_pass",                  //
+                  "identity_scale_eliminate_pass",               //
+                  "lite_scales_fuse_pass",                       //
+                  "lite_sequence_reverse_embedding_fuse_pass",   //
+                  "elementwise_mul_constant_eliminate_pass",     //
+                  "lite_sequence_pool_concat_fuse_pass",         //
+                  "lite_scale_activation_fuse_pass",             //
+                  "lite_instance_norm_activation_fuse_pass",     //
+         #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined
+         LITE_WITH_CUDA) || \
+             (defined LITE_WITH_ARM)
+                  "lite_elementwise_activation_fuse_pass",  //
+         #endif
+                  "identity_dropout_eliminate_pass",
+                  "__xpu__resnet_fuse_pass",
+                  "__xpu__resnet_d_fuse_pass",
+                  "__xpu__resnet_cbam_fuse_pass",
+                  "__xpu__conv2d_fuse_pass",
+                  "__xpu__resblock_reduction_fuse_pass",
+                  "__xpu__resblock_normal_fuse_pass",
+                  "__xpu__conv2d_link_previous_out_max_pass",
+                  "__xpu__sfa_head_meanstd_fuse_pass",
+                  "__xpu__sfa_head_moment_fuse_pass",
+                  "__xpu__mmdnn_fuse_pass",
+                  "__xpu__multi_encoder_fuse_pass",
+                  "__xpu__embedding_with_eltwise_add_fuse_pass",
+                  "__xpu__fc_fuse_pass",
+                  "__xpu__softmax_topk_fuse_pass",
+                  "__xpu__multi_encoder_slice_link_fuse_pass",
+                  // Only for fully quantized model, infer the output scale and
+         fix the
+                  // attribute 'enable_int8' for all of the quantized ops.
+                  "quantized_op_attributes_inference_pass",
+                  // Apply the constraints for the quantized ops(such as concat)
+         that the
+                  // inputs and outputs must have the same scale.
+                  "restrict_quantized_op_with_same_input_output_scale_pass",
+                  "npu_subgraph_pass",
+                  "huawei_ascend_npu_subgraph_pass",
+                  "imagination_nna_subgraph_pass",
+                  "xpu_subgraph_pass",
+                  "bm_subgraph_pass",
+                  "apu_subgraph_pass",
+                  "rknpu_subgraph_pass",
+                  "mlu_subgraph_pass",
+                  "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
+              */
          "static_kernel_pick_pass",  // pick original kernel from graph
-
-         "remove_tf_redundant_ops_pass",
+         //"type_target_cast_pass",  // add io_copy/io_copy_once if meet
+         //         "remove_tf_redundant_ops_pass",
          "variable_place_inference_pass",  // inference arg/var's
-
-         "mlu_postprocess_pass",
-         // info(target/precision/layout/device)
-         // using kernel info
-         "argument_type_display_pass",  // debug pass: show arg-type-node's
-                                        // info
-                                        // (target/precision/layout/device)
-
-         "type_target_cast_pass",  // add io_copy/io_copy_once if meet
-                                   // different targets when last and next
-                                   // node
-         "variable_place_inference_pass",  //
-         "argument_type_display_pass",     //
-
-         "io_copy_kernel_pick_pass",    //
-         "argument_type_display_pass",  //
-
-         "variable_place_inference_pass",  //
-         "argument_type_display_pass",     //
-
-         "type_precision_cast_pass",       //
-         "variable_place_inference_pass",  //
-         "argument_type_display_pass",     //
-
-         "type_layout_cast_pass",  // add layout/layout_once op if meet
-                                   // different layout when last and next node
-         "argument_type_display_pass",  //
-
-         "variable_place_inference_pass",  //
-         "argument_type_display_pass",
-
+                                           /*
+                                                    "mlu_postprocess_pass",
+                                                    // info(target/precision/layout/device)
+                                                    // using kernel info
+                                                    "argument_type_display_pass",  // debug pass: show
+                                           arg-type-node's
+                                                                                   // info
+                                                                                   //
+                                           (target/precision/layout/device)
+                                  
+                                                    "type_target_cast_pass",  // add io_copy/io_copy_once if meet
+                                                                              // different targets when last and
+                                           next
+                                                                              // node
+                                           //
+                                                    "variable_place_inference_pass",  //
+                                                    "argument_type_display_pass",     //
+                                  
+                                                    "io_copy_kernel_pick_pass",    //
+                                                    "argument_type_display_pass",  //
+                                  
+                                                    "variable_place_inference_pass",  //
+                                                    "argument_type_display_pass",     //
+                                                    "type_precision_cast_pass",       //
+                                                    "variable_place_inference_pass",  //
+                                                    "argument_type_display_pass",     //
+                                  
+                                                    "type_layout_cast_pass",  // add layout/layout_once op if meet
+                                                                              // different layout when last and
+                                           next node
+                                                    "argument_type_display_pass",  //
+                                                    "variable_place_inference_pass",  //
+                                                    "argument_type_display_pass",
+                                  
+                                           */
          "runtime_context_assign_pass",
          "argument_type_display_pass",
+/*
          "lite_reshape_fuse_pass",
+     */
 #if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
          "memory_optimize_pass"
 #endif
         }};
-
+#endif
     // It's just a workaround to avoid repeated op fusion if the filter weights
     // are shared among sub-blocks
     if (graphs_.size() > 1) {
@@ -229,6 +244,7 @@ class Optimizer {
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
+    // pass->Apply(graphs_[0]);
     for (auto& graph : graphs_) {
       pass->Apply(graph);
     }
