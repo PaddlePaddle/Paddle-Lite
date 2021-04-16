@@ -47,7 +47,7 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
   std::string kernel_func_name_{"NotImplForConvWino"};
 #define PROFILE_INFO(dtype1, dtype2)                                        \
   template <>                                                               \
-  void DirectConv<PRECISION(dtype1), PRECISION(dtype2)>::                   \
+  void WinogradConv<PRECISION(dtype1), PRECISION(dtype2)>::                 \
       SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
     ch->kernel_func_name = kernel_func_name_;                               \
   }
@@ -84,7 +84,7 @@ class WinogradConv<PRECISION(kInt8), OutType>
   std::string kernel_func_name_{"NotImplForConvWino"};
 #define PROFILE_INFO(kInt8, dtype2)                                         \
   template <>                                                               \
-  void DirectConv<PRECISION(kInt8), PRECISION(dtype2)>::                    \
+  void WinogradConv<PRECISION(kInt8), PRECISION(dtype2)>::                  \
       SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
     ch->kernel_func_name = kernel_func_name_;                               \
   }

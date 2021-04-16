@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,34 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/types.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace x86 {
 
-template <PrecisionType PType, PrecisionType OutType>
-class MatMulCompute : public KernelLite<TARGET(kARM), PType> {
+template <class T>
+class GridSamplerCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
-  using param_t = operators::MatMulParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::GridSamplerParam;
 
   void Run() override;
 
-  virtual ~MatMulCompute() = default;
-
- private:
-  int m_, n_, k_;
-  std::vector<float> scale_;
-  std::vector<float> scale_one;
+  virtual ~GridSamplerCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace x86
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
