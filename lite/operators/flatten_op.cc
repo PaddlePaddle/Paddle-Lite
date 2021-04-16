@@ -158,6 +158,7 @@ bool FlattenContiguousRangeOp::InferShapeImpl() const {
 
   return true;
 }
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

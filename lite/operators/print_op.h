@@ -37,12 +37,10 @@ class PrintOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "print"; }
 
-#ifndef LITE_ON_TINY_PUBLISH
   bool InferType() override {
     param_.out->set_precision(param_.in->precision());
     return true;
   }
-#endif
 
  private:
   mutable PrintParam param_;

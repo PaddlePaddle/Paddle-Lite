@@ -37,12 +37,10 @@ class ConcatOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "concat"; }
 
-#ifndef LITE_ON_TINY_PUBLISH
   bool InferType() override {
     param_.output->set_precision(param_.x.front()->precision());
     return true;
   }
-#endif
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {

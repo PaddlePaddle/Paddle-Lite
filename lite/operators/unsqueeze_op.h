@@ -36,12 +36,12 @@ class UnsqueezeOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "unsqueeze"; }
-#ifndef LITE_ON_TINY_PUBLISH
+
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());
     return true;
   }
-#endif
+
  protected:
   mutable UnsqueezeParam param_;
 };
@@ -59,12 +59,11 @@ class Unsqueeze2Op : public UnsqueezeOp {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "unsqueeze2"; }
-#ifndef LITE_ON_TINY_PUBLISH
+
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());
     return true;
   }
-#endif
 };
 
 }  // namespace operators

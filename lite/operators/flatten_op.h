@@ -30,12 +30,11 @@ class FlattenOp : public OpLite {
 
   bool CheckShape() const override;
 
-#ifndef LITE_ON_TINY_PUBLISH
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());
     return true;
   }
-#endif
+
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
@@ -54,13 +53,13 @@ class Flatten2Op : public FlattenOp {
   explicit Flatten2Op(const std::string &op_type) : FlattenOp(op_type) {}
 
   bool CheckShape() const override;
-#ifndef LITE_ON_TINY_PUBLISH
+
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());
     param_.xshape->set_precision(PRECISION(kInt64));
     return true;
   }
-#endif
+
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;

@@ -68,7 +68,6 @@ class OpLite : public Registry {
   // Inference the outputs' shape.
   virtual bool InferShapeImpl() const { return true; }
   virtual bool InferShape();
-#ifndef LITE_ON_TINY_PUBLISH
   // Infer the outputs's data type during opt period
   virtual bool InferType() {
     LOG(FATAL) << "Error! " << op_type_
@@ -76,7 +75,6 @@ class OpLite : public Registry {
                << op_type_;
     return false;
   }
-#endif
   // Run this operator.
   virtual bool Run();
   // Indicate whether the Op runs only once or not

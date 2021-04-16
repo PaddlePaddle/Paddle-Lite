@@ -37,12 +37,10 @@ class ReshapeOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "reshape"; }
 
-#ifndef LITE_ON_TINY_PUBLISH
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());
     return true;
   }
-#endif
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
@@ -70,12 +68,11 @@ class Reshape2Op : public ReshapeOp {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "reshape2"; }
-#ifndef LITE_ON_TINY_PUBLISH
+
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());
     return true;
   }
-#endif
 };
 
 std::vector<DDim::value_type> ValidateShape(const std::vector<int> &shape,
