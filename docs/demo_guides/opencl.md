@@ -172,7 +172,7 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            # repeats=100, warmup=10
            # power_mode=0 绑定大核, thread_num=1
            # accelerate_opencl=1 开启 opencl kernel cache & tuning，仅当模型运行在 opencl 后端时该选项才会生效
-           # print_output=0 不打印模型输出 tensors 详细数
+           # print_output=0 不打印模型输出 tensors 详细数据
 ```
 
 
@@ -225,7 +225,34 @@ adb shell "export GLOG_v=4; \
 
 **NOTE：** 对OpenCL的支持还在持续开发中。
 
-## 4. 常见问题
+## 4. 性能分析和精度分析
+
+Android 平台下分析：
+```
+# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
+./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_opencl=ON --with_extra=ON --with_profile=ON full_publish
+# 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_opencl=ON --with_extra=ON --with_precision_profile=ON full_publish
+```
+
+macOS x86 平台下分析：
+```
+# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
+./lite/tools/build.sh --with_opencl=ON --with_extra=ON --with_profile=ON x86 
+# 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+./lite/tools/build.sh --with_opencl=ON --with_extra=ON --with_precision_profile=ON x86 
+```
+
+Windows x86 平台下分析：
+```
+# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
+.\lite\tools\build_windows.bat with_opencl with_extra with_profile 
+# 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+.\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile 
+```
+详细输出信息的说明可查阅[调试工具](../user_guides/debug)。
+
+## 5. 常见问题
 
 1. opencl计算过程中大多以`cl::Image2D`的数据排布进行计算，不同gpu支持的最大`cl::Image2D`的宽度和高度有限制，模型输入的数据格式是buffer形式的`NCHW`数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的`cl::Image2D`最大宽度和高度均为16384），可以通过公式`image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4`计算当前层NCHW排布的Tensor所需的`cl::Image2D`的宽度和高度；
 2. 部署时需考虑不支持opencl的情况，可预先使用API`bool ::IsOpenCLBackendValid()`判断，对于不支持的情况加载CPU模型，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
