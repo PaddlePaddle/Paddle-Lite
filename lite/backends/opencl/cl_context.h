@@ -56,11 +56,6 @@ class CLContext {
 
   cl::Kernel &GetKernel(const std::string &name);
 
-  cl_int RunKernel(const cl::Kernel &kernel,
-                   const cl::NDRange &global,
-                   const cl::NDRange &local,
-                   cl::Event *event = nullptr);
-
   cl::NDRange DefaultGlobalWorkSize(const CLImage &image);
 
   cl::NDRange DefaultLocalWorkSize(
