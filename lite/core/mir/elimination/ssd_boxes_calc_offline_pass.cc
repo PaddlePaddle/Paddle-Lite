@@ -30,6 +30,7 @@ namespace mir {
 void SSDBoxesCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   RemovePriorboxPattern(graph);
   RemoveReshapePattern(graph);
+  RemoveFlattenPattern(graph);
   RemoveConcatPattern(graph);
 }
 
@@ -97,6 +98,49 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     auto priorbox_outlinks = node->outlinks;
     for (auto& priorbox_out_link : priorbox_outlinks) {
       priorbox_out_link->arg()->is_weight = true;
+    }
+    nodes2rm_.insert(node);
+    GraphSafeRemoveNodes(graph.get(), nodes2rm_);
+  }
+}
+
+void SSDBoxesCalcOfflinePass::RemoveFlattenPattern(
+    const std::unique_ptr<SSAGraph>& graph) {
+  auto check_flatten_after_priorbox = [](Node* p) -> bool {
+    auto check_flatten_inlinks = p->inlinks;
+    for (auto& check_flatten_in_link : check_flatten_inlinks) {
+      if (check_flatten_in_link->arg()->is_weight != true) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  for (auto& node : graph->StmtTopologicalOrder()) {
+    if (node->AsStmt().picked_kernel().op_type() != "flatten2") continue;
+    if (check_flatten_after_priorbox(node) != true) continue;
+
+    std::set<const Node*> nodes2rm_;
+    auto& flatten_instruct = node->AsStmt();
+    auto* scope = flatten_instruct.op()->scope();
+    auto op_desc = flatten_instruct.mutable_op_info();
+
+    auto input_var = scope->FindVar(op_desc->Input("X").front());
+    auto input_t = &(input_var->Get<lite::Tensor>());
+    auto output_var = scope->FindVar(op_desc->Output("Out").front());
+    auto output_t = output_var->GetMutable<lite::Tensor>();
+    // Calc flatten offline
+    ComputeFlatten(input_t, output_t);
+    // Offline calc reshape, only retain output tensor as persistable tensor
+    output_t->set_persistable(true);
+
+    auto flatten_outlinks = node->outlinks;
+    for (auto& flatten_out_link : flatten_outlinks) {
+      flatten_out_link->arg()->is_weight = true;
+    }
+    auto flatten_inlinks = node->inlinks;
+    for (auto& flatten_in_link : flatten_inlinks) {
+      nodes2rm_.insert(flatten_in_link);
     }
     nodes2rm_.insert(node);
     GraphSafeRemoveNodes(graph.get(), nodes2rm_);
@@ -373,6 +417,17 @@ void SSDBoxesCalcOfflinePass::ComputePriorbox(
       }
     }
   }
+}
+
+void SSDBoxesCalcOfflinePass::ComputeFlatten(const lite::Tensor* in,
+                                             lite::Tensor* out) {
+  // In CopyDataFrom, the target tensor's dims will be set to the source
+  // tensor's dims.
+  auto out_dims = out->dims();
+  auto out_lod = out->lod();
+  out->CopyDataFrom(*in);
+  out->Resize(out_dims);
+  out->set_lod(out_lod);
 }
 
 void SSDBoxesCalcOfflinePass::ComputeReshape(const lite::Tensor* in,

@@ -30,7 +30,7 @@ namespace mir {
 // Prior-box don't depend on feature-map data, only depend on image &
 // feature-map size,
 // so if the shape is determined, we can calculate it offline in opt stage,
-// and the reshape & concat which linked with prior-box can calculate
+// and the reshape & flatten & concat which linked with prior-box can calculate
 // offline too.
 //
 // For example:
@@ -49,12 +49,12 @@ namespace mir {
 //       |                      |                  |                      |
 //       |                      |                  |                      |
 //       |                      |                  |                      |
-//   OP: reshape           OP: reshape         OP: reshape           OP: reshape
+// OP:reshape|flatten  OP:reshape|flatten  OP:reshape|flatten OP:reshape|flatten
 //       |                      |                  |                      |
 //       |                      |                  |                      |
 //       |                      |                  |                      |
 //       |                      |                  |                      |
-//  reshape-output       reshape-output      reshape-output       reshape-output
+//  output                   output              output                output
 //       |                      |                  |                      |
 //       |                      |                  |                      |
 //       |                      |                  |                      |
@@ -94,6 +94,7 @@ class SSDBoxesCalcOfflinePass : public mir::StmtPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
   void RemovePriorboxPattern(const std::unique_ptr<SSAGraph>& graph);
+  void RemoveFlattenPattern(const std::unique_ptr<SSAGraph>& graph);
   void RemoveReshapePattern(const std::unique_ptr<SSAGraph>& graph);
   void RemoveConcatPattern(const std::unique_ptr<SSAGraph>& graph);
 
@@ -120,6 +121,7 @@ class SSDBoxesCalcOfflinePass : public mir::StmtPass {
                        const std::vector<std::string>& order_,
                        bool min_max_aspect_ratios_order);
   void ComputeReshape(const lite::Tensor* in, lite::Tensor* out);
+  void ComputeFlatten(const lite::Tensor* in, lite::Tensor* out);
   void ComputeConcat(const std::vector<lite::Tensor*> inputs,
                      lite::Tensor* output);
   std::vector<size_t> StrideNumel(const DDim& ddim);
