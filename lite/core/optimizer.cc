@@ -30,18 +30,6 @@ void Optimizer::SpecifyKernelPickTactic(core::KernelPickFactor factor) {
   *pass->mutable_kernel_pick_factors() = factor;
 }
 
-std::unique_ptr<RuntimeProgram> Optimizer::GenRuntimeProgram() {
-  auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
-      "generate_program_pass");
-  for (auto& graph : graphs_) {
-    pass->Apply(graph);
-  }
-  auto program = pass->GenProgram();
-  CHECK(exec_scope_);
-  program->set_exec_scope(exec_scope_);
-  return program;
-}
-
 void Optimizer::InitTargetTypeTransformPass() {
   auto* pass = mir::PassManager::Global().LookUp<mir::TypeTargetTransformPass>(
       "type_target_cast_pass");

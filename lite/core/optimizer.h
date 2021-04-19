@@ -77,19 +77,16 @@ class Optimizer {
 
     exec_scope_ = program.exec_scope();
 
-    return GenRuntimeProgram(graphs_);
+    return GenRuntimeProgram(&graphs_);
   }
 
   const Scope* exec_scope() const { return exec_scope_; }
 
-  // Generate a new program based on the mir graph.
-  std::unique_ptr<RuntimeProgram> GenRuntimeProgram();
-
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram(
-      std::vector<std::unique_ptr<mir::SSAGraph>>& graphs) {
+      std::vector<std::unique_ptr<mir::SSAGraph>>* graphs) {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
-    for (auto& graph : graphs) {
+    for (auto& graph : *graphs) {
       pass->Apply(graph);
     }
     auto program = pass->GenProgram();
