@@ -74,6 +74,8 @@ else()
   add_kernel(generate_proposals_compute_xpu XPU extra SRCS generate_proposals_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(anchor_generator_compute_xpu XPU extra SRCS anchor_generator_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(box_clip_compute_xpu XPU extra SRCS box_clip_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(pad2d_compute_xpu XPU extra SRCS pad2d_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(pixel_shuffle_compute_xpu XPU extra SRCS pixel_shuffle_compute.cc DEPS ${lite_kernel_deps})
 
   # extra(fused kernel)
   add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc DEPS ${lite_kernel_deps})
