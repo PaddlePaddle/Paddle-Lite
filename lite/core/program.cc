@@ -80,9 +80,8 @@ void RuntimeProgram::SaveToProgram(
             auto var = scope->FindVar(var_name);
             if (var != nullptr) {
               auto tensor = var->GetMutable<Tensor>();
-              if (tensor != nullptr &&
-                  (tensor->persistable() ^ v->Persistable())) {
-                v->SetPersistable(true);
+              if (tensor != nullptr && tensor->persistable()) {
+                v->SetPersistable(tensor->persistable());
               }
             }
           }
