@@ -44,14 +44,17 @@ class ConcatCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       return;
     }
 
-    int64_t axis = static_cast<int64_t>(param.axis);
+    int axis = param.axis;
     auto* axis_tensor = param.axis_tensor;
     if (axis_tensor != nullptr) {
       auto* axis_tensor_data = axis_tensor->template data<int>();
-      axis = static_cast<int64_t>(axis_tensor_data[0]);
+      axis = axis_tensor_data[0];
+    }
+    const auto& x_dims = param.x[0]->dims();
+    if (axis < 0) {
+      axis += static_cast<int>(x_dims.size());
     }
 
-    const auto& x_dims = param.x[0]->dims();
     auto* out = param.output;
     T* output_data = param.output->template mutable_data<T>();
 
