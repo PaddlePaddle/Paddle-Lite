@@ -1,8 +1,13 @@
 # Generate paddle_lite_jni.so
 
 if (LITE_ON_TINY_PUBLISH)
-    set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
-    set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+    if (ARM_TARGET_LANG STREQUAL "clang")
+        set(CMAKE_CXX_FLAGS_RELEASE "-Oz -DNDEBUG")
+        set(CMAKE_C_FLAGS_RELEASE "-Oz -DNDEBUG")
+    else()
+        set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
+        set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+    endif()
     set(lib_DEPS light_api paddle_api paddle_api_light)
 else()
     set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light)
