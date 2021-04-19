@@ -210,6 +210,13 @@ class Optimizer {
                                      passes_local.end(),
                                      "lite_conv_bn_fuse_pass"),
                          passes_local.end());
+      // duplicated nodes can't be removed if referenced in different subgraphs
+      passes_local.erase(std::remove(passes_local.begin(),
+                                     passes_local.end(),
+                                     "__xpu__graph_dedup_pass"),
+                         passes_local.end());
+      LOG(INFO) << "skip __xpu__graph_dedup_pass because of multiple subgraphs["
+                << graphs_.size() << "]";
     }
 
     // multi_stream_analysis_pass must be in the front of
