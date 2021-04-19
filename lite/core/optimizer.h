@@ -131,7 +131,8 @@ class Optimizer {
 std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     Program&& program,
     const std::vector<Place>& valid_places,
-    core::KernelPickFactor kernel_pick_factor);
+    core::KernelPickFactor kernel_pick_factor,
+    const std::vector<std::string>& passes);
 
 }  // namespace lite
 }  // namespace paddle

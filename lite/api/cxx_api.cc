@@ -298,7 +298,6 @@ void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type) {
-  CHECK(passes.empty());
   if (config.is_model_from_memory()) {
     LOG(INFO) << "Load model from memory.";
     Build(config.model_dir(),
@@ -378,7 +377,8 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
 
   exec_scope_ = program.exec_scope();
 
-  program_ = RunDefaultOptimizer(std::move(program), inner_places, factor);
+  program_ =
+      RunDefaultOptimizer(std::move(program), inner_places, factor, passes);
 
   PrepareFeedFetch();
   // Verify if the ops version of current runtime program is
