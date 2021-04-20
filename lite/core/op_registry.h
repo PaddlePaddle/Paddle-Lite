@@ -222,6 +222,50 @@ class KernelRegistrar {
     OpKernelInfoCollector::Global().AddOp2path(#op_type__, __FILE__);          \
     return 0;                                                                  \
   }
+namespace paddle {
+namespace lite {
+class ParamTypeDummyRegistry {
+ public:
+  struct NewInstance {
+    NewInstance() {}
+    NewInstance& BindInput(const std::string& arg_name,
+                           const ParamType& ptype) {
+      return *this;
+    }
+    NewInstance& BindOutput(const std::string& arg_name,
+                            const ParamType& ptype) {
+      return *this;
+    }
+    NewInstance& SetVersion(const std::string& version) { return *this; }
+    NewInstance& BindPaddleOpVersion(const std::string& op_type,
+                                     int32_t version_id) {
+      return *this;
+    }
+    bool Finalize() { return true; }
+  };
+
+ private:
+  ParamTypeDummyRegistry() = default;
+};
+}  // namespace lite
+}  // namespace paddle
+
+#ifdef LITE_ON_TINY_PUBLISH
+#define ParamTypeRegistry(                                                \
+    op_type__, target__, precision__, layout__, KernelClass, alias__)     \
+  static auto                                                             \
+      op_type__##target__##precision__##layout__##alias__##param_register \
+          UNUSED = paddle::lite::ParamTypeDummyRegistry::NewInstance()
+#else
+#define ParamTypeRegistry(                                                \
+    op_type__, target__, precision__, layout__, KernelClass, alias__)     \
+  static auto                                                             \
+      op_type__##target__##precision__##layout__##alias__##param_register \
+          UNUSED = paddle::lite::ParamTypeRegistry::NewInstance<          \
+              TARGET(target__),                                           \
+              PRECISION(precision__),                                     \
+              DATALAYOUT(layout__)>(#op_type__ "/" #alias__)
+#endif
 
 // Register a kernel.
 #define REGISTER_LITE_KERNEL(                                                 \
@@ -246,9 +290,5 @@ class KernelRegistrar {
         __FILE__);                                                            \
     return 0;                                                                 \
   }                                                                           \
-  static auto                                                                 \
-      op_type__##target__##precision__##layout__##alias__##param_register     \
-          UNUSED = paddle::lite::ParamTypeRegistry::NewInstance<              \
-              TARGET(target__),                                               \
-              PRECISION(precision__),                                         \
-              DATALAYOUT(layout__)>(#op_type__ "/" #alias__)
+  ParamTypeRegistry(                                                          \
+      op_type__, target__, precision__, layout__, KernelClass, alias__)

@@ -177,11 +177,6 @@ void RunModel(std::string model_dir,
       // CL_PRECISION_FP16: 2, force fp16
       config.set_opencl_precision(CL_PRECISION_FP16);
     }
-  } else {
-    std::cout << "Unsupport opencl nb model." << std::endl;
-    exit(1);
-    // you can give backup cpu nb model instead
-    // config.set_model_from_file(cpu_nb_model_dir);
   }
 
   // NOTE: To load model transformed by model_optimize_tool before
