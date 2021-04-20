@@ -30,6 +30,7 @@ namespace kernels {
 namespace opencl {
 
 void ConvImageCompute::PrepareForRun() {
+  VLOG(3) << "ConvImageCompute::PrepareForRun() ";
   ReInitWhenNeeded();
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -500,9 +501,9 @@ void ConvImageCompute::ReInitWhenNeeded() {
     }
 
     // define image pointer for input, output
-    input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
-    output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
-        output_image_w_, output_image_h_);
+    // input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+    // output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+    //     output_image_w_, output_image_h_);
 
     GetGlobalWorkSize();
   }
@@ -618,6 +619,10 @@ void ConvImageCompute::GetGlobalWorkSize() {
 }
 
 void ConvImageCompute::Conv2d1x1opt(bool enable_tune) {
+  VLOG(3) << "ConvImageCompute::Conv2d1x1opt";
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
@@ -672,6 +677,9 @@ void ConvImageCompute::Conv2d1x1opt(bool enable_tune) {
 }
 
 void ConvImageCompute::Conv2d3x3(bool enable_tune) {
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
@@ -731,6 +739,9 @@ void ConvImageCompute::Conv2d3x3(bool enable_tune) {
 }
 
 void ConvImageCompute::Conv2d3x3opt(bool enable_tune) {
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
@@ -789,6 +800,9 @@ void ConvImageCompute::Conv2d3x3opt(bool enable_tune) {
 }
 
 void ConvImageCompute::Conv2d5x5(bool enable_tune) {
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
@@ -839,6 +853,9 @@ void ConvImageCompute::Conv2d5x5(bool enable_tune) {
 }
 
 void ConvImageCompute::Conv2d5x5opt(bool enable_tune) {
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
@@ -891,6 +908,9 @@ void ConvImageCompute::Conv2d5x5opt(bool enable_tune) {
 }
 
 void ConvImageCompute::Conv2d7x7(bool enable_tune) {
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
@@ -941,6 +961,9 @@ void ConvImageCompute::Conv2d7x7(bool enable_tune) {
 }
 
 void ConvImageCompute::Conv2d7x7opt(bool enable_tune) {
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
@@ -994,6 +1017,9 @@ void ConvImageCompute::Conv2d7x7opt(bool enable_tune) {
 }
 
 void ConvImageCompute::DepthwiseConv2d3x3s1(bool enable_tune) {
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
@@ -1045,6 +1071,9 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool enable_tune) {
 }
 
 void ConvImageCompute::DepthwiseConv2d3x3(bool enable_tune) {
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
@@ -1096,6 +1125,9 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool enable_tune) {
 }
 
 void ConvImageCompute::DepthwiseConv2d(bool enable_tune) {
+  input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
+  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
+      output_image_w_, output_image_h_);
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
