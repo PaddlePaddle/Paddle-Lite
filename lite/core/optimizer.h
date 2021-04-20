@@ -99,6 +99,7 @@ class Optimizer {
          "lite_match_matrix_activation_fuse_pass",      //
          "lite_squeeze2_matmul_fuse_pass",              //
          "lite_reshape2_matmul_fuse_pass",              //
+         "lite_matmul_element_add_fuse_pass",           //
          "lite_matmul_fuse_pass",                       //
          "lite_fc_fuse_pass",                           //
          "lite_shuffle_channel_fuse_pass",              //
