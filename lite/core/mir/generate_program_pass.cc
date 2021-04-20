@@ -75,19 +75,19 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     for (auto* in : inlinks) {
       // Create the new var manually.
       auto in_arg_name = in->AsArg().name;
-      auto* tmp_tensor = node->AsStmt()
-                             .op()
-                             ->scope()
-                             ->Var(in_arg_name)
-                             ->GetMutable<lite::Tensor>();
-      if (!(in->AsArg().is_weight) && in->AsArg().type->IsTensor() &&
-          (tmp_tensor->precision() != in->AsArg().type->precision())) {
-        tmp_tensor->set_precision(in->AsArg().type->precision());
+      if (!(in->AsArg().is_weight) && in->AsArg().type->IsTensor()) {
+        auto* tmp_tensor = node->AsStmt()
+                               .op()
+                               ->scope()
+                               ->Var(in_arg_name)
+                               ->GetMutable<lite::Tensor>();
+        if ((tmp_tensor->precision() != in->AsArg().type->precision())) {
+          tmp_tensor->set_precision(in->AsArg().type->precision());
+        }
       }
     }
   }
 }
-
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
