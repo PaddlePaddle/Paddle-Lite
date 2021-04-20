@@ -63,6 +63,7 @@ lite_cc_library(mir_passes
       elimination/elementwise_mul_constant_eliminate_pass.cc
       elimination/remove_tf_redundant_ops_pass.cc
       elimination/remove_scale1_pass.cc
+      elimination/ssd_boxes_calc_offline_pass.cc
       adaptive_1x1_pool2d_convert_global_pass.cc
       elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.cc
       control_flow_op_shared_inputs_and_outputs_place_sync_pass.cc
