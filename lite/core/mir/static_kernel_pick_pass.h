@@ -217,7 +217,7 @@ class StaticKernelPickPass : public mir::StmtPass {
   // Compatible for PrecisionType.
   // For cuda, in the process of choosing kernel, fp16 and fp32 are compatiable.
   bool PrecTypeCompatible(const PrecisionType& p1, const PrecisionType& p2) {
-    if (p1 == p2) {
+    if (p1 == p2 || p2 == PRECISION(kAny)) {
       return true;
     } else if ((p1 == PRECISION(kFP16) || p1 == PRECISION(kFloat)) &&
                (p2 == PRECISION(kFP16) || p2 == PRECISION(kFloat))) {
