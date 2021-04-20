@@ -49,8 +49,6 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
                  << " doesn't support";
     }
 
-    VLOG(4) << "BOX_CODER";
-
     // H2D: prior_box, prior_box
     CLImageConverterNormal converter;
     priorbox_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
