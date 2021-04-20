@@ -55,6 +55,7 @@ if((NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WIT
     lite_cc_test(test_kernel_batch_norm_compute SRCS batch_norm_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_pool_compute SRCS pool_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_constant_compute SRCS fill_constant_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_fill_zeros_like_compute SRCS fill_zeros_like_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_constant_batch_size_like_compute SRCS fill_constant_batch_size_like_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_crop_tensor_compute SRCS crop_tensor_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_crop_compute SRCS crop_compute_test.cc DEPS ${test_kernel_deps})
