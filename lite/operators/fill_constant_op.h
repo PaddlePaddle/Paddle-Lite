@@ -38,6 +38,13 @@ class FillConstantOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "fill_constant"; }
 
+  bool InferType() override {
+    if (param_.value_tensor) {
+      param_.out->set_precision(param_.value_tensor->precision());
+    }
+    return true;
+  }
+
  private:
   mutable FillConstantParam param_;
 };
