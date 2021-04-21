@@ -46,7 +46,8 @@ class DeviceProgram {
       const std::vector<Tensor*>& origin_otensors,
       std::vector<char>* model_cache_cfg_buffer,
       std::vector<char>* model_cache_bin_buffer,
-      const std::string& model_cache_dir);
+      const std::string& model_cache_dir,
+      const std::vector<std::string>& nnadapter_device_names);
   bool BuildGraphAndCacheToFile(
       RuntimeProgram* origin_program,
       const std::vector<std::string>& input_names,
@@ -54,7 +55,8 @@ class DeviceProgram {
       const std::vector<std::vector<int64_t>>& origin_idims,
       const std::vector<Tensor*>& origin_itensors,
       const std::vector<Tensor*>& origin_otensors,
-      const std::string& model_cache_dir);
+      const std::string& model_cache_dir,
+      const std::vector<std::string>& nnadapter_device_names);
   bool PrepareInputsOutputs(const std::vector<std::string>& input_names,
                             const std::vector<std::string>& output_names,
                             std::vector<Tensor*>* origin_itensors,

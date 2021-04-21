@@ -18,7 +18,35 @@
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nnadapter {}  // namespace nnadapter
+namespace nnadapter {
+
+int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
+  auto it = nodes_.find(name);
+  if (it != nodes_.end()) {
+    // Only variable node can be shared with the same name
+    if (!node->is_var() || !it->second.back()->is_var()) {
+      LOG(FATAL) << "Const or data node " << name << " is redefined.";
+      return -1;
+    }
+  } else {
+    auto ret = nodes_.insert(
+        std::make_pair(name, std::vector<std::shared_ptr<Node>>()));
+    CHECK(ret.second);
+    it = ret.first;
+  }
+  it->second.push_back(node);
+  return it->second.size();
+}
+
+std::shared_ptr<Node> Graph::Add(const std::string& name,
+                                 NNAdapterOperand* operand) {
+  Node::Role role = Node::Role::kVar;
+  auto node = std::make_shared<Node>(operand, role);
+  auto idx = Add(name, node);
+  return node;
+}
+
+}  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

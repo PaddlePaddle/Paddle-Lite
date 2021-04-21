@@ -12,19 +12,111 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver.h"                   // NOLINT
+#include "driver.h"  // NOLINT
+#include <vector>
 #include "../../nnadapter_logging.h"  // NOLINT
 
 namespace nnadapter {
 namespace driver {
 namespace rockchip_npu {
 
-int32_t createContext(void** context) {
-  if (!context) {
-    return NNADAPTER_INVALID_OBJECT;
+Model::~Model() {
+  if (!execution_) {
+    delete execution_;
   }
-  Context* c = new Context(nullptr);
-  if (c == nullptr) {
+  if (!graph_) {
+    delete graph_;
+  }
+}
+
+int Model::CreateFromGraph(driver::Graph* graph) {
+  graph_ = new rk::nn::Graph();
+  if (!graph_) {
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  std::vector<Operation*> operations =
+      driver::sortOperationsInTopologicalOrder(graph);
+  for (auto operation : operations) {
+    switch (operation->type) {
+      case NNADAPTER_CONV_2D:
+        ConvertConv2D(operation);
+        break;
+      default:
+        NNADAPTER_LOG(ERROR) << "Unsupported operation(" << operation->type
+                             << ") is found.";
+        break;
+    }
+  }
+  std::vector<rk::nn::Tensor *> input_nodes, output_nodes;
+  graph_->SetInputsOutputs(input_nodes, output_nodes);
+  execution_ = new rk::nn::Exection(graph_);
+  execution_->Build();
+  return NNADAPTER_NO_ERROR;
+}
+
+int Model::CreateFromCache(void* buffer, size_t length) {
+  return NNADAPTER_NO_ERROR;
+}
+
+int Model::ConvertConv2D(driver::Operation* operation) {
+  auto& inputOperands = operation->inputs;
+  auto& outputOperands = operation->outputs;
+  auto inputCount = inputOperands.size();
+  auto outputCount = outputOperands.size();
+  NNADAPTER_CHECK_GE(inputCount, 10);
+  NNADAPTER_CHECK_EQ(outputCount, 1);
+
+  int oc = 1;
+  auto filterOperand = inputOperands[3];
+  auto paddingWidthLeft = *reinterpret_cast<int32_t*>(inputOperands[3]->buffer);
+  auto paddingWidthRight =
+      *reinterpret_cast<int32_t*>(inputOperands[4]->buffer);
+  auto paddingHeightTop = *reinterpret_cast<int32_t*>(inputOperands[5]->buffer);
+  auto paddingHeightBottom =
+      *reinterpret_cast<int32_t*>(inputOperands[6]->buffer);
+  auto strideWidth = *reinterpret_cast<int32_t*>(inputOperands[7]->buffer);
+  auto strideHeight = *reinterpret_cast<int32_t*>(inputOperands[8]->buffer);
+  auto fuseCode = *reinterpret_cast<int32_t*>(inputOperands[9]->buffer);
+  int32_t dilationWidth = 1;
+  int32_t dilationHeight = 1;
+  if (inputCount >= 12) {
+    dilationWidth = *reinterpret_cast<int32_t*>(inputOperands[10]->buffer);
+    dilationHeight = *reinterpret_cast<int32_t*>(inputOperands[11]->buffer);
+  }
+
+  rk::nn::Conv2DAttr attr;
+  attr.ksize[0] = filterOperand->type.dimensions[2];
+  attr.ksize[1] = filterOperand->type.dimensions[3];
+  attr.stride[0] = strideWidth;
+  attr.stride[1] = strideHeight;
+  attr.pad[0] = paddingWidthLeft;
+  attr.pad[1] = paddingWidthRight;
+  attr.pad[2] = paddingHeightTop;
+  attr.pad[3] = paddingHeightBottom;
+  attr.group = 1;
+  attr.weights = oc;
+  attr.dilation[0] = dilationWidth;
+  attr.dilation[1] = dilationHeight;
+  attr.pad_type = rk::nn::PadType::AUTO;
+  // fuse RELU ?
+  if (fuseCode == NNADAPTER_FUSED_NONE) {
+    attr.has_relu = false;
+  } else if (fuseCode == NNADAPTER_FUSED_RELU) {
+    attr.has_relu = true;
+  } else {
+    NNADAPTER_LOG(ERROR) << "Unsupported fuse_code(" << operation->type
+                         << ") is found.";
+  }
+  // graph->AddOperator(rk::nn::OperatorType::CONV2D, inputs, outputs, &attr);
+  return NNADAPTER_NO_ERROR;
+}
+
+int createContext(void** context) {
+  if (!context) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto c = new Context(nullptr);
+  if (!c) {
     *context = nullptr;
     NNADAPTER_LOG(ERROR) << "Failed to create context for rockchip_npu.";
     return NNADAPTER_OUT_OF_MEMORY;
@@ -35,17 +127,77 @@ int32_t createContext(void** context) {
 
 void destroyContext(void* context) {
   if (!context) {
-    Context* c = reinterpret_cast<Context*>(context);
+    auto c = reinterpret_cast<Context*>(context);
     delete c;
   }
 }
 
-int32_t buildModel(Network* network, void* context, void** model) {
+int createModelFromGraph(void* context, driver::Graph* graph, void** model) {
+  NNADAPTER_LOG(INFO) << "Create model from graph for rockchip_npu.";
+  if (!context || !graph || !model) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
   *model = nullptr;
-  return VerifyNetwork(network);
+  auto m = new Model();
+  if (!m) {
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  int result = m->CreateFromGraph(graph);
+  if (result == NNADAPTER_NO_ERROR) {
+    *model = reinterpret_cast<void*>(m);
+  }
+  return result;
 }
 
-int32_t excuteModel(void* context, void* model) { return NNADAPTER_NO_ERROR; }
+int createModelFromCache(void* context,
+                         void* buffer,
+                         size_t length,
+                         void** model) {
+  if (!context || !buffer || !length || !model) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  NNADAPTER_LOG(INFO) << "Create model from cache for rockchip_npu.";
+  *model = nullptr;
+  auto m = new Model();
+  if (!m) {
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  int result = m->CreateFromCache(buffer, length);
+  if (result == NNADAPTER_NO_ERROR) {
+    *model = reinterpret_cast<void*>(m);
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
+void destroyModel(void* context, void* model) {
+  if (context && model) {
+    NNADAPTER_LOG(INFO) << "Destroy model for imagination_nna.";
+    auto m = reinterpret_cast<Model*>(model);
+    delete m;
+  }
+}
+
+int runModelSync(void* context,
+                 void* model,
+                 uint32_t inputCount,
+                 Operand** inputs,
+                 uint32_t outputCount,
+                 Operand** outputs) {
+  if (!context || !model || !outputs || !inputCount) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto m = reinterpret_cast<Model*>(model);
+  return NNADAPTER_NO_ERROR;
+}
+
+int runModelAsync(void* context,
+                  void* model,
+                  uint32_t inputCount,
+                  Operand** inputs,
+                  uint32_t outputCount,
+                  Operand** outputs) {
+  return NNADAPTER_NO_ERROR;
+}
 
 }  // namespace rockchip_npu
 }  // namespace driver
@@ -59,5 +211,11 @@ nnadapter::driver::Driver NNADAPTER_EXPORT
         .version = 1,
         .createContext = nnadapter::driver::rockchip_npu::createContext,
         .destroyContext = nnadapter::driver::rockchip_npu::destroyContext,
-        .buildModel = nnadapter::driver::rockchip_npu::buildModel,
-        .excuteModel = nnadapter::driver::rockchip_npu::excuteModel};
+        .createModelFromGraph =
+            nnadapter::driver::rockchip_npu::createModelFromGraph,
+        .createModelFromCache =
+            nnadapter::driver::rockchip_npu::createModelFromCache,
+        .destroyModel = nnadapter::driver::rockchip_npu::destroyModel,
+        .runModelSync = nnadapter::driver::rockchip_npu::runModelSync,
+        .runModelAsync = nnadapter::driver::rockchip_npu::runModelAsync,
+};

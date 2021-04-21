@@ -32,9 +32,9 @@ lite_cc_library(scope SRCS scope.cc DEPS tensor)
 lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
 
 if (LITE_WITH_ARM)
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context NNADAPTER_DEPS nnadapter_wrapper)
 else()
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context CUDA_DEPS cuda_context)
+lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context CUDA_DEPS cuda_context NNADAPTER_DEPS nnadapter_wrapper)
 endif()
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------

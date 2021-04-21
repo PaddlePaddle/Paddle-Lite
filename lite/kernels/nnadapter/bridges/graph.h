@@ -28,7 +28,28 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-class Node {};
+class Node {
+ public:
+  enum class Role {
+    kVar = 0,
+    kConst,
+    kData,
+  };
+
+  Node(NNAdapterOperand* data, Role role) : data_(data), role_(role) {}
+
+  void set_data(NNAdapterOperand* data) { data_ = data; }
+  void set_role(Role role) { role_ = role; }
+
+  NNAdapterOperand* data() { return data_; }
+  bool is_var() const { return role_ == Role::kVar; }
+  bool is_const() const { return role_ == Role::kConst; }
+  bool is_data() const { return role_ == Role::kData; }
+
+ private:
+  NNAdapterOperand* data_{nullptr};
+  Role role_{Role::kVar};
+};
 
 class Graph {
  public:
@@ -37,30 +58,39 @@ class Graph {
       NNAdapterDevice* device = nullptr;
       int result = NNAdapter::Global().NNAdapterDevice_acquire(
           device_name.c_str(), &device);
-      if (device != nullptr) {
+      bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
+      if (found) {
         const char* name = nullptr;
-        result |= NNAdapter::Global().NNAdapterDevice_getName(device, &name);
+        NNAdapter::Global().NNAdapterDevice_getName(device, &name);
         const char* vendor = nullptr;
-        result |=
-            NNAdapter::Global().NNAdapterDevice_getVendor(device, &vendor);
+        NNAdapter::Global().NNAdapterDevice_getVendor(device, &vendor);
         NNAdapterDeviceType type = 0;
-        result |= NNAdapter::Global().NNAdapterDevice_getType(device, &type);
+        NNAdapter::Global().NNAdapterDevice_getType(device, &type);
         int32_t version = 0;
-        result |=
-            NNAdapter::Global().NNAdapterDevice_getVersion(device, &version);
-        LOG(INFO) << "[NNAdapter] " << device_name << " result=" << result
-                  << ", name=" << name << " vendor=" << vendor
-                  << " type=" << type << " version=" << version;
+        NNAdapter::Global().NNAdapterDevice_getVersion(device, &version);
+        LOG(INFO) << device_name << "(" << name << ":" << vendor << ":" << type
+                  << ":" << version << ")";
         devices_.push_back(device);
       }
     }
-    NNAdapter::Global().NNAdapterNetwork_create(&network_);
+    NNAdapter::Global().NNAdapterGraph_create(&graph_);
   }
-  ~Graph() { NNAdapter::Global().NNAdapterNetwork_free(network_); }
+
+  ~Graph() {
+    NNAdapter::Global().NNAdapterGraph_destroy(graph_);
+    for (auto* device : devices_) {
+      NNAdapter::Global().NNAdapterDevice_release(device);
+    }
+  }
 
  public:
+  NNAdapterGraph* Handle() { return graph_; }
+
+  int Add(const std::string& name, std::shared_ptr<Node> node);
+  std::shared_ptr<Node> Add(const std::string& name, NNAdapterOperand* operand);
+
   std::shared_ptr<Node> Get(std::string name) {
-    CHECK(Has(name)) << "[NNAdapter] Node " << name << " not found.";
+    CHECK(Has(name)) << "Node " << name << " not found.";
     return nodes_.at(name).back();
   }
 
@@ -70,7 +100,7 @@ class Graph {
 
  private:
   std::map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
-  NNAdapterNetwork* network_{nullptr};
+  NNAdapterGraph* graph_{nullptr};
   std::vector<NNAdapterDevice*> devices_;
 };
 

@@ -15,6 +15,7 @@
 #pragma once
 
 #include "../../nnadapter_driver.h"  // NOLINT
+#include "rknpu/rknpu_pub.h"         // NOLINT
 
 namespace nnadapter {
 namespace driver {
@@ -27,6 +28,20 @@ class Context {
 
  private:
   void* raw_ctx_{nullptr};
+};
+
+class Model {
+ public:
+  Model() {}
+  ~Model();
+
+  int CreateFromGraph(driver::Graph* graph);
+  int CreateFromCache(void* buffer, size_t length);
+  int ConvertConv2D(driver::Operation* operation);
+
+ private:
+  rk::nn::Graph* graph_{nullptr};
+  rk::nn::Exection* execution_{nullptr};
 };
 
 }  // namespace rockchip_npu

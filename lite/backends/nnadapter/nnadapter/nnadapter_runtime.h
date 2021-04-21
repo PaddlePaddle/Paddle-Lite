@@ -23,29 +23,6 @@
 namespace nnadapter {
 namespace runtime {
 
-class Network {
- public:
-  Network() {}
-
- private:
-  driver::Network* network{nullptr};
-};
-
-class Model {
- public:
-  Model() {}
-
- private:
-  void* model{nullptr};
-};
-
-class Execution {
- public:
-  Execution() {}
-
- private:
-};
-
 class Device {
  public:
   explicit Device(const std::string& name);
@@ -60,14 +37,108 @@ class Device {
     return hasDriver() ? driver_->type : -1;
   }
   int32_t getVersion() const { return hasDriver() ? driver_->version : -1; }
-  int32_t buildModel(driver::Network* network, void** model);
-  int32_t excuteModel(void* model);
+  int createModelFromGraph(driver::Graph* graph, void** model);
+  int createModelFromCache(void* buffer, size_t length, void** model);
+  void destroyModel(void* model);
+  int runModelSync(void* model,
+                   uint32_t inputCount,
+                   driver::Operand** inputs,
+                   uint32_t outputCount,
+                   driver::Operand** outputs);
+  int runModelAsync(void* model,
+                    uint32_t inputCount,
+                    driver::Operand** inputs,
+                    uint32_t outputCount,
+                    driver::Operand** outputs);
 
  private:
   void* context_{nullptr};
   driver::Driver* driver_{nullptr};
   Device(const Device&) = delete;
   Device& operator=(const Device&) = delete;
+};
+
+class Graph {
+ public:
+  Graph() : completed_{false} {}
+  ~Graph();
+  int addOperand(const NNAdapterOperandType& type, driver::Operand** operand);
+  int addOperation(NNAdapterOperationType type, driver::Operation** operation);
+  int identifyInputsAndOutputs(uint32_t inputCount,
+                               driver::Operand** inputs,
+                               uint32_t outputCount,
+                               driver::Operand** outputs);
+  int finish();
+
+  driver::Graph graph_;
+  bool completed_;
+};
+
+class Event {
+ public:
+  ~Event() = default;
+  void wait() {}
+  int getStatus() { return NNADAPTER_NO_ERROR; }
+};
+
+class Model {
+ public:
+  Model(Graph* graph, std::vector<Device*> devices)
+      : graph_(graph),
+        model_(nullptr),
+        cached_(false),
+        buffer_(nullptr),
+        length_(0),
+        devices_(devices),
+        completed_{false} {}
+  Model(void* buffer,
+        size_t length,
+        uint32_t inputCount,
+        const NNAdapterOperandType** inputTypes,
+        uint32_t outputCount,
+        const NNAdapterOperandType** outputTypes,
+        std::vector<Device*> devices);
+  ~Model();
+  Device* firstDevice();
+  int setCaching(const char* cacheDir, const uint8_t* token);
+  int finish();
+  int setInput(int32_t index,
+               const uint32_t* dimensions,
+               uint32_t dimensionCount,
+               void* buffer,
+               size_t length);
+  int setOutput(int32_t index,
+                const uint32_t* dimensions,
+                uint32_t dimensionCount,
+                void* buffer,
+                size_t length);
+  int run(Event** event);
+
+  Graph* graph_;
+  void* model_;
+  bool cached_;
+  void* buffer_;
+  size_t length_;
+  std::vector<Device*> devices_;
+  bool completed_;
+};
+
+class Execution {
+ public:
+  explicit Execution(Model* model) : model_(model) {}
+  int setInput(int32_t index,
+               const uint32_t* dimensions,
+               uint32_t dimensionCount,
+               void* buffer,
+               size_t length);
+  int setOutput(int32_t index,
+                const uint32_t* dimensions,
+                uint32_t dimensionCount,
+                void* buffer,
+                size_t length);
+  int run(Event** event);
+
+  Model* model_;
 };
 
 class Driver {

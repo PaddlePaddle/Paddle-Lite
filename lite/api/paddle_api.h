@@ -150,6 +150,7 @@ class LITE_API ConfigBase {
   // Set the cached npu/xpu/rknpu/apu offline model from the buffers
   std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
       subgraph_model_cache_buffers_{};
+  std::vector<std::string> subgraph_nnadapter_device_names_{};
   int device_id_{0};
   int x86_math_num_threads_ = 1;
 
@@ -196,6 +197,15 @@ class LITE_API ConfigBase {
   const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>&
   subgraph_model_cache_buffers() const {
     return subgraph_model_cache_buffers_;
+  }
+  bool check_subgraph_nnadapter_device(
+      const std::string& subgraph_nnadapter_device_name);
+  void set_subgraph_nnadapter_devices(
+      const std::vector<std::string>& subgraph_nnadapter_device_names) {
+    subgraph_nnadapter_device_names_ = subgraph_nnadapter_device_names;
+  }
+  const std::vector<std::string>& subgraph_nnadapter_devices() const {
+    return subgraph_nnadapter_device_names_;
   }
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }

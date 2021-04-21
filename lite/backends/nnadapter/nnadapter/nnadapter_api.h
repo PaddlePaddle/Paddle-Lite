@@ -25,70 +25,76 @@ extern "C" {
   * Get the count of avaiable devices or acquire the specified device and create
  * a context for model building
  */
-int32_t NNAdapterDevice_acquire(const char* name, NNAdapterDevice** device);
+int NNAdapterDevice_acquire(const char* name, NNAdapterDevice** device);
 void NNAdapterDevice_release(NNAdapterDevice* device);
-int32_t NNAdapterDevice_getName(const NNAdapterDevice* device,
-                                const char** name);
-int32_t NNAdapterDevice_getVendor(const NNAdapterDevice* device,
-                                  const char** vendor);
-int32_t NNAdapterDevice_getType(const NNAdapterDevice* device,
-                                NNAdapterDeviceType* type);
-int32_t NNAdapterDevice_getVersion(const NNAdapterDevice* device,
-                                   int32_t* version);
+int NNAdapterDevice_getName(const NNAdapterDevice* device, const char** name);
+int NNAdapterDevice_getVendor(const NNAdapterDevice* device,
+                              const char** vendor);
+int NNAdapterDevice_getType(const NNAdapterDevice* device,
+                            NNAdapterDeviceType* type);
+int NNAdapterDevice_getVersion(const NNAdapterDevice* device, int32_t* version);
 
-int32_t NNAdapterNetwork_create(NNAdapterNetwork** network);
-void NNAdapterNetwork_free(NNAdapterNetwork* network);
-int32_t NNAdapterNetwork_addOperand(NNAdapterNetwork* network,
-                                    const NNAdapterOperandType* type,
-                                    NNAdapterOperand** operand);
-int32_t NNAdapterNetwork_setOperand(NNAdapterOperand* operand,
-                                    const void* buffer,
-                                    size_t length);
-int32_t NNAdapterNetwork_addOperation(NNAdapterNetwork* network,
-                                      NNAdapterOperationType type,
-                                      NNAdapterOperation** operation);
-int32_t NNAdapterNetwork_setOperation(NNAdapterOperation* operation,
-                                      uint32_t inputCount,
-                                      const NNAdapterOperand* inputs,
-                                      uint32_t outputCount,
-                                      const NNAdapterOperand* outputs);
-int32_t NNAdapterNetwork_identifyInputsAndOutputs(
-    NNAdapterNetwork* network,
-    uint32_t inputCount,
-    const NNAdapterOperand* inputs,
-    uint32_t outputCount,
-    const NNAdapterOperand* outputs);
+int NNAdapterGraph_create(NNAdapterGraph** graph);
+void NNAdapterGraph_destroy(NNAdapterGraph* graph);
+int NNAdapterGraph_finish(NNAdapterGraph* graph);
+int NNAdapterGraph_addOperand(NNAdapterGraph* graph,
+                              const NNAdapterOperandType* type,
+                              NNAdapterOperand** operand);
+int NNAdapterGraph_setOperand(NNAdapterOperand* operand,
+                              void* buffer,
+                              size_t length);
+int NNAdapterGraph_addOperation(NNAdapterGraph* graph,
+                                NNAdapterOperationType type,
+                                NNAdapterOperation** operation);
+int NNAdapterGraph_setOperation(NNAdapterOperation* operation,
+                                uint32_t inputCount,
+                                NNAdapterOperand** inputs,
+                                uint32_t outputCount,
+                                NNAdapterOperand** outputs);
+int NNAdapterGraph_identifyInputsAndOutputs(NNAdapterGraph* graph,
+                                            uint32_t inputCount,
+                                            NNAdapterOperand** inputs,
+                                            uint32_t outputCount,
+                                            NNAdapterOperand** outputs);
 
-int32_t NNAapdterModel_createFromCache(void* buffer,
-                                       const size_t size,
-                                       NNAdapterModel** model);
-int32_t NNAapdterModel_createFromNetwork(NNAdapterNetwork* network,
-                                         const NNAdapterDevice* const* devices,
-                                         uint32_t numDevices,
-                                         NNAdapterModel** model);
-void NNAapdterModel_free(NNAdapterModel* model);
-int32_t NNAapdterModel_setCacheMode(NNAdapterModel* model,
-                                    const char* cacheDir,
-                                    const uint8_t* token);
-int32_t NNAdapterModel_getCacheSize(NNAdapterModel* model, size_t* size);
-int32_t NNAdapterModel_getCacheBuffer(NNAdapterModel* model,
-                                      void* buffer,
-                                      const size_t size);
+int NNAdapterModel_createFromGraph(NNAdapterGraph* graph,
+                                   NNAdapterDevice** devices,
+                                   uint32_t numDevices,
+                                   NNAdapterModel** model);
+int NNAdapterModel_createFromCache(void* buffer,
+                                   size_t length,
+                                   uint32_t inputCount,
+                                   const NNAdapterOperandType** inputTypes,
+                                   uint32_t outputCount,
+                                   const NNAdapterOperandType** outputTypes,
+                                   NNAdapterDevice** devices,
+                                   uint32_t numDevices,
+                                   NNAdapterModel** model);
+void NNAdapterModel_destroy(NNAdapterModel* model);
+int NNAdapterModel_finish(NNAdapterModel* model);
+int NNAdapterModel_setCaching(NNAdapterModel* model,
+                              const char* cacheDir,
+                              const uint8_t* token);
 
-int32_t NNAdapterExecution_create(NNAdapterModel* model,
-                                  NNAdapterExecution** execution);
-void NNAdapterExecution_free(NNAdapterExecution* execution);
-int32_t NNAdapterExecution_setInput(NNAdapterExecution* execution,
-                                    int32_t index,
-                                    const NNAdapterOperandType* type,
-                                    const void* buffer,
-                                    size_t length);
-int32_t NNAdapterExecution_setOutput(NNAdapterExecution* execution,
-                                     int32_t index,
-                                     const NNAdapterOperandType* type,
-                                     void* buffer,
-                                     size_t length);
-int32_t NNAdapterExecution_startCompute(NNAdapterExecution* execution);
+int NNAdapterExecution_create(NNAdapterModel* model,
+                              NNAdapterExecution** execution);
+void NNAdapterExecution_destroy(NNAdapterExecution* execution);
+int NNAdapterExecution_setInput(NNAdapterExecution* execution,
+                                int32_t index,
+                                const uint32_t* dimensions,
+                                uint32_t dimensionCount,
+                                void* buffer,
+                                size_t length);
+int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
+                                 int32_t index,
+                                 const uint32_t* dimensions,
+                                 uint32_t dimensionCount,
+                                 void* buffer,
+                                 size_t length);
+int NNAdapterExecution_run(NNAdapterExecution* execution,
+                           NNAdapterEvent** event);
+int NNAdapterEvent_wait(NNAdapterEvent* event);
+void NNAdapterEvent_destroy(NNAdapterEvent* event);
 
 #ifdef __cplusplus
 }

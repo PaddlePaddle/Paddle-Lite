@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <list>
 #include <vector>
 #include "nnadapter_micros.h"  // NOLINT
 #include "nnadapter_types.h"   // NOLINT
@@ -33,25 +34,42 @@ typedef struct Operation {
   std::vector<Operand *> outputs;
 } Operation;
 
-typedef struct Network {
-  std::vector<Operand> operands;
-  std::vector<Operation> operations;
+typedef struct Graph {
+  std::list<Operand> operands;
+  std::list<Operation> operations;
   std::vector<Operand *> inputs;
   std::vector<Operand *> outputs;
-} Network;
+} Graph;
 
 typedef struct Driver {
   const char *name;
   const char *vendor;
   NNAdapterDeviceType type;
   int32_t version;
-  int32_t (*createContext)(void **context);
+  int (*createContext)(void **context);
   void (*destroyContext)(void *context);
-  int32_t (*buildModel)(Network *network, void *context, void **model);
-  int32_t (*excuteModel)(void *context, void *model);
+  int (*createModelFromGraph)(void *context, Graph *graph, void **model);
+  int (*createModelFromCache)(void *context,
+                              void *buffer,
+                              size_t length,
+                              void **model);
+  void (*destroyModel)(void *context, void *model);
+  int (*runModelSync)(void *context,
+                      void *model,
+                      uint32_t inputCount,
+                      Operand **inputs,
+                      uint32_t outputCount,
+                      Operand **outputs);
+  // TODO(hong19860320) missing callback and notify defs
+  int (*runModelAsync)(void *context,
+                       void *model,
+                       uint32_t inputCount,
+                       Operand **inputs,
+                       uint32_t outputCount,
+                       Operand **outputs);
 } Driver;
 
-int VerifyNetwork(Network *network);
+std::vector<Operation *> sortOperationsInTopologicalOrder(Graph *graph);
 
 }  // namespace driver
 }  // namespace nnadapter

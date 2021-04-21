@@ -143,6 +143,8 @@ void ImaginationNNASubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  std::vector<std::string> candidate_devices;
+
   std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"

@@ -361,6 +361,20 @@ void ConfigBase::set_subgraph_model_cache_buffers(
       std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
 }
 
+bool ConfigBase::check_subgraph_nnadapter_device(
+    const std::string &subgraph_nnadapter_device_name) {
+  bool found = false;
+#ifdef LITE_WITH_NNADAPTER
+  found = lite::Context<TargetType::kNNAdapter>::CheckSubgraphNNAdapterDevice(
+      subgraph_nnadapter_device_name);
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'check_subgraph_nnadapter_device' is ignored, please "
+                  "rebuild it with LITE_WITH_NNADAPTER=ON.";
+#endif
+  return found;
+}
+
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
                                size_t program_buffer_size,
                                const char *params_buffer,

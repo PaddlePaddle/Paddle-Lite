@@ -31,6 +31,9 @@
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #endif
+#ifdef LITE_WITH_NNADAPTER
+#include "lite/backends/nnadapter/nnadapter_wrapper.h"
+#endif
 
 #include <map>
 #include <memory>
@@ -315,6 +318,34 @@ class Context<TargetType::kNNAdapter> {
     std::vector<char>().swap(data->first);
     std::vector<char>().swap(data->second);
     return true;
+  }
+
+  static bool CheckSubgraphNNAdapterDevice(
+      const std::string& subgraph_nnadapter_device_name) {
+    NNAdapterDevice* device = nullptr;
+    int result = NNAdapter::Global().NNAdapterDevice_acquire(
+        subgraph_nnadapter_device_name.c_str(), &device);
+    bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
+    if (found) {
+      NNAdapter::Global().NNAdapterDevice_release(device);
+    }
+    return found;
+  }
+
+  static void SetSubgraphNNAdapterDevices(
+      Scope* scope,
+      const std::vector<std::string>& subgraph_nnadapter_device_names) {
+    auto var = scope->Var("SUBGRAPH_NNADAPTER_DEVICES");
+    CHECK(var);
+    auto data = var->GetMutable<std::vector<std::string>>();
+    CHECK(data);
+    *data = subgraph_nnadapter_device_names;
+  }
+
+  static std::vector<std::string> SubgraphNNAdapterDevices(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_NNADAPTER_DEVICES");
+    if (!var) return std::vector<std::string>();
+    return var->Get<std::vector<std::string>>();
   }
 };
 #endif

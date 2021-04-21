@@ -24,7 +24,37 @@
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nnadapter {}  // namespace nnadapter
+namespace nnadapter {
+
+bool hasInput(const OpInfo* op_info,
+              const Scope* scope,
+              const std::string& arg_name) {
+  return op_info->HasInput(arg_name) && op_info->Input(arg_name).size() > 0 &&
+         scope->FindVar(op_info->Input(arg_name).front());
+}
+
+bool hasOutput(const OpInfo* op_info,
+               const Scope* scope,
+               const std::string& arg_name) {
+  return op_info->HasOutput(arg_name) && op_info->Output(arg_name).size() > 0 &&
+         scope->FindVar(op_info->Output(arg_name).front());
+}
+
+bool isPerChannelScales(const std::vector<float>& scales) {
+  const float threshold = 1e-5f;
+  size_t size = scales.size();
+  CHECK_GT(size, 0) << "The size of scales should be greater than 0.";
+  auto ref_scale = scales[0];
+  for (size_t i = 1; i < size; i++) {
+    auto cur_scale = scales[i];
+    if (fabs(cur_scale - ref_scale) > threshold) {
+      return false;
+    }
+  }
+  return true;
+}
+
+}  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

@@ -61,7 +61,8 @@ bool DeviceProgram::LoadCacheFromBufferAndFile(
     const std::vector<Tensor*>& origin_otensors,
     std::vector<char>* model_cache_cfg_buffer,
     std::vector<char>* model_cache_bin_buffer,
-    const std::string& model_cache_dir) {
+    const std::string& model_cache_dir,
+    const std::vector<std::string>& nnadapter_device_names) {
   CHECK(!model_name_.empty());
   // Deserialize the preicisions, shapes and scales of the origin input/output
   // tensors from the cached configuration file
@@ -159,7 +160,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     const std::vector<std::vector<int64_t>>& origin_idims,
     const std::vector<Tensor*>& origin_itensors,
     const std::vector<Tensor*>& origin_otensors,
-    const std::string& model_cache_dir) {
+    const std::string& model_cache_dir,
+    const std::vector<std::string>& nnadapter_device_names) {
   CHECK(!model_name_.empty());
   // Create a new IR graph
   graph_ = std::make_shared<int>();
@@ -181,12 +183,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Convert all of Paddle operators and variables to the IR nodes, and add
   // them into the IR graph
   int status = 0;
-  std::vector<std::string> device_names;
-  device_names.push_back("huawei_kirin_npu");
-  device_names.push_back("mediatek_apu");
-  device_names.push_back("rockchip_npu");
-  device_names.push_back("imagination_nna");
-  subgraph::nnadapter::Graph graph(device_names);
+  subgraph::nnadapter::Graph graph(nnadapter_device_names);
   const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   CHECK(origin_program) << "[NNAdapter] The origin program is not initialized!";
   CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
@@ -376,6 +373,11 @@ bool SubgraphEngine::BuildDeviceProgram() {
         ctx_->As<NNAdapterContext>().SubgraphModelCacheDir(exec_scope_);
     VLOG(3) << "[NNAdapter] Getting subgraph_model_cache_dir: "
             << model_cache_dir;
+    // Obtain the nnadapter device names
+    auto nnadapter_device_names =
+        ctx_->As<NNAdapterContext>().SubgraphNNAdapterDevices(exec_scope_);
+    VLOG(3) << "[NNAdapter] Getting subgraph_nndapter_devices: "
+            << nnadapter_device_names.size();
     // Check and load if the cached model and configuration file exists
     if (!device_program->LoadCacheFromBufferAndFile(input_names_,
                                                     output_names_,
@@ -384,7 +386,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
                                                     origin_otensors_,
                                                     &model_cache_cfg_buffer,
                                                     &model_cache_bin_buffer,
-                                                    model_cache_dir)) {
+                                                    model_cache_dir,
+                                                    nnadapter_device_names)) {
       // Build the model online, including converting the paddle ops to the RK
       // IR nodes, building the RK IR graph, and generate a execution for
       // inference.
@@ -401,7 +404,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
                                                     origin_idims_,
                                                     origin_itensors_,
                                                     origin_otensors_,
-                                                    model_cache_dir)) {
+                                                    model_cache_dir,
+                                                    nnadapter_device_names)) {
         return false;
       }
     }

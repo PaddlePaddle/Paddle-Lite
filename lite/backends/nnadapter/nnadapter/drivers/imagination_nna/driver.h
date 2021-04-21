@@ -29,6 +29,15 @@ class Context {
   void* raw_ctx_{nullptr};
 };
 
+class Model {
+ public:
+  Model() {}
+  ~Model();
+
+  int CreateFromGraph(driver::Graph* graph);
+  int CreateFromCache(void* buffer, size_t length);
+};
+
 }  // namespace imagination_nna
 }  // namespace driver
 }  // namespace nnadapter

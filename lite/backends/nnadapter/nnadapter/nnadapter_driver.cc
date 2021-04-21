@@ -13,11 +13,51 @@
 // limitations under the License.
 
 #include "nnadapter_driver.h"  // NOLINT
+#include <map>
+#include <utility>
 
 namespace nnadapter {
 namespace driver {
 
-int VerifyNetwork(Network* network) { return NNADAPTER_NO_ERROR; }
+std::vector<Operation*> sortOperationsInTopologicalOrder(Graph* graph) {
+  std::vector<Operation*> operations;  // Operations in topological order
+  std::vector<Operation*> queue;
+  // Use to find all of adjacent operations according to a given operand.
+  std::multimap<Operand*, Operation*> map;
+  // The counters of variable inputs for all of operations.
+  std::map<Operation*, uint32_t> counts;
+  for (auto& operation : graph->operations) {
+    uint32_t count = 0;
+    for (auto operand : operation.inputs) {
+      auto lifetime = operand->type.lifetime;
+      if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||
+          lifetime == NNADAPTER_OUTPUT) {
+        count++;
+        map.insert(std::pair<Operand*, Operation*>(operand, &operation));
+      }
+    }
+    if (count == 0) {
+      // The operation which only depends the model inputs and constants
+      queue.push_back(&operation);
+    }
+    counts[&operation] = count;
+  }
+  while (queue.size() > 0) {
+    auto operation = queue.back();
+    queue.pop_back();
+    operations.push_back(operation);
+    for (auto operand : operation->outputs) {
+      auto range = map.equal_range(operand);
+      for (auto i = range.first; i != range.second; i++) {
+        uint32_t& count = counts[i->second];
+        if (--count == 0) {
+          queue.push_back(i->second);
+        }
+      }
+    }
+  }
+  return operations;
+}
 
 }  // namespace driver
 }  // namespace nnadapter

@@ -75,7 +75,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 // NNADAPTER_CHECK()
 // clang-format off
 #define NNADAPTER_CHECK(x) if (!(x)) nnadapter::logging::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() << "Check failed: " #x << ": " // NOLINT(*)
-#define _NNADAPTER_CHECK_BINARY(x, cmp, y) CHECK((x cmp y)) << (x) << "!" #cmp << (y) << " " // NOLINT(*)
+#define _NNADAPTER_CHECK_BINARY(x, cmp, y) NNADAPTER_CHECK((x cmp y)) << (x) << "!" #cmp << (y) << " " // NOLINT(*)
 
 // clang-format on
 #define NNADAPTER_CHECK_EQ(x, y) _NNADAPTER_CHECK_BINARY(x, ==, y)
