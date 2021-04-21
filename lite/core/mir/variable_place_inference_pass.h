@@ -99,6 +99,15 @@ class VariablePlaceInferencePass : public DebugPass {
     }
   }
 
+  // Update tensors' precision according to kernel registry.
+  // eg. Kernel con2d_fp16 is picked as the actual implementaion for conv2d op.
+  //        con2d_fp16 kernel registry { input: X (host\kFloat16\NCHW)   output:
+  //        Out (host\kFloat16\NCHW) }
+  //        conv2d op_info: X:var1(precisionFloat32), Out:var2(precsionFloat32)
+  //        after InferenceArgumentPlace is operated, related tensors will be
+  //        updated:
+  //        conv2d op_info: X:var1(precisionFloat16), Out:var2(precsionFloat16)
+
   void InferenceArgumentPlace(SSAGraph* graph) {
     auto& valid_places = graph->valid_places();
     auto valid_places_has_target = [&](TargetType t) -> bool {
@@ -126,8 +135,8 @@ class VariablePlaceInferencePass : public DebugPass {
       // The IoCopyOp is a tool operator, it won't support the type inference.
       // in fpga, we has io_copy+cali+layout tool ops, so we need type inference
       // for tool operator
-      if ((!with_targets["kFPGA"]) && (!with_targets["kOpenCL"])) {
-        VLOG(3) << "skip 'io_copy' if target is FPGA and OpenCL";
+      if (with_targets["kFPGA"] || with_targets["kOpenCL"]) {
+        VLOG(3) << "skip 'io_copy' if target is FPGA or OpenCL";
         if (op_type == "io_copy") continue;
       }
 
@@ -153,7 +162,9 @@ class VariablePlaceInferencePass : public DebugPass {
           }
         } else if (!(*var_type)->place().is_valid()) {
           // If is quantization, infer the Int8 type.
-          if (decl_type->precision() == PRECISION(kInt8)) {
+          if (decl_type->precision() == PRECISION(kInt8) ||
+              (decl_type->precision() == PRECISION(kFP16) &&
+               decl_type->target() != TARGET(kOpenCL))) {
             *var_type = decl_type;
           } else {
             UpdateTypeFrom(var_type, decl_type);
@@ -186,6 +197,40 @@ class VariablePlaceInferencePass : public DebugPass {
           } else {
             UpdateTypeFrom(var_type, decl_type);
           }
+        }
+      }
+    }
+  }
+
+  // For kernel whose input(X) and output(Out) are both defined as any
+  // precision, while there is no detype attribute from which we can determine
+  // output(Out)'s precsion, we will update output(Out)'s precision directly
+  // from input(X)'s precision.
+  // eg.
+  //     reshape kernel registry { input: X (host\kAny\NCHW)   output: Out
+  //     (host\kAny\NCHW) }
+  //     reshape op_info: X:var1(precisionFloat16), Out:var2(precsionFloat)
+  //     after InferenceKernelWithUncertainPrecision is operated reshape op
+  //     will be updated:
+  //     reshape op_info: X:var1(precisionFloat16), Out:var2(precsionFloat16)
+  void InferenceKernelWithUncertainPrecision(SSAGraph* graph) {
+    std::vector<std::string> skiped_ops = {
+        "feed", "fetch", "while", "subgraph", "io_copy", "io_copy_once"};
+    for (auto& node : graph->StmtTopologicalOrder()) {
+      auto& inst = node->AsStmt();
+      const auto* op_info = inst.op_info();
+      const auto& op_type = op_info->Type();
+      auto& kernel = inst.picked_kernel();
+      if (std::find(skiped_ops.begin(), skiped_ops.end(), op_type) ==
+              skiped_ops.end() &&
+          op_info->HasInput("X") && op_info->HasOutput("Out") &&
+          !op_info->HasAttr("dtype")) {
+        const auto* decl_input_type = kernel.GetInputDeclType("X");
+        const auto* decl_output_type = kernel.GetOutputDeclType("Out");
+        if (decl_input_type->IsTensor() && decl_output_type->IsTensor() &&
+            decl_input_type->precision() == PRECISION(kAny) &&
+            decl_output_type->precision() == PRECISION(kAny)) {
+          inst.op()->InferType();
         }
       }
     }
