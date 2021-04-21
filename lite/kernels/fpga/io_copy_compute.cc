@@ -167,21 +167,22 @@ class IoCopyFpgaToHostCHWCompute
 
       hwc.ZynqTensor()->copyFrom(&tempTensor);
     } else {
-      float16* in_data = param.x->ZynqTensor()->data<float16>();
-      param.x->ZynqTensor()->flush();
-      float max = 0;
+      hwc.ZynqTensor()->copyFrom(param.x->ZynqTensor());
+      // float16* in_data = param.x->ZynqTensor()->data<float16>();
+      // param.x->ZynqTensor()->flush();
+      // float max = 0;
 
-      for (int i = 0; i < param.x->dims().production(); i++) {
-        float value = zynqmp::half_to_float(in_data[i]);
-        hwc_data[i] = value;
-        if (value < 0) {
-          value = -value;
-        }
-        if (value > max) {
-          max = value;
-        }
-      }
-      param.x->ZynqTensor()->max()[0] = max;
+      // for (int i = 0; i < param.x->dims().production(); i++) {
+      //   float value = zynqmp::half_to_float(in_data[i]);
+      //   hwc_data[i] = value;
+      //   if (value < 0) {
+      //     value = -value;
+      //   }
+      //   if (value > max) {
+      //     max = value;
+      //   }
+      // }
+      // param.x->ZynqTensor()->max()[0] = max;
     }
 
     int num = 1;
