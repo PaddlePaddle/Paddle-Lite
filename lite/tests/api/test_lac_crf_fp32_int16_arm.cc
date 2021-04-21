@@ -26,31 +26,42 @@ DEFINE_int32(test_img_num, 10000, "0 < test_img_num <= 10000");
 namespace paddle {
 namespace lite {
 
-TEST(LAC_MODEL, test_lac_crf_fp32_arm) {
-  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
+float run_test(bool is_quant_model, int quant_bit = 16) {
+  std::shared_ptr<lite_api::PaddlePredictor> predictor = nullptr;
   // Use the full api with CxxConfig to generate the optimized model
   lite_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(FLAGS_model_dir);
   cxx_config.set_valid_places(
       {lite_api::Place{TARGET(kARM), PRECISION(kFloat)}});
+  if (is_quant_model) {
+    cxx_config.set_quant_model(true);
+    if (quant_bit == 16) {
+      cxx_config.set_quant_type(lite_api::QuantType::QUANT_INT16);
+    } else if (quant_bit == 8) {
+      cxx_config.set_quant_type(lite_api::QuantType::QUANT_INT8);
+    } else {
+      LOG(FATAL) << "quant_bit should be 8 or 16.";
+    }
+  }
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
-                                paddle::lite_api::LiteModelType::kNaiveBuffer);
+                                lite_api::LiteModelType::kNaiveBuffer);
 
   // Use the light api with MobileConfig to load and run the optimized model
-  paddle::lite_api::MobileConfig mobile_config;
+  lite_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(FLAGS_model_dir + ".nb");
   mobile_config.set_threads(FLAGS_threads);
   mobile_config.set_power_mode(
       static_cast<lite_api::PowerMode>(FLAGS_power_mode));
-  predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
+  predictor = lite_api::CreatePaddlePredictor(mobile_config);
 
   // prepare
   std::ifstream fs(FLAGS_data_dir);
-  ASSERT_TRUE(fs.is_open()) << "open input file " << FLAGS_data_dir
-                            << " error.";
-  ASSERT_TRUE(FLAGS_test_img_num > 0 && FLAGS_test_img_num <= 10000);
+  if (!fs.is_open()) {
+    LOG(FATAL) << "open input file " << FLAGS_data_dir << " error.";
+  }
 
+  int correct_num = 0;
   for (int i = 0; i < FLAGS_test_img_num; i++) {
     if (i % 100 == 0) {
       LOG(INFO) << "Iter:" << i;
@@ -92,14 +103,35 @@ TEST(LAC_MODEL, test_lac_crf_fp32_arm) {
     }
 
     // check
-    ASSERT_EQ(out_shape.size(), 2);
-    ASSERT_EQ(out_shape[0], gt_h);
-    ASSERT_EQ(out_shape[1], gt_w);
-    for (int i = 0; i < gt_num; i++) {
-      ASSERT_EQ(out_data[i], gt_data[i]);
+    if (out_shape.size() == 2 && out_shape[0] == gt_h && out_shape[1] == gt_w) {
+      bool is_same = true;
+      for (int j = 0; j < gt_num; j++) {
+        if (out_data[j] != gt_data[j]) {
+          is_same = false;
+          break;
+        }
+      }
+      if (is_same) {
+        correct_num++;
+      }
     }
   }
   fs.close();
+
+  float acc = static_cast<float>(correct_num) / FLAGS_test_img_num;
+  return acc;
+}
+
+TEST(LAC_MODEL, test_lac_crf_fp32_arm) {
+  float acc = run_test(false);
+  LOG(INFO) << "The acc of lac fp32 model is " << acc;
+  ASSERT_GE(acc, 1);
+}
+
+TEST(LAC_MODEL, test_lac_crf_dynamic_quant_int16_arm) {
+  float acc = run_test(true, 16);
+  LOG(INFO) << "The acc of lac int16 model is " << acc;
+  ASSERT_GE(acc, 0.9999);
 }
 
 }  // namespace lite
