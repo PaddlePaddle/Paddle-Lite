@@ -99,14 +99,15 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
     const auto& out_dims = boxcoder_param_->proposals->dims();
     auto image_shape = InitImageDimInfoWith(out_dims);
 
-    auto* out_buf =
-        boxcoder_param_->proposals->mutable_data<half_t, cl::Image2D>(
-            image_shape["width"], image_shape["height"]);
+    auto* out_buf = MUTABLE_DATA_GPU(boxcoder_param_->proposals,
+                                     image_shape["width"],
+                                     image_shape["height"],
+                                     nullptr);
 
     const auto* input_targetbox = boxcoder_param_->target_box;
     const auto& code_type = boxcoder_param_->code_type;
     if (code_type == "decode_center_size") {
-      auto* target_box_image = input_targetbox->data<half_t, cl::Image2D>();
+      auto* target_box_image = GET_DATA_GPU(input_targetbox);
 
       int new_dims[4] = {1, 1, 1, 1};
       for (int i = 0; i < out_dims.size(); i++) {
