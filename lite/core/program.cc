@@ -210,7 +210,7 @@ RuntimeProgram::RuntimeProgram(
         "Compile Paddle-Lite with command `--with_extra=ON`.";
 #else
     std::string ops_error_message =
-        "Error: This model is not supported, because operator '" + op_type +
+        "\nError: This model is not supported, because operator '" + op_type +
         "' is not supported by Paddle-Lite.";
 #endif
     CHECK(op) << ops_error_message;
@@ -253,8 +253,8 @@ RuntimeProgram::RuntimeProgram(
           "Compile Paddle-Lite with command `--with_extra=ON`.";
 #else
       std::string kernels_error_message =
-          "Error: This model is not supported, because kernel for '" + op_type +
-          "' is not supported by Paddle-Lite.";
+          "\nError: This model is not supported, because kernel for '" +
+          op_type + "' is not supported by Paddle-Lite.";
 #endif
 
       auto kernels = op->CreateKernels({place});
