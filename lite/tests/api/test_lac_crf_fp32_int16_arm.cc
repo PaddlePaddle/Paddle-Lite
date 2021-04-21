@@ -131,7 +131,7 @@ TEST(LAC_MODEL, test_lac_crf_fp32_arm) {
 TEST(LAC_MODEL, test_lac_crf_dynamic_quant_int16_arm) {
   float acc = run_test(true, 16);
   LOG(INFO) << "The acc of lac int16 model is " << acc;
-  ASSERT_GE(acc, 0.9999);
+  ASSERT_GT(acc, 0.9998);
 }
 
 }  // namespace lite
