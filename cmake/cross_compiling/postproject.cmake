@@ -17,12 +17,14 @@ if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 endif()
 include(CheckCXXCompilerFlag)
 if(ANDROID)
+    string(REGEX REPLACE ".*android-ndk-r\([0-9]+\).*" "\\1" NDK_VERSION ${ANDROID_NDK})
+    message(STATUS "NDK_VERSION: ${NDK_VERSION}")
     include(cross_compiling/findar)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -llog -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog -fPIC")
     if(LITE_WITH_ARM82_FP16)
-        if(${ANDROID_NDK_MAJOR})
-            if(${ANDROID_NDK_MAJOR} GREATER "17")
+        if(${NDK_VERSION})
+            if(${NDK_VERSION} GREATER "17")
                 add_definitions(-DENABLE_ARM_FP16)
                 if (${ARM_TARGET_ARCH_ABI} STREQUAL "armv8")
                   set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+fp16")
@@ -36,8 +38,8 @@ if(ANDROID)
     endif()
 
     if(LITE_WITH_ARM82_INT8_SDOT)
-        if(${ANDROID_NDK_MAJOR})
-            if(${ANDROID_NDK_MAJOR} GREATER "17")
+        if(${NDK_VERSION})
+            if(${NDK_VERSION} GREATER "17")
                 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+dotprod")
                 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.2-a+dotprod")
             endif()
@@ -110,8 +112,6 @@ if(ARM_TARGET_LANG STREQUAL "clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-inconsistent-missing-override -Wno-return-type")
 endif()
 
-message(STATUS "ANDROID_NDK_MAJOR: ${ANDROID_NDK_MAJOR}")
-
 if(LITE_WITH_OPENMP)
     if (ARM_TARGET_LANG STREQUAL "gcc")
         set(OpenMP_C_FLAGS "-fopenmp")
@@ -128,9 +128,9 @@ if(LITE_WITH_OPENMP)
     set(LIBOMP_ENABLE_SHARED OFF)
     if(OPENMP_FOUND OR OpenMP_CXX_FOUND)
         add_definitions(-DARM_WITH_OMP)
-        if(${ANDROID_NDK_MAJOR})
-            if(${ANDROID_NDK_MAJOR} GREATER 20)
-                message(STATUS "ANDROID_NDK_MAJOR GREATER 20")
+        if(${NDK_VERSION})
+            if(${NDK_VERSION} GREATER 20)
+                message(STATUS "NDK_VERSION GREATER 20")
                 set(OPENMP_LINK_FLAGS "-fopenmp -static-openmp")
             else()
                 set(OPENMP_LINK_FLAGS "-fopenmp")
@@ -167,11 +167,17 @@ if(ANDROID)
         "-DANDROID_TOOLCHAIN=${ARM_TARGET_LANG}"
         "-DANDROID_STL=${CMAKE_ANDROID_STL_TYPE}"
         "-DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}"
-        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_ANDROID_NDK}/build/cmake/android.toolchain.cmake"
         "-DCMAKE_ANDROID_NDK_TOOLCHAIN_VERSION=${CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION}"
         "-DANDROID_PLATFORM=android-${ANDROID_NATIVE_API_LEVEL}"
         "-D__ANDROID_API__=${ANDROID_NATIVE_API_LEVEL}"
         )
+    if (${NDK_VERSION})
+        if (${NDK_VERSION} GREATER 17)
+            set(CROSS_COMPILE_CMAKE_ARGS ${CROSS_COMPILE_CMAKE_ARGS}
+                "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_ANDROID_NDK}/build/cmake/android.toolchain.cmake"
+                )
+        endif()
+     endif()
 endif()
   
 if(IOS)
