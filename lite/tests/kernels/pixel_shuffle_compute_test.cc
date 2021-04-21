@@ -94,10 +94,16 @@ class PixelShuffleComputeTester : public arena::TestCase {
 };
 
 TEST(PixelShuffle, precision) {
+  Place place;
   LOG(INFO) << "test pixel_shuffle op";
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
   LOG(INFO) << "test pixel_shuffle arm";
-  Place place(TARGET(kARM));
+  place = TARGET(kARM);
+#else
+  return;
+#endif
 
   for (int upscale_factor : {1, 2, 3, 4, 5}) {
     for (int n : {1, 3}) {
@@ -115,7 +121,6 @@ TEST(PixelShuffle, precision) {
       }
     }
   }
-#endif
 }
 
 }  // namespace lite

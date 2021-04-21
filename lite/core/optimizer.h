@@ -116,6 +116,7 @@ class Optimizer {
          "lite_elementwise_activation_fuse_pass",
          "lite_conv_scale_fuse_pass",
          "identity_dropout_eliminate_pass",
+         "__xpu__graph_dedup_pass",
          "__xpu__resnet_fuse_pass",
          "__xpu__resnet_cbam_fuse_pass",
          "__xpu__conv2d_fuse_pass",
@@ -139,6 +140,7 @@ class Optimizer {
          "__xpu__multi_encoder_slice_link_fuse_pass",
          "__xpu__generate_sequence_fuse_pass",
          "__xpu__logit_fuse_pass",
+         "ssd_boxes_calc_offline_pass",
          // Only for fully quantized model, infer the output scale and fix the
          // attribute 'enable_int8' for all of the quantized ops.
          "quantized_op_attributes_inference_pass",

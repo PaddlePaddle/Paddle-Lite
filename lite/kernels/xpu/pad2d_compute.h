@@ -21,14 +21,14 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T, class Functor>
-class ElementwiseCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <class T>
+class Pad2dCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ElementwiseParam;
+  using param_t = operators::Pad2dParam;
 
   virtual void Run();
 
-  virtual ~ElementwiseCompute() = default;
+  virtual ~Pad2dCompute() = default;
 };
 
 }  // namespace xpu

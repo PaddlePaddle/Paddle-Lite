@@ -21,14 +21,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T, class Functor>
-class ElementwiseCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class PixelShuffleCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ElementwiseParam;
+  using param_t = operators::PixelShuffleParam;
 
   virtual void Run();
 
-  virtual ~ElementwiseCompute() = default;
+  virtual ~PixelShuffleCompute() = default;
 };
 
 }  // namespace xpu
