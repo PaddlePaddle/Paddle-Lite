@@ -139,7 +139,7 @@ void PrintPbModelErrorMessage() {
              << "      2. You can also appoint the model and params file in "
                 "custom format:\n"
              << "          eg. |-- set_model_file('custom_model_name')\n"
-             << "              |-- set_params_file('custom_params_name')'\n";
+             << "              |-- set_params_file('custom_params_name')'";
 }
 // Find correct model filename
 std::string FindModelFileName(const std::string &model_dir,
@@ -165,7 +165,7 @@ std::string FindModelFileName(const std::string &model_dir,
     } else {
       LOG(FATAL) << "\nError, the model file '" << model_file
                  << "' is not existed. Please confirm that you have inputed "
-                    "correct model file path.\n";
+                    "correct model file path.";
     }
   }
   return prog_path;
@@ -225,7 +225,7 @@ void LoadModelPb(const std::string &model_dir,
 
   // Load model topology data from file.
   std::string prog_path = FindModelFileName(model_dir, model_file, combined);
-  OPT_LOG << "Start load model topology data from " << prog_path;
+  OPT_LOG << "Loading topology data from " << prog_path;
   framework::proto::ProgramDesc pb_proto_prog =
       *LoadProgram(prog_path, model_buffer);
   pb::ProgramDesc pb_prog(&pb_proto_prog);
@@ -234,23 +234,24 @@ void LoadModelPb(const std::string &model_dir,
 
   // Load params data from file.
   // NOTE: Only main block be used now.
-  OPT_LOG << "Start load model params...";
   CHECK(!(!combined && !model_buffer.is_empty()))
       << "If you want use the model_from_memory,"
       << " you should load the combined model using cfg.set_model_buffer "
          "interface.";
   if (!combined) {
+    OPT_LOG << "Loading non-combined params data from " << model_dir;
     LoadNonCombinedParamsPb(model_dir, cpp_prog, model_buffer, scope);
   } else {
+    OPT_LOG << "Loading params data from " << param_file;
     if (!IsFileExists(param_file)) {
-      LOG(FATAL) << "\nError, the param file '" << param_file
+      LOG(FATAL) << "Error, the param file '" << param_file
                  << "' is not existed. Please confirm that you have inputed "
-                    "correct param file path.\n";
+                    "correct param file path.";
     }
 
     LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_buffer);
   }
-  OPT_LOG << "Load protobuf model successfully\n";
+  OPT_LOG << "1. Model is successfully loaded!";
 }
 
 void SaveModelPb(const std::string &model_dir,
@@ -553,7 +554,8 @@ void SaveModelNaive(const std::string &model_file,
       break;
     }
   }
-  OPT_LOG << "Save optimized model into " << prog_path << " successfully";
+  OPT_LOG << "2. Model is optimized and saved into " << prog_path
+          << " successfully";
 }
 
 template <typename T>

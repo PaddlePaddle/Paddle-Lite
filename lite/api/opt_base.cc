@@ -294,7 +294,8 @@ void OptBase::PrintHelpInfo() {
       "------------------------------------------------------------------------"
       "-----------------------------------------------------------\n";
   OPT_LOG << "opt version:" << opt_version;
-  OPT_LOG_ERROR << help_info;
+  OPT_LOG << help_info;
+  exit(1);
 }
 
 void OptBase::PrintExecutableBinHelpInfo() {
@@ -329,7 +330,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "nna|intel_fpga)`"
       "  Display operators in the input model\n";
   OPT_LOG << "paddlelite opt version:" << opt_version;
-  OPT_LOG_FATAL << help_info;
+  OPT_LOG << help_info;
 }
 
 // 2. Print supported info of inputed ops
