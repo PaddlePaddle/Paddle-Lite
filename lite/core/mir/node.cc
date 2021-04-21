@@ -29,23 +29,7 @@ Place mir::Node::Stmt::place() const {
 }
 
 KernelBase &mir::Node::Stmt::picked_kernel() {
-// Error message: if current kernel is not supported, WITH_EXTRA lib is
-// suggested.
-#ifndef LITE_BUILD_EXTRA
-  std::string error_message =
-      "Error: Please use Paddle-Lite lib with all ops, which is marked with "
-      "`with_extra`. Current lib is of tiny_publish, in which only basic "
-      "kernels are included and we can not create kernel for '" +
-      op_type() +
-      "'.\n Two ways are suggested to get Paddle-Lite lib with all ops:\n    "
-      "1. Download pre-commit lib which is marked with `with_extra`.\n    2. "
-      "Compile Paddle-Lite with command `--with_extra=ON`.";
-#else
-  std::string error_message =
-      "Error: This model is not supported, because kernel for '" + op_type() +
-      "' is not supported by Paddle-Lite.";
-#endif
-  CHECK(!valid_kernels_.empty()) << error_message;
+  CHECK(!valid_kernels_.empty()) << "no kernel for " << op_type();
   return *valid_kernels_.front();
 }
 
@@ -62,29 +46,13 @@ void mir::Node::Stmt::ResetOp(const cpp::OpDesc &op_desc,
   op_->Attach(op_desc, the_scope);
   // Recreate the kernels with the latest OpInfo.
   valid_kernels_.clear();
-// Error message: if current kernel is not supported, WITH_EXTRA lib is
-// suggested.
-#ifndef LITE_BUILD_EXTRA
-  std::string error_message =
-      "Error: Please use Paddle-Lite lib with all ops, which is marked with "
-      "`with_extra`. Current lib is of tiny_publish, in which only basic ops "
-      "are included and we can not create operator '" +
-      op_desc.Type() +
-      "'.\n Two ways are suggested to get Paddle-Lite lib with all ops:\n    "
-      "1. Download pre-commit lib which is marked with `with_extra`.\n    2. "
-      "Compile Paddle-Lite with command `--with_extra=ON`.";
-#else
-  std::string error_message =
-      "Error: This model is not supported, because operator '" +
-      op_desc.Type() + "' is not supported by Paddle-Lite.";
-#endif
+
   if (!op_ || op_->op_info()->Type() != op_desc.Type()) {
     op_ = LiteOpRegistry::Global().Create(op_desc.Type());
-    CHECK(op_) << error_message;
+    CHECK(op_) << "No op found for " << op_desc.Type();
   }
   valid_kernels_ = op_->CreateKernels(valid_places);
 }
-
 void mir::Node::Stmt::ResetKernels(const std::vector<Place> &valid_places) {
   CHECK(op_) << "change valid place failed, not created op";
   valid_kernels_.clear();
