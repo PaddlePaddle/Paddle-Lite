@@ -92,7 +92,7 @@ struct MemoryBarrierArgs {
 
 struct ActivationArgs {
   enum ActivationType type;
-  uint16_t leaky_relu_factor;
+  uint16_t leaky_relu_factor = float_to_half(0.0f);
 };
 
 struct NormalizeParameterArgs {

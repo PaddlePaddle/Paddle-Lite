@@ -46,7 +46,6 @@ int8_t* format_filter(float* data_in,
 
 void convert_to_hwn(int16_t** data_in, int num, int height, int width);
 size_t align_element_n(int16_t** data_in, int num, int height, int width);
-size_t align_element_n(int16_t** data_in, int num, int height, int width);
 void quantize_to_fp16(
     float** data_in, int num, int height, int width, float* scale_ptr);
 int16_t* quantize_to_int16(float* data_in,
