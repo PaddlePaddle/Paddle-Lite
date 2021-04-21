@@ -25,7 +25,8 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-const std::vector<std::string> PostQuantDynamicPass::quant_axis1_ops{"mul"};
+const std::vector<std::string> PostQuantDynamicPass::quant_axis1_ops{
+    "mul", "lookup_table"};
 
 static bool abs_compare(float a, float b) {
   return std::fabs(a) < std::fabs(b);

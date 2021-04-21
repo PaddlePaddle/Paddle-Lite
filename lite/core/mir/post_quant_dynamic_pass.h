@@ -44,7 +44,7 @@ class PostQuantDynamicPass : public ProgramPass {
 
  private:
   lite_api::QuantType quant_type_{lite_api::QuantType::QUANT_INT16};
-  std::vector<std::string> quant_ops_{"conv2d", "mul"};
+  std::vector<std::string> quant_ops_{"conv2d", "mul", "lookup_table"};
   static const std::vector<std::string> quant_axis1_ops;
 };
 
