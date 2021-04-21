@@ -223,7 +223,12 @@ void PrecisionCastPass::AddCastInst(const Type& from,
     CHECK(cast_op) << "create op [" << cast_op << "] failed";
 
     // Create the new var manually.
-    inst_node->AsStmt().op()->scope()->Var(cast_op_output_name);
+    auto* cast_op_output_tensor = inst_node->AsStmt()
+                                      .op()
+                                      ->scope()
+                                      ->Var(cast_op_output_name)
+                                      ->GetMutable<lite::Tensor>();
+    cast_op_output_tensor->set_precision(to.precision());
 
     // Create Calib Instruction.
     cpp::OpDesc op_desc;

@@ -38,6 +38,11 @@ class GatherOp : public OpLite {
 
   std::string DebugString() const override { return "gather"; }
 
+  bool InferType() override {
+    param_.Out->set_precision(param_.X->precision());
+    return true;
+  }
+
  private:
   mutable GatherParam param_;
 };
