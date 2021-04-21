@@ -65,6 +65,11 @@ T floordiv(T a, T b) {
 }
 
 template <class T>
+T pow(T a, T b) {
+  return std::pow(a, b);
+}
+
+template <class T>
 T max(T a, T b) {
   return std::max(a, b);
 }
@@ -72,11 +77,6 @@ T max(T a, T b) {
 template <class T>
 T min(T a, T b) {
   return std::min(a, b);
-}
-
-template <class T>
-T pow(T a, T b) {
-  return std::pow(a, b);
 }
 
 template <class T>
@@ -379,6 +379,7 @@ TEST(elementwise_x86, precison) {
     TestEltX86<int64_t>(place, abs_error, op, "int64");
   }
 
+  TestEltX86<float>(place, abs_error, "pow", "def");
   TestEltX86<int>(place, abs_error, "mod", "int32");
   TestEltX86<int64_t>(place, abs_error, "mod", "int64");
 }
