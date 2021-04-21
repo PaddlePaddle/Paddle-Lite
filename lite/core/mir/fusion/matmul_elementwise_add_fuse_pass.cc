@@ -24,7 +24,7 @@ namespace mir {
 
 void MatmulElementwiseAddFusePass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
-#if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA)
+#if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA) || defined(LITE_WITH_ARM)
 #ifdef LITE_WITH_MLU
   fusion::MatmulElementwiseAddFuser fuser(false);
   fuser(graph.get());
@@ -49,8 +49,4 @@ REGISTER_MIR_PASS(lite_matmul_element_add_fuse_pass,
                   paddle::lite::mir::MatmulElementwiseAddFusePass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
-#if (!defined(LITE_WITH_MLU) && !defined(LITE_WITH_HUAWEI_ASCEND_NPU))
-    .ExcludeTargets({TARGET(kX86)})
-#endif
-    .ExcludeTargets({TARGET(kBM)})
     .BindKernel("fc");

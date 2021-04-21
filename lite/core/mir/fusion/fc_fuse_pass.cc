@@ -23,7 +23,7 @@ namespace lite {
 namespace mir {
 
 void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-#if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA)
+#if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA) || defined(LITE_WITH_ARM)
 #ifdef LITE_WITH_MLU
   fusion::FcFuser fuser(false);
   fuser(graph.get());

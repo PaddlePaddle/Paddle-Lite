@@ -43,7 +43,7 @@ void MatmulElementwiseAddFuser::BuildPattern() {
 
   // create topology.
   std::vector<PMNode*> matmul_inputs{W, x};
-  std::vector<PMNode*> add_inputs{mul_out, b};
+  std::vector<PMNode*> add_inputs{matmul_out, b};
   matmul_inputs >> *matmul >> *matmul_out;
 
   // Some op specialities.
@@ -95,7 +95,7 @@ cpp::OpDesc MatmulElementwiseAddFuser::GenOpDesc(const key2nodes_t& matched) {
     x_scale_vct = op_desc.GetInputScale(input_x_name);
     y_scale_vct = op_desc.GetInputScale(op_desc.Input("Y").front());
   }
-  auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+  auto* scope = matched.at("matmul")->stmt()->op()->scope();
   auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
   int x_num_col_dims = x_shape.size() - 1;
   VLOG(4) << "x_shape: " << x_shape;
