@@ -47,7 +47,16 @@ void MatMulCompute::Run() {
       mat_dim_b.batch_size_ = mat_dim_a.batch_size_;
       mat_dim_b.height_ = mat_dim_b.height_ / mat_dim_b.batch_size_;
     }
+  } else if (x_dims.size() <= 2 && y_dims.size() == 3) {
+    if (!param.transpose_Y) {
+      mat_dim_b.height_ *= mat_dim_b.batch_size_;
+      mat_dim_b.batch_size_ = 0;
+    } else {
+      mat_dim_a.batch_size_ = mat_dim_b.batch_size_;
+      mat_dim_a.height_ = mat_dim_a.height_ / mat_dim_a.batch_size_;
+    }
   }
+
   CHECK_EQ(mat_dim_a.width_, mat_dim_b.height_);
   CHECK_EQ(mat_dim_a.batch_size_, mat_dim_b.batch_size_);
 
