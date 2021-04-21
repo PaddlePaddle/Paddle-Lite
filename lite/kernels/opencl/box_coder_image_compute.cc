@@ -107,7 +107,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
     const auto* input_targetbox = boxcoder_param_->target_box;
     const auto& code_type = boxcoder_param_->code_type;
     if (code_type == "decode_center_size") {
-      auto* target_box_image = DATA_GPU(input_targetbox);
+      auto* target_box_image = GET_DATA_GPU(input_targetbox);
 
       int new_dims[4] = {1, 1, 1, 1};
       for (int i = 0; i < out_dims.size(); i++) {
