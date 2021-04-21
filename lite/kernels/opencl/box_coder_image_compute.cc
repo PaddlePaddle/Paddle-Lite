@@ -48,6 +48,44 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
       LOG(FATAL) << "This code_type " << boxcoder_param_->code_type
                  << " doesn't support";
     }
+
+    // H2D: prior_box, prior_box
+    CLImageConverterNormal converter;
+    priorbox_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+    priorboxvar_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+    auto priorbox_cpu_image = std::unique_ptr<Tensor>(new Tensor);
+    auto priorboxvar_cpu_image = std::unique_ptr<Tensor>(new Tensor);
+
+    const auto* priorbox_cpu = boxcoder_param_->prior_box->data<float>();
+    const auto& priorbox_dims = boxcoder_param_->prior_box->dims();
+    auto image_shape = InitImageDimInfoWith(priorbox_dims);
+    priorbox_cpu_image->Resize(
+        {1, image_shape["width"], image_shape["height"], 4});
+    auto* priorbox_image_data = MUTABLE_DATA_CPU(priorbox_cpu_image);
+    converter.NCHWToImage(
+        const_cast<float*>(priorbox_cpu), priorbox_image_data, priorbox_dims);
+    MUTABLE_DATA_GPU(priorbox_gpu_image_,
+                     image_shape["width"],
+                     image_shape["height"],
+                     priorbox_image_data);
+
+    const auto* priorboxvar_cpu = boxcoder_param_->prior_box_var->data<float>();
+    const auto& priorboxvar_dims = boxcoder_param_->prior_box_var->dims();
+    image_shape = InitImageDimInfoWith(priorboxvar_dims);
+    priorboxvar_cpu_image->Resize(
+        {1, image_shape["width"], image_shape["height"], 4});
+    auto* priorboxvar_image_data = MUTABLE_DATA_CPU(priorboxvar_cpu_image);
+    converter.NCHWToImage(const_cast<float*>(priorboxvar_cpu),
+                          priorboxvar_image_data,
+                          priorboxvar_dims);
+    MUTABLE_DATA_GPU(priorboxvar_gpu_image_,
+                     image_shape["width"],
+                     image_shape["height"],
+                     priorboxvar_image_data);
+
+    priorbox_image_ = DATA_GPU(priorbox_gpu_image_);
+    priorboxvar_image_ = DATA_GPU(priorboxvar_gpu_image_);
+
     CHECK(context.cl_context() != nullptr);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -65,18 +103,9 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
         boxcoder_param_->proposals->mutable_data<half_t, cl::Image2D>(
             image_shape["width"], image_shape["height"]);
 
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "boxcoder input shape:  ";
-
-#endif
-    const auto* input_priorbox = boxcoder_param_->prior_box;
-    const auto* input_priorboxvar = boxcoder_param_->prior_box_var;
     const auto* input_targetbox = boxcoder_param_->target_box;
     const auto& code_type = boxcoder_param_->code_type;
     if (code_type == "decode_center_size") {
-      auto* prior_box_image = input_priorbox->data<half_t, cl::Image2D>();
-      auto* prior_box_var_image =
-          input_priorboxvar->data<half_t, cl::Image2D>();
       auto* target_box_image = input_targetbox->data<half_t, cl::Image2D>();
 
       int new_dims[4] = {1, 1, 1, 1};
@@ -99,8 +128,13 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
       int out_H = new_dims[2];
 #ifdef LITE_WITH_LOG
       VLOG(4) << TargetToStr(boxcoder_param_->proposals->target());
-      VLOG(4) << "output shape: " << out_dims[0] << ", " << out_dims[1] << ", "
-              << out_dims[2] << ", " << out_dims[3];
+      VLOG(4) << "input[PriorBox] shape: "
+              << boxcoder_param_->prior_box->dims();
+      VLOG(4) << "input[PriorBoxVar] shape: "
+              << boxcoder_param_->prior_box_var->dims();
+      VLOG(4) << "input[TargetBox] shape: "
+              << boxcoder_param_->target_box->dims();
+      VLOG(4) << "output[OutputBox] shape: " << out_dims;
       VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
               << image_shape["height"];
       VLOG(4) << "out_C = " << out_C;
@@ -109,9 +143,9 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
               << default_work_size[1] << ", " << default_work_size[2];
 #endif
       int arg_idx = 0;
-      cl_int status = kernel.setArg(arg_idx++, *prior_box_image);
+      cl_int status = kernel.setArg(arg_idx++, *priorbox_image_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(arg_idx++, *prior_box_var_image);
+      status = kernel.setArg(arg_idx++, *priorboxvar_image_);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(arg_idx++, *target_box_image);
       CL_CHECK_FATAL(status);
@@ -133,11 +167,6 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
                                     nullptr,
                                     event_);
       CL_CHECK_FATAL(status);
-
-#ifdef LITE_WITH_LOG
-      VLOG(4) << "global_work_size:[2D]:" << global_work_size[0] << " "
-              << global_work_size[1];
-#endif
     }
   }
   std::string doc() { return "Boxcoder using cl::Image, kFP16"; }
@@ -154,6 +183,10 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
+  std::unique_ptr<Tensor> priorbox_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> priorboxvar_gpu_image_{nullptr};
+  const cl::Image2D* priorbox_image_{nullptr};
+  const cl::Image2D* priorboxvar_image_{nullptr};
 };
 
 }  // namespace opencl
@@ -165,13 +198,9 @@ typedef paddle::lite::kernels::opencl::BoxCoderComputeImage BoxCoder_image;
 REGISTER_LITE_KERNEL(
     box_coder, kOpenCL, kFP16, kImageDefault, BoxCoder_image, ImageDefault)
     .BindInput("PriorBox",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("PriorBoxVar",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("TargetBox",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
