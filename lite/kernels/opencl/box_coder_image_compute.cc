@@ -61,9 +61,10 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
     const auto& out_dims = boxcoder_param_->proposals->dims();
     auto image_shape = InitImageDimInfoWith(out_dims);
 
-    auto* out_buf =
-        boxcoder_param_->proposals->mutable_data<half_t, cl::Image2D>(
-            image_shape["width"], image_shape["height"]);
+    auto* out_buf = MUTABLE_DATA_GPU(boxcoder_param_->proposals,
+                                     image_shape["width"],
+                                     image_shape["height"],
+                                     nullptr);
 
 #ifdef LITE_WITH_LOG
     VLOG(4) << "boxcoder input shape:  ";
