@@ -35,11 +35,11 @@ KernelBase &mir::Node::Stmt::picked_kernel() {
   std::string error_message =
       "Error: Please use Paddle-Lite lib with all ops, which is marked with "
       "`with_extra`. Current lib is of tiny_publish, in which only basic "
-      "kernels are included and we can not create kernel for '"
-      << op_type()
-      << "'.\n Two ways are suggested to get Paddle-Lite lib with all ops:\n   "
-         " 1. Download pre-commit lib which is marked with `with_extra`.\n    "
-         "2. Compile Paddle-Lite with command `--with_extra=ON`.";
+      "kernels are included and we can not create kernel for '" +
+      op_type() +
+      "'.\n Two ways are suggested to get Paddle-Lite lib with all ops:\n    "
+      "1. Download pre-commit lib which is marked with `with_extra`.\n    2. "
+      "Compile Paddle-Lite with command `--with_extra=ON`.";
 #else
   std::string error_message =
       "Error: This model is not supported, because kernel for '" + op_type() +
@@ -68,11 +68,11 @@ void mir::Node::Stmt::ResetOp(const cpp::OpDesc &op_desc,
   std::string error_message =
       "Error: Please use Paddle-Lite lib with all ops, which is marked with "
       "`with_extra`. Current lib is of tiny_publish, in which only basic ops "
-      "are included and we can not create operator '"
-      << op_desc.Type()
-      << "'.\n Two ways are suggested to get Paddle-Lite lib with all ops:\n   "
-         " 1. Download pre-commit lib which is marked with `with_extra`.\n    "
-         "2. Compile Paddle-Lite with command `--with_extra=ON`.";
+      "are included and we can not create operator '" +
+      op_desc.Type() +
+      "'.\n Two ways are suggested to get Paddle-Lite lib with all ops:\n    "
+      "1. Download pre-commit lib which is marked with `with_extra`.\n    2. "
+      "Compile Paddle-Lite with command `--with_extra=ON`.";
 #else
   std::string error_message =
       "Error: This model is not supported, because operator '" +
