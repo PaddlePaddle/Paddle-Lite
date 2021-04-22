@@ -58,29 +58,27 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
 
     const auto* priorbox_cpu = boxcoder_param_->prior_box->data<float>();
     const auto& priorbox_dims = boxcoder_param_->prior_box->dims();
-    auto image_shape = InitImageDimInfoWith(priorbox_dims);
-    priorbox_cpu_image->Resize(
-        {1, image_shape["width"], image_shape["height"], 4});
+    auto image_shape = converter.InitImageDimInfoWith(priorbox_dims);
+    priorbox_cpu_image->Resize({1, image_shape[0], image_shape[1], 4});
     auto* priorbox_image_data = MUTABLE_DATA_CPU(priorbox_cpu_image);
     converter.NCHWToImage(
         const_cast<float*>(priorbox_cpu), priorbox_image_data, priorbox_dims);
     MUTABLE_DATA_GPU(priorbox_gpu_image_,
-                     image_shape["width"],
-                     image_shape["height"],
+                     image_shape[0],
+                     image_shape[1],
                      priorbox_image_data);
 
     const auto* priorboxvar_cpu = boxcoder_param_->prior_box_var->data<float>();
     const auto& priorboxvar_dims = boxcoder_param_->prior_box_var->dims();
-    image_shape = InitImageDimInfoWith(priorboxvar_dims);
-    priorboxvar_cpu_image->Resize(
-        {1, image_shape["width"], image_shape["height"], 4});
+    image_shape = converter.InitImageDimInfoWith(priorboxvar_dims);
+    priorboxvar_cpu_image->Resize({1, image_shape[0], image_shape[1], 4});
     auto* priorboxvar_image_data = MUTABLE_DATA_CPU(priorboxvar_cpu_image);
     converter.NCHWToImage(const_cast<float*>(priorboxvar_cpu),
                           priorboxvar_image_data,
                           priorboxvar_dims);
     MUTABLE_DATA_GPU(priorboxvar_gpu_image_,
-                     image_shape["width"],
-                     image_shape["height"],
+                     image_shape[0],
+                     image_shape[1],
                      priorboxvar_image_data);
 
     priorbox_image_ = DATA_GPU(priorbox_gpu_image_);
