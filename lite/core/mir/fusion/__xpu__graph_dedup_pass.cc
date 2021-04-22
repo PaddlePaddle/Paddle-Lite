@@ -75,13 +75,7 @@ class XPUGraphDedup {
     if (!VectorIdentical(output_argname0, output_argname1)) {
       return false;
     }
-    for (auto& argname : output_argname0) {
-      auto output0 = op_info0->Output(argname);
-      auto output1 = op_info1->Output(argname);
-      if (output0.size() != output1.size()) {
-        return false;
-      }
-    }
+
     // 3. attribute
     auto attr_type0 = op_info0->attr_types();
     auto attr_type1 = op_info1->attr_types();
