@@ -120,6 +120,10 @@ std::vector<std::string> LightPredictor::GetInputNames() {
 std::vector<std::string> LightPredictor::GetOutputNames() {
   return output_names_;
 }
+// get input tensor precision type
+const std::vector<PrecisionType>& LightPredictor::GetInputPrecisions() const {
+  return input_precisions_;
+}
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
   std::vector<const cpp::OpDesc*> feeds;
@@ -137,6 +141,7 @@ void LightPredictor::PrepareFeedFetch() {
   }
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
+  input_precisions_.resize(feeds.size());
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
@@ -144,6 +149,9 @@ void LightPredictor::PrepareFeedFetch() {
   for (size_t i = 0; i < fetchs.size(); i++) {
     output_names_[fetchs[i]->GetAttr<int>("col")] =
         fetchs[i]->Input("X").front();
+  }
+  for (size_t i = 0; i < feeds.size(); i++) {
+    input_precisions_[i] = GetInput(i)->precision();
   }
 }
 
@@ -153,6 +161,32 @@ void LightPredictor::BuildRuntimeProgram(
   // Prepare workspace
   scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
   scope_->Var("fetch")->GetMutable<std::vector<lite::Tensor>>();
+
+  auto VarDescType2PrecisionType =
+      [](const lite::VarDescAPI::Type& type) -> PrecisionType {
+    switch (type) {
+      case lite::VarDescAPI::Type::BOOL:
+        return PRECISION(kBool);
+      case lite::VarDescAPI::Type::FP32:
+        return PRECISION(kFloat);
+      case lite::VarDescAPI::Type::FP16:
+        return PRECISION(kFP16);
+      case lite::VarDescAPI::Type::INT8:
+        return PRECISION(kInt8);
+      case lite::VarDescAPI::Type::INT16:
+        return PRECISION(kInt16);
+      case lite::VarDescAPI::Type::INT32:
+        return PRECISION(kInt32);
+      case lite::VarDescAPI::Type::INT64:
+        return PRECISION(kInt64);
+      case lite::VarDescAPI::Type::UINT8:
+        return PRECISION(kUInt8);
+      default:
+        LOG(WARNING) << "Unable to convert var desc type("
+                     << static_cast<int>(type) << ") to precision type!";
+        return PRECISION(kUnk);
+    }
+  };
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
   CHECK(block_size);
@@ -162,7 +196,13 @@ void LightPredictor::BuildRuntimeProgram(
     for (size_t var_idx = 0; var_idx < var_size; ++var_idx) {
       auto var_desc = block_desc->GetVar<cpp::VarDesc>(var_idx);
       if (!var_desc->Persistable()) {
-        exe_scope->Var(var_desc->Name());
+        auto* var = exe_scope_->Var(var_desc->Name());
+        if (var_desc->GetType() == lite::VarDescAPI::Type::LOD_TENSOR) {
+          const auto& var_data_type =
+              VarDescType2PrecisionType(var_desc->GetDataType());
+          auto* tensor = var->GetMutable<lite::Tensor>();
+          tensor->set_precision(var_data_type);
+        }
       } else {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") continue;
         scope_->Var(var_desc->Name());
@@ -291,6 +331,19 @@ void LightPredictor::WeightFP32ToFP16() {
   }
 }
 #endif
+
+void LightPredictor::CheckInputValid() {
+  for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
+    if (GetInput(idx)->precision() != input_precisions_[idx]) {
+      LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
+                   << ") Tensor name (" << input_names_[idx]
+                   << ") Require Precision type ("
+                   << PrecisionToStr(input_precisions_[idx])
+                   << ") Input Precision type ("
+                   << PrecisionToStr(GetInput(idx)->precision()) << ").";
+    }
+  }
+}
 
 }  // namespace lite
 }  // namespace paddle
