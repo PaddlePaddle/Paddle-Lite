@@ -142,9 +142,8 @@ void RunModel(std::string model_dir,
 
   bool is_opencl_backend_valid =
       ::IsOpenCLBackendValid(/*check_fp16_valid = false*/);
-  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
-      ? "true"
-      : "false" << std::endl;
+  std::cout << "is_opencl_backend_valid:"
+            << (is_opencl_backend_valid ? "true" : "false") << std::endl;
   if (is_opencl_backend_valid) {
     if (accelerate_opencl != 0) {
       // Set opencl kernel binary.
