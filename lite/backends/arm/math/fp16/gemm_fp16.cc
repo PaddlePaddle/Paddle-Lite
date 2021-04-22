@@ -991,19 +991,15 @@ void loadb_trans(float16_t *out,
   } else if (y_remain == 2) {
     const uint16_t *inptr0 = inptr + y * ldin + k0;
     const uint16_t *inptr1 = inptr0 + ldin;
-    for (int x = 0; x < remain; x++) {
-      *outptr++ = *inptr0++;
-      *outptr++ = *inptr1++;
-    }
-  } else {
+    memcpy(outptr, inptr0, sizeof(uint16_t) * x_len);
+    memcpy(outptr + x_len, inptr1, sizeof(uint16_t) * x_len);
+  } else if (y_remain == 3) {
     const uint16_t *inptr0 = inptr + y * ldin + k0;
     const uint16_t *inptr1 = inptr0 + ldin;
     const uint16_t *inptr2 = inptr1 + ldin;
-    for (int x = 0; x < remain; x++) {
-      *outptr++ = *inptr0++;
-      *outptr++ = *inptr1++;
-      *outptr++ = *inptr2++;
-    }
+    memcpy(outptr, inptr0, sizeof(uint16_t) * x_len);
+    memcpy(outptr + x_len, inptr1, sizeof(uint16_t) * x_len);
+    memcpy(outptr + 2 * x_len, inptr2, sizeof(uint16_t) * x_len);
   }
 }
 
