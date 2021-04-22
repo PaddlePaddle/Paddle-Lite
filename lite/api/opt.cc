@@ -345,7 +345,8 @@ void PrintHelpInfo() {
       "  Display operators in the input model\n"
       "  How to print detailed information: export GLOG_v=1 \n";
   OPT_LOG << "opt version:" << opt_version;
-  OPT_LOG_FATAL << help_info;
+  OPT_LOG << help_info;
+  exit(1);
 }
 
 // Parse Input command
