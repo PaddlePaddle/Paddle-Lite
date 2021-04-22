@@ -50,22 +50,25 @@ class NormPE : public PE {
     bypass_args_.output.address = mid_out_.data<void>();
     bypass_args_.output.scale_address = mid_out_.max();
 
-    norm_args_.input_image_address = mid_data;
-    norm_args_.image_width = input_shape.width();
-    norm_args_.image_height = input_shape.height();
-    norm_args_.image_channel = input_shape.channel();
-    norm_args_.output_image_address = param_.output->data<float>();
-    norm_args_.output_scale_address =
-        reinterpret_cast<uint32_t*>(param_.output->max());
-
     bypass_args_.inplace.normalize_param.channel = input_shape.channel();
     bypass_args_.inplace.normalize_param.hight_width =
         input_shape.height() * input_shape.width();
     bypass_args_.inplace.normalize_param.enabled = true;
 
+    norm_args_.input_image_address = mid_data;
+    norm_args_.image_width = input_shape.width();
+    norm_args_.image_height = input_shape.height();
+    norm_args_.image_channel = input_shape.channel();
+    norm_args_.output_image_address = param_.output->data<float16>();
+    norm_args_.output_scale_address =
+        reinterpret_cast<uint32_t*>(param_.output->max());
+    norm_args_.inplace = bypass_args_.inplace;
+    norm_args_.inplace.normalize_param.enabled = false;
+
     if (DLEngine::get_instance().isZU3()) {
       cpu_compute_ = true;
     }
+    cpu_compute_ = true;
   }
 
   void cpu_compute() {
@@ -107,7 +110,9 @@ class NormPE : public PE {
   bool dispatch() {
     if (cpu_compute_) {
       cpu_compute();
+      return true;
     }
+
     perform_bypass(bypass_args_);
     compute_norm(norm_args_);
     return true;
