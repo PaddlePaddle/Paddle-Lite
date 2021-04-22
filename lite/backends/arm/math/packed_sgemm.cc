@@ -2418,25 +2418,15 @@ void loadb_trans(
   } else if (y_remain == 2) {
     const uint32_t *inptr0 = inptr + y * ldin + k0;
     const uint32_t *inptr1 = inptr0 + ldin;
-    for (int x = 0; x < x_len; x++) {
-      *outptr++ = *inptr0++;
-    }
-    for (int x = 0; x < x_len; x++) {
-      *outptr++ = *inptr1++;
-    }
+    memcpy(outptr, inptr0, sizeof(uint32_t) * x_len);
+    memcpy(outptr + x_len, inptr1, sizeof(uint32_t) * x_len);
   } else if (y_remain == 3) {
     const uint32_t *inptr0 = inptr + y * ldin + k0;
     const uint32_t *inptr1 = inptr0 + ldin;
     const uint32_t *inptr2 = inptr1 + ldin;
-    for (int x = 0; x < x_len; x++) {
-      *outptr++ = *inptr0++;
-    }
-    for (int x = 0; x < x_len; x++) {
-      *outptr++ = *inptr1++;
-    }
-    for (int x = 0; x < x_len; x++) {
-      *outptr++ = *inptr2++;
-    }
+    memcpy(outptr, inptr0, sizeof(uint32_t) * x_len);
+    memcpy(outptr + x_len, inptr1, sizeof(uint32_t) * x_len);
+    memcpy(outptr + 2 * x_len, inptr2, sizeof(uint32_t) * x_len);
   }
 }
 
