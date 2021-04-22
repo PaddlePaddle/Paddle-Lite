@@ -2420,6 +2420,8 @@ void loadb_trans(
     const uint32_t *inptr1 = inptr0 + ldin;
     for (int x = 0; x < x_len; x++) {
       *outptr++ = *inptr0++;
+    }
+    for (int x = 0; x < x_len; x++) {
       *outptr++ = *inptr1++;
     }
   } else if (y_remain == 3) {
@@ -2428,7 +2430,11 @@ void loadb_trans(
     const uint32_t *inptr2 = inptr1 + ldin;
     for (int x = 0; x < x_len; x++) {
       *outptr++ = *inptr0++;
+    }
+    for (int x = 0; x < x_len; x++) {
       *outptr++ = *inptr1++;
+    }
+    for (int x = 0; x < x_len; x++) {
       *outptr++ = *inptr2++;
     }
   }
