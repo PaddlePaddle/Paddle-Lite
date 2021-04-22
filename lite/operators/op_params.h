@@ -311,6 +311,13 @@ struct ScatterParam : ParamBase {
   bool overwrite{true};
 };
 
+struct ScatterNdAddParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* indexs{};
+  lite::Tensor* updates{};
+  lite::Tensor* output{};
+};
+
 // For Softmax op
 struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};
