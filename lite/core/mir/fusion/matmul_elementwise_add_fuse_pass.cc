@@ -24,6 +24,11 @@ namespace mir {
 
 void MatmulElementwiseAddFusePass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
+  for (auto& place : graph->valid_places()) {
+    if (place.precision == PRECISION(kInt8)) {
+      return;
+    }
+  }
 #if defined(LITE_WITH_X86) || defined(LITE_WITH_CUDA) || defined(LITE_WITH_ARM)
 #ifdef LITE_WITH_MLU
   fusion::MatmulElementwiseAddFuser fuser(false);

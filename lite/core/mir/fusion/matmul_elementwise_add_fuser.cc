@@ -25,7 +25,8 @@ namespace fusion {
 void MatmulElementwiseAddFuser::BuildPattern() {
   // create nodes.
   auto* x = VarNode("x")->assert_is_op_input("matmul", "X");
-  auto* W = VarNode("W")->assert_is_op_input("matmul", "Y");
+  auto* W = VarNode("W")->assert_is_persistable_var()->assert_is_op_input(
+      "matmul", "Y");
   auto* b = VarNode("b")->assert_is_persistable_var();
   /*
    * The mul op must satisfy the following conditions:
