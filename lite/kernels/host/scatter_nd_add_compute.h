@@ -23,12 +23,16 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+template <typename T, typename IndexType>
 class ScatterNdAddCompute
     : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::ScatterNdAddParam;
+
   void Run() override;
+
   virtual ~ScatterNdAddCompute() = default;
+
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
