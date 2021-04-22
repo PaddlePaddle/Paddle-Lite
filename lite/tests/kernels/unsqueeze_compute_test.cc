@@ -276,6 +276,8 @@ TEST(unsqueeze, precision) {
   place = TARGET(kOpenCL);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  Place = TARGET(kXPU);
 #endif
   test_unsqueeze(place, abs_error);
 }
@@ -290,6 +292,8 @@ TEST(unsqueeze2, precision) {
   place = TARGET(kOpenCL);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  Place = TARGET(kXPU);
 #endif
 
   test_unsqueeze2(place, abs_error);
