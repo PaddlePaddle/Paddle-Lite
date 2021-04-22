@@ -331,9 +331,7 @@ static bool prepack_input_nxw(const dtype* din,
       // get address
       const dtype* in_array;
       if (i < 0 || i >= height) {
-        memset(out_array[j], 0.f, sizeof(dtype) * size_w);
-        j++;
-        continue;
+        in_array = zero_ptr;
       } else {
         in_array = din + i * width;
       }
