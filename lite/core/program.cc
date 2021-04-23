@@ -208,8 +208,8 @@ RuntimeProgram::RuntimeProgram(
         "ops are included and we can not create operator '" +
         op_type +
         "'.\n Two ways are suggested to get Paddle-Lite lib with all ops:\n    "
-        "1. Download pre-commit lib which is marked with `with_extra`.\n    2. "
-        "Compile Paddle-Lite with command `--with_extra=ON`.";
+        "1. Download pre-compiled lib which is marked with `with_extra`.\n    "
+        "2. Compile Paddle-Lite with command `--with_extra=ON`.";
 #else
     std::string ops_error_message =
         "\nError: This model is not supported, because operator '" + op_type +
