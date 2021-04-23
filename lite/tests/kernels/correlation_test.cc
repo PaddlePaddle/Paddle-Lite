@@ -157,7 +157,9 @@ class CorrelationComputeTester : public arena::TestCase {
 TEST(correlation, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;
