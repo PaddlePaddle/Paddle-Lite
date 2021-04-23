@@ -50,6 +50,8 @@ add_kernel(shape_compute_fpga FPGA basic SRCS shape_compute.cc DEPS ${fpga_deps}
 add_kernel(slice_compute_fpga FPGA basic SRCS slice_compute.cc DEPS ${fpga_deps})
 add_kernel(density_prior_box_compute_fpga FPGA basic SRCS density_prior_box_compute.cc DEPS ${fpga_deps} math_arm)
 
+add_kernel(unsqueeze_compute_fpga FPGA basic SRCS unsqueeze_compute.cc DEPS ${fpga_deps})
+
 # add_kernel(while_compute_fpga FPGA extra SRCS while_compute.cc DEPS ${fpga_deps})
 # add_kernel(write_to_array_compute_fpga FPGA extra SRCS write_to_array_compute.cc DEPS ${fpga_deps})
 

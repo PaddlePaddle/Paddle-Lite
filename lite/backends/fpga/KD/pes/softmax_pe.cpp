@@ -187,7 +187,6 @@ void fpga_softmax(int axis,
   struct FpgaRegWriteArgs args;
   args.value = 0;
   args.address = 0x890;
-  // reg_write(args); //TODO
   output->invalidate();
 }
 
