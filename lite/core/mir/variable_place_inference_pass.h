@@ -214,8 +214,13 @@ class VariablePlaceInferencePass : public DebugPass {
   //     will be updated:
   //     reshape op_info: X:var1(precisionFloat16), Out:var2(precsionFloat16)
   void InferenceKernelWithUncertainPrecision(SSAGraph* graph) {
-    std::vector<std::string> skiped_ops = {
-        "feed", "fetch", "while", "subgraph", "io_copy", "io_copy_once"};
+    std::vector<std::string> skiped_ops = {"feed",
+                                           "fetch",
+                                           "while",
+                                           "subgraph",
+                                           "io_copy",
+                                           "io_copy_once",
+                                           "cast"};
     for (auto& node : graph->StmtTopologicalOrder()) {
       auto& inst = node->AsStmt();
       const auto* op_info = inst.op_info();
