@@ -26,8 +26,6 @@
 #include "lite/core/profile/precision_profiler.h"
 #endif
 
-#include "lite/backends/fpga/monitor.hpp"
-
 namespace paddle {
 namespace lite {
 
@@ -278,9 +276,6 @@ void RuntimeProgram::Run() {
 #endif
 
   int idx = -1;
-
-  Monitor& monitor = Monitor::get_instance();
-
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
@@ -300,9 +295,7 @@ void RuntimeProgram::Run() {
     }
 #endif
 
-    monitor.preRun(inst);
     inst.Run();
-    monitor.postRun(inst);
 
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
