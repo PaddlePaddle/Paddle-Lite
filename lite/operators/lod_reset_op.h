@@ -38,6 +38,11 @@ class LodResetOp : public OpLite {
 
   std::string DebugString() const override { return "lod_reset"; }
 
+  bool InferType() override {
+    param_.Out->set_precision(param_.X->precision());
+    return true;
+  }
+
  private:
   mutable LodResetParam param_;
 };

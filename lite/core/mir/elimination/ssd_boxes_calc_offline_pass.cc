@@ -469,4 +469,4 @@ void SSDBoxesCalcOfflinePass::ComputeConcat(
 
 REGISTER_MIR_PASS(ssd_boxes_calc_offline_pass,
                   paddle::lite::mir::SSDBoxesCalcOfflinePass)
-    .BindTargets({TARGET(kRKNPU), TARGET(kNPU)});
+    .BindTargets({TARGET(kRKNPU), TARGET(kNPU), TARGET(kOpenCL)});

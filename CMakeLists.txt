@@ -82,6 +82,7 @@ lite_option(WITH_SYSTEM_BLAS    "Use system blas library"           OFF)
 
 # for lite, both server and mobile framework.
 lite_option(LITE_WITH_JAVA      "Enable Java JNI lib in lite mode" OFF)
+lite_option(LITE_WITH_STATIC_LIB      "Enable static cplus lib in lite mode" OFF)
 lite_option(LITE_WITH_PYTHON    "Enable Python api lib in lite mode" OFF)
 lite_option(LITE_WITH_CUDA      "Enable CUDA in lite mode" OFF)
 lite_option(LITE_WITH_X86       "Enable X86 in lite mode"  ON)

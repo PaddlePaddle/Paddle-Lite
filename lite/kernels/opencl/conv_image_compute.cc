@@ -132,7 +132,7 @@ void ConvImageCompute::PrepareForRun() {
     if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
       CHECK(pad_equal && stride_equal && dilation_equal);
       if (input_tensor_c_ % 4 == 0) {
-        kernel_func_names_.push_back("conv2d_1x1_simple");
+        kernel_func_names_.push_back("conv2d_1x1_h1w4c1");
       } else {
         kernel_func_names_.push_back("conv2d_1x1_opt");
       }
@@ -574,71 +574,181 @@ void ConvImageCompute::PrepareForRun() {
 #define SHOW_EACH_LWS_TIME
 #undef SHOW_EACH_LWS_TIME
 void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
-  auto& context = ctx_->As<OpenCLContext>();
-  std::stringstream kernel_key;
-  kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
-  kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+  if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1") {
+    auto tuned_map_key = GenerateTunedKey();
+    cl::NDRange lws_in_map = cl::NullRange;
+    // if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
+    //                                                   &lws_in_map)) {
+    //   local_work_size_ = lws_in_map;
+    //   return;
+    // }
+    std::string final_kernel_func_name = "conv2d_1x1_h1w4c1";
+    cl::NDRange final_global_work_size = cl::NDRange{
+        static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+    cl::NDRange final_local_work_size = cl::NDRange{
+        static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+    double final_lws_time = DBL_MAX;
+    auto& context = ctx_->As<OpenCLContext>();
+    std::stringstream kernel_key;
+    for (size_t i = 0; i < 4; i++) {
+      if (i == 1) {
+        kernel_func_names_[0] = "conv2d_1x1_h1w5c1";
+        global_work_size_ =
+            cl::NDRange{static_cast<size_t>(default_c_blk_),
+                        static_cast<size_t>(UP_DIV(default_w_blk_, 5)),
+                        static_cast<size_t>(default_nh_blk_)};
+        context.cl_context()->AddKernel(kernel_func_names_[0],
+                                        kernel_func_paths_[0],
+                                        build_options_[0],
+                                        time_stamp_);
+      }
+      if (i == 2) {
+        kernel_func_names_[0] = "conv2d_1x1_h1w7c1";
+        global_work_size_ =
+            cl::NDRange{static_cast<size_t>(default_c_blk_),
+                        static_cast<size_t>(UP_DIV(default_w_blk_, 7)),
+                        static_cast<size_t>(default_nh_blk_)};
+        context.cl_context()->AddKernel(kernel_func_names_[0],
+                                        kernel_func_paths_[0],
+                                        build_options_[0],
+                                        time_stamp_);
+      }
+      if (i == 3) {
+        kernel_func_names_[0] = "conv2d_1x1_h2w2c2";
+        global_work_size_ =
+            cl::NDRange{static_cast<size_t>(UP_DIV(default_c_blk_, 2)),
+                        static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
+                        static_cast<size_t>(UP_DIV(default_nh_blk_, 2))};
+        context.cl_context()->AddKernel(kernel_func_names_[0],
+                                        kernel_func_paths_[0],
+                                        build_options_[0],
+                                        time_stamp_);
+      }
+      kernel_key.str("");
+      kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
+      kernel_ = context.cl_context()->GetKernel(kernel_key.str());
 
-  auto tuned_map_key = GenerateTunedKey();
-  cl::NDRange lws_in_map = cl::NullRange;
-  if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
-                                                    &lws_in_map)) {
-    local_work_size_ = lws_in_map;
-    return;
-  }
-
-  size_t max_work_group_size = 0;
-  kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
-                                   CL_KERNEL_WORK_GROUP_SIZE,
-                                   &max_work_group_size);
-  std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
-      global_work_size_, max_work_group_size);
-  CHECK(lwss.size() > 0) << "Possible local work sizes should bigger than zero";
-  local_work_size_ = *lwss.begin();
-  if (max_work_group_size <= 0 || !use_lws_ ||
-      CLRuntime::Global()->auto_tune() <= 0) {
-    if (!use_lws_) {
-      local_work_size_ = cl::NullRange;
+      size_t max_work_group_size = 0;
+      kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                       CL_KERNEL_WORK_GROUP_SIZE,
+                                       &max_work_group_size);
+      std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
+          global_work_size_, max_work_group_size);
+      CHECK(lwss.size() > 0)
+          << "Possible local work sizes should bigger than zero";
+      local_work_size_ = *lwss.begin();
+      if (max_work_group_size <= 0 || !use_lws_ ||
+          CLRuntime::Global()->auto_tune() <= 0) {
+        if (!use_lws_) {
+          local_work_size_ = cl::NullRange;
+        }
+        return;
+      }
+      double min_lws_time = DBL_MAX;
+      cl::NDRange min_lws = *lwss.begin();
+      for (cl::NDRange cur_lws : lwss) {
+        local_work_size_ = cur_lws;
+        double cur_lws_time = 0.0f;
+        // note: useless for skip first run
+        for (size_t i = 0; i < repeats; ++i) {
+          Run();
+          cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
+        }
+        cur_lws_time /= repeats;
+        if (min_lws_time > cur_lws_time) {
+          min_lws = cur_lws;
+          min_lws_time = cur_lws_time;
+        }
+      }
+      if (final_lws_time > min_lws_time) {
+        final_kernel_func_name = kernel_func_names_[0];
+        final_global_work_size = global_work_size_;
+        final_local_work_size = min_lws;
+        final_lws_time = min_lws_time;
+      }
     }
-    return;
-  }
+    kernel_func_names_[0] = final_kernel_func_name;
+    global_work_size_ = final_global_work_size;
+    local_work_size_ = final_local_work_size;
+    kernel_key.str("");
+    kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+    if (kernel_func_names_[0] == "conv2d_1x1_h1w5c1") {
+      w_blk_ = UP_DIV(default_w_blk_, 5);
+    }
+    if (kernel_func_names_[0] == "conv2d_1x1_h1w7c1") {
+      w_blk_ = UP_DIV(default_w_blk_, 7);
+    }
+    // CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,local_work_size_);
+  } else {
+    auto& context = ctx_->As<OpenCLContext>();
+    std::stringstream kernel_key;
+    kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+
+    auto tuned_map_key = GenerateTunedKey();
+    cl::NDRange lws_in_map = cl::NullRange;
+    if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
+                                                      &lws_in_map)) {
+      local_work_size_ = lws_in_map;
+      return;
+    }
+
+    size_t max_work_group_size = 0;
+    kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                     CL_KERNEL_WORK_GROUP_SIZE,
+                                     &max_work_group_size);
+    std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
+        global_work_size_, max_work_group_size);
+    CHECK(lwss.size() > 0)
+        << "Possible local work sizes should bigger than zero";
+    local_work_size_ = *lwss.begin();
+    if (max_work_group_size <= 0 || !use_lws_ ||
+        CLRuntime::Global()->auto_tune() <= 0) {
+      if (!use_lws_) {
+        local_work_size_ = cl::NullRange;
+      }
+      return;
+    }
 
 #ifdef SHOW_EACH_LWS_TIME
-  LOG(INFO) << "====== start =======";
+    LOG(INFO) << "====== start =======";
 #endif
-  double min_lws_time = DBL_MAX;
-  cl::NDRange min_lws = *lwss.begin();
-  for (cl::NDRange cur_lws : lwss) {
-    local_work_size_ = cur_lws;
-    double cur_lws_time = 0.0f;
-    // note: useless for skip first run
-    for (size_t i = 0; i < repeats; ++i) {
-      Run();
-      cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
-    }
-    cur_lws_time /= repeats;
+    double min_lws_time = DBL_MAX;
+    cl::NDRange min_lws = *lwss.begin();
+    for (cl::NDRange cur_lws : lwss) {
+      local_work_size_ = cur_lws;
+      double cur_lws_time = 0.0f;
+      // note: useless for skip first run
+      for (size_t i = 0; i < repeats; ++i) {
+        Run();
+        cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
+      }
+      cur_lws_time /= repeats;
 #ifdef SHOW_EACH_LWS_TIME
-    LOG(INFO) << GenerateTunedKey() << " "
-              << "{" << std::to_string(local_work_size_[0]) << ","
-              << std::to_string(local_work_size_[1]) << ","
-              << std::to_string(local_work_size_[2]) << "} -->" << cur_lws_time;
+      LOG(INFO) << GenerateTunedKey() << " "
+                << "{" << std::to_string(local_work_size_[0]) << ","
+                << std::to_string(local_work_size_[1]) << ","
+                << std::to_string(local_work_size_[2]) << "} -->"
+                << cur_lws_time;
 #endif
-    if (min_lws_time > cur_lws_time) {
-      min_lws = cur_lws;
-      min_lws_time = cur_lws_time;
+      if (min_lws_time > cur_lws_time) {
+        min_lws = cur_lws;
+        min_lws_time = cur_lws_time;
+      }
     }
+#ifdef SHOW_EACH_LWS_TIME
+    LOG(INFO) << "=======================";
+    LOG(INFO) << "best:" << std::to_string(min_lws[0]) << ","
+              << std::to_string(min_lws[1]) << "," << std::to_string(min_lws[2])
+              << ","
+              << " time:" << min_lws_time;
+    LOG(INFO) << "======= finish ========";
+#endif
+    local_work_size_ = min_lws;
+    CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,
+                                                  local_work_size_);
   }
-#ifdef SHOW_EACH_LWS_TIME
-  LOG(INFO) << "=======================";
-  LOG(INFO) << "best:" << std::to_string(min_lws[0]) << ","
-            << std::to_string(min_lws[1]) << "," << std::to_string(min_lws[2])
-            << ","
-            << " time:" << min_lws_time;
-  LOG(INFO) << "======= finish ========";
-#endif
-  local_work_size_ = min_lws;
-  CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,
-                                                local_work_size_);
 }
 
 std::string ConvImageCompute::GenerateTunedKey() {
@@ -725,9 +835,9 @@ void ConvImageCompute::SetGlobalWorkSize() {
         cl::NDRange{static_cast<size_t>(c_blk_ * UP_DIV(w_blk_, 4)),
                     static_cast<size_t>(nh_blk_)};
 
-  } else if (kernel_func_names_[0] == "conv2d_1x1_simple" ||
+  } else if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1" ||
              kernel_func_names_[0] == "conv2d_1x1_opt") {
-    w_blk_ = maptofactor(default_w_blk_, 4);
+    w_blk_ = UP_DIV(default_w_blk_, 4);
     c_blk_ = default_c_blk_;
     nh_blk_ = default_nh_blk_;
     global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
@@ -906,7 +1016,7 @@ void ConvImageCompute::Conv2d1x1Mali() {
 }
 
 void ConvImageCompute::Conv2d1x1opt() {
-  status_ = kernel_.setArg(0, c_blk_);
+  status_ = kernel_.setArg(0, default_c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
   CL_CHECK_FATAL(status_);
@@ -1346,9 +1456,11 @@ void ConvImageCompute::Run() {
   (this->*impl_)();
 
   auto& context = ctx_->As<OpenCLContext>();
+  /*
   status_ = context.cl_context()->RunKernel(
       kernel_, global_work_size_, local_work_size_, &event_);
-  /*
+  */
+
   status_ = EnqueueNDRangeKernel(context,
                                  kernel_,
                                  cl::NullRange,
@@ -1356,7 +1468,6 @@ void ConvImageCompute::Run() {
                                  local_work_size_,
                                  nullptr,
                                  event_);
-  */
   CL_CHECK_FATAL(status_);
 }
 

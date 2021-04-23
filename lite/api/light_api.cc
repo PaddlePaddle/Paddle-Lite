@@ -234,7 +234,8 @@ void LightPredictor::DequantizeWeight() {
                 const int16_t* int_data = tmp_tensor.data<int16_t>();
                 PROCESS_CONV2D_DATA()
               }
-            } else if (op_type == "fc" || op_type == "mul") {
+            } else if (op_type == "fc" || op_type == "mul" ||
+                       op_type == "lookup_table") {
               int64_t chin = input_tensor->dims()[0];
               int64_t chout = input_tensor->dims()[1];
               CHECK_EQ(scale_list.size(), chout);
