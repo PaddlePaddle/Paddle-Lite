@@ -1,6 +1,9 @@
 lite_cc_library(fuse_fc
         SRCS fc_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_matmul_elementwise_add
+        SRCS matmul_elementwise_add_fuser.cc
+        DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_reshape2_matmul
         SRCS reshape2_matmul_fuser.cc
         DEPS pattern_matcher_high_api)
@@ -75,6 +78,7 @@ set(mir_fusers
     fuse_reshape2_matmul
     fuse_squeeze2_matmul
     fuse_matmul
+    fuse_matmul_elementwise_add
     fuse_fc
     fuse_shuffle_channel
     fuse_conv_elementwise
