@@ -44,6 +44,7 @@ void BilinearInterpCompute::Run() {
   }
 
   zynqmp::Tensor input_float;
+  input_float.setAligned(input_x->aligned());
   input_float.setDataLocation(zynqmp::CPU);
   float* input = input_float.mutableData<float>(zynqmp::FP32, input_x->shape());
   input_float.copyFrom(input_x);
