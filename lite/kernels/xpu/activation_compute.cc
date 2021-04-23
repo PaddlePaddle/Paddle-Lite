@@ -208,6 +208,18 @@ void SoftsignCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void SwishCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+  auto beta = param.Swish_beta;
+  CHECK(std::abs(beta - 1.0f) < 1e-7);
+  int r = xdnn::swish(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
@@ -330,5 +342,12 @@ REGISTER_LITE_KERNEL(softsign,
                      paddle::lite::kernels::xpu::SoftsignCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    swish, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SwishCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
