@@ -43,7 +43,7 @@ const char* opencl_error_to_str(cl_int error);
         __LINE__);                                                   \
   }
 #else
-#define CL_CHECK_FATAL(err_code__)
+#define CL_CHECK_FATAL(err_code__) LOG(FATAL)
 #endif
 
 #ifdef LITE_WITH_PROFILE
