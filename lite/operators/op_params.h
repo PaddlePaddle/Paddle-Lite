@@ -1011,8 +1011,8 @@ struct PriorBoxParam : ParamBase {
   lite::Tensor* boxes{};
   lite::Tensor* variances{};
 
-  bool flip;
-  bool clip;
+  bool flip{true};
+  bool clip{true};
   std::vector<float> min_sizes;
   std::vector<float> max_sizes;
   std::vector<float> aspect_ratios;
