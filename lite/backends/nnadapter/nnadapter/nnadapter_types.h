@@ -88,11 +88,9 @@ typedef enum {
 /**
  * Operand life time codes, where to find the data for a operand.
  * * NNADAPTER_TEMPORARY_VARIABLE: A temporary operand in a newtork, There is no
- need to set its
- *     data during building a network.
+ need to set its data during building a network.
  * * NNADAPTER_CONSTANT: A constant operand, copy to an new space allocated
- internally during
-       building a network.
+ internally during building a network.
  */
 typedef enum {
   NNADAPTER_TEMPORARY_VARIABLE = 0,
@@ -108,8 +106,7 @@ typedef enum {
   /**
    * 2-D convolution operation.
    * The CONV_2D op computes a 2-D convolution based on the input, filter,
-   * strides,
-   * addings, dilations, groups and etc.
+   * strides, paddings, dilations, groups and etc.
    *
    * Inputs:
    * * 0: input, A 4-D tensor with shape [N, C_in, H_in, W_in].
@@ -200,8 +197,8 @@ typedef struct NNAdapterSymmPerLayerQuantParams {
  * operand.
  */
 typedef struct NNAdapterSymmPerChannelQuantParams {
-  uint32_t channelDim;
-  uint32_t scaleCount;
+  uint32_t channel_dim;
+  uint32_t scale_count;
   float* scales;
 } NNAdapterSymmPerChannelQuantParams;
 
@@ -211,7 +208,7 @@ typedef struct NNAdapterSymmPerChannelQuantParams {
  */
 typedef struct NNAdapterAsymmPerLayerQuantParams {
   float scale;
-  int32_t zeroPoint;
+  int32_t zero_point;
 } NNAdapterAsymmPerLayerQuantParams;
 
 /**
@@ -239,7 +236,7 @@ typedef struct NNAdapterOperandType {
    *
    * Must be 0 for scalars.
    */
-  uint32_t dimensionCount;
+  uint32_t dimension_count;
 
   /**
    * The dimensions of the tensor.
@@ -250,9 +247,9 @@ typedef struct NNAdapterOperandType {
    * The quantization parameters.
    */
   union {
-    NNAdapterSymmPerLayerQuantParams symmPerLayerParams;
-    NNAdapterSymmPerChannelQuantParams symmPerChannelParams;
-    NNAdapterAsymmPerLayerQuantParams asymmPerLayerParams;
+    NNAdapterSymmPerLayerQuantParams symm_per_layer_params;
+    NNAdapterSymmPerChannelQuantParams symm_per_channel_params;
+    NNAdapterAsymmPerLayerQuantParams asymm_per_layer_params;
   };
 } NNAdapterOperandType;
 
@@ -261,83 +258,6 @@ typedef int32_t NNAdapterOperationType;
 typedef struct NNAdapterDevice NNAdapterDevice;
 typedef struct NNAdapterOperand NNAdapterOperand;
 typedef struct NNAdapterOperation NNAdapterOperation;
-typedef struct NNAdapterGraph NNAdapterGraph;
 typedef struct NNAdapterModel NNAdapterModel;
+typedef struct NNAdapterCompilation NNAdapterCompilation;
 typedef struct NNAdapterExecution NNAdapterExecution;
-typedef struct NNAdapterEvent NNAdapterEvent;
-
-typedef int (*NNAdapterDevice_acquire_fn)(const char* name,
-                                          NNAdapterDevice** device);
-typedef void (*NNAdapterDevice_release_fn)(NNAdapterDevice* device);
-typedef int (*NNAdapterDevice_getName_fn)(const NNAdapterDevice* device,
-                                          const char** name);
-typedef int (*NNAdapterDevice_getVendor_fn)(const NNAdapterDevice* device,
-                                            const char** vendor);
-typedef int (*NNAdapterDevice_getType_fn)(const NNAdapterDevice* device,
-                                          NNAdapterDeviceType* type);
-typedef int (*NNAdapterDevice_getVersion_fn)(const NNAdapterDevice* device,
-                                             int32_t* version);
-
-typedef int (*NNAdapterGraph_create_fn)(NNAdapterGraph** graph);
-typedef void (*NNAdapterGraph_destroy_fn)(NNAdapterGraph* graph);
-typedef int (*NNAdapterGraph_finish_fn)(NNAdapterGraph* graph);
-typedef int (*NNAdapterGraph_addOperand_fn)(NNAdapterGraph* graph,
-                                            const NNAdapterOperandType* type,
-                                            NNAdapterOperand** operand);
-typedef int (*NNAdapterGraph_setOperand_fn)(NNAdapterOperand* operand,
-                                            void* buffer,
-                                            size_t length);
-typedef int (*NNAdapterGraph_addOperation_fn)(NNAdapterGraph* graph,
-                                              NNAdapterOperationType type,
-                                              NNAdapterOperation** operation);
-typedef int (*NNAdapterGraph_setOperation_fn)(NNAdapterOperation* operation,
-                                              uint32_t inputCount,
-                                              NNAdapterOperand** inputs,
-                                              uint32_t outputCount,
-                                              NNAdapterOperand** outputs);
-typedef int (*NNAdapterGraph_identifyInputsAndOutputs_fn)(
-    NNAdapterGraph* graph,
-    uint32_t inputCount,
-    NNAdapterOperand** inputs,
-    uint32_t outputCount,
-    NNAdapterOperand** outputs);
-
-typedef int (*NNAdapterModel_createFromGraph_fn)(NNAdapterGraph* graph,
-                                                 NNAdapterDevice** devices,
-                                                 uint32_t numDevices,
-                                                 NNAdapterModel** model);
-typedef int (*NNAdapterModel_createFromCache_fn)(
-    void* buffer,
-    size_t length,
-    uint32_t inputCount,
-    const NNAdapterOperandType** inputTypes,
-    uint32_t outputCount,
-    const NNAdapterOperandType** outputTypes,
-    NNAdapterDevice** devices,
-    uint32_t numDevices,
-    NNAdapterModel** model);
-typedef void (*NNAdapterModel_destroy_fn)(NNAdapterModel* model);
-typedef void (*NNAdapterModel_finish_fn)(NNAdapterModel* model);
-typedef int (*NNAdapterModel_setCaching_fn)(NNAdapterModel* model,
-                                            const char* cacheDir,
-                                            const uint8_t* token);
-
-typedef int (*NNAdapterExecution_create_fn)(NNAdapterModel* model,
-                                            NNAdapterExecution** execution);
-typedef void (*NNAdapterExecution_destroy_fn)(NNAdapterExecution* execution);
-typedef int (*NNAdapterExecution_setInput_fn)(NNAdapterExecution* execution,
-                                              int32_t index,
-                                              const uint32_t* dimensions,
-                                              uint32_t dimensionCount,
-                                              void* buffer,
-                                              size_t length);
-typedef int (*NNAdapterExecution_setOutput_fn)(NNAdapterExecution* execution,
-                                               int32_t index,
-                                               const uint32_t* dimensions,
-                                               uint32_t dimensionCount,
-                                               void* buffer,
-                                               size_t length);
-typedef int (*NNAdapterExecution_run_fn)(NNAdapterExecution* execution,
-                                         NNAdapterEvent** event);
-typedef int (*NNAdapterEvent_wait_fn)(NNAdapterEvent* event);
-typedef void (*NNAdapterEvent_destroy_fn)(NNAdapterEvent* event);

@@ -32,7 +32,7 @@ NNADAPTER_EXPORT int NNAdapterDevice_acquire(const char* name,
     *device = nullptr;
     return NNADAPTER_OUT_OF_MEMORY;
   }
-  if (!d->hasDriver()) {
+  if (!d->HasDriver()) {
     delete d;
     NNADAPTER_LOG(ERROR) << "The NNAdapter driver of '" << name
                          << "' is not initialized.";
@@ -55,7 +55,7 @@ NNADAPTER_EXPORT int NNAdapterDevice_getName(const NNAdapterDevice* device,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto d = reinterpret_cast<const nnadapter::runtime::Device*>(device);
-  *name = d->getName();
+  *name = d->GetName();
   return NNADAPTER_NO_ERROR;
 }
 
@@ -65,7 +65,7 @@ NNADAPTER_EXPORT int NNAdapterDevice_getVendor(const NNAdapterDevice* device,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto d = reinterpret_cast<const nnadapter::runtime::Device*>(device);
-  *vendor = d->getVendor();
+  *vendor = d->GetVendor();
   return NNADAPTER_NO_ERROR;
 }
 
@@ -75,7 +75,7 @@ NNADAPTER_EXPORT int NNAdapterDevice_getType(const NNAdapterDevice* device,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto d = reinterpret_cast<const nnadapter::runtime::Device*>(device);
-  *type = d->getType();
+  *type = d->GetType();
   return NNADAPTER_NO_ERROR;
 }
 
@@ -85,159 +85,15 @@ NNADAPTER_EXPORT int NNAdapterDevice_getVersion(const NNAdapterDevice* device,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto d = reinterpret_cast<const nnadapter::runtime::Device*>(device);
-  *version = d->getVersion();
+  *version = d->GetVersion();
   return NNADAPTER_NO_ERROR;
 }
 
-NNADAPTER_EXPORT int NNAdapterGraph_create(NNAdapterGraph** graph) {
-  if (!graph) {
+NNADAPTER_EXPORT int NNAdapterModel_create(NNAdapterModel** model) {
+  if (!model) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  auto g = new nnadapter::runtime::Graph();
-  if (g == nullptr) {
-    *graph = nullptr;
-    return NNADAPTER_OUT_OF_MEMORY;
-  }
-  *graph = reinterpret_cast<NNAdapterGraph*>(g);
-  return NNADAPTER_NO_ERROR;
-}
-
-NNADAPTER_EXPORT void NNAdapterGraph_destroy(NNAdapterGraph* graph) {
-  if (!graph) {
-    auto g = reinterpret_cast<nnadapter::runtime::Graph*>(graph);
-    delete g;
-  }
-}
-
-NNADAPTER_EXPORT int NNAdapterGraph_finish(NNAdapterGraph* graph) {
-  if (!graph) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto g = reinterpret_cast<nnadapter::runtime::Graph*>(graph);
-  return g->finish();
-}
-
-NNADAPTER_EXPORT int NNAdapterGraph_addOperand(NNAdapterGraph* graph,
-                                               const NNAdapterOperandType* type,
-                                               NNAdapterOperand** operand) {
-  if (!graph || !type || !operand) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto g = reinterpret_cast<nnadapter::runtime::Graph*>(graph);
-  nnadapter::driver::Operand* o = nullptr;
-  int result = g->addOperand(*type, &o);
-  if (result == NNADAPTER_NO_ERROR) {
-    *operand = reinterpret_cast<NNAdapterOperand*>(o);
-  }
-  return result;
-}
-
-NNADAPTER_EXPORT int NNAdapterGraph_setOperand(NNAdapterOperand* operand,
-                                               void* buffer,
-                                               size_t length) {
-  if (!operand || !buffer || !length) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto o = reinterpret_cast<nnadapter::driver::Operand*>(operand);
-  o->buffer = malloc(length);
-  if (!o->buffer) return NNADAPTER_OUT_OF_MEMORY;
-  memcpy(o->buffer, buffer, length);
-  o->length = length;
-  o->type.lifetime = NNADAPTER_CONSTANT;
-  return NNADAPTER_NO_ERROR;
-}
-
-NNADAPTER_EXPORT int NNAdapterGraph_addOperation(
-    NNAdapterGraph* graph,
-    NNAdapterOperationType type,
-    NNAdapterOperation** operation) {
-  if (!graph || !operation) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto g = reinterpret_cast<nnadapter::runtime::Graph*>(graph);
-  nnadapter::driver::Operation* o = nullptr;
-  int result = g->addOperation(type, &o);
-  if (result == NNADAPTER_NO_ERROR) {
-    *operation = reinterpret_cast<NNAdapterOperation*>(o);
-  }
-  return result;
-}
-
-NNADAPTER_EXPORT int NNAdapterGraph_setOperation(NNAdapterOperation** operation,
-                                                 uint32_t inputCount,
-                                                 NNAdapterOperand** inputs,
-                                                 uint32_t outputCount,
-                                                 NNAdapterOperand** outputs) {
-  if (!operation) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto o = reinterpret_cast<nnadapter::driver::Operation*>(operation);
-  o->inputs.resize(inputCount);
-  for (uint32_t i = 0; i < inputCount; i++) {
-    o->inputs[i] = reinterpret_cast<nnadapter::driver::Operand*>(inputs[i]);
-  }
-  o->outputs.resize(outputCount);
-  for (uint32_t i = 0; i < outputCount; i++) {
-    o->outputs[i] = reinterpret_cast<nnadapter::driver::Operand*>(outputs[i]);
-  }
-  return NNADAPTER_NO_ERROR;
-}
-
-NNADAPTER_EXPORT int NNAdapterGraph_identifyInputsAndOutputs(
-    NNAdapterGraph* graph,
-    uint32_t inputCount,
-    NNAdapterOperand** inputs,
-    uint32_t outputCount,
-    NNAdapterOperand** outputs) {
-  if (!graph || !outputs || !outputCount) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto g = reinterpret_cast<nnadapter::runtime::Graph*>(graph);
-  auto is = reinterpret_cast<nnadapter::driver::Operand**>(inputs);
-  auto os = reinterpret_cast<nnadapter::driver::Operand**>(outputs);
-  return g->identifyInputsAndOutputs(inputCount, is, outputCount, os);
-}
-
-NNADAPTER_EXPORT int NNAdapterModel_createFromGraph(NNAdapterGraph* graph,
-                                                    NNAdapterDevice** devices,
-                                                    uint32_t numDevices,
-                                                    NNAdapterModel** model) {
-  if (!graph || !devices || !model) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto g = reinterpret_cast<nnadapter::runtime::Graph*>(graph);
-  std::vector<nnadapter::runtime::Device*> ds;
-  for (uint32_t i = 0; i < numDevices; i++) {
-    ds.push_back(reinterpret_cast<nnadapter::runtime::Device*>(devices[i]));
-  }
-  auto m = new nnadapter::runtime::Model(g, ds);
-  if (m == nullptr) {
-    *model = nullptr;
-    return NNADAPTER_OUT_OF_MEMORY;
-  }
-  *model = reinterpret_cast<NNAdapterModel*>(m);
-  return NNADAPTER_NO_ERROR;
-}
-
-NNADAPTER_EXPORT int NNAdapterModel_createFromCache(
-    void* buffer,
-    size_t length,
-    uint32_t inputCount,
-    const NNAdapterOperandType** inputTypes,
-    uint32_t outputCount,
-    const NNAdapterOperandType** outputTypes,
-    NNAdapterDevice** devices,
-    uint32_t numDevices,
-    NNAdapterModel** model) {
-  if (!buffer || !length || !model) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  std::vector<nnadapter::runtime::Device*> ds;
-  for (uint32_t i = 0; i < numDevices; i++) {
-    ds.push_back(reinterpret_cast<nnadapter::runtime::Device*>(devices[i]));
-  }
-  auto m = new nnadapter::runtime::Model(
-      buffer, length, inputCount, inputTypes, outputCount, outputTypes, ds);
+  auto m = new nnadapter::runtime::Model();
   if (m == nullptr) {
     *model = nullptr;
     return NNADAPTER_OUT_OF_MEMORY;
@@ -258,26 +114,141 @@ NNADAPTER_EXPORT int NNAdapterModel_finish(NNAdapterModel* model) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
-  return m->finish();
+  return m->Finish();
 }
 
-NNADAPTER_EXPORT int NNAdapterModel_setCaching(NNAdapterModel* model,
-                                               const char* cacheDir,
-                                               const uint8_t* token) {
-  if (!model) {
+NNADAPTER_EXPORT int NNAdapterModel_addOperand(NNAdapterModel* model,
+                                               const NNAdapterOperandType* type,
+                                               NNAdapterOperand** operand) {
+  if (!model || !type || !operand) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
-  return m->setCaching(cacheDir, token);
+  nnadapter::driver::Operand* o = nullptr;
+  int result = m->AddOperand(*type, &o);
+  if (result == NNADAPTER_NO_ERROR) {
+    *operand = reinterpret_cast<NNAdapterOperand*>(o);
+  }
+  return result;
 }
 
-NNADAPTER_EXPORT int NNAdapterExecution_create(NNAdapterModel* model,
-                                               NNAdapterExecution** execution) {
-  if (!model || !execution) {
+NNADAPTER_EXPORT int NNAdapterModel_setOperand(NNAdapterOperand* operand,
+                                               void* buffer,
+                                               size_t length) {
+  if (!operand || !buffer || !length) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto o = reinterpret_cast<nnadapter::driver::Operand*>(operand);
+  o->buffer = malloc(length);
+  if (!o->buffer) return NNADAPTER_OUT_OF_MEMORY;
+  memcpy(o->buffer, buffer, length);
+  o->length = length;
+  o->type.lifetime = NNADAPTER_CONSTANT;
+  return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int NNAdapterModel_addOperation(
+    NNAdapterModel* model,
+    NNAdapterOperationType type,
+    NNAdapterOperation** operation) {
+  if (!model || !operation) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
-  auto e = new nnadapter::runtime::Execution(m);
+  nnadapter::driver::Operation* o = nullptr;
+  int result = m->AddOperation(type, &o);
+  if (result == NNADAPTER_NO_ERROR) {
+    *operation = reinterpret_cast<NNAdapterOperation*>(o);
+  }
+  return result;
+}
+
+NNADAPTER_EXPORT int NNAdapterModel_setOperation(NNAdapterOperation* operation,
+                                                 uint32_t input_count,
+                                                 NNAdapterOperand** inputs,
+                                                 uint32_t output_count,
+                                                 NNAdapterOperand** outputs) {
+  if (!operation) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto o = reinterpret_cast<nnadapter::driver::Operation*>(operation);
+  o->inputs.resize(input_count);
+  for (uint32_t i = 0; i < input_count; i++) {
+    o->inputs[i] = reinterpret_cast<nnadapter::driver::Operand*>(inputs[i]);
+  }
+  o->outputs.resize(output_count);
+  for (uint32_t i = 0; i < output_count; i++) {
+    o->outputs[i] = reinterpret_cast<nnadapter::driver::Operand*>(outputs[i]);
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int NNAdapterModel_identifyInputsAndOutputs(
+    NNAdapterModel* model,
+    uint32_t input_count,
+    NNAdapterOperand** inputs,
+    uint32_t output_count,
+    NNAdapterOperand** outputs) {
+  if (!model || !outputs || !output_count) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
+  auto is = reinterpret_cast<nnadapter::driver::Operand**>(inputs);
+  auto os = reinterpret_cast<nnadapter::driver::Operand**>(outputs);
+  return m->IdentifyInputsAndOutputs(input_count, is, output_count, os);
+}
+
+NNADAPTER_EXPORT int NNAdapterCompilation_create(
+    NNAdapterModel* model,
+    const char* cache_key,
+    void* cache_buffer,
+    size_t cache_length,
+    const char* cache_dir,
+    NNAdapterDevice** devices,
+    uint32_t num_devices,
+    NNAdapterCompilation** compilation) {
+  if (!devices || !compilation) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
+  std::vector<nnadapter::runtime::Device*> ds;
+  for (uint32_t i = 0; i < num_devices; i++) {
+    ds.push_back(reinterpret_cast<nnadapter::runtime::Device*>(devices[i]));
+  }
+  auto c = new nnadapter::runtime::Compilation(
+      m, cache_key, cache_buffer, cache_length, cache_dir, ds);
+  if (c == nullptr) {
+    *compilation = nullptr;
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  *compilation = reinterpret_cast<NNAdapterCompilation*>(c);
+  return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT void NNAdapterCompilation_destroy(
+    NNAdapterCompilation* compilation) {
+  if (!compilation) {
+    auto c = reinterpret_cast<nnadapter::runtime::Compilation*>(compilation);
+    delete c;
+  }
+}
+
+NNADAPTER_EXPORT int NNAdapterCompilation_finish(
+    NNAdapterCompilation* compilation) {
+  if (!compilation) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto c = reinterpret_cast<nnadapter::runtime::Compilation*>(compilation);
+  return c->Finish();
+}
+
+NNADAPTER_EXPORT int NNAdapterExecution_create(
+    NNAdapterCompilation* compilation, NNAdapterExecution** execution) {
+  if (!compilation || !execution) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto c = reinterpret_cast<nnadapter::runtime::Compilation*>(compilation);
+  auto e = new nnadapter::runtime::Execution(c);
   if (e == nullptr) {
     *execution = nullptr;
     return NNADAPTER_OUT_OF_MEMORY;
@@ -297,61 +268,35 @@ NNADAPTER_EXPORT void NNAdapterExecution_destroy(
 NNADAPTER_EXPORT int NNAdapterExecution_setInput(NNAdapterExecution* execution,
                                                  int32_t index,
                                                  const uint32_t* dimensions,
-                                                 uint32_t dimensionCount,
+                                                 uint32_t dimension_count,
                                                  void* buffer,
                                                  size_t length) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto e = reinterpret_cast<nnadapter::runtime::Execution*>(execution);
-  return e->setInput(index, dimensions, dimensionCount, buffer, length);
+  return e->SetInput(index, dimensions, dimension_count, buffer, length);
 }
 
 NNADAPTER_EXPORT int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
                                                   int32_t index,
                                                   const uint32_t* dimensions,
-                                                  uint32_t dimensionCount,
+                                                  uint32_t dimension_count,
                                                   void* buffer,
                                                   size_t length) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto e = reinterpret_cast<nnadapter::runtime::Execution*>(execution);
-  return e->setOutput(index, dimensions, dimensionCount, buffer, length);
+  return e->SetOutput(index, dimensions, dimension_count, buffer, length);
 }
 
-NNADAPTER_EXPORT int NNAdapterExecution_run(NNAdapterExecution* execution,
-                                            NNAdapterEvent** event) {
+NNADAPTER_EXPORT int NNAdapterExecution_compute(NNAdapterExecution* execution) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto e = reinterpret_cast<nnadapter::runtime::Execution*>(execution);
-  int result;
-  if (event) {
-    nnadapter::runtime::Event* n = nullptr;
-    result = e->run(&n);
-    *event = reinterpret_cast<NNAdapterEvent*>(n);
-  } else {
-    result = e->run(nullptr);
-  }
-  return result;
-}
-
-NNADAPTER_EXPORT int NNAdapterEvent_wait(NNAdapterEvent* event) {
-  if (!event) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto n = reinterpret_cast<nnadapter::runtime::Event*>(event);
-  n->wait();
-  return n->getStatus();
-}
-
-NNADAPTER_EXPORT void NNAdapterEvent_destroy(NNAdapterEvent* event) {
-  if (event) {
-    auto n = reinterpret_cast<nnadapter::runtime::Event*>(event);
-    n->wait();
-    delete n;
-  }
+  return e->Compute();
 }
 
 #ifdef __cplusplus

@@ -22,266 +22,217 @@ namespace nnadapter {
 namespace runtime {
 
 Device::Device(const std::string& name) {
-  driver_ = Driver::Global().Find(name.c_str());
+  driver_ = DriverManager::Global().Find(name.c_str());
   if (driver_) {
-    driver_->createContext(&context_);
+    driver_->create_context(&context_);
   }
 }
 
 Device::~Device() {
   if (driver_ && context_) {
-    driver_->destroyContext(context_);
+    driver_->destroy_context(context_);
   }
   context_ = nullptr;
   driver_ = nullptr;
 }
 
-int Device::createModelFromGraph(driver::Graph* graph, void** model) {
-  if (driver_ && context_ && graph && model) {
-    return driver_->createModelFromGraph(context_, graph, model);
+int Device::CreateProgram(driver::Model* model,
+                          driver::Cache* cache,
+                          void** program) {
+  if (driver_ && context_ && model && program) {
+    return driver_->create_program(context_, model, cache, program);
   }
   return NNADAPTER_INVALID_PARAMETER;
 }
 
-int Device::createModelFromCache(void* buffer, size_t length, void** model) {
-  if (driver_ && context_ && buffer && length) {
-    return driver_->createModelFromCache(context_, buffer, length, model);
+void Device::DestroyProgram(void* program) {
+  if (driver_ && context_ && program) {
+    return driver_->destroy_program(context_, program);
+  }
+}
+
+int Device::ExecuteProgram(void* program,
+                           uint32_t input_count,
+                           driver::Argument* inputs,
+                           uint32_t output_count,
+                           driver::Argument* outputs) {
+  if (driver_ && context_ && program && outputs && output_count) {
+    return driver_->execute_program(
+        context_, program, input_count, inputs, output_count, outputs);
   }
   return NNADAPTER_INVALID_PARAMETER;
 }
 
-void Device::destroyModel(void* model) {
-  if (driver_ && context_ && model) {
-    return driver_->destroyModel(context_, model);
-  }
-}
-
-int Device::runModelSync(void* model,
-                         uint32_t inputCount,
-                         driver::Operand** inputs,
-                         uint32_t outputCount,
-                         driver::Operand** outputs) {
-  if (driver_ && context_ && model && outputs && outputCount) {
-    return driver_->runModelSync(
-        context_, model, inputCount, inputs, outputCount, outputs);
-  }
-  return NNADAPTER_INVALID_PARAMETER;
-}
-
-int Device::runModelAsync(void* model,
-                          uint32_t inputCount,
-                          driver::Operand** inputs,
-                          uint32_t outputCount,
-                          driver::Operand** outputs) {
-  if (driver_ && context_ && outputs && outputCount) {
-    return driver_->runModelAsync(
-        context_, model, inputCount, inputs, outputCount, outputs);
-  }
-  return NNADAPTER_INVALID_PARAMETER;
-}
-
-Graph::~Graph() {
-  for (auto& operand : graph_.operands) {
+Model::~Model() {
+  for (auto& operand : model_.operands) {
     if (operand.type.lifetime == NNADAPTER_CONSTANT && operand.buffer) {
       free(operand.buffer);
     }
     if (operand.type.precision ==
             NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL &&
-        operand.type.symmPerChannelParams.scales) {
-      free(operand.type.symmPerChannelParams.scales);
+        operand.type.symm_per_channel_params.scales) {
+      free(operand.type.symm_per_channel_params.scales);
     }
   }
 }
 
-int Graph::addOperand(const NNAdapterOperandType& type,
+int Model::AddOperand(const NNAdapterOperandType& type,
                       driver::Operand** operand) {
-  graph_.operands.emplace_back();
-  *operand = &graph_.operands.back();
+  model_.operands.emplace_back();
+  *operand = &model_.operands.back();
   memcpy(&(*operand)->type, &type, sizeof(NNAdapterOperandType));
   if (type.precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL) {
-    uint32_t scaleSize = type.symmPerChannelParams.scaleCount * sizeof(float);
-    float* scales = reinterpret_cast<float*>(malloc(scaleSize));
+    uint32_t scale_size =
+        type.symm_per_channel_params.scale_count * sizeof(float);
+    float* scales = reinterpret_cast<float*>(malloc(scale_size));
     NNADAPTER_CHECK(scales)
         << "Failed to allocate the scale buffer for a operand.";
-    memcpy(scales, type.symmPerChannelParams.scales, scaleSize);
-    (*operand)->type.symmPerChannelParams.scales = scales;
+    memcpy(scales, type.symm_per_channel_params.scales, scale_size);
+    (*operand)->type.symm_per_channel_params.scales = scales;
   }
   return NNADAPTER_NO_ERROR;
 }
 
-int Graph::addOperation(NNAdapterOperationType type,
+int Model::AddOperation(NNAdapterOperationType type,
                         driver::Operation** operation) {
-  graph_.operations.emplace_back();
-  *operation = &graph_.operations.back();
+  model_.operations.emplace_back();
+  *operation = &model_.operations.back();
   (*operation)->type = type;
   return NNADAPTER_NO_ERROR;
 }
 
-int Graph::identifyInputsAndOutputs(uint32_t inputCount,
+int Model::IdentifyInputsAndOutputs(uint32_t input_count,
                                     driver::Operand** inputs,
-                                    uint32_t outputCount,
+                                    uint32_t output_count,
                                     driver::Operand** outputs) {
-  graph_.inputs.resize(inputCount);
-  for (uint32_t i = 0; i < inputCount; i++) {
-    graph_.inputs[i] = inputs[i];
-    graph_.inputs[i]->type.lifetime = NNADAPTER_INPUT;
+  model_.inputs.resize(input_count);
+  for (uint32_t i = 0; i < input_count; i++) {
+    model_.inputs[i] = inputs[i];
+    model_.inputs[i]->type.lifetime = NNADAPTER_INPUT;
   }
-  graph_.outputs.resize(outputCount);
-  for (uint32_t i = 0; i < outputCount; i++) {
-    graph_.outputs[i] = outputs[i];
-    graph_.outputs[i]->type.lifetime = NNADAPTER_OUTPUT;
+  model_.outputs.resize(output_count);
+  for (uint32_t i = 0; i < output_count; i++) {
+    model_.outputs[i] = outputs[i];
+    model_.outputs[i]->type.lifetime = NNADAPTER_OUTPUT;
   }
   return NNADAPTER_NO_ERROR;
 }
 
-int Graph::finish() {
+int Model::Finish() {
   // TODO(hong19860320) model validation
   completed_ = true;
   return NNADAPTER_NO_ERROR;
 }
 
-Model::Model(void* buffer,
-             size_t length,
-             uint32_t inputCount,
-             const NNAdapterOperandType** inputTypes,
-             uint32_t outputCount,
-             const NNAdapterOperandType** outputTypes,
-             std::vector<Device*> devices)
-    : graph_(nullptr),
-      model_(nullptr),
-      cached_(true),
-      buffer_(buffer),
-      length_(length),
-      devices_(devices),
-      completed_{false} {
-  // Create a fake model, and add input&output operands
-  graph_ = new Graph();
-  std::vector<driver::Operand*> is(inputCount);
-  for (uint32_t i = 0; i < inputCount; i++) {
-    graph_->addOperand(*inputTypes[i], &is[i]);
-  }
-  std::vector<driver::Operand*> os(outputCount);
-  for (uint32_t i = 0; i < outputCount; i++) {
-    graph_->addOperand(*outputTypes[i], &os[i]);
-  }
-  graph_->identifyInputsAndOutputs(is.size(), &is[0], os.size(), &os[0]);
-  graph_->finish();
+Compilation::Compilation(Model* model,
+                         const char* cache_key,
+                         void* cache_buffer,
+                         size_t cache_length,
+                         const char* cache_dir,
+                         std::vector<Device*> devices)
+    : model_(model), program_(nullptr), devices_(devices), completed_{false} {
+  cache_.cache_key = std::string(cache_key);
+  cache_.cache_buffer = cache_buffer;
+  cache_.cache_length = cache_length;
+  cache_.cache_dir = std::string(cache_dir);
 }
 
-Model::~Model() {
-  if (cached_ && graph_) {
-    delete graph_;
-  }
-  if (model_) {
-    auto first_device = firstDevice();
-    first_device->destroyModel(model_);
+Compilation::~Compilation() {
+  if (program_) {
+    auto first_device = GetFirstDevice();
+    first_device->DestroyProgram(program_);
   }
 }
 
-Device* Model::firstDevice() {
+Device* Compilation::GetFirstDevice() {
   NNADAPTER_CHECK_GT(devices_.size(), 0) << "No device found.";
   auto first_device = devices_[0];
-  NNADAPTER_CHECK(first_device->hasDriver())
-      << "Driver for device '" << first_device->getName() << "' not found.";
+  NNADAPTER_CHECK(first_device->HasDriver())
+      << "Driver for device '" << first_device->GetName() << "' not found.";
   return first_device;
 }
 
-int Model::setCaching(const char* cacheDir, const uint8_t* token) {
-  NNADAPTER_NO_ERROR;
+int Compilation::Execute(std::vector<driver::Argument>* inputs,
+                         std::vector<driver::Argument>* outputs) {
+  // Execute generated program on target device asynchronously or synchronously
+  auto first_device = GetFirstDevice();
+  // TODO(hong19860320) support asynchronously execution
+  return first_device->ExecuteProgram(program_,
+                                      inputs->size(),
+                                      &((*inputs)[0]),
+                                      outputs->size(),
+                                      &((*outputs)[0]));
 }
 
-int Model::setInput(int32_t index,
-                    const uint32_t* dimensions,
-                    uint32_t dimensionCount,
-                    void* buffer,
-                    size_t length) {
-  auto& inputs = graph_->graph_.inputs;
-  if (index < 0 || index >= inputs.size()) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  inputs[index]->type.dimensionCount = dimensionCount;
-  memcpy(inputs[index]->type.dimensions,
-         dimensions,
-         dimensionCount * sizeof(uint32_t));
-  inputs[index]->buffer = buffer;
-  inputs[index]->length = length;
-  return NNADAPTER_NO_ERROR;
-}
-
-int Model::setOutput(int32_t index,
-                     const uint32_t* dimensions,
-                     uint32_t dimensionCount,
-                     void* buffer,
-                     size_t length) {
-  auto& outputs = graph_->graph_.outputs;
-  if (index < 0 || index >= outputs.size()) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  outputs[index]->type.dimensionCount = dimensionCount;
-  memcpy(outputs[index]->type.dimensions,
-         dimensions,
-         dimensionCount * sizeof(uint32_t));
-  outputs[index]->buffer = buffer;
-  outputs[index]->length = length;
-  return NNADAPTER_NO_ERROR;
-}
-
-int Model::run(Event** event) {
-  // TODO(hong19860320) add callback
-  *event = new Event();
-  if (!*event) {
-    return NNADAPTER_OUT_OF_MEMORY;
-  }
-  // Invoke the driver of target device to compute model asynchronously or
-  // synchronously
-  auto first_device = firstDevice();
-  std::vector<driver::Operand*>& inputs = graph_->graph_.inputs;
-  std::vector<driver::Operand*>& outputs = graph_->graph_.outputs;
-  if (event) {
-    return first_device->runModelAsync(
-        model_, inputs.size(), &inputs[0], outputs.size(), &outputs[0]);
-  }
-  return first_device->runModelSync(
-      model_, inputs.size(), &inputs[0], outputs.size(), &outputs[0]);
-}
-
-int Model::finish() {
-  // Invoke the driver of target device to build from cache or model
+int Compilation::Finish() {
+  // Start to build program from model or cache
   completed_ = true;
-  auto first_device = firstDevice();
-  if (cached_) {
-    return first_device->createModelFromCache(buffer_, length_, &model_);
-  }
+  auto first_device = GetFirstDevice();
   // TODO(hong19860320) Support the task partition for multi-devices
-  return first_device->createModelFromGraph(&graph_->graph_, &model_);
+  return first_device->CreateProgram(&model_->model_, &cache_, &program_);
 }
 
-int Execution::setInput(int32_t index,
+int Execution::SetInput(int32_t index,
                         const uint32_t* dimensions,
-                        uint32_t dimensionCount,
+                        uint32_t dimension_count,
                         void* buffer,
                         size_t length) {
-  return model_->setInput(index, dimensions, dimensionCount, buffer, length);
+  driver::Argument* argument = nullptr;
+  for (auto& input : inputs_) {
+    if (input.index == index) {
+      argument = &input;
+      break;
+    }
+  }
+  if (!argument) {
+    inputs_.emplace_back();
+    argument = &inputs_.back();
+    argument->index = index;
+  }
+  argument->dimension_count = dimension_count;
+  memcpy(argument->dimensions, dimensions, sizeof(uint32_t) * dimension_count);
+  argument->buffer = buffer;
+  argument->length = length;
+  return NNADAPTER_NO_ERROR;
 }
 
-int Execution::setOutput(int32_t index,
+int Execution::SetOutput(int32_t index,
                          const uint32_t* dimensions,
-                         uint32_t dimensionCount,
+                         uint32_t dimension_count,
                          void* buffer,
                          size_t length) {
-  return model_->setOutput(index, dimensions, dimensionCount, buffer, length);
+  driver::Argument* argument = nullptr;
+  for (auto& output : outputs_) {
+    if (output.index == index) {
+      argument = &output;
+      break;
+    }
+  }
+  if (!argument) {
+    outputs_.emplace_back();
+    argument = &outputs_.back();
+    argument->index = index;
+  }
+  argument->dimension_count = dimension_count;
+  memcpy(argument->dimensions, dimensions, sizeof(uint32_t) * dimension_count);
+  argument->buffer = buffer;
+  argument->length = length;
+  return NNADAPTER_NO_ERROR;
 }
 
-int Execution::run(Event** event) { return model_->run(event); }
-
-Driver& Driver::Global() {
-  static Driver driver;
-  return driver;
+int Execution::Compute() {
+  // TODO(hong19860320) support asynchronously execution
+  return compilation_->Execute(&inputs_, &outputs_);
 }
 
-Driver::Driver() {}
+DriverManager& DriverManager::Global() {
+  static DriverManager driver_manager;
+  return driver_manager;
+}
 
-Driver::~Driver() {
+DriverManager::DriverManager() {}
+
+DriverManager::~DriverManager() {
   std::lock_guard<std::mutex> lock(mutex_);
   for (size_t i = 0; i < drivers_.size(); i++) {
     void* library = drivers_[i].first;
@@ -292,12 +243,12 @@ Driver::~Driver() {
   drivers_.clear();
 }
 
-size_t Driver::Count() {
+size_t DriverManager::Count() {
   std::lock_guard<std::mutex> lock(mutex_);
   return drivers_.size();
 }
 
-driver::Driver* Driver::At(int index) {
+driver::Driver* DriverManager::At(int index) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (index >= 0 && index < drivers_.size()) {
     return drivers_[index].second;
@@ -305,7 +256,7 @@ driver::Driver* Driver::At(int index) {
   return nullptr;
 }
 
-driver::Driver* Driver::Find(const char* name) {
+driver::Driver* DriverManager::Find(const char* name) {
   std::lock_guard<std::mutex> lock(mutex_);
   for (size_t i = 0; i < drivers_.size(); i++) {
     auto driver = drivers_[i].second;

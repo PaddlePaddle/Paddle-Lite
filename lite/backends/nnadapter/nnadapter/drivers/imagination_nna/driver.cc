@@ -20,11 +20,11 @@ namespace nnadapter {
 namespace driver {
 namespace imagination_nna {
 
-Model::~Model() {}
+Program::~Program() {}
 
-int Model::CreateFromGraph(driver::Graph* graph) {
+int Program::Build(driver::Model* model, driver::Cache* cache) {
   std::vector<Operation*> operations =
-      driver::sortOperationsInTopologicalOrder(graph);
+      driver::SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
     switch (operation->type) {
       case NNADAPTER_CONV_2D:
@@ -37,11 +37,7 @@ int Model::CreateFromGraph(driver::Graph* graph) {
   return NNADAPTER_NO_ERROR;
 }
 
-int Model::CreateFromCache(void* buffer, size_t length) {
-  return NNADAPTER_NO_ERROR;
-}
-
-int createContext(void** context) {
+int CreateContext(void** context) {
   if (!context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -55,77 +51,51 @@ int createContext(void** context) {
   return NNADAPTER_NO_ERROR;
 }
 
-void destroyContext(void* context) {
+void DestroyContext(void* context) {
   if (!context) {
     auto c = reinterpret_cast<Context*>(context);
     delete c;
   }
 }
 
-int createModelFromGraph(void* context, driver::Graph* graph, void** model) {
-  NNADAPTER_LOG(INFO) << "Create model from graph for imagination_nna.";
-  if (!context || !graph || !model) {
+int CreateProgram(void* context,
+                  driver::Model* model,
+                  driver::Cache* cache,
+                  void** program) {
+  NNADAPTER_LOG(INFO) << "Create program for imagination_nna.";
+  if (!context || !(model && cache) || !program) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  *model = nullptr;
-  auto m = new Model();
-  if (!m) {
+  *program = nullptr;
+  auto p = new Program();
+  if (!p) {
     return NNADAPTER_OUT_OF_MEMORY;
   }
-  int result = m->CreateFromGraph(graph);
+  int result = p->Build(model, cache);
   if (result == NNADAPTER_NO_ERROR) {
-    *model = reinterpret_cast<void*>(m);
+    *program = reinterpret_cast<void*>(p);
   }
   return result;
 }
 
-int createModelFromCache(void* context,
-                         void* buffer,
-                         size_t length,
-                         void** model) {
-  if (!context || !buffer || !length || !model) {
+void DestroyProgram(void* context, void* program) {
+  if (context && program) {
+    NNADAPTER_LOG(INFO) << "Destroy program for imagination_nna.";
+    auto p = reinterpret_cast<Program*>(program);
+    delete p;
+  }
+}
+
+int ExecuteProgram(void* context,
+                   void* program,
+                   uint32_t input_count,
+                   driver::Argument* inputs,
+                   uint32_t output_count,
+                   driver::Argument* outputs) {
+  if (!context || !program || !outputs || !output_count) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  NNADAPTER_LOG(INFO) << "Create model from cache for imagination_nna.";
-  *model = nullptr;
-  auto m = new Model();
-  if (!m) {
-    return NNADAPTER_OUT_OF_MEMORY;
-  }
-  int result = m->CreateFromCache(buffer, length);
-  if (result == NNADAPTER_NO_ERROR) {
-    *model = reinterpret_cast<void*>(m);
-  }
-  return NNADAPTER_NO_ERROR;
-}
-
-void destroyModel(void* context, void* model) {
-  if (context && model) {
-    NNADAPTER_LOG(INFO) << "Destroy model for imagination_nna.";
-    auto m = reinterpret_cast<Model*>(model);
-    delete m;
-  }
-}
-
-int runModelSync(void* context,
-                 void* model,
-                 uint32_t inputCount,
-                 Operand** inputs,
-                 uint32_t outputCount,
-                 Operand** outputs) {
-  if (!context || !model || !outputs || !inputCount) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto m = reinterpret_cast<Model*>(model);
-  return NNADAPTER_NO_ERROR;
-}
-
-int runModelAsync(void* context,
-                  void* model,
-                  uint32_t inputCount,
-                  Operand** inputs,
-                  uint32_t outputCount,
-                  Operand** outputs) {
+  auto p = reinterpret_cast<Program*>(program);
   return NNADAPTER_NO_ERROR;
 }
 
@@ -139,13 +109,9 @@ nnadapter::driver::Driver NNADAPTER_EXPORT
         .vendor = "Imagination",
         .type = NNADAPTER_ACCELERATOR,
         .version = 1,
-        .createContext = nnadapter::driver::imagination_nna::createContext,
-        .destroyContext = nnadapter::driver::imagination_nna::destroyContext,
-        .createModelFromGraph =
-            nnadapter::driver::imagination_nna::createModelFromGraph,
-        .createModelFromCache =
-            nnadapter::driver::imagination_nna::createModelFromCache,
-        .destroyModel = nnadapter::driver::imagination_nna::destroyModel,
-        .runModelSync = nnadapter::driver::imagination_nna::runModelSync,
-        .runModelAsync = nnadapter::driver::imagination_nna::runModelAsync,
+        .create_context = nnadapter::driver::imagination_nna::CreateContext,
+        .destroy_context = nnadapter::driver::imagination_nna::DestroyContext,
+        .create_program = nnadapter::driver::imagination_nna::CreateProgram,
+        .destroy_program = nnadapter::driver::imagination_nna::DestroyProgram,
+        .execute_program = nnadapter::driver::imagination_nna::ExecuteProgram,
 };

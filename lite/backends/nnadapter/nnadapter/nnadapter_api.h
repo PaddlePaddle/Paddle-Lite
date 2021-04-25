@@ -22,10 +22,13 @@ extern "C" {
 #endif
 
 /**
-  * Get the count of avaiable devices or acquire the specified device and create
- * a context for model building
+ * Acquire the specified device with device name and create a context for model
+ * compilation.
  */
 int NNAdapterDevice_acquire(const char* name, NNAdapterDevice** device);
+/**
+ * Release the target device and its context.
+ */
 void NNAdapterDevice_release(NNAdapterDevice* device);
 int NNAdapterDevice_getName(const NNAdapterDevice* device, const char** name);
 int NNAdapterDevice_getVendor(const NNAdapterDevice* device,
@@ -34,67 +37,86 @@ int NNAdapterDevice_getType(const NNAdapterDevice* device,
                             NNAdapterDeviceType* type);
 int NNAdapterDevice_getVersion(const NNAdapterDevice* device, int32_t* version);
 
-int NNAdapterGraph_create(NNAdapterGraph** graph);
-void NNAdapterGraph_destroy(NNAdapterGraph* graph);
-int NNAdapterGraph_finish(NNAdapterGraph* graph);
-int NNAdapterGraph_addOperand(NNAdapterGraph* graph,
-                              const NNAdapterOperandType* type,
-                              NNAdapterOperand** operand);
-int NNAdapterGraph_setOperand(NNAdapterOperand* operand,
-                              void* buffer,
-                              size_t length);
-int NNAdapterGraph_addOperation(NNAdapterGraph* graph,
-                                NNAdapterOperationType type,
-                                NNAdapterOperation** operation);
-int NNAdapterGraph_setOperation(NNAdapterOperation* operation,
-                                uint32_t inputCount,
-                                NNAdapterOperand** inputs,
-                                uint32_t outputCount,
-                                NNAdapterOperand** outputs);
-int NNAdapterGraph_identifyInputsAndOutputs(NNAdapterGraph* graph,
-                                            uint32_t inputCount,
-                                            NNAdapterOperand** inputs,
-                                            uint32_t outputCount,
-                                            NNAdapterOperand** outputs);
-
-int NNAdapterModel_createFromGraph(NNAdapterGraph* graph,
-                                   NNAdapterDevice** devices,
-                                   uint32_t numDevices,
-                                   NNAdapterModel** model);
-int NNAdapterModel_createFromCache(void* buffer,
-                                   size_t length,
-                                   uint32_t inputCount,
-                                   const NNAdapterOperandType** inputTypes,
-                                   uint32_t outputCount,
-                                   const NNAdapterOperandType** outputTypes,
-                                   NNAdapterDevice** devices,
-                                   uint32_t numDevices,
-                                   NNAdapterModel** model);
+/**
+ * Create a hardware-independent neural networks model.
+ */
+int NNAdapterModel_create(NNAdapterModel** model);
+/**
+ * Destroy the model that free all of resources of the model includes the memory
+ * of constant operands, quantization parameters, etc.
+ */
 void NNAdapterModel_destroy(NNAdapterModel* model);
 int NNAdapterModel_finish(NNAdapterModel* model);
-int NNAdapterModel_setCaching(NNAdapterModel* model,
-                              const char* cacheDir,
-                              const uint8_t* token);
+int NNAdapterModel_addOperand(NNAdapterModel* model,
+                              const NNAdapterOperandType* type,
+                              NNAdapterOperand** operand);
+int NNAdapterModel_setOperand(NNAdapterOperand* operand,
+                              void* buffer,
+                              size_t length);
+int NNAdapterModel_addOperation(NNAdapterModel* model,
+                                NNAdapterOperationType type,
+                                NNAdapterOperation** operation);
+int NNAdapterModel_setOperation(NNAdapterOperation* operation,
+                                uint32_t input_count,
+                                NNAdapterOperand** inputs,
+                                uint32_t output_count,
+                                NNAdapterOperand** outputs);
+int NNAdapterModel_identifyInputsAndOutputs(NNAdapterModel* model,
+                                            uint32_t input_count,
+                                            NNAdapterOperand** inputs,
+                                            uint32_t output_count,
+                                            NNAdapterOperand** outputs);
 
-int NNAdapterExecution_create(NNAdapterModel* model,
+/**
+ * Compile the model to the hardware-related binary program or load the cached
+ * binary program from
+ * memory or file system.
+ * If cache_key, cache_buffer and cache_length is specified, load the binary
+ * program from memory
+ * directly.
+ * If cache_key and cache_dir is specified, find and load the cached binary
+ * program from the cache
+ * files directly.
+ * If no cache parameter is specified or the cache files are not found, then
+ * compile the given model
+ * to the binary program of target devices.
+ */
+int NNAdapterCompilation_create(NNAdapterModel* model,
+                                const char* cache_key,
+                                void* cache_buffer,
+                                size_t cache_length,
+                                const char* cache_dir,
+                                NNAdapterDevice** devices,
+                                uint32_t num_devices,
+                                NNAdapterCompilation** compilation);
+/**
+ * Destroy the hardware-related binary program.
+ */
+void NNAdapterCompilation_destroy(NNAdapterCompilation* compilation);
+int NNAdapterCompilation_finish(NNAdapterCompilation* compilation);
+
+/**
+ * Create an execution plan to execute the hardware-related binary program.
+ */
+int NNAdapterExecution_create(NNAdapterCompilation* compilation,
                               NNAdapterExecution** execution);
+/**
+ * Destroy an execution plan.
+ */
 void NNAdapterExecution_destroy(NNAdapterExecution* execution);
 int NNAdapterExecution_setInput(NNAdapterExecution* execution,
                                 int32_t index,
                                 const uint32_t* dimensions,
-                                uint32_t dimensionCount,
+                                uint32_t dimension_count,
                                 void* buffer,
                                 size_t length);
 int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
                                  int32_t index,
                                  const uint32_t* dimensions,
-                                 uint32_t dimensionCount,
+                                 uint32_t dimension_count,
                                  void* buffer,
                                  size_t length);
-int NNAdapterExecution_run(NNAdapterExecution* execution,
-                           NNAdapterEvent** event);
-int NNAdapterEvent_wait(NNAdapterEvent* event);
-void NNAdapterEvent_destroy(NNAdapterEvent* event);
+int NNAdapterExecution_compute(NNAdapterExecution* execution);
 
 #ifdef __cplusplus
 }

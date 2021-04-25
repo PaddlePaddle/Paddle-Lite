@@ -28,28 +28,22 @@ class Device {
   explicit Device(const std::string& name);
   ~Device();
 
-  bool hasDriver() const { return driver_ != nullptr; }
-  const char* getName() const { return hasDriver() ? driver_->name : nullptr; }
-  const char* getVendor() const {
-    return hasDriver() ? driver_->vendor : nullptr;
+  bool HasDriver() const { return driver_ != nullptr; }
+  const char* GetName() const { return HasDriver() ? driver_->name : nullptr; }
+  const char* GetVendor() const {
+    return HasDriver() ? driver_->vendor : nullptr;
   }
-  NNAdapterDeviceType getType() const {
-    return hasDriver() ? driver_->type : -1;
+  NNAdapterDeviceType GetType() const {
+    return HasDriver() ? driver_->type : -1;
   }
-  int32_t getVersion() const { return hasDriver() ? driver_->version : -1; }
-  int createModelFromGraph(driver::Graph* graph, void** model);
-  int createModelFromCache(void* buffer, size_t length, void** model);
-  void destroyModel(void* model);
-  int runModelSync(void* model,
-                   uint32_t inputCount,
-                   driver::Operand** inputs,
-                   uint32_t outputCount,
-                   driver::Operand** outputs);
-  int runModelAsync(void* model,
-                    uint32_t inputCount,
-                    driver::Operand** inputs,
-                    uint32_t outputCount,
-                    driver::Operand** outputs);
+  int32_t GetVersion() const { return HasDriver() ? driver_->version : -1; }
+  int CreateProgram(driver::Model* model, driver::Cache* cache, void** program);
+  void DestroyProgram(void* program);
+  int ExecuteProgram(void* program,
+                     uint32_t input_count,
+                     driver::Argument* inputs,
+                     uint32_t output_count,
+                     driver::Argument* outputs);
 
  private:
   void* context_{nullptr};
@@ -58,94 +52,76 @@ class Device {
   Device& operator=(const Device&) = delete;
 };
 
-class Graph {
+class Model {
  public:
-  Graph() : completed_{false} {}
-  ~Graph();
-  int addOperand(const NNAdapterOperandType& type, driver::Operand** operand);
-  int addOperation(NNAdapterOperationType type, driver::Operation** operation);
-  int identifyInputsAndOutputs(uint32_t inputCount,
+  Model() : completed_{false} {}
+  ~Model();
+  int AddOperand(const NNAdapterOperandType& type, driver::Operand** operand);
+  int AddOperation(NNAdapterOperationType type, driver::Operation** operation);
+  int IdentifyInputsAndOutputs(uint32_t input_count,
                                driver::Operand** inputs,
-                               uint32_t outputCount,
+                               uint32_t output_count,
                                driver::Operand** outputs);
-  int finish();
+  int Finish();
 
-  driver::Graph graph_;
+  driver::Model model_;
   bool completed_;
 };
 
 class Event {
  public:
   ~Event() = default;
-  void wait() {}
-  int getStatus() { return NNADAPTER_NO_ERROR; }
+  void Wait() {}
+  int GetStatus() { return NNADAPTER_NO_ERROR; }
 };
 
-class Model {
+class Compilation {
  public:
-  Model(Graph* graph, std::vector<Device*> devices)
-      : graph_(graph),
-        model_(nullptr),
-        cached_(false),
-        buffer_(nullptr),
-        length_(0),
-        devices_(devices),
-        completed_{false} {}
-  Model(void* buffer,
-        size_t length,
-        uint32_t inputCount,
-        const NNAdapterOperandType** inputTypes,
-        uint32_t outputCount,
-        const NNAdapterOperandType** outputTypes,
-        std::vector<Device*> devices);
-  ~Model();
-  Device* firstDevice();
-  int setCaching(const char* cacheDir, const uint8_t* token);
-  int finish();
-  int setInput(int32_t index,
-               const uint32_t* dimensions,
-               uint32_t dimensionCount,
-               void* buffer,
-               size_t length);
-  int setOutput(int32_t index,
-                const uint32_t* dimensions,
-                uint32_t dimensionCount,
-                void* buffer,
-                size_t length);
-  int run(Event** event);
+  Compilation(Model* model,
+              const char* cache_key,
+              void* cache_buffer,
+              size_t cache_length,
+              const char* cache_dir,
+              std::vector<Device*> devices);
+  ~Compilation();
+  Device* GetFirstDevice();
+  int Finish();
+  int Execute(std::vector<driver::Argument>* inputs,
+              std::vector<driver::Argument>* outputs);
 
-  Graph* graph_;
-  void* model_;
-  bool cached_;
-  void* buffer_;
-  size_t length_;
+  Model* model_{nullptr};
+  driver::Cache cache_;
+  void* program_{nullptr};
   std::vector<Device*> devices_;
-  bool completed_;
+  bool completed_{false};
 };
 
 class Execution {
  public:
-  explicit Execution(Model* model) : model_(model) {}
-  int setInput(int32_t index,
+  explicit Execution(Compilation* compilation) : compilation_(compilation) {}
+  int SetInput(int32_t index,
                const uint32_t* dimensions,
-               uint32_t dimensionCount,
+               uint32_t dimension_count,
                void* buffer,
                size_t length);
-  int setOutput(int32_t index,
+  int SetOutput(int32_t index,
                 const uint32_t* dimensions,
                 uint32_t dimensionCount,
                 void* buffer,
                 size_t length);
-  int run(Event** event);
+  int Compute();
 
-  Model* model_;
+ private:
+  Compilation* compilation_{nullptr};
+  std::vector<driver::Argument> inputs_;
+  std::vector<driver::Argument> outputs_;
 };
 
-class Driver {
+class DriverManager {
  public:
-  static Driver& Global();
-  Driver();
-  ~Driver();
+  static DriverManager& Global();
+  DriverManager();
+  ~DriverManager();
   size_t Count();
   driver::Driver* At(int index);
   driver::Driver* Find(const char* name);
@@ -153,8 +129,8 @@ class Driver {
  private:
   std::mutex mutex_;
   std::vector<std::pair<void*, driver::Driver*>> drivers_;
-  Driver(const Driver&) = delete;
-  Driver& operator=(const Driver&) = delete;
+  DriverManager(const DriverManager&) = delete;
+  DriverManager& operator=(const DriverManager&) = delete;
 };
 
 }  // namespace runtime

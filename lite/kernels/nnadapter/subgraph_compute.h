@@ -67,6 +67,7 @@ class DeviceProgram {
   std::string model_name_{""};
   std::vector<std::vector<int64_t>> origin_odims_;
   std::vector<PrecisionType> origin_otypes_;
+
   // std::vector<rk::nn::InputInfo> device_itensors_{};
   // std::vector<rk::nn::OutputInfo> device_otensors_{};
   std::shared_ptr<int> graph_{nullptr};

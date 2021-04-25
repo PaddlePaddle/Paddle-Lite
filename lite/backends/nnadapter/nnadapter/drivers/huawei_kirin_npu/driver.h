@@ -29,13 +29,12 @@ class Context {
   void* raw_ctx_{nullptr};
 };
 
-class Model {
+class Program {
  public:
-  Model() {}
-  ~Model();
+  Program() {}
+  ~Program();
 
-  int CreateFromGraph(driver::Graph* graph);
-  int CreateFromCache(void* buffer, size_t length);
+  int Build(driver::Model* model, driver::Cache* cache);
 };
 
 }  // namespace huawei_kirin_npu

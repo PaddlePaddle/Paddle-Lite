@@ -15,6 +15,7 @@
 #pragma once
 
 #include <list>
+#include <string>
 #include <vector>
 #include "nnadapter_micros.h"  // NOLINT
 #include "nnadapter_types.h"   // NOLINT
@@ -28,48 +29,57 @@ typedef struct Operand {
   size_t length;
 } Operand;
 
+typedef struct Argument {
+  int index;
+  uint32_t dimension_count;
+  uint32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+  void *buffer;
+  size_t length;
+} Argument;
+
 typedef struct Operation {
   NNAdapterOperationType type;
   std::vector<Operand *> inputs;
   std::vector<Operand *> outputs;
 } Operation;
 
-typedef struct Graph {
+typedef struct Cache {
+  std::string cache_key;
+  void *cache_buffer;
+  size_t cache_length;
+  std::string cache_dir;
+  std::vector<NNAdapterOperandType> input_types;
+  std::vector<NNAdapterOperandType> output_types;
+} Cache;
+
+typedef struct Model {
   std::list<Operand> operands;
   std::list<Operation> operations;
   std::vector<Operand *> inputs;
   std::vector<Operand *> outputs;
-} Graph;
+} Model;
 
 typedef struct Driver {
   const char *name;
   const char *vendor;
   NNAdapterDeviceType type;
   int32_t version;
-  int (*createContext)(void **context);
-  void (*destroyContext)(void *context);
-  int (*createModelFromGraph)(void *context, Graph *graph, void **model);
-  int (*createModelFromCache)(void *context,
-                              void *buffer,
-                              size_t length,
-                              void **model);
-  void (*destroyModel)(void *context, void *model);
-  int (*runModelSync)(void *context,
-                      void *model,
-                      uint32_t inputCount,
-                      Operand **inputs,
-                      uint32_t outputCount,
-                      Operand **outputs);
-  // TODO(hong19860320) missing callback and notify defs
-  int (*runModelAsync)(void *context,
-                       void *model,
-                       uint32_t inputCount,
-                       Operand **inputs,
-                       uint32_t outputCount,
-                       Operand **outputs);
+  int (*create_context)(void **context);
+  void (*destroy_context)(void *context);
+  int (*create_program)(void *context,
+                        Model *model,
+                        Cache *cache,
+                        void **program);
+  void (*destroy_program)(void *context, void *program);
+  int (*execute_program)(void *context,
+                         void *program,
+                         uint32_t input_count,
+                         Argument *inputs,
+                         uint32_t output_count,
+                         Argument *outputs);
 } Driver;
 
-std::vector<Operation *> sortOperationsInTopologicalOrder(Graph *graph);
+std::vector<Operation *> SortOperationsInTopologicalOrder(Model *model);
 
 }  // namespace driver
 }  // namespace nnadapter

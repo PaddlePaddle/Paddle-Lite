@@ -19,14 +19,14 @@
 namespace nnadapter {
 namespace driver {
 
-std::vector<Operation*> sortOperationsInTopologicalOrder(Graph* graph) {
+std::vector<Operation*> SortOperationsInTopologicalOrder(Model* model) {
   std::vector<Operation*> operations;  // Operations in topological order
   std::vector<Operation*> queue;
   // Use to find all of adjacent operations according to a given operand.
   std::multimap<Operand*, Operation*> map;
   // The counters of variable inputs for all of operations.
   std::map<Operation*, uint32_t> counts;
-  for (auto& operation : graph->operations) {
+  for (auto& operation : model->operations) {
     uint32_t count = 0;
     for (auto operand : operation.inputs) {
       auto lifetime = operand->type.lifetime;

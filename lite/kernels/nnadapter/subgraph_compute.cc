@@ -17,7 +17,7 @@
 #include <time.h>
 #include <utility>
 #include "lite/core/op_registry.h"
-#include "lite/kernels/nnadapter/bridges/graph.h"
+#include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 #include "lite/utils/io.h"
@@ -183,7 +183,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Convert all of Paddle operators and variables to the IR nodes, and add
   // them into the IR graph
   int status = 0;
-  subgraph::nnadapter::Graph graph(nnadapter_device_names);
+  subgraph::nnadapter::Converter converter(nnadapter_device_names);
   const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   CHECK(origin_program) << "[NNAdapter] The origin program is not initialized!";
   CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
@@ -200,7 +200,9 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     }
     auto kernel = inst.kernel();
     status |= bridges.Select(op_type, TARGET(kNNAdapter))(
-        reinterpret_cast<void*>(&graph), op, const_cast<KernelBase*>(kernel));
+        reinterpret_cast<void*>(&converter),
+        op,
+        const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
       return false;
     }
@@ -210,14 +212,14 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Collect the input and output nodes from the RK IR graph
   std::vector<std::shared_ptr<rk::nn::Tensor>> device_inodes;
   for (size_t i = 0; i < input_names.size(); i++) {
-    CHECK(graph.Has(input_names[i]));
-    CHECK(graph.Get(input_names[i])->is_data());
-    device_inodes.push_back(graph.Get(input_names[i])->data());
+    CHECK(converter.HasOperand(input_names[i]));
+    CHECK(converter.GetOperand(input_names[i])->is_input());
+    device_inodes.push_back(converter.GetOperand(input_names[i])->operand());
   }
   std::vector<std::shared_ptr<rk::nn::Tensor>> device_onodes;
   for (size_t i = 0; i < output_names.size(); i++) {
-    CHECK(graph.Has(output_names[i]));
-    device_onodes.push_back(graph.Get(output_names[i])->data());
+    CHECK(converter.HasOperand(output_names[i]));
+    device_onodes.push_back(network.Get(output_names[i])->is_output());
   }
   // Create the RK execution for inference, and set the input and output nodes
   execution_ = lite::rknpu::Device::Global().Build(

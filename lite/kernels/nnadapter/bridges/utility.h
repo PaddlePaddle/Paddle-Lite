@@ -28,16 +28,16 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-bool hasInput(const OpInfo* op_info,
+bool HasInput(const OpInfo* op_info,
               const Scope* scope,
               const std::string& arg_name);
-bool hasOutput(const OpInfo* op_info,
+bool HasOutput(const OpInfo* op_info,
                const Scope* scope,
                const std::string& arg_name);
-bool isPerChannelScales(const std::vector<float>& scales);
+bool IsPerChannelScales(const std::vector<float>& scales);
 
 template <typename T>
-void quant(const float* input_data,
+void Quant(const float* input_data,
            size_t input_size,
            const std::vector<float>& input_scale,
            T* output_data) {

@@ -30,16 +30,15 @@ class Context {
   void* raw_ctx_{nullptr};
 };
 
-class Model {
+class Program {
  public:
-  Model() {}
-  ~Model();
+  Program() {}
+  ~Program();
 
-  int CreateFromGraph(driver::Graph* graph);
-  int CreateFromCache(void* buffer, size_t length);
-  int ConvertConv2D(driver::Operation* operation);
+  int Build(driver::Model* model, driver::Cache* cache);
 
  private:
+  int ConvertConv2D(driver::Operation* operation);
   rk::nn::Graph* graph_{nullptr};
   rk::nn::Exection* execution_{nullptr};
 };

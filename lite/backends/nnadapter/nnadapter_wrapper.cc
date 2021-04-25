@@ -27,10 +27,13 @@ NNAdapter& NNAdapter::Global() {
 }
 
 NNAdapter::NNAdapter() {
-  CHECK(Init()) << "Failed to initialize NNAdapter library!";
+  if (!initialized_) {
+    supported_ = Initialize();
+    initialized_ = true;
+  }
 }
 
-bool NNAdapter::Init() {
+bool NNAdapter::Initialize() {
   const std::vector<std::string> candidate_paths = {
       "libnnadapter.so",
   };
@@ -58,34 +61,30 @@ bool NNAdapter::Init() {
       return false;                                                 \
     }                                                               \
     VLOG(4) << #name << " is loaded.";                              \
-  } while (false)
+  } while (false);
 
-  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_acquire);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_release);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getName);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getVendor);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getType);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getVersion);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterGraph_create);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterGraph_destroy);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterGraph_finish);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterGraph_addOperand);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterGraph_setOperand);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterGraph_addOperation);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterGraph_setOperation);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterGraph_identifyInputsAndOutputs);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_createFromGraph);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_createFromCache);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_destroy);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_finish);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setCaching);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_create);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_destroy);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_setInput);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_setOutput);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_run);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterEvent_wait);
-  NNADAPTER_LOAD_FUNCTION(NNAdapterEvent_destroy);
+  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_acquire)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_release)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getName)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getVendor)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getType)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getVersion)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_create)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_destroy)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_finish)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_addOperand)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setOperand)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_addOperation)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setOperation)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_identifyInputsAndOutputs)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_create)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_destroy)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_finish)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_create)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_destroy)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_setInput)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_setOutput)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_compute)
 #undef NNADAPTER_LOAD_FUNCTION
   VLOG(4) << "Extract all of symbols from " << found_path << " done.";
   return true;
