@@ -99,6 +99,7 @@ class Optimizer {
          "lite_match_matrix_activation_fuse_pass",      //
          "lite_squeeze2_matmul_fuse_pass",              //
          "lite_reshape2_matmul_fuse_pass",              //
+         "lite_matmul_element_add_fuse_pass",           //
          "lite_matmul_fuse_pass",                       //
          "lite_fc_fuse_pass",                           //
          "lite_shuffle_channel_fuse_pass",              //
@@ -116,6 +117,7 @@ class Optimizer {
          "lite_elementwise_activation_fuse_pass",
          "lite_conv_scale_fuse_pass",
          "identity_dropout_eliminate_pass",
+         "__xpu__graph_dedup_pass",
          "__xpu__resnet_fuse_pass",
          "__xpu__resnet_cbam_fuse_pass",
          "__xpu__conv2d_fuse_pass",
@@ -125,6 +127,7 @@ class Optimizer {
          "__xpu__conv2d_concat_pool2d_fuse_pass",
          "__xpu__consecutive_conv2d_fuse_pass",
          "__xpu__conv2d_pool2d_fuse_pass",
+         "__xpu__concat_conv2d_fuse_pass",
          "__xpu__consecutive_block_fuse_pass",
          "__xpu__link_previous_out_max_pass",
          "__xpu__sfa_head_meanstd_fuse_pass",
@@ -138,6 +141,7 @@ class Optimizer {
          "__xpu__multi_encoder_slice_link_fuse_pass",
          "__xpu__generate_sequence_fuse_pass",
          "__xpu__logit_fuse_pass",
+         "ssd_boxes_calc_offline_pass",
          // Only for fully quantized model, infer the output scale and fix the
          // attribute 'enable_int8' for all of the quantized ops.
          "quantized_op_attributes_inference_pass",
@@ -208,6 +212,13 @@ class Optimizer {
                                      passes_local.end(),
                                      "lite_conv_bn_fuse_pass"),
                          passes_local.end());
+      // duplicated nodes can't be removed if referenced in different subgraphs
+      passes_local.erase(std::remove(passes_local.begin(),
+                                     passes_local.end(),
+                                     "__xpu__graph_dedup_pass"),
+                         passes_local.end());
+      LOG(INFO) << "skip __xpu__graph_dedup_pass because of multiple subgraphs["
+                << graphs_.size() << "]";
     }
 
     // multi_stream_analysis_pass must be in the front of

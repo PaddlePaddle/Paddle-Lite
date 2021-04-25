@@ -41,7 +41,7 @@ function publish_inference_lib {
   # Remove Compiling Cache
   rm -rf build*
   # Compiling inference library
-  ./lite/tools/build_android.sh --arch=$arch --toolchain=$toolchain  --with_extra=$with_extra
+  ./lite/tools/build_android.sh --arch=$arch --toolchain=$toolchain  --with_extra=$with_extra  --with_static_lib=ON
   # Checking results: cplus and java inference lib.
   if [ -d build*/inference*/cxx/lib ] && [ -d build*/inference*/java/so ]; then
     cxx_results=$(ls build*/inference*/cxx/lib | wc -l)

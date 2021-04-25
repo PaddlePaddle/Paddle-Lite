@@ -59,7 +59,7 @@ if(LITE_WITH_ARM)
     lite_cc_test_with_model_and_data(test_resnet50_int8_arm MODEL resnet50_int8_for_arm DATA ILSVRC2012_500)
     lite_cc_test_with_model_and_data(test_ocr_lstm_int8_arm MODEL ocr_rec_quant_mul_lstm_for_arm DATA ocr_rec_img_txt)
     lite_cc_test_with_model_and_data(test_nlp_lstm_int8_arm MODEL nlp_quant_lstm_int8_arm DATA nlp_quant_lstm_int8_data_txt)
-    lite_cc_test_with_model_and_data(test_lac_crf_fp32_arm MODEL lac_crf_fp32_arm DATA lac_crf_data_txt)
+    lite_cc_test_with_model_and_data(test_lac_crf_fp32_int16_arm MODEL lac_fp32_arm DATA lac_data_txt)
 endif()
 
 # Only test on android, disable it for ci error

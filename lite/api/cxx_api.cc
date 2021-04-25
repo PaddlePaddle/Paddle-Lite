@@ -147,8 +147,8 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   }
   std::fclose(opf_source);
   std::fclose(opf);
-  LOG(INFO) << "operators information of tailored model is stored into: "
-            << opf_path;
+  OPT_LOG << "operators information of tailored model is stored into: "
+          << opf_path;
 
   // write Kernel_type and Kernel_path into file
   for (auto kernel_info = kernels_info.begin();
@@ -168,8 +168,8 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   }
   std::fclose(kpf_source);
   std::fclose(kpf);
-  LOG(INFO) << "kernels information of tailored model is stored into: "
-            << kpf_path;
+  OPT_LOG << "kernels information of tailored model is stored into: "
+          << kpf_path;
 }
 
 #if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
@@ -452,7 +452,7 @@ void Predictor::CheckPaddleOpVersions(
           // registry.
           if ((model_op_version_index > iter->second) &&
               (model_op_version_index != -1)) {
-            LOG(WARNING) << "Error: incompatible paddle op version. Kernel ("
+            LOG(WARNING) << "Warning: incompatible paddle op version. Kernel ("
                          << kernel->name() << ") requires that op_version("
                          << iter->first << ")==" << iter->second
                          << ". However, the op_version(" << iter->first

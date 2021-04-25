@@ -105,6 +105,7 @@ bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
       f_n += 2;
       act_n += 3;
       act_param_n += 3;
+      bias_n += 1;
     }
   }
   CHECK_EQ(f_n, param_.filter_dims.size());

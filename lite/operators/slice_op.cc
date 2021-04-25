@@ -22,15 +22,14 @@ namespace lite {
 namespace operators {
 
 bool SliceOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
+  CHECK(param_.X);
+  CHECK(param_.Out);
   CHECK_LT(param_.X->dims().size(), 7u)
       << "The rank of input X should be less than 7";
   return true;
 }
 
 bool SliceOp::InferShapeImpl() const {
-  CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto in_dims = param_.X->dims();
   auto out_dims = in_dims;

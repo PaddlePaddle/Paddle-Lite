@@ -142,8 +142,8 @@ void RunModel(std::string model_dir,
 
   bool is_opencl_backend_valid =
       ::IsOpenCLBackendValid(/*check_fp16_valid = false*/);
-  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
-            << std::endl;
+  std::cout << "is_opencl_backend_valid:"
+            << (is_opencl_backend_valid ? "true" : "false") << std::endl;
   if (is_opencl_backend_valid) {
     if (accelerate_opencl != 0) {
       // Set opencl kernel binary.
@@ -178,8 +178,7 @@ void RunModel(std::string model_dir,
       config.set_opencl_precision(CL_PRECISION_FP16);
     }
   } else {
-    std::cout << "Unsupport opencl nb model." << std::endl;
-    exit(1);
+    std::cout << "*** nb model will be running on cpu. ***" << std::endl;
     // you can give backup cpu nb model instead
     // config.set_model_from_file(cpu_nb_model_dir);
   }

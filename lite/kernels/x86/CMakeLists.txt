@@ -38,11 +38,8 @@ add_kernel(gru_unit_compute_x86 X86 basic SRCS gru_unit_compute.cc DEPS ${lite_k
 add_kernel(sequence_expand_as_compute_x86 X86 basic SRCS sequence_expand_as_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_conv_compute_x86 X86 basic SRCS sequence_conv_compute.cc DEPS ${lite_kernel_deps} math_function blas context_project)
 
-# lite_cc_test(test_conv2d_compute_x86 SRCS conv_compute_test.cc DEPS conv_compute_x86)
 add_kernel(gather_compute_x86 X86 extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} fluid_data_type)
-# lite_cc_test(test_scale_compute_x86 SRCS scale_compute_test.cc DEPS scale_compute_x86)
-# lite_cc_test(test_dropout_compute_x86 SRCS dropout_compute_test.cc DEPS dropout_compute_x86)
-# lite_cc_test(test_batch_norm_compute_x86 SRCS batch_norm_compute_test.cc DEPS batch_norm_compute_x86)
+add_kernel(grid_sampler_compute_x86 X86 extra SRCS grid_sampler_compute.cc DEPS ${lite_kernel_deps} math_function)
 add_kernel(mul_compute_x86 X86 basic SRCS mul_compute.cc DEPS ${lite_kernel_deps} blas)
 add_kernel(concat_compute_x86 X86 basic SRCS concat_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_pool_compute_x86 X86 basic SRCS sequence_pool_compute.cc DEPS ${lite_kernel_deps} sequence_pooling)
@@ -77,7 +74,6 @@ add_kernel(interpolate_compute_x86 X86 basic SRCS interpolate_compute.cc DEPS ${
 
 lite_cc_test(test_conv2d_compute_x86 SRCS conv_compute_test.cc DEPS conv_compute_x86)
 lite_cc_test(test_mul_compute_x86 SRCS mul_compute_test.cc DEPS mul_compute_x86)
-lite_cc_test(test_slice_compute_x86 SRCS slice_compute_test.cc DEPS slice_compute_x86)
 lite_cc_test(test_sequence_pool_compute_x86 SRCS sequence_pool_compute_test.cc DEPS sequence_pool_compute_x86)
 lite_cc_test(test_batch_norm_compute_x86 SRCS batch_norm_compute_test.cc DEPS batch_norm_compute_x86)
 lite_cc_test(test_softmax_compute_x86 SRCS softmax_compute_test.cc DEPS softmax_compute_x86)

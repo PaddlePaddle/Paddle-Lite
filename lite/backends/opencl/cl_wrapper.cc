@@ -68,6 +68,9 @@ bool CLWrapper::InitHandle() {
     // Arm Mali with Android
     "/system/vendor/lib/egl/libGLES_mali.so",
     "/system/lib/egl/libGLES_mali.so",
+    // PowerVR Rogue with Android
+    "/system/vendor/lib/libPVROCL.so",
+    "/data/data/org.pocl.libs/files/lib/libpocl.so",
 #endif  // __aarch64__
 #elif defined(__linux__)
     "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
