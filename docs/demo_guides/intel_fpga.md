@@ -130,7 +130,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ### 更新模型
 
-- 通过Paddle Fluid训练，或X2Paddle转换得到SSD-MobileNetV1 foat32模型[ssd_mobilenet_v1_fp32_300_fluid](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)；
+- 通过Paddle Fluid训练，或X2Paddle转换得到SSD-MobileNetV1 float32模型[ssd_mobilenet_v1_fp32_300_fluid](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成英特尔FPGA模型，仅需要将valid_targets设置为intel_fpga,arm即可。
   ```shell
   $ ./opt --model_dir=ssd_mobilenet_v1_fp32_300_fluid \
