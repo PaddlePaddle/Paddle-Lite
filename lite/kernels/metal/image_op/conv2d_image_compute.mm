@@ -17,6 +17,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/metal_timestats.h"
+#include "lite/model_parser/base/helper.h"
 
 namespace paddle {
 namespace lite {
@@ -39,11 +40,9 @@ void Conv2dImageCompute<P, PTYPE>::PrepareForRun() {
   if (param.activation_param.has_active) {
     if (lite_api::ActivationType::kRelu == param.activation_param.active_type)
       activate_type_ = 1;
-    else if (lite_api::ActivationType::kRelu6 ==
-             param.activation_param.active_type) {
+    else if (lite_api::ActivationType::kRelu6 == param.activation_param.active_type) {
       activate_type_ = 2;
-      relu6_thredhold_ =
-          static_cast<short>(param.activation_param.hard_swish_threshold);
+      relu6_thredhold_ = static_cast<short>(param.activation_param.hard_swish_threshold);
     } else {
       throw std::logic_error("ERROR: cannot support the activate type");
     }
@@ -56,18 +55,16 @@ void Conv2dImageCompute<P, PTYPE>::PrepareForRun() {
 
   DDim blank_dim = DDimLite({output_dims[1]});
   blank_tensor_.Resize(blank_dim);
-  MetalImage* p = blank_tensor_.mutable_data<P, MetalImage>(
-      blank_dim, {0, 1, 2, 3});
+  MetalImage* p = blank_tensor_.mutable_data<P, MetalImage>(blank_dim, {0, 1, 2, 3});
 
   p->template CopyFromNCHW<float>(blank_host);
   free(blank_host);
 
   bool should_use_mps = false;
-  function_name_ =
-      KernelFunctionName(param, metal_context_->use_aggressive_optimization());
+  function_name_ = KernelFunctionName(param, metal_context_->use_aggressive_optimization());
 
 #ifdef TARGET_IOS
-    if(@available(iOS 11.0, *)) {
+  if (@available(iOS 11.0, *)) {
 #endif
     if (metal_context_->use_mps() || metal_context_->use_aggressive_optimization()) {
       if (input_dims[1] >= 3 && output_buffer_->tensor_dim_[1] >= 3) {
@@ -75,7 +72,7 @@ void Conv2dImageCompute<P, PTYPE>::PrepareForRun() {
       }
     }
 #ifdef TARGET_IOS
-    }
+  }
 #endif
   if (IsWinoGrad(function_name_)) {
     should_use_mps = false;
@@ -114,41 +111,36 @@ void Conv2dImageCompute<P, PTYPE>::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  {
-    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-    if (param.bias) {
-        [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-        [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image()) atIndex:(1)];
-        [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
-        [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
-        [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
+  if (param.bias) {
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+    [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0)atIndex:(1)];
 
-      bool quadruple = false;
-      if (IsWinoGrad(function_name_) ||
-          function_name_ == "conv_add_relu_1x1_quadruple_half") {
-          quadruple = true;
-      }
-      kernel_->Execute(*encoder, global_work_size, quadruple);
-    } else {
-      auto blank_buffer = blank_tensor_.template data<P, MetalImage>();
-
-        [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-        [encoder->metal_command_encoder_ setTexture:(blank_buffer->image()) atIndex:(1)];
-        [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
-        [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
-        [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
-
-      bool quadruple = false;
-      if (IsWinoGrad(function_name_) ||
-          function_name_ == "conv_add_relu_1x1_quadruple_half") {
-        quadruple = true;
-      }
-      kernel_->Execute(*encoder, global_work_size, quadruple);
+    bool quadruple = false;
+    if (IsWinoGrad(function_name_) || function_name_ == "conv_add_relu_1x1_quadruple_half") {
+      quadruple = true;
     }
+    kernel_->Execute(*encoder, global_work_size, quadruple);
+  } else {
+    auto blank_buffer = blank_tensor_.template data<P, MetalImage>();
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(blank_buffer->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+    [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0)atIndex:(1)];
+
+    bool quadruple = false;
+    if (IsWinoGrad(function_name_) || function_name_ == "conv_add_relu_1x1_quadruple_half") {
+      quadruple = true;
+    }
+    kernel_->Execute(*encoder, global_work_size, quadruple);
   }
 }
 
@@ -237,8 +229,7 @@ template <typename P, PrecisionType PTYPE>
 bool Conv2dImageCompute<P, PTYPE>::IsWinoGrad(const std::string& function_name) {
   std::string suffix = "winograd";
   if (function_name.size() >= suffix.size() &&
-      function_name.compare(
-          function_name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+      function_name.compare(function_name.size() - suffix.size(), suffix.size(), suffix) == 0) {
     return true;
   }
   return false;
@@ -349,7 +340,6 @@ void Conv2dImageCompute<P, PTYPE>::SetupWithoutMPS() {
         *device, &conv_params, sizeof(conv_params), METAL_ACCESS_FLAG::CPUWriteOnly);
   }
   auto filter_buffer = param.filter->template data<float>();
-
   if (IsWinoGrad(function_name_)) {
     DataConverter<float>* converter = new WinogradPointerConverter<float>();
     free(converter);
@@ -371,7 +361,7 @@ void Conv2dImageCompute<P, PTYPE>::SetupWithoutMPS() {
           *device, param.filter->dims(), METAL_PRECISION_TYPE::HALF, pad_when_one_ch, true, false);
     }
   }
-  filter_buffer_->CopyFromNCHW<float>(filter_buffer);
+  filter_buffer_->template CopyFromNCHW<float>(filter_buffer);
 }
 
 }  // namespace metal

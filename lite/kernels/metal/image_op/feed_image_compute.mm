@@ -31,21 +31,33 @@ void FeedImageCompute<P, PTYPE>::PrepareForRun() {
 
   Tensor& input_tensor = param.feed_list->at(param.col);
   auto input_dims = input_tensor.dims();
+  int input_channel = input_dims[1];
   param.out->Resize(input_dims);
   output_buffer_ = param.out->template mutable_data<P, MetalImage>(output_dims);
 
   std::string function_name = "";
   if (std::is_same<float, P>::value) {
-    function_name = "buffer_to_texture_array_n_channel_kernel";
+    if (input_channel == 1) {
+      function_name = "buffer_to_texture_array_kernel";
+    } else if (input_channel == 3) {
+      function_name = "buffer_to_texture_array_kernel_channel_3";
+    } else {
+      function_name = "buffer_to_texture_array_n_channel_kernel";
+    }
   } else if (std::is_same<MetalHalf, P>::value) {
-    function_name = "buffer_to_texture_array_n_channel_kernel_half";
+    if (input_channel == 1) {
+      function_name = "buffer_to_texture_array_kernel_half";
+    } else if (input_channel == 3) {
+      function_name = "buffer_to_texture_array_kernel_half_channel_3";
+    } else {
+      function_name = "buffer_to_texture_array_n_channel_kernel_half";
+    }
   }
   assert(!function_name.empty());
 
   kernel_ = metal_context_->GetKernel(*device_, function_name);
   queue_ = metal_context_->GetDefaultQueue(*device_);
 }
-
 
 template <typename P, PrecisionType PTYPE>
 void FeedImageCompute<P, PTYPE>::Run() {
@@ -57,6 +69,7 @@ void FeedImageCompute<P, PTYPE>::Run() {
   auto input_buffer = input_tensor.mutable_data<float>();
   auto input_dims = input_tensor.dims();
   auto mem_size = input_dims.production() * sizeof(float);
+
   input_buffer_ = metal_context_->CreateBuffer(
       *mtl_dev, input_buffer, mem_size, METAL_ACCESS_FLAG::CPUWriteOnly);
 

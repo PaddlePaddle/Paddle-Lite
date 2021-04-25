@@ -90,18 +90,10 @@ class MetalBuffer {
             size_t dst_offset) const;
 
   template <typename SP>
-  void CopyFromNCHW(const SP* src) {
-    static_assert(
-        std::is_same<float, SP>::value || std::is_same<MetalHalf, SP>::value,
-        "can support float and half");
-  }
+  void CopyFromNCHW(const SP* src);
 
   template <typename DP>
-  void CopyToNCHW(DP* dst) {
-    static_assert(
-        std::is_same<float, DP>::value || std::is_same<MetalHalf, DP>::value,
-        "can support float and half");
-  }
+  void CopyToNCHW(DP* dst);
 
 #if defined(__OBJC__)
   id<MTLBuffer> buffer() const;
@@ -110,6 +102,7 @@ class MetalBuffer {
   void* buffer() const;
   void* buffer_{nullptr};
 #endif
+
   int offset() const;
   void set_offset(int offset);
 

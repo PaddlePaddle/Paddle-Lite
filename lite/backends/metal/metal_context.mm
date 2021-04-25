@@ -91,6 +91,7 @@ void MetalContext::WaitUntilCompleted() {
   if (cmd_buf_->have_command_) {
     [cmd_buf_->metal_command_buffer_ commit];
     [cmd_buf_->metal_command_buffer_ waitUntilCompleted];
+    cmd_buf_->have_command_ = false;
   }
 }
 

@@ -102,7 +102,7 @@ MetalBuffer::MetalBuffer(const MetalDevice &device,
 }
 
 template <>
-void MetalBuffer::CopyFromNCHW(const float *src) {
+void MetalBuffer::CopyFromNCHW<float>(const float *src) {
   assert(src != nullptr);
   auto tensor_length = static_cast<size_t>(tensor_dim_.production() * precision_size_);
   if (precision_ == METAL_PRECISION_TYPE::FLOAT)
@@ -170,7 +170,7 @@ void MetalBuffer::CopyFromNCHW(const float *src) {
 }
 
 template <>
-void MetalBuffer::CopyFromNCHW(const MetalHalf *src) {
+void MetalBuffer::CopyFromNCHW<MetalHalf>(const MetalHalf *src) {
   assert(src != nullptr);
   auto tensor_length = static_cast<size_t>(tensor_dim_.production() * precision_size_);
   if (precision_ == METAL_PRECISION_TYPE::FLOAT)
@@ -237,7 +237,7 @@ void MetalBuffer::CopyFromNCHW(const MetalHalf *src) {
 }
 
 template <>
-void MetalBuffer::CopyToNCHW(MetalHalf *dst) {
+void MetalBuffer::CopyToNCHW<MetalHalf>(MetalHalf *dst) {
   assert(dst != nullptr);
   auto tensor_length = static_cast<size_t>(precision_size_ * tensor_dim_.production());
   if (with_transpose_ && tensor_dim_.size() == 4) {
@@ -325,7 +325,7 @@ void MetalBuffer::CopyToNCHW(MetalHalf *dst) {
 }
 
 template <>
-void MetalBuffer::CopyToNCHW(float *dst) {
+void MetalBuffer::CopyToNCHW<float>(float *dst) {
   assert(dst != nullptr);
   auto tensor_length = static_cast<size_t>(precision_size_ * tensor_dim_.production());
   if (with_transpose_ && tensor_dim_.size() == 4) {

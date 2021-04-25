@@ -46,6 +46,7 @@ void TargetWrapperMetal::WaitForCompleted() {
   if (ctx_.cmd_buf_->have_command_) {
     [ctx_.cmd_buf_->metal_command_buffer_ commit];
     [ctx_.cmd_buf_->metal_command_buffer_ waitUntilCompleted];
+    ctx_.cmd_buf_->have_command_ = false;
   }
 }
 

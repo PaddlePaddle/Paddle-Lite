@@ -15,9 +15,9 @@
 #include "lite/backends/metal/metal_queue.h"
 #include "lite/backends/metal/metal_kernel.h"
 #include "lite/core/dim.h"
-#include "lite/utils/cp_logging.h"
 #include "lite/core/program.h"
-#include "lite/backends/metal/metal_debug.h"
+
+//#define LITE_METAL_SAVE_TENSOR 1
 
 namespace paddle {
 namespace lite {

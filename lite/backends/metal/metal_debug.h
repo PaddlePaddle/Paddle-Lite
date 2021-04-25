@@ -38,9 +38,25 @@ class MetalDebug {
   static void set_enable(bool flag) { enable_ = flag; }
 
   static void SaveOutput(std::string name,
+                         MetalBuffer* buffer,
+                         DumpMode mode = DumpMode::kBoth) {
+    layer_count_++;
+    if (op_stats_.count(name) > 0) {
+      op_stats_[name] += 1;
+      auto name_plus_index = std::to_string(layer_count_) + "-" + name + "-" +
+                             std::to_string(op_stats_[name]);
+      DumpBuffer(name_plus_index, buffer, mode);
+    } else {
+      op_stats_[name] = 1;
+      auto name_plus_index = std::to_string(layer_count_) + "-" + name + "-" +
+                             std::to_string(op_stats_[name]);
+      DumpBuffer(name_plus_index, buffer, mode);
+    }
+  }
+
+  static void SaveOutput(std::string name,
                          MetalImage* image,
                          DumpMode mode = DumpMode::kBoth) {
-    if (name == "feed" || name == "fetch") return;
     layer_count_++;
     if (op_stats_.count(name) > 0) {
       op_stats_[name] += 1;
@@ -53,6 +69,18 @@ class MetalDebug {
                              std::to_string(op_stats_[name]);
       DumpImage(name_plus_index, image, mode);
     }
+  }
+
+  static void SaveOutput(std::string name,
+                         const MetalBuffer* image,
+                         DumpMode mode = DumpMode::kBoth) {
+    SaveOutput(name, const_cast<MetalBuffer*>(image), mode);
+  }
+
+  static void SaveOutput(std::string name,
+                         std::shared_ptr<MetalBuffer> image,
+                         DumpMode mode = DumpMode::kBoth) {
+    SaveOutput(name, image.get(), mode);
   }
 
   static void SaveOutput(std::string name,

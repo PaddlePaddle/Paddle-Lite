@@ -157,8 +157,16 @@ if(LITE_WITH_OPENMP)
         message(FATAL_ERROR "Could not found OpenMP!")
     endif()
 endif()
+
+if (CMAKE_CXX_FLAGS)
 string(REGEX REPLACE " \\-g " " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+endif()
+
+if (CMAKE_C_FLAGS)
 string(REGEX REPLACE " \\-g " " " CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+endif ()
+
+
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 # third party cmake args
