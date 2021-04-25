@@ -57,19 +57,37 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     auto variances_var = scope->FindVar(op_desc->Output("Variances").front());
     auto variances_t = variances_var->GetMutable<lite::Tensor>();
     // Get priorbox's other attr
-    auto is_clip = op_desc->GetAttr<bool>("clip");
-    auto is_flip = op_desc->GetAttr<bool>("flip");
-    auto min_max_aspect_ratios_order =
-        op_desc->GetAttr<bool>("min_max_aspect_ratios_order");
+    auto is_flip = true;
+    if (op_desc->HasAttr("flip")) {
+      is_flip = op_desc->GetAttr<bool>("flip");
+    }
+    auto is_clip = true;
+    if (op_desc->HasAttr("clip")) {
+      is_clip = op_desc->GetAttr<bool>("clip");
+    }
+    auto min_max_aspect_ratios_order = false;
+    if (op_desc->HasAttr("min_max_aspect_ratios_order")) {
+      min_max_aspect_ratios_order =
+          op_desc->GetAttr<bool>("min_max_aspect_ratios_order");
+    }
     auto max_sizes = op_desc->GetAttr<std::vector<float>>("max_sizes");
     auto min_sizes = op_desc->GetAttr<std::vector<float>>("min_sizes");
     auto aspect_ratios = op_desc->GetAttr<std::vector<float>>("aspect_ratios");
     std::vector<float> aspect_ratios_vec;
     ExpandAspectRatios(aspect_ratios, is_flip, &aspect_ratios_vec);
     auto variances = op_desc->GetAttr<std::vector<float>>("variances");
-    auto step_h = op_desc->GetAttr<float>("step_h");
-    auto step_w = op_desc->GetAttr<float>("step_w");
-    auto offset = op_desc->GetAttr<float>("offset");
+    auto step_h = 0.f;
+    if (op_desc->HasAttr("step_h")) {
+      step_h = op_desc->GetAttr<float>("step_h");
+    }
+    auto step_w = 0.f;
+    if (op_desc->HasAttr("step_w")) {
+      step_w = op_desc->GetAttr<float>("step_w");
+    }
+    auto offset = 0.5f;
+    if (op_desc->HasAttr("offset")) {
+      offset = op_desc->GetAttr<float>("offset");
+    }
     int prior_num =
         (aspect_ratios_vec.size() * min_sizes.size()) + max_sizes.size();
     const std::vector<std::string> order_tmp;
@@ -117,7 +135,9 @@ void SSDBoxesCalcOfflinePass::RemoveFlattenPattern(
   };
 
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "flatten2") continue;
+    if (node->AsStmt().picked_kernel().op_type() != "flatten" &&
+        node->AsStmt().picked_kernel().op_type() != "flatten2")
+      continue;
     if (check_flatten_after_priorbox(node) != true) continue;
 
     std::set<const Node*> nodes2rm_;
@@ -160,7 +180,9 @@ void SSDBoxesCalcOfflinePass::RemoveReshapePattern(
   };
 
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "reshape2") continue;
+    if (node->AsStmt().picked_kernel().op_type() != "reshape" &&
+        node->AsStmt().picked_kernel().op_type() != "reshape2")
+      continue;
     if (check_reshape_after_priorbox(node) != true) continue;
 
     std::set<const Node*> nodes2rm_;
@@ -331,7 +353,7 @@ void SSDBoxesCalcOfflinePass::ComputePriorbox(
       float* com_buf = reinterpret_cast<float*>(
           host::malloc(sizeof(float) * aspect_ratio_.size() * 4));
 
-      for (int s = 0; s < min_size_.size(); ++s) {
+      for (auto s = 0; s < min_size_.size(); ++s) {
         int min_idx = 0;
         int max_idx = 0;
         int com_idx = 0;
@@ -362,7 +384,7 @@ void SSDBoxesCalcOfflinePass::ComputePriorbox(
         }
 
         //! Rest of priors
-        for (int r = 0; r < aspect_ratio_.size(); ++r) {
+        for (auto r = 0; r < aspect_ratio_.size(); ++r) {
           float ar = aspect_ratio_[r];
           if (fabs(ar - 1.) < 1e-6) {
             continue;

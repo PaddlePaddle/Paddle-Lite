@@ -30,8 +30,8 @@ namespace mir {
 // Prior-box don't depend on feature-map data, only depend on image &
 // feature-map size,
 // so if the shape is determined, we can calculate it offline in opt stage,
-// and the reshape & flatten & concat which linked with prior-box can calculate
-// offline too.
+// and the reshape(2) & flatten(2) & concat which linked with prior-box can
+// be calculate offline too.
 //
 // For example:
 //   image-size            feature-size       image-size            feature-size
