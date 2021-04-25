@@ -78,7 +78,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
         - models
           - ssd_mobilenet_v1_fp32_300_fluid # Paddle fluid non-combined格式的SSD-MobileNetV1 float32模型
           - ssd_mobilenet_v1_fp32_300_for_intel_fpga
-            - model.nb # 已通过opt转好的、适合英特尔FPGA的SSD-MobileNetV1 foat32模型
+            - model.nb # 已通过opt转好的、适合英特尔FPGA的SSD-MobileNetV1 float32模型
       - shell
         - CMakeLists.txt # 示例程序CMake脚本
         - build
