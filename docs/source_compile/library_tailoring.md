@@ -22,10 +22,13 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 
 
 ### Step 1. 准备模型
-- 模型格式：只支持以下两种模型格式
+- 模型格式：只支持以下五种模型格式
 ``` shell
-# 格式一 : model params
-# 格式二 : __model__ + var1 + var2 + ...
+# 格式一 : __model__ + var1 + var2 + ...
+# 格式二 : model + var1 + var2 + ...
+# 格式三 : pdmodel + pdiparams
+# 格式四 : model +  params
+# 格式五 : model + weights
 ```
 
 - 所有模型放入同一个文件夹
@@ -88,12 +91,12 @@ cd Paddle-Lite
 - 编译产出
 
 ```shell
-# 编译产出位于： Paddle-Lite/android-lib
+# 编译产出位于： Paddle-Lite/iOS-lib
 iOS_lib  (Android 编译产出)
    |---- armv7            （armv7 iOS预测库&demo)
    |---- armv8            （armv8 iOS预测库&demo)
    |---- opt              （模型转换工具opt)
-   |---- optimized_model  （opt转化后的Android移动端模型)
+   |---- optimized_model  （opt转化后的iOS移动端模型)
               |---- mobilenet_v1.nb
               |---- shufflenet_v1.nb
 ```
