@@ -214,8 +214,13 @@ class VariablePlaceInferencePass : public DebugPass {
   //     will be updated:
   //     reshape op_info: X:var1(precisionFloat16), Out:var2(precsionFloat16)
   void InferenceKernelWithUncertainPrecision(SSAGraph* graph) {
-    std::vector<std::string> skiped_ops = {
-        "feed", "fetch", "while", "subgraph", "io_copy", "io_copy_once"};
+    std::vector<std::string> skiped_ops = {"feed",
+                                           "fetch",
+                                           "while",
+                                           "subgraph",
+                                           "io_copy",
+                                           "io_copy_once",
+                                           "cast"};
     for (auto& node : graph->StmtTopologicalOrder()) {
       auto& inst = node->AsStmt();
       const auto* op_info = inst.op_info();
@@ -230,7 +235,50 @@ class VariablePlaceInferencePass : public DebugPass {
         if (decl_input_type->IsTensor() && decl_output_type->IsTensor() &&
             decl_input_type->precision() == PRECISION(kAny) &&
             decl_output_type->precision() == PRECISION(kAny)) {
+          // update op's input variables precision from graph nodes info
+          //    ps. op's input variables are stored in exec_scope, while
+          //        graph node info is a temporary structure.
+          auto UpdateOpInputsFromNodeInfo = [&]() {
+            for (auto* in : node->inlinks) {
+              if (!(in->AsArg().is_weight) && in->AsArg().type->IsTensor()) {
+                auto in_arg_name = in->AsArg().name;
+                auto* tmp_tensor = node->AsStmt()
+                                       .op()
+                                       ->scope()
+                                       ->Var(in_arg_name)
+                                       ->GetMutable<lite::Tensor>();
+                tmp_tensor->set_precision(in->AsArg().type->precision());
+              }
+            }
+          };
+
+          // update graph nodes precision info from op's output variables
+          //    ps. op's output variables are stored in exec_scope, while
+          //        graph node info is a temporary structure.
+          auto UpdateNodeInfoFromOpOutputs = [&] {
+            for (auto* out : node->outlinks) {
+              if (!(out->AsArg().is_weight) && out->AsArg().type->IsTensor()) {
+                auto out_arg_name = out->AsArg().name;
+                auto* tmp_tensor = node->AsStmt()
+                                       .op()
+                                       ->scope()
+                                       ->Var(out_arg_name)
+                                       ->GetMutable<lite::Tensor>();
+                out->AsArg().type =
+                    LiteType::GetTensorTy(out->AsArg().type->target(),
+                                          tmp_tensor->precision(),
+                                          out->AsArg().type->layout());
+              }
+            }
+          };
+
+          // update op's input variables precision from graph nodes info
+          UpdateOpInputsFromNodeInfo();
+          // update op's output precision from input precision by applying
+          // InferType
           inst.op()->InferType();
+          // update graph nodes precision info from op's output variables
+          UpdateNodeInfoFromOpOutputs();
         }
       }
     }
