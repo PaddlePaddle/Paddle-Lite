@@ -353,6 +353,25 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   operators::ActivationParam act_param;
   act_param.has_active = false;
+
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << "x_dims size:" << x_dims.size() << std::endl;
+  std::cout << "y_dims size:" << y_dims.size() << std::endl;
+  for (int i = 0; i < 100; i++) {
+    // LOG(INFO) << "matmul_x: " << (float)x_data[i] << ",";
+  }
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << std::endl;
+  for (int i = 0; i < 100; i++) {
+    // LOG(INFO) << "matmul_y: " << (float)y_data[i] << ",";
+  }
+  std::cout << std::endl;
+
   if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&
       (x_dims.size() != 2 || y_dims.size() != 2)) {
     // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
@@ -488,6 +507,12 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                << ")";
   }
   matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
+  std::cout << std::endl;
+  for (int i = 0; i < 100; i++) {
+    // LOG(INFO) << "matmul_o: " << (float)o_data[i] << ",";
+  }
+  std::cout << std::endl;
+  std::cout << std::endl;
 }
 
 }  // namespace arm

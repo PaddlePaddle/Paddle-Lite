@@ -300,6 +300,7 @@ void RuntimeProgram::Run() {
     }
 #endif
 
+    LOG(INFO) << "op type" << inst.kernel()->op_type();
     inst.Run();
 
 #ifdef LITE_WITH_PRECISION_PROFILE
@@ -484,7 +485,6 @@ void Instruction::Run() {
   if (op_->run_once() && has_run_) {
     return;
   }
-
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;

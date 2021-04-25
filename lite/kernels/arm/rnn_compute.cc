@@ -374,6 +374,9 @@ void RnnCompute::Run() {
   auto& ctx = this->ctx_->As<ARMContext>();
   std::string mode = param.mode;
   auto input = param.Input;
+  for (int i = 0; i < 100; i++) {
+    LOG(INFO) << "rnn input:" << input->data<float>()[i];
+  }
   auto weight_list = param.WeightList;
   auto reserve_data = param.Reserve;
   auto pre_state = param.PreState;
@@ -467,6 +470,9 @@ void RnnCompute::Run() {
     } else {
       RUN_LSTM_LAYER(i, output_holder, false, 0);
     }
+  }
+  for (int i = 0; i < 100; i++) {
+    LOG(INFO) << "rnn output:" << output->data<float>()[i];
   }
 }
 }  // namespace arm
