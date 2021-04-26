@@ -536,6 +536,7 @@ void Instruction::Run() {
   if (op_->run_once() && has_run_) {
     return;
   }
+
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
