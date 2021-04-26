@@ -56,7 +56,11 @@ const char *opencl_error_to_str(cl_int error);
         __LINE__);                                                   \
   }
 #else
-#define CL_CHECK_FATAL(err_code__)
+#define CL_CHECK_FATAL(err_code__) \
+  if (err_code__ != CL_SUCCESS) {  \
+    LOG(FATAL);                    \
+  }
+
 #endif
 
 #define UP_DIV(x, y) (((x) + (y) - (1)) / (y))
