@@ -84,6 +84,9 @@ class IoCopyHostToOpenCLCompute
     VLOG(2) << "param.y->dims():" << param.y->dims();
 #endif
     auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
+    CHECK(data) << "param.y->mutable_data(TARGET(kOpenCL), mem_size) failed";
+    CHECK(param.x) << "param.x == nullptr";
+    CHECK(param.x->raw_data()) << " param.x->raw_data() == nullptr";
     h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
 
