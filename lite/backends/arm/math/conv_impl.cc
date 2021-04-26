@@ -1020,7 +1020,6 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
         for (int i = 0; i < n; i++) {
           scale_ptr[i] = scale_group[0];
         }
-
         gemv_int8(dB,
                   weights_group,
                   dout_group,
