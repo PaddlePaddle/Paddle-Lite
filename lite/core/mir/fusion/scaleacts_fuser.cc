@@ -93,8 +93,6 @@ cpp::OpDesc ScaleactsFuser::GenOpDesc(const key2nodes_t& matched) {
   auto& out_name = matched.at("out")->arg()->name;
   op_desc.SetOutput("Out", {out_name});
 
-  // should we consider int8 case?
-
   return op_desc;
 }
 
