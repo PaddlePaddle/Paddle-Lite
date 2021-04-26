@@ -300,7 +300,6 @@ void RuntimeProgram::Run() {
     }
 #endif
 
-    LOG(INFO) << "op type" << inst.kernel()->op_type();
     inst.Run();
 
 #ifdef LITE_WITH_PRECISION_PROFILE

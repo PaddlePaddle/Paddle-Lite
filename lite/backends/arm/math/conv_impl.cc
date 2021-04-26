@@ -934,9 +934,6 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                            const operators::ConvParam& param,
                            ARMContext* ctx,
                            const float* scale) {
-  for (int i = 0; i < 10; i++) {
-    // LOG(INFO) << "im2col in :" << (float)i_data[i];
-  }
   int group = param.groups;
   auto filter_dims = param.filter->dims();
   auto paddings = *param.paddings;
@@ -1022,7 +1019,6 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
           scale_ptr[i] = scale_group[0];
         }
 
-        // LOG(INFO) << "scale:" << flag_bias;
         gemv_int8(dB,
                   weights_group,
                   dout_group,
@@ -1049,10 +1045,6 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                           ctx);
       }
     }
-  }
-
-  for (int i = 0; i < 10; i++) {
-    // LOG(INFO) << "im2col out :" << (float)o_data[i];
   }
 }
 

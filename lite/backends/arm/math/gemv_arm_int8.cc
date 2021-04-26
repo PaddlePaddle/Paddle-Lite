@@ -1265,7 +1265,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
   int out_cnt = M >> 4;
   int out_remain = M & 15;
 
-  int thread_num = ctx.threads();
+  int thread_num = ctx->threads();
   int zero_ptr[M * thread_num];  // NOLINT
   memset(zero_ptr, 0, sizeof(int) * M * thread_num);
   float zerobuf[M];  // NOLINT
@@ -1278,16 +1278,13 @@ bool gemv_int8_trans_oth(const int8_t* A,
   int cnt_4 = tail >> 2;
   int tail_4 = tail & 3;
   int stride_in = M << 3;
-
-  for (int i = 0; i < 20; i++) {
-    // LOG(INFO) << "A:" <<(float)A[i];
-    // LOG(INFO) << "x:" <<(float)x[i];
-  }
+  int cnt_per_thread = cnt / thread_num;
+  int cnt_remain = cnt % thread_num;
 #pragma omp parallel for
   for (int tid = 0; tid < thread_num; tid++) {
-    for (int i = 0; i < cnt / thread_num; i++) {
+    for (int i = 0; i < cnt_per_thread; i++) {
       const int8_t* in_ptr0 =
-          data_in + i * stride_in * thread_num + tid * stride_in;
+          data_in + i * stride_in + tid * stride_in * cnt_per_thread;
       const int8_t* in_ptr1 = in_ptr0 + M;
       const int8_t* in_ptr2 = in_ptr1 + M;
       const int8_t* in_ptr3 = in_ptr2 + M;
@@ -1295,7 +1292,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
       const int8_t* in_ptr5 = in_ptr4 + M;
       const int8_t* in_ptr6 = in_ptr5 + M;
       const int8_t* in_ptr7 = in_ptr6 + M;
-      const int8_t* wei_ptr = weights_ptr + 8 * i * thread_num;
+      const int8_t* wei_ptr = weights_ptr + 8 * i + tid * 8 * cnt_per_thread;
       int32_t* out_ptr = zero_ptr + tid * M;
       int cnt_col = out_cnt;
       asm volatile(
@@ -1441,14 +1438,17 @@ bool gemv_int8_trans_oth(const int8_t* A,
         *out_ptr += *in_ptr7++ * wei_ptr[7];
         out_ptr++;
       }
-      // data_in += stride_in;
-      // weights_ptr += 8;
     }
   }
-
-  if (thread_remine) {
-    for (int i = 0; i < cnt; i++) {
-      const int8_t* in_ptr0 = data_in + i * stride_in;
+  for (int tid = 1; tid < thread_num; tid++) {
+    for (int i = 0; i < M; i++) {
+      zero_ptr[i] += zero_ptr[i + tid * M];
+    }
+  }
+  if (cnt_remain) {
+    for (int i = 0; i < cnt_remain; i++) {
+      const int8_t* in_ptr0 =
+          data_in + cnt_per_thread * thread_num * stride_in + i * stride_in;
       const int8_t* in_ptr1 = in_ptr0 + M;
       const int8_t* in_ptr2 = in_ptr1 + M;
       const int8_t* in_ptr3 = in_ptr2 + M;
@@ -1456,7 +1456,8 @@ bool gemv_int8_trans_oth(const int8_t* A,
       const int8_t* in_ptr5 = in_ptr4 + M;
       const int8_t* in_ptr6 = in_ptr5 + M;
       const int8_t* in_ptr7 = in_ptr6 + M;
-      const int8_t* wei_ptr = weights_ptr + 8 * i;
+      const int8_t* wei_ptr =
+          weights_ptr + cnt_per_thread * thread_num * 8 + i * 8;
       int32_t* out_ptr = zero_ptr;
       int cnt_col = out_cnt;
       asm volatile(
@@ -1602,21 +1603,18 @@ bool gemv_int8_trans_oth(const int8_t* A,
         *out_ptr += *in_ptr7++ * wei_ptr[7];
         out_ptr++;
       }
-      // data_in += stride_in;
-      // weights_ptr += 8;
     }
   }
-
   data_in += cnt * stride_in;
   weights_ptr += 8 * cnt;
   if (cnt_4) {
-    const int8_t* in_ptr0 = data_in + cnt * stride_in;
+    const int8_t* in_ptr0 = data_in;
     const int8_t* in_ptr1 = in_ptr0 + M;
     const int8_t* in_ptr2 = in_ptr1 + M;
     const int8_t* in_ptr3 = in_ptr2 + M;
     int32_t* out_ptr = zero_ptr;
     int cnt_col = out_cnt;
-    const int8_t* wei_ptr = weights_ptr + 8 * cnt;
+    const int8_t* wei_ptr = weights_ptr;
     asm volatile(
         "prfm  pldl1keep, [%[wc]]        \n"
         "prfm  pldl1keep, [%[in_ptr0]]   \n"
@@ -2625,34 +2623,23 @@ void gemv_int8(const int8_t* A,
       alpha = act_param.Leaky_relu_alpha;
     }
   }
-  // LOG(INFO) << "alpha"<<alpha;
   if (transA) {
     gemv_int8_trans_oth(IN_PARAMS);
     return;
-  }
-  for (int i = 0; i < 20; i++) {
-    // LOG(INFO) << "A:" <<(float)A[i];
-    // LOG(INFO) << "x:" <<(float)x[i];
   }
 
 #ifdef __aarch64__
   if (ctx->has_dot()) {
 #ifdef WITH_ARM_DOTPROD
-    LOG(INFO) << "gemv_int8_sdot";
     gemv_int8_sdot<dtype>(IN_PARAMS);
 #endif
   } else {
-    LOG(INFO) << "gemv_int8_oth";
     gemv_int8_oth<dtype>(IN_PARAMS);
   }
 #else
   gemv_int8_oth<dtype>(IN_PARAMS);
 #endif
 #undef IN_PARAMS
-
-  for (int i = 0; i < 20; i++) {
-    // LOG(INFO) << "y:" <<(float)y[i];
-  }
 }
 
 #define GEMV_INT8_FUN(dtype)                                                 \

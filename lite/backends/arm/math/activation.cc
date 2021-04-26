@@ -684,9 +684,6 @@ void act_hard_sigmoid<float>(const float* din,
                              const float slope,
                              const float offset,
                              int threads) {
-  for (int i = 0; i < 10; i++) {
-    LOG(INFO) << "hard_sigmoid input:" << din[i];
-  }
   for (int64_t i = 0; i < size; ++i) {
     dout[0] = din[0] * slope + offset;
     dout[0] = dout[0] < 1.0f ? dout[0] : 1.0f;
