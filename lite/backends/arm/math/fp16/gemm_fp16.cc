@@ -551,8 +551,6 @@ void loadb(float16_t *out,
   int rem_cnt = right_remain >> 2;
   int rem_rem = right_remain & 3;
 
-  // uint16x4_t vzero = vdup_n_u16(0);
-  // uint16x4_t vmask = vclt_u16(vld1_u16(mask_buffer), vdup_n_u16(rem_rem));
   int cnt_num = (x_len >= 16) ? 16 : 4;
   int stride_out = cnt_num * y_len * 2;
   int stride = y_len << 3;  // 4 * y_len * 2
