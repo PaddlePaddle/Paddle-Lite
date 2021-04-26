@@ -24,26 +24,34 @@ class ReluPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(param_.input->aligned());
-    output->setDataLocation(CPU);
+    output->setDataLocation(Device);
     return true;
   }
 
-  void apply() {}
+  void apply() {
+    Shape& input_shape = param_.input->shape();
+
+    bypass_args_.input_data_type = DATA_TYPE_FP16;
+    bypass_args_.output_data_type = DATA_TYPE_FP16;
+    bypass_args_.input_layout_type = LAYOUT_HWC;
+    bypass_args_.output_layout_type = LAYOUT_HWC;
+    bypass_args_.image.address = param_.input->data<void>();
+    bypass_args_.image.scale_address = param_.input->max();
+    bypass_args_.image.channels = input_shape.channel();
+    bypass_args_.image.height = input_shape.height();
+    bypass_args_.image.width = input_shape.width();
+    bypass_args_.output.address = param_.output->data<void>();
+    bypass_args_.output.scale_address = param_.output->max();
+
+    bypass_args_.inplace.active_param.type = TYPE_RELU;
+    bypass_args_.inplace.active_param.leaky_relu_factor =
+        float_to_half(param_.activeParam.leaky_relu_factor);
+  }
 
   bool dispatch() {
-    param_.input->invalidate();
-    int16_t* input_data = param_.input->data<int16_t>();
-    float16* out_data = param_.output->data<float16>();
-    for (int i = 0; i < param_.input->shape().alignedElementCount(); i++) {
-      int16_t v = param_.input->data<float16>()[i];
-      if (v > 0) {
-        out_data[i] = input_data[i];
-      } else {
-        out_data[i] = zero;
-      }
-    }
-    param_.output->copyScaleFrom(param_.input);
-    param_.output->flush();
+    // fpga compute through bypass
+    param_.input->syncToDevice();
+    perform_bypass(bypass_args_);
     return true;
   }
 
@@ -51,6 +59,7 @@ class ReluPE : public PE {
 
  private:
   InputParam param_;
+  BypassArgs bypass_args_;
   float16 zero = float_to_half(0.0f);
 };
 

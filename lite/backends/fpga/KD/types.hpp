@@ -21,8 +21,9 @@ enum DataType : int {
   FP32 = 0,
   FP16 = 1,
   INT8 = 2,
-  INT32 = 3,
-  INT64 = 4,
+  INT16 = 3,
+  INT32 = 4,
+  INT64 = 5,
 };
 
 template <typename T>
@@ -65,9 +66,12 @@ inline int CellSize(DataType type) {
       return sizeof(int32_t);
     case INT8:
       return sizeof(int8_t);
+    case INT16:
+      return sizeof(int16_t);
     case INT64:
       return sizeof(int64_t);
     default:
+      exit(-1);
       return 0;
   }
   return 0;
