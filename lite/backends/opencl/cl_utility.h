@@ -43,7 +43,11 @@ const char* opencl_error_to_str(cl_int error);
         __LINE__);                                                   \
   }
 #else
-#define CL_CHECK_FATAL(err_code__) LOG(FATAL)
+// CL EXECUTE ERR NEED NOTIFY OUTSIDE
+#define CL_CHECK_FATAL(err_code__) \
+  if (err_code__ != CL_SUCCESS) {  \
+    LOG(FATAL);                    \
+  }
 #endif
 
 #ifdef LITE_WITH_PROFILE
