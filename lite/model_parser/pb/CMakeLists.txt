@@ -1,10 +1,12 @@
-lite_cc_library(var_desc SRCS var_desc.cc DEPS framework_proto)
-lite_cc_library(op_desc SRCS op_desc.cc DEPS framework_proto)
-lite_cc_library(block_desc SRCS block_desc.cc DEPS framework_proto)
-lite_cc_library(program_desc SRCS program_desc.cc DEPS framework_proto)
-lite_cc_library(op_version_map SRCS op_version_map.cc DEPS framework_proto)
-lite_cc_library(pb_utils SRCS utils.cc DEPS framework_proto)
-lite_cc_library(param_desc SRCS param_desc.cc DEPS framework_proto model_base_io var_desc pb_utils)
-lite_cc_library(pb_tensor_io SRCS tensor_io.cc DEPS model_base_io scope framework_proto)
-
-set(pb_wrapper pb_tensor_io pb_utils param_desc var_desc op_desc block_desc op_version_map program_desc PARENT_SCOPE) 
+# protobuf data struct
+lite_cc_library(pb_wrapper SRCS
+  program_desc.cc
+  block_desc.cc
+  op_desc.cc
+  op_version_map.cc
+  tensor_io.cc
+  param_desc.cc
+  var_desc.cc
+  utils.cc
+  DEPS framework_proto
+)

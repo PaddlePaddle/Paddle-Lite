@@ -3,10 +3,10 @@ if (LITE_ON_TYNY_PUBLISH)
 endif()
 
 lite_cc_library(gen_code SRCS gen_code.cc
-        DEPS program op scope
-        cpp_op_desc
+        DEPS core 
+        model_parser
         HVY_DEPS operator)
-lite_cc_library(paddle_infer_gencode SRCS paddle_infer.cc DEPS program utils)
+lite_cc_library(paddle_infer_gencode SRCS paddle_infer.cc DEPS core utils)
 
 lite_cc_test(test_gen_code SRCS gen_code_test.cc 
         DEPS gen_code tensor ${host_kernels} ${ops}
@@ -26,7 +26,7 @@ lite_cc_test(test_gen_code SRCS gen_code_test.cc
 
 lite_cc_library(__generated_code__
     SRCS ${CMAKE_BINARY_DIR}/lite/gen_code/__generated_code__.cc
-    DEPS scope op kernel paddle_infer_gencode
+    DEPS core paddle_infer_gencode
     EXCLUDE_COMPILE_DEPS "ON"
 )
 if(WITH_TESTING)
@@ -34,7 +34,7 @@ if(WITH_TESTING)
     add_dependencies(__generated_code__ extern_lite_download_lite_naive_model_tar_gz)
 endif(WITH_TESTING)
 
-lite_cc_binary(paddle_code_generator SRCS paddle_code_generator.cc DEPS model_parser gen_code gflags)
+lite_cc_binary(paddle_code_generator SRCS paddle_code_generator.cc DEPS core model_parser gen_code gflags paddle_api)
 
 # TODO(xxx): fix the gen code bug on ios
 if(IOS)

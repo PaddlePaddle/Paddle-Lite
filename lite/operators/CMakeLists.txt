@@ -1,6 +1,6 @@
-set(op_DEPS tensor op op_params scope memory)
+set(op_DEPS core)
 
-lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
+lite_cc_library(op_params SRCS op_params.cc)
 
 # 1.baisc ops used in basic models
 add_operator(conv_op basic SRCS conv_op.cc DEPS ${op_DEPS})

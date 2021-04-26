@@ -1,40 +1,40 @@
-if (WITH_TESTING)
-    lite_cc_library(lite_gtest_main SRCS lite_gtest_main.cc DEPS gtest gflags)
-endif()
-lite_cc_library(target_wrapper SRCS target_wrapper.cc
-  DEPS target_wrapper_host place fbs_headers
-  X86_DEPS target_wrapper_x86
-  CUDA_DEPS target_wrapper_cuda
+lite_cc_library(core SRCS
+     program.cc # program struct
+     target_wrapper.cc # basic memory operations: malloc/memcpy/free/memcmp
+     memory.cc # memory operations are integrated according to hardware type
+     tensor.cc # A unit for data operation
+     types.cc  # types for model transformation, useless in tiny_publish
+     type_system.cc # type system for op and kernel registry
+     context.cc # context designed for different hardware
+     device_info.cc # hardware device info
+     variable.cc  # variable struct
+     scope.cc # scope struct to store runtime variables
+     kernel.cc # kernel defination
+     op_lite.cc # op defination
+     op_registry.cc  # op registry
+  DEPS place target_wrapper_host
+  X86_DEPS target_wrapper_x86 eigen3
+  CUDA_DEPS target_wrapper_cuda cuda_context nvtx_wrapper cuda_type_trans
   XPU_DEPS target_wrapper_xpu
-  CL_DEPS cl_target_wrapper
-  FPGA_DEPS fpga_target_wrapper
+  CL_DEPS cl_target_wrapper cl_context
+  FPGA_DEPS fpga_target_wrapper lite_tensor_fpga
   INTEL_FPGA_DEPS intel_fpga_target_wrapper
   BM_DEPS target_wrapper_bm
-  MLU_DEPS target_wrapper_mlu)
+  MLU_DEPS target_wrapper_mlu
+  PROFILE_DEPS lite_profiler
+)
 
-lite_cc_library(memory SRCS memory.cc DEPS target_wrapper CL_DEPS cl_target_wrapper)
-
-set(tensor_extra_deps "")
-if (LITE_WITH_FPGA)
-    set(tensor_extra_deps lite_tensor_fpga)
-endif()
-lite_cc_library(tensor SRCS tensor.cc DEPS memory ${tensor_extra_deps})
+# head files for ops and kernels registry
+add_dependencies(core kernel_list_h op_list_h)
 
 
+
+
+
+# protobuf model data structure defination
 if (NOT LITE_ON_TINY_PUBLISH)
     proto_library(framework_proto SRCS framework.proto)
-endif()
-
-lite_cc_library(variable SRCS variable.cc DEPS tensor)
-lite_cc_library(types SRCS types.cc)
-lite_cc_library(op_registry SRCS op_registry.cc DEPS kernel)
-lite_cc_library(scope SRCS scope.cc DEPS tensor)
-lite_cc_library(device_info SRCS device_info.cc DEPS tensor)
-
-if (LITE_WITH_ARM)
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info CL_DEPS cl_context)
-else()
-lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DEPS cl_context CUDA_DEPS cuda_context)
+    add_dependencies(core framework_proto)
 endif()
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
@@ -119,28 +119,13 @@ add_custom_command(
   OUTPUT supported_kernel_op_info.h # not a real path to the output to force it execute every time.
   )
   add_custom_target(supported_kernel_op_info_h DEPENDS supported_kernel_op_info.h)
-#----------------------------------------------- NOT CHANGE -----------------------------------------------
-lite_cc_library(kernel SRCS kernel.cc
-        DEPS context type_system target_wrapper any op_params tensor
-        PROFILE_DEPS lite_profiler
-  )
-lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
-  cpp_op_desc tensor utils
-  )
-
-add_dependencies(kernel kernel_list_h)
-add_dependencies(op op_list_h)
 
 
-lite_cc_library(type_system SRCS type_system.cc DEPS tensor target_wrapper)
 
-lite_cc_library(program SRCS program.cc
-    DEPS op kernel model_parser ${ops} ${cpp_wrapper}
-    PROFILE_DEPS lite_profiler
-    CUDA_DEPS nvtx_wrapper cuda_type_trans)
+
 
 if (NOT LITE_ON_TINY_PUBLISH)
-  lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)
+  lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser core)
   add_subdirectory(mir)
   add_subdirectory(profile)
   add_subdirectory(arena)
@@ -156,19 +141,13 @@ if(LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WI
       DEPS op)
    lite_cc_library(subgraph_engine_base
       SRCS subgraph_engine_base.cc
-      DEPS tensor op scope program)
+      DEPS core)
 endif()
 
 # for mobile, unnecessary to compile the following testings.
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     return()
 endif()
-
-# lite_cc_library(program_fake_utils SRCS program_fake_utils.cc DEPS mir_ssa_graph
-#         scope op_registry proto_desc op
-#         ${ops}
-#         ${host_kernels}
-#         )
 
 lite_cc_test(test_scope SRCS scope_test.cc DEPS scope)
 lite_cc_test(test_kernel SRCS kernel_test.cc DEPS kernel target_wrapper any)
@@ -179,17 +158,3 @@ lite_cc_test(test_type_system SRCS type_system_test.cc DEPS type_system utils)
 lite_cc_test(test_types SRCS types_test.cc DEPS types)
 lite_cc_test(test_memory SRCS memory_test.cc DEPS memory)
 lite_cc_test(test_context SRCS context_test.cc DEPS context)
-
-
-# # A trick to generate the paddle_use_kernels.h
-# execute_process(
-#   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
-#   ${kernels_src_list}
-#   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
-#   )
-# # A trick to generate the paddle_use_ops.h
-# execute_process(
-#   COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
-#   ${ops_src_list}
-#   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
-#   )

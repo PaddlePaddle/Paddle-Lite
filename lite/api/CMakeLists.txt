@@ -1,8 +1,4 @@
-if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
-  lite_cc_library(place SRCS paddle_place.cc DEPS logging)
-else()
-  lite_cc_library(place SRCS paddle_place.cc DEPS glog)
-endif()
+lite_cc_library(place SRCS paddle_place.cc DEPS utils)
 
 if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
@@ -15,8 +11,8 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
-    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto op_registry fbs_headers)
-    target_link_libraries(paddle_full_api_shared framework_proto op_registry)
+    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto core fbs_headers)
+    target_link_libraries(paddle_full_api_shared framework_proto core)
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
         target_link_libraries(paddle_full_api_shared xxhash)
@@ -158,7 +154,7 @@ endif()
 
 if (WITH_TESTING)
     lite_cc_library(lite_api_test_helper SRCS lite_api_test_helper.cc
-      DEPS scope optimizer target_wrapper_host model_parser program
+      DEPS core optimizer model_parser
            ${ops} ${host_kernels}
       CUDA_DEPS ${cuda_kernels}
       X86_DEPS ${x86_kernels}
@@ -236,10 +232,10 @@ message(STATUS "Collected ${num_imagination_nna_kernels} IMAGINATION_NNA kernels
 # for full api
 if (NOT LITE_ON_TINY_PUBLISH)
     set(cxx_api_deps
-    scope optimizer target_wrapper_host model_parser program)
+    core optimizer model_parser)
     lite_cc_library(cxx_api
                         SRCS cxx_api.cc
-                        DEPS ${cxx_api_deps} ${ops} ${host_kernels} program
+                        DEPS ${cxx_api_deps} ${ops} ${host_kernels}
                         X86_DEPS ${x86_kernels}
                         CUDA_DEPS ${cuda_kernels}
                         ARM_DEPS ${arm_kernels}
@@ -258,14 +254,14 @@ endif()
 
 # for light api
 set(light_api_deps
-    scope target_wrapper_host model_parser program)
+    core model_parser)
 if(LITE_WITH_CUDA)
     get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
     set(light_api_deps ${light_api_deps} target_wrapper_cuda)
 endif()
 lite_cc_library(light_api SRCS light_api.cc
-        DEPS scope target_wrapper_host model_parser
-            ${light_api_deps} ${ops} ${host_kernels} program
+        DEPS core model_parser
+            ${light_api_deps} ${ops} ${host_kernels}
         CUDA_DEPS ${cuda_kernels}
         X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
@@ -439,15 +435,12 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
    #    FPGA_DEPS ${fpga_kernels})
 endif()
 
-lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params tensor device_info)
+lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params core)
 
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.
-if (LITE_ON_TINY_PUBLISH)
-    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream)
-else()
-    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
-endif()
+lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api utils)
+
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
         ${ops}
@@ -474,7 +467,7 @@ endif()
 # TODO(Superjomn) support latter.
 if(NOT WITH_COVERAGE)
     lite_cc_test(test_light_api SRCS light_api_test.cc
-        DEPS light_api program mir_passes paddle_api_light
+        DEPS light_api core mir_passes paddle_api_light
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
         INTEL_FPGA_DEPS ${intel_fpga_kernels}

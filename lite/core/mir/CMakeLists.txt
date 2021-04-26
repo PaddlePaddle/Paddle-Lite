@@ -1,5 +1,5 @@
-lite_cc_library(mir_node SRCS node.cc DEPS kernel)
-lite_cc_library(mir_ssa_graph SRCS ssa_graph.cc DEPS mir_node program)
+lite_cc_library(mir_node SRCS node.cc DEPS core)
+lite_cc_library(mir_ssa_graph SRCS ssa_graph.cc DEPS mir_node core)
 lite_cc_library(mir_pass SRCS pass.cc pass_utils.cc DEPS mir_ssa_graph)
 lite_cc_library(mir_pass_manager SRCS pass_manager.cc DEPS mir_pass mir_ssa_graph mir_passes)
 lite_cc_library(mir_pass_registry SRCS pass_registry.cc DEPS mir_pass_manager)
@@ -88,35 +88,9 @@ lite_cc_library(mir_passes
       restrict_quantized_op_with_same_input_output_scale_pass.cc
       post_quant_dynamic_pass.cc
       fp16_attribute_pass.cc
-  DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
+  DEPS mir_pass core ${mir_fusers} ${mir_subgraphs})
 
-# lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS
-        #mir_ssa_graph scope op
-        #fc_op
-        #${host_kernels}
-        #mir_passes
-        #mir_pass_manager
-        #program_fake_utils
-        #)
-# lite_cc_test(test_variable_place_infrence_pass SRCS variable_place_inference_pass_test.cc
-#   DEPS
-#       mul_op
-#       feed_op
-#       fetch_op
-#       io_copy_op
-#       ${host_kernels}
-#       mir_passes
-#       mir_pass_manager
-#       optimizer
-#       program_fake_utils
-#       target_wrapper_host
-#   PROFILE_DEPS basic_profiler
-#   CUDA_DEPS target_wrapper_cuda kernels_cuda
-#   ARM_DEPS mul_compute_arm
-#   X86_DEPS mul_compute_x86
-# )
-
-set(pattern_deps mir_node mir_ssa_graph op)
+set(pattern_deps mir_node mir_ssa_graph core)
 if (WITH_TESTING)
   list(APPEND pattern_deps gtest)
 endif()
@@ -131,13 +105,3 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     return()
 endif()
 lite_cc_test(test_mir_pass_manager SRCS pass_manager_test.cc DEPS mir_pass_manager mir_passes)
-
-
-# TODO(wz) replace framework/proto to lite proto.
-if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-    # it depends on the fluid/framework/proto, that is too heavy for mobile execution.
-    # TODO(wz) enable it latter.
-    # lite_cc_test(test_pattern_matcher_high_api SRCS pattern_matcher_high_api_test.cc DEPS
-    #     pattern_matcher_high_api proto_desc mir_pass_manager fc_op mul_op elementwise_ops
-    #     mir_passes compatible_pb program ${ops})
-endif()

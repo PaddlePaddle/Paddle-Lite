@@ -1,5 +1,4 @@
-if(LITE_WITH_CV)
-  if(LITE_WITH_ARM)
+if(LITE_WITH_CV AND LITE_WITH_ARM)
     if(LITE_WITH_FPGA)
       lite_cc_library(paddle_cv_arm SRCS
         image_convert.cc
@@ -22,5 +21,4 @@ if(LITE_WITH_CV)
         image_resize.cc
         DEPS paddle_api place)
     endif()
-  endif()
 endif()
