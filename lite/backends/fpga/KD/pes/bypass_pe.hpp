@@ -42,14 +42,14 @@ class BypassPE : public PE {
     args.input_layout_type = LAYOUT_HWC;
     args.output_layout_type = LAYOUT_HWC;
     args.image = {.address = input->data<void>(),
-                  .scale_address = input->scale(),
+                  .scale_address = input->max(),
                   .channels = (uint32_t)count,
                   .width = 1,
                   .height = 1,
                   .pad_width = 0u,
                   .pad_height = 0u};
     args.output = {
-        .address = output->data<void>(), .scale_address = output->scale(),
+        .address = output->data<void>(), .scale_address = output->max(),
     };
     input->syncToDevice();
     size_t aligned_remainder = count % 16;

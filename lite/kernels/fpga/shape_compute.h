@@ -13,32 +13,20 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
-#include "lite/operators/conv_op.h"
-
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/conv_pe.hpp"
-#include "lite/backends/fpga/KD/pes/depthwise_conv_pe.hpp"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
-using float16 = zynqmp::float16;
-class ConvCompute
+
+class ShapeCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
-  using param_t = operators::ConvParam;
-
-  void PrepareForRun() override;
-
   void Run() override;
 
- private:
-  zynqmp::ConvPE conv_pe_;
-  zynqmp::DepthwiseConvPE dw_conv_pe_;
-  float16 input_max_ = 0;
+  virtual ~ShapeCompute() = default;
 };
 
 }  // namespace fpga
