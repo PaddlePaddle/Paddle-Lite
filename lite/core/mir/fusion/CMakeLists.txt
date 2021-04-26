@@ -98,6 +98,7 @@ set(mir_fusers
     fuse_inplace
     fuse_match_matrix_activation
     fuse_scales
+    fuse_scaleacts
     fuse_sequence_reverse_embedding
     fuse_instance_norm_activation
     fuse_elementwise_add_scale

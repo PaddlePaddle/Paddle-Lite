@@ -22,7 +22,10 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-// This pass fuse two scale ops to one scale op.
+// This pass fuses two scale ops to one scale op.
+// Caculation will not be reduced by this pass but two ops fused to one.
+// This will reduce running time on gpu device.
+// MobilenetV3 has this pattern.
 //
 // For example:
 //     scale(has act func)
@@ -32,7 +35,7 @@ namespace mir {
 //     scale(no act func)
 //
 // After this pass is applied:
-//     scale
+//     scale( out = scale1 * (act(scale*in + bias)) + bias1 )
 
 class ScaleactsFusePass : public ProgramPass {
  public:

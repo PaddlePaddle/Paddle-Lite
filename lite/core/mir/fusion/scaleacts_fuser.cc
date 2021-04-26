@@ -81,13 +81,14 @@ void ScaleactsFuser::InsertNewNode(SSAGraph* graph,
 }
 
 cpp::OpDesc ScaleactsFuser::GenOpDesc(const key2nodes_t& matched) {
-  auto op_desc = matched.at("scale2")->stmt()->op_info();
-  float scale1 = op_desc->GetAttr<float>("scale");
-  float bias1 = op_desc->GetAttr<float>("bias");
+  auto* op_desc_tmp = matched.at("scale2")->stmt()->op_info();
+  float scale1 = op_desc_tmp->GetAttr<float>("scale");
+  float bias1 = op_desc_tmp->GetAttr<float>("bias");
 
-  op_desc.SetAttr<bool>("fuse_scaleact", true);
-  op_desc.SetAttr<float>("scale1", scale1);
-  op_desc.SetAttr<float>("bias1", bias1);
+  auto op_desc = *matched.at("scale1")->stmt()->op_info();
+  op_desc.SetAttr("fuse_scaleact", true);
+  op_desc.SetAttr("scale1", scale1);
+  op_desc.SetAttr("bias1", bias1);
 
   auto& out_name = matched.at("out")->arg()->name;
   op_desc.SetOutput("Out", {out_name});
