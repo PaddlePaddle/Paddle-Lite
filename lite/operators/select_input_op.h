@@ -37,6 +37,11 @@ class SelectInputOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "selectInput"; }
 
+  bool InferType() override {
+    param_.Out->set_precision(param_.X[0]->precision());
+    return true;
+  }
+
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
     auto output_dims = param_.Out->dims();

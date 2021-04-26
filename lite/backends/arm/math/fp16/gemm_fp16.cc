@@ -541,21 +541,30 @@ void loadb(float16_t *out,
   uint16_t *outptr = reinterpret_cast<uint16_t *>(out);
   const uint16_t *inptr =
       reinterpret_cast<const uint16_t *>(in) + k0 * ldin + n0;
-  uint16_t mask_buffer[16] = {
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  uint16_t mask_buffer[4] = {0, 1, 2, 3};
   int x_len = nmax - n0;
   int y_len = kmax - k0;
   int cnt = x_len >> 4;
   int right_remain = x_len & 15;
 
   uint16_t *outptr_row = outptr;
-  int stride_out = 32 * y_len;  // 16 * y_len * 2
+  int rem_cnt = right_remain >> 2;
+  int rem_rem = right_remain & 3;
 
-  uint16x8_t vzero = vdupq_n_u16(0);
-  uint16x8_t vmask1 =
-      vcltq_u16(vld1q_u16(mask_buffer), vdupq_n_u16(right_remain));
-  uint16x8_t vmask2 =
-      vcltq_u16(vld1q_u16(mask_buffer + 8), vdupq_n_u16(right_remain));
+  // uint16x4_t vzero = vdup_n_u16(0);
+  // uint16x4_t vmask = vclt_u16(vld1_u16(mask_buffer), vdup_n_u16(rem_rem));
+  int cnt_num = (x_len >= 16) ? 16 : 4;
+  int stride_out = cnt_num * y_len * 2;
+  int stride = y_len << 3;  // 4 * y_len * 2
+  // rem_cnt > 0 ? (16 - 4) : (16 - 1)
+  int stride_w = (rem_cnt > 0) ? 24 : 30;  // (16 - 4) * 2
+  int stride_w2 = 6;                       // (4 - 1) * 2;
+  if (y_len >= 4) {
+    stride_w = stride_w << 2;    // stride_w * 4
+    stride_w2 = stride_w2 << 2;  // stride_w2 * 4
+  }
+  int cnt_y = 4 * (y_len / 4);
+  int stride_k = y_len << 1;
 
 #pragma omp parallel for
   for (int y = 0; y < y_len - 3; y += 4) {
@@ -564,8 +573,13 @@ void loadb(float16_t *out,
     const uint16_t *ptr2 = ptr1 + ldin;
     const uint16_t *ptr3 = ptr2 + ldin;
 
-    uint16_t *outptr_row_col = outptr_row + y * 16;
+    uint16_t *outptr_row_col = outptr_row + y * cnt_num;
     int cnt_col = cnt;
+    bool y_line = (y > 0 && cnt > 0);
+    int cnt_rem_num = rem_cnt;
+    int rem_rem_rem = rem_rem;
+    int temp = y_line ? stride_w * (y / 4) : 0;
+    int temp2 = (y > 0 && rem_cnt > 0) ? stride_w2 * (y / 4) : 0;
     asm volatile(
         "cmp %w[cnt], #1                            \n"
         "prfm   pldl1keep, [%[ptr0]]                \n"
@@ -583,48 +597,78 @@ void loadb(float16_t *out,
         "stp q2, q3, [%[outptr], #32]               \n"
         "stp q4, q5, [%[outptr], #64]               \n"
         "stp q6, q7, [%[outptr], #96]               \n"
-        "add %[outptr], %[outptr], %[stride]        \n"
+        // outptr+= stride_out(16k)
+        "add %[outptr], %[outptr], %[stride_out]    \n"
         "bne 0b                                     \n"
         "1:                                         \n"
         "cmp %w[right_remain], #1                   \n"
         "blt 2f                                     \n"
-        "ldp q0, q1, [%[ptr0]], #32                 \n"
-        "ldp q2, q3, [%[ptr1]], #32                 \n"
-        "ldp q4, q5, [%[ptr2]], #32                 \n"
-        "ldp q6, q7, [%[ptr3]], #32                 \n"
-        "bif v0.16b, %[vzero].16b, %[vmask1].16b    \n"
-        "bif v1.16b, %[vzero].16b, %[vmask2].16b    \n"
-        "bif v2.16b, %[vzero].16b, %[vmask1].16b    \n"
-        "bif v3.16b, %[vzero].16b, %[vmask2].16b    \n"
-        "bif v4.16b, %[vzero].16b, %[vmask1].16b    \n"
-        "bif v5.16b, %[vzero].16b, %[vmask2].16b    \n"
-        "stp q0, q1, [%[outptr]]                    \n"
-        "bif v6.16b, %[vzero].16b, %[vmask1].16b    \n"
-        "stp q2, q3, [%[outptr], #32]               \n"
-        "bif v7.16b, %[vzero].16b, %[vmask2].16b    \n"
-        "stp q4, q5, [%[outptr], #64]               \n"
-        "stp q6, q7, [%[outptr], #96]               \n"
+        // rem_cnt > 0
+        "cmp %w[rem_cnt], #1                        \n"
+        "sub %[outptr], %[outptr], %[temp]          \n"
+        "blt 3f                                     \n"
+        "4:                                         \n"
+        "ldr d0, [%[ptr0]], #8                      \n"
+        "ldr d1, [%[ptr1]], #8                      \n"
+        "ldr d2, [%[ptr2]], #8                      \n"
+        "ldr d3, [%[ptr3]], #8                      \n"
+        "subs %w[rem_cnt], %w[rem_cnt], #1          \n"
+        "str d0, [%[outptr]]                        \n"
+        "str d1, [%[outptr], #0x08]                 \n"
+        "str d2, [%[outptr], #0x10]                 \n"
+        "str d3, [%[outptr], #0x18]                 \n"
+        // outptr+= stride
+        "add %[outptr], %[outptr], %[stride]        \n"
+        "bne 4b                                     \n"
+        "sub %[outptr], %[outptr], %[temp2]         \n"
+        "3:                                         \n"
+        // rem_rem > 0
+        "cmp %w[rem_rem], #1                        \n"
+        "blt 2f                                     \n"
+        "5:                                         \n"
+        "ldr s0, [%[ptr0]], #2                      \n"
+        "ldr s1, [%[ptr1]], #2                      \n"
+        "ldr s2, [%[ptr2]], #2                      \n"
+        "ldr s3, [%[ptr3]], #2                      \n"
+        "subs %w[rem_rem], %w[rem_rem], #1          \n"
+        "str s0, [%[outptr]]                        \n"
+        "str s1, [%[outptr], #0x02]                 \n"
+        "str s2, [%[outptr], #0x04]                 \n"
+        "str s3, [%[outptr], #0x06]                 \n"
+        "add %[outptr], %[outptr], %[stride_k]      \n"
+        "bne 5b                                     \n"
         "2:                                         \n"
         : [ptr0] "+r"(ptr0),
           [ptr1] "+r"(ptr1),
           [ptr2] "+r"(ptr2),
           [ptr3] "+r"(ptr3),
           [outptr] "+r"(outptr_row_col),
+          [rem_cnt] "+r"(cnt_rem_num),
+          [rem_rem] "+r"(rem_rem_rem),
           [cnt] "+r"(cnt_col)
         : [right_remain] "r"(right_remain),
-          [stride] "r"(stride_out),
-          [vzero] "w"(vzero),
-          [vmask1] "w"(vmask1),
-          [vmask2] "w"(vmask2)
+          [stride_out] "r"(stride_out),
+          [stride] "r"(stride),
+          [stride_k] "r"(stride_k),
+          [temp2] "r"(temp2),
+          [temp] "r"(temp)
         : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
   }
 
 #pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  for (int y = cnt_y; y < y_len; ++y) {
     const uint16_t *ptr0 = inptr + y * ldin;
-    uint16_t *outptr_row_col = outptr_row + y * 16;
+    uint16_t *outptr_row_col = outptr_row + y * cnt_num;
     int cnt_col = cnt;
-
+    bool y_line = (y > 0 && cnt > 0);
+    int cnt_rem_num = rem_cnt;
+    int rem_rem_rem = rem_rem;
+    // (y - cnt_y) * (16 - 4) * 2 || (y - cnt_y) * (16 - 1) * 2
+    int valid_w = rem_cnt > 0 ? 24 : 30;
+    int temp = y_line ? (stride_w * (y / 4) + (y - cnt_y) * valid_w) : 0;
+    // (y - cnt_y) * (4 - 1) * 2
+    int temp2 =
+        (y > 0 && rem_cnt > 0) ? (stride_w2 * (y / 4) + (y - cnt_y) * 6) : 0;
     asm volatile(
         "cmp %w[cnt], #1                            \n"
         "prfm   pldl1keep, [%[ptr0]]                \n"
@@ -634,22 +678,45 @@ void loadb(float16_t *out,
         "prfm   pldl1keep, [%[ptr0]]                \n"
         "subs %w[cnt], %w[cnt], #1                  \n"
         "stp q0, q1, [%[outptr]]                    \n"
-        "add %[outptr], %[outptr], %[stride]        \n"
+        "add %[outptr], %[outptr], %[stride_out]    \n"
         "bne 0b                                     \n"
         "1:                                         \n"
         "cmp %w[right_remain], #1                   \n"
         "blt 2f                                     \n"
-        "ldp q0, q1, [%[ptr0]], #32                 \n"
-        "bif v0.16b, %[vzero].16b, %[vmask1].16b    \n"
-        "bif v1.16b, %[vzero].16b, %[vmask2].16b    \n"
-        "stp q0, q1, [%[outptr]]                    \n"
+        // rem_cnt > 0
+        "cmp %w[rem_cnt], #1                        \n"
+        "sub %[outptr], %[outptr], %[temp]          \n"
+        "blt 3f                                     \n"
+        "4:                                         \n"
+        "ldr d0, [%[ptr0]], #8                      \n"
+        "subs %w[rem_cnt], %w[rem_cnt], #1          \n"
+        "str d0, [%[outptr]]                        \n"
+        // outptr+= stride
+        "add %[outptr], %[outptr], %[stride]        \n"
+        "bne 4b                                     \n"
+        "sub %[outptr], %[outptr], %[temp2]         \n"
+        "3:                                         \n"
+        // rem_rem > 0
+        "cmp %w[rem_rem], #1                        \n"
+        "blt 2f                                     \n"
+        "5:                                         \n"
+        "ldr s0, [%[ptr0]], #2                      \n"
+        "subs %w[rem_rem], %w[rem_rem], #1          \n"
+        "str s0, [%[outptr]]                        \n"
+        "add %[outptr], %[outptr], %[stride_k]      \n"
+        "bne 5b                                     \n"
         "2:                                         \n"
-        : [ptr0] "+r"(ptr0), [outptr] "+r"(outptr_row_col), [cnt] "+r"(cnt_col)
+        : [ptr0] "+r"(ptr0),
+          [outptr] "+r"(outptr_row_col),
+          [rem_cnt] "+r"(cnt_rem_num),
+          [rem_rem] "+r"(rem_rem_rem),
+          [cnt] "+r"(cnt_col)
         : [right_remain] "r"(right_remain),
-          [stride] "r"(stride_out),
-          [vzero] "w"(vzero),
-          [vmask1] "w"(vmask1),
-          [vmask2] "w"(vmask2)
+          [stride_out] "r"(stride_out),
+          [stride] "r"(stride),
+          [stride_k] "r"(stride_k),
+          [temp2] "r"(temp2),
+          [temp] "r"(temp)
         : "cc", "memory", "v0", "v1");
   }
 }
@@ -669,10 +736,11 @@ void loadb_trans(float16_t *out,
   memset(zerobuff, 0, sizeof(uint16_t) * size);
   int cnt = x_len >> 3;
   int remain = x_len & 7;
+  int y = n0;
+  int y_remain = (nmax - n0) & 3;
 
-//! data B is not transposed, transpose B to k * 16
-#pragma omp parallel for
-  for (int y = n0; y < nmax; y += 16) {
+  //! data B is not transposed, transpose B to k * 16
+  for (; y < nmax - 15; y += 16) {
     const uint16_t *inptr0 = inptr + y * ldin + k0;
     const uint16_t *inptr1 = inptr0 + ldin;
     const uint16_t *inptr2 = inptr1 + ldin;
@@ -691,26 +759,6 @@ void loadb_trans(float16_t *out,
     const uint16_t *inptr15 = inptr14 + ldin;
 
     //! cope with row index exceed real size, set to zero buffer
-    if ((y + 15) >= nmax) {
-      ptr_acquire_a16<uint16_t>(zerobuff,
-                                inptr1,
-                                inptr2,
-                                inptr3,
-                                inptr4,
-                                inptr5,
-                                inptr6,
-                                inptr7,
-                                inptr8,
-                                inptr9,
-                                inptr10,
-                                inptr11,
-                                inptr12,
-                                inptr13,
-                                inptr14,
-                                inptr15,
-                                (y + 15),
-                                nmax);
-    }
     int cnt_col = cnt;
     // clang-format off
     asm volatile(
@@ -854,11 +902,258 @@ void loadb_trans(float16_t *out,
       *outptr++ = *inptr15++;
     }
   }
+  for (; y < nmax - 3; y += 4) {
+    const uint16_t *inptr0 = inptr + y * ldin + k0;
+    const uint16_t *inptr1 = inptr0 + ldin;
+    const uint16_t *inptr2 = inptr1 + ldin;
+    const uint16_t *inptr3 = inptr2 + ldin;
+    //! cope with row index exceed real size, set to zero buffer
+    int cnt_col = cnt;
+    // clang-format off
+    asm volatile(
+        "cmp %w[cnt], #1                      \n"
+        "prfm   pldl1keep, [%[inptr0]]        \n"
+        "prfm   pldl1keep, [%[inptr1]]        \n"
+        "prfm   pldl1keep, [%[inptr2]]        \n"
+        "prfm   pldl1keep, [%[inptr3]]        \n"
+        "blt 1f                               \n"
+        "0:                                   \n"
+        "ld1 {v0.8h}, [%[inptr0]], #16        \n"
+        "ld1 {v1.8h}, [%[inptr1]], #16        \n"
+        "ld1 {v2.8h}, [%[inptr2]], #16        \n"
+        "ld1 {v3.8h}, [%[inptr3]], #16        \n"
+        // a0b0a2b2a4b4a6b6
+        "trn1 v8.8h, v0.8h, v1.8h             \n"
+        "trn2 v9.8h, v0.8h, v1.8h             \n"
+        // c0d0c2d2c4d4c6d6
+        "trn1 v10.8h, v2.8h, v3.8h            \n"
+        "trn2 v11.8h, v2.8h, v3.8h            \n"
+        "ld1 {v0.8h}, [%[inptr0]], #16        \n"
+        // a0b0c0d0a4b4c4d4 a2b2c2d2a6b6c6d6
+        "trn1 v12.4s, v8.4s, v10.4s           \n"
+        "trn2 v13.4s, v8.4s, v10.4s           \n"
+        "ld1 {v1.8h}, [%[inptr1]], #16        \n"
+        // a1b1c1d1a5b5c5d5d5 a3b3c3d3a7b7c7d7
+        "trn1 v14.4s, v9.4s, v11.4s           \n"
+        "trn2 v15.4s, v9.4s, v11.4s           \n"
+        "ld1 {v2.8h}, [%[inptr2]], #16        \n"
+        // a0b0c0d0a1b1c1d1
+        "trn1 v8.2d, v12.2d, v14.2d           \n"
+        "trn2 v9.2d, v12.2d, v14.2d           \n"
+        // a2b2c2d2a3b3c3d3
+        "trn1 v10.2d, v13.2d, v15.2d          \n"
+        "trn2 v11.2d, v13.2d, v15.2d          \n"
+        "ld1 {v3.8h}, [%[inptr3]], #16        \n"
+        "str q8, [%[outptr]]                  \n"
+        "sub %w[cnt], %w[cnt], #1             \n"
+        "str q10, [%[outptr], #0x10]          \n"
+        "str q9,  [%[outptr], #0x20]          \n"
+        "str q11, [%[outptr], #0x30]          \n"
+        "add %[outptr], %[outptr], #64        \n"
+        "bne 1b                               \n"
+        "1:                                   \n"
+        : [inptr0] "+r"(inptr0),
+          [inptr1] "+r"(inptr1),
+          [inptr2] "+r"(inptr2),
+          [inptr3] "+r"(inptr3),
+          [outptr] "+r"(outptr),
+          [cnt] "+r"(cnt_col)
+        :
+        : "cc",
+          "memory",
+          "v0",
+          "v1",
+          "v2",
+          "v3",
+          "v4",
+          "v5",
+          "v6",
+          "v7",
+          "v8",
+          "v9",
+          "v10",
+          "v11",
+          "v12",
+          "v13",
+          "v14",
+          "v15");
+    // clang-format on
+    for (int x = 0; x < remain; x++) {
+      *outptr++ = *inptr0++;
+      *outptr++ = *inptr1++;
+      *outptr++ = *inptr2++;
+      *outptr++ = *inptr3++;
+    }
+  }
+
+  if (y_remain == 1) {
+    memcpy(outptr, inptr + y * ldin + k0, sizeof(uint16_t) * x_len);
+  } else if (y_remain == 2) {
+    const uint16_t *inptr0 = inptr + y * ldin + k0;
+    const uint16_t *inptr1 = inptr0 + ldin;
+    memcpy(outptr, inptr0, sizeof(uint16_t) * x_len);
+    memcpy(outptr + x_len, inptr1, sizeof(uint16_t) * x_len);
+  } else if (y_remain == 3) {
+    const uint16_t *inptr0 = inptr + y * ldin + k0;
+    const uint16_t *inptr1 = inptr0 + ldin;
+    const uint16_t *inptr2 = inptr1 + ldin;
+    memcpy(outptr, inptr0, sizeof(uint16_t) * x_len);
+    memcpy(outptr + x_len, inptr1, sizeof(uint16_t) * x_len);
+    memcpy(outptr + 2 * x_len, inptr2, sizeof(uint16_t) * x_len);
+  }
 }
 
 #else
 #endif
 #ifdef __aarch64__
+#define FMLA_N00_4                        \
+  "fmla v8.4h,  v2.4h, v0.h[0]        \n" \
+  "fmla v10.4h, v2.4h, v0.h[1]        \n" \
+  "fmla v12.4h, v2.4h, v0.h[2]        \n" \
+  "fmla v14.4h, v2.4h, v0.h[3]        \n"
+
+#define FMLA_N01_4                        \
+  "fmla v16.4h, v2.4h, v0.h[4]        \n" \
+  "fmla v18.4h, v2.4h, v0.h[5]        \n" \
+  "fmla v20.4h, v2.4h, v0.h[6]        \n" \
+  "fmla v22.4h, v2.4h, v0.h[7]        \n"
+
+#define FMLA_N10_4                        \
+  "fmla v8.4h,  v3.4h, v1.h[0]        \n" \
+  "fmla v10.4h, v3.4h, v1.h[1]        \n" \
+  "fmla v12.4h, v3.4h, v1.h[2]        \n" \
+  "fmla v14.4h, v3.4h, v1.h[3]        \n"
+
+#define FMLA_N11_4                        \
+  "fmla v16.4h, v3.4h, v1.h[4]        \n" \
+  "fmla v18.4h, v3.4h, v1.h[5]        \n" \
+  "fmla v20.4h, v3.4h, v1.h[6]        \n" \
+  "fmla v22.4h, v3.4h, v1.h[7]        \n"
+
+#define LEAKY_0_4                           \
+  "fcmge v0.4h,  v8.4h,  %[vzero].4h    \n" \
+  "fmul  v1.4h,  v8.4h,  %[valpha].4h   \n" \
+  "fcmge v2.4h,  v10.4h, %[vzero].4h    \n" \
+  "fmul  v3.4h,  v10.4h, %[valpha].4h   \n" \
+  "fcmge v4.4h,  v12.4h, %[vzero].4h    \n" \
+  "fmul  v5.4h,  v12.4h, %[valpha].4h   \n" \
+  "fcmge v6.4h,  v14.4h, %[vzero].4h    \n" \
+  "fmul  v7.4h,  v14.4h, %[valpha].4h   \n" \
+  "bif   v8.8b,  v1.8b,  v0.8b          \n" \
+  "bif   v10.8b, v3.8b,  v2.8b          \n" \
+  "bif   v12.8b, v5.8b,  v4.8b          \n" \
+  "bif   v14.8b, v7.8b,  v6.8b          \n"
+
+#define LEAKY_1_4                           \
+  "fcmge v0.4h,  v16.4h, %[vzero].4h    \n" \
+  "fmul  v1.4h,  v16.4h, %[valpha].4h   \n" \
+  "fcmge v2.4h,  v18.4h, %[vzero].4h    \n" \
+  "fmul  v3.4h,  v18.4h, %[valpha].4h   \n" \
+  "fcmge v4.4h,  v20.4h, %[vzero].4h    \n" \
+  "fmul  v5.4h,  v20.4h, %[valpha].4h   \n" \
+  "fcmge v6.4h,  v22.4h, %[vzero].4h    \n" \
+  "fmul  v7.4h,  v22.4h, %[valpha].4h   \n" \
+  "bif   v16.8b,  v1.8b,  v0.8b         \n" \
+  "bif   v18.8b,  v3.8b,  v2.8b         \n" \
+  "bif   v20.8b,  v5.8b,  v4.8b         \n" \
+  "bif   v22.8b,  v7.8b,  v6.8b         \n"
+
+#define FMAX_4                            \
+  "fmax v8.4h,  v8.4h,  %[vzero].4h   \n" \
+  "fmax v10.4h, v10.4h, %[vzero].4h   \n" \
+  "fmax v12.4h, v12.4h, %[vzero].4h   \n" \
+  "fmax v14.4h, v14.4h, %[vzero].4h   \n" \
+  "fmax v16.4h, v16.4h, %[vzero].4h   \n" \
+  "fmax v18.4h, v18.4h, %[vzero].4h   \n" \
+  "fmax v20.4h, v20.4h, %[vzero].4h   \n" \
+  "fmax v22.4h, v22.4h, %[vzero].4h   \n"
+
+#define FMIN_4                             \
+  "fmin v8.4h,  v8.4h,  %[valpha].4h   \n" \
+  "fmin v10.4h, v10.4h, %[valpha].4h   \n" \
+  "fmin v12.4h, v12.4h, %[valpha].4h   \n" \
+  "fmin v14.4h, v14.4h, %[valpha].4h   \n" \
+  "fmin v16.4h, v16.4h, %[valpha].4h   \n" \
+  "fmin v18.4h, v18.4h, %[valpha].4h   \n" \
+  "fmin v20.4h, v20.4h, %[valpha].4h   \n" \
+  "fmin v22.4h, v22.4h, %[valpha].4h   \n"
+
+#define FMLA_N00_8                        \
+  "fmla v8.8h,  v2.8h, v0.h[0]        \n" \
+  "fmla v10.8h, v2.8h, v0.h[1]        \n" \
+  "fmla v12.8h, v2.8h, v0.h[2]        \n" \
+  "fmla v14.8h, v2.8h, v0.h[3]        \n" \
+  "fmla v16.8h, v2.8h, v0.h[4]        \n" \
+  "fmla v18.8h, v2.8h, v0.h[5]        \n" \
+  "fmla v20.8h, v2.8h, v0.h[6]        \n" \
+  "fmla v22.8h, v2.8h, v0.h[7]        \n"
+
+#define FMLA_N01_8                        \
+  "fmla v9.8h,  v3.8h, v0.h[0]        \n" \
+  "fmla v11.8h, v3.8h, v0.h[1]        \n" \
+  "fmla v13.8h, v3.8h, v0.h[2]        \n" \
+  "fmla v15.8h, v3.8h, v0.h[3]        \n" \
+  "fmla v17.8h, v3.8h, v0.h[4]        \n" \
+  "fmla v19.8h, v3.8h, v0.h[5]        \n" \
+  "fmla v21.8h, v3.8h, v0.h[6]        \n" \
+  "fmla v23.8h, v3.8h, v0.h[7]        \n"
+
+#define FMLA_N10_8                         \
+  "fmla v8.8h,  v4.8h, v1.h[0]         \n" \
+  "fmla v10.8h, v4.8h, v1.h[1]        \n"  \
+  "fmla v12.8h, v4.8h, v1.h[2]        \n"  \
+  "fmla v14.8h, v4.8h, v1.h[3]        \n"  \
+  "fmla v16.8h, v4.8h, v1.h[4]        \n"  \
+  "fmla v18.8h, v4.8h, v1.h[5]        \n"  \
+  "fmla v20.8h, v4.8h, v1.h[6]        \n"  \
+  "fmla v22.8h, v4.8h, v1.h[7]        \n"
+
+#define FMLA_N11_8                         \
+  "fmla v9.8h,  v5.8h, v1.h[0]         \n" \
+  "fmla v11.8h, v5.8h, v1.h[1]        \n"  \
+  "fmla v13.8h, v5.8h, v1.h[2]        \n"  \
+  "fmla v15.8h, v5.8h, v1.h[3]        \n"  \
+  "fmla v17.8h, v5.8h, v1.h[4]        \n"  \
+  "fmla v19.8h, v5.8h, v1.h[5]        \n"  \
+  "fmla v21.8h, v5.8h, v1.h[6]        \n"  \
+  "fmla v23.8h, v5.8h, v1.h[7]        \n"
+
+#define FMAX_8                            \
+  "fmax v8.8h,  v8.8h,  %[vzero].8h   \n" \
+  "fmax v10.8h, v10.8h, %[vzero].8h   \n" \
+  "fmax v12.8h, v12.8h, %[vzero].8h   \n" \
+  "fmax v14.8h, v14.8h, %[vzero].8h   \n" \
+  "fmax v16.8h, v16.8h, %[vzero].8h   \n" \
+  "fmax v18.8h, v18.8h, %[vzero].8h   \n" \
+  "fmax v20.8h, v20.8h, %[vzero].8h   \n" \
+  "fmax v22.8h, v22.8h, %[vzero].8h   \n" \
+  "fmax v9.8h,  v9.8h,  %[vzero].8h   \n" \
+  "fmax v11.8h, v11.8h, %[vzero].8h   \n" \
+  "fmax v13.8h, v13.8h, %[vzero].8h   \n" \
+  "fmax v15.8h, v15.8h, %[vzero].8h   \n" \
+  "fmax v17.8h, v17.8h, %[vzero].8h   \n" \
+  "fmax v19.8h, v19.8h, %[vzero].8h   \n" \
+  "fmax v21.8h, v21.8h, %[vzero].8h   \n" \
+  "fmax v23.8h, v23.8h, %[vzero].8h   \n"
+
+#define FMIN_8                             \
+  "fmin v8.8h,  v8.8h,  %[valpha].8h   \n" \
+  "fmin v10.8h, v10.8h, %[valpha].8h   \n" \
+  "fmin v12.8h, v12.8h, %[valpha].8h   \n" \
+  "fmin v14.8h, v14.8h, %[valpha].8h   \n" \
+  "fmin v16.8h, v16.8h, %[valpha].8h   \n" \
+  "fmin v18.8h, v18.8h, %[valpha].8h   \n" \
+  "fmin v20.8h, v20.8h, %[valpha].8h   \n" \
+  "fmin v22.8h, v22.8h, %[valpha].8h   \n" \
+  "fmin v9.8h,  v9.8h,  %[valpha].8h   \n" \
+  "fmin v11.8h, v11.8h, %[valpha].8h   \n" \
+  "fmin v13.8h, v13.8h, %[valpha].8h   \n" \
+  "fmin v15.8h, v15.8h, %[valpha].8h   \n" \
+  "fmin v17.8h, v17.8h, %[valpha].8h   \n" \
+  "fmin v19.8h, v19.8h, %[valpha].8h   \n" \
+  "fmin v21.8h, v21.8h, %[valpha].8h   \n" \
+  "fmin v23.8h, v23.8h, %[valpha].8h   \n"
+
 void gemm_prepack_8x16(bool is_transB,
                        int M,
                        int N,
@@ -903,7 +1198,7 @@ void gemm_prepack_8x16(bool is_transB,
     }
     int bblocks = (xmax - x0 + NBLOCK_FP16 - 1) / NBLOCK_FP16;
     remain = xmax - x0 - (bblocks - 1) * NBLOCK_FP16;
-    if (remain > 0) {
+    if (remain > 0 && remain != 16) {
       flag_p_remain = true;
     }
     //! load bpanel
@@ -957,337 +1252,538 @@ void gemm_prepack_8x16(bool is_transB,
           }
         }
         if (flag_p_remain && (xb == bblocks - 1)) {
-          // deal with cout remain data
-          GEMM_REMAIN_C_PREPARE
-        }
-        const float16_t *a_ptr = a_ptr_l;
-        int tail = tail_pre;
-        int k = k_pre;
-        // clang-format off
-        asm volatile(
-          "prfm   pldl1keep, [%[a_ptr]]       \n"
-          "prfm   pldl1keep, [%[b_ptr]]       \n"
-          "dup	v8.8h, %[vbias].h[0]          \n"
-          "dup	v9.8h, %[vbias].h[0]          \n"
-          "prfm   pldl1keep, [%[b_ptr], #64]  \n"
-          "dup	v10.8h, %[vbias].h[1]         \n"
-          "dup	v11.8h, %[vbias].h[1]         \n"
-          "prfm   pldl1keep, [%[a_ptr], #64]  \n"
-          "dup	v12.8h, %[vbias].h[2]         \n"
-          "dup	v13.8h, %[vbias].h[2]         \n"
-          "prfm   pldl1keep, [%[b_ptr], #128] \n"
-          "dup	v14.8h, %[vbias].h[3]         \n"
-          "dup	v15.8h, %[vbias].h[3]         \n"
-          "prfm   pldl1keep, [%[b_ptr], #192] \n"
-          "dup	v16.8h, %[vbias].h[4]         \n"
-          "dup	v17.8h, %[vbias].h[4]         \n"
-          "prfm   pldl1keep, [%[a_ptr], #128] \n"
-          "dup	v18.8h, %[vbias].h[5]         \n"
-          "dup	v19.8h, %[vbias].h[5]         \n"
-          "prfm   pldl1keep, [%[b_ptr], #256] \n"
-          "dup	v20.8h, %[vbias].h[6]         \n"
-          "dup	v21.8h, %[vbias].h[6]         \n"
-          "cmp    %w[has_beta], #1            \n"
-          "prfm   pldl1keep, [%[a_ptr], #192] \n"
-          "dup	v22.8h, %[vbias].h[7]         \n"
-          "dup	v23.8h, %[vbias].h[7]         \n"
-          "blt 1f                             \n"
-          // process beta
-          "ldp q0, q1, [%[c_ptr0]]            \n"
-          "ldp q2, q3, [%[c_ptr1]]            \n"
-          "ldp q4, q5, [%[c_ptr2]]            \n"
-          "ldp q6, q7, [%[c_ptr3]]            \n"
-          "fmla v8.8h, v0.8h, %[vbeta].8h     \n"
-          "fmla v9.8h, v1.8h, %[vbeta].8h     \n"
-          "ldp q0, q1, [%[c_ptr4]]            \n"
-          "fmla v10.8h, v2.8h, %[vbeta].8h    \n"
-          "fmla v11.8h, v3.8h, %[vbeta].8h    \n"
-          "ldp q2, q3, [%[c_ptr5]]            \n"
-          "fmla v12.8h, v4.8h, %[vbeta].8h    \n"
-          "fmla v13.8h, v5.8h, %[vbeta].8h    \n"
-          "ldp q4, q5, [%[c_ptr6]]            \n"
-          "fmla v14.8h, v6.8h, %[vbeta].8h    \n"
-          "fmla v15.8h, v7.8h, %[vbeta].8h    \n"
-          "ldp q6, q7, [%[c_ptr7]]            \n"
-          "fmla v16.8h, v0.8h, %[vbeta].8h    \n"
-          "fmla v17.8h, v1.8h, %[vbeta].8h    \n"
-          "fmla v18.8h, v2.8h, %[vbeta].8h    \n"
-          "fmla v19.8h, v3.8h, %[vbeta].8h    \n"
-          "fmla v20.8h, v4.8h, %[vbeta].8h    \n"
-          "fmla v21.8h, v5.8h, %[vbeta].8h    \n"
-          "fmla v22.8h, v6.8h, %[vbeta].8h    \n"
-          "fmla v23.8h, v7.8h, %[vbeta].8h    \n"
-          "1:                                 \n"
-          "cmp %w[cnt], #1                    \n"
-          "ldr q0, [%[a_ptr]], #16            \n"
-          "ldr q2, [%[b_ptr]], #16            \n"
-          "blt 2f                             \n"
-          "0:                                 \n"
-          "ldr q3, [%[b_ptr]], #16            \n"
-          // unrool 0
-          "fmla v8.8h, v2.8h, v0.h[0]         \n"
-          "fmla v10.8h, v2.8h, v0.h[1]        \n"
-          "fmla v12.8h, v2.8h, v0.h[2]        \n"
-          "fmla v14.8h, v2.8h, v0.h[3]        \n"
-          "fmla v16.8h, v2.8h, v0.h[4]        \n"
-          "fmla v18.8h, v2.8h, v0.h[5]        \n"
-          "fmla v20.8h, v2.8h, v0.h[6]        \n"
-          "fmla v22.8h, v2.8h, v0.h[7]        \n"
-          "prfm   pldl1keep, [%[a_ptr], #64]  \n"
-          "prfm   pldl1keep, [%[b_ptr], #128] \n"
-          "fmla v9.8h, v3.8h, v0.h[0]         \n"
-          "fmla v11.8h, v3.8h, v0.h[1]        \n"
-          "ldr q1, [%[a_ptr]], #16            \n"
-          "fmla v13.8h, v3.8h, v0.h[2]        \n"
-          "fmla v15.8h, v3.8h, v0.h[3]        \n"
-          "ldr q4, [%[b_ptr]], #16            \n"
-          "fmla v17.8h, v3.8h, v0.h[4]        \n"
-          "fmla v19.8h, v3.8h, v0.h[5]        \n"
-          "fmla v21.8h, v3.8h, v0.h[6]        \n"
-          "fmla v23.8h, v3.8h, v0.h[7]        \n"
-          // unrool 1
-          "fmla v8.8h, v4.8h, v1.h[0]         \n"
-          "fmla v10.8h, v4.8h, v1.h[1]        \n"
-          "ldr q5, [%[b_ptr]], #16            \n"
-          "fmla v12.8h, v4.8h, v1.h[2]        \n"
-          "fmla v14.8h, v4.8h, v1.h[3]        \n"
-          "fmla v16.8h, v4.8h, v1.h[4]        \n"
-          "fmla v18.8h, v4.8h, v1.h[5]        \n"
-          "fmla v20.8h, v4.8h, v1.h[6]        \n"
-          "fmla v22.8h, v4.8h, v1.h[7]        \n"
-          "prfm   pldl1keep, [%[a_ptr], #64]  \n"
-          "prfm   pldl1keep, [%[b_ptr], #128] \n"
-          "fmla v9.8h, v5.8h, v1.h[0]         \n"
-          "fmla v11.8h, v5.8h, v1.h[1]        \n"
-          "ldr q0, [%[a_ptr]], #16            \n"
-          "fmla v13.8h, v5.8h, v1.h[2]        \n"
-          "fmla v15.8h, v5.8h, v1.h[3]        \n"
-          "ldr q2, [%[b_ptr]], #16            \n"
-          "subs %w[cnt], %w[cnt], #1          \n"
-          "fmla v17.8h, v5.8h, v1.h[4]        \n"
-          "fmla v19.8h, v5.8h, v1.h[5]        \n"
-          "fmla v21.8h, v5.8h, v1.h[6]        \n"
-          "fmla v23.8h, v5.8h, v1.h[7]        \n"
-          "bne 0b                             \n"
-          "2:                                 \n"
-          "cmp %w[tail], #1                   \n"
-          "ldr q3, [%[b_ptr]], #16            \n"
-          "beq 3f                             \n"
-          // tail=2
-          "fmla v8.8h, v2.8h, v0.h[0]         \n"
-          "fmla v10.8h, v2.8h, v0.h[1]        \n"
-          "fmla v12.8h, v2.8h, v0.h[2]        \n"
-          "fmla v14.8h, v2.8h, v0.h[3]        \n"
-          "fmla v16.8h, v2.8h, v0.h[4]        \n"
-          "fmla v18.8h, v2.8h, v0.h[5]        \n"
-          "fmla v20.8h, v2.8h, v0.h[6]        \n"
-          "fmla v22.8h, v2.8h, v0.h[7]        \n"
-          "prfm   pldl1keep, [%[a_ptr], #64]  \n"
-          "prfm   pldl1keep, [%[b_ptr], #128] \n"
-          "fmla v9.8h, v3.8h, v0.h[0]         \n"
-          "fmla v11.8h, v3.8h, v0.h[1]        \n"
-          "ldr q1, [%[a_ptr]], #16            \n"
-          "fmla v13.8h, v3.8h, v0.h[2]        \n"
-          "fmla v15.8h, v3.8h, v0.h[3]        \n"
-          "ldr q4, [%[b_ptr]], #16            \n"
-          "fmla v17.8h, v3.8h, v0.h[4]        \n"
-          "fmla v19.8h, v3.8h, v0.h[5]        \n"
-          "fmla v21.8h, v3.8h, v0.h[6]        \n"
-          "fmla v23.8h, v3.8h, v0.h[7]        \n"
-          // unrool 1
-          "fmla v8.8h, v4.8h, v1.h[0]         \n"
-          "fmla v10.8h, v4.8h, v1.h[1]        \n"
-          "ldr q5, [%[b_ptr]], #16            \n"
-          "fmla v12.8h, v4.8h, v1.h[2]        \n"
-          "fmla v14.8h, v4.8h, v1.h[3]        \n"
-          "fmla v16.8h, v4.8h, v1.h[4]        \n"
-          "fmla v18.8h, v4.8h, v1.h[5]        \n"
-          "fmla v20.8h, v4.8h, v1.h[6]        \n"
-          "fmla v22.8h, v4.8h, v1.h[7]        \n"
-          "fmla v9.8h, v5.8h, v1.h[0]         \n"
-          "fmla v11.8h, v5.8h, v1.h[1]        \n"
-          "fmla v13.8h, v5.8h, v1.h[2]        \n"
-          "fmla v15.8h, v5.8h, v1.h[3]        \n"
-          "fmla v17.8h, v5.8h, v1.h[4]        \n"
-          "fmla v19.8h, v5.8h, v1.h[5]        \n"
-          "fmla v21.8h, v5.8h, v1.h[6]        \n"
-          "fmla v23.8h, v5.8h, v1.h[7]        \n"
-          "b 6f                               \n"
-          "3:                                 \n"
-          // tail = 1
-          "fmla v8.8h, v2.8h, v0.h[0]         \n"
-          "fmla v10.8h, v2.8h, v0.h[1]        \n"
-          "fmla v12.8h, v2.8h, v0.h[2]        \n"
-          "fmla v14.8h, v2.8h, v0.h[3]        \n"
-          "fmla v16.8h, v2.8h, v0.h[4]        \n"
-          "fmla v18.8h, v2.8h, v0.h[5]        \n"
-          "fmla v20.8h, v2.8h, v0.h[6]        \n"
-          "fmla v22.8h, v2.8h, v0.h[7]        \n"
-          "fmla v9.8h, v3.8h, v0.h[0]         \n"
-          "fmla v11.8h, v3.8h, v0.h[1]        \n"
-          "fmla v13.8h, v3.8h, v0.h[2]        \n"
-          "fmla v15.8h, v3.8h, v0.h[3]        \n"
-          "fmla v17.8h, v3.8h, v0.h[4]        \n"
-          "fmla v19.8h, v3.8h, v0.h[5]        \n"
-          "fmla v21.8h, v3.8h, v0.h[6]        \n"
-          "fmla v23.8h, v3.8h, v0.h[7]        \n"
-          "6:                                 \n"
-          "cmp    %w[flag_act],   #1          \n"
-          "beq 4f                             \n"
-          "cmp    %w[flag_act],   #0          \n"
-          "beq 7f                             \n"
-          "cmp    %w[flag_act],   #2          \n"
-          "beq 5f                             \n"
-          // leakyRelu
-          "fcmge v0.8h, v8.8h, %[vzero].8h    \n"
-          "fmul v1.8h, v8.8h, %[valpha].8h     \n"
-          "fcmge v2.8h, v9.8h, %[vzero].8h    \n"
-          "fmul v3.8h, v9.8h, %[valpha].8h     \n"
-          "fcmge v4.8h, v10.8h, %[vzero].8h   \n"
-          "fmul v5.8h, v10.8h, %[valpha].8h    \n"
-          "fcmge v6.8h, v11.8h, %[vzero].8h   \n"
-          "fmul v7.8h, v11.8h, %[valpha].8h    \n"
-          "bif  v8.16b, v1.16b, v0.16b        \n"
-          "bif  v9.16b, v3.16b, v2.16b        \n"
-          "bif  v10.16b, v5.16b, v4.16b       \n"
-          "bif  v11.16b, v7.16b, v6.16b       \n"
-          "fcmge v0.8h, v12.8h, %[vzero].8h   \n"
-          "fmul v1.8h, v12.8h, %[valpha].8h    \n"
-          "fcmge v2.8h, v13.8h, %[vzero].8h   \n"
-          "fmul v3.8h, v13.8h, %[valpha].8h    \n"
-          "fcmge v4.8h, v14.8h, %[vzero].8h   \n"
-          "fmul v5.8h, v14.8h, %[valpha].8h    \n"
-          "fcmge v6.8h, v15.8h, %[vzero].8h   \n"
-          "fmul v7.8h, v15.8h, %[valpha].8h    \n"
-          "bif  v12.16b, v1.16b, v0.16b       \n"
-          "bif  v13.16b, v3.16b, v2.16b       \n"
-          "bif  v14.16b, v5.16b, v4.16b       \n"
-          "bif  v15.16b, v7.16b, v6.16b       \n"
-          "fcmge v0.8h, v16.8h, %[vzero].8h   \n"
-          "fmul v1.8h, v16.8h, %[valpha].8h    \n"
-          "fcmge v2.8h, v17.8h, %[vzero].8h   \n"
-          "fmul v3.8h, v17.8h, %[valpha].8h    \n"
-          "fcmge v4.8h, v18.8h, %[vzero].8h   \n"
-          "fmul v5.8h, v18.8h, %[valpha].8h    \n"
-          "fcmge v6.8h, v19.8h, %[vzero].8h   \n"
-          "fmul v7.8h, v19.8h, %[valpha].8h    \n"
-          "bif  v16.16b, v1.16b, v0.16b       \n"
-          "bif  v17.16b, v3.16b, v2.16b       \n"
-          "bif  v18.16b, v5.16b, v4.16b       \n"
-          "bif  v19.16b, v7.16b, v6.16b       \n"
-          "fcmge v0.8h, v20.8h, %[vzero].8h   \n"
-          "fmul v1.8h, v20.8h, %[valpha].8h    \n"
-          "fcmge v2.8h, v21.8h, %[vzero].8h   \n"
-          "fmul v3.8h, v21.8h, %[valpha].8h    \n"
-          "fcmge v4.8h, v22.8h, %[vzero].8h   \n"
-          "fmul v5.8h, v22.8h, %[valpha].8h    \n"
-          "fcmge v6.8h, v23.8h, %[vzero].8h   \n"
-          "fmul v7.8h, v23.8h, %[valpha].8h    \n"
-          "bif  v20.16b, v1.16b, v0.16b       \n"
-          "bif  v21.16b, v3.16b, v2.16b       \n"
-          "bif  v22.16b, v5.16b, v4.16b       \n"
-          "bif  v23.16b, v7.16b, v6.16b       \n"
-          "b 7f                               \n"
-          // relu
-          "4:                                 \n"
-          "fmax v8.8h, v8.8h, %[vzero].8h     \n"
-          "fmax v9.8h, v9.8h, %[vzero].8h     \n"
-          "fmax v10.8h, v10.8h, %[vzero].8h   \n"
-          "fmax v11.8h, v11.8h, %[vzero].8h   \n"
-          "fmax v12.8h, v12.8h, %[vzero].8h   \n"
-          "fmax v13.8h, v13.8h, %[vzero].8h   \n"
-          "fmax v14.8h, v14.8h, %[vzero].8h   \n"
-          "fmax v15.8h, v15.8h, %[vzero].8h   \n"
-          "fmax v16.8h, v16.8h, %[vzero].8h   \n"
-          "fmax v17.8h, v17.8h, %[vzero].8h   \n"
-          "fmax v18.8h, v18.8h, %[vzero].8h   \n"
-          "fmax v19.8h, v19.8h, %[vzero].8h   \n"
-          "fmax v20.8h, v20.8h, %[vzero].8h   \n"
-          "fmax v21.8h, v21.8h, %[vzero].8h   \n"
-          "fmax v22.8h, v22.8h, %[vzero].8h   \n"
-          "fmax v23.8h, v23.8h, %[vzero].8h   \n"
-          "b 7f                               \n"
-          // relu6
-          "5:                                 \n"
-          "fmax v8.8h, v8.8h, %[vzero].8h     \n"
-          "fmax v9.8h, v9.8h, %[vzero].8h     \n"
-          "fmax v10.8h, v10.8h, %[vzero].8h   \n"
-          "fmax v11.8h, v11.8h, %[vzero].8h   \n"
-          "fmax v12.8h, v12.8h, %[vzero].8h   \n"
-          "fmin v8.8h, v8.8h, %[valpha].8h    \n"
-          "fmax v13.8h, v13.8h, %[vzero].8h   \n"
-          "fmin v9.8h, v9.8h, %[valpha].8h    \n"
-          "fmax v14.8h, v14.8h, %[vzero].8h   \n"
-          "fmin v10.8h, v10.8h, %[valpha].8h  \n"
-          "fmax v15.8h, v15.8h, %[vzero].8h   \n"
-          "fmin v11.8h, v11.8h, %[valpha].8h  \n"
-          "fmax v16.8h, v16.8h, %[vzero].8h   \n"
-          "fmin v12.8h, v12.8h, %[valpha].8h  \n"
-          "fmax v17.8h, v17.8h, %[vzero].8h   \n"
-          "fmin v13.8h, v13.8h, %[valpha].8h  \n"
-          "fmax v18.8h, v18.8h, %[vzero].8h   \n"
-          "fmin v14.8h, v14.8h, %[valpha].8h  \n"
-          "fmax v19.8h, v19.8h, %[vzero].8h   \n"
-          "fmin v15.8h, v15.8h, %[valpha].8h  \n"
-          "fmax v20.8h, v20.8h, %[vzero].8h   \n"
-          "fmin v16.8h, v16.8h, %[valpha].8h  \n"
-          "fmax v21.8h, v21.8h, %[vzero].8h   \n"
-          "fmin v17.8h, v17.8h, %[valpha].8h  \n"
-          "fmax v22.8h, v22.8h, %[vzero].8h   \n"
-          "fmin v18.8h, v18.8h, %[valpha].8h  \n"
-          "fmax v23.8h, v23.8h, %[vzero].8h   \n"
-          "fmin v19.8h, v19.8h, %[valpha].8h  \n"
-          "fmin v20.8h, v20.8h, %[valpha].8h  \n"
-          "fmin v21.8h, v21.8h, %[valpha].8h  \n"
-          "fmin v22.8h, v22.8h, %[valpha].8h  \n"
-          "fmin v23.8h, v23.8h, %[valpha].8h  \n"
-          "b 7f                               \n"
-          // no relu
-          "7:                                 \n"
-          "stp q8, q9, [%[c_ptr0]], #32       \n"
-          "stp q10, q11, [%[c_ptr1]], #32     \n"
-          "stp q12, q13, [%[c_ptr2]], #32     \n"
-          "stp q14, q15, [%[c_ptr3]], #32     \n"
-          "stp q16, q17, [%[c_ptr4]], #32     \n"
-          "stp q18, q19, [%[c_ptr5]], #32     \n"
-          "stp q20, q21, [%[c_ptr6]], #32     \n"
-          "stp q22, q23, [%[c_ptr7]], #32     \n"
-          : [a_ptr] "+r"(a_ptr),
-            [b_ptr] "+r"(b_ptr),
-            [cnt] "+r"(k),
-            [tail] "+r"(tail),
-            [c_ptr0] "+r"(c_ptr0),
-            [c_ptr1] "+r"(c_ptr1),
-            [c_ptr2] "+r"(c_ptr2),
-            [c_ptr3] "+r"(c_ptr3),
-            [c_ptr4] "+r"(c_ptr4),
-            [c_ptr5] "+r"(c_ptr5),
-            [c_ptr6] "+r"(c_ptr6),
-            [c_ptr7] "+r"(c_ptr7)
-          : [has_beta] "r"(has_beta),
-            [vbias] "w"(vbias),
-            [vbeta] "w"(vbeta),
-            [valpha] "w"(valpha),
-            [vzero] "w"(vzero),
-            [flag_act] "r"(flag_act)
-          : "cc","memory",
-            "v0","v1","v2","v3","v4","v5","v6","v7",
-            "v8","v9","v10","v11","v12","v13",
-            "v14","v15","v16","v17","v18","v19",
-            "v20","v21","v22","v23"
-        );
-        // clang-format on
-        if (flag_p_remain && (xb == bblocks - 1)) {
-          for (int i = 0; i < remain; ++i) {
-            *pout0++ = cout0[i];
-            *pout1++ = cout1[i];
-            *pout2++ = cout2[i];
-            *pout3++ = cout3[i];
-            *pout4++ = cout4[i];
-            *pout5++ = cout5[i];
-            *pout6++ = cout6[i];
-            *pout7++ = cout7[i];
+          int cnt_rem = remain >> 2;
+          int rem_rem = remain & 3;
+          for (int i = 0; i < cnt_rem; i++) {
+            const float16_t *a_ptr = a_ptr_l;
+            int tail = tail_pre;
+            int k = k_pre;
+            // clang-format off
+            asm volatile(
+              "prfm   pldl1keep, [%[a_ptr]]       \n"
+              "prfm   pldl1keep, [%[b_ptr]]       \n"
+              "dup	v8.4h, %[vbias].h[0]          \n"
+              "prfm   pldl1keep, [%[b_ptr], #64]  \n"
+              "dup	v10.4h, %[vbias].h[1]         \n"
+              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+              "dup	v12.4h, %[vbias].h[2]         \n"
+              "prfm   pldl1keep, [%[b_ptr], #128] \n"
+              "dup	v14.4h, %[vbias].h[3]         \n"
+              "prfm   pldl1keep, [%[b_ptr], #192] \n"
+              "dup	v16.4h, %[vbias].h[4]         \n"
+              "prfm   pldl1keep, [%[a_ptr], #128] \n"
+              "dup	v18.4h, %[vbias].h[5]         \n"
+              "prfm   pldl1keep, [%[b_ptr], #256] \n"
+              "dup	v20.4h, %[vbias].h[6]         \n"
+              "cmp    %w[has_beta], #1            \n"
+              "prfm   pldl1keep, [%[a_ptr], #192] \n"
+              "dup	v22.4h, %[vbias].h[7]         \n"
+              "blt 1f                             \n"
+              // process beta
+              "ldr d0, [%[c_ptr0]]                \n"
+              "ldr d2, [%[c_ptr1]]                \n"
+              "ldr d4, [%[c_ptr2]]                \n"
+              "ldr d6, [%[c_ptr3]]                \n"
+              "ldr d1, [%[c_ptr4]]                \n"
+              "fmla v8.4h, v0.4h, %[vbeta].4h     \n"
+              "ldr d3, [%[c_ptr5]]                \n"
+              "fmla v10.4h, v2.4h, %[vbeta].4h    \n"
+              "ldr d5, [%[c_ptr6]]                \n"
+              "fmla v12.4h, v4.4h, %[vbeta].4h    \n"
+              "ldr d6, [%[c_ptr7]]                \n"
+              "fmla v14.4h, v6.4h, %[vbeta].4h    \n"
+              "fmla v16.4h, v1.4h, %[vbeta].4h    \n"
+              "fmla v18.4h, v3.4h, %[vbeta].4h    \n"
+              "fmla v20.4h, v5.4h, %[vbeta].4h    \n"
+              "fmla v22.4h, v7.4h, %[vbeta].4h    \n"
+              "1:                                 \n"
+              "cmp %w[cnt], #1                    \n"
+              "ldr q0, [%[a_ptr]], #16            \n"
+              "ldr d2, [%[b_ptr]], #8             \n"
+              "blt 2f                             \n"
+              "0:                                 \n"
+              // unrool 0
+              FMLA_N00_4
+              "ldr q1, [%[a_ptr]], #16            \n"
+              "ldr d3, [%[b_ptr]], #8             \n"
+              FMLA_N01_4
+              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+              "prfm   pldl1keep, [%[b_ptr], #128] \n"
+              // unrool 1
+              FMLA_N10_4
+              "ldr q0, [%[a_ptr]], #16            \n"
+              "ldr d2, [%[b_ptr]], #8             \n"
+              "subs %w[cnt], %w[cnt], #1          \n"
+              FMLA_N11_4
+              "bne 0b                             \n"
+              "2:                                 \n"
+              "cmp %w[tail], #1                   \n"
+              "beq 3f                             \n"
+              // tail=2
+              FMLA_N00_4
+              "ldr q1, [%[a_ptr]], #16            \n"
+              "ldr d3, [%[b_ptr]], #8             \n"
+              FMLA_N01_4
+              // unrool 1
+              FMLA_N10_4
+              FMLA_N11_4
+              "b 6f                               \n"
+              "3:                                 \n"
+              // tail = 1
+              FMLA_N00_4
+              FMLA_N01_4
+              "6:                                 \n"
+              "cmp    %w[flag_act],   #1          \n"
+              "beq 4f                             \n"
+              "cmp    %w[flag_act],   #0          \n"
+              "beq 7f                             \n"
+              "cmp    %w[flag_act],   #2          \n"
+              "beq 5f                             \n"
+              // leakyRelu
+              LEAKY_0_4
+              LEAKY_1_4
+              "b 7f                               \n"
+              // relu
+              "4:                                 \n"
+              FMAX_4
+              "b 7f                               \n"
+              // relu6
+              "5:                                 \n"
+              FMAX_4
+              FMIN_4
+              "b 7f                               \n"
+              // no relu
+              "7:                                 \n"
+              "st1 {v8.4h},  [%[c_ptr0]], #8      \n"
+              "st1 {v10.4h}, [%[c_ptr1]], #8      \n"
+              "st1 {v12.4h}, [%[c_ptr2]], #8      \n"
+              "st1 {v14.4h}, [%[c_ptr3]], #8      \n"
+              "st1 {v16.4h}, [%[c_ptr4]], #8      \n"
+              "st1 {v18.4h}, [%[c_ptr5]], #8      \n"
+              "st1 {v20.4h}, [%[c_ptr6]], #8      \n"
+              "st1 {v22.4h}, [%[c_ptr7]], #8      \n"
+              : [a_ptr] "+r"(a_ptr),
+                [b_ptr] "+r"(b_ptr),
+                [cnt] "+r"(k),
+                [tail] "+r"(tail),
+                [c_ptr0] "+r"(c_ptr0),
+                [c_ptr1] "+r"(c_ptr1),
+                [c_ptr2] "+r"(c_ptr2),
+                [c_ptr3] "+r"(c_ptr3),
+                [c_ptr4] "+r"(c_ptr4),
+                [c_ptr5] "+r"(c_ptr5),
+                [c_ptr6] "+r"(c_ptr6),
+                [c_ptr7] "+r"(c_ptr7)
+              : [has_beta] "r"(has_beta),
+                [vbias] "w"(vbias),
+                [vbeta] "w"(vbeta),
+                [valpha] "w"(valpha),
+                [vzero] "w"(vzero),
+                [flag_act] "r"(flag_act)
+              : "cc","memory",
+                "v0","v1","v2","v3","v4","v5","v6","v7",
+                "v8","v9","v10","v11","v12","v13",
+                "v14","v15","v16","v17","v18","v19",
+                "v20","v21","v22","v23"
+            );
+            // clang-format on
           }
+
+          // remain process
+          for (int i = 0; i < rem_rem; i++) {
+            const float16_t *a_ptr = a_ptr_l;
+            int tail = tail_pre;
+            int k = k_pre;
+            // clang-format off
+            asm volatile(
+              "prfm   pldl1keep, [%[a_ptr]]       \n"
+              "prfm   pldl1keep, [%[b_ptr]]       \n"
+              "dup	v8.4h, %[vbias].h[0]          \n"
+              "prfm   pldl1keep, [%[b_ptr], #64]  \n"
+              "dup	v10.4h, %[vbias].h[1]         \n"
+              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+              "dup	v12.4h, %[vbias].h[2]         \n"
+              "prfm   pldl1keep, [%[b_ptr], #128] \n"
+              "dup	v14.4h, %[vbias].h[3]         \n"
+              "prfm   pldl1keep, [%[b_ptr], #192] \n"
+              "dup	v16.4h, %[vbias].h[4]         \n"
+              "prfm   pldl1keep, [%[a_ptr], #128] \n"
+              "dup	v18.4h, %[vbias].h[5]         \n"
+              "prfm   pldl1keep, [%[b_ptr], #256] \n"
+              "dup	v20.4h, %[vbias].h[6]         \n"
+              "cmp    %w[has_beta], #1            \n"
+              "prfm   pldl1keep, [%[a_ptr], #192] \n"
+              "dup	v22.4h, %[vbias].h[7]         \n"
+              "blt 1f                             \n"
+              // process beta
+              "ldr d0, [%[c_ptr0]]                \n"
+              "ldr d2, [%[c_ptr1]]                \n"
+              "ldr d4, [%[c_ptr2]]                \n"
+              "ldr d6, [%[c_ptr3]]                \n"
+              "ldr d1, [%[c_ptr4]]                \n"
+              "fmla v8.4h, v0.4h, %[vbeta].4h     \n"
+              "ldr d3, [%[c_ptr5]]                \n"
+              "fmla v10.4h, v2.4h, %[vbeta].4h    \n"
+              "ldr d5, [%[c_ptr6]]                \n"
+              "fmla v12.4h, v4.4h, %[vbeta].4h    \n"
+              "ldr d6, [%[c_ptr7]]                \n"
+              "fmla v14.4h, v6.4h, %[vbeta].4h    \n"
+              "fmla v16.4h, v1.4h, %[vbeta].4h    \n"
+              "fmla v18.4h, v3.4h, %[vbeta].4h    \n"
+              "fmla v20.4h, v5.4h, %[vbeta].4h    \n"
+              "fmla v22.4h, v7.4h, %[vbeta].4h    \n"
+              "1:                                 \n"
+              "cmp %w[cnt], #1                    \n"
+              "movi v4.8h, #0                     \n"
+              "movi v5.8h, #0                     \n"
+              "ldp q0, q1, [%[a_ptr]], #32        \n"
+              "ldr d2, [%[b_ptr]]                 \n"
+              "blt 2f                             \n"
+              "0:                                 \n"
+              // unrool 0
+              "add %[b_ptr], %[b_ptr], #4         \n"
+              "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+              "prfm   pldl1keep, [%[b_ptr], #128] \n"
+              "subs %w[cnt], %w[cnt], #1          \n"
+              "fmla v4.8h, v0.8h, v2.h[0]         \n"
+              "fmla v5.8h, v1.8h, v2.h[1]         \n"
+              "ldp q0, q1, [%[a_ptr]], #32        \n"
+              "ldr d2, [%[b_ptr]]                 \n"
+              "bne 0b                             \n"
+              "2:                                 \n"
+              "cmp %w[tail], #1                   \n"
+              "beq 3f                             \n"
+              // tail=2
+              "add %[b_ptr], %[b_ptr], #4         \n"
+              "fmla v4.8h, v0.8h, v2.h[0]         \n"
+              "fmla v5.8h, v1.8h, v2.h[1]         \n"
+              "b 6f                               \n"
+              "3:                                 \n"
+              // tail = 1
+              "add %[b_ptr], %[b_ptr], #2         \n"
+              "fmla v4.8h, v0.8h, v2.h[0]         \n"
+              "6:                                 \n"
+              "fadd v9.8h, v4.8h, v5.8h           \n"
+              "cmp    %w[flag_act],   #1          \n"
+              "ins  v0.h[0], v9.h[0]              \n"
+              "ins  v1.h[0], v9.h[1]              \n"
+              "ins  v2.h[0], v9.h[2]              \n"
+              "ins  v3.h[0], v9.h[3]              \n"
+              "beq 4f                             \n"
+              "cmp    %w[flag_act],   #0          \n"
+              "ins  v4.h[0], v9.h[4]              \n"
+              "ins  v5.h[0], v9.h[5]              \n"
+              "ins  v6.h[0], v9.h[6]              \n"
+              "ins  v7.h[0], v9.h[7]              \n"
+              "beq 7f                             \n"
+              "cmp    %w[flag_act],   #2          \n"
+              "fadd v8.4h, v8.4h, v0.4h           \n"
+              "fadd v10.4h, v10.4h, v1.4h         \n"
+              "fadd v12.4h, v12.4h, v2.4h         \n"
+              "fadd v14.4h, v14.4h, v3.4h         \n"
+              "beq 5f                             \n"
+              "fadd v16.4h, v16.4h, v4.4h         \n"
+              "fadd v18.4h, v18.4h, v5.4h         \n"
+              "fadd v20.4h, v20.4h, v6.4h         \n"
+              "fadd v22.4h, v22.4h, v7.4h         \n"
+              // leakyRelu
+              LEAKY_0_4
+              LEAKY_1_4
+              "b 8f                               \n"
+              // relu
+              "4:                                 \n"
+              "ins  v4.h[0], v9.h[4]              \n"
+              "ins  v5.h[0], v9.h[5]              \n"
+              "ins  v6.h[0], v9.h[6]              \n"
+              "ins  v7.h[0], v9.h[7]              \n"
+              "fadd v8.4h, v8.4h, v0.4h           \n"
+              "fadd v10.4h, v10.4h, v1.4h         \n"
+              "fadd v12.4h, v12.4h, v2.4h         \n"
+              "fadd v14.4h, v14.4h, v3.4h         \n"
+              "fadd v16.4h, v16.4h, v4.4h         \n"
+              "fadd v18.4h, v18.4h, v5.4h         \n"
+              "fadd v20.4h, v20.4h, v6.4h         \n"
+              "fadd v22.4h, v22.4h, v7.4h         \n"
+              FMAX_4
+              "b 8f                               \n"
+              // relu6
+              "5:                                 \n"
+              "fadd v16.4h, v16.4h, v4.4h         \n"
+              "fadd v18.4h, v18.4h, v5.4h         \n"
+              "fadd v20.4h, v20.4h, v6.4h         \n"
+              "fadd v22.4h, v22.4h, v7.4h         \n"
+              FMAX_4
+              FMIN_4
+              "b 8f                               \n"
+              // no relu
+              "7:                                 \n"
+              "fadd v8.4h,  v8.4h,  v0.4h         \n"
+              "fadd v10.4h, v10.4h, v1.4h         \n"
+              "fadd v12.4h, v12.4h, v2.4h         \n"
+              "fadd v14.4h, v14.4h, v3.4h         \n"
+              "fadd v16.4h, v16.4h, v4.4h         \n"
+              "fadd v18.4h, v18.4h, v5.4h         \n"
+              "fadd v20.4h, v20.4h, v6.4h         \n"
+              "fadd v22.4h, v22.4h, v7.4h         \n"
+              "8:                                 \n"
+              "str  h8,     [%[c_ptr0]], #2       \n"
+              "str  h10,    [%[c_ptr1]], #2       \n"
+              "str  h12,    [%[c_ptr2]], #2       \n"
+              "str  h14,    [%[c_ptr3]], #2       \n"
+              "str  h16,    [%[c_ptr4]], #2       \n"
+              "str  h18,    [%[c_ptr5]], #2       \n"
+              "str  h20,    [%[c_ptr6]], #2       \n"
+              "str  h22,    [%[c_ptr7]], #2       \n"
+              : [a_ptr] "+r"(a_ptr),
+                [b_ptr] "+r"(b_ptr),
+                [cnt] "+r"(k),
+                [tail] "+r"(tail),
+                [c_ptr0] "+r"(c_ptr0),
+                [c_ptr1] "+r"(c_ptr1),
+                [c_ptr2] "+r"(c_ptr2),
+                [c_ptr3] "+r"(c_ptr3),
+                [c_ptr4] "+r"(c_ptr4),
+                [c_ptr5] "+r"(c_ptr5),
+                [c_ptr6] "+r"(c_ptr6),
+                [c_ptr7] "+r"(c_ptr7)
+              : [has_beta] "r"(has_beta),
+                [vbias] "w"(vbias),
+                [vbeta] "w"(vbeta),
+                [valpha] "w"(valpha),
+                [vzero] "w"(vzero),
+                [flag_act] "r"(flag_act)
+              : "cc","memory",
+                "v0","v1","v2","v3","v4","v5","v6","v7",
+                "v8","v9","v10","v11","v12","v13",
+                "v14","v15","v16","v17","v18","v19",
+                "v20","v21","v22","v23"
+            );
+            // clang-format on
+          }
+        } else {
+          const float16_t *a_ptr = a_ptr_l;
+          int tail = tail_pre;
+          int k = k_pre;
+          // clang-format off
+          asm volatile(
+            "prfm   pldl1keep, [%[a_ptr]]       \n"
+            "prfm   pldl1keep, [%[b_ptr]]       \n"
+            "dup	v8.8h, %[vbias].h[0]          \n"
+            "dup	v9.8h, %[vbias].h[0]          \n"
+            "prfm   pldl1keep, [%[b_ptr], #64]  \n"
+            "dup	v10.8h, %[vbias].h[1]         \n"
+            "dup	v11.8h, %[vbias].h[1]         \n"
+            "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+            "dup	v12.8h, %[vbias].h[2]         \n"
+            "dup	v13.8h, %[vbias].h[2]         \n"
+            "prfm   pldl1keep, [%[b_ptr], #128] \n"
+            "dup	v14.8h, %[vbias].h[3]         \n"
+            "dup	v15.8h, %[vbias].h[3]         \n"
+            "prfm   pldl1keep, [%[b_ptr], #192] \n"
+            "dup	v16.8h, %[vbias].h[4]         \n"
+            "dup	v17.8h, %[vbias].h[4]         \n"
+            "prfm   pldl1keep, [%[a_ptr], #128] \n"
+            "dup	v18.8h, %[vbias].h[5]         \n"
+            "dup	v19.8h, %[vbias].h[5]         \n"
+            "prfm   pldl1keep, [%[b_ptr], #256] \n"
+            "dup	v20.8h, %[vbias].h[6]         \n"
+            "dup	v21.8h, %[vbias].h[6]         \n"
+            "cmp    %w[has_beta], #1            \n"
+            "prfm   pldl1keep, [%[a_ptr], #192] \n"
+            "dup	v22.8h, %[vbias].h[7]         \n"
+            "dup	v23.8h, %[vbias].h[7]         \n"
+            "blt 1f                             \n"
+            // process beta
+            "ldp q0, q1, [%[c_ptr0]]            \n"
+            "ldp q2, q3, [%[c_ptr1]]            \n"
+            "ldp q4, q5, [%[c_ptr2]]            \n"
+            "ldp q6, q7, [%[c_ptr3]]            \n"
+            "fmla v8.8h, v0.8h, %[vbeta].8h     \n"
+            "fmla v9.8h, v1.8h, %[vbeta].8h     \n"
+            "ldp q0, q1, [%[c_ptr4]]            \n"
+            "fmla v10.8h, v2.8h, %[vbeta].8h    \n"
+            "fmla v11.8h, v3.8h, %[vbeta].8h    \n"
+            "ldp q2, q3, [%[c_ptr5]]            \n"
+            "fmla v12.8h, v4.8h, %[vbeta].8h    \n"
+            "fmla v13.8h, v5.8h, %[vbeta].8h    \n"
+            "ldp q4, q5, [%[c_ptr6]]            \n"
+            "fmla v14.8h, v6.8h, %[vbeta].8h    \n"
+            "fmla v15.8h, v7.8h, %[vbeta].8h    \n"
+            "ldp q6, q7, [%[c_ptr7]]            \n"
+            "fmla v16.8h, v0.8h, %[vbeta].8h    \n"
+            "fmla v17.8h, v1.8h, %[vbeta].8h    \n"
+            "fmla v18.8h, v2.8h, %[vbeta].8h    \n"
+            "fmla v19.8h, v3.8h, %[vbeta].8h    \n"
+            "fmla v20.8h, v4.8h, %[vbeta].8h    \n"
+            "fmla v21.8h, v5.8h, %[vbeta].8h    \n"
+            "fmla v22.8h, v6.8h, %[vbeta].8h    \n"
+            "fmla v23.8h, v7.8h, %[vbeta].8h    \n"
+            "1:                                 \n"
+            "cmp %w[cnt], #1                    \n"
+            "ldr q0, [%[a_ptr]], #16            \n"
+            "ldr q2, [%[b_ptr]], #16            \n"
+            "blt 2f                             \n"
+            "0:                                 \n"
+            "ldr q3, [%[b_ptr]], #16            \n"
+            // unrool 0
+            FMLA_N00_8
+            "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+            "prfm   pldl1keep, [%[b_ptr], #128] \n"
+            "fmla v9.8h, v3.8h, v0.h[0]         \n"
+            "fmla v11.8h, v3.8h, v0.h[1]        \n"
+            "ldr q1, [%[a_ptr]], #16            \n"
+            "fmla v13.8h, v3.8h, v0.h[2]        \n"
+            "fmla v15.8h, v3.8h, v0.h[3]        \n"
+            "ldr q4, [%[b_ptr]], #16            \n"
+            "fmla v17.8h, v3.8h, v0.h[4]        \n"
+            "fmla v19.8h, v3.8h, v0.h[5]        \n"
+            "fmla v21.8h, v3.8h, v0.h[6]        \n"
+            "fmla v23.8h, v3.8h, v0.h[7]        \n"
+            // unrool 1
+            "ldr q5, [%[b_ptr]], #16            \n"
+            FMLA_N10_8
+            "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+            "prfm   pldl1keep, [%[b_ptr], #128] \n"
+            "fmla v9.8h, v5.8h, v1.h[0]         \n"
+            "fmla v11.8h, v5.8h, v1.h[1]        \n"
+            "ldr q0, [%[a_ptr]], #16            \n"
+            "fmla v13.8h, v5.8h, v1.h[2]        \n"
+            "fmla v15.8h, v5.8h, v1.h[3]        \n"
+            "ldr q2, [%[b_ptr]], #16            \n"
+            "subs %w[cnt], %w[cnt], #1          \n"
+            "fmla v17.8h, v5.8h, v1.h[4]        \n"
+            "fmla v19.8h, v5.8h, v1.h[5]        \n"
+            "fmla v21.8h, v5.8h, v1.h[6]        \n"
+            "fmla v23.8h, v5.8h, v1.h[7]        \n"
+            "bne 0b                             \n"
+            "2:                                 \n"
+            "cmp %w[tail], #1                   \n"
+            "ldr q3, [%[b_ptr]], #16            \n"
+            "beq 3f                             \n"
+            // tail=2
+            FMLA_N00_8
+            "prfm   pldl1keep, [%[a_ptr], #64]  \n"
+            "prfm   pldl1keep, [%[b_ptr], #128] \n"
+            "fmla v9.8h, v3.8h, v0.h[0]         \n"
+            "fmla v11.8h, v3.8h, v0.h[1]        \n"
+            "ldr q1, [%[a_ptr]], #16            \n"
+            "fmla v13.8h, v3.8h, v0.h[2]        \n"
+            "fmla v15.8h, v3.8h, v0.h[3]        \n"
+            "ldr q4, [%[b_ptr]], #16            \n"
+            "fmla v17.8h, v3.8h, v0.h[4]        \n"
+            "fmla v19.8h, v3.8h, v0.h[5]        \n"
+            "fmla v21.8h, v3.8h, v0.h[6]        \n"
+            "fmla v23.8h, v3.8h, v0.h[7]        \n"
+            // unrool 1
+            "ldr q5, [%[b_ptr]], #16            \n"
+            FMLA_N10_8
+            FMLA_N11_8
+            "b 6f                               \n"
+            "3:                                 \n"
+            // tail = 1
+            FMLA_N00_8
+            FMLA_N01_8
+            "6:                                 \n"
+            "cmp    %w[flag_act],   #1          \n"
+            "beq 4f                             \n"
+            "cmp    %w[flag_act],   #0          \n"
+            "beq 7f                             \n"
+            "cmp    %w[flag_act],   #2          \n"
+            "beq 5f                             \n"
+            // leakyRelu
+            "fcmge v0.8h, v8.8h, %[vzero].8h    \n"
+            "fmul v1.8h, v8.8h, %[valpha].8h     \n"
+            "fcmge v2.8h, v9.8h, %[vzero].8h    \n"
+            "fmul v3.8h, v9.8h, %[valpha].8h     \n"
+            "fcmge v4.8h, v10.8h, %[vzero].8h   \n"
+            "fmul v5.8h, v10.8h, %[valpha].8h    \n"
+            "fcmge v6.8h, v11.8h, %[vzero].8h   \n"
+            "fmul v7.8h, v11.8h, %[valpha].8h    \n"
+            "bif  v8.16b, v1.16b, v0.16b        \n"
+            "bif  v9.16b, v3.16b, v2.16b        \n"
+            "bif  v10.16b, v5.16b, v4.16b       \n"
+            "bif  v11.16b, v7.16b, v6.16b       \n"
+            "fcmge v0.8h, v12.8h, %[vzero].8h   \n"
+            "fmul v1.8h, v12.8h, %[valpha].8h    \n"
+            "fcmge v2.8h, v13.8h, %[vzero].8h   \n"
+            "fmul v3.8h, v13.8h, %[valpha].8h    \n"
+            "fcmge v4.8h, v14.8h, %[vzero].8h   \n"
+            "fmul v5.8h, v14.8h, %[valpha].8h    \n"
+            "fcmge v6.8h, v15.8h, %[vzero].8h   \n"
+            "fmul v7.8h, v15.8h, %[valpha].8h    \n"
+            "bif  v12.16b, v1.16b, v0.16b       \n"
+            "bif  v13.16b, v3.16b, v2.16b       \n"
+            "bif  v14.16b, v5.16b, v4.16b       \n"
+            "bif  v15.16b, v7.16b, v6.16b       \n"
+            "fcmge v0.8h, v16.8h, %[vzero].8h   \n"
+            "fmul v1.8h, v16.8h, %[valpha].8h    \n"
+            "fcmge v2.8h, v17.8h, %[vzero].8h   \n"
+            "fmul v3.8h, v17.8h, %[valpha].8h    \n"
+            "fcmge v4.8h, v18.8h, %[vzero].8h   \n"
+            "fmul v5.8h, v18.8h, %[valpha].8h    \n"
+            "fcmge v6.8h, v19.8h, %[vzero].8h   \n"
+            "fmul v7.8h, v19.8h, %[valpha].8h    \n"
+            "bif  v16.16b, v1.16b, v0.16b       \n"
+            "bif  v17.16b, v3.16b, v2.16b       \n"
+            "bif  v18.16b, v5.16b, v4.16b       \n"
+            "bif  v19.16b, v7.16b, v6.16b       \n"
+            "fcmge v0.8h, v20.8h, %[vzero].8h   \n"
+            "fmul v1.8h, v20.8h, %[valpha].8h    \n"
+            "fcmge v2.8h, v21.8h, %[vzero].8h   \n"
+            "fmul v3.8h, v21.8h, %[valpha].8h    \n"
+            "fcmge v4.8h, v22.8h, %[vzero].8h   \n"
+            "fmul v5.8h, v22.8h, %[valpha].8h    \n"
+            "fcmge v6.8h, v23.8h, %[vzero].8h   \n"
+            "fmul v7.8h, v23.8h, %[valpha].8h    \n"
+            "bif  v20.16b, v1.16b, v0.16b       \n"
+            "bif  v21.16b, v3.16b, v2.16b       \n"
+            "bif  v22.16b, v5.16b, v4.16b       \n"
+            "bif  v23.16b, v7.16b, v6.16b       \n"
+            "b 7f                               \n"
+            // relu
+            "4:                                 \n"
+            FMAX_8
+            "b 7f                               \n"
+            // relu6
+            "5:                                 \n"
+            FMAX_8
+            FMIN_8
+            "b 7f                               \n"
+            // no relu
+            "7:                                 \n"
+            "stp q8, q9, [%[c_ptr0]], #32       \n"
+            "stp q10, q11, [%[c_ptr1]], #32     \n"
+            "stp q12, q13, [%[c_ptr2]], #32     \n"
+            "stp q14, q15, [%[c_ptr3]], #32     \n"
+            "stp q16, q17, [%[c_ptr4]], #32     \n"
+            "stp q18, q19, [%[c_ptr5]], #32     \n"
+            "stp q20, q21, [%[c_ptr6]], #32     \n"
+            "stp q22, q23, [%[c_ptr7]], #32     \n"
+            : [a_ptr] "+r"(a_ptr),
+              [b_ptr] "+r"(b_ptr),
+              [cnt] "+r"(k),
+              [tail] "+r"(tail),
+              [c_ptr0] "+r"(c_ptr0),
+              [c_ptr1] "+r"(c_ptr1),
+              [c_ptr2] "+r"(c_ptr2),
+              [c_ptr3] "+r"(c_ptr3),
+              [c_ptr4] "+r"(c_ptr4),
+              [c_ptr5] "+r"(c_ptr5),
+              [c_ptr6] "+r"(c_ptr6),
+              [c_ptr7] "+r"(c_ptr7)
+            : [has_beta] "r"(has_beta),
+              [vbias] "w"(vbias),
+              [vbeta] "w"(vbeta),
+              [valpha] "w"(valpha),
+              [vzero] "w"(vzero),
+              [flag_act] "r"(flag_act)
+            : "cc","memory",
+              "v0","v1","v2","v3","v4","v5","v6","v7",
+              "v8","v9","v10","v11","v12","v13",
+              "v14","v15","v16","v17","v18","v19",
+              "v20","v21","v22","v23"
+          );
+          // clang-format on
         }
       }
     }

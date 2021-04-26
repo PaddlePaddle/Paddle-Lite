@@ -13,37 +13,25 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
+
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class NormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <class T>
+class Pad2dCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::NormParam;
+  using param_t = operators::Pad2dParam;
 
-  void PrepareForRun() override;
+  virtual void Run();
 
-  void Run() override;
-
-  ~NormCompute() {}
-
- private:
+  virtual ~Pad2dCompute() = default;
 };
 
-class PNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
-
-  virtual ~PNormCompute() = default;
-};
-
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -34,15 +34,15 @@ int AdaptEndIndex(int ph, int input_size, int output_size) {
 }
 
 void pooling_basic_fp16(POOLING_PARAM,
-                        const std::vector<int>& ksize,
-                        const std::vector<int>& strides,
-                        const std::vector<int>& paddings,
+                        const std::vector<int> &ksize,
+                        const std::vector<int> &strides,
+                        const std::vector<int> &paddings,
                         bool global_pooling,
                         bool exclusive,
                         bool adaptive,
                         bool ceil_mode,
                         bool use_quantizer,
-                        const std::string& pooling_type) {
+                        const std::string &pooling_type) {
   // no need to pad input tensor, border is zero pad inside this function
   memset(dout, 0, num * chout * hout * wout * sizeof(float16_t));
   int kernel_h = ksize[0];
@@ -56,11 +56,11 @@ void pooling_basic_fp16(POOLING_PARAM,
   if (global_pooling) {
     if (pooling_type == "max") {  // Pooling_max
       for (int n = 0; n < num; ++n) {
-        float16_t* dout_batch = dout + n * chout * size_channel_out;
-        const float16_t* din_batch = din + n * chin * size_channel_in;
+        float16_t *dout_batch = dout + n * chout * size_channel_out;
+        const float16_t *din_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
         for (int c = 0; c < chout; ++c) {
-          const float16_t* din_ch =
+          const float16_t *din_ch =
               din_batch + c * size_channel_in;  // in address
           float16_t tmp1 = din_ch[0];
           for (int i = 0; i < size_channel_in; ++i) {
@@ -73,11 +73,11 @@ void pooling_basic_fp16(POOLING_PARAM,
     } else if (pooling_type == "avg") {
       // Pooling_average_include_padding
       for (int n = 0; n < num; ++n) {
-        float16_t* dout_batch = dout + n * chout * size_channel_out;
-        const float16_t* din_batch = din + n * chin * size_channel_in;
+        float16_t *dout_batch = dout + n * chout * size_channel_out;
+        const float16_t *din_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
         for (int c = 0; c < chout; ++c) {
-          const float16_t* din_ch =
+          const float16_t *din_ch =
               din_batch + c * size_channel_in;  // in address
           float16_t sum = 0.f;
           for (int i = 0; i < size_channel_in; ++i) {
@@ -440,17 +440,21 @@ void pooling_basic_fp16(POOLING_PARAM,
   int w_unroll_size = wout >> 3;                            \
   int w_unroll_remian = wout & 7;                           \
   /* wout = (win + P + pad_right - K) / S + 1*/             \
-  int right_remain = (wout * S + 1 - P) - win;              \
+  int right_remain = (wout * S - S + K - P) - win;          \
   if (w_unroll_remian == 0 && right_remain > 0) {           \
     w_unroll_size -= 1;                                     \
     w_unroll_remian = 8;                                    \
   }                                                         \
   int cnt = w_unroll_remian >> 2;                           \
   int cnt_remain = w_unroll_remian & 3;                     \
+  if (cnt_remain == 0 && right_remain > 0) {                \
+    cnt -= 1;                                               \
+    cnt_remain = 4;                                         \
+  }                                                         \
   int remain_num = win - (w_unroll_size * 8 * S - P);       \
   /* cnt = 1, right > 8; cnt = 2, right > 16*/              \
   int right = (remain_num - (cnt * 4 * S - P)) > 0 ? 1 : 0; \
-  int wend = std::min((wout - 1) * 2 - P + K, win) - ((wout - 1) * 2 - P);
+  int wend = std::min((wout - 1) * S - P + K, win) - ((wout - 1) * S - P);
 
 #define MAX_ONE_COMPUTE(                                           \
     dr0, dr1, dr2, dr_out, cnt_remain, minval, right_remain, wend) \
@@ -479,6 +483,35 @@ void pooling_basic_fp16(POOLING_PARAM,
     }                                                              \
     *(dr_out++) = tmp;                                             \
   }
+
+#define MAX_ONE_COMPUTE_S1(                                        \
+    dr0, dr1, dr2, dr_out, cnt_remain, minval, right_remain, wend) \
+  for (int w = 0; w < cnt_remain; w += 1) {                        \
+    float16x4_t vr0 = vld1_f16(dr0);                               \
+    float16x4_t vr1 = vld1_f16(dr1);                               \
+    float16x4_t vr2 = vld1_f16(dr2);                               \
+    vr0 = vset_lane_f16(minval, vr0, 3);                           \
+    vr1 = vset_lane_f16(minval, vr1, 3);                           \
+    vr2 = vset_lane_f16(minval, vr2, 3);                           \
+    float16x4_t vmax1 = vmax_f16(vr0, vr1);                        \
+    vmax1 = vmax_f16(vmax1, vr2);                                  \
+    float16x4_t vmax2 = vpmax_f16(vmax1, vmax1);                   \
+    float16x4_t vmax = vpmax_f16(vmax2, vmax2);                    \
+    dr_out[0] = vget_lane_f16(vmax, 0);                            \
+    dr0 += 1;                                                      \
+    dr1 += 1;                                                      \
+    dr2 += 1;                                                      \
+    dr_out++;                                                      \
+  }                                                                \
+  if (right_remain > 0) {                                          \
+    float16_t tmp = dr0[0];                                        \
+    for (int i = 0; i < wend; i++) {                               \
+      tmp = std::max(tmp, std::max(dr0[i], dr1[i]));               \
+      tmp = std::max(tmp, dr2[i]);                                 \
+    }                                                              \
+    *(dr_out++) = tmp;                                             \
+  }
+
 #define AVG_ONE_COMPUTE(                                           \
     dr0, dr1, dr2, dr_out, cnt_remain, minval, right_remain, wend) \
   for (int w = 0; w < cnt_remain; w += 1) {                        \
@@ -524,6 +557,16 @@ void pooling_basic_fp16(POOLING_PARAM,
     }                                                         \
   }
 
+#define P3x3S1_MAX_PTR_CHOOSE(dr0, dr1, dr2, S, K, P, h, hin) \
+  if (h * S + K - P > hin) {                                  \
+    if (h * S + K - P - hin == 1) {                           \
+      dr2 = dr0;                                              \
+    }                                                         \
+    if (h * S + K - P - hin == 2) {                           \
+      dr1 = dr0;                                              \
+    }                                                         \
+  }
+
 #define P3x3s2_AVG_PTR_CHOOSE(                                          \
     dr1, dr2, zero_ptr, S, K, P, h, hin, coef_h, pad_bottom, exclusive) \
   if (h * S + K - P > hin) {                                            \
@@ -562,6 +605,175 @@ void pooling_basic_fp16(POOLING_PARAM,
         break;                                                          \
     }                                                                   \
   }
+
+#define P3x3S1P0_INIT_INTRIN                    \
+  float16x8_t dr0_first8 = vld1q_f16(dr0);      \
+  float16x8_t dr0_second8 = vld1q_f16(dr0 + 8); \
+  float16x8_t dr1_first8 = vld1q_f16(dr1);      \
+  float16x8_t dr1_second8 = vld1q_f16(dr1 + 8); \
+  float16x8_t dr2_first8 = vld1q_f16(dr2);      \
+  float16x8_t dr2_second8 = vld1q_f16(dr2 + 8);
+
+#define P3x3S1P1_WINLESS_INTRIN                                               \
+  float16x4_t vmin_4 = vget_low_f16(vmin);                                    \
+  float16x4_t dr0_first4 = vld1_f16(dr0);                                     \
+  float16x4_t dr0_second4 = vld1_f16(dr0 + 4);                                \
+                                                                              \
+  float16x4_t dr1_first4 = vld1_f16(dr1);                                     \
+  float16x4_t dr1_second4 = vld1_f16(dr1 + 4);                                \
+                                                                              \
+  float16x4_t dr2_first4 = vld1_f16(dr2);                                     \
+  float16x4_t dr2_second4 = vld1_f16(dr2 + 4);                                \
+                                                                              \
+  const float16x4_t dr0_first4_offset = vext_f16(dr0_first4, dr0_second4, 1); \
+  const float16x4_t dr1_first4_offset = vext_f16(dr1_first4, dr1_second4, 1); \
+  const float16x4_t dr2_first4_offset = vext_f16(dr2_first4, dr2_second4, 1); \
+                                                                              \
+  const float16x4_t dr0_pad_4 = vext_f16(vmin_4, dr0_first4, 3);              \
+  const float16x4_t dr1_pad_4 = vext_f16(vmin_4, dr1_first4, 3);              \
+  const float16x4_t dr2_pad_4 = vext_f16(vmin_4, dr2_first4, 3);              \
+                                                                              \
+  float16x4_t dr0_max4 = vmax_f16(dr0_first4, dr0_first4_offset);             \
+  dr0_max4 = vmax_f16(dr0_max4, dr0_pad_4);                                   \
+                                                                              \
+  float16x4_t dr1_max4 = vmax_f16(dr1_first4, dr1_first4_offset);             \
+  dr1_max4 = vmax_f16(dr1_max4, dr1_pad_4);                                   \
+                                                                              \
+  float16x4_t dr2_max4 = vmax_f16(dr2_first4, dr2_first4_offset);             \
+  dr2_max4 = vmax_f16(dr2_max4, dr2_pad_4);                                   \
+                                                                              \
+  float16x4_t pad_left_max4 = vmax_f16(dr0_max4, dr1_max4);                   \
+  pad_left_max4 = vmax_f16(pad_left_max4, dr2_max4);                          \
+  vst1_f16(dr_out, pad_left_max4);                                            \
+                                                                              \
+  dr0 += 3;                                                                   \
+  dr1 += 3;                                                                   \
+  dr2 += 3;                                                                   \
+  dr_out += 4;                                                                \
+  cnt_remain_4--;
+
+#define P3x3S1P1_INIT_INTRIN                                                   \
+  float16x8_t dr0_first8 = vld1q_f16(dr0);                                     \
+  float16x8_t dr0_second8 = vld1q_f16(dr0 + 8);                                \
+                                                                               \
+  float16x8_t dr1_first8 = vld1q_f16(dr1);                                     \
+  float16x8_t dr1_second8 = vld1q_f16(dr1 + 8);                                \
+                                                                               \
+  float16x8_t dr2_first8 = vld1q_f16(dr2);                                     \
+  float16x8_t dr2_second8 = vld1q_f16(dr2 + 8);                                \
+                                                                               \
+  const float16x8_t dr0_first8_offset = vextq_f16(dr0_first8, dr0_second8, 1); \
+  const float16x8_t dr1_first8_offset = vextq_f16(dr1_first8, dr1_second8, 1); \
+  const float16x8_t dr2_first8_offset = vextq_f16(dr2_first8, dr2_second8, 1); \
+                                                                               \
+  const float16x8_t dr0_pad_8 = vextq_f16(vmin, dr0_first8, 7);                \
+  const float16x8_t dr1_pad_8 = vextq_f16(vmin, dr1_first8, 7);                \
+  const float16x8_t dr2_pad_8 = vextq_f16(vmin, dr2_first8, 7);                \
+                                                                               \
+  float16x8_t dr0_max8 = vmaxq_f16(dr0_first8, dr0_first8_offset);             \
+  dr0_max8 = vmaxq_f16(dr0_max8, dr0_pad_8);                                   \
+                                                                               \
+  float16x8_t dr1_max8 = vmaxq_f16(dr1_first8, dr1_first8_offset);             \
+  dr1_max8 = vmaxq_f16(dr1_max8, dr1_pad_8);                                   \
+                                                                               \
+  float16x8_t dr2_max8 = vmaxq_f16(dr2_first8, dr2_first8_offset);             \
+  dr2_max8 = vmaxq_f16(dr2_max8, dr2_pad_8);                                   \
+                                                                               \
+  float16x8_t pad_left_max8 = vmaxq_f16(dr0_max8, dr1_max8);                   \
+  pad_left_max8 = vmaxq_f16(pad_left_max8, dr2_max8);                          \
+  vst1q_f16(dr_out, pad_left_max8);                                            \
+  dr0_first8 = vextq_f16(dr0_first8, dr0_second8, 7);                          \
+  dr1_first8 = vextq_f16(dr1_first8, dr1_second8, 7);                          \
+  dr2_first8 = vextq_f16(dr2_first8, dr2_second8, 7);                          \
+                                                                               \
+  dr0 += 7;                                                                    \
+  dr1 += 7;                                                                    \
+  dr2 += 7;                                                                    \
+  dr0_second8 = vld1q_f16(dr0 + 8);                                            \
+  dr1_second8 = vld1q_f16(dr1 + 8);                                            \
+  dr2_second8 = vld1q_f16(dr2 + 8);                                            \
+                                                                               \
+  dr_out += 8;                                                                 \
+  cnt_num--;
+
+#define P3x3S1P0_MAX_8TIMES_PER_CYCLE_INTRIN                                 \
+  while (cnt_num > 0) {                                                      \
+    const float16x8_t dr0_first8_offset1 =                                   \
+        vextq_f16(dr0_first8, dr0_second8, 1);                               \
+    const float16x8_t dr0_first8_offset2 =                                   \
+        vextq_f16(dr0_first8, dr0_second8, 2);                               \
+    float16x8_t dr0_max_first8 = vmaxq_f16(dr0_first8, dr0_first8_offset1);  \
+    const float16x8_t dr1_first8_offset1 =                                   \
+        vextq_f16(dr1_first8, dr1_second8, 1);                               \
+    const float16x8_t dr1_first8_offset2 =                                   \
+        vextq_f16(dr1_first8, dr1_second8, 2);                               \
+    dr0_max_first8 = vmaxq_f16(dr0_max_first8, dr0_first8_offset2);          \
+    float16x8_t dr1_max_first8 = vmaxq_f16(dr1_first8, dr1_first8_offset1);  \
+    const float16x8_t dr2_first8_offset1 =                                   \
+        vextq_f16(dr2_first8, dr2_second8, 1);                               \
+    const float16x8_t dr2_first8_offset2 =                                   \
+        vextq_f16(dr2_first8, dr2_second8, 2);                               \
+    dr1_max_first8 = vmaxq_f16(dr1_max_first8, dr1_first8_offset2);          \
+    float16x8_t dr2_max_first8 = vmaxq_f16(dr2_first8, dr2_first8_offset1);  \
+                                                                             \
+    float16x8_t col_0_3_row_0_8 = vmaxq_f16(dr0_max_first8, dr1_max_first8); \
+    dr2_max_first8 = vmaxq_f16(dr2_max_first8, dr2_first8_offset2);          \
+    col_0_3_row_0_8 = vmaxq_f16(col_0_3_row_0_8, dr2_max_first8);            \
+    vst1q_f16(dr_out, col_0_3_row_0_8);                                      \
+    dr_out += 8;                                                             \
+                                                                             \
+    dr0_first8 = dr0_second8;                                                \
+    dr1_first8 = dr1_second8;                                                \
+    dr2_first8 = dr2_second8;                                                \
+                                                                             \
+    dr0 += 8;                                                                \
+    dr1 += 8;                                                                \
+    dr2 += 8;                                                                \
+    dr0_second8 = vld1q_f16(dr0 + 8);                                        \
+    dr1_second8 = vld1q_f16(dr1 + 8);                                        \
+    dr2_second8 = vld1q_f16(dr2 + 8);                                        \
+    cnt_num--;                                                               \
+  }
+
+#define P3x3S1P0_MAX_4TIMES_PER_CYCLE_INTRIN                               \
+  if (cnt_remain_4 > 0) {                                                  \
+    const float16x4_t dr0_first4 = vget_low_f16(dr0_first8);               \
+    const float16x4_t dr1_first4 = vget_low_f16(dr1_first8);               \
+    const float16x4_t dr2_first4 = vget_low_f16(dr2_first8);               \
+    const float16x4_t dr0_second4 = vget_high_f16(dr0_first8);             \
+    const float16x4_t dr1_second4 = vget_high_f16(dr1_first8);             \
+    const float16x4_t dr2_second4 = vget_high_f16(dr2_first8);             \
+                                                                           \
+    const float16x4_t dr0_first4_offset1 =                                 \
+        vext_f16(dr0_first4, dr0_second4, 1);                              \
+    const float16x4_t dr0_first4_offset2 =                                 \
+        vext_f16(dr0_first4, dr0_second4, 2);                              \
+    float16x4_t dr0_max_first4 = vmax_f16(dr0_first4, dr0_first4_offset1); \
+    const float16x4_t dr1_first4_offset1 =                                 \
+        vext_f16(dr1_first4, dr1_second4, 1);                              \
+    const float16x4_t dr1_first4_offset2 =                                 \
+        vext_f16(dr1_first4, dr1_second4, 2);                              \
+    dr0_max_first4 = vmax_f16(dr0_max_first4, dr0_first4_offset2);         \
+                                                                           \
+    float16x4_t dr1_max_first4 = vmax_f16(dr1_first4, dr1_first4_offset1); \
+    const float16x4_t dr2_first4_offset1 =                                 \
+        vext_f16(dr2_first4, dr2_second4, 1);                              \
+    const float16x4_t dr2_first4_offset2 =                                 \
+        vext_f16(dr2_first4, dr2_second4, 2);                              \
+    dr1_max_first4 = vmax_f16(dr1_max_first4, dr1_first4_offset2);         \
+                                                                           \
+    float16x4_t dr2_max_first4 = vmax_f16(dr2_first4, dr2_first4_offset1); \
+    float16x4_t pool_row_result_0_4 =                                      \
+        vmax_f16(dr0_max_first4, dr1_max_first4);                          \
+    dr2_max_first4 = vmax_f16(dr2_max_first4, dr2_first4_offset2);         \
+    pool_row_result_0_4 = vmax_f16(pool_row_result_0_4, dr2_max_first4);   \
+    vst1_f16(dr_out, pool_row_result_0_4);                                 \
+    dr0 += 4;                                                              \
+    dr1 += 4;                                                              \
+    dr2 += 4;                                                              \
+    dr_out += 4;                                                           \
+  }
+
 #endif
 
 void pooling_global_max_fp16(POOLING_PARAM) {
@@ -573,11 +785,11 @@ void pooling_global_max_fp16(POOLING_PARAM) {
   int remain_8 = remain & 7;
 
   for (int n = 0; n < num; ++n) {
-    float16_t* data_out_batch = dout + n * chout;
-    const float16_t* data_in_batch = din + n * chin * size_channel_in;
+    float16_t *data_out_batch = dout + n * chout;
+    const float16_t *data_in_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
     for (int c = 0; c < chout; ++c) {
-      const float16_t* data_in_channel = data_in_batch + c * size_channel_in;
+      const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       float16x8_t vmax = vdupq_n_f16(data_in_channel[0]);
       int size_cnt = cnt;
       int size_remain = cnt_8;
@@ -614,11 +826,11 @@ void pooling_global_avg_fp16(POOLING_PARAM) {
   int remain_8 = remain & 7;
 
   for (int n = 0; n < num; ++n) {
-    float16_t* data_out_batch = dout + n * chout;
-    const float16_t* data_in_batch = din + n * chin * size_channel_in;
+    float16_t *data_out_batch = dout + n * chout;
+    const float16_t *data_in_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
     for (int c = 0; c < chout; c++) {
-      const float16_t* data_in_channel =
+      const float16_t *data_in_channel =
           data_in_batch + c * size_channel_in;  // in address
       float16x8_t vsum = vdupq_n_f16(0.0f);
       int size_cnt = cnt;
@@ -664,17 +876,17 @@ void pooling3x3s2p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
   float16_t minval = minval_fp32;
   float16x8_t vmin = vdupq_n_f16(minval);
   for (int n = 0; n < num; ++n) {
-    float16_t* data_out_batch = dout + n * chout * size_channel_out;
-    const float16_t* data_in_batch = din + n * chin * size_channel_in;
+    float16_t *data_out_batch = dout + n * chout * size_channel_out;
+    const float16_t *data_in_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
     for (int c = 0; c < chout; c++) {
-      float16_t* data_out_channel = data_out_batch + c * size_channel_out;
-      const float16_t* data_in_channel = data_in_batch + c * size_channel_in;
-      const float16_t* r0 = data_in_channel;
-      const float16_t* r1 = r0 + win;
-      const float16_t* r2 = r1 + win;
+      float16_t *data_out_channel = data_out_batch + c * size_channel_out;
+      const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
+      const float16_t *r0 = data_in_channel;
+      const float16_t *r1 = r0 + win;
+      const float16_t *r2 = r1 + win;
       for (int h = 0; h < hout; h++) {
-        float16_t* dr_out = data_out_channel;
+        float16_t *dr_out = data_out_channel;
         auto dr0 = r0;
         auto dr1 = r1;
         auto dr2 = r2;
@@ -732,24 +944,24 @@ void pooling3x3s2p0_avg_fp16(POOLING_PARAM,
   if (right_remain > 0) {
     cnt_remain--;
   }
-  auto zero_ptr = static_cast<float16_t*>(
+  auto zero_ptr = static_cast<float16_t *>(
       TargetMalloc(TARGET(kARM), win * sizeof(float16_t)));
   memset(zero_ptr, 0, win * sizeof(float16_t));
 
   float16x8_t vzero = vdupq_n_f16(0.f);
   for (int n = 0; n < num; ++n) {
-    float16_t* data_out_batch = dout + n * chout * size_channel_out;
-    const float16_t* data_in_batch = din + n * chin * size_channel_in;
+    float16_t *data_out_batch = dout + n * chout * size_channel_out;
+    const float16_t *data_in_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
     for (int c = 0; c < chout; c++) {
-      float16_t* data_out_channel = data_out_batch + c * size_channel_out;
-      const float16_t* data_in_channel = data_in_batch + c * size_channel_in;
-      const float16_t* r0 = data_in_channel;
-      const float16_t* r1 = r0 + win;
-      const float16_t* r2 = r1 + win;
+      float16_t *data_out_channel = data_out_batch + c * size_channel_out;
+      const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
+      const float16_t *r0 = data_in_channel;
+      const float16_t *r1 = r0 + win;
+      const float16_t *r2 = r1 + win;
       for (int h = 0; h < hout; h++) {
         float16_t coef_h = 1.f / 3;
-        float16_t* dr_out = data_out_channel;
+        float16_t *dr_out = data_out_channel;
         auto dr0 = r0;
         auto dr1 = r1;
         auto dr2 = r2;
@@ -815,17 +1027,17 @@ void pooling3x3s2p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
 
   float16x8_t vmin = vdupq_n_f16(minval);
   for (int n = 0; n < num; ++n) {
-    float16_t* data_out_batch = dout + n * chout * size_channel_out;
-    const float16_t* data_in_batch = din + n * chin * size_channel_in;
+    float16_t *data_out_batch = dout + n * chout * size_channel_out;
+    const float16_t *data_in_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
     for (int c = 0; c < chout; c++) {
-      float16_t* data_out_channel = data_out_batch + c * size_channel_out;
-      const float16_t* data_in_channel = data_in_batch + c * size_channel_in;
-      const float16_t* r0 = data_in_channel;
-      const float16_t* r1 = r0 + win;
-      const float16_t* r2 = r1 + win;
+      float16_t *data_out_channel = data_out_batch + c * size_channel_out;
+      const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
+      const float16_t *r0 = data_in_channel;
+      const float16_t *r1 = r0 + win;
+      const float16_t *r2 = r1 + win;
       for (int h = 0; h < hout; h++) {
-        float16_t* dr_out = data_out_channel;
+        float16_t *dr_out = data_out_channel;
         auto dr0 = r0;
         auto dr1 = r1;
         auto dr2 = r2;
@@ -893,6 +1105,127 @@ void pooling3x3s2p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
   }
 }
 
+void pooling3x3s1p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
+  const int K = 3;
+  const int P = 0;
+  const int S = 1;
+
+  POOL_CNT_COMPUTE
+  float minval_fp32 = std::numeric_limits<float>::lowest();
+  if (right == 0) {
+    cnt--;
+    cnt_remain = cnt_remain + 4;
+  }
+  if (right_remain > 0) {
+    cnt_remain--;
+  }
+  float16_t minval = minval_fp32;
+  for (int n = 0; n < num; ++n) {
+    float16_t *data_out_batch = dout + n * chout * size_channel_out;
+    const float16_t *data_in_batch = din + n * chin * size_channel_in;
+#pragma omp parallel for
+    for (int c = 0; c < chout; c++) {
+      float16_t *data_out_channel = data_out_batch + c * size_channel_out;
+      const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
+      const float16_t *r0 = data_in_channel;
+      const float16_t *r1 = r0 + win;
+      const float16_t *r2 = r1 + win;
+      for (int h = 0; h < hout; h++) {
+        float16_t *dr_out = data_out_channel;
+        auto dr0 = r0;
+        auto dr1 = r1;
+        auto dr2 = r2;
+#ifdef __aarch64__
+        P3x3S2_MAX_PTR_CHOOSE(dr0, dr1, dr2, S, K, P, h, hin) int cnt_num =
+            w_unroll_size;
+        int cnt_remain_4 = cnt;
+        P3x3S1P0_INIT_INTRIN P3x3S1P0_MAX_8TIMES_PER_CYCLE_INTRIN
+            P3x3S1P0_MAX_4TIMES_PER_CYCLE_INTRIN;
+#endif
+        MAX_ONE_COMPUTE_S1(
+            dr0, dr1, dr2, dr_out, cnt_remain, minval, right_remain, wend)
+        r0 = r1;
+        r1 = r2;
+        r2 = r1 + win;
+        data_out_channel += wout;
+      }
+    }
+  }
+}
+
+void pooling3x3s1p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
+  const int K = 3;
+  const int P = 1;
+  const int S = 1;
+
+  POOL_CNT_COMPUTE
+  right = win > 7 ? 1 : 0;
+  float minval_fp32 = std::numeric_limits<float>::lowest();
+  if (right == 0) {
+    cnt--;
+    cnt_remain = cnt < 0 ? cnt_remain : cnt_remain + 4;
+  }
+  if (right_remain > 0) {
+    cnt_remain--;
+  }
+  float16_t minval = minval_fp32;
+  float16x8_t vmin = vdupq_n_f16(minval);
+  int win_less = (w_unroll_size == 0) ? 1 : 0;
+  for (int n = 0; n < num; ++n) {
+    float16_t *data_out_batch = dout + n * chout * size_channel_out;
+    const float16_t *data_in_batch = din + n * chin * size_channel_in;
+#pragma omp parallel for
+    for (int c = 0; c < chout; c++) {
+      float16_t *data_out_channel = data_out_batch + c * size_channel_out;
+      const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
+      const float16_t *r0 = data_in_channel;
+      const float16_t *r1 = r0 + win;
+      const float16_t *r2 = r1 + win;
+      for (int h = 0; h < hout; h++) {
+        float16_t *dr_out = data_out_channel;
+        auto dr0 = r0;
+        auto dr1 = r1;
+        auto dr2 = r2;
+        if (h == 0) {
+          dr0 = r0;
+          dr1 = r0;
+          dr2 = r1;
+        } else {
+          r0 = r1;
+          r1 = r2;
+          r2 = r1 + win;
+        }
+        P3x3S1_MAX_PTR_CHOOSE(dr0, dr1, dr2, S, K, P, h, hin) int cnt_num =
+            w_unroll_size;
+        int cnt_remain_4 = cnt;
+#ifdef __aarch64__
+        if (!win_less) {
+          P3x3S1P1_INIT_INTRIN P3x3S1P0_MAX_8TIMES_PER_CYCLE_INTRIN
+              P3x3S1P0_MAX_4TIMES_PER_CYCLE_INTRIN
+        } else if (cnt_remain_4 > 0) {
+          P3x3S1P1_WINLESS_INTRIN
+        }
+#endif
+        int win_remain = cnt_remain;
+        if (win_less && (cnt <= 0) && win_remain > 0) {
+          float16_t tmp = dr0[0];
+          for (int i = 0; i < 2; i++) {
+            tmp = std::max(tmp, std::max(dr0[i], dr1[i]));
+            tmp = std::max(tmp, dr2[i]);
+          }
+          dr_out[0] = tmp;
+          dr_out++;
+          win_remain--;
+        }
+        MAX_ONE_COMPUTE_S1(
+            dr0, dr1, dr2, dr_out, win_remain, minval, right_remain, wend)
+
+        data_out_channel += wout;
+      }
+    }
+  }
+}
+
 void pooling3x3s2p1_avg_fp16(POOLING_PARAM,
                              bool exclusive,
                              int pad_bottom,
@@ -913,22 +1246,22 @@ void pooling3x3s2p1_avg_fp16(POOLING_PARAM,
   int win_less = (w_unroll_size == 0) ? 1 : 0;
 
   float16x8_t vzero = vdupq_n_f16(0.f);
-  auto zero_ptr = static_cast<float16_t*>(
+  auto zero_ptr = static_cast<float16_t *>(
       TargetMalloc(TARGET(kARM), win * sizeof(float16_t)));
   memset(zero_ptr, 0, win * sizeof(float16_t));
   for (int n = 0; n < num; ++n) {
-    float16_t* data_out_batch = dout + n * chout * size_channel_out;
-    const float16_t* data_in_batch = din + n * chin * size_channel_in;
+    float16_t *data_out_batch = dout + n * chout * size_channel_out;
+    const float16_t *data_in_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
     for (int c = 0; c < chout; c++) {
-      float16_t* data_out_channel = data_out_batch + c * size_channel_out;
-      const float16_t* data_in_channel = data_in_batch + c * size_channel_in;
-      const float16_t* r0 = data_in_channel;
-      const float16_t* r1 = r0 + win;
-      const float16_t* r2 = r1 + win;
+      float16_t *data_out_channel = data_out_batch + c * size_channel_out;
+      const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
+      const float16_t *r0 = data_in_channel;
+      const float16_t *r1 = r0 + win;
+      const float16_t *r2 = r1 + win;
       for (int h = 0; h < hout; h++) {
         float16_t coef_h = 1.f / 3;
-        float16_t* dr_out = data_out_channel;
+        float16_t *dr_out = data_out_channel;
         auto dr0 = r0;
         auto dr1 = r1;
         auto dr2 = r2;
@@ -1013,6 +1346,86 @@ void pooling3x3s2p1_avg_fp16(POOLING_PARAM,
   }
   TargetFree(TARGET(kARM), zero_ptr);
 }
+
+void pooling3x3s1p0_avg_fp16(POOLING_PARAM,
+                             bool exclusive,
+                             int pad_bottom,
+                             int pad_right) {
+  const int K = 3;
+  const int P = 0;
+  const int S = 1;
+  POOL_CNT_COMPUTE
+
+  if (right == 0) {
+    cnt--;
+    cnt_remain = (cnt_remain == 0) ? 4 : cnt_remain;
+  }
+  if (right_remain > 0) {
+    cnt_remain--;
+  }
+  auto zero_ptr = static_cast<float16_t *>(
+      TargetMalloc(TARGET(kARM), win * sizeof(float16_t)));
+  memset(zero_ptr, 0, win * sizeof(float16_t));
+
+  float16x8_t vzero = vdupq_n_f16(0.f);
+  for (int n = 0; n < num; ++n) {
+    float16_t *data_out_batch = dout + n * chout * size_channel_out;
+    const float16_t *data_in_batch = din + n * chin * size_channel_in;
+#pragma omp parallel for
+    for (int c = 0; c < chout; c++) {
+      float16_t *data_out_channel = data_out_batch + c * size_channel_out;
+      const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
+      const float16_t *r0 = data_in_channel;
+      const float16_t *r1 = r0 + win;
+      const float16_t *r2 = r1 + win;
+      for (int h = 0; h < hout; h++) {
+        float16_t coef_h = 1.f / 3;
+        float16_t *dr_out = data_out_channel;
+        auto dr0 = r0;
+        auto dr1 = r1;
+        auto dr2 = r2;
+        P3x3s2_AVG_PTR_CHOOSE(
+            dr1, dr2, zero_ptr, S, K, P, h, hin, coef_h, pad_bottom, exclusive)
+            float16x8_t vcoef = vdupq_n_f16(coef_h / 3);
+        int cnt_num = w_unroll_size;
+        int cnt_remain_4 = cnt;
+#ifdef __aarch64__
+        asm volatile(
+            P3x3S2P0_INIT P3x3S2P0_AVG P3x3S2_REMIN P3x3S2P0_AVG_REMAIN
+            : [dr0] "+r"(dr0),
+              [dr1] "+r"(dr1),
+              [dr2] "+r"(dr2),
+              [dr_out] "+r"(dr_out),
+              [cnt_num] "+r"(cnt_num)
+            : [remain] "r"(cnt_remain_4), [vcoef] "w"(vcoef), [vmin] "w"(vzero)
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11");
+#else
+#endif
+        AVG_ONE_COMPUTE(
+            dr0, dr1, dr2, dr_out, cnt_remain, minval, right_remain, wend)
+        r0 = r2;
+        r1 = r0 + win;
+        r2 = r1 + win;
+        data_out_channel += wout;
+      }
+    }
+  }
+  TargetFree(TARGET(kARM), zero_ptr);
+}
+
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

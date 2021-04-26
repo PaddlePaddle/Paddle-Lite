@@ -24,24 +24,7 @@ models_names=$(ls models)
 rm -rf models_opt && mkdir models_opt
 for name in $models_names
 do
-  if [[ $(ls models/$name | wc -l) -gt 2 ]]
-  then
-    if [[ -f models/$name/__model__ ]]
-	then
-      ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/$name --record_tailoring_info=true
-    else
-      echo "Error: unsupported model format /models/$name"
-      exit 1
-    fi
-  else
-    if [[ -f models/$name/model ]] && [[ -f models/$name/params ]]
-	then
-	./opt --model_file=./models/$name/model --param_file=./models/$name/params --valid_targets=arm --optimize_out=./models_opt/$name --record_tailoring_info=true
-	else
-	  echo "Error: unsupported model format /models/$name"
-	  exit 1
-	fi
-  fi
+  ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/$name --record_tailoring_info=true
 done
 
 

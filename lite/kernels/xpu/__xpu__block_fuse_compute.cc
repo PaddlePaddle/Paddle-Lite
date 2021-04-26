@@ -106,7 +106,18 @@ std::vector<const float*> GenerateBiasVector(
       }
       filter_idx += 4;
       conv_idx += 1;
-    } else if (op_type[op_idx] <= 4) {
+    } else if (op_type[op_idx] <= 3) {
+      filter_idx += 2;
+    } else if (op_type[op_idx] == 4 && conv_idx < conv_bias.size()) {
+      if (conv_bias[conv_idx] > 0) {
+        bias_v.push_back(encode_bias_ptr);
+        encode_bias_ptr +=
+            filter_dims[filter_idx + 1] / filter_dims[filter_idx] +
+            filter_dims[filter_idx + 1];
+      } else {
+        bias_v.push_back(nullptr);
+      }
+      conv_idx += 1;
       filter_idx += 2;
     }
   }
@@ -241,12 +252,13 @@ std::vector<PackParam> GenerateOpAttr(const T* w_ptr,
                      cur_acts,
                      w_ptr,
                      wmax_ptr,
-                     nullptr});
+                     *b_iter});
       w_ptr += (*(f_iter + 1)) * (*(f_iter + 1)) / (*f_iter) * 2;
       wmax_ptr += 8;
       f_iter += 2;
       act_iter += 3;
       actp_iter += 3;
+      b_iter += 1;
     } else if (op_type[op_idx] == 20) {
       res.push_back(
           {-1, -1, -1, -1, {}, {}, {}, -1, {}, nullptr, nullptr, nullptr});
@@ -373,6 +385,7 @@ void XPUBlockFuseCompute<TM, TW, PType>::PrepareForRun() {
               pack_param[op_cnt].c,
               pack_param[op_cnt].f,
               static_cast<const float*>(pack_param[op_cnt].w_max),
+              static_cast<const float*>(pack_param[op_cnt].bias),
               pack_param[op_cnt].acts[0],
               pack_param[op_cnt].acts[1],
               pack_param[op_cnt].acts[2],

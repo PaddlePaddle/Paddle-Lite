@@ -64,6 +64,7 @@ if((NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WIT
 
 if(LITE_BUILD_EXTRA)
     lite_cc_test(test_gru_unit SRCS gru_unit_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_scatter_nd_add SRCS scatter_nd_add_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_sequence_pad SRCS sequence_pad_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_sequence_mask SRCS sequence_mask_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_sequence_reverse SRCS sequence_reverse_test.cc DEPS ${test_kernel_deps})

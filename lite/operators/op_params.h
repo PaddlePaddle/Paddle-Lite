@@ -482,6 +482,11 @@ struct ConvParam : ParamBase {
   // only used in conv_transpose.
   std::vector<int> output_size;
   std::vector<int> output_padding;
+
+#ifdef LITE_WITH_FPGA
+  lite::Tensor* scale{nullptr};
+#endif
+
   // for int8
   WITH_INT8_CONFIG
   // for Conv2d+Scale fusion
@@ -1011,8 +1016,8 @@ struct PriorBoxParam : ParamBase {
   lite::Tensor* boxes{};
   lite::Tensor* variances{};
 
-  bool flip;
-  bool clip;
+  bool flip{true};
+  bool clip{true};
   std::vector<float> min_sizes;
   std::vector<float> max_sizes;
   std::vector<float> aspect_ratios;
@@ -1384,8 +1389,8 @@ struct CastParam : ParamBase {
 };
 
 struct SliceParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* X{nullptr};
+  lite::Tensor* Out{nullptr};
   std::vector<int> axes{};
   std::vector<int> starts{};
   std::vector<int> ends{};
@@ -1393,8 +1398,8 @@ struct SliceParam : ParamBase {
   std::vector<int> infer_flags{};
   std::vector<lite::Tensor*> StartsTensorList{};
   std::vector<lite::Tensor*> EndsTensorList{};
-  lite::Tensor* StartsTensor{nullptr};
-  lite::Tensor* EndsTensor{nullptr};
+  const lite::Tensor* StartsTensor{nullptr};
+  const lite::Tensor* EndsTensor{nullptr};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1808,9 +1813,9 @@ struct GroupNormParam : ParamBase {
 
 /// --------------------- grid sampler operators --------------------
 struct GridSamplerParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* out{};
-  lite::Tensor* grid{};
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* grid{nullptr};
+  lite::Tensor* out{nullptr};
   bool align_corners{true};
   std::string padding_mode{"zeros"};
   std::string mode{"bilinear"};
