@@ -1264,10 +1264,8 @@ bool gemv_int8_trans_oth(const int8_t* A,
   const int8_t* weights_ptr = x;
   int out_cnt = M >> 4;
   int out_remain = M & 15;
-
-  int thread_num = ctx->threads();
-  int zero_ptr[M * thread_num];  // NOLINT
-  memset(zero_ptr, 0, sizeof(int) * M * thread_num);
+  int zero_ptr[M];  // NOLINT
+  memset(zero_ptr, 0, sizeof(int) * M);
   float zerobuf[M];  // NOLINT
   memset(zerobuf, 0, sizeof(float) * M);
   const float* bias_ptr = is_bias ? bias : zerobuf;
@@ -1278,335 +1276,165 @@ bool gemv_int8_trans_oth(const int8_t* A,
   int cnt_4 = tail >> 2;
   int tail_4 = tail & 3;
   int stride_in = M << 3;
-  int cnt_per_thread = cnt / thread_num;
-  int cnt_remain = cnt % thread_num;
-#pragma omp parallel for
-  for (int tid = 0; tid < thread_num; tid++) {
-    for (int i = 0; i < cnt_per_thread; i++) {
-      const int8_t* in_ptr0 =
-          data_in + i * stride_in + tid * stride_in * cnt_per_thread;
-      const int8_t* in_ptr1 = in_ptr0 + M;
-      const int8_t* in_ptr2 = in_ptr1 + M;
-      const int8_t* in_ptr3 = in_ptr2 + M;
-      const int8_t* in_ptr4 = in_ptr3 + M;
-      const int8_t* in_ptr5 = in_ptr4 + M;
-      const int8_t* in_ptr6 = in_ptr5 + M;
-      const int8_t* in_ptr7 = in_ptr6 + M;
-      const int8_t* wei_ptr = weights_ptr + 8 * i + tid * 8 * cnt_per_thread;
-      int32_t* out_ptr = zero_ptr + tid * M;
-      int cnt_col = out_cnt;
-      asm volatile(
-          "prfm  pldl1keep, [%[wc]]        \n"
-          "prfm  pldl1keep, [%[in_ptr0]]   \n"
-          "prfm  pldl1keep, [%[in_ptr1]]   \n"
-          "prfm  pldl1keep, [%[in_ptr2]]   \n"
-          "prfm  pldl1keep, [%[in_ptr3]]   \n"
-          "prfm  pldl1keep, [%[in_ptr4]]   \n"
-          "prfm  pldl1keep, [%[in_ptr5]]   \n"
-          "prfm  pldl1keep, [%[in_ptr6]]   \n"
-          "prfm  pldl1keep, [%[in_ptr7]]   \n"
-          "cmp %w[cnt], #1\n"
-          "ldr q8, [%[wc]]\n"
-          "ldr q9, [%[in_ptr0]], #0x10\n"
-          "ldr q10, [%[in_ptr1]], #0x10\n"
-          "ldr q11, [%[in_ptr2]], #0x10\n"
-          "ldr q12, [%[in_ptr3]], #0x10\n"
-          "sxtl  v0.8h, v8.8b\n"
-          "blt 2f\n"
-          "1: \n"
-          "ldr q13, [%[out_ptr]]\n"
-          "sxtl  v1.8h, v9.8b\n"
-          "sxtl2 v2.8h, v9.16b\n"
-          "ldr q14, [%[out_ptr], #0x10]\n"
-          "sxtl  v3.8h, v10.8b\n"
-          "sxtl2 v4.8h, v10.16b\n"
-          "ldr q15, [%[out_ptr], #0x20]\n"
-          "sxtl  v5.8h, v11.8b\n"
-          "sxtl2 v6.8h, v11.16b\n"
-          "ldr q16, [%[out_ptr], #0x30]\n"
-          "ldr q9, [%[in_ptr4]], #0x10\n"
-          // r0
-          "smlal v13.4s, v1.4h, v0.h[0]\n"
-          "smlal2 v14.4s, v1.8h, v0.h[0]\n"
-          "sxtl  v7.8h, v12.8b\n"
-          "sxtl2 v8.8h, v12.16b\n"
-          "ldr q10, [%[in_ptr5]], #0x10\n"
-          "smlal v15.4s, v2.4h, v0.h[0]\n"
-          "smlal2 v16.4s, v2.8h, v0.h[0]\n"
-          "sxtl  v17.8h, v9.8b\n"
-          "sxtl2 v18.8h, v9.16b\n"
-          "ldr q11, [%[in_ptr6]], #0x10\n"
-          // r1
-          "smlal v13.4s, v3.4h, v0.h[1]\n"
-          "smlal2 v14.4s, v3.8h, v0.h[1]\n"
-          "sxtl  v19.8h, v10.8b\n"
-          "sxtl2 v20.8h, v10.16b\n"
-          "ldr q12, [%[in_ptr7]], #0x10\n"
-          "smlal v15.4s, v4.4h, v0.h[1]\n"
-          "smlal2 v16.4s, v4.8h, v0.h[1]\n"
-          "sxtl  v1.8h, v11.8b\n"
-          "sxtl2 v2.8h, v11.16b\n"
-          // r2
-          "smlal v13.4s, v5.4h, v0.h[2]\n"
-          "smlal2 v14.4s, v5.8h, v0.h[2]\n"
-          "sxtl  v3.8h, v12.8b\n"
-          "sxtl2 v4.8h, v12.16b\n"
-          "smlal v15.4s, v6.4h, v0.h[2]\n"
-          "smlal2 v16.4s, v6.8h, v0.h[2]\n"
-          // r3
-          "smlal v13.4s, v7.4h, v0.h[3]\n"
-          "smlal2 v14.4s, v7.8h, v0.h[3]\n"
-          "ldr q9, [%[in_ptr0]], #0x10\n"
-          "smlal v15.4s, v8.4h, v0.h[3]\n"
-          "smlal2 v16.4s, v8.8h, v0.h[3]\n"
-          // r4
-          "smlal v13.4s, v17.4h, v0.h[4]\n"
-          "smlal2 v14.4s, v17.8h, v0.h[4]\n"
-          "ldr q10, [%[in_ptr1]], #0x10\n"
-          "smlal v15.4s, v18.4h, v0.h[4]\n"
-          "smlal2 v16.4s, v18.8h, v0.h[4]\n"
-          // r5
-          "smlal v13.4s, v19.4h, v0.h[5]\n"
-          "smlal2 v14.4s, v19.8h, v0.h[5]\n"
-          "ldr q11, [%[in_ptr2]], #0x10\n"
-          "smlal v15.4s, v20.4h, v0.h[5]\n"
-          "smlal2 v16.4s, v20.8h, v0.h[5]\n"
-          // r6
-          "smlal v13.4s, v1.4h, v0.h[6]\n"
-          "smlal2 v14.4s, v1.8h, v0.h[6]\n"
-          "ldr q12, [%[in_ptr3]], #0x10\n"
-          "smlal v15.4s, v2.4h, v0.h[6]\n"
-          "smlal2 v16.4s, v2.8h, v0.h[6]\n"
-          // r7
-          "smlal v13.4s, v3.4h, v0.h[7]\n"
-          "smlal2 v14.4s, v3.8h, v0.h[7]\n"
-          "smlal v15.4s, v4.4h, v0.h[7]\n"
-          "smlal2 v16.4s, v4.8h, v0.h[7]\n"
-          "subs %w[cnt], %w[cnt], #1\n"
-          "str q13, [%[out_ptr]], #0x10\n"
-          "str q14, [%[out_ptr]], #0x10\n"
-          "str q15, [%[out_ptr]], #0x10\n"
-          "str q16, [%[out_ptr]], #0x10\n"
-          "bne 1b\n"
-          "2: \n"
-          : [out_ptr] "+r"(out_ptr),
-            [in_ptr0] "+r"(in_ptr0),
-            [in_ptr1] "+r"(in_ptr1),
-            [in_ptr2] "+r"(in_ptr2),
-            [in_ptr3] "+r"(in_ptr3),
-            [in_ptr4] "+r"(in_ptr4),
-            [in_ptr5] "+r"(in_ptr5),
-            [in_ptr6] "+r"(in_ptr6),
-            [in_ptr7] "+r"(in_ptr7),
-            [cnt] "+r"(cnt_col)
-          : [wc] "r"(wei_ptr)
-          : "cc",
-            "memory",
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11",
-            "v12",
-            "v13",
-            "v14",
-            "v15",
-            "v16",
-            "v17",
-            "v18",
-            "v19",
-            "v20");
-      in_ptr0 -= 16;
-      in_ptr1 -= 16;
-      in_ptr2 -= 16;
-      in_ptr3 -= 16;
-      for (int j = 0; j < out_remain; j++) {
-        *out_ptr += *in_ptr0++ * wei_ptr[0];
-        *out_ptr += *in_ptr1++ * wei_ptr[1];
-        *out_ptr += *in_ptr2++ * wei_ptr[2];
-        *out_ptr += *in_ptr3++ * wei_ptr[3];
-        *out_ptr += *in_ptr4++ * wei_ptr[4];
-        *out_ptr += *in_ptr5++ * wei_ptr[5];
-        *out_ptr += *in_ptr6++ * wei_ptr[6];
-        *out_ptr += *in_ptr7++ * wei_ptr[7];
-        out_ptr++;
-      }
+  // #pragma omp parallel for
+  for (int i = 0; i < cnt; i++) {
+    const int8_t* in_ptr0 = data_in;
+    const int8_t* in_ptr1 = in_ptr0 + M;
+    const int8_t* in_ptr2 = in_ptr1 + M;
+    const int8_t* in_ptr3 = in_ptr2 + M;
+    const int8_t* in_ptr4 = in_ptr3 + M;
+    const int8_t* in_ptr5 = in_ptr4 + M;
+    const int8_t* in_ptr6 = in_ptr5 + M;
+    const int8_t* in_ptr7 = in_ptr6 + M;
+    const int8_t* wei_ptr = weights_ptr;
+    int32_t* out_ptr = zero_ptr;
+    int cnt_col = out_cnt;
+    asm volatile(
+        "prfm  pldl1keep, [%[wc]]        \n"
+        "prfm  pldl1keep, [%[in_ptr0]]   \n"
+        "prfm  pldl1keep, [%[in_ptr1]]   \n"
+        "prfm  pldl1keep, [%[in_ptr2]]   \n"
+        "prfm  pldl1keep, [%[in_ptr3]]   \n"
+        "prfm  pldl1keep, [%[in_ptr4]]   \n"
+        "prfm  pldl1keep, [%[in_ptr5]]   \n"
+        "prfm  pldl1keep, [%[in_ptr6]]   \n"
+        "prfm  pldl1keep, [%[in_ptr7]]   \n"
+        "cmp %w[cnt], #1\n"
+        "ldr q8, [%[wc]]\n"
+        "ldr q9, [%[in_ptr0]], #0x10\n"
+        "ldr q10, [%[in_ptr1]], #0x10\n"
+        "ldr q11, [%[in_ptr2]], #0x10\n"
+        "ldr q12, [%[in_ptr3]], #0x10\n"
+        "sxtl  v0.8h, v8.8b\n"
+        "blt 2f\n"
+        "1: \n"
+        "ldr q13, [%[out_ptr]]\n"
+        "sxtl  v1.8h, v9.8b\n"
+        "sxtl2 v2.8h, v9.16b\n"
+        "ldr q14, [%[out_ptr], #0x10]\n"
+        "sxtl  v3.8h, v10.8b\n"
+        "sxtl2 v4.8h, v10.16b\n"
+        "ldr q15, [%[out_ptr], #0x20]\n"
+        "sxtl  v5.8h, v11.8b\n"
+        "sxtl2 v6.8h, v11.16b\n"
+        "ldr q16, [%[out_ptr], #0x30]\n"
+        "ldr q9, [%[in_ptr4]], #0x10\n"
+        // r0
+        "smlal v13.4s, v1.4h, v0.h[0]\n"
+        "smlal2 v14.4s, v1.8h, v0.h[0]\n"
+        "sxtl  v7.8h, v12.8b\n"
+        "sxtl2 v8.8h, v12.16b\n"
+        "ldr q10, [%[in_ptr5]], #0x10\n"
+        "smlal v15.4s, v2.4h, v0.h[0]\n"
+        "smlal2 v16.4s, v2.8h, v0.h[0]\n"
+        "sxtl  v17.8h, v9.8b\n"
+        "sxtl2 v18.8h, v9.16b\n"
+        "ldr q11, [%[in_ptr6]], #0x10\n"
+        // r1
+        "smlal v13.4s, v3.4h, v0.h[1]\n"
+        "smlal2 v14.4s, v3.8h, v0.h[1]\n"
+        "sxtl  v19.8h, v10.8b\n"
+        "sxtl2 v20.8h, v10.16b\n"
+        "ldr q12, [%[in_ptr7]], #0x10\n"
+        "smlal v15.4s, v4.4h, v0.h[1]\n"
+        "smlal2 v16.4s, v4.8h, v0.h[1]\n"
+        "sxtl  v1.8h, v11.8b\n"
+        "sxtl2 v2.8h, v11.16b\n"
+        // r2
+        "smlal v13.4s, v5.4h, v0.h[2]\n"
+        "smlal2 v14.4s, v5.8h, v0.h[2]\n"
+        "sxtl  v3.8h, v12.8b\n"
+        "sxtl2 v4.8h, v12.16b\n"
+        "smlal v15.4s, v6.4h, v0.h[2]\n"
+        "smlal2 v16.4s, v6.8h, v0.h[2]\n"
+        // r3
+        "smlal v13.4s, v7.4h, v0.h[3]\n"
+        "smlal2 v14.4s, v7.8h, v0.h[3]\n"
+        "ldr q9, [%[in_ptr0]], #0x10\n"
+        "smlal v15.4s, v8.4h, v0.h[3]\n"
+        "smlal2 v16.4s, v8.8h, v0.h[3]\n"
+        // r4
+        "smlal v13.4s, v17.4h, v0.h[4]\n"
+        "smlal2 v14.4s, v17.8h, v0.h[4]\n"
+        "ldr q10, [%[in_ptr1]], #0x10\n"
+        "smlal v15.4s, v18.4h, v0.h[4]\n"
+        "smlal2 v16.4s, v18.8h, v0.h[4]\n"
+        // r5
+        "smlal v13.4s, v19.4h, v0.h[5]\n"
+        "smlal2 v14.4s, v19.8h, v0.h[5]\n"
+        "ldr q11, [%[in_ptr2]], #0x10\n"
+        "smlal v15.4s, v20.4h, v0.h[5]\n"
+        "smlal2 v16.4s, v20.8h, v0.h[5]\n"
+        // r6
+        "smlal v13.4s, v1.4h, v0.h[6]\n"
+        "smlal2 v14.4s, v1.8h, v0.h[6]\n"
+        "ldr q12, [%[in_ptr3]], #0x10\n"
+        "smlal v15.4s, v2.4h, v0.h[6]\n"
+        "smlal2 v16.4s, v2.8h, v0.h[6]\n"
+        // r7
+        "smlal v13.4s, v3.4h, v0.h[7]\n"
+        "smlal2 v14.4s, v3.8h, v0.h[7]\n"
+        "smlal v15.4s, v4.4h, v0.h[7]\n"
+        "smlal2 v16.4s, v4.8h, v0.h[7]\n"
+        "subs %w[cnt], %w[cnt], #1\n"
+        "str q13, [%[out_ptr]], #0x10\n"
+        "str q14, [%[out_ptr]], #0x10\n"
+        "str q15, [%[out_ptr]], #0x10\n"
+        "str q16, [%[out_ptr]], #0x10\n"
+        "bne 1b\n"
+        "2: \n"
+        : [out_ptr] "+r"(out_ptr),
+          [in_ptr0] "+r"(in_ptr0),
+          [in_ptr1] "+r"(in_ptr1),
+          [in_ptr2] "+r"(in_ptr2),
+          [in_ptr3] "+r"(in_ptr3),
+          [in_ptr4] "+r"(in_ptr4),
+          [in_ptr5] "+r"(in_ptr5),
+          [in_ptr6] "+r"(in_ptr6),
+          [in_ptr7] "+r"(in_ptr7),
+          [cnt] "+r"(cnt_col)
+        : [wc] "r"(wei_ptr)
+        : "cc",
+          "memory",
+          "v0",
+          "v1",
+          "v2",
+          "v3",
+          "v4",
+          "v5",
+          "v6",
+          "v7",
+          "v8",
+          "v9",
+          "v10",
+          "v11",
+          "v12",
+          "v13",
+          "v14",
+          "v15",
+          "v16",
+          "v17",
+          "v18",
+          "v19",
+          "v20");
+    in_ptr0 -= 16;
+    in_ptr1 -= 16;
+    in_ptr2 -= 16;
+    in_ptr3 -= 16;
+    for (int j = 0; j < out_remain; j++) {
+      *out_ptr += *in_ptr0++ * wei_ptr[0];
+      *out_ptr += *in_ptr1++ * wei_ptr[1];
+      *out_ptr += *in_ptr2++ * wei_ptr[2];
+      *out_ptr += *in_ptr3++ * wei_ptr[3];
+      *out_ptr += *in_ptr4++ * wei_ptr[4];
+      *out_ptr += *in_ptr5++ * wei_ptr[5];
+      *out_ptr += *in_ptr6++ * wei_ptr[6];
+      *out_ptr += *in_ptr7++ * wei_ptr[7];
+      out_ptr++;
     }
+    data_in += stride_in;
+    weights_ptr += 8;
   }
-  for (int tid = 1; tid < thread_num; tid++) {
-    for (int i = 0; i < M; i++) {
-      zero_ptr[i] += zero_ptr[i + tid * M];
-    }
-  }
-  if (cnt_remain) {
-    for (int i = 0; i < cnt_remain; i++) {
-      const int8_t* in_ptr0 =
-          data_in + cnt_per_thread * thread_num * stride_in + i * stride_in;
-      const int8_t* in_ptr1 = in_ptr0 + M;
-      const int8_t* in_ptr2 = in_ptr1 + M;
-      const int8_t* in_ptr3 = in_ptr2 + M;
-      const int8_t* in_ptr4 = in_ptr3 + M;
-      const int8_t* in_ptr5 = in_ptr4 + M;
-      const int8_t* in_ptr6 = in_ptr5 + M;
-      const int8_t* in_ptr7 = in_ptr6 + M;
-      const int8_t* wei_ptr =
-          weights_ptr + cnt_per_thread * thread_num * 8 + i * 8;
-      int32_t* out_ptr = zero_ptr;
-      int cnt_col = out_cnt;
-      asm volatile(
-          "prfm  pldl1keep, [%[wc]]        \n"
-          "prfm  pldl1keep, [%[in_ptr0]]   \n"
-          "prfm  pldl1keep, [%[in_ptr1]]   \n"
-          "prfm  pldl1keep, [%[in_ptr2]]   \n"
-          "prfm  pldl1keep, [%[in_ptr3]]   \n"
-          "prfm  pldl1keep, [%[in_ptr4]]   \n"
-          "prfm  pldl1keep, [%[in_ptr5]]   \n"
-          "prfm  pldl1keep, [%[in_ptr6]]   \n"
-          "prfm  pldl1keep, [%[in_ptr7]]   \n"
-          "cmp %w[cnt], #1\n"
-          "ldr q8, [%[wc]]\n"
-          "ldr q9, [%[in_ptr0]], #0x10\n"
-          "ldr q10, [%[in_ptr1]], #0x10\n"
-          "ldr q11, [%[in_ptr2]], #0x10\n"
-          "ldr q12, [%[in_ptr3]], #0x10\n"
-          "sxtl  v0.8h, v8.8b\n"
-          "blt 2f\n"
-          "1: \n"
-          "ldr q13, [%[out_ptr]]\n"
-          "sxtl  v1.8h, v9.8b\n"
-          "sxtl2 v2.8h, v9.16b\n"
-          "ldr q14, [%[out_ptr], #0x10]\n"
-          "sxtl  v3.8h, v10.8b\n"
-          "sxtl2 v4.8h, v10.16b\n"
-          "ldr q15, [%[out_ptr], #0x20]\n"
-          "sxtl  v5.8h, v11.8b\n"
-          "sxtl2 v6.8h, v11.16b\n"
-          "ldr q16, [%[out_ptr], #0x30]\n"
-          "ldr q9, [%[in_ptr4]], #0x10\n"
-          // r0
-          "smlal v13.4s, v1.4h, v0.h[0]\n"
-          "smlal2 v14.4s, v1.8h, v0.h[0]\n"
-          "sxtl  v7.8h, v12.8b\n"
-          "sxtl2 v8.8h, v12.16b\n"
-          "ldr q10, [%[in_ptr5]], #0x10\n"
-          "smlal v15.4s, v2.4h, v0.h[0]\n"
-          "smlal2 v16.4s, v2.8h, v0.h[0]\n"
-          "sxtl  v17.8h, v9.8b\n"
-          "sxtl2 v18.8h, v9.16b\n"
-          "ldr q11, [%[in_ptr6]], #0x10\n"
-          // r1
-          "smlal v13.4s, v3.4h, v0.h[1]\n"
-          "smlal2 v14.4s, v3.8h, v0.h[1]\n"
-          "sxtl  v19.8h, v10.8b\n"
-          "sxtl2 v20.8h, v10.16b\n"
-          "ldr q12, [%[in_ptr7]], #0x10\n"
-          "smlal v15.4s, v4.4h, v0.h[1]\n"
-          "smlal2 v16.4s, v4.8h, v0.h[1]\n"
-          "sxtl  v1.8h, v11.8b\n"
-          "sxtl2 v2.8h, v11.16b\n"
-          // r2
-          "smlal v13.4s, v5.4h, v0.h[2]\n"
-          "smlal2 v14.4s, v5.8h, v0.h[2]\n"
-          "sxtl  v3.8h, v12.8b\n"
-          "sxtl2 v4.8h, v12.16b\n"
-          "smlal v15.4s, v6.4h, v0.h[2]\n"
-          "smlal2 v16.4s, v6.8h, v0.h[2]\n"
-          // r3
-          "smlal v13.4s, v7.4h, v0.h[3]\n"
-          "smlal2 v14.4s, v7.8h, v0.h[3]\n"
-          "ldr q9, [%[in_ptr0]], #0x10\n"
-          "smlal v15.4s, v8.4h, v0.h[3]\n"
-          "smlal2 v16.4s, v8.8h, v0.h[3]\n"
-          // r4
-          "smlal v13.4s, v17.4h, v0.h[4]\n"
-          "smlal2 v14.4s, v17.8h, v0.h[4]\n"
-          "ldr q10, [%[in_ptr1]], #0x10\n"
-          "smlal v15.4s, v18.4h, v0.h[4]\n"
-          "smlal2 v16.4s, v18.8h, v0.h[4]\n"
-          // r5
-          "smlal v13.4s, v19.4h, v0.h[5]\n"
-          "smlal2 v14.4s, v19.8h, v0.h[5]\n"
-          "ldr q11, [%[in_ptr2]], #0x10\n"
-          "smlal v15.4s, v20.4h, v0.h[5]\n"
-          "smlal2 v16.4s, v20.8h, v0.h[5]\n"
-          // r6
-          "smlal v13.4s, v1.4h, v0.h[6]\n"
-          "smlal2 v14.4s, v1.8h, v0.h[6]\n"
-          "ldr q12, [%[in_ptr3]], #0x10\n"
-          "smlal v15.4s, v2.4h, v0.h[6]\n"
-          "smlal2 v16.4s, v2.8h, v0.h[6]\n"
-          // r7
-          "smlal v13.4s, v3.4h, v0.h[7]\n"
-          "smlal2 v14.4s, v3.8h, v0.h[7]\n"
-          "smlal v15.4s, v4.4h, v0.h[7]\n"
-          "smlal2 v16.4s, v4.8h, v0.h[7]\n"
-          "subs %w[cnt], %w[cnt], #1\n"
-          "str q13, [%[out_ptr]], #0x10\n"
-          "str q14, [%[out_ptr]], #0x10\n"
-          "str q15, [%[out_ptr]], #0x10\n"
-          "str q16, [%[out_ptr]], #0x10\n"
-          "bne 1b\n"
-          "2: \n"
-          : [out_ptr] "+r"(out_ptr),
-            [in_ptr0] "+r"(in_ptr0),
-            [in_ptr1] "+r"(in_ptr1),
-            [in_ptr2] "+r"(in_ptr2),
-            [in_ptr3] "+r"(in_ptr3),
-            [in_ptr4] "+r"(in_ptr4),
-            [in_ptr5] "+r"(in_ptr5),
-            [in_ptr6] "+r"(in_ptr6),
-            [in_ptr7] "+r"(in_ptr7),
-            [cnt] "+r"(cnt_col)
-          : [wc] "r"(wei_ptr)
-          : "cc",
-            "memory",
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11",
-            "v12",
-            "v13",
-            "v14",
-            "v15",
-            "v16",
-            "v17",
-            "v18",
-            "v19",
-            "v20");
-      in_ptr0 -= 16;
-      in_ptr1 -= 16;
-      in_ptr2 -= 16;
-      in_ptr3 -= 16;
-      for (int j = 0; j < out_remain; j++) {
-        *out_ptr += *in_ptr0++ * wei_ptr[0];
-        *out_ptr += *in_ptr1++ * wei_ptr[1];
-        *out_ptr += *in_ptr2++ * wei_ptr[2];
-        *out_ptr += *in_ptr3++ * wei_ptr[3];
-        *out_ptr += *in_ptr4++ * wei_ptr[4];
-        *out_ptr += *in_ptr5++ * wei_ptr[5];
-        *out_ptr += *in_ptr6++ * wei_ptr[6];
-        *out_ptr += *in_ptr7++ * wei_ptr[7];
-        out_ptr++;
-      }
-    }
-  }
-  data_in += cnt * stride_in;
-  weights_ptr += 8 * cnt;
   if (cnt_4) {
     const int8_t* in_ptr0 = data_in;
     const int8_t* in_ptr1 = in_ptr0 + M;
