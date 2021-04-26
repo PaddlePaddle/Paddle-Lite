@@ -25,8 +25,6 @@ namespace fusion {
 
 class ScaleactsFuser : public FuseBase {
  public:
-  ScaleactsFuser() {}
-
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
