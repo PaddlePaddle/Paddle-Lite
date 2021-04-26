@@ -15,7 +15,6 @@
 #if defined(_MSC_VER)
 #include "lite/backends/x86/port.h"
 #else
-#include <lite/core/target_wrapper.h>
 #include <sys/time.h>
 #endif
 #include "lite/backends/opencl/target_wrapper.h"
