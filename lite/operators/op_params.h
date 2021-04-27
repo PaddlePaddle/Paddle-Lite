@@ -2358,4 +2358,3 @@ struct ArgsortParam : ParamBase {
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
