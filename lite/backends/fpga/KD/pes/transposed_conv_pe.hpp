@@ -54,6 +54,7 @@ class TransposedConvPE : public PE {
     if (DLEngine::get_instance().isZU3()) {
       sub_filter_ena_ = false;
     }
+    sub_filter_ena_ = false;
 
     ConvParam& conv_param = pe_.param();
     convert_cnhw_to_nchw(param_.filter, &filter_);
