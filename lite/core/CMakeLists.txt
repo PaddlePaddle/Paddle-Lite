@@ -18,6 +18,7 @@ lite_cc_library(core SRCS
   XPU_DEPS target_wrapper_xpu
   CL_DEPS cl_target_wrapper cl_context
   FPGA_DEPS fpga_target_wrapper lite_tensor_fpga
+  METAL_DEPS metal_target_wrapper
   INTEL_FPGA_DEPS intel_fpga_target_wrapper
   BM_DEPS target_wrapper_bm
   MLU_DEPS target_wrapper_mlu
@@ -26,7 +27,6 @@ lite_cc_library(core SRCS
 
 # head files for ops and kernels registry
 add_dependencies(core kernel_list_h op_list_h)
-
 
 
 

@@ -53,6 +53,15 @@ class SlicePE : public PE {
                input_data + i * input_channel + start,
                count * sizeof(float16));
       }
+    } else if (axes.size() == 1 && axes[0] == 0) {
+      int start = starts[0];
+      int output_len = output->shape().numel();
+      int* input_data = input->data<int32_t>();
+      int* output_data = output->data<int32_t>();
+
+      for (int i = 0; i < output_len; ++i) {
+        output_data[i] = input_data[i + start];
+      }
     }
 
     return true;

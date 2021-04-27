@@ -45,7 +45,6 @@ class FullyConnectedPE : public PE {
 
     convParam_.input = &input_;
     convParam_.output = param_.output;
-
     convParam_.activeParam.type = param_.activeParam.type;
     convParam_.groups = 1;
     convParam_.strides = {1, 1};
@@ -122,8 +121,7 @@ class FullyConnectedPE : public PE {
     }
 
     output->flush();
-    output->scale()[0] = max / 127.0f;
-    output->scale()[1] = 127.0f / max;
+    output->max()[0] = float_to_half(max);
   }
 
   bool dispatch() {

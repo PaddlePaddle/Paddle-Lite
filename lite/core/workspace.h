@@ -70,6 +70,13 @@ class WorkSpace {
     return *x;
   }
 #endif
+#if defined(LITE_WITH_METAL)
+  static WorkSpace& Global_METAL() {
+    static LITE_THREAD_LOCAL std::unique_ptr<WorkSpace> x(
+        new WorkSpace(TARGET(kMetal)));
+    return *x;
+  }
+#endif
 
 #if defined(LITE_WITH_MLU)
   static WorkSpace& Global_MLU() {

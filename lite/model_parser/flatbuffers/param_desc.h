@@ -162,7 +162,7 @@ class ParamDesc : public ParamDescAPI {
 
   size_t byte_size() const override { return lod_tensor_->data.size(); }
 
-  void SetData(const void* data, size_t byte_size) {
+  void SetData(const void* data, size_t byte_size) override {
     lod_tensor_->data.resize(byte_size);
     model_parser::memcpy(lod_tensor_->data.data(), data, byte_size);
   }

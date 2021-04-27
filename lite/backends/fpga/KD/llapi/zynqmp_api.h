@@ -18,10 +18,14 @@ limitations under the License. */
 #define PADDLE_LITE_SRC_FPGA_KD_ZYNQMP_API_H
 
 #include <stdint.h>
+
 #include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <string>
+
+#include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -33,6 +37,8 @@ typedef int16_t half;
 #define BS_NUM_ALIGNMENT 8
 #define BIAS_NUM_ALIGNMENT 16
 
+static int POOL_CAP = 4096;
+
 enum DDataType {
   DATA_TYPE_FP32 = 1,
   DATA_TYPE_FP16 = 0,
@@ -43,7 +49,7 @@ enum DLayoutType {
   LAYOUT_HWC = 0,
 };
 
-enum ActiveType {
+enum ActivationType {
   TYPE_NONE = 0,
   TYPE_RELU = 1,
   TYPE_RELU6 = 2,
@@ -56,12 +62,12 @@ struct DeviceInfoArgs {
   uint32_t version;
   uint16_t device_type;
   uint32_t column;
+  uint32_t pool_cap;
   uint32_t reserved1;
   uint32_t reserved2;
   uint32_t reserved3;
   uint32_t reserved4;
   uint32_t reserved5;
-  uint32_t reserved6;
 };
 
 struct VersionArgs {
@@ -84,9 +90,9 @@ struct MemoryBarrierArgs {
   uint16_t dummy;
 };
 
-struct ActiveParamterArgs {
-  enum ActiveType type;
-  uint16_t leaky_relu_factor;
+struct ActivationArgs {
+  enum ActivationType type;
+  uint16_t leaky_relu_factor = float_to_half(0.0f);
 };
 
 struct NormalizeParameterArgs {
@@ -96,7 +102,8 @@ struct NormalizeParameterArgs {
 };
 
 struct InplaceArgs {
-  struct ActiveParamterArgs active_param;
+  // bool                          findmax_restart;
+  struct ActivationArgs active_param;
   struct NormalizeParameterArgs normalize_param;
 };
 
@@ -121,8 +128,8 @@ struct ImageInputArgs {
 };
 
 struct ImageOutputArgs {
-  void* address;         // output result address;
-  float* scale_address;  // output scale address;
+  void* address;           // output result address;
+  float16* scale_address;  // output scale address;
 };
 
 struct DeconvArgs {
@@ -131,6 +138,18 @@ struct DeconvArgs {
                              // will be divided into several sub conv operation
   uint16_t invalid_col_num;  // which will be dumped in the left and right for
                              // each row directly in FPGA
+};
+
+struct StrideArgs {
+  uint32_t wr_offset;
+  uint32_t rd_offset;
+  bool wr_enabled;
+  bool rd_enabled;
+};
+
+struct QuantArgs {
+  uint16_t dynamic_range;
+  uint32_t inv_dynamic_range;
 };
 
 struct ConvArgs {
@@ -143,33 +162,38 @@ struct ConvArgs {
 
   struct DeconvArgs deconv;
   struct KernelArgs kernel;
+  struct StrideArgs stride;
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
+  struct QuantArgs quant;
   struct InplaceArgs inplace;
 };
 
 struct DWconvArgs {
   void* bias_address;
   void* filter_address;
+  void* filter_scale_address;
   struct KernelArgs kernel;
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
   uint16_t out_width;
   uint16_t out_height;
   uint16_t sub_conv_num;
+  uint32_t dilation;
   struct InplaceArgs inplace;
+  struct QuantArgs quant;
 };
 
 struct PoolingArgs {
   uint16_t mode;
-  uint16_t kernel_reciprocal;
+  uint32_t kernel_reciprocal;
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
   uint16_t out_width;
   uint16_t out_height;
   struct InplaceArgs inplace;
-  uint16_t global_pool_factor;
+  struct QuantArgs quant;
 };
 
 // elementwise add arguments
@@ -180,6 +204,7 @@ struct EWAddArgs {
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
   struct InplaceArgs inplace;
+  struct QuantArgs quant;
 };
 
 struct BypassArgs {
@@ -246,17 +271,13 @@ struct ResizeArgs {
   uint32_t output_height;
   uint32_t height_ratio;
   uint32_t width_ratio;
-  uint32_t* output_scale_address;
+  uint16_t* output_scale_address;
 };
 
 struct PowerParameterArgs {
   uint16_t shift;
   uint16_t scale;
   uint16_t power;
-};
-
-struct GlobalPoolArgs {
-  uint16_t global_pool_factor;
 };
 
 struct FpgaRegWriteArgs {
@@ -298,14 +319,6 @@ struct FpgaResetArgs {
 #define IOCTL_CONFIG_DWCONV _IOW(IOCTL_FPGA_MAGIC, 31, struct DWconvArgs)
 
 #define IOCTL_CONFIG_INPLACE _IOW(IOCTL_FPGA_MAGIC, 40, struct InplaceArgs)
-#define IOCTL_CONFIG_POWER_PARAMETER \
-  _IOW(IOCTL_FPGA_MAGIC, 41, struct PowerParameterArgs)
-#define IOCTL_CONFIG_NORMALIZE_PARAMETER \
-  _IOW(IOCTL_FPGA_MAGIC, 42, struct NormalizeParameterArgs)
-#define IOCTL_CONFIG_ACTIVATION_PARAMETER \
-  _IOW(IOCTL_FPGA_MAGIC, 43, struct ActiveParamterArgs)
-#define IOCTL_CONFIG_GLOBAL_POOL_PARAMETER \
-  _IOW(IOCTL_FPGA_MAGIC, 44, struct GlobalPoolArgs)
 
 #define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 50, struct FpgaRegReadArgs)
 #define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 51, struct FpgaRegWriteArgs)
@@ -320,8 +333,14 @@ struct FpgaResetArgs {
 
 //============================== API =============================
 std::ostream& operator<<(std::ostream& os, const ConvArgs& args);
+std::ostream& operator<<(std::ostream& os, const DWconvArgs& args);
 
 inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
+inline int align_to_x_floor(int num, int x) { return (num / x) * x; }
+
+void set_pool_cap(uint32_t pool_cap);
+uint32_t get_pool_cap();
+
 int open_device();
 void close_device();
 void reset_device();

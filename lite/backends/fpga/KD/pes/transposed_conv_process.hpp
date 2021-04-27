@@ -198,6 +198,10 @@ void inline inverse_filter(Tensor* tensor) {
 }
 
 void fill_sub_filters(ConvParam* param, Tensor* filter) {
+  int dynamic_range = 127;  // int8 max value
+  float16 dynamic_range_fp16 = float_to_half(dynamic_range * 1.0);
+  float inv_dynamic_range = 1.0 / dynamic_range;
+
   Tensor* input = param->input;
   Tensor* output = param->output;
   int sub_conv_number = param->strides[0];
@@ -224,7 +228,7 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
   float* filter_data = filter->data<float>();
   for (int i = 0; i < sub_conv_number; i++) {
     float16* out_address = nullptr;
-    float* out_scale_address = nullptr;
+    float16* out_scale_address = nullptr;
 
     Shape shape_nchw(NCHW, {sub_num, channel, sub_h, sub_w});
     Shape shape_nhwc(NHWC, {sub_num, sub_h, sub_w, channel});
@@ -285,7 +289,7 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
     int offset = (sub_conv_number - 1 - i) *
                  align_to_x(after_omit_out_w * kernel_num, 16);
     out_address = output->data<float16>() + offset;
-    out_scale_address = basic_conv_param->output.scale();
+    out_scale_address = basic_conv_param->output.max();
 
     args.group_num = param->groups;
     args.sb_address = basic_conv_param->scaleBias.data<float16>();
@@ -298,7 +302,7 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
     args.filter_num = sub_num;
     args.filter_scale_address = basic_conv_param->filter.scale();
     args.image.address = input->data<void>();
-    args.image.scale_address = input->scale();
+    args.image.scale_address = input->max();
     args.image.channels = channel;
     args.image.width = input->shape().width();
     args.image.height = input->shape().height();
@@ -307,9 +311,17 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
     args.dilation = param->dilations[0];
     args.output.address = out_address;
     args.output.scale_address = out_scale_address;
+    args.stride.rd_enabled = false;
+    args.stride.wr_enabled = false;
     args.deconv.enabled = 1;
     args.deconv.sub_kernel_num = sub_conv_number;
     args.deconv.invalid_col_num = omit_size;
+
+    // how to change data type gracefully
+    args.quant.dynamic_range =
+        *(reinterpret_cast<uint16_t*>(&dynamic_range_fp16));
+    args.quant.inv_dynamic_range =
+        *(reinterpret_cast<uint32_t*>(&inv_dynamic_range));
 
     param->splitParams().push_back(basic_conv_param);
   }

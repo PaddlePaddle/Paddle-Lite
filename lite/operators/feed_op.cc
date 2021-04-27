@@ -26,10 +26,25 @@ class FeedOp : public OpLite {
   bool CheckShape() const override {
     CHECK_OR_FALSE(param_.feed_list);
     CHECK_OR_FALSE(param_.out);
+
     return true;
   }
 
-  bool InferShapeImpl() const override { return true; }
+  bool InferShapeImpl() const override {
+    auto input_tensor = (*param_.feed_list)[param_.col];
+    auto output_tensor = param_.out;
+    DDim output_dims = output_tensor->dims();
+    auto input_dims = input_tensor.dims();
+    if (!output_dims.empty()) {
+      if (output_tensor->dims()[0] == -1) {
+        output_dims[0] = input_dims[0];
+        output_tensor->Resize(output_dims);
+      }
+    } else {
+      output_tensor->Resize(input_dims);
+    }
+    return true;
+  }
 
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
