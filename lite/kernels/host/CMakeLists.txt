@@ -21,6 +21,7 @@ add_kernel(argmax_compute_host Host basic SRCS argmax_compute.cc DEPS ${lite_ker
 # extra kernels
 add_kernel(reduce_all_compute_host Host extra SRCS reduce_all_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(unstack_compute_host Host extra SRCS unstack_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(norm_compute_host Host extra SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(shape_compute_host Host extra SRCS shape_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(is_empty_compute_host Host extra SRCS is_empty_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(crf_decoding_compute_host Host extra SRCS crf_decoding_compute.cc DEPS ${lite_kernel_deps})
