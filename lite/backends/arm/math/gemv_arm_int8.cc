@@ -1276,7 +1276,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
   int cnt_4 = tail >> 2;
   int tail_4 = tail & 3;
   int stride_in = M << 3;
-#pragma omp parallel for
+  // #pragma omp parallel for
   for (int i = 0; i < cnt; i++) {
     const int8_t* in_ptr0 = data_in;
     const int8_t* in_ptr1 = in_ptr0 + M;
