@@ -111,6 +111,17 @@ std::vector<mir::Node *> SSAGraph::StmtTopologicalOrder() {
 
   auto adj_list = BuildOperationAdjList();
 
+#ifdef LITE_WITH_XPU
+  // XXX(miaotianxiang): put |io_copy_once| first, so that its memory is pinned
+  for (auto adj : adj_list) {
+    auto *node = adj.first;
+    if (node->AsStmt().op_type() == "io_copy_once") {
+      if (visited.find(node) == visited.end()) {
+        SortHelper(adj_list, node, &visited, &res);
+      }
+    }
+  }
+#endif
   for (auto adj : adj_list) {
     if (visited.find(adj.first) == visited.end()) {
       SortHelper(adj_list, adj.first, &visited, &res);

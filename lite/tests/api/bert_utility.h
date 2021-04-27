@@ -26,12 +26,12 @@
 namespace paddle {
 namespace lite {
 
-template <class T = int64_t>
+template <class T0, class T1, class T2, class T3>
 void ReadRawData(const std::string& input_data_dir,
-                 std::vector<std::vector<T>>* input0,
-                 std::vector<std::vector<T>>* input1,
-                 std::vector<std::vector<T>>* input2,
-                 std::vector<std::vector<T>>* input3,
+                 std::vector<std::vector<T0>>* input0,
+                 std::vector<std::vector<T1>>* input1,
+                 std::vector<std::vector<T2>>* input2,
+                 std::vector<std::vector<T3>>* input3,
                  std::vector<std::vector<int64_t>>* input_shapes) {
   auto lines = ReadLines(input_data_dir);
   for (auto line : lines) {
@@ -40,17 +40,17 @@ void ReadRawData(const std::string& input_data_dir,
         Split<int64_t>(Split(shape_and_data[0], ":")[0], " ");
     input_shapes->emplace_back(input_shape);
 
-    std::vector<T> input0_data =
-        Split<T>(Split(shape_and_data[0], ":")[1], " ");
+    std::vector<T0> input0_data =
+        Split<T0>(Split(shape_and_data[0], ":")[1], " ");
     input0->emplace_back(input0_data);
-    std::vector<T> input1_data =
-        Split<T>(Split(shape_and_data[1], ":")[1], " ");
+    std::vector<T1> input1_data =
+        Split<T1>(Split(shape_and_data[1], ":")[1], " ");
     input1->emplace_back(input1_data);
-    std::vector<T> input2_data =
-        Split<T>(Split(shape_and_data[2], ":")[1], " ");
+    std::vector<T2> input2_data =
+        Split<T2>(Split(shape_and_data[2], ":")[1], " ");
     input2->emplace_back(input2_data);
-    std::vector<T> input3_data =
-        Split<T>(Split(shape_and_data[3], ":")[1], " ");
+    std::vector<T3> input3_data =
+        Split<T3>(Split(shape_and_data[3], ":")[1], " ");
     input3->emplace_back(input3_data);
   }
 }

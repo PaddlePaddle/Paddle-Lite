@@ -37,9 +37,10 @@ class XPUMultiEncoderCompute
   int bert_encoder_run();
   int transformer_encoder_run();
 
-  std::vector<const int8_t *> arg_fc_weight_int8_;
-  std::vector<const int16_t *> arg_fc_weight_int16_;
-  std::vector<const float *> arg_fc_weight_fp32_;
+  std::vector<XPUScratchPadGuard> fc_weight_guard_;
+  std::vector<void *> arg_fc_weight_;
+  std::vector<float> arg_fc_weight_max_;
+  std::vector<XPUScratchPadGuard> fc_bias_guard_;
   std::vector<const float *> arg_fc_bias_;
   std::vector<const float *> arg_ln_scale_;
   std::vector<const float *> arg_ln_bias_;

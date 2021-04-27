@@ -1938,7 +1938,6 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> fc_bias;
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
-  lite::Tensor* fc_weight_max{};
   const lite::Tensor* mask{nullptr};
   const lite::Tensor* SeqLod{nullptr};
   const lite::Tensor* PadSeqLen{nullptr};
