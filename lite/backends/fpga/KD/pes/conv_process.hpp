@@ -347,6 +347,7 @@ inline void split_filter_num(const ConvParam& c_param) {
   float max = find_max(*filter);
   Shape& out_shape = out->shape();
 
+  float16* out_base_address = nullptr;
   for (int i = 0; i < split_num; i++) {
     BasicConvParam* conv_param = new BasicConvParam();
     conv_param->output.setDataLocation(Device);
@@ -372,7 +373,7 @@ inline void split_filter_num(const ConvParam& c_param) {
                      out_shape.height(),
                      out_shape.width(),
                      filter_num_per_div * (split_num - 1)});
-        conv_param->output.mutableData<float16>(FP16, shape);
+        out_base_address = conv_param->output.mutableData<float16>(FP16, shape);
       }
       if (i == split_num - 1) {
         Shape extra_shape(
@@ -380,7 +381,8 @@ inline void split_filter_num(const ConvParam& c_param) {
         out_address =
             conv_param->output.mutableData<float16>(FP16, extra_shape);
       } else {
-        out_address = conv_param->output.data<float16>() + offset;
+        // base_address is allocated in first iteration;
+        out_address = out_base_address + offset;
       }
     } else {
       out_address = out->data<float16>() + offset;
