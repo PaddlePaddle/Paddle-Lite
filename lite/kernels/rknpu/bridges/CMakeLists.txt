@@ -2,7 +2,7 @@ if(NOT LITE_WITH_RKNPU)
   return()
 endif()
 
-lite_cc_library(subgraph_bridge_utility_rknpu SRCS utility.cc DEPS ${rknpu_builder_libs} tensor)
+lite_cc_library(subgraph_bridge_utility_rknpu SRCS utility.cc DEPS ${rknpu_builder_libs} core)
 lite_cc_library(subgraph_bridge_graph_rknpu SRCS graph.cc DEPS subgraph_bridge_utility_rknpu)
 
 set(rknpu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_rknpu subgraph_bridge_graph_rknpu)
