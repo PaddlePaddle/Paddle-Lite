@@ -281,11 +281,15 @@ struct ScaleParam : ParamBase {
   lite::Tensor* output{};
 
   float scale{1.f};
-  float bias{};
+  float bias{0.f};
   bool bias_after_scale{true};
   std::string activation_type{""};
   bool fuse_relu{false};
   float alpha{6.f};
+
+  bool fuse_scaleact{false};
+  float scale1{1.f};
+  float bias1{0.f};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
