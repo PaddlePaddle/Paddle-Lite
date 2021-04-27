@@ -54,6 +54,7 @@ bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
     }
 
     if (op_desc.HasAttr("fuse_scaleact")) {
+      param_.fuse_scaleact = op_desc.GetAttr<bool>("fuse_scaleact");
       param_.scale1 = op_desc.GetAttr<float>("scale1");
       param_.bias1 = op_desc.GetAttr<float>("bias1");
     }
