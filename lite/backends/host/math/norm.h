@@ -13,26 +13,30 @@
 // limitations under the License.
 
 #pragma once
-
 #include <cmath>
 #include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
 
-void matrix_norm_row(const float* x_data,
-                     const float* scale_data,
-                     const float* bias_data,
-                     float* out_data,
-                     float* mean_out,
-                     float* var_out,
-                     float epsilon,
-                     int batch_size,
-                     int feature_size);
+void norm(const float* input,
+          const int pre_n,
+          const int n,
+          const int post_n,
+          const float epsilon,
+          float* out);
+
+void p_norm(const float* input,
+            const int pre_n,
+            const int n,
+            const int post_n,
+            const float epsilon,
+            float* out,
+            const int porder);
 
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
