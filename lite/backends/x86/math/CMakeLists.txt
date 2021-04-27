@@ -6,7 +6,7 @@ function(math_library TARGET)
     # But it handle split GPU/CPU code and link some common library.
     set(cc_srcs)
     set(hip_srcs)
-    set(math_common_deps context framework_proto)
+    set(math_common_deps core framework_proto)
     set(options AVX2)
     set(multiValueArgs DEPS)
     cmake_parse_arguments(math_library "${options}" "${oneValueArgs}"
