@@ -48,9 +48,11 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
 
     if (inputs.size() == 2) {
       kernel_func_name_ = "concat2";
-    } else if (inputs.size() == 3 && axis_ == 1) {
+    } else if (inputs.size() == 3 && axis_ == 1 &&
+               output_tensor_dims.size() == 4) {
       kernel_func_name_ = "concatByCWith3Inputs";
-    } else if (inputs.size() == 4 && axis_ == 1) {
+    } else if (inputs.size() == 4 && axis_ == 1 &&
+               output_tensor_dims.size() == 4) {
       kernel_func_name_ = "concatByCWith4Inputs";
     } else {
       // note: do layout transform between image and buffer,
