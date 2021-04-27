@@ -95,7 +95,7 @@ if (WITH_TESTING)
   list(APPEND pattern_deps gtest)
 endif()
 lite_cc_library(pattern_matcher SRCS pattern_matcher.cc xpu_pattern_matcher.cc DEPS ${pattern_deps})
-lite_cc_test(test_pattern_matcher SRCS pattern_matcher_test.cc DEPS pattern_matcher)
+lite_cc_test(test_pattern_matcher SRCS pattern_matcher_test.cc DEPS pattern_matcher ${UNIT_TEST_DEPS})
 
 lite_cc_library(pattern_matcher_high_api SRCS pattern_matcher_high_api.cc xpu_pattern_matcher_high_api.cc DEPS pattern_matcher)
 
@@ -104,4 +104,4 @@ lite_cc_library(pattern_matcher_high_api SRCS pattern_matcher_high_api.cc xpu_pa
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     return()
 endif()
-lite_cc_test(test_mir_pass_manager SRCS pass_manager_test.cc DEPS mir_pass_manager mir_passes)
+lite_cc_test(test_mir_pass_manager SRCS pass_manager_test.cc DEPS mir_pass_manager mir_passes ${UNIT_TEST_DEPS})

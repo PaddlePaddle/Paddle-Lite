@@ -22,6 +22,9 @@ message(STATUS "LITE_WITH_CV:\t${LITE_WITH_CV}")
 set(LITE_MODEL_DIR "${THIRD_PARTY_PATH}/install")
 set(LITE_ON_MOBILE ${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK})
 
+# inner dependency of unit test
+set(UNIT_TEST_DEPS core utils model_parser)
+
 add_subdirectory(backends)
 add_subdirectory(utils)
 add_subdirectory(operators)

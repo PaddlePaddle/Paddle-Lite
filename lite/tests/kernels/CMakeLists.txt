@@ -1,6 +1,7 @@
 set(test_kernel_deps
     arena_framework
-    ${lite_ops}
+    ${UNIT_TEST_DEPS}
+    ${ops}
     ${host_kernels}
     ${arm_kernels}
     ${x86_kernels}
@@ -47,12 +48,12 @@ if((NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WIT
     lite_cc_test(test_kernel_transpose_compute SRCS transpose_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_reshape_compute SRCS reshape_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_layer_norm_compute SRCS layer_norm_compute_test.cc DEPS ${test_kernel_deps})
-    lite_cc_test(test_kernel_dropout_compute SRCS dropout_compute_test.cc DEPS ${test_kernel_deps})
-    lite_cc_test(test_kernel_softmax_compute SRCS softmax_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_dropout_compute SRCS dropout_compute_test.cc DEPS ${test_kernel_deps} ${UNIT_TEST_DEPS})
+    lite_cc_test(test_kernel_softmax_compute SRCS softmax_compute_test.cc DEPS ${test_kernel_deps} ${UNIT_TEST_DEPS})
     lite_cc_test(test_kernel_mul_compute SRCS mul_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_multiclass_nms_compute SRCS multiclass_nms_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_multiclass_nms3_compute SRCS multiclass_nms3_compute_test.cc DEPS ${test_kernel_deps})
-    lite_cc_test(test_kernel_batch_norm_compute SRCS batch_norm_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_batch_norm_compute SRCS batch_norm_compute_test.cc DEPS ${test_kernel_deps} ${UNIT_TEST_DEPS})
     lite_cc_test(test_kernel_pool_compute SRCS pool_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_constant_compute SRCS fill_constant_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_zeros_like_compute SRCS fill_zeros_like_compute_test.cc DEPS ${test_kernel_deps})
@@ -67,7 +68,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_scatter_nd_add SRCS scatter_nd_add_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_sequence_pad SRCS sequence_pad_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_sequence_mask SRCS sequence_mask_test.cc DEPS ${test_kernel_deps})
-    lite_cc_test(test_sequence_reverse SRCS sequence_reverse_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_sequence_reverse SRCS sequence_reverse_test.cc DEPS ${test_kernel_deps} ${UNIT_TEST_DEPS})
     lite_cc_test(test_correlation SRCS correlation_test.cc DEPS ${test_kernel_deps})
     #lite_cc_test(test_kernel_sequence_pool_compute SRCS sequence_pool_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_sequence_conv_compute SRCS sequence_conv_compute_test.cc DEPS ${test_kernel_deps})

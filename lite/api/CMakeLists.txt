@@ -285,7 +285,7 @@ set(LITE_DEMO_INSTALL_DIR "${THIRD_PARTY_PATH}/inference_demo" CACHE STRING
 if(WITH_TESTING)
     if(NOT WITH_COVERAGE)
         lite_cc_test(test_cxx_api SRCS cxx_api_test.cc
-           DEPS cxx_api mir_passes lite_api_test_helper
+           DEPS cxx_api mir_passes lite_api_test_helper paddle_api
            ${ops} ${host_kernels}
            X86_DEPS ${x86_kernels}
            CUDA_DEPS ${cuda_kernels}
@@ -354,17 +354,17 @@ if(WITH_TESTING)
 endif()
 
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
-    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${apu_kernels} ${fpga_kernels} ${intel_fpga_kernels})
+    set(lite_model_test_DEPS paddle_api ${UNIT_TEST_DEPS} cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${apu_kernels} ${fpga_kernels} ${intel_fpga_kernels})
 
     lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc
-       DEPS ${lite_model_test_DEPS}
+       DEPS ${lite_model_test_DEPS} paddle_api
        CL_DEPS ${opencl_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
         --model_dir=${LITE_MODEL_DIR}/MobilenetV1_quant SERIAL)
     add_dependencies(test_mobilenetv1_int8 extern_lite_download_MobileNetV1_quant_tar_gz)
 
     lite_cc_test(test_mobilenetv1 SRCS mobilenetv1_test.cc
-       DEPS ${lite_model_test_DEPS}
+       DEPS ${lite_model_test_DEPS} paddle_api
        CL_DEPS ${opencl_kernels}
        NPU_DEPS ${npu_kernels} ${npu_bridges}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
@@ -389,7 +389,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_tar_gz)
 
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
-       DEPS ${lite_model_test_DEPS}
+       DEPS ${lite_model_test_DEPS} paddle_api
        CL_DEPS ${opencl_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu SERIAL)
@@ -412,7 +412,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        FPGA_DEPS ${fpga_kernels})
 
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
-       DEPS ${lite_model_test_DEPS}
+       DEPS ${lite_model_test_DEPS} paddle_api
        CL_DEPS ${opencl_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
@@ -628,7 +628,7 @@ if(NOT IOS)
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})
 
-    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS  paddle_api cxx_api gflags
         ${ops} ${host_kernels}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -643,9 +643,5 @@ if(NOT IOS)
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
+    target_link_libraries(test_transformer paddle_api)
 endif()
-
-#lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc
-    #X86_DEPS operator
-    #DEPS light_api model_parser target_wrapper_host mir_passes
-    #ARM_DEPS ${arm_kernels}) NPU_DEPS ${npu_kernels})

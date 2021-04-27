@@ -225,23 +225,23 @@ add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_o
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)
-        lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS one_hot_op memory scope ${op_deps} one_hot_compute_host)
+        lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS ${UNIT_TEST_DEPS} one_hot_op core ${op_deps} one_hot_compute_host)
     endif()
     lite_cc_test(test_fc_op SRCS fc_op_test.cc
-                DEPS fc_op memory
+                DEPS fc_op ${UNIT_TEST_DEPS}
                 X86_DEPS fc_compute_x86
-                ARM_DEPS fc_compute_arm)
+                ARM_DEPS fc_compute_arm math_arm)
     lite_cc_test(test_pool_op SRCS pool_op_test.cc
-                DEPS pool_op memory
+                DEPS pool_op ${UNIT_TEST_DEPS}
                 ARM_DEPS pool_compute_arm)
-    lite_cc_test(test_scale_op SRCS scale_op_test.cc DEPS scale_op memory)
-    lite_cc_test(test_softmax_op SRCS softmax_op_test.cc DEPS softmax_op memory)
-    #lite_cc_test(test_reshape_op SRCS reshape_op_test.cc DEPS reshape_op memory)
-    lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc DEPS batch_norm_op memory)
-    lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op memory scope)
-    lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS calib_op memory ARM_DEPS calib_compute_arm)
-    lite_cc_test(test_transpose_op SRCS transpose_op_test.cc DEPS transpose_op memory)
+    lite_cc_test(test_scale_op SRCS scale_op_test.cc DEPS scale_op ${UNIT_TEST_DEPS})
+    lite_cc_test(test_softmax_op SRCS softmax_op_test.cc DEPS softmax_op ${UNIT_TEST_DEPS})
+    lite_cc_test(test_reshape_op SRCS reshape_op_test.cc DEPS reshape_op core ${UNIT_TEST_DEPS})
+    lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc DEPS batch_norm_op ${UNIT_TEST_DEPS})
+    lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op ${UNIT_TEST_DEPS})
+    lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS calib_op ${UNIT_TEST_DEPS} ARM_DEPS calib_compute_arm)
+    lite_cc_test(test_transpose_op SRCS transpose_op_test.cc DEPS transpose_op ${UNIT_TEST_DEPS})
     lite_cc_test(test_fusion_elementwise_activation_ops
                  SRCS fusion_elementwise_activation_ops_test.cc
-                 DEPS fusion_elementwise_activation_ops memory)
+                 DEPS fusion_elementwise_activation_ops ${UNIT_TEST_DEPS})
 endif()

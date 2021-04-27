@@ -37,6 +37,11 @@ if (NOT LITE_ON_TINY_PUBLISH)
     add_dependencies(core framework_proto)
 endif()
 
+# basic struct for unit test
+if (WITH_TESTING)
+    lite_cc_library(lite_gtest_main SRCS lite_gtest_main.cc DEPS gtest gflags)
+endif()
+
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
 if (LITE_WITH_CODE_META_INFO)
 execute_process(

@@ -9,6 +9,6 @@ lite_cc_library(fbs_wrapper SRCS
      io.cc)
 add_dependencies(fbs_wrapper fbs_headers)
 
-lite_cc_test(test_vector_view SRCS vector_view_test.cc DEPS model_parser)
-lite_cc_test(test_fbs_io SRCS io_test.cc DEPS model_parser)
-lite_cc_test(test_program_desc SRCS program_desc_test.cc DEPS model_parser)
+lite_cc_test(test_vector_view SRCS vector_view_test.cc DEPS ${UNIT_TEST_DEPS})
+lite_cc_test(test_fbs_io SRCS io_test.cc DEPS ${UNIT_TEST_DEPS})
+lite_cc_test(test_program_desc SRCS program_desc_test.cc DEPS ${UNIT_TEST_DEPS})
