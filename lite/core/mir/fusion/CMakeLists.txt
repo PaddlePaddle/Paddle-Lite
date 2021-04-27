@@ -61,6 +61,9 @@ lite_cc_library(fuse_match_matrix_activation
 lite_cc_library(fuse_scales
         SRCS scales_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_scaleacts
+        SRCS scaleacts_fuser.cc
+        DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_sequence_reverse_embedding
         SRCS sequence_reverse_embedding_fuser.cc
         DEPS pattern_matcher_high_api)
@@ -98,6 +101,7 @@ set(mir_fusers
     fuse_inplace
     fuse_match_matrix_activation
     fuse_scales
+    fuse_scaleacts
     fuse_sequence_reverse_embedding
     fuse_instance_norm_activation
     fuse_elementwise_add_scale
