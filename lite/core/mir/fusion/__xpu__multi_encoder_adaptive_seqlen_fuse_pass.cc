@@ -116,16 +116,29 @@ class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
     embedding_seq_lod_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW));
     scope->NewTensor(embedding_seq_lod_name);
+    // add new arg pad_seq_len
+    std::string embedding_pad_seq_len_name =
+        embedding_out_name + "_pad_seq_len";
+    auto* embedding_pad_seq_len_node =
+        graph->NewArgumentNode(embedding_pad_seq_len_name);
+    embedding_pad_seq_len_node->arg()->type = LiteType::GetTensorTy(
+        TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW));
+    scope->NewTensor(embedding_pad_seq_len_name);
+
     embedding_op_desc.SetOutput("SeqLod", {embedding_seq_lod_name});
+    embedding_op_desc.SetOutput("PadSeqLen", {embedding_pad_seq_len_name});
     encoder_op_desc.SetInput("SeqLod", {embedding_seq_lod_name});
+    encoder_op_desc.SetInput("PadSeqLen", {embedding_pad_seq_len_name});
     embedding_op_desc.SetInput("Mask", {matched.at("mask")->arg()->name});
 
     embedding_instruct->ResetOp(embedding_op_desc,
                                 embedding_op->valid_places());
     encoder_instruct->ResetOp(encoder_op_desc, encoder_op->valid_places());
     DirectedLink(matched.at("xpu_embedding"), embedding_seq_lod_node);
+    DirectedLink(matched.at("xpu_embedding"), embedding_pad_seq_len_node);
     DirectedLink(matched.at("mask"), matched.at("xpu_embedding"));
     DirectedLink(embedding_seq_lod_node, matched.at("xpu_encoder"));
+    DirectedLink(embedding_pad_seq_len_node, matched.at("xpu_encoder"));
   }
 };
 

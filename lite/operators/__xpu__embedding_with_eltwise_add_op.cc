@@ -34,6 +34,7 @@ bool XPUEmbeddingWithEltwiseAddOp::CheckShape() const {
 
   if (param_.Mask != nullptr) {
     CHECK(param_.SeqLod != nullptr);
+    CHECK(param_.PadSeqLen != nullptr);
   }
   return true;
 }
@@ -46,6 +47,9 @@ bool XPUEmbeddingWithEltwiseAddOp::InferShapeImpl() const {
 
   param_.Out->Resize(lite::DDim(out_shape));
   param_.Out->set_lod(param_.Ids[0]->lod());
+  if (param_.Mask != nullptr) {
+    param_.PadSeqLen->Resize({1});
+  }
   return true;
 }
 
@@ -84,6 +88,12 @@ bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
       output_arg_names.end()) {
     auto seqlod_name = op_desc.Output("SeqLod").front();
     param_.SeqLod = GetMutableVar<lite::Tensor>(scope, seqlod_name);
+  }
+  if (std::find(output_arg_names.begin(),
+                output_arg_names.end(),
+                "PadSeqLen") != output_arg_names.end()) {
+    auto padseqlen_name = op_desc.Output("PadSeqLen").front();
+    param_.PadSeqLen = GetMutableVar<lite::Tensor>(scope, padseqlen_name);
   }
 
   param_.padding_idx = op_desc.GetAttr<int64_t>("padding_idx");
