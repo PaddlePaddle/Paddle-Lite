@@ -109,7 +109,7 @@ class XPUSfaHeadMeanstdFuser : public FuseBase {
   }
 
  private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) {
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override {
     cpp::OpDesc op_desc = *matched.at("reduce_mean")->stmt()->op_info();
     op_desc.mutable_inputs()->clear();
     op_desc.mutable_outputs()->clear();

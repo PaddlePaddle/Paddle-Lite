@@ -153,6 +153,10 @@ class LITE_API ConfigBase {
   int device_id_{0};
   int x86_math_num_threads_ = 1;
 
+  std::string metal_path_;
+  bool metal_use_agressive_;
+  bool metal_use_mps_;
+
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
   // set Model_dir
@@ -203,6 +207,10 @@ class LITE_API ConfigBase {
   // set x86_math_num_threads
   void set_x86_math_num_threads(int threads);
   int x86_math_num_threads() const;
+
+  void set_metal_dir(const std::string& path);
+  void set_metal_use_aggressive_optimization(bool flag);
+  void set_metal_use_mps(bool flag);
 };
 
 class LITE_API CxxModelBuffer {

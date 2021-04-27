@@ -172,7 +172,7 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
           << kpf_path;
 }
 
-#ifndef LITE_WITH_FPGA
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
 lite::Tensor *Predictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -244,8 +244,7 @@ void Predictor::PrepareFeedFetch() {
   }
 }
 
-#ifndef LITE_WITH_FPGA
-
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"
@@ -266,7 +265,6 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
   return outputs;
 }
 #else
-
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
   CHECK(_fetch_list) << "no fatch variable in exec_scope";

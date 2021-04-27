@@ -56,9 +56,9 @@ class VarDesc : public VarDescAPI {
   VarDescAPI::VarDataType GetDataType() const;
 
   // Get var's shape
-  std::vector<int64_t> GetShape() const;
+  std::vector<int64_t> GetShape() const override;
   // Set var's shape
-  void SetShape(const std::vector<int64_t> &dims);
+  void SetShape(const std::vector<int64_t> &dims) override;
 
  private:
   const proto::VarType &GetVarType() const;

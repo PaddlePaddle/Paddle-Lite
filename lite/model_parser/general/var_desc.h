@@ -47,9 +47,9 @@ class VarDesc : public VarDescAPI {
 
   void SetDataType(Type data_type) { data_type_ = data_type; }
 
-  void SetShape(const std::vector<int64_t> &dims) { shape_ = dims; }
+  void SetShape(const std::vector<int64_t> &dims) override { shape_ = dims; }
 
-  std::vector<int64_t> GetShape() const { return shape_; }
+  std::vector<int64_t> GetShape() const override { return shape_; }
 
  private:
   std::string name_;
