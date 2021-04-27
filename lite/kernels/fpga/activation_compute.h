@@ -26,7 +26,7 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-static std::map<std::string, zynqmp::ActiveType> activation_map = {
+static std::map<std::string, zynqmp::ActivationType> activation_map = {
     {"relu", zynqmp::TYPE_RELU},
     {"relu6", zynqmp::TYPE_RELU6},
     {"leaky_relu", zynqmp::TYPE_LEAKY_RELU},

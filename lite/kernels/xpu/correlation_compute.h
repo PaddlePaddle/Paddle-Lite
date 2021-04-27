@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,37 +13,25 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class NormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <class T>
+class CorrelationCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::NormParam;
+  using param_t = operators::CorrelationParam;
 
-  void PrepareForRun() override;
+  virtual void Run();
 
-  void Run() override;
-
-  ~NormCompute() {}
-
- private:
+  virtual ~CorrelationCompute() = default;
 };
 
-class PNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
-
-  virtual ~PNormCompute() = default;
-};
-
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

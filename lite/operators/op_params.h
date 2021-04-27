@@ -361,6 +361,10 @@ struct ReshapeParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+
+#ifdef LITE_WITH_METAL
+  std::vector<int> excepted_transpose_;
+#endif
 };
 
 // For Concat op
@@ -482,6 +486,11 @@ struct ConvParam : ParamBase {
   // only used in conv_transpose.
   std::vector<int> output_size;
   std::vector<int> output_padding;
+
+#ifdef LITE_WITH_FPGA
+  lite::Tensor* scale{nullptr};
+#endif
+
   // for int8
   WITH_INT8_CONFIG
   // for Conv2d+Scale fusion
@@ -1011,8 +1020,8 @@ struct PriorBoxParam : ParamBase {
   lite::Tensor* boxes{};
   lite::Tensor* variances{};
 
-  bool flip;
-  bool clip;
+  bool flip{true};
+  bool clip{true};
   std::vector<float> min_sizes;
   std::vector<float> max_sizes;
   std::vector<float> aspect_ratios;

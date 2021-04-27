@@ -24,6 +24,8 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
+using float16 = zynqmp::float16;
+
 class FcCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
@@ -37,6 +39,7 @@ class FcCompute
 
  private:
   zynqmp::FullyConnectedPE pe_;
+  float16 input_max_ = 0;
 };
 
 }  // namespace fpga
