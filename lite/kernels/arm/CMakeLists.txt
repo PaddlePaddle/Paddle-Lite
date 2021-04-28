@@ -51,7 +51,7 @@ add_kernel(grid_sampler_compute_arm ARM basic SRCS grid_sampler_compute.cc DEPS 
 add_kernel(rnn_compute_arm ARM extra SRCS rnn_compute.cc DEPS ${lite_kernel_deps} math_host)
 
 ## 2.other basic kernels: basic kernels that not used in basic models
-add_kernel(activation_extra_compute_arm ARM extrta SRCS activation_extra_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(activation_extra_compute_arm ARM extra SRCS activation_extra_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(negative_compute_arm ARM extra SRCS negative_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(crop_compute_arm ARM extra SRCS crop_compute.cc DEPS ${lite_kernel_deps} crop_compute_host)
 add_kernel(pow_compute_arm ARM extra SRCS pow_compute.cc DEPS ${lite_kernel_deps} math_arm)
