@@ -269,62 +269,54 @@ class Context<TargetType::kNNAdapter> {
   NNAdapterContext& operator=(const NNAdapterContext& ctx) {}
   std::string name() const { return "NNAdapterContext"; }
 
-  static void SetSubgraphModelCacheDir(Scope* scope,
-                                       std::string subgraph_model_cache_dir) {
-    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+  static void SetNNAdapterModelCacheDir(
+      Scope* scope, const std::string& nnadapter_model_cache_dir) {
+    auto var = scope->Var("NNADAPTER_MODEL_CACHE_DIR");
     CHECK(var);
     auto data = var->GetMutable<std::string>();
     CHECK(data);
-    *data = subgraph_model_cache_dir;
+    *data = nnadapter_model_cache_dir;
   }
 
-  static std::string SubgraphModelCacheDir(Scope* scope) {
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+  static std::string NNAdapterModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_MODEL_CACHE_DIR");
     if (!var) return "";
     return var->Get<std::string>();
   }
 
-  static void SetSubgraphModelCacheBuffers(
+  static void SetNNAdapterModelCacheBuffers(
       Scope* scope,
-      const std::map<std::string,
-                     std::pair<std::vector<char>, std::vector<char>>>&
-          subgraph_model_cache_buffers) {
-    for (auto& subgraph_model_cache_buffer : subgraph_model_cache_buffers) {
-      auto& key = subgraph_model_cache_buffer.first;
-      auto var = scope->Var("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
+      const std::map<std::string, std::vector<char>>&
+          nnadapter_model_cache_buffers) {
+    for (const auto& nnadapter_model_cache_buffer :
+         nnadapter_model_cache_buffers) {
+      auto& key = nnadapter_model_cache_buffer.first;
+      auto var = scope->Var("NNADAPTER_MODEL_CACHE_BUFFERS_" + key);
       CHECK(var);
-      auto data =
-          var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
+      auto data = var->GetMutable<std::vector<char>>();
       CHECK(data);
-      *data = subgraph_model_cache_buffer.second;
+      *data = nnadapter_model_cache_buffer.second;
     }
   }
 
-  static bool SubgraphModelCacheBuffers(Scope* scope,
-                                        const std::string& key,
-                                        std::vector<char>* cfg,
-                                        std::vector<char>* bin) {
-    CHECK(cfg);
-    CHECK(bin);
-    cfg->clear();
-    bin->clear();
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
+  static bool NNAdapterModelCacheBuffers(Scope* scope,
+                                         const std::string& key,
+                                         std::vector<char>* buffer) {
+    CHECK(buffer);
+    buffer->clear();
+    auto var = scope->FindVar("NNADAPTER_MODEL_CACHE_BUFFERS_" + key);
     if (!var) return false;
-    auto data =
-        var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
-    *cfg = data->first;
-    *bin = data->second;
+    auto data = var->GetMutable<std::vector<char>>();
+    *buffer = *data;
     // Reset to reduce memory consumption
-    std::vector<char>().swap(data->first);
-    std::vector<char>().swap(data->second);
+    std::vector<char>().swap(*data);
     return true;
   }
 
-  static bool CheckSubgraphNNAdapterDevice(
-      const std::string& subgraph_nnadapter_device_name) {
+  static bool CheckNNAdapterDevice(const std::string& nnadapter_device_name) {
     NNAdapterDevice* device = nullptr;
     int result = NNAdapter::Global().NNAdapterDevice_acquire(
-        subgraph_nnadapter_device_name.c_str(), &device);
+        nnadapter_device_name.c_str(), &device);
     bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
     if (found) {
       NNAdapter::Global().NNAdapterDevice_release(device);
@@ -332,18 +324,17 @@ class Context<TargetType::kNNAdapter> {
     return found;
   }
 
-  static void SetSubgraphNNAdapterDevices(
-      Scope* scope,
-      const std::vector<std::string>& subgraph_nnadapter_device_names) {
-    auto var = scope->Var("SUBGRAPH_NNADAPTER_DEVICES");
+  static void SetNNAdapterDevices(
+      Scope* scope, const std::vector<std::string>& nnadapter_device_names) {
+    auto var = scope->Var("NNADAPTER_DEVICES");
     CHECK(var);
     auto data = var->GetMutable<std::vector<std::string>>();
     CHECK(data);
-    *data = subgraph_nnadapter_device_names;
+    *data = nnadapter_device_names;
   }
 
-  static std::vector<std::string> SubgraphNNAdapterDevices(Scope* scope) {
-    auto var = scope->FindVar("SUBGRAPH_NNADAPTER_DEVICES");
+  static std::vector<std::string> NNAdapterDevices(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_DEVICES");
     if (!var) return std::vector<std::string>();
     return var->Get<std::vector<std::string>>();
   }

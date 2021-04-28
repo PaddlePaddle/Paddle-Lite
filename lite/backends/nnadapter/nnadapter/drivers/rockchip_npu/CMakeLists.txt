@@ -20,7 +20,7 @@ add_definitions(-DNNADAPTER_DRIVER_TARGET=${NNADAPTER_DRIVER_TARGET})
 
 include(deps.cmake)
 
-set(NNADAPTER_DRIVER_SRCS driver.cc)
+set(NNADAPTER_DRIVER_SRCS driver.cc context.cc program.cc utility.cc)
 set(NNADAPTER_DRIVER_DEPS nnadapter_logging nnadapter_driver ${${NNADAPTER_DRIVER_NAME}_deps})
 
 add_library(${NNADAPTER_DRIVER_TARGET} SHARED ${NNADAPTER_DRIVER_SRCS})

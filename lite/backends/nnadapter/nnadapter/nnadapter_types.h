@@ -37,7 +37,7 @@ typedef enum {
   /**
    * An 8 bit boolean scalar value.
    */
-  NNADAPTER_BOOL = 0,
+  NNADAPTER_BOOL8 = 0,
   NNADAPTER_INT8 = 1,
   NNADAPTER_UINT8 = 2,
   NNADAPTER_INT16 = 3,
@@ -52,7 +52,7 @@ typedef enum {
   /**
    * A tensor of 8 bit boolean values.
    */
-  NNADAPTER_TENSOR_BOOL = 12,
+  NNADAPTER_TENSOR_BOOL8 = 12,
   NNADAPTER_TENSOR_INT8 = 13,
   NNADAPTER_TENSOR_UINT8 = 14,
   NNADAPTER_TENSOR_INT16 = 15,
@@ -74,6 +74,9 @@ typedef enum {
   NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER = 24,
   NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL = 25,
   NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER = 26,
+  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER = 27,
+  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL = 28,
+  NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER = 29,
   NNADAPTER_NETWORK = 27,
 } NNAdapterOperandPrecisionCode;
 
@@ -240,8 +243,9 @@ typedef struct NNAdapterOperandType {
 
   /**
    * The dimensions of the tensor.
+   * -1 means Any for supporting dynamic shape.
    */
-  uint32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+  int32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
 
   /**
    * The quantization parameters.

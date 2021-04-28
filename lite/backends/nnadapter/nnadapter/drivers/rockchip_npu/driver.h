@@ -19,30 +19,6 @@
 
 namespace nnadapter {
 namespace driver {
-namespace rockchip_npu {
-
-class Context {
- public:
-  explicit Context(void* raw_ctx) : raw_ctx_(raw_ctx) {}
-  ~Context() {}
-
- private:
-  void* raw_ctx_{nullptr};
-};
-
-class Program {
- public:
-  Program() {}
-  ~Program();
-
-  int Build(driver::Model* model, driver::Cache* cache);
-
- private:
-  int ConvertConv2D(driver::Operation* operation);
-  rk::nn::Graph* graph_{nullptr};
-  rk::nn::Exection* execution_{nullptr};
-};
-
-}  // namespace rockchip_npu
+namespace rockchip_npu {}  // namespace rockchip_npu
 }  // namespace driver
 }  // namespace nnadapter

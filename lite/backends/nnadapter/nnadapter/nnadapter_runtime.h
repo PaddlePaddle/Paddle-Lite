@@ -41,9 +41,9 @@ class Device {
   void DestroyProgram(void* program);
   int ExecuteProgram(void* program,
                      uint32_t input_count,
-                     driver::Argument* inputs,
+                     driver::Argument* input_arguments,
                      uint32_t output_count,
-                     driver::Argument* outputs);
+                     driver::Argument* output_arguments);
 
  private:
   void* context_{nullptr};
@@ -59,20 +59,13 @@ class Model {
   int AddOperand(const NNAdapterOperandType& type, driver::Operand** operand);
   int AddOperation(NNAdapterOperationType type, driver::Operation** operation);
   int IdentifyInputsAndOutputs(uint32_t input_count,
-                               driver::Operand** inputs,
+                               driver::Operand** input_operands,
                                uint32_t output_count,
-                               driver::Operand** outputs);
+                               driver::Operand** output_operands);
   int Finish();
 
   driver::Model model_;
   bool completed_;
-};
-
-class Event {
- public:
-  ~Event() = default;
-  void Wait() {}
-  int GetStatus() { return NNADAPTER_NO_ERROR; }
 };
 
 class Compilation {
@@ -80,15 +73,20 @@ class Compilation {
   Compilation(Model* model,
               const char* cache_key,
               void* cache_buffer,
-              size_t cache_length,
+              uint32_t cache_length,
               const char* cache_dir,
               std::vector<Device*> devices);
   ~Compilation();
   Device* GetFirstDevice();
   int Finish();
-  int Execute(std::vector<driver::Argument>* inputs,
-              std::vector<driver::Argument>* outputs);
+  int QueryInputsAndOutputs(uint32_t* input_count,
+                            NNAdapterOperandType** input_types,
+                            uint32_t* output_count,
+                            NNAdapterOperandType** output_types);
+  int Execute(std::vector<driver::Argument>* input_arguments,
+              std::vector<driver::Argument>* output_arguments);
 
+ private:
   Model* model_{nullptr};
   driver::Cache cache_;
   void* program_{nullptr};
@@ -100,21 +98,21 @@ class Execution {
  public:
   explicit Execution(Compilation* compilation) : compilation_(compilation) {}
   int SetInput(int32_t index,
-               const uint32_t* dimensions,
+               const int32_t* dimensions,
                uint32_t dimension_count,
                void* buffer,
-               size_t length);
+               uint32_t length);
   int SetOutput(int32_t index,
-                const uint32_t* dimensions,
+                const int32_t* dimensions,
                 uint32_t dimensionCount,
                 void* buffer,
-                size_t length);
+                uint32_t length);
   int Compute();
 
  private:
   Compilation* compilation_{nullptr};
-  std::vector<driver::Argument> inputs_;
-  std::vector<driver::Argument> outputs_;
+  std::vector<driver::Argument> input_arguments_;
+  std::vector<driver::Argument> output_arguments_;
 };
 
 class DriverManager {

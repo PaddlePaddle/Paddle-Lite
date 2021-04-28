@@ -72,12 +72,12 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
 #ifdef LITE_WITH_NNADAPTER
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration
-  Context<TargetType::kNNAdapter>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
-  Context<TargetType::kNNAdapter>::SetSubgraphModelCacheBuffers(
-      raw_predictor_->scope(), config.subgraph_model_cache_buffers());
-  Context<TargetType::kNNAdapter>::SetSubgraphNNAdapterDevices(
-      raw_predictor_->scope(), config.subgraph_nnadapter_devices());
+  Context<TargetType::kNNAdapter>::SetNNAdapterDevices(
+      raw_predictor_->scope(), config.nnadapter_devices());
+  Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(
+      raw_predictor_->scope(), config.nnadapter_model_cache_dir());
+  Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
+      raw_predictor_->scope(), config.nnadapter_model_cache_buffers());
 #endif
 
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU

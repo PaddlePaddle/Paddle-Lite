@@ -28,19 +28,19 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-// Generate the model name by using md5 hashes based on:
+// Generate a simple key to indentify the model by using md5 algrithm based on
+// the following information:
 // 1. the sorted variable input names
 // 2. the shapes of the origin input tensors
 // 3. the sorted variable output names
-std::string DeviceProgram::GenerateModelName(
-    const std::vector<std::string>& input_names,
-    const std::vector<std::string>& output_names,
-    const std::vector<std::vector<int64_t>>& origin_idims) {
+std::string KeyGenerator(const std::vector<std::string>& input_names,
+                         const std::vector<std::string>& output_names,
+                         const std::vector<std::vector<int64_t>>& input_dims) {
   std::ostringstream os;
-  CHECK_EQ(input_names.size(), origin_idims.size());
+  CHECK_EQ(input_names.size(), input_dims.size());
   for (int i = 0; i < input_names.size(); i++) {
     os << input_names[i];
-    for (auto dim : origin_idims[i]) {
+    for (auto dim : input_dims[i]) {
       os << dim;
     }
   }
@@ -50,145 +50,39 @@ std::string DeviceProgram::GenerateModelName(
   return MD5(os.str());
 }
 
-// Deserialize the generated model, the precisions and dimensions of the origin
-// output tensors of the subgraph op from the cached configuration file and
-// binary IR graph file
-bool DeviceProgram::LoadCacheFromBufferAndFile(
-    const std::vector<std::string>& input_names,
-    const std::vector<std::string>& output_names,
-    const std::vector<std::vector<int64_t>>& origin_idims,
-    const std::vector<Tensor*>& origin_itensors,
-    const std::vector<Tensor*>& origin_otensors,
-    std::vector<char>* model_cache_cfg_buffer,
-    std::vector<char>* model_cache_bin_buffer,
-    const std::string& model_cache_dir,
-    const std::vector<std::string>& nnadapter_device_names) {
-  CHECK(!model_name_.empty());
-  // Deserialize the preicisions, shapes and scales of the origin input/output
-  // tensors from the cached configuration file
-  if (!model_cache_cfg_buffer->empty()) {
-    VLOG(3) << "[NNAdapter] Load configuration from buffer";
-  } else if (!model_cache_dir.empty()) {
-    auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
-    VLOG(3) << "[NNAdapter] Load configuration from " << config_path;
-    if (!ReadFile(config_path, model_cache_cfg_buffer)) {
-      LOG(WARNING) << "[NNAdapter] read from " << config_path << " failed!";
-      return false;
-    }
-  } else {
-    return false;
+DeviceProgram::~DeviceProgram() {
+  if (execution_) {
+    NNAdapterExecution_destroy(execution_);
   }
-  return false;
-#if 0
-  std::string str(model_cache_cfg_buffer->begin(),
-                  model_cache_cfg_buffer->end());
-  // Parse the precision and shapes of the output tensors
-  std::vector<std::shared_ptr<rk::nn::Tensor>> device_inodes;
-  auto inputs_outputs = Split<std::string>(str, "\n");
-  CHECK_EQ(inputs_outputs.size(), 2);  // inputs and outputs
-  // Create a new RK IR graph and restore from the cached binary file
-  graph_ = std::make_shared<rk::nn::Graph>();
-  if (!model_cache_bin_buffer->empty()) {
-    VLOG(3) << "[NNAdapter] Load model from buffer";
-    if (graph_->LoadCache(model_cache_bin_buffer->data(),
-                          model_cache_bin_buffer->size()) !=
-        rk::nn::RK_SUCCESS) {
-      LOG(WARNING)
-          << "[NNAdapter] Load cached binary graph from buffer failed!";
-      return false;
-    }
-  } else if (!model_cache_dir.empty()) {
-    auto model_path = model_cache_dir + "/" + model_name_ + ".bin";
-    VLOG(3) << "[NNAdapter] Load model from " << model_path;
-    if (graph_->LoadCache(model_path) != rk::nn::RK_SUCCESS) {
-      LOG(WARNING) << "[NNAdapter] Load cached binary graph from "
-                   << model_path << " failed!";
-      return false;
-    }
-  } else {
-    return false;
+  if (compilation_) {
+    NNAdapterCompilation_destroy(compilation_);
   }
-  // Restore the input RK IR nodes
-  auto input_options = Split<std::string>(inputs_outputs[0], ";");
-  CHECK_EQ(input_options.size(), input_names.size());
-  for (int i = 0; i < input_names.size(); i++) {
-    auto items = Split<std::string>(input_options[i], ":");
-    CHECK_EQ(items.size(), 1);  // only scales
-    const auto& scales = Split<float>(items[0], ",");
-    device_inodes.push_back(
-        subgraph::rknpu::CvtTensor(graph_.get(),
-                                   input_names[i],
-                                   origin_itensors[i]->dims().Vectorize(),
-                                   scales,
-                                   nullptr,
-                                   origin_itensors[i]->precision()));
+  if (model_) {
+    NNAdapterModel_destroy(model_);
   }
-  // Restore the output RK IR nodes
-  std::vector<std::shared_ptr<rk::nn::Tensor>> device_onodes;
-  auto output_options = Split<std::string>(inputs_outputs[1], ";");
-  CHECK_EQ(output_options.size(), output_names.size());
-  origin_otypes_.resize(output_names.size());
-  origin_odims_.resize(output_names.size());
-  for (int i = 0; i < output_names.size(); i++) {
-    auto items = Split<std::string>(output_options[i], ":");
-    CHECK_EQ(items.size(), 3);  // precision, shapes and scales
-    origin_otypes_[i] = static_cast<PrecisionType>(std::stoi(items[0]));
-    origin_odims_[i] = Split<int64_t>(items[1], ",");
-    const auto& scales = Split<float>(items[2], ",");
-    device_onodes.push_back(subgraph::rknpu::CvtTensor(graph_.get(),
-                                                       output_names[i],
-                                                       origin_odims_[i],
-                                                       scales,
-                                                       nullptr,
-                                                       origin_otypes_[i]));
-  }
-  // Create the RK execution for inference, and set the input and output nodes
-  execution_ = lite::rknpu::Device::Global().Build(
-      model_name_, graph_.get(), device_inodes, device_onodes);
-  if (execution_ == nullptr) {
-    LOG(WARNING) << "[NNAdapter] Build model failed!";
-    return false;
-  }
-#endif
-  return true;
 }
 
-bool DeviceProgram::BuildGraphAndCacheToFile(
+bool DeviceProgram::LoadFromCache(std::vector<char>* model_cache_buffer,
+                                  const std::string& model_cache_dir) {
+  return false;
+}
+
+bool DeviceProgram::BuildAndCacheToFiles(
     RuntimeProgram* origin_program,
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
-    const std::vector<std::vector<int64_t>>& origin_idims,
-    const std::vector<Tensor*>& origin_itensors,
-    const std::vector<Tensor*>& origin_otensors,
-    const std::string& model_cache_dir,
-    const std::vector<std::string>& nnadapter_device_names) {
-  CHECK(!model_name_.empty());
-  // Create a new IR graph
-  graph_ = std::make_shared<int>();
-  if (!model_cache_dir.empty()) {
-    // Enable caching the compiled RK IR graph to a binary file when the first
-    // run
-    auto model_path = model_cache_dir + "/" + model_name_ + ".bin";
-#if 0
-    if (graph_->EnableCreateCache(model_path) == rk::nn::RK_SUCCESS) {
-      VLOG(3) << "[NNAdapter] The compiled IR graph will be saved to "
-              << model_path << " when the first run";
-    } else {
-      LOG(WARNING)
-          << "[NNAdapter] Failed to cache the compiled IR graph to "
-          << model_path;
-    }
-#endif
-  }
-  // Convert all of Paddle operators and variables to the IR nodes, and add
-  // them into the IR graph
-  int status = 0;
-  subgraph::nnadapter::Converter converter(nnadapter_device_names);
+    const std::string& model_cache_dir) {
+  // Converting the PaddlePaddle operators and variables to the NNAdapter
+  // operations and operands for building the hardware-indepedent model.
+  CHECK(!model_cache_key_.empty());
+  int result = NNAdapterModel_create(&model_);
+  subgraph::nnadapter::Converter converter(model_);
   const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   CHECK(origin_program) << "[NNAdapter] The origin program is not initialized!";
   CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
       << "[NNAdapter] No instructions found in the origin program!";
   const auto& insts = origin_program->instructions(kRootBlockIdx);
+  int status = 0;
   for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
@@ -207,232 +101,249 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
       return false;
     }
   }
-  return false;
-#if 0
-  // Collect the input and output nodes from the RK IR graph
-  std::vector<std::shared_ptr<rk::nn::Tensor>> device_inodes;
-  for (size_t i = 0; i < input_names.size(); i++) {
-    CHECK(converter.HasOperand(input_names[i]));
-    CHECK(converter.GetOperand(input_names[i])->is_input());
-    device_inodes.push_back(converter.GetOperand(input_names[i])->operand());
+  // Query and indentify the input and output operands
+  std::vector<NNAdapterOperand *> input_operands, output_operands;
+  for (int i = 0; i < input_names.size(); i++) {
+    CHECK(converter.HasOperand(input_names[i]))
+        << "No operand found for input '" << input_names[i] << "'!";
+    auto operand = converter.GetOperand(input_names[i]);
+    input_operands.push_back(operand);
+    VLOG(3) << "Found an operand @0x" << std::hex
+            << reinterpret_cast<int64_t>(operand) << " for input '"
+            << input_names[i] << "'.";
   }
-  std::vector<std::shared_ptr<rk::nn::Tensor>> device_onodes;
-  for (size_t i = 0; i < output_names.size(); i++) {
-    CHECK(converter.HasOperand(output_names[i]));
-    device_onodes.push_back(network.Get(output_names[i])->is_output());
+  for (int i = 0; i < output_names.size(); i++) {
+    CHECK(converter.HasOperand(output_names[i]))
+        << "No operand found for output '" << output_names[i] << "'!";
+    auto operand = converter.GetOperand(output_names[i]);
+    output_operands.push_back(operand);
+    VLOG(3) << "Found an operand @0x" << std::hex
+            << reinterpret_cast<int64_t>(operand) << " for output '"
+            << output_names[i] << "'.";
   }
-  // Create the RK execution for inference, and set the input and output nodes
-  execution_ = lite::rknpu::Device::Global().Build(
-      model_name_, graph_.get(), device_inodes, device_onodes);
-  if (execution_ == nullptr) {
-    LOG(WARNING) << "[NNAdapter] Build model failed!";
+  NNAdapterModel_identifyInputsAndOutputs(model_,
+                                          input_operands.size(),
+                                          &input_operands[0],
+                                          output_operands.size(),
+                                          &output_operands[0]);
+  result = NNAdapterModel_finish(model_);
+  // Compiling the model to the hardware-related programs
+  result = NNAdapterCompilation_create(model_,
+                                       model_cache_key_.c_str(),
+                                       nullptr,
+                                       0,
+                                       model_cache_dir.c_str(),
+                                       &((*devices_)[0]),
+                                       devices_->size(),
+                                       &compilation_);
+  if (result != NNADAPTER_NO_ERROR) {
+    NNAdapterModel_destroy(model_);
+    model_ = nullptr;
+    LOG(WARNING) << "Create a compilation for building model failed(" << result
+                 << ") !";
     return false;
   }
-  // Update the precison and dimensions of the origin output tensors
-  CHECK_EQ(origin_otensors.size(), output_names.size());
-  origin_otypes_.resize(output_names.size());
-  origin_odims_.resize(output_names.size());
-  for (size_t i = 0; i < output_names.size(); i++) {
-    origin_otypes_[i] = graph.Get(output_names[i])->precision();
-    origin_odims_[i] = origin_otensors[i]->dims().Vectorize();
+  result = NNAdapterCompilation_finish(compilation_);
+  if (result != NNADAPTER_NO_ERROR) {
+    NNAdapterModel_destroy(model_);
+    model_ = nullptr;
+    LOG(WARNING) << "Build model failed(" << result << ") !";
+    return false;
   }
-  if (!model_cache_dir.empty()) {
-    // Serialize the precisions, shapes and scales of the origin input/output
-    // tensors
-    // into the configuration file
-    std::ostringstream os;
-    for (int i = 0; i < input_names.size(); i++) {
-      const auto& scales =
-          device_inodes[i]->GetAttrs()->qntParamSymmetric.scale;
-      for (const auto& scale : scales) {
-        os << scale << ",";
-      }
-      os << ";";
-    }
-    os << "\n";
-    for (int i = 0; i < output_names.size(); i++) {
-      os << static_cast<int32_t>(origin_otypes_[i]) << ":";
-      for (auto dim : origin_odims_[i]) {
-        os << dim << ",";
-      }
-      os << ":";
-      const auto& scales =
-          device_onodes[i]->GetAttrs()->qntParamSymmetric.scale;
-      for (const auto& scale : scales) {
-        os << scale << ",";
-      }
-      os << ";";
-    }
-    auto str = os.str();
-    std::vector<char> config_buffer(str.begin(), str.end());
-    auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
-    VLOG(3) << "[NNAdapter] Save configuration to " << config_path;
-    if (!WriteFile(config_path, config_buffer)) {
-      LOG(WARNING) << "[NNAdapter] Open " << config_path
-                   << " for writting failed!";
-    }
-  }
-#endif
   return true;
 }
 
-bool DeviceProgram::PrepareInputsOutputs(
-    const std::vector<std::string>& input_names,
-    const std::vector<std::string>& output_names,
-    std::vector<Tensor*>* origin_itensors,
-    std::vector<Tensor*>* origin_otensors) {
-  CHECK(!model_name_.empty() && graph_ && execution_);
-  // Check the dimensions of the device tensors and the origin tensors
-  CHECK_EQ(origin_itensors->size(), input_names.size());
-  CHECK_EQ(origin_otensors->size(), output_names.size());
-  CHECK_EQ(origin_otypes_.size(), output_names.size());
-  CHECK_EQ(origin_odims_.size(), output_names.size());
-#if 0
-  device_itensors_.resize(input_names.size());
-  device_otensors_.resize(output_names.size());
-  for (size_t i = 0; i < input_names.size(); i++) {
-    VLOG(3) << "[NNAdapter] Inputs[" << i << "] name: " << input_names[i]
-            << " dims:" << origin_itensors->at(i)->dims().repr() << " ";
-    device_itensors_[i].index = i;
-    device_itensors_[i].buf =
-        reinterpret_cast<void*>(origin_itensors->at(i)->raw_data());
-    device_itensors_[i].size = origin_itensors->at(i)->memory_size();
-    device_itensors_[i].pass_through = false;
-    device_itensors_[i].type =
-        subgraph::rknpu::CvtPrecisionType(origin_itensors->at(i)->precision());
-    device_itensors_[i].layout = rk::nn::DataLayoutType::NCHW;
+bool DeviceProgram::SetInputsAndOutputs(std::vector<Tensor*>* origin_itensors,
+                                        std::vector<Tensor*>* origin_otensors) {
+  CHECK(IsValid());
+  // Query the information of inputs and outputs
+  uint32_t input_count, output_count;
+  int result = NNAdapterCompilation_queryInputsAndOutputs(
+      compilation_, &input_count, NULL, &output_count, NULL);
+  if (result != NNADAPTER_NO_ERROR) {
+    LOG(WARNING) << "Failed to query the count of inputs and outputs from the "
+                    "compilation("
+                 << result << ") !";
+    return false;
   }
-  for (size_t i = 0; i < output_names.size(); i++) {
-    origin_otensors->at(i)->Resize(origin_odims_[i]);
-    VLOG(3) << "[NNAdapter] Outputs[" << i << "] name: " << output_names[i]
-            << " dims:" << origin_otensors->at(i)->dims().repr();
-    switch (origin_otypes_[i]) {
-      case PRECISION(kInt8):
-        origin_otensors->at(i)->mutable_data<int8_t>();
-        break;
-      case PRECISION(kInt32):
-        origin_otensors->at(i)->mutable_data<int32_t>();
-        break;
+  CHECK_EQ(input_count, origin_itensors->size());
+  CHECK_EQ(output_count, origin_otensors->size());
+  std::vector<NNAdapterOperandType *> input_types(input_count),
+      output_types(output_count);
+  result = NNAdapterCompilation_queryInputsAndOutputs(compilation_,
+                                                      &input_count,
+                                                      &input_types[0],
+                                                      &output_count,
+                                                      &output_types[0]);
+  if (result != NNADAPTER_NO_ERROR) {
+    LOG(WARNING) << "Failed to query the type of inputs and outputs from the "
+                    "compilation("
+                 << result << ") !";
+    return false;
+  }
+  // Create an execution for executing the compiled device program
+  result = NNAdapterExecution_create(compilation_, &execution_);
+  if (result != NNADAPTER_NO_ERROR) {
+    LOG(WARNING) << "Create execution failed(" << result << ") !";
+    return false;
+  }
+  // Set the real dimensions and buffer of the inputs and outputs
+  for (size_t i = 0; i < origin_itensors->size(); i++) {
+    auto dimensions =
+        subgraph::nnadapter::ConvertDimensions(origin_itensors->at(i)->dims());
+    NNAdapterExecution_setInput(execution_,
+                                i,
+                                &dimensions[0],
+                                dimensions.size(),
+                                origin_itensors->at(i)->raw_data(),
+                                origin_itensors->at(i)->memory_size());
+  }
+  for (size_t i = 0; i < origin_otensors->size(); i++) {
+    auto precision =
+        subgraph::nnadapter::ConvertPrecision(output_types[i]->precision);
+    auto dimensions = subgraph::nnadapter::ConvertDimensions(
+        output_types[i]->dimensions, output_types[i]->dimension_count);
+    origin_otensors->at(i)->Resize(dimensions);
+#define TENSOR_MUTABLE_DATA(ptype, dtype)          \
+  case PRECISION(ptype):                           \
+    origin_otensors->at(i)->mutable_data<dtype>(); \
+    break;
+    switch (precision) {
+      TENSOR_MUTABLE_DATA(kInt8, int8_t)
+      TENSOR_MUTABLE_DATA(kInt32, int32_t)
+      TENSOR_MUTABLE_DATA(kFloat, float)
       default:
-        LOG(FATAL)
-            << "[NNAdapter] Unable to mutable data with precision type "
-            << PrecisionToStr(origin_otypes_[i]);
+        LOG(ERROR) << "Failed to mutable data for the precsion type("
+                   << PrecisionToStr(precision) << ") of output[" << i << "]!";
         break;
     }
-    device_otensors_[i].index = i;
-    device_otensors_[i].buf =
-        reinterpret_cast<void*>(origin_otensors->at(i)->raw_data());
-    device_otensors_[i].size = origin_otensors->at(i)->memory_size();
-    device_otensors_[i].want_float = false;
-    device_otensors_[i].type =
-        subgraph::rknpu::CvtPrecisionType(origin_otensors->at(i)->precision());
-    device_otensors_[i].layout = rk::nn::DataLayoutType::NCHW;
+#undef TENSOR_MUTABLE_DATA
+    NNAdapterExecution_setOutput(execution_,
+                                 i,
+                                 output_types[i]->dimensions,
+                                 output_types[i]->dimension_count,
+                                 origin_otensors->at(i)->raw_data(),
+                                 origin_otensors->at(i)->memory_size());
   }
-#endif
   return true;
 }
 
-bool DeviceProgram::StartExecution() {
-  CHECK(!model_name_.empty() && graph_ && execution_);
+bool DeviceProgram::Execute() {
+  CHECK(IsReady());
   auto GetCurrentUS = []() -> double {
     struct timeval time;
     gettimeofday(&time, NULL);
     return 1e+6 * time.tv_sec + time.tv_usec;
   };
-  int istamp;
   auto start_time = GetCurrentUS();
-  // CHECK(execution_->SetInputs(device_itensors_) == rk::nn::RK_SUCCESS);
-  // CHECK(execution_->Run() == rk::nn::RK_SUCCESS);
-  // CHECK(execution_->GetOutputs(device_otensors_) == rk::nn::RK_SUCCESS);
-  VLOG(3) << "[NNAdapter] Process cost " << GetCurrentUS() - start_time
-          << " us";
+  int result = NNAdapterExecution_compute(execution_);
+  if (result != NNADAPTER_NO_ERROR) {
+    LOG(WARNING) << "Failed to run the execution(" << result << ")!";
+    return false;
+  }
+  VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
   return true;
 }
 
+SubgraphEngine::SubgraphEngine(
+    KernelContext* ctx,
+    int block_idx,
+    const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+    Scope* exec_scope,
+    const std::vector<std::string>& input_names,
+    const std::vector<std::string>& output_names)
+    : subgraph::SubgraphEngineBase(
+          ctx, block_idx, program_desc, exec_scope, input_names, output_names) {
+  // Get the device names from the scope
+  auto device_names = ctx->As<NNAdapterContext>().NNAdapterDevices(exec_scope);
+  CHECK_GT(device_names.size(), 0) << "No device is specified.";
+  // Get the specified devices and create a context for each device to build or
+  // load the device-related program from the model or the cache files/buffers.
+  for (auto& device_name : device_names) {
+    NNAdapterDevice* device = nullptr;
+    int result = NNAdapterDevice_acquire(device_name.c_str(), &device);
+    bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
+    if (found) {
+      const char* name = nullptr;
+      NNAdapterDevice_getName(device, &name);
+      const char* vendor = nullptr;
+      NNAdapterDevice_getVendor(device, &vendor);
+      NNAdapterDeviceType type = 0;
+      NNAdapterDevice_getType(device, &type);
+      int32_t version = 0;
+      NNAdapterDevice_getVersion(device, &version);
+      VLOG(3) << "nnadapter device " << name << ": vendor=" << vendor
+              << " type=" << type << " version=" << version;
+      devices_.push_back(device);
+      // Only support the first found device.
+      break;
+    }
+  }
+  CHECK_GT(devices_.size(), 0) << "No device is found.";
+  // Get the model cache dir from the scope
+  model_cache_dir_ =
+      ctx_->As<NNAdapterContext>().NNAdapterModelCacheDir(exec_scope_);
+  VLOG(3) << "nnadapter model_cache_dir: " << model_cache_dir_;
+}
+
+SubgraphEngine::~SubgraphEngine() {
+  for (auto* device : devices_) {
+    NNAdapterDevice_release(device);
+  }
+}
+
 bool SubgraphEngine::BuildDeviceProgram() {
-  // Check if the cache device program exists
+  // Check if the compiled device program exists
   if (!device_programs_.count(origin_idims_)) {
-    auto device_program = std::make_shared<DeviceProgram>();
-    // Generate the model name by the names and dimensions of the input and
-    // output tensors
-    device_program->model_name_ = DeviceProgram::GenerateModelName(
-        input_names_, output_names_, origin_idims_);
-    // Load the cached configuration and model from the buffers which are stored
-    // as the tensors in the exec scope
-    std::vector<char> model_cache_cfg_buffer;
-    std::vector<char> model_cache_bin_buffer;
-    ctx_->As<NNAdapterContext>().SubgraphModelCacheBuffers(
-        exec_scope_,
-        device_program->model_name_,
-        &model_cache_cfg_buffer,
-        &model_cache_bin_buffer);
-    VLOG(3) << "[NNAdapter] Getting subgraph_model_cache_cfg_buffer: "
-            << model_cache_cfg_buffer.size()
-            << ", subgraph_model_cache_bin_buffer: "
-            << model_cache_bin_buffer.size();
-    // Obtain the model cache dir from the Context of the subgraph op
-    auto model_cache_dir =
-        ctx_->As<NNAdapterContext>().SubgraphModelCacheDir(exec_scope_);
-    VLOG(3) << "[NNAdapter] Getting subgraph_model_cache_dir: "
-            << model_cache_dir;
-    // Obtain the nnadapter device names
-    auto nnadapter_device_names =
-        ctx_->As<NNAdapterContext>().SubgraphNNAdapterDevices(exec_scope_);
-    VLOG(3) << "[NNAdapter] Getting subgraph_nndapter_devices: "
-            << nnadapter_device_names.size();
-    // Check and load if the cached model and configuration file exists
-    if (!device_program->LoadCacheFromBufferAndFile(input_names_,
-                                                    output_names_,
-                                                    origin_idims_,
-                                                    origin_itensors_,
-                                                    origin_otensors_,
-                                                    &model_cache_cfg_buffer,
-                                                    &model_cache_bin_buffer,
-                                                    model_cache_dir,
-                                                    nnadapter_device_names)) {
-      // Build the model online, including converting the paddle ops to the RK
-      // IR nodes, building the RK IR graph, and generate a execution for
-      // inference.
+    std::string model_cache_key =
+        KeyGenerator(input_names_, output_names_, origin_idims_);
+    auto device_program =
+        std::make_shared<DeviceProgram>(model_cache_key, &devices_);
+    // Load the compiled device program from the buffers which are stored as the
+    // tensors in the scope
+    std::vector<char> model_cache_buffer;
+    ctx_->As<NNAdapterContext>().NNAdapterModelCacheBuffers(
+        exec_scope_, model_cache_key, &model_cache_buffer);
+    VLOG(3) << "nnadapter model_cache_buffer size: "
+            << model_cache_buffer.size();
+    // Load if the compiled device program exists
+    if (!device_program->LoadFromCache(&model_cache_buffer, model_cache_dir_)) {
       if (!origin_program_) {
         BuildOriginProgram();
       }
-      CHECK(origin_program_)
-          << "[NNAdapter] The origin program is not initialized!";
+      CHECK(origin_program_) << "The origin program is not initialized!";
       CHECK_GT(origin_program_->instructions().size(), 0)
-          << "[NNAdapter] No instructions found in the origin program!";
-      if (!device_program->BuildGraphAndCacheToFile(origin_program_.get(),
-                                                    input_names_,
-                                                    output_names_,
-                                                    origin_idims_,
-                                                    origin_itensors_,
-                                                    origin_otensors_,
-                                                    model_cache_dir,
-                                                    nnadapter_device_names)) {
+          << "No instructions found in the origin program!";
+      // Build the model online and cache to the files
+      if (!device_program->BuildAndCacheToFiles(origin_program_.get(),
+                                                input_names_,
+                                                output_names_,
+                                                model_cache_dir_)) {
         return false;
       }
     }
-    if (!device_program->graph_ || !device_program->execution_) {
+    if (!device_program->IsValid()) {
       return false;
     }
     device_programs_[origin_idims_] = device_program;
   }
   auto device_program = device_programs_[origin_idims_];
-  CHECK(device_program && device_program->graph_ && device_program->execution_);
-  return device_program->PrepareInputsOutputs(
-      input_names_, output_names_, &origin_itensors_, &origin_otensors_);
+  CHECK(device_program && device_program->IsValid());
+  return device_program->SetInputsAndOutputs(&origin_itensors_,
+                                             &origin_otensors_);
 }
 
 bool SubgraphEngine::LaunchDeviceProgram() {
-  // Roll back to launch the origin program if the device program can't be
-  // found or graph/execution isn't initialized.
+  // Fallback to launch the origin program if the device program is not found or
+  // initialized.
   if (!device_programs_.count(origin_idims_)) {
     return LaunchOriginProgram();
   }
   auto device_program = device_programs_[origin_idims_];
-  if (!device_program->graph_ || !device_program->execution_) {
+  if (!device_program->IsValid()) {
     return LaunchOriginProgram();
   }
-  return device_program->StartExecution();
+  return device_program->Execute();
 }
 
 void SubgraphCompute::PrepareForRun() {

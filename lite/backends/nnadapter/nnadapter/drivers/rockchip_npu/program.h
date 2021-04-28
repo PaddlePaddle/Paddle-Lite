@@ -14,20 +14,16 @@
 
 #pragma once
 
+#include <map>
+#include <memory>
+#include <vector>
 #include "../../nnadapter_driver.h"  // NOLINT
+#include "context.h"                 // NOLINT
+#include "rknpu/rknpu_pub.h"         // NOLINT
 
 namespace nnadapter {
 namespace driver {
-namespace huawei_kirin_npu {
-
-class Context {
- public:
-  Context() {}
-  ~Context() {}
-
- private:
-  void* context_{nullptr};
-};
+namespace rockchip_npu {
 
 class Program {
  public:
@@ -35,8 +31,21 @@ class Program {
   ~Program();
 
   int Build(driver::Model* model, driver::Cache* cache);
+  int Execute(uint32_t input_count,
+              driver::Argument* input_arguments,
+              uint32_t output_count,
+              driver::Argument* output_arguments);
+
+ private:
+  std::shared_ptr<rk::nn::Tensor> ConvertOperand(driver::Operand* operand);
+  int ConvertConv2D(driver::Operation* operation);
+  std::map<driver::Operand*, std::shared_ptr<rk::nn::Tensor>> nodes_;
+  rk::nn::Graph* graph_{nullptr};
+  rk::nn::Exection* execution_{nullptr};
+  std::vector<rk::nn::InputInfo> input_info_;
+  std::vector<rk::nn::OutputInfo> output_info_;
 };
 
-}  // namespace huawei_kirin_npu
+}  // namespace rockchip_npu
 }  // namespace driver
 }  // namespace nnadapter

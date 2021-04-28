@@ -55,6 +55,132 @@ bool IsPerChannelScales(const std::vector<float>& scales) {
   return true;
 }
 
+bool IsPrecisionCompatible(const NNAdapterOperandType* target,
+                           const PrecisionType reference) {
+  bool compatiable = false;
+  switch (target->precision) {
+    case NNADAPTER_TENSOR_BOOL8:
+      compatiable = reference == PRECISION(kBool);
+      break;
+    case NNADAPTER_TENSOR_INT8:
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+      compatiable = reference == PRECISION(kInt8);
+      break;
+    case NNADAPTER_TENSOR_INT16:
+      compatiable = reference == PRECISION(kInt16);
+      break;
+    case NNADAPTER_TENSOR_INT32:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
+      compatiable = reference == PRECISION(kInt32);
+      break;
+    case NNADAPTER_TENSOR_INT64:
+      compatiable = reference == PRECISION(kInt64);
+      break;
+    case NNADAPTER_TENSOR_FLOAT16:
+      compatiable = reference == PRECISION(kFP16);
+      break;
+    case NNADAPTER_TENSOR_FLOAT32:
+      compatiable = reference == PRECISION(kFloat);
+      break;
+    case NNADAPTER_TENSOR_FLOAT64:
+      compatiable = reference == PRECISION(kFP64);
+      break;
+    default:
+      break;
+  }
+  return compatiable;
+}
+
+bool IsLayoutCompatible(const NNAdapterOperandType* target,
+                        const DataLayoutType& reference) {
+  bool compatiable = false;
+  switch (target->layout) {
+    case NNADAPTER_NCHW:
+      compatiable = reference == DATALAYOUT(kNCHW);
+      break;
+    case NNADAPTER_NHWC:
+      compatiable = reference == DATALAYOUT(kNHWC);
+      break;
+    default:
+      break;
+  }
+  return true;
+}
+
+bool IsDimensionCompatible(const NNAdapterOperandType* target,
+                           const DDim& reference) {
+  bool compatiable = target->dimension_count == reference.size();
+  if (compatiable) {
+    for (size_t i = 0; i < target->dimension_count; i++) {
+      // -1 mean Any for dynamic shape
+      if (target->dimensions[i] != -1 &&
+          target->dimensions[i] != reference[i]) {
+        compatiable = false;
+        break;
+      }
+    }
+  }
+  return compatiable;
+}
+
+std::vector<int32_t> ConvertDimensions(const DDim& input_dimensions) {
+  std::vector<int32_t> output_dimensions(input_dimensions.size());
+  for (size_t i = 0; i < input_dimensions.size(); i++) {
+    output_dimensions[i] = static_cast<int32_t>(input_dimensions[i]);
+  }
+  return output_dimensions;
+}
+
+DDim ConvertDimensions(int32_t* input_dimensions,
+                       uint32_t input_dimension_count) {
+  std::vector<int64_t> output_dimensions(input_dimension_count);
+  for (int i = 0; i < input_dimension_count; i++) {
+    output_dimensions[i] = static_cast<int64_t>(input_dimensions[i]);
+  }
+  return DDim(output_dimensions);
+}
+
+PrecisionType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
+  PrecisionType output_precision = PRECISION(kUnk);
+  switch (input_precision) {
+    case NNADAPTER_TENSOR_BOOL8:
+      output_precision = PRECISION(kBool);
+      break;
+    case NNADAPTER_TENSOR_INT8:
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+      output_precision = PRECISION(kInt8);
+      break;
+    case NNADAPTER_TENSOR_INT16:
+      output_precision = PRECISION(kInt16);
+      break;
+    case NNADAPTER_TENSOR_INT32:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
+      output_precision = PRECISION(kInt32);
+      break;
+    case NNADAPTER_TENSOR_INT64:
+      output_precision = PRECISION(kInt64);
+      break;
+    case NNADAPTER_TENSOR_FLOAT16:
+      output_precision = PRECISION(kFP16);
+      break;
+    case NNADAPTER_TENSOR_FLOAT32:
+      output_precision = PRECISION(kFloat);
+      break;
+    case NNADAPTER_TENSOR_FLOAT64:
+      output_precision = PRECISION(kFP64);
+      break;
+    default:
+      LOG(FATAL) << "Failed to convert the NNAdapter operand precision code("
+                 << input_precision << ") to PrecisionType !";
+      break;
+  }
+  return output_precision;
+}
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite

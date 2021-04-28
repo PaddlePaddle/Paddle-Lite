@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/backends/nnadapter/nnadapter_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
@@ -32,46 +33,32 @@ namespace nnadapter {
 
 class DeviceProgram {
  public:
-  DeviceProgram() {}
-  ~DeviceProgram() {}
-  static std::string GenerateModelName(
-      const std::vector<std::string>& input_names,
-      const std::vector<std::string>& output_names,
-      const std::vector<std::vector<int64_t>>& origin_idims);
-  bool LoadCacheFromBufferAndFile(
-      const std::vector<std::string>& input_names,
-      const std::vector<std::string>& output_names,
-      const std::vector<std::vector<int64_t>>& origin_idims,
-      const std::vector<Tensor*>& origin_itensors,
-      const std::vector<Tensor*>& origin_otensors,
-      std::vector<char>* model_cache_cfg_buffer,
-      std::vector<char>* model_cache_bin_buffer,
-      const std::string& model_cache_dir,
-      const std::vector<std::string>& nnadapter_device_names);
-  bool BuildGraphAndCacheToFile(
-      RuntimeProgram* origin_program,
-      const std::vector<std::string>& input_names,
-      const std::vector<std::string>& output_names,
-      const std::vector<std::vector<int64_t>>& origin_idims,
-      const std::vector<Tensor*>& origin_itensors,
-      const std::vector<Tensor*>& origin_otensors,
-      const std::string& model_cache_dir,
-      const std::vector<std::string>& nnadapter_device_names);
-  bool PrepareInputsOutputs(const std::vector<std::string>& input_names,
+  explicit DeviceProgram(const std::string& model_cache_key,
+                         std::vector<NNAdapterDevice*>* devices)
+      : model_cache_key_(model_cache_key), devices_(devices) {}
+  ~DeviceProgram();
+  // Load the compiled device program from the buffers or files
+  bool LoadFromCache(std::vector<char>* model_cache_buffer,
+                     const std::string& model_cache_dir);
+  // Build the model online and cache the compiled device program to the file
+  // system if model_cache_dir is given
+  bool BuildAndCacheToFiles(RuntimeProgram* origin_program,
+                            const std::vector<std::string>& input_names,
                             const std::vector<std::string>& output_names,
-                            std::vector<Tensor*>* origin_itensors,
-                            std::vector<Tensor*>* origin_otensors);
-  bool StartExecution();
+                            const std::string& model_cache_dir);
+  // Create an execution and set the buffer of inputs and outputs
+  bool SetInputsAndOutputs(std::vector<Tensor*>* origin_itensors,
+                           std::vector<Tensor*>* origin_otensors);
+  bool Execute();
+  bool IsValid() { return devices_ && compilation_; }
+  bool IsReady() { return IsValid() && execution_; }
 
  public:
-  std::string model_name_{""};
-  std::vector<std::vector<int64_t>> origin_odims_;
-  std::vector<PrecisionType> origin_otypes_;
-
-  // std::vector<rk::nn::InputInfo> device_itensors_{};
-  // std::vector<rk::nn::OutputInfo> device_otensors_{};
-  std::shared_ptr<int> graph_{nullptr};
-  std::unique_ptr<int> execution_{nullptr};
+  std::string model_cache_key_{""};
+  NNAdapterModel* model_{nullptr};
+  NNAdapterCompilation* compilation_{nullptr};
+  NNAdapterExecution* execution_{nullptr};
+  std::vector<NNAdapterDevice*>* devices_{nullptr};
 };
 
 class SubgraphEngine : public subgraph::SubgraphEngineBase {
@@ -81,18 +68,16 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
                  const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
                  Scope* exec_scope,
                  const std::vector<std::string>& input_names,
-                 const std::vector<std::string>& output_names)
-      : subgraph::SubgraphEngineBase(ctx,
-                                     block_idx,
-                                     program_desc,
-                                     exec_scope,
-                                     input_names,
-                                     output_names) {}
+                 const std::vector<std::string>& output_names);
+  ~SubgraphEngine();
 
  protected:
   bool BuildDeviceProgram() override;
   bool LaunchDeviceProgram() override;
 
+ private:
+  std::string model_cache_dir_{""};
+  std::vector<NNAdapterDevice*> devices_;
   std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<DeviceProgram>>
       device_programs_;
 };

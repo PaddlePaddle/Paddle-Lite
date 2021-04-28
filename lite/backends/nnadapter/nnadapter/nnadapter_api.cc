@@ -134,7 +134,7 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperand(NNAdapterModel* model,
 
 NNADAPTER_EXPORT int NNAdapterModel_setOperand(NNAdapterOperand* operand,
                                                void* buffer,
-                                               size_t length) {
+                                               uint32_t length) {
   if (!operand || !buffer || !length) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -163,22 +163,25 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperation(
   return result;
 }
 
-NNADAPTER_EXPORT int NNAdapterModel_setOperation(NNAdapterOperation* operation,
-                                                 uint32_t input_count,
-                                                 NNAdapterOperand** inputs,
-                                                 uint32_t output_count,
-                                                 NNAdapterOperand** outputs) {
+NNADAPTER_EXPORT int NNAdapterModel_setOperation(
+    NNAdapterOperation* operation,
+    uint32_t input_count,
+    NNAdapterOperand** input_operands,
+    uint32_t output_count,
+    NNAdapterOperand** output_operands) {
   if (!operation) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto o = reinterpret_cast<nnadapter::driver::Operation*>(operation);
-  o->inputs.resize(input_count);
+  o->input_operands.resize(input_count);
   for (uint32_t i = 0; i < input_count; i++) {
-    o->inputs[i] = reinterpret_cast<nnadapter::driver::Operand*>(inputs[i]);
+    o->input_operands[i] =
+        reinterpret_cast<nnadapter::driver::Operand*>(input_operands[i]);
   }
-  o->outputs.resize(output_count);
+  o->output_operands.resize(output_count);
   for (uint32_t i = 0; i < output_count; i++) {
-    o->outputs[i] = reinterpret_cast<nnadapter::driver::Operand*>(outputs[i]);
+    o->output_operands[i] =
+        reinterpret_cast<nnadapter::driver::Operand*>(output_operands[i]);
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -186,15 +189,15 @@ NNADAPTER_EXPORT int NNAdapterModel_setOperation(NNAdapterOperation* operation,
 NNADAPTER_EXPORT int NNAdapterModel_identifyInputsAndOutputs(
     NNAdapterModel* model,
     uint32_t input_count,
-    NNAdapterOperand** inputs,
+    NNAdapterOperand** input_operands,
     uint32_t output_count,
-    NNAdapterOperand** outputs) {
-  if (!model || !outputs || !output_count) {
+    NNAdapterOperand** output_operands) {
+  if (!model || !output_operands || !output_count) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
-  auto is = reinterpret_cast<nnadapter::driver::Operand**>(inputs);
-  auto os = reinterpret_cast<nnadapter::driver::Operand**>(outputs);
+  auto is = reinterpret_cast<nnadapter::driver::Operand**>(input_operands);
+  auto os = reinterpret_cast<nnadapter::driver::Operand**>(output_operands);
   return m->IdentifyInputsAndOutputs(input_count, is, output_count, os);
 }
 
@@ -202,7 +205,7 @@ NNADAPTER_EXPORT int NNAdapterCompilation_create(
     NNAdapterModel* model,
     const char* cache_key,
     void* cache_buffer,
-    size_t cache_length,
+    uint32_t cache_length,
     const char* cache_dir,
     NNAdapterDevice** devices,
     uint32_t num_devices,
@@ -242,6 +245,20 @@ NNADAPTER_EXPORT int NNAdapterCompilation_finish(
   return c->Finish();
 }
 
+int NNAdapterCompilation_queryInputsAndOutputs(
+    NNAdapterCompilation* compilation,
+    uint32_t* input_count,
+    NNAdapterOperandType** input_types,
+    uint32_t* output_count,
+    NNAdapterOperandType** output_types) {
+  if (!compilation || !input_count || !output_count) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto c = reinterpret_cast<nnadapter::runtime::Compilation*>(compilation);
+  return c->QueryInputsAndOutputs(
+      input_count, input_types, output_count, output_types);
+}
+
 NNADAPTER_EXPORT int NNAdapterExecution_create(
     NNAdapterCompilation* compilation, NNAdapterExecution** execution) {
   if (!compilation || !execution) {
@@ -267,10 +284,10 @@ NNADAPTER_EXPORT void NNAdapterExecution_destroy(
 
 NNADAPTER_EXPORT int NNAdapterExecution_setInput(NNAdapterExecution* execution,
                                                  int32_t index,
-                                                 const uint32_t* dimensions,
+                                                 const int32_t* dimensions,
                                                  uint32_t dimension_count,
                                                  void* buffer,
-                                                 size_t length) {
+                                                 uint32_t length) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -280,10 +297,10 @@ NNADAPTER_EXPORT int NNAdapterExecution_setInput(NNAdapterExecution* execution,
 
 NNADAPTER_EXPORT int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
                                                   int32_t index,
-                                                  const uint32_t* dimensions,
+                                                  const int32_t* dimensions,
                                                   uint32_t dimension_count,
                                                   void* buffer,
-                                                  size_t length) {
+                                                  uint32_t length) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }

@@ -22,11 +22,11 @@ namespace imagination_nna {
 
 class Context {
  public:
-  explicit Context(void* raw_ctx) : raw_ctx_(raw_ctx) {}
+  Context() {}
   ~Context() {}
 
  private:
-  void* raw_ctx_{nullptr};
+  void* context_{nullptr};
 };
 
 class Program {

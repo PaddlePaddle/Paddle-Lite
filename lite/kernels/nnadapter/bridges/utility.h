@@ -31,10 +31,30 @@ namespace nnadapter {
 bool HasInput(const OpInfo* op_info,
               const Scope* scope,
               const std::string& arg_name);
+
 bool HasOutput(const OpInfo* op_info,
                const Scope* scope,
                const std::string& arg_name);
+
 bool IsPerChannelScales(const std::vector<float>& scales);
+
+bool IsPrecisionCompatible(const NNAdapterOperandType* target,
+                           const PrecisionType reference);
+
+bool IsLayoutCompatible(const NNAdapterOperandType* target,
+                        const DataLayoutType& reference);
+
+bool IsDimensionCompatible(const NNAdapterOperandType* target,
+                           const DDim& reference);
+
+// Paddle to NNAdapter
+std::vector<int32_t> ConvertDimensions(const DDim& input_dimensions);
+// NNAdapter to Paddle
+DDim ConvertDimensions(int32_t* input_dimensions,
+                       uint32_t input_dimension_count);
+
+// NNAdapter to Paddle
+PrecisionType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision);
 
 template <typename T>
 void Quant(const float* input_data,

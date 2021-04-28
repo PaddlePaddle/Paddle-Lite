@@ -27,7 +27,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
-  auto model = converter->GetModel();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
@@ -97,34 +96,33 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Input operand
   CHECK(op_info->HasInputScale(input_scale_name, true));
   auto input_scale = op_info->GetInputScale(input_scale_name, true)[0];
-  std::shared_ptr<Operand> input_node = nullptr;
+  NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(input_name)) {
-    input_node = converter->GetOperand(input_name);
+    input_operand = converter->GetOperand(input_name);
   } else {
-    NNAdapterOperand* input_operand;
     NNAdapterOperandType input_type;
+    memset(&input_type, 0, sizeof(NNAdapterOperandType));
     input_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
     input_type.symm_per_layer_params.scale = input_scale;
     input_type.dimension_count = input_dims.size();
-    input_type.dimensions[0] = static_cast<uint32_t>(input_dims[0]);
-    input_type.dimensions[1] = static_cast<uint32_t>(input_dims[1]);
-    input_type.dimensions[2] = static_cast<uint32_t>(input_dims[2]);
-    input_type.dimensions[3] = static_cast<uint32_t>(input_dims[3]);
-    NNAdapterModel_addOperand(model, &input_type, &input_operand);
-    input_node = converter->AddOperand(input_name, input_operand);
+    input_type.dimensions[0] = static_cast<int32_t>(input_dims[0]);
+    input_type.dimensions[1] = static_cast<int32_t>(input_dims[1]);
+    input_type.dimensions[2] = static_cast<int32_t>(input_dims[2]);
+    input_type.dimensions[3] = static_cast<int32_t>(input_dims[3]);
+    input_operand = converter->AddOperand(&input_type, input_name);
   }
 
   // Filter operand
   CHECK(op_info->HasInputScale(filter_scale_name, true));
   auto filter_scale = op_info->GetInputScale(filter_scale_name, true);
   bool is_perchannel_filter_scales = IsPerChannelScales(filter_scale);
-  NNAdapterOperand* filter_operand;
   NNAdapterOperandType filter_type;
+  memset(&filter_type, 0, sizeof(NNAdapterOperandType));
   filter_type.dimension_count = filter_dims.size();
-  filter_type.dimensions[0] = static_cast<uint32_t>(filter_dims[0]);
-  filter_type.dimensions[1] = static_cast<uint32_t>(filter_dims[1]);
-  filter_type.dimensions[2] = static_cast<uint32_t>(filter_dims[2]);
-  filter_type.dimensions[3] = static_cast<uint32_t>(filter_dims[3]);
+  filter_type.dimensions[0] = static_cast<int32_t>(filter_dims[0]);
+  filter_type.dimensions[1] = static_cast<int32_t>(filter_dims[1]);
+  filter_type.dimensions[2] = static_cast<int32_t>(filter_dims[2]);
+  filter_type.dimensions[3] = static_cast<int32_t>(filter_dims[3]);
   if (is_perchannel_filter_scales) {
     // Per channel
     filter_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
@@ -136,92 +134,67 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     filter_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
     filter_type.symm_per_layer_params.scale = filter_scale[0];
   }
-  NNAdapterModel_addOperand(model, &filter_type, &filter_operand);
-  NNAdapterModel_setOperand(
+  auto filter_operand = converter->AddOperand(&filter_type, filter_name);
+  converter->SetOperand(
       filter_operand, filter->raw_data(), filter->memory_size());
-  auto filter_node = converter->AddOperand(filter_name, filter_operand);
 
   // Paddings, strides and dilations operands
   NNAdapterOperandType int32_type;
+  memset(&int32_type, 0, sizeof(NNAdapterOperandType));
   int32_type.precision = NNADAPTER_INT32;
   int32_type.dimension_count = 0;
 
-  NNAdapterOperand* padding_width_left_operand;
-  NNAdapterModel_addOperand(model, &int32_type, &padding_width_left_operand);
-  NNAdapterModel_setOperand(
+  auto padding_width_left_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(
       padding_width_left_operand, &paddings[0], sizeof(int32_t));
-  auto padding_width_left_node = converter->AddOperand(
-      filter_name + "_padding_width_left", padding_width_left_operand);
 
-  NNAdapterOperand* padding_width_right_operand;
-  NNAdapterModel_addOperand(model, &int32_type, &padding_width_right_operand);
-  NNAdapterModel_setOperand(
+  auto padding_width_right_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(
       padding_width_right_operand, &paddings[1], sizeof(int32_t));
-  auto padding_width_right_node = converter->AddOperand(
-      filter_name + "_padding_width_right", padding_width_right_operand);
 
-  NNAdapterOperand* padding_height_top_operand;
-  NNAdapterModel_addOperand(model, &int32_type, &padding_height_top_operand);
-  NNAdapterModel_setOperand(
+  auto padding_height_top_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(
       padding_height_top_operand, &paddings[2], sizeof(int32_t));
-  auto padding_height_top_node = converter->AddOperand(
-      filter_name + "_padding_height_top", padding_height_top_operand);
 
-  NNAdapterOperand* padding_height_bottom_operand;
-  NNAdapterModel_addOperand(model, &int32_type, &padding_height_bottom_operand);
-  NNAdapterModel_setOperand(
+  auto padding_height_bottom_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(
       padding_height_bottom_operand, &paddings[3], sizeof(int32_t));
-  auto padding_height_bottom_node = converter->AddOperand(
-      filter_name + "_padding_height_bottom", padding_height_bottom_operand);
 
-  NNAdapterOperand* stride_width_operand;
-  NNAdapterModel_addOperand(model, &int32_type, &stride_width_operand);
-  NNAdapterModel_setOperand(stride_width_operand, &strides[0], sizeof(int32_t));
-  auto stride_width_node = converter->AddOperand(filter_name + "_stride_width",
-                                                 stride_width_operand);
+  auto stride_width_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(stride_width_operand, &strides[0], sizeof(int32_t));
 
-  NNAdapterOperand* stride_height_operand;
-  NNAdapterModel_addOperand(model, &int32_type, &stride_height_operand);
-  NNAdapterModel_setOperand(
-      stride_height_operand, &strides[1], sizeof(int32_t));
-  auto stride_height_node = converter->AddOperand(
-      filter_name + "_stride_height", stride_height_operand);
+  auto stride_height_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(stride_height_operand, &strides[1], sizeof(int32_t));
 
-  NNAdapterOperand* dilation_width_operand;
-  NNAdapterModel_addOperand(model, &int32_type, &dilation_width_operand);
-  NNAdapterModel_setOperand(
-      dilation_width_operand, &dilations[0], sizeof(int32_t));
-  auto dilation_width_node = converter->AddOperand(
-      filter_name + "_dilation_width", dilation_width_operand);
+  auto dilation_width_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(dilation_width_operand, &dilations[0], sizeof(int32_t));
 
-  NNAdapterOperand* dilation_height_operand;
-  NNAdapterModel_addOperand(model, &int32_type, &dilation_height_operand);
-  NNAdapterModel_setOperand(
+  auto dilation_height_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(
       dilation_height_operand, &dilations[1], sizeof(int32_t));
-  auto dilation_height_node = converter->AddOperand(
-      filter_name + "_dilation_height", dilation_height_operand);
 
   // Bias
   NNAdapterOperandType bias_type;
+  memset(&bias_type, 0, sizeof(NNAdapterOperandType));
   std::vector<float> bias_scale(filter_scale.size());
   for (size_t i = 0; i < filter_scale.size(); i++) {
     bias_scale[i] = input_scale * filter_scale[i];
   }
   if (is_perchannel_filter_scales) {
     // Per channel
-    bias_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
+    bias_type.precision = NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
     bias_type.symm_per_channel_params.scales = &bias_scale[0];
     bias_type.symm_per_channel_params.scale_count = bias_scale.size();
     bias_type.symm_per_channel_params.channel_dim = 0;
   } else {
     // Per layer
-    bias_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
+    bias_type.precision = NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER;
     bias_type.symm_per_layer_params.scale = bias_scale[0];
   }
   bias_type.dimension_count = 1;
-  bias_type.dimensions[0] = static_cast<uint32_t>(output_channel_size);
+  bias_type.dimensions[0] = static_cast<int32_t>(output_channel_size);
   std::vector<int32_t> quant_bias_data(output_channel_size, 0);
-  std::string bias_name = filter_name + "_dummy_bias";
+  std::string bias_name = output_name + "_dummy_bias";
   if (HasInput(op_info, scope, "Bias")) {
     bias_name = op_info->Input("Bias").front();
     auto bias = scope->FindMutableTensor(bias_name);
@@ -233,11 +206,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto* bias_data = bias->mutable_data<float>();
     Quant(bias_data, output_channel_size, bias_scale, &quant_bias_data[0]);
   }
-  NNAdapterOperand* bias_operand;
-  NNAdapterModel_addOperand(model, &bias_type, &bias_operand);
-  NNAdapterModel_setOperand(bias_operand, &quant_bias_data[0], sizeof(int32_t));
-  std::shared_ptr<Operand> bias_node =
-      converter->AddOperand(bias_name, bias_operand);
+  auto bias_operand = converter->AddOperand(&bias_type, bias_name);
+  converter->SetOperand(bias_operand,
+                        &quant_bias_data[0],
+                        sizeof(int32_t) * quant_bias_data.size());
 
   // Fuse code operand
   int32_t fuse_code_value = 0;
@@ -252,48 +224,38 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     LOG(WARNING) << "Support act_type: " << act_type;
     return FAILED;
   }
-  NNAdapterOperand* fuse_code_operand;
-  NNAdapterModel_addOperand(model, &int32_type, &fuse_code_operand);
-  NNAdapterModel_setOperand(
-      fuse_code_operand, &fuse_code_value, sizeof(int32_t));
-  auto fuse_code_node =
-      converter->AddOperand(filter_name + "_fuse_code", fuse_code_operand);
+  auto fuse_code_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(fuse_code_operand, &fuse_code_value, sizeof(int32_t));
 
   // Output operand
   NNAdapterOperandType output_type;
+  memset(&output_type, 0, sizeof(NNAdapterOperandType));
   output_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
   output_type.symm_per_layer_params.scale = output_scale;
   output_type.dimension_count = output_dims.size();
-  output_type.dimensions[0] = static_cast<uint32_t>(output_dims[0]);
-  output_type.dimensions[1] = static_cast<uint32_t>(output_dims[1]);
-  output_type.dimensions[2] = static_cast<uint32_t>(output_dims[2]);
-  output_type.dimensions[3] = static_cast<uint32_t>(output_dims[3]);
-  NNAdapterOperand* output_operand;
-  NNAdapterModel_addOperand(model, &output_type, &output_operand);
-  auto output_node = converter->AddOperand(output_name, output_operand);
+  output_type.dimensions[0] = static_cast<int32_t>(output_dims[0]);
+  output_type.dimensions[1] = static_cast<int32_t>(output_dims[1]);
+  output_type.dimensions[2] = static_cast<int32_t>(output_dims[2]);
+  output_type.dimensions[3] = static_cast<int32_t>(output_dims[3]);
+  auto output_operand = converter->AddOperand(&output_type, output_name);
 
   // Conv2D operation
   std::vector<NNAdapterOperand*> input_operands = {
-      input_node->operand(),
-      filter_node->operand(),
-      bias_node->operand(),
-      padding_width_left_node->operand(),
-      padding_width_right_node->operand(),
-      padding_height_top_node->operand(),
-      padding_height_bottom_node->operand(),
-      stride_width_node->operand(),
-      stride_height_node->operand(),
-      fuse_code_node->operand(),
-      dilation_width_node->operand(),
-      dilation_height_node->operand()};
-  std::vector<NNAdapterOperand*> output_operands = {output_node->operand()};
-  NNAdapterOperation* conv2d;
-  NNAdapterModel_addOperation(model, NNADAPTER_CONV_2D, &conv2d);
-  NNAdapterModel_setOperation(conv2d,
-                              input_operands.size(),
-                              &input_operands[0],
-                              output_operands.size(),
-                              &output_operands[0]);
+      input_operand,
+      filter_operand,
+      bias_operand,
+      padding_width_left_operand,
+      padding_width_right_operand,
+      padding_height_top_operand,
+      padding_height_bottom_operand,
+      stride_width_operand,
+      stride_height_operand,
+      fuse_code_operand,
+      dilation_width_operand,
+      dilation_height_operand};
+  std::vector<NNAdapterOperand*> output_operands = {output_operand};
+  auto conv2d = converter->AddOperation(NNADAPTER_CONV_2D);
+  converter->SetOperation(conv2d, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

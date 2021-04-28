@@ -41,7 +41,7 @@ int CreateContext(void** context) {
   if (!context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  auto c = new Context(nullptr);
+  auto c = new Context();
   if (!c) {
     *context = nullptr;
     NNADAPTER_LOG(ERROR) << "Failed to create context for mediatek_apu.";
@@ -89,10 +89,10 @@ void DestroyProgram(void* context, void* program) {
 int ExecuteProgram(void* context,
                    void* program,
                    uint32_t input_count,
-                   driver::Argument* inputs,
+                   driver::Argument* input_arguments,
                    uint32_t output_count,
-                   driver::Argument* outputs) {
-  if (!context || !program || !outputs || !output_count) {
+                   driver::Argument* output_arguments) {
+  if (!context || !program || !output_arguments || !output_count) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto p = reinterpret_cast<Program*>(program);

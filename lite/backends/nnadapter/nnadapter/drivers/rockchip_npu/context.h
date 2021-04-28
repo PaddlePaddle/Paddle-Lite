@@ -14,29 +14,19 @@
 
 #pragma once
 
-#include "../../nnadapter_driver.h"  // NOLINT
-
 namespace nnadapter {
 namespace driver {
-namespace huawei_kirin_npu {
+namespace rockchip_npu {
 
 class Context {
  public:
-  Context() {}
-  ~Context() {}
+  Context();
+  ~Context();
 
  private:
   void* context_{nullptr};
 };
 
-class Program {
- public:
-  Program() {}
-  ~Program();
-
-  int Build(driver::Model* model, driver::Cache* cache);
-};
-
-}  // namespace huawei_kirin_npu
+}  // namespace rockchip_npu
 }  // namespace driver
 }  // namespace nnadapter

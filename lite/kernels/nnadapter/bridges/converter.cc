@@ -20,34 +20,53 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int Converter::AddOperand(const std::string& name,
-                          std::shared_ptr<Operand> operand) {
-  auto it = operands_.find(name);
-  if (it != operands_.end()) {
-    // Only temporary variable operand can be shared with the same name
-    if (!operand->is_temporary_variable() ||
-        !it->second.back()->is_temporary_variable()) {
-      LOG(FATAL) << "Constant, input or output operand " << name
-                 << " is redefined.";
-      return -1;
-    }
-  } else {
-    auto ret = operands_.insert(
-        std::make_pair(name, std::vector<std::shared_ptr<Operand>>()));
-    CHECK(ret.second);
-    it = ret.first;
-  }
-  it->second.push_back(operand);
-  return it->second.size();
+NNAdapterOperation* Converter::AddOperation(NNAdapterOperationType type) {
+  NNAdapterOperation* operation = nullptr;
+  NNAdapterModel_addOperation(model_, type, &operation);
+  return operation;
 }
 
-std::shared_ptr<Operand> Converter::AddOperand(const std::string& name,
-                                               NNAdapterOperand* operand) {
-  Operand::Lifetime lifetime = Operand::Lifetime::kTemporaryVariable;
-  auto handle = std::make_shared<Operand>(operand, lifetime);
-  auto index = AddOperand(name, handle);
-  CHECK_GE(index, 1);
-  return handle;
+void Converter::SetOperation(NNAdapterOperation* operation,
+                             std::vector<NNAdapterOperand*>* input_operands,
+                             std::vector<NNAdapterOperand*>* output_operands) {
+  NNAdapterModel_setOperation(operation,
+                              input_operands->size(),
+                              &((*input_operands)[0]),
+                              output_operands->size(),
+                              &((*output_operands)[0]));
+}
+
+bool Converter::HasOperand(const std::string& name) {
+  return operands_.find(name) != operands_.end();
+}
+
+NNAdapterOperand* Converter::GetOperand(std::string name) {
+  CHECK(HasOperand(name)) << "Operand '" << name << "' is not found!";
+  return operands_[name];
+}
+
+NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
+                                        const std::string& name) {
+  NNAdapterOperand* operand = nullptr;
+  if (!name.empty()) {
+    if (HasOperand(name)) {
+      LOG(WARNING) << "Operand '" << name << "' already exists!";
+      operand = operands_[name];
+    } else {
+      NNAdapterModel_addOperand(model_, type, &operand);
+      operands_[name] = operand;
+    }
+  } else {
+    // Anonymous operand
+    NNAdapterModel_addOperand(model_, type, &operand);
+  }
+  return operand;
+}
+
+void Converter::SetOperand(NNAdapterOperand* operand,
+                           void* buffer,
+                           size_t length) {
+  NNAdapterModel_setOperand(operand, buffer, length);
 }
 
 }  // namespace nnadapter

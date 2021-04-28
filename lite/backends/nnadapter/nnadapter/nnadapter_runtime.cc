@@ -53,12 +53,16 @@ void Device::DestroyProgram(void* program) {
 
 int Device::ExecuteProgram(void* program,
                            uint32_t input_count,
-                           driver::Argument* inputs,
+                           driver::Argument* input_arguments,
                            uint32_t output_count,
-                           driver::Argument* outputs) {
-  if (driver_ && context_ && program && outputs && output_count) {
-    return driver_->execute_program(
-        context_, program, input_count, inputs, output_count, outputs);
+                           driver::Argument* output_arguments) {
+  if (driver_ && context_ && program && output_arguments && output_count) {
+    return driver_->execute_program(context_,
+                                    program,
+                                    input_count,
+                                    input_arguments,
+                                    output_count,
+                                    output_arguments);
   }
   return NNADAPTER_INVALID_PARAMETER;
 }
@@ -68,8 +72,10 @@ Model::~Model() {
     if (operand.type.lifetime == NNADAPTER_CONSTANT && operand.buffer) {
       free(operand.buffer);
     }
-    if (operand.type.precision ==
-            NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL &&
+    if ((operand.type.precision ==
+             NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
+         operand.type.precision ==
+             NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL) &&
         operand.type.symm_per_channel_params.scales) {
       free(operand.type.symm_per_channel_params.scales);
     }
@@ -81,7 +87,8 @@ int Model::AddOperand(const NNAdapterOperandType& type,
   model_.operands.emplace_back();
   *operand = &model_.operands.back();
   memcpy(&(*operand)->type, &type, sizeof(NNAdapterOperandType));
-  if (type.precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL) {
+  if (type.precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
+      type.precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL) {
     uint32_t scale_size =
         type.symm_per_channel_params.scale_count * sizeof(float);
     float* scales = reinterpret_cast<float*>(malloc(scale_size));
@@ -102,18 +109,18 @@ int Model::AddOperation(NNAdapterOperationType type,
 }
 
 int Model::IdentifyInputsAndOutputs(uint32_t input_count,
-                                    driver::Operand** inputs,
+                                    driver::Operand** input_operands,
                                     uint32_t output_count,
-                                    driver::Operand** outputs) {
-  model_.inputs.resize(input_count);
+                                    driver::Operand** output_operands) {
+  model_.input_operands.resize(input_count);
   for (uint32_t i = 0; i < input_count; i++) {
-    model_.inputs[i] = inputs[i];
-    model_.inputs[i]->type.lifetime = NNADAPTER_INPUT;
+    model_.input_operands[i] = input_operands[i];
+    model_.input_operands[i]->type.lifetime = NNADAPTER_INPUT;
   }
-  model_.outputs.resize(output_count);
+  model_.output_operands.resize(output_count);
   for (uint32_t i = 0; i < output_count; i++) {
-    model_.outputs[i] = outputs[i];
-    model_.outputs[i]->type.lifetime = NNADAPTER_OUTPUT;
+    model_.output_operands[i] = output_operands[i];
+    model_.output_operands[i]->type.lifetime = NNADAPTER_OUTPUT;
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -127,10 +134,10 @@ int Model::Finish() {
 Compilation::Compilation(Model* model,
                          const char* cache_key,
                          void* cache_buffer,
-                         size_t cache_length,
+                         uint32_t cache_length,
                          const char* cache_dir,
                          std::vector<Device*> devices)
-    : model_(model), program_(nullptr), devices_(devices), completed_{false} {
+    : model_(model), program_(nullptr), devices_(devices), completed_(false) {
   cache_.cache_key = std::string(cache_key);
   cache_.cache_buffer = cache_buffer;
   cache_.cache_length = cache_length;
@@ -152,16 +159,16 @@ Device* Compilation::GetFirstDevice() {
   return first_device;
 }
 
-int Compilation::Execute(std::vector<driver::Argument>* inputs,
-                         std::vector<driver::Argument>* outputs) {
+int Compilation::Execute(std::vector<driver::Argument>* input_arguments,
+                         std::vector<driver::Argument>* output_arguments) {
   // Execute generated program on target device asynchronously or synchronously
   auto first_device = GetFirstDevice();
   // TODO(hong19860320) support asynchronously execution
   return first_device->ExecuteProgram(program_,
-                                      inputs->size(),
-                                      &((*inputs)[0]),
-                                      outputs->size(),
-                                      &((*outputs)[0]));
+                                      input_arguments->size(),
+                                      &((*input_arguments)[0]),
+                                      output_arguments->size(),
+                                      &((*output_arguments)[0]));
 }
 
 int Compilation::Finish() {
@@ -172,49 +179,85 @@ int Compilation::Finish() {
   return first_device->CreateProgram(&model_->model_, &cache_, &program_);
 }
 
+int Compilation::QueryInputsAndOutputs(uint32_t* input_count,
+                                       NNAdapterOperandType** input_types,
+                                       uint32_t* output_count,
+                                       NNAdapterOperandType** output_types) {
+  if (!input_count || !output_count) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  if (model_) {
+    // From model
+    *input_count = static_cast<uint32_t>(model_->model_.input_operands.size());
+    *output_count =
+        static_cast<uint32_t>(model_->model_.output_operands.size());
+    if (input_types && output_types) {
+      for (uint32_t i = 0; i < *input_count; i++) {
+        input_types[i] = &model_->model_.input_operands[i]->type;
+      }
+      for (uint32_t i = 0; i < *output_count; i++) {
+        output_types[i] = &model_->model_.output_operands[i]->type;
+      }
+    }
+  } else {
+    // From cache
+    *input_count = static_cast<uint32_t>(cache_.input_types.size());
+    *output_count = static_cast<uint32_t>(cache_.output_types.size());
+    if (input_types && output_types) {
+      for (uint32_t i = 0; i < *input_count; i++) {
+        input_types[i] = &cache_.input_types[i];
+      }
+      for (uint32_t i = 0; i < *output_count; i++) {
+        output_types[i] = &cache_.output_types[i];
+      }
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
 int Execution::SetInput(int32_t index,
-                        const uint32_t* dimensions,
+                        const int32_t* dimensions,
                         uint32_t dimension_count,
                         void* buffer,
-                        size_t length) {
+                        uint32_t length) {
   driver::Argument* argument = nullptr;
-  for (auto& input : inputs_) {
-    if (input.index == index) {
-      argument = &input;
+  for (auto& input_argument : input_arguments_) {
+    if (input_argument.index == index) {
+      argument = &input_argument;
       break;
     }
   }
   if (!argument) {
-    inputs_.emplace_back();
-    argument = &inputs_.back();
+    input_arguments_.emplace_back();
+    argument = &input_arguments_.back();
     argument->index = index;
   }
   argument->dimension_count = dimension_count;
-  memcpy(argument->dimensions, dimensions, sizeof(uint32_t) * dimension_count);
+  memcpy(argument->dimensions, dimensions, sizeof(int32_t) * dimension_count);
   argument->buffer = buffer;
   argument->length = length;
   return NNADAPTER_NO_ERROR;
 }
 
 int Execution::SetOutput(int32_t index,
-                         const uint32_t* dimensions,
+                         const int32_t* dimensions,
                          uint32_t dimension_count,
                          void* buffer,
-                         size_t length) {
+                         uint32_t length) {
   driver::Argument* argument = nullptr;
-  for (auto& output : outputs_) {
-    if (output.index == index) {
-      argument = &output;
+  for (auto& output_argument : output_arguments_) {
+    if (output_argument.index == index) {
+      argument = &output_argument;
       break;
     }
   }
   if (!argument) {
-    outputs_.emplace_back();
-    argument = &outputs_.back();
+    output_arguments_.emplace_back();
+    argument = &output_arguments_.back();
     argument->index = index;
   }
   argument->dimension_count = dimension_count;
-  memcpy(argument->dimensions, dimensions, sizeof(uint32_t) * dimension_count);
+  memcpy(argument->dimensions, dimensions, sizeof(int32_t) * dimension_count);
   argument->buffer = buffer;
   argument->length = length;
   return NNADAPTER_NO_ERROR;
@@ -222,7 +265,7 @@ int Execution::SetOutput(int32_t index,
 
 int Execution::Compute() {
   // TODO(hong19860320) support asynchronously execution
-  return compilation_->Execute(&inputs_, &outputs_);
+  return compilation_->Execute(&input_arguments_, &output_arguments_);
 }
 
 DriverManager& DriverManager::Global() {
