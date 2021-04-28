@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/scales_fuser.h"
+#include "lite/core/mir/fusion/scaleacts_fuser.h"
 #include <memory>
 #include <vector>
 
@@ -21,11 +21,19 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-void ScalesFuser::BuildPattern() {
+void ScaleactsFuser::BuildPattern() {
   // create input nodes.
   auto* x = VarNode("x")->assert_is_op_input("scale", "X")->AsInput();
 
-  auto scales_teller = [](const Node* node) -> bool {
+  auto scales_teller1 = [](const Node* node) -> bool {
+    bool bias_after_scale =
+        const_cast<Node*>(node)->AsStmt().op_info()->GetAttr<bool>(
+            "bias_after_scale");
+    bool has_act =
+        const_cast<Node*>(node)->AsStmt().op_info()->HasAttr("activation_type");
+    return bias_after_scale && has_act;
+  };
+  auto scales_teller2 = [](const Node* node) -> bool {
     bool bias_after_scale =
         const_cast<Node*>(node)->AsStmt().op_info()->GetAttr<bool>(
             "bias_after_scale");
@@ -37,11 +45,11 @@ void ScalesFuser::BuildPattern() {
   // create op nodes
   auto* scale1 = OpNode("scale1", "scale")
                      ->assert_is_op("scale")
-                     ->assert_node_satisfied(scales_teller)
+                     ->assert_node_satisfied(scales_teller1)
                      ->AsIntermediate();
   auto* scale2 = OpNode("scale2", "scale")
                      ->assert_is_op("scale")
-                     ->assert_node_satisfied(scales_teller)
+                     ->assert_node_satisfied(scales_teller2)
                      ->AsIntermediate();
 
   // create intermediate nodes
@@ -57,7 +65,8 @@ void ScalesFuser::BuildPattern() {
   *x >> *scale1 >> *scale1_out >> *scale2 >> *out;
 }
 
-void ScalesFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
+void ScaleactsFuser::InsertNewNode(SSAGraph* graph,
+                                   const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
   auto scale_op = LiteOpRegistry::Global().Create("scale");
   auto scale = matched.at("scale1")->stmt()->op();
@@ -71,16 +80,15 @@ void ScalesFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   IR_NODE_LINK_TO(new_op_node, matched.at("out"));
 }
 
-cpp::OpDesc ScalesFuser::GenOpDesc(const key2nodes_t& matched) {
-  auto op_desc = *matched.at("scale1")->stmt()->op_info();
-  float scale1 = op_desc.GetAttr<float>("scale");
-  float bias1 = op_desc.GetAttr<float>("bias");
-  float scale2 =
-      matched.at("scale2")->stmt()->op_info()->GetAttr<float>("scale");
-  float bias2 = matched.at("scale2")->stmt()->op_info()->GetAttr<float>("bias");
+cpp::OpDesc ScaleactsFuser::GenOpDesc(const key2nodes_t& matched) {
+  auto* op_desc_tmp = matched.at("scale2")->stmt()->op_info();
+  float scale1 = op_desc_tmp->GetAttr<float>("scale");
+  float bias1 = op_desc_tmp->GetAttr<float>("bias");
 
-  op_desc.SetAttr<float>("scale", scale1 * scale2);
-  op_desc.SetAttr<float>("bias", bias1 * scale2 + bias2);
+  auto op_desc = *matched.at("scale1")->stmt()->op_info();
+  op_desc.SetAttr("fuse_scaleact", true);
+  op_desc.SetAttr("scale1", scale1);
+  op_desc.SetAttr("bias1", bias1);
 
   auto& out_name = matched.at("out")->arg()->name;
   op_desc.SetOutput("Out", {out_name});
