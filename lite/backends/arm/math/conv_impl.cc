@@ -603,7 +603,6 @@ void conv1x1s1_gemm(const float* i_data,
   if (n > 1 && m > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
-  bool has_a53 = (ctx->arch() == kA53 || ctx->arch() == kA35);
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
@@ -616,7 +615,7 @@ void conv1x1s1_gemm(const float* i_data,
           static_cast<const float*>(weights) + g * weights_size_per_group;
       const float* bias_group = static_cast<const float*>(bias) + g * m;
 
-      if (n == 1 && !has_a53) {
+      if (n == 1) {
         sgemv(weights_group,
               din_group,
               dout_group,
@@ -832,7 +831,6 @@ void conv_im2col_gemm(const float* i_data,
   if (n > 1 && m > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
-  bool has_a53 = (ctx->arch() == kA53 || ctx->arch() == kA35);
 
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
@@ -864,7 +862,7 @@ void conv_im2col_gemm(const float* i_data,
                     dilations[0],
                     dilations[1],
                     dB);
-      if (n == 1 && !has_a53) {
+      if (n == 1) {
         sgemv(weights_group,
               dB,
               dout_group,
