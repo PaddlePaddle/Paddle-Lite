@@ -74,11 +74,11 @@ void RuntimeProgram::SaveToProgram(
         auto* v = block_desc->AddVar<cpp::VarDesc>();
         v->SetName(var_name);
         auto it = origin_var_maps.find(var_name);
+        auto* var = scope->FindVar(var_name);
         if (it != origin_var_maps.end() && (it->second.Persistable())) {
           v->SetType(it->second.GetType());
           v->SetPersistable(it->second.Persistable());
           if (it->second.GetType() == cpp::VarDesc::Type::LOD_TENSOR) {
-            auto var = scope->FindVar(var_name);
             if (var != nullptr) {
               auto tensor = var->GetMutable<Tensor>();
               if (tensor != nullptr && tensor->persistable()) {
@@ -99,7 +99,7 @@ void RuntimeProgram::SaveToProgram(
             op_info->GetOutputArgname(var_name, &arg_name);
             decl_type = kernel->GetOutputDeclType(arg_name);
           }
-          if (decl_type->IsTensor()) {
+          if (decl_type->IsTensor() && var->IsType<lite::Tensor>()) {
             v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
             auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
             v->SetPersistable(tensor->persistable());
@@ -126,12 +126,13 @@ void RuntimeProgram::SaveToProgram(
                                << var_name << " in op " << op_type;
               }
             }
-          } else if (decl_type->IsTensorList()) {
+          } else if (decl_type->IsTensorList() ||
+                     var->IsType<std::vector<lite::Tensor>>()) {
             // Set persistable=false for tensor array
             v->SetType(cpp::VarDesc::Type::LOD_TENSOR_ARRAY);
             v->SetPersistable(false);
           } else {
-            CHECK(false) << "Unsupported decl type " << *decl_type
+            LOG(WARNING) << "Unsupported decl type " << *decl_type
                          << " for var " << var_name << " in op " << op_type;
           }
         }
