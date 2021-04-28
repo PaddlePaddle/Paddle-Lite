@@ -66,7 +66,7 @@ void OptBase::SetValidPlaces(const std::string& valid_places,
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
       if (enable_fp16) {
-        valid_places.emplace_back(
+        valid_places_.emplace_back(
             Place{TARGET(kARM), PRECISION(kFP16), DATALAYOUT(kNCHW)});
       }
       valid_places_.emplace_back(
@@ -108,8 +108,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places,
       valid_places_.emplace_back(
           Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else if (target_repr == "intel_fpga") {
-      valid_places.emplace_back(TARGET(kIntelFPGA));
-      valid_places.emplace_back(
+      valid_places_.emplace_back(TARGET(kIntelFPGA));
+      valid_places_.emplace_back(
           Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else {
       OPT_LOG_FATAL << lite::string_format(
