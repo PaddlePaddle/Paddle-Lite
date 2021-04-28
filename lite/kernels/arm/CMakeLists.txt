@@ -31,7 +31,7 @@ add_kernel(pad2d_compute_arm ARM basic SRCS pad2d_compute.cc DEPS ${lite_kernel_
 add_kernel(prior_box_compute_arm ARM basic SRCS prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(calib_compute_arm ARM basic SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(transpose_compute_arm ARM basic SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(yolo_box_compute_arm ARM basic SRCS yolo_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(yolo_box_compute_arm ARM basic SRCS yolo_box_compute.cc DEPS ${lite_kernel_deps} yolo_box_compute_host)
 add_kernel(shuffle_channel_compute_arm ARM basic SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(argmax_compute_arm ARM basic SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(conv_transpose_compute_arm ARM basic SRCS conv_transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)

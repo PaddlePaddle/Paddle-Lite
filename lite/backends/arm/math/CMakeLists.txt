@@ -112,7 +112,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       box_coder.cc
       shuffle_channel.cc
       activation.cc
-      yolo_box.cc
       dropout.cc
       power.cc
       interpolate.cc

@@ -12,17 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/yolo_box_compute.h"
+#pragma once
+#include <vector>
+#include "lite/core/tensor.h"
 
-REGISTER_LITE_KERNEL(yolo_box,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::YoloBoxCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("ImgSize",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace host {
+namespace math {
+
+void YoloBox(lite::Tensor* X,
+             lite::Tensor* ImgSize,
+             lite::Tensor* Boxes,
+             lite::Tensor* Scores,
+             std::vector<int> anchors,
+             int class_num,
+             float conf_thresh,
+             int downsample_ratio,
+             bool clip_bbox,
+             float scale,
+             float bias);
+
+}  // namespace math
+}  // namespace host
+}  // namespace lite
+}  // namespace paddle

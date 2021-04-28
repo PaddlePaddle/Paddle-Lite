@@ -281,11 +281,15 @@ struct ScaleParam : ParamBase {
   lite::Tensor* output{};
 
   float scale{1.f};
-  float bias{};
+  float bias{0.f};
   bool bias_after_scale{true};
   std::string activation_type{""};
   bool fuse_relu{false};
   float alpha{6.f};
+
+  bool fuse_scaleact{false};
+  float scale1{1.f};
+  float bias1{0.f};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1223,9 +1227,7 @@ struct SequencePoolParam : ParamBase {
   lite::Tensor* Out{};
   lite::Tensor* MaxIndex{};
   std::string pool_type{"AVERAGE"};
-#ifdef LITE_WITH_X86
   float pad_value{0.0f};
-#endif
 };
 
 struct SequenceConvParam : ParamBase {
@@ -1912,6 +1914,7 @@ struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* fc_weight_max{};
   const lite::Tensor* mask{nullptr};
   const lite::Tensor* SeqLod{nullptr};
+  const lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* output{nullptr};
 
   std::vector<int> slice_axes{};
@@ -1932,6 +1935,7 @@ struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Tables;
   const lite::Tensor* Mask{nullptr};
   lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
 };

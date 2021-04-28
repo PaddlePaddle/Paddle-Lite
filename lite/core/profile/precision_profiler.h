@@ -53,19 +53,15 @@ namespace lite {
 namespace profile {
 
 static const std::string get_date_str() {
-  auto timestamp =
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch())
-          .count();
-  std::time_t time_t = timestamp / 1000000;
-  auto gmtime = std::gmtime(&time_t);
+  std::time_t now = std::time(nullptr);
   char buffer[32];
-  strftime(buffer, 32, "%Y-%m-%d_%H-%M-%S_", gmtime);
-  char microseconds[8];
-  snprintf(microseconds, sizeof(microseconds), "%06ld", timestamp % 1000000);
-
-  // print date / time
-  return std::string(buffer) + microseconds;
+  if (std::strftime(
+          buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", std::localtime(&now))) {
+    return std::string(buffer);
+  } else {
+    LOG(WARNING) << "Convert calendar time error! Use the default timestamp.";
+    return "timestamp";
+  }
 }
 
 inline std::string generate_valid_tensor_name(const std::string& name) {

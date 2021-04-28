@@ -55,6 +55,7 @@ lite_cc_library(mir_passes
       fusion/__xpu__graph_dedup_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
+      fusion/scaleacts_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc
       fusion/instance_norm_activation_fuse_pass.cc
       fusion/elementwise_add_scale_fuse_pass.cc
