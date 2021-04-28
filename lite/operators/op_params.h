@@ -1227,9 +1227,7 @@ struct SequencePoolParam : ParamBase {
   lite::Tensor* Out{};
   lite::Tensor* MaxIndex{};
   std::string pool_type{"AVERAGE"};
-#ifdef LITE_WITH_X86
   float pad_value{0.0f};
-#endif
 };
 
 struct SequenceConvParam : ParamBase {
