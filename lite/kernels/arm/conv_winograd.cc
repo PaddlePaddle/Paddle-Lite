@@ -22,7 +22,7 @@ namespace kernels {
 namespace arm {
 
 #define WINOGRAD_INIT(cblock)                        \
-  auto& param = this->Param<param_t>();              \
+  auto& param = this->Param();                       \
   auto& ctx = this->ctx_->template As<ARMContext>(); \
   int threads = ctx.threads();                       \
   auto x_dims = param.x->dims();                     \
@@ -120,7 +120,7 @@ PROFILE_INFO(kFloat, kFloat)
 
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
   const auto* i_data = param.x->data<float>();
@@ -287,7 +287,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::PrepareForRun() {
 
 template <PrecisionType OutType>
 void WinogradConv<PRECISION(kInt8), OutType>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
   const auto* i_data = param.x->template data<int8_t>();
@@ -406,7 +406,7 @@ void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
 
 template <>
 void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
   const auto* i_data = param.x->template data<float16_t>();

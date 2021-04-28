@@ -20,7 +20,7 @@ namespace kernels {
 namespace host {
 
 void ConditionalBlockCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   if (program_ == nullptr) {
     program_.reset(new RuntimeProgram(
         param.program_desc, param.exec_scope, param.block_idx));
@@ -28,7 +28,7 @@ void ConditionalBlockCompute::PrepareForRun() {
 }
 
 void ConditionalBlockCompute::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   bool need_run = true;
   if (param.is_scalar_condition) {
     auto* cond = param.cond;

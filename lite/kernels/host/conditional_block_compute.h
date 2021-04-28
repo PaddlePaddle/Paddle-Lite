@@ -40,7 +40,18 @@ class ConditionalBlockCompute
     program_ = std::move(*program);
   }
 
+  void SetParam(
+      const std::shared_ptr<operators::ParamBase>& op_param) override {
+    param_ = std::dynamic_pointer_cast<param_t>(op_param);
+  }
+
+  param_t& Param() {
+    CHECK(param_);
+    return *param_;
+  }
+
  private:
+  std::shared_ptr<param_t> param_;
   std::unique_ptr<RuntimeProgram> program_;
 };
 

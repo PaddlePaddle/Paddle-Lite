@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
@@ -183,11 +184,12 @@ inline bool direct_conv_trans_weights<PRECISION(kFP16), PRECISION(kFP16)>(
 template <PrecisionType Ptype, PrecisionType OutType>
 class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
  public:
+  using param_t = operators::ConvParam;
   DirectConv() = default;
   ~DirectConv() {}
 
   virtual void PrepareForRun() {
-    auto& param = this->template Param<param_t>();
+    auto& param = this->Param();
     auto& ctx = this->ctx_->template As<ARMContext>();
 
     auto x_dims = param.x->dims();
@@ -220,6 +222,16 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
 
   virtual void Run();
 
+  void SetParam(
+      const std::shared_ptr<operators::ParamBase>& op_param) override {
+    param_ = std::dynamic_pointer_cast<param_t>(op_param);
+  }
+
+  param_t& Param() {
+    CHECK(param_);
+    return *param_;
+  }
+
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
@@ -242,14 +254,12 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
 
   /// todo, support inplace weights transform
  protected:
+  std::shared_ptr<param_t> param_;
   Tensor weights_;
   Tensor bias_;
   bool flag_trans_weights_{false};
   bool flag_trans_bias_{false};
   std::vector<float> w_scale_;
-
- private:
-  using param_t = operators::ConvParam;
 };
 
 }  // namespace arm

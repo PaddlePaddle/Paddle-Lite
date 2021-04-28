@@ -23,7 +23,7 @@ PROFILE_INFO(kFloat, kFloat)
 
 template <>
 void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   // extend workspace
   if (param.strides[0] == 2) {
@@ -87,7 +87,7 @@ PROFILE_INFO(kInt8, kFloat)
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();
@@ -147,7 +147,7 @@ PROFILE_INFO(kInt8, kInt8)
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();
@@ -206,7 +206,7 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 #ifdef ENABLE_ARM_FP16
 template <>
 void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   // extend workspace
   if (param.strides[0] == 2) {

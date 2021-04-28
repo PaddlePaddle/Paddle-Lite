@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/conv_impl.h"
@@ -34,11 +35,21 @@ namespace arm {
 template <PrecisionType Ptype, PrecisionType Otype>
 class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
  public:
-  GemmLikeConv() = default;
+  using param_t = operators::ConvParam;
   ~GemmLikeConv() {}
 
+  void SetParam(
+      const std::shared_ptr<operators::ParamBase>& op_param) override {
+    param_ = std::dynamic_pointer_cast<param_t>(op_param);
+  }
+
+  param_t& Param() {
+    CHECK(param_);
+    return *param_;
+  }
+
   virtual void ReInitWhenNeeded() {
-    auto& param = this->template Param<param_t>();
+    auto& param = this->Param();
     CHECK(this->ctx_);
     auto& ctx = this->ctx_->template As<ARMContext>();
     auto x_dims = param.x->dims();
@@ -124,7 +135,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
 
   /// todo, support inplace weights transform
  protected:
-  using param_t = operators::ConvParam;
+  std::shared_ptr<param_t> param_;
   DDim last_shape_;
   std::vector<float> w_scale_;
   bool flag_1x1gemm_{true};

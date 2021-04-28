@@ -129,14 +129,9 @@ class KernelBase {
   void SetContext(std::unique_ptr<KernelContext>&& ctx) {
     ctx_ = std::move(ctx);
   }
-  template <typename T>
-  void SetParam(T param) {
-    param_.set(param);
-  }
-  template <typename P>
-  P& Param() const {
-    return *param_.get_mutable<P>();
-  }
+
+  virtual void SetParam(
+      const std::shared_ptr<operators::ParamBase>& op_param) = 0;
 
   // This is used in the kernels that takes 'kAny' places and inference the
   // output place. For `ScaleCompute` and `IoCopyCompute`, their input types are
@@ -201,7 +196,6 @@ class KernelBase {
 
  protected:
   std::unique_ptr<KernelContext> ctx_{nullptr};
-  mutable operators::param_t param_;
   // The corresponding op type.
   std::string op_type_{};
   // The extra identity to help defficiate a specific kernel, op_type_ + alias_

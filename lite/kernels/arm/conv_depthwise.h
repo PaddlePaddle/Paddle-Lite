@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/conv_impl.h"
@@ -30,6 +31,7 @@ namespace arm {
 template <PrecisionType Ptype, PrecisionType Otype>
 class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
  public:
+  using param_t = operators::ConvParam;
   typedef void (*conv_dw_impl)(const void* din,
                                void* dout,
                                int num,
@@ -59,8 +61,18 @@ class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
   std::string kernel_func_name_{"NotImplForConvDw"};
 #endif
 
+  void SetParam(
+      const std::shared_ptr<operators::ParamBase>& op_param) override {
+    param_ = std::dynamic_pointer_cast<param_t>(op_param);
+  }
+
+  param_t& Param() {
+    CHECK(param_);
+    return *param_;
+  }
+
  private:
-  using param_t = operators::ConvParam;
+  std::shared_ptr<param_t> param_;
   Tensor weights_;
   Tensor bias_;
   DDim last_shape_;

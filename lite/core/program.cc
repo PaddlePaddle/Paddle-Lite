@@ -28,7 +28,7 @@
 
 namespace paddle {
 namespace lite {
-
+#ifndef LITE_ON_TINY_PUBLISH
 void RuntimeProgram::SaveToProgram(
     std::shared_ptr<cpp::ProgramDesc> program_desc) {
   LOG(INFO) << "Into SaveToProgram";
@@ -163,6 +163,7 @@ void RuntimeProgram::SaveToProgram(
   }
   LOG(INFO) << "SaveToProgram done";
 }
+#endif
 
 // Create runtime program from sub_block desc according to block_idx and
 // program_desc, which is used for while/conditional_block/subgraph op.

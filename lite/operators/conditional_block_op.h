@@ -26,8 +26,11 @@ namespace operators {
 
 class ConditionalBlockOp : public OpLite {
  public:
-  ConditionalBlockOp() {}
-  explicit ConditionalBlockOp(const std::string &op_type) : OpLite(op_type) {}
+  using param_t = operators::ConditionalBlockParam;
+  ConditionalBlockOp() { param_ = std::make_shared<param_t>(); }
+  explicit ConditionalBlockOp(const std::string &op_type) : OpLite(op_type) {
+    param_ = std::make_shared<param_t>();
+  }
 
   bool CheckShape() const override;
 
@@ -35,19 +38,20 @@ class ConditionalBlockOp : public OpLite {
 
   bool AttachImpl(const cpp::OpDesc &opdesc, Scope *scope) override;
 
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
   std::string DebugString() const override { return "conditional_block"; }
 
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   void SetProgramDesc(std::shared_ptr<const cpp::ProgramDesc> program_desc) {
-    param_.program_desc = program_desc;
+    param_->program_desc = program_desc;
   }
   std::shared_ptr<const cpp::ProgramDesc> GetProgramDesc() {
-    return param_.program_desc;
+    return param_->program_desc;
   }
 
  private:
-  mutable ConditionalBlockParam param_;
+  // mutable ConditionalBlockParam param_;
+  std::shared_ptr<ConditionalBlockParam> param_;
 };
 
 }  // namespace operators

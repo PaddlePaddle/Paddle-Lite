@@ -30,7 +30,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   ReInitWhenNeeded();
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   /// update scale
   w_scale_ = param.weight_scale;
   if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
@@ -51,7 +51,8 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   ReInitWhenNeeded();
-  auto& param = this->Param<param_t>();
+  // auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   /// update scale
   /// update scale
   w_scale_ = param.weight_scale;
@@ -90,7 +91,8 @@ PROFILE_INFO(kFloat, kFloat);
 
 template <>
 void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  auto& param = this->Param<param_t>();
+  // auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
   auto weights = param.filter->data<float>();
@@ -130,7 +132,8 @@ PROFILE_INFO(kInt8, kFloat);
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
-  auto& param = this->Param<param_t>();
+  // auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
   auto weights = param.filter->data<int8_t>();
@@ -194,7 +197,8 @@ PROFILE_INFO(kInt8, kInt8)
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
-  auto& param = this->Param<param_t>();
+  // auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
   auto weights = param.filter->data<int8_t>();
@@ -262,7 +266,8 @@ void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
 
 template <>
 void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
-  auto& param = this->Param<param_t>();
+  // auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
   auto weights = param.filter->data<float16_t>();

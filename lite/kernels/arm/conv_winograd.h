@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/conv_impl.h"
@@ -34,11 +35,21 @@ namespace arm {
 template <PrecisionType Ptype, PrecisionType OutType>
 class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
  public:
+  using param_t = operators::ConvParam;
   WinogradConv() = default;
   ~WinogradConv() {}
   virtual void PrepareForRun();
   virtual void ReInitWhenNeeded();
   virtual void Run();
+  void SetParam(
+      const std::shared_ptr<operators::ParamBase>& op_param) override {
+    param_ = std::dynamic_pointer_cast<param_t>(op_param);
+  }
+  param_t& Param() {
+    CHECK(param_);
+    return *param_;
+  }
+
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
@@ -60,7 +71,7 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
 #endif
 
  protected:
-  using param_t = operators::ConvParam;
+  std::shared_ptr<param_t> param_;
   Tensor weights_;
   DDim last_shape_;
   int workspace_size_{0};
@@ -71,11 +82,20 @@ template <PrecisionType OutType>
 class WinogradConv<PRECISION(kInt8), OutType>
     : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
  public:
+  using param_t = operators::ConvParam;
   WinogradConv() = default;
   ~WinogradConv() {}
   virtual void PrepareForRun();
   virtual void ReInitWhenNeeded();
   virtual void Run();
+  void SetParam(
+      const std::shared_ptr<operators::ParamBase>& op_param) override {
+    param_ = std::dynamic_pointer_cast<param_t>(op_param);
+  }
+  param_t& Param() {
+    CHECK(param_);
+    return *param_;
+  }
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
@@ -97,7 +117,7 @@ class WinogradConv<PRECISION(kInt8), OutType>
 #endif
 
  protected:
-  using param_t = operators::ConvParam;
+  std::shared_ptr<param_t> param_;
   Tensor weights_;
   Tensor bias_;
   DDim last_shape_;

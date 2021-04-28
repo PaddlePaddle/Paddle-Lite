@@ -22,18 +22,18 @@ namespace lite {
 namespace operators {
 
 bool ConvOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.output);
-  CHECK_OR_FALSE(param_.filter);
+  CHECK_OR_FALSE(param_->x);
+  CHECK_OR_FALSE(param_->output);
+  CHECK_OR_FALSE(param_->filter);
   // bias is optional.
 
-  const auto in_dims = param_.x->dims();
-  const auto filter_dims = param_.filter->dims();
+  const auto in_dims = param_->x->dims();
+  const auto filter_dims = param_->filter->dims();
 
   CHECK_OR_FALSE(in_dims.size() == 4 || in_dims.size() == 5);
 
   CHECK_EQ_OR_FALSE(in_dims.size(), filter_dims.size());
-  CHECK_OR_FALSE(in_dims.size() - param_.strides.size() == 2U);
+  CHECK_OR_FALSE(in_dims.size() - param_->strides.size() == 2U);
   CHECK_EQ_OR_FALSE(filter_dims.size(), 4UL);
 
   return true;
@@ -81,31 +81,31 @@ void UpdatePaddingAndDilation(std::vector<int>* paddings,
 }
 
 bool ConvOpLite::InferShapeImpl() const {
-  const auto in_dims = param_.x->dims();
-  const auto filter_dims = param_.filter->dims();
+  const auto in_dims = param_->x->dims();
+  const auto filter_dims = param_->filter->dims();
 
-  UpdatePaddingAndDilation(param_.paddings.get(),
-                           param_.dilations.get(),
-                           param_.strides,
+  UpdatePaddingAndDilation(param_->paddings.get(),
+                           param_->dilations.get(),
+                           param_->strides,
                            padding_algorithm_,
                            in_dims,
                            filter_dims);
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
-  auto paddings = *param_.paddings;
-  auto dilations = *param_.dilations;
-  for (size_t i = 0; i < param_.strides.size(); ++i) {
+  auto paddings = *param_->paddings;
+  auto dilations = *param_->dilations;
+  for (size_t i = 0; i < param_->strides.size(); ++i) {
     output_shape.push_back(ConvOutputSize(in_dims[i + 2],
                                           filter_dims[i + 2],
                                           dilations[i],
                                           paddings[i * 2],
                                           paddings[i * 2 + 1],
-                                          param_.strides[i]));
+                                          param_->strides[i]));
   }
 
   // Set output dims
-  param_.output->Resize(lite::DDim(output_shape));
+  param_->output->Resize(lite::DDim(output_shape));
   // share LoD
-  param_.output->set_lod(param_.x->lod());
+  param_->output->set_lod(param_->x->lod());
 
   return true;
 }

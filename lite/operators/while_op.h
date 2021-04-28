@@ -26,8 +26,11 @@ namespace operators {
 
 class WhileOp : public OpLite {
  public:
-  WhileOp() {}
-  explicit WhileOp(const std::string &op_type) : OpLite(op_type) {}
+  using param_t = operators::WhileParam;
+  WhileOp() { param_ = std::make_shared<param_t>(); }
+  explicit WhileOp(const std::string &op_type) : OpLite(op_type) {
+    param_ = std::make_shared<param_t>();
+  }
 
   bool CheckShape() const override;
 
@@ -40,16 +43,17 @@ class WhileOp : public OpLite {
   std::string DebugString() const override { return "while"; }
 
   void SetProgramDesc(std::shared_ptr<const cpp::ProgramDesc> program_desc) {
-    param_.program_desc = program_desc;
+    param_->program_desc = program_desc;
   }
   std::shared_ptr<const cpp::ProgramDesc> GetProgramDesc() {
-    return param_.program_desc;
+    return param_->program_desc;
   }
 
   bool InferType() override { return true; }
 
  private:
-  mutable WhileParam param_;
+  std::shared_ptr<param_t> param_;
+  // mutable WhileParam param_;
 };
 
 }  // namespace operators

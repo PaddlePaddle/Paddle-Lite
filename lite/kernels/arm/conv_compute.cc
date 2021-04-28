@@ -29,7 +29,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 #define PARAM_INIT                                                           \
-  auto& param = this->Param<param_t>();                                      \
+  auto& param = this->Param();                                               \
   auto w_dims = param.filter->dims();                                        \
   auto& ctx = this->ctx_->template As<ARMContext>();                         \
   auto paddings = *param.paddings;                                           \
@@ -80,7 +80,7 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     // VLOG(3) << "invoking gemm like conv";
   }
   impl_->SetContext(std::move(this->ctx_));
-  impl_->SetParam(param);
+  // impl_->SetParam(param);
   impl_->PrepareForRun();
   is_first_epoch_ = false;
 }
@@ -105,7 +105,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     // VLOG(3) << "Run GemmLikeConvInt8";
   }
   impl_->SetContext(std::move(this->ctx_));
-  impl_->SetParam(param);
+  // impl_->SetParam(param);
   impl_->PrepareForRun();
   is_first_epoch_ = false;
 }
@@ -130,7 +130,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     // VLOG(3) << "Run GemmLikeConvInt8";
   }
   impl_->SetContext(std::move(this->ctx_));
-  impl_->SetParam(param);
+  // impl_->SetParam(param);
   impl_->PrepareForRun();
   is_first_epoch_ = false;
 }
@@ -161,7 +161,7 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
     impl_ = new GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>;
   }
   impl_->SetContext(std::move(this->ctx_));
-  impl_->SetParam(param);
+  // impl_->SetParam(param);
   impl_->PrepareForRun();
   is_first_epoch_ = false;
 }

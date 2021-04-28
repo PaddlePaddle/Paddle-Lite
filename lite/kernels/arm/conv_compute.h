@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
 #ifdef LITE_WITH_PROFILE
@@ -27,6 +28,7 @@ namespace arm {
 template <PrecisionType Ptype, PrecisionType OutType>
 class ConvCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
+  using param_t = operators::ConvParam;
   virtual void PrepareForRun();
 
   virtual void ReInitWhenNeeded() {
@@ -52,8 +54,18 @@ class ConvCompute : public KernelLite<TARGET(kARM), Ptype> {
     }
   }
 
+  void SetParam(
+      const std::shared_ptr<operators::ParamBase>& op_param) override {
+    param_ = std::dynamic_pointer_cast<param_t>(op_param);
+  }
+
+  param_t& Param() {
+    CHECK(param_);
+    return *param_;
+  }
+
  private:
-  using param_t = operators::ConvParam;
+  std::shared_ptr<param_t> param_;
   KernelLite<TARGET(kARM), Ptype>* impl_{nullptr};
 };
 

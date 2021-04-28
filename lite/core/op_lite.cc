@@ -26,8 +26,8 @@ namespace lite {
 bool OpLite::InferShape() {
   // if input_tensor_ptrs and output_tensor_ptrs are overloaded in param_
   // InferShapeByMemoryInternal will be applied.
-  if (op_param_ && op_param_->input_tensor_ptrs() &&
-      op_param_->output_tensor_ptrs()) {
+  if (this->OpParam() && this->OpParam()->input_tensor_ptrs() &&
+      this->OpParam()->output_tensor_ptrs()) {
     return this->InferShapeWithCache();
   } else {
     return this->InferShapeImpl();
@@ -35,7 +35,7 @@ bool OpLite::InferShape() {
 }
 bool OpLite::InferShapeWithCache() {
   // 1. Get vector of current input tensors
-  auto *current_inputs = op_param_->input_tensor_ptrs();
+  auto *current_inputs = this->OpParam()->input_tensor_ptrs();
   // 2. Get hash value of current inputs shape and lod
   bool use_cache = true;
   if (last_input_shapes.size() == current_inputs->size()) {
@@ -54,7 +54,7 @@ bool OpLite::InferShapeWithCache() {
   if (use_cache) {
     // if current hash value is consistent with io_shape_lod_hash_,
     // previous outputs shape and lod are reused.
-    auto *current_outputs = op_param_->output_tensor_ptrs();
+    auto *current_outputs = this->OpParam()->output_tensor_ptrs();
     for (size_t i = 0; i < current_outputs->size(); i++) {
       current_outputs->at(i)->Resize(last_output_shapes[i]);
       current_outputs->at(i)->set_lod(last_output_lods[i]);
@@ -62,7 +62,7 @@ bool OpLite::InferShapeWithCache() {
   } else {
     // otherwise, current hash value is changed, InferShapeImpl will apply.
     this->InferShapeImpl();
-    auto *current_outputs = op_param_->output_tensor_ptrs();
+    auto *current_outputs = this->OpParam()->output_tensor_ptrs();
     last_output_shapes.clear();
     last_output_lods.clear();
     for (size_t i = 0; i < current_outputs->size(); i++) {

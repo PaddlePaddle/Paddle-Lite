@@ -22,7 +22,7 @@ namespace kernels {
 namespace host {
 
 void WhileCompute::PrepareForRun() {
-  auto &param = this->Param<param_t>();
+  auto &param = this->Param();
   if (program_ == nullptr) {
     program_.reset(new RuntimeProgram(
         param.program_desc, param.exec_scope, param.block_idx));

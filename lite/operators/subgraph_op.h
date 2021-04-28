@@ -26,9 +26,12 @@ namespace operators {
 
 class SubgraphOp : public OpLite {
  public:
-  SubgraphOp() {}
+  using param_t = operators::SubgraphParam;
+  SubgraphOp() { param_ = std::make_shared<param_t>(); }
 
-  explicit SubgraphOp(const std::string &type) : OpLite(type) {}
+  explicit SubgraphOp(const std::string &type) : OpLite(type) {
+    param_ = std::make_shared<param_t>();
+  }
 
   bool CheckShape() const override;
 
@@ -41,14 +44,15 @@ class SubgraphOp : public OpLite {
   std::string DebugString() const override { return "subgraph"; }
 
   void SetProgramDesc(std::shared_ptr<const cpp::ProgramDesc> program_desc) {
-    param_.program_desc = program_desc;
+    param_->program_desc = program_desc;
   }
   std::shared_ptr<const cpp::ProgramDesc> GetProgramDesc() {
-    return param_.program_desc;
+    return param_->program_desc;
   }
 
  private:
-  mutable SubgraphParam param_;
+  // mutable SubgraphParam param_;
+  std::shared_ptr<param_t> param_;
 };
 
 }  // namespace operators

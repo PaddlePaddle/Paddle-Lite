@@ -29,7 +29,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {}
 
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
@@ -91,7 +91,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param();
   auto x_dims = param.x->dims();
   if (last_shape_ == x_dims) {
     return;
@@ -139,7 +139,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
@@ -187,7 +187,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {
-  auto& param = this->template Param<param_t>();
+  auto& param = this->Param();
   auto x_dims = param.x->dims();
   if (last_shape_ == x_dims) {
     return;
@@ -235,7 +235,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
@@ -304,7 +304,7 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {}
 
 template <>
 void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
@@ -334,7 +334,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::
 
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<float>();
@@ -384,7 +384,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();
@@ -434,7 +434,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();
@@ -485,7 +485,7 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::
 
 template <>
 void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->Param();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<float16_t>();
