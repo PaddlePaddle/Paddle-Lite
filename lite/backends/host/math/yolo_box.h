@@ -13,22 +13,27 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <vector>
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace host {
+namespace math {
 
-class YoloBoxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
+void YoloBox(lite::Tensor* X,
+             lite::Tensor* ImgSize,
+             lite::Tensor* Boxes,
+             lite::Tensor* Scores,
+             std::vector<int> anchors,
+             int class_num,
+             float conf_thresh,
+             int downsample_ratio,
+             bool clip_bbox,
+             float scale,
+             float bias);
 
-  virtual ~YoloBoxCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace math
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
