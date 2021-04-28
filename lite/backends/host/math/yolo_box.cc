@@ -12,56 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/yolo_box.h"
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/host/math/yolo_box.h"
+#include <cmath>
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
 
-namespace {
-inline float sigmoid(float x) { return 1.f / (1.f + expf(-x)); }
+inline float Sigmoid(float x) { return 1.f / (1.f + expf(-x)); }
 
-inline void get_yolo_box(float* box,
-                         const float* x,
-                         const int* anchors,
-                         int i,
-                         int j,
-                         int an_idx,
-                         int grid_size,
-                         int input_size,
-                         int index,
-                         int stride,
-                         int img_height,
-                         int img_width,
-                         float scale,
-                         float bias) {
-  box[0] = (i + sigmoid(x[index]) * scale + bias) * img_width / grid_size;
+inline void GetYoloBox(float* box,
+                       const float* x,
+                       const int* anchors,
+                       int i,
+                       int j,
+                       int an_idx,
+                       int grid_size,
+                       int input_size,
+                       int index,
+                       int stride,
+                       int img_height,
+                       int img_width,
+                       float scale,
+                       float bias) {
+  box[0] = (i + Sigmoid(x[index]) * scale + bias) * img_width / grid_size;
   box[1] =
-      (j + sigmoid(x[index + stride]) * scale + bias) * img_height / grid_size;
+      (j + Sigmoid(x[index + stride]) * scale + bias) * img_height / grid_size;
   box[2] = std::exp(x[index + 2 * stride]) * anchors[2 * an_idx] * img_width /
            input_size;
   box[3] = std::exp(x[index + 3 * stride]) * anchors[2 * an_idx + 1] *
            img_height / input_size;
 }
 
-inline int get_entry_index(int batch,
-                           int an_idx,
-                           int hw_idx,
-                           int an_num,
-                           int an_stride,
-                           int stride,
-                           int entry) {
+inline int GetEntryIndex(int batch,
+                         int an_idx,
+                         int hw_idx,
+                         int an_num,
+                         int an_stride,
+                         int stride,
+                         int entry) {
   return (batch * an_num + an_idx) * an_stride + entry * stride + hw_idx;
 }
 
-inline void calc_detection_box(float* boxes,
-                               float* box,
-                               const int box_idx,
-                               const int img_height,
-                               const int img_width,
-                               bool clip_bbox) {
+inline void CalcDetectionBox(float* boxes,
+                             float* box,
+                             const int box_idx,
+                             const int img_height,
+                             const int img_width,
+                             bool clip_bbox) {
   boxes[box_idx] = box[0] - box[2] / 2;
   boxes[box_idx + 1] = box[1] - box[3] / 2;
   boxes[box_idx + 2] = box[0] + box[2] / 2;
@@ -81,20 +80,19 @@ inline void calc_detection_box(float* boxes,
   }
 }
 
-inline void calc_label_score(float* scores,
-                             const float* input,
-                             const int label_idx,
-                             const int score_idx,
-                             const int class_num,
-                             const float conf,
-                             const int stride) {
+inline void CalcLabelScore(float* scores,
+                           const float* input,
+                           const int label_idx,
+                           const int score_idx,
+                           const int class_num,
+                           const float conf,
+                           const int stride) {
   for (int i = 0; i < class_num; i++) {
-    scores[score_idx + i] = conf * sigmoid(input[label_idx + i * stride]);
+    scores[score_idx + i] = conf * Sigmoid(input[label_idx + i * stride]);
   }
 }
-}  // namespace
 
-void yolobox(lite::Tensor* X,
+void YoloBox(lite::Tensor* X,
              lite::Tensor* ImgSize,
              lite::Tensor* Boxes,
              lite::Tensor* Scores,
@@ -135,42 +133,42 @@ void yolobox(lite::Tensor* X,
       for (int k = 0; k < h; k++) {
         for (int l = 0; l < w; l++) {
           int obj_idx =
-              get_entry_index(i, j, k * w + l, an_num, an_stride, stride, 4);
-          float conf = sigmoid(X_data[obj_idx]);
+              GetEntryIndex(i, j, k * w + l, an_num, an_stride, stride, 4);
+          float conf = Sigmoid(X_data[obj_idx]);
           if (conf < conf_thresh) {
             continue;
           }
 
           int box_idx =
-              get_entry_index(i, j, k * w + l, an_num, an_stride, stride, 0);
-          get_yolo_box(box,
-                       X_data,
-                       anchors_data,
-                       l,
-                       k,
-                       j,
-                       h,
-                       X_size,
-                       box_idx,
-                       stride,
-                       img_height,
-                       img_width,
-                       scale,
-                       bias);
+              GetEntryIndex(i, j, k * w + l, an_num, an_stride, stride, 0);
+          GetYoloBox(box,
+                     X_data,
+                     anchors_data,
+                     l,
+                     k,
+                     j,
+                     h,
+                     X_size,
+                     box_idx,
+                     stride,
+                     img_height,
+                     img_width,
+                     scale,
+                     bias);
           box_idx = (i * b_num + j * stride + k * w + l) * 4;
-          calc_detection_box(
+          CalcDetectionBox(
               Boxes_data, box, box_idx, img_height, img_width, clip_bbox);
 
           int label_idx =
-              get_entry_index(i, j, k * w + l, an_num, an_stride, stride, 5);
+              GetEntryIndex(i, j, k * w + l, an_num, an_stride, stride, 5);
           int score_idx = (i * b_num + j * stride + k * w + l) * class_num;
-          calc_label_score(Scores_data,
-                           X_data,
-                           label_idx,
-                           score_idx,
-                           class_num,
-                           conf,
-                           stride);
+          CalcLabelScore(Scores_data,
+                         X_data,
+                         label_idx,
+                         score_idx,
+                         class_num,
+                         conf,
+                         stride);
         }
       }
     }
@@ -178,6 +176,6 @@ void yolobox(lite::Tensor* X,
 }
 
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
