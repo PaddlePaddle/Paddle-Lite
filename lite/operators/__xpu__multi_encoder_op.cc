@@ -32,13 +32,7 @@ bool XPUMultiEncoderOp::InferShapeImpl() const {
   auto head_num = input_shape[2];
   if (param_.SeqLod && param_.SeqLod->data<int>()) {
     batch_size = param_.SeqLod->numel() - 1;
-    int seq_pad_len = 0;
-    for (auto i = 1; i < param_.SeqLod->numel(); i++) {
-      int cur_seqlen =
-          param_.SeqLod->data<int>()[i] - param_.SeqLod->data<int>()[i - 1];
-      seq_pad_len = seq_pad_len > cur_seqlen ? seq_pad_len : cur_seqlen;
-    }
-    seq_len = seq_pad_len;
+    seq_len = param_.PadSeqLen->data<int>()[0];
   }
   if ((param_.slice_starts.size() > 0 && param_.slice_starts[0] == 0) &&
       (param_.slice_ends.size() > 0 && param_.slice_ends[0] == 1) &&
@@ -93,6 +87,16 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
         param_.SeqLod = &(arg_var->Get<lite::Tensor>());
+      }
+    }
+  }
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "PadSeqLen") !=
+      input_arg_names.end()) {
+    auto arguments = op_desc.Input("PadSeqLen");
+    if (arguments.size() > 0) {
+      auto arg_var = scope->FindVar(arguments.front());
+      if (arg_var != nullptr) {
+        param_.PadSeqLen = &(arg_var->Get<lite::Tensor>());
       }
     }
   }
