@@ -224,7 +224,10 @@ void LoadModelPb(const std::string &model_dir,
   cpp_prog->ClearBlocks();
 
   // Load model topology data from file.
-  std::string prog_path = FindModelFileName(model_dir, model_file, combined);
+  std::string prog_path =
+      model_buffer.is_empty()
+          ? FindModelFileName(model_dir, model_file, combined)
+          : "";
   OPT_LOG << "Loading topology data from " << prog_path;
   framework::proto::ProgramDesc pb_proto_prog =
       *LoadProgram(prog_path, model_buffer);
@@ -234,7 +237,7 @@ void LoadModelPb(const std::string &model_dir,
 
   // Load params data from file.
   // NOTE: Only main block be used now.
-  CHECK(!(!combined && !model_buffer.is_empty()))
+  CHECK(combined || model_buffer.is_empty())
       << "If you want use the model_from_memory,"
       << " you should load the combined model using cfg.set_model_buffer "
          "interface.";
@@ -242,11 +245,12 @@ void LoadModelPb(const std::string &model_dir,
     OPT_LOG << "Loading non-combined params data from " << model_dir;
     LoadNonCombinedParamsPb(model_dir, cpp_prog, model_buffer, scope);
   } else {
-    OPT_LOG << "Loading params data from " << param_file;
-    if (!IsFileExists(param_file)) {
-      LOG(FATAL) << "Error, the param file '" << param_file
-                 << "' is not existed. Please confirm that you have inputed "
-                    "correct param file path.";
+    if (model_buffer.is_empty()) {
+      OPT_LOG << "Loading params data from " << param_file;
+      CHECK(IsFileExists(param_file))
+          << "Error, the param file '" << param_file
+          << "' is not existed. Please confirm that you have inputed "
+             "correct param file path.";
     }
 
     LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_buffer);
