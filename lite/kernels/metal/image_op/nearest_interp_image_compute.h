@@ -31,10 +31,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class NearestInterpImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PTYPE,
+                        PRECISION(kFloat),
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::InterpolateParam;
 
@@ -46,12 +45,14 @@ class NearestInterpImageCompute
   };
 
  private:
+  void setup_without_mps();
+
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
+	std::shared_ptr<MetalBuffer> params_buffer_;
+
+	void* pipline_;
+	std::string function_name_;
   MetalContext* metal_context_;
 };
 

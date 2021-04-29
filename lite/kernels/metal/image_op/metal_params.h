@@ -28,6 +28,14 @@ struct ElementwiseAddMetalParam {
   int ytrans[4];
 };
 
+struct ActivationMetalParam {
+	uint16_t activationType;
+	float threshold; 		//RELU6
+	float alpha;				//LEAKY_RELU
+	float offset;				//HARD_SIGMOID
+	float slope;
+};
+
 struct MetalConvParam {
   int16_t offsetX;
   int16_t offsetY;
@@ -43,6 +51,7 @@ struct MetalConvParam {
   uint16_t hasAddOp;
   uint16_t hasReluOp;
   ElementwiseAddMetalParam addParam;
+	ActivationMetalParam activationParam;
 };
 
 struct SoftmaxMetalParam {
@@ -71,6 +80,10 @@ struct ReshapeMetalParam {
 
 struct Relu6MetalParam {
   float threshold;
+};
+
+struct LeakyReluMetalParam {
+	float alpha;
 };
 
 struct PoolMetalParam {
@@ -209,6 +222,24 @@ struct ConvTransposeAddMetalParam {
   uint16_t oC;
   uint16_t hasAddOp;
   ElementwiseAddMetalParam addParam;
+};
+
+struct SliceMetalParam {
+		uint16_t start0;
+		uint16_t start1;
+		uint16_t start2;
+		uint16_t start3;
+		uint16_t end0;
+		uint16_t end1;
+		uint16_t end2;
+		uint16_t end3;
+		int iC;
+		int oC;
+};
+
+struct FetchMetalParam {
+	int isize;
+	int idim[4];
 };
 
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_

@@ -32,9 +32,8 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class ExpImageCompute : public KernelLite<TARGET(kMetal),
-                                          PTYPE,
+                                          PRECISION(kFloat),
                                           DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ActivationParam;
 
@@ -47,10 +46,10 @@ class ExpImageCompute : public KernelLite<TARGET(kMetal),
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
+
+	void* pipline_;
+	std::string function_name_;
+	MetalContext* metal_context_;
 };
 
 }  // namespace metal

@@ -13,104 +13,125 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/relu_image_compute.h"
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
+#include "lite/backends/metal/metal_context_imp.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+
+using namespace std;
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void ReluImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
+void ReluImageCompute::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->template Param<param_t>();
+  const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
   auto input_dims = param.X->dims();
+#ifdef LITE_WITH_METAL_FULL
+#else
+	output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+	input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+#endif
 
-  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
-  input_buffer_ = param.X->template data<P, MetalImage>();
-
-  std::string function_name = "";
-  if (std::is_same<float, P>::value) {
-    function_name = "relu";
-  } else if (std::is_same<MetalHalf, P>::value) {
-    function_name = "relu_half";
-  }
-  assert(!function_name.empty());
-
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
+  function_name_ = "relu";
+	//pipline
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	pipline_ = (__bridge_retained void *)[backend pipline:function_name_];
 }
 
-template <typename P, PrecisionType PTYPE>
-void ReluImageCompute<P, PTYPE>::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
+void ReluImageCompute::Run() {
+	auto outTexture = output_buffer_->image();
+	auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	
+	auto encoder = [backend commandEncoder];
+  [encoder setTexture:input_buffer_->image() atIndex:(0)];
+  [encoder setTexture:output_buffer_->image() atIndex:(1)];
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
-
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-
-  kernel_->Execute(*encoder, global_work_size, false);
+	[backend dispatchEncoder:encoder
+									 pipline:pipline
+								outTexture:outTexture];
+	[backend commit];
 }
 
-template <typename P, PrecisionType PTYPE>
-void Relu6ImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
+void Relu6ImageCompute::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->template Param<param_t>();
+  const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
   auto input_dims = param.X->dims();
-
-  Relu6MetalParam metal_param{param.hard_swish_threshold};
-  param_buffer_ = metal_context_->CreateBuffer(
-      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
-
-  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
-  input_buffer_ = param.X->template data<P, MetalImage>();
-
-  std::string function_name = "";
-  if (std::is_same<float, P>::value) {
-    function_name = "relu6";
-  } else if (std::is_same<MetalHalf, P>::value) {
-    function_name = "relu6_half";
-  }
-  assert(!function_name.empty());
-
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
+#ifdef LITE_WITH_METAL_FULL
+#else
+	output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+	input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+#endif
+	Relu6MetalParam params{param.hard_swish_threshold};
+	params_buffer_ = std::make_shared<MetalBuffer>(metal_context_,
+																								 sizeof(params),
+																								 &params);
+	function_name_ = "relu6";
+	//pipline
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	pipline_ = (__bridge_retained void *)[backend pipline:function_name_];
 }
 
-template <typename P, PrecisionType PTYPE>
-void Relu6ImageCompute<P, PTYPE>::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
+void Relu6ImageCompute::Run() {
+	auto outTexture = output_buffer_->image();
+	auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	
+	auto encoder = [backend commandEncoder];
+  [encoder setTexture:input_buffer_->image() atIndex:(0)];
+  [encoder setTexture:output_buffer_->image() atIndex:(1)];
+  [encoder setBuffer:params_buffer_->buffer() offset:(0) atIndex:(0)];
 
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
+	[backend dispatchEncoder:encoder
+									 pipline:pipline
+								outTexture:outTexture];
+	[backend commit];
+}
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
+void LeakyReluImageCompute::PrepareForRun() {
+	auto& context = ctx_->As<ContextMetal>();
+	metal_context_ = (MetalContext*)context.context();
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
-  kernel_->Execute(*encoder, global_work_size, false);
+	const auto& param = this->Param<param_t>();
+	auto output_dims = param.Out->dims();
+	auto input_dims = param.X->dims();
+#ifdef LITE_WITH_METAL_FULL
+#else
+	output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+	input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+#endif
+	LeakyReluMetalParam params{param.Leaky_relu_alpha};
+	params_buffer_ = std::make_shared<MetalBuffer>(metal_context_,
+																								 sizeof(params),
+																								 &params);
+	function_name_ = "leaky_relu";
+	//pipline
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	pipline_ = (__bridge_retained void *)[backend pipline:function_name_];
+}
+
+void LeakyReluImageCompute::Run() {
+	auto outTexture = output_buffer_->image();
+	auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	
+	auto encoder = [backend commandEncoder];
+	[encoder setTexture:input_buffer_->image() atIndex:(0)];
+	[encoder setTexture:output_buffer_->image() atIndex:(1)];
+	[encoder setBuffer:params_buffer_->buffer() offset:(0) atIndex:(0)];
+
+	[backend dispatchEncoder:encoder
+									 pipline:pipline
+								outTexture:outTexture];
+	[backend commit];
 }
 
 }  // namespace metal
@@ -118,21 +139,11 @@ void Relu6ImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ReluImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ReluImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::ReluImageCompute<float, PRECISION(kFloat)> MetalReluFp32;
-typedef paddle::lite::kernels::metal::ReluImageCompute<MetalHalf, PRECISION(kFP16)> MetalReluFp16;
-
-template class paddle::lite::kernels::metal::Relu6ImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::Relu6ImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::Relu6ImageCompute<float, PRECISION(kFloat)> MetalRelu6Fp32;
-typedef paddle::lite::kernels::metal::Relu6ImageCompute<MetalHalf, PRECISION(kFP16)> MetalRelu6Fp16;
-
 REGISTER_LITE_KERNEL(relu,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     MetalReluFp32,
+                     paddle::lite::kernels::metal::ReluImageCompute,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
@@ -146,7 +157,7 @@ REGISTER_LITE_KERNEL(relu6,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     MetalRelu6Fp32,
+                     paddle::lite::kernels::metal::Relu6ImageCompute,
                      def)
 .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFloat),
@@ -156,12 +167,26 @@ REGISTER_LITE_KERNEL(relu6,
                                               DATALAYOUT(kMetalTexture2DArray))})
 .Finalize();
 
+REGISTER_LITE_KERNEL(leaky_relu,
+										 kMetal,
+										 kFloat,
+										 kMetalTexture2DArray,
+										 paddle::lite::kernels::metal::LeakyReluImageCompute,
+										 def)
+.BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
+																			 PRECISION(kFloat),
+																			 DATALAYOUT(kMetalTexture2DArray))})
+.BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
+																							PRECISION(kFloat),
+																							DATALAYOUT(kMetalTexture2DArray))})
+.Finalize();
+
 
 REGISTER_LITE_KERNEL(relu,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     MetalReluFp16,
+                     paddle::lite::kernels::metal::ReluImageCompute,
                      def)
 .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFP16),
@@ -175,7 +200,7 @@ REGISTER_LITE_KERNEL(relu6,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     MetalRelu6Fp16,
+                     paddle::lite::kernels::metal::Relu6ImageCompute,
                      def)
 .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFP16),
@@ -183,4 +208,18 @@ REGISTER_LITE_KERNEL(relu6,
 .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
                                           PRECISION(kFP16),
                                           DATALAYOUT(kMetalTexture2DArray))})
+.Finalize();
+
+REGISTER_LITE_KERNEL(leaky_relu,
+										 kMetal,
+										 kFP16,
+										 kMetalTexture2DArray,
+										 paddle::lite::kernels::metal::LeakyReluImageCompute,
+										 def)
+.BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
+																			 PRECISION(kFP16),
+																			 DATALAYOUT(kMetalTexture2DArray))})
+.BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
+																					PRECISION(kFP16),
+																					DATALAYOUT(kMetalTexture2DArray))})
 .Finalize();

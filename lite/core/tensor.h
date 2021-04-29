@@ -127,16 +127,12 @@ class TensorLite {
 
   template <typename T, typename R>
   typename std::enable_if<IsBuffer<R>::value, R>::type *mutable_data(
-      const DDim &dim,
-      bool transpose = false,
-      bool to_nhwc = true,
-      bool pad_when_one_c = false,
-      void *host_ptr = nullptr) {
-    target_ = TARGET(kMetal);
-    buffer_->ResetLazyMetalBuffer<T>(
-        target_, dim, transpose, to_nhwc, pad_when_one_c, host_ptr);
-    dims_ = dim;
-    return static_cast<MetalBuffer *>(buffer_->data());
+       size_t count,
+       METAL_ACCESS_FLAG access = METAL_ACCESS_FLAG::CPUReadWrite) {
+		 target_ = TARGET(kMetal);
+		 buffer_->ResetLazyMetalBuffer<T>(target_, count, access);
+		 dims_ = DDimLite({static_cast<long long>(count)});
+		 return static_cast<MetalBuffer *>(buffer_->data());
   }
 #endif
 
