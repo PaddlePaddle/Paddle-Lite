@@ -327,7 +327,7 @@ void PrintHelpInfo() {
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
       "  Arguments of enable_fp16 in opt: \n"
-      "        `--enable_fp16(true|false)`\n"
+      "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"

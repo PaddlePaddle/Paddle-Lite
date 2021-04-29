@@ -133,13 +133,13 @@ void PrintPbModelErrorMessage() {
                 "these formats:\n"
              << "          (1) __model__ + var1 + var2 + etc.\n"
              << "          (2) model + var1 + var2 + etc.\n"
-             << "          (3) pdmodel + pdiparams\n"
+             << "          (3) model.pdmodel + model.pdiparams\n"
              << "          (4) model + params\n"
              << "          (5) model + weights\n"
              << "      2. You can also appoint the model and params file in "
                 "custom format:\n"
              << "          eg. |-- set_model_file('custom_model_name')\n"
-             << "              |-- set_params_file('custom_params_name')'";
+             << "              |-- set_param_file('custom_params_name')'";
 }
 // Find correct model filename
 std::string FindModelFileName(const std::string &model_dir,
@@ -154,8 +154,8 @@ std::string FindModelFileName(const std::string &model_dir,
       prog_path = model_dir + "/__model__";
     } else if (IsFileExists(model_dir + "/model")) {
       prog_path = model_dir + "/model";
-    } else if (IsFileExists(model_dir + "/pdmodel")) {
-      prog_path = model_dir + "/pdmodel";
+    } else if (IsFileExists(model_dir + "/model.pdmodel")) {
+      prog_path = model_dir + "/model.pdmodel";
     } else {
       PrintPbModelErrorMessage();
     }
@@ -200,8 +200,8 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
           params_path = model_dir + "/params";
         } else if (IsFileExists(model_dir + "/weights")) {
           params_path = model_dir + "/weights";
-        } else if (IsFileExists(model_dir + "/pdiparams")) {
-          params_path = model_dir + "/pdiparams";
+        } else if (IsFileExists(model_dir + "/model.pdiparams")) {
+          params_path = model_dir + "/model.pdiparams";
         } else {
           PrintPbModelErrorMessage();
         }
