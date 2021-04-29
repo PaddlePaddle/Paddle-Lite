@@ -79,106 +79,97 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         int input_block = input_c / 4;
         int2 pos_in = (int2)(input_block * input_width + in_pos_in_one_block.x,
                              in_pos_in_one_block.y);
-        input0 = select(
+        input0 = SELECT(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           SAMPLER,
                           (int2)(pos_in.x - dilation, pos_in.y - dilation)),
             zero_dtype4,
-            (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
+            in_pos_in_one_block.x - dilation < 0 ||
                        in_pos_in_one_block.y - dilation < 0 ||
                        in_pos_in_one_block.x - dilation >= input_width ||
-                       in_pos_in_one_block.y - dilation >= input_height)
-                      << 15));
+                       in_pos_in_one_block.y - dilation >= input_height);
         input1 =
-            select(READ_IMG_TYPE(CL_DTYPE_CHAR,
+            SELECT(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
                                  SAMPLER,
                                  (int2)(pos_in.x, pos_in.y - dilation)),
                    zero_dtype4,
-                   (ushort4)((in_pos_in_one_block.x < 0 ||
+                   in_pos_in_one_block.x < 0 ||
                               in_pos_in_one_block.y - dilation < 0 ||
                               in_pos_in_one_block.x >= input_width ||
-                              in_pos_in_one_block.y - dilation >= input_height)
-                             << 15));
-        input2 = select(
+                              in_pos_in_one_block.y - dilation >= input_height);
+        input2 = SELECT(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           SAMPLER,
                           (int2)(pos_in.x + dilation, pos_in.y - dilation)),
             zero_dtype4,
-            (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
+            in_pos_in_one_block.x + dilation < 0 ||
                        in_pos_in_one_block.y - dilation < 0 ||
                        in_pos_in_one_block.x + dilation >= input_width ||
-                       in_pos_in_one_block.y - dilation >= input_height)
-                      << 15));
+                       in_pos_in_one_block.y - dilation >= input_height);
 
         input3 =
-            select(READ_IMG_TYPE(CL_DTYPE_CHAR,
+            SELECT(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
                                  SAMPLER,
                                  (int2)(pos_in.x - dilation, pos_in.y)),
                    zero_dtype4,
-                   (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
+                   in_pos_in_one_block.x - dilation < 0 ||
                               in_pos_in_one_block.y < 0 ||
                               in_pos_in_one_block.x - dilation >= input_width ||
-                              in_pos_in_one_block.y >= input_height)
-                             << 15));
+                              in_pos_in_one_block.y >= input_height);
 
-        input4 = select(
+        input4 = SELECT(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           SAMPLER,
                           (int2)(pos_in.x, pos_in.y)),
             zero_dtype4,
-            (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 ||
+            in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 ||
                        in_pos_in_one_block.x >= input_width ||
-                       in_pos_in_one_block.y >= input_height)
-                      << 15));
+                       in_pos_in_one_block.y >= input_height);
         input5 =
-            select(READ_IMG_TYPE(CL_DTYPE_CHAR,
+            SELECT(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
                                  SAMPLER,
                                  (int2)(pos_in.x + dilation, pos_in.y)),
                    zero_dtype4,
-                   (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
+                   in_pos_in_one_block.x + dilation < 0 ||
                               in_pos_in_one_block.y < 0 ||
                               in_pos_in_one_block.x + dilation >= input_width ||
-                              in_pos_in_one_block.y >= input_height)
-                             << 15));
-        input6 = select(
+                              in_pos_in_one_block.y >= input_height);
+        input6 = SELECT(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           SAMPLER,
                           (int2)(pos_in.x - dilation, pos_in.y + dilation)),
             zero_dtype4,
-            (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
+            in_pos_in_one_block.x - dilation < 0 ||
                        in_pos_in_one_block.y + dilation < 0 ||
                        in_pos_in_one_block.x - dilation >= input_width ||
-                       in_pos_in_one_block.y + dilation >= input_height)
-                      << 15));
+                       in_pos_in_one_block.y + dilation >= input_height);
         input7 =
-            select(READ_IMG_TYPE(CL_DTYPE_CHAR,
+            SELECT(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
                                  SAMPLER,
                                  (int2)(pos_in.x, pos_in.y + dilation)),
                    zero_dtype4,
-                   (ushort4)((in_pos_in_one_block.x < 0 ||
+                   in_pos_in_one_block.x < 0 ||
                               in_pos_in_one_block.y + dilation < 0 ||
                               in_pos_in_one_block.x >= input_width ||
-                              in_pos_in_one_block.y + dilation >= input_height)
-                             << 15));
-        input8 = select(
+                              in_pos_in_one_block.y + dilation >= input_height);
+        input8 = SELECT(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           SAMPLER,
                           (int2)(pos_in.x + dilation, pos_in.y + dilation)),
             zero_dtype4,
-            (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
+            in_pos_in_one_block.x + dilation < 0 ||
                        in_pos_in_one_block.y + dilation < 0 ||
                        in_pos_in_one_block.x + dilation >= input_width ||
-                       in_pos_in_one_block.y + dilation >= input_height)
-                      << 15));
+                       in_pos_in_one_block.y + dilation >= input_height);
 
         CL_DTYPE tmp_out = 0;
         for (int j = 0; j < 9; j++) {
