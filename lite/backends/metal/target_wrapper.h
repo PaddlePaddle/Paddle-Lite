@@ -17,10 +17,10 @@
 #include <string>
 #include <vector>
 
-#include "lite/backends/metal/metal_context.h"
 #include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
-#include "lite/utils/macros.h"
+#include "lite/backends/metal/metal_common.h"
+#include "lite/backends/metal/metal_context.h"
 
 namespace paddle {
 namespace lite {
@@ -36,8 +36,6 @@ class TargetWrapper<TARGET(kMetal)> {
     return dev_id;
   }
 
-  static bool MPSVersionRequired();
-
   static void CreateCommandBuffer(RuntimeProgram* program) {
     assert(program);
     ctx_.CreateCommandBuffer(program);
@@ -52,12 +50,6 @@ class TargetWrapper<TARGET(kMetal)> {
     ctx_.set_use_aggressive_optimization(flag);
   }
 
-  static bool use_mps() { return ctx_.use_mps(); }
-
-  static bool use_aggressive_optimization() {
-    return ctx_.use_aggressive_optimization();
-  }
-
   static void set_metal_use_mps(bool flag) { ctx_.set_use_mps(flag); }
 
   template <typename T>
@@ -65,12 +57,8 @@ class TargetWrapper<TARGET(kMetal)> {
                            std::vector<int> transport,
                            void* host_ptr = nullptr);
 
-  template <typename T>
-  static void* MallocBuffer(const DDim dim,
-                            bool transpose,
-                            bool to_nhwc,
-                            bool pad_when_one_c,
-                            void* host_ptr);
+  static void* MallocBuffer(size_t size,
+														METAL_ACCESS_FLAG access);
 
   static void FreeImage(void* image);
 
