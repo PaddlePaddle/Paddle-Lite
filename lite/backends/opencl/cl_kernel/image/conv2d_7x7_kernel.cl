@@ -72,19 +72,17 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
                          in_pos_in_one_block.y + batch_index * input_height);
     for (int j = 0; j < 7; j++) {
       for (int k = 0; k < 7; k++) {
-        input = select(
+        input = SELECT(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           SAMPLER,
                           (int2)(pos_in.x + (j - 3) * dilation,
                                  pos_in.y + (k - 3) * dilation)),
             (CL_DTYPE4)(0.0f),
-            (ushort4)(
-                (in_pos_in_one_block.x + (j - 3) * dilation < 0 ||
+                 in_pos_in_one_block.x + (j - 3) * dilation < 0 ||
                  in_pos_in_one_block.y + (k - 3) * dilation < 0 ||
                  in_pos_in_one_block.x + (j - 3) * dilation >= input_width ||
-                 in_pos_in_one_block.y + (k - 3) * dilation >= input_height)
-                << 15));
+                 in_pos_in_one_block.y + (k - 3) * dilation >= input_height);
         int filter_h = k;
         int filter_w = j;
         int filter_c = i;
