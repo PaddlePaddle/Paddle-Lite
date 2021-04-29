@@ -253,9 +253,11 @@ class LITE_API RuntimeProgram {
 
   size_t block_size() { return instructions_.size(); }
 
+#ifndef LITE_ON_TINY_PUBLISH
   // Update the ops and vars of all of blocks to the given program_desc
   // according to the instructions
   void SaveToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
+#endif
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
