@@ -33,10 +33,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class ReshapeImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PTYPE,
+                        PRECISION(kFloat),
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ReshapeParam;
 
@@ -44,18 +43,19 @@ class ReshapeImageCompute
   void PrepareForRun() override;
   void Run() override;
   void SaveOutput() override {
-    MetalDebug::SaveOutput("reshape", output_buffer_);
+    MetalDebug::SaveOutput(function_name_, output_buffer_);
   };
+  virtual ~ReshapeImageCompute();
 
  private:
+	void setup_without_mps();
+													
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;
 
-  std::vector<int> transpose_ = {0, 1, 2, 3};
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
+	void* pipline_;
+	std::string function_name_;
   MetalContext* metal_context_;
 };
 

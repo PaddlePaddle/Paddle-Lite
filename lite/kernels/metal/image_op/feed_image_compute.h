@@ -16,6 +16,7 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_FEED_IMAGE_COMPUTE_H_
 
 #include <memory>
+#include <string>
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -32,28 +33,27 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class FeedImageCompute : public KernelLite<TARGET(kMetal),
-                                           PTYPE,
+                                           PRECISION(kFloat),
                                            DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::FeedParam;
 
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("feed", output_buffer_);
-  };
+	void SaveOutput() override;
+//  void SaveOutput() override {
+//    MetalDebug::SaveOutput("feed", output_buffer_);
+//  };
 
  private:
   std::shared_ptr<MetalBuffer> input_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   MetalImage* output_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
+
+	void* pipline_;
+	std::string function_name_;
   MetalContext* metal_context_;
-  const MetalDevice* device_;
 };
 
 }  // namespace metal

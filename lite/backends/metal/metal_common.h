@@ -17,11 +17,13 @@
 
 #include <algorithm>
 
-typedef uint32_t MetalUint;
-typedef uint16_t MetalHalf;
-
 namespace paddle {
 namespace lite {
+
+enum class DataLayout {
+	kNCHW = 0,
+	kNHWC
+};
 
 enum class METAL_PRECISION_TYPE {
   FLOAT = 0,
@@ -31,7 +33,15 @@ enum class METAL_PRECISION_TYPE {
   INT32 = 4
 };
 
-enum class METAL_ACCESS_FLAG { CPUReadWrite = 0, CPUWriteOnly, CPUTransparent };
+enum class METAL_ACCESS_FLAG {
+	CPUReadWrite = 0,
+	CPUWriteOnly,
+	CPUTransparent,
+	CPUShared
+};
+
+typedef uint32_t MetalUint;
+typedef uint16_t MetalHalf;
 
 struct MetalUint2 {
  public:

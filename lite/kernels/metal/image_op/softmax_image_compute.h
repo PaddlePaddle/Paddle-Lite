@@ -26,18 +26,17 @@
 #include "lite/core/profile/profiler.h"
 #endif
 
-#include "lite/backends/metal/metal_context.h"
 #include "lite/backends/metal/metal_debug.h"
+#include "lite/backends/metal/metal_context.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class SoftmaxImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PTYPE,
+                        PRECISION(kFloat),
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::SoftmaxParam;
 
@@ -48,15 +47,26 @@ class SoftmaxImageCompute
   void SaveOutput() override {
     MetalDebug::SaveOutput("softmax", output_buffer_);
   };
+	virtual ~SoftmaxImageCompute();
 
  private:
-  std::string GetFunctionName(const DDimLite& input_dims, int axis) const;
+	bool use_mps_{false};
+	void *mps_softmax_op_{nullptr};
+	void *mps_input_image_{nullptr};
+	void *mps_output_image_{nullptr};
+
+	void setup_with_mps();
+	void setup_without_mps();
+																						 
+	void run_with_mps();
+	void run_without_mps();
+													
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
+
+	void* pipline_;
+	std::string function_name_;
   MetalContext* metal_context_;
 };
 

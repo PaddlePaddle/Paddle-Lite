@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-#include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/sigmoid_image_compute.h"
-#include "lite/backends/metal/metal_debug.h"
+#include "lite/core/tensor.h"
+#include "lite/core/op_registry.h"
+#include "lite/backends/metal/metal_context_imp.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
 
@@ -24,44 +25,38 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void SigmoidImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
+void SigmoidImageCompute::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->template Param<param_t>();
+  const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
 
-  input_buffer_ = param.X->template data<P, MetalImage>();
-  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
+#ifdef LITE_WITH_METAL_FULL
+#else
+	input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+	output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+#endif
 
-  std::string function_name = "";
-  if (std::is_same<float, P>::value) {
-    function_name = "sigmoid";
-  } else if (std::is_same<MetalHalf, P>::value) {
-    function_name = "sigmoid_half";
-  }
-  assert(!function_name.empty());
-
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
+	function_name_ = "sigmoid";
+	//pipline
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	pipline_ = (__bridge_retained void *)[backend pipline:function_name_];
 }
 
-template <typename P, PrecisionType PTYPE>
-void SigmoidImageCompute<P, PTYPE>::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
-
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
-
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  kernel_->Execute(*encoder, global_work_size, false);
+void SigmoidImageCompute::Run() {
+	auto outTexture = output_buffer_->image();
+	auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	
+	auto encoder = [backend commandEncoder];
+  [encoder setTexture:input_buffer_->image() atIndex:(0)];
+  [encoder setTexture:output_buffer_->image() atIndex:(1)];
+	
+	[backend dispatchEncoder:encoder
+									 pipline:pipline
+								outTexture:outTexture];
+	[backend commit];
 }
 
 }  // namespace metal
@@ -69,18 +64,11 @@ void SigmoidImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::SigmoidImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::SigmoidImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::SigmoidImageCompute<float, PRECISION(kFloat)>
-    MetalSigmoidFp32;
-typedef paddle::lite::kernels::metal::SigmoidImageCompute<MetalHalf, PRECISION(kFP16)>
-    MetalSigmoidFp16;
-
 REGISTER_LITE_KERNEL(sigmoid,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     MetalSigmoidFp32,
+                     paddle::lite::kernels::metal::SigmoidImageCompute,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
@@ -95,7 +83,7 @@ REGISTER_LITE_KERNEL(sigmoid,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     MetalSigmoidFp16,
+                     paddle::lite::kernels::metal::SigmoidImageCompute,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                PRECISION(kFP16),

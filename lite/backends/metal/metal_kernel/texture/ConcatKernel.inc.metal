@@ -15,33 +15,13 @@
 #ifdef P
 
 #define CONCAT2(a, b) a ## b
-#define CONCAT2_(a, b) a ## _ ## b
-#define CONCAT3_(a, b, c) a ## _ ## b ## _ ## c
 #define CONCAT4_(a, b, c, d) a ## _ ## b ## _ ## c ## _ ## d
-#define CONCAT5_(a, b, c, d, e) a ## _ ## b ## _ ## c ## _ ## d ## _ ## e
 
-#define FUNC(f, r, n, v, p) CONCAT5_(f, r, n, v, p)
+#define FUNC(f, r, n, v) CONCAT4_(f, r, n, v)
 #define VECTOR(p, n) CONCAT2(p, n)
-#define FUNC_R(f, r) CONCAT2_(f, r)
-
-#if V == VX
-#define VV x
-#elif V == VY
-#define VV y
-#elif V == VZ
-#define VV z
-#else
-#define VV normal
-#endif
 
 #if V == VNORMAL
-//kernel void FUNC(concat, R, N, normal, P)(array<texture2d_array<P, access::read>, N> in [[texture(0)]],
-//                                     texture2d_array<P, access::read> out_x [[texture(N)]],
-//                                     texture2d_array<P, access::write> out [[texture(N+1)]],
-//                                     constant ConcatParam & pm [[buffer(0)]],
-//                                     uint3 gid [[thread_position_in_grid]]) {
-//}
-kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[texture(0)]],
+kernel void FUNC(concat, R, N, normal)(texture2d_array<P, access::read> in0 [[texture(0)]],
                                           texture2d_array<P, access::read> in1 [[texture(1)]],
 #if N >= 3
                                           texture2d_array<P, access::read> in2 [[texture(2)]],
@@ -65,11 +45,7 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
    VECTOR(P, 4) r = inx.read(gid.xy, gid.z);
    for (int i = 0; i < 4; i++) {
      xyzn[3] = i;
-#if R == 4
      xyzn2abcd_4(cp.odim[3], xyzn, abcd);
-#else
-     FUNC_R(xyzn2abcd, R)(xyzn, abcd);
-#endif
      int k = abcd[cp.axis] - cp.offset;
      if (k < 0) continue;
      int j = 0;
@@ -85,11 +61,7 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
      int ta = cp.odim[cp.axis];
      abcd[cp.axis] = k;
      cp.odim[cp.axis] = cp.vdim[j];
-#if R == 4
      abcd2xyzn_4(cp.odim[3], abcd, oxyzn);
-#else
-     FUNC_R(abcd2xyzn, R)(abcd, oxyzn);
-#endif
      cp.odim[cp.axis] = ta;
      switch (j) {
        case 0: r[i] = in0.read(uint2(oxyzn[0], oxyzn[1]), oxyzn[2])[oxyzn[3]]; break;
@@ -116,7 +88,7 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
 
 
 #if V == VX
-kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[texture(0)]],
+kernel void FUNC(concat, R, N, x)(texture2d_array<P, access::read> in0 [[texture(0)]],
                                           texture2d_array<P, access::read> in1 [[texture(1)]],
 #if N >= 3
                                           texture2d_array<P, access::read> in2 [[texture(2)]],
@@ -182,7 +154,7 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
 #endif // V == VX
 
 #if V == VY
-kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[texture(0)]],
+kernel void FUNC(concat, R, N, y)(texture2d_array<P, access::read> in0 [[texture(0)]],
                                       texture2d_array<P, access::read> in1 [[texture(1)]],
 #if N >= 3
                                       texture2d_array<P, access::read> in2 [[texture(2)]],
@@ -248,7 +220,7 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
 #endif // V == VY
 
 #if V == VZ
-kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[texture(0)]],
+kernel void FUNC(concat, R, N, z)(texture2d_array<P, access::read> in0 [[texture(0)]],
                                       texture2d_array<P, access::read> in1 [[texture(1)]],
 #if N >= 3
                                       texture2d_array<P, access::read> in2 [[texture(2)]],
@@ -314,5 +286,4 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
 #endif // V == VZ
 
 
-#undef VV
 #endif // #ifdef P

@@ -15,107 +15,67 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#pragma mark -
 
-inline void xyzn2abcd_1(int xyzn[4], int abcd[4]) {
-    abcd[0] = abcd[1] = abcd[2] = 0;
-    abcd[3] = xyzn[0] * 4 + xyzn[3];
-}
-inline void xyzn2abcd_2(int xyzn[4], int abcd[4]) {
-    abcd[0] = abcd[1] = 0;
-    abcd[2] = xyzn[1];
-    abcd[3] = xyzn[0] * 4 + xyzn[3];
-}
-inline void xyzn2abcd_3(int xyzn[4], int abcd[4]) {
-    abcd[0] = 0;
-    abcd[3] = xyzn[0];
-    abcd[2] = xyzn[1];
-    abcd[1] = xyzn[2] * 4 + xyzn[3];
-}
-inline void xyzn2abcd_4(int C, int xyzn[4], int abcd[4]) {
-    abcd[2] = xyzn[0];
-    abcd[1] = xyzn[1];
-    uint t = xyzn[2] * 4 + xyzn[3];
-    abcd[0] = t / C;
-    abcd[3] = t % C;
-}
+#if LITE_WITH_METAL_FULL
+typedef float    ftype;
+typedef float2   ftype2;
+typedef float3   ftype3;
+typedef float4   ftype4;
+typedef float2x2 ftype2x2;
+typedef float2x3 ftype2x3;
+typedef float2x4 ftype2x4;
+typedef float3x2 ftype3x2;
+typedef float3x3 ftype3x3;
+typedef float3x4 ftype3x4;
+typedef float4x2 ftype4x2;
+typedef float4x3 ftype4x3;
+typedef float4x4 ftype4x4;
+#else
+typedef half     ftype;
+typedef half2    ftype2;
+typedef half3    ftype3;
+typedef half4    ftype4;
+typedef half2x2  ftype2x2;
+typedef half2x3  ftype2x3;
+typedef half2x4  ftype2x4;
+typedef half3x2  ftype3x2;
+typedef half3x3  ftype3x3;
+typedef half3x4  ftype3x4;
+typedef half4x2  ftype4x2;
+typedef half4x3  ftype4x3;
+typedef half4x4  ftype4x4;
+#endif
 
-inline void abcd2xyzn_1(int abcd[4], int xyzn[4]) {
-    xyzn[1] = xyzn[2] = 0;
-    xyzn[0] = abcd[3] / 4;
-    xyzn[1] = abcd[3] % 4;
-}
-inline void abcd2xyzn_2(int abcd[4], int xyzn[4]) {
-    xyzn[2] = 0;
-    xyzn[1] = abcd[2];
-    xyzn[0] = abcd[3] / 4;
-    xyzn[3] = abcd[3] % 4;
-}
-inline void abcd2xyzn_3(int abcd[4], int xyzn[4]) {
-    xyzn[0] = abcd[3];
-    xyzn[1] = abcd[2];
-    xyzn[2] = abcd[1] / 4;
-    xyzn[3] = abcd[1] % 4;
-}
-inline void abcd2xyzn_4(int C, int abcd[4], int xyzn[4]) {
-    xyzn[0] = abcd[2];
-    xyzn[1] = abcd[1];
-    uint t = abcd[0] * C + abcd[3];
-    xyzn[2] = t / 4;
-    xyzn[3] = t % 4;
-}
+#pragma mark -
 
-inline void xyzn2abcd(int C, int xyzn[4], int abcd[4]) {
-    abcd[2] = xyzn[0];
-    abcd[1] = xyzn[1];
-    uint t = xyzn[2] * 4 + xyzn[3];
-    abcd[0] = t / C;
-    abcd[3] = t % C;
-}
-
-inline void abcd2xyzn(int C, int abcd[4], int xyzn[4]) {
-    xyzn[0] = abcd[2];
-    xyzn[1] = abcd[1];
-    uint t = abcd[0] * C + abcd[3];
-    xyzn[2] = t / 4;
-    xyzn[3] = t % 4;
-}
-
-inline int32_t abcd2index(int32_t dim[4], int32_t abcd[4]) {
-    int32_t r = abcd[0];
-    r = r * dim[1] + abcd[1];
-    r = r * dim[2] + abcd[2];
-    r = r * dim[3] + abcd[3];
-    return r;
-}
-
-inline void index2abcd(int32_t dim[4], int32_t ind, int32_t abcd[4]) {
-    abcd[3] = ind % dim[3]; ind /= dim[3];
-    abcd[2] = ind % dim[2]; ind /= dim[2];
-    abcd[1] = ind % dim[1]; ind /= dim[1];
-    abcd[0] = ind;
-}
-
-inline void trans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
-    for (int i = 0; i < 4; i++) {
-        opos[i] = ipos[trans[i]];
-    }
-}
-
-inline void invtrans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
-    for (int i = 0; i < 4; i++) {
-        opos[trans[i]] = ipos[i];
-    }
-}
+enum ActivationType : ushort {
+		NONE           = 0,
+		RELU           = 1,
+		RELU6          = 2,
+		PRELU          = 3,
+		LEAKY_RELU     = 4,
+		HARD_SIGMOID   = 5,
+};
+	
+struct MetalActivationParam {
+	ActivationType activationType;
+	float threshold; 		//RELU6
+	float alpha;				//LEAKY_RELU
+	float offset;				//HARD_SIGMOID
+	float slope;
+	
+};
 
 struct ElementwiseAddParam {
-    int32_t fast;
-    int32_t addByChannel;
-    int32_t axis;
-    int32_t ylen;
-    int32_t xdim[4];
-    int32_t xtrans[4];
-    int32_t ydim[4];
-    int32_t ytrans[4];
+    int32_t fast;					//对位相加
+    int32_t addByChannel;	//仅c通道相加
+    int32_t axis;					// y 的维度对应到 x 维度上时的索引
+    int32_t ylen;					// y维度
+    int32_t xdim[4];			//x的GPU存储维度（已经经过数据转换，如果有的话，比如[NCHW-CPU] -> [NHWC-GPU]）
+    int32_t xtrans[4]; 		//x转换维度（转换后存到GPU）
+    int32_t ydim[4];			//y的GPU存储维度
+    int32_t ytrans[4];		//y转换维度（转换后存到GPU）
 };
 
 struct ElementwiseParam {
@@ -137,6 +97,7 @@ struct MetalConvParam {
     ushort hasAddOp;
     ushort hasReluOp;
     ElementwiseAddParam addParam;
+		MetalActivationParam activationParam;
 };
 
 struct Pad2dParam {
@@ -199,40 +160,135 @@ struct B2TParam {
     int32_t h;
     int32_t w;
 };
+	
+struct ReshapeParam {
+		int32_t idim[4];
+		int32_t itrans[4];
+		int32_t odim[4];
+		int32_t otrans[4];
+};
+
+#pragma mark -
+
+inline void xyzn2abcd_1(int xyzn[4], int abcd[4]) {
+		abcd[0] = abcd[1] = abcd[2] = 0;
+		abcd[3] = xyzn[0] * 4 + xyzn[3];
+}
+inline void xyzn2abcd_2(int xyzn[4], int abcd[4]) {
+		abcd[0] = abcd[1] = 0;
+		abcd[2] = xyzn[1];
+		abcd[3] = xyzn[0] * 4 + xyzn[3];
+}
+inline void xyzn2abcd_3(int xyzn[4], int abcd[4]) {
+		abcd[0] = 0;
+		abcd[3] = xyzn[0];
+		abcd[2] = xyzn[1];
+		abcd[1] = xyzn[2] * 4 + xyzn[3];
+}
+inline void xyzn2abcd_4(int C, int xyzn[4], int abcd[4]) {
+		abcd[2] = xyzn[0];
+		abcd[1] = xyzn[1];
+		uint t = xyzn[2] * 4 + xyzn[3];
+		abcd[0] = t / C;
+		abcd[3] = t % C;
+}
+
+inline void abcd2xyzn_1(int abcd[4], int xyzn[4]) {
+		xyzn[1] = xyzn[2] = 0;
+		xyzn[0] = abcd[3] / 4;
+		xyzn[1] = abcd[3] % 4;
+}
+inline void abcd2xyzn_2(int abcd[4], int xyzn[4]) {
+		xyzn[2] = 0;
+		xyzn[1] = abcd[2];
+		xyzn[0] = abcd[3] / 4;
+		xyzn[3] = abcd[3] % 4;
+}
+inline void abcd2xyzn_3(int abcd[4], int xyzn[4]) {
+		xyzn[0] = abcd[3];
+		xyzn[1] = abcd[2];
+		xyzn[2] = abcd[1] / 4;
+		xyzn[3] = abcd[1] % 4;
+}
+inline void abcd2xyzn_4(int C, int abcd[4], int xyzn[4]) {
+		xyzn[0] = abcd[2];
+		xyzn[1] = abcd[1];
+		uint t = abcd[0] * C + abcd[3];
+		xyzn[2] = t / 4;
+		xyzn[3] = t % 4;
+}
+
+inline void xyzn2abcd(int C, int xyzn[4], int abcd[4]) {
+		abcd[2] = xyzn[0];
+		abcd[1] = xyzn[1];
+		uint t = xyzn[2] * 4 + xyzn[3];
+		abcd[0] = t / C;
+		abcd[3] = t % C;
+}
+
+inline void abcd2xyzn(int C, int abcd[4], int xyzn[4]) {
+		xyzn[0] = abcd[2];
+		xyzn[1] = abcd[1];
+		uint t = abcd[0] * C + abcd[3];
+		xyzn[2] = t / 4;
+		xyzn[3] = t % 4;
+}
+
+inline int32_t abcd2index(int32_t dim[4], int32_t abcd[4]) {
+		int32_t r = abcd[0];
+		r = r * dim[1] + abcd[1];
+		r = r * dim[2] + abcd[2];
+		r = r * dim[3] + abcd[3];
+		return r;
+}
+
+inline void index2abcd(int32_t dim[4], int32_t ind, int32_t abcd[4]) {
+		abcd[3] = ind % dim[3]; ind /= dim[3];
+		abcd[2] = ind % dim[2]; ind /= dim[2];
+		abcd[1] = ind % dim[1]; ind /= dim[1];
+		abcd[0] = ind;
+}
+
+inline void trans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
+		for (int i = 0; i < 4; i++) {
+				opos[i] = ipos[trans[i]];
+		}
+}
+
+inline void invtrans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
+		for (int i = 0; i < 4; i++) {
+				opos[trans[i]] = ipos[i];
+		}
+}
+
+#pragma -
+	
+inline ftype4 activation(const ftype4 input,
+												 constant MetalActivationParam &param) {
+		switch(param.activationType) {
+				case NONE:
+						return input;
+				case RELU:
+						return fmax(0, input);
+				case RELU6:
+						return fmin(fmax(input, 0.0), ftype(param.threshold));
+				case PRELU:
+					return input;
+				case LEAKY_RELU:
+						return fmax(input, ftype(param.alpha) * input);
+				case HARD_SIGMOID:
+						return fmax(0.0, fmin(1.0, ftype(param.slope) * input + ftype(param.offset)));
+		}
+}
+	
+#pragma -
 
 inline half4 getBiasHalf(uint3 gid, constant ElementwiseAddParam &addParam, texture2d_array<half, access::sample> biasTexture) {
     half4 output;
     if (addParam.fast == 1) {
         output = biasTexture.read(gid.xy, gid.z);
     } else if (addParam.addByChannel == 1) {
-        output = biasTexture.read(uint2(gid.z, 0), 0);
-    } else {
-        int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4], t_abcd[4];
-        int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
-        int32_t xtrans[4] = {addParam.xtrans[0], addParam.xtrans[1], addParam.xtrans[2], addParam.xtrans[3]};
-        int32_t ytrans[4] = {addParam.ytrans[0], addParam.ytrans[1], addParam.ytrans[2], addParam.ytrans[3]};
-        int32_t yshift = 4 - addParam.ylen - addParam.axis;
-        for (int n = 0; n < 4; n++) {
-            x_xyzn[3] = n;
-            xyzn2abcd(addParam.xdim[3], x_xyzn, x_abcd);
-            invtrans(xtrans, x_abcd, t_abcd);
-            for (int k = addParam.axis; k < (addParam.axis + addParam.ylen); k++) {
-                y_abcd[yshift+k] = t_abcd[k];
-            }
-            trans(ytrans, y_abcd, t_abcd);
-            abcd2xyzn(addParam.ydim[3], t_abcd, y_xyzn);
-            output[n] = biasTexture.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
-        }
-    }
-    return output;
-}
-
-inline float4 getBias(uint3 gid, constant ElementwiseAddParam &addParam, texture2d_array<float, access::sample> biasTexture) {
-    float4 output;
-    if (addParam.fast == 1) {
-        output = float4(biasTexture.read(gid.xy, gid.z));
-    } else if (addParam.addByChannel == 1) {
-        output = float4(biasTexture.read(uint2(gid.z, 0), 0));
+        output = biasTexture.read(uint2(0, 0), gid.z);
     } else {
         int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4], t_abcd[4];
         int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];

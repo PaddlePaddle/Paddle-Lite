@@ -15,6 +15,9 @@
 
 #include <cassert>
 #include "lite/backends/metal/target_wrapper.h"
+#include "lite/backends/metal/metal_image.h"
+#include "lite/backends/metal/metal_buffer.h"
+#include "lite/backends/metal/metal_context_imp.h"
 
 namespace paddle {
 namespace lite {
@@ -22,40 +25,20 @@ namespace lite {
 
 size_t TargetWrapperMetal::num_devices() { return ctx_.GetDevicesNum(); }
 
-bool TargetWrapperMetal::MPSVersionRequired() {
-#ifdef TARGET_IOS
-  if (@available(iOS 11.0, *)) {
-    return true;
-  }
-#else
-  if (@available(macos 10.13, *)) {
-    return true;
-  }
-#endif
-  return false;
-};
-
 void* TargetWrapperMetal::Malloc(size_t size) {
-  void* ptr{};
-  auto device = ctx_.GetDefaultDevice();
-  auto buffer = new MetalBuffer(*device, size);
-  return (void*)buffer;
+  return nullptr;
 }
 
 void TargetWrapperMetal::WaitForCompleted() {
-  if (ctx_.cmd_buf_->have_command_) {
-    [ctx_.cmd_buf_->metal_command_buffer_ commit];
-    [ctx_.cmd_buf_->metal_command_buffer_ waitUntilCompleted];
-    ctx_.cmd_buf_->have_command_ = false;
-  }
+	auto backend = (__bridge MetalContextImp *)ctx_.backend();
+	[backend waitUntilCompleted];
 }
 
 template <>
 void* TargetWrapperMetal::MallocImage<float>(const DDim dim,
                                              std::vector<int> transpose,
                                              void* host_ptr) {
-  auto device = ctx_.GetDefaultDevice();
-  auto image = new MetalImage(*device, dim, transpose, METAL_PRECISION_TYPE::FLOAT);
+  auto image = new MetalImage(&ctx_, dim, transpose, METAL_PRECISION_TYPE::FLOAT);
   if (host_ptr) image->CopyFromNCHW<float>((float*)host_ptr);
   return (void*)image;
 }
@@ -64,42 +47,14 @@ template <>
 void* TargetWrapperMetal::MallocImage<MetalHalf>(const DDim dim,
                                                   std::vector<int> transpose,
                                                   void* host_ptr) {
-  auto device = ctx_.GetDefaultDevice();
-  auto image = new MetalImage(*device, dim, transpose, METAL_PRECISION_TYPE::HALF);
+  auto image = new MetalImage(&ctx_, dim, transpose, METAL_PRECISION_TYPE::HALF);
   if (host_ptr) image->CopyFromNCHW<MetalHalf>((MetalHalf*)host_ptr);
   return (void*)image;
 }
 
-template <>
-void* TargetWrapperMetal::MallocBuffer<float>(
-    const DDim dim, bool transpose, bool to_nhwc, bool pad_when_one_c, void* host_ptr) {
-  auto device = ctx_.GetDefaultDevice();
-
-  MetalBufferDescriptor desc;
-  desc.dim_ = dim;
-  desc.precision_ = METAL_PRECISION_TYPE::FLOAT;
-  desc.pad_when_one_c_ = pad_when_one_c;
-  desc.convert_to_NHWC_ = to_nhwc;
-  desc.with_transpose_ = transpose;
-  auto buffer = new MetalBuffer(*device, desc);
-
-  if (host_ptr) buffer->CopyFromNCHW<float>((float*)host_ptr);
-  return (void*)buffer;
-}
-
-template <>
-void* TargetWrapperMetal::MallocBuffer<MetalHalf>(
-    const DDim dim, bool transpose, bool to_nhwc, bool pad_when_one_c, void* host_ptr) {
-  auto device = ctx_.GetDefaultDevice();
-  MetalBufferDescriptor desc;
-  desc.dim_ = dim;
-  desc.precision_ = METAL_PRECISION_TYPE::HALF;
-  desc.pad_when_one_c_ = pad_when_one_c;
-  desc.convert_to_NHWC_ = to_nhwc;
-  desc.with_transpose_ = transpose;
-  auto buffer = new MetalBuffer(*device, desc);
-  if (host_ptr) buffer->CopyFromNCHW<MetalHalf>((MetalHalf*)host_ptr);
-  return (void*)buffer;
+void* TargetWrapperMetal::MallocBuffer(size_t size,
+																			 METAL_ACCESS_FLAG access) {
+  return nullptr;
 }
 
 void TargetWrapperMetal::FreeImage(void* image) {
