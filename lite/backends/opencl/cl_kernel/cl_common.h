@@ -93,7 +93,11 @@ __constant sampler_t SAMPLER =
 inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
   CL_DTYPE output = in;
 #ifdef PRELU
-  output = select(prelu_alpha * in, in, isgreaterequal(in, 0));
+#ifdef CL_DTYPE_half
+  output = select(prelu_alpha * in, in, (ushort)(isgreaterequal(in, 0)));
+#else
+  output = select(prelu_alpha * in, in, (uint)(isgreaterequal(in, 0)));
+#endif
 #endif
 
 #ifdef RELU
@@ -105,7 +109,13 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
 #endif
 
 #ifdef LEAKY_RELU
-  output = select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, isgreaterequal(in, 0));
+#ifdef CL_DTYPE_half
+  output = select(
+      (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (ushort)(isgreaterequal(in, 0)));
+#else
+  output = select(
+      (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (uint)(isgreaterequal(in, 0)));
+#endif
 #endif
 
 #ifdef HARD_SWISH
