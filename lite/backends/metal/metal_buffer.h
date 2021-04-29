@@ -20,132 +20,90 @@
 #endif
 
 #include <algorithm>
-
 #include "lite/backends/metal/metal_common.h"
+#include "lite/backends/metal/metal_context.h"
 #include "lite/backends/metal/metal_converter.h"
-#include "lite/backends/metal/metal_device.h"
-#include "lite/backends/metal/metal_queue.h"
 
 namespace paddle {
 namespace lite {
 
-class MetalBufferDescriptor;
-
+/**
+ * rawdata 默认为NCHW
+ * MTLBuffer为NHWC
+ */
 class MetalBuffer {
+	
  public:
-  enum class TYPE { kCommonBuffer, kTensorBuffer, kUnknownBuffer };
-
-  MetalBuffer(const MetalDevice& device, const MetalBufferDescriptor& desc);
-
-#ifdef __OBJC__
-  MetalBuffer(const MetalDevice& device, id<MTLBuffer> buffer);
-#else
-  MetalBuffer(const MetalDevice& device, void* buffer);
-#endif
-
-  MetalBuffer(const MetalDevice& device,
-              size_t size,
-              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
-
-  MetalBuffer(const MetalDevice& device,
-              void* data,
-              size_t size,
-              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
-
-  MetalBuffer(const MetalDevice& device,
-              const DDim& in_dim,
-              METAL_PRECISION_TYPE precision = METAL_PRECISION_TYPE::FLOAT,
-              bool pad_when_one_c = false,
-              bool convert_to_NHWC = true,
-              bool with_transpose = false,
-              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
-
- public:
-  MetalBuffer() = delete;
-  ~MetalBuffer();
-
-  template <typename P>
-  P* Convert(DataConverter<P>* converter);
-
-  void Read(void* data, size_t size, size_t offset) const;
-  void Read(void* data,
-            size_t size,
-            size_t offset,
-            const MetalQueue& queue) const;
-
-  void Write(const void* src,
-             size_t size,
-             size_t offset,
-             const MetalQueue& queue) const;
-  void Write(const void* src, size_t size, size_t offset) const;
-
-  void Copy(const MetalQueue& queue,
-            const MetalBuffer& src,
-            size_t size,
-            size_t src_offset,
-            size_t dst_offset) const;
-  void Copy(const MetalBuffer& src,
-            size_t size,
-            size_t src_offset,
-            size_t dst_offset) const;
-
-  template <typename SP>
-  void CopyFromNCHW(const SP* src);
-
-  template <typename DP>
-  void CopyToNCHW(DP* dst);
+	//使用场景：shader params 只包含GPU的MTLBuffer
+	MetalBuffer(MetalContext* context,
+							size_t size,
+							void *data = nullptr,
+							METAL_ACCESS_FLAG access = METAL_ACCESS_FLAG::CPUWriteOnly);
+   
+	//使用场景：shader input or output 只包含GPU的MTLBuffer eg:io_copy fetch
+	MetalBuffer(MetalContext* context,
+							const DDim& inDim,
+							size_t size,
+							void *data = nullptr,
+							METAL_PRECISION_TYPE precision = METAL_PRECISION_TYPE::FLOAT,
+							METAL_ACCESS_FLAG access = METAL_ACCESS_FLAG::CPUShared);
+	
+	//使用场景：shader weight 既包含CPU的raw_data_ 也包含GPU的MTLBuffer
+	MetalBuffer(MetalContext* context,
+							const DDim& inDim,
+							METAL_PRECISION_TYPE precision = METAL_PRECISION_TYPE::HALF);
+	
+	MetalBuffer() = delete;
+	~MetalBuffer();
+	
+	bool convert_to_nhwc_{true};
+	bool with_transpose_{false};
+	bool pad_when_one_channel_{false};
+	DataLayout data_layout_{DataLayout::kNCHW};
+	METAL_ACCESS_FLAG access_{METAL_ACCESS_FLAG::CPUWriteOnly};
+	METAL_PRECISION_TYPE precision_{METAL_PRECISION_TYPE::HALF};
 
 #if defined(__OBJC__)
-  id<MTLBuffer> buffer() const;
-  id<MTLBuffer> buffer_{nil};
-#else
-  void* buffer() const;
-  void* buffer_{nullptr};
+	id<MTLBuffer> buffer() const;
 #endif
+	void* rawdata() { return rawdata_; }
+	DDim tensor_dim() { return tensor_dim_; }
+	size_t mtl_size() const { return mtl_size_; }
+	
+public:
+	template <typename SP>
+	void CopyFromNCHW(const SP* src);
 
-  int offset() const;
-  void set_offset(int offset);
+	template <typename DP>
+	void CopyToNCHW(DP* dst);
+	
+	template <typename P>
+	P* Convert(DataConverter<P>* converter);
 
-  MetalBuffer::TYPE type() { return type_; }
-  DDim tensor_dim() { return tensor_dim_; }
-  size_t data_length() { return data_length_; }
+private:
+	DDim dim_;
+	DDim tensor_dim_;
+	MetalContext* metal_context_;
+	
+	void* rawdata_ = nullptr; 	//默认NCHW 原始数据
+	size_t mtl_size_;						//MTLBuffer大小（byte大小）
+	size_t precision_size_;
+	bool can_copy_to_{true};		//是否能copy to someone
 
- private:
-  template <typename P>
-  void ExpandNHWC();
-  void Convert();
+#if defined(__OBJC__)
+	id<MTLBuffer> buffer_{nil}; //NHWC GPU数据
+#endif
+	
+  void Convert2NHWC();				//NCHW转NHWC
+	
+public:
+	void Read(void* data, size_t size, size_t offset) const;
+	void Write(const void* src, size_t size, size_t offset) const;
+	void Copy(const MetalBuffer& src,
+						size_t size,
+						size_t src_offset,
+						size_t dst_offset) const;
 
-  size_t size_;
-  int offset_ = 0;
-
-  DDim tensor_dim_;
-  __unused DDim pad_to_four_dim_;
-  DDim dim_;
-  void* data_ = nullptr;
-
-  int precision_size_;
-  size_t data_length_;
-  MetalDevice* mtl_device_;
-  int c_;
-  int c_slices_;
-  int padded_c_;
-  int count_;
-  bool pad_when_one_channel_;
-  bool convert_to_nhwc_;
-  bool with_transpose_;
-  METAL_PRECISION_TYPE precision_;
-  METAL_ACCESS_FLAG flags_;
-  TYPE type_;
-};
-
-struct MetalBufferDescriptor {
-  DDim dim_;
-  MetalBuffer::TYPE type_ = MetalBuffer::TYPE::kTensorBuffer;
-  METAL_PRECISION_TYPE precision_ = METAL_PRECISION_TYPE::FLOAT;
-  bool pad_when_one_c_ = false;
-  bool convert_to_NHWC_ = true;
-  bool with_transpose_ = false;
-  METAL_ACCESS_FLAG flag_ = METAL_ACCESS_FLAG::CPUReadWrite;
 };
 
 }  // namespace lite

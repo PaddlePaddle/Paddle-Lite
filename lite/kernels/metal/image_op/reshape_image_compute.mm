@@ -14,88 +14,94 @@
 
 #include "lite/kernels/metal/image_op/reshape_image_compute.h"
 #include "lite/core/op_registry.h"
+#include "lite/backends/metal/metal_context_imp.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
-#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-
-template <typename P, PrecisionType PTYPE>
-void ReshapeImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
+void ReshapeImageCompute::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->template Param<param_t>();
+  const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
-  auto transpose = param.excepted_transpose_;
 
-  if(transpose.empty()){
-      output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
-  } else {
-    output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims, transpose);
-  }
-  input_buffer_ = param.x->template data<P, MetalImage>();
-
-  auto irank = input_buffer_->tensor_dim_.size();
-  auto orank = output_buffer_->tensor_dim_.size();
-
-  std::string function_name = "";
-  if (std::is_same<P, float>::value) {
-    function_name = "reshape_" + std::to_string(irank) + "_" + std::to_string(orank) + "_float";
-  } else if (std::is_same<P, MetalHalf>::value) {
-    function_name = "reshape_" + std::to_string(irank) + "_" + std::to_string(orank) + "_half";
-  }
-  assert(!function_name.empty());
-
-  kernel_ = metal_context_->GetKernel(*device, function_name);
-
-  std::vector<int> it = input_buffer_->transpose_;
-  std::vector<int> ot = output_buffer_->transpose_;
-  std::vector<int> id = {1, 1, 1, 1};
-  std::vector<int> od = {1, 1, 1, 1};
-
-  for (int i = 0; i < irank; i++) {
-    id[4 - irank + i] = (int)input_buffer_->tensor_dim_[i];
-  }
-
-  for (int i = 0; i < orank; i++) {
-    od[4 - orank + i] = (int)(output_buffer_->tensor_dim_[i]);
-  }
-
-  ReshapeMetalParam reshape_params{{id[0], id[1], id[2], id[3]},
-                                   {it[0], it[1], it[2], it[3]},
-                                   {od[0], od[1], od[2], od[3]},
-                                   {ot[0], ot[1], ot[2], ot[3]}};
-
-  params_buffer_ = metal_context_->CreateBuffer(*device,
-                                         &reshape_params,
-                                         sizeof(reshape_params),
-                                         METAL_ACCESS_FLAG::CPUWriteOnly);
-  queue_ = metal_context_->GetDefaultQueue(*device);
-
+#ifdef LITE_WITH_METAL_FULL
+#else
+	input_buffer_ = param.x->data<MetalHalf, MetalImage>();
+	output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+#endif
+	
+	setup_without_mps();
 }
 
-template<typename P, PrecisionType PTYPE>
-void ReshapeImageCompute<P, PTYPE>::Run() {
-  const auto& param = this->template Param<param_t>();
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
+void ReshapeImageCompute::Run() {
+	auto outTexture = output_buffer_->image();
+	auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	
+	auto encoder = [backend commandEncoder];
+	[encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+	[encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+	[encoder setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
+	[backend dispatchEncoder:encoder
+									 pipline:pipline
+								outTexture:outTexture];
+	[backend commit];
+}
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+void ReshapeImageCompute::setup_without_mps() {
+	int irank = (int)input_buffer_->tensor_dim_.size();
+	int orank = (int)output_buffer_->tensor_dim_.size();
+	
+	//CPU上Tensor数据NCHW表示
+	std::vector<int> idm = {1, 1, 1, 1};
+	for (int i = 0; i < irank; i++) {
+		idm[4 - irank + i] = (int)input_buffer_->tensor_dim_[i];
+	}
+	//CPU上NHWC数据表示（CPU上Tensor数据NCHW转换而来）
+	//注意：4维有转换 3维没有转换 与Texture中的desc_逻辑一致
+	std::vector<int> it = {0, 2, 3, 1};
+	if (input_buffer_->tensor_dim_.size() < 4) {
+		it = {0, 1, 2, 3};
+	}
+	
+	std::vector<int> odm = {1, 1, 1, 1};
+	for (int i = 0; i < orank; i++) {
+		odm[4 - orank + i] = (int)(output_buffer_->tensor_dim_[i]);
+	}
+	std::vector<int> ot = {0, 2, 3, 1};
+	if (output_buffer_->tensor_dim_.size() < 4) {
+		ot = {0, 1, 2, 3};
+	}
 
-  kernel_->Execute(*encoder, global_work_size, false);
+	ReshapeMetalParam reshape_params{
+		{idm[0], idm[1], idm[2], idm[3]},
+		{it[0], it[1], it[2], it[3]},
+		{odm[0], odm[1], odm[2], odm[3]},
+		{ot[0], ot[1], ot[2], ot[3]}};
+	params_buffer_ = std::make_shared<MetalBuffer>(metal_context_,
+																								 sizeof(reshape_params),
+																								 &reshape_params);
+	
+#ifdef LITE_WITH_METAL_FULL
+#else
+	function_name_ = "reshape";
+#endif
+	//pipline
+	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+	pipline_ = (__bridge_retained void *)[backend pipline:function_name_];
+}
+
+ReshapeImageCompute::~ReshapeImageCompute() {
+	if (pipline_){
+		CFRelease(pipline_);
+		pipline_ = nullptr;
+	}
 }
 
 }  // namespace metal
@@ -103,17 +109,11 @@ void ReshapeImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ReshapeImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ReshapeImageCompute<MetalHalf, PRECISION(kFP16)>;
-
-typedef paddle::lite::kernels::metal::ReshapeImageCompute<float, PRECISION(kFloat)> MetalReshapeFp32;
-typedef paddle::lite::kernels::metal::ReshapeImageCompute<MetalHalf, PRECISION(kFP16)> MetalReshapeFp16;
-
 REGISTER_LITE_KERNEL(reshape2,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     MetalReshapeFp32,
+                     paddle::lite::kernels::metal::ReshapeImageCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -135,7 +135,7 @@ REGISTER_LITE_KERNEL(reshape2,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     MetalReshapeFp16,
+                     paddle::lite::kernels::metal::ReshapeImageCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -154,46 +154,28 @@ REGISTER_LITE_KERNEL(reshape2,
     .Finalize();
 
 REGISTER_LITE_KERNEL(flatten,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalReshapeFp16,
-                     image2d)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
-    .Finalize();
+										 kMetal,
+										 kFloat,
+										 kMetalTexture2DArray,
+										 paddle::lite::kernels::metal::ReshapeImageCompute,
+										 image2d)
+		.BindInput("X",
+							 {LiteType::GetTensorTy(TARGET(kMetal),
+																			PRECISION(kFloat),
+																			DATALAYOUT(kMetalTexture2DArray))})
+		.BindInput("Shape",
+							 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+		.BindOutput("Out",
+								{LiteType::GetTensorTy(TARGET(kMetal),
+																			 PRECISION(kFloat),
+																			 DATALAYOUT(kMetalTexture2DArray))})
+		.Finalize();
 
 REGISTER_LITE_KERNEL(flatten,
                      kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalReshapeFp32,
-                     image2d)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(flatten2,
-                     kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     MetalReshapeFp16,
+                     paddle::lite::kernels::metal::ReshapeImageCompute,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -201,8 +183,6 @@ REGISTER_LITE_KERNEL(flatten2,
                                       DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Shape",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("XShape",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFP16),
@@ -213,7 +193,7 @@ REGISTER_LITE_KERNEL(flatten2,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     MetalReshapeFp32,
+                     paddle::lite::kernels::metal::ReshapeImageCompute,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
@@ -228,3 +208,23 @@ REGISTER_LITE_KERNEL(flatten2,
                                        PRECISION(kFloat),
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(flatten2,
+										 kMetal,
+										 kFP16,
+										 kMetalTexture2DArray,
+										 paddle::lite::kernels::metal::ReshapeImageCompute,
+										 image2d)
+		.BindInput("X",
+							 {LiteType::GetTensorTy(TARGET(kMetal),
+																			PRECISION(kFP16),
+																			DATALAYOUT(kMetalTexture2DArray))})
+		.BindInput("Shape",
+							 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+		.BindOutput("XShape",
+								{LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+		.BindOutput("Out",
+								{LiteType::GetTensorTy(TARGET(kMetal),
+																			 PRECISION(kFP16),
+																			 DATALAYOUT(kMetalTexture2DArray))})
+		.Finalize();

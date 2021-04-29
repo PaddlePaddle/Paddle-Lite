@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef LITE_KERNELS_METAL_IMAGE_OP_FEED_IMAGE_COMPUTE_H_
+#define LITE_KERNELS_METAL_IMAGE_OP_FEED_IMAGE_COMPUTE_H_
 
 #include <memory>
-#include <vector>
+#include <string>
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -24,42 +25,41 @@
 #include "lite/core/profile/profiler.h"
 #endif
 
-#include "lite/backends/metal/metal_context.h"
 #include "lite/backends/metal/metal_debug.h"
-#include "lite/kernels/metal/image_op/reshape_image_compute.h"
+#include "lite/backends/metal/metal_context.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class FetchImageCompute : public KernelLite<TARGET(kMetal),
-                                            PTYPE,
-                                            DATALAYOUT(kMetalTexture2DArray)> {
+                                           PRECISION(kFloat),
+                                           DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::FetchParam;
 
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override { ; };
+	void SaveOutput() override {
+		MetalDebug::SaveOutput("fetch", output_buffer_.get());
+	};
 
  private:
-  std::shared_ptr<MetalBuffer> output_buffer_;
-  const MetalImage* input_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-  const MetalDevice* device_;
-  std::vector<int> expected_transpose_ = {};
+	void setup_without_mps();
 
-  ReshapeImageCompute<P, PTYPE> reshape_;
-  Tensor shape_out_dev;
-  bool insert_shape = false;
+  const MetalImage* input_buffer_;
+  std::shared_ptr<MetalBuffer> output_buffer_;
+	std::shared_ptr<MetalBuffer> params_buffer_;
+
+  void* pipline_;
+  std::string function_name_;
+  MetalContext* metal_context_;
 };
 
 }  // namespace metal
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+#endif  // LITE_KERNELS_METAL_IMAGE_OP_FEED_IMAGE_COMPUTE_H_

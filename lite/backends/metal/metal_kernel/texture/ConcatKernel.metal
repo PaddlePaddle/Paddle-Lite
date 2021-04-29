@@ -30,267 +30,120 @@ struct ConcatParam {
 #define VY 3
 #define VZ 4
 
+// R:输入维度 N:输入个数 V：方向
+
+// >> normal mode (loop mode)
+
 // >> fast mode
 // only support concat_{2,3,4}_{2,3,4,5,6}_y_{float,half}
 // only support concat_{3,4}_{2,3,4,5,6}_x_{float,half}
 // only support concat_{1,2,3,4}_{2,3,4,5,6}_z_{float,half}
-// >> normal mode (loop mode)
-// ssd-ar: (R=4, N=3, V=z), (R=3, N=2, V=y), (R=2, N=5, V=x), (R=3, N=5, V=x)
-// ssd: (R=2, N=6, V=y), (R=3, N=6, V=y)
-// genet: (R=4, N=2, V=normal)
 
-// ssd-ar: (R=3, N=5, V=x)
-#define V VX
-#define R 3
-#define N 5
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-// ssd-ar: (R=2, N=5, V=x)
-#define V VX
-#define R 2
-#define N 5
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-// gesture recognizing: (R=2, N=3, V=x)
-#define V VX
-#define R 2
-#define N 3
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
+// >> special model
 // lens: (R=4, N=3, V=normal)
-#define V VNORMAL
-#define R 4
-#define N 3
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-// lens: (R=2, N=2, V=normal)
-#define V VNORMAL
-#define R 2
-#define N 2
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-// ssd-ar: (R=3, N=2, V=y)
-#define V VY
-#define R 3
-#define N 2
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-// ssd-ar: (R=4, N=3, V=z)
-#define V VZ
-#define R 4
-#define N 3
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-// lens: (R=4, N=2, V=z)
-#define V VZ
-#define R 4
-#define N 2
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-// ssd: (R=2, N=6, V=y)
-#define V VY
-#define R 2
-#define N 6
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-// ssd: (R=3, N=6, V=y)
-#define V VY
-#define R 3
-#define N 6
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-#define V VNORMAL
-#define R 4
-#define N 2
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
 // lens: (R=2, N=3, V=normal)
-#define V VNORMAL
-#define R 2
-#define N 3
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
+// lens: (R=2, N=2, V=normal)
+// lens: (R=4, N=2, V=z)
+// ssd-ar: (R=4, N=3, V=z)
+// ssd-ar: (R=3, N=2, V=y)
+// ssd-ar: (R=3, N=5, V=x)
+// ssd-ar: (R=2, N=5, V=x)
+// ssd: (R=2, N=6, V=y),
+// ssd: (R=3, N=6, V=y)
+// genet: (R=4, N=2, V=normal)
+// gesture recognizing: (R=2, N=3, V=x)
+
+#pragma mark -
+#pragma mark normal
 
 #define V VNORMAL
-#define R 3
-#define N 2
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-#define V VNORMAL
-#define R 3
-#define N 3
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-#define V VY
-#define R 2
-#define N 2
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-#define V VY
-#define R 3
-#define N 3
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-#define V VY
-#define R 2
-#define N 5
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-#define V VY
 #define R 4
 #define N 3
-#define P float
-#include "ConcatKernel.inc.metal"
-#undef P
-#define P half
+#define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
 #undef N
 #undef R
 #undef V
+
+#define V VNORMAL
+#define R 4
+#define N 2
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VNORMAL
+#define R 3
+#define N 3
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VNORMAL
+#define R 3
+#define N 2
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VNORMAL
+#define R 2
+#define N 3
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VNORMAL
+#define R 2
+#define N 2
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#pragma mark -
+#pragma mark z
 
 #define V VZ
 #define R 4
 #define N 4
-#define P float
+#define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
-#define P half
+#undef N
+#undef R
+#undef V
+
+#define V VZ
+#define R 4
+#define N 3
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+
+#define V VZ
+#define R 4
+#define N 2
+#define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
 #undef N
@@ -300,10 +153,20 @@ struct ConcatParam {
 #define V VZ
 #define R 3
 #define N 3
-#define P float
+#define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
-#define P half
+#undef N
+#undef R
+#undef V
+
+#pragma mark -
+#pragma mark x
+
+#define V VX
+#define R 3
+#define N 5
+#define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
 #undef N
@@ -313,10 +176,110 @@ struct ConcatParam {
 #define V VX
 #define R 3
 #define N 3
-#define P float
+#define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
-#define P half
+#undef N
+#undef R
+#undef V
+
+#define V VX
+#define R 3
+#define N 2
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VX
+#define R 2
+#define N 5
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VX
+#define R 2
+#define N 3
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#pragma mark -
+#pragma mark y
+
+#define V VY
+#define R 4
+#define N 3
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VY
+#define R 3
+#define N 6
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VY
+#define R 3
+#define N 3
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VY
+#define R 3
+#define N 2
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VY
+#define R 2
+#define N 6
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VY
+#define R 2
+#define N 5
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VY
+#define R 2
+#define N 2
+#define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
 #undef N

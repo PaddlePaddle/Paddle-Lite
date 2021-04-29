@@ -13,6 +13,8 @@
  limitations under the License. */
 
 #include <metal_stdlib>
+#include "Common.metal"
+
 using namespace metal;
 
 struct MetalSliceParam {
@@ -28,15 +30,15 @@ struct MetalSliceParam {
     int oC;
 };
 
-kernel void slice(texture2d_array<float, access::sample> inTexture [[texture(0)]],
-                texture2d_array<float, access::write> outTexture [[texture(1)]],
+kernel void slice(texture2d_array<ftype, access::sample> inTexture [[texture(0)]],
+                texture2d_array<ftype, access::write> outTexture [[texture(1)]],
                 constant MetalSliceParam &param [[buffer(0)]],
                 uint3 gid [[thread_position_in_grid]]) {
+	
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) return;
-    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-    float4 output;
+		ftype4 output;
     for (int i = 0; i < 4; ++i) {
         int tmp = gid.z * 4 + i;
         int output_c = tmp % param.oC;
@@ -45,30 +47,7 @@ kernel void slice(texture2d_array<float, access::sample> inTexture [[texture(0)]
         tmp = output_n * param.iC + c;
         int input_z = tmp / 4;
         int input_c = tmp % 4;
-        const float4 input = inTexture.read(gid.xy, input_z);
-        output[i] = input[input_c % 4];
-    }
-    outTexture.write(output, gid.xy, gid.z);
-}
-
-kernel void slice_half(texture2d_array<half, access::sample> inTexture [[texture(0)]],
-                     texture2d_array<half, access::write> outTexture [[texture(1)]],
-                       constant MetalSliceParam &param [[buffer(0)]],
-                     uint3 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() ||
-        gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size()) return;
-    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-    half4 output;
-    for (int i = 0; i < 4; ++i) {
-        int tmp = gid.z * 4 + i;
-        int output_c = tmp % param.oC;
-        int output_n = tmp / param.oC;
-        int c = output_c + param.start1;
-        tmp = output_n * param.iC + c;
-        int input_z = tmp / 4;
-        int input_c = tmp % 4;
-        const half4 input = inTexture.read(gid.xy, input_z);
+        const ftype4 input = inTexture.read(gid.xy, input_z);
         output[i] = input[input_c % 4];
     }
     outTexture.write(output, gid.xy, gid.z);

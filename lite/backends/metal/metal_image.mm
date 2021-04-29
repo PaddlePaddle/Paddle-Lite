@@ -13,97 +13,149 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/metal/metal_half.h"
 #include "lite/backends/metal/metal_image.h"
+#include "lite/backends/metal/metal_half.h"
+#include "lite/backends/metal/metal_context_imp.h"
 
 namespace paddle {
 namespace lite {
 
-static MTLResourceOptions OptionForAccess(METAL_ACCESS_FLAG flag) {
-  if (flag == METAL_ACCESS_FLAG::CPUWriteOnly) {
-    return MTLResourceOptionCPUCacheModeWriteCombined;
-  } else if (flag == METAL_ACCESS_FLAG::CPUTransparent) {
-    if (@available(iOS 9.0, *)) {
-      return MTLResourceStorageModePrivate;
-    } else {
-      return MTLResourceOptionCPUCacheModeDefault;
-    }
-  } else {
-    return MTLResourceOptionCPUCacheModeDefault;
-  }
-}
-
-MetalImage::MetalImage(const MetalDevice &device,
+MetalImage::MetalImage(MetalContext *context,
                        const DDim &in_dim,
                        std::vector<int> in_transpose,
                        const METAL_PRECISION_TYPE precision_type,
                        const METAL_ACCESS_FLAG flag)
     : precision_type_(precision_type), flag_(flag) {
-  device_ = &device;
+	auto backend = (__bridge MetalContextImp *)context->backend();
   auto four_dim = FourDimFrom(in_dim);
 
   tensor_dim_ = in_dim;
   dim_ = four_dim;
   pad_to_four_dim_ = four_dim;
+	transpose_ = std::move(in_transpose);
 
-  if (tensor_dim_.size() < 4) {
-    transpose_ = {0, 1, 2, 3};
-  } else {
-    transpose_ = std::move(in_transpose);
-  }
-
-  UpdateDims(in_dim);
   InitTexture();
-
-  // TODO:(lzy) Do we need clear the buffer here
+	image_ = [backend newTextureWithDescriptor:desc_];
 }
 
-void MetalImage::UpdateDims(const DDim &in_tensor_dim) {
-  auto four_dim = MetalImage::FourDimFrom(in_tensor_dim);
+void MetalImage::UpdateDims(MetalContext *context,
+														const DDim &in_tensor_dim,
+														std::vector<int> in_transpose) {
+	auto backend = (__bridge MetalContextImp *)context->backend();
+  auto four_dim = FourDimFrom(in_tensor_dim);
   tensor_dim_ = in_tensor_dim;
   pad_to_four_dim_ = four_dim;
 
-  std::vector<DDim::value_type> new_dim = {};
-  for_each(transpose_.begin(), transpose_.end(), [&](int i) -> void {
-    new_dim.emplace_back(pad_to_four_dim_[i]);
-  });
-  dim_ = DDimLite(new_dim);
+	transpose_ = std::move(in_transpose);
+	InitTexture();
+	image_ = [backend newTextureWithDescriptor:desc_];
 }
 
 void MetalImage::InitTexture() {
-
-  std::vector<DDim::value_type> new_dim = {};
-  for_each(transpose_.begin(), transpose_.end(), [&](int i) -> void {
-    new_dim.emplace_back(pad_to_four_dim_[i]);
-  });
-
-  dim_ = DDimLite(new_dim);
-
+	
   desc_ = [[MTLTextureDescriptor alloc] init];
   [desc_ setTextureType:MTLTextureType2DArray];
   [desc_ setDepth:1];
 
-  switch (tensor_dim_.size()) {
-    case 4:
-      desc_.width = static_cast<NSUInteger>(new_dim[2]);
-      desc_.height = static_cast<NSUInteger>(new_dim[1]);
-      desc_.arrayLength = static_cast<NSUInteger>(((new_dim[0]) * (new_dim[3]) + 3) / 4);
-      break;
-    case 3:
-      desc_.width = static_cast<NSUInteger>(new_dim[3]);
-      desc_.height = static_cast<NSUInteger>(new_dim[2]);
-      desc_.arrayLength = static_cast<NSUInteger>((new_dim[1] + 3) / 4);
-      break;
-    case 2:
-    case 1:
-      desc_.width = static_cast<NSUInteger>((new_dim[3] + 3) / 4);
-      desc_.height = static_cast<NSUInteger>(new_dim[2]);
-      desc_.arrayLength = 1;
-      break;
-    default:
-      throw std::logic_error("ERROR: Dim size is error");
-  }
-
+	std::vector<int> transpose_nhwc = {0, 2, 3, 1};
+	std::vector<int> transpose_nchw = {0, 1, 2, 3};
+	std::vector<DDim::value_type> dim = {};
+	switch (tensor_dim_.size()) {
+		case 4: {
+			//eg:tensor={1,24,208,208}转换为dim={1,208,208,24}
+			//GPU上的arraylength方向使用24 大小为(24+3)/4=6
+			//注：仅支持N=1
+			std::vector<int> transpose = {0, 2, 3, 1};
+			for_each(transpose.begin(), transpose.end(), [&](int i) -> void {
+				dim.emplace_back(pad_to_four_dim_[i]);
+			});
+		}
+			break;
+		case 3:
+		case 2:
+		case 1: {
+			//eg1:tensor={1,36,3549}转换为dim={1,1,36,3549}
+			//GPU上的arraylength方向使用3549大小为(3549+3)/4=888 width方向使用36大小为36 height方向使用1大小为1
+			//eg12:tensor={1,24}转换为dim={1,1,1,24}
+			//GPU上的arraylength方向使用24 大小为(24+3)/4=6  width方向使用1大小为1 height方向使用1大小为1
+			std::vector<int> transpose = {0, 1, 2, 3};
+			for_each(transpose.begin(), transpose.end(), [&](int i) -> void {
+				dim.emplace_back(pad_to_four_dim_[i]);
+			});
+		}
+			break;
+		default:
+			throw std::logic_error("metal_image: Dim size is error");
+	}
+	dim_ = DDimLite(dim);
+	
+	//GPU上数据排布
+	if (transpose_ == transpose_nhwc) {
+		//使用场景：OP层中的上层输出下层输入 tensor.size可能是1、2、3、4
+		switch (tensor_dim_.size()) {
+			case 4:
+				desc_.width = static_cast<NSUInteger>(dim[2]);
+				desc_.height = static_cast<NSUInteger>(dim[1]);
+				desc_.arrayLength = static_cast<NSUInteger>(((dim[0]) * (dim[3]) + 3) / 4);
+				break;
+			case 3:
+				dim_ = DDimLite(dim);
+				desc_.width = static_cast<NSUInteger>(dim[2]);
+				desc_.height = static_cast<NSUInteger>(dim[1]);
+				desc_.arrayLength = static_cast<NSUInteger>(((dim[0]) * (dim[3]) + 3) / 4);
+				break;
+			case 2:
+			case 1:
+				desc_.width = static_cast<NSUInteger>(dim[2]);
+				desc_.height = static_cast<NSUInteger>(dim[1]);
+				desc_.arrayLength = static_cast<NSUInteger>(((dim[3] + 3) / 4) * (dim[0]));
+				//手百上还未出现width!=1情况 如果出现时注意测试
+				if (dim[2] != 1) {
+					throw std::logic_error("metal_image: Attention this dim");
+				}
+				break;
+			default:
+				throw std::logic_error("metal_image: Dim size is error");
+		}
+	}
+	else if (transpose_ == transpose_nchw) {
+		//使用场景：OP运算时使用的参数 tensor传入转为texture使用 目前tensor.size都是1或2 其他情况还未遇到
+		switch (tensor_dim_.size()) {
+			case 4: {
+				throw std::logic_error("metal_image: InitTexture(0123) - tensor dim = 4");
+				//目前未遇到 数据可按照以下两种方式 遇到时再决定
+				/*//1、注意这里按照 N*(ceil(C+3)/4)填充
+				desc_.width = static_cast<NSUInteger>(dim[3]);
+				desc_.height = static_cast<NSUInteger>(dim[2]);
+				desc_.arrayLength = static_cast<NSUInteger>(((dim[1] + 3) / 4) * (dim[0]));
+				//2、注意这里按照 (ceil(N*C+3)/4) 填充
+				desc_.width = static_cast<NSUInteger>(dim[3]);
+				desc_.height = static_cast<NSUInteger>(dim[2]);
+				desc_.arrayLength = static_cast<NSUInteger>(((dim[1] + 3) / 4) * (dim[0]));*/
+			}
+				break;
+			case 3: {
+				throw std::logic_error("metal_image: InitTexture(0123) - tensor dim = 3");
+				/*//目前未遇到 遇到时注意测试
+				desc_.width = static_cast<NSUInteger>(dim[2]);
+				desc_.height = static_cast<NSUInteger>(dim[1]);
+				desc_.arrayLength = static_cast<NSUInteger>(((dim[3] + 3) / 4) * (dim[0]));*/
+			}
+				break;
+			case 2:
+			case 1: {
+				desc_.width = static_cast<NSUInteger>(dim[2]);
+				desc_.height = static_cast<NSUInteger>(dim[1]);
+				desc_.arrayLength = static_cast<NSUInteger>(((dim[3] + 3) / 4) * (dim[0]));
+			}
+				break;
+			default:
+				throw std::logic_error("metal_image: Dim size is error");
+		}
+	}
+	else {
+		throw std::logic_error("metal_image: unsupported tensor dim count");
+	}
   texture_width_ = desc_.width;
   texture_height_ = desc_.height;
   array_length_ = desc_.arrayLength;
@@ -137,15 +189,7 @@ void MetalImage::InitTexture() {
   }
 
   desc_.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
-//  desc_.storageMode = MTLStorageModeShared;
-
-  image_ = [device_->device() newTextureWithDescriptor:desc_];
-
-#if (!__has_feature(objc_arc)) 
-  [desc_ release];
-#endif
-
-  desc_ = nil;
+	desc_.storageMode = MTLStorageModeShared;
 }
 
 DDim MetalImage::FourDimFrom(DDim in_dim) {
@@ -177,130 +221,82 @@ void *metal_image::image() const
   return image_;
 }
 
+int MetalImage::ElementCount() const {
+	if (image_) {
+		return (int)(image_.width * image_.height * image_.arrayLength * 4);
+	} else if (desc_) {
+		return (int)(desc_.width * desc_.height * desc_.arrayLength * 4);
+	} else {
+		throw std::logic_error("metal_image: texture desc = nil");
+	}
+}
+
+//MTLTextureDescriptor* MetalImage::descriptor() const {
+//	return desc_;
+//}
+
+//与texture desc逻辑一致
+//使用场景：OP运算时使用的参数 tensor传入转为texture使用
+//目前tensor.size都是1或2 其他情况还未遇到
+//tensor=4的情况：metal未实现算子时，cpu处理完后再给gpu
 template <typename SP>
 void MetalImage::CopyFromNCHW(const SP *src) {
-  size_t new_dims[] = {1, 1, 1, 1};
-  for (int i = 0; i < tensor_dim_.size(); ++i) {
-    new_dims[4 - tensor_dim_.size() + i] = static_cast<size_t>(tensor_dim_[i]);
-  }
-
-  size_t N = new_dims[0];
-  size_t C = new_dims[1];
-  size_t H = new_dims[2];
-  size_t W = new_dims[3];
-
   auto rcount = texture_width_ * texture_height_ * array_length_ * channels_per_pixel_;
-
+	
   if (precision_type_ == METAL_PRECISION_TYPE::FLOAT && std::is_same<SP, float>::value) {
-    auto nvalue = (float *)malloc(sizeof(float) * rcount);
-    if (tensor_dim_.size() == 4) {
-      for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < C; ++i1) {
-          for (int i2 = 0; i2 < H; ++i2) {
-            for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-              std::vector<int> jg = {
-                  ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-              auto k = jg[0] * dim_[3] + jg[3];
-              auto jx =
-                  ((k / 4) * dim_[1] * dim_[2] * 4) + (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
-              nvalue[jx] = src[ix];
-            }
-          }
-        }
-      }
-    } else if (tensor_dim_.size() == 3) {
-      for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < C; ++i1) {
-          for (int i2 = 0; i2 < H; ++i2) {
-            for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-              std::vector<int> jg = {
-                  ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-              auto k = jg[1];
-              auto jx =
-                  ((k / 4) * dim_[2] * dim_[3] * 4) + (jg[1] * dim_[3] * 4) + (jg[3] * 4) + (k % 4);
-              nvalue[jx] = src[ix];
-            }
-          }
-        }
-      }
-    } else {
-      for (int i1 = 0; i1 < H; ++i1) {
-        for (int i2 = 0; i2 < W; ++i2) {
-          auto ix = (i1 * W) + i2;
-          auto jx = (i1 * texture_width_ * 4) + i2;
-          nvalue[jx] = src[ix];
-        }
-      }
-    }
-
-    auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(float);
-    auto bytes_per_image = image_.height * bytes_per_row;
-    const MTLRegion region{.origin = {0, 0, 0},
-                           .size = {
-                               image_.width,
-                               image_.height,
-                               image_.depth,
-                           }};
-
-    for (int i = 0; i < array_length_; ++i) {
-      auto p = nvalue + image_.width * image_.height * channels_per_pixel_ * i;
-      [image_ replaceRegion:region
-                mipmapLevel:0
-                      slice:static_cast<NSUInteger>(i)
-                  withBytes:p
-                bytesPerRow:bytes_per_row
-              bytesPerImage:bytes_per_image];
-    }
-
-    free(nvalue);
-  } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<SP, float>::value) {
+		throw std::logic_error("metal_image: CopyFromNCHW - precision = FLOAT");
+  }
+	else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<SP, float>::value) {
+		//注意：此逻辑与initTexture逻辑一致
     auto nvalue = (MetalHalf *)malloc(sizeof(MetalHalf) * rcount);
     if (tensor_dim_.size() == 4) {
-      for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < C; ++i1) {
-          for (int i2 = 0; i2 < H; ++i2) {
-            for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-              std::vector<int> jg = {
-                  ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-              auto k = jg[0] * dim_[3] + jg[3];
-              auto jx =
-                  ((k / 4) * dim_[1] * dim_[2] * 4) + (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
-              nvalue[jx] = MetalFloat2Half(src[ix]);
-            }
-          }
-        }
-      }
+			size_t n = dim_[0];
+			size_t h = dim_[1];
+			size_t w = dim_[2];
+			size_t c = dim_[3];
+			size_t p = (c * n + 3) / 4;
+			size_t C = n * c;
+			for (int i1 = 0; i1 < p; i1++) {
+				for (int i2 = 0; i2 < h; i2++) {
+					for (int i3 = 0; i3 < w; i3++) {
+						for (int k = 0; k < 4; k++) {
+							auto dx = i1 * h * w * 4 + i2 * w * 4 + i3 * 4 + k;
+							auto sx = (i1 * 4 + k) * h * w + i2 * w + i3;
+							if ((i1 * 4 + k) < C) {
+								nvalue[dx] = MetalFloat2Half(src[sx]);
+							} else {
+								nvalue[dx] = 0.0;
+							}
+						}
+					}
+				}
+			}
     } else if (tensor_dim_.size() == 3) {
-      for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < C; ++i1) {
-          for (int i2 = 0; i2 < H; ++i2) {
-            for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-              std::vector<int> jg = {
-                  ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-              auto k = jg[1];
-              auto jx =
-                  ((k / 4) * dim_[2] * dim_[3] * 4) + (jg[1] * dim_[3] * 4) + (jg[3] * 4) + (k % 4);
-              nvalue[jx] = MetalFloat2Half(src[ix]);
-            }
-          }
-        }
-      }
+			throw std::logic_error("MetalImage: CopyFromNCHW - tensor dim = 3");
     } else {
-      for (int i1 = 0; i1 < H; ++i1) {
-        for (int i2 = 0; i2 < W; ++i2) {
-          auto ix = (i1 * W) + i2;
-          auto jx = (i1 * texture_width_ * 4) + i2;
-          nvalue[jx] = MetalFloat2Half(src[ix]);
-        }
-      }
+			//4维以下与texture desc逻辑一致
+			size_t n = dim_[0];
+			size_t h = dim_[1];
+			size_t w = dim_[2];
+			size_t c = dim_[3];
+			size_t p = (c + 3) / 4;
+			for (int i0 = 0; i0 < n; i0++) {
+				for (int i1 = 0; i1 < p; i1++) {
+					for (int i2 = 0; i2 < h; i2++) {
+						for (int i3 = 0; i3 < w; i3++) {
+							for (int k = 0; k < 4; k++) {
+								auto dx = i0 * p * h * w * 4 + i1 * h * w * 4 + i2 * w * 4 + i3 * 4 + k;
+								auto sx = k + i1 * 4 + i3 * c + i2 * w * c + i0 * c * h * w;
+								if ((i1 * 4 + k) < c) {
+									nvalue[dx] = MetalFloat2Half(src[sx]);
+								} else {
+									nvalue[dx] = 0.0;
+								}
+							}
+						}
+					}
+				}
+			}
     }
 
     auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
@@ -323,76 +319,8 @@ void MetalImage::CopyFromNCHW(const SP *src) {
     }
 
     free(nvalue);
-  } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<SP, MetalHalf>::value) {
-    auto nvalue = (MetalHalf *)malloc(sizeof(MetalHalf) * rcount);
-    if (tensor_dim_.size() == 4) {
-      for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < C; ++i1) {
-          for (int i2 = 0; i2 < H; ++i2) {
-            for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-              std::vector<int> jg = {
-                  ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-              auto k = jg[0] * dim_[3] + jg[3];
-              auto jx =
-                  ((k / 4) * dim_[1] * dim_[2] * 4) + (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
-              nvalue[jx] = (src[ix]);
-            }
-          }
-        }
-      }
-    } else if (tensor_dim_.size() == 3) {
-        for (int i0 = 0; i0 < N; ++i0) {
-            for (int i1 = 0; i1 < C; ++i1) {
-                for (int i2 = 0; i2 < H; ++i2) {
-                    for (int i3 = 0; i3 < W; ++i3) {
-                        std::vector<int> ig = {i0, i1, i2, i3};
-                        auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-                        std::vector<int> jg = {
-                                ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-                        auto k = jg[1];
-                        auto jx =
-                                ((k / 4) * dim_[2] * dim_[3] * 4) + (jg[1] * dim_[3] * 4) + (jg[3] * 4) + (k % 4);
-                        nvalue[jx] = src[ix];
-                    }
-                }
-            }
-        }
-
-    } else {
-        for (int i0 = 0; i0 < C; ++i0) {
-            for (int i1 = 0; i1 < H; ++i1) {
-                for (int i2 = 0; i2 < W; ++i2) {
-                    auto ix = (i0 * W * H) + (i1 * W) + i2;
-                    auto jx = ((i0 / 4) * texture_width_ * 4 * H) + (i1 * texture_width_ * 4) + i2;
-                    nvalue[jx] = src[ix];
-                }
-            }
-        }
-    }
-
-    auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
-    auto bytes_per_image = image_.height * bytes_per_row;
-    const MTLRegion region{.origin = {0, 0, 0},
-                           .size = {
-                               image_.width,
-                               image_.height,
-                               image_.depth,
-                           }};
-
-    for (int i = 0; i < array_length_; ++i) {
-      auto p = nvalue + image_.width * image_.height * channels_per_pixel_ * i;
-      [image_ replaceRegion:region
-                mipmapLevel:0
-                      slice:static_cast<NSUInteger>(i)
-                  withBytes:p
-                bytesPerRow:bytes_per_row
-              bytesPerImage:bytes_per_image];
-    }
-
-    free(nvalue);
-  } else {
+  }
+	else {
     throw std::logic_error("ERROR: do not support this half format");
     return;
   }
@@ -510,7 +438,8 @@ void MetalImage::CopyToNCHW(P *dst) const {
       }
     }
     free(pointer);
-  } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<P, float>::value) {
+  }
+	else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<P, float>::value) {
     auto pointer = (MetalHalf *)malloc(sizeof(MetalHalf) * dstCounts);
 
     auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
@@ -525,9 +454,12 @@ void MetalImage::CopyToNCHW(P *dst) const {
     for (int i = 0; i < array_length_; ++i) {
       auto p = pointer + image_.width * image_.height * channels_per_pixel_ * i;
 
-      [image_ getBytes:(p)
-           bytesPerRow:(bytes_per_row)bytesPerImage:(bytes_per_image)fromRegion:(region)mipmapLevel
-                      :(0)slice:static_cast<NSUInteger>(i)];
+      [image_ getBytes:p
+           bytesPerRow:bytes_per_row
+				 bytesPerImage:bytes_per_image
+						fromRegion:region
+					 mipmapLevel:0
+								 slice:static_cast<NSUInteger>(i)];
     }
 
     int index = 0;
@@ -548,20 +480,36 @@ void MetalImage::CopyToNCHW(P *dst) const {
           }
         }
       }
-
+			
+//			size_t N = new_dims[0];
+//			size_t C = new_dims[1];
+//			size_t H = new_dims[2];
+//			size_t W = new_dims[3];
+//			size_t c = N * C ;
+//			for (int i1 = 0; i1 < c; ++i1) {
+//				for (int i2 = 0; i2 < H; ++i2) {
+//					for (int i3 = 0; i3 < W; ++i3) {
+//						auto dx = i1 * W * H + i2 * W + i3;
+//						auto sx = i3 * 4 + i2 * W * 4 + (i1 / 4) * H * W * 4 + i1 % 4;
+//						dst[dx] = MetalHalf2Float(pointer[sx]);
+//					}
+//				}
+//			}
+			
     } else if (tensor_dim_.size() == 3) {
+			size_t N = new_dims[0];
+			size_t H = new_dims[1];
+			size_t W = new_dims[2];
+			size_t C = new_dims[3];
+			
       for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < C; ++i1) {
-          for (int i2 = 0; i2 < H; ++i2) {
-            for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {ig };
-              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-              std::vector<int> jg = {
-                  ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-              auto k = jg[1];
-              auto jx =
-                  ((k / 4) * dim_[2] * dim_[3] * 4) + (jg[1] * dim_[3] * 4) + (jg[3] * 4) + (k % 4);
-              dst[ix] = MetalHalf2Float(pointer[jx]);
+        for (int i1 = 0; i1 < H; ++i1) {
+          for (int i2 = 0; i2 < W; ++i2) {
+            for (int i3 = 0; i3 < C; ++i3) {
+							
+							auto dx = (i0 * H * W * C) + (i1 * W * C) + (i2 * C) + i3;
+							auto sx = (i3 / 4) * H * W * 4 + i2 * 4  + i1 * W * 4 + i3 % 4;
+							dst[dx] = MetalHalf2Float(pointer[sx]);
             }
           }
         }
@@ -574,69 +522,9 @@ void MetalImage::CopyToNCHW(P *dst) const {
       }
     }
     free(pointer);
-  } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<P, MetalHalf>::value) {
-    auto pointer = (MetalHalf *)malloc(sizeof(MetalHalf) * dstCounts);
-
-    auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
-    auto bytes_per_image = image_.height * bytes_per_row;
-
-    const MTLRegion region{.origin = {0, 0, 0},
-                           .size = {
-                               image_.width,
-                               image_.height,
-                               image_.depth,
-                           }};
-    for (int i = 0; i < array_length_; ++i) {
-      auto p = pointer + image_.width * image_.height * channels_per_pixel_ * i;
-
-      [image_ getBytes:(p)
-           bytesPerRow:(bytes_per_row)bytesPerImage:(bytes_per_image)fromRegion:(region)mipmapLevel
-                      :(0)slice:static_cast<NSUInteger>(i)];
-    }
-
-    int index = 0;
-    if (tensor_dim_.size() == 4) {
-      for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < C; ++i1) {
-          for (int i2 = 0; i2 < H; ++i2) {
-            for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-              std::vector<int> jg = {
-                  ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-              auto k = jg[0] * dim_[3] + jg[3];
-              auto jx =
-                  ((k / 4) * dim_[1] * dim_[2] * 4) + (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
-              dst[ix] = pointer[jx];
-            }
-          }
-        }
-      }
-    } else if (tensor_dim_.size() == 3) {
-      for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < C; ++i1) {
-          for (int i2 = 0; i2 < H; ++i2) {
-            for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-              std::vector<int> jg = {
-                  ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-              auto k = jg[1];
-              auto jx =
-                  ((k / 4) * dim_[2] * dim_[3] * 4) + (jg[1] * dim_[3] * 4) + (jg[3] * 4) + (k % 4);
-              dst[ix] = MetalHalf2Float(pointer[jx]);
-            }
-          }
-        }
-      }
-    } else {
-      for (int h = 0; h < H; h++) {
-        for (int w = 0; w < W; w++) {
-          dst[index++] = pointer[texture_width_ * 4 * h + w];
-        }
-      }
-    }
-    free(pointer);
+  }
+	else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<P, MetalHalf>::value) {
+		throw std::logic_error("metal_image: CopyToNCHW-half2half");
   }
 }
 
@@ -647,8 +535,6 @@ MetalImage::~MetalImage() {
 #endif
     image_ = nil;
   }
-
-  device_ = nullptr;
 }
 
 template void MetalImage::CopyFromNCHW(const float *src);
