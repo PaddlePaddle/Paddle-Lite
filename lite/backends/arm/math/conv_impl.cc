@@ -30,56 +30,6 @@ namespace arm {
 namespace math {
 
 /**
- * \brief neon implementation to add bias
- * @param tensor
- * @param bias
- * @param channel
- * @param channel_size
- */
-void fill_bias(float* tensor,
-               const float* bias,
-               int channel,
-               int channel_size) {
-  if (tensor == nullptr) {
-    return;
-  }
-  float* data = tensor;
-
-  for (int j = 0; j < channel; ++j) {
-    float32x4_t vdata = vdupq_n_f32(bias[j]);
-    int i = 0;
-    for (; i < channel_size - 3; i += 4) {
-      vst1q_f32(data + i, vdata);
-    }
-    for (; i < channel_size; i++) {
-      data[i] = bias[j];
-    }
-    data += channel_size;
-  }
-}
-
-void fill_bias_int8(int* tensor,
-                    const int* bias,
-                    int channel,
-                    int channel_size) {
-  if (tensor == nullptr) {
-    return;
-  }
-  int* data = tensor;
-  for (int j = 0; j < channel; ++j) {
-    int32x4_t vdata = vdupq_n_s32(bias[j]);
-    int i = 0;
-    for (; i < channel_size - 3; i += 4) {
-      vst1q_s32(data + i, vdata);
-    }
-    for (; i < channel_size; i++) {
-      data[i] = bias[j];
-    }
-    data += channel_size;
-  }
-}
-
-/**
  * \brief inline funcs used in im2col
  * @param a
  * @param b
