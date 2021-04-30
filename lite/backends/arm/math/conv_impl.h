@@ -23,39 +23,6 @@ namespace lite {
 namespace arm {
 namespace math {
 
-/// conv 3x3s1
-size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
-                                       ARMContext* ctx);
-void conv_3x3s1_direct_fp32(const float* din,
-                            float* dout,
-                            int num,
-                            int chout,
-                            int hout,
-                            int wout,
-                            int chin,
-                            int hin,
-                            int win,
-                            const float* weights,
-                            const float* bias,
-                            const operators::ConvParam& param,
-                            ARMContext* ctx);
-
-template <typename Dtype>
-void conv_3x3s1_direct_int8(const int8_t* din,
-                            Dtype* dout,
-                            int num,
-                            int chout,
-                            int hout,
-                            int wout,
-                            int chin,
-                            int hin,
-                            int win,
-                            const int8_t* weights,
-                            const float* bias,
-                            const operators::ConvParam& param,
-                            ARMContext* ctx,
-                            const float* scale);
-
 /// conv3x3s2
 size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
                                        ARMContext* ctx);
@@ -73,8 +40,6 @@ void conv_3x3s2_direct_fp32(const float* din,
                             const operators::ConvParam& param,
                             ARMContext* ctx);
 
-int conv_3x3s2_direct_int8_c_num();
-
 template <typename Dtype>
 void conv_3x3s2_direct_int8(const int8_t* din,
                             Dtype* dout,
@@ -90,54 +55,6 @@ void conv_3x3s2_direct_int8(const int8_t* din,
                             const operators::ConvParam& param,
                             ARMContext* ctx,
                             const float* scale);
-
-void conv_1x5s1_direct(const float* din,
-                       float* dout,
-                       int num,
-                       int chout,
-                       int hout,
-                       int wout,
-                       int chin,
-                       int hin,
-                       int win,
-                       const float* weights,
-                       const float* bias,
-                       int group,
-                       int kernel_w,
-                       int kernel_h,
-                       int stride_w,
-                       int stride_h,
-                       int dila_w,
-                       int dila_h,
-                       int pad_w,
-                       int pad_h,
-                       bool flag_bias,
-                       bool flag_relu,
-                       ARMContext& ctx);  // NOLINT
-
-void conv_5x1s1_direct(const float* din,
-                       float* dout,
-                       int num,
-                       int chout,
-                       int hout,
-                       int wout,
-                       int chin,
-                       int hin,
-                       int win,
-                       const float* weights,
-                       const float* bias,
-                       int group,
-                       int kernel_w,
-                       int kernel_h,
-                       int stride_w,
-                       int stride_h,
-                       int dila_w,
-                       int dila_h,
-                       int pad_w,
-                       int pad_h,
-                       bool flag_bias,
-                       bool flag_relu,
-                       ARMContext& ctx);  // NOLINT
 
 void conv1x1s1_gemm(const float* din,
                     float* dout,
@@ -308,14 +225,7 @@ void conv_winograd3x3(const float* din,
 void winograd_transform_weights(
     void* dout, const void* din, int ch_out, int ch_in, void* work_space);
 
-void fill_bias(float* tensor, const float* bias, int channel, int channel_size);
-
-void fill_bias_int8(int* tensor,
-                    const int* bias,
-                    int channel,
-                    int channel_size);
 // new winograd
-
 void weight_trans_c4_8x8(
     float* dest, const float* src, int ic, int oc, void* workspace);
 void weight_trans_c4_6x6(
