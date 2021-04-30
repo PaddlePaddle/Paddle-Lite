@@ -40,9 +40,9 @@ void ConcatCompute<InType>::Run() {
       xdims_list.push_back(std::vector<int>());
       for (int j = 0; j < ins[i]->dims().size(); j++) {
         xdims_list[i].push_back(ins[i]->dims()[j]);
-        if (sizeof(InType) == 8) {
-          xdims_list[i].back() = xdims_list[i].back() * 2;
-        }
+      }
+      if (sizeof(InType) == 8) {
+        xdims_list[i].back() = xdims_list[i].back() * 2;
       }
       x_list.push_back(
           reinterpret_cast<const float*>(ins[i]->template data<InType>()));

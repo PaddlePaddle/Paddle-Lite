@@ -30,6 +30,7 @@ bool XPUMultiEncoderOp::InferShapeImpl() const {
   auto batch_size = input_shape[0];
   auto seq_len = input_shape[1];
   auto head_num = input_shape[2];
+  auto slice_decrease_axis = param_.slice_decrease_axis;
   if (param_.SeqLod && param_.SeqLod->data<int>()) {
     batch_size = param_.SeqLod->numel() - 1;
     seq_len = param_.PadSeqLen->data<int>()[0];
@@ -37,7 +38,27 @@ bool XPUMultiEncoderOp::InferShapeImpl() const {
   if ((param_.slice_starts.size() > 0 && param_.slice_starts[0] == 0) &&
       (param_.slice_ends.size() > 0 && param_.slice_ends[0] == 1) &&
       (param_.slice_axes.size() > 0 && param_.slice_axes[0] == 1)) {
-    param_.output->Resize({batch_size, 1, head_num});
+    DDim out_dims(std::vector<int64_t>({batch_size, 1, head_num}));
+    if (param_.slice_decrease_axis.size() > 0) {
+      std::vector<int64_t> new_out_shape;
+      for (size_t i = 0; i < slice_decrease_axis.size(); ++i) {
+        CHECK_EQ(out_dims[slice_decrease_axis[i]], 1)
+            << "xpu multiencoder with slice decrease dim should be 1";
+        out_dims[slice_decrease_axis[i]] = 0;
+      }
+      for (size_t i = 0; i < out_dims.size(); ++i) {
+        if (out_dims[i] != 0) {
+          new_out_shape.push_back(out_dims[i]);
+        }
+      }
+      if (new_out_shape.size() == 0) {
+        new_out_shape.push_back(1);
+      }
+      DDim new_dims;
+      new_dims.ConstructFrom(new_out_shape);
+      out_dims = new_dims;
+    }
+    param_.output->Resize(out_dims);
   } else {
     param_.output->Resize({batch_size, seq_len, head_num});
   }
@@ -128,6 +149,10 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   }
   if (op_desc.HasAttr("slice_ends")) {
     param_.slice_ends = op_desc.GetAttr<std::vector<int>>("slice_ends");
+  }
+  if (op_desc.HasAttr("slice_decrease_axis")) {
+    param_.slice_decrease_axis =
+        op_desc.GetAttr<std::vector<int>>("slice_decrease_axis");
   }
 
   return true;
