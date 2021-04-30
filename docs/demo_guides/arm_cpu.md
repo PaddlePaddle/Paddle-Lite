@@ -66,8 +66,10 @@ export NDK_ROOT=/opt/android-ndk-r20b
 # 注：编译帮助请执行: ./lite/tools/build_android.sh help
 ```
 
-注1：该方式的编译产物中的`demo/cxx/mobile_light`适用于做benchmark，该过程不会打印开发中加入的log，注意需要提前转好模型。关于使用，详见下文**运行示例1: 编译产物demo示例**。
+注1：该方式的编译产物中的`demo/cxx/mobile_light`适用于做benchmark，该过程不会打印开发中加入的log，注意需要提前转好模型。关于使用，详见下文**运行示例1: 编译产物demo示例**
+
 注2: 如果运行FP16 预测库，模型在OPT转换的时候需要加上`--enable_fp16=1`选项，这样转换的模型会选择**FP16 kernel**实现。并且，FP16预测库和FP16模型**只在支持ARMv8.2架构的手机**上运行，如小米9，华为Meta30 等。
+
 注3: 当前Paddle-Lite只支持**ARMv8架构**的FP16运算。
 
 #### 针对 Lite 开发者的编译命令(有单元测试,编译产物)
@@ -153,7 +155,9 @@ rm ./lite/api/paddle_use_ops.h
 
 ### 2.1 运行示例1: 编译产物demo示例和benchmark
 
-需要提前用模型优化工具opt转好模型(下面假设已经转换好模型，且模型名为`mobilenetv1_fp32.nb`)。编译脚本为前文**针对 Lite 用户的编译命令(无单元测试,有编译产物,适用于benchmark)**。
+需要提前用模型优化工具opt转好模型(下面假设已经转换好模型，且模型名为`mobilenetv1_fp32.nb`)。
+
+编译脚本为前文**针对 Lite 用户的编译命令(无单元测试,有编译产物,适用于benchmark)**。
 注：产物demo需要用`tiny_publish`或`full_publish` 方式编译才能获取。
 
 ```bash
@@ -250,7 +254,8 @@ test
 ```
 
 3. 执行
-1）推送OPT转换后的模型至手机, 运行时请将`use_optimize_nb`设置为1
+
+1) 推送OPT转换后的模型至手机, 运行时请将`use_optimize_nb`设置为1
 
 ```bash
 # 将转换好的模型文件推送到/data/local/tmp/arm_cpu目录下
@@ -266,7 +271,7 @@ adb shell "\
   --repeats=100"
 ```
 
-2）推送原始模型至手机, 运行时请将`use_optimize_nb`设置为0，`use_fp16`设置为1；（`use_fp16`默认为0）
+2) 推送原始模型至手机, 运行时请将`use_optimize_nb`设置为0，`use_fp16`设置为1；（`use_fp16`默认为0）
 
 ```bash
 # 将fluid 原始模型文件推送到/data/local/tmp/arm_cpu目录下
