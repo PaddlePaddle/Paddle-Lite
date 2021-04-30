@@ -143,9 +143,10 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   bool has_active = act_param.has_active;
+  bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
   bool conv_3x3_wino = (ic < 8) || (oc < 8);
-  if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
-      no_dilation && flag_dw_3x3) {
+  if (param.groups == ic && ic == oc && kps_equal && pads_less && no_dilation &&
+      flag_dw_3x3) {
     impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
              ks_equal) {
