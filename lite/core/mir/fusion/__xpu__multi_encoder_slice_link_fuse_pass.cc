@@ -73,6 +73,11 @@ class XPUMultiEncoderSliceLinkFuser : public FuseBase {
       auto slice_ends = slice_op_desc.GetAttr<std::vector<int>>("ends");
       encoder_op_desc.SetAttr("slice_ends", slice_ends);
     }
+    if (slice_op_desc.HasAttr("decrease_axis")) {
+      auto slice_decrease_axis =
+          slice_op_desc.GetAttr<std::vector<int>>("decrease_axis");
+      encoder_op_desc.SetAttr("slice_decrease_axis", slice_decrease_axis);
+    }
     encoder_instruct->ResetOp(encoder_op_desc, encoder_op->valid_places());
     DirectedLink(matched.at("xpu_encoder"), matched.at("slice_out"));
   }
