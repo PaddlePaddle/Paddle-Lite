@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_KERNELS_METAL_IMAGE_OP_RESHAPE_IMAGE_COMPUTE_H_
-#define LITE_KERNELS_METAL_IMAGE_OP_RESHAPE_IMAGE_COMPUTE_H_
+//
+//  slice_image_compute.h
+//  PaddleLiteiOS
+//
+//  Created by hxwc on 2021/4/13.
+//
+#ifndef LITE_KERNELS_METAL_IMAGE_OP_SLICE_IMAGE_COMPUTE_H_
+#define LITE_KERNELS_METAL_IMAGE_OP_SLICE_IMAGE_COMPUTE_H_
 
 #include <memory>
 #include <string>
-#include <vector>
-#include "lite/backends/metal/metal_context.h"
-#include "lite/backends/metal/metal_debug.h"
+
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -28,24 +32,25 @@
 #include "lite/core/profile/profiler.h"
 #endif
 
+#include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-class ReshapeImageCompute
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ReshapeParam;
+class SliceImageCompute : public KernelLite<TARGET(kMetal),
+                                            PRECISION(kFloat),
+                                            DATALAYOUT(kMetalTexture2DArray)> {
+  using param_t = operators::SliceParam;
 
  public:
   void PrepareForRun() override;
   void Run() override;
   void SaveOutput() override {
-    MetalDebug::SaveOutput(function_name_, output_buffer_);
+    MetalDebug::SaveOutput("slice", output_buffer_);
   };
-  virtual ~ReshapeImageCompute();
 
  private:
   void setup_without_mps();
@@ -64,4 +69,4 @@ class ReshapeImageCompute
 }  // namespace lite
 }  // namespace paddle
 
-#endif  // LITE_KERNELS_METAL_IMAGE_OP_RESHAPE_IMAGE_COMPUTE_H_
+#endif  // LITE_KERNELS_METAL_IMAGE_OP_SLICE_IMAGE_COMPUTE_H_

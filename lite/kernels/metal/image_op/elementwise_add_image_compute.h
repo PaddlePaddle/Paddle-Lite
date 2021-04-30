@@ -16,7 +16,7 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_ELEMENTWISE_ADD_IMAGE_COMPUTE_H_
 
 #include <memory>
-
+#include <string>
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -33,10 +33,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class ElementwiseAddImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PTYPE,
+                        PRECISION(kFloat),
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ElementwiseParam;
 
@@ -46,15 +45,28 @@ class ElementwiseAddImageCompute
   void SaveOutput() override {
     MetalDebug::SaveOutput("elementwise_add", output_buffer_);
   };
+  virtual ~ElementwiseAddImageCompute();
 
  private:
+  bool use_mps_{false};
+  void* mps_add_op_{nullptr};
+  void* mps_input_image_{nullptr};
+  void* mps_input_image_y_{nullptr};
+  void* mps_output_image_{nullptr};
+
+  void setup_with_mps();
+  void setup_without_mps();
+
+  void run_with_mps();
+  void run_without_mps();
+
+  MetalImage* output_buffer_;
   const MetalImage* input_buffer_x_;
   const MetalImage* input_buffer_y_;
   std::shared_ptr<MetalBuffer> params_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
+
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
 };
 

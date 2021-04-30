@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "lite/backends/metal/context.h"
 
 namespace paddle {
 namespace lite {
 
 void ContextMetal::InitOnce() {
+  TargetWrapperMetal::ctx_.PrepareDevices();
   this->context_ = &TargetWrapperMetal::ctx_;
-  auto device = TargetWrapperMetal::ctx_.GetDefaultDevice();
-  TargetWrapperMetal::ctx_.CreateLibraryWithFile(*device);
 }
 
 void ContextMetal::CopySharedTo(ContextMetal* ctx) {

@@ -16,6 +16,7 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_FC_IMAGE_COMPUTE_H_
 
 #include <memory>
+#include <string>
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/reshape_image_compute.h"
@@ -33,31 +34,30 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class FCImageCompute : public KernelLite<TARGET(kMetal),
-                                         PTYPE,
+                                         PRECISION(kFloat),
                                          DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::FcParam;
 
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override { MetalDebug::SaveOutput("fc", output_buffer_); };
+  void SaveOutput() override {
+    MetalDebug::SaveOutput(function_name_, output_buffer_);
+  };
 
  private:
+  void setup_without_mps();
+
   const MetalImage* input_buffer_;
   const MetalImage* weight_buffer_;
   const MetalImage* bias_buffer_;
   MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
 
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
-
-  Tensor shape_out_dev_;
-  ReshapeImageCompute<P, PTYPE> reshape_;
 
   DDim input_x_mul_dim_;
   bool insert_shape = false;

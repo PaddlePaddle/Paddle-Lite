@@ -15,7 +15,7 @@
 #pragma once
 
 #include <memory>
-
+#include <string>
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -33,10 +33,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class ElementwiseMulImageCompute
     : public KernelLite<TARGET(kMetal),
-                        PTYPE,
+                        PRECISION(kFloat),
                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ElementwiseParam;
 
@@ -44,21 +43,19 @@ class ElementwiseMulImageCompute
   void PrepareForRun() override;
   void Run() override;
   void SaveOutput() override {
-    MetalDebug::SaveOutput("elementwise_mul", output_buffer_);
+    MetalDebug::SaveOutput(function_name_, output_buffer_);
   };
 
  private:
+  void setup_without_mps();
+
+  MetalImage* output_buffer_;
   const MetalImage* input_buffer_x_;
   const MetalImage* input_buffer_y_;
   std::shared_ptr<MetalBuffer> params_buffer_;
-  MetalImage* output_buffer_;
-  DDim input_x_mul_dim_;
-  ReshapeImageCompute<P, PTYPE> reshape_;
-  Tensor shape_out_dev;
-  bool insert_shape = false;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
+
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
 };
 

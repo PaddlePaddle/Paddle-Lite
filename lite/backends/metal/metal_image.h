@@ -15,10 +15,14 @@
 #ifndef LITE_BACKENDS_METAL_METAL_IMAGE_H_
 #define LITE_BACKENDS_METAL_METAL_IMAGE_H_
 
+#if defined(__OBJC__)
+#include <Metal/Metal.h>
+#endif
+
 #include <vector>
 
 #include "lite/backends/metal/metal_common.h"
-#include "lite/backends/metal/metal_device.h"
+#include "lite/backends/metal/metal_context.h"
 #include "lite/core/dim.h"
 
 namespace paddle {
@@ -35,11 +39,20 @@ class MetalImage {
   void* image() const;
 #endif
 
-  MetalImage(const MetalDevice& device,
+  int ElementCount() const;
+
+  // 源数据 mps计算时使用
+  void* src_tensor_{nullptr};
+
+  MetalImage(MetalContext* context,
              const DDim& in_dim,
              std::vector<int> in_transpose = {0, 2, 3, 1},
              METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::FLOAT,
              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
+
+  void UpdateDims(MetalContext* context,
+                  const DDim& in_tensor_dim,
+                  std::vector<int> in_transpose);
 
   template <typename SP>
   void CopyFromNCHW(const SP* src);
@@ -64,12 +77,9 @@ class MetalImage {
   std::vector<int> transpose_ = {0, 1, 2, 3};
 
  private:
-  void UpdateDims(const DDim& in_tensor_dim);
   void InitTexture();
   const METAL_PRECISION_TYPE precision_type_;
   const METAL_ACCESS_FLAG flag_;
-
-  const MetalDevice* device_;
 
 #if defined(__OBJC__)
   id<MTLTexture> image_{nil};
