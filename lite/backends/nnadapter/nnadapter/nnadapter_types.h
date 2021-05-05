@@ -114,26 +114,20 @@ typedef enum {
    * Inputs:
    * * 0: input, A 4-D tensor with shape [N, C_in, H_in, W_in].
    * * 1: filter, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
-   *      NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER
-   *      4-D tensor, The convolution kernel with shape [C_out, C_in,
-   * filter_height, filter_width],
-   *      where C_out and C_in is the number of the channels of output and
-   * input, filter_height and
-   *      filter_width is the filter's kernel size in the 'H' and 'W' dimension.
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor, The convolution
+   * kernel with shape [C_out, C_in, filter_height, filter_width], where C_out
+   * and C_in is the number of the channels of output and input, filter_height
+   * and filter_width is the filter's kernel size in the 'H' and 'W' dimension.
    * * 2: bias, A 1-D tensor with shape [C_out].
    *      1) If input's type is NNADAPTER_TENSOR_FLOAT16 or
-   * NNADAPTER_TENSOR_FLOAT32, its type must
-   *      be the same type.
+   * NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
    *      2) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER, its
-   * type should
-   *      be NNADAPTER_TENSOR_INT32, and bias_scale == input_scale *
-   * filter_scale.
+   * type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER, and bias_scale
+   * == input_scale * filter_scale.
    *      3) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL,
-   * its type should
-   *      be NNADAPTER_TENSOR_INT32, and bias_scale[i] = input_scale *
-   * filter_scale[i] for each
-   *      output channel.
+   * its type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL, and
+   * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
    * * 3: padding_width_left, A NNADAPTER_INT32 scalar.
    * * 4: padding_width_right, A NNADAPTER_INT32 scalar.
    * * 5: padding_height_top, A NNADAPTER_INT32 scalar.
@@ -143,11 +137,9 @@ typedef enum {
    * * 9: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
    * * 10: dilation_width, optional, A NNADAPTER_INT32 scalar. Defaults to 1. If
-   * this input is set,
-   *       input 11 (dilation_height) must be specified as well.
+   * this input is set, input 11 (dilation_height) must be specified as well.
    * * 11: dilation_height, optional, A NNADAPTER_INT32 scalar. Defaults to 1.
-   * If this input is set,
-   *       input 10 (dilation_width) must be specified as well.
+   * If this input is set, input 10 (dilation_width) must be specified as well.
    *
    * Outputs:
    * * 0: output, The output 4-D tensor with shape [N, C_out, H_out, W_out], its

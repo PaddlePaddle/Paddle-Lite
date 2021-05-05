@@ -241,6 +241,7 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
   }
   auto tensor = graph_->CreateTensor(attr, operand->buffer);
   NNADAPTER_CHECK(tensor);
+  // Use to find the tensor based on the pointer of operand
   nodes_[operand] = tensor;
 
 #undef CONVERT_QUANT_INTx_SYMM_PER_LAYER
