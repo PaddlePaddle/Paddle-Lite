@@ -13,35 +13,24 @@
 // limitations under the License.
 
 #pragma once
-
-#include <string>
-#include "lite/core/op_lite.h"
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace xpu {
 
-class XPUConv2dOp : public OpLite {
+class UnsqueezeCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  XPUConv2dOp() {}
+  void Run() override;
 
-  explicit XPUConv2dOp(const std::string &op_type) : OpLite(op_type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "XPUConv2d"; }
-
- private:
-  mutable XPUBlockFuseParam param_;
-  std::string padding_algorithm_{""};
+  virtual ~UnsqueezeCompute() = default;
 };
 
-}  // namespace operators
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

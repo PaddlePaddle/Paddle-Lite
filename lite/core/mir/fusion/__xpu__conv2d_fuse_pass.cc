@@ -190,15 +190,19 @@ class XPUConv2dFuser : public FuseBase {
     if (with_bn_) {
       bn_bias = VarNode("bn_bias")
                     ->assert_is_op_input("batch_norm", "Bias")
+                    ->assert_only_one_output()
                     ->AsIntermediate();
       bn_mean = VarNode("bn_mean")
                     ->assert_is_op_input("batch_norm", "Mean")
+                    ->assert_only_one_output()
                     ->AsIntermediate();
       bn_scale = VarNode("bn_scale")
                      ->assert_is_op_input("batch_norm", "Scale")
+                     ->assert_only_one_output()
                      ->AsIntermediate();
       bn_var = VarNode("bn_variance")
                    ->assert_is_op_input("batch_norm", "Variance")
+                   ->assert_only_one_output()
                    ->AsIntermediate();
       bn = OpNode("bn", "batch_norm")->AsIntermediate();
       bn_out = VarNode("bn_out")->assert_is_op_output("batch_norm", "Y");
@@ -417,6 +421,7 @@ class XPUConv2dFuser : public FuseBase {
                                        {"leaky_relu", 5},
                                        {"hard_swish", 14},
                                        {"hard_sigmoid", 15},
+                                       {"swish", 16},
                                        {"relu6", 17}};
 
     float act_param_ = 0.0f;
@@ -510,6 +515,7 @@ class XPUConv2dFusePass : public ProgramPass {
                                   "hard_swish",
                                   "hard_sigmoid",
                                   "relu6",
+                                  "swish",
                                   "linear"}) {
               fusion::XPUConv2dFuser fuser(
                   conv_type, act_type, with_conv_bias, with_bn, with_branch);

@@ -26,13 +26,17 @@ void SqueezeCompute::Run() {
   auto x = param.X;
   auto output = param.Out;
   auto output_dims = output->dims();
-  output->set_precision(x->precision());
-  output->mutable_data(TARGET(kXPU), x->memory_size());
-  int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
-                             x->data<int8_t>(),
-                             static_cast<int8_t*>(output->raw_data()),
-                             x->memory_size());
-  CHECK_EQ(r, 0);
+  if (param.inplace) {
+    output->ShareDataWith(*x);
+  } else {
+    output->set_precision(x->precision());
+    output->mutable_data(TARGET(kXPU), x->memory_size());
+    int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
+                               x->data<int8_t>(),
+                               static_cast<int8_t*>(output->raw_data()),
+                               x->memory_size());
+    CHECK_EQ(r, 0);
+  }
   output->Resize(output_dims);
 }
 
