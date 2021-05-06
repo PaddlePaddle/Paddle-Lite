@@ -139,9 +139,9 @@ class TransposedConvPE : public PE {
       param_.output->setOffset(off_addr);
       float max_val = 0.0;
       for (auto conv_param : param_.splitParams()) {
-        max_val = std::max(max_val, half_to_float(conv_param->output.max()[0]));
+        max_val = std::max(max_val, half_to_float(conv_param->output_max));
       }
-      param_.output->max()[0] = max_val;
+      param_.output->max()[0] = float_to_half(max_val);
     }
     return ret;
   }
