@@ -164,6 +164,15 @@ class SoftsignCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~SoftsignCompute() = default;
 };
 
+class SwishCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~SwishCompute() = default;
+};
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
