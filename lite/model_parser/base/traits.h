@@ -80,15 +80,16 @@ inline VarDataType ConvertPrecisionType(lite_api::PrecisionType type) {
     return lite::VarDataType::vtype;      \
     break
   switch (type) {
-    CASE(Float, FP32);
-    CASE(Int8, INT8);
-    CASE(Int32, INT32);
-    CASE(FP16, FP16);
     CASE(Bool, BOOL);
-    CASE(Int64, INT64);
+    CASE(Int8, INT8);
+    CASE(UInt8, UINT8);
     CASE(Int16, INT16);
+    CASE(Int32, INT32);
+    CASE(Int64, INT64);
+    CASE(FP16, FP16);
+    CASE(Float, FP32);
     default:
-      LOG(FATAL) << "Illegal flatbuffer VarType.";
+      LOG(FATAL) << "Illegal flatbuffer VarType." << static_cast<int>(type);
       return lite::VarDataType();
   }
 #undef CASE
@@ -100,15 +101,16 @@ inline lite_api::PrecisionType ConvertPrecisionType(VarDataType type) {
     return lite_api::PrecisionType::k##ptype; \
     break
   switch (type) {
-    CASE(Float, FP32);
-    CASE(Int8, INT8);
-    CASE(Int32, INT32);
-    CASE(FP16, FP16);
     CASE(Bool, BOOL);
-    CASE(Int64, INT64);
+    CASE(Int8, INT8);
+    CASE(UInt8, UINT8);
     CASE(Int16, INT16);
+    CASE(Int32, INT32);
+    CASE(Int64, INT64);
+    CASE(FP16, FP16);
+    CASE(Float, FP32);
     default:
-      LOG(FATAL) << "Illegal flatbuffer VarType.";
+      LOG(FATAL) << "Illegal flatbuffer VarType: " << static_cast<int>(type);
       return lite_api::PrecisionType();
   }
 #undef CASE
