@@ -44,7 +44,7 @@
 //       OPT_LOG--->LOG(INFO) , OPT_LOG_ERROR--->LOG(ERROR),
 //       OPT_LOG_FATAL--->LOG(FATAL)
 
-#ifdef LITE_ON_MODEL_OPTIMIZE_TOOL
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON)
 // OPT_LOG SYSTEM
 #define OPT_LOG paddle::lite::OptPrinter()
 #define OPT_LOG_ERROR paddle::lite::OptErrorPrinter()
