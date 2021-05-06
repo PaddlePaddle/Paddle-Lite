@@ -20,7 +20,7 @@
 // 3. use glog in other cases.
 
 #if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
-    defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
+    defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON)
 #include "lite/utils/logging.h"
 #else
 #ifndef LITE_WITH_LOG

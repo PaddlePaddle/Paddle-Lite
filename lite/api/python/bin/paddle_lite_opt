@@ -36,6 +36,7 @@ def main():
              "calculation will cause a lower precision but higher inference speed.")
 
    # arguments of help information
+    parser.add_argument('--version', action='version', version=a.version())
     parser.add_argument("--print_supported_ops", type=str, default="false",\
         help="{true, false}\
                Print supported operators on the inputed target")
