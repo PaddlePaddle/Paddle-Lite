@@ -72,6 +72,7 @@ void BindLiteOpt(py::module *m) {
       .def("set_passes_internal", &OptBase::SetPassesInternal)
       .def("run", &OptBase::Run)
       .def("run_optimize", &OptBase::RunOptimize)
+      .def("version", &OptBase::OptVersion)
       .def("help", &OptBase::PrintHelpInfo)
       .def("executablebin_help", &OptBase::PrintExecutableBinHelpInfo)
       .def("print_supported_ops", &OptBase::PrintSupportedOps)

@@ -76,7 +76,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #else
 #define LOG(status) LOG_##status.stream()
 
-#ifdef LITE_ON_MODEL_OPTIMIZE_TOOL
+#if defined LITE_ON_MODEL_OPTIMIZE_TOOL || defined LITE_WITH_PYTHON
 // In opt tool, all LOG(INFO) will be replaced by VLOG(1),
 // so that the message will not be printed by default.
 #define LOG_INFO paddle::lite::VLogMessage(__FILE__, __FUNCTION__, __LINE__, 1)
