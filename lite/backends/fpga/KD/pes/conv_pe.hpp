@@ -140,14 +140,18 @@ class ConvPE : public PE {
     }
 
     int ret = 0;
+//    int i = 0;
     for (auto conv_param : params) {
-      ret |= compute_fpga_conv_basic(conv_param->args);
+        ret |= compute_fpga_conv_basic(conv_param->args);
+//        param_.output->saveToFile("first_output", true);
     }
+
+
 
     if ((pack_channel || split_cpu_concat) && ret == 0 && !param_.deconv) {
       concatPE_.dispatch();
     }
-    if (!param_.deconv & !split_channel) {
+    if (!split_channel && param_.deconv == false) {
       float16 max_val = 0.0;
 
       // The final max value is count by a conv dispatch
