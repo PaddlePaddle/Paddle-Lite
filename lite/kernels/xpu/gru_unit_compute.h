@@ -22,15 +22,15 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class GRUCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class GRUUnitCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::GRUParam;
+  using param_t = operators::GRUUnitParam;
 
   void PrepareForRun() override;
 
   virtual void Run();
 
-  virtual ~GRUCompute() = default;
+  virtual ~GRUUnitCompute() = default;
 
  private:
   float weight_s1_abs_max_;

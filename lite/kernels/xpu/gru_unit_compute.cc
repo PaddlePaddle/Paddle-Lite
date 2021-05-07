@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/gru_compute.h"
-#include <string>
+#include "lite/kernels/xpu/gru_unit_compute.h"
 #include <vector>
 #include "lite/backends/xpu/math.h"
 #include "lite/backends/xpu/target_wrapper.h"
@@ -25,20 +24,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-inline xdnn::Activation_t GetActType(const std::string& act_type) {
-  if (act_type == "sigmoid") {
-    return xdnn::Activation_t::SIGMOID;
-  } else if (act_type == "tanh") {
-    return xdnn::Activation_t::TANH;
-  } else if (act_type == "relu") {
-    return xdnn::Activation_t::RELU;
-  } else {
-    LOG(FATAL) << "unsupported activation type:" << act_type;
-    return xdnn::Activation_t::LINEAR;
-  }
-}
-
-void GRUCompute::PrepareForRun() {
+void GRUUnitCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   auto weight = param.weight;
   auto weight_ptr = weight->data<float>();
@@ -95,61 +81,55 @@ void GRUCompute::PrepareForRun() {
 #endif
 }
 
-void GRUCompute::Run() {
+void GRUUnitCompute::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
-  auto& param = *param_.get_mutable<operators::GRUParam>();
-
+  auto& param = *param_.get_mutable<operators::GRUUnitParam>();
+  // inputs
+  auto input = param.input;
+  auto hidden_prev = param.hidden_prev;
+  auto bias = param.bias;
+  // outputs
+  auto hidden = param.hidden;
+  // args
+  int gate_activation = param.gate_activation;
+  CHECK_EQ(gate_activation, 1)
+      << "Only support gate_activation=1(sigmoid) but received "
+      << gate_activation << " in XPU gru_unit kernel";
+  int activation = param.activation;
+  CHECK_EQ(activation, 2) << "Only support activation=2(tanh) but received "
+                          << activation << " in XPU gru_unit kernel";
   bool origin_mode = param.origin_mode;
-  bool is_reverse = param.is_reverse;
-  auto gate_activation = GetActType(param.gate_activation);
-  auto activation = GetActType(param.activation);
 
-  auto* input = param.input;
+  int batch_size = input->dims()[0];
+  int frame_size = hidden_prev->dims()[1];
+
   const float* input_ptr = input->data<float>();
-
-  auto* h0 = param.h0;
-  const float* hidden_prev_ptr = (h0 == nullptr) ? nullptr : h0->data<float>();
-
+  const float* hidden_prev_ptr = hidden_prev->data<float>();
   const float* weight_ptr =
       reinterpret_cast<const float*>(quant_weight_guard_->addr_);
   const float* weight_maxptr =
       reinterpret_cast<const float*>(weight_max_guard_->addr_);
-
-  auto* bias = param.bias;
   const float* bias_ptr = (bias == nullptr) ? nullptr : bias->data<float>();
 
-  auto* hidden = param.hidden;
   float* hidden_ptr = hidden->mutable_data<float>(TARGET(kXPU));
-  const auto& hidden_dims = hidden->dims();
-  int frame_size = hidden_dims[1];
 
-  auto& input_lod = input->lod()[0];
-  int batch_size = input_lod.size() - 1;
-  for (int i = 0; i < batch_size; i++) {
-    int cur_seq_len = input_lod[i + 1] - input_lod[i];
-    int ret = xdnn::gru_core<float, float, float, int16_t>(ctx.GetRawContext(),
-                                                           input_ptr,
-                                                           hidden_prev_ptr,
-                                                           weight_ptr,
-                                                           hidden_ptr,
-                                                           1,
-                                                           cur_seq_len,
-                                                           frame_size,
-                                                           nullptr,
-                                                           nullptr,
-                                                           weight_maxptr,
-                                                           nullptr,
-                                                           bias_ptr,
-                                                           activation,
-                                                           gate_activation,
-                                                           origin_mode,
-                                                           is_reverse);
-    CHECK_EQ(ret, 0) << "call xdnn::gru_core failed!";
-    input_ptr += cur_seq_len * 3 * frame_size;
-    hidden_ptr += cur_seq_len * frame_size;
-  }
-  // batch_gate, batch_reset_hidden_prev lod not set
-  hidden->set_lod(input->lod());
+  int ret =
+      xdnn::gru_unit<float, float, float, int16_t>(ctx.GetRawContext(),
+                                                   input_ptr,
+                                                   hidden_prev_ptr,
+                                                   weight_ptr,
+                                                   hidden_ptr,
+                                                   batch_size,
+                                                   frame_size,
+                                                   nullptr,
+                                                   nullptr,
+                                                   weight_maxptr,
+                                                   nullptr,
+                                                   bias_ptr,
+                                                   xdnn::Activation_t::TANH,
+                                                   xdnn::Activation_t::SIGMOID,
+                                                   origin_mode);
+  CHECK_EQ(ret, 0) << "call xdnn::paddle_gru_unit failed!";
 }
 
 }  // namespace xpu
@@ -157,14 +137,17 @@ void GRUCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    gru, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::GRUCompute, def)
+REGISTER_LITE_KERNEL(gru_unit,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::GRUUnitCompute,
+                     def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("H0", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("HiddenPrev", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("BatchGate", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("BatchResetHiddenPrev", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("BatchHidden", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Gate", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("ResetHiddenPrev", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
