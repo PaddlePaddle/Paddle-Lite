@@ -79,6 +79,7 @@ USE_MIR_PASS(lite_scale_activation_fuse_pass);
 USE_MIR_PASS(lite_instance_norm_activation_fuse_pass);
 USE_MIR_PASS(ssd_boxes_calc_offline_pass);
 USE_MIR_PASS(lite_fc_prelu_fuse_pass);
+USE_MIR_PASS(opencl_kernel_place_correct_pass);
 USE_MIR_PASS(__xpu__graph_dedup_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_cbam_fuse_pass);
