@@ -12,19 +12,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
+
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <algorithm>
+#include <bitset>
 #include <cstring>
 #include <map>
 #include <mutex>  // NOLINT
 #include <utility>
-
-#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
 namespace paddle {
 namespace zynqmp {
@@ -66,6 +68,10 @@ void reset_device() {
   FpgaResetArgs args;
   do_ioctl(IOCTL_FPGA_RESET, &args);
 }
+
+void set_pool_cap(uint32_t pool_cap) { POOL_CAP = pool_cap; }
+
+uint32_t get_pool_cap() { return POOL_CAP; }
 
 // memory management;
 void *fpga_malloc(size_t size) {
@@ -226,13 +232,14 @@ int perform_bypass(const struct BypassArgs &args) {
   int out_type_size =
       args.output_data_type == DATA_TYPE_FP32 ? sizeof(float) : sizeof(int16_t);
 
+  float16 max_val = 0;
   float scales[2];
   struct BypassArgs bypassArgs = args;
   bypassArgs.image.width = 1;
   bypassArgs.image.height = 1;
-  bypassArgs.output.scale_address = scales;
+  bypassArgs.output.scale_address = &max_val;
 
-  float scale = 0;
+  float max = 0.0f;
   for (int i = 0; i < count; ++i) {
     bypassArgs.image.channels = max_size;
     bypassArgs.image.address =
@@ -240,8 +247,7 @@ int perform_bypass(const struct BypassArgs &args) {
     bypassArgs.output.address =
         reinterpret_cast<char *>(output_address + i * max_size * out_type_size);
     ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
-    scale = std::max(scale, scales[0]);
-
+    max = std::max(half_to_float(max_val), max);
     if (ret != 0) {
       return ret;
     }
@@ -255,11 +261,11 @@ int perform_bypass(const struct BypassArgs &args) {
     bypassArgs.output.address = reinterpret_cast<char *>(
         output_address + count * max_size * out_type_size);
     ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
-    scale = std::max(scale, scales[0]);
+    max = std::max(half_to_float(max_val), max);
   }
 
-  args.output.scale_address[0] = scale;
-  args.output.scale_address[1] = 1.0f / scale;
+  max_val = float_to_half(max);
+  args.output.scale_address[0] = float_to_half(max);
   return ret;
 }
 
@@ -324,8 +330,9 @@ std::ostream &operator<<(std::ostream &os, const ConvArgs &args) {
 
   os << "  image.address : " << args.image.address << std::endl;
   os << "  image.scale_address : " << args.image.scale_address << std::endl;
-  os << "  image.scale : "
-     << (reinterpret_cast<float *>(args.image.scale_address))[0] << std::endl;
+  os << "  image.scale : " << half_to_float((reinterpret_cast<float16 *>(
+                                  args.image.scale_address))[0])
+     << std::endl;
   os << "  image.channels : " << args.image.channels << std::endl;
   os << "  image.width : " << args.image.width << std::endl;
   os << "  image.height : " << args.image.height << std::endl;
@@ -334,6 +341,49 @@ std::ostream &operator<<(std::ostream &os, const ConvArgs &args) {
   os << "  output.address : " << args.output.address << std::endl;
   os << "}" << std::endl;
 
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const DWconvArgs &args) {
+  os << "DWconvArgs {\n";
+  os << "  bias_address : " << args.bias_address << std::endl;
+  os << "  filter_address : " << args.filter_address << std::endl;
+  os << "  filter_scale : "
+     << (reinterpret_cast<float *>(args.filter_scale_address))[0] << std::endl;
+  os << "  kernel.stride_h : " << args.kernel.stride_h << std::endl;
+  os << "  kernel.height : " << args.kernel.height << std::endl;
+  os << "  kernel.width : " << args.kernel.width << std::endl;
+
+  os << "  image.address : " << args.image.address << std::endl;
+  os << "  image.scale_address : " << args.image.scale_address << std::endl;
+  os << "  image.scale : " << half_to_float((reinterpret_cast<float16 *>(
+                                  args.image.scale_address))[0])
+     << std::endl;
+  os << "  image.channels : " << args.image.channels << std::endl;
+  os << "  image.width : " << args.image.width << std::endl;
+  os << "  image.height : " << args.image.height << std::endl;
+  os << "  image.pad_width : " << args.image.pad_width << std::endl;
+  os << "  image.pad_height : " << args.image.pad_height << std::endl;
+  os << "  output.address : " << args.output.address << std::endl;
+  os << "  out_width : " << args.out_width << std::endl;
+  os << "  out_height : " << args.out_height << std::endl;
+  os << "  sub_conv_num : " << args.sub_conv_num << std::endl;
+  os << "  dilation : " << args.dilation << std::endl;
+  os << "  InplaceArgs{" << std::endl;
+  os << "    activationType:" << args.inplace.active_param.type << std::endl;
+  os << "    leaky_relu_factor:" << args.inplace.active_param.leaky_relu_factor
+     << std::endl;
+  os << "    norm.channel : " << args.inplace.normalize_param.channel
+     << std::endl;
+  os << "    norm.height_width : " << args.inplace.normalize_param.hight_width
+     << std::endl;
+  os << "    norm.enabled : " << args.inplace.normalize_param.enabled
+     << std::endl;
+  os << "  }" << std::endl;
+  os << "  quant.dynamic_range : " << half_to_float(args.quant.dynamic_range)
+     << std::endl;
+  os << "  quant.inv_dynamic_range : " << args.quant.inv_dynamic_range
+     << std::endl;
   return os;
 }
 

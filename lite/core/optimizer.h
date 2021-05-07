@@ -111,6 +111,7 @@ class Optimizer {
          "elementwise_mul_constant_eliminate_pass",     //
          "lite_sequence_pool_concat_fuse_pass",         //
          "lite_scale_activation_fuse_pass",             //
+         "lite_scaleacts_fuse_pass",                    //
          "lite_elementwise_scale_fuse_pass",            //
          "lite_instance_norm_activation_fuse_pass",     //
          "lite_fc_prelu_fuse_pass",                     //
@@ -122,6 +123,7 @@ class Optimizer {
          "__xpu__resnet_cbam_fuse_pass",
          "__xpu__conv2d_fuse_pass",
          "__xpu__squeeze_excitation_fuse_pass",
+         "__xpu__bigru_fuse_pass",
          "__xpu__resblock_reduction_fuse_pass",
          "__xpu__resblock_normal_fuse_pass",
          "__xpu__conv2d_concat_pool2d_fuse_pass",

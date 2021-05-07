@@ -69,6 +69,9 @@ DEFINE_int32(threads, 1, "threads num");
 DEFINE_string(result_path,
               "result.txt",
               "save the inference time to the file.");
+DEFINE_bool(use_fp16,
+            false,
+            "Register fp16 arm-cpu kernel when optimized model");
 DEFINE_bool(show_output, false, "Wether to show the output in shell.");
 
 namespace paddle {
@@ -142,6 +145,8 @@ void PrintUsage() {
       "  --repeats (Repeats times) type: int32 default: 1 \n"
       "  --result_path (Save the inference time to the file.) type: \n"
       "    string default: result.txt \n"
+      "  --use_fp16 (opening use_fp16 when run fp16 model) type: bool default: "
+      "false"
       "Note that: \n"
       "  If load the optimized model, set optimized_model_path. Otherwise, \n"
       "    set model_dir, model_filename and params_filename according to \n"
@@ -163,8 +168,11 @@ void OutputOptModel(const std::string& save_optimized_model_dir) {
   std::vector<Place> vaild_places = {
       Place{TARGET(kARM), PRECISION(kInt32)},
       Place{TARGET(kARM), PRECISION(kInt64)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
   };
+  if (FLAGS_use_fp16) {
+    vaild_places.push_back(Place{TARGET(kARM), PRECISION(kFP16)});
+  }
+  vaild_places.push_back(Place{TARGET(kARM), PRECISION(kFloat)});
   config.set_valid_places(vaild_places);
   auto predictor = lite_api::CreatePaddlePredictor(config);
 

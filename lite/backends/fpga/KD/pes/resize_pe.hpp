@@ -54,7 +54,7 @@ class ResizePE : public PE {
 
     args.input_image_address = input->mutableData<void>();
     args.output_image_address = output->mutableData<void>();
-    args.output_scale_address = reinterpret_cast<uint32_t*>(output->scale());
+    args.output_scale_address = reinterpret_cast<uint16_t*>(output->max());
   }
 
   void compute_scale(Tensor* src, float* scale) {
@@ -101,6 +101,7 @@ class ResizePE : public PE {
     }
     param_.output->flush();
     param_.output->copyScaleFrom(param_.input);
+    param_.output->copyMaxFrom(param_.input);
   }
 
   bool dispatch() {

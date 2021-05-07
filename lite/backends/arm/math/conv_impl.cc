@@ -30,56 +30,6 @@ namespace arm {
 namespace math {
 
 /**
- * \brief neon implementation to add bias
- * @param tensor
- * @param bias
- * @param channel
- * @param channel_size
- */
-void fill_bias(float* tensor,
-               const float* bias,
-               int channel,
-               int channel_size) {
-  if (tensor == nullptr) {
-    return;
-  }
-  float* data = tensor;
-
-  for (int j = 0; j < channel; ++j) {
-    float32x4_t vdata = vdupq_n_f32(bias[j]);
-    int i = 0;
-    for (; i < channel_size - 3; i += 4) {
-      vst1q_f32(data + i, vdata);
-    }
-    for (; i < channel_size; i++) {
-      data[i] = bias[j];
-    }
-    data += channel_size;
-  }
-}
-
-void fill_bias_int8(int* tensor,
-                    const int* bias,
-                    int channel,
-                    int channel_size) {
-  if (tensor == nullptr) {
-    return;
-  }
-  int* data = tensor;
-  for (int j = 0; j < channel; ++j) {
-    int32x4_t vdata = vdupq_n_s32(bias[j]);
-    int i = 0;
-    for (; i < channel_size - 3; i += 4) {
-      vst1q_s32(data + i, vdata);
-    }
-    for (; i < channel_size; i++) {
-      data[i] = bias[j];
-    }
-    data += channel_size;
-  }
-}
-
-/**
  * \brief inline funcs used in im2col
  * @param a
  * @param b
@@ -603,7 +553,6 @@ void conv1x1s1_gemm(const float* i_data,
   if (n > 1 && m > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
-  bool has_a53 = (ctx->arch() == kA53 || ctx->arch() == kA35);
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
@@ -616,7 +565,7 @@ void conv1x1s1_gemm(const float* i_data,
           static_cast<const float*>(weights) + g * weights_size_per_group;
       const float* bias_group = static_cast<const float*>(bias) + g * m;
 
-      if (n == 1 && !has_a53) {
+      if (n == 1) {
         sgemv(weights_group,
               din_group,
               dout_group,
@@ -832,7 +781,6 @@ void conv_im2col_gemm(const float* i_data,
   if (n > 1 && m > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
-  bool has_a53 = (ctx->arch() == kA53 || ctx->arch() == kA35);
 
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
@@ -864,7 +812,7 @@ void conv_im2col_gemm(const float* i_data,
                     dilations[0],
                     dilations[1],
                     dB);
-      if (n == 1 && !has_a53) {
+      if (n == 1) {
         sgemv(weights_group,
               dB,
               dout_group,

@@ -122,6 +122,20 @@ std::vector<Place> ParserValidPlaces(bool enable_fp16) {
           Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
+    } else if (target_repr == "arm_metal") {
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(TARGET(kARM));
+      valid_places.emplace_back(TARGET(kHost));
+    } else if (target_repr == "x86_metal") {
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(TARGET(kX86));
+      valid_places.emplace_back(TARGET(kHost));
     } else if (target_repr == "x86") {
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
@@ -327,7 +341,7 @@ void PrintHelpInfo() {
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
       "  Arguments of enable_fp16 in opt: \n"
-      "        `--enable_fp16(true|false)`\n"
+      "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"

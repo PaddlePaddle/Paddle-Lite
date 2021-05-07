@@ -118,6 +118,9 @@ struct Instruction {
 
   // Run the instruction.
   void Run();
+#ifdef LITE_WITH_METAL
+  void SaveOutput();
+#endif
 
   friend STL::ostream& operator<<(STL::ostream& os, const Instruction& other);
 
@@ -231,6 +234,9 @@ class LITE_API RuntimeProgram {
   }
 
   void Run();
+#ifdef LITE_WITH_METAL
+  void SaveOutput();
+#endif
 
   void set_exec_scope(Scope* x) { exec_scope_ = x; }
   Scope* exec_scope() { return exec_scope_; }
@@ -247,9 +253,11 @@ class LITE_API RuntimeProgram {
 
   size_t block_size() { return instructions_.size(); }
 
+#ifndef LITE_ON_TINY_PUBLISH
   // Update the ops and vars of all of blocks to the given program_desc
   // according to the instructions
   void SaveToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
+#endif
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
