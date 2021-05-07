@@ -218,3 +218,18 @@ REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt32, int32)
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
+
+using SliceInt64 = paddle::lite::kernels::xpu::SliceCompute<int64_t>;
+REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt64, int64)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .Finalize();
