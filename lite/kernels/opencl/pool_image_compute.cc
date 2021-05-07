@@ -27,8 +27,6 @@
 #endif
 #include "lite/backends/opencl/cl_utility.h"
 
-#undef LITE_WITH_LOG
-
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -108,8 +106,8 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
             << paddings[1] << "  " << paddings[2] << "  " << paddings[3];
 #endif
 
-    bool pads_equal =
-        (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
+    bool pads_equal = ((abs(paddings[0] - paddings[1]) < 2) &&
+                       (abs(paddings[2] - paddings[3]) < 2));
     if (!pads_equal) {
       LOG(FATAL)
           << "padding requires pad_left == pad_right, pad_top == pad_bottom";
@@ -203,4 +201,3 @@ REGISTER_LITE_KERNEL(pool2d,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
-#define LITE_WITH_LOG

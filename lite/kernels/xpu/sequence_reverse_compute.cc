@@ -21,15 +21,15 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T, PrecisionType PType>
-void SequenceReverseCompute<T, PType>::PrepareForRun() {
-  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+template <typename T>
+void SequenceReverseCompute<T>::PrepareForRun() {
+  lod_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
   lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
-template <typename T, PrecisionType PType>
-void SequenceReverseCompute<T, PType>::Run() {
+template <typename T>
+void SequenceReverseCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
@@ -79,10 +79,9 @@ void SequenceReverseCompute<T, PType>::Run() {
 }  // namespace paddle
 
 namespace xpu = paddle::lite::kernels::xpu;
-using SequenceReverseFp32 =
-    xpu::SequenceReverseCompute<float, PRECISION(kFloat)>;
-using SequenceReverseInt64 =
-    xpu::SequenceReverseCompute<int64_t, PRECISION(kInt64)>;
+using SequenceReverseFp32 = xpu::SequenceReverseCompute<float>;
+using SequenceReverseInt32 = xpu::SequenceReverseCompute<int>;
+using SequenceReverseInt64 = xpu::SequenceReverseCompute<int64_t>;
 
 REGISTER_LITE_KERNEL(
     sequence_reverse, kXPU, kFloat, kNCHW, SequenceReverseFp32, def)
@@ -91,7 +90,13 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    sequence_reverse, kXPU, kInt64, kNCHW, SequenceReverseInt64, def)
+    sequence_reverse, kXPU, kFloat, kNCHW, SequenceReverseInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    sequence_reverse, kXPU, kFloat, kNCHW, SequenceReverseInt64, int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();

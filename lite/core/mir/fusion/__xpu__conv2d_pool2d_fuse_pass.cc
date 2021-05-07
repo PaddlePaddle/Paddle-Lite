@@ -54,37 +54,43 @@ namespace fusion {
 
 class XPUConv2dPool2dFuser : public FuseBase {
  public:
+  explicit XPUConv2dPool2dFuser(const std::string& block_type,
+                                bool with_conv_bias) {
+    block_type_ = block_type;
+    with_conv_bias_ = with_conv_bias;
+  }
+
   void BuildPattern() override {
-    auto* input = VarNode("input")
-                      ->assert_is_op_input("__xpu__conv2d", "Input")
-                      ->AsInput();
+    auto* input =
+        VarNode("input")->assert_is_op_input(block_type_, "Input")->AsInput();
     auto* weight = VarNode("weight")
-                       ->assert_is_op_input("__xpu__conv2d", "Filter")
+                       ->assert_is_op_input(block_type_, "Filter")
                        ->assert_is_persistable_var()
                        ->AsInput();
-    auto* weight_max = VarNode("weight_max")
-                           ->assert_is_op_input("__xpu__conv2d", "FilterMax")
-                           ->assert_is_persistable_var()
-                           ->AsInput();
-    auto* bias = VarNode("bias")
-                     ->assert_is_persistable_var()
-                     ->assert_is_op_input("__xpu__conv2d", "Bias")
-                     ->AsInput();
+    PMNode* bias = nullptr;
+    if (with_conv_bias_) {
+      bias = VarNode("bias")
+                 ->assert_is_persistable_var()
+                 ->assert_is_op_input(block_type_, "Bias")
+                 ->AsInput();
+    }
     auto* xpu_conv =
-        OpNode("xpu_conv", "__xpu__conv2d")
+        OpNode("xpu_conv", block_type_)
             ->assert_op_attr<bool>("has_branch", false)
-            ->assert_op_attr_satisfied<int>(
+            ->assert_op_attr<bool>("has_bias", with_conv_bias_)
+            ->assert_op_attr_satisfied<std::vector<int>>(
                 "act_type",
-                [](const int& attr) {
-                  return attr == 1 || attr == 2; /* support relu and sigmoid */
+                [](const std::vector<int>& attr) {
+                  return attr.back() == 1 ||
+                         attr.back() == 2; /* support relu and sigmoid */
                 })
             ->AsIntermediate();
     auto* conv_out = VarNode("conv_out")
-                         ->assert_is_op_output("__xpu__conv2d", "Output")
+                         ->assert_is_op_output(block_type_, "Output")
                          ->assert_is_op_input("pool2d", "X")
                          ->AsIntermediate();
     auto* conv_out_max = VarNode("conv_out_max")
-                             ->assert_is_op_output("__xpu__conv2d", "OutputMax")
+                             ->assert_is_op_output(block_type_, "OutputMax")
                              ->AsIntermediate();
     auto pool2d_teller = [](const Node* x) -> bool {
       if (x && x->IsStmt()) {
@@ -109,16 +115,14 @@ class XPUConv2dPool2dFuser : public FuseBase {
 
     *input >> *xpu_conv >> *conv_out >> *pool2d >> *pool2d_out;
     *weight >> *xpu_conv;
-    *weight_max >> *xpu_conv;
-    *bias >> *xpu_conv;
+    if (with_conv_bias_) {
+      *bias >> *xpu_conv;
+    }
     *xpu_conv >> *conv_out_max;
   }
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     std::vector<std::string> conv_name{"xpu_conv"};
     std::vector<std::string> filter_name{matched.at("weight")->arg()->name};
-    std::vector<std::string> bias_name = {matched.at("bias")->arg()->name};
-    std::vector<std::string> filter_max_name{
-        matched.at("weight_max")->arg()->name};
 
     cpp::OpDesc op_desc;
     auto conv = matched.at("xpu_conv")->stmt()->op();
@@ -126,23 +130,55 @@ class XPUConv2dPool2dFuser : public FuseBase {
     op_desc.mutable_inputs()->clear();
     op_desc.mutable_outputs()->clear();
     auto output_name = matched.at("pool2d_out")->arg()->name;
+    if (with_conv_bias_) {
+      op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
+    }
     std::string max_output_name = output_name + "_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    scope->NewTensor(max_output_name);
+    auto* max_output_tensor = scope->NewTensor(max_output_name);
+    max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_output_tensor->set_persistable(true);
+
     op_desc.SetType("__xpu__block_fuse_op");
     op_desc.SetInput("Input", {matched.at("input")->arg()->name});
     op_desc.SetInput("Filter", {filter_name});
-    op_desc.SetInput("Bias", {bias_name});
-    op_desc.SetInput("FilterMax", {filter_max_name});
     op_desc.SetOutput("Output", {output_name});
     op_desc.SetOutput("OutputMax", {max_output_name});
 
-    std::vector<int> place_x{0, 0};
-    std::vector<int> place_y{9, 9};
-    std::vector<int> place_z{10, 10};
-    std::vector<int> block_lod{1, 1};
+    std::vector<int> place_x{0};
+    auto old_place_x = matched.at("xpu_conv")
+                           ->stmt()
+                           ->op_info()
+                           ->GetAttr<std::vector<int>>("place_x");
+    place_x.insert(place_x.begin(), old_place_x.begin(), old_place_x.end());
+    std::vector<int> place_y{9};
+    auto old_place_y = matched.at("xpu_conv")
+                           ->stmt()
+                           ->op_info()
+                           ->GetAttr<std::vector<int>>("place_y");
+    place_y.insert(place_y.begin(), old_place_y.begin(), old_place_y.end());
+    std::vector<int> place_z{10};
+    auto old_place_z = matched.at("xpu_conv")
+                           ->stmt()
+                           ->op_info()
+                           ->GetAttr<std::vector<int>>("place_z");
+    place_z.insert(place_z.begin(), old_place_z.begin(), old_place_z.end());
+    std::vector<int> block_lod{1};
+    auto old_block_lod = matched.at("xpu_conv")
+                             ->stmt()
+                             ->op_info()
+                             ->GetAttr<std::vector<int>>("block_lod");
+    block_lod.insert(
+        block_lod.begin(), old_block_lod.begin(), old_block_lod.end());
+    std::vector<int> conv_bias;
+    auto old_conv_bias = matched.at("xpu_conv")
+                             ->stmt()
+                             ->op_info()
+                             ->GetAttr<std::vector<int>>("conv_bias");
+    conv_bias.insert(
+        conv_bias.begin(), old_conv_bias.begin(), old_conv_bias.end());
     int pooling_type = -1;
     if (matched.at("pool2d")->stmt()->op_info()->GetAttr<std::string>(
             "pooling_type") == "avg") {
@@ -155,7 +191,12 @@ class XPUConv2dPool2dFuser : public FuseBase {
     } else {
       pooling_type = 3;
     }
-    std::vector<int> op_type{0, pooling_type};
+    std::vector<int> op_type{pooling_type};
+    auto old_op_type = matched.at("xpu_conv")
+                           ->stmt()
+                           ->op_info()
+                           ->GetAttr<std::vector<int>>("op_type");
+    op_type.insert(op_type.begin(), old_op_type.begin(), old_op_type.end());
     auto conv_filter_dims = matched.at("xpu_conv")
                                 ->stmt()
                                 ->op_info()
@@ -163,12 +204,13 @@ class XPUConv2dPool2dFuser : public FuseBase {
     auto pool_kernel =
         matched.at("pool2d")->stmt()->op_info()->GetAttr<std::vector<int>>(
             "ksize");
-    std::vector<int> filter_dims{conv_filter_dims[0],
-                                 conv_filter_dims[1],
-                                 conv_filter_dims[2],
-                                 conv_filter_dims[3],
-                                 pool_kernel[0],
-                                 pool_kernel[1]};
+    std::vector<int> filter_dims{pool_kernel[0], pool_kernel[1]};
+    auto old_filter_dims = matched.at("xpu_conv")
+                               ->stmt()
+                               ->op_info()
+                               ->GetAttr<std::vector<int>>("filter_dims");
+    filter_dims.insert(
+        filter_dims.begin(), old_filter_dims.begin(), old_filter_dims.end());
     auto conv_strides = matched.at("xpu_conv")
                             ->stmt()
                             ->op_info()
@@ -176,21 +218,13 @@ class XPUConv2dPool2dFuser : public FuseBase {
     auto pool_strides =
         matched.at("pool2d")->stmt()->op_info()->GetAttr<std::vector<int>>(
             "strides");
-    std::vector<int> strides{
-        conv_strides[0], conv_strides[1], pool_strides[0], pool_strides[1]};
+    std::vector<int> strides{pool_strides[0], pool_strides[1]};
+    strides.insert(strides.begin(), conv_strides.begin(), conv_strides.end());
+
     auto conv_paddings = matched.at("xpu_conv")
                              ->stmt()
                              ->op_info()
                              ->GetAttr<std::vector<int>>("paddings");
-    if (conv_paddings.size() == 2) {
-      for (size_t i = 0; i < conv_strides.size(); ++i) {
-        int copy_pad = *(conv_paddings.begin() + 2 * i);
-        conv_paddings.insert(conv_paddings.begin() + 2 * i + 1, copy_pad);
-      }
-    }
-    CHECK_EQ(conv_paddings.size(), 4UL)
-        << "Paddings size should be 2 or 4, But received paddings size: "
-        << conv_paddings.size();
     auto pool_paddings =
         matched.at("pool2d")->stmt()->op_info()->GetAttr<std::vector<int>>(
             "paddings");
@@ -200,9 +234,6 @@ class XPUConv2dPool2dFuser : public FuseBase {
         pool_paddings.insert(pool_paddings.begin() + 2 * i + 1, copy_pad);
       }
     }
-    CHECK_EQ(conv_paddings.size(), 4UL)
-        << "Paddings size should be 2 or 4, But received paddings size: "
-        << conv_paddings.size();
     if ((matched.at("pool2d")->stmt()->op_info()->HasAttr(
             "padding_algorithm")) &&
         (matched.at("pool2d")->stmt()->op_info()->GetAttr<std::string>(
@@ -217,28 +248,25 @@ class XPUConv2dPool2dFuser : public FuseBase {
       pool_paddings[1] += pool_strides[0] - 1;
       pool_paddings[3] += pool_strides[1] - 1;
     }
-    std::vector<int> paddings{conv_paddings[0],
-                              conv_paddings[1],
-                              conv_paddings[2],
-                              conv_paddings[3],
-                              pool_paddings[0],
-                              pool_paddings[1],
-                              pool_paddings[2],
-                              pool_paddings[3]};
+    std::vector<int> paddings;
+    paddings.insert(paddings.end(), conv_paddings.begin(), conv_paddings.end());
+    paddings.insert(paddings.end(), pool_paddings.begin(), pool_paddings.end());
     auto conv_dilations = matched.at("xpu_conv")
                               ->stmt()
                               ->op_info()
                               ->GetAttr<std::vector<int>>("dilations");
-    std::vector<int> dilations{conv_dilations[0], conv_dilations[1]};
-    auto conv_groups =
-        matched.at("xpu_conv")->stmt()->op_info()->GetAttr<int>("groups");
-    std::vector<int> groups{conv_groups};
-    auto conv_act_type =
-        matched.at("xpu_conv")->stmt()->op_info()->GetAttr<int>("act_type");
-    std::vector<int> act_type{conv_act_type};
-    auto conv_act_param =
-        matched.at("xpu_conv")->stmt()->op_info()->GetAttr<float>("act_param");
-    std::vector<float> act_param{conv_act_param};
+    auto conv_groups = matched.at("xpu_conv")
+                           ->stmt()
+                           ->op_info()
+                           ->GetAttr<std::vector<int>>("groups");
+    auto conv_act_type = matched.at("xpu_conv")
+                             ->stmt()
+                             ->op_info()
+                             ->GetAttr<std::vector<int>>("act_type");
+    auto conv_act_param = matched.at("xpu_conv")
+                              ->stmt()
+                              ->op_info()
+                              ->GetAttr<std::vector<float>>("act_param");
     op_desc.SetAttr("op_type", op_type);
     op_desc.SetAttr("place_x", place_x);
     op_desc.SetAttr("place_y", place_y);
@@ -246,11 +274,14 @@ class XPUConv2dPool2dFuser : public FuseBase {
     op_desc.SetAttr("filter_dims", filter_dims);
     op_desc.SetAttr("strides", strides);
     op_desc.SetAttr("paddings", paddings);
-    op_desc.SetAttr("dilations", dilations);
-    op_desc.SetAttr("groups", groups);
-    op_desc.SetAttr("act_type", act_type);
-    op_desc.SetAttr("act_param", act_param);
+    op_desc.SetAttr("dilations", conv_dilations);
+    op_desc.SetAttr("groups", conv_groups);
+    op_desc.SetAttr("act_type", conv_act_type);
+    op_desc.SetAttr("act_param", conv_act_param);
     op_desc.SetAttr("block_lod", block_lod);
+    op_desc.SetAttr("conv_bias", conv_bias);
+    op_desc.SetAttr<bool>("has_bias", with_conv_bias_);
+    op_desc.SetAttr<bool>("has_branch", false);
 
     auto& valid_places = conv->valid_places();
     auto block_op = LiteOpRegistry::Global().Create(op_desc.Type());
@@ -259,11 +290,16 @@ class XPUConv2dPool2dFuser : public FuseBase {
 
     IR_NODE_LINK_TO(matched.at("input"), new_op_node);
     IR_NODE_LINK_TO(matched.at("weight"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("weight_max"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("bias"), new_op_node);
+    if (with_conv_bias_) {
+      IR_NODE_LINK_TO(matched.at("bias"), new_op_node);
+    }
     IR_NODE_LINK_TO(new_op_node, matched.at("pool2d_out"));
     IR_NODE_LINK_TO(new_op_node, max_output_node);
   }
+
+ private:
+  bool with_conv_bias_;
+  std::string block_type_;
 };
 
 }  // namespace fusion
@@ -271,8 +307,19 @@ class XPUConv2dPool2dFuser : public FuseBase {
 class XPUConv2dPool2dFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    fusion::XPUConv2dPool2dFuser fuser;
-    fuser(graph.get());
+    for (auto with_conv_bias : {true, false}) {
+      fusion::XPUConv2dPool2dFuser fuser("__xpu__conv2d", with_conv_bias);
+      fuser(graph.get());
+    }
+    bool changed = true;
+    while (changed) {
+      changed = false;
+      for (auto with_conv_bias : {true, false}) {
+        fusion::XPUConv2dPool2dFuser fuser("__xpu__block_fuse_op",
+                                           with_conv_bias);
+        changed |= fuser(graph.get());
+      }
+    }
   }
 };
 

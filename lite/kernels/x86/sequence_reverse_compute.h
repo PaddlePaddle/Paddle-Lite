@@ -22,8 +22,9 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-template <typename T, PrecisionType Ptype>
-class SequenceReverseCompute : public KernelLite<TARGET(kX86), Ptype> {
+template <typename T>
+class SequenceReverseCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::SequenceReverseParam;
 

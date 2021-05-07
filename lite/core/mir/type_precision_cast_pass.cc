@@ -154,9 +154,19 @@ void PrecisionCastPass::ComplementInputs(
           decl_arg_type->target(), data_type, decl_arg_type->layout());
     }
   }
-  // if (!in->AsArg().is_weight && !PrecisionCompatibleTo(*in->AsArg().type,
-  // *decl_arg_type)) {
-  if (!PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
+  bool has_fp16 = false;
+  for (auto place : graph->valid_places()) {
+    if (place.target == TARGET(kARM)) {
+      if (place.precision == PRECISION(kFP16)) {
+        has_fp16 = true;
+        break;
+      }
+    }
+  }
+  has_fp16 = has_fp16 && (in->AsArg().is_weight);
+  VLOG(4) << "has_fp16: " << has_fp16 << ", arg_name: " << in->AsArg().name;
+  if ((!has_fp16) &&
+      !PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
     VLOG(4) << "found Target unmatched tensor: " << in->AsArg().name
             << " for kernel " << inst.op()->DebugString() << " "
             << *in->AsArg().type << " -> " << *decl_arg_type;
@@ -183,18 +193,19 @@ void PrecisionCastPass::AddCastInst(const Type& from,
   // var -> new_transform_op -> new_var -> inst
   // So there will be a new Argument node and a new Cast Statement Node.
   CHECK(in->IsArg());
-  // auto node_id = [&] { return graph->nodes().size(); };
+  static int i = 0;
   auto cast_op_output_name = in->AsArg().name + "/precision_trans";
-  // in->AsArg().name + "/precision_trans/" +
-  // paddle::lite::to_string(node_id());
-  if (cast_nodes->count(in->AsArg().name)) {
+  if (to.precision() == PRECISION(kInt8)) {
+    cast_op_output_name = cast_op_output_name + to_string(i++);
+  }
+  if (cast_nodes->count(in->AsArg().name) &&
+      to.precision() != PRECISION(kInt8)) {
     // Remove the old link
     RemoveDirectedLink(in, inst_node);
     // Update the original instruction OpDesc.
     // Update its input to the cast_op_output_name
     // Add new link, newarg->inst
-    DirectedLink(cast_nodes->at(in->AsArg().name),
-                 inst_node);  // [io_copy kernel]'s output -> [current kernel]
+    DirectedLink(cast_nodes->at(in->AsArg().name), inst_node);
     // reset opdesc and update kernel information
     UpdateInputs(
         inst_node->AsStmt().op().get(), in->AsArg().name, cast_op_output_name);
@@ -212,7 +223,12 @@ void PrecisionCastPass::AddCastInst(const Type& from,
     CHECK(cast_op) << "create op [" << cast_op << "] failed";
 
     // Create the new var manually.
-    inst_node->AsStmt().op()->scope()->Var(cast_op_output_name);
+    auto* cast_op_output_tensor = inst_node->AsStmt()
+                                      .op()
+                                      ->scope()
+                                      ->Var(cast_op_output_name)
+                                      ->GetMutable<lite::Tensor>();
+    cast_op_output_tensor->set_precision(to.precision());
 
     // Create Calib Instruction.
     cpp::OpDesc op_desc;

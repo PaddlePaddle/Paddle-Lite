@@ -15,6 +15,7 @@
 #include "lite/kernels/arm/deformable_conv_compute.h"
 #include <cmath>
 #include <utility>
+#include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #include "lite/kernels/arm/conv_depthwise.h"
@@ -33,171 +34,269 @@ void DeformableConvCompute<PRECISION(kFloat),
   ReInitWhenNeeded();
 }
 
-static inline float deformable_bilinear(const float* bottom_data,
-                                        const int height,
-                                        const int width,
-                                        float h,
-                                        float w) {
+template <typename T>
+static T DmcnIm2colBilinear(const T* bottom_data,
+                            const int data_width,
+                            const int height,
+                            const int width,
+                            T h,
+                            T w) {
   int h_low = floor(h);
   int w_low = floor(w);
   int h_high = h_low + 1;
   int w_high = w_low + 1;
-  if (h_low >= height - 1) {
-    h_high = h_low = height - 1;
-    h = static_cast<float>(h_low);
-  } else {
-    h_high = h_low + 1;
-  }
 
-  if (w_low >= width - 1) {
-    w_high = w_low = width - 1;
-    w = static_cast<float>(w_low);
-  } else {
-    w_high = w_low + 1;
+  T lh = h - h_low;
+  T lw = w - w_low;
+  T hh = 1 - lh;
+  T hw = 1 - lw;
+
+  T v1 =
+      (h_low >= 0 && w_low >= 0) ? bottom_data[h_low * data_width + w_low] : 0;
+  T v2 = (h_low >= 0 && w_high <= width - 1)
+             ? bottom_data[h_low * data_width + w_high]
+             : 0;
+  T v3 = (h_high <= height - 1 && w_low >= 0)
+             ? bottom_data[h_high * data_width + w_low]
+             : 0;
+  T v4 = (h_high <= height - 1 && w_high <= width - 1)
+             ? bottom_data[h_high * data_width + w_high]
+             : 0;
+
+  T w1 = hh * hw;
+  T w2 = hh * lw;
+  T w3 = lh * hw;
+  T w4 = lh * lw;
+
+  return w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4;
+}
+
+template <typename T>
+static void ModulatedDeformableIm2colCPUKernel(
+    const int num_kernels,
+    const T* data_im,
+    const T* data_offset,
+    const T* data_mask,
+    const int height,
+    const int width,
+    const int kernel_h,
+    const int kernel_w,
+    const int pad_h,
+    const int pad_w,
+    const int stride_h,
+    const int stride_w,
+    const int dilation_h,
+    const int dilation_w,
+    const int channel_per_deformable_group,
+    const int batch_size,
+    const int num_channels,
+    const int deformable_group,
+    const int height_col,
+    const int width_col,
+    T* data_col) {
+  for (int i = 0; i < num_kernels; i++) {
+    const int w_col = i % width_col;
+    const int h_col = (i / width_col) % height_col;
+    const int b_col = (i / width_col) / height_col % batch_size;
+    const int c_im = (i / width_col / height_col) / batch_size;
+    const int c_col = c_im * kernel_h * kernel_w;
+
+    const int deformable_group_index = c_im / channel_per_deformable_group;
+
+    const int h_in = h_col * stride_h - pad_h;
+    const int w_in = w_col * stride_w - pad_w;
+
+    T* data_col_ptr =
+        data_col +
+        ((c_col * batch_size + b_col) * height_col + h_col) * width_col + w_col;
+    const T* data_im_ptr =
+        data_im + (b_col * num_channels + c_im) * height * width;
+    const T* data_offset_ptr =
+        data_offset +
+        (b_col * deformable_group + deformable_group_index) * 2 * kernel_h *
+            kernel_w * height_col * width_col;
+    const T* data_mask_ptr =
+        data_mask +
+        (b_col * deformable_group + deformable_group_index) * kernel_h *
+            kernel_w * height_col * width_col;
+
+    for (int i = 0; i < kernel_h; ++i) {
+      for (int j = 0; j < kernel_w; ++j) {
+        const int data_offset_h_ptr =
+            ((2 * (i * kernel_w + j)) * height_col + h_col) * width_col + w_col;
+        const int data_offset_w_ptr =
+            ((2 * (i * kernel_w + j) + 1) * height_col + h_col) * width_col +
+            w_col;
+        const int data_mask_hw_ptr =
+            ((i * kernel_w + j) * height_col + h_col) * width_col + w_col;
+
+        const T offset_h = data_offset_ptr[data_offset_h_ptr];
+        const T offset_w = data_offset_ptr[data_offset_w_ptr];
+        const T mask = data_mask_ptr[data_mask_hw_ptr];
+        T val = static_cast<T>(0);
+        const T h_im = h_in + i * dilation_h + offset_h;
+        const T w_im = w_in + j * dilation_w + offset_w;
+        if (h_im > -1 && w_im > -1 && h_im < height && w_im < width) {
+          val =
+              DmcnIm2colBilinear(data_im_ptr, width, height, width, h_im, w_im);
+        }
+        *data_col_ptr = val * mask;
+        data_col_ptr += batch_size * height_col * width_col;
+      }
+    }
   }
-  float lh = h - h_low;
-  float lw = w - w_low;
-  float hh = 1 - lh;
-  float hw = 1 - lw;
-  float v1 = bottom_data[h_low * width + w_low];
-  float v2 = bottom_data[h_low * width + w_high];
-  float v3 = bottom_data[h_high * width + w_low];
-  float v4 = bottom_data[h_high * width + w_high];
-  float w1 = hh * hw;
-  float w2 = hh * lw;
-  float w3 = lh * hw;
-  float w4 = lh * lw;
-  float val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
-  return val;
+}
+
+template <typename T>
+static inline void ModulatedDeformableIm2colCPU(
+    const T* data_im,
+    const T* data_offset,
+    const T* data_mask,
+    const std::vector<int64_t> im_shape,
+    const std::vector<int64_t> col_shape,
+    const std::vector<int64_t> filter_shape,
+    const std::vector<int> paddings,
+    const std::vector<int> strides,
+    const std::vector<int> dilations,
+    const int deformable_groups,
+    T* data_col) {
+  int channel_per_deformable_group = im_shape[0] / deformable_groups;
+  int num_kernels = im_shape[0] * col_shape[1] * col_shape[2] * col_shape[3];
+
+  // get outputs of im2col with offset by bilinear interpolation
+  ModulatedDeformableIm2colCPUKernel(num_kernels,
+                                     data_im,
+                                     data_offset,
+                                     data_mask,
+                                     im_shape[1],
+                                     im_shape[2],
+                                     filter_shape[2],
+                                     filter_shape[3],
+                                     paddings[0],
+                                     paddings[1],
+                                     strides[0],
+                                     strides[1],
+                                     dilations[0],
+                                     dilations[1],
+                                     channel_per_deformable_group,
+                                     col_shape[1],
+                                     im_shape[0],
+                                     deformable_groups,
+                                     col_shape[2],
+                                     col_shape[3],
+                                     data_col);
 }
 
 template <>
 void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
-  // basic implement
-  // param.x shape [n, cin, hin, win];
-  // param.offset shape [n, 2 * deformabel_group * kw * kh, hin, win]
-  // param.mask shape [n, deformabel_group * kw * kh, hin, win]
-  // param.filter shape [cout, cin/group, kw, kh]
-  // param.output shape [n, cout, hout, wout]
-  // deformable_group == group
-  auto& param = this->Param<param_t>();
+  const auto& param = this->Param<operators::DeformableConvParam>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  const auto* in_data = param.x->data<float>();
+  const auto* input = param.x;
+  const auto* offset = param.offset;
+  const auto* mask = param.mask;
+  const auto& filter = *param.conv_param.filter;
   const auto* filter_data = param.conv_param.filter->data<float>();
-  const auto* offset_data = param.offset->data<float>();
-  const auto* mask_data = param.mask->data<float>();
-  float* out_data = param.output->mutable_data<float>();
-
-  auto in_dims = param.x->dims();
-  auto filter_dims = param.conv_param.filter->dims();
-  auto out_dims = param.output->dims();
-  auto stride = param.conv_param.strides;
-  auto paddings = *param.conv_param.paddings;
-  auto dilation = *param.conv_param.dilations;
-  auto group = param.conv_param.groups;
-  auto deformable_group = param.deformable_groups;
-
-  auto num = in_dims[0];
-  auto cin = in_dims[1];
-  auto hin = in_dims[2];
-  auto win = in_dims[3];
-  auto cout = filter_dims[0];
-  auto kh = filter_dims[2];
-  auto kw = filter_dims[3];
-  auto hout = out_dims[2];
-  auto wout = out_dims[3];
+  if (flag_trans_weights_) {
+    filter_data = weights_.data<float>();
+  }
+  auto* output = param.output;
   bool is_bias = param.conv_param.bias ? true : false;
   const float* bias =
       param.conv_param.bias ? param.conv_param.bias->data<float>() : nullptr;
 
-  auto in_c_group = cin / group;
-  auto out_c_group = cout / group;
-  float alpha = 1.f;
-  const float beta = 0.f;
-  int in_size = hin * win;
-  int out_size = hout * wout;
-  int c_in_size = cin * in_size;
-  int c_out_size = cout * out_size;
-  int kernel_size = kw * kh;
+  const int groups = param.conv_param.groups;
+  const int deformable_groups = param.deformable_groups;
+  const int im2col_step = param.im2col_step;
+  const std::vector<int>& strides = param.conv_param.strides;
+  const std::vector<int>& paddings = *param.conv_param.paddings;
+  const std::vector<int>& dilations = *param.conv_param.dilations;
 
-  int col_size = num * cin * kernel_size * in_size;
-  auto offset_in_size = 2 * group * kernel_size * in_size;
-  float* col_data = new float[col_size];
-  for (int n = 0; n < num; n++) {
-    for (int g = 0; g < group; ++g) {
-      const float* offset_data_ptr =
-          offset_data + n * offset_in_size + g * 2 * kernel_size * in_size;
-      const float* in_data_offset =
-          in_data + n * c_in_size + g * in_c_group * in_size;
-      float* col_data_g = col_data + n * c_in_size * kernel_size +
-                          g * in_c_group * kernel_size * in_size;
-      for (int ic = 0; ic < in_c_group; ++ic) {
-        const float* in_data_ch = in_data_offset + ic * in_size;
-        float* col_data_ch = col_data_g + ic * kernel_size * in_size;
-        for (int fh = 0; fh < kh; fh++) {
-          for (int fw = 0; fw < kw; fw++) {
-            const float* offset_data_ptr_h =
-                offset_data_ptr + (2 * (fh * kw + fw)) * out_size;
-            const float* offset_data_ptr_w =
-                offset_data_ptr + (2 * (fh * kw + fw) + 1) * out_size;
-            float* col_data_g_ksize = col_data_ch + (fh * kw + fw) * in_size;
-            for (int ih = 0; ih < hin; ih++) {
-              const float* offset_data_ptr_h_w = offset_data_ptr_h + ih * wout;
-              const float* offset_data_ptr_w_w = offset_data_ptr_w + ih * wout;
-              float* col_data_g_ksize_h = col_data_g_ksize + ih * win;
-              for (int iw = 0; iw < win; iw++) {
-                const float offset_h = *offset_data_ptr_h_w++;
-                const float offset_w = *offset_data_ptr_w_w++;
-                const float im_w =
-                    iw * stride[1] - paddings[2] + kw * dilation[1] + offset_w;
-                const float im_h =
-                    ih * stride[0] - paddings[0] + kh * dilation[0] + offset_h;
-                if (im_h >= 0 && im_h < hin && im_w >= 0 && im_w < win) {
-                  float val =
-                      deformable_bilinear(in_data_ch, hin, win, im_h, im_w);
+  const int batch_size = static_cast<int>(input->dims()[0]);
 
-                  if (param.modulated) {
-                    // use mask
-                    const float* mask_ptr =
-                        mask_data + n * group * kernel_size * in_size +
-                        g * kernel_size * in_size +
-                        (fh * kw + fw) * hout * wout + ih * win + iw;
-                    val *= mask_ptr[0];
-                  }
-                  *col_data_g_ksize_h++ = val;
-                } else {
-                  *col_data_g_ksize_h++ = 0.0;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+  std::vector<int64_t> filter_shape_vec(filter.dims().Vectorize());
+  std::vector<int64_t> output_shape_vec(output->dims().Vectorize());
+
+  // col_shape_vec: {c_i * k_h * k_w, im2col_step, o_h, o_w}
+  std::vector<int64_t> col_buffer_shape_vec(filter_shape_vec.size());
+  col_buffer_shape_vec[0] =
+      input->dims()[1] * filter.dims()[2] * filter.dims()[3];
+  col_buffer_shape_vec[1] = im2col_step;
+  for (size_t j = 0; j < filter_shape_vec.size() - 2; ++j) {
+    col_buffer_shape_vec[j + 2] = output_shape_vec[j + 2];
   }
-  // convolution
-  int m = cout / group;
-  int n = hout * wout;
-  int k = cin * kernel_size / group;
-  int weights_size_per_group = m * k;
-  if (flag_trans_weights_) {
-    filter_data = weights_.data<float>();
-  }
-  for (int b = 0; b < num; ++b) {
-    for (int g = 0; g < group; ++g) {
-      float* dout_group = out_data + (b * cout + g * m) * out_size;
-      const float* din_group =
-          col_data + (b * cin + g * in_c_group) * in_size * kernel_size;
+  DDim col_shape(col_buffer_shape_vec);
+  std::vector<int64_t> output_buffer_shape_vec(1);
+  output_buffer_shape_vec[0] = batch_size * output_shape_vec[1] *
+                               output_shape_vec[2] * output_shape_vec[3];
+  DDim output_shape(output_buffer_shape_vec);
+  Tensor col_buffer;
+  Tensor output_buffer;
+  col_buffer.Resize(col_shape);
+  col_buffer.mutable_data<float>();
+  output_buffer.Resize(output_shape);
+  output_buffer.mutable_data<float>();
+  int64_t M = output_shape_vec[1] / groups;
+  int64_t N = im2col_step * output_shape_vec[2] * output_shape_vec[3];
+  int64_t K =
+      input->dims()[1] * filter_shape_vec[2] * filter_shape_vec[3] / groups;
+
+  Tensor weight_3d;
+  weight_3d.ShareDataWith(filter);
+  weight_3d.Resize(DDim({groups, M, K}));
+  Tensor col_buffer_3d;
+  col_buffer_3d.ShareDataWith(col_buffer);
+  col_buffer_3d.Resize(DDim({groups, K, N}));
+  Tensor output_4d;
+  output_4d.ShareDataWith(output_buffer);
+  output_4d.Resize(DDim({batch_size / im2col_step, groups, M, N}));
+  output_4d.mutable_data<float>();
+  DDim input_shape = input->dims().Slice(1, input->dims().size());
+  std::vector<int64_t> input_shape_vec = input_shape.Vectorize();
+  int input_dim = input->numel() / input->dims()[0];
+  int input_offset_dim = offset->numel() / offset->dims()[0];
+  int input_mask_dim = mask->numel() / mask->dims()[0];
+  const float* input_ptr = input->data<float>();
+  const float* offset_ptr = offset->data<float>();
+  const float* mask_ptr = mask->data<float>();
+  col_buffer.mutable_data<float>();
+  float* col_buffer_ptr = col_buffer.mutable_data<float>();
+  int weights_size_per_group = M * K;
+  for (int i = 0; i < batch_size / im2col_step; ++i) {
+    ModulatedDeformableIm2colCPU<float>(
+        input_ptr + i * im2col_step * input_dim,
+        offset_ptr + i * im2col_step * input_offset_dim,
+        mask_ptr + i * im2col_step * input_mask_dim,
+        input_shape_vec,
+        col_buffer_shape_vec,
+        filter_shape_vec,
+        paddings,
+        strides,
+        dilations,
+        deformable_groups,
+        col_buffer_ptr);
+    Tensor output_3d = output_4d.Slice<float>(i, i + 1);
+    output_3d.Resize(DDim(output_4d.dims()).Slice(1, output_4d.dims().size()));
+    // get the product of pixel and weight
+    for (int g = 0; g < groups; ++g) {
       const float* weights_group = filter_data + g * weights_size_per_group;
-      const float* bias_group = bias + g * m;
-      if (n == 1) {
+      const float* bias_group = bias + g * M;
+      Tensor weight_3d_slice = weight_3d.Slice<float>(g, g + 1);
+      weight_3d_slice.Resize(
+          DDim(weight_3d.dims()).Slice(1, weight_3d.dims().size()));
+      Tensor col_buffer_3d_slice = col_buffer_3d.Slice<float>(g, g + 1);
+      col_buffer_3d_slice.Resize(
+          DDim(col_buffer_3d.dims()).Slice(1, col_buffer_3d.dims().size()));
+      Tensor output_3d_slice = output_3d.Slice<float>(g, g + 1);
+      output_3d_slice.Resize(
+          DDim(output_3d.dims()).Slice(1, output_3d.dims().size()));
+      if (N == 1) {
         lite::arm::math::sgemv(
             weights_group,
-            din_group,
-            dout_group,
+            col_buffer_3d_slice.data<float>(),
+            const_cast<float*>(output_3d_slice.data<float>()),
             false,
-            m,
-            k,
+            M,
+            K,
             0.f,
             is_bias,
             bias_group,
@@ -207,26 +306,28 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
             param.conv_param.activation_param.Relu_clipped_coef,
             param.conv_param.activation_param.Leaky_relu_alpha);
       } else {
-        int ldb = n;
-        lite::arm::math::sgemm_prepack(false,
-                                       m,
-                                       n,
-                                       k,
-                                       weights_group,
-                                       din_group,
-                                       ldb,
-                                       0.f,
-                                       dout_group,
-                                       n,
-                                       bias_group,
-                                       is_bias,
-                                       param.conv_param.activation_param,
-                                       &ctx);
+        lite::arm::math::sgemm_prepack(
+            false,
+            output_3d_slice.dims()[0],
+            output_3d_slice.dims()[1],
+            weight_3d_slice.dims()[1],
+            weights_group,
+            col_buffer_3d_slice.data<float>(),
+            output_3d_slice.dims()[1],
+            0.f,
+            const_cast<float*>(output_3d_slice.data<float>()),
+            output_3d_slice.dims()[1],
+            bias_group,
+            is_bias,
+            param.conv_param.activation_param,
+            &ctx);
       }
     }
   }
-  delete[] col_data;
+  output->ShareDataWith(output_buffer);
+  output->Resize(DDim(output_shape_vec));
 }
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

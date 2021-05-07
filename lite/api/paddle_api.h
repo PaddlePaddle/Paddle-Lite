@@ -177,7 +177,10 @@ class LITE_API ConfigBase {
                                    const std::string& name);
   // set GPU opencl tune
   void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
+                       const std::string& path = "",
+                       const std::string& name = "",
                        size_t lws_repeats = 4);
+
   // set GPU opencl precision
   void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
   // set subgraph_model_dir
@@ -307,7 +310,9 @@ class LITE_API CxxConfig : public ConfigBase {
 
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
+  // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+  void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
 
   void set_xpu_conv_autotune(bool autotune = true,
                              const std::string& autotune_file = "");
@@ -316,7 +321,11 @@ class LITE_API CxxConfig : public ConfigBase {
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
+
+  // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
+  void set_xpu_multi_encoder_method(const std::string& precision = "int16",
+                                    bool adaptive_seqlen = false);
 
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when

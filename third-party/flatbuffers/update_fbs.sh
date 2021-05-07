@@ -55,7 +55,7 @@ function make_fbs {
   git checkout $workspace/third-party/flatbuffers/pre-build/ && rm -rf $workspace/third-party/flatbuffers/pre-build/*
   # update
   cp -rf $workspace/lite/model_parser/flatbuffers/*generated.h $workspace/third-party/flatbuffers/pre-build/
-  cp -f $workspace/lite/backends/opencl/utils/cache_generated.h $workspace/third-party/flatbuffers/pre-build/
+  cp -rf $workspace/lite/backends/opencl/utils/*generated.h $workspace/third-party/flatbuffers/pre-build/
   cp -rf third_party/install/flatbuffers/include/flatbuffers $workspace/third-party/flatbuffers/pre-build/
   # return to original path
   cd -

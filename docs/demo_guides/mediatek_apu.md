@@ -15,7 +15,31 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
 ### 已支持的Paddle模型
 
+#### 模型
 - [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid.tar.gz)
+
+#### 性能
+- 测试环境
+  - 编译环境
+    - Ubuntu 16.04，NDK-r17c with GCC for Android armeabi-v7a
+
+  - 硬件环境
+    - MT8168
+      - MT8168-P2V1 Tablet
+      - CPU：4 x Cortex-A53 2.0 GHz
+      - APU：0.3 TOPs
+
+- 测试方法
+  - warmup=10，repeats=30，统计平均时间，单位是ms
+  - 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
+  - 分类模型的输入图像维度是{1，3，224，224}
+
+- 测试结果
+
+  |模型 |MT8168||
+  |---|---|---|
+  |  |CPU(ms) | NPU(ms) |
+  |MobileNetV1-int8|  131.622305|  31.453601|
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -187,7 +211,7 @@ Paddle Lite已支持MediaTek APU的预测部署。
 ### 更新模型
 
 - 通过Paddle Fluid训练，或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型量化-有校准数据训练后量化](../user_guides/post_quant_with_data)使用PaddleSlim对float32模型进行量化（注意：由于MTK APU只支持量化OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid.tar.gz)；
+- 参考[模型量化-静态离线量化](../user_guides/quant_post_static)使用PaddleSlim对float32模型进行量化（注意：由于MTK APU只支持量化OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成MTK APU模型，仅需要将valid_targets设置为apu,arm即可。
 
   ```shell
@@ -217,26 +241,40 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
 - 编译并生成PaddleLite+MediaTekAPU for armv8 and armv7的部署库
 
-  ```shell
-  For armv8
-  tiny_publish
-  $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
-  full_publish
-  $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk full_publish
+  - For armv8
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
 
-  For armv7
-  tiny_publish
-  $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
-  full_publish
-  $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk full_publish
-  ```
+      将tiny_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件；
+      ```
 
-- 将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
-- 将tiny_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_full_api_shared.so文件；
-- 将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/include目录；
-- 将tiny_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_full_api_shared.so文件。
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk full_publish
+
+      将full_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_full_api_shared.so文件；
+      ```
+    
+    将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
+
+  - For armv7
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
+
+      将tiny_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件；
+      ```
+    
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk full_publish
+
+      将full_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_full_api_shared.so文件。
+      ```
+    将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/include目录；
+
+- 替换头文件后需要重新编译示例程序
 
 ## 其它说明
 

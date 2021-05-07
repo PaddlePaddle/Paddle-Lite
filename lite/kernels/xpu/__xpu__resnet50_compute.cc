@@ -34,50 +34,31 @@ void XPUResNet50Compute::PrepareForRun() {
   }
 }
 
-void XPUResNet50DtypeCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-
-  for (auto* filter : param.filter) {
-    arg_filter_.push_back(
-        reinterpret_cast<const int16_t*>(filter->data<float>()));
-  }
-  for (auto* bias : param.bias) {
-    arg_bias_.push_back(bias->data<float>());
-  }
-  for (auto* max_filter : param.max_filter) {
-    arg_max_filter_.push_back(max_filter->data<float>());
-  }
-}
-
 void XPUResNet50Compute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int batch_size = param.input->dims()[0];
-  int r = xdnn::conv2d_int16_resnet<float, int16_t>(
-      ctx.GetRawContext(),                             /* context */
-      batch_size,                                      /* num */
-      param.input->data<float>(),                      /* bottom */
-      &arg_filter_[0],                                 /* weight_list */
-      param.output->mutable_data<float>(TARGET(kXPU)), /* top */
-      &arg_bias_[0],                                   /* bias_list */
-      &arg_max_filter_[0] /* max_filter_list */);
-  CHECK_EQ(r, 0);
-}
+  int n = param.input->dims()[0];
+  int c = param.input->dims()[1];
+  int h = param.input->dims()[2];
+  int w = param.input->dims()[3];
 
-void XPUResNet50DtypeCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
-
-  int batch_size = param.input->dims()[0];
-  int r = xdnn::conv2d_int16_resnet_d<float, int16_t>(
+  int r = xdnn::resnet50<float, int16_t, int16_t, float16>(
       ctx.GetRawContext(),                             /* context */
-      batch_size,                                      /* num */
       param.input->data<float>(),                      /* bottom */
-      &arg_filter_[0],                                 /* weight_list */
+      arg_filter_,                                     /* weight_list */
       param.output->mutable_data<float>(TARGET(kXPU)), /* top */
-      &arg_bias_[0],                                   /* bias_list */
-      &arg_max_filter_[0] /* max_filter_list */);
+      n,
+      c,
+      h,
+      w,
+      nullptr,
+      arg_max_filter_,
+      nullptr,
+      arg_bias_,
+      {nullptr, nullptr, nullptr, nullptr},
+      true);
+
   CHECK_EQ(r, 0);
 }
 
@@ -91,19 +72,6 @@ REGISTER_LITE_KERNEL(__xpu__resnet50,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::xpu::XPUResNet50Compute,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("MaxFilter", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(__xpu__resnet50_d,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::XPUResNet50DtypeCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})

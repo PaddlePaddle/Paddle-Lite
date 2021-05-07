@@ -136,6 +136,14 @@ class ConvOpLite : public OpLite {
             op_desc.GetAttr<float>("slope");
         param_.activation_param.hard_sigmoid_offset =
             op_desc.GetAttr<float>("offset");
+      } else if (act_type == "prelu") {
+        param_.activation_param.active_type = lite_api::ActivationType::kPRelu;
+        param_.activation_param.Prelu_mode =
+            op_desc.GetAttr<std::string>("prelu_mode");
+        auto prelu_alpha_name = op_desc.Input("Prelu_alpha").front();
+        auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
+        param_.activation_param.Prelu_alpha =
+            const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>()));
       } else {
         LOG(FATAL) << "The fused conv only supports fuse with relu, leaky "
                       "relu, hard_swish, while the given activation type is "

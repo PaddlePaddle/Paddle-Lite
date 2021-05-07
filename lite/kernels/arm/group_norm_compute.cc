@@ -35,15 +35,23 @@ void GroupNormCompute::Run() {
   float epsilon = param.epsilon;
   int groups = param.groups;
   int channels = param.channels;
-  int n = param.x->dims()[0];
-  int c = param.x->dims()[1];
+  auto x_dims = param.x->dims();
+  int n = x_dims[0];
+  int c = x_dims[1];
+  if (channels == -1) {
+    CHECK_EQ(param.data_layout_str, "NCHW")
+        << "it only support NCHW layout!, but recived layout is "
+        << param.data_layout_str;
+    channels = c;
+  }
+  int height = x_dims[2];
+  int width = x_dims[3];
   int ch_per_group = channels / groups;
-  int height = param.x->dims()[2];
-  int width = param.x->dims()[3];
   int spatial_size = ch_per_group * height * width;
   int ngroup = n * groups;
   int cnt = spatial_size >> 4;
   int remain = spatial_size % 16;
+  float* std_vec = new float[param.saved_variance->numel()];
 // compute saved_mean and saved_variance
 #pragma omp parallel for
   for (int n = 0; n < ngroup; ++n) {
@@ -103,7 +111,8 @@ void GroupNormCompute::Run() {
     float variance = (summ - mean * mean * spatial_size) / spatial_size;
     float std = 1.f / sqrtf(variance + epsilon);
     saved_mean[n] = mean;
-    saved_variance[n] = std;
+    saved_variance[n] = variance;
+    std_vec[n] = std;
   }
   int in_size = height * width;
   cnt = in_size >> 4;
@@ -117,7 +126,7 @@ void GroupNormCompute::Run() {
     numc *= ch_per_group;
     for (int c = 0; c < ch_per_group; c++) {
       int chin = numc + c;
-      const float sstd_val = scale[chin] * saved_variance[i];
+      const float sstd_val = scale[chin] * std_vec[i];
       const float bias_val = bias[chin];
       const float mean_val = saved_mean[i];
       const float32x4_t vsstd = vdupq_n_f32(sstd_val);
@@ -158,6 +167,7 @@ void GroupNormCompute::Run() {
       }
     }
   }
+  delete[] std_vec;
 }
 
 }  // namespace arm
@@ -177,4 +187,6 @@ REGISTER_LITE_KERNEL(group_norm,
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Mean", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Variance", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

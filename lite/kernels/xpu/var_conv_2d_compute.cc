@@ -23,10 +23,10 @@ namespace kernels {
 namespace xpu {
 
 void VarConv2DCompute::PrepareForRun() {
-  offset_x_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
-  offset_y_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  offset_x_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
+  offset_y_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
   offset_x_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
   offset_y_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
@@ -135,6 +135,8 @@ REGISTER_LITE_KERNEL(var_conv_2d,
                      paddle::lite::kernels::xpu::VarConv2DCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("COLUMN", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("ROW", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kXPU))})

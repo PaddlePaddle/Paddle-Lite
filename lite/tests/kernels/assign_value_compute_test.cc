@@ -143,8 +143,10 @@ class AssignValueComputeTester : public arena::TestCase {
 
 TEST(AssignValue, precision) {
   Place place;
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif

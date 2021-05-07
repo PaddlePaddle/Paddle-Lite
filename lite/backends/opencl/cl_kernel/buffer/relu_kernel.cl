@@ -16,7 +16,8 @@ limitations under the License. */
 
 __kernel void relu(__global const CL_DTYPE* x_data, const int count, __global CL_DTYPE* out_data) {
   const int index = get_global_id(0); 
+  CL_DTYPE alpha;
   if (index < count) {
-    out_data[index] = activation(x_data[index]);
+    out_data[index] = activation(x_data[index], alpha);
   }
 }

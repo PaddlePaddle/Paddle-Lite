@@ -33,19 +33,22 @@ namespace mir {
  */
 class PostQuantDynamicPass : public ProgramPass {
  public:
+  // The ops in quant_ops will be applied post_quant_dynamic.
+  // Default, quant_ops = {"conv2d", "mul", "lookup_table"}
+  static std::vector<std::string> quant_ops;
+  // For the ops in quant_axis1_ops, the quantized axis is 1.
+  // Default, quant_axis1_ops = {"mul", "lookup_table"}
+  static const std::vector<std::string> quant_axis1_ops;
+
+ public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
   void SetQuantType(lite_api::QuantType quant_type) {
     quant_type_ = quant_type;
   }
-  void SetQuantOps(const std::vector<std::string>& quant_ops) {
-    quant_ops_ = quant_ops;
-  }
 
  private:
   lite_api::QuantType quant_type_{lite_api::QuantType::QUANT_INT16};
-  std::vector<std::string> quant_ops_{"conv2d", "mul"};
-  static const std::vector<std::string> quant_axis1_ops;
 };
 
 }  // namespace mir

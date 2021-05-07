@@ -23,7 +23,7 @@ void ShapeCompute::Run() {
   auto& param = Param<operators::ShapeParam>();
   int* output_data = param.Out->mutable_data<int>();
   auto in_dims = param.X->dims();
-  for (int i = 0; i < in_dims.size(); ++i) {
+  for (size_t i = 0; i < in_dims.size(); ++i) {
     output_data[i] = in_dims[i];
   }
 }
