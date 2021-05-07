@@ -222,6 +222,7 @@ add_operator(__xpu__sfa_head_op extra SRCS __xpu__sfa_head_op.cc DEPS ${op_DEPS}
 add_operator(__xpu__generate_sequence_op extra SRCS __xpu__generate_sequence_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__logit_op extra SRCS __xpu__logit_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)
