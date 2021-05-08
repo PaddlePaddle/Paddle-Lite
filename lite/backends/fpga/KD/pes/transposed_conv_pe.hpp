@@ -62,7 +62,6 @@ class TransposedConvPE : public PE {
     if (DLEngine::get_instance().isZU3()) {
       sub_filter_ena_ = false;
     }
-    sub_filter_ena_ = false;
 
     ConvParam& conv_param = pe_.param();
     // just for test
@@ -91,16 +90,17 @@ class TransposedConvPE : public PE {
       omit_size_ = deconv_get_omit(stride_width, kernel_width, padding_width);
       sub_conv_number_ = param_.strides[0];
       fill_sub_filters(&param_, &filter_);
-      conv_param.input = param_.input;
-      conv_param.output = param_.output;
-      conv_param.filter = param_.filter;
-      for(auto basic : const_cast<ConvParam&>(param_).splitParams()) {
-        basic->args.inplace.active_param.type = param_.activeParam.type;   
-      	conv_param.splitParams().push_back(basic);
+      conv_param = const_cast<ConvParam&>(param_);
+      std::cout << "deconv is " << conv_param.deconv << std::endl;
+      std::cout << "split feature num is " << conv_param.splitParams().size() << std::endl;
+      
+
+      for(auto basic_param : conv_param.splitParams()) {
+        basic_param->args.inplace.active_param.type = param_.activeParam.type;
+        basic_param->args.inplace.active_param.leaky_relu_factor =
+            float_to_half(param_.activeParam.leaky_relu_factor);
       }
-      conv_param.deconv = true;
-      conv_param.activeParam.type = param_.activeParam.type;
-      conv_param.cpu_concat = param_.cpu_concat;
+
     } else {
       Shape& input_shape = param_.input->shape();
       int padded_height = input_shape.height() +
