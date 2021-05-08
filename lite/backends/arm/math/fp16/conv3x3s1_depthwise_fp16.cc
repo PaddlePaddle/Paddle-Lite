@@ -660,22 +660,33 @@ inline int right_mask_3x3s1p0_fp16(int w_in,
                                    uint16_t* vmask,
                                    uint16_t* rmask) {
   const uint16_t right_pad_idx[16] = {
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+      9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0};
   const uint16_t right_pad_rst[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   int tile_w = w_out >> 3;
-  int cnt_col = tile_w;
-  uint16_t size_pad_right = static_cast<uint16_t>(w_in - (cnt_col << 3));
-  uint16_t rst_remain = static_cast<uint16_t>(w_out - (cnt_col << 3));
+  uint16_t size_pad_right = static_cast<uint16_t>(10 + (tile_w << 3) - w_in);
+  uint16_t rst_remain = static_cast<uint16_t>(w_out & 7);
+  if (rst_remain == 0 &&
+      size_pad_right == 10) {  // w_in == w_out and w_out % 8 == 0
+    tile_w -= 1;
+    rst_remain = 8;
+    size_pad_right = 2;
+  }
+  if (rst_remain == 0 &&
+      size_pad_right == 9) {  // pad_right=1 and w_out % 8 == 0
+    tile_w -= 1;
+    rst_remain = 8;
+    size_pad_right = 1;
+  }
   uint16x8_t rmask_rp =
       vcgtq_u16(vdupq_n_u16(rst_remain), vld1q_u16(right_pad_rst));
   uint8x16_t vmask_rp1 =
-      vcgtq_u16(vdupq_n_u16(size_pad_right), vld1q_u16(right_pad_idx));
+      vcgeq_u16(vld1q_u16(right_pad_idx), vdupq_n_u16(size_pad_right));
   uint8x16_t vmask_rp2 =
-      vcgtq_u16(vdupq_n_u16(size_pad_right), vld1q_u16(right_pad_idx + 8));
+      vcgeq_u16(vld1q_u16(right_pad_idx + 8), vdupq_n_u16(size_pad_right));
   vst1q_u16(vmask, vmask_rp1);
   vst1q_u16(vmask + 8, vmask_rp2);
   vst1q_u16(rmask, rmask_rp);
-  return cnt_col;
+  return tile_w;
 }
 
 inline void right_mask_3x3_s1_small_fp16(int w_in,
@@ -717,17 +728,17 @@ inline void right_mask_3x3_s1_small_fp16(int w_in,
   dr3 = dr2 + w_in;                                        \
   dr4 = dr3 + w_in;                                        \
   dr5 = dr4 + w_in;                                        \
-  if (i + 5 > h_in) {                                      \
+  if (i + 5 >= h_in) {                                     \
     switch (i + 5 - h_in) {                                \
-      case 5:                                              \
-        din_ptr1 = zero_ptr;                               \
       case 4:                                              \
-        din_ptr2 = zero_ptr;                               \
+        din_ptr1 = zero_ptr;                               \
       case 3:                                              \
-        din_ptr3 = zero_ptr;                               \
+        din_ptr2 = zero_ptr;                               \
       case 2:                                              \
-        din_ptr4 = zero_ptr;                               \
+        din_ptr3 = zero_ptr;                               \
       case 1:                                              \
+        din_ptr4 = zero_ptr;                               \
+      case 0:                                              \
         din_ptr5 = zero_ptr;                               \
       default:                                             \
         break;                                             \
