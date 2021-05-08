@@ -141,10 +141,6 @@ void OptBase::Run() {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
-    auto resulted_model_name =
-        record_strip_info_ ? "information of striped model" : "optimized model";
-    OPT_LOG << "Save the " << resulted_model_name << " into :" << lite_out_name_
-            << "successfully";
   }
 }
 
@@ -170,10 +166,6 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
-    auto resulted_model_name =
-        record_strip_info_ ? "information of striped model" : "optimized model";
-    OPT_LOG << "Save the " << resulted_model_name << " into :" << lite_out_name_
-            << "successfully";
   }
 }
 // collect ops info of modelset
@@ -220,8 +212,6 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
           lite::Join<std::string>({input_model_dir, param_file}, "/");
     }
 
-    OPT_LOG << "Start model transformation ... ";
-
     opt_config_.set_model_dir(input_model_dir);
     opt_config_.set_model_file(model_file);
     opt_config_.set_param_file(param_file);
@@ -229,8 +219,6 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info);
-
-    OPT_LOG << "Transformation done. ";
   }
 
   // 3. if record_strip_info = true, we will record striping info

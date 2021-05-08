@@ -452,14 +452,14 @@ void Predictor::CheckPaddleOpVersions(
           // registry.
           if ((model_op_version_index > iter->second) &&
               (model_op_version_index != -1)) {
-            LOG(WARNING) << "Warning: incompatible paddle op version. Kernel ("
-                         << kernel->name() << ") requires that op_version("
-                         << iter->first << ")==" << iter->second
-                         << ". However, the op_version(" << iter->first
-                         << ") in this models is " << model_op_version_index
-                         << ". It's suggested to use PaddlePaddle and "
-                            "Paddle-Lite of the same op_version("
-                         << iter->first << ").";
+            LOG(INFO) << "Warning: incompatible paddle op version. Kernel ("
+                      << kernel->name() << ") requires that op_version("
+                      << iter->first << ")==" << iter->second
+                      << ". However, the op_version(" << iter->first
+                      << ") in this models is " << model_op_version_index
+                      << ". It's suggested to use PaddlePaddle and "
+                         "Paddle-Lite of the same op_version("
+                      << iter->first << ").";
           }
         }
       }
