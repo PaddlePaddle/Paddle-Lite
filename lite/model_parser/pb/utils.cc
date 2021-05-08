@@ -52,6 +52,7 @@ lite::VarDataType ConvertVarType(
     break
     CASE(FP64);
     CASE(FP32);
+    CASE(FP16);
     CASE(INT8);
     CASE(UINT8);
     CASE(INT16);

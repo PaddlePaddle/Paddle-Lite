@@ -22,15 +22,14 @@ namespace lite {
 namespace operators {
 
 bool SliceOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
+  CHECK(param_.X);
+  CHECK(param_.Out);
   CHECK_LT(param_.X->dims().size(), 7u)
       << "The rank of input X should be less than 7";
   return true;
 }
 
 bool SliceOp::InferShapeImpl() const {
-  CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto in_dims = param_.X->dims();
   auto out_dims = in_dims;
@@ -124,6 +123,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.StartsTensorList.clear();
   if (opdesc.HasInput("StartsTensorList") &&
       !opdesc.Input("StartsTensorList").empty()) {
+    param_.StartsTensorList.clear();
     auto StartsTensorList = opdesc.Input("StartsTensorList");
     for (auto var : StartsTensorList) {
       param_.StartsTensorList.push_back(
@@ -136,6 +136,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.EndsTensorList.clear();
   if (opdesc.HasInput("EndsTensorList") &&
       !opdesc.Input("EndsTensorList").empty()) {
+    param_.EndsTensorList.clear();
     auto EndsTensorList = opdesc.Input("EndsTensorList");
     for (auto var : EndsTensorList) {
       param_.EndsTensorList.push_back(

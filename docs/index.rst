@@ -69,6 +69,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/mediatek_apu
   demo_guides/imagination_nna
   demo_guides/bitmain
+  demo_guides/intel_fpga
 
 .. toctree::
   :maxdepth: 1

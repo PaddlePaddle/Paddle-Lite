@@ -64,23 +64,12 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   }
 }
 
-void XPUMultiEncoderCompute::Run() {
+int XPUMultiEncoderCompute::bert_encoder_run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-
-  encoder_param_.batch_size = param.input->dims()[0];
-  encoder_param_.from_seq_len = param.input->dims()[1];
-  encoder_param_.to_seq_len = param.input->dims()[1];
-  std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
-  encoder_param_.mask_shape =
-      std::vector<int>(mask_shape.begin(), mask_shape.end());
-  encoder_param_.slice_starts = param.slice_starts;
-  encoder_param_.slice_ends = param.slice_ends;
-  encoder_param_.slice_axes = param.slice_axes;
+  ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
 
   int r = -1;
-
-  ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
   if (param.precision == "int31") {
     r = xdnn::bert_encoder_transformer_int31(
         ctx.GetRawContext(),                             /* context */
@@ -121,6 +110,74 @@ void XPUMultiEncoderCompute::Run() {
         param.fc_weight_max->data<float>(),              /* fc_weights_max */
         encoder_param_);
   }
+  return r;
+}
+
+int XPUMultiEncoderCompute::transformer_encoder_run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+  ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
+
+  int r = -1;
+  if (param.precision == "int31") {
+    LOG(FATAL) << "Not support int31 at now";
+  } else if (param.precision == "int8") {
+    LOG(FATAL) << "Not support int8 at now";
+  } else {
+    r = xdnn::transformer_encoder_int16<float, int16_t, float>(
+        ctx.GetRawContext(),                             /* context */
+        param.input->data<float>(),                      /* from_tensor */
+        param.input->data<float>(),                      /* to_tensor */
+        param.mask->data<float>(),                       /* att_mask */
+        param.output->mutable_data<float>(TARGET(kXPU)), /* output */
+        arg_fc_weight_int16_,                            /* fc_weights */
+        arg_fc_bias_,                                    /* fc_biass */
+        arg_ln_scale_,                                   /* ln_scales */
+        arg_ln_bias_,                                    /* ln_biass */
+        param.fc_weight_max->data<float>(),              /* fc_weights_max */
+        encoder_param_);
+  }
+  return r;
+}
+
+void XPUMultiEncoderCompute::Run() {
+  auto& param = this->Param<param_t>();
+
+  encoder_param_.batch_size = param.input->dims()[0];
+  encoder_param_.from_seq_len = param.input->dims()[1];
+  encoder_param_.to_seq_len = param.input->dims()[1];
+  std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
+  encoder_param_.mask_shape =
+      std::vector<int>(mask_shape.begin(), mask_shape.end());
+  encoder_param_.slice_starts = param.slice_starts;
+  encoder_param_.slice_ends = param.slice_ends;
+  encoder_param_.slice_axes = param.slice_axes;
+  const bool norm_before_ = param.norm_before;
+
+  if (param.SeqLod && param.SeqLod->data<int>()) {
+    auto& ctx = this->ctx_->As<XPUContext>();
+    ctx.GetRawContext()->batch_split_type = -1;  // disable auto split batch
+    encoder_param_.seq_lod.resize(param.SeqLod->numel());
+    memcpy(encoder_param_.seq_lod.data(),
+           param.SeqLod->data<int>(),
+           sizeof(int) * param.SeqLod->numel());
+    encoder_param_.adaptive_seqlen = true;
+    encoder_param_.batch_size = param.SeqLod->numel() - 1;
+    int seq_pad_len = 0;
+    for (auto i = 1; i < param.SeqLod->numel(); i++) {
+      int cur_seqlen =
+          param.SeqLod->data<int>()[i] - param.SeqLod->data<int>()[i - 1];
+      seq_pad_len = seq_pad_len > cur_seqlen ? seq_pad_len : cur_seqlen;
+    }
+    encoder_param_.from_seq_len = seq_pad_len;
+    encoder_param_.to_seq_len = seq_pad_len;
+  }
+  int r = -1;
+  if (norm_before_) {
+    r = transformer_encoder_run();
+  } else {
+    r = bert_encoder_run();
+  }
   CHECK_EQ(r, 0);
 }
 
@@ -136,6 +193,8 @@ REGISTER_LITE_KERNEL(__xpu__multi_encoder,
                      paddle::lite::kernels::xpu::XPUMultiEncoderCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("SeqLod",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("FCWeight", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("FCBias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("LNScale", {LiteType::GetTensorTy(TARGET(kXPU))})

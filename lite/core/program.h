@@ -29,6 +29,9 @@
 #ifdef LITE_WITH_NVTX
 #include "lite/backends/cuda/nvtx_wrapper.h"
 #endif
+#ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_runtime.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -136,6 +139,16 @@ struct Instruction {
   void Sync() const { kernel_->mutable_context()->As<CUDAContext>().Sync(); }
 #endif
 
+#ifdef LITE_WITH_OPENCL
+  bool need_flush(const int inst_idx) const {
+    if (kernel_->target() == TargetType::kOpenCL && inst_idx % 10 == 0) {
+      return true;
+    }
+    return false;
+  }
+  void Flush() const { CLRuntime::Global()->command_queue().flush(); }
+#endif
+
 #ifdef LITE_WITH_PROFILE
   void set_profiler(profile::Profiler* profiler) {
     profiler_ = profiler;
@@ -158,7 +171,9 @@ struct Instruction {
   }
 
   void SetProfileRuntimeOpInfo(paddle::lite::profile::OpCharacter* ch) {
+    CHECK(ch != nullptr) << "OpCharacter should not be nullptr.";
     auto* op_lite = static_cast<paddle::lite::OpLite*>(ch->op_lite);
+    CHECK(op_lite != nullptr) << "op_lite should not be nullptr.";
     op_lite->GetOpRuntimeInfo(ch);
   }
 #endif

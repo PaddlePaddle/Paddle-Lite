@@ -56,6 +56,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     act_types.push_back("leaky_relu");
     act_types.push_back("hard_swish");
     act_types.push_back("hard_sigmoid");
+    act_types.push_back("prelu");
   }
   if (!has_int8 && has_cuda) {
     act_types.push_back("leaky_relu");
@@ -64,10 +65,17 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     act_types.push_back("relu");
     act_types.push_back("relu6");
   }
+  bool has_alpha = false;
   for (auto conv_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
     for (auto act_type : act_types) {
+      if (act_type == "prelu") {
+        has_alpha = true;
+      } else {
+        has_alpha = false;
+      }
       for (auto has_bias : {true, false}) {
-        fusion::ConvActivationFuser fuser(conv_type, act_type, has_bias);
+        fusion::ConvActivationFuser fuser(
+            conv_type, act_type, has_bias, has_alpha);
         fuser(graph.get());
       }
     }

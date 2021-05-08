@@ -62,6 +62,7 @@ class TransposedConvPE : public PE {
     if (DLEngine::get_instance().isZU3()) {
       sub_filter_ena_ = false;
     }
+    sub_filter_ena_ = false;
 
     ConvParam& conv_param = pe_.param();
     // just for test
@@ -195,6 +196,7 @@ class TransposedConvPE : public PE {
       int off_addr = omit_size_ * oc * ow;
       param_.output->unalignImage();
       param_.output->setOffset(off_addr);
+
     }
 
     // param_.output->saveToFile("final2", true);

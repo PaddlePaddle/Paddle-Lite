@@ -141,11 +141,14 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
     std::string op_path = op2pathmap[*op_info];
     fputs(op_path.c_str(), opf_source);
     fputc('\n', opf_source);
+    if (op_path == "calib_once_op.cc") {
+      fputs("calib_op.cc\n", opf_source);
+    }
   }
   std::fclose(opf_source);
   std::fclose(opf);
-  LOG(INFO) << "operators information of tailored model is stored into: "
-            << opf_path;
+  OPT_LOG << "operators information of tailored model is stored into: "
+          << opf_path;
 
   // write Kernel_type and Kernel_path into file
   for (auto kernel_info = kernels_info.begin();
@@ -165,8 +168,8 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   }
   std::fclose(kpf_source);
   std::fclose(kpf);
-  LOG(INFO) << "kernels information of tailored model is stored into: "
-            << kpf_path;
+  OPT_LOG << "kernels information of tailored model is stored into: "
+          << kpf_path;
 }
 
 #ifndef LITE_WITH_FPGA
@@ -197,6 +200,11 @@ std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 // get outputnames
 std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 
+// get input tensor precision type
+const std::vector<PrecisionType> &Predictor::GetInputPrecisions() const {
+  return input_precisions_;
+}
+
 // get param names
 std::vector<std::string> Predictor::GetParamNames() {
   return exec_scope_->AttributeVarNames();
@@ -222,6 +230,7 @@ void Predictor::PrepareFeedFetch() {
 
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
+  input_precisions_.resize(feeds.size());
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
@@ -229,6 +238,9 @@ void Predictor::PrepareFeedFetch() {
   for (size_t i = 0; i < fetchs.size(); i++) {
     output_names_[fetchs[i]->GetAttr<int>("col")] =
         fetchs[i]->Input("X").front();
+  }
+  for (size_t i = 0; i < feeds.size(); i++) {
+    input_precisions_[i] = GetInput(i)->precision();
   }
 }
 
@@ -442,7 +454,7 @@ void Predictor::CheckPaddleOpVersions(
           // registry.
           if ((model_op_version_index > iter->second) &&
               (model_op_version_index != -1)) {
-            LOG(WARNING) << "Error: incompatible paddle op version. Kernel ("
+            LOG(WARNING) << "Warning: incompatible paddle op version. Kernel ("
                          << kernel->name() << ") requires that op_version("
                          << iter->first << ")==" << iter->second
                          << ". However, the op_version(" << iter->first
@@ -466,6 +478,19 @@ void Predictor::CheckPaddleOpVersions(
 //     feed_list[i].ShareDataWith(tensors[i]);
 // }
 // #endif
+
+void Predictor::CheckInputValid() {
+  for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
+    if (GetInput(idx)->precision() != input_precisions_[idx]) {
+      LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
+                   << ") Tensor name (" << input_names_[idx]
+                   << ") Require Precision type ("
+                   << PrecisionToStr(input_precisions_[idx])
+                   << ") Input Precision type ("
+                   << PrecisionToStr(GetInput(idx)->precision()) << ").";
+    }
+  }
+}
 
 }  // namespace lite
 }  // namespace paddle

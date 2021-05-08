@@ -21,6 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+template <typename InType>
 class ConcatCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ConcatParam;

@@ -52,6 +52,7 @@ void FillAnyLikeCompute::Run() {
                                   static_cast<int64_t>(param.value));
       break;
     }
+    case -1:
     case 5: {
       auto data = param.Out->mutable_data<float>(TARGET(kXPU));
       r = xdnn::constant<float>(ctx.GetRawContext(),

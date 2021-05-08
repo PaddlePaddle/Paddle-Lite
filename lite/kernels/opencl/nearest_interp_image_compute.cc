@@ -53,14 +53,12 @@ class NearestInterpComputeImageDefault
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
     const auto& y_dims = param.Out->dims();
-    auto* x_img =
-        param.X->data<half_t,
-                      cl::Image2D>();  // use half_t represents half float
+    auto* x_img = GET_DATA_GPU(param.X);
     auto out_image_shape = InitImageDimInfoWith(y_dims);
-    auto* out_img = param.Out->mutable_data<half_t, cl::Image2D>(  // use half_t
-        // represents half float
-        out_image_shape["width"],
-        out_image_shape["height"]);
+    auto* out_img = MUTABLE_DATA_GPU(param.Out,
+                                     out_image_shape["width"],
+                                     out_image_shape["height"],
+                                     nullptr);
 
     float scale_h = y_dims[2] / x_dims[2];
     float scale_w = y_dims[3] / x_dims[3];

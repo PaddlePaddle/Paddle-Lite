@@ -37,12 +37,12 @@ void Im2SequenceCompute::Run() {
   std::vector<uint64_t> im_offset;
   im_offset.push_back(0);
 
-  XPUScratchPadGuard xpu_x_nhwc_guard_ = TargetWrapperXPU::MallocScratchPad(
-      param.X->numel() * sizeof(float), false /*use_l3 */);
+  XPUScratchPadGuard xpu_x_nhwc_guard_ =
+      TargetWrapperXPU::MallocScratchPad(param.X->numel() * sizeof(float));
   float* x_nhwc = reinterpret_cast<float*>(xpu_x_nhwc_guard_->addr_);
 
-  XPUScratchPadGuard xpu_y_ofc_guard_ = TargetWrapperXPU::MallocScratchPad(
-      param.Out->numel() * sizeof(float), false /*use_l3 */);
+  XPUScratchPadGuard xpu_y_ofc_guard_ =
+      TargetWrapperXPU::MallocScratchPad(param.Out->numel() * sizeof(float));
   float* y_ofc = reinterpret_cast<float*>(xpu_y_ofc_guard_->addr_);
 
   int r = xdnn::transpose<float>(ctx.GetRawContext(),
@@ -66,7 +66,8 @@ void Im2SequenceCompute::Run() {
                           false);
 
   CHECK_EQ(r, 0);
-  int output_imsize = param.Out->numel() / channel / (kernel_h * kernel_w);
+  int output_imsize =
+      param.Out->numel() / channel / (kernel_h * kernel_w) / batch;
   r = xdnn::transpose<float>(
       ctx.GetRawContext(),
       y_ofc,

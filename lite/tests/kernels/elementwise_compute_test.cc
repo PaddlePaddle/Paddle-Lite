@@ -61,8 +61,12 @@ T div(T a, T b) {
 
 template <class T>
 T floordiv(T a, T b) {
-  LOG(INFO) << "--- k, " << a << ", " << b;
   return static_cast<T>(std::trunc(a / b));
+}
+
+template <class T>
+T pow(T a, T b) {
+  return std::pow(a, b);
 }
 
 template <class T>
@@ -76,16 +80,20 @@ T min(T a, T b) {
 }
 
 template <class T>
-T pow(T a, T b) {
-  return std::pow(a, b);
-}
-
-template <class T>
 T mod(T a, T b) {
   T res = a % b;
   if ((res != 0) && ((res < 0) != (b < 0))) res += b;
   return res;
 }
+
+#ifdef ENABLE_ARM_FP16
+template <>
+float16_t mod<float16_t>(float16_t a, float16_t b) {
+  float16_t res = fmod(a, b);
+  if ((res != 0) && ((b < 0) != (res < 0))) res += b;
+  return res;
+}
+#endif
 
 template <>
 float mod<float>(float a, float b) {
@@ -265,6 +273,15 @@ void TestEltTypes(Place place, float abs_error) {
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
   }
+
+  if (place.target == TARGET(kARM)) {
+    Place arm_int32_place(TARGET(kARM), PRECISION(kInt32));
+    TestElt<int32_t>(
+        arm_int32_place, abs_error, "floordiv", {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+    Place arm_int64_place(TARGET(kARM), PRECISION(kInt64));
+    TestElt<int64_t>(
+        arm_int64_place, abs_error, "floordiv", {2, 3, 4, 5}, {3}, 1);
+  }
 }
 
 void TestEltFuseAct(Place place, float abs_error) {
@@ -274,6 +291,40 @@ void TestEltFuseAct(Place place, float abs_error) {
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1, "relu");
   }
 }
+
+#ifdef ENABLE_ARM_FP16
+void TestFp16EltDims(Place place, float abs_error) {
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {2, 3, 4}, 0);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {2, 3}, 0);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3}, {2}, 0);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {3, 4}, 1);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {3, 4}, 1);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3}, {3}, 1);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {4, 5}, 2);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {4}, 2);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {5}, 3);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {3, 4, 5}, -1);
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {3, 4}, -1);
+}
+
+void TestFp16EltFuseAct(Place place, float abs_error) {
+  TestElt<float16_t>(
+      place, abs_error, "add", {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {2, 3, 4}, 0, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {2, 3}, 0, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3}, {2}, 0, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {3, 4}, 1, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {3, 4}, 1, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3}, {3}, 1, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {4, 5}, 2, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {4}, 2, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {5}, 3, "relu");
+  TestElt<float16_t>(
+      place, abs_error, "add", {2, 3, 4, 5}, {3, 4, 5}, -1, "relu");
+  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {3, 4}, -1, "relu");
+}
+#endif
 
 TEST(Elementwise, precision) {
   Place place;
@@ -292,7 +343,11 @@ TEST(Elementwise, precision) {
 #else
   return;
 #endif
-
+#ifdef ENABLE_ARM_FP16
+  Place place1(TARGET(kARM), PRECISION(kFP16));
+  TestFp16EltDims(place1, abs_error);
+  TestFp16EltFuseAct(place1, abs_error);
+#endif
   TestEltDims(place, abs_error);
   TestEltTypes(place, abs_error);
   TestEltFuseAct(place, abs_error);
@@ -317,10 +372,15 @@ TEST(elementwise_x86, precison) {
   Place place(TARGET(kX86));
   float abs_error = 1e-5;
 
-  TestEltX86<float>(place, abs_error, "floordiv", "float32");
-  TestEltX86<int32_t>(place, abs_error, "floordiv", "int32");
-  TestEltX86<int64_t>(place, abs_error, "floordiv", "int64");
-  TestEltX86<int32_t>(place, abs_error, "mod", "int32");
+  for (auto op : std::vector<std::string>{
+           "add", "sub", "mul", "div", "floordiv", "max", "min"}) {
+    TestEltX86<float>(place, abs_error, op, "def");
+    TestEltX86<int>(place, abs_error, op, "int32");
+    TestEltX86<int64_t>(place, abs_error, op, "int64");
+  }
+
+  TestEltX86<float>(place, abs_error, "pow", "def");
+  TestEltX86<int>(place, abs_error, "mod", "int32");
   TestEltX86<int64_t>(place, abs_error, "mod", "int64");
 }
 #endif

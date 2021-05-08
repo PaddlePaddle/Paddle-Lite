@@ -21,6 +21,9 @@
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -148,6 +151,34 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
   return false;
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+inline bool direct_conv_trans_weights<PRECISION(kFP16), PRECISION(kFP16)>(
+    const Tensor* win,
+    Tensor* wout,
+    const Tensor* bin,
+    Tensor* bout,
+    int stride,
+    const std::vector<float>& w_scale,
+    float in_scale,
+    float out_scale,
+    std::vector<float>& merge_scale,  // NOLINT
+    float* relu_clipped_coef) {
+  constexpr int cblock = 8;
+  int oc = win->dims()[0];
+  int ic = win->dims()[1];
+  int kh = win->dims()[2];
+  int kw = win->dims()[3];
+  int cround = ROUNDUP(oc, cblock);
+  wout->Resize({cround, ic, kh, kw});
+  auto w_in_data = win->data<float16_t>();
+  auto transed_w_data = wout->mutable_data<float16_t>();
+  lite::arm::math::conv_trans_weights_numc(
+      w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
+  return false;
+}
+#endif
+
 /// only support 3x3s1 and 3x3s2
 template <PrecisionType Ptype, PrecisionType OutType>
 class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
@@ -172,6 +203,8 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
         << "direct conv only support conv3x3s1 and conv3x3s2";
     CHECK(kw == 3 && kh == 3)
         << "direct conv only support conv3x3s1 and conv3x3s2";
+
+    LOG(INFO) << "param.filter: ";
     flag_trans_bias_ = direct_conv_trans_weights<Ptype, OutType>(
         param.filter,
         &weights_,
@@ -192,8 +225,19 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
       paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
   }
-
   std::string kernel_func_name_{"NotImplForConvDirect"};
+#define PROFILE_INFO(dtype1, dtype2)                                        \
+  template <>                                                               \
+  void DirectConv<PRECISION(dtype1), PRECISION(dtype2)>::                   \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
+  }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
+
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
 
   /// todo, support inplace weights transform

@@ -82,6 +82,7 @@ lite_option(WITH_SYSTEM_BLAS    "Use system blas library"           OFF)
 
 # for lite, both server and mobile framework.
 lite_option(LITE_WITH_JAVA      "Enable Java JNI lib in lite mode" OFF)
+lite_option(LITE_WITH_STATIC_LIB      "Enable static cplus lib in lite mode" OFF)
 lite_option(LITE_WITH_PYTHON    "Enable Python api lib in lite mode" OFF)
 lite_option(LITE_WITH_CUDA      "Enable CUDA in lite mode" OFF)
 lite_option(LITE_WITH_X86       "Enable X86 in lite mode"  ON)
@@ -99,6 +100,7 @@ lite_option(LITE_WITH_TRAIN     "Enable training operators and kernels in lite" 
 lite_option(LITE_WITH_OPENMP    "Enable OpenMP in lite framework" ON)
 lite_option(LITE_WITH_OPENCL    "Enable OpenCL support in lite" OFF)
 lite_option(LITE_WITH_FPGA      "Enable FPGA support in lite" OFF)
+lite_option(LITE_WITH_INTEL_FPGA      "Enable Intel FPGA support in lite" OFF)
 lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
 lite_option(LITE_WITH_PROFILE   "Enable profile mode in lite framework"  OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF)
@@ -184,15 +186,20 @@ if(LITE_WITH_IMAGINATION_NNA)
 	include(device/imagination_nna)
 endif()
 
+if(LITE_WITH_INTEL_FPGA)
+	include(device/intel_fpga)
+endif()
+
 # flatbuffer module for loading model
 if(LITE_UPDATE_FBS_HEAD)
     include(external/flatbuffers)
 else()
     include_directories("${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build")
     add_custom_target(fbs_headers ${TARGET}
-            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/framework_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
-            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/param_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
-            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/framework_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/param_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/tune_cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
             )
 endif()
 

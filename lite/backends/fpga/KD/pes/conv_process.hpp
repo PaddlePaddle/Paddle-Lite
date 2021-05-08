@@ -442,11 +442,11 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
   }
 
+
   // support jump write
     int jump_out_start_offset = param.original_out_channel;
     int fuse_idx = param.fuse_idx;
     bool enable_jump = param.wd_enable;
-
 
   float16* out_base_address = nullptr;
   for (int i = 0; i < split_num; i++) {
@@ -481,6 +481,9 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
         out_address =
             conv_param->output.mutableData<float16>(FP16, extra_shape);
       } else {
+
+        // base_address is allocated in first iteration;
+
         out_address = out_base_address + offset;
       }
     } else if(!enable_jump) {

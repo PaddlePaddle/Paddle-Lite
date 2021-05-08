@@ -310,6 +310,7 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
     }
     const_cast<ConvParam&>(sb_param).splitParams().clear();
 
+
   }
 }
 

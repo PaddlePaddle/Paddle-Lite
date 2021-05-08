@@ -43,6 +43,7 @@ class FakeChannelWiseDequantizeMaxAbsOpLite : public OpLite {
     param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
 
     auto args = op_desc.Input("Scales");
+    param_.scale_tensors.clear();
     for (auto arg : args) {
       auto *var = scope->FindVar(arg);
       if (var != nullptr) {

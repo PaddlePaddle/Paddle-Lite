@@ -57,15 +57,12 @@ namespace fusion {
   auto* weight_##num = VarNode(STR2(weight_##num))                             \
                            ->assert_is_op_input("__xpu__conv2d", "Filter")     \
                            ->AsIntermediate();                                 \
-  auto* weight_max_##num =                                                     \
-      VarNode(STR2(weight_max_##num))                                          \
-          ->assert_is_op_input("__xpu__conv2d", "FilterMax")                   \
-          ->AsIntermediate();                                                  \
   auto* bias_##num = VarNode(STR2(bias_##num))                                 \
                          ->assert_is_op_input("__xpu__conv2d", "Bias")         \
                          ->AsIntermediate();                                   \
   auto* conv_##num = OpNode(STR2(conv_##num), "__xpu__conv2d")                 \
                          ->assert_op_attr<bool>("has_branch", false)           \
+                         ->assert_op_attr<bool>("has_bias", true)              \
                          ->AsIntermediate();                                   \
   auto* conv_out_##num = VarNode(STR2(conv_out_##num))                         \
                              ->assert_is_op_output("__xpu__conv2d", "Output"); \
@@ -73,10 +70,9 @@ namespace fusion {
       VarNode(STR2(conv_out_max_##num))                                        \
           ->assert_is_op_output("__xpu__conv2d", "OutputMax");
 
-#define CONV_CONNECT(num)           \
-  *weight_##num >> *conv_##num;     \
-  *weight_max_##num >> *conv_##num; \
-  *bias_##num >> *conv_##num;       \
+#define CONV_CONNECT(num)       \
+  *weight_##num >> *conv_##num; \
+  *bias_##num >> *conv_##num;   \
   *conv_##num >> *conv_out_max_##num;
 
 class XPUConsecutiveConv2dFuser : public FuseBase {
@@ -104,16 +100,13 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     std::vector<std::string> conv_name;
     std::vector<std::string> filter_name;
     std::vector<std::string> bias_name;
-    std::vector<std::string> filter_max_name;
     for (int i = 0; i < 3; i++) {
       std::string cur_conv_name = "conv_" + std::to_string(i);
       std::string cur_weight_name = "weight_" + std::to_string(i);
       std::string cur_bias_name = "bias_" + std::to_string(i);
-      std::string cur_filter_max_name = "weight_max_" + std::to_string(i);
       conv_name.push_back(cur_conv_name);
       filter_name.push_back(matched.at(cur_weight_name)->arg()->name);
       bias_name.push_back(matched.at(cur_bias_name)->arg()->name);
-      filter_max_name.push_back(matched.at(cur_filter_max_name)->arg()->name);
     }
     cpp::OpDesc op_desc;
     auto conv_0 = matched.at("conv_0")->stmt()->op();
@@ -139,7 +132,7 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     std::vector<float> act_param;
     std::vector<int> encode_filter_size{0};
     std::vector<int> encode_bias_size{0};
-    std::vector<int> encode_filter_max_size{0};
+    std::vector<int> conv_bias{1, 1, 1};
     for (auto name : conv_name) {
       auto cur_filter_dims =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
@@ -154,18 +147,20 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
               "dilations");
       auto cur_groups =
-          matched.at(name)->stmt()->op_info()->GetAttr<int>("groups");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "groups");
       auto cur_act_type =
-          matched.at(name)->stmt()->op_info()->GetAttr<int>("act_type");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "act_type");
       auto cur_act_param =
-          matched.at(name)->stmt()->op_info()->GetAttr<float>("act_param");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<float>>(
+              "act_param");
       filter_dims.insert(
           filter_dims.end(), cur_filter_dims.begin(), cur_filter_dims.end());
       encode_filter_size.push_back(encode_filter_size.back() +
                                    cur_filter_dims[0] * cur_filter_dims[1] *
                                        cur_filter_dims[2] * cur_filter_dims[3]);
       encode_bias_size.push_back(encode_bias_size.back() + cur_filter_dims[0]);
-      encode_filter_max_size.push_back(encode_filter_max_size.back() + 4);
       conv_strides.insert(
           conv_strides.end(), cur_strides.begin(), cur_strides.end());
       if (cur_paddings.size() == 2) {
@@ -181,9 +176,9 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
           conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
       conv_dilations.insert(
           conv_dilations.end(), cur_dilations.begin(), cur_dilations.end());
-      conv_groups.push_back(cur_groups);
-      act_type.push_back(cur_act_type);
-      act_param.push_back(cur_act_param);
+      conv_groups.push_back(cur_groups[0]);
+      act_type.push_back(cur_act_type[0]);
+      act_param.push_back(cur_act_param[0]);
     }
     op_desc.SetAttr("op_type", op_type);
     op_desc.SetAttr("place_x", place_x);
@@ -197,28 +192,33 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     op_desc.SetAttr("act_type", act_type);
     op_desc.SetAttr("act_param", act_param);
     op_desc.SetAttr("block_lod", block_lod);
+    op_desc.SetAttr("conv_bias", conv_bias);
+    op_desc.SetAttr<bool>("has_bias", true);
+    op_desc.SetAttr<bool>("has_branch", false);
 
-    std::unique_ptr<int16_t[]> encode_filter_int16(
-        new int16_t[encode_filter_size.back()]);
+    std::unique_ptr<float[]> encode_filter_float(
+        new float[encode_filter_size.back()]);
     for (int i = 0; i < filter_name.size(); i++) {
       auto* filter_t = scope->FindMutableTensor(filter_name[i]);
-      int16_t* filter_on_host = filter_t->mutable_data<int16_t>();
-      memcpy(encode_filter_int16.get() + encode_filter_size[i],
-             filter_on_host,
-             (encode_filter_size[i + 1] - encode_filter_size[i]) *
-                 sizeof(int16_t));
+      float* filter_on_host = filter_t->mutable_data<float>();
+      memcpy(
+          encode_filter_float.get() + encode_filter_size[i],
+          filter_on_host,
+          (encode_filter_size[i + 1] - encode_filter_size[i]) * sizeof(float));
     }
     std::string new_filter_name = "block_" + filter_name[0];
     auto* new_filter_node = graph->NewArgumentNode(new_filter_name);
     new_filter_node->arg()->is_weight = true;
     new_filter_node->arg()->type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kInt16), DATALAYOUT(kNCHW));
+        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_filter_t = scope->NewTensor(new_filter_name);
+    new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_filter_t->set_persistable(true);
     new_filter_t->Resize({encode_filter_size.back()});
-    int16_t* new_filter_ptr = new_filter_t->mutable_data<int16_t>();
+    float* new_filter_ptr = new_filter_t->mutable_data<float>();
     memcpy(new_filter_ptr,
-           encode_filter_int16.get(),
-           encode_filter_size.back() * sizeof(int16_t));
+           encode_filter_float.get(),
+           encode_filter_size.back() * sizeof(float));
     op_desc.SetInput("Filter", {new_filter_name});
 
     std::unique_ptr<float[]> encode_bias(new float[encode_bias_size.back()]);
@@ -235,35 +235,14 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     new_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_bias_t = scope->NewTensor(new_bias_name);
+    new_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_bias_t->set_persistable(true);
     new_bias_t->Resize({encode_bias_size.back()});
     float* new_bias_ptr = new_bias_t->mutable_data<float>();
     memcpy(new_bias_ptr,
            encode_bias.get(),
            encode_bias_size.back() * sizeof(float));
     op_desc.SetInput("Bias", {new_bias_name});
-
-    std::unique_ptr<float[]> encode_filter_max(
-        new float[encode_filter_max_size.back()]);
-    for (int i = 0; i < filter_max_name.size(); i++) {
-      auto* filter_max_t = scope->FindMutableTensor(filter_max_name[i]);
-      float* filter_max_on_host = filter_max_t->mutable_data<float>();
-      memcpy(encode_filter_max.get() + encode_filter_max_size[i],
-             filter_max_on_host,
-             (encode_filter_max_size[i + 1] - encode_filter_max_size[i]) *
-                 sizeof(float));
-    }
-    std::string new_filter_max_name = "block_" + filter_max_name[0];
-    auto* new_filter_max_node = graph->NewArgumentNode(new_filter_max_name);
-    new_filter_max_node->arg()->is_weight = true;
-    new_filter_max_node->arg()->type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    auto* new_filter_max_t = scope->NewTensor(new_filter_max_name);
-    new_filter_max_t->Resize({encode_filter_max_size.back()});
-    float* new_filter_max_ptr = new_filter_max_t->mutable_data<float>();
-    memcpy(new_filter_max_ptr,
-           encode_filter_max.get(),
-           encode_filter_max_size.back() * sizeof(float));
-    op_desc.SetInput("FilterMax", {new_filter_max_name});
 
     auto& valid_places = conv_0->valid_places();
     auto block_op = LiteOpRegistry::Global().Create(op_desc.Type());
@@ -272,7 +251,6 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
 
     IR_NODE_LINK_TO(matched.at("input"), new_op_node);
     IR_NODE_LINK_TO(new_filter_node, new_op_node);
-    IR_NODE_LINK_TO(new_filter_max_node, new_op_node);
     IR_NODE_LINK_TO(new_bias_node, new_op_node);
     IR_NODE_LINK_TO(new_op_node, matched.at("conv_out_2"));
     IR_NODE_LINK_TO(new_op_node, matched.at("conv_out_max_2"));

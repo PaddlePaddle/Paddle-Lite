@@ -96,6 +96,7 @@ void generate_lod(int seq_num,
     seq_offset.push_back(uint64_t(sum));
   }
 }
+
 void test_sequence_softmax(Place place) {
   int max_len = 10;
   for (int seq_num : {1, 3, 5}) {
@@ -110,13 +111,14 @@ void test_sequence_softmax(Place place) {
 }
 
 TEST(SequenceSoftmax, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_sequence_softmax(place);
+  Place place;
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  test_sequence_softmax(place);
 }
 
 }  // namespace lite

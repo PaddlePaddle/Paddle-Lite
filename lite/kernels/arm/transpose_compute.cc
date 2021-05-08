@@ -31,6 +31,7 @@ void transpose_mat(const Dtype* din,
                    const int num,
                    const int width,
                    const int height);
+
 void transpose_mat(const float* din,
                    float* dout,
                    const int num,
@@ -187,12 +188,12 @@ void TransposeCompute::ReInitWhenNeeded() {
   }
 }
 void TransposeCompute::PrepareForRun() { ReInitWhenNeeded(); }
+
 template <typename Dtype>
 void TransposeCompute_(const std::vector<int>& axis,
                        const lite::Tensor* input,
                        lite::Tensor* output) {
-  // const Dtype *input_ptr = input->data<Dtype>();
-  const Dtype* input_ptr = input->data<float>();
+  const Dtype* input_ptr = input->data<Dtype>();
   Dtype* output_ptr = output->mutable_data<Dtype>();
 
   // input and output's shape dimension must >= 2 && <= 6.
@@ -253,13 +254,34 @@ void TransposeCompute::Run() {
     return;
   }
 
-  const float* din = static_cast<const float*>(input->data<float>());
-  float* dout = static_cast<float*>(output->mutable_data<float>());
-  //! transpose the data
-  if (trans_mat) {
+  if (input->precision() == PRECISION(kFloat) && trans_mat) {
+    const float* din = input->data<float>();
+    float* dout = output->mutable_data<float>();
     transpose_mat(din, dout, _trans_num, _trans_w, _trans_h);
-  } else {
-    TransposeCompute_<float>(axis, input, output);
+    return;
+  }
+
+  switch (input->precision()) {
+    case PRECISION(kInt32):
+      TransposeCompute_<int32_t>(axis, input, output);
+      break;
+    case PRECISION(kInt64):
+      TransposeCompute_<int64_t>(axis, input, output);
+      break;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      TransposeCompute_<__fp16>(axis, input, output);
+      break;
+#endif
+    case PRECISION(kFloat):
+      TransposeCompute_<float>(axis, input, output);
+      break;
+    case PRECISION(kFP64):
+      TransposeCompute_<double>(axis, input, output);
+      break;
+    default:
+      LOG(FATAL) << "Not support the dtype: "
+                 << static_cast<int>(input->precision());
   }
 }
 
@@ -271,22 +293,22 @@ void TransposeCompute::Run() {
 // Transpose
 REGISTER_LITE_KERNEL(transpose,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::TransposeCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
 
 // Transpose2
 REGISTER_LITE_KERNEL(transpose2,
                      kARM,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::arm::Transpose2Compute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
