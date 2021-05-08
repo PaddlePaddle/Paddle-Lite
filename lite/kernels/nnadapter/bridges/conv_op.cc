@@ -48,6 +48,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto batch_size = input_dims[0];
   auto input_channel_size = input_dims[1];
   auto output_channel_size = filter_dims[0];
+  auto filter_channel_size = filter_dims[1];
   CHECK_EQ(input_dims.size(), 4L);
   CHECK_EQ(output_dims.size(), 4L);
   CHECK_EQ(filter_dims.size(), 4L);
@@ -86,9 +87,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       filter_dims);
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
   // Check depthwise mode
-  bool is_depthwise_mode = (input_channel_size == groups &&
-                            output_channel_size == groups && groups != 1);
-  CHECK(!is_depthwise_mode) << "depthwise mode is not supported.";
+  bool is_depthwise_mode =
+      (input_channel_size == groups && output_channel_size == groups &&
+       filter_channel_size == 1);
+  VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
 
   CHECK(op_info->HasOutputScale(output_scale_name, true));
   auto output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
@@ -173,6 +175,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   converter->SetOperand(
       dilation_height_operand, &dilations[1], sizeof(int32_t));
 
+  auto group_operand = converter->AddOperand(&int32_type);
+  converter->SetOperand(group_operand, &groups, sizeof(int32_t));
+
   // Bias
   NNAdapterOperandType bias_type;
   memset(&bias_type, 0, sizeof(NNAdapterOperandType));
@@ -204,7 +209,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
            bias_dims[1] == output_channel_size))
         << "The dimensions of bias only supports [C_out], [1, C_out]";
     auto* bias_data = bias->mutable_data<float>();
-    Quant(bias_data, output_channel_size, bias_scale, &quant_bias_data[0]);
+    Quantize(bias_data, output_channel_size, bias_scale, &quant_bias_data[0]);
   }
   auto bias_operand = converter->AddOperand(&bias_type, bias_name);
   converter->SetOperand(bias_operand,
@@ -250,6 +255,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       padding_height_bottom_operand,
       stride_width_operand,
       stride_height_operand,
+      group_operand,
       fuse_code_operand,
       dilation_width_operand,
       dilation_height_operand};

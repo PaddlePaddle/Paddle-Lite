@@ -254,18 +254,26 @@ int Program::ConvertConv2D(driver::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_GE(input_count, 10);
+  NNADAPTER_CHECK_GE(input_count, 11);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
   auto input_node = ConvertOperand(input_operand);
+  auto input_channel_size = input_operand->type.dimensions[1];
   NNADAPTER_LOG(INFO) << "input dims[" << input_operand->type.dimensions[0]
-                      << "," << input_operand->type.dimensions[1] << ","
+                      << "," << input_channel_size << ","
                       << input_operand->type.dimensions[2] << ","
                       << input_operand->type.dimensions[3] << "]";
   // Filter
   auto filter_operand = input_operands[1];
   auto filter_node = ConvertOperand(filter_operand);
+  auto output_channel_size = filter_operand->type.dimensions[0];
+  auto filter_channel_size = filter_operand->type.dimensions[1];
+  auto filter_height = filter_operand->type.dimensions[2];
+  auto filter_width = filter_operand->type.dimensions[3];
+  NNADAPTER_LOG(INFO) << "filter dims[" << output_channel_size << ","
+                      << filter_channel_size << "," << filter_height << ","
+                      << filter_width << "]";
   // Bias
   auto bias_operand = input_operands[2];
   auto bias_node = ConvertOperand(bias_operand);
@@ -289,30 +297,39 @@ int Program::ConvertConv2D(driver::Operation* operation) {
   auto stride_height = *reinterpret_cast<int32_t*>(input_operands[8]->buffer);
   NNADAPTER_VLOG(5) << "strides=[" << stride_width << "," << stride_height
                     << "]";
+  // Group
+  auto group = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);
+  NNADAPTER_VLOG(5) << "group=" << group;
   // Fuse code
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);
+  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[10]->buffer);
   NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
   // Dilations
   int32_t dilation_width = 1;
   int32_t dilation_height = 1;
-  if (input_count >= 12) {
-    dilation_width = *reinterpret_cast<int32_t*>(input_operands[10]->buffer);
-    dilation_height = *reinterpret_cast<int32_t*>(input_operands[11]->buffer);
+  if (input_count >= 13) {
+    dilation_width = *reinterpret_cast<int32_t*>(input_operands[11]->buffer);
+    dilation_height = *reinterpret_cast<int32_t*>(input_operands[12]->buffer);
   }
   NNADAPTER_VLOG(5) << "dilations=[" << dilation_width << "," << dilation_height
                     << "]";
+  // Check depthwise mode
+  bool is_depthwise_mode =
+      (input_channel_size == group && output_channel_size == group &&
+       filter_channel_size == 1);
+  NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
+
   rk::nn::Conv2DAttr attr;
-  attr.ksize[0] = filter_operand->type.dimensions[2];
-  attr.ksize[1] = filter_operand->type.dimensions[3];
+  attr.ksize[0] = filter_height;
+  attr.ksize[1] = filter_width;
   attr.stride[0] = stride_width;
   attr.stride[1] = stride_height;
   attr.pad[0] = padding_width_left;
   attr.pad[1] = padding_width_right;
   attr.pad[2] = padding_height_top;
   attr.pad[3] = padding_height_bottom;
-  attr.group = 1;
-  attr.multiplier = 0;  // 1 represents depthwise_conv2d
-  attr.weights = filter_operand->type.dimensions[0];
+  attr.group = group;
+  attr.multiplier = is_depthwise_mode ? 1 : 0;
+  attr.weights = output_channel_size;
   attr.dilation[0] = dilation_width;
   attr.dilation[1] = dilation_height;
   attr.pad_type = rk::nn::PadType::AUTO;

@@ -77,7 +77,6 @@ typedef enum {
   NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER = 27,
   NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL = 28,
   NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER = 29,
-  NNADAPTER_NETWORK = 27,
 } NNAdapterOperandPrecisionCode;
 
 /**
@@ -107,7 +106,7 @@ typedef enum {
  */
 typedef enum {
   /**
-   * 2-D convolution operation.
+   * Perform a normal or depthwise 2-D convolution operation.
    * The CONV_2D op computes a 2-D convolution based on the input, filter,
    * strides, paddings, dilations, groups and etc.
    *
@@ -115,10 +114,15 @@ typedef enum {
    * * 0: input, A 4-D tensor with shape [N, C_in, H_in, W_in].
    * * 1: filter, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor, The convolution
-   * kernel with shape [C_out, C_in, filter_height, filter_width], where C_out
-   * and C_in is the number of the channels of output and input, filter_height
-   * and filter_width is the filter's kernel size in the 'H' and 'W' dimension.
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor.
+   *      1) For a normal convolution, the filter's shape is [C_out, C_in,
+   * filter_height, filter_width], where C_out and C_in is the number of the
+   * channels of output and input, filter_height and filter_width is the
+   * filter's kernel size in the 'H' and 'W' dimension.
+   *      2) For a depthwise convolution, the filter's shape is [C_out, 1,
+   * filter_height, filter_width], where C_out is the number of the channels of
+   * output, filter_height and filter_width is the filter's kernel size in the
+   * 'H' and 'W' dimension.
    * * 2: bias, A 1-D tensor with shape [C_out].
    *      1) If input's type is NNADAPTER_TENSOR_FLOAT16 or
    * NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
@@ -134,11 +138,15 @@ typedef enum {
    * * 6: padding_height_bottom, A NNADAPTER_INT32 scalar.
    * * 7: stride_width, A NNADAPTER_INT32 scalar.
    * * 8: stride_height, A NNADAPTER_INT32 scalar.
-   * * 9: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+   * * 9: group, A NNADAPTER_INT32 scalar.
+   *      1) For a normal convolution, group must be 1.
+   *      2) For a depthwise convolution, the formula should be satisfied:
+   * group=C_out=C_in.
+   * * 10: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
-   * * 10: dilation_width, optional, A NNADAPTER_INT32 scalar. Defaults to 1. If
+   * * 11: dilation_width, optional, A NNADAPTER_INT32 scalar. Defaults to 1. If
    * this input is set, input 11 (dilation_height) must be specified as well.
-   * * 11: dilation_height, optional, A NNADAPTER_INT32 scalar. Defaults to 1.
+   * * 12: dilation_height, optional, A NNADAPTER_INT32 scalar. Defaults to 1.
    * If this input is set, input 10 (dilation_width) must be specified as well.
    *
    * Outputs:
