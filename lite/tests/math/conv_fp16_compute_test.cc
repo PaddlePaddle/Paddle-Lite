@@ -291,25 +291,27 @@ TEST(TestConv3x3DwFp16, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
       for (auto& pad : {0, 1}) {
-        for (auto& flag_bias : {false, true}) {
-          for (auto& flag_act : {0, 1}) {
-            for (auto& c : {4, 7, 8, 10, 11, 16}) {
-              DDim weights_dim({c, 1, 3, 3});
-              for (auto& batch : {1}) {
-                for (auto& h : {12, 13, 14, 15, 16, 17, 18, 33}) {
-                  DDim dim_in({batch, c, h, h});
-                  const float leakey_relu_scale = 1.0f;
-                  test_conv_fp16(dim_in,
-                                 weights_dim,
-                                 c,
-                                 {stride, stride},
-                                 {pad, pad, pad, pad},
-                                 {1, 1},
-                                 flag_bias,
-                                 flag_act,
-                                 {FLAGS_threads},
-                                 {FLAGS_power_mode},
-                                 leakey_relu_scale);
+        for (auto& pad1 : {0, 1}) {
+          for (auto& flag_bias : {false, true}) {
+            for (auto& flag_act : {0, 1}) {
+              for (auto& c : {4, 7, 8, 10, 11, 16}) {
+                DDim weights_dim({c, 1, 3, 3});
+                for (auto& batch : {1}) {
+                  for (auto& h : {12, 13, 14, 15, 16, 17, 18, 33}) {
+                    DDim dim_in({batch, c, h, h});
+                    const float leakey_relu_scale = 1.0f;
+                    test_conv_fp16(dim_in,
+                                   weights_dim,
+                                   c,
+                                   {stride, stride},
+                                   {pad, pad1, pad, pad1},
+                                   {1, 1},
+                                   flag_bias,
+                                   flag_act,
+                                   {FLAGS_threads},
+                                   {FLAGS_power_mode},
+                                   leakey_relu_scale);
+                  }
                 }
               }
             }
