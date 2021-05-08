@@ -78,14 +78,39 @@ class OpenCLKernelPlaceCorrectPass : public ProgramPass {
       std::string arg_name = get_argname(node_name, inst.op_info()->outputs());
       LOG(INFO) << "======= node_name:" << node_name
                 << "\t arg_name:" << arg_name;
-      auto op_type = inst.op_type();
+      const auto& op_type = inst.op_type();
 
-      if (inst.op_type() == "softmax") {
-        // out->AsStmt().op_info()
-        if (false) {
-          LOG(INFO) << "FOCUS";
-          UpdateTarget(inst, TargetType::kARM);
-          UpdateTensor(inst, in, out, TargetType::kARM);
+      if (op_type == "softmax") {
+        const auto op = inst.op();
+        const auto* op_info = inst.op_info();
+        auto var_names = op_info->output_names();
+        CHECK_EQ(var_names.size(), 1);
+        auto* scope = op->scope();
+        auto* var = scope->FindVar(var_names[0]);
+        LOG(INFO) << "var_names[0]: " << var_names[0];
+        if (var == nullptr) {
+          LOG(WARNING) << "var is nullptr";
+          return;
+        }
+
+        const auto& tensor = var->Get<Tensor>();
+        const auto dims = tensor.dims();
+        int axis = op_info->GetAttr<int>("axis");
+        axis = axis >= 0 ? axis : axis + dims.size();
+        VLOG(4) << "dims[axis]: " << dims[axis] << "\t dims: " << dims;
+
+        // OpenCL parallelism is low at this case, so we use host backend
+        // kernel.
+        const int thres = 500;
+        if (dims[axis] > thres) {
+          VLOG(3) << "Correct opencl softmax kernel place from device to host.";
+#if defined(LITE_WITH_ARM)
+          auto new_target = TargetType::kARM;
+#elif defined(LITE_WITH_X86)
+          auto new_target = TargetType::kX86;
+#endif
+          UpdateTarget(inst, new_target);
+          UpdateTensor(inst, in, out, new_target);
         }
       }
     }
