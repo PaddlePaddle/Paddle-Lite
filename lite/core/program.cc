@@ -25,8 +25,9 @@
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
+
 #ifdef LITE_WITH_FPGA
-  #include "lite/backends/fpga/monitor.hpp"
+#include "lite/backends/fpga/monitor.hpp"
 #endif
 
 namespace paddle {
@@ -321,6 +322,11 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
+#ifdef LITE_WITH_FPGA
+  Monitor& monitor = Monitor::get_instance();
+  monitor.inferStart();
+#endif
+
 #ifdef LITE_WITH_NVTX
   const NVTXAnnotator& annotator = NVTXAnnotator::Global();
   NVTXRangeAnnotation annotation_one_loop = annotator.AnnotateBlock();
@@ -338,6 +344,10 @@ void RuntimeProgram::Run() {
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
+
+#ifdef LITE_WITH_FPGA
+    monitor.preRun(inst);
+#endif
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
 #endif
@@ -360,24 +370,32 @@ void RuntimeProgram::Run() {
 #endif
 
 #ifdef LITE_WITH_FPGA
-  monitor.preRun(inst);
+    monitor.preRun(inst);
 #endif
 
     inst.Run();
 
 #ifdef LITE_WITH_FPGA
-  monitor.postRun(inst);
-#endif    
-
+<<<<<<< Updated upstream
+    monitor.postRun(inst);
+=======
+    monitor.postRun(inst);
+>>>>>>> Stashed changes
+    #endif
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
-    if (inst.op()->Type() != "while") {
+        if (inst.op()->Type() != "while") {
       precision_profiler_summary +=
           inst_precision_profiler.GetInstPrecision(&inst);
     }
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
+
+#ifdef LITE_WITH_FPGA
+  monitor.inferEnd();
+#endif
+
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
 #endif
