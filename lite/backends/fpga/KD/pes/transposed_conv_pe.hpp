@@ -54,7 +54,6 @@ class TransposedConvPE : public PE {
     if (DLEngine::get_instance().isZU3()) {
       sub_filter_ena_ = false;
     }
-    sub_filter_ena_ = false;
 
     ConvParam& conv_param = pe_.param();
     convert_cnhw_to_nchw(param_.filter, &filter_);
@@ -66,6 +65,12 @@ class TransposedConvPE : public PE {
       conv_param = const_cast<ConvParam&>(param_);
       conv_param.deconv = true;
       conv_param.activeParam.type = param_.activeParam.type;
+      // config inplace operation in conv-args
+      for (auto basic_param : conv_param.splitParams()) {
+        basic_param->args.inplace.active_param.type = param_.activeParam.type;
+        basic_param->args.inplace.active_param.leaky_relu_factor =
+            float_to_half(param_.activeParam.leaky_relu_factor);
+      }
     } else {
       Shape& input_shape = param_.input->shape();
       int padded_height = input_shape.height() +
