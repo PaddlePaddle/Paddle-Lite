@@ -36,48 +36,16 @@ class OpenCLKernelPlaceCorrectPass : public ProgramPass {
 
  private:
   void CorrectArgumentPlace(SSAGraph* graph) {
-    auto& valid_places = graph->valid_places();
-    auto valid_places_has_target = [&](TargetType t) -> bool {
-      for (auto& p : valid_places) {
-        if (p.target == t) {
-          return true;
-        }
-      }
-      return false;
-    };
-    std::map<std::string, bool> lite_with_targets{
-        {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))}};
-    VLOG(4) << "lite_with_targets['kOpenCL']:" << lite_with_targets["kOpenCL"];
-
-    VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
     for (auto& x : graph->StmtTopologicalOrder()) {
       auto& inst = x->AsStmt();
       // deal with inputs
       VLOG(4) << "checking op " << inst.op_info()->Repr();
-
-      auto get_argname = [&](
-          const std::string& node_name,
-          const std::map<std::string, std::vector<std::string>>& argname_map)
-          -> std::string {
-            for (auto& ele : argname_map) {
-              auto it =
-                  std::find(ele.second.begin(), ele.second.end(), node_name);
-              if (it != ele.second.end()) return ele.first;
-            }
-            return "";
-          };
 
       auto in = x->inlinks.front();
       if (!in) {
         continue;
       }
       auto out = x->outlinks.front();
-
-      std::string node_name = out->AsArg().name;
-
-      std::string arg_name = get_argname(node_name, inst.op_info()->outputs());
-      LOG(INFO) << "======= node_name:" << node_name
-                << "\t arg_name:" << arg_name;
       const auto& op_type = inst.op_type();
 
       if (op_type == "softmax") {
@@ -87,9 +55,8 @@ class OpenCLKernelPlaceCorrectPass : public ProgramPass {
         CHECK_EQ(var_names.size(), 1);
         auto* scope = op->scope();
         auto* var = scope->FindVar(var_names[0]);
-        LOG(INFO) << "var_names[0]: " << var_names[0];
         if (var == nullptr) {
-          LOG(WARNING) << "var is nullptr";
+          LOG(WARNING) << "var is nullptr! var_name: " << var_names[0];
           return;
         }
 
@@ -97,13 +64,13 @@ class OpenCLKernelPlaceCorrectPass : public ProgramPass {
         const auto dims = tensor.dims();
         int axis = op_info->GetAttr<int>("axis");
         axis = axis >= 0 ? axis : axis + dims.size();
-        VLOG(4) << "dims[axis]: " << dims[axis] << "\t dims: " << dims;
+        VLOG(4) << "dims: " << dims << "\t dims[axis]: " << dims[axis];
 
-        // OpenCL parallelism is low at this case, so we use host backend
-        // kernel.
+        // OpenCL parallelism is low at this case,
+        // so we use host backendkernel.
         const int thres = 500;
         if (dims[axis] > thres) {
-          VLOG(3) << "Correct opencl softmax kernel place from device to host.";
+          VLOG(4) << "Correct opencl softmax kernel place from device to host.";
 #if defined(LITE_WITH_ARM)
           auto new_target = TargetType::kARM;
 #elif defined(LITE_WITH_X86)
