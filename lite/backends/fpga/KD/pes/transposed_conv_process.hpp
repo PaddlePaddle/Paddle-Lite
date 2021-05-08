@@ -217,8 +217,8 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
   int sub_pad = calc_sub_pad(width, param->paddings[0], param->strides[0]);
   int omit_size = deconv_get_omit(param->strides[0], width, param->paddings[0]);
   int channel = filter->shape().channel();
-  if(channel % 16)
-      ENFORCE(false, "channel should be divided by 16 currently");
+  // if(channel % 16)
+  //     ENFORCE(false, "channel should be divided by 16 currently");
   int sub_output_w = get_sub_out_axis(input->shape().width(), sub_pad, sub_w);
   int sub_output_h = get_sub_out_axis(input->shape().height(), sub_pad, sub_h);
   int before_omit_out_w = sub_output_w * sub_conv_number;
@@ -257,8 +257,8 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
             for(int h = 0; h < sub_h; ++h) {
                 for(int w = 0; w < sub_w; ++w) {
                     // Sub filters along h dim are arranged in a reversed order
-                    int idx_in_stride_w = sub_conv_number - 1 - n % sub_conv_number;
-                    int original_n = n / sub_conv_number;
+                    int idx_in_stride_w = sub_conv_number - 1 - n / kernel_num;
+                    int original_n = n % kernel_num;
                     int original_h = h * sub_conv_number + idx_in_stride_h;
                     int original_w = w * sub_conv_number + idx_in_stride_w;
 //                    int original_c = c;
@@ -270,7 +270,7 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
         }
     }
     sub_param.filter->flush();
-
+    
     Tensor* sub_scale = sub_param.scale();
     Tensor* sub_bias = sub_param.bias();
     Shape s_shape(NC, {1, sub_num});
@@ -298,7 +298,7 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
     const ConvParam& sb_param = sub_param;
     bool deconv = true;
     bool force_cpu_concat = true;
-    split_filter_num(sb_param, start_offset, deconv, force_cpu_concat);
+    split_filter_num(sb_param, start_offset, deconv, force_cpu_concat, omit_size * kernel_num);
     if(sb_param.cpu_concat) {
       param->cpu_concat = true;
     }

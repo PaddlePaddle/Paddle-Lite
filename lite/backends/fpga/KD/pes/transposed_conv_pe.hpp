@@ -43,6 +43,7 @@ class TransposedConvPE : public PE {
     Tensor* output = param_.output;
     output->setAligned(true);
     output->setDataLocation(Device);
+
     return true;
   }
 
@@ -63,6 +64,25 @@ class TransposedConvPE : public PE {
     }
 
     ConvParam& conv_param = pe_.param();
+    // just for test
+    static int counter = 0;
+    std::string ss_filter;
+    ss_filter = std::to_string(counter).append("transposed_filter");
+    std::cout << "current feed filter is " << ss_filter << std::endl;
+    std::string ss_bias;
+    ss_bias = std::to_string(counter).append("transposed_bias");
+    std::cout << "current feed bias is " << ss_bias << std::endl;
+    std::string ss_scale;
+    ss_scale = std::to_string(counter).append("transposed_scale");
+    std::cout << "current feed scale is " << ss_scale << std::endl;
+
+    param_.filter->readFloatFromFile(ss_filter);
+    param_.bias()->readFloatFromFile(ss_bias);
+    param_.scale()->readFloatFromFile(ss_scale);
+    std::cout << "read filter, scale and bias" << std::endl;      
+
+    ++counter;
+    // end test
     convert_cnhw_to_nchw(param_.filter, &filter_);
     inverse_filter(&filter_);
 
@@ -74,7 +94,8 @@ class TransposedConvPE : public PE {
       conv_param.output = param_.output;
       conv_param.filter = param_.filter;
       for(auto basic : const_cast<ConvParam&>(param_).splitParams()) {
-           conv_param.splitParams().push_back(basic);
+        basic->args.inplace.active_param.type = param_.activeParam.type;   
+      	conv_param.splitParams().push_back(basic);
       }
       conv_param.deconv = true;
       conv_param.activeParam.type = param_.activeParam.type;
@@ -144,7 +165,15 @@ class TransposedConvPE : public PE {
     if (sub_filter_ena_ == false) {
       pad_input<float16>();
     }
-
+    // just for test
+    static int counter = 0;
+    if(counter == 0) {
+      param_.input->readHalfFromFile("transposed_input");
+      param_.input->saveToFile("checkinput", true);
+      std::cout << "read input" << std::endl;
+    }
+    ++counter;
+    // end test
     bool ret = pe_.dispatch();
     if(ret == true) {
       if(sub_filter_ena_ && !param_.cpu_concat) {
@@ -157,6 +186,7 @@ class TransposedConvPE : public PE {
       }
       else if(sub_filter_ena_) {
         // all the split sub filters are concated by cpu
+        std::cout << "cpu concat transposed";
         param_.output->setOffset(0);
         splited_sub_res_concat();
       }

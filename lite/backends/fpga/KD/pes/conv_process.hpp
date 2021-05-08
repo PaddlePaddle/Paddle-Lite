@@ -240,9 +240,11 @@ inline void format_filter(Tensor* filter,
                           std::vector<float>& scales,  // NOLINT
                           float max) {
   float max_value = find_max(*filter);
+
   Shape& filter_shape = filter->shape();
   int mem_size;
   std::vector<float> max_values;
+
   int8_t* quantized_data = filter::format_filter(filter->data<float>(),
                                                  mem_size,
                                                  filter_shape.num(),
@@ -252,6 +254,12 @@ inline void format_filter(Tensor* filter,
                                                  group,
                                                  max_value,
                                                  max_values);
+  // // just for test
+  // std::cout << "quant local maxes are ";
+  // for(int ii = 0; ii < max_values.size(); ii++)
+  //   std::cout << max_values[ii] << " ";
+  // std::cout << std::endl;
+  // // end test
 
   float mem_factor = mem_size * 1.0f / filter->shape().numel();
   quantized_filter->setMemScale(mem_factor);
@@ -386,7 +394,7 @@ inline void config_basic_conv_output(BasicConvParam* conv_param, void* out_addre
 
 
 
-inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool deconv=false, bool force_cpu_concat=false) {
+inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool deconv=false, bool force_cpu_concat=false, int bias_offset=0) {
   static int call_times = 0;
   ConvParam& param = const_cast<ConvParam&>(c_param);
   Tensor* input = param.input;
@@ -396,12 +404,24 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
   int split_num = get_split_num(param.filter);
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
 
+  // just for test
+  if(force_cpu_concat) {
+    filter->saveToFile("before_quant_sub_filter", true);
+    param.scale()->saveToFile("before_quant_sub_scale", true);
+    param.bias()->saveToFile("before_quant_sub_bias", true);
+  }
+  // end test
+
 
   param.cpu_concat =
       out_channel % 16 != 0 && split_num > 1 && out->shape().width() != 1;
 
   if(force_cpu_concat) {
      param.cpu_concat = true;
+     // if no need to split sub filter, then no need to force cpu concat
+     param.cpu_concat = param.cpu_concat && split_num > 1;
+     // just for test
+     // param.cpu_concat = true;
   }
 
 
@@ -512,9 +532,22 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
     Tensor bias;
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
+    // just for test
+    if(force_cpu_concat) {
+      std::cout << "quant scale for scale are ";
+      for(int ii = 0; ii < quant_scale.size(); ++ii)
+        std::cout << quant_scale[ii] << " ";
+      std::cout << std::endl;      
+    }
+
+    // end test
     for (int n = 0; n < filter_num; n++) {
+      int nn = n;
+      if(deconv) {
+        nn = (bias_offset + n) % filter_num;
+      }
       scale_data[n] =
-          param.scale()->data<float>()[n + sb_channnel_start] * quant_scale[n];
+          param.scale()->data<float>()[n + sb_channnel_start] * quant_scale[nn];
     }
     for (int n = 0; n < filter_num; n++) {
       bias_data[n] = param.bias()->data<float>()[n + sb_channnel_start];
@@ -524,7 +557,14 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
     format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     conv_param->scaleBias.flush();
-
+    // just for test
+    if(force_cpu_concat){
+      bias.saveToFile("floatbias", true);
+      scale.saveToFile("floatscale", true);
+      conv_param->scaleBias.saveToFile("sub_biasscale", true);
+      conv_param->filter.saveToFile("sub_filter", true);
+    }
+    // end test
 
     config_basic_conv_kernel(conv_param, param.dilations[0],
                             param.groups, conv_param->scaleBias.data<float16>(),

@@ -45,12 +45,12 @@ class ConvPE : public PE {
       pack_channel = split_axis == 2 && param_.splitParams().size() > 1;
       split_cpu_concat = split_axis == 0 && param_.cpu_concat;
       split_channel = split_axis == 1;
-
       for (auto conv_param : param_.splitParams()) {
         conv_param->args.inplace.active_param.type = param_.activeParam.type;
         conv_param->args.inplace.active_param.leaky_relu_factor =
-            float_to_half(param_.activeParam.leaky_relu_factor);
+        float_to_half(param_.activeParam.leaky_relu_factor);
       }
+
       if (pack_channel) {
         ConcatParam& concat_param = concatPE_.param();
         for (auto conv_param : param_.splitParams()) {
