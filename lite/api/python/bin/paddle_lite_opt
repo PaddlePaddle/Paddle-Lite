@@ -75,7 +75,7 @@ def main():
     if args.optimize_out is not None:
          a.set_optimize_out(args.optimize_out)
     if args.valid_targets is not None:
-         if args.enable_fp16 is not None:
+         if args.enable_fp16 == "true":
               a.set_valid_places(args.valid_targets, True)
          else:
               a.set_valid_places(args.valid_targets, False)
