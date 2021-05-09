@@ -337,17 +337,13 @@ void RuntimeProgram::Run() {
 #endif
 
   int idx = -1;
-#ifdef LITE_WITH_FPGA
-  Monitor& monitor = Monitor::get_instance();
-#endif
+
 
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
 
-#ifdef LITE_WITH_FPGA
-    monitor.preRun(inst);
-#endif
+
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
 #endif
@@ -376,12 +372,10 @@ void RuntimeProgram::Run() {
     inst.Run();
 
 #ifdef LITE_WITH_FPGA
-<<<<<<< Updated upstream
+
     monitor.postRun(inst);
-=======
-    monitor.postRun(inst);
->>>>>>> Stashed changes
-    #endif
+
+#endif
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
         if (inst.op()->Type() != "while") {

@@ -270,7 +270,7 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
         }
     }
     sub_param.filter->flush();
-    
+
     Tensor* sub_scale = sub_param.scale();
     Tensor* sub_bias = sub_param.bias();
     Shape s_shape(NC, {1, sub_num});
@@ -288,16 +288,19 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
     sub_bias->flush();
 
     // split num start position of the output
-    int start_offset = 0;
-    if(i != 0)
+
+
       // just for test
-        start_offset = i * align_to_x(before_omit_out_w * kernel_num, 16);
-        // start_offset = i * align_to_x(after_omit_out_w * kernel_num, 16);
+        // start_offset = i * align_to_x(before_omit_out_w * kernel_num, 16);
+    int start_offset = (sub_conv_number - 1 - i) *
+             align_to_x(after_omit_out_w * kernel_num, 16);
+
 
     // sub_param.filter->saveToFile("feed_before_split", true);
     const ConvParam& sb_param = sub_param;
     bool deconv = true;
     bool force_cpu_concat = true;
+    std::cout << "omit size is " << omit_size << std::endl;
     split_filter_num(sb_param, start_offset, deconv, force_cpu_concat, omit_size * kernel_num);
     if(sb_param.cpu_concat) {
       param->cpu_concat = true;

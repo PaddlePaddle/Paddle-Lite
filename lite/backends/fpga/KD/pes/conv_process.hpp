@@ -404,13 +404,13 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
   int split_num = get_split_num(param.filter);
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
 
-  // just for test
-  if(force_cpu_concat) {
-    filter->saveToFile("before_quant_sub_filter", true);
-    param.scale()->saveToFile("before_quant_sub_scale", true);
-    param.bias()->saveToFile("before_quant_sub_bias", true);
-  }
-  // end test
+  // // just for test
+  // if(force_cpu_concat) {
+  //   filter->saveToFile("before_quant_sub_filter", true);
+  //   param.scale()->saveToFile("before_quant_sub_scale", true);
+  //   param.bias()->saveToFile("before_quant_sub_bias", true);
+  // }
+  // // end test
 
 
   param.cpu_concat =
@@ -535,15 +535,15 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
     Tensor bias;
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
-    // just for test
-    if(force_cpu_concat) {
-      std::cout << "quant scale for scale are ";
-      for(int ii = 0; ii < quant_scale.size(); ++ii)
-        std::cout << quant_scale[ii] << " ";
-      std::cout << std::endl;      
-    }
+    // // just for test
+    // if(force_cpu_concat) {
+    //   std::cout << "quant scale for scale are ";
+    //   for(int ii = 0; ii < quant_scale.size(); ++ii)
+    //     std::cout << quant_scale[ii] << " ";
+    //   std::cout << std::endl;
+    // }
 
-    // end test
+    // // end test
     for (int n = 0; n < filter_num; n++) {
       int nn = n;
       if(deconv) {
@@ -560,14 +560,14 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
     format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     conv_param->scaleBias.flush();
-    // just for test
-    if(force_cpu_concat){
-      bias.saveToFile("floatbias", true);
-      scale.saveToFile("floatscale", true);
-      conv_param->scaleBias.saveToFile("sub_biasscale", true);
-      conv_param->filter.saveToFile("sub_filter", true);
-    }
-    // end test
+    // // just for test
+    // if(force_cpu_concat){
+    //   bias.saveToFile("floatbias", true);
+    //   scale.saveToFile("floatscale", true);
+    //   conv_param->scaleBias.saveToFile("sub_biasscale", true);
+    //   conv_param->filter.saveToFile("sub_filter", true);
+    // }
+    // // end test
 
     config_basic_conv_kernel(conv_param, param.dilations[0],
                             param.groups, conv_param->scaleBias.data<float16>(),
@@ -605,8 +605,14 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
     config_basic_conv_output(conv_param, out_address, out_scale_address);
 
+    // just for test
+    /*if(call_times == 1) {
+      config_basic_conv_deconvinfo(conv_param, true, 2, 1);
+      compute_fpga_conv_basic(conv_param->args);
+      out->saveToFile("first_output", true);
+      exit(0);      
+    }*/
 
-    // compute_fpga_conv_basic(conv_param->args);
 
     // input->saveToFile("first_input", true);
 
@@ -614,12 +620,14 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
     //conv_param->scaleBias.saveToFile("first_scale_bias", true);
     // TODO how to change shape automatically
 
-    //conv_param->output.saveToFile("first_output", true);
+    
     //std::cout << "split num call times is " << call_times << std::endl;
     /*if(call_times == 3) {
       exit(0);
     }*/
     ++call_times;
+    
+    // end test
 
     param.splitParams().push_back(conv_param);
   }

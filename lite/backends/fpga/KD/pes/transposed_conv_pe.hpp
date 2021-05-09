@@ -64,25 +64,7 @@ class TransposedConvPE : public PE {
     }
 
     ConvParam& conv_param = pe_.param();
-    // just for test
-    static int counter = 0;
-    std::string ss_filter;
-    ss_filter = std::to_string(counter).append("transposed_filter");
-    std::cout << "current feed filter is " << ss_filter << std::endl;
-    std::string ss_bias;
-    ss_bias = std::to_string(counter).append("transposed_bias");
-    std::cout << "current feed bias is " << ss_bias << std::endl;
-    std::string ss_scale;
-    ss_scale = std::to_string(counter).append("transposed_scale");
-    std::cout << "current feed scale is " << ss_scale << std::endl;
 
-    param_.filter->readFloatFromFile(ss_filter);
-    param_.bias()->readFloatFromFile(ss_bias);
-    param_.scale()->readFloatFromFile(ss_scale);
-    std::cout << "read filter, scale and bias" << std::endl;      
-
-    ++counter;
-    // end test
     convert_cnhw_to_nchw(param_.filter, &filter_);
     inverse_filter(&filter_);
 
@@ -91,9 +73,9 @@ class TransposedConvPE : public PE {
       sub_conv_number_ = param_.strides[0];
       fill_sub_filters(&param_, &filter_);
       conv_param = const_cast<ConvParam&>(param_);
-      std::cout << "deconv is " << conv_param.deconv << std::endl;
-      std::cout << "split feature num is " << conv_param.splitParams().size() << std::endl;
-      
+      conv_param.deconv = true;
+
+
 
       for(auto basic_param : conv_param.splitParams()) {
         basic_param->args.inplace.active_param.type = param_.activeParam.type;
@@ -166,15 +148,7 @@ class TransposedConvPE : public PE {
     if (sub_filter_ena_ == false) {
       pad_input<float16>();
     }
-    // just for test
-    static int counter = 0;
-    if(counter == 0) {
-      param_.input->readHalfFromFile("transposed_input");
-      param_.input->saveToFile("checkinput", true);
-      std::cout << "read input" << std::endl;
-    }
-    ++counter;
-    // end test
+
     bool ret = pe_.dispatch();
     if(ret == true) {
       if(sub_filter_ena_ && !param_.cpu_concat) {
@@ -238,6 +212,7 @@ class TransposedConvPE : public PE {
         // src data and config for each split sub output
         auto each_conv_param = conv_params[sub_idx * res_num_per_sub + idx_in_sub];
         float16 cur_max = each_conv_param->output_max;
+        std::cout << "current max " << half_to_float(cur_max) << std::endl;
         final_max = std::max(cur_max, final_max);
 
         each_conv_param->output.invalidate();
@@ -304,7 +279,7 @@ class TransposedConvPE : public PE {
 
 
       }// end each split
-
+      break;
 
 
     }// end each sub

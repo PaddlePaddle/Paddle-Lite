@@ -143,7 +143,8 @@ class ConvPE : public PE {
 //    int i = 0;
     for (auto conv_param : params) {
         ret |= compute_fpga_conv_basic(conv_param->args);
-//        param_.output->saveToFile("first_output", true);
+        //conv_param->output.saveToFile("first_output", true);
+        //std::cout << "dispatch max is " << half_to_float(conv_param->output_max) << std::endl;
     }
 
 
