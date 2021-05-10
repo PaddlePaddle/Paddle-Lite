@@ -13,15 +13,14 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/reshape_image_compute.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
-#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
-
 
 template <typename P, PrecisionType PTYPE>
 void ReshapeImageCompute<P, PTYPE>::PrepareForRun() {
@@ -33,10 +32,12 @@ void ReshapeImageCompute<P, PTYPE>::PrepareForRun() {
   auto output_dims = param.output->dims();
   auto transpose = param.excepted_transpose_;
 
-  if(transpose.empty()){
-      output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
+  if (transpose.empty()) {
+    output_buffer_ =
+        param.output->template mutable_data<P, MetalImage>(output_dims);
   } else {
-    output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims, transpose);
+    output_buffer_ = param.output->template mutable_data<P, MetalImage>(
+        output_dims, transpose);
   }
   input_buffer_ = param.x->template data<P, MetalImage>();
 
@@ -45,9 +46,11 @@ void ReshapeImageCompute<P, PTYPE>::PrepareForRun() {
 
   std::string function_name = "";
   if (std::is_same<P, float>::value) {
-    function_name = "reshape_" + std::to_string(irank) + "_" + std::to_string(orank) + "_float";
+    function_name = "reshape_" + std::to_string(irank) + "_" +
+                    std::to_string(orank) + "_float";
   } else if (std::is_same<P, MetalHalf>::value) {
-    function_name = "reshape_" + std::to_string(irank) + "_" + std::to_string(orank) + "_half";
+    function_name = "reshape_" + std::to_string(irank) + "_" +
+                    std::to_string(orank) + "_half";
   }
   assert(!function_name.empty());
 
@@ -71,29 +74,33 @@ void ReshapeImageCompute<P, PTYPE>::PrepareForRun() {
                                    {od[0], od[1], od[2], od[3]},
                                    {ot[0], ot[1], ot[2], ot[3]}};
 
-  params_buffer_ = metal_context_->CreateBuffer(*device,
-                                         &reshape_params,
-                                         sizeof(reshape_params),
-                                         METAL_ACCESS_FLAG::CPUWriteOnly);
+  params_buffer_ =
+      metal_context_->CreateBuffer(*device,
+                                   &reshape_params,
+                                   sizeof(reshape_params),
+                                   METAL_ACCESS_FLAG::CPUWriteOnly);
   queue_ = metal_context_->GetDefaultQueue(*device);
-
 }
 
-template<typename P, PrecisionType PTYPE>
+template <typename P, PrecisionType PTYPE>
 void ReshapeImageCompute<P, PTYPE>::Run() {
   const auto& param = this->template Param<param_t>();
   auto output_width = output_buffer_->texture_width_;
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
+                                                &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
+                                      atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                      atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer())
+                                      offset:(0)atIndex:(0)];
 
   kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -103,18 +110,20 @@ void ReshapeImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ReshapeImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ReshapeImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite::kernels::metal::
+    ReshapeImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::
+    ReshapeImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::ReshapeImageCompute<float, PRECISION(kFloat)> MetalReshapeFp32;
-typedef paddle::lite::kernels::metal::ReshapeImageCompute<MetalHalf, PRECISION(kFP16)> MetalReshapeFp16;
+typedef paddle::lite::kernels::metal::ReshapeImageCompute<float,
+                                                          PRECISION(kFloat)>
+    MetalReshapeFp32;
+typedef paddle::lite::kernels::metal::ReshapeImageCompute<MetalHalf,
+                                                          PRECISION(kFP16)>
+    MetalReshapeFp16;
 
-REGISTER_LITE_KERNEL(reshape2,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalReshapeFp32,
-                     def)
+REGISTER_LITE_KERNEL(
+    reshape2, kMetal, kFloat, kMetalTexture2DArray, MetalReshapeFp32, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFloat),
@@ -131,12 +140,8 @@ REGISTER_LITE_KERNEL(reshape2,
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(reshape2,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalReshapeFp16,
-                     def)
+REGISTER_LITE_KERNEL(
+    reshape2, kMetal, kFP16, kMetalTexture2DArray, MetalReshapeFp16, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),
@@ -153,12 +158,8 @@ REGISTER_LITE_KERNEL(reshape2,
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(flatten,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalReshapeFp16,
-                     image2d)
+REGISTER_LITE_KERNEL(
+    flatten, kMetal, kFP16, kMetalTexture2DArray, MetalReshapeFp16, image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),
@@ -171,12 +172,8 @@ REGISTER_LITE_KERNEL(flatten,
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(flatten,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalReshapeFp32,
-                     image2d)
+REGISTER_LITE_KERNEL(
+    flatten, kMetal, kFloat, kMetalTexture2DArray, MetalReshapeFp32, image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFloat),
@@ -189,12 +186,8 @@ REGISTER_LITE_KERNEL(flatten,
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(flatten2,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalReshapeFp16,
-                     image2d)
+REGISTER_LITE_KERNEL(
+    flatten2, kMetal, kFP16, kMetalTexture2DArray, MetalReshapeFp16, image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),
@@ -209,12 +202,8 @@ REGISTER_LITE_KERNEL(flatten2,
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(flatten2,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalReshapeFp32,
-                     image2d)
+REGISTER_LITE_KERNEL(
+    flatten2, kMetal, kFloat, kMetalTexture2DArray, MetalReshapeFp32, image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFloat),
