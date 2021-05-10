@@ -30,10 +30,12 @@ class Device {
     static Device x;
     return x;
   }
-  Device() { InitOnce(); }
+  Device() {}
 
-  ~Device() { DestroyOnce(); }
+  ~Device() {}
 
+  void RegisterDeviceResource();
+  void UnRegisterDeviceResource();
   std::shared_ptr<AclModelClient> LoadFromMem(
       const std::vector<char>& model_buffer, const int device_id);
   std::shared_ptr<AclModelClient> LoadFromFile(const std::string& model_path,
@@ -44,12 +46,11 @@ class Device {
              std::vector<char>* model_buffer);         // NOLINT
 
  private:
-  void InitOnce();
-  void DestroyOnce();
+
   bool runtime_inited_{false};
+  static int device_create_count_;
   static std::mutex device_mutex_;
 };
-
 }  // namespace huawei_ascend_npu
 }  // namespace lite
 }  // namespace paddle

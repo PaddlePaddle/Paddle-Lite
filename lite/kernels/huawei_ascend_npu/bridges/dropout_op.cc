@@ -42,6 +42,8 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scale = 1 - op_info->GetAttr<float>("dropout_prob");
   if (dropout_implementation == "upscale_in_train") {
     scale = 1.f;
+    LOG(WARNING)<< "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU not support upscale_in_train implementation!";
+    return FAILED;
   }
 
   // X node
@@ -53,10 +55,10 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Dropout node
-  auto dropout_node = graph->Add<ge::op::Muls>(out_name);
-  auto dropout_op = dropout_node->data<ge::op::Muls>();
+  auto dropout_node = graph->Add<ge::op::Dropout>(out_name);
+  auto dropout_op = dropout_node->data<ge::op::Dropout>();
   dropout_op->set_input_x(*x_node->data());
-  dropout_op->set_attr_value(scale);
+  dropout_op->set_attr_dropout_ratio(scale);
   INPUT_UPDATE(dropout_op, x, x_node);
   OUTPUT_UPDATE(dropout_op, y, dropout_node);
 

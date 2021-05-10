@@ -26,6 +26,7 @@ lite_cc_library(subgraph_bridge_cast_op_huawei_ascend_npu SRCS cast_op.cc DEPS $
 lite_cc_library(subgraph_bridge_scale_op_huawei_ascend_npu SRCS scale_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_slice_op_huawei_ascend_npu SRCS slice_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_gather_op_huawei_ascend_npu SRCS gather_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_prior_box_op_huawei_ascend_npu SRCS prior_box_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 
 set(huawei_ascend_npu_subgraph_bridges
         subgraph_bridge_registry
@@ -49,4 +50,5 @@ set(huawei_ascend_npu_subgraph_bridges
         subgraph_bridge_scale_op_huawei_ascend_npu
         subgraph_bridge_slice_op_huawei_ascend_npu
         subgraph_bridge_gather_op_huawei_ascend_npu
+        subgraph_bridge_prior_box_op_huawei_ascend_npu
         CACHE INTERNAL "huawei_ascend_npu_subgraph_bridges")

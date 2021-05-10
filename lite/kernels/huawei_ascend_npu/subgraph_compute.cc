@@ -128,8 +128,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
-    op->CheckShape();
-    op->InferShape();
+    CHECK(op->CheckShape());
+    CHECK(op->InferShape());
     std::string op_type = op->op_info()->Type();
     if (!bridges.Exists(op_type, TARGET(kHuaweiAscendNPU))) {
       return false;
@@ -150,6 +150,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   }
   std::vector<ge::Operator> device_onodes;
   for (size_t i = 0; i < output_names.size(); i++) {
+    VLOG(3) << "output_name" << output_names[i];
     CHECK(graph.Has(output_names[i]));
     device_onodes.push_back(*graph.Get(output_names[i])->data());
   }

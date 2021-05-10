@@ -9,7 +9,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
-readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-2}
 
 # global variables
 CMAKE_EXTRA_OPTIONS=""
@@ -45,7 +45,7 @@ BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host 
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
-HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
+HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
 # min android api level
@@ -499,7 +499,7 @@ function make_x86 {
             -DXPU_SDK_ENV=$XPU_SDK_ENV \
             -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
             -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
-            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_BUILD_TYPE=Debug \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
 

@@ -88,6 +88,7 @@ int LookupTableConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(lookup_table,
-                         kXPU,
-                         paddle::lite::subgraph::xpu::LookupTableConverter);
+// TODO(shentanyue): enable later
+// REGISTER_SUBGRAPH_BRIDGE(lookup_table,
+//                          kXPU,
+//                          paddle::lite::subgraph::xpu::LookupTableConverter);

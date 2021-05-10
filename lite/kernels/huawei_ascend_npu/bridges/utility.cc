@@ -90,10 +90,10 @@ ge::Format CvtDataLayoutType(DataLayoutType itype) {
 std::vector<int64_t> CvtShape(const std::vector<int64_t>& in_shape) {
   std::vector<int64_t> out_shape;
   // Padding the shape to 4-dimensions(NCHW)
-  for (size_t i = 0; i < 4 - in_shape.size(); i++) {
+  for (int i = 0; i < 4 - in_shape.size(); i++) {
     out_shape.push_back(1);
   }
-  for (size_t i = 0; i < in_shape.size(); i++) {
+  for (int i = 0; i < in_shape.size(); i++) {
     out_shape.push_back(in_shape[i]);
   }
   return out_shape;
