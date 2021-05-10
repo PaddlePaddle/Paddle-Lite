@@ -35,7 +35,6 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-
   auto out_name = op_info->Output("Out").front();
 
   // X node
@@ -47,14 +46,14 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Shape Const node
-  if (op_info->HasInput("ShapeTensor")) {
+  if (op_info->HasInput("ShapeTensor") && !op_info->Input("ShapeTensor").empty()) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] not support \"Shape\" from more than "
                     "one Tensor.";
     return FAILED;
   }
 
   std::shared_ptr<Node> actual_shape_node = nullptr;
-  if (op_info->HasInput("Shape")) {
+  if (op_info->HasInput("Shape") && !op_info->Input("Shape").empty()) {
     auto actual_shape_name = op_info->Input("Shape").front();
     if (graph->Has(actual_shape_name)) {
       actual_shape_node = graph->Get(actual_shape_name);
@@ -73,10 +72,18 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else if (op_info->HasAttr("shape")) {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
     auto out_shape = lite::operators::ValidateShape(shape, x_dims);
-    out_shape = CvtShape(out_shape);
+    //out_shape = CvtShape(out_shape);
     actual_shape_node = graph->Add<int64_t>(
         out_name + "/shape",
         std::vector<int64_t>(out_shape.begin(), out_shape.end()));
+    VLOG(3) << "shape = ";
+    for (int i = 0; i < shape.size(); i++){
+        VLOG(3) << "shape[i]" << shape[i];
+    }
+    VLOG(3) << "out_shape = ";
+    for (int i = 0; i < out_shape.size(); i++){
+      VLOG(3) << "out_shape[i]" << out_shape[i];
+    }
   }
   // actual_shape_node should not be nullptr
   CHECK(actual_shape_node);
@@ -89,7 +96,9 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   INPUT_UPDATE(reshape_op, x, x_node);
   INPUT_UPDATE(reshape_op, shape, actual_shape_node);
   OUTPUT_UPDATE(reshape_op, y, reshape_node);
-
+  VLOG(3) << "input_name: " << x_name;
+  VLOG(3) << "x_dims= " << x_dims.repr();
+  VLOG(3) << "output_name: " << out_name;
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

@@ -38,7 +38,7 @@ class TensorDesc {
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting tensor name : " << name;
     ge_tensor_desc_ = new ge::TensorDesc(
         GetGeShape(dims), GetGeFormat(format), GetGeDataType(data_type));
-    ge_tensor_desc_->SetName(name);
+    ge_tensor_desc_->SetName(name.c_str());
     CHECK(ge_tensor_desc_ != nullptr);
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting data shape : " << repr();
   }

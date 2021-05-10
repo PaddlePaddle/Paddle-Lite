@@ -93,7 +93,7 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Create Variable node for batch norm output y
   auto out_y_node = graph->Add<ge::op::Identity>(y_name);
   auto out_y_op = out_y_node->data<ge::op::Identity>();
-  out_y_op->set_input_x(*batch_norm_node->data(), "y");
+  out_y_op->set_input_x_by_name(*batch_norm_node->data(), "y");
   INPUT_UPDATE(out_y_op, x, batch_norm_node);
   OUTPUT_UPDATE(out_y_op, y, out_y_node);
 
