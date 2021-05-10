@@ -41,7 +41,7 @@ add_kernel(trigonometric_opencl_image OPENCL basic SRCS trigonometric_image_comp
 add_kernel(batch_norm_opencl_image OPENCL basic SRCS batch_norm_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(reduce_mean_opencl_image OPENCL basic SRCS reduce_mean_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(clip_opencl_image OPENCL basic SRCS clip_image_compute.cc DEPS ${cl_kernel_deps})
-#add_kernel(softmax_opencl_image OPENCL basic SRCS softmax_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(softmax_opencl_image OPENCL basic SRCS softmax_image_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 
