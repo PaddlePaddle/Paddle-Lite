@@ -17,7 +17,6 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/metal_timestats.h"
-#include "lite/model_parser/base/helper.h"
 
 namespace paddle {
 namespace lite {
