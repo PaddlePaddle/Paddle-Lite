@@ -92,6 +92,44 @@ int ActConverter<ge::op::LeakyRelu>(void* ctx, OpLite* op, KernelBase* kernel) {
   return SUCCESS;
 }
 
+template <>
+int ActConverter<ge::op::HardSigmoid>(void* ctx, OpLite* op, KernelBase* kernel) {
+  CHECK(ctx != nullptr);
+  CHECK(op != nullptr);
+  auto graph = static_cast<Graph*>(ctx);
+  auto op_info = op->op_info();
+  auto op_type = op_info->Type();
+  auto scope = op->scope();
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Converting " + op_type + "...";
+
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto out_name = op_info->Output("Out").front();
+
+  // X node
+  std::shared_ptr<Node> x_node = nullptr;
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
+  } else {
+    x_node = graph->Add(x_name, *x);
+  }
+
+  // Act node
+  auto act_node = graph->template Add<ge::op::HardSigmoid>(out_name);
+  auto act_op = act_node->template data<ge::op::HardSigmoid>();
+  act_op->set_input_input_x(*x_node->data());
+  auto slope = op_info->GetAttr<float>("slope");
+  auto offset = op_info->GetAttr<float>("offset");
+  act_op->set_attr_alpha(slope);
+  act_op->set_attr_beta(offset);
+  INPUT_UPDATE(act_op, input_x, x_node);
+  OUTPUT_UPDATE(act_op, output_y, act_node);
+
+  return SUCCESS;
+}
+
 }  // namespace huawei_ascend_npu
 }  // namespace subgraph
 }  // namespace lite
@@ -125,3 +163,7 @@ REGISTER_SUBGRAPH_BRIDGE(
     softplus,
     kHuaweiAscendNPU,
     paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::Softplus>);
+REGISTER_SUBGRAPH_BRIDGE(
+    hard_sigmoid,
+    kHuaweiAscendNPU,
+    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::HardSigmoid>);

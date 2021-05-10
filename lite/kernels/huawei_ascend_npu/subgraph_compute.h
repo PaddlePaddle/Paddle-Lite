@@ -89,8 +89,13 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
                                      program_desc,
                                      exec_scope,
                                      input_names,
-                                     output_names) {}
+                                     output_names) {
+        lite::huawei_ascend_npu::Device::Global().RegisterDeviceResource();
+    }
 
+  virtual ~SubgraphEngine() {
+      lite::huawei_ascend_npu::Device::Global().UnRegisterDeviceResource();
+  }
  protected:
   bool PrepareWorkspaceForDeviceProgram() override;
   bool BuildDeviceProgram() override;

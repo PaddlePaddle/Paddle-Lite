@@ -98,7 +98,7 @@ bool AclModelClient::GetModelIOTensorDim(
     aclFormat data_format = aclmdlGetInputFormat(model_desc_, i);
     const std::string name_str(aclmdlGetInputNameByIndex(model_desc_, i));
     TensorDesc tensor_desc =
-        TensorDesc(name_str, data_type, input_dim, data_format);
+        TensorDesc(name_str.c_str(), data_type, input_dim, data_format);
     input_tensor->push_back(tensor_desc);
   }
 
@@ -112,7 +112,7 @@ bool AclModelClient::GetModelIOTensorDim(
     aclFormat data_format = aclmdlGetOutputFormat(model_desc_, i);
     const std::string name_str(aclmdlGetOutputNameByIndex(model_desc_, i));
     TensorDesc tensor_desc =
-        TensorDesc(name_str, data_type, output_dim, data_format);
+        TensorDesc(name_str.c_str(), data_type, output_dim, data_format);
     output_tensor->push_back(tensor_desc);
   }
   return true;
@@ -129,7 +129,7 @@ bool AclModelClient::GetTensorFromDataset(
   for (size_t i = 0; i < device_output_num; i++) {
     aclDataBuffer* buffer_device = aclmdlGetDatasetBuffer(output_dataset_, i);
     void* device_data = aclGetDataBufferAddr(buffer_device);
-    uint32_t device_size = aclGetDataBufferSize(buffer_device);
+    uint32_t device_size = aclGetDataBufferSizeV2(buffer_device);
 
     void* tensor_data = nullptr;
     ACL_CALL(aclrtMallocHost(&tensor_data, device_size));
