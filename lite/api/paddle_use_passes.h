@@ -20,6 +20,7 @@ USE_MIR_PASS(static_kernel_pick_pass);
 USE_MIR_PASS(variable_place_inference_pass);
 USE_MIR_PASS(type_target_cast_pass);
 USE_MIR_PASS(__fpga_kernel_place_correct_pass);
+USE_MIR_PASS(opencl_kernel_place_correct_pass);
 USE_MIR_PASS(generate_program_pass);
 
 USE_MIR_PASS(io_copy_kernel_pick_pass);
