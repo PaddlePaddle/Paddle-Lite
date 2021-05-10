@@ -212,3 +212,15 @@ REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt32, int32)
                                        PRECISION(kInt32),
                                        DATALAYOUT(kAny))})
     .Finalize();
+
+using SliceInt64 = paddle::lite::kernels::xpu::SliceCompute<int64_t>;
+REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt64, int64)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
