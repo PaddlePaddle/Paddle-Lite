@@ -45,6 +45,15 @@ rm ./lite/api/paddle_use_ops.h
   --with_extra=ON \
   --with_cv=ON \
   --with_opencl=ON
+或
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv7 \
+  --arm_lang=clang \
+  --android_stl=c++_shared \
+  --with_log=OFF \
+  --build_extra=ON \
+  opencl
 
 # android-armv8:cpu+gpu+cv+extra
 ./lite/tools/build_android.sh \
@@ -54,7 +63,15 @@ rm ./lite/api/paddle_use_ops.h
   --with_extra=ON \
   --with_cv=ON \
   --with_opencl=ON
-
+或
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv8 \
+  --arm_lang=clang \
+  --android_stl=c++_shared \
+  --with_log=OFF \
+  --build_extra=ON \
+  opencl
 
 # 注：编译帮助请执行: ./lite/tools/build_android.sh help
 ```
@@ -238,9 +255,9 @@ Android 平台下分析：
 macOS x86 平台下分析：
 ```
 # 开启性能分析，会打印出每个 op 耗时信息和汇总信息
-./lite/tools/build.sh --with_opencl=ON --with_extra=ON --with_profile=ON x86 
+./lite/tools/build.sh --build_opencl=ON --build_extra=ON --with_profile=ON x86
 # 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
-./lite/tools/build.sh --with_opencl=ON --with_extra=ON --with_precision_profile=ON x86 
+./lite/tools/build.sh --build_opencl=ON --build_extra=ON --with_precision_profile=ON x86
 ```
 
 Windows x86 平台下分析：
