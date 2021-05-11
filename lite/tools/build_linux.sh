@@ -35,6 +35,8 @@ IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 BAIDU_XPU_SDK_ROOT=""
+BAIDU_XPU_SDK_URL=""
+BAIDU_XPU_SDK_ENV=""
 # options of compiling intel fpga.
 WITH_INTEL_FPGA=OFF
 INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk" 
@@ -79,6 +81,8 @@ function init_cmake_mutable_options {
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
                         -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
+                        -DXPU_SDK_URL=$BAIDU_XPU_SDK_URL \
+                        -DXPU_SDK_ENV=$BAIDU_XPU_SDK_ENV \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_IMAGINATION_NNA=$WITH_IMAGINATION_NNA \
                         -DIMAGINATION_NNA_SDK_ROOT=${IMAGINATION_NNA_SDK_ROOT} \
@@ -251,9 +255,11 @@ function print_usage {
     echo -e "|  detailed information about Paddle-Lite RKNPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html                           |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
-    echo -e "|     ./lite/tools/build_linux.sh --with_baidu_xpu=ON --baidu_xpu_sdk_root=YourBaiduXpuSdkPath                                                         |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_baidu_xpu=ON                                                                                                  |"
     echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF                                                        |"
-    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) required when compiling baidu_xpu library                                                     |"
+    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) optional                                                                                      |"
+    echo -e "|     --baidu_xpu_sdk_url: (baidu_xpu sdk download url) optional                                                                                       |"
+    echo -e "|     --baidu_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional                                                       |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -353,6 +359,14 @@ function main {
                 ;;
             --baidu_xpu_sdk_root=*)
                 BAIDU_XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --baidu_xpu_sdk_url=*)
+                BAIDU_XPU_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --baidu_xpu_sdk_env=*)
+                BAIDU_XPU_SDK_ENV="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on intel fpga.

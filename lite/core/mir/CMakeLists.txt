@@ -60,6 +60,7 @@ lite_cc_library(mir_passes
       fusion/sequence_reverse_embedding_fuse_pass.cc
       fusion/instance_norm_activation_fuse_pass.cc
       fusion/elementwise_add_scale_fuse_pass.cc
+      fusion/flatten_fc_fuse_pass.cc
       fusion/fc_prelu_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
@@ -73,6 +74,7 @@ lite_cc_library(mir_passes
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       fpga_kernel_place_correct_pass.cc
+      opencl_kernel_place_correct_pass.cc
       type_target_cast_pass.cc
       type_layout_cast_pass.cc
       type_precision_cast_pass.cc

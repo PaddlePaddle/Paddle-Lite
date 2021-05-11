@@ -27,7 +27,7 @@ namespace x86 {
 
 template <typename T>
 void scale_compute(
-    const T* x, T* out, int size, float scale, float bias, bool bias_before) {
+    const T* x, T* out, int size, T scale, T bias, bool bias_before) {
   if (bias_before) bias *= scale;
   for (int i = 0; i < size; i++) {
     out[i] = x[i] * scale + bias;
@@ -41,11 +41,13 @@ class ScaleCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
+    T scale = static_cast<T>(param.scale);
+    T bias = static_cast<T>(param.bias);
     scale_compute(param.x->template data<T>(),
                   param.output->template mutable_data<T>(),
                   param.x->dims().production(),
-                  param.scale,
-                  param.bias,
+                  scale,
+                  bias,
                   !param.bias_after_scale);
   }
 

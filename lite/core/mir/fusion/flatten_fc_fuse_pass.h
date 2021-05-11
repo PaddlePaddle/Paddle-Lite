@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/assign_value_compute.h"
+#pragma once
 
-REGISTER_LITE_KERNEL(assign_value,
-                     kARM,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::host::AssignValueCompute,
-                     def)
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .Finalize();
+#include <memory>
+#include <string>
+#include "lite/core/mir/pass.h"
+
+namespace paddle {
+namespace lite {
+namespace mir {
+
+class FlattenFcFusePass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+};
+
+}  // namespace mir
+}  // namespace lite
+}  // namespace paddle

@@ -114,6 +114,7 @@ class Optimizer {
          "lite_scaleacts_fuse_pass",                    //
          "lite_elementwise_scale_fuse_pass",            //
          "lite_instance_norm_activation_fuse_pass",     //
+         "lite_flatten_fc_fuse_pass",                   //
          "lite_fc_prelu_fuse_pass",                     //
          "lite_elementwise_activation_fuse_pass",
          "lite_conv_scale_fuse_pass",
@@ -165,6 +166,7 @@ class Optimizer {
          "variable_place_inference_pass",  // inference arg/var's
          "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
          "__fpga_kernel_place_correct_pass",
+         "opencl_kernel_place_correct_pass",
          "mlu_postprocess_pass",
          // info(target/precision/layout/device)
          // using kernel info

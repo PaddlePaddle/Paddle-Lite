@@ -52,7 +52,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     } else if (inputs.size() == 4 && axis_ == 1 &&
                output_tensor_dims.size() == 4) {
       kernel_func_name_ = "concatByCWith4Inputs";
-    } else if (align_) {
+    } else if (!(flag_ == 1 && !align_)) {
     } else {
       // note: do layout transform between image and buffer,
       // before and after concat(buffer impl.)
@@ -112,12 +112,16 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     }
 
     for (auto& input : inputs) {
-      if (input->dims()[input->dims().size() - 1] % 4 != 0) {
+      in_shape_ = {1, 1, 1, 1};
+      for (auto j = 0; j < input->dims().size(); ++j) {
+        in_shape_.s[4 - j] = input->dims()[j];
+      }
+      if (in_shape_.s[1] % 4 != 0) {
         // 当输入tensors中有一个tensor的channel不是4的整数倍时，align置为false
         align_ = false;
       }
     }
-    if (align_) {
+    if (!(flag_ == 1 && !align_)) {
       kernel_func_name_ = "Concat" + std::to_string(inputs.size()) +
                           "InputAxis" + std::to_string(flag_);
     }
@@ -163,7 +167,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                         output_image_shape["width"] /
                         output_tensor_dims[output_tensor_dims.size() - 1]),
                     static_cast<cl::size_type>(output_image_shape["height"])};
-    if (align_) {
+    if (!(flag_ == 1 && !align_)) {
       global_work_size =
           cl::NDRange{static_cast<cl::size_type>(
                           output_image_shape["width"] /
@@ -174,14 +178,14 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     }
 
 #ifdef LITE_WITH_LOG
-    VLOG(4) << "concat input shape:  ";
+    VLOG(4) << "concat input shape:";
     for (size_t i = 0; i < inputs.size(); i++) {
       VLOG(4) << "inputs [" << i << "]"
-              << "   dims:" << inputs[i]->dims();
+              << "   dims: " << inputs[i]->dims();
     }
 
-    VLOG(4) << "concat output shape:  ";
-    VLOG(4) << " out  dims:  " << output_tensor_dims;
+    VLOG(4) << "concat output shape:";
+    VLOG(4) << " out dims: " << output_tensor_dims;
     VLOG(4) << "axis_: " << axis_;
     VLOG(4) << "flag_: " << flag_;
 
@@ -189,12 +193,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "output_image_shape(w,h): " << output_image_shape["width"] << " "
             << output_image_shape["height"];
     VLOG(4) << "output_tensor_w: " << output_tensor_w;
-    VLOG(4) << "width_:" << width_;
-    VLOG(4) << "global_work_size: "
-            << output_tensor_dims[output_tensor_dims.size() - 1] << "  "
-            << (output_image_shape["width"] /
-                output_tensor_dims[output_tensor_dims.size() - 1])
-            << "  " << (output_image_shape["height"]);
+    VLOG(4) << "width_: " << width_;
+    VLOG(4) << "global_work_size: " << global_work_size[0] << "  "
+            << global_work_size[1] << "  " << global_work_size[2];
 #endif
 
     auto& context = ctx_->As<OpenCLContext>();
@@ -203,7 +204,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    if (align_) {
+    if (!(flag_ == 1 && !align_)) {
       cl_int status;
       int arg_cnt = 0;
       for (auto& input : inputs) {
@@ -217,17 +218,17 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       for (auto& input : inputs) {
         in_shape_ = {1, 1, 1, 1};
         for (auto j = 0; j < input->dims().size(); ++j) {
-          in_shape_.s[4 - j] = input->dims()[j];
+          in_shape_.s[4 - input->dims().size() + j] = input->dims()[j];
         }
-        in_shape_.s[3] = UP_DIV(in_shape_.s[3], 4);
+        in_shape_.s[1] = UP_DIV(in_shape_.s[1], 4);
         kernel.setArg(arg_cnt++, in_shape_);
         CL_CHECK_FATAL(status);
       }
       out_shape_ = {1, 1, 1, 1};
       for (auto j = 0; j < output_tensor_dims.size(); ++j) {
-        out_shape_.s[4 - j] = output_tensor_dims[j];
+        out_shape_.s[4 - output_tensor_dims.size() + j] = output_tensor_dims[j];
       }
-      out_shape_.s[3] = UP_DIV(out_shape_.s[3], 4);
+      out_shape_.s[1] = UP_DIV(out_shape_.s[1], 4);
       kernel.setArg(arg_cnt++, out_shape_);
       CL_CHECK_FATAL(status);
 

@@ -335,36 +335,36 @@ CONCAT6(6Input, Axis3)
 void doconcat(__read_only image2d_t input, __write_only image2d_t output,
               int start_c_remain, int start_c_blk_idx, int W,
               int c_blk_idx, int w_idx, int nh_idx) {
+  CL_DTYPE4 result = 0.f;
   int2 output_pos = (int2)(c_blk_idx * W + w_idx, nh_idx);
   if (start_c_remain == 0) {
     int x = (c_blk_idx - start_c_blk_idx) * W + w_idx;
-    CL_DTYPE4 result = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, nh_idx));
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, result);
+    result = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, nh_idx));
   } else {
-    CL_DTYPE4 result0, result1, combined;
+    CL_DTYPE4 result0, result1;
     if (c_blk_idx == start_c_blk_idx) {
-      result0 = READ_IMG_TYPE(CL_DTYPE_CHAR, output, SAMPLER, output_pos);
+      // result0 = READ_IMG_TYPE(CL_DTYPE_CHAR, output, SAMPLER, output_pos); // BUGFIX
       result1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(0, nh_idx));
     } else {
       int x = (c_blk_idx - start_c_blk_idx - 1) * W + w_idx;
-      result0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, nh_idx);
+      result0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, nh_idx));
       result1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x + W, nh_idx));
     }
 
     if (start_c_remain == 3) {
-      combined = (CL_DTYPE4)(result0.x, result0.y, result0.z, result1.x);
+      result = (CL_DTYPE4)(result0.x, result0.y, result0.z, result1.x);
     } else if (start_c_remain == 2) {
-      combined = (CL_DTYPE4)(result0.x, result0.y, result1.x, result1.y);
+      result = (CL_DTYPE4)(result0.x, result0.y, result1.x, result1.y);
     } else if (start_c_remain == 1) {
-      combined = (CL_DTYPE4)(result0.x, result1.x, result1.y, result1.z);
+      result = (CL_DTYPE4)(result0.x, result1.x, result1.y, result1.z);
     }
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, combined);
   }
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, result);
 }
 
 __kernel void Concat2InputAxis1UnAligned(__read_only image2d_t input0,
                                          __read_only image2d_t input1,
-                                         __write_only image2d_t output,
+                                         __read_write image2d_t output,
                                          int4 input_shape0, int4 input_shape1,
                                          int4 output_shape) {
   CHECK_IDX_UNALIGN
@@ -383,7 +383,7 @@ __kernel void Concat2InputAxis1UnAligned(__read_only image2d_t input0,
 __kernel void Concat3InputAxis1UnAligned(__read_only image2d_t input0,
                                          __read_only image2d_t input1,
                                          __read_only image2d_t input2,
-                                         __write_only image2d_t output,
+                                         __read_write image2d_t output,
                                          int4 input_shape0, int4 input_shape1,
                                          int4 input_shape2,
                                          int4 output_shape) {
@@ -397,7 +397,7 @@ __kernel void Concat3InputAxis1UnAligned(__read_only image2d_t input0,
 
   if (c_blk_idx < start_c_blk_idx1) {
     doconcat(input0, output, start_c_reamin0, start_c_blk_idx0, output_shape.w, w_idx, c_blk_idx, nh_idx);
-  } else if (c_blk_idx >= start_c_blk_idx1 && c_blk_id < start_c_blk_idx2) {
+  } else if (c_blk_idx >= start_c_blk_idx1 && c_blk_idx < start_c_blk_idx2) {
     doconcat(input1, output, start_c_reamin1, start_c_blk_idx1, output_shape.w, w_idx, c_blk_idx, nh_idx);
   } else {
     doconcat(input2, output, start_c_reamin2, start_c_blk_idx2, output_shape.w, w_idx, c_blk_idx, nh_idx);
@@ -408,7 +408,7 @@ __kernel void Concat4InputAxis1UnAligned(__read_only image2d_t input0,
                                          __read_only image2d_t input1,
                                          __read_only image2d_t input2,
                                          __read_only image2d_t input3,
-                                         __write_only image2d_t output,
+                                         __read_write image2d_t output,
                                          int4 input_shape0, int4 input_shape1,
                                          int4 input_shape2, int4 input_shape3,
                                          int4 output_shape) {
@@ -424,9 +424,9 @@ __kernel void Concat4InputAxis1UnAligned(__read_only image2d_t input0,
 
   if (c_blk_idx < start_c_blk_idx1) {
     doconcat(input0, output, start_c_reamin0, start_c_blk_idx0, output_shape.w, w_idx, c_blk_idx, nh_idx);
-  } else if (c_blk_idx >= start_c_blk_idx1 && c_blk_id < start_c_blk_idx2) {
+  } else if (c_blk_idx >= start_c_blk_idx1 && c_blk_idx < start_c_blk_idx2) {
     doconcat(input1, output, start_c_reamin1, start_c_blk_idx1, output_shape.w, w_idx, c_blk_idx, nh_idx);
-  } else if (c_blk_idx >= start_c_blk_idx2 && c_blk_id < start_c_blk_idx3) {
+  } else if (c_blk_idx >= start_c_blk_idx2 && c_blk_idx < start_c_blk_idx3) {
     doconcat(input1, output, start_c_reamin1, start_c_blk_idx1, output_shape.w, w_idx, c_blk_idx, nh_idx);
   } else {
     doconcat(input2, output, start_c_reamin2, start_c_blk_idx2, output_shape.w, w_idx, c_blk_idx, nh_idx);

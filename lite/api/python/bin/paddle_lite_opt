@@ -75,10 +75,11 @@ def main():
     if args.optimize_out is not None:
          a.set_optimize_out(args.optimize_out)
     if args.valid_targets is not None:
-         if args.enable_fp16 is not None:
-              a.set_valid_places(args.valid_targets, True)
+         if args.enable_fp16 == "true":
+              a.enable_fp16()
+              a.set_valid_places(args.valid_targets)
          else:
-              a.set_valid_places(args.valid_targets, False)
+              a.set_valid_places(args.valid_targets)
     if args.param_file is not None:
          a.set_param_file(args.param_file)
     if args.record_tailoring_info == "true":
