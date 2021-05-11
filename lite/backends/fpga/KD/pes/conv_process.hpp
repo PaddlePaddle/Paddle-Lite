@@ -31,6 +31,12 @@ limitations under the License. */
 namespace paddle {
 namespace zynqmp {
 
+enum DCpuConcatType {
+    NONE = 0,
+    ONE = 1,
+    TWO = 2,
+};  
+
 const int MAX_CHANNEL = 16384;
 
 inline int get_aligned_filter_element_num(int chw) {
@@ -394,7 +400,8 @@ inline void config_basic_conv_output(BasicConvParam* conv_param, void* out_addre
 
 
 
-inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool deconv=false, bool force_cpu_concat=false, int bias_offset=0) {
+inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0, bool deconv=false, int kernel_num=0, int omit_size=0, int sub_conv_number=0) {
+  DCpuConcatType deconv_concat_type = DCpuConcatType::NONE;
   static int call_times = 0;
   ConvParam& param = const_cast<ConvParam&>(c_param);
   Tensor* input = param.input;
@@ -415,26 +422,30 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
   param.cpu_concat =
       out_channel % 16 != 0 && split_num > 1 && out->shape().width() != 1;
-
-  if(force_cpu_concat) {
+  
+  bool deconv_out_reshape = false;
+  if(deconv && split_num > 1)
+    deconv_out_reshape = true;
+  
+  /*if(force_cpu_concat) {
      param.cpu_concat = true;
      // if no need to split sub filter, then no need to force cpu concat
      param.cpu_concat = param.cpu_concat && split_num > 1;
      // just for test
-     // param.cpu_concat = true;
-  }
+     param.cpu_concat = true;
+  }*/
 
 
   int dynamic_range = 127;  // int8 max value
   float16 dynamic_range_fp16 = float_to_half(dynamic_range * 1.0);
   float inv_dynamic_range = 1.0 / dynamic_range;
-
   float max = find_max(*filter);
+
 
   Shape& out_shape = out->shape();
   int out_w = out_shape.width();
   int out_h = out_shape.height();
-  if(deconv && param.cpu_concat) {
+  if(deconv_out_reshape) {
     // stride always be one in this branch
     Shape in_shape = input->shape();
     out_w = input->shape().width() + 2 * param.paddings[1] - filter->shape().width() + 1;
@@ -444,9 +455,13 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
 
   // support jump write
-    int jump_out_start_offset = param.original_out_channel;
-    int fuse_idx = param.fuse_idx;
-    bool enable_jump = param.wd_enable;
+  int jump_out_start_offset = param.original_out_channel;
+  int fuse_idx = param.fuse_idx;
+  bool enable_jump = param.wd_enable;
+  // TODO currently not support for deconv mode, reset it for protection
+  if(deconv)
+    enable_jump = false;
+
 
   float16* out_base_address = nullptr;
   for (int i = 0; i < split_num; i++) {
@@ -466,7 +481,10 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
     int offset = i * filter_num_per_div;
 
+    // Case One: cpu_concat no matter deconv or not, take care of the residual
+    // jump write between op is disabled in this branch, no need to care
     if (param.cpu_concat) {
+      std::cout << "branch 1" << std::endl;
       if (i == 0) {
         Shape shape(NHWC,
                     {1,
@@ -481,21 +499,42 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
         out_address =
             conv_param->output.mutableData<float16>(FP16, extra_shape);
       } else {
-
         // base_address is allocated in first iteration;
-
         out_address = out_base_address + offset;
       }
-    } else if(!enable_jump) {
+    } 
+
+    // Case Two: deconv mode with split num > 1 and no residual
+    // deconv mode is not support jump write between op yet
+    else if(deconv_out_reshape) {
+      std::cout << "branch 2" << std::endl;
+      if (i == 0) {
+        Shape shape(NHWC,
+                    {1,
+                     out_h,
+                     out_w,
+                     filter_num_per_div * split_num});
+        out_base_address = conv_param->output.mutableData<float16>(FP16, shape);
+      }
+      out_address = out_base_address + offset;
+    }
+
+    // Case Three: deconv mode with split num is 1 or normal conv without residual and with jump write disabled
+    else if(!enable_jump) {
+      std::cout << "branch 3" << std::endl;
       // for single conv op
       out_address = out->data<float16>() + offset;
     }
+
+    // Case Four: normal conv with jump write enabled across op
     else {
-        // support jump write between conv op before concat
-       out_address = out->data<float16>() + offset + jump_out_start_offset;
+      std::cout << "branch 4" << std::endl;
+      out_address = out->data<float16>() + offset + jump_out_start_offset;
     }
+
     // support deconv sub filter split num
-    if(!param.cpu_concat) {
+    if(deconv && !deconv_out_reshape) {
+      std::cout << "start pos is " << start_pos << std::endl;
       out_address = out_address + start_pos;
     }
 
@@ -518,7 +557,11 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
            filter->data<float>() + i * filter_num_per_div * filter_hwc,
            filter_num * filter_hwc * sizeof(float));
     new_filter.flush();
-
+    // just for test
+    // new_filter.saveToFile("sub_split_filter", true);
+    // param.scale()->saveToFile("sub_split_scale", true);
+    // param.bias()->saveToFile("sub_split_bias", true);
+    // end test
     conv_param->filter.mutableData<float>(FP32, f_shape);
 
     std::vector<float> quant_scale;
@@ -546,8 +589,9 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
     // // end test
     for (int n = 0; n < filter_num; n++) {
       int nn = n;
-      if(deconv) {
-        nn = (bias_offset + n) % filter_num;
+      if(deconv && !deconv_out_reshape) {
+
+        nn = (kernel_num * omit_size + n) % filter_num;
       }
       scale_data[n] =
           param.scale()->data<float>()[n + sb_channnel_start] * quant_scale[nn];
@@ -588,14 +632,11 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
     }
     else {
-
       bool wr_enable =
         (split_num != 1 && (param.cpu_concat == false || i != split_num - 1));
       int wd_offset =
         param.cpu_concat ? filter_num_per_div * (split_num - 1) : out_channel;
       config_basic_conv_strideinfo(conv_param, wr_enable, false, wd_offset);
-
-
     }
 
     args.quant.dynamic_range =
@@ -605,13 +646,18 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
     config_basic_conv_output(conv_param, out_address, out_scale_address);
 
-    // just for test
-    /*if(call_times == 1) {
-      config_basic_conv_deconvinfo(conv_param, true, 2, 1);
+    if(deconv && !deconv_out_reshape) {
+      config_basic_conv_deconvinfo(conv_param, true, sub_conv_number, omit_size);
+    }
+
+
+    /*// just for test
+    if(call_times == 0) {
+      // config_basic_conv_deconvinfo(conv_param, true, 2, 1);
       compute_fpga_conv_basic(conv_param->args);
-      out->saveToFile("first_output", true);
+      conv_param->output.saveToFile("first_output", true);
       exit(0);      
-    }*/
+    // }*/
 
 
     // input->saveToFile("first_input", true);
@@ -631,6 +677,11 @@ inline void split_filter_num(const ConvParam& c_param, int start_pos=0, bool dec
 
     param.splitParams().push_back(conv_param);
   }
+  if(deconv && param.cpu_concat)
+    deconv_concat_type = DCpuConcatType::TWO;
+  if(deconv_out_reshape)
+    deconv_concat_type = DCpuConcatType::ONE;
+  return deconv_concat_type;
 }
 
 inline void pack_channel_filter(const ConvParam& c_param) {

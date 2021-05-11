@@ -32,6 +32,9 @@ namespace zynqmp {
 
 class TransposedConvPE : public PE {
  public:
+
+
+
   bool init() {
     Tensor* filter = param_.filter;
 
@@ -71,10 +74,11 @@ class TransposedConvPE : public PE {
     if (sub_filter_ena_) {
       omit_size_ = deconv_get_omit(stride_width, kernel_width, padding_width);
       sub_conv_number_ = param_.strides[0];
-      fill_sub_filters(&param_, &filter_);
+      deconv_concat_type_ = fill_sub_filters(&param_, &filter_);
       conv_param = const_cast<ConvParam&>(param_);
       conv_param.deconv = true;
-
+      std::cout << "deconv is " << conv_param.deconv << std::endl;
+      std::cout << "split feature num is " << conv_param.splitParams().size() << std::endl;
 
 
       for(auto basic_param : conv_param.splitParams()) {
@@ -151,7 +155,7 @@ class TransposedConvPE : public PE {
 
     bool ret = pe_.dispatch();
     if(ret == true) {
-      if(sub_filter_ena_ && !param_.cpu_concat) {
+      if(sub_filter_ena_ && deconv_concat_type_ == DCpuConcatType::NONE) {
         float max_val = 0.0;
         for (auto conv_param : param_.splitParams()) {
             std::cout << half_to_float(conv_param->output_max) << std::endl;
@@ -170,10 +174,10 @@ class TransposedConvPE : public PE {
       int off_addr = omit_size_ * oc * ow;
       param_.output->unalignImage();
       param_.output->setOffset(off_addr);
-
+      // param_.output->saveToFile("transposed_out", true);
     }
 
-    // param_.output->saveToFile("final2", true);
+    // param_.output->saveToFile("final", true);
     return ret;
   }
 
@@ -196,6 +200,11 @@ class TransposedConvPE : public PE {
     int omit_low = oc * omit_size_;
     int omit_high = oc * (sub_conv_number_ - omit_size_);
     int accum_c = 0;
+    int output_num_per_sub = 0;
+    if(deconv_concat_type_ == DCpuConcatType::ONE)
+      output_num_per_sub = 1;
+    else if(deconv_concat_type_ == DCpuConcatType::TWO)
+      output_num_per_sub = 2;
 
     // for every sub filter outputs
     for(int sub_idx = 0; sub_idx < sub_conv_number_; ++sub_idx) {
@@ -203,19 +212,26 @@ class TransposedConvPE : public PE {
       // for every split sub outputs, clear accum_c
       accum_c = 0;
       // std::cout << "current accum c is " << accum_c << std::endl;
+     
 
-      for(int idx_in_sub = 0; idx_in_sub < res_num_per_sub; ++idx_in_sub) {
+      for(int idx_in_sub = 0; idx_in_sub < output_num_per_sub; ++idx_in_sub) {
         // std::cout << "current idx in sub is " << idx_in_sub << std::endl;
         // dst start position for split sub output
-        float16* dst_start_hwc = final_dst + sub_idx * dst_stride_in_wc;
+
+        idx_in_sub = idx_in_sub * (res_num_per_sub - 1);
+        float16* dst_start_hwc = final_dst + (sub_conv_number_ - 1 - sub_idx) * dst_stride_in_wc;
 
         // src data and config for each split sub output
         auto each_conv_param = conv_params[sub_idx * res_num_per_sub + idx_in_sub];
-        float16 cur_max = each_conv_param->output_max;
-        std::cout << "current max " << half_to_float(cur_max) << std::endl;
-        final_max = std::max(cur_max, final_max);
+        float16 fpga_cur_max = each_conv_param->output_max;
+        std::cout << "current sub idx is " << sub_idx << " idx in sub is " << idx_in_sub << std::endl;
+        std::cout << "current max " << half_to_float(fpga_cur_max) << std::endl;
+        
 
         each_conv_param->output.invalidate();
+        // // just for test
+        // each_conv_param->output.saveToFile("sub_output", true);
+        // // end test
 
         float16* src_start = each_conv_param->output.data<float16>();
         int each_C = each_conv_param->output.shape().channel();
@@ -231,62 +247,73 @@ class TransposedConvPE : public PE {
           float16* src_hwc = src_start + h * src_stride_in_wc;
           float16* dst_cur_hwc = dst_start_hwc + sub_conv_number_ * h * dst_stride_in_wc;
 
-
-          // when w = 0
-          // check the remain fill length of the first oc
-          int dst_w_start_without_omit = accum_c / oc;
-          if(dst_w_start_without_omit < omit_size_) {
-            // std::cout << "dst_w_start_without_omit is " << dst_w_start_without_omit << std::endl;
-            int dst_w_end_without_omit = accum_c + each_C;
-            if(dst_w_end_without_omit > omit_size_) {
-              // fill part of oc
-              // std::cout << "need fill part" << std::endl;
-              int part_fill_start = omit_size_ * oc - accum_c;
-              memcpy(dst_cur_hwc, src_hwc + part_fill_start, (each_C - part_fill_start) * sizeof(float16));
+          // Branch One: copy one each_C * each_W at a time
+          if(output_num_per_sub == 1) {
+            std::cout << "branch one" << std::endl;
+            float16* src_cur = src_hwc + omit_size_ * oc;
+            memcpy(dst_cur_hwc, src_cur, oc * ow * sizeof(float16));
+          }
+          
+          // Branch Two: copy one each_C at a time 
+          else if(output_num_per_sub == 2) {
+            std::cout << "branch two" << std::endl;
+            // Step One: when w = 0
+            // check the remain fill length of the first oc
+            int dst_w_start_without_omit = accum_c / oc;
+            if(dst_w_start_without_omit < omit_size_) {
+              // std::cout << "dst_w_start_without_omit is " << dst_w_start_without_omit << std::endl;
+              int dst_w_end_without_omit = (accum_c + each_C) / oc;
+              if(dst_w_end_without_omit  > omit_size_) {
+                // fill part of oc
+                // std::cout << "need fill part" << std::endl;
+                int part_fill_start = omit_size_ * oc - accum_c;
+                memcpy(dst_cur_hwc, src_hwc + part_fill_start, (each_C - part_fill_start) * sizeof(float16));
+              }
+            } else {
+              // fill a complete oc, idx[hwc], idx[wc], idx[c]
+              // std::cout << "fill complete" << std::endl;
+              float16* dst_fill_copy_start = dst_cur_hwc + (dst_w_start_without_omit - omit_size_) * oc + accum_c % oc;
+              memcpy(dst_fill_copy_start, src_hwc, each_C * sizeof(float16));
             }
-          } else {
-            // fill a complete oc, idx[hwc], idx[wc], idx[c]
-            // std::cout << "fill complete" << std::endl;
-            float16* dst_fill_copy_start = dst_cur_hwc + (dst_w_start_without_omit - omit_size_) * oc + accum_c % oc;
-            memcpy(dst_fill_copy_start, src_hwc, each_C * sizeof(float16));
-          }
 
-          // Because the first oc might be omitted, in order to be simple, just omit the first
-          float16* dst_start_wc = dst_cur_hwc + (sub_conv_number_ - omit_size_ + idx_in_sub) * oc;
-          dst_cur = dst_start_wc + accum_c % oc;
-          for(int w = 1; w < each_W - 1; ++w) {
-            float16* src_wc = src_hwc + w * each_C;
-            memcpy(dst_cur, src_wc, each_C * sizeof(float16));
-            dst_cur += oc * sub_conv_number_;
-          }
+            // Because the first oc might be omitted, in order to be simple, just omit the first
+            float16* dst_start_wc = dst_cur_hwc + (sub_conv_number_ - omit_size_) * oc;
+            dst_cur = dst_start_wc + accum_c;
+            // Step Two: w from 1 to each_W - 2
+            for(int w = 1; w < each_W - 1; ++w) {
+              float16* src_wc = src_hwc + w * each_C;
+              memcpy(dst_cur, src_wc, each_C * sizeof(float16));
+              dst_cur += oc * sub_conv_number_;
+            }
 
-          // when w = each_W - 1
-          int start_c = accum_c;
-          int end_c = accum_c + each_C;
-          float16* src_wc = src_hwc + (each_W - 1) * each_C;
-          start_c = std::min(start_c, omit_high) - accum_c;
-          end_c = std::min(end_c, omit_high) - accum_c;
-          if(start_c < end_c) {
-            memcpy(dst_cur, src_wc, (end_c - start_c) * sizeof(float16));
-          }
+            // Step Three: when w = each_W - 1
+            int start_c = accum_c;
+            int end_c = accum_c + each_C;
+            float16* src_wc = src_hwc + (each_W - 1) * each_C;
+            start_c = std::min(start_c, omit_high) - accum_c;
+            end_c = std::min(end_c, omit_high) - accum_c;
+            if(start_c < end_c) {
+              memcpy(dst_cur, src_wc, (end_c - start_c) * sizeof(float16));
+            }
 
+          }
 
         }// end each_H
 
+        final_max = std::max(fpga_cur_max, final_max);
         // accumulate channel
-
         accum_c += each_C;
 
 
       }// end each split
-      break;
+      // break;
 
 
     }// end each sub
 
     final_output->max()[0] = final_max;
     final_output->flush();
-    // final_output->saveToFile("final", true);
+    // final_output->saveToFile("res", true);
 
   }
 
@@ -298,6 +325,7 @@ class TransposedConvPE : public PE {
   bool sub_filter_ena_;
   int omit_size_;
   int sub_conv_number_;
+  DCpuConcatType deconv_concat_type_ = DCpuConcatType::NONE;
   Tensor padded_input_;
   Tensor filter_;
 };

@@ -200,7 +200,8 @@ void inline inverse_filter(Tensor* tensor) {
   }
 }
 
-void fill_sub_filters(ConvParam* param, Tensor* filter) {
+DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
+  DCpuConcatType deconv_concat_type = DCpuConcatType::NONE;
   int dynamic_range = 127;  // int8 max value
   float16 dynamic_range_fp16 = float_to_half(dynamic_range * 1.0);
   float inv_dynamic_range = 1.0 / dynamic_range;
@@ -270,6 +271,7 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
         }
     }
     sub_param.filter->flush();
+    // sub_param.filter->saveToFile("sub_filter", true);
 
     Tensor* sub_scale = sub_param.scale();
     Tensor* sub_bias = sub_param.bias();
@@ -277,7 +279,6 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
     float* scale_data = sub_scale->mutableData<float>(FP32, s_shape);
     float* bias_data = sub_bias->mutableData<float>(FP32, s_shape);
     for (int n = 0; n < sub_num; n++) {
-      int q_idx = (n + omit_size * kernel_num) % sub_num;
       scale_data[n] =
           param->scale()->data<float>()[n % kernel_num];
     }
@@ -298,23 +299,18 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
 
     // sub_param.filter->saveToFile("feed_before_split", true);
     const ConvParam& sb_param = sub_param;
-    bool deconv = true;
-    bool force_cpu_concat = true;
     std::cout << "omit size is " << omit_size << std::endl;
-    split_filter_num(sb_param, start_offset, deconv, force_cpu_concat, omit_size * kernel_num);
-    if(sb_param.cpu_concat) {
-      param->cpu_concat = true;
-    }
+    deconv_concat_type = split_filter_num(sb_param, start_offset, true, kernel_num, omit_size, sub_conv_number);
+
     for(auto basic_conv_param : const_cast<ConvParam&>(sb_param).splitParams()) {
-      if(!param->cpu_concat) {
-        config_basic_conv_deconvinfo(basic_conv_param, true, sub_conv_number, omit_size);
-      }
+
         param->splitParams().push_back(basic_conv_param);
     }
     const_cast<ConvParam&>(sb_param).splitParams().clear();
 
 
   }
+  return deconv_concat_type;
 }
 
 }  // namespace zynqmp
