@@ -64,6 +64,7 @@ void BindLiteOpt(py::module *m) {
       .def("set_model_file", &OptBase::SetModelFile)
       .def("set_param_file", &OptBase::SetParamFile)
       .def("set_valid_places", &OptBase::SetValidPlaces)
+      .def("enable_fp16", &OptBase::EnableFloat16)
       .def("set_optimize_out", &OptBase::SetOptimizeOut)
       .def("set_model_type", &OptBase::SetModelType)
       .def("set_quant_model", &OptBase::SetQuantModel)
