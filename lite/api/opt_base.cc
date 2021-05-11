@@ -59,13 +59,12 @@ void OptBase::SetPassesInternal(
   opt_config_.set_passes_internal(passes_internal);
 }
 
-void OptBase::SetValidPlaces(const std::string& valid_places,
-                             bool enable_fp16) {
+void OptBase::SetValidPlaces(const std::string& valid_places) {
   valid_places_.clear();
   auto target_reprs = lite::Split(valid_places, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
-      if (enable_fp16) {
+      if (enable_fp16_) {
         valid_places_.emplace_back(
             Place{TARGET(kARM), PRECISION(kFP16), DATALAYOUT(kNCHW)});
       }
@@ -149,13 +148,12 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
                           const std::string& param_path,
                           const std::string& model_type,
                           const std::string& valid_places,
-                          const bool enable_fp16,
                           const std::string& optimized_out_path) {
   SetModelDir(model_dir_path);
   SetModelFile(model_path);
   SetParamFile(param_path);
   SetModelType(model_type);
-  SetValidPlaces(valid_places, enable_fp16);
+  SetValidPlaces(valid_places);
   SetOptimizeOut(optimized_out_path);
   CheckIfModelSupported(false);
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
