@@ -117,6 +117,16 @@ void XPUFcCompute::Run() {
         ctx.GetRawContext(), param.output->data<float>(), m * n, output_max);
     CHECK_EQ(r, 0);
   } else if (param.precision == "int16") {
+    XPUScratchPadGuard input_max_guard_;
+    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    if (input_max == nullptr) {
+      int r = xdnn::findmax<float>(
+          ctx.GetRawContext(),
+          param.input->data<float>(),
+          m * k,
+          reinterpret_cast<float*>(input_max_guard_->addr_));
+      CHECK_EQ(r, 0);
+    }
     int r = xdnn::fc_int16(
         ctx.GetRawContext(),        /* context */
         false,                      /* TransA */
@@ -126,15 +136,17 @@ void XPUFcCompute::Run() {
         k,                          /* k */
         1.0f,                       /* alpha */
         param.input->data<float>(), /* A */
+        (input_max == nullptr)
+            ? reinterpret_cast<float*>(input_max_guard_->addr_)
+            : input_max, /* input_max */
         reinterpret_cast<const int16_t*>(quant_weight_guard_->addr_), /* B */
-        w_max,                                           /* max_b */
+        reinterpret_cast<const float*>(
+            weight_max_guard_->addr_),                   /* weight_max */
         0.0f,                                            /* beta */
         param.output->mutable_data<float>(TARGET(kXPU)), /* C */
+        output_max,                                      /* outputmax */
         bias,                                            /* bias */
         act /* act_type */);
-    CHECK_EQ(r, 0);
-    r = xdnn::findmax<float>(
-        ctx.GetRawContext(), param.output->data<float>(), m * n, output_max);
     CHECK_EQ(r, 0);
   } else if (param.precision == "int8") {
     bool x_trans = false;
