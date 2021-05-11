@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# Start the CI task of examining iOS inference lib compiling.
+# Start the CI task of examining iOS metal-based inference lib compiling.
 set +x
 set -e
 
 #####################################################################################################
-# Usage: test the publish period on iOS platform.
+# Usage: test the publish period on iOS metal-based platform.
 # Data: 20210125
 # Author: DannyIsFunny
 #####################################################################################################
@@ -47,8 +47,8 @@ function publish_inference_lib {
   fi
   # Error message.
   echo "**************************************************************************************"
-  echo -e "* iOS compiling task failed on the following instruction:"
-  echo -e "*     ./lite/tools/build_ios.sh --arch=$arch --with_extra=ON"
+  echo -e "* iOS metal-based compiling task failed on the following instruction:"
+  echo -e "*     ./lite/tools/build_ios_with_metal.sh --arch=$arch --with_extra=ON"
   echo "**************************************************************************************"
   exit 1
 }
