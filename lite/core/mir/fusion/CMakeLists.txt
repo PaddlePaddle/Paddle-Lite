@@ -73,6 +73,9 @@ lite_cc_library(fuse_instance_norm_activation
 lite_cc_library(fuse_elementwise_add_scale
         SRCS elementwise_add_scale_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_flatten_fc
+        SRCS flatten_fc_fuser.cc
+        DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_fc_prelu
         SRCS fc_prelu_fuser.cc
         DEPS pattern_matcher_high_api)
@@ -102,6 +105,7 @@ set(mir_fusers
     fuse_sequence_reverse_embedding
     fuse_instance_norm_activation
     fuse_elementwise_add_scale
+    fuse_flatten_fc
     fuse_fc_prelu
     fuse_conv_scale
     CACHE INTERNAL "fusers")
