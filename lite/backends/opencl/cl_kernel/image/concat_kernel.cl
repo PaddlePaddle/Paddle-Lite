@@ -60,7 +60,7 @@ __kernel void concatByCWith2Inputs(
     } else if (value_offset == 3) {
       value = input_data.w;
     }
-   if (i == 0) {
+    if (i == 0) {
       output_data.x = value;
     } else if (i == 1) {
       output_data.y = value;
