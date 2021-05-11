@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/operators/conv_op.h"
-#include <algorithm>
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
@@ -58,6 +57,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
   std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  CHECK_EQ(dilations.size(), 2L);
   bool with_act =
       op_info->HasAttr("with_act") && op_info->GetAttr<bool>("with_act");
   std::string act_type =
@@ -65,8 +65,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   float leaky_relu_alpha = act_type == "leaky_relu"
                                ? op_info->GetAttr<float>("leaky_relu_alpha")
                                : 0.f;
+  // Calculate paddings and strides
   CHECK_EQ(strides.size(), 2L);
-  CHECK_EQ(dilations.size(), 2L);
   if (paddings.size() == 2L) {
     for (size_t i = 0; i < strides.size(); i++) {
       int copy_pad = *(paddings.begin() + 2 * i);
@@ -92,9 +92,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
        filter_channel_size == 1);
   VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
 
-  CHECK(op_info->HasOutputScale(output_scale_name, true));
-  auto output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
-
   // Input operand
   CHECK(op_info->HasInputScale(input_scale_name, true));
   auto input_scale = op_info->GetInputScale(input_scale_name, true)[0];
@@ -106,11 +103,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     memset(&input_type, 0, sizeof(NNAdapterOperandType));
     input_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
     input_type.symm_per_layer_params.scale = input_scale;
-    input_type.dimension_count = input_dims.size();
-    input_type.dimensions[0] = static_cast<int32_t>(input_dims[0]);
-    input_type.dimensions[1] = static_cast<int32_t>(input_dims[1]);
-    input_type.dimensions[2] = static_cast<int32_t>(input_dims[2]);
-    input_type.dimensions[3] = static_cast<int32_t>(input_dims[3]);
+    ConvertDimensions(
+        input_dims, input_type.dimensions, &input_type.dimension_count);
     input_operand = converter->AddOperand(&input_type, input_name);
   }
 
@@ -120,11 +114,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   bool is_perchannel_filter_scales = IsPerChannelScales(filter_scale);
   NNAdapterOperandType filter_type;
   memset(&filter_type, 0, sizeof(NNAdapterOperandType));
-  filter_type.dimension_count = filter_dims.size();
-  filter_type.dimensions[0] = static_cast<int32_t>(filter_dims[0]);
-  filter_type.dimensions[1] = static_cast<int32_t>(filter_dims[1]);
-  filter_type.dimensions[2] = static_cast<int32_t>(filter_dims[2]);
-  filter_type.dimensions[3] = static_cast<int32_t>(filter_dims[3]);
+  ConvertDimensions(
+      filter_dims, filter_type.dimensions, &filter_type.dimension_count);
   if (is_perchannel_filter_scales) {
     // Per channel
     filter_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
@@ -217,7 +208,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                         sizeof(int32_t) * quant_bias_data.size());
 
   // Fuse code operand
-  int32_t fuse_code_value = 0;
+  int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
     fuse_code_value = 1;
   } else if (act_type == "relu1") {
@@ -225,23 +216,21 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else if (act_type == "relu6") {
     fuse_code_value = 3;
   } else if (!act_type.empty()) {
-    fuse_code_value = 0;
-    LOG(WARNING) << "Support act_type: " << act_type;
+    LOG(WARNING) << "Unsupported activation type: " << act_type;
     return FAILED;
   }
   auto fuse_code_operand = converter->AddOperand(&int32_type);
   converter->SetOperand(fuse_code_operand, &fuse_code_value, sizeof(int32_t));
 
   // Output operand
+  CHECK(op_info->HasOutputScale(output_scale_name, true));
+  auto output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
   NNAdapterOperandType output_type;
   memset(&output_type, 0, sizeof(NNAdapterOperandType));
   output_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
   output_type.symm_per_layer_params.scale = output_scale;
-  output_type.dimension_count = output_dims.size();
-  output_type.dimensions[0] = static_cast<int32_t>(output_dims[0]);
-  output_type.dimensions[1] = static_cast<int32_t>(output_dims[1]);
-  output_type.dimensions[2] = static_cast<int32_t>(output_dims[2]);
-  output_type.dimensions[3] = static_cast<int32_t>(output_dims[3]);
+  ConvertDimensions(
+      output_dims, output_type.dimensions, &output_type.dimension_count);
   auto output_operand = converter->AddOperand(&output_type, output_name);
 
   // Conv2D operation

@@ -133,8 +133,20 @@ std::vector<int32_t> ConvertDimensions(const DDim& input_dimensions) {
   return output_dimensions;
 }
 
+void ConvertDimensions(const DDim& input_dimensions,
+                       int32_t* output_dimensions,
+                       uint32_t* output_dimension_count) {
+  CHECK(output_dimensions);
+  CHECK(output_dimension_count);
+  *output_dimension_count = input_dimensions.size();
+  for (size_t i = 0; i < input_dimensions.size(); i++) {
+    output_dimensions[i] = static_cast<int32_t>(input_dimensions[i]);
+  }
+}
+
 DDim ConvertDimensions(int32_t* input_dimensions,
                        uint32_t input_dimension_count) {
+  CHECK(input_dimensions);
   std::vector<int64_t> output_dimensions(input_dimension_count);
   for (int i = 0; i < input_dimension_count; i++) {
     output_dimensions[i] = static_cast<int64_t>(input_dimensions[i]);

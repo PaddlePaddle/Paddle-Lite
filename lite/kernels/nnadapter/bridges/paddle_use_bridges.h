@@ -16,3 +16,20 @@
 
 USE_SUBGRAPH_BRIDGE(conv2d, kNNAdapter);
 USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(fc, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(softmax, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(pool2d, kNNAdapter);
+
+USE_SUBGRAPH_BRIDGE(sigmoid, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(relu, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(relu6, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(tanh, kNNAdapter);
+
+USE_SUBGRAPH_BRIDGE(elementwise_add, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(elementwise_sub, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(elementwise_mul, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(elementwise_div, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_sub_activation, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_mul_activation, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation, kNNAdapter);

@@ -115,12 +115,12 @@ int Model::IdentifyInputsAndOutputs(uint32_t input_count,
   model_.input_operands.resize(input_count);
   for (uint32_t i = 0; i < input_count; i++) {
     model_.input_operands[i] = input_operands[i];
-    model_.input_operands[i]->type.lifetime = NNADAPTER_INPUT;
+    model_.input_operands[i]->type.lifetime = NNADAPTER_MODEL_INPUT;
   }
   model_.output_operands.resize(output_count);
   for (uint32_t i = 0; i < output_count; i++) {
     model_.output_operands[i] = output_operands[i];
-    model_.output_operands[i]->type.lifetime = NNADAPTER_OUTPUT;
+    model_.output_operands[i]->type.lifetime = NNADAPTER_MODEL_OUTPUT;
   }
   return NNADAPTER_NO_ERROR;
 }

@@ -254,7 +254,7 @@ int Program::ConvertConv2D(driver::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_GE(input_count, 11);
+  NNADAPTER_CHECK_EQ(input_count, 13);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
@@ -304,12 +304,9 @@ int Program::ConvertConv2D(driver::Operation* operation) {
   auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[10]->buffer);
   NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
   // Dilations
-  int32_t dilation_width = 1;
-  int32_t dilation_height = 1;
-  if (input_count >= 13) {
-    dilation_width = *reinterpret_cast<int32_t*>(input_operands[11]->buffer);
-    dilation_height = *reinterpret_cast<int32_t*>(input_operands[12]->buffer);
-  }
+  auto dilation_width = *reinterpret_cast<int32_t*>(input_operands[11]->buffer);
+  auto dilation_height =
+      *reinterpret_cast<int32_t*>(input_operands[12]->buffer);
   NNADAPTER_VLOG(5) << "dilations=[" << dilation_width << "," << dilation_height
                     << "]";
   // Check depthwise mode

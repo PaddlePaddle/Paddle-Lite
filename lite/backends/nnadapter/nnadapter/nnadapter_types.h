@@ -97,8 +97,8 @@ typedef enum {
 typedef enum {
   NNADAPTER_TEMPORARY_VARIABLE = 0,
   NNADAPTER_CONSTANT = 1,
-  NNADAPTER_INPUT = 2,
-  NNADAPTER_OUTPUT = 3,
+  NNADAPTER_MODEL_INPUT = 2,
+  NNADAPTER_MODEL_OUTPUT = 3,
 } NNAdapterOperandLifetimeCode;
 
 /**
@@ -106,12 +106,15 @@ typedef enum {
  */
 typedef enum {
   /**
-   * Perform a normal or depthwise 2-D convolution operation.
+   * Performs a normal or depthwise 2-D convolution operation.
    * The CONV_2D op computes a 2-D convolution based on the input, filter,
    * strides, paddings, dilations, groups and etc.
    *
    * Inputs:
-   * * 0: input, A 4-D tensor with shape [N, C_in, H_in, W_in].
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
+   * H_in, W_in].
    * * 1: filter, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor.
@@ -144,14 +147,12 @@ typedef enum {
    * group=C_out=C_in.
    * * 10: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
-   * * 11: dilation_width, optional, A NNADAPTER_INT32 scalar. Defaults to 1. If
-   * this input is set, input 11 (dilation_height) must be specified as well.
-   * * 12: dilation_height, optional, A NNADAPTER_INT32 scalar. Defaults to 1.
-   * If this input is set, input 10 (dilation_width) must be specified as well.
+   * * 11: dilation_width, A NNADAPTER_INT32 scalar. Defaults to 1.
+   * * 12: dilation_height, A NNADAPTER_INT32 scalar. Defaults to 1.
    *
    * Outputs:
    * * 0: output, The output 4-D tensor with shape [N, C_out, H_out, W_out], its
-   * type is the same as x.
+   * type is the same as input.
    *      H_out = (H_in + padding_height_top + padding_height_bottom -
    * (dilation_height * (filter_height
    *              - 1) + 1)) / stride_height + 1
@@ -159,7 +160,273 @@ typedef enum {
    * (dilation_width * (filter_width - 1)
    *              + 1)) / stride_width + 1
    */
-  NNADAPTER_CONV_2D = 3,
+  NNADAPTER_CONV_2D = 1,
+
+  /**
+   * Add a fully connected layer.
+   * The output is calculated using this formula:
+   *     output = activation(input * weight' + bias)
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor of at least rank 2, If
+   * its rank is greater than 2, it will be flattened to a 2-D Tensor with the
+   * shape [batch_size, input_size], where input_size represents the number of
+   * inputs, matching the second dimension of weight, and batch_size is
+   * calculated by dividing the number of elements by input_size
+   * * 1: weight, A 2-D tensor with shape [num_units, input_size], where the
+   * num_units represents the number of output units, which also means the
+   * feature size of output.
+   * * 2: bias, A 1-D tensor with shape [num_units].
+   *      1) If input's type is NNADAPTER_TENSOR_FLOAT16 or
+   * NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
+   *      2) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER, its
+   * type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER, and bias_scale
+   * == input_scale * weight_scale.
+   *      3) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL,
+   * its type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL, and
+   * bias_scale[i] = input_scale * weight_scale[i] for each output channel.
+   * * 3: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+   * values.
+   *
+   * Outputs:
+   * * 0: output, A 2-D tensor with shape [batch_size, num_units], and its type
+   * is the same as input.
+   */
+  NNADAPTER_FULLY_CONNECTED = 2,
+
+  /**
+   * Applies sigmoid activation to the input tensor element-wise.
+   * The output is calculated using this formula:
+   *     output = 1 / (1 + exp(-input))
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   */
+  NNADAPTER_SIGMOID = 3,
+
+  /**
+   * Applies rectified linear activation to the input tensor element-wise.
+   * The output is calculated using this formula:
+   *     output = max(0, input)
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   */
+  NNADAPTER_RELU = 4,
+
+  /**
+   * Applies rectified linear 6 activation to the input tensor element-wise.
+   * The output is calculated using this formula:
+   *     output = min(6, max(0, input))
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   */
+  NNADAPTER_RELU6 = 5,
+
+  /**
+   * Applies the hyperbolic tangent activation to the input tensor element-wise.
+   * The output is calculated using this formula:
+   *     output = tanh(input)
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   */
+  NNADAPTER_TANH = 6,
+
+  /**
+   * Computes the normalized exponential values for the input tensor
+   * element-wise.
+   * The output is calculated using this formula:
+   *     output = exp(input) / reduce_sum(exp(input), axis=axis, keepdims=true)
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, A NNADAPTER_INT32 scalar. Defaults to 1. It represents the
+   * dimension along which softmax will be performed. It should be in range [-R,
+   * R), where R is the rank of input, negative value works the same way as
+   * axis+R.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   */
+  NNADAPTER_SOFTMAX = 7,
+
+  /**
+   * Applies a 2-D average pooling across the input according to kernel sizes,
+  * stride sizes, and pad lengths.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+  * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+  * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
+  * H_in, W_in].
+   * * 1: padding_width_left, A NNADAPTER_INT32 scalar.
+   * * 2: padding_width_right, A NNADAPTER_INT32 scalar.
+   * * 3: padding_height_top, A NNADAPTER_INT32 scalar.
+   * * 4: padding_height_bottom, A NNADAPTER_INT32 scalar.
+   * * 5: stride_width, A NNADAPTER_INT32 scalar.
+   * * 6: stride_height, A NNADAPTER_INT32 scalar.
+   * * 7: filter_width, A NNADAPTER_INT32 scalar, filter_width=W_in and
+  * filter_height=H_in represents a global 2-D average pooling.
+   * * 8: filter_height, A NNADAPTER_INT32 scalar, filter_width=W_in and
+  * filter_height=H_in represents a global 2-D average pooling.
+   * * 9: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+  * values.
+   * * 10: ceil_mode, A NNADAPTER_BOOL8 scalar, whether to use ceil or floor
+  * (default) to compute the output shape. Defaults to false.
+   * * 11: count_include_pad, A NNADAPTER_BOOL8 scalar, whether include pad
+  * pixels when calculating values for the edges. Defaults to false.
+   *
+   * Outputs:
+   * * 0: output, The output 4-D tensor with shape [N, C_out, H_out, W_out], its
+  * type is the same as input.
+  *      1) If ceil_mode=false,
+   *         H_out = floor((H_in + padding_height_top + padding_height_bottom -
+  * filter_height) / stride_height + 1)
+   *         W_out = floor((W_in + padding_width_left + padding_width_right -
+  * filter_width) / stride_width + 1)
+   *      2) If ceil_mode=true,
+   *         H_out = ceil((H_in + padding_height_top + padding_height_bottom -
+  * filter_height) / stride_height + 1)
+   *         W_out = ceil((W_in + padding_width_left + padding_width_right -
+  * filter_width) / stride_width + 1)
+   */
+  NNADAPTER_AVERAGE_POOL_2D = 8,
+
+  /**
+   * Applies a 2-D max pooling across the input according to kernel sizes,
+   * stride sizes, and pad lengths.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
+   * H_in, W_in].
+   * * 1: padding_width_left, A NNADAPTER_INT32 scalar.
+   * * 2: padding_width_right, A NNADAPTER_INT32 scalar.
+   * * 3: padding_height_top, A NNADAPTER_INT32 scalar.
+   * * 4: padding_height_bottom, A NNADAPTER_INT32 scalar.
+   * * 5: stride_width, A NNADAPTER_INT32 scalar.
+   * * 6: stride_height, A NNADAPTER_INT32 scalar.
+   * * 7: filter_width, A NNADAPTER_INT32 scalar, filter_width=W_in and
+   * filter_height=H_in represents a global 2-D max pooling.
+   * * 8: filter_height, A NNADAPTER_INT32 scalar, filter_width=W_in and
+   * filter_height=H_in represents a global 2-D max pooling.
+   * * 9: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+   * values.
+   * * 10: ceil_mode, A NNADAPTER_BOOL8 scalar, whether to use ceil or floor
+   * (default) to compute the output shape. Defaults to false.
+   * * 11: count_include_pad, A NNADAPTER_BOOL8 scalar, whether include pad
+   * pixels when calculating values for the edges. Defaults to false.
+   *
+   * Outputs:
+   * * 0: output, The output 4-D tensor with shape [N, C_out, H_out, W_out], its
+   * type is the same as input.
+   *      1) If ceil_mode=false,
+   *         H_out = floor((H_in + padding_height_top + padding_height_bottom -
+   * filter_height) / stride_height + 1)
+   *         W_out = floor((W_in + padding_width_left + padding_width_right -
+   * filter_width) / stride_width + 1)
+   *      2) If ceil_mode=true,
+   *         H_out = ceil((H_in + padding_height_top + padding_height_bottom -
+   * filter_height) / stride_height + 1)
+   *         W_out = ceil((W_in + padding_width_left + padding_width_right -
+   * filter_width) / stride_width + 1)
+   */
+  NNADAPTER_MAX_POOL_2D = 9,
+
+  /**
+   * Performs element-wise binary addition(with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   *
+   * Inputs:
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: input1, A tensor with the same type as input0.
+   * * 2: fuse_code, A NNADAPTER_INT32 scalar, Specifies the activation to the
+   * result, must be one of NNAdapterFuseCode values.
+   *
+   * Outputs:
+   * * 0: output, The result with the same type as two inputs.
+   */
+  NNADAPTER_ADD = 10,
+
+  /**
+   * Performs element-wise binary subtraction(with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   *
+   * Inputs:
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: input1, A tensor with the same type as input0.
+   * * 2: fuse_code, A NNADAPTER_INT32 scalar, Specifies the activation to the
+   * result, must be one of NNAdapterFuseCode values.
+   *
+   * Outputs:
+   * * 0: output, The result with the same type as two inputs.
+   */
+  NNADAPTER_SUB = 11,
+
+  /**
+   * Performs element-wise binary addition(with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   *
+   * Inputs:
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: input1, A tensor with the same type as input0.
+   * * 2: fuse_code, A NNADAPTER_INT32 scalar, Specifies the activation to the
+   * result, must be one of NNAdapterFuseCode values.
+   *
+   * Outputs:
+   * * 0: output, The result with the same type as two inputs.
+   */
+  NNADAPTER_MUL = 12,
+
+  /**
+   * Performs element-wise binary addition(with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   *
+   * Inputs:
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: input1, A tensor with the same type as input0.
+   * * 2: fuse_code, A NNADAPTER_INT32 scalar, Specifies the activation to the
+   * result, must be one of NNAdapterFuseCode values.
+   *
+   * Outputs:
+   * * 0: output, The result with the same type as two inputs.
+   */
+  NNADAPTER_DIV = 13,
 } NNAdapterOperationCode;
 
 /**
