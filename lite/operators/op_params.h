@@ -1108,6 +1108,7 @@ struct BiGRUParam : ParamBase {
   bool fw_gru_origin_mode{false};
   bool bw_gru_origin_mode{false};
   bool has_mul_b{false};
+  bool has_gru_b{false};
 };
 
 /// ----------------------- BeamSearchDecode operators ----------------------f
