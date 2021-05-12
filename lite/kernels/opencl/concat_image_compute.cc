@@ -141,7 +141,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     context.cl_context()->AddKernel(kernel_func_name_,
                                     (kernel_func_name_ == "concat_mul_buffer")
                                         ? "buffer/concat_kernel.cl"
-                                        : "image/concat_kernel_1.cl",
+                                        : "image/concat_kernel.cl",
                                     build_options_,
                                     time_stamp_);
   }
