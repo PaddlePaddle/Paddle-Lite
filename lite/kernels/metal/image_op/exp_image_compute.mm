@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/exp_image_compute.h"
-#include "lite/core/tensor.h"
-#include "lite/core/op_registry.h"
 #include "lite/backends/metal/metal_context_imp.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
@@ -24,36 +24,34 @@ namespace kernels {
 namespace metal {
 
 void ExpImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
+    auto& context = ctx_->As<ContextMetal>();
+    metal_context_ = (MetalContext*)context.context();
 
-  const auto& param = this->Param<param_t>();
-  auto output_dims = param.Out->dims();
+    const auto& param = this->Param<param_t>();
+    auto output_dims = param.Out->dims();
 #ifdef LITE_WITH_METAL_FULL
 #else
-	input_buffer_ = param.X->data<MetalHalf, MetalImage>();
-	output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+    input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
 #endif
 
-  function_name_ = "exp";
-	//pipline
-	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
-	pipline_ = (__bridge_retained void *)[backend pipline:function_name_];
+    function_name_ = "exp";
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
 }
 
 void ExpImageCompute::Run() {
-	auto outTexture = output_buffer_->image();
-	auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
-	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+    auto outTexture = output_buffer_->image();
+    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-	auto encoder = [backend commandEncoder];
-  [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+    auto encoder = [backend commandEncoder];
+    [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
 
-	[backend dispatchEncoder:encoder
-									 pipline:pipline
-								outTexture:outTexture];
-	[backend commit];
+    [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    [backend commit];
 }
 
 }  // namespace metal
@@ -61,31 +59,24 @@ void ExpImageCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(exp,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ExpImageCompute,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    exp, kMetal, kFloat, kMetalTexture2DArray, paddle::lite::kernels::metal::ExpImageCompute, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-
-REGISTER_LITE_KERNEL(exp,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ExpImageCompute,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    exp, kMetal, kFP16, kMetalTexture2DArray, paddle::lite::kernels::metal::ExpImageCompute, def)
+    .BindInput(
+        "X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput(
+        "Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();

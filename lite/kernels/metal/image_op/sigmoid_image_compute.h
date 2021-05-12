@@ -50,9 +50,9 @@ class SigmoidImageCompute
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
-  
-	void* pipline_;
-	std::string function_name_;
+
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
 };
 

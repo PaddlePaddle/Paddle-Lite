@@ -16,6 +16,7 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_DROPOUT_IMAGE_COMPUTE_H_
 
 #include <memory>
+
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
