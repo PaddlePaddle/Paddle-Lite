@@ -224,25 +224,23 @@ class MMDNNFcOp {
       CHECK_EQ(r, 0);
       in_max_by_caller = in_max_;
     }
-    r = xdnn::gemm_int16_maxptr<float, int16_t, float>(ctx,
-                                                       false,
-                                                       true,
-                                                       m,
-                                                       n_,
-                                                       k_,
-                                                       1.0f,
-                                                       in,
-                                                       k_,
-                                                       weight_,
-                                                       k_,
-                                                       0.0f,
-                                                       out,
-                                                       n_,
-                                                       bias_,
-                                                       act_type_,
-                                                       in_max_by_caller,
-                                                       weight_max_,
-                                                       out_max);
+
+    r = xdnn::fc_int16(ctx,
+                       false,
+                       true,
+                       m,
+                       n_,
+                       k_,
+                       1.0f,
+                       in,
+                       in_max_by_caller,
+                       weight_,
+                       weight_max_,
+                       0.0f,
+                       out,
+                       out_max,
+                       bias_,
+                       act_type_);
     CHECK_EQ(r, 0);
   }
 };

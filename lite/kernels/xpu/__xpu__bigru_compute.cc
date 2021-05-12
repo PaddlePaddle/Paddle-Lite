@@ -127,15 +127,7 @@ void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
                       weight_max_vector.data(),
                       8 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-// quant
-#if 1
-  quant_weight_guard_ =
-      TargetWrapperXPU::MallocScratchPad(weight_len * sizeof(float));
-  XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(quant_weight_guard_->addr_),
-                      weight_ptr,
-                      weight_len * sizeof(float),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-#else
+  // quant
   quant_weight_guard_ =
       TargetWrapperXPU::MallocScratchPad(weight_len * sizeof(int16_t));
   std::vector<int16_t> quant_weight_cpu(weight_len);
@@ -153,10 +145,11 @@ void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
                       quant_weight_cpu.data(),
                       weight_len * sizeof(int16_t),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-#endif
 }
 
 void XPUBiGRUCompute::PrepareForRun() {
+  input_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+  mul_output_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   for (auto forward : {true, false}) {
     PrepareBiasForRun(forward);
     PrepareMulWeightForRun(forward);
@@ -195,9 +188,13 @@ void XPUBiGRUCompute::MulRun(bool forward) {
 
   auto& quant_weight_guard =
       forward ? fw_mul_quant_weight_guard_ : bw_mul_quant_weight_guard_;
-  auto& weight_abs_max =
-      forward ? fw_mul_weight_abs_max_ : bw_mul_weight_abs_max_;
+  auto& weight_max_guard =
+      forward ? fw_mul_weight_max_guard_ : bw_mul_weight_max_guard_;
   auto& bias_guard = forward ? fw_bias_guard_ : bw_bias_guard_;
+  const float* bias_ptr =
+      (bias_guard == nullptr)
+          ? nullptr
+          : reinterpret_cast<const float*>(bias_guard->addr_);
 
   int r = xdnn::fc_int16(
       ctx.GetRawContext(), /* context */
@@ -206,16 +203,18 @@ void XPUBiGRUCompute::MulRun(bool forward) {
       m,
       n,
       k,
-      1.0f,                                                        /* alpha */
-      x_matrix.data<float>(),                                      /* A */
+      1.0f,                   /* alpha */
+      x_matrix.data<float>(), /* A */
+      reinterpret_cast<const float*>(input_max_guard_->addr_),
       reinterpret_cast<const int16_t*>(quant_weight_guard->addr_), /* B */
-      weight_abs_max,
+      reinterpret_cast<const float*>(weight_max_guard->addr_),
       0.0f,                                     /* beta */
       output.mutable_data<float>(TARGET(kXPU)), /* C */
-      reinterpret_cast<const float*>(bias_guard->addr_),
+      reinterpret_cast<float*>(mul_output_max_guard_->addr_),
+      bias_ptr,
       xdnn::Activation_t::LINEAR);
-  *(output.mutable_lod()) = origin_x.lod();
   CHECK_EQ(r, 0);
+  *(output.mutable_lod()) = origin_x.lod();
 }
 
 void XPUBiGRUCompute::GRURun(bool forward) {
@@ -235,7 +234,7 @@ void XPUBiGRUCompute::GRURun(bool forward) {
 
   const float* hidden_prev_ptr = nullptr;
 
-  const float* weight_ptr = reinterpret_cast<const float*>(
+  const int16_t* weight_ptr = reinterpret_cast<const int16_t*>(
       forward ? fw_gru_quant_weight_guard_->addr_
               : bw_gru_quant_weight_guard_->addr_);
   const float* weight_maxptr =
@@ -253,23 +252,24 @@ void XPUBiGRUCompute::GRURun(bool forward) {
   int batch_size = input_lod.size() - 1;
   for (int i = 0; i < batch_size; i++) {
     int cur_seq_len = input_lod[i + 1] - input_lod[i];
-    int ret = xdnn::gru_core<float, float, float, int16_t>(ctx.GetRawContext(),
-                                                           input_ptr,
-                                                           hidden_prev_ptr,
-                                                           weight_ptr,
-                                                           hidden_ptr,
-                                                           1,
-                                                           cur_seq_len,
-                                                           frame_size,
-                                                           nullptr,
-                                                           nullptr,
-                                                           weight_maxptr,
-                                                           nullptr,
-                                                           bias_ptr,
-                                                           activation,
-                                                           gate_activation,
-                                                           origin_mode,
-                                                           is_reverse);
+    int ret =
+        xdnn::gru_core<float, int16_t, float, int16_t>(ctx.GetRawContext(),
+                                                       input_ptr,
+                                                       hidden_prev_ptr,
+                                                       weight_ptr,
+                                                       hidden_ptr,
+                                                       1,
+                                                       cur_seq_len,
+                                                       frame_size,
+                                                       nullptr,
+                                                       nullptr,
+                                                       weight_maxptr,
+                                                       nullptr,
+                                                       bias_ptr,
+                                                       activation,
+                                                       gate_activation,
+                                                       origin_mode,
+                                                       is_reverse);
     CHECK_EQ(ret, 0) << "call xdnn::gru_core failed!";
     input_ptr += cur_seq_len * 3 * frame_size;
     hidden_ptr += cur_seq_len * frame_size;
@@ -295,10 +295,10 @@ void XPUBiGRUCompute::BiGRURun() {
     const float* fw_input_ptr = fw_input->data<float>();
     const float* bw_input_ptr = bw_input->data<float>();
 
-    const float* fw_weight_ptr =
-        reinterpret_cast<const float*>(fw_gru_quant_weight_guard_->addr_);
-    const float* bw_weight_ptr =
-        reinterpret_cast<const float*>(bw_gru_quant_weight_guard_->addr_);
+    const int16_t* fw_weight_ptr =
+        reinterpret_cast<const int16_t*>(fw_gru_quant_weight_guard_->addr_);
+    const int16_t* bw_weight_ptr =
+        reinterpret_cast<const int16_t*>(bw_gru_quant_weight_guard_->addr_);
 
     const float* fw_weight_maxptr =
         reinterpret_cast<const float*>(fw_gru_weight_max_guard_->addr_);
@@ -313,11 +313,8 @@ void XPUBiGRUCompute::BiGRURun() {
 
     int frame_size = fw_gru_frame_size;
     auto& input_lod = fw_input->lod()[0];
-    int batch_size = input_lod.size() - 1;
-    for (int i = 0; i < batch_size; i++) {
-      int cur_seq_len = input_lod[i + 1] - input_lod[i];
-      int ret =
-          xdnn::bigru_core<float, float, float, int16_t>(ctx.GetRawContext(),
+    int ret =
+        xdnn::bigru_core<float, int16_t, float, int16_t>(ctx.GetRawContext(),
                                                          fw_input_ptr,
                                                          bw_input_ptr,
                                                          nullptr,
@@ -326,8 +323,7 @@ void XPUBiGRUCompute::BiGRURun() {
                                                          bw_weight_ptr,
                                                          fw_hidden_ptr,
                                                          bw_hidden_ptr,
-                                                         1,
-                                                         cur_seq_len,
+                                                         input_lod,
                                                          frame_size,
                                                          nullptr,
                                                          nullptr,
@@ -342,12 +338,7 @@ void XPUBiGRUCompute::BiGRURun() {
                                                          activation,
                                                          gate_activation,
                                                          origin_mode);
-      CHECK_EQ(ret, 0) << "call xdnn::bigru_core failed!";
-      fw_input_ptr += cur_seq_len * 3 * frame_size;
-      bw_input_ptr += cur_seq_len * 3 * frame_size;
-      fw_hidden_ptr += cur_seq_len * frame_size;
-      bw_hidden_ptr += cur_seq_len * frame_size;
-    }
+    CHECK_EQ(ret, 0) << "call xdnn::bigru_core failed!";
   } else {
     // FW_GRU
     GRURun(true);
@@ -357,6 +348,14 @@ void XPUBiGRUCompute::BiGRURun() {
 }
 
 void XPUBiGRUCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+  int r =
+      xdnn::findmax<float>(ctx.GetRawContext(),
+                           param.input->data<float>(),
+                           param.input->numel(),
+                           reinterpret_cast<float*>(input_max_guard_->addr_));
+  CHECK_EQ(r, 0);
   // FW_MUL
   MulRun(true);
   // BW_MUL

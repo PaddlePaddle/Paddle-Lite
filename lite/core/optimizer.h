@@ -125,7 +125,6 @@ class Optimizer {
          "__xpu__consecutive_conv2d_fuse_pass",
          "__xpu__conv2d_pool2d_fuse_pass",
          "__xpu__consecutive_block_fuse_pass",
-         "__xpu__link_previous_out_max_pass",
          "__xpu__sfa_head_meanstd_fuse_pass",
          "__xpu__sfa_head_moment_fuse_pass",
          "__xpu__mmdnn_fuse_pass",
@@ -136,6 +135,7 @@ class Optimizer {
          "__xpu__multi_encoder_adaptive_seqlen_fuse_pass",
          "__xpu__multi_encoder_slice_link_fuse_pass",
          "__xpu__generate_sequence_fuse_pass",
+         "__xpu__link_previous_out_max_pass",
          // Only for fully quantized model, infer the output scale and fix the
          // attribute 'enable_int8' for all of the quantized ops.
          "quantized_op_attributes_inference_pass",

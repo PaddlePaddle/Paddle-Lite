@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/scales_fuse_pass.h"
-
-#include <memory>
-#include <vector>
-
-#include "lite/core/mir/fusion/scales_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace kernels {
+namespace host {
 
-void ScalesFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::ScalesFuser fuser;
-  fuser(graph.get());
-}
+template <class T>
+class SequenceMaskCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::SequenceMaskParam;
 
-}  // namespace mir
+  void Run() override;
+
+  virtual ~SequenceMaskCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(lite_scales_fuse_pass, paddle::lite::mir::ScalesFusePass)
-    .BindTargets({TARGET(kAny)});
