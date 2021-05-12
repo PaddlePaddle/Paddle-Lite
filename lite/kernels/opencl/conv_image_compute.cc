@@ -666,6 +666,9 @@ void ConvImageCompute::PrepareForRun() {
                                     build_options_[i],
                                     time_stamp_);
   }
+  if (device_name.find("Mali-T860") != std::string::npos) {
+    use_lws_ = false;
+  }
   SetLocalWorkSize(CLRuntime::Global()->lws_repeats());
 }
 
