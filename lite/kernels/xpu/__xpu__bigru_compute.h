@@ -59,6 +59,9 @@ class XPUBiGRUCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   void PrepareMulWeightForRun(bool forward);
   void PrepareGRUWeightForRun(bool forward);
 
+  XPUScratchPadGuard input_max_guard_;
+  XPUScratchPadGuard mul_output_max_guard_;
+
   XPUScratchPadGuard fw_bias_guard_;
   XPUScratchPadGuard bw_bias_guard_;
 
