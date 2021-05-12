@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class BatchNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class BatchNormCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::BatchNormParam;
 
