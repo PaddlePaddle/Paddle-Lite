@@ -24,18 +24,27 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
-static int PoolOutputSize(
-    int input_size, int filter_size, int pad_left, int pad_right, int stride, bool ceil_mode) {
+static int PoolOutputSize(int input_size,
+                          int filter_size,
+                          int pad_left,
+                          int pad_right,
+                          int stride,
+                          bool ceil_mode) {
   int output_size;
   if (!ceil_mode) {
-    output_size = (input_size - filter_size + pad_left + pad_right) / stride + 1;
+    output_size =
+        (input_size - filter_size + pad_left + pad_right) / stride + 1;
   } else {
-    output_size = (input_size - filter_size + pad_left + pad_right + stride - 1) / stride + 1;
+    output_size =
+        (input_size - filter_size + pad_left + pad_right + stride - 1) /
+            stride +
+        1;
   }
   return output_size;
 }
 
-static std::vector<int64_t> compute_output_shape(operators::PoolParam* param_, bool is_nchw) {
+static std::vector<int64_t> compute_output_shape(operators::PoolParam* param_,
+                                                 bool is_nchw) {
   int axis = 2;
   if (!is_nchw) axis = 1;
   const auto x_dims = param_->x->dims();
@@ -53,7 +62,8 @@ static std::vector<int64_t> compute_output_shape(operators::PoolParam* param_, b
   std::vector<int64_t> output_shape({x_dims[0]});
   if (is_nchw) output_shape.push_back(x_dims[1]);
   if (param_->adaptive) {
-    output_shape.insert(output_shape.end(), param_->ksize.begin(), param_->ksize.end());
+    output_shape.insert(
+        output_shape.end(), param_->ksize.begin(), param_->ksize.end());
   } else {
     auto paddings = *param_->paddings;
     for (size_t i = 0; i < param_->ksize.size(); ++i) {
@@ -174,8 +184,10 @@ void pool_compute_ref(const operators::PoolParam& param) {
 }
 
 TEST(pool_metal, retrive_op) {
-  auto pool = KernelRegistry::Global().Create(
-      "pool2d", TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray));
+  auto pool = KernelRegistry::Global().Create("pool2d",
+                                              TARGET(kMetal),
+                                              PRECISION(kFloat),
+                                              DATALAYOUT(kMetalTexture2DArray));
   ASSERT_FALSE(pool.empty());
   ASSERT_TRUE(pool.front());
 }
@@ -198,8 +210,9 @@ TEST(pool_metal, compute) {
                   for (auto c : {1, 2, 3}) {
                     for (auto h : {8}) {
                       for (auto w : {8}) {
-                        LOG(INFO) << "n:" << n << " c:" << c << " h:" << h << " w:" << w
-                                  << " ksize:" << ksize << " stride:" << stride << " pad:" << pad
+                        LOG(INFO) << "n:" << n << " c:" << c << " h:" << h
+                                  << " w:" << w << " ksize:" << ksize
+                                  << " stride:" << stride << " pad:" << pad
                                   << " exclusive:" << exclusive
                                   << " global_pooling:" << global_pooling
                                   << " ceil_mode: " << ceil_mode
@@ -229,7 +242,8 @@ TEST(pool_metal, compute) {
                         param.global_pooling = global_pooling;
                         param.strides = {stride, stride};
                         std::vector<int> paddings = {pad, pad, pad, pad};
-                        param.paddings = std::make_shared<std::vector<int>>(paddings);
+                        param.paddings =
+                            std::make_shared<std::vector<int>>(paddings);
                         param.exclusive = exclusive;
                         param.ceil_mode = ceil_mode;
                         param.adaptive = false;
@@ -258,9 +272,11 @@ TEST(pool_metal, compute) {
                           // judge the input
                           Tensor x_from_dev;
                           x_from_dev.Resize(in_out_shape);
-                          auto x_from_dev_ptr = x_from_dev.mutable_data<float>();
+                          auto x_from_dev_ptr =
+                              x_from_dev.mutable_data<float>();
                           x_dev_ptr->CopyToNCHW<float>(x_from_dev_ptr);
-                          for (int i = 0; i < x_from_dev.dims().production(); i++) {
+                          for (int i = 0; i < x_from_dev.dims().production();
+                               i++) {
                             ASSERT_NEAR(x_from_dev_ptr[i], x_data[i], 1e-5);
                           }
                         }
@@ -269,10 +285,11 @@ TEST(pool_metal, compute) {
                         PoolImageCompute<float, PRECISION(kFloat)> pool;
                         std::unique_ptr<KernelContext> ctx(new KernelContext);
                         ctx->As<ContextMetal>().InitOnce();
-                        auto mt = (MetalContext*)ctx->As<ContextMetal>().context();
-                        mt->set_metal_path(
-                            "/Users/liuzheyuan/code/Paddle-Lite/cmake-build-debug/lite/"
-                            "backends/metal/lite.metallib");
+                        auto mt =
+                            (MetalContext*)ctx->As<ContextMetal>().context();
+                        mt->set_metal_path("/Users/liuzheyuan/code/Paddle-Lite/"
+                                           "cmake-build-debug/lite/"
+                                           "backends/metal/lite.metallib");
                         pool.SetContext(std::move(ctx));
 
                         pool.SetParam(param);
