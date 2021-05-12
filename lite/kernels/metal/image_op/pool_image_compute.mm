@@ -14,12 +14,12 @@
 
 #include <cmath>
 
-#include "lite/kernels/metal/image_op/pool_image_compute.h"
-#include "lite/core/tensor.h"
-#include "lite/core/op_registry.h"
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/metal_context_imp.h"
+#include "lite/backends/metal/metal_debug.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/kernels/metal/image_op/pool_image_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -27,192 +27,200 @@ namespace kernels {
 namespace metal {
 
 void PoolImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
+    auto& context = ctx_->As<ContextMetal>();
+    metal_context_ = (MetalContext*)context.context();
 
-  const auto& param = this->Param<param_t>();
-  auto output_dims = param.output->dims();
-  
+    const auto& param = this->Param<param_t>();
+    auto output_dims = param.output->dims();
+
 #ifdef LITE_WITH_METAL_FULL
 #else
-	input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-	output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims, input_buffer_->transpose_);
+    input_buffer_ = param.x->data<MetalHalf, MetalImage>();
+    output_buffer_ =
+        param.output->mutable_data<MetalHalf, MetalImage>(output_dims, input_buffer_->transpose_);
 #endif
-	
-	//是否使用mps
-	bool should_use_mps = false;
-	if(@available(iOS 10.0, *)) {
-		if (metal_context_->use_mps()) {
-			int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
-			int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
-			if (input_c >= 3 && output_c >= 3) {
-				should_use_mps = true;
-			}
-		}
-	}
-	if (param.global_pooling) {
-		should_use_mps = false;
-	}
-	use_mps_ = should_use_mps;
-	if (use_mps_) {
-		setup_with_mps();
-	} else {
-		setup_without_mps();
-	}
+
+    //是否使用mps
+    bool should_use_mps = false;
+    if (@available(iOS 10.0, *)) {
+        if (metal_context_->use_mps()) {
+            int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+            int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+            if (input_c >= 3 && output_c >= 3) {
+                should_use_mps = true;
+            }
+        }
+    }
+    if (param.global_pooling) {
+        should_use_mps = false;
+    }
+    use_mps_ = should_use_mps;
+    if (use_mps_) {
+        setup_with_mps();
+    } else {
+        setup_without_mps();
+    }
 }
 
 void PoolImageCompute::Run() {
-	if (use_mps_) {
-		run_with_mps();
-	} else {
-		run_without_mps();
-	}
+    if (use_mps_) {
+        run_with_mps();
+    } else {
+        run_without_mps();
+    }
 }
 
 #pragma mark - SELF
 void PoolImageCompute::run_without_mps() {
-	const auto &param = this->Param<param_t>();
-	auto outTexture = output_buffer_->image();
-	auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
-	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
-	
-	auto encoder = [backend commandEncoder];
-	if (param.global_pooling) {
-		[encoder setTexture:(input_buffer_->image()) atIndex:(0)];
-		[encoder setTexture:(output_buffer_->image()) atIndex:(1)];
-		
-		//按照global_pooling设置threadgroup
-		//A14考虑SIMD reduction instructions
-		auto inTexture = input_buffer_->image();
-		NSUInteger slices = (outTexture.arrayLength * 4 + 3)/4;
-		NSUInteger width = 0, height = 0, groupWidth = 0, groupHeight = 0;
-		width = MIN(256, pipline.threadExecutionWidth);
-		width = MIN(width, inTexture.width);
-		height = MIN(256, pipline.maxTotalThreadsPerThreadgroup) / width;
-		height = MIN(height, inTexture.height);
-		groupWidth = 1;
-		groupHeight = 1;
-		MTLSize threadsPerGroup = MTLSize{.width =  width, .height = height, .depth = 1};
-		MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = slices};
-		[backend dispatchEncoder:encoder
-										 pipline:pipline
-						 threadsPerGroup:threadsPerGroup
-											groups:groups];
-	} else {
-		[encoder setTexture:(input_buffer_->image()) atIndex:(0)];
-		[encoder setTexture:(output_buffer_->image()) atIndex:(1)];
-		[encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
-		
-		[backend dispatchEncoder:encoder
-										 pipline:pipline
-									outTexture:outTexture];
-	}
-	[backend commit];
+    const auto& param = this->Param<param_t>();
+    auto outTexture = output_buffer_->image();
+    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+
+    auto encoder = [backend commandEncoder];
+    if (param.global_pooling) {
+        [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+        [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+
+        //按照global_pooling设置threadgroup
+        // A14考虑SIMD reduction instructions
+        auto inTexture = input_buffer_->image();
+        NSUInteger slices = (outTexture.arrayLength * 4 + 3) / 4;
+        NSUInteger width = 0, height = 0, groupWidth = 0, groupHeight = 0;
+        width = MIN(256, pipline.threadExecutionWidth);
+        width = MIN(width, inTexture.width);
+        height = MIN(256, pipline.maxTotalThreadsPerThreadgroup) / width;
+        height = MIN(height, inTexture.height);
+        groupWidth = 1;
+        groupHeight = 1;
+        MTLSize threadsPerGroup = MTLSize{.width = width, .height = height, .depth = 1};
+        MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = slices};
+        [backend dispatchEncoder:encoder
+                         pipline:pipline
+                 threadsPerGroup:threadsPerGroup
+                          groups:groups];
+    } else {
+        [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+        [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+        [encoder setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+
+        [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    }
+    [backend commit];
 }
 
 void PoolImageCompute::setup_without_mps() {
-	const auto& param = this->Param<param_t>();
+    const auto& param = this->Param<param_t>();
 
-	int pool_type;
-	if (param.pooling_type == "max")
-		pool_type = 0;
-	else if (param.pooling_type == "avg")
-		pool_type = 1;
-	else {
-		throw std::logic_error("pool: no such pooling type\n");
-	}
-	if (param.global_pooling) {
-		if (pool_type == 1) {
-			//global_pooling只支持avg形式
-			function_name_ = "global_pool";
-		} else {
-			throw std::logic_error("pool: global_pooling no such pooling type\n");
-		}
-	} else {
-		auto kw = param.ksize[1];
-		auto kh = param.ksize[0];
-		auto sw = param.strides[1];
-		auto sh = param.strides[0];
-		auto pw = (*param.paddings)[2];
-		auto ph = (*param.paddings)[0];
+    int pool_type;
+    if (param.pooling_type == "max")
+        pool_type = 0;
+    else if (param.pooling_type == "avg")
+        pool_type = 1;
+    else {
+        throw std::logic_error("pool: no such pooling type\n");
+    }
+    if (param.global_pooling) {
+        if (pool_type == 1) {
+            // global_pooling只支持avg形式
+            function_name_ = "global_pool";
+        } else {
+            throw std::logic_error("pool: global_pooling no such pooling type\n");
+        }
+    } else {
+        auto kw = param.ksize[1];
+        auto kh = param.ksize[0];
+        auto sw = param.strides[1];
+        auto sh = param.strides[0];
+        auto pw = (*param.paddings)[2];
+        auto ph = (*param.paddings)[0];
 
-		PoolMetalParam pool_params{
-				kw, kh, sw, sh, pw, ph, pool_type, param.exclusive};
+        PoolMetalParam pool_params{kw, kh, sw, sh, pw, ph, pool_type, param.exclusive};
 
-		params_buffer_ = std::make_shared<MetalBuffer>(metal_context_,
-																									 sizeof(pool_params),
-																									 &pool_params);
-		
-		function_name_ = "pool";
-	}
-	//pipline
-	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
-	pipline_ = (__bridge_retained void *)[backend pipline:function_name_];
+        params_buffer_ =
+            std::make_shared<MetalBuffer>(metal_context_, sizeof(pool_params), &pool_params);
+
+        function_name_ = "pool";
+    }
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
 }
 
 #pragma mark - MPS
 
 void PoolImageCompute::run_with_mps() {
-	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
-	auto cmdbuf = [backend commandBuffer];
-	if (mps_pool_op_) {
-		[((__bridge MPSCNNPoolingMax *)mps_pool_op_) encodeToCommandBuffer:cmdbuf
-																														sourceImage:(__bridge MPSImage *)mps_input_image_
-																											 destinationImage:(__bridge MPSImage *)mps_output_image_];
-	}
-	[backend commit:cmdbuf];
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    auto cmdbuf = [backend commandBuffer];
+    if (mps_pool_op_) {
+        [((__bridge MPSCNNPoolingMax*)mps_pool_op_)
+            encodeToCommandBuffer:cmdbuf
+                      sourceImage:(__bridge MPSImage*)mps_input_image_
+                 destinationImage:(__bridge MPSImage*)mps_output_image_];
+    }
+    [backend commit:cmdbuf];
 }
 
 void PoolImageCompute::setup_with_mps() {
-	const auto& param = this->Param<param_t>();
-	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+    const auto& param = this->Param<param_t>();
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-	auto kw = param.ksize[1];
-	auto kh = param.ksize[0];
-	auto sw = param.strides[1];
-	auto sh = param.strides[0];
-	auto pw = (*param.paddings)[2];
-	auto ph = (*param.paddings)[0];
+    auto kw = param.ksize[1];
+    auto kh = param.ksize[0];
+    auto sw = param.strides[1];
+    auto sh = param.strides[0];
+    auto pw = (*param.paddings)[2];
+    auto ph = (*param.paddings)[0];
 
-	if (param.global_pooling) {
-		auto input_dims = param.x->dims();
-		kw = (int)input_dims[3];
-		kh = (int)input_dims[2];
-	}
-	int offsetX = static_cast<int>(((int)(kw - 1) + 1) / 2 - pw);
-	int offsetY = static_cast<int>(((int)(kh - 1) + 1) / 2 - ph);
+    if (param.global_pooling) {
+        auto input_dims = param.x->dims();
+        kw = (int)input_dims[3];
+        kh = (int)input_dims[2];
+    }
+    int offsetX = static_cast<int>(((int)(kw - 1) + 1) / 2 - pw);
+    int offsetY = static_cast<int>(((int)(kh - 1) + 1) / 2 - ph);
 
-	if (param.pooling_type == "max") {
-		mps_pool_op_ = (__bridge_retained void *)[[MPSCNNPoolingMax alloc] initWithDevice:backend.device
-																																					kernelWidth:kw kernelHeight:kh
-																																			strideInPixelsX:sw strideInPixelsY:sh];
-	} else if (param.pooling_type == "avg"){
-		mps_pool_op_ = (__bridge_retained void *)[[MPSCNNPoolingAverage alloc] initWithDevice:backend.device
-																																							kernelWidth:kw kernelHeight:kh
-																																					strideInPixelsX:sw strideInPixelsY:sh];
-	}
-	((__bridge MPSCNNPoolingMax *)mps_pool_op_).offset = MPSOffset{.x = offsetX, .y = offsetY};
-	((__bridge MPSCNNPoolingMax *)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
-	//MPS算子输入输出
-	auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
-	auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
-	mps_input_image_ = (__bridge_retained void *)[[MPSImage alloc] initWithTexture:input_buffer_->image() featureChannels:input_c];
-	mps_output_image_ = (__bridge_retained void *)[[MPSImage alloc] initWithTexture:output_buffer_->image() featureChannels:output_c];
+    if (param.pooling_type == "max") {
+        mps_pool_op_ =
+            (__bridge_retained void*)[[MPSCNNPoolingMax alloc] initWithDevice:backend.device
+                                                                  kernelWidth:kw
+                                                                 kernelHeight:kh
+                                                              strideInPixelsX:sw
+                                                              strideInPixelsY:sh];
+    } else if (param.pooling_type == "avg") {
+        mps_pool_op_ =
+            (__bridge_retained void*)[[MPSCNNPoolingAverage alloc] initWithDevice:backend.device
+                                                                      kernelWidth:kw
+                                                                     kernelHeight:kh
+                                                                  strideInPixelsX:sw
+                                                                  strideInPixelsY:sh];
+    }
+    ((__bridge MPSCNNPoolingMax*)mps_pool_op_).offset = MPSOffset{.x = offsetX, .y = offsetY};
+    ((__bridge MPSCNNPoolingMax*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
+    // MPS算子输入输出
+    auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+    auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+    mps_input_image_ =
+        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
+                                                   featureChannels:input_c];
+    mps_output_image_ =
+        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
+                                                   featureChannels:output_c];
 }
 
 PoolImageCompute::~PoolImageCompute() {
-	if (mps_pool_op_){
-		CFRelease(mps_pool_op_);
-		mps_pool_op_ = nullptr;
-	}
-	if (mps_input_image_){
-		CFRelease(mps_input_image_);
-		mps_input_image_ = nullptr;
-	}
-	if (mps_output_image_){
-		CFRelease(mps_output_image_);
-		mps_output_image_ = nullptr;
-	}
+    if (mps_pool_op_) {
+        CFRelease(mps_pool_op_);
+        mps_pool_op_ = nullptr;
+    }
+    if (mps_input_image_) {
+        CFRelease(mps_input_image_);
+        mps_input_image_ = nullptr;
+    }
+    if (mps_output_image_) {
+        CFRelease(mps_output_image_);
+        mps_output_image_ = nullptr;
+    }
 }
 
 }  // namespace metal
@@ -220,7 +228,7 @@ PoolImageCompute::~PoolImageCompute() {
 }  // namespace lite
 }  // namespace paddle
 
-#pragma mark - 
+#pragma mark -
 
 REGISTER_LITE_KERNEL(pool2d,
                      kMetal,
@@ -244,12 +252,10 @@ REGISTER_LITE_KERNEL(pool2d,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::PoolImageCompute,
                      def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput(
+        "X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput(
+        "Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

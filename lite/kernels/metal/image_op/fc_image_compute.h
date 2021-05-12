@@ -16,6 +16,7 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_FC_IMAGE_COMPUTE_H_
 
 #include <memory>
+
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/reshape_image_compute.h"
@@ -42,8 +43,8 @@ class FCImageCompute : public KernelLite<TARGET(kMetal),
   void PrepareForRun() override;
   void Run() override;
   void SaveOutput() override {
-		MetalDebug::SaveOutput(function_name_, output_buffer_);
-	};
+    MetalDebug::SaveOutput(function_name_, output_buffer_);
+  };
 
  private:
   void setup_without_mps();
@@ -53,10 +54,10 @@ class FCImageCompute : public KernelLite<TARGET(kMetal),
   const MetalImage* bias_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;
-																					 
-	void* pipline_;
-	std::string function_name_;
-	MetalContext* metal_context_;
+
+  void* pipline_;
+  std::string function_name_;
+  MetalContext* metal_context_;
 
   DDim input_x_mul_dim_;
   bool insert_shape = false;

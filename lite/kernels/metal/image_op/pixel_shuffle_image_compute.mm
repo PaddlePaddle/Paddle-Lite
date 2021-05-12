@@ -23,48 +23,49 @@ namespace metal {
 
 template <typename P, PrecisionType PTYPE>
 void PixelShuffleImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
+    auto& context = this->ctx_->template As<ContextMetal>();
+    metal_context_ = (MetalContext*)context.context();
+    auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->template Param<param_t>();
-  auto output_dims = param.output->dims();
+    const auto& param = this->template Param<param_t>();
+    auto output_dims = param.output->dims();
 
-  input_buffer_ = param.x->template data<P, MetalImage>();
-  output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
+    input_buffer_ = param.x->template data<P, MetalImage>();
+    output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
 
-  PixelShuffleMetalParam metal_param{param.upscale_factor};
-  param_buffer_ = metal_context_->CreateBuffer(
-      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
+    PixelShuffleMetalParam metal_param{param.upscale_factor};
+    param_buffer_ = metal_context_->CreateBuffer(*device, &metal_param, sizeof(metal_param),
+                                                 METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  std::string function_name = "";
-  if (std::is_same<float, P>::value) {
-    function_name = "pixel_shuffle";
-  } else if (std::is_same<MetalHalf, P>::value) {
-    function_name = "pixel_shuffle_half";
-  }
-  assert(!function_name.empty());
+    std::string function_name = "";
+    if (std::is_same<float, P>::value) {
+        function_name = "pixel_shuffle";
+    } else if (std::is_same<MetalHalf, P>::value) {
+        function_name = "pixel_shuffle_half";
+    }
+    assert(!function_name.empty());
 
-  kernel_ = metal_context_->GetKernel(*device, function_name);
-  queue_ = metal_context_->GetDefaultQueue(*device);
+    kernel_ = metal_context_->GetKernel(*device, function_name);
+    queue_ = metal_context_->GetDefaultQueue(*device);
 }
 
 template <typename P, PrecisionType PTYPE>
 void PixelShuffleImageCompute<P, PTYPE>::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
+    auto output_width = output_buffer_->texture_width_;
+    auto output_height = output_buffer_->texture_height_;
+    auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
+    auto encoder =
+        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
 
-  kernel_->Execute(*encoder, global_work_size, false);
+    kernel_->Execute(*encoder, global_work_size, false);
 }
 
 }  // namespace metal
@@ -79,31 +80,23 @@ typedef paddle::lite::kernels::metal::PixelShuffleImageCompute<float, PRECISION(
 typedef paddle::lite::kernels::metal::PixelShuffleImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalPixelShuffleFp16;
 
-REGISTER_LITE_KERNEL(pixel_shuffle,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalPixelShuffleFp32,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    pixel_shuffle, kMetal, kFloat, kMetalTexture2DArray, MetalPixelShuffleFp32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-
-REGISTER_LITE_KERNEL(pixel_shuffle,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalPixelShuffleFp16,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(pixel_shuffle, kMetal, kFP16, kMetalTexture2DArray, MetalPixelShuffleFp16, def)
+    .BindInput(
+        "X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput(
+        "Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
