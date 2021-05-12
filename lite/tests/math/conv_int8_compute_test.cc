@@ -53,7 +53,7 @@ DEFINE_int32(stride_w, 1, "stride width");
 DEFINE_int32(dila_h, 1, "dilation height");
 DEFINE_int32(dila_w, 1, "dilation width");
 
-DEFINE_bool(flag_act, true, "do act");
+DEFINE_int32(flag_act, 1, "do act");
 DEFINE_bool(flag_bias, true, "with bias");
 DEFINE_double(clipped_coef, 1.0, "clipped relu coef");
 DEFINE_double(leakey_relu_alpha, 2.22, "leakey relu alpha");
