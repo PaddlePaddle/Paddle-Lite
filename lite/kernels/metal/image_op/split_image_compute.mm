@@ -37,7 +37,8 @@ void SplitImageCompute<P, PTYPE>::PrepareForRun() {
   input_buffer_ = param.x->template data<P, MetalImage>();
   for (int i = 0; i < num; i++) {
     auto output_dim = outputs[i]->dims();
-    auto output_image = outputs[i]->template mutable_data<P, MetalImage>(output_dim);
+    auto output_image =
+        outputs[i]->template mutable_data<P, MetalImage>(output_dim);
     output_buffers_.emplace_back(output_image);
   }
 
@@ -51,8 +52,8 @@ void SplitImageCompute<P, PTYPE>::PrepareForRun() {
     axis += input_buffer_->tensor_dim_.size();
   }
   auto rank = input_buffer_->tensor_dim_.size();
-  auto axis_param =
-      (int)(param.axis + input_buffer_->tensor_dim_.size() - input_buffer_->tensor_dim_.size());
+  auto axis_param = (int)(param.axis + input_buffer_->tensor_dim_.size() -
+                          input_buffer_->tensor_dim_.size());
 
   SplitMetalParam smp = {{
       (int)param.x->dims()[0],
@@ -121,16 +122,16 @@ void SplitImageCompute<P, PTYPE>::PrepareForRun() {
     throw std::logic_error("ERROR: unsupported split type");
   }
 
-  param_buffer_ =
-      metal_context_->CreateBuffer(*device, &smp, sizeof(smp), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = metal_context_->CreateBuffer(
+      *device, &smp, sizeof(smp), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   std::string function_name = "";
   if (std::is_same<float, P>::value) {
-    function_name =
-        "split_" + std::to_string(rank) + "_" + std::to_string(num) + "_" + v_ + "_float";
+    function_name = "split_" + std::to_string(rank) + "_" +
+                    std::to_string(num) + "_" + v_ + "_float";
   } else if (std::is_same<MetalHalf, P>::value) {
-    function_name =
-        "split_" + std::to_string(rank) + "_" + std::to_string(num) + "_" + v_ + "_half";
+    function_name = "split_" + std::to_string(rank) + "_" +
+                    std::to_string(num) + "_" + v_ + "_half";
   }
   queue_ = metal_context_->GetDefaultQueue(*device);
   kernel_ = metal_context_->GetKernel(*device, function_name);
@@ -142,16 +143,20 @@ void SplitImageCompute<P, PTYPE>::Run() {
   auto output_height = input_buffer_->texture_height_;
   auto output_array_length = input_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
+                                                &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
   NSUInteger image_index = 0;
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(image_index++)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
+                                      atIndex:(image_index++)];
   for (auto item : output_buffers_)
-    [encoder->metal_command_encoder_ setTexture:(item->image()) atIndex:(image_index++)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(item->image())
+                                        atIndex:(image_index++)];
+  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer())
+                                      offset:(0)atIndex:(0)];
 
   kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -161,49 +166,54 @@ void SplitImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::SplitImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::SplitImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::SplitImageCompute<float, PRECISION(kFloat)> MetalSplitFp32;
-typedef paddle::lite::kernels::metal::SplitImageCompute<MetalHalf, PRECISION(kFP16)> MetalSplitFp16;
+template class paddle::lite::kernels::metal::
+    SplitImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::
+    SplitImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::SplitImageCompute<float,
+                                                        PRECISION(kFloat)>
+    MetalSplitFp32;
+typedef paddle::lite::kernels::metal::SplitImageCompute<MetalHalf,
+                                                        PRECISION(kFP16)>
+    MetalSplitFp16;
 
-REGISTER_LITE_KERNEL(split,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalSplitFp32,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindInput("AxisTensor", {LiteType::GetTensorTy(TARGET(kHost),
-                                                   PRECISION(kInt32),
-                                                   DATALAYOUT(kNCHW))})
-        .BindInput("SectionsTensorList", {LiteType::GetTensorTy(TARGET(kHost),
-                                                                    PRECISION(kInt32),
-                                                                    DATALAYOUT(kNCHW))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    split, kMetal, kFloat, kMetalTexture2DArray, MetalSplitFp32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("SectionsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
+REGISTER_LITE_KERNEL(
+    split, kMetal, kFP16, kMetalTexture2DArray, MetalSplitFp16, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
 
-REGISTER_LITE_KERNEL(split,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalSplitFp16,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-
-        .BindInput("AxisTensor", {LiteType::GetTensorTy(TARGET(kHost),
-                                                            PRECISION(kInt32),
-                                                            DATALAYOUT(kNCHW))})
-        .BindInput("SectionsTensorList", {LiteType::GetTensorTy(TARGET(kHost),
-                                                            PRECISION(kInt32),
-                                                            DATALAYOUT(kNCHW))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("SectionsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
