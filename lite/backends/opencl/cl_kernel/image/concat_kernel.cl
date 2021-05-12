@@ -11,7 +11,9 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-// For case: All Axis C of inputs are aligned
+/********************************************************
+ * For case that All Axis C of inputs are aligned: Start
+ ********************************************************/
 #define CHECK_IDX                                  \
   int c_blk_idx = get_global_id(0);                \
   int w_idx = get_global_id(1);                    \
@@ -24,7 +26,8 @@ limitations under the License. */
   CL_DTYPE4 result;
 
 
-// axis = 0, 对 N 合并; 也可以直接执行 copy 操作
+// axis = 0
+// Calling enqueueCopyImage directly is also OK but may be slower than kernel impl.
 #define DOConcat2InputAxis0                                            \
   int n_idx = nh_idx / output_shape.z;                                 \
   int h_idx = nh_idx % output_shape.z;                                 \
@@ -73,7 +76,7 @@ limitations under the License. */
   }
 
 
-// axis = 1, 对 C 合并
+// axis = 1
 #define DOConcat2InputAxis1                                            \
   int boundary0 = input_shape0.y; /* C_blk0 */                         \
   int boundary1 = boundary0 + input_shape1.y; /* C_blk0 + C_blk1 */    \
@@ -83,7 +86,7 @@ limitations under the License. */
     input_pos.x = c_blk_idx * input_shape0.w + w_idx;                  \
     result = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, input_pos); \
   } else if (c_blk_idx < boundary1) {                                  \
-    input_pos.x = (c_blk_idx - boundary0) * input_shape1.w + w_idx; /* Note: input_shape1.w == input_shape0.w; // input_pos.x -= boundary0 * input_shape1.w; // TODO: can be optimize */    \
+    input_pos.x = (c_blk_idx - boundary0) * input_shape1.w + w_idx;    \
     result = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, SAMPLER, input_pos); \
   }
 
@@ -120,14 +123,14 @@ limitations under the License. */
   }
 
 
-// axis = 2, 对 H 合并
+// axis = 2
 #define DOConcat2InputAxis2                                            \
   int n_idx = nh_idx / output_shape.z;                                 \
   int h_idx = nh_idx % output_shape.z;                                 \
   int boundary0 = input_shape0.z; /* H0 */                             \
   int boundary1 = boundary0 + input_shape1.z; /* H0 + H1 */            \
   int2 input_pos;                                                      \
-  input_pos.x = c_blk_idx * input_shape0.w + w_idx; /* Note: input_shape0.w == input_shape1.w  */ \
+  input_pos.x = c_blk_idx * input_shape0.w + w_idx;                    \
   if (h_idx < boundary0) {                                             \
     input_pos.y = n_idx * input_shape0.z + h_idx;                      \
     result = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, input_pos); \
@@ -169,7 +172,7 @@ limitations under the License. */
   }
 
 
-// axis = 3, 对 W 合并
+// axis = 3
 #define DOConcat2InputAxis3                                            \
   int boundary0 = input_shape0.w; /* W0 */                             \
   int boundary1 = boundary0 + input_shape1.w; /* W0 + W1 */            \
@@ -290,8 +293,6 @@ limitations under the License. */
     WRITE_IMG_DATA                                                           \
   }
 
-
-// case 1: 如对 N/H/W合并，或对channel合并但是所有input tensors的channel都是4的整数倍
 // axis = 0
 CONCAT2(2Input, Axis0)
 CONCAT3(3Input, Axis0)
@@ -316,6 +317,9 @@ CONCAT3(3Input, Axis3)
 CONCAT4(4Input, Axis3)
 CONCAT5(5Input, Axis3)
 CONCAT6(6Input, Axis3)
+/********************************************************
+ * For case that All Axis C of inputs are aligned: End
+ ********************************************************/
 
 
 // deprecated
