@@ -165,9 +165,9 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel_.setArg(2, out_c_group);
     CL_CHECK_FATAL(status);
-    status = kernel_.setArg(3, lws_[1]);
+    status = kernel_.setArg(3, static_cast<int>(lws_[1]));
     CL_CHECK_FATAL(status);
-    status = kernel_.setArg(4, lws_[2]);
+    status = kernel_.setArg(4, static_cast<int>(lws_[2]));
     CL_CHECK_FATAL(status);
     status = kernel_.setArg(5, epsilon);
     CL_CHECK_FATAL(status);
