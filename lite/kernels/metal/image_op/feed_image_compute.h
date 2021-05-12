@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -41,18 +42,18 @@ class FeedImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
-	void SaveOutput() override;
-//  void SaveOutput() override {
-//    MetalDebug::SaveOutput("feed", output_buffer_);
-//  };
+  void SaveOutput() override;
+  //  void SaveOutput() override {
+  //    MetalDebug::SaveOutput("feed", output_buffer_);
+  //  };
 
  private:
   std::shared_ptr<MetalBuffer> input_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   MetalImage* output_buffer_;
 
-	void* pipline_;
-	std::string function_name_;
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
 };
 

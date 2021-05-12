@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -34,9 +35,7 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class DepthwiseConv2dImageCompute
-    : public Conv2dImageCompute {
-};
+class DepthwiseConv2dImageCompute : public Conv2dImageCompute {};
 
 }  // namespace metal
 }  // namespace kernels

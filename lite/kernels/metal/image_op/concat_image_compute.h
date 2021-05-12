@@ -48,15 +48,15 @@ class ConcatImageCompute : public KernelLite<TARGET(kMetal),
   };
 
  private:
-	void setup_without_mps();
+  void setup_without_mps();
 
   std::vector<const MetalImage*> input_buffers_;
   MetalImage* output_buffer_;
-	std::shared_ptr<MetalBuffer> params_buffer_;
-																																			 
-	void* pipline_;
-	std::string function_name_;
-	MetalContext* metal_context_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
+
+  void* pipline_;
+  std::string function_name_;
+  MetalContext* metal_context_;
   std::string v_ = "normal";
 };
 

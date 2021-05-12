@@ -26,8 +26,8 @@
 #include "lite/core/profile/profiler.h"
 #endif
 
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -47,26 +47,26 @@ class SoftmaxImageCompute
   void SaveOutput() override {
     MetalDebug::SaveOutput("softmax", output_buffer_);
   };
-	virtual ~SoftmaxImageCompute();
+  virtual ~SoftmaxImageCompute();
 
  private:
-	bool use_mps_{false};
-	void *mps_softmax_op_{nullptr};
-	void *mps_input_image_{nullptr};
-	void *mps_output_image_{nullptr};
+  bool use_mps_{false};
+  void* mps_softmax_op_{nullptr};
+  void* mps_input_image_{nullptr};
+  void* mps_output_image_{nullptr};
 
-	void setup_with_mps();
-	void setup_without_mps();
-																						 
-	void run_with_mps();
-	void run_without_mps();
-													
+  void setup_with_mps();
+  void setup_without_mps();
+
+  void run_with_mps();
+  void run_without_mps();
+
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;
 
-	void* pipline_;
-	std::string function_name_;
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
 };
 

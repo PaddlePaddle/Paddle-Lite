@@ -20,9 +20,10 @@
 #endif
 
 #include <vector>
-#include "lite/core/dim.h"
+
 #include "lite/backends/metal/metal_common.h"
 #include "lite/backends/metal/metal_context.h"
+#include "lite/core/dim.h"
 
 namespace paddle {
 namespace lite {
@@ -37,22 +38,22 @@ class MetalImage {
 #else
   void* image() const;
 #endif
-	
-	int ElementCount() const;
-		
-	//源数据 mps计算时使用
-	void* src_tensor_{nullptr};
 
-  MetalImage(MetalContext *context,
+  int ElementCount() const;
+
+  //源数据 mps计算时使用
+  void* src_tensor_{nullptr};
+
+  MetalImage(MetalContext* context,
              const DDim& in_dim,
              std::vector<int> in_transpose = {0, 2, 3, 1},
              METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::FLOAT,
              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
-	void UpdateDims(MetalContext *context,
-									const DDim &in_tensor_dim,
-									std::vector<int> in_transpose);
-	
+  void UpdateDims(MetalContext* context,
+                  const DDim& in_tensor_dim,
+                  std::vector<int> in_transpose);
+
   template <typename SP>
   void CopyFromNCHW(const SP* src);
 

@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -25,8 +26,8 @@
 #include "lite/core/profile/profiler.h"
 #endif
 
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -34,23 +35,23 @@ namespace kernels {
 namespace metal {
 
 class FetchImageCompute : public KernelLite<TARGET(kMetal),
-                                           PRECISION(kFloat),
-                                           DATALAYOUT(kMetalTexture2DArray)> {
+                                            PRECISION(kFloat),
+                                            DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::FetchParam;
 
  public:
   void PrepareForRun() override;
   void Run() override;
-	void SaveOutput() override {
-		MetalDebug::SaveOutput("fetch", output_buffer_.get());
-	};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("fetch", output_buffer_.get());
+  };
 
  private:
-	void setup_without_mps();
+  void setup_without_mps();
 
   const MetalImage* input_buffer_;
   std::shared_ptr<MetalBuffer> output_buffer_;
-	std::shared_ptr<MetalBuffer> params_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
 
   void* pipline_;
   std::string function_name_;

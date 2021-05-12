@@ -16,6 +16,7 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_RELU_IMAGE_COMPUTE_H_
 
 #include <memory>
+
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -48,8 +49,8 @@ class ReluImageCompute : public KernelLite<TARGET(kMetal),
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
 
-	void* pipline_;
-	std::string function_name_;
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
 };
 
@@ -68,33 +69,34 @@ class Relu6ImageCompute : public KernelLite<TARGET(kMetal),
  private:
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
-	std::shared_ptr<MetalBuffer> params_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
 
-	void* pipline_;
-	std::string function_name_;
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
 };
 
-class LeakyReluImageCompute : public KernelLite<TARGET(kMetal),
-																						PRECISION(kFloat),
-																						DATALAYOUT(kMetalTexture2DArray)> {
-	using param_t = operators::ActivationParam;
+class LeakyReluImageCompute
+    : public KernelLite<TARGET(kMetal),
+                        PRECISION(kFloat),
+                        DATALAYOUT(kMetalTexture2DArray)> {
+  using param_t = operators::ActivationParam;
 
  public:
-	void PrepareForRun() override;
-	void Run() override;
-	void SaveOutput() override {
-		MetalDebug::SaveOutput("leaky_relu", output_buffer_);
-	};
+  void PrepareForRun() override;
+  void Run() override;
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("leaky_relu", output_buffer_);
+  };
 
  private:
-	const MetalImage* input_buffer_;
-	MetalImage* output_buffer_;
-	std::shared_ptr<MetalBuffer> params_buffer_;
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
 
-	void* pipline_;
-	std::string function_name_;
-	MetalContext* metal_context_;
+  void* pipline_;
+  std::string function_name_;
+  MetalContext* metal_context_;
 };
 
 }  // namespace metal
