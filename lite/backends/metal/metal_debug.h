@@ -42,29 +42,27 @@ class MetalDebug {
   static void SaveOutput(std::string name,
                          MetalImage* image,
                          DumpMode mode = DumpMode::kBoth) {
-		print_log(name, image);
+    print_log(name, image);
   }
-	
-	static void SaveOutput(std::string name,
-												 MetalBuffer* buffer,
-												 DumpMode mode = DumpMode::kBoth) {
-		print_log(name, buffer);
-	}
 
-	static void SaveOutput_(std::string name,
-												  MetalImage* image,
-												  DumpMode mode = DumpMode::kBoth);
-	
-  static void print_log(const std::string& name,
-												MetalImage* metalImg);
-	
-	static void print_log(const std::string& name,
-												MetalBuffer* metalImg);
-	
-	static void print_float(const std::string& name,
-													float* data,
-													int size,
-													int inCount = 80);
+  static void SaveOutput(std::string name,
+                         MetalBuffer* buffer,
+                         DumpMode mode = DumpMode::kBoth) {
+    print_log(name, buffer);
+  }
+
+  static void SaveOutput_(std::string name,
+                          MetalImage* image,
+                          DumpMode mode = DumpMode::kBoth);
+
+  static void print_log(const std::string& name, MetalImage* metalImg);
+
+  static void print_log(const std::string& name, MetalBuffer* metalImg);
+
+  static void print_float(const std::string& name,
+                          float* data,
+                          int size,
+                          int inCount = 80);
 
   static void DumpImage(const std::string& name,
                         MetalImage* image,

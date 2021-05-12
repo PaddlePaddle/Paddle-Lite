@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -49,10 +50,10 @@ class NearestInterpImageCompute
 
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
-	std::shared_ptr<MetalBuffer> params_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
 
-	void* pipline_;
-	std::string function_name_;
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
 };
 

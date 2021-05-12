@@ -20,10 +20,7 @@
 namespace paddle {
 namespace lite {
 
-enum class DataLayout {
-	kNCHW = 0,
-	kNHWC
-};
+enum class DataLayout { kNCHW = 0, kNHWC };
 
 enum class METAL_PRECISION_TYPE {
   FLOAT = 0,
@@ -34,10 +31,10 @@ enum class METAL_PRECISION_TYPE {
 };
 
 enum class METAL_ACCESS_FLAG {
-	CPUReadWrite = 0,
-	CPUWriteOnly,
-	CPUTransparent,
-	CPUShared
+  CPUReadWrite = 0,
+  CPUWriteOnly,
+  CPUTransparent,
+  CPUShared
 };
 
 typedef uint32_t MetalUint;

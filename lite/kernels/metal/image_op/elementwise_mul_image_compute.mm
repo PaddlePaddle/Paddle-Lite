@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/elementwise_mul_image_compute.h"
-#include "lite/core/tensor.h"
-#include "lite/core/op_registry.h"
 #include "lite/backends/metal/metal_context_imp.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
@@ -26,99 +26,91 @@ namespace kernels {
 namespace metal {
 
 void ElementwiseMulImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
+    auto& context = ctx_->As<ContextMetal>();
+    metal_context_ = (MetalContext*)context.context();
 
-  const auto& param = this->Param<param_t>();
-  auto output_dims = param.Out->dims();
-  auto input_dims = param.X->dims();
+    const auto& param = this->Param<param_t>();
+    auto output_dims = param.Out->dims();
+    auto input_dims = param.X->dims();
 
 #ifdef LITE_WITH_METAL_FULL
 #else
-	input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
-	input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
-	output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+    input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
+    input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
 #endif
-	
-	setup_without_mps();
+
+    setup_without_mps();
 }
 
 void ElementwiseMulImageCompute::Run() {
-	auto outTexture = output_buffer_->image();
-	auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
-	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
+    auto outTexture = output_buffer_->image();
+    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-	auto encoder = [backend commandEncoder];
-	[encoder setTexture:input_buffer_x_->image() atIndex:(0)];
-	[encoder setTexture:input_buffer_y_->image() atIndex:(1)];
-	[encoder setTexture:output_buffer_->image() atIndex:(2)];
-	[encoder setBuffer:params_buffer_->buffer() offset:(0)atIndex:(0)];
+    auto encoder = [backend commandEncoder];
+    [encoder setTexture:input_buffer_x_->image() atIndex:(0)];
+    [encoder setTexture:input_buffer_y_->image() atIndex:(1)];
+    [encoder setTexture:output_buffer_->image() atIndex:(2)];
+    [encoder setBuffer:params_buffer_->buffer() offset:(0)atIndex:(0)];
 
-	[backend dispatchEncoder:encoder
-									 pipline:pipline
-								outTexture:outTexture];
-	[backend commit];
+    [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    [backend commit];
 }
 
 void ElementwiseMulImageCompute::setup_without_mps() {
-	const auto& param = this->Param<param_t>();
+    const auto& param = this->Param<param_t>();
 
-	auto valid = true;
-	int by_channel = 0;
-	if (input_buffer_x_->tensor_dim_.size() == 4) {
-		if (input_buffer_y_->tensor_dim_.size() == 4) {
-			if (input_buffer_y_->tensor_dim_[0] == 1 &&
-					input_buffer_y_->tensor_dim_[2] == 1 &&
-					input_buffer_y_->tensor_dim_[3] == 1 &&
-					input_buffer_x_->tensor_dim_[1] == input_buffer_y_->tensor_dim_[1]) {
-				by_channel = 1;
-			} else {
-				for (int i = 0; i < 4; i++) {
-					if (input_buffer_x_->tensor_dim_[i] != input_buffer_y_->tensor_dim_[i]) {
-						valid = false;
-						break;
-					}
-				}
-			}
-		}
-		else if (input_buffer_y_->tensor_dim_.size() == 3) {
-			if (param.axis == 1 || param.axis == -1) {
-				if (input_buffer_y_->tensor_dim_[1] == 1 &&
-						input_buffer_y_->tensor_dim_[2] == 1 &&
-						input_buffer_y_->tensor_dim_[0] == input_buffer_x_->tensor_dim_[1]) {
-					by_channel = 1;
-				}
-			}
-		}
-		else if (input_buffer_y_->tensor_dim_.size() == 2) {
-			if (param.axis == 0) {
-				by_channel = 1;
-			}
-		}
-		else if (input_buffer_y_->tensor_dim_.size() == 1) {
-			by_channel = 1;
-		} else {
-			valid = false;
-		}
-	} else {
-		valid = false;
-	}
-	if (!valid) {
-		throw std::logic_error("elementwise_mul: only supports : 1.same shapes 2.by channel.");
-	}
+    auto valid = true;
+    int by_channel = 0;
+    if (input_buffer_x_->tensor_dim_.size() == 4) {
+        if (input_buffer_y_->tensor_dim_.size() == 4) {
+            if (input_buffer_y_->tensor_dim_[0] == 1 && input_buffer_y_->tensor_dim_[2] == 1 &&
+                input_buffer_y_->tensor_dim_[3] == 1 &&
+                input_buffer_x_->tensor_dim_[1] == input_buffer_y_->tensor_dim_[1]) {
+                by_channel = 1;
+            } else {
+                for (int i = 0; i < 4; i++) {
+                    if (input_buffer_x_->tensor_dim_[i] != input_buffer_y_->tensor_dim_[i]) {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+        } else if (input_buffer_y_->tensor_dim_.size() == 3) {
+            if (param.axis == 1 || param.axis == -1) {
+                if (input_buffer_y_->tensor_dim_[1] == 1 && input_buffer_y_->tensor_dim_[2] == 1 &&
+                    input_buffer_y_->tensor_dim_[0] == input_buffer_x_->tensor_dim_[1]) {
+                    by_channel = 1;
+                }
+            }
+        } else if (input_buffer_y_->tensor_dim_.size() == 2) {
+            if (param.axis == 0) {
+                by_channel = 1;
+            }
+        } else if (input_buffer_y_->tensor_dim_.size() == 1) {
+            by_channel = 1;
+        } else {
+            valid = false;
+        }
+    } else {
+        valid = false;
+    }
+    if (!valid) {
+        throw std::logic_error("elementwise_mul: only supports : 1.same shapes 2.by channel.");
+    }
 
-	ElementwiseMetalParam element_params = {by_channel};
-	params_buffer_ = std::make_shared<MetalBuffer>(metal_context_,
-																								 sizeof(element_params),
-																								 &element_params);
-	
-	//inputy来源：4维-参数来自于上一个输入 3维-参数来自于外部tensor
-	function_name_ = "elementwise_mul";
-	//pipline
-	auto backend = (__bridge MetalContextImp *)metal_context_->backend();
-	pipline_ = (__bridge_retained void *)[backend pipline:function_name_];
+    ElementwiseMetalParam element_params = {by_channel};
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(element_params), &element_params);
+
+    // inputy来源：4维-参数来自于上一个输入 3维-参数来自于外部tensor
+    function_name_ = "elementwise_mul";
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
 }
-	
+
 }  // namespace metal
 }  // namespace kernels
 }  // namespace lite
@@ -131,9 +123,9 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      paddle::lite::kernels::metal::ElementwiseMulImageCompute,
                      def)
     .BindInput("X",
-           {LiteType::GetTensorTy(TARGET(kMetal),
-                                  PRECISION(kFloat),
-                                  DATALAYOUT(kMetalTexture2DArray))})
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Y",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFloat),
@@ -144,23 +136,19 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    elementwise_mul,
-    kMetal,
-    kFP16,
-    kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ElementwiseMulImageCompute,
-    def)
-    .BindInput("X",
-           {LiteType::GetTensorTy(TARGET(kMetal),
-                                  PRECISION(kFP16),
-                                  DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+REGISTER_LITE_KERNEL(elementwise_mul,
+                     kMetal,
+                     kFP16,
+                     kMetalTexture2DArray,
+                     paddle::lite::kernels::metal::ElementwiseMulImageCompute,
+                     def)
+    .BindInput(
+        "X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput(
+        "Y",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput(
+        "Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

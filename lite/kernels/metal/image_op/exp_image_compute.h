@@ -47,9 +47,9 @@ class ExpImageCompute : public KernelLite<TARGET(kMetal),
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
 
-	void* pipline_;
-	std::string function_name_;
-	MetalContext* metal_context_;
+  void* pipline_;
+  std::string function_name_;
+  MetalContext* metal_context_;
 };
 
 }  // namespace metal

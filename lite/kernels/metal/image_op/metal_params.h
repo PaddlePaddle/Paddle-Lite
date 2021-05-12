@@ -29,11 +29,11 @@ struct ElementwiseAddMetalParam {
 };
 
 struct ActivationMetalParam {
-	uint16_t activationType;
-	float threshold; 		//RELU6
-	float alpha;				//LEAKY_RELU
-	float offset;				//HARD_SIGMOID
-	float slope;
+  uint16_t activationType;
+  float threshold;  // RELU6
+  float alpha;      // LEAKY_RELU
+  float offset;     // HARD_SIGMOID
+  float slope;
 };
 
 struct MetalConvParam {
@@ -51,7 +51,7 @@ struct MetalConvParam {
   uint16_t hasAddOp;
   uint16_t hasReluOp;
   ElementwiseAddMetalParam addParam;
-	ActivationMetalParam activationParam;
+  ActivationMetalParam activationParam;
 };
 
 struct SoftmaxMetalParam {
@@ -83,7 +83,7 @@ struct Relu6MetalParam {
 };
 
 struct LeakyReluMetalParam {
-	float alpha;
+  float alpha;
 };
 
 struct PoolMetalParam {
@@ -225,21 +225,21 @@ struct ConvTransposeAddMetalParam {
 };
 
 struct SliceMetalParam {
-		uint16_t start0;
-		uint16_t start1;
-		uint16_t start2;
-		uint16_t start3;
-		uint16_t end0;
-		uint16_t end1;
-		uint16_t end2;
-		uint16_t end3;
-		int iC;
-		int oC;
+  uint16_t start0;
+  uint16_t start1;
+  uint16_t start2;
+  uint16_t start3;
+  uint16_t end0;
+  uint16_t end1;
+  uint16_t end2;
+  uint16_t end3;
+  int iC;
+  int oC;
 };
 
 struct FetchMetalParam {
-	int isize;
-	int idim[4];
+  int isize;
+  int idim[4];
 };
 
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_
