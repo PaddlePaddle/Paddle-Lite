@@ -66,15 +66,7 @@ void GRUCompute::PrepareForRun() {
                       weight_max_vector.data(),
                       8 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-// quant
-#if 1
-  quant_weight_guard_ =
-      TargetWrapperXPU::MallocScratchPad(weight_len * sizeof(float));
-  XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(quant_weight_guard_->addr_),
-                      weight_ptr,
-                      weight_len * sizeof(float),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-#else
+  // quant
   quant_weight_guard_ =
       TargetWrapperXPU::MallocScratchPad(weight_len * sizeof(int16_t));
   std::vector<int16_t> quant_weight_cpu(weight_len);
@@ -92,7 +84,6 @@ void GRUCompute::PrepareForRun() {
                       quant_weight_cpu.data(),
                       weight_len * sizeof(int16_t),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-#endif
 }
 
 void GRUCompute::Run() {
@@ -110,8 +101,8 @@ void GRUCompute::Run() {
   auto* h0 = param.h0;
   const float* hidden_prev_ptr = (h0 == nullptr) ? nullptr : h0->data<float>();
 
-  const float* weight_ptr =
-      reinterpret_cast<const float*>(quant_weight_guard_->addr_);
+  const int16_t* weight_ptr =
+      reinterpret_cast<const int16_t*>(quant_weight_guard_->addr_);
   const float* weight_maxptr =
       reinterpret_cast<const float*>(weight_max_guard_->addr_);
 
@@ -124,16 +115,12 @@ void GRUCompute::Run() {
   int frame_size = hidden_dims[1];
 
   auto& input_lod = input->lod()[0];
-  int batch_size = input_lod.size() - 1;
-  for (int i = 0; i < batch_size; i++) {
-    int cur_seq_len = input_lod[i + 1] - input_lod[i];
-    int ret = xdnn::gru_core<float, float, float, int16_t>(ctx.GetRawContext(),
+  int ret = xdnn::gru_core<float, int16_t, float, int16_t>(ctx.GetRawContext(),
                                                            input_ptr,
                                                            hidden_prev_ptr,
                                                            weight_ptr,
                                                            hidden_ptr,
-                                                           1,
-                                                           cur_seq_len,
+                                                           input_lod,
                                                            frame_size,
                                                            nullptr,
                                                            nullptr,
@@ -144,10 +131,7 @@ void GRUCompute::Run() {
                                                            gate_activation,
                                                            origin_mode,
                                                            is_reverse);
-    CHECK_EQ(ret, 0) << "call xdnn::gru_core failed!";
-    input_ptr += cur_seq_len * 3 * frame_size;
-    hidden_ptr += cur_seq_len * frame_size;
-  }
+  CHECK_EQ(ret, 0) << "call xdnn::gru_core failed!";
   // batch_gate, batch_reset_hidden_prev lod not set
   hidden->set_lod(input->lod());
 }

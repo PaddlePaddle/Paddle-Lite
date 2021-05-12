@@ -91,6 +91,8 @@ bool XPUBiGRUOp::InferShapeImpl() const {
 
 bool XPUBiGRUOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   AttachParam(&param_);
+  bool has_mul_b = op_desc.GetAttr<bool>("has_mul_b");
+  bool has_gru_b = op_desc.GetAttr<bool>("has_gru_b");
 
   param_.input =
       scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
@@ -98,11 +100,11 @@ bool XPUBiGRUOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
                         ->GetMutable<Tensor>();
   param_.bw_mul_w = scope->FindVar(op_desc.Input("BackwardMulWeight").front())
                         ->GetMutable<Tensor>();
-  if (op_desc.GetAttr<bool>("has_mul_b")) {
+  if (has_mul_b) {
     param_.fw_mul_b = scope->FindVar(op_desc.Input("ForwardMulBias").front())
                           ->GetMutable<Tensor>();
   }
-  if (op_desc.GetAttr<bool>("has_mul_b")) {
+  if (has_mul_b) {
     param_.bw_mul_b = scope->FindVar(op_desc.Input("BackwardMulBias").front())
                           ->GetMutable<Tensor>();
   }
@@ -110,11 +112,11 @@ bool XPUBiGRUOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
                         ->GetMutable<Tensor>();
   param_.bw_gru_w = scope->FindVar(op_desc.Input("BackwardGRUWeight").front())
                         ->GetMutable<Tensor>();
-  if (!op_desc.Input("ForwardGRUBias").empty()) {
+  if (has_gru_b) {
     param_.fw_gru_b = scope->FindVar(op_desc.Input("ForwardGRUBias").front())
                           ->GetMutable<Tensor>();
   }
-  if (!op_desc.Input("BackwardGRUBias").empty()) {
+  if (has_gru_b) {
     param_.bw_gru_b = scope->FindVar(op_desc.Input("BackwardGRUBias").front())
                           ->GetMutable<Tensor>();
   }
@@ -133,8 +135,12 @@ bool XPUBiGRUOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       op_desc.GetAttr<std::string>("bw_gru_gate_activation");
   param_.fw_gru_activation = op_desc.GetAttr<std::string>("fw_gru_activation");
   param_.bw_gru_activation = op_desc.GetAttr<std::string>("bw_gru_activation");
-  param_.fw_gru_origin_mode = op_desc.GetAttr<bool>("fw_gru_origin_mode");
-  param_.bw_gru_origin_mode = op_desc.GetAttr<bool>("bw_gru_origin_mode");
+  if (op_desc.HasAttr("fw_gru_origin_mode")) {
+    param_.fw_gru_origin_mode = op_desc.GetAttr<bool>("fw_gru_origin_mode");
+  }
+  if (op_desc.HasAttr("bw_gru_origin_mode")) {
+    param_.bw_gru_origin_mode = op_desc.GetAttr<bool>("bw_gru_origin_mode");
+  }
 
   return true;
 }
