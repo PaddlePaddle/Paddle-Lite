@@ -83,6 +83,7 @@ typedef struct Driver {
 std::string string_format(const std::string fmt_str, ...);
 
 // Utilities for model
+std::string OperationTypeToString(NNAdapterOperationType type);
 std::string Visualize(Model *model);
 std::vector<Operation *> SortOperationsInTopologicalOrder(Model *model);
 

@@ -29,7 +29,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NNAdapter] Converting " << op_type << "... ";
+  VLOG(3) << "Converting " << op_type << " ...";
 
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
@@ -112,6 +112,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(op_info->HasInputScale(filter_scale_name, true));
   auto filter_scale = op_info->GetInputScale(filter_scale_name, true);
   bool is_perchannel_filter_scales = IsPerChannelScales(filter_scale);
+  VLOG(5) << "is_perchannel_filter_scales: " << is_perchannel_filter_scales;
   NNAdapterOperandType filter_type;
   memset(&filter_type, 0, sizeof(NNAdapterOperandType));
   ConvertDimensions(

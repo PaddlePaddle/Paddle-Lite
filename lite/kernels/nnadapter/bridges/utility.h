@@ -119,7 +119,7 @@ void Transpose(const T* input,
   }
   std::vector<int64_t> input_strides(dimension_count, 1);
   std::vector<int64_t> output_strides(dimension_count, 1);
-  for (size_t i = dimension_count - 2; i >= 0; i--) {
+  for (int i = dimension_count - 2; i >= 0; i--) {
     input_strides[i] = input_strides[i + 1] * input_dimensions[i + 1];
     output_strides[i] = output_strides[i + 1] * output_dimensions[i + 1];
   }

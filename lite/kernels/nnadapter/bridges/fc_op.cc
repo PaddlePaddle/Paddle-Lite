@@ -28,7 +28,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NNAdapter] Converting " << op_type << "... ";
+  VLOG(3) << "Converting " << op_type << " ...";
 
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
@@ -77,6 +77,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(op_info->HasInputScale(w_scale_name, true));
   auto w_scale = op_info->GetInputScale(w_scale_name, true);
   bool is_perchannel_weight_scales = IsPerChannelScales(w_scale);
+  VLOG(5) << "is_perchannel_weight_scales: " << is_perchannel_weight_scales;
   NNAdapterOperandType weight_type;
   memset(&weight_type, 0, sizeof(NNAdapterOperandType));
   weight_type.dimension_count = w_dims.size();
@@ -94,10 +95,10 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     weight_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
     weight_type.symm_per_layer_params.scale = w_scale[0];
   }
-  auto weight_operand = converter->AddOperand(&weight_type, weight_name);
+  auto weight_operand = converter->AddOperand(&weight_type, w_name);
   auto w_data = w->mutable_data<int8_t>();
   std::vector<int8_t> transpose_weight_data(w_dims.production(), 0);
-  Transpose(w_data, &transpose_weight_data[0], w_dims.Vectorize(), {1, 0});
+  Transpose(w_data, &transpose_weight_data[0], {1, 0}, w_dims.Vectorize());
   converter->SetOperand(weight_operand,
                         &transpose_weight_data[0],
                         sizeof(int8_t) * transpose_weight_data.size());
@@ -109,7 +110,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < w_scale.size(); i++) {
     bias_scale[i] = input_scale * w_scale[i];
   }
-  if (is_perchannel_filter_scales) {
+  if (is_perchannel_weight_scales) {
     // Per channel
     bias_type.precision = NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
     bias_type.symm_per_channel_params.scales = &bias_scale[0];
@@ -123,7 +124,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   bias_type.dimension_count = 1;
   bias_type.dimensions[0] = static_cast<int32_t>(N);
   std::vector<int32_t> quant_bias_data(N, 0);
-  std::string bias_name = output_name + "_dummy_bias";
+  std::string bias_name = out_name + "_dummy_bias";
   if (HasInput(op_info, scope, "Bias")) {
     bias_name = op_info->Input("Bias").front();
     auto bias = scope->FindMutableTensor(bias_name);
@@ -138,11 +139,18 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                         sizeof(int32_t) * quant_bias_data.size());
 
   // Fuse code operand
+  NNAdapterOperandType int32_type;
+  memset(&int32_type, 0, sizeof(NNAdapterOperandType));
+  int32_type.precision = NNADAPTER_INT32;
+  int32_type.dimension_count = 0;
+
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   auto fuse_code_operand = converter->AddOperand(&int32_type);
   converter->SetOperand(fuse_code_operand, &fuse_code_value, sizeof(int32_t));
 
   // Output operand
+  CHECK(op_info->HasOutputScale(out_scale_name, true));
+  auto out_scale = op_info->GetOutputScale(out_scale_name, true)[0];
   NNAdapterOperandType output_type;
   memset(&output_type, 0, sizeof(NNAdapterOperandType));
   output_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
@@ -150,11 +158,11 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   output_type.dimension_count = 2;
   output_type.dimensions[0] = static_cast<int32_t>(M);
   output_type.dimensions[1] = static_cast<int32_t>(N);
-  auto output_operand = converter->AddOperand(&output_type, output_name);
+  auto output_operand = converter->AddOperand(&output_type, out_name);
 
   // Fully connected layer
   std::vector<NNAdapterOperand*> input_operands = {
-      input_operand, weight_operand, bias_operand};
+      input_operand, weight_operand, bias_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   auto fc = converter->AddOperation(NNADAPTER_FULLY_CONNECTED);
   converter->SetOperation(fc, &input_operands, &output_operands);

@@ -29,7 +29,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NNAdapter] Converting " << op_type << "... ";
+  VLOG(3) << "Converting " << op_type << " ...";
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
@@ -44,6 +44,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  auto strides = op_info->GetAttr<std::vector<int>>("strides");
   // Check pooling mode
   if (pooling_type == "max" || pooling_type == "avg") {
   } else {
@@ -63,7 +64,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("adaptive")) {
     adaptive = op_info->GetAttr<bool>("adaptive");
   }
-  auto strides = op_info->GetAttr<std::vector<int>>("strides");
   std::string padding_algorithm("");
   if (op_info->HasAttr("padding_algorithm")) {
     padding_algorithm = op_info->GetAttr<std::string>("padding_algorithm");
@@ -92,7 +92,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     NNAdapterOperandType input_type;
     memset(&input_type, 0, sizeof(NNAdapterOperandType));
     input_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-    input_type.symm_per_layer_params.scale = input_scale;
+    input_type.symm_per_layer_params.scale = x_scale;
     ConvertDimensions(
         x_dims, input_type.dimensions, &input_type.dimension_count);
     input_operand = converter->AddOperand(&input_type, x_name);
@@ -127,28 +127,15 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   converter->SetOperand(stride_height_operand, &strides[1], sizeof(int32_t));
 
   auto filter_width_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(filter_width_operand,
-                        global_pooling ? &x_dims[3] : &ksize[1],
-                        sizeof(int32_t));
+  int32_t filter_width = global_pooling ? x_dims[3] : ksize[1];
+  converter->SetOperand(filter_width_operand, &filter_width, sizeof(int32_t));
 
   auto filter_height_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(filter_height_operand,
-                        global_pooling ? &x_dims[2] : &ksize[0],
-                        sizeof(int32_t));
+  int32_t filter_height = global_pooling ? x_dims[2] : ksize[0];
+  converter->SetOperand(filter_height_operand, &filter_height, sizeof(int32_t));
 
   // Fuse code operand
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
-  if (act_type == "relu") {
-    fuse_code_value = 1;
-  } else if (act_type == "relu1") {
-    fuse_code_value = 2;
-  } else if (act_type == "relu6") {
-    fuse_code_value = 3;
-  } else if (!act_type.empty()) {
-    fuse_code_value = NNADAPTER_FUSED_NONE;
-    LOG(WARNING) << "Unsupported activation type: " << act_type;
-    return FAILED;
-  }
   auto fuse_code_operand = converter->AddOperand(&int32_type);
   converter->SetOperand(fuse_code_operand, &fuse_code_value, sizeof(int32_t));
 
@@ -174,7 +161,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   output_type.symm_per_layer_params.scale = out_scale;
   ConvertDimensions(
       out_dims, output_type.dimensions, &output_type.dimension_count);
-  auto output_operand = converter->AddOperand(&output_type, output_name);
+  auto output_operand = converter->AddOperand(&output_type, out_name);
 
   // 2-D Pooling operation
   std::vector<NNAdapterOperand*> input_operands = {
@@ -191,7 +178,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       ceil_mode_operand,
       count_include_pad_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperand* pooling = nullptr;
+  NNAdapterOperation* pooling = nullptr;
   if (pooling_type == "max") {
     pooling = converter->AddOperation(NNADAPTER_MAX_POOL_2D);
   } else if (pooling_type == "avg") {

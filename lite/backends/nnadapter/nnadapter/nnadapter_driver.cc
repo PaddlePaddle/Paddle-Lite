@@ -176,12 +176,37 @@ std::string string_format(const std::string fmt_str, ...) {
   return std::string(formatted.get());
 }
 
-std::string Visualize(Model* model) {
+std::string OperationTypeToString(NNAdapterOperationType type) {
 #define OPERATION_TYPE_TO_STRING(type) \
   case NNADAPTER_##type:               \
-    operation_name = #type;            \
+    name = #type;                      \
     break;
 
+  std::string name;
+  switch (type) {
+    OPERATION_TYPE_TO_STRING(CONV_2D);
+    OPERATION_TYPE_TO_STRING(FULLY_CONNECTED);
+    OPERATION_TYPE_TO_STRING(SIGMOID);
+    OPERATION_TYPE_TO_STRING(RELU);
+    OPERATION_TYPE_TO_STRING(RELU6);
+    OPERATION_TYPE_TO_STRING(TANH);
+    OPERATION_TYPE_TO_STRING(SOFTMAX);
+    OPERATION_TYPE_TO_STRING(AVERAGE_POOL_2D);
+    OPERATION_TYPE_TO_STRING(MAX_POOL_2D);
+    OPERATION_TYPE_TO_STRING(ADD);
+    OPERATION_TYPE_TO_STRING(SUB);
+    OPERATION_TYPE_TO_STRING(MUL);
+    OPERATION_TYPE_TO_STRING(DIV);
+    default:
+      name = "UNKNOWN";
+      break;
+  }
+
+#undef OPERATION_TYPE_TO_STRING
+  return name;
+}
+
+std::string Visualize(Model* model) {
 #define APPEND_OPERAND_NODE()                                     \
   auto operand_name =                                             \
       string_format("@0x%X", reinterpret_cast<int64_t>(operand)); \
@@ -197,13 +222,7 @@ std::string Visualize(Model* model) {
   auto operations = SortOperationsInTopologicalOrder(model);
   std::set<Operand*> visited_operands;
   for (auto* operation : operations) {
-    std::string operation_name;
-    switch (operation->type) {
-      OPERATION_TYPE_TO_STRING(CONV_2D);
-      default:
-        operation_name = "UNKNOWN";
-        break;
-    }
+    std::string operation_name = OperationTypeToString(operation->type);
     operation_name = string_format("%s@0x%X",
                                    operation_name.c_str(),
                                    reinterpret_cast<int64_t>(operation));
@@ -227,7 +246,6 @@ std::string Visualize(Model* model) {
   }
   os << dot.Build();
 
-#undef OPERATION_TYPE_TO_STRING
 #undef APPEND_OPERAND_NODE
   return os.str();
 }
@@ -244,7 +262,7 @@ std::vector<Operation*> SortOperationsInTopologicalOrder(Model* model) {
     for (auto operand : operation.input_operands) {
       auto lifetime = operand->type.lifetime;
       if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||
-          lifetime == NNADAPTER_OUTPUT) {
+          lifetime == NNADAPTER_MODEL_OUTPUT) {
         count++;
         map.insert(std::pair<Operand*, Operation*>(operand, &operation));
       }

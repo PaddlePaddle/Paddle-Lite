@@ -28,7 +28,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NNAdapter] Converting " << op_type << "... ";
+  VLOG(3) << "Converting " << op_type << " ...";
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
@@ -95,6 +95,11 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Fuse code operand
+  NNAdapterOperandType int32_type;
+  memset(&int32_type, 0, sizeof(NNAdapterOperandType));
+  int32_type.precision = NNADAPTER_INT32;
+  int32_type.dimension_count = 0;
+
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
     fuse_code_value = 1;
@@ -124,7 +129,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {input0_operand,
                                                    input1_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperand* elementwise = nullptr;
+  NNAdapterOperation* elementwise = nullptr;
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {
     elementwise = converter->AddOperation(NNADAPTER_ADD);

@@ -28,7 +28,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NNAdapter] Converting " << op_type << "... ";
+  VLOG(3) << "Converting " << op_type << " ...";
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
@@ -65,12 +65,12 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   output_type.symm_per_layer_params.scale = out_scale;
   ConvertDimensions(
       out_dims, output_type.dimensions, &output_type.dimension_count);
-  auto output_operand = converter->AddOperand(&output_type, output_name);
+  auto output_operand = converter->AddOperand(&output_type, out_name);
 
   // Activation operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperand* activation = nullptr;
+  NNAdapterOperation* activation = nullptr;
   if (op_type == "sigmoid") {
     activation = converter->AddOperation(NNADAPTER_SIGMOID);
   } else if (op_type == "relu") {

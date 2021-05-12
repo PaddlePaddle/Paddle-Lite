@@ -49,10 +49,10 @@ bool IsPerChannelScales(const std::vector<float>& scales) {
   for (size_t i = 1; i < size; i++) {
     auto cur_scale = scales[i];
     if (std::fabs(cur_scale - ref_scale) > threshold) {
-      return false;
+      return true;
     }
   }
-  return true;
+  return false;
 }
 
 bool IsPrecisionCompatible(const NNAdapterOperandType* target,

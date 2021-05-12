@@ -37,8 +37,16 @@ class Program {
               driver::Argument* output_arguments);
 
  private:
+  // Operation converters
   std::shared_ptr<rk::nn::Tensor> ConvertOperand(driver::Operand* operand);
   int ConvertConv2D(driver::Operation* operation);
+  int ConvertFullyConnected(driver::Operation* operation);
+  int ConvertAverageAndMaxPool2D(driver::Operation* operation);
+  int ConvertElementwiseBinaryOperations(driver::Operation* operation);
+  int ConvertSoftmax(driver::Operation* operation);
+  int ConvertActivationUnaryOperations(driver::Operation* operation);
+
+ private:
   std::map<driver::Operand*, std::shared_ptr<rk::nn::Tensor>> nodes_;
   rk::nn::Graph* graph_{nullptr};
   rk::nn::Exection* execution_{nullptr};

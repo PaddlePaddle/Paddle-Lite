@@ -14,11 +14,21 @@
 
 #pragma once
 
+#include <vector>
 #include "../../nnadapter_driver.h"  // NOLINT
 #include "rknpu/rknpu_pub.h"         // NOLINT
 
 namespace nnadapter {
 namespace driver {
-namespace rockchip_npu {}  // namespace rockchip_npu
+namespace rockchip_npu {
+
+rk::nn::PrecisionType ConvertPrecision(
+    NNAdapterOperandPrecisionCode input_precision);
+rk::nn::DataLayoutType ConvertDataLayout(
+    NNAdapterOperandLayoutCode input_layout);
+std::vector<int32_t> ConvertDimensions(int32_t* input_dimensions,
+                                       uint32_t input_dimensions_count);
+
+}  // namespace rockchip_npu
 }  // namespace driver
 }  // namespace nnadapter

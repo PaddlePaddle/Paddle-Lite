@@ -16,93 +16,11 @@
 #include <memory>
 #include <vector>
 #include "../../nnadapter_logging.h"  // NOLINT
+#include "utility.h"                  // NOLINT
 
 namespace nnadapter {
 namespace driver {
 namespace rockchip_npu {
-
-rk::nn::PrecisionType ConvertPrecision(
-    NNAdapterOperandPrecisionCode input_precision) {
-  rk::nn::PrecisionType output_precision = rk::nn::PrecisionType::UNKNOWN;
-  switch (input_precision) {
-    case NNADAPTER_TENSOR_BOOL8:
-      output_precision = rk::nn::PrecisionType::BOOL8;
-      break;
-    case NNADAPTER_TENSOR_INT8:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
-      output_precision = rk::nn::PrecisionType::INT8;
-      break;
-    case NNADAPTER_TENSOR_INT16:
-      output_precision = rk::nn::PrecisionType::INT16;
-      break;
-    case NNADAPTER_TENSOR_INT32:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
-      output_precision = rk::nn::PrecisionType::INT32;
-      break;
-    case NNADAPTER_TENSOR_INT64:
-      output_precision = rk::nn::PrecisionType::INT64;
-      break;
-    case NNADAPTER_TENSOR_UINT8:
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
-      output_precision = rk::nn::PrecisionType::UINT8;
-      break;
-    case NNADAPTER_TENSOR_UINT16:
-      output_precision = rk::nn::PrecisionType::UINT16;
-      break;
-    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_UINT32:
-      output_precision = rk::nn::PrecisionType::UINT32;
-      break;
-    case NNADAPTER_TENSOR_UINT64:
-      output_precision = rk::nn::PrecisionType::UINT64;
-      break;
-    case NNADAPTER_TENSOR_FLOAT16:
-      output_precision = rk::nn::PrecisionType::FLOAT16;
-      break;
-    case NNADAPTER_TENSOR_FLOAT32:
-      output_precision = rk::nn::PrecisionType::FLOAT32;
-      break;
-    case NNADAPTER_TENSOR_FLOAT64:
-      output_precision = rk::nn::PrecisionType::FLOAT64;
-      break;
-    default:
-      NNADAPTER_LOG(FATAL)
-          << "Failed to convert the NNAdapter operand precision code("
-          << input_precision << ") to rk::nn::PrecisionType !";
-      break;
-  }
-  return output_precision;
-}
-
-rk::nn::DataLayoutType ConvertDataLayout(
-    NNAdapterOperandLayoutCode input_layout) {
-  rk::nn::DataLayoutType output_layout = rk::nn::DataLayoutType::UNKNOWN;
-  switch (input_layout) {
-    case NNADAPTER_NCHW:
-      output_layout = rk::nn::DataLayoutType::NCHW;
-      break;
-    case NNADAPTER_NHWC:
-      output_layout = rk::nn::DataLayoutType::NHWC;
-      break;
-    default:
-      NNADAPTER_LOG(FATAL)
-          << "Failed to convert the NNAdapter operand layout code("
-          << input_layout << ") to rk::nn::DataLayoutType !";
-      break;
-  }
-  return output_layout;
-}
-
-std::vector<int32_t> ConvertDimensions(int32_t* input_dimensions,
-                                       uint32_t input_dimensions_count) {
-  std::vector<int32_t> output_dimensions(input_dimensions_count);
-  memcpy(&output_dimensions[0],
-         input_dimensions,
-         input_dimensions_count * sizeof(int32_t));
-  return output_dimensions;
-}
 
 Program::~Program() {
   if (!execution_) {
@@ -123,10 +41,33 @@ int Program::Build(driver::Model* model, driver::Cache* cache) {
   std::vector<Operation*> operations =
       driver::SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
+    NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
+                      << " ...";
     switch (operation->type) {
       case NNADAPTER_CONV_2D:
         ConvertConv2D(operation);
         break;
+      case NNADAPTER_FULLY_CONNECTED:
+        ConvertFullyConnected(operation);
+        break;
+      case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_MAX_POOL_2D:
+        ConvertAverageAndMaxPool2D(operation);
+        break;
+      case NNADAPTER_ADD:
+      case NNADAPTER_SUB:
+      case NNADAPTER_MUL:
+      case NNADAPTER_DIV:
+        ConvertElementwiseBinaryOperations(operation);
+        break;
+      case NNADAPTER_SOFTMAX:
+        ConvertSoftmax(operation);
+        break;
+      case NNADAPTER_SIGMOID:
+      case NNADAPTER_RELU:
+      case NNADAPTER_RELU6:
+      case NNADAPTER_TANH:
+        ConvertActivationUnaryOperations(operation);
       default:
         NNADAPTER_LOG(ERROR) << "Unsupported operation(" << operation->type
                              << ") is found.";
@@ -277,9 +218,6 @@ int Program::ConvertConv2D(driver::Operation* operation) {
   // Bias
   auto bias_operand = input_operands[2];
   auto bias_node = ConvertOperand(bias_operand);
-  // Output
-  auto output_operand = output_operands[0];
-  auto output_node = ConvertOperand(output_operand);
   // Paddings
   auto padding_width_left =
       *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
@@ -309,6 +247,9 @@ int Program::ConvertConv2D(driver::Operation* operation) {
       *reinterpret_cast<int32_t*>(input_operands[12]->buffer);
   NNADAPTER_VLOG(5) << "dilations=[" << dilation_width << "," << dilation_height
                     << "]";
+  // Output
+  auto output_operand = output_operands[0];
+  auto output_node = ConvertOperand(output_operand);
   // Check depthwise mode
   bool is_depthwise_mode =
       (input_channel_size == group && output_channel_size == group &&
@@ -336,7 +277,7 @@ int Program::ConvertConv2D(driver::Operation* operation) {
   } else if (fuse_code == NNADAPTER_FUSED_RELU) {
     attr.has_relu = true;
   } else {
-    NNADAPTER_LOG(ERROR) << "Unsupported fuse_code(" << operation->type
+    NNADAPTER_LOG(ERROR) << "Unsupported fuse_code(" << fuse_code
                          << ") is found.";
   }
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes = {
@@ -344,6 +285,238 @@ int Program::ConvertConv2D(driver::Operation* operation) {
   std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes = {output_node};
   graph_->AddOperator(
       rk::nn::OperatorType::CONV2D, input_nodes, output_nodes, &attr);
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::ConvertFullyConnected(driver::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  // Input
+  auto input_operand = input_operands[0];
+  auto input_node = ConvertOperand(input_operand);
+  // Weight
+  auto weight_operand = input_operands[1];
+  auto weight_node = ConvertOperand(weight_operand);
+  NNADAPTER_CHECK_EQ(weight_operand->type.dimension_count, 2);
+  auto num_units = weight_operand->type.dimensions[0];
+  auto input_size = weight_operand->type.dimensions[1];
+  NNADAPTER_LOG(INFO) << "weight dims[" << num_units << "," << input_size
+                      << "]";
+  // Bias
+  auto bias_operand = input_operands[2];
+  auto bias_node = ConvertOperand(bias_operand);
+  NNADAPTER_CHECK_EQ(bias_operand->type.dimension_count, 1);
+  NNADAPTER_CHECK_EQ(num_units, bias_operand->type.dimensions[0]);
+  NNADAPTER_LOG(INFO) << "bias dims[" << bias_operand->type.dimensions[0]
+                      << "]";
+  // Fuse code
+  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
+  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
+  // Output
+  auto output_operand = output_operands[0];
+  auto output_node = ConvertOperand(output_operand);
+
+  rk::nn::FCAttr attr;
+  attr.weights = num_units;
+  // fuse RELU ?
+  if (fuse_code == NNADAPTER_FUSED_NONE) {
+    attr.has_relu = false;
+  } else if (fuse_code == NNADAPTER_FUSED_RELU) {
+    attr.has_relu = true;
+  } else {
+    NNADAPTER_LOG(ERROR) << "Unsupported fuse_code(" << fuse_code
+                         << ") is found.";
+  }
+  std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes = {
+      input_node, weight_node, bias_node};
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes = {output_node};
+  graph_->AddOperator(
+      rk::nn::OperatorType::FULLCONNECT, input_nodes, output_nodes, &attr);
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::ConvertAverageAndMaxPool2D(driver::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 12);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  // Input
+  auto input_operand = input_operands[0];
+  auto input_node = ConvertOperand(input_operand);
+  // Paddings
+  auto padding_width_left =
+      *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  auto padding_width_right =
+      *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
+  auto padding_height_top =
+      *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
+  auto padding_height_bottom =
+      *reinterpret_cast<int32_t*>(input_operands[4]->buffer);
+  NNADAPTER_VLOG(5) << "paddings=[" << padding_width_left << ","
+                    << padding_width_right << "," << padding_height_top << ","
+                    << padding_height_bottom << "]";
+  // Strides
+  auto stride_width = *reinterpret_cast<int32_t*>(input_operands[5]->buffer);
+  auto stride_height = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
+  NNADAPTER_VLOG(5) << "strides=[" << stride_width << "," << stride_height
+                    << "]";
+  // Filter
+  auto filter_width = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);
+  auto filter_height = *reinterpret_cast<int32_t*>(input_operands[8]->buffer);
+  NNADAPTER_VLOG(5) << "filter=[" << filter_width << "," << filter_height
+                    << "]";
+  bool global_pooling = filter_width == input_operand->type.dimensions[3] &&
+                        filter_height == input_operand->type.dimensions[2];
+  // Fuse code
+  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);
+  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
+  // Ceil mode
+  bool ceil_mode = *reinterpret_cast<int8_t*>(input_operands[10]->buffer);
+  NNADAPTER_VLOG(5) << "ceil_mode=" << ceil_mode;
+  // Count include pad
+  bool count_include_pad =
+      *reinterpret_cast<int8_t*>(input_operands[11]->buffer);
+  NNADAPTER_VLOG(5) << "count_include_pad=" << count_include_pad;
+  NNADAPTER_CHECK_EQ(count_include_pad, false)
+      << "rknpu_ddk doesn't suppport count_include_pad=true";
+  // Output
+  auto output_operand = output_operands[0];
+  auto output_node = ConvertOperand(output_operand);
+
+  rk::nn::PoolAttr attr;
+  attr.ksize[0] = filter_height;
+  attr.ksize[1] = filter_width;
+  attr.stride[0] = stride_width;
+  attr.stride[1] = stride_height;
+  attr.pad[0] = padding_width_left;
+  attr.pad[1] = padding_width_right;
+  attr.pad[2] = padding_height_top;
+  attr.pad[3] = padding_height_bottom;
+  attr.pad_type = rk::nn::PadType::AUTO;
+  attr.global_pooling = global_pooling;
+  attr.round_type = ceil_mode ? rk::nn::RoundType::ROUND_CEIL
+                              : rk::nn::RoundType::ROUND_FLOOR;
+  std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes = {input_node};
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes = {output_node};
+  if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
+    attr.pool_type = rk::nn::PoolType::POOLING_AVG;
+  } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
+    attr.pool_type = rk::nn::PoolType::POOLING_MAX;
+  } else {
+    NNADAPTER_LOG(ERROR) << "Unsupported pooling operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
+  }
+  graph_->AddOperator(
+      rk::nn::OperatorType::POOL, input_nodes, output_nodes, &attr);
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::ConvertElementwiseBinaryOperations(driver::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  // Input0
+  auto input0_operand = input_operands[0];
+  auto input0_node = ConvertOperand(input0_operand);
+  // Input1
+  auto input1_operand = input_operands[1];
+  auto input1_node = ConvertOperand(input1_operand);
+  // Output
+  auto output_operand = output_operands[0];
+  auto output_node = ConvertOperand(output_operand);
+
+  std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes = {input0_node,
+                                                              input1_node};
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes = {output_node};
+  rk::nn::OperatorType op_type;
+  if (operation->type == NNADAPTER_ADD) {
+    op_type = rk::nn::OperatorType::ADD;
+  } else if (operation->type == NNADAPTER_SUB) {
+    op_type = rk::nn::OperatorType::SUBTRACT;
+  } else if (operation->type == NNADAPTER_MUL) {
+    op_type = rk::nn::OperatorType::MULTIPLY;
+  } else if (operation->type == NNADAPTER_DIV) {
+    op_type = rk::nn::OperatorType::DIVIDE;
+  } else {
+    NNADAPTER_LOG(ERROR) << "Unsupported element-wise binary operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
+  }
+  graph_->AddOperator(op_type, input_nodes, output_nodes, nullptr);
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::ConvertSoftmax(driver::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  // Input
+  auto input_operand = input_operands[0];
+  auto input_node = ConvertOperand(input_operand);
+  // Axis
+  auto axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  if (axis < 0) {
+    axis += input_operand->type.dimension_count;
+  }
+  NNADAPTER_VLOG(5) << "axis=" << axis;
+  // Output
+  auto output_operand = output_operands[0];
+  auto output_node = ConvertOperand(output_operand);
+
+  rk::nn::SoftmaxAttr attr;
+  attr.axis = axis;
+  attr.beta = 1.0;
+  std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes = {input_node};
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes = {output_node};
+  graph_->AddOperator(
+      rk::nn::OperatorType::SOFTMAX, input_nodes, output_nodes, &attr);
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::ConvertActivationUnaryOperations(driver::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 1);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  // Input
+  auto input_operand = input_operands[0];
+  auto input_node = ConvertOperand(input_operand);
+  // Output
+  auto output_operand = output_operands[0];
+  auto output_node = ConvertOperand(output_operand);
+
+  std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes = {input_node};
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes = {output_node};
+  rk::nn::OperatorType op_type;
+  if (operation->type == NNADAPTER_SIGMOID) {
+    op_type = rk::nn::OperatorType::SIGMOID;
+  } else if (operation->type == NNADAPTER_RELU) {
+    op_type = rk::nn::OperatorType::RELU;
+  } else if (operation->type == NNADAPTER_RELU6) {
+    op_type = rk::nn::OperatorType::RELU6;
+  } else if (operation->type == NNADAPTER_TANH) {
+    op_type = rk::nn::OperatorType::TANH;
+  } else {
+    NNADAPTER_LOG(ERROR) << "Unsupported activation unary operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
+  }
+  graph_->AddOperator(op_type, input_nodes, output_nodes, nullptr);
   return NNADAPTER_NO_ERROR;
 }
 

@@ -14,9 +14,6 @@
 
 #pragma once
 
-#include "../../nnadapter_driver.h"  // NOLINT
-#include "rknpu/rknpu_pub.h"         // NOLINT
-
 namespace nnadapter {
 namespace driver {
 namespace rockchip_npu {}  // namespace rockchip_npu
