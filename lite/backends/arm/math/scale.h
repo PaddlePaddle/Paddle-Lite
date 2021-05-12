@@ -55,16 +55,16 @@ void scale(const T* din,
            int outer_dim,
            int scale_dim,
            int inner_dim,
-           const float* scale_data,
-           const float* bias_data);
+           const T* scale_data,
+           const T* bias_data);
 
 template <typename T>
 void scale(const T* din,
            T* dout,
            int outer_dim,
            int scale_dim,
-           const float* scale_data,
-           const float* bias_data);
+           const T* scale_data,
+           const T* bias_data);
 
 }  // namespace math
 }  // namespace arm

@@ -56,7 +56,7 @@ void ScaleCompute<T, PType>::Run() {
 
 using scale_float16 =
     paddle::lite::kernels::arm::ScaleCompute<__fp16, PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(scale, kARM, kFloat, kNCHW, scale_float16, def)
+REGISTER_LITE_KERNEL(scale, kARM, kFP16, kNCHW, scale_float16, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();

@@ -24,7 +24,7 @@ namespace arm {
 
 template <typename T, PrecisionType PType>
 void BatchNormCompute<T, PType>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   auto x_dims = param.x->dims();
   bool global_stats = param.is_test || param.use_global_stats;
   if (global_stats) {
@@ -40,10 +40,10 @@ void BatchNormCompute<T, PType>::PrepareForRun() {
     }
     new_scale.Resize({channel_size});
     new_bias.Resize({channel_size});
-    auto* scale_data = param.scale->data<float>();
-    auto* bias_data = param.bias->data<float>();
-    auto* mean_data = param.mean->data<float>();
-    auto* variance_data = param.variance->data<float>();
+    auto* scale_data = param.scale->template data<float>();
+    auto* bias_data = param.bias->template data<float>();
+    auto* mean_data = param.mean->template data<float>();
+    auto* variance_data = param.variance->template data<float>();
     auto* new_scale_data = new_scale.mutable_data<T>();
     auto* new_bias_data = new_bias.mutable_data<T>();
     for (int c = 0; c < channel_size; c++) {
@@ -57,10 +57,10 @@ void BatchNormCompute<T, PType>::PrepareForRun() {
 
 template <typename T, PrecisionType PType>
 void BatchNormCompute<T, PType>::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   auto x_dims = param.x->dims();
-  auto x_data = param.x->data<T>();
-  auto y_data = param.y->mutable_data<T>();
+  auto x_data = param.x->template data<T>();
+  auto y_data = param.y->template mutable_data<T>();
   bool global_stats = param.is_test || param.use_global_stats;
   if (global_stats) {
     auto* new_scale_data = new_scale.data<T>();
@@ -98,12 +98,7 @@ void BatchNormCompute<T, PType>::Run() {
 typedef paddle::lite::kernels::arm::BatchNormCompute<float16_t,
                                                      PRECISION(kFP16)>
     BnFp16;
-REGISTER_LITE_KERNEL(batch_norm,
-                     kARM,
-                     kFP16,
-                     kNCHW,
-                     paddle::lite::kernels::arm::BatchNormCompute,
-                     def)
+REGISTER_LITE_KERNEL(batch_norm, kARM, kFP16, kNCHW, BnFp16, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
