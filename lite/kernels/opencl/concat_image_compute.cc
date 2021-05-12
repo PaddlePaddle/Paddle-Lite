@@ -44,40 +44,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto inputs = concat_param_->x;
     auto output_tensor_dims = concat_param_->output->dims();
 
-    if (inputs.size() == 2) {
-      kernel_func_name_ = "concat2";
-    } else if (inputs.size() == 3 && axis_ == 1 &&
-               output_tensor_dims.size() == 4) {
-      kernel_func_name_ = "concatByCWith3Inputs";
-    } else if (inputs.size() == 4 && axis_ == 1 &&
-               output_tensor_dims.size() == 4) {
-      kernel_func_name_ = "concatByCWith4Inputs";
-    } else if (!(flag_ == 1 && !align_)) {
-    } else {
-      // note: do layout transform between image and buffer,
-      // before and after concat(buffer impl.)
-      kernel_func_name_ = "concat_mul_buffer";  // buffer/concat_kernel.cl
-      build_options_ = " -DCL_DTYPE_float";
-      auto in_dims = inputs[0]->dims();
-      for (int i = 0; i < axis_; i++) {
-        pre_size_ *= in_dims[i];
-      }
-      for (int i = axis_ + 1; i < in_dims.size(); i++) {
-        post_size_ *= in_dims[i];
-      }
-      // create kernels of img2buf and buf2img
-      auto img_to_buf_kernels = KernelRegistry::Global().Create(
-          "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
-      auto buf_to_img_kernels =
-          KernelRegistry::Global().Create("layout",
-                                          TARGET(kOpenCL),
-                                          PRECISION(kAny),
-                                          DATALAYOUT(kImageDefault));
-
-      img_to_buf_kernel_ = std::move(img_to_buf_kernels.front());
-      buf_to_img_kernel_ = std::move(buf_to_img_kernels.front());
-    }
-
     if (output_tensor_dims.size() < 4) {
       if (output_tensor_dims.size() - axis_ == 1) {
         // width
@@ -112,18 +78,49 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     }
 
     for (auto& input : inputs) {
-      in_shape_ = {1, 1, 1, 1};
+      cl_int4 in_shape = {1, 1, 1, 1};
       for (auto j = 0; j < input->dims().size(); ++j) {
-        in_shape_.s[4 - j] = input->dims()[j];
+        in_shape.s[4 - j] = input->dims()[j];
       }
-      if (in_shape_.s[1] % 4 != 0) {
-        // 当输入tensors中有一个tensor的channel不是4的整数倍时，align置为false
+      if (in_shape.s[1] % 4 != 0) {
         align_ = false;
       }
     }
-    if (!(flag_ == 1 && !align_)) {
+
+    if (inputs.size() == 2) {
+      kernel_func_name_ = "concat2";
+    } else if (inputs.size() == 3 && axis_ == 1 &&
+               output_tensor_dims.size() == 4) {
+      kernel_func_name_ = "concatByCWith3Inputs";
+    } else if (inputs.size() == 4 && axis_ == 1 &&
+               output_tensor_dims.size() == 4) {
+      kernel_func_name_ = "concatByCWith4Inputs";
+    } else if (!(flag_ == 1 && !align_) && inputs.size() <= 6) {
       kernel_func_name_ = "Concat" + std::to_string(inputs.size()) +
                           "InputAxis" + std::to_string(flag_);
+    } else {
+      // note: do layout transform between image and buffer,
+      // before and after concat(buffer impl.)
+      kernel_func_name_ = "concat_mul_buffer";  // buffer/concat_kernel.cl
+      build_options_ = " -DCL_DTYPE_float";
+      auto in_dims = inputs[0]->dims();
+      for (int i = 0; i < axis_; i++) {
+        pre_size_ *= in_dims[i];
+      }
+      for (int i = axis_ + 1; i < in_dims.size(); i++) {
+        post_size_ *= in_dims[i];
+      }
+      // create kernels of img2buf and buf2img
+      auto img_to_buf_kernels = KernelRegistry::Global().Create(
+          "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
+      auto buf_to_img_kernels =
+          KernelRegistry::Global().Create("layout",
+                                          TARGET(kOpenCL),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kImageDefault));
+
+      img_to_buf_kernel_ = std::move(img_to_buf_kernels.front());
+      buf_to_img_kernel_ = std::move(buf_to_img_kernels.front());
     }
 
     auto input0_tensor_dims = inputs[0]->dims();
@@ -216,20 +213,20 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
 
       for (auto& input : inputs) {
-        in_shape_ = {1, 1, 1, 1};
+        cl_int4 in_shape = {1, 1, 1, 1};
         for (auto j = 0; j < input->dims().size(); ++j) {
-          in_shape_.s[4 - input->dims().size() + j] = input->dims()[j];
+          in_shape.s[4 - input->dims().size() + j] = input->dims()[j];
         }
-        in_shape_.s[1] = UP_DIV(in_shape_.s[1], 4);
-        kernel.setArg(arg_cnt++, in_shape_);
+        in_shape.s[1] = UP_DIV(in_shape.s[1], 4);
+        kernel.setArg(arg_cnt++, in_shape);
         CL_CHECK_FATAL(status);
       }
-      out_shape_ = {1, 1, 1, 1};
+      cl_int4 out_shape = {1, 1, 1, 1};
       for (auto j = 0; j < output_tensor_dims.size(); ++j) {
-        out_shape_.s[4 - output_tensor_dims.size() + j] = output_tensor_dims[j];
+        out_shape.s[4 - output_tensor_dims.size() + j] = output_tensor_dims[j];
       }
-      out_shape_.s[1] = UP_DIV(out_shape_.s[1], 4);
-      kernel.setArg(arg_cnt++, out_shape_);
+      out_shape.s[1] = UP_DIV(out_shape.s[1], 4);
+      kernel.setArg(arg_cnt++, out_shape);
       CL_CHECK_FATAL(status);
 
       status = EnqueueNDRangeKernel(context,
@@ -443,8 +440,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   int pre_size_ = 1;
   int post_size_ = 1;
   int align_{true};
-  cl_int4 in_shape_{};
-  cl_int4 out_shape_{};
   param_t* concat_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{""};
