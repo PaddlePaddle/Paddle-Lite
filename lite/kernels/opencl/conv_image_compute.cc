@@ -666,6 +666,7 @@ void ConvImageCompute::PrepareForRun() {
                                     build_options_[i],
                                     time_stamp_);
   }
+  auto device_name = CLRuntime::Global()->device().getInfo<CL_DEVICE_NAME>();
   if (device_name.find("Mali-T860") != std::string::npos) {
     use_lws_ = false;
   }
