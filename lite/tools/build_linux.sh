@@ -13,6 +13,8 @@ WITH_EXTRA=OFF
 # controls whether to compile python lib, default is OFF.
 WITH_PYTHON=OFF
 PY_VERSION=""
+# ON or OFF, default is OFF
+WITH_STATIC_LIB=OFF
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
 # controls whether to print log information, default is ON.
@@ -39,6 +41,8 @@ NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 BAIDU_XPU_SDK_ROOT=""
+BAIDU_XPU_SDK_URL=""
+BAIDU_XPU_SDK_ENV=""
 # options of compiling intel fpga.
 WITH_INTEL_FPGA=OFF
 INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk" 
@@ -72,6 +76,7 @@ function init_cmake_mutable_options {
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DPY_VERSION=$PY_VERSION \
+                        -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
                         -DLITE_WITH_CV=$WITH_CV \
                         -DLITE_WITH_LOG=$WITH_LOG \
                         -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -82,6 +87,8 @@ function init_cmake_mutable_options {
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
                         -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
+                        -DXPU_SDK_URL=$BAIDU_XPU_SDK_URL \
+                        -DXPU_SDK_ENV=$BAIDU_XPU_SDK_ENV \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_IMAGINATION_NNA=$WITH_IMAGINATION_NNA \
                         -DIMAGINATION_NNA_SDK_ROOT=$IMAGINATION_NNA_SDK_ROOT \
@@ -236,6 +243,7 @@ function print_usage {
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP), default is OFF  |"
     echo -e "|     --with_python: (OFF|ON); controls whether to build python lib or whl, default is OFF                                                             |"
     echo -e "|     --python_version: (2.7|3.5|3.7); controls python version to compile whl, default is None                                                         |"
+    echo -e "|     --with_static_lib: (OFF|ON); controls whether to publish c++ api static lib, default is OFF                                                      |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                                            |"
@@ -258,9 +266,11 @@ function print_usage {
     echo -e "|  detailed information about Paddle-Lite RKNPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html                           |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
-    echo -e "|     ./lite/tools/build_linux.sh --with_baidu_xpu=ON --baidu_xpu_sdk_root=YourBaiduXpuSdkPath                                                         |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_baidu_xpu=ON                                                                                                  |"
     echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF                                                        |"
-    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) required when compiling baidu_xpu library                                                     |"
+    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) optional                                                                                      |"
+    echo -e "|     --baidu_xpu_sdk_url: (baidu_xpu sdk download url) optional                                                                                       |"
+    echo -e "|     --baidu_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional                                                       |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -288,6 +298,11 @@ function main {
             # ON or OFF, default OFF
             --with_extra=*)
                 WITH_EXTRA="${i#*=}"
+                shift
+                ;;
+            # controls whether to compile cplus static library, default is OFF
+            --with_static_lib=*)
+                WITH_STATIC_LIB="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF
@@ -376,6 +391,14 @@ function main {
                 ;;
             --baidu_xpu_sdk_root=*)
                 BAIDU_XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --baidu_xpu_sdk_url=*)
+                BAIDU_XPU_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --baidu_xpu_sdk_env=*)
+                BAIDU_XPU_SDK_ENV="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on intel fpga.

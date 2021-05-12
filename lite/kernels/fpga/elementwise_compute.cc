@@ -95,6 +95,8 @@ void ElementwiseMulCompute::PrepareForRun() {
     scale_value = param.Y->data<zynqmp::float16>()[0];
   }
 
+  scale_param.re_assign = param.Y->dims().production() != 1;
+
   for (int i = 0; i < channel; i++) {
     if (param.Y->dims().production() != 1) {
       if (param.Y->ZynqTensor()->dataType() == zynqmp::FP32) {

@@ -29,10 +29,14 @@ def main():
         help="{true, false} Use post_quant_dynamic method to quantize"
              "the model weights. Default false.")
     parser.add_argument("--quant_type", type=str, default="QUANT_INT16",
-        help="{QUANT_INT16, QUANT_INT8} Set the quant_type for " 
+        help="{QUANT_INT16, QUANT_INT8} Set the quant_type for "
              "post_quant_dynamic. Default QUANT_INT16.")
+    parser.add_argument("--enable_fp16", type=str, default="false",
+        help="{true, false} Whether to enable FP16 calculation, FP16 "
+             "calculation will cause a lower precision but higher inference speed.")
 
    # arguments of help information
+    parser.add_argument('--version', action='version', version=a.version())
     parser.add_argument("--print_supported_ops", type=str, default="false",\
         help="{true, false}\
                Print supported operators on the inputed target")
@@ -71,7 +75,11 @@ def main():
     if args.optimize_out is not None:
          a.set_optimize_out(args.optimize_out)
     if args.valid_targets is not None:
-         a.set_valid_places(args.valid_targets)
+         if args.enable_fp16 == "true":
+              a.enable_fp16()
+              a.set_valid_places(args.valid_targets)
+         else:
+              a.set_valid_places(args.valid_targets)
     if args.param_file is not None:
          a.set_param_file(args.param_file)
     if args.record_tailoring_info == "true":

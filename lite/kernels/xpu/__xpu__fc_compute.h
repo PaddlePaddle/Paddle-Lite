@@ -32,12 +32,11 @@ class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~XPUFcCompute() = default;
 
  private:
-  void XPUMalloc(float** max_ptr);
-
- private:
-  float* x_max_{nullptr};
-  float* w_max_{nullptr};
-  float* y_max_{nullptr};
+  XPUScratchPadGuard quant_weight_guard_;
+  XPUScratchPadGuard weight_max_guard_;
+  // TODO(weihaoji): remove cpu w_max after xpu fc wrapper refactor
+  float w_max;
+  XPUScratchPadGuard input_max_guard_;
 };
 
 }  // namespace xpu

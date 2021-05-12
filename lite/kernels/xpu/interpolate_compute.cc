@@ -75,7 +75,7 @@ void NearestInterpCompute::Run() {
   int out_h = Out->dims()[2];
   int out_w = Out->dims()[3];
   bool align_corners = param.align_corners;
-  int trans_mode = (align_corners == true) ? 0 : 1;
+  int trans_mode = (align_corners == true) ? 0 : 2;
 
   int r = xdnn::interpolate2d<float>(ctx.GetRawContext(),
                                      X->data<float>(),

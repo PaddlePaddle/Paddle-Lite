@@ -32,7 +32,7 @@ void Conv2DTransposeCompute::PrepareForRun() {
   int pad_h = (*param.paddings)[0];
   int pad_w = (*param.paddings)[2];
 
-  zynqmp::ActiveType active_type = zynqmp::TYPE_NONE;
+  zynqmp::ActivationType active_type = zynqmp::TYPE_NONE;
   float leaky_relu_factor = 0;
 
   switch (param.activation_param.active_type) {

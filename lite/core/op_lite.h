@@ -68,6 +68,13 @@ class OpLite : public Registry {
   // Inference the outputs' shape.
   virtual bool InferShapeImpl() const { return true; }
   virtual bool InferShape();
+  // Infer the outputs's data type during opt period
+  virtual bool InferType() {
+    LOG(FATAL) << "Error! " << op_type_
+               << "::InferType() function must be registered for op "
+               << op_type_;
+    return false;
+  }
   // Run this operator.
   virtual bool Run();
   // Indicate whether the Op runs only once or not

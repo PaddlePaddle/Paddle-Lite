@@ -37,10 +37,10 @@ static void slice_ref(const float* input,
   std::vector<int> real_starts(in_dims.size(), 0);
   std::vector<int> real_ends(in_dims.size(), 0);
   std::vector<int> real_step(in_dims.size(), 0);
-  for (int i = 0; i < in_dims.size(); i++) {
+  for (size_t i = 0; i < in_dims.size(); i++) {
     real_ends[i] = in_dims[i];
   }
-  for (int i = 0; i < axes.size(); i++) {
+  for (size_t i = 0; i < axes.size(); i++) {
     int dim_value = in_dims[axes[i]];
     if (dim_value > 0) {
       int start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
@@ -55,11 +55,11 @@ static void slice_ref(const float* input,
   }
   const int LEN = in_dims.size();
   std::vector<int> dst_step(LEN);
-  for (int i = 0; i < in_dims.size(); ++i) {
+  for (size_t i = 0; i < in_dims.size(); ++i) {
     dst_step[i] = 1;
   }
   std::vector<int> src_step(LEN);
-  for (int i = 0; i < in_dims.size(); ++i) {
+  for (size_t i = 0; i < in_dims.size(); ++i) {
     src_step[i] = 1;
   }
   int out_num = out_dims[in_dims.size() - 1];
@@ -72,7 +72,7 @@ static void slice_ref(const float* input,
   for (int dst_id = 0; dst_id < out_num; dst_id++) {
     int src_id = 0;
     int index_id = dst_id;
-    for (int j = 0; j < out_dims.size(); j++) {
+    for (size_t j = 0; j < out_dims.size(); j++) {
       int cur_id = index_id / dst_step[j];
       index_id = index_id % dst_step[j];
       src_id += (cur_id + real_starts[j]) * src_step[j];
@@ -151,7 +151,7 @@ class SliceComputeTester : public arena::TestCase {
       for (size_t i = 0; i < decrease_axis_.size(); ++i) {
         out_dims[decrease_axis_[i]] = 0;
       }
-      for (int i = 0; i < out_dims.size(); ++i) {
+      for (size_t i = 0; i < out_dims.size(); ++i) {
         if (out_dims[i] != 0) {
           new_out_shape.push_back(out_dims[i]);
         }
@@ -178,7 +178,7 @@ class SliceComputeTester : public arena::TestCase {
     } else if (use_tensor_list_) {
       std::vector<std::string> starts_tensor_list_;
       std::vector<std::string> ends_tensor_list_;
-      for (int i = 0; i < starts_.size(); ++i) {
+      for (size_t i = 0; i < starts_.size(); ++i) {
         starts_tensor_list_.push_back("starts_tensor_list_" +
                                       paddle::lite::to_string(i));
         ends_tensor_list_.push_back("ends_tensor_list_" +
@@ -214,12 +214,12 @@ class SliceComputeTester : public arena::TestCase {
                       DDim({static_cast<int64_t>(ends_.size())}),
                       ends_i64.data());
     } else if (use_tensor_list_) {
-      for (int i = 0; i < starts_.size(); ++i) {
+      for (size_t i = 0; i < starts_.size(); ++i) {
         SetCommonTensor("starts_tensor_list_" + paddle::lite::to_string(i),
                         DDim({1}),
                         &starts_i64[i]);
       }
-      for (int i = 0; i < ends_.size(); ++i) {
+      for (size_t i = 0; i < ends_.size(); ++i) {
         SetCommonTensor("ends_tensor_list_" + paddle::lite::to_string(i),
                         DDim({1}),
                         &ends_i64[i]);
@@ -280,17 +280,27 @@ TEST(Slice, precision) {
   test_slice(place);
   test_slice_tensor(place);
   test_slice_tensor_list(place);
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+  Place place(TARGET(kXPU));
+  test_slice(place);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  Place place(TARGET(kXPU));
+  test_slice(place);
+  test_slice_tensor(place);
+  test_slice_tensor_list(place);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  Place place = TARGET(kHuaweiAscendNPU);
+  test_slice(place);
 #elif defined(LITE_WITH_ARM)
   Place place(TARGET(kARM));
   test_slice(place);
   test_slice_tensor(place);
   test_slice_tensor_list(place);
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  Place place(TARGET(kXPU));
+#elif defined(LITE_WITH_X86)
+  Place place(TARGET(kX86));
   test_slice(place);
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  Place place = TARGET(kHuaweiAscendNPU);
-  test_slice(place);
+  test_slice_tensor(place);
+  test_slice_tensor_list(place);
 #endif
 }
 

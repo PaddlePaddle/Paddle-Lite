@@ -34,4 +34,4 @@ void ScalesFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_scales_fuse_pass, paddle::lite::mir::ScalesFusePass)
-    .BindTargets({TARGET(kCUDA)});
+    .BindTargets({TARGET(kAny)});

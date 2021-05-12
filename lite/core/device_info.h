@@ -14,16 +14,21 @@
 
 #pragma once
 
-#include <cstdarg>
 #include <string>
 #include <vector>
+
 #include "lite/api/paddle_api.h"
+#include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/macros.h"
+
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/target_wrapper.h"
+#endif
 #ifdef LITE_WITH_MLU
 #include "lite/backends/mlu/mlu_utils.h"
 #endif
-#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -336,6 +341,46 @@ class Device<TARGET(kCUDA)> {
 };
 
 template class Env<TARGET(kCUDA)>;
+#endif
+
+#ifdef LITE_WITH_METAL
+template <>
+class Device<TARGET(kMetal)> {
+ public:
+  Device(int dev_id, void* device) : idx_(dev_id), device_(device) {}
+  void Init() {}
+
+ private:
+  int idx_{0};
+  void* device_{nullptr};
+};
+
+template <>
+class Env<TARGET(kMetal)> {
+ public:
+  typedef std::vector<Device<TARGET(kMetal)>> Devs;
+
+  static Devs& Global() {
+    static Devs* devs = new Devs();
+    return *devs;
+  }
+
+  static void Init(int max_stream = 1) {
+    Devs& devs = Global();
+    int count = TargetWrapperMetal::ctx_.GetDevicesNum();
+
+    if (count < 1) return;
+
+    for (int i = 0; i < count; i++) {
+      auto dev = Device<TARGET(kMetal)>(
+          i,
+          reinterpret_cast<void*>(TargetWrapperMetal::ctx_.GetDeviceByID(i)));
+      dev.Init();
+      devs.push_back(dev);
+    }
+  }
+};
+
 #endif
 
 }  // namespace lite

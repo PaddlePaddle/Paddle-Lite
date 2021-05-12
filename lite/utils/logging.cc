@@ -19,9 +19,10 @@
 
 #include "lite/utils/logging.h"
 #include <iomanip>
+#include "lite/utils/env.h"
 
 #if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
-    defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
+    defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON)
 #ifdef LITE_WITH_LOG
 
 namespace paddle {

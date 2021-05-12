@@ -211,6 +211,7 @@ list(LENGTH cuda_kernels num_cuda_kernels)
 list(LENGTH host_kernels num_host_kernels)
 list(LENGTH arm_kernels num_arm_kernels)
 list(LENGTH opencl_kernels num_opencl_kernels)
+list(LENGTH metal_kernels num_metal_kernels)
 list(LENGTH npu_kernels num_npu_kernels)
 list(LENGTH apu_kernels num_apu_kernels)
 list(LENGTH xpu_kernels num_xpu_kernels)
@@ -229,6 +230,7 @@ message(STATUS "Collected ${num_cuda_kernels} CUDA kernels")
 message(STATUS "Collected ${num_host_kernels} Host kernels")
 message(STATUS "Collected ${num_arm_kernels} ARM kernels")
 message(STATUS "Collected ${num_opencl_kernels} OpenCL kernels")
+message(STATUS "Collected ${num_metal_kernels} metal kernels")
 message(STATUS "Collected ${num_npu_kernels} NPU kernels")
 message(STATUS "Collected ${num_apu_kernels} APU kernels")
 message(STATUS "Collected ${num_xpu_kernels} XPU kernels")
@@ -260,6 +262,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
                         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
                         NNADAPTER_DEPS ${nnadapter_kernels}
                         CL_DEPS ${opencl_kernels}
+                        METAL_DEPS ${metal_kernels}
                         FPGA_DEPS ${fpga_kernels}
                         INTEL_FPGA_DEPS ${intel_fpga_kernels}
                         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
@@ -284,6 +287,7 @@ lite_cc_library(light_api SRCS light_api.cc
         XPU_DEPS ${xpu_kernels}
         RKNPU_DEPS ${rknpu_kernels}
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         FPGA_DEPS ${fpga_kernels}
         INTEL_FPGA_DEPS ${intel_fpga_kernels}
         BM_DEPS ${bm_kernels}
@@ -310,6 +314,7 @@ if(WITH_TESTING)
            XPU_DEPS ${xpu_kernels}
            RKNPU_DEPS ${rknpu_kernels}
            CL_DEPS ${opencl_kernels}
+           METAL_DEPS ${metal_kernels}
            FPGA_DEPS ${fpga_kernels}
            INTEL_FPGA_DEPS ${intel_fpga_kernels}
            BM_DEPS ${bm_kernels}
@@ -332,6 +337,13 @@ if(WITH_TESTING)
                DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
                ${ops} ${host_kernels} ${x86_kernels}
                ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1)
+            if(LITE_WITH_METAL)
+                lite_cc_test(test_mobilenetv1_lite_metal SRCS test_mobilenetv1_lite_metal.cc
+                        DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+                        METAL_DEPS ${metal_kernels}
+                        ${ops} ${host_kernels} ${x86_kernels}
+                        ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 --metal_dir=${CMAKE_BINARY_DIR}/lite/backends/metal/lite.metallib)
+            endif()
             add_dependencies(test_mobilenetv1_lite_x86 extern_lite_download_mobilenet_v1_tar_gz)
             lite_cc_test(test_mobilenetv2_lite_x86 SRCS test_mobilenetv2_lite_x86.cc
                DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
@@ -373,6 +385,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
+       METAL_DEPS ${metal_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
         --model_dir=${LITE_MODEL_DIR}/MobilenetV1_quant SERIAL)
     add_dependencies(test_mobilenetv1_int8 extern_lite_download_MobileNetV1_quant_tar_gz)
@@ -380,6 +393,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_mobilenetv1 SRCS mobilenetv1_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
+       METAL_DEPS ${metal_kernels}
        NPU_DEPS ${npu_kernels} ${npu_bridges}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
@@ -392,6 +406,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_mobilenetv1_int16 SRCS mobilenetv1_int16_test.cc
        DEPS ${lite_model_test_DEPS} ${light_lib_DEPS}
        CL_DEPS ${opencl_kernels}
+       METAL_DEPS ${metal_kernels}
        NPU_DEPS ${npu_kernels} ${npu_bridges}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int16 SERIAL)
@@ -405,6 +420,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
+       METAL_DEPS ${metal_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu SERIAL)
     add_dependencies(test_mobilenetv2 extern_lite_download_mobilenet_v2_relu_tar_gz)
@@ -415,6 +431,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_resnet50 SRCS resnet50_test.cc
        DEPS ${lite_model_test_DEPS} paddle_api_light
        CL_DEPS ${opencl_kernels}
+       METAL_DEPS ${metal_kernels}
        FPGA_DEPS ${fpga_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
@@ -423,11 +440,13 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_resnet50_fpga SRCS resnet50_test_fpga.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
+       METAL_DEPS ${metal_kernels}
        FPGA_DEPS ${fpga_kernels})
 
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
        DEPS ${lite_model_test_DEPS}
        CL_DEPS ${opencl_kernels}
+       METAL_DEPS ${metal_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
@@ -435,6 +454,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_fast_rcnn SRCS fast_rcnn_test.cc
        DEPS ${lite_model_test_DEPS} ${light_lib_DEPS} paddle_api_full
        CL_DEPS ${opencl_kernels}
+       METAL_DEPS ${metal_kernels}
        FPGA_DEPS ${fpga_kernels}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
     add_dependencies(test_fast_rcnn extern_lite_download_fast_rcnn_fluid184_tar_gz)
@@ -466,6 +486,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         NPU_DEPS ${npu_kernels}
         APU_DEPS ${apu_kernels}
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         FPGA_DEPS ${fpga_kernels}
         INTEL_FPGA_DEPS ${intel_fpga_kernels}
         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
@@ -487,6 +508,7 @@ if(NOT WITH_COVERAGE)
     lite_cc_test(test_light_api SRCS light_api_test.cc
         DEPS light_api program mir_passes paddle_api_light
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         FPGA_DEPS ${fpga_kernels}
         INTEL_FPGA_DEPS ${intel_fpga_kernels}
         RKNPU_DEPS ${rknpu_kernels}
@@ -496,6 +518,7 @@ if(NOT WITH_COVERAGE)
     lite_cc_test(test_apis SRCS apis_test.cc
         DEPS cxx_api light_api ${ops} paddle_api_light
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         X86_DEPS ${x86_kernels}
         XPU_DEPS ${xpu_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -542,6 +565,7 @@ if(NOT WITH_COVERAGE)
       APU_DEPS ${apu_kernels}
       RKNPU_DEPS ${rknpu_kernels}
       CL_DEPS ${opencl_kernels}
+      METAL_DEPS ${metal_kernels}
       X86_DEPS ${x86_kernels}
       FPGA_DEPS ${fpga_kernels}
       INTEL_FPGA_DEPS ${intel_fpga_kernels}
@@ -566,6 +590,7 @@ if(NOT IOS)
         MLU_DEPS ${mlu_kernels}
         APU_DEPS ${apu_kernels}
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         BM_DEPS ${bm_kernels}
         RKNPU_DEPS ${rknpu_kernels}
         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
@@ -584,6 +609,7 @@ if(NOT IOS)
         MLU_DEPS ${mlu_kernels}
         APU_DEPS ${apu_kernels}
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         BM_DEPS ${bm_kernels}
         RKNPU_DEPS ${rknpu_kernels}
         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
@@ -602,6 +628,7 @@ if(NOT IOS)
         MLU_DEPS ${mlu_kernels}
         APU_DEPS ${apu_kernels}
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         BM_DEPS ${bm_kernels}
         RKNPU_DEPS ${rknpu_kernels}
         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
@@ -622,6 +649,7 @@ if(NOT IOS)
         MLU_DEPS ${mlu_kernels}
         APU_DEPS ${apu_kernels}
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         FPGA_DEPS ${fpga_kernels}
         INTEL_FPGA_DEPS ${intel_fpga_kernels}
         X86_DEPS ${x86_kernels}
@@ -640,6 +668,7 @@ if(NOT IOS)
         MLU_DEPS ${mlu_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         BM_DEPS ${bm_kernels}
         FPGA_DEPS ${fpga_kernels}
         INTEL_FPGA_DEPS ${intel_fpga_kernels}
@@ -656,6 +685,7 @@ if(NOT IOS)
         XPU_DEPS ${xpu_kernels}
         APU_DEPS ${apu_kernels}
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         FPGA_DEPS ${fpga_kernels}
         INTEL_FPGA_DEPS ${intel_fpga_kernels}
         X86_DEPS ${x86_kernels}

@@ -16,7 +16,31 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ### 已支持的Paddle模型
 
+#### 模型
 - [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)
+
+#### 性能
+- 测试环境
+  - 编译环境
+    - Ubuntu 18.04，GCC 5.4 for ARMLinux aarch64
+
+  - 硬件环境
+    - 紫光展锐虎贲T7510
+      - Roc1开发板
+      - CPU：4 x Cortex-A75 2.0 GHz + 4 x Cortex-A55 1.8 GHz
+      - NNA：4 TOPs @1.0GHz
+
+- 测试方法
+  - warmup=10，repeats=30，统计平均时间，单位是ms
+  - 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
+  - 分类模型的输入图像维度是{1，3，224，224}
+
+- 测试结果
+
+  |模型 |紫光展锐虎贲T7510||
+  |---|---|---|
+  |  |CPU(ms) | NPU(ms) |
+  |MobileNetV1-int8|  61.4|  18.02|
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -38,7 +62,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ### 准备设备环境
 
-- 需要依赖特定版本的firmware，请联系Imagination相关研发同学；
+- 需要依赖特定版本的firmware，请联系Imagination相关研发同学 jason.wang@imgtec.com；
 - 确定能够通过SSH方式远程登录Roc 1开发板；
 - 由于Roc 1的ARM CPU能力较弱，示例程序和PaddleLite库的编译均采用交叉编译方式。
 

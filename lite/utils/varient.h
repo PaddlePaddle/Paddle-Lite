@@ -131,6 +131,17 @@ struct variant {
   }
 
   template <typename T>
+  const T get_if() const {
+    static_assert(std::is_pointer<T>::value,
+                  "Use get_if, make sure T is pointer");
+    if (type_id == typeid(T).hash_code()) {
+      return *reinterpret_cast<const T*>(&data);
+    } else {
+      return nullptr;
+    }
+  }
+
+  template <typename T>
   T* get_mutable() {
     // It is a dynamic_cast-like behaviour
     if (type_id == typeid(T).hash_code()) {
@@ -144,6 +155,7 @@ struct variant {
 #endif
     }
   }
+
   ~variant() { helper_t::destroy(type_id, &data); }
 };
 

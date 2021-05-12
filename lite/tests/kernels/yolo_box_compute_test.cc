@@ -159,20 +159,19 @@ class YoloBoxComputeTester : public arena::TestCase {
     float* scores_data = scores->mutable_data<float>();
 
 #ifdef LITE_WITH_LOG
-    LOG(INFO) << "x_n:" << n;
-    LOG(INFO) << "x_h:" << h;
-    LOG(INFO) << "x_c:" << in->dims()[1];
-    LOG(INFO) << "x_w:" << w;
-    LOG(INFO) << "x_stride_:" << stride;
-    LOG(INFO) << "x_size_:" << in_size;
-    LOG(INFO) << "box_num_:" << box_num;
-    LOG(INFO) << "anchor_num_:" << an_num;
-    LOG(INFO) << "anchor_stride_:" << an_stride;
-    LOG(INFO) << "class_num_:" << class_num;
-    LOG(INFO) << "clip_bbox_:" << clip_bbox_;
-    LOG(INFO) << "conf_thresh_:" << conf_thresh;
-    LOG(INFO) << "scale_x_y_:" << scale_x_y_;
-// LOG(INFO) << "bias_:" << bias_;
+    VLOG(4) << "x_n:" << n;
+    VLOG(4) << "x_h:" << h;
+    VLOG(4) << "x_c:" << in->dims()[1];
+    VLOG(4) << "x_w:" << w;
+    VLOG(4) << "x_stride_:" << stride;
+    VLOG(4) << "x_size_:" << in_size;
+    VLOG(4) << "box_num_:" << box_num;
+    VLOG(4) << "anchor_num_:" << an_num;
+    VLOG(4) << "anchor_stride_:" << an_stride;
+    VLOG(4) << "class_num_:" << class_num;
+    VLOG(4) << "clip_bbox_:" << clip_bbox_;
+    VLOG(4) << "conf_thresh_:" << conf_thresh;
+    VLOG(4) << "scale_x_y_:" << scale_x_y_;
 #endif
 
     float box[4];
@@ -269,10 +268,10 @@ TEST(YoloBox, precision) {
 #if defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL));
   abs_error = 2e-2;
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif

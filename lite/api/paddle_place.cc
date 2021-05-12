@@ -84,8 +84,10 @@ const std::string& TargetToStr(TargetType target) {
                                               "huawei_ascend_npu",
                                               "imagination_nna",
                                               "intel_fpga",
+                                              "metal",
                                               "nnadapter"};
   auto x = static_cast<int>(target);
+
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
 }
@@ -108,8 +110,15 @@ const std::string& PrecisionToStr(PrecisionType precision) {
 }
 
 const std::string& DataLayoutToStr(DataLayoutType layout) {
-  static const std::string datalayout2string[] = {
-      "unk", "NCHW", "any", "NHWC", "ImageDefault", "ImageFolder", "ImageNW"};
+  static const std::string datalayout2string[] = {"unk",
+                                                  "NCHW",
+                                                  "any",
+                                                  "NHWC",
+                                                  "ImageDefault",
+                                                  "ImageFolder",
+                                                  "ImageNW",
+                                                  "MetalTexture2DArray",
+                                                  "MetalTexture2D"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
@@ -133,6 +142,7 @@ const std::string& TargetRepr(TargetType target) {
                                               "kHuaweiAscendNPU",
                                               "kImaginationNNA",
                                               "kIntelFPGA",
+                                              "kMetal",
                                               "kNNAdapter"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
@@ -161,7 +171,9 @@ const std::string& DataLayoutRepr(DataLayoutType layout) {
                                                   "kNHWC",
                                                   "kImageDefault",
                                                   "kImageFolder",
-                                                  "kImageNW"};
+                                                  "kImageNW",
+                                                  "kMetalTexture2DArray",
+                                                  "kMetalTexture2D"};
   auto x = static_cast<int>(layout);
   CHECK_LT(x, static_cast<int>(DATALAYOUT(NUM)));
   return datalayout2string[x];
@@ -196,6 +208,7 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kHuaweiAscendNPU),
                                                TARGET(kImaginationNNA),
                                                TARGET(kIntelFPGA),
+                                               TARGET(kMetal),
                                                TARGET(kNNAdapter)});
   if (target == TARGET(kAny)) {
     return valid_set;
@@ -213,12 +226,15 @@ std::set<PrecisionType> ExpandValidPrecisions(PrecisionType precision) {
 }
 
 std::set<DataLayoutType> ExpandValidLayouts(DataLayoutType layout) {
-  static const std::set<DataLayoutType> valid_set({DATALAYOUT(kNCHW),
-                                                   DATALAYOUT(kAny),
-                                                   DATALAYOUT(kNHWC),
-                                                   DATALAYOUT(kImageDefault),
-                                                   DATALAYOUT(kImageFolder),
-                                                   DATALAYOUT(kImageNW)});
+  static const std::set<DataLayoutType> valid_set(
+      {DATALAYOUT(kNCHW),
+       DATALAYOUT(kAny),
+       DATALAYOUT(kNHWC),
+       DATALAYOUT(kImageDefault),
+       DATALAYOUT(kImageFolder),
+       DATALAYOUT(kImageNW),
+       DATALAYOUT(kMetalTexture2DArray),
+       DATALAYOUT(kMetalTexture2D)});
   if (layout == DATALAYOUT(kAny)) {
     return valid_set;
   }

@@ -161,9 +161,15 @@ void TestPad2d(const Place& place,
 TEST(Pad2d, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+  std::vector<std::string> pad_mode_list = {"constant", "edge", "reflect"};
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+  pad_mode_list = {"constant",
+                   "reflect"};  // XPU support constant and reflect now
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -177,7 +183,7 @@ TEST(Pad2d, precision) {
       for (int pad_left : {0, 1}) {
         for (int pad_right : {0, 1}) {
           std::vector<int> paddings{pad_top, pad_bottom, pad_left, pad_right};
-          for (std::string pad_mode : {"constant", "edge", "reflect"}) {
+          for (std::string pad_mode : pad_mode_list) {
             for (float pad_value : {0.f, 1.0f}) {
               VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
                       << paddings[0] << " " << paddings[1] << " " << paddings[2]

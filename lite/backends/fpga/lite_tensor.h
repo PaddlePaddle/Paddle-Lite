@@ -228,7 +228,7 @@ inline zynqmp::DataType precision_to_data_type(PrecisionType p) {
       data_type = zynqmp::INT32;
       break;
     case PrecisionType::kInt16:
-      data_type = zynqmp::INT8;
+      data_type = zynqmp::INT16;
       break;
     case PrecisionType::kInt64:
       data_type = zynqmp::INT64;

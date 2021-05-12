@@ -97,7 +97,7 @@ class IoCopyXPUToHostCompute
       }
     } else if (x->target() == TARGET(kHost) || x->target() == TARGET(kX86) ||
                x->target() == TARGET(kARM)) {
-      y->ShareDataWith(*x);
+      y->CopyDataFrom(*x);
     } else {
       LOG(FATAL) << "IoCopyXPUToHost can not handle with the input target: "
                  << lite_api::TargetToStr(x->target());

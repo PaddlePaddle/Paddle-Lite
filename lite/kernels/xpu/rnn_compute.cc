@@ -123,8 +123,6 @@ void RnnCompute::Run() {
   auto pre_state = param.PreState;
   auto weight_list = param.WeightList;
   const Tensor* sequence_length = param.SequenceLength;
-  CHECK(sequence_length == nullptr)
-      << "Only support SequenceLength = nullptr in XPU rnn kernel";
   // OUTPUT
   auto output = param.Out;
   auto state = param.State;
@@ -153,7 +151,11 @@ void RnnCompute::Run() {
   int hdim = hidden_size;
 
   const float* input_ptr = input->data<float>();
-  output->Resize({seq_len, batch_size, hdim * 2});
+  if (is_bidirec) {
+    output->Resize({seq_len, batch_size, hdim * 2});
+  } else {
+    output->Resize({seq_len, batch_size, hdim});
+  }
   float* output_ptr = output->mutable_data<float>(TARGET(kXPU));
 
   Tensor internal_output_1_tensor, internal_output_2_tensor;
