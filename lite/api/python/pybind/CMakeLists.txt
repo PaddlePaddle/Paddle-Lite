@@ -9,15 +9,15 @@ if(WIN32)
   target_link_libraries(lite_pybind protobuf cblas xxhash)
   add_dependencies(lite_pybind pybind python supported_kernel_op_info_h all_kernel_faked_cc)
 
-  add_library(bundle_full_api STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS> $<TARGET_OBJECTS:framework_proto_obj>)
-  target_link_libraries(bundle_full_api protobuf cblas xxhash)
+  add_library(paddle_api_full_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS> $<TARGET_OBJECTS:framework_proto_obj>)
+  target_link_libraries(paddle_api_full_bundled protobuf cblas xxhash)
 
   # Only deps libmklml.so, not link
   if(WITH_MKL)
     add_dependencies(PADDLELITE_OBJS mklml)
     if(WITH_STATIC_MKL)
         target_link_libraries(lite_pybind ${MKLML_LIBRARIES})
-        target_link_libraries(bundle_full_api ${MKLML_LIBRARIES})
+        target_link_libraries(paddle_api_full_bundled ${MKLML_LIBRARIES})
     endif(WITH_STATIC_MKL)
   endif(WITH_MKL)
 
