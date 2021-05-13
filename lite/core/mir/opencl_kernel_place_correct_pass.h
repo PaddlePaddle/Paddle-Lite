@@ -83,7 +83,7 @@ class OpenCLKernelPlaceCorrectPass : public ProgramPass {
           }
           VLOG(4) << string_format(
               "Correct opencl %s kernel & tensor's place from %s to %s.",
-              op_type,
+              op_type.c_str(),
               TargetToStr(inst.place().target).c_str(),
               TargetToStr(new_target).c_str());
           UpdateTarget(inst, new_target);
