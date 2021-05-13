@@ -17,10 +17,10 @@
 #include <string>
 #include <vector>
 
-#include "lite/core/dim.h"
-#include "lite/core/target_wrapper.h"
 #include "lite/backends/metal/metal_common.h"
 #include "lite/backends/metal/metal_context.h"
+#include "lite/core/dim.h"
+#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -57,8 +57,7 @@ class TargetWrapper<TARGET(kMetal)> {
                            std::vector<int> transport,
                            void* host_ptr = nullptr);
 
-  static void* MallocBuffer(size_t size,
-														METAL_ACCESS_FLAG access);
+  static void* MallocBuffer(size_t size, METAL_ACCESS_FLAG access);
 
   static void FreeImage(void* image);
 

@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/depthwise_conv2d_image_compute.h"
-#include "lite/core/op_registry.h"
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/metal_context_imp.h"
+#include "lite/backends/metal/metal_debug.h"
+#include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
@@ -23,9 +23,7 @@ using namespace std;
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace metal {
-
-}  // namespace metal
+namespace metal {}  // namespace metal
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
@@ -45,36 +43,28 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                                       PRECISION(kFloat),
                                       DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Filter",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFloat),
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    depthwise_conv2d,
-    kMetal,
-    kFP16,
-    kMetalTexture2DArray,
-    paddle::lite::kernels::metal::DepthwiseConv2dImageCompute,
-    def)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("Bias",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+REGISTER_LITE_KERNEL(depthwise_conv2d,
+                     kMetal,
+                     kFP16,
+                     kMetalTexture2DArray,
+                     paddle::lite::kernels::metal::DepthwiseConv2dImageCompute,
+                     def)
+    .BindInput(
+        "Input",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput(
+        "Bias",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Filter",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Output",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindOutput(
+        "Output",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

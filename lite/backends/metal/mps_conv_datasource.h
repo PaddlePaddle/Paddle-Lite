@@ -11,11 +11,10 @@
 #include <MetalPerformanceShaders/MetalPerformanceShaders.h>
 
 @interface MPSConvDataSource : NSObject <MPSCNNConvolutionDataSource> {
-
 }
-@property (nonatomic, assign)void* weights;
-@property (nonatomic, assign)float* biasTerms;
-@property (nonatomic, strong)MPSCNNConvolutionDescriptor* descriptor;
+@property (nonatomic, assign) void* weights;
+@property (nonatomic, assign) float* biasTerms;
+@property (nonatomic, strong) MPSCNNConvolutionDescriptor* descriptor;
 
 @end
 
