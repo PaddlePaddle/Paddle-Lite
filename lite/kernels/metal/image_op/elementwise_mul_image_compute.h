@@ -24,8 +24,8 @@
 #include "lite/core/profile/profiler.h"
 #endif
 
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/kernels/metal/image_op/reshape_image_compute.h"
 
 namespace paddle {
@@ -47,15 +47,15 @@ class ElementwiseMulImageCompute
   };
 
  private:
-	void setup_without_mps();
-													
-	MetalImage* output_buffer_;
+  void setup_without_mps();
+
+  MetalImage* output_buffer_;
   const MetalImage* input_buffer_x_;
   const MetalImage* input_buffer_y_;
   std::shared_ptr<MetalBuffer> params_buffer_;
 
-	void* pipline_;
-	std::string function_name_;
+  void* pipline_;
+  std::string function_name_;
   MetalContext* metal_context_;
 };
 

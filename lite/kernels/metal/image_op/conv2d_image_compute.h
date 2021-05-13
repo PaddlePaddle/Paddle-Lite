@@ -26,8 +26,8 @@
 #include "lite/core/profile/profiler.h"
 #endif
 
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
@@ -44,46 +44,47 @@ class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
   void PrepareForRun() override;
   void Run() override;
   void SaveOutput() override;
-//  void SaveOutput() override {
-//    MetalDebug::SaveOutput("conv2d", output_buffer_);
-//  };
-	virtual ~Conv2dImageCompute();
+  //  void SaveOutput() override {
+  //    MetalDebug::SaveOutput("conv2d", output_buffer_);
+  //  };
+  virtual ~Conv2dImageCompute();
 
  private:
-	bool use_mps_{false};
-	void *mps_conv_op_{nullptr};
-	void *mps_input_image_{nullptr};
-	void *mps_output_image_{nullptr};
+  bool use_mps_{false};
+  void* mps_conv_op_{nullptr};
+  void* mps_input_image_{nullptr};
+  void* mps_output_image_{nullptr};
 
-	void setup_with_mps();
-	void setup_without_mps();
-																							
-	void run_with_mps();
-	void run_without_mps();
+  void setup_with_mps();
+  void setup_without_mps();
 
-	bool canAddUseMPS();
-	bool canMPSAddByChannel();
-	bool canMPSAddByElement();
-																	
-  static std::string KernelFunctionName(
-      const param_t& param, bool use_winograde = false, bool use_quadruple = false);
+  void run_with_mps();
+  void run_without_mps();
+
+  bool canAddUseMPS();
+  bool canMPSAddByChannel();
+  bool canMPSAddByElement();
+
+  static std::string KernelFunctionName(const param_t& param,
+                                        bool use_winograde = false,
+                                        bool use_quadruple = false);
 
   static bool IsWinoGrad(const std::string& function_name);
   bool IsQuadruple(const std::string& function_name);
-																							 
+
  private:
   bool is_depthwise_{false};
-	uint16_t activate_type_ = 0;
+  uint16_t activate_type_ = 0;
   std::string name_param_out_;
-												
+
   void* pipline_;
-	std::string function_name_;
-	MetalContext* metal_context_;
-																				
-	MetalImage* output_buffer_;
-	const MetalImage* input_buffer_;
-	const MetalImage* bias_buffer_;
-	MetalImage* blank_buffer_;
+  std::string function_name_;
+  MetalContext* metal_context_;
+
+  MetalImage* output_buffer_;
+  const MetalImage* input_buffer_;
+  const MetalImage* bias_buffer_;
+  MetalImage* blank_buffer_;
   std::shared_ptr<MetalBuffer> filter_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;
 };

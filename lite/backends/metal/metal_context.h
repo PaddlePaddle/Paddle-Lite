@@ -25,8 +25,8 @@ class RuntimeProgram;
 
 class MetalContext {
  public:
-	MetalContext();
-	~ MetalContext();
+  MetalContext();
+  ~MetalContext();
   /// device
   void PrepareDevices();
   int GetDevicesNum();
@@ -37,20 +37,16 @@ class MetalContext {
   void WaitUntilCompleted();
 
   void set_metal_path(std::string path);
-	void set_use_aggressive_optimization(bool flag){};
-	void set_use_mps(bool flag){};
+  void set_use_aggressive_optimization(bool flag){};
+  void set_use_mps(bool flag){};
   bool use_mps() const { return true; }
-	bool use_quadruple() const { return false; }
+  bool use_quadruple() const { return false; }
   bool use_winograde() const { return false; }
 
-	void *backend() const {
-			return mContext;
-	}
-	
-	RuntimeProgram *program() const {
-			return program_;
-	}
-	
+  void* backend() const { return mContext; }
+
+  RuntimeProgram* program() const { return program_; }
+
  private:
   void* mContext = nullptr;
   bool got_devices_{false};

@@ -13,56 +13,55 @@
 // limitations under the License.
 
 #include "lite/backends/metal/metal_context.h"
-#include "lite/utils/cp_logging.h"
 #include "lite/backends/metal/metal_buffer.h"
 #include "lite/backends/metal/metal_common.h"
-#include "lite/backends/metal/metal_image.h"
 #include "lite/backends/metal/metal_context_imp.h"
+#include "lite/backends/metal/metal_image.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
 
 MetalContext::MetalContext() {
-	mContext = (__bridge_retained void *)[[MetalContextImp alloc] init];
-	if (mContext) {
-		got_devices_ = true;
-	}
+    mContext = (__bridge_retained void*)[[MetalContextImp alloc] init];
+    if (mContext) {
+        got_devices_ = true;
+    }
 }
 
-MetalContext::~ MetalContext() {
-	CFRelease(mContext);
+MetalContext::~MetalContext() {
+    CFRelease(mContext);
 }
 
 void MetalContext::PrepareDevices() {
-  if (got_devices_) return;
+    if (got_devices_) return;
 }
 
 int MetalContext::GetDevicesNum() {
-  if (!got_devices_) {
-		return 0;
-  }
-  return 1;
+    if (!got_devices_) {
+        return 0;
+    }
+    return 1;
 }
 
 void* MetalContext::GetDeviceByID(int id) {
-	return nullptr;
+    return nullptr;
 }
 
-void MetalContext::CreateCommandBuffer(RuntimeProgram* program ) {
-	program_ = program;
+void MetalContext::CreateCommandBuffer(RuntimeProgram* program) {
+    program_ = program;
 }
 
-void MetalContext::WaitUntilCompleted(){
-  
+void MetalContext::WaitUntilCompleted() {
 }
 
 const void* MetalContext::GetDefaultDevice() {
-	return nullptr;
+    return nullptr;
 }
 
 void MetalContext::set_metal_path(std::string path) {
-	metal_path_ = path;
-	[(__bridge MetalContextImp *)mContext setMetalPath:path];
+    metal_path_ = path;
+    [(__bridge MetalContextImp*)mContext setMetalPath:path];
 }
 
 }
