@@ -487,6 +487,10 @@ if (NOT LITE_ON_TINY_PUBLISH)
     target_link_libraries(paddle_api_full ${cuda_deps})
     get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
     bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
+    if (LITE_WITH_X86 AND WIN32 AND WITH_MKL)
+       add_dependencies(paddle_api_full eigen3 mklml)
+       add_dependencies(paddle_api_light eigen3 mklml)
+    endif()
 endif()
 
 #-----------------------------------------------------------------------------------------------------
