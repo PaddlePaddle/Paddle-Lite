@@ -85,7 +85,7 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto& outs = split_param_->output;
     axis_ = split_param_->axis;
     if (axis_ < 0) {
-      axis_ += x_dims.size() - 1;
+      axis_ += x_dims.size();
     }
 
     if (outs.size() != 2) {
