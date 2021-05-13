@@ -77,8 +77,8 @@ class TransposedConvPE : public PE {
       deconv_concat_type_ = fill_sub_filters(&param_, &filter_);
       conv_param = const_cast<ConvParam&>(param_);
       conv_param.deconv = true;
-      std::cout << "deconv is " << conv_param.deconv << std::endl;
-      std::cout << "split feature num is " << conv_param.splitParams().size() << std::endl;
+      // std::cout << "deconv is " << conv_param.deconv << std::endl;
+      // std::cout << "split feature num is " << conv_param.splitParams().size() << std::endl;
 
 
       for(auto basic_param : conv_param.splitParams()) {
@@ -165,7 +165,7 @@ class TransposedConvPE : public PE {
       }
       else if(sub_filter_ena_) {
         // all the split sub filters are concated by cpu
-        std::cout << "cpu concat transposed";
+        // std::cout << "cpu concat transposed";
         param_.output->setOffset(0);
         splited_sub_res_concat();
       }
@@ -224,8 +224,7 @@ class TransposedConvPE : public PE {
         // src data and config for each split sub output
         auto each_conv_param = conv_params[sub_idx * res_num_per_sub + idx_in_sub];
         float16 fpga_cur_max = each_conv_param->output_max;
-        std::cout << "current sub idx is " << sub_idx << " idx in sub is " << idx_in_sub << std::endl;
-        std::cout << "current max " << half_to_float(fpga_cur_max) << std::endl;
+
         
 
         each_conv_param->output.invalidate();
@@ -249,14 +248,14 @@ class TransposedConvPE : public PE {
 
           // Branch One: copy one each_C * each_W at a time
           if(output_num_per_sub == 1) {
-            std::cout << "branch one" << std::endl;
+
             float16* src_cur = src_hwc + omit_size_ * oc;
             memcpy(dst_cur_hwc, src_cur, oc * ow * sizeof(float16));
           }
           
           // Branch Two: copy one each_C at a time 
           else if(output_num_per_sub == 2) {
-            std::cout << "branch two" << std::endl;
+
             // Step One: when w = 0
             // check the remain fill length of the first oc
             int dst_w_start_without_omit = accum_c / oc;

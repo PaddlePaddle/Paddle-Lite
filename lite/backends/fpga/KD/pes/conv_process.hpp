@@ -484,7 +484,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
     // Case One: cpu_concat no matter deconv or not, take care of the residual
     // jump write between op is disabled in this branch, no need to care
     if (param.cpu_concat) {
-      std::cout << "branch 1" << std::endl;
+      // std::cout << "branch 1" << std::endl;
       if (i == 0) {
         Shape shape(NHWC,
                     {1,
@@ -507,7 +507,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
     // Case Two: deconv mode with split num > 1 and no residual
     // deconv mode is not support jump write between op yet
     else if(deconv_out_reshape) {
-      std::cout << "branch 2" << std::endl;
+      // std::cout << "branch 2" << std::endl;
       if (i == 0) {
         Shape shape(NHWC,
                     {1,
@@ -521,20 +521,19 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
 
     // Case Three: deconv mode with split num is 1 or normal conv without residual and with jump write disabled
     else if(!enable_jump) {
-      std::cout << "branch 3" << std::endl;
+      // std::cout << "branch 3" << std::endl;
       // for single conv op
       out_address = out->data<float16>() + offset;
     }
 
     // Case Four: normal conv with jump write enabled across op
     else {
-      std::cout << "branch 4" << std::endl;
+      // std::cout << "branch 4" << std::endl;
       out_address = out->data<float16>() + offset + jump_out_start_offset;
     }
 
     // support deconv sub filter split num
     if(deconv && !deconv_out_reshape) {
-      std::cout << "start pos is " << start_pos << std::endl;
       out_address = out_address + start_pos;
     }
 

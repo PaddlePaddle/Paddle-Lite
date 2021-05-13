@@ -284,7 +284,7 @@ class Tensor {
     this->invalidate();
     perform_bypass(args);
     this->invalidate();
-
+    
     if (dataType_ == FP32) {
       copyMaxFrom(src);
     }

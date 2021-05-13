@@ -23,6 +23,7 @@ add_kernel(multiclass_nms_compute_fpga FPGA basic SRCS multiclass_nms_compute.cc
 add_kernel(norm_compute_fpga FPGA basic SRCS norm_compute.cc DEPS ${fpga_deps})
 
 add_kernel(pooling_compute_fpga FPGA basic SRCS pooling_compute.cc DEPS ${fpga_deps})
+add_kernel(subgraph_compute_fpga FPGA basic SRCS subgraph_compute.cc DEPS ${fpga_deps})
 add_kernel(prior_box_compute_fpga FPGA basic SRCS prior_box_compute.cc DEPS ${fpga_deps})
 add_kernel(reduce_mean_compute_fpga FPGA basic SRCS reduce_mean_compute.cc DEPS ${fpga_deps})
 add_kernel(reshape_compute_fpga FPGA basic SRCS reshape_compute.cc DEPS ${fpga_deps} reshape_op)
