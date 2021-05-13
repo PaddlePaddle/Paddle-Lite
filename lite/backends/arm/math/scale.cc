@@ -68,7 +68,7 @@ inline void scale_compute_fp32(const float* din,
       : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
 #else
   asm volatile(
-      "cmp %w[cnt], #1                          \n"
+      "cmp %[cnt], #1                          \n"
       "blt 0f                                   \n"
       "1:                                     @ loop header \n"
       "vld1.32  {d8-d11}, [%[din]]!           @ load din 0 \n"
@@ -88,13 +88,13 @@ inline void scale_compute_fp32(const float* din,
       "vst1.32  {d20-d23}, [%[dout]]!         @ store result, add pointer\n"
       "bne    1b                              @ jump to main loop start "
       "0:                                       \n"
-      "cmp %w[remain_cnt], #1                   \n"
+      "cmp %[remain_cnt], #1                   \n"
       "blt 2f                                   \n"
       "3:                                       \n"
       "vld1.32  {d8-d9}, [%[din]]!            @ load din 0 \n"
       "vand.32 q8, %q[vbias], %q[vbias]       @ out bias \n"
       "vmla.f32 q8, q4, %q[vscale]            @ mla \n"
-      "subs %w[remain_cnt], %w[remain_cnt],  #1  \n"
+      "subs %[remain_cnt],  #1  \n"
       "str q8, [%[dout]]!                       \n"
       "bne    3b                                \n"
       "2:                                       \n"
@@ -181,7 +181,7 @@ void scale_relu<float>(
       : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
 #else
   asm volatile(
-      "cmp %w[cnt], #1                          \n"
+      "cmp %[cnt], #1                          \n"
       "blt 0f                                   \n"
       "1:                                     @ loop header \n"
       "vld1.32  {d8-d11}, [%[din]]!           @ load din 0 \n"
@@ -208,13 +208,13 @@ void scale_relu<float>(
 
       "bne    1b                              @ jump to main loop start "
       "0:                                       \n"
-      "cmp %w[remain_cnt], #1                   \n"
+      "cmp %[remain_cnt], #1                   \n"
       "blt 2f                                   \n"
       "3:                                       \n"
       "vld1.32  {d8-d9}, [%[din]]!            @ load din 0 \n"
       "vand.32 q8, %q[vbias], %q[vbias]       @ out bias \n"
       "vmla.f32 q8, q4, %q[vscale]            @ mla \n"
-      "subs %w[remain_cnt], %w[remain_cnt],  #1  \n"
+      "subs %[remain_cnt],  #1  \n"
       "vmax.f32 q8, q8, %q[vzero]             @ relu \n"
       "str q8, [%[dout]]!                       \n"
       "bne    3b                                \n"
