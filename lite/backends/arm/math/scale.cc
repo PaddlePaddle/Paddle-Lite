@@ -88,7 +88,7 @@ inline void scale_compute_fp32(const float* din,
       "vst1.32  {d20-d23}, [%[dout]]!         @ store result, add pointer\n"
       "bne    1b                              @ jump to main loop start \n"
       "0:                                       \n"
-      "cmp %[remain_cnt], #1                   \n"
+      "cmp %[remain_cnt], #1                    \n"
       "blt 2f                                   \n"
       "3:                                       \n"
       "vld1.32  {d8-d9}, [%[din]]!            @ load din 0 \n"
@@ -824,7 +824,7 @@ inline void scale_compute_fp16(const flaot16_t* din,
                                int cnt,
                                int remain_cnt,
                                int remain_rem,
-                               flaot16x8_t vscale,
+                               float16x8_t vscale,
                                float16x8_t vbias) {
 #ifdef __aarch64__
   asm volatile(
@@ -850,7 +850,7 @@ inline void scale_compute_fp16(const flaot16_t* din,
       "and  v8.16b, %[vbias].16b, %[vbias].16b  \n"
       "fmla v8.4h, v4.4h, %[vscale].4h          \n"
       "subs %w[remain_cnt], %w[remain_cnt],  #1 \n"
-      "str {v8.4h}, [%[dout]], #8               \n"
+      "st1 {v8.4h}, [%[dout]], #8               \n"
       "bne    3b                                \n"
       "2:                                       \n"
       : [dout] "+r"(dout),
@@ -923,8 +923,8 @@ void scale<float16_t>(const float16_t* din,
       float16x8_t vscale1 = vld1q_f16(scale_ptr + 8);
       float16x8_t vbias1 = vld1q_f16(bias_ptr + 8);
 
-      float16x8_t vsum1 = vmlaq_f16(vbias0, din0, vscale0);
-      float16x8_t vsum2 = vmlaq_f16(vbias1, din1, vscale1);
+      float16x8_t vsum1 = vfmaq_f16(vbias0, din0, vscale0);
+      float16x8_t vsum2 = vfmaq_f16(vbias1, din1, vscale1);
 
       vst1q_f16(dout_ptr, vsum1);
       vst1q_f16(dout_ptr + 8, vsum2);
@@ -999,13 +999,13 @@ void scale_relu<float16_t>(const float16_t* din,
       "fmla v8.4h, v4.4h, %[vscale].4h         \n"
       "subs %w[remain_cnt], %w[remain_cnt],  #1\n"
       "fmax v8.4h, v8.4h, %[vzero].4h          \n"
-      "str {v8.4h}, [%[dout]], #8              \n"
+      "st1 {v8.4h}, [%[dout]], #8              \n"
       "bne    3b                               \n"
       "2:                                      \n"
       : [dout] "+r"(dout),
         [din] "+r"(din),
         [cnt] "+r"(cnt),
-        [remain_cnt] "+r"(remain_cnt)
+        [remain_cnt] "+r"(remain_num)
       : [vscale] "w"(vscale), [vbias] "w"(vbias), [vzero] "w"(vzero)
       : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
 #else
@@ -1019,20 +1019,20 @@ void scale_relu<float16_t>(const float16_t* din,
 }
 
 template <>
-void scale_relu6<float>(const float* din,
-                        float* dout,
-                        int num,
-                        float scale,
-                        float bias,
-                        float alpha) {
+void scale_relu6<float16_t>(const float16_t* din,
+                            float16_t* dout,
+                            int num,
+                            float16_t scale,
+                            float16_t bias,
+                            float16_t alpha) {
   int cnt = num >> 4;
   int remain = num % 16;
   int remain_num = remain >> 2;
   int remain_rem = remain & 3;
-  float32x4_t vscale = vdupq_n_f32(scale);
-  float32x4_t vbias = vdupq_n_f32(bias);
-  float32x4_t vzero = vdupq_n_f32(0.f);
-  float32x4_t valpha = vdupq_n_f32(alpha);
+  float16x8_t vscale = vdupq_n_f16(scale);
+  float16x8_t vbias = vdupq_n_f16(bias);
+  float16x8_t vzero = vdupq_n_f16(0.f);
+  float16x8_t valpha = vdupq_n_f16(alpha);
 #ifdef __aarch64__
   asm volatile(
       "cmp %w[cnt], #1                         \n"
@@ -1065,13 +1065,13 @@ void scale_relu6<float>(const float* din,
       "subs %w[remain_cnt], %w[remain_cnt],  #1\n"
       "fmax v8.4h, v8.4h, %[vzero].4h          \n"
       "fmin v8.4h, v8.4h, %[valpha].4h         \n"
-      "str {v8.4h}, [%[dout]], #8              \n"
+      "st1 {v8.4h}, [%[dout]], #8              \n"
       "bne    3b                               \n"
       "2:                                      \n"
       : [dout] "+r"(dout),
         [din] "+r"(din),
         [cnt] "+r"(cnt),
-        [remain_cnt] "+r"(remain_cnt)
+        [remain_cnt] "+r"(remain_num)
       : [vscale] "w"(vscale),
         [vbias] "w"(vbias),
         [vzero] "w"(vzero),
@@ -1088,20 +1088,20 @@ void scale_relu6<float>(const float* din,
 }
 
 template <>
-void scale_leaky_relu<float>(const float* din,
-                             float* dout,
-                             int num,
-                             float scale,
-                             float bias,
-                             float alpha) {
+void scale_leaky_relu<float16_t>(const float16_t* din,
+                                 float16_t* dout,
+                                 int num,
+                                 float16_t scale,
+                                 float16_t bias,
+                                 float16_t alpha) {
   int cnt = num >> 4;
   int remain = num % 16;
   int remain_num = remain >> 2;
   int remain_rem = remain & 3;
-  float32x4_t vscale = vdupq_n_f32(scale);
-  float32x4_t vbias = vdupq_n_f32(bias);
-  float32x4_t vzero = vdupq_n_f32(0.f);
-  float32x4_t valpha = vdupq_n_f32(alpha);
+  float16x8_t vscale = vdupq_n_f16(scale);
+  float16x8_t vbias = vdupq_n_f16(bias);
+  float16x8_t vzero = vdupq_n_f16(0.f);
+  float16x8_t valpha = vdupq_n_f16(alpha);
 #ifdef __aarch64__
   asm volatile(
       "cmp %w[cnt], #1                         \n"
@@ -1136,13 +1136,13 @@ void scale_leaky_relu<float>(const float* din,
       "fcmge v10.4h, v8.4h, %[vzero].4h        \n"
       "fmul v11.4h, v8.4h, %[valpha].4h        \n"
       "bif  v8.16b, v11.16b, v10.16b           \n"
-      "str {v8.4h}, [%[dout]], #8              \n"
+      "st1 {v8.4h}, [%[dout]], #8              \n"
       "bne    3b                               \n"
       "2:                                      \n"
       : [dout] "+r"(dout),
         [din] "+r"(din),
         [cnt] "+r"(cnt),
-        [remain_cnt] "+r"(remain_cnt)
+        [remain_cnt] "+r"(remain_num)
       : [vscale] "w"(vscale),
         [vbias] "w"(vbias),
         [vzero] "w"(vzero),
