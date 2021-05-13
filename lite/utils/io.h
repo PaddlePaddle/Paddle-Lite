@@ -38,6 +38,10 @@ static bool IsFileExists(const std::string& path) {
 
 // ARM mobile not support mkdir in C++
 static void MkDirRecur(const std::string& path) {
+  if (IsFileExists(path)) {
+    LOG(INFO) << "Directory [" << path << "] exists!";
+    return;
+  }
 #ifndef LITE_WITH_ARM
 
 #ifdef _WIN32
