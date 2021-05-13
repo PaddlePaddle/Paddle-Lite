@@ -186,7 +186,7 @@ goto:eof
     if "%BUILD_PLATFORM%"=="x64" (
         call "%vcvarsall_dir%" amd64
         set ARCH="amd64"
-    ) else if "%BUILD_PLATFORM%"=="x86" (
+    ) else (
         call "%vcvarsall_dir%" x86
         set ARCH="i386"
     )
@@ -213,7 +213,7 @@ goto:eof
             -DPYTHON_EXECUTABLE="%python_path%"
 
     ninja extern_mklml
-    ninja -j %core%
+    ninja -j %cores%
 goto:eof
 
 
