@@ -468,7 +468,7 @@ if (LITE_ON_TINY_PUBLISH)
 else()
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
 endif()
-if (NOT LITE_ON_TINY_PUBLISH AND NOT WIN32)
+if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
         ${ops}
         ARM_DEPS ${arm_kernels}
@@ -483,10 +483,12 @@ if (NOT LITE_ON_TINY_PUBLISH AND NOT WIN32)
         BM_DEPS ${bm_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     # The final inference library for just MobileConfig.
-    bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
-    target_link_libraries(paddle_api_full ${cuda_deps})
-    get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
-    bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
+    if (NOT WIN32)
+        bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
+        target_link_libraries(paddle_api_full ${cuda_deps})
+        get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
+        bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
+    endif()
 endif()
 
 #-----------------------------------------------------------------------------------------------------
