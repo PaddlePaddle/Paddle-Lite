@@ -488,7 +488,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         target_link_libraries(paddle_api_full ${cuda_deps})
         get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
         bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
-    endif(WIN32)
+    endif(NOT WIN32)
 endif()
 
 #-----------------------------------------------------------------------------------------------------

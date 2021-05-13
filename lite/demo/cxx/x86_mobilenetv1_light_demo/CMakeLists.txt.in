@@ -43,7 +43,7 @@ if (WIN32)
                  ${MKLML_DIR}/lib/libiomp5md${CMAKE_STATIC_LIBRARY_SUFFIX})
   endif()
 
-  target_link_libraries(${TARGET} libpaddle_api_light_bundled.lib)
+  target_link_libraries(${TARGET} libpaddle_api_full_bundled.lib)
   target_link_libraries(${TARGET} shlwapi.lib)
   target_link_libraries(${TARGET} ${MATH_LIB})
 

@@ -27,8 +27,6 @@ set /a cores=%number_of_processors%-2 > null
 @echo off
 if /I "%1"=="with_extra" (
     set BUILD_EXTRA=ON
-) else if /I "%1"=="without_python" (
-    set WITH_PYTHON=OFF
 ) else if /I  "%1"=="with_profile" (
     set WITH_PROFILE=ON
 ) else if /I  "%1"=="with_precision_profile" (
@@ -277,7 +275,6 @@ echo "|      build_windows.bat help                                             
 echo "|                                                                                                     |"
 echo "|  optional argument:                                                                                 |"
 echo "|      without_log: Disable print log information. Default  ON.                                       |"
-echo "|      without_python: Disable Python api lib in lite mode. Default ON.                               |"
 echo "|      with_profile: Enable profile mode in lite framework. Default  OFF.                             |"
 echo "|      with_extra: Enable extra algorithm support in Lite, both kernels and operators. Default OFF.   |"
 echo "|      with_strip: Enable tailoring library according to model. Default OFF.                          |"
