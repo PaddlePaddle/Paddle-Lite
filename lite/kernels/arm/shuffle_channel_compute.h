@@ -21,8 +21,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ShuffleChannelCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ShuffleChannelCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
