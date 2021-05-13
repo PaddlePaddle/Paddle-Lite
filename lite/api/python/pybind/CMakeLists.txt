@@ -1,3 +1,29 @@
+if(WIN32)
+  add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files})
+  add_dependencies(PADDLELITE_OBJS eigen cblas xxhash protobuf framework_proto op_list_h kernel_list_h fbs_headers)
+   if(WITH_AVX AND AVX_FOUND)
+    set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "/arch:AVX2 /DAVX2 /fp:strict")
+  endif()
+
+  add_library(lite_pybind SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> pybind.cc $<TARGET_OBJECTS:framework_proto_obj> $<TARGET_OBJECTS:opt_base>)
+  target_link_libraries(lite_pybind protobuf cblas xxhash)
+  add_dependencies(lite_pybind pybind python supported_kernel_op_info_h all_kernel_faked_cc)
+
+  add_library(bundle_full_api STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS> $<TARGET_OBJECTS:framework_proto_obj>)
+  target_link_libraries(bundle_full_api protobuf cblas xxhash)
+
+  # Only deps libmklml.so, not link
+  if(WITH_MKL)
+    add_dependencies(PADDLELITE_OBJS mklml)
+    if(WITH_STATIC_MKL)
+        target_link_libraries(lite_pybind ${MKLML_LIBRARIES})
+        target_link_libraries(bundle_full_api ${MKLML_LIBRARIES})
+    endif(WITH_STATIC_MKL)
+  endif(WITH_MKL)
+
+  return()
+endif(WIN32)
+
 set(PYBIND_DEPS pybind python paddle_api_light paddle_api)
 if (NOT LITE_ON_TINY_PUBLISH)
    set(PYBIND_DEPS ${PYBIND_DEPS} paddle_api_full opt_base)

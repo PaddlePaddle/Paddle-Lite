@@ -468,7 +468,7 @@ if (LITE_ON_TINY_PUBLISH)
 else()
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
 endif()
-if (NOT LITE_ON_TINY_PUBLISH)
+if (NOT LITE_ON_TINY_PUBLISH AND NOT WIN32)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
         ${ops}
         ARM_DEPS ${arm_kernels}
@@ -527,8 +527,13 @@ endif()
 if (LITE_WITH_PYTHON)
     add_subdirectory(python)
     # add library for opt_base
-    lite_cc_library(opt_base SRCS opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc DEPS kernel op optimizer mir_passes utils)
-    add_dependencies(opt_base supported_kernel_op_info_h framework_proto all_kernel_faked_cc kernel_list_h)
+    if(WIN32)
+        add_library(opt_base OBJECT opt_base.cc)
+        add_dependencies(opt_base framework_proto op_list_h kernel_list_h all_kernel_faked_cc)
+    else()
+        lite_cc_library(opt_base SRCS opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc DEPS kernel op optimizer mir_passes utils)
+        add_dependencies(opt_base supported_kernel_op_info_h framework_proto all_kernel_faked_cc kernel_list_h)
+    endif(WIN32)
 endif()
 
 if (LITE_ON_TINY_PUBLISH)
