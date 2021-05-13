@@ -1,6 +1,6 @@
 if(WIN32)
   add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files})
-  add_dependencies(PADDLELITE_OBJS eigen cblas xxhash protobuf framework_proto op_list_h kernel_list_h fbs_headers)
+  add_dependencies(PADDLELITE_OBJS eigen3 cblas xxhash protobuf framework_proto op_list_h kernel_list_h fbs_headers)
    if(WITH_AVX AND AVX_FOUND)
     set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "/arch:AVX2 /DAVX2 /fp:strict")
   endif()
