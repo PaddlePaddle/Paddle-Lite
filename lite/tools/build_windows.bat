@@ -200,6 +200,7 @@ goto:eof
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
+            -DCMAKE_BUILD_TYPE=Release ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
             -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
