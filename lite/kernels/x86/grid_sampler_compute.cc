@@ -332,7 +332,7 @@ void GridSamplerCompute<T>::Run() {
 #else
   LOG(FATAL) << "Error: This model is not supported on Windows Os yet, because "
                 "grid_sample op is not supported on windows Paddle-Lite, "
-                "please update your Paddle-Lite version."
+                "please update your Paddle-Lite version.";
 #endif
 }
 
