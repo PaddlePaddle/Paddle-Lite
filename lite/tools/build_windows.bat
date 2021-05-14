@@ -131,7 +131,7 @@ copy "%root_dir%\lite\tools\debug\analysis_tool.py" "%DEBUG_TOOL_PATH_PREFIX%\"
 
 cd "%build_directory%"
 
-if %CMAKE_GENERATOR% == "Ninja" (
+if "%CMAKE_GENERATOR%"=="Ninja" (
     pip install ninja
     if %errorlevel% NEQ 0 (
         echo pip install ninja failed!
