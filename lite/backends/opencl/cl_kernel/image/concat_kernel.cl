@@ -11,9 +11,9 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-/********************************************************
- * For case that All Axis C of inputs are aligned: Start
- ********************************************************/
+/***************************************************************************
+ * For case: Axis N/H/W or Axis C that all input channels is aligned: Start
+ ***************************************************************************/
 #define CHECK_IDX                                  \
   int c_blk_idx = get_global_id(0);                \
   int w_idx = get_global_id(1);                    \
@@ -317,9 +317,9 @@ CONCAT3(3Input, Axis3)
 CONCAT4(4Input, Axis3)
 CONCAT5(5Input, Axis3)
 CONCAT6(6Input, Axis3)
-/********************************************************
- * For case that All Axis C of inputs are aligned: End
- ********************************************************/
+/*************************************************************************
+ * For case: Axis N/H/W or Axis C that all input channels is aligned: End 
+ *************************************************************************/
 
 
 // deprecated
