@@ -607,8 +607,17 @@ TEST(Activation_floor, precision) {
 }
 
 TEST(Activation_rsqrt, precision) {
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
+#endif
+
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
@@ -616,7 +625,6 @@ TEST(Activation_rsqrt, precision) {
     arena::Arena arena(std::move(tester), place, 2e-5);
     arena.TestPrecision();
   }
-#endif
 }
 
 TEST(Activation_sqrt, precision) {
