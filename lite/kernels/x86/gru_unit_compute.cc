@@ -123,9 +123,9 @@ void GRUUnitCompute<T>::Run() {
     h.device(place) = u * (c - h_p) + h_p;  // u * c + (1 - u) * h_p
   }
 #else
-  LOG(FATAL) << "Error: this model is not supported on Windows Os, because "
-                "gru_unit kernel is not supported on Windows yet. Please "
-                "update your Paddle-Lite version."
+  LOG(FATAL) << "Error: this model is not supported on Windows Os yet, because "
+                "gru_unit kernel is not supported on Windows Paddle-Lite, "
+                "please update your Paddle-Lite version."
 #endif
 }
 
