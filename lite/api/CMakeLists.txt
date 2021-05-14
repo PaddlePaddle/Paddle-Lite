@@ -490,6 +490,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
     if (LITE_WITH_X86 AND WIN32 AND WITH_MKL)
        add_dependencies(paddle_api_full eigen3 mklml)
        add_dependencies(paddle_api_light eigen3 mklml)
+       add_dependencies(bundle_full_api eigen3 mklml)
+       add_dependencies(bundle_light_api eigen3 mklml)
     endif()
 endif()
 
