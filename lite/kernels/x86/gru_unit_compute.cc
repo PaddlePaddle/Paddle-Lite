@@ -125,7 +125,7 @@ void GRUUnitCompute<T>::Run() {
 #else
   LOG(FATAL) << "Error: this model is not supported on Windows Os yet, because "
                 "gru_unit kernel is not supported on Windows Paddle-Lite, "
-                "please update your Paddle-Lite version."
+                "please update your Paddle-Lite version.";
 #endif
 }
 
