@@ -897,11 +897,6 @@ void ConvImageCompute::ReInitWhenNeeded() {
     CHECK_GE(conv_param_->x->dims().size(), 4);
     CHECK_GE(conv_param_->output->dims().size(), 4);
 
-    // define image pointer for input, output
-    input_image_p_ = DATA_GPU(conv_param_->x);
-    output_image_p_ = MUTABLE_DATA_GPU(
-        conv_param_->output, output_image_w_, output_image_h_, nullptr);
-
     SetGlobalWorkSize();
   }
 }
@@ -1576,6 +1571,11 @@ void ConvImageCompute::Run() {
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
+
+  // define image pointer for input, output
+  input_image_p_ = DATA_GPU(conv_param_->x);
+  output_image_p_ = MUTABLE_DATA_GPU(
+      conv_param_->output, output_image_w_, output_image_h_, nullptr);
   // setArg
   (this->*impl_)();
 
