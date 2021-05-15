@@ -183,7 +183,166 @@ class RefactorBackwardGRUv1 : public FuseBase {
   bool with_mul_bias_;
   bool with_gru_bias_;
 };
+/* Refactor Backward GRU 2                                          */
+/*                                                                  */
+/* before:                                                          */
+/* sequence_reverse -> mul -> gru(is_reverse) -> sequence_reverse   */
+/*                                                                  */
+/* after:                                                           */
+/* mul -> gru(!is_reverse)                                          */
+class RefactorBackwardGRUv2 : public FuseBase {
+ public:
+  explicit RefactorBackwardGRUv2(bool with_mul_bias, bool with_gru_bias) {
+    with_mul_bias_ = with_mul_bias;
+    with_gru_bias_ = with_gru_bias;
+  }
 
+  void BuildPattern() override {
+    auto* input = VarNode("input")
+                      ->assert_is_op_input("sequence_reverse", "X")
+                      ->AsInput();
+    auto* sequence_reverse_0_out =
+        VarNode("sequence_reverse_0_out")
+            ->assert_is_op_output("sequence_reverse", "Y")
+            ->assert_is_op_input("mul", "X")
+            ->AsIntermediate();
+    auto* mul_weight = VarNode("mul_weight")
+                           ->assert_is_op_input("mul", "Y")
+                           ->assert_is_persistable_var()
+                           ->AsInput();
+    auto* mul_out = VarNode("mul_out")->assert_is_op_output("mul", "Out");
+    PMNode* mul_bias = nullptr;
+    PMNode* elementwise_add_out = nullptr;
+    if (with_mul_bias_) {
+      mul_out->assert_is_op_input("elementwise_add", "X");
+      mul_bias = VarNode("mul_bias")
+                     ->assert_is_op_input("elementwise_add", "Y")
+                     ->assert_is_persistable_var()
+                     ->AsInput();
+      elementwise_add_out = VarNode("elementwise_add_out")
+                                ->assert_is_op_output("elementwise_add", "Out")
+                                ->assert_is_op_input("gru", "Input");
+    } else {
+      mul_out->assert_is_op_input("gru", "Input");
+    }
+    auto* gru_weight = VarNode("gru_weight")
+                           ->assert_is_op_input("gru", "Weight")
+                           ->assert_is_persistable_var()
+                           ->AsInput();
+    PMNode* gru_bias = nullptr;
+    if (with_gru_bias_) {
+      gru_bias = VarNode("gru_bias")
+                     ->assert_is_op_input("gru", "Bias")
+                     ->assert_is_persistable_var()
+                     ->AsInput();
+    }
+    auto* gru_hidden = VarNode("gru_hidden")
+                           ->assert_is_op_output("gru", "Hidden")
+                           ->assert_is_op_input("sequence_reverse", "X")
+                           ->AsOutput();
+    auto* gru_batch_gate = VarNode("gru_batch_gate")
+                               ->assert_is_op_output("gru", "BatchGate")
+                               ->AsOutput();
+    auto* gru_batch_hidden = VarNode("gru_batch_hidden")
+                                 ->assert_is_op_output("gru", "BatchHidden")
+                                 ->AsOutput();
+    auto* gru_batch_reset_hidden_prev =
+        VarNode("gru_batch_reset_hidden_prev")
+            ->assert_is_op_output("gru", "BatchResetHiddenPrev")
+            ->AsOutput();
+    auto* output = VarNode("output")
+                       ->assert_is_op_output("sequence_reverse", "Y")
+                       ->AsOutput();
+    //
+    auto* sequence_reverse_0 =
+        OpNode("sequence_reverse_0", "sequence_reverse")->AsIntermediate();
+    auto* mul = OpNode("mul", "mul")->AsIntermediate();
+    PMNode* elementwise_add = nullptr;
+    if (with_mul_bias_) {
+      elementwise_add = OpNode("elementwise_add", "elementwise_add");
+    }
+    auto* gru = OpNode("gru", "gru")->AsIntermediate();
+    auto* sequence_reverse_1 =
+        OpNode("sequence_reverse_1", "sequence_reverse")->AsIntermediate();
+    //
+    *input >> *sequence_reverse_0 >> *sequence_reverse_0_out >> *mul >>
+        *mul_out;
+    *mul_weight >> *mul;
+    if (with_mul_bias_) {
+      *mul_out >> *elementwise_add;
+      *mul_bias >> *elementwise_add;
+      *elementwise_add >> *elementwise_add_out;
+      *elementwise_add >> *gru;
+    } else {
+      *mul_out >> *gru;
+    }
+    *gru_weight >> *gru;
+    if (with_gru_bias_) {
+      *gru_bias >> *gru;
+    }
+    *gru >> *gru_hidden >> *sequence_reverse_1 >> *output;
+    *gru >> *gru_batch_gate;
+    *gru >> *gru_batch_hidden;
+    *gru >> *gru_batch_reset_hidden_prev;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    auto mul_op = matched.at("mul")->stmt()->op();
+    auto* scope = mul_op->scope();
+    auto& valid_places = mul_op->valid_places();
+
+    auto mul_op_info = matched.at("mul")->stmt()->op_info();
+    cpp::OpDesc new_mul_op_desc = *mul_op_info;
+    new_mul_op_desc.SetInput("X", {matched.at("input")->arg()->name});
+    auto new_mul_op = LiteOpRegistry::Global().Create(new_mul_op_desc.Type());
+    new_mul_op->Attach(new_mul_op_desc, scope);
+    auto* new_mul_op_node =
+        graph->GraphCreateInstructNode(new_mul_op, valid_places);
+
+    auto gru_op_info = matched.at("gru")->stmt()->op_info();
+    bool is_reverse = gru_op_info->GetAttr<bool>("is_reverse");
+    cpp::OpDesc new_gru_op_desc = *gru_op_info;
+    new_gru_op_desc.SetAttr<bool>("is_reverse", !is_reverse);
+    new_gru_op_desc.SetOutput("Hidden", {matched.at("output")->arg()->name});
+    auto new_gru_op = LiteOpRegistry::Global().Create(new_gru_op_desc.Type());
+    new_gru_op->Attach(new_gru_op_desc, scope);
+    auto* new_gru_op_node =
+        graph->GraphCreateInstructNode(new_gru_op, valid_places);
+
+    cpp::OpDesc seq_rev_op_desc;
+    seq_rev_op_desc.SetType("sequence_reverse");
+    seq_rev_op_desc.SetInput("X", {matched.at("output")->arg()->name});
+    seq_rev_op_desc.SetOutput("Y", {matched.at("gru_hidden")->arg()->name});
+    auto new_seq_rev_op =
+        LiteOpRegistry::Global().Create(seq_rev_op_desc.Type());
+    new_seq_rev_op->Attach(seq_rev_op_desc, scope);
+    auto* new_seq_rev_op_node =
+        graph->GraphCreateInstructNode(new_seq_rev_op, valid_places);
+
+    IR_NODE_LINK_TO(matched.at("input"), new_mul_op_node);
+    IR_NODE_LINK_TO(matched.at("mul_weight"), new_mul_op_node);
+    IR_OP_VAR_LINK(new_mul_op_node, matched.at("mul_out"));
+    if (with_mul_bias_) {
+      IR_NODE_LINK_TO(matched.at("elementwise_add_out"), new_gru_op_node);
+    } else {
+      IR_NODE_LINK_TO(matched.at("mul_out"), new_gru_op_node);
+    }
+    IR_NODE_LINK_TO(matched.at("gru_weight"), new_gru_op_node);
+    if (with_gru_bias_) {
+      IR_NODE_LINK_TO(matched.at("gru_bias"), new_gru_op_node);
+    }
+    IR_OP_VAR_LINK(new_gru_op_node, matched.at("output"));
+    IR_OP_VAR_LINK(new_gru_op_node, matched.at("gru_batch_gate"));
+    IR_OP_VAR_LINK(new_gru_op_node, matched.at("gru_batch_hidden"));
+    IR_OP_VAR_LINK(new_gru_op_node, matched.at("gru_batch_reset_hidden_prev"));
+    IR_NODE_LINK_TO(matched.at("output"), new_seq_rev_op_node);
+    IR_OP_VAR_LINK(new_seq_rev_op_node, matched.at("gru_hidden"));
+  }
+
+ private:
+  bool with_mul_bias_;
+  bool with_gru_bias_;
+};
 /* Bidirectional GRU                */
 /*              in_Input            */
 /*              /      \            */
@@ -450,10 +609,12 @@ class XPUBiGRUFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     for (auto with_gru_bias : {true, false}) {
       for (auto with_mul_bias : {true, false}) {
+        fusion::RefactorBackwardGRUv2 refactor_backward_gru_v2(with_mul_bias,
+                                                               with_gru_bias);
+        refactor_backward_gru_v2(graph.get());
         fusion::RefactorBackwardGRUv1 refactor_backward_gru_v1(with_mul_bias,
                                                                with_gru_bias);
         refactor_backward_gru_v1(graph.get());
-        graph.get()->CheckValid();
         fusion::XPUBiGRUFuser fuser(with_mul_bias, with_gru_bias);
         fuser(graph.get());
       }
