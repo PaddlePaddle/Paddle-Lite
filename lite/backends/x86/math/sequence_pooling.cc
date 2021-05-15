@@ -396,9 +396,10 @@ class SequencePoolGradFunctor<TARGET(kX86), T> {
 };
 
 template class SequencePoolFunctor<TARGET(kX86), float>;
-template class SequencePoolFunctor<TARGET(kX86), double>;
-template class SequencePoolGradFunctor<TARGET(kX86), float>;
-template class SequencePoolGradFunctor<TARGET(kX86), double>;
+// Note: these implementations have not been called yet
+// Template class SequencePoolFunctor<TARGET(kX86), double>;
+// Template class SequencePoolGradFunctor<TARGET(kX86), float>;
+// Template class SequencePoolGradFunctor<TARGET(kX86), double>;
 
 }  // namespace math
 }  // namespace x86

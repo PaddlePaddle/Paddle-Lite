@@ -21,11 +21,12 @@ namespace x86 {
 namespace math {
 
 template class SoftmaxFunctor<lite::TargetType::kX86, float, true>;
-template class SoftmaxFunctor<lite::TargetType::kX86, float, false>;
-template class SoftmaxFunctor<lite::TargetType::kX86, double, true>;
-template class SoftmaxFunctor<lite::TargetType::kX86, double, false>;
-template class SoftmaxGradFunctor<lite::TargetType::kX86, float>;
-template class SoftmaxGradFunctor<lite::TargetType::kX86, double>;
+// note: these implemetaions have not been called yet
+// template class SoftmaxFunctor<lite::TargetType::kX86, float, false>;
+// template class SoftmaxFunctor<lite::TargetType::kX86, double, true>;
+// template class SoftmaxFunctor<lite::TargetType::kX86, double, false>;
+// template class SoftmaxGradFunctor<lite::TargetType::kX86, float>;
+// template class SoftmaxGradFunctor<lite::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86
