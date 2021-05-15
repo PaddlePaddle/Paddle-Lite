@@ -27,6 +27,7 @@ using EigenMatrix = lite::fluid::EigenMatrix<T, MajorType, IndexType>;
 
 template <class T>
 void GRUUnitCompute<T>::Run() {
+#ifndef WIN32
   auto& param = this->Param<param_t>();
   auto& context = ctx_->As<X86Context>();
   auto* input = param.input;
@@ -121,6 +122,11 @@ void GRUUnitCompute<T>::Run() {
   } else {
     h.device(place) = u * (c - h_p) + h_p;  // u * c + (1 - u) * h_p
   }
+#else
+  LOG(FATAL) << "Error: this model is not supported on Windows Os yet, because "
+                "gru_unit kernel is not supported on Windows Paddle-Lite, "
+                "please update your Paddle-Lite version.";
+#endif
 }
 
 }  // namespace x86
