@@ -202,7 +202,7 @@ void inline inverse_filter(Tensor* tensor) {
 }
 
 DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
-  DCpuConcatType deconv_concat_type = DCpuConcatType::NONE;
+  DCpuConcatType deconv_concat_type = DCpuConcatType::DISABLED;
   int dynamic_range = 127;  // int8 max value
   float16 dynamic_range_fp16 = float_to_half(dynamic_range * 1.0);
   float inv_dynamic_range = 1.0 / dynamic_range;
@@ -245,7 +245,7 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
     sub_param.dilations = param->dilations;
     // Filter data loaded from params is NCHW.
     // Format transform is made in split_filter_num.
-    // TODO There is an assumption that channel < 2047
+    // TODO(chengruichang) There is an assumption that channel < 2047
     const Shape sub_filter_shape(NCHW, {sub_num, channel, sub_h, sub_w});
     // copy filter data separately into every sub filter
     Tensor sub_filter;

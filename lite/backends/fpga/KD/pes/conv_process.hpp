@@ -32,9 +32,9 @@ namespace paddle {
 namespace zynqmp {
 
 enum DCpuConcatType {
-  NONE = 0,
-  ONE = 1,
-  TWO = 2,
+  DISABLED = 0,
+  ALIGNED = 1,
+  UNALIGNED = 2,
 };
 
 const int MAX_CHANNEL = 16384;
@@ -419,8 +419,8 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
                                        int kernel_num = 0,
                                        int omit_size = 0,
                                        int sub_conv_number = 0) {
-  DCpuConcatType deconv_concat_type = DCpuConcatType::NONE;
-  static int call_times = 0;
+  DCpuConcatType deconv_concat_type = DCpuConcatType::DISABLED;
+
   ConvParam& param = const_cast<ConvParam&>(c_param);
   Tensor* input = param.input;
   Tensor* out = param.output;
@@ -444,7 +444,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
   int out_w = out_shape.width();
   int out_h = out_shape.height();
   if (deconv_out_reshape) {
-    // stride always be one in this branch
+    // stride is forced be one in this branch
     Shape in_shape = input->shape();
     out_w = input->shape().width() + 2 * param.paddings[1] -
             filter->shape().width() + 1;
@@ -456,7 +456,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
   int jump_out_start_offset = param.original_out_channel;
   int fuse_idx = param.fuse_idx;
   bool enable_jump = param.wd_enable;
-  // TODO currently not support for deconv mode, reset it for protection
+  // TODO(chengruichang) currently not support for deconv mode, reset it for protection
   if (deconv) enable_jump = false;
 
   float16* out_base_address = nullptr;
@@ -478,7 +478,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
     int offset = i * filter_num_per_div;
 
     // Case One: cpu_concat no matter deconv or not, take care of the residual
-    // jump write between op is disabled in this branch, no need to care
+    // jump write between op is disabled in this branch
     if (param.cpu_concat) {
       if (i == 0) {
         Shape shape(NHWC,
@@ -621,12 +621,12 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
           conv_param, true, sub_conv_number, omit_size);
     }
 
-    ++call_times;
+
 
     param.splitParams().push_back(conv_param);
   }
-  if (deconv && param.cpu_concat) deconv_concat_type = DCpuConcatType::TWO;
-  if (deconv_out_reshape) deconv_concat_type = DCpuConcatType::ONE;
+  if (deconv && param.cpu_concat) deconv_concat_type = DCpuConcatType::ALIGNED;
+  if (deconv_out_reshape) deconv_concat_type = DCpuConcatType::UNALIGNED;
   return deconv_concat_type;
 }
 

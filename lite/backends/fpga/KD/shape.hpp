@@ -114,6 +114,7 @@ class Shape {
         break;
       case CNHW:
         layout_ = &cnhw_;
+        break;
       default:
         break;
     }

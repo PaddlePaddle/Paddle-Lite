@@ -424,7 +424,7 @@ class Tensor {
       std::cout << "open file error for " << path << std::endl;
       return;
     }
-    std::cout << "open file success for " << path << std::endl;
+
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;
@@ -446,7 +446,7 @@ class Tensor {
       std::cout << "open file error for " << path << std::endl;
       return;
     }
-    std::cout << "open file success for " << path << std::endl;
+
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;
@@ -468,7 +468,7 @@ class Tensor {
       std::cout << "open file error for " << path << std::endl;
       return;
     }
-    std::cout << "open file success for " << path << std::endl;
+
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;

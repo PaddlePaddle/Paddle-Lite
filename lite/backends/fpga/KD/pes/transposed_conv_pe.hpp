@@ -149,10 +149,10 @@ class TransposedConvPE : public PE {
 
     bool ret = pe_.dispatch();
     if (ret == true) {
-      if (sub_filter_ena_ && deconv_concat_type_ == DCpuConcatType::NONE) {
+      if (sub_filter_ena_ && deconv_concat_type_ == DCpuConcatType::DISABLED) {
         float max_val = 0.0;
         for (auto conv_param : param_.splitParams()) {
-          std::cout << half_to_float(conv_param->output_max) << std::endl;
+
           max_val = std::max(max_val, half_to_float(conv_param->output_max));
         }
         param_.output->max()[0] = float_to_half(max_val);
@@ -192,9 +192,9 @@ class TransposedConvPE : public PE {
     int omit_high = oc * (sub_conv_number_ - omit_size_);
     int accum_c = 0;
     int output_num_per_sub = 0;
-    if (deconv_concat_type_ == DCpuConcatType::ONE)
+    if (deconv_concat_type_ == DCpuConcatType::ALIGNED)
       output_num_per_sub = 1;
-    else if (deconv_concat_type_ == DCpuConcatType::TWO)
+    else if (deconv_concat_type_ == DCpuConcatType::UNALIGNED)
       output_num_per_sub = 2;
 
     // for every sub filter outputs
@@ -304,7 +304,7 @@ class TransposedConvPE : public PE {
   bool sub_filter_ena_;
   int omit_size_;
   int sub_conv_number_;
-  DCpuConcatType deconv_concat_type_ = DCpuConcatType::NONE;
+  DCpuConcatType deconv_concat_type_ = DCpuConcatType::DISABLED;
   Tensor padded_input_;
   Tensor filter_;
 };

@@ -151,8 +151,8 @@ class ConvPE : public PE {
     if (!split_channel && param_.deconv == false) {
       float16 max_val = 0.0;
 
-      // The final max value is count by a conv dispatch
-      // If output tensor is writed by multiple kernels, the max value should be
+      // The final max value is counted by a conv dispatch
+      // If output tensor is written by multiple kernels, the max value should be
       // counted across kernels
       if (param_.wd_enable) {
         int cur_idx = param_.fuse_idx;
