@@ -97,14 +97,13 @@ void ConvCompute::PrepareForRun() {
   } else {
     zynqmp::ConvParam& conv_param = conv_pe_.param();
     // pass jump write info to pe params
-    if(stride_info_.wd_enable_) {
-        conv_param.fuse_idx = stride_info_.fuse_idx_;
-        conv_param.wd_enable = stride_info_.wd_enable_;
-        conv_param.original_out_channel = stride_info_.original_out_channel_;
-        conv_param.wd_offset = stride_info_.wd_offset_;
-        conv_param.start_idx = stride_info_.start_idx_;
-        conv_param.end_idx = stride_info_.end_idx_;
-
+    if (stride_info_.wd_enable_) {
+      conv_param.fuse_idx = stride_info_.fuse_idx_;
+      conv_param.wd_enable = stride_info_.wd_enable_;
+      conv_param.original_out_channel = stride_info_.original_out_channel_;
+      conv_param.wd_offset = stride_info_.wd_offset_;
+      conv_param.start_idx = stride_info_.start_idx_;
+      conv_param.end_idx = stride_info_.end_idx_;
     }
 
     conv_param.input = param.x->ZynqTensor();
@@ -157,8 +156,12 @@ void ConvCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    fpga_conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ConvCompute, def)
+REGISTER_LITE_KERNEL(fpga_conv2d,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::ConvCompute,
+                     def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),

@@ -23,12 +23,11 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-
 void SubgraphCompute::PrepareForRun() {
-    VLOG(3) << "preparing fpga subgraph kernel";
-    auto &param = this->Param<param_t>();
-    program_.reset(new RuntimeProgram(
-    param.program_desc, param.exec_scope, param.block_idx));
+  VLOG(3) << "preparing fpga subgraph kernel";
+  auto &param = this->Param<param_t>();
+  program_.reset(new RuntimeProgram(
+      param.program_desc, param.exec_scope, param.block_idx));
 }
 
 void SubgraphCompute::Run() {
@@ -48,7 +47,11 @@ REGISTER_LITE_KERNEL(subgraph,
                      paddle::lite::kernels::fpga::SubgraphCompute,
                      def)
     .BindInput("Inputs",
-               {LiteType::GetTensorTy(TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kNHWC))})
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNHWC))})
     .BindOutput("Outputs",
-                {LiteType::GetTensorTy(TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kNHWC))})
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kNHWC))})
     .Finalize();

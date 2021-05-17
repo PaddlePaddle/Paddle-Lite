@@ -508,13 +508,12 @@ struct ConvParam : ParamBase {
   }
 };
 
-
 // For Fpga convlution wrapper, support jump write
 struct FpgaConvParam : ConvParam {
-    int wd_offset_;
-    bool wd_enable_ = false;
-    int fuse_idx_;
-    int original_out_channel_ = 0;
+  int wd_offset_;
+  bool wd_enable_ = false;
+  int fuse_idx_;
+  int original_out_channel_ = 0;
 };
 
 // For BatchNorm op

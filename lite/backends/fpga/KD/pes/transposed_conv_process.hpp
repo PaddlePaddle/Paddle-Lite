@@ -72,7 +72,8 @@ this function convert it into NCHW format.
 */
 void inline convert_cnhw_to_nchw(Tensor* cnhw, Tensor* nchw) {
   Shape& cnhw_shape = cnhw->shape();
-  // For all param tensors loaded from the param file, the shapes are all treated as N, C, H, W
+  // For all param tensors loaded from the param file, the shapes are all
+  // treated as N, C, H, W
   // So here cnhw_shape.channel() is actually filter num.
   // Is this a good way?
   Shape shape(NCHW,
@@ -234,7 +235,7 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
   float* filter_data = filter->data<float>();
 
   for (int i = 0; i < sub_conv_number; i++) {
-//  init a ConvParam for a sub filter conv
+    //  init a ConvParam for a sub filter conv
     ConvParam sub_param;
     sub_param.input = input;
     sub_param.output = output;
@@ -249,29 +250,31 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
     // copy filter data separately into every sub filter
     Tensor sub_filter;
     sub_param.filter = &sub_filter;
-    float* sub_filter_data = sub_filter.mutableData<float>(FP32, sub_filter_shape);
+    float* sub_filter_data =
+        sub_filter.mutableData<float>(FP32, sub_filter_shape);
     int idx_in_stride_h = i % sub_conv_number;
     float* dst = sub_filter_data;
     float* src = filter_data;
-    for(int n = 0; n < sub_num; ++n) {
-        for(int c = 0; c < channel; ++c) {
-            for(int h = 0; h < sub_h; ++h) {
-                for(int w = 0; w < sub_w; ++w) {
-                    // Sub filters along h dim are arranged in a reversed order
-                    int idx_in_stride_w = sub_conv_number - 1 - n / kernel_num;
-                    int original_n = n % kernel_num;
-                    int original_h = h * sub_conv_number + idx_in_stride_h;
-                    int original_w = w * sub_conv_number + idx_in_stride_w;
-//                    int original_c = c;
-                    dst = sub_filter_data + w + h * sub_w + c * sub_w * sub_h + n * sub_w * sub_h * channel;
-                    src = filter_data + original_w + original_h * width + c * width * height + original_n * width * height * channel;
-                    memcpy(dst, src, sizeof(float));
-                }
-            }
+    for (int n = 0; n < sub_num; ++n) {
+      for (int c = 0; c < channel; ++c) {
+        for (int h = 0; h < sub_h; ++h) {
+          for (int w = 0; w < sub_w; ++w) {
+            // Sub filters along h dim are arranged in a reversed order
+            int idx_in_stride_w = sub_conv_number - 1 - n / kernel_num;
+            int original_n = n % kernel_num;
+            int original_h = h * sub_conv_number + idx_in_stride_h;
+            int original_w = w * sub_conv_number + idx_in_stride_w;
+            //                    int original_c = c;
+            dst = sub_filter_data + w + h * sub_w + c * sub_w * sub_h +
+                  n * sub_w * sub_h * channel;
+            src = filter_data + original_w + original_h * width +
+                  c * width * height + original_n * width * height * channel;
+            memcpy(dst, src, sizeof(float));
+          }
         }
+      }
     }
     sub_param.filter->flush();
-
 
     Tensor* sub_scale = sub_param.scale();
     Tensor* sub_bias = sub_param.bias();
@@ -279,8 +282,7 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
     float* scale_data = sub_scale->mutableData<float>(FP32, s_shape);
     float* bias_data = sub_bias->mutableData<float>(FP32, s_shape);
     for (int n = 0; n < sub_num; n++) {
-      scale_data[n] =
-          param->scale()->data<float>()[n % kernel_num];
+      scale_data[n] = param->scale()->data<float>()[n % kernel_num];
     }
     for (int n = 0; n < sub_num; n++) {
       bias_data[n] = param->bias()->data<float>()[n % kernel_num];
@@ -290,24 +292,19 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
 
     // split num start position of the output
 
-
-
     int start_offset = (sub_conv_number - 1 - i) *
-             align_to_x(after_omit_out_w * kernel_num, 16);
-
-
+                       align_to_x(after_omit_out_w * kernel_num, 16);
 
     const ConvParam& sb_param = sub_param;
 
-    deconv_concat_type = split_filter_num(sb_param, start_offset, true, kernel_num, omit_size, sub_conv_number);
+    deconv_concat_type = split_filter_num(
+        sb_param, start_offset, true, kernel_num, omit_size, sub_conv_number);
 
-    for(auto basic_conv_param : const_cast<ConvParam&>(sb_param).splitParams()) {
-
-        param->splitParams().push_back(basic_conv_param);
+    for (auto basic_conv_param :
+         const_cast<ConvParam&>(sb_param).splitParams()) {
+      param->splitParams().push_back(basic_conv_param);
     }
     const_cast<ConvParam&>(sb_param).splitParams().clear();
-
-
   }
   return deconv_concat_type;
 }

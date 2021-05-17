@@ -32,10 +32,10 @@ namespace paddle {
 namespace zynqmp {
 
 enum DCpuConcatType {
-    NONE = 0,
-    ONE = 1,
-    TWO = 2,
-};  
+  NONE = 0,
+  ONE = 1,
+  TWO = 2,
+};
 
 const int MAX_CHANNEL = 16384;
 
@@ -260,7 +260,6 @@ inline void format_filter(Tensor* filter,
                                                  max_value,
                                                  max_values);
 
-
   float mem_factor = mem_size * 1.0f / filter->shape().numel();
   quantized_filter->setMemScale(mem_factor);
   quantized_filter->setAligned(true);
@@ -338,63 +337,88 @@ inline void format_dw_filter(Tensor* filter,
   fpga_free(quantized_data);
 }
 
-inline void config_basic_conv_input_args(BasicConvParam* conv_param, void* input_address,
-                                         void * scale_address, int channels,
-                                         int width, int height, int pad_h, int pad_w) {
-    ConvArgs& args = conv_param->args;
-    args.image.address = input_address;
-    args.image.scale_address = scale_address;
-    args.image.channels = channels;
-    args.image.width = width;
-    args.image.height = height;
-    args.image.pad_width = pad_w;
-    args.image.pad_height = pad_h;
+inline void config_basic_conv_input_args(BasicConvParam* conv_param,
+                                         void* input_address,
+                                         void* scale_address,
+                                         int channels,
+                                         int width,
+                                         int height,
+                                         int pad_h,
+                                         int pad_w) {
+  ConvArgs& args = conv_param->args;
+  args.image.address = input_address;
+  args.image.scale_address = scale_address;
+  args.image.channels = channels;
+  args.image.width = width;
+  args.image.height = height;
+  args.image.pad_width = pad_w;
+  args.image.pad_height = pad_h;
 }
 
-inline void config_basic_conv_filter(BasicConvParam* conv_param, void* fllter_address, int filter_num, void* scale_address) {
-    ConvArgs& args = conv_param->args;
-    args.filter_address = fllter_address;
-    args.filter_num = filter_num;
-    args.filter_scale_address = scale_address;
+inline void config_basic_conv_filter(BasicConvParam* conv_param,
+                                     void* fllter_address,
+                                     int filter_num,
+                                     void* scale_address) {
+  ConvArgs& args = conv_param->args;
+  args.filter_address = fllter_address;
+  args.filter_num = filter_num;
+  args.filter_scale_address = scale_address;
 }
 
-inline void config_basic_conv_kernel(BasicConvParam* conv_param, int dilation, int groups, void* scalebias, int stride_h, int stride_w, int h, int w) {
-    ConvArgs& args = conv_param->args;
-    args.group_num = groups;
-    args.sb_address = scalebias;
-    args.kernel.stride_h = stride_h;
-    args.kernel.stride_w = stride_h;
-    args.kernel.height = h;
-    args.kernel.width = w;
-    args.dilation = dilation;
+inline void config_basic_conv_kernel(BasicConvParam* conv_param,
+                                     int dilation,
+                                     int groups,
+                                     void* scalebias,
+                                     int stride_h,
+                                     int stride_w,
+                                     int h,
+                                     int w) {
+  ConvArgs& args = conv_param->args;
+  args.group_num = groups;
+  args.sb_address = scalebias;
+  args.kernel.stride_h = stride_h;
+  args.kernel.stride_w = stride_h;
+  args.kernel.height = h;
+  args.kernel.width = w;
+  args.dilation = dilation;
 }
 
-inline void config_basic_conv_stride_info(BasicConvParam* conv_param, bool wr_enable, bool rd_enable, int offset) {
-    ConvArgs& args = conv_param->args;
-    args.stride.rd_enabled = rd_enable;
-    args.stride.wr_enabled = wr_enable;
-    args.stride.wr_offset = offset;
+inline void config_basic_conv_stride_info(BasicConvParam* conv_param,
+                                          bool wr_enable,
+                                          bool rd_enable,
+                                          int offset) {
+  ConvArgs& args = conv_param->args;
+  args.stride.rd_enabled = rd_enable;
+  args.stride.wr_enabled = wr_enable;
+  args.stride.wr_offset = offset;
 }
 
-inline void config_basic_conv_deconv_info(BasicConvParam* conv_param, bool deconv_enable, int sub_conv_number = 0, int omit_size = 0) {
-    ConvArgs& args = conv_param->args;
-    args.deconv.enabled = deconv_enable;
-    if(deconv_enable) {
-        args.deconv.sub_kernel_num = sub_conv_number;
-        args.deconv.invalid_col_num = omit_size;
-    }
-
+inline void config_basic_conv_deconv_info(BasicConvParam* conv_param,
+                                          bool deconv_enable,
+                                          int sub_conv_number = 0,
+                                          int omit_size = 0) {
+  ConvArgs& args = conv_param->args;
+  args.deconv.enabled = deconv_enable;
+  if (deconv_enable) {
+    args.deconv.sub_kernel_num = sub_conv_number;
+    args.deconv.invalid_col_num = omit_size;
+  }
 }
 
-inline void config_basic_conv_output(BasicConvParam* conv_param, void* out_address, float16* out_scale_address) {
-    ConvArgs& args = conv_param->args;
-    args.output.address = out_address;
-    args.output.scale_address = out_scale_address;
+inline void config_basic_conv_output(BasicConvParam* conv_param,
+                                     void* out_address,
+                                     float16* out_scale_address) {
+  ConvArgs& args = conv_param->args;
+  args.output.address = out_address;
+  args.output.scale_address = out_scale_address;
 }
 
-
-
-inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0, bool deconv=false, int kernel_num=0, int omit_size=0, int sub_conv_number=0) {
+inline DCpuConcatType split_filter_num(const ConvParam& c_param,
+                                       int start_pos = 0,
+                                       bool deconv = false,
+                                       int kernel_num = 0,
+                                       int omit_size = 0,
+                                       int sub_conv_number = 0) {
   DCpuConcatType deconv_concat_type = DCpuConcatType::NONE;
   static int call_times = 0;
   ConvParam& param = const_cast<ConvParam&>(c_param);
@@ -405,45 +429,35 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
   int split_num = get_split_num(param.filter);
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
 
-
-
-
   param.cpu_concat =
       out_channel % 16 != 0 && split_num > 1 && out->shape().width() != 1;
-  
+
   bool deconv_out_reshape = false;
-  if(deconv && split_num > 1)
-    deconv_out_reshape = true;
-  
-
-
+  if (deconv && split_num > 1) deconv_out_reshape = true;
 
   int dynamic_range = 127;  // int8 max value
   float16 dynamic_range_fp16 = float_to_half(dynamic_range * 1.0);
   float inv_dynamic_range = 1.0 / dynamic_range;
   float max = find_max(*filter);
 
-
   Shape& out_shape = out->shape();
   int out_w = out_shape.width();
   int out_h = out_shape.height();
-  if(deconv_out_reshape) {
+  if (deconv_out_reshape) {
     // stride always be one in this branch
     Shape in_shape = input->shape();
-    out_w = input->shape().width() + 2 * param.paddings[1] - filter->shape().width() + 1;
-    out_h = input->shape().height() + 2 * param.paddings[0] - filter->shape().height() + 1;
-
+    out_w = input->shape().width() + 2 * param.paddings[1] -
+            filter->shape().width() + 1;
+    out_h = input->shape().height() + 2 * param.paddings[0] -
+            filter->shape().height() + 1;
   }
-
 
   // support jump write
   int jump_out_start_offset = param.original_out_channel;
   int fuse_idx = param.fuse_idx;
   bool enable_jump = param.wd_enable;
   // TODO currently not support for deconv mode, reset it for protection
-  if(deconv)
-    enable_jump = false;
-
+  if (deconv) enable_jump = false;
 
   float16* out_base_address = nullptr;
   for (int i = 0; i < split_num; i++) {
@@ -466,59 +480,47 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
     // Case One: cpu_concat no matter deconv or not, take care of the residual
     // jump write between op is disabled in this branch, no need to care
     if (param.cpu_concat) {
-
       if (i == 0) {
         Shape shape(NHWC,
-                    {1,
-                     out_h,
-                     out_w,
-                     filter_num_per_div * (split_num - 1)});
+                    {1, out_h, out_w, filter_num_per_div * (split_num - 1)});
         out_base_address = conv_param->output.mutableData<float16>(FP16, shape);
       }
       if (i == split_num - 1) {
-        Shape extra_shape(
-            NHWC, {1, out_h, out_w, filter_num});
+        Shape extra_shape(NHWC, {1, out_h, out_w, filter_num});
         out_address =
             conv_param->output.mutableData<float16>(FP16, extra_shape);
       } else {
         // base_address is allocated in first iteration;
         out_address = out_base_address + offset;
       }
-    } 
+    }
 
     // Case Two: deconv mode with split num > 1 and no residual
     // deconv mode is not support jump write between op yet
-    else if(deconv_out_reshape) {
-
+    else if (deconv_out_reshape) {
       if (i == 0) {
-        Shape shape(NHWC,
-                    {1,
-                     out_h,
-                     out_w,
-                     filter_num_per_div * split_num});
+        Shape shape(NHWC, {1, out_h, out_w, filter_num_per_div * split_num});
         out_base_address = conv_param->output.mutableData<float16>(FP16, shape);
       }
       out_address = out_base_address + offset;
     }
 
-    // Case Three: deconv mode with split num is 1 or normal conv without residual and with jump write disabled
-    else if(!enable_jump) {
-
+    // Case Three: deconv mode with split num is 1 or normal conv without
+    // residual and with jump write disabled
+    else if (!enable_jump) {
       // for single conv op
       out_address = out->data<float16>() + offset;
     }
 
     // Case Four: normal conv with jump write enabled across op
     else {
-
       out_address = out->data<float16>() + offset + jump_out_start_offset;
     }
 
     // support deconv sub filter split num
-    if(deconv && !deconv_out_reshape) {
+    if (deconv && !deconv_out_reshape) {
       out_address = out_address + start_pos;
     }
-
 
     out_scale_address = &conv_param->output_max;
 
@@ -547,8 +549,6 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
     conv_param->filter.flush();
     conv_param->filter.setDataType(INT8);
 
-
-
     int sb_channnel_start = i * filter_num_per_div;
     Shape s_shape(NC, {1, filter_num});
     Tensor scale;
@@ -558,8 +558,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
 
     for (int n = 0; n < filter_num; n++) {
       int nn = n;
-      if(deconv && !deconv_out_reshape) {
-
+      if (deconv && !deconv_out_reshape) {
         nn = (kernel_num * omit_size + n) % filter_num;
       }
       scale_data[n] =
@@ -574,30 +573,39 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
     format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     conv_param->scaleBias.flush();
 
+    config_basic_conv_kernel(conv_param,
+                             param.dilations[0],
+                             param.groups,
+                             conv_param->scaleBias.data<float16>(),
+                             param.strides[1],
+                             param.strides[0],
+                             new_filter.shape().height(),
+                             new_filter.shape().width());
 
-    config_basic_conv_kernel(conv_param, param.dilations[0],
-                            param.groups, conv_param->scaleBias.data<float16>(),
-                            param.strides[1], param.strides[0],
-                            new_filter.shape().height(), new_filter.shape().width());
+    config_basic_conv_filter(conv_param,
+                             conv_param->filter.data<int8_t>(),
+                             filter_num,
+                             conv_param->filter.scale());
 
-    config_basic_conv_filter(conv_param, conv_param->filter.data<int8_t>(), filter_num, conv_param->filter.scale());
-
-    config_basic_conv_input_args(conv_param, input->data<void>(),
-                                input->max(), input->shape().channel(),
-                                input->shape().width(), input->shape().height(),
-                                param.paddings[0], param.paddings[1]);
+    config_basic_conv_input_args(conv_param,
+                                 input->data<void>(),
+                                 input->max(),
+                                 input->shape().channel(),
+                                 input->shape().width(),
+                                 input->shape().height(),
+                                 param.paddings[0],
+                                 param.paddings[1]);
 
     config_basic_conv_deconv_info(conv_param, false);
     // support jump write
-    if(enable_jump) {
+    if (enable_jump) {
       config_basic_conv_stride_info(conv_param, true, false, param.wd_offset);
 
-    }
-    else {
+    } else {
       bool wr_enable =
-        (split_num != 1 && (param.cpu_concat == false || i != split_num - 1));
+          (split_num != 1 && (param.cpu_concat == false || i != split_num - 1));
       int wd_offset =
-        param.cpu_concat ? filter_num_per_div * (split_num - 1) : out_channel;
+          param.cpu_concat ? filter_num_per_div * (split_num - 1) : out_channel;
       config_basic_conv_stride_info(conv_param, wr_enable, false, wd_offset);
     }
 
@@ -608,21 +616,17 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
 
     config_basic_conv_output(conv_param, out_address, out_scale_address);
 
-    if(deconv && !deconv_out_reshape) {
-      config_basic_conv_deconv_info(conv_param, true, sub_conv_number, omit_size);
+    if (deconv && !deconv_out_reshape) {
+      config_basic_conv_deconv_info(
+          conv_param, true, sub_conv_number, omit_size);
     }
 
-
-
     ++call_times;
-    
 
     param.splitParams().push_back(conv_param);
   }
-  if(deconv && param.cpu_concat)
-    deconv_concat_type = DCpuConcatType::TWO;
-  if(deconv_out_reshape)
-    deconv_concat_type = DCpuConcatType::ONE;
+  if (deconv && param.cpu_concat) deconv_concat_type = DCpuConcatType::TWO;
+  if (deconv_out_reshape) deconv_concat_type = DCpuConcatType::ONE;
   return deconv_concat_type;
 }
 

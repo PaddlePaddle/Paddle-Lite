@@ -117,20 +117,17 @@ class Shape {
       default:
         break;
     }
-
   }
 
   void LayoutTransform(LayoutType layout_type) {
     LayoutType original_layout_type = this->layoutType_;
     Layout* original_layout = this->layout_;
-    if(original_layout_type != layout_type) {
+    if (original_layout_type != layout_type) {
       bool is_compatible = original_layout->isCompatibleTransform(layout_type);
-      if(!is_compatible)
-        ENFORCE(false, "layout transform is not compatible");
+      if (!is_compatible) ENFORCE(false, "layout transform is not compatible");
       setLayoutType(layout_type);
       dimTransformFrom(original_layout);
     }
-
   }
   // TODO only tensor with 4 dims can be transformed
   void dimTransformFrom(Layout* original_layout) {
@@ -144,9 +141,8 @@ class Shape {
     dims_[layout_->heightIndex()] = height;
   }
 
-
   void print() {
-    for(int i = 0; i < dims_.size(); ++i) {
+    for (int i = 0; i < dims_.size(); ++i) {
       std::cout << dims_[i] << " ";
     }
     std::cout << std::endl;

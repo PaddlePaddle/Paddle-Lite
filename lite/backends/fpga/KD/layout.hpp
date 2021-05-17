@@ -40,7 +40,6 @@ class Layout {
   virtual int alignedElementCount(const std::vector<int>& dims) = 0;
   virtual int elementCount(const std::vector<int>& dims) = 0;
   virtual bool isCompatibleTransform(LayoutType new_layout) = 0;
-
 };
 
 struct None : Layout {
@@ -51,8 +50,7 @@ struct None : Layout {
   int alignedElementCount(const std::vector<int>& dims) { return 16; }
   virtual int elementCount(const std::vector<int>& dims) { return 1; }
   bool isCompatibleTransform(LayoutType new_layout) {
-    if(new_layout == LayoutType::None)
-      return true;
+    if (new_layout == LayoutType::None) return true;
     return false;
   }
 };
@@ -69,7 +67,8 @@ struct NCHW : Layout {
     return dims[0] * dims[1] * dims[2] * dims[3];
   }
   bool isCompatibleTransform(LayoutType new_layout) {
-    if(new_layout == LayoutType::NCHW || new_layout == LayoutType::CNHW || new_layout == LayoutType::NHWC)
+    if (new_layout == LayoutType::NCHW || new_layout == LayoutType::CNHW ||
+        new_layout == LayoutType::NHWC)
       return true;
     return false;
   }
@@ -87,11 +86,11 @@ struct NHWC : Layout {
     return dims[0] * dims[1] * dims[2] * dims[3];
   }
   bool isCompatibleTransform(LayoutType new_layout) {
-    if(new_layout == LayoutType::NCHW || new_layout == LayoutType::CNHW || new_layout == LayoutType::NHWC)
+    if (new_layout == LayoutType::NCHW || new_layout == LayoutType::CNHW ||
+        new_layout == LayoutType::NHWC)
       return true;
     return false;
   }
-
 };
 
 struct CNHW : Layout {
@@ -106,11 +105,11 @@ struct CNHW : Layout {
     return dims[0] * dims[1] * dims[2] * dims[3];
   }
   bool isCompatibleTransform(LayoutType new_layout) {
-    if(new_layout == LayoutType::NCHW || new_layout == LayoutType::CNHW || new_layout == LayoutType::NHWC)
+    if (new_layout == LayoutType::NCHW || new_layout == LayoutType::CNHW ||
+        new_layout == LayoutType::NHWC)
       return true;
     return false;
   }
-
 };
 
 struct NC : Layout {
@@ -123,8 +122,7 @@ struct NC : Layout {
     return dims[0] * dims[1];
   }
   bool isCompatibleTransform(LayoutType new_layout) {
-    if(new_layout == LayoutType::NC)
-      return true;
+    if (new_layout == LayoutType::NC) return true;
     return false;
   }
 };
@@ -135,8 +133,7 @@ struct N : Layout {
   virtual int elementCount(const std::vector<int>& dims) { return dims[0]; }
 
   bool isCompatibleTransform(LayoutType new_layout) {
-    if(new_layout == LayoutType::N)
-      return true;
+    if (new_layout == LayoutType::N) return true;
     return false;
   }
 };
@@ -154,8 +151,7 @@ struct NHW : Layout {
   }
 
   bool isCompatibleTransform(LayoutType new_layout) {
-    if(new_layout == LayoutType::NHW)
-      return true;
+    if (new_layout == LayoutType::NHW) return true;
     return false;
   }
 };

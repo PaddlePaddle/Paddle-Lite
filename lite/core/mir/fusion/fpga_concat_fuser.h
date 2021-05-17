@@ -24,40 +24,51 @@ namespace mir {
 namespace fusion {
 
 struct NodeInfo {
-public:
-NodeInfo(Node* node, bool wd_enable, int wd_offset, int fuse_idx=-1,  int original_out_channel = 0):node_(node), wd_offset_(wd_offset), wd_enable_(wd_enable), fuse_idx_(fuse_idx), original_out_channel_(original_out_channel) {}
-        Node* node_;
-        bool wd_enable_;
-        int wd_offset_;
-        int fuse_idx_;
-        int original_out_channel_ = 0;
-        int start_idx_ = 0;
-        int end_idx_ = 0;
+ public:
+  NodeInfo(Node* node,
+           bool wd_enable,
+           int wd_offset,
+           int fuse_idx = -1,
+           int original_out_channel = 0)
+      : node_(node),
+        wd_offset_(wd_offset),
+        wd_enable_(wd_enable),
+        fuse_idx_(fuse_idx),
+        original_out_channel_(original_out_channel) {}
+  Node* node_;
+  bool wd_enable_;
+  int wd_offset_;
+  int fuse_idx_;
+  int original_out_channel_ = 0;
+  int start_idx_ = 0;
+  int end_idx_ = 0;
 };
 
 class FpgaConcatFuser : public FuseBase {
  public:
-
   explicit FpgaConcatFuser() {}
   size_t operator()(SSAGraph* graph);
   // pure virtual function must has implementation although it is useless here
-  void BuildPattern() override {};
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {};
+  void BuildPattern() override{};
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override{};
 
  private:
   std::vector<std::vector<NodeInfo>> PatternMatch(SSAGraph* graph);
   void ExtractInputsOutputs(std::vector<NodeInfo>& patterns,
-                                          std::set<Node*>* input_var_nodes,
-                                          std::set<Node*>* weight_var_nodes,
-                                          std::set<Node*>* output_var_nodes);
-  void InsertNewNode(SSAGraph *graph, std::vector<std::vector<NodeInfo>>& patterns);
-  void DeleteInterNodes(SSAGraph *graph, std::vector<std::vector<NodeInfo>>& patterns);
-  std::vector<std::vector<NodeInfo>> select_candidate(std::vector<NodeInfo> subgraph);
+                            std::set<Node*>* input_var_nodes,
+                            std::set<Node*>* weight_var_nodes,
+                            std::set<Node*>* output_var_nodes);
+  void InsertNewNode(SSAGraph* graph,
+                     std::vector<std::vector<NodeInfo>>& patterns);
+  void DeleteInterNodes(SSAGraph* graph,
+                        std::vector<std::vector<NodeInfo>>& patterns);
+  std::vector<std::vector<NodeInfo>> select_candidate(
+      std::vector<NodeInfo> subgraph);
   void fuse_accumulate(std::vector<std::vector<NodeInfo>>& groups);
   bool enable_fuse(Node* varnode);
   int enable_jump(Node* opnode);
   std::string DebugPatternInfo(const std::vector<NodeInfo>& pattern);
-//  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  //  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
 };
 
 }  // namespace fusion

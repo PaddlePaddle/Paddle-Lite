@@ -48,7 +48,7 @@ class ConvPE : public PE {
       for (auto conv_param : param_.splitParams()) {
         conv_param->args.inplace.active_param.type = param_.activeParam.type;
         conv_param->args.inplace.active_param.leaky_relu_factor =
-        float_to_half(param_.activeParam.leaky_relu_factor);
+            float_to_half(param_.activeParam.leaky_relu_factor);
       }
 
       if (pack_channel) {
@@ -142,15 +142,8 @@ class ConvPE : public PE {
     int ret = 0;
 
     for (auto conv_param : params) {
-
       ret |= compute_fpga_conv_basic(conv_param->args);
-    
-
     }
-
-
-
-
 
     if ((pack_channel || split_cpu_concat) && ret == 0 && !param_.deconv) {
       concatPE_.dispatch();
@@ -159,13 +152,14 @@ class ConvPE : public PE {
       float16 max_val = 0.0;
 
       // The final max value is count by a conv dispatch
-      // If output tensor is writed by multiple kernels, the max value should be counted across kernels
-      if(param_.wd_enable) {
-          int cur_idx = param_.fuse_idx;
-          if(cur_idx == param_.start_idx)
-              max_val = 0;
-          else if(cur_idx <= param_.end_idx)
-              max_val = param_.output->max()[0];
+      // If output tensor is writed by multiple kernels, the max value should be
+      // counted across kernels
+      if (param_.wd_enable) {
+        int cur_idx = param_.fuse_idx;
+        if (cur_idx == param_.start_idx)
+          max_val = 0;
+        else if (cur_idx <= param_.end_idx)
+          max_val = param_.output->max()[0];
       }
 
       for (auto conv_param : param_.splitParams()) {

@@ -25,13 +25,19 @@ namespace paddle {
 namespace zynqmp {
 
 struct StrideInfo {
-    StrideInfo() : wd_enable_(false), wd_offset_(-1), fuse_idx_(-1), original_out_channel_(-1), start_idx_(0), end_idx_(0) {}
-    bool wd_enable_;
-    int wd_offset_;
-    int fuse_idx_;
-    int original_out_channel_;
-    int start_idx_;
-    int end_idx_;
+  StrideInfo()
+      : wd_enable_(false),
+        wd_offset_(-1),
+        fuse_idx_(-1),
+        original_out_channel_(-1),
+        start_idx_(0),
+        end_idx_(0) {}
+  bool wd_enable_;
+  int wd_offset_;
+  int fuse_idx_;
+  int original_out_channel_;
+  int start_idx_;
+  int end_idx_;
 };
 
 }  // namespace lite

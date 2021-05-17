@@ -338,11 +338,9 @@ void RuntimeProgram::Run() {
 
   int idx = -1;
 
-
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
-
 
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
@@ -378,7 +376,7 @@ void RuntimeProgram::Run() {
 #endif
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
-        if (inst.op()->Type() != "while") {
+    if (inst.op()->Type() != "while") {
       precision_profiler_summary +=
           inst_precision_profiler.GetInstPrecision(&inst);
     }

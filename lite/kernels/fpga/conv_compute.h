@@ -32,17 +32,15 @@ class ConvCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::ConvParam;
-//    using param_t = operators::FpgaConvParam;
+  //    using param_t = operators::FpgaConvParam;
   void PrepareForRun() override;
 
   void Run() override;
 
-  void SetStrideInfo(StrideInfo strideinfo) {
-      stride_info_ = strideinfo;
-  };
+  void SetStrideInfo(StrideInfo strideinfo) { stride_info_ = strideinfo; };
 
  private:
-  StrideInfo stride_info_= StrideInfo();
+  StrideInfo stride_info_ = StrideInfo();
   zynqmp::ConvPE conv_pe_;
   zynqmp::DepthwiseConvPE dw_conv_pe_;
   float16 input_max_ = 0;

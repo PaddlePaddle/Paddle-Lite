@@ -17,15 +17,16 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "lite/core/program.h"
 #include "lite/core/kernel.h"
+#include "lite/core/program.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-class SubgraphCompute : public KernelLite<TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kNHWC)> {
+class SubgraphCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::SubgraphParam;
 
