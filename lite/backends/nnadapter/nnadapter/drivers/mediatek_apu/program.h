@@ -19,11 +19,11 @@
 #include <vector>
 #include "../../nnadapter_driver.h"  // NOLINT
 #include "context.h"                 // NOLINT
-#include "rknpu/rknpu_pub.h"         // NOLINT
+#include "neuron_adapter_wrapper.h"  // NOLINT
 
 namespace nnadapter {
 namespace driver {
-namespace rockchip_npu {
+namespace mediatek_apu {
 
 class Program {
  public:
@@ -38,7 +38,7 @@ class Program {
 
  private:
   // Operation converters
-  std::shared_ptr<rk::nn::Tensor> ConvertOperand(driver::Operand* operand);
+  int ConvertOperand(driver::Operand* operand);
   int ConvertConv2D(driver::Operation* operation);
   int ConvertFullyConnected(driver::Operation* operation);
   int ConvertAverageAndMaxPool2D(driver::Operation* operation);
@@ -48,13 +48,13 @@ class Program {
 
  private:
   Context* context_{nullptr};
-  std::map<driver::Operand*, std::shared_ptr<rk::nn::Tensor>> nodes_;
-  rk::nn::Graph* graph_{nullptr};
-  rk::nn::Exection* execution_{nullptr};
-  std::vector<rk::nn::InputInfo> input_info_;
-  std::vector<rk::nn::OutputInfo> output_info_;
+  std::map<driver::Operand*, int> nodes_;
+  int32_t operand_idx_{0};
+  NeuronModel* model_{nullptr};
+  NeuronCompilation* compilation_{nullptr};
+  NeuronExecution* execution_{nullptr};
 };
 
-}  // namespace rockchip_npu
+}  // namespace mediatek_apu
 }  // namespace driver
 }  // namespace nnadapter

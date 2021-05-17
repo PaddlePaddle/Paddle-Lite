@@ -84,8 +84,8 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Softmax operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand, axis_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto softmax = converter->AddOperation(NNADAPTER_SOFTMAX);
-  converter->SetOperation(softmax, &input_operands, &output_operands);
+  auto softmax_operation = converter->AddOperation(NNADAPTER_SOFTMAX);
+  converter->SetOperation(softmax_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

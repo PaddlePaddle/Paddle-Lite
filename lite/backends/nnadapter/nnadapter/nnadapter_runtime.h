@@ -28,16 +28,19 @@ class Device {
   explicit Device(const std::string& name);
   ~Device();
 
-  bool HasDriver() const { return driver_ != nullptr; }
-  const char* GetName() const { return HasDriver() ? driver_->name : nullptr; }
+  bool IsValid() const { return device_ != nullptr; }
+  const char* GetName() const { return IsValid() ? device_->name : nullptr; }
   const char* GetVendor() const {
-    return HasDriver() ? driver_->vendor : nullptr;
+    return IsValid() ? device_->vendor : nullptr;
   }
-  NNAdapterDeviceType GetType() const {
-    return HasDriver() ? driver_->type : -1;
-  }
-  int32_t GetVersion() const { return HasDriver() ? driver_->version : -1; }
-  int CreateProgram(driver::Model* model, driver::Cache* cache, void** program);
+  NNAdapterDeviceType GetType() const { return IsValid() ? device_->type : -1; }
+  int32_t GetVersion() const { return IsValid() ? device_->version : -1; }
+  int CreateContext(void** context);
+  void DestroyContext(void* context);
+  int CreateProgram(void* context,
+                    driver::Model* model,
+                    driver::Cache* cache,
+                    void** program);
   void DestroyProgram(void* program);
   int ExecuteProgram(void* program,
                      uint32_t input_count,
@@ -46,10 +49,21 @@ class Device {
                      driver::Argument* output_arguments);
 
  private:
-  void* context_{nullptr};
-  driver::Driver* driver_{nullptr};
+  driver::Device* device_{nullptr};
   Device(const Device&) = delete;
   Device& operator=(const Device&) = delete;
+};
+
+class Context {
+ public:
+  explicit Context(std::vector<Device*> devices);
+  ~Context();
+  std::pair<void*, Device*> GetFirstDevice();
+
+ private:
+  std::vector<std::pair<void*, Device*>> contexts_;
+  Context(const Context&) = delete;
+  Context& operator=(const Context&) = delete;
 };
 
 class Model {
@@ -75,9 +89,8 @@ class Compilation {
               void* cache_buffer,
               uint32_t cache_length,
               const char* cache_dir,
-              std::vector<Device*> devices);
+              Context* context);
   ~Compilation();
-  Device* GetFirstDevice();
   int Finish();
   int QueryInputsAndOutputs(uint32_t* input_count,
                             NNAdapterOperandType** input_types,
@@ -89,8 +102,8 @@ class Compilation {
  private:
   Model* model_{nullptr};
   driver::Cache cache_;
+  Context* context_{nullptr};
   void* program_{nullptr};
-  std::vector<Device*> devices_;
   bool completed_{false};
 };
 
@@ -115,20 +128,20 @@ class Execution {
   std::vector<driver::Argument> output_arguments_;
 };
 
-class DriverManager {
+class DeviceManager {
  public:
-  static DriverManager& Global();
-  DriverManager();
-  ~DriverManager();
+  static DeviceManager& Global();
+  DeviceManager();
+  ~DeviceManager();
   size_t Count();
-  driver::Driver* At(int index);
-  driver::Driver* Find(const char* name);
+  driver::Device* At(int index);
+  driver::Device* Find(const char* name);
 
  private:
   std::mutex mutex_;
-  std::vector<std::pair<void*, driver::Driver*>> drivers_;
-  DriverManager(const DriverManager&) = delete;
-  DriverManager& operator=(const DriverManager&) = delete;
+  std::vector<std::pair<void*, driver::Device*>> devices_;
+  DeviceManager(const DeviceManager&) = delete;
+  DeviceManager& operator=(const DeviceManager&) = delete;
 };
 
 }  // namespace runtime

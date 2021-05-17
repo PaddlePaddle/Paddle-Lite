@@ -34,8 +34,8 @@ namespace nnadapter {
 class DeviceProgram {
  public:
   explicit DeviceProgram(const std::string& model_cache_key,
-                         std::vector<NNAdapterDevice*>* devices)
-      : model_cache_key_(model_cache_key), devices_(devices) {}
+                         ::NNAdapterContext* context)
+      : model_cache_key_(model_cache_key), context_(context) {}
   ~DeviceProgram();
   // Load the compiled device program from the buffers or files
   bool LoadFromCache(std::vector<char>* model_cache_buffer,
@@ -50,7 +50,7 @@ class DeviceProgram {
   bool SetInputsAndOutputs(std::vector<Tensor*>* origin_itensors,
                            std::vector<Tensor*>* origin_otensors);
   bool Execute();
-  bool IsValid() { return devices_ && compilation_; }
+  bool IsValid() { return context_ && compilation_; }
   bool IsReady() { return IsValid() && execution_; }
 
  public:
@@ -58,7 +58,7 @@ class DeviceProgram {
   NNAdapterModel* model_{nullptr};
   NNAdapterCompilation* compilation_{nullptr};
   NNAdapterExecution* execution_{nullptr};
-  std::vector<NNAdapterDevice*>* devices_{nullptr};
+  ::NNAdapterContext* context_{nullptr};
 };
 
 class SubgraphEngine : public subgraph::SubgraphEngineBase {
@@ -78,6 +78,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
  private:
   std::string model_cache_dir_{""};
   std::vector<NNAdapterDevice*> devices_;
+  ::NNAdapterContext* context_{nullptr};
   std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<DeviceProgram>>
       device_programs_;
 };

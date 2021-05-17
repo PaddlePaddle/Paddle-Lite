@@ -12,30 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver.h"  // NOLINT
-#include <vector>
 #include "../../nnadapter_logging.h"  // NOLINT
+#include "context.h"                  // NOLINT
+#include "program.h"                  // NOLINT
 
 namespace nnadapter {
 namespace driver {
 namespace mediatek_apu {
-
-Program::~Program() {}
-
-int Program::Build(driver::Model* model, driver::Cache* cache) {
-  std::vector<Operation*> operations =
-      driver::SortOperationsInTopologicalOrder(model);
-  for (auto operation : operations) {
-    switch (operation->type) {
-      case NNADAPTER_CONV_2D:
-      default:
-        NNADAPTER_LOG(ERROR) << "Unsupported operation(" << operation->type
-                             << ") is found.";
-        break;
-    }
-  }
-  return NNADAPTER_NO_ERROR;
-}
 
 int CreateContext(void** context) {
   if (!context) {
@@ -67,7 +50,8 @@ int CreateProgram(void* context,
     return NNADAPTER_INVALID_PARAMETER;
   }
   *program = nullptr;
-  auto p = new Program();
+  auto c = reinterpret_cast<Context*>(context);
+  auto p = new Program(c);
   if (!p) {
     return NNADAPTER_OUT_OF_MEMORY;
   }
@@ -78,32 +62,32 @@ int CreateProgram(void* context,
   return result;
 }
 
-void DestroyProgram(void* context, void* program) {
-  if (context && program) {
+void DestroyProgram(void* program) {
+  if (program) {
     NNADAPTER_LOG(INFO) << "Destroy program for mediatek_apu.";
     auto p = reinterpret_cast<Program*>(program);
     delete p;
   }
 }
 
-int ExecuteProgram(void* context,
-                   void* program,
+int ExecuteProgram(void* program,
                    uint32_t input_count,
                    driver::Argument* input_arguments,
                    uint32_t output_count,
                    driver::Argument* output_arguments) {
-  if (!context || !program || !output_arguments || !output_count) {
+  if (!program || !output_arguments || !output_count) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto p = reinterpret_cast<Program*>(program);
-  return NNADAPTER_NO_ERROR;
+  return p->Execute(
+      input_count, input_arguments, output_count, output_arguments);
 }
 
 }  // namespace mediatek_apu
 }  // namespace driver
 }  // namespace nnadapter
 
-nnadapter::driver::Driver NNADAPTER_EXPORT
+nnadapter::driver::Device NNADAPTER_EXPORT
     NNADAPTER_AS_SYM2(NNADAPTER_DRIVER_TARGET) = {
         .name = NNADAPTER_AS_STR2(NNADAPTER_DRIVER_NAME),
         .vendor = "MediaTek",

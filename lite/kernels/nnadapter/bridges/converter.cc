@@ -22,18 +22,18 @@ namespace nnadapter {
 
 NNAdapterOperation* Converter::AddOperation(NNAdapterOperationType type) {
   NNAdapterOperation* operation = nullptr;
-  NNAdapterModel_addOperation(model_, type, &operation);
+  NNAdapterModel_addOperation_invoke(model_, type, &operation);
   return operation;
 }
 
 void Converter::SetOperation(NNAdapterOperation* operation,
                              std::vector<NNAdapterOperand*>* input_operands,
                              std::vector<NNAdapterOperand*>* output_operands) {
-  NNAdapterModel_setOperation(operation,
-                              input_operands->size(),
-                              &((*input_operands)[0]),
-                              output_operands->size(),
-                              &((*output_operands)[0]));
+  NNAdapterModel_setOperation_invoke(operation,
+                                     input_operands->size(),
+                                     &((*input_operands)[0]),
+                                     output_operands->size(),
+                                     &((*output_operands)[0]));
 }
 
 bool Converter::HasOperand(const std::string& name) {
@@ -53,20 +53,28 @@ NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
       LOG(WARNING) << "Operand '" << name << "' already exists!";
       operand = operands_[name];
     } else {
-      NNAdapterModel_addOperand(model_, type, &operand);
+      NNAdapterModel_addOperand_invoke(model_, type, &operand);
       operands_[name] = operand;
     }
   } else {
     // Anonymous operand
-    NNAdapterModel_addOperand(model_, type, &operand);
+    NNAdapterModel_addOperand_invoke(model_, type, &operand);
   }
+  return operand;
+}
+
+NNAdapterOperand* Converter::AddOperand(NNAdapterOperand* operand,
+                                        const std::string& name) {
+  CHECK(!operand);
+  CHECK(!name.empty());
+  operands_[name] = operand;
   return operand;
 }
 
 void Converter::SetOperand(NNAdapterOperand* operand,
                            void* buffer,
                            size_t length) {
-  NNAdapterModel_setOperand(operand, buffer, length);
+  NNAdapterModel_setOperand_invoke(operand, buffer, length);
 }
 
 }  // namespace nnadapter

@@ -129,24 +129,25 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {input0_operand,
                                                    input1_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* elementwise = nullptr;
+  NNAdapterOperation* elementwise_operation = nullptr;
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {
-    elementwise = converter->AddOperation(NNADAPTER_ADD);
+    elementwise_operation = converter->AddOperation(NNADAPTER_ADD);
   } else if (op_type == "elementwise_sub" ||
              op_type == "fusion_elementwise_sub_activation") {
-    elementwise = converter->AddOperation(NNADAPTER_SUB);
+    elementwise_operation = converter->AddOperation(NNADAPTER_SUB);
   } else if (op_type == "elementwise_mul" ||
              op_type == "fusion_elementwise_mul_activation") {
-    elementwise = converter->AddOperation(NNADAPTER_MUL);
+    elementwise_operation = converter->AddOperation(NNADAPTER_MUL);
   } else if (op_type == "elementwise_div" ||
              op_type == "fusion_elementwise_div_activation") {
-    elementwise = converter->AddOperation(NNADAPTER_DIV);
+    elementwise_operation = converter->AddOperation(NNADAPTER_DIV);
   } else {
     LOG(WARNING) << "Unsupported elementwise op type: " << op_type;
     return FAILED;
   }
-  converter->SetOperation(elementwise, &input_operands, &output_operands);
+  converter->SetOperation(
+      elementwise_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

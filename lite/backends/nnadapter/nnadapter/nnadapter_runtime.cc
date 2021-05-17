@@ -22,32 +22,37 @@ namespace nnadapter {
 namespace runtime {
 
 Device::Device(const std::string& name) {
-  driver_ = DriverManager::Global().Find(name.c_str());
-  if (driver_) {
-    driver_->create_context(&context_);
+  device_ = DeviceManager::Global().Find(name.c_str());
+}
+
+Device::~Device() { device_ = nullptr; }
+
+int Device::CreateContext(void** context) {
+  if (device_ && context) {
+    return device_->create_context(context);
+  }
+  return NNADAPTER_INVALID_PARAMETER;
+}
+
+void Device::DestroyContext(void* context) {
+  if (device_ && context) {
+    device_->destroy_context(context);
   }
 }
 
-Device::~Device() {
-  if (driver_ && context_) {
-    driver_->destroy_context(context_);
-  }
-  context_ = nullptr;
-  driver_ = nullptr;
-}
-
-int Device::CreateProgram(driver::Model* model,
+int Device::CreateProgram(void* context,
+                          driver::Model* model,
                           driver::Cache* cache,
                           void** program) {
-  if (driver_ && context_ && model && program) {
-    return driver_->create_program(context_, model, cache, program);
+  if (device_ && context && model && program) {
+    return device_->create_program(context, model, cache, program);
   }
   return NNADAPTER_INVALID_PARAMETER;
 }
 
 void Device::DestroyProgram(void* program) {
-  if (driver_ && context_ && program) {
-    return driver_->destroy_program(context_, program);
+  if (device_ && program) {
+    return device_->destroy_program(program);
   }
 }
 
@@ -56,15 +61,37 @@ int Device::ExecuteProgram(void* program,
                            driver::Argument* input_arguments,
                            uint32_t output_count,
                            driver::Argument* output_arguments) {
-  if (driver_ && context_ && program && output_arguments && output_count) {
-    return driver_->execute_program(context_,
-                                    program,
-                                    input_count,
-                                    input_arguments,
-                                    output_count,
-                                    output_arguments);
+  if (device_ && program && output_arguments && output_count) {
+    return device_->execute_program(
+        program, input_count, input_arguments, output_count, output_arguments);
   }
   return NNADAPTER_INVALID_PARAMETER;
+}
+
+Context::Context(std::vector<Device*> devices) {
+  for (size_t i = 0; i < devices.size(); i++) {
+    auto device = devices[i];
+    void* context = nullptr;
+    device->CreateContext(&context);
+    contexts_.emplace_back(context, device);
+  }
+}
+
+Context::~Context() {
+  for (size_t i = 0; i < contexts_.size(); i++) {
+    auto device = contexts_[i].second;
+    void* context = contexts_[i].first;
+    device->DestroyContext(context);
+  }
+}
+
+std::pair<void*, Device*> Context::GetFirstDevice() {
+  NNADAPTER_CHECK_GT(contexts_.size(), 0) << "No device found.";
+  auto first_device = contexts_[0];
+  NNADAPTER_CHECK(first_device.second->IsValid())
+      << "Driver for device '" << first_device.second->GetName()
+      << "' not found.";
+  return first_device;
 }
 
 Model::~Model() {
@@ -136,8 +163,8 @@ Compilation::Compilation(Model* model,
                          void* cache_buffer,
                          uint32_t cache_length,
                          const char* cache_dir,
-                         std::vector<Device*> devices)
-    : model_(model), program_(nullptr), devices_(devices), completed_(false) {
+                         Context* context)
+    : model_(model), program_(nullptr), context_(context), completed_(false) {
   cache_.cache_key = std::string(cache_key);
   cache_.cache_buffer = cache_buffer;
   cache_.cache_length = cache_length;
@@ -146,37 +173,30 @@ Compilation::Compilation(Model* model,
 
 Compilation::~Compilation() {
   if (program_) {
-    auto first_device = GetFirstDevice();
-    first_device->DestroyProgram(program_);
+    auto first_device = context_->GetFirstDevice();
+    first_device.second->DestroyProgram(program_);
   }
-}
-
-Device* Compilation::GetFirstDevice() {
-  NNADAPTER_CHECK_GT(devices_.size(), 0) << "No device found.";
-  auto first_device = devices_[0];
-  NNADAPTER_CHECK(first_device->HasDriver())
-      << "Driver for device '" << first_device->GetName() << "' not found.";
-  return first_device;
 }
 
 int Compilation::Execute(std::vector<driver::Argument>* input_arguments,
                          std::vector<driver::Argument>* output_arguments) {
   // Execute generated program on target device asynchronously or synchronously
-  auto first_device = GetFirstDevice();
+  auto first_device = context_->GetFirstDevice();
   // TODO(hong19860320) support asynchronously execution
-  return first_device->ExecuteProgram(program_,
-                                      input_arguments->size(),
-                                      &((*input_arguments)[0]),
-                                      output_arguments->size(),
-                                      &((*output_arguments)[0]));
+  return first_device.second->ExecuteProgram(program_,
+                                             input_arguments->size(),
+                                             &((*input_arguments)[0]),
+                                             output_arguments->size(),
+                                             &((*output_arguments)[0]));
 }
 
 int Compilation::Finish() {
   // Start to build program from model or cache
   completed_ = true;
-  auto first_device = GetFirstDevice();
+  auto first_device = context_->GetFirstDevice();
   // TODO(hong19860320) Support the task partition for multi-devices
-  return first_device->CreateProgram(&model_->model_, &cache_, &program_);
+  return first_device.second->CreateProgram(
+      first_device.first, &model_->model_, &cache_, &program_);
 }
 
 int Compilation::QueryInputsAndOutputs(uint32_t* input_count,
@@ -268,43 +288,43 @@ int Execution::Compute() {
   return compilation_->Execute(&input_arguments_, &output_arguments_);
 }
 
-DriverManager& DriverManager::Global() {
-  static DriverManager driver_manager;
-  return driver_manager;
+DeviceManager& DeviceManager::Global() {
+  static DeviceManager manager;
+  return manager;
 }
 
-DriverManager::DriverManager() {}
+DeviceManager::DeviceManager() {}
 
-DriverManager::~DriverManager() {
+DeviceManager::~DeviceManager() {
   std::lock_guard<std::mutex> lock(mutex_);
-  for (size_t i = 0; i < drivers_.size(); i++) {
-    void* library = drivers_[i].first;
+  for (size_t i = 0; i < devices_.size(); i++) {
+    void* library = devices_[i].first;
     if (library) {
       dlclose(library);
     }
   }
-  drivers_.clear();
+  devices_.clear();
 }
 
-size_t DriverManager::Count() {
+size_t DeviceManager::Count() {
   std::lock_guard<std::mutex> lock(mutex_);
-  return drivers_.size();
+  return devices_.size();
 }
 
-driver::Driver* DriverManager::At(int index) {
+driver::Device* DeviceManager::At(int index) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (index >= 0 && index < drivers_.size()) {
-    return drivers_[index].second;
+  if (index >= 0 && index < devices_.size()) {
+    return devices_[index].second;
   }
   return nullptr;
 }
 
-driver::Driver* DriverManager::Find(const char* name) {
+driver::Device* DeviceManager::Find(const char* name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  for (size_t i = 0; i < drivers_.size(); i++) {
-    auto driver = drivers_[i].second;
-    if (strcmp(driver->name, name) == 0) {
-      return driver;
+  for (size_t i = 0; i < devices_.size(); i++) {
+    auto device = devices_[i].second;
+    if (strcmp(device->name, name) == 0) {
+      return device;
     }
   }
   // Load if the driver of target device is not registered.
@@ -317,16 +337,16 @@ driver::Driver* DriverManager::Find(const char* name) {
                          << "' from " << path << ", " << dlerror();
     return nullptr;
   }
-  auto driver =
-      reinterpret_cast<driver::Driver*>(dlsym(library, symbol.c_str()));
-  if (!driver) {
+  auto device =
+      reinterpret_cast<driver::Device*>(dlsym(library, symbol.c_str()));
+  if (!device) {
     dlclose(library);
     NNADAPTER_LOG(ERROR) << "Failed to find the symbol '" << symbol << "' from "
                          << path << ", " << dlerror();
     return nullptr;
   }
-  drivers_.emplace_back(library, driver);
-  return driver;
+  devices_.emplace_back(library, device);
+  return device;
 }
 
 }  // namespace runtime

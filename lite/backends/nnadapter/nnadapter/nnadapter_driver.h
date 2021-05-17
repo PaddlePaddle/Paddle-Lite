@@ -59,7 +59,7 @@ typedef struct Model {
   std::vector<Operand *> output_operands;
 } Model;
 
-typedef struct Driver {
+typedef struct Device {
   const char *name;
   const char *vendor;
   NNAdapterDeviceType type;
@@ -70,14 +70,13 @@ typedef struct Driver {
                         Model *model,
                         Cache *cache,
                         void **program);
-  void (*destroy_program)(void *context, void *program);
-  int (*execute_program)(void *context,
-                         void *program,
+  void (*destroy_program)(void *program);
+  int (*execute_program)(void *program,
                          uint32_t input_count,
                          Argument *input_arguments,
                          uint32_t output_count,
                          Argument *output_arguments);
-} Driver;
+} Device;
 
 // Utilities for strings
 std::string string_format(const std::string fmt_str, ...);

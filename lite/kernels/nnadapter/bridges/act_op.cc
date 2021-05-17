@@ -70,20 +70,21 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Activation operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* activation = nullptr;
+  NNAdapterOperation* activation_operation = nullptr;
   if (op_type == "sigmoid") {
-    activation = converter->AddOperation(NNADAPTER_SIGMOID);
+    activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
   } else if (op_type == "relu") {
-    activation = converter->AddOperation(NNADAPTER_RELU);
+    activation_operation = converter->AddOperation(NNADAPTER_RELU);
   } else if (op_type == "relu6") {
-    activation = converter->AddOperation(NNADAPTER_RELU6);
+    activation_operation = converter->AddOperation(NNADAPTER_RELU6);
   } else if (op_type == "tanh") {
-    activation = converter->AddOperation(NNADAPTER_TANH);
+    activation_operation = converter->AddOperation(NNADAPTER_TANH);
   } else {
     LOG(WARNING) << "Unsupported activation type: " << op_type;
     return FAILED;
   }
-  converter->SetOperation(activation, &input_operands, &output_operands);
+  converter->SetOperation(
+      activation_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

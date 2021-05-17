@@ -32,7 +32,7 @@ NNADAPTER_EXPORT int NNAdapterDevice_acquire(const char* name,
     *device = nullptr;
     return NNADAPTER_OUT_OF_MEMORY;
   }
-  if (!d->HasDriver()) {
+  if (!d->IsValid()) {
     delete d;
     NNADAPTER_LOG(ERROR) << "The NNAdapter driver of '" << name
                          << "' is not initialized.";
@@ -87,6 +87,32 @@ NNADAPTER_EXPORT int NNAdapterDevice_getVersion(const NNAdapterDevice* device,
   auto d = reinterpret_cast<const nnadapter::runtime::Device*>(device);
   *version = d->GetVersion();
   return NNADAPTER_NO_ERROR;
+}
+
+int NNAdapterContext_create(NNAdapterDevice** devices,
+                            uint32_t num_devices,
+                            NNAdapterContext** context) {
+  if (!devices || !num_devices || !context) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  std::vector<nnadapter::runtime::Device*> ds;
+  for (uint32_t i = 0; i < num_devices; i++) {
+    ds.push_back(reinterpret_cast<nnadapter::runtime::Device*>(devices[i]));
+  }
+  auto x = new nnadapter::runtime::Context(ds);
+  if (x == nullptr) {
+    *context = nullptr;
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  *context = reinterpret_cast<NNAdapterContext*>(x);
+  return NNADAPTER_NO_ERROR;
+}
+
+void NNAdapterContext_destroy(NNAdapterContext* context) {
+  if (!context) {
+    auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
+    delete x;
+  }
 }
 
 NNADAPTER_EXPORT int NNAdapterModel_create(NNAdapterModel** model) {
@@ -207,19 +233,15 @@ NNADAPTER_EXPORT int NNAdapterCompilation_create(
     void* cache_buffer,
     uint32_t cache_length,
     const char* cache_dir,
-    NNAdapterDevice** devices,
-    uint32_t num_devices,
+    NNAdapterContext* context,
     NNAdapterCompilation** compilation) {
-  if (!devices || !compilation) {
+  if (!context || !compilation) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
-  std::vector<nnadapter::runtime::Device*> ds;
-  for (uint32_t i = 0; i < num_devices; i++) {
-    ds.push_back(reinterpret_cast<nnadapter::runtime::Device*>(devices[i]));
-  }
+  auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
   auto c = new nnadapter::runtime::Compilation(
-      m, cache_key, cache_buffer, cache_length, cache_dir, ds);
+      m, cache_key, cache_buffer, cache_length, cache_dir, x);
   if (c == nullptr) {
     *compilation = nullptr;
     return NNADAPTER_OUT_OF_MEMORY;

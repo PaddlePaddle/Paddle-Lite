@@ -13,7 +13,7 @@ lite_cc_library(subgraph_bridge_softmax_op_nnadapter SRCS softmax_op.cc DEPS ${n
 lite_cc_library(subgraph_bridge_pool_op_nnadapter SRCS pool_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_fc_op_nnadapter SRCS fc_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_elementwise_ops_nnadapter SRCS elementwise_ops.cc DEPS ${nnadapter_subgraph_bridge_deps})
-
+lite_cc_library(subgraph_bridge_scale_op_nnadapter SRCS scale_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
         subgraph_bridge_registry
@@ -25,6 +25,7 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_pool_op_nnadapter
         subgraph_bridge_fc_op_nnadapter
         subgraph_bridge_elementwise_ops_nnadapter
+        subgraph_bridge_scale_op_nnadapter
         CACHE INTERNAL "nnadapter_subgraph_bridges")
 
 message(STATUS "+++++ nnadapter_subgraph_bridges: ${nnadapter_subgraph_bridges}")

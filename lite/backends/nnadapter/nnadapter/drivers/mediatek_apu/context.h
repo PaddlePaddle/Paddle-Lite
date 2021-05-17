@@ -14,27 +14,17 @@
 
 #pragma once
 
-#include "../../nnadapter_driver.h"  // NOLINT
-
 namespace nnadapter {
 namespace driver {
 namespace mediatek_apu {
 
 class Context {
  public:
-  Context() {}
-  ~Context() {}
+  Context();
+  ~Context();
 
  private:
   void* context_{nullptr};
-};
-
-class Program {
- public:
-  Program() {}
-  ~Program();
-
-  int Build(driver::Model* model, driver::Cache* cache);
 };
 
 }  // namespace mediatek_apu

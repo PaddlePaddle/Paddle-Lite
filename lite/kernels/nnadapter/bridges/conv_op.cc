@@ -250,8 +250,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       dilation_width_operand,
       dilation_height_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto conv2d = converter->AddOperation(NNADAPTER_CONV_2D);
-  converter->SetOperation(conv2d, &input_operands, &output_operands);
+  auto conv2d_operation = converter->AddOperation(NNADAPTER_CONV_2D);
+  converter->SetOperation(conv2d_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

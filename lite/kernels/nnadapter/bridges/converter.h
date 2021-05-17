@@ -39,6 +39,8 @@ class Converter {
   NNAdapterOperand* GetOperand(std::string name);
   NNAdapterOperand* AddOperand(NNAdapterOperandType* type,
                                const std::string& name = "");
+  NNAdapterOperand* AddOperand(NNAdapterOperand* operand,
+                               const std::string& name);
   void SetOperand(NNAdapterOperand* operand, void* buffer, size_t length);
 
  private:

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,29 +14,12 @@
 
 #pragma once
 
+#include <vector>
 #include "../../nnadapter_driver.h"  // NOLINT
+#include "neuron_adapter_wrapper.h"  // NOLINT
 
 namespace nnadapter {
 namespace driver {
-namespace imagination_nna {
-
-class Context {
- public:
-  Context() {}
-  ~Context() {}
-
- private:
-  void* context_{nullptr};
-};
-
-class Program {
- public:
-  Program() {}
-  ~Program();
-
-  int Build(driver::Model* model, driver::Cache* cache);
-};
-
-}  // namespace imagination_nna
+namespace mediatek_apu {}  // namespace mediatek_apu
 }  // namespace driver
 }  // namespace nnadapter

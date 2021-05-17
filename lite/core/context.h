@@ -319,11 +319,11 @@ class Context<TargetType::kNNAdapter> {
 
   static bool CheckNNAdapterDevice(const std::string& nnadapter_device_name) {
     NNAdapterDevice* device = nullptr;
-    int result = NNAdapter::Global().NNAdapterDevice_acquire(
-        nnadapter_device_name.c_str(), &device);
+    int result =
+        NNAdapterDevice_acquire_invoke(nnadapter_device_name.c_str(), &device);
     bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
     if (found) {
-      NNAdapter::Global().NNAdapterDevice_release(device);
+      NNAdapterDevice_release_invoke(device);
     }
     return found;
   }

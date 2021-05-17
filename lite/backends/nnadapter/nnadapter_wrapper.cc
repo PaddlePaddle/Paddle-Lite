@@ -21,19 +21,19 @@ limitations under the License. */
 namespace paddle {
 namespace lite {
 
-NNAdapter& NNAdapter::Global() {
-  static NNAdapter nnadapter;
-  return nnadapter;
+NNAdapterWrapper& NNAdapterWrapper::Global() {
+  static NNAdapterWrapper wrapper;
+  return wrapper;
 }
 
-NNAdapter::NNAdapter() {
+NNAdapterWrapper::NNAdapterWrapper() {
   if (!initialized_) {
     supported_ = Initialize();
     initialized_ = true;
   }
 }
 
-bool NNAdapter::Initialize() {
+bool NNAdapterWrapper::Initialize() {
   const std::vector<std::string> candidate_paths = {
       "libnnadapter.so",
   };
@@ -69,6 +69,8 @@ bool NNAdapter::Initialize() {
   NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getVendor)
   NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getType)
   NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getVersion)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterContext_create)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterContext_destroy)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_create)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_destroy)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_finish)

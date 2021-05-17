@@ -12,31 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include "../../nnadapter_driver.h"  // NOLINT
+#include "context.h"  // NOLINT
 
 namespace nnadapter {
 namespace driver {
-namespace huawei_kirin_npu {
+namespace mediatek_apu {
 
-class Context {
- public:
-  Context() {}
-  ~Context() {}
+Context::Context() {}
 
- private:
-  void* context_{nullptr};
-};
+Context::~Context() {}
 
-class Program {
- public:
-  Program() {}
-  ~Program();
-
-  int Build(driver::Model* model, driver::Cache* cache);
-};
-
-}  // namespace huawei_kirin_npu
+}  // namespace mediatek_apu
 }  // namespace driver
 }  // namespace nnadapter

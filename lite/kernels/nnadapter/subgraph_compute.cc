@@ -52,13 +52,13 @@ std::string KeyGenerator(const std::vector<std::string>& input_names,
 
 DeviceProgram::~DeviceProgram() {
   if (execution_) {
-    NNAdapterExecution_destroy(execution_);
+    NNAdapterExecution_destroy_invoke(execution_);
   }
   if (compilation_) {
-    NNAdapterCompilation_destroy(compilation_);
+    NNAdapterCompilation_destroy_invoke(compilation_);
   }
   if (model_) {
-    NNAdapterModel_destroy(model_);
+    NNAdapterModel_destroy_invoke(model_);
   }
 }
 
@@ -75,7 +75,7 @@ bool DeviceProgram::BuildAndCacheToFiles(
   // Converting the PaddlePaddle operators and variables to the NNAdapter
   // operations and operands for building the hardware-indepedent model.
   CHECK(!model_cache_key_.empty());
-  int result = NNAdapterModel_create(&model_);
+  int result = NNAdapterModel_create_invoke(&model_);
   subgraph::nnadapter::Converter converter(model_);
   const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   CHECK(origin_program) << "[NNAdapter] The origin program is not initialized!";
@@ -121,31 +121,30 @@ bool DeviceProgram::BuildAndCacheToFiles(
             << reinterpret_cast<int64_t>(operand) << " for output '"
             << output_names[i] << "'.";
   }
-  NNAdapterModel_identifyInputsAndOutputs(model_,
-                                          input_operands.size(),
-                                          &input_operands[0],
-                                          output_operands.size(),
-                                          &output_operands[0]);
-  result = NNAdapterModel_finish(model_);
+  NNAdapterModel_identifyInputsAndOutputs_invoke(model_,
+                                                 input_operands.size(),
+                                                 &input_operands[0],
+                                                 output_operands.size(),
+                                                 &output_operands[0]);
+  result = NNAdapterModel_finish_invoke(model_);
   // Compiling the model to the hardware-related programs
-  result = NNAdapterCompilation_create(model_,
-                                       model_cache_key_.c_str(),
-                                       nullptr,
-                                       0,
-                                       model_cache_dir.c_str(),
-                                       &((*devices_)[0]),
-                                       devices_->size(),
-                                       &compilation_);
+  result = NNAdapterCompilation_create_invoke(model_,
+                                              model_cache_key_.c_str(),
+                                              nullptr,
+                                              0,
+                                              model_cache_dir.c_str(),
+                                              context_,
+                                              &compilation_);
   if (result != NNADAPTER_NO_ERROR) {
-    NNAdapterModel_destroy(model_);
+    NNAdapterModel_destroy_invoke(model_);
     model_ = nullptr;
     LOG(WARNING) << "Create a compilation for building model failed(" << result
                  << ") !";
     return false;
   }
-  result = NNAdapterCompilation_finish(compilation_);
+  result = NNAdapterCompilation_finish_invoke(compilation_);
   if (result != NNADAPTER_NO_ERROR) {
-    NNAdapterModel_destroy(model_);
+    NNAdapterModel_destroy_invoke(model_);
     model_ = nullptr;
     LOG(WARNING) << "Build model failed(" << result << ") !";
     return false;
@@ -158,7 +157,7 @@ bool DeviceProgram::SetInputsAndOutputs(std::vector<Tensor*>* origin_itensors,
   CHECK(IsValid());
   // Query the information of inputs and outputs
   uint32_t input_count, output_count;
-  int result = NNAdapterCompilation_queryInputsAndOutputs(
+  int result = NNAdapterCompilation_queryInputsAndOutputs_invoke(
       compilation_, &input_count, NULL, &output_count, NULL);
   if (result != NNADAPTER_NO_ERROR) {
     LOG(WARNING) << "Failed to query the count of inputs and outputs from the "
@@ -170,11 +169,11 @@ bool DeviceProgram::SetInputsAndOutputs(std::vector<Tensor*>* origin_itensors,
   CHECK_EQ(output_count, origin_otensors->size());
   std::vector<NNAdapterOperandType *> input_types(input_count),
       output_types(output_count);
-  result = NNAdapterCompilation_queryInputsAndOutputs(compilation_,
-                                                      &input_count,
-                                                      &input_types[0],
-                                                      &output_count,
-                                                      &output_types[0]);
+  result = NNAdapterCompilation_queryInputsAndOutputs_invoke(compilation_,
+                                                             &input_count,
+                                                             &input_types[0],
+                                                             &output_count,
+                                                             &output_types[0]);
   if (result != NNADAPTER_NO_ERROR) {
     LOG(WARNING) << "Failed to query the type of inputs and outputs from the "
                     "compilation("
@@ -182,7 +181,7 @@ bool DeviceProgram::SetInputsAndOutputs(std::vector<Tensor*>* origin_itensors,
     return false;
   }
   // Create an execution for executing the compiled device program
-  result = NNAdapterExecution_create(compilation_, &execution_);
+  result = NNAdapterExecution_create_invoke(compilation_, &execution_);
   if (result != NNADAPTER_NO_ERROR) {
     LOG(WARNING) << "Create execution failed(" << result << ") !";
     return false;
@@ -191,12 +190,12 @@ bool DeviceProgram::SetInputsAndOutputs(std::vector<Tensor*>* origin_itensors,
   for (size_t i = 0; i < origin_itensors->size(); i++) {
     auto dimensions =
         subgraph::nnadapter::ConvertDimensions(origin_itensors->at(i)->dims());
-    NNAdapterExecution_setInput(execution_,
-                                i,
-                                &dimensions[0],
-                                dimensions.size(),
-                                origin_itensors->at(i)->raw_data(),
-                                origin_itensors->at(i)->memory_size());
+    NNAdapterExecution_setInput_invoke(execution_,
+                                       i,
+                                       &dimensions[0],
+                                       dimensions.size(),
+                                       origin_itensors->at(i)->raw_data(),
+                                       origin_itensors->at(i)->memory_size());
   }
   for (size_t i = 0; i < origin_otensors->size(); i++) {
     auto precision =
@@ -218,12 +217,12 @@ bool DeviceProgram::SetInputsAndOutputs(std::vector<Tensor*>* origin_itensors,
         break;
     }
 #undef TENSOR_MUTABLE_DATA
-    NNAdapterExecution_setOutput(execution_,
-                                 i,
-                                 output_types[i]->dimensions,
-                                 output_types[i]->dimension_count,
-                                 origin_otensors->at(i)->raw_data(),
-                                 origin_otensors->at(i)->memory_size());
+    NNAdapterExecution_setOutput_invoke(execution_,
+                                        i,
+                                        output_types[i]->dimensions,
+                                        output_types[i]->dimension_count,
+                                        origin_otensors->at(i)->raw_data(),
+                                        origin_otensors->at(i)->memory_size());
   }
   return true;
 }
@@ -236,7 +235,7 @@ bool DeviceProgram::Execute() {
     return 1e+6 * time.tv_sec + time.tv_usec;
   };
   auto start_time = GetCurrentUS();
-  int result = NNAdapterExecution_compute(execution_);
+  int result = NNAdapterExecution_compute_invoke(execution_);
   if (result != NNADAPTER_NO_ERROR) {
     LOG(WARNING) << "Failed to run the execution(" << result << ")!";
     return false;
@@ -254,6 +253,7 @@ SubgraphEngine::SubgraphEngine(
     const std::vector<std::string>& output_names)
     : subgraph::SubgraphEngineBase(
           ctx, block_idx, program_desc, exec_scope, input_names, output_names) {
+  int result;
   // Get the device names from the scope
   auto device_names = ctx->As<NNAdapterContext>().NNAdapterDevices(exec_scope);
   CHECK_GT(device_names.size(), 0) << "No device is specified.";
@@ -261,17 +261,17 @@ SubgraphEngine::SubgraphEngine(
   // load the device-related program from the model or the cache files/buffers.
   for (auto& device_name : device_names) {
     NNAdapterDevice* device = nullptr;
-    int result = NNAdapterDevice_acquire(device_name.c_str(), &device);
+    result = NNAdapterDevice_acquire_invoke(device_name.c_str(), &device);
     bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
     if (found) {
       const char* name = nullptr;
-      NNAdapterDevice_getName(device, &name);
+      NNAdapterDevice_getName_invoke(device, &name);
       const char* vendor = nullptr;
-      NNAdapterDevice_getVendor(device, &vendor);
+      NNAdapterDevice_getVendor_invoke(device, &vendor);
       NNAdapterDeviceType type = 0;
-      NNAdapterDevice_getType(device, &type);
+      NNAdapterDevice_getType_invoke(device, &type);
       int32_t version = 0;
-      NNAdapterDevice_getVersion(device, &version);
+      NNAdapterDevice_getVersion_invoke(device, &version);
       VLOG(3) << "nnadapter device " << name << ": vendor=" << vendor
               << " type=" << type << " version=" << version;
       devices_.push_back(device);
@@ -280,6 +280,8 @@ SubgraphEngine::SubgraphEngine(
     }
   }
   CHECK_GT(devices_.size(), 0) << "No device is found.";
+  // Create a context with multiple devices
+  NNAdapterContext_create_invoke(&devices_[0], devices_.size(), &context_);
   // Get the model cache dir from the scope
   model_cache_dir_ =
       ctx_->As<NNAdapterContext>().NNAdapterModelCacheDir(exec_scope_);
@@ -287,8 +289,9 @@ SubgraphEngine::SubgraphEngine(
 }
 
 SubgraphEngine::~SubgraphEngine() {
+  NNAdapterContext_destroy_invoke(context_);
   for (auto* device : devices_) {
-    NNAdapterDevice_release(device);
+    NNAdapterDevice_release_invoke(device);
   }
 }
 
@@ -298,7 +301,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
     std::string model_cache_key =
         KeyGenerator(input_names_, output_names_, origin_idims_);
     auto device_program =
-        std::make_shared<DeviceProgram>(model_cache_key, &devices_);
+        std::make_shared<DeviceProgram>(model_cache_key, context_);
     // Load the compiled device program from the buffers which are stored as the
     // tensors in the scope
     std::vector<char> model_cache_buffer;

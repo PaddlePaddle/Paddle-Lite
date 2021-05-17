@@ -22,12 +22,11 @@ extern "C" {
 #endif
 
 /**
- * Acquire the specified device with device name and create a context for model
- * compilation.
+ * Acquire the specified device with the device name.
  */
 int NNAdapterDevice_acquire(const char* name, NNAdapterDevice** device);
 /**
- * Release the target device and its context.
+ * Release the target device.
  */
 void NNAdapterDevice_release(NNAdapterDevice* device);
 /**
@@ -49,7 +48,16 @@ int NNAdapterDevice_getType(const NNAdapterDevice* device,
  * Get the driver version of the specified device.
  */
 int NNAdapterDevice_getVersion(const NNAdapterDevice* device, int32_t* version);
-
+/**
+ * Create an context with multiple devices.
+ */
+int NNAdapterContext_create(NNAdapterDevice** devices,
+                            uint32_t num_devices,
+                            NNAdapterContext** context);
+/**
+ * Release the context.
+ */
+void NNAdapterContext_destroy(NNAdapterContext* context);
 /**
  * Create a hardware-independent neural networks model.
  */
@@ -113,8 +121,7 @@ int NNAdapterCompilation_create(NNAdapterModel* model,
                                 void* cache_buffer,
                                 uint32_t cache_length,
                                 const char* cache_dir,
-                                NNAdapterDevice** devices,
-                                uint32_t num_devices,
+                                NNAdapterContext* context,
                                 NNAdapterCompilation** compilation);
 /**
  * Destroy the hardware-related binary program.

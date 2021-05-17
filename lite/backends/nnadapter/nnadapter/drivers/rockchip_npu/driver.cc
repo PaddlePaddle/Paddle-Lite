@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver.h"                   // NOLINT
 #include "../../nnadapter_logging.h"  // NOLINT
 #include "context.h"                  // NOLINT
 #include "program.h"                  // NOLINT
@@ -51,7 +50,8 @@ int CreateProgram(void* context,
     return NNADAPTER_INVALID_PARAMETER;
   }
   *program = nullptr;
-  auto p = new Program();
+  auto c = reinterpret_cast<Context*>(context);
+  auto p = new Program(c);
   if (!p) {
     return NNADAPTER_OUT_OF_MEMORY;
   }
@@ -62,21 +62,20 @@ int CreateProgram(void* context,
   return result;
 }
 
-void DestroyProgram(void* context, void* program) {
-  if (context && program) {
+void DestroyProgram(void* program) {
+  if (program) {
     NNADAPTER_LOG(INFO) << "Destroy program for rockchip_npu.";
     auto p = reinterpret_cast<Program*>(program);
     delete p;
   }
 }
 
-int ExecuteProgram(void* context,
-                   void* program,
+int ExecuteProgram(void* program,
                    uint32_t input_count,
                    driver::Argument* input_arguments,
                    uint32_t output_count,
                    driver::Argument* output_arguments) {
-  if (!context || !program || !output_arguments || !output_count) {
+  if (!program || !output_arguments || !output_count) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto p = reinterpret_cast<Program*>(program);
@@ -88,7 +87,7 @@ int ExecuteProgram(void* context,
 }  // namespace driver
 }  // namespace nnadapter
 
-nnadapter::driver::Driver NNADAPTER_EXPORT
+nnadapter::driver::Device NNADAPTER_EXPORT
     NNADAPTER_AS_SYM2(NNADAPTER_DRIVER_TARGET) = {
         .name = NNADAPTER_AS_STR2(NNADAPTER_DRIVER_NAME),
         .vendor = "Rockchip",
