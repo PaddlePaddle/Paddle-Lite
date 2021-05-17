@@ -29,57 +29,55 @@ void SequencePadCompute::Run() {
   auto& param = this->template Param<param_t>();
 
   auto* x = param.X;
+  const float* x_ptr = x->data<float>();
   CHECK(!x->lod().empty()) << "Input X should have lod data.";
-  auto& x_dims = x->dims();
-  int dim = x->numel() / x_dims[0];
-  auto x_lod = x->lod();
-  const auto& x_lod_0 = x_lod[0];
+  const auto& x_lod_0 = x->lod()[0];
   int seq_num = x_lod_0.size() - 1;
   int max_seq_len = 0;
   for (int i = 0; i < seq_num; ++i) {
     max_seq_len =
         (std::max)(max_seq_len, static_cast<int>(x_lod_0[i + 1] - x_lod_0[i]));
   }
+  auto& x_dims = x->dims();
+  int dim = x->numel() / x_dims[0];
 
-  auto* pad_value = param.PadValue;
-  CHECK_EQ(pad_value->numel(), 1)
-      << "The numel of pad_value only be 1 for XPU.";
-  float pad_value_data = pad_value->data<float>()[0];
-
-  auto* out = param.Out;
-  auto* len_t = param.Length;
-
-  int padded_length = param.padded_length;
-  int real_padded_length = padded_length;
-  if (real_padded_length == -1) {
-    real_padded_length = max_seq_len;
-  }
-
-  std::vector<int> x_lod_0_int(x_lod_0.size());
-  for (int i = 0; i < x_lod_0.size(); i++) {
-    x_lod_0_int[i] = static_cast<int>(x_lod_0[i]);
-  }
   XPUScratchPadGuard x_lod_0_guard_ =
-      TargetWrapperXPU::MallocScratchPad(x_lod_0_int.size() * sizeof(int));
-  XPU_CALL(xpu_memcpy(reinterpret_cast<int*>(x_lod_0_guard_->addr_),
-                      x_lod_0_int.data(),
-                      x_lod_0_int.size() * sizeof(int),
+      TargetWrapperXPU::MallocScratchPad(x_lod_0.size() * sizeof(int64_t));
+  XPU_CALL(xpu_memcpy(reinterpret_cast<int64_t*>(x_lod_0_guard_->addr_),
+                      x_lod_0.data(),
+                      x_lod_0.size() * sizeof(int64_t),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
-  int ret =
-      xdnn::sequence_pad(ctx.GetRawContext(),
-                         x->data<float>(),
-                         out->mutable_data<float>(TARGET(kXPU)),
-                         reinterpret_cast<const int*>(x_lod_0_guard_->addr_),
-                         max_seq_len,
-                         seq_num,
-                         dim,
-                         pad_value_data);
+  auto* pad_value = param.PadValue;
+  float* pad_value_ptr = const_cast<float*>(pad_value->data<float>());
+  int pad_value_size = pad_value->numel();
+  CHECK_EQ(pad_value_size, 1) << "The numel of pad_value only be 1 for XPU.";
+
+  auto* out = param.Out;
+  float* out_ptr = out->mutable_data<float>(TARGET(kXPU));
+
+  int padded_length = param.padded_length;
+  CHECK_EQ(((padded_length == -1) || (padded_length == max_seq_len)), true)
+      << "padded_length(" << padded_length << ") should be -1 or max_seq_len("
+      << max_seq_len << ") for XPU.";
+
+  int ret = xdnn::sequence_pad<float, int64_t>(
+      ctx.GetRawContext(),
+      x_ptr,
+      reinterpret_cast<const int64_t*>(x_lod_0_guard_->addr_),
+      out_ptr,
+      seq_num,
+      max_seq_len,
+      dim,
+      pad_value_ptr,
+      pad_value_size,
+      nullptr);
   CHECK_EQ(ret, 0) << "call xdnn::sequence_pad failed!";
 
-  auto* len_data = len_t->template mutable_data<int64_t>();
-  for (size_t i = 1; i < x_lod[0].size(); i++) {
-    len_data[i - 1] = x_lod[0][i] - x_lod[0][i - 1];
+  auto* length = param.Length;
+  auto* length_ptr = length->template mutable_data<int64_t>();
+  for (size_t i = 1; i < x_lod_0.size(); i++) {
+    length_ptr[i - 1] = x_lod_0[i] - x_lod_0[i - 1];
   }
 }
 
@@ -96,7 +94,7 @@ REGISTER_LITE_KERNEL(sequence_pad,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindInput("PadValue",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindOutput("Length",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
