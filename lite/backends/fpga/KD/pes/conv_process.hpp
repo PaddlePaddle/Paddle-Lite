@@ -72,7 +72,6 @@ inline int get_pack_num(Tensor* filter, int group_num) {
 }
 
 inline void fill_scale_bias_const(ConvParam* param_) {
-  // int channel = param_->output->shape().channel();
   int channel = param_->filter->shape().num();
   Shape sb_shape(N, {channel});
   float* new_scale_ptr = param_->scale()->mutableData<float>(FP32, sb_shape);
@@ -260,12 +259,7 @@ inline void format_filter(Tensor* filter,
                                                  group,
                                                  max_value,
                                                  max_values);
-  // // just for test
-  // std::cout << "quant local maxes are ";
-  // for(int ii = 0; ii < max_values.size(); ii++)
-  //   std::cout << max_values[ii] << " ";
-  // std::cout << std::endl;
-  // // end test
+
 
   float mem_factor = mem_size * 1.0f / filter->shape().numel();
   quantized_filter->setMemScale(mem_factor);
@@ -375,14 +369,14 @@ inline void config_basic_conv_kernel(BasicConvParam* conv_param, int dilation, i
     args.dilation = dilation;
 }
 
-inline void config_basic_conv_strideinfo(BasicConvParam* conv_param, bool wr_enable, bool rd_enable, int offset) {
+inline void config_basic_conv_stride_info(BasicConvParam* conv_param, bool wr_enable, bool rd_enable, int offset) {
     ConvArgs& args = conv_param->args;
     args.stride.rd_enabled = rd_enable;
     args.stride.wr_enabled = wr_enable;
     args.stride.wr_offset = offset;
 }
 
-inline void config_basic_conv_deconvinfo(BasicConvParam* conv_param, bool deconv_enable, int sub_conv_number = 0, int omit_size = 0) {
+inline void config_basic_conv_deconv_info(BasicConvParam* conv_param, bool deconv_enable, int sub_conv_number = 0, int omit_size = 0) {
     ConvArgs& args = conv_param->args;
     args.deconv.enabled = deconv_enable;
     if(deconv_enable) {
@@ -411,13 +405,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
   int split_num = get_split_num(param.filter);
   int filter_num_per_div = get_filter_num_per_div(filter, param.groups);
 
-  // // just for test
-  // if(force_cpu_concat) {
-  //   filter->saveToFile("before_quant_sub_filter", true);
-  //   param.scale()->saveToFile("before_quant_sub_scale", true);
-  //   param.bias()->saveToFile("before_quant_sub_bias", true);
-  // }
-  // // end test
+
 
 
   param.cpu_concat =
@@ -427,13 +415,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
   if(deconv && split_num > 1)
     deconv_out_reshape = true;
   
-  /*if(force_cpu_concat) {
-     param.cpu_concat = true;
-     // if no need to split sub filter, then no need to force cpu concat
-     param.cpu_concat = param.cpu_concat && split_num > 1;
-     // just for test
-     param.cpu_concat = true;
-  }*/
+
 
 
   int dynamic_range = 127;  // int8 max value
@@ -484,7 +466,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
     // Case One: cpu_concat no matter deconv or not, take care of the residual
     // jump write between op is disabled in this branch, no need to care
     if (param.cpu_concat) {
-      // std::cout << "branch 1" << std::endl;
+
       if (i == 0) {
         Shape shape(NHWC,
                     {1,
@@ -507,7 +489,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
     // Case Two: deconv mode with split num > 1 and no residual
     // deconv mode is not support jump write between op yet
     else if(deconv_out_reshape) {
-      // std::cout << "branch 2" << std::endl;
+
       if (i == 0) {
         Shape shape(NHWC,
                     {1,
@@ -521,14 +503,14 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
 
     // Case Three: deconv mode with split num is 1 or normal conv without residual and with jump write disabled
     else if(!enable_jump) {
-      // std::cout << "branch 3" << std::endl;
+
       // for single conv op
       out_address = out->data<float16>() + offset;
     }
 
     // Case Four: normal conv with jump write enabled across op
     else {
-      // std::cout << "branch 4" << std::endl;
+
       out_address = out->data<float16>() + offset + jump_out_start_offset;
     }
 
@@ -556,11 +538,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
            filter->data<float>() + i * filter_num_per_div * filter_hwc,
            filter_num * filter_hwc * sizeof(float));
     new_filter.flush();
-    // just for test
-    // new_filter.saveToFile("sub_split_filter", true);
-    // param.scale()->saveToFile("sub_split_scale", true);
-    // param.bias()->saveToFile("sub_split_bias", true);
-    // end test
+
     conv_param->filter.mutableData<float>(FP32, f_shape);
 
     std::vector<float> quant_scale;
@@ -577,15 +555,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
     Tensor bias;
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
-    // // just for test
-    // if(force_cpu_concat) {
-    //   std::cout << "quant scale for scale are ";
-    //   for(int ii = 0; ii < quant_scale.size(); ++ii)
-    //     std::cout << quant_scale[ii] << " ";
-    //   std::cout << std::endl;
-    // }
 
-    // // end test
     for (int n = 0; n < filter_num; n++) {
       int nn = n;
       if(deconv && !deconv_out_reshape) {
@@ -603,14 +573,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
 
     format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     conv_param->scaleBias.flush();
-    // // just for test
-    // if(force_cpu_concat){
-    //   bias.saveToFile("floatbias", true);
-    //   scale.saveToFile("floatscale", true);
-    //   conv_param->scaleBias.saveToFile("sub_biasscale", true);
-    //   conv_param->filter.saveToFile("sub_filter", true);
-    // }
-    // // end test
+
 
     config_basic_conv_kernel(conv_param, param.dilations[0],
                             param.groups, conv_param->scaleBias.data<float16>(),
@@ -624,10 +587,10 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
                                 input->shape().width(), input->shape().height(),
                                 param.paddings[0], param.paddings[1]);
 
-    config_basic_conv_deconvinfo(conv_param, false);
+    config_basic_conv_deconv_info(conv_param, false);
     // support jump write
     if(enable_jump) {
-      config_basic_conv_strideinfo(conv_param, true, false, param.wd_offset);
+      config_basic_conv_stride_info(conv_param, true, false, param.wd_offset);
 
     }
     else {
@@ -635,7 +598,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
         (split_num != 1 && (param.cpu_concat == false || i != split_num - 1));
       int wd_offset =
         param.cpu_concat ? filter_num_per_div * (split_num - 1) : out_channel;
-      config_basic_conv_strideinfo(conv_param, wr_enable, false, wd_offset);
+      config_basic_conv_stride_info(conv_param, wr_enable, false, wd_offset);
     }
 
     args.quant.dynamic_range =
@@ -646,33 +609,13 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param, int start_pos=0
     config_basic_conv_output(conv_param, out_address, out_scale_address);
 
     if(deconv && !deconv_out_reshape) {
-      config_basic_conv_deconvinfo(conv_param, true, sub_conv_number, omit_size);
+      config_basic_conv_deconv_info(conv_param, true, sub_conv_number, omit_size);
     }
 
 
-    /*// just for test
-    if(call_times == 0) {
-      // config_basic_conv_deconvinfo(conv_param, true, 2, 1);
-      compute_fpga_conv_basic(conv_param->args);
-      conv_param->output.saveToFile("first_output", true);
-      exit(0);      
-    // }*/
 
-
-    // input->saveToFile("first_input", true);
-
-    //conv_param->filter.saveToFile("first_filter", true);
-    //conv_param->scaleBias.saveToFile("first_scale_bias", true);
-    // TODO how to change shape automatically
-
-    
-    //std::cout << "split num call times is " << call_times << std::endl;
-    /*if(call_times == 3) {
-      exit(0);
-    }*/
     ++call_times;
     
-    // end test
 
     param.splitParams().push_back(conv_param);
   }

@@ -77,8 +77,7 @@ class TransposedConvPE : public PE {
       deconv_concat_type_ = fill_sub_filters(&param_, &filter_);
       conv_param = const_cast<ConvParam&>(param_);
       conv_param.deconv = true;
-      // std::cout << "deconv is " << conv_param.deconv << std::endl;
-      // std::cout << "split feature num is " << conv_param.splitParams().size() << std::endl;
+
 
 
       for(auto basic_param : conv_param.splitParams()) {
@@ -165,7 +164,7 @@ class TransposedConvPE : public PE {
       }
       else if(sub_filter_ena_) {
         // all the split sub filters are concated by cpu
-        // std::cout << "cpu concat transposed";
+
         param_.output->setOffset(0);
         splited_sub_res_concat();
       }
@@ -174,10 +173,10 @@ class TransposedConvPE : public PE {
       int off_addr = omit_size_ * oc * ow;
       param_.output->unalignImage();
       param_.output->setOffset(off_addr);
-      // param_.output->saveToFile("transposed_out", true);
+
     }
 
-    // param_.output->saveToFile("final", true);
+
     return ret;
   }
 
@@ -192,7 +191,7 @@ class TransposedConvPE : public PE {
     int ow = final_output->shape().width();
     int oc = final_output->shape().channel();
     int dst_stride_in_wc = align_to_x(oc * ow, 16);
-    // std::cout << "final output w is " << ow << "final ouput c is " << oc << std::endl;
+
     // split sub filter config
     auto conv_params = param_.splitParams();
     int total_res_num = conv_params.size();
@@ -208,14 +207,14 @@ class TransposedConvPE : public PE {
 
     // for every sub filter outputs
     for(int sub_idx = 0; sub_idx < sub_conv_number_; ++sub_idx) {
-      // std::cout << "current sub idx is " << sub_idx << std::endl;
+
       // for every split sub outputs, clear accum_c
       accum_c = 0;
-      // std::cout << "current accum c is " << accum_c << std::endl;
+
      
 
       for(int idx_in_sub = 0; idx_in_sub < output_num_per_sub; ++idx_in_sub) {
-        // std::cout << "current idx in sub is " << idx_in_sub << std::endl;
+
         // dst start position for split sub output
 
         idx_in_sub = idx_in_sub * (res_num_per_sub - 1);
@@ -228,9 +227,7 @@ class TransposedConvPE : public PE {
         
 
         each_conv_param->output.invalidate();
-        // // just for test
-        // each_conv_param->output.saveToFile("sub_output", true);
-        // // end test
+
 
         float16* src_start = each_conv_param->output.data<float16>();
         int each_C = each_conv_param->output.shape().channel();
@@ -260,17 +257,17 @@ class TransposedConvPE : public PE {
             // check the remain fill length of the first oc
             int dst_w_start_without_omit = accum_c / oc;
             if(dst_w_start_without_omit < omit_size_) {
-              // std::cout << "dst_w_start_without_omit is " << dst_w_start_without_omit << std::endl;
+
               int dst_w_end_without_omit = (accum_c + each_C) / oc;
               if(dst_w_end_without_omit  > omit_size_) {
                 // fill part of oc
-                // std::cout << "need fill part" << std::endl;
+
                 int part_fill_start = omit_size_ * oc - accum_c;
                 memcpy(dst_cur_hwc, src_hwc + part_fill_start, (each_C - part_fill_start) * sizeof(float16));
               }
             } else {
               // fill a complete oc, idx[hwc], idx[wc], idx[c]
-              // std::cout << "fill complete" << std::endl;
+
               float16* dst_fill_copy_start = dst_cur_hwc + (dst_w_start_without_omit - omit_size_) * oc + accum_c % oc;
               memcpy(dst_fill_copy_start, src_hwc, each_C * sizeof(float16));
             }
@@ -305,14 +302,14 @@ class TransposedConvPE : public PE {
 
 
       }// end each split
-      // break;
+
 
 
     }// end each sub
 
     final_output->max()[0] = final_max;
     final_output->flush();
-    // final_output->saveToFile("res", true);
+
 
   }
 

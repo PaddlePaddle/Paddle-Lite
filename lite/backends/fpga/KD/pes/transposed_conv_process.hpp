@@ -271,7 +271,7 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
         }
     }
     sub_param.filter->flush();
-    // sub_param.filter->saveToFile("sub_filter", true);
+
 
     Tensor* sub_scale = sub_param.scale();
     Tensor* sub_bias = sub_param.bias();
@@ -291,15 +291,14 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
     // split num start position of the output
 
 
-      // just for test
-        // start_offset = i * align_to_x(before_omit_out_w * kernel_num, 16);
+
     int start_offset = (sub_conv_number - 1 - i) *
              align_to_x(after_omit_out_w * kernel_num, 16);
 
 
-    // sub_param.filter->saveToFile("feed_before_split", true);
+
     const ConvParam& sb_param = sub_param;
-    std::cout << "omit size is " << omit_size << std::endl;
+
     deconv_concat_type = split_filter_num(sb_param, start_offset, true, kernel_num, omit_size, sub_conv_number);
 
     for(auto basic_conv_param : const_cast<ConvParam&>(sb_param).splitParams()) {
