@@ -35,7 +35,9 @@ message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: "
         "${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "AR tools: ${CMAKE_AR}")
 
+if(NOT ARMMACOS)
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
+endif()
 
 if(WIN32)
     option(MSVC_STATIC_CRT "use static C Runtime library by default" ON)
@@ -126,7 +128,7 @@ lite_option(LITE_WITH_ARM82_INT8_SDOT  "when compile with arm v8.2 int8, it's ON
 lite_option(LITE_WITH_CODE_META_INFO  "include git version in the header file." ON)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
-if(ANDROID OR IOS OR ARMLINUX)
+if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
     set(WITH_GPU OFF CACHE STRING
             "Disable GPU when cross-compiling for Android and iOS" FORCE)
     set(WITH_DSO OFF CACHE STRING

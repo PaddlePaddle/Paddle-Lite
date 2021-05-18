@@ -15,7 +15,7 @@
 set(HOST_C_COMPILER $ENV{CC})
 set(HOST_CXX_COMPILER $ENV{CXX})
 
-if(IOS)
+if(IOS OR ARMMACOS)
     set(default_cc clang)
     set(default_cxx clang++)
 else()
