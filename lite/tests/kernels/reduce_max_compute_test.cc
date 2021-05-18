@@ -310,6 +310,9 @@ class ReduceMaxComputeTester : public arena::TestCase {
         out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
                        out_dims.end());
       }
+      if (!keep_dim_ && out_dims.empty()) {
+        out_dims.push_back(1);
+      }
       out->Resize(DDim(out_dims));
     }
 

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <stdlib.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
@@ -20,8 +21,8 @@
 namespace paddle {
 namespace lite {
 
-void reduce_sum_n(const float* src,
-                  float* dst,
+void reduce_any_n(const bool* src,
+                  bool* dst,
                   int num_in,
                   int channel_in,
                   int height_in,
@@ -33,18 +34,18 @@ void reduce_sum_n(const float* src,
     for (int h = 0; h < height_in; ++h) {
       for (int w = 0; w < width_in; ++w) {
         data_index = c * hw_size + h * width_in + w;
-        dst[data_index] = 0.0;
+        dst[data_index] = false;
         for (int n = 0; n < num_in; ++n) {
           src_index = n * chw_size + data_index;
-          dst[data_index] += static_cast<float>(src[src_index]);
+          dst[data_index] = dst[data_index] || src[src_index];
         }
       }
     }
   }
 }
 
-void reduce_sum_c(const float* src,
-                  float* dst,
+void reduce_any_c(const bool* src,
+                  bool* dst,
                   int num_in,
                   int channel_in,
                   int height_in,
@@ -57,18 +58,18 @@ void reduce_sum_c(const float* src,
       for (int w = 0; w < width_in; ++w) {
         data_index = n * hw_size + h * width_in + w;
         src_index0 = n * chw_size + h * width_in + w;
-        dst[data_index] = 0.0;
+        dst[data_index] = false;
         for (int c = 0; c < channel_in; ++c) {
           src_index = src_index0 + c * hw_size;
-          dst[data_index] += static_cast<float>(src[src_index]);
+          dst[data_index] = dst[data_index] || src[src_index];
         }
       }
     }
   }
 }
 
-void reduce_sum_h(const float* src,
-                  float* dst,
+void reduce_any_h(const bool* src,
+                  bool* dst,
                   int num_in,
                   int channel_in,
                   int height_in,
@@ -82,18 +83,18 @@ void reduce_sum_h(const float* src,
       for (int w = 0; w < width_in; ++w) {
         data_index = n * cw_size + c * width_in + w;
         src_index0 = n * chw_size + c * hw_size + w;
-        dst[data_index] = 0.0;
+        dst[data_index] = false;
         for (int h = 0; h < height_in; ++h) {
           src_index = src_index0 + h * width_in;
-          dst[data_index] += static_cast<float>(src[src_index]);
+          dst[data_index] = dst[data_index] || src[src_index];
         }
       }
     }
   }
 }
 
-void reduce_sum_w(const float* src,
-                  float* dst,
+void reduce_any_w(const bool* src,
+                  bool* dst,
                   int num_in,
                   int channel_in,
                   int height_in,
@@ -109,23 +110,23 @@ void reduce_sum_w(const float* src,
       for (int h = 0; h < height_in; ++h) {
         data_index = n * ch_size + c * height_in + h;
         src_index0 = n * chw_size + c * hw_size + h * width_in;
-        dst[data_index] = 0.0;
+        dst[data_index] = false;
         for (int w = 0; w < width_in; ++w) {
           src_index = src_index0 + w;
-          dst[data_index] += static_cast<float>(src[src_index]);
+          dst[data_index] = dst[data_index] || src[src_index];
         }
       }
     }
   }
 }
 
-void reduce_sum_all(const float* src,
-                    float* dst,
+void reduce_any_all(const bool* src,
+                    bool* dst,
                     int num_in,
                     int channel_in,
                     int height_in,
                     int width_in) {
-  float sum = 0.0;
+  bool any = false;
   int src_index;
   int n_id, c_id;
   for (int n = 0; n < num_in; ++n) {
@@ -135,16 +136,16 @@ void reduce_sum_all(const float* src,
       for (int h = 0; h < height_in; ++h) {
         for (int w = 0; w < width_in; ++w) {
           src_index = n_id + c_id + h * width_in + w;
-          sum = sum + src[src_index];
+          any = any || src[src_index];
         }
       }
     }
   }
-  dst[0] = sum;
+  dst[0] = any;
 }
 
-void reduce_sum_nc(const float* src,
-                   float* dst,
+void reduce_any_nc(const bool* src,
+                   bool* dst,
                    int num_in,
                    int channel_in,
                    int height_in,
@@ -153,13 +154,13 @@ void reduce_sum_nc(const float* src,
   DDimLite ddimA({1, channel_in, height_in, width_in});
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
-  float* tmp_out = tensor_tmp.mutable_data<float>();
-  reduce_sum_n(src, tmp_out, num_in, channel_in, height_in, width_in);
-  reduce_sum_c(tmp_out, dst, 1, channel_in, height_in, width_in);
+  bool* tmp_out = tensor_tmp.mutable_data<bool>();
+  reduce_any_n(src, tmp_out, num_in, channel_in, height_in, width_in);
+  reduce_any_c(tmp_out, dst, 1, channel_in, height_in, width_in);
 }
 
-void reduce_sum_ch(const float* src,
-                   float* dst,
+void reduce_any_ch(const bool* src,
+                   bool* dst,
                    int num_in,
                    int channel_in,
                    int height_in,
@@ -168,13 +169,13 @@ void reduce_sum_ch(const float* src,
   DDimLite ddimA({num_in, 1, height_in, width_in});
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
-  float* tmp_out = tensor_tmp.mutable_data<float>();
-  reduce_sum_c(src, tmp_out, num_in, channel_in, height_in, width_in);
-  reduce_sum_h(tmp_out, dst, num_in, 1, height_in, width_in);
+  bool* tmp_out = tensor_tmp.mutable_data<bool>();
+  reduce_any_c(src, tmp_out, num_in, channel_in, height_in, width_in);
+  reduce_any_h(tmp_out, dst, num_in, 1, height_in, width_in);
 }
 
-void reduce_sum_hw(const float* src,
-                   float* dst,
+void reduce_any_hw(const bool* src,
+                   bool* dst,
                    int num_in,
                    int channel_in,
                    int height_in,
@@ -183,109 +184,120 @@ void reduce_sum_hw(const float* src,
   DDimLite ddimA({num_in, channel_in, 1, width_in});
   lite::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
-  float* tmp_out = tensor_tmp.mutable_data<float>();
-  reduce_sum_h(src, tmp_out, num_in, channel_in, height_in, width_in);
-  reduce_sum_w(tmp_out, dst, num_in, channel_in, 1, width_in);
+  bool* tmp_out = tensor_tmp.mutable_data<bool>();
+  reduce_any_h(src, tmp_out, num_in, channel_in, height_in, width_in);
+  reduce_any_w(tmp_out, dst, num_in, channel_in, 1, width_in);
 }
 
-class ReduceSumComputeTester : public arena::TestCase {
+class ReduceAnyComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
   std::vector<int> dim_{0};
   bool keep_dim_ = false;
-  bool reduce_all_ = false;
   DDim x_dims_{{3, 2, 3, 4}};
+  bool reduce_all_ = false;
 
  public:
-  ReduceSumComputeTester(const Place& place,
+  ReduceAnyComputeTester(const Place& place,
                          const std::string& alias,
                          std::vector<int> dim,
                          bool keep_dim,
-                         bool reduce_all,
                          DDim x_dims)
       : TestCase(place, alias),
         dim_(dim),
         keep_dim_(keep_dim),
-        reduce_all_(reduce_all),
         x_dims_(x_dims) {}
 
   void RunBaseline(Scope* scope) override {
     auto* x = scope->FindMutableTensor(input_);
-    const auto* x_data = x->data<float>();
+    const auto* x_data = x->data<bool>();
     auto* out = scope->NewTensor(output_);
-    auto x_rank = x_dims_.size();
+    size_t x_rank = x_dims_.size();
     if (!dim_.empty()) {
-      for (int i = 0; i < dim_.size(); i++) {
+      for (size_t i = 0; i < dim_.size(); i++) {
         if (dim_[i] < 0) {
           dim_[i] += x_rank;
         }
       }
     }
 
-    std::stable_sort(dim_.begin(), dim_.end());
+    std::set<int> dims_set(dim_.begin(), dim_.end());
+    bool full_dim = true;
+    for (size_t i = 0; i < x_rank; i++) {
+      if (dims_set.find(i) == dims_set.end()) {
+        full_dim = false;
+        break;
+      }
+    }
+    reduce_all_ = (reduce_all_ || full_dim);
+    if (dim_.size() == 0) {
+      reduce_all_ = true;
+    }
+
     std::vector<int64_t> out_dims;
     if (reduce_all_) {
-      if (keep_dim_) {
-        out_dims.resize(x_rank);
-        for (int i = 0; i < x_rank; ++i) {
-          out_dims[i] = 1;
-        }
-      } else {
-        out_dims.push_back(1);
-      }
+      if (keep_dim_)
+        out_dims = std::vector<int64_t>(x_rank, 1);
+      else
+        out_dims = std::vector<int64_t>{1};
     } else {
-      for (int i = 0; i < x_dims_.size(); i++) {
-        out_dims.push_back(x_dims_[i]);
-      }
-      if (keep_dim_) {
-        for (size_t i = 0; i < dim_.size(); ++i) {
-          out_dims[dim_[i]] = 1L;
+      size_t out_rank = keep_dim_ ? x_rank : x_rank - dim_.size();
+      out_dims.resize(out_rank);
+      std::stable_sort(dim_.begin(), dim_.end());
+      int dim_index = 0;
+      int out_index = 0;
+      for (size_t i = 0; i < x_rank; ++i) {
+        if (dim_index < dim_.size() &&
+            dim_[dim_index] == static_cast<DDim::value_type>(i)) {
+          if (keep_dim_) {
+            out_dims[out_index++] = 1;
+          }
+          dim_index++;
+        } else {
+          out_dims[out_index++] = x_dims_[i];
         }
-      } else {
-        int64_t kDelFlag = -2;
-        for (size_t i = 0; i < dim_.size(); ++i) {
-          out_dims[dim_[i]] = kDelFlag;
-        }
-        out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
-                       out_dims.end());
       }
     }
     out->Resize(DDim(out_dims));
 
-    auto* out_data = out->mutable_data<float>();
-    int in_n = x_dims_[0];
-    int in_c = x_dims_[1];
-    int in_h = x_dims_[2];
-    int in_w = x_dims_[3];
+    auto* out_data = out->mutable_data<bool>();
+    size_t new_dims[] = {1, 1, 1, 1};
+    for (size_t j = 0; j < x_dims_.size(); ++j) {
+      new_dims[j] = x_dims_[j];
+    }
+    int in_n = new_dims[0];
+    int in_c = new_dims[1];
+    int in_h = new_dims[2];
+    int in_w = new_dims[3];
 
     if (reduce_all_) {
-      reduce_sum_all(x_data, out_data, in_n, in_c, in_h, in_w);
+      reduce_any_all(x_data, out_data, in_n, in_c, in_h, in_w);
     } else if (dim_.size() == 1) {
       switch (dim_[0]) {
         case 0:
-          reduce_sum_n(x_data, out_data, in_n, in_c, in_h, in_w);
+          reduce_any_n(x_data, out_data, in_n, in_c, in_h, in_w);
           break;
         case 1:
-          reduce_sum_c(x_data, out_data, in_n, in_c, in_h, in_w);
+          reduce_any_c(x_data, out_data, in_n, in_c, in_h, in_w);
           break;
         case 2:
-          reduce_sum_h(x_data, out_data, in_n, in_c, in_h, in_w);
+          reduce_any_h(x_data, out_data, in_n, in_c, in_h, in_w);
           break;
         case 3:
-          reduce_sum_w(x_data, out_data, in_n, in_c, in_h, in_w);
+          reduce_any_w(x_data, out_data, in_n, in_c, in_h, in_w);
           break;
         default:
           LOG(FATAL) << "error!!!";
       }
     } else if (dim_.size() == 2) {
       if (dim_[0] == 0 && dim_[1] == 1) {
-        reduce_sum_nc(x_data, out_data, in_n, in_c, in_h, in_w);
+        reduce_any_nc(x_data, out_data, in_n, in_c, in_h, in_w);
       } else if (dim_[0] == 1 && dim_[1] == 2) {
-        reduce_sum_ch(x_data, out_data, in_n, in_c, in_h, in_w);
+        reduce_any_ch(x_data, out_data, in_n, in_c, in_h, in_w);
       } else if (dim_[0] == 2 && dim_[1] == 3) {
-        reduce_sum_hw(x_data, out_data, in_n, in_c, in_h, in_w);
+        reduce_any_hw(x_data, out_data, in_n, in_c, in_h, in_w);
       } else {
         LOG(FATAL) << "invalid dims_!!";
       }
@@ -293,24 +305,24 @@ class ReduceSumComputeTester : public arena::TestCase {
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("reduce_sum");
+    op_desc->SetType("reduce_any");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
     op_desc->SetAttr("dim", dim_);
     op_desc->SetAttr("keep_dim", keep_dim_);
-    op_desc->SetAttr("reduce_all", reduce_all_);
   }
 
   void PrepareData() override {
-    std::vector<float> data(x_dims_.production());
+    std::vector<uint8_t> data(x_dims_.production());
     for (int i = 0; i < x_dims_.production(); i++) {
-      data[i] = i * 1.0;
+      data[i] = 0;  // static_cast<float>(rand()%2);
     }
-    SetCommonTensor(input_, x_dims_, data.data());
+    SetCommonTensor<bool>(
+        input_, x_dims_, reinterpret_cast<bool*>(data.data()));
   }
 };
 
-void test_reduce_sum(Place place) {
+void test_reduce_any(Place place, float abs_err) {
   std::vector<std::vector<int>> reduce_dim{
       {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
   for (auto n : {1, 3}) {
@@ -318,13 +330,41 @@ void test_reduce_sum(Place place) {
       for (auto h : {1, 3}) {
         for (auto w : {1, 3}) {
           for (bool keep_dim : {false, true}) {
-            for (bool reduce_all : {false, true}) {
-              for (auto dim : reduce_dim) {
-                auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
+            for (auto dim : reduce_dim) {
+              DDim x_dims;
+              for (auto dims : {2, 3, 4}) {
+                switch (dims) {
+                  case 2:
+                    x_dims = DDim(std::vector<int64_t>({n, c}));
+                    break;
+                  case 3:
+                    x_dims = DDim(std::vector<int64_t>({n, c, h}));
+                    break;
+                  case 4:
+                    x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
+                    break;
+                  default:
+                    x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
+                }
+
+                int last_dim = dim.back();
+                if (dim.back() < 0) {
+                  last_dim += x_dims.size();
+                  if (last_dim < 1) continue;
+                }
+                if (last_dim > x_dims.size() - 1) continue;
+
+#ifdef LITE_WITH_OPENCL
+                // fixme: currently utest will fail when keep_dim == false on
+                // same case(such as nchw{1,2,1,1}, dim{2}). Not that the kernel
+                // is right on this case but the utest will fail because cannot
+                // get the padded dims of output tensor in framework.cc
+                keep_dim = true;
+#endif
                 std::unique_ptr<arena::TestCase> tester(
-                    new ReduceSumComputeTester(
-                        place, "def", dim, keep_dim, reduce_all, x_dims));
-                arena::Arena arena(std::move(tester), place, 2e-5);
+                    new ReduceAnyComputeTester(
+                        place, "def", dim, keep_dim, x_dims));
+                arena::Arena arena(std::move(tester), place, abs_err);
                 arena.TestPrecision();
               }
             }
@@ -335,17 +375,10 @@ void test_reduce_sum(Place place) {
   }
 }
 
-TEST(ReduceSum, precision) {
-  Place place;
-#if defined(LITE_WITH_X86)
-  place = TARGET(kX86);
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#else
-  return;
-#endif
-
-  test_reduce_sum(place);
+TEST(ReduceAny, precision) {
+  Place place(TARGET(kHost));
+  float abs_err = 2e-5;
+  test_reduce_any(place, abs_err);
 }
 
 }  // namespace lite

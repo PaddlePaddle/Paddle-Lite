@@ -22,11 +22,12 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class ReduceAllCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+template <typename T, typename Functor>
+class ReduceCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   void Run() override;
 
-  virtual ~ReduceAllCompute() = default;
+  virtual ~ReduceCompute() = default;
 
  private:
 };
