@@ -1,6 +1,6 @@
 # 源码编译 (Arm MacOS)
 
-**注意：** 以下编译方法只适用于**develop(commit id:647845)** 及之后版本
+**注意：** 以下编译方法只适用于**develop(commit id:647845) 以及release/v2.9.1** 及之后版本
 
 如果您还没有配置好编译环境，请先根据[编译环境准备](compile_env.html#mac-os)中的内容，根据您的开发环境安装编译预测库所需的编译环境。
 
@@ -18,7 +18,7 @@
 inference_lite_lib.armmacos.armv8
 ├── include                                                C++头文件
 │   ├── paddle_api.h
-│   ├── paddle_image_preprocess.h
+    ├── paddle_image_preprocess.h
 │   ├── paddle_lite_factory_helper.h
 │   ├── paddle_place.h
 │   ├── paddle_use_kernels.h
@@ -30,8 +30,7 @@ inference_lite_lib.armmacos.armv8
 
 ### 编译命令
 
-- 默认编译方法: (armv8)
-
+ 默认编译方法: (armv8)                                           
 ```shell
 ./lite/tools/build_ios.sh
 ```
@@ -43,7 +42,6 @@ inference_lite_lib.armmacos.armv8
 ```
 
 - 其他可选编译命令(Arm Macos M1 芯片只支持 Armv8,不支持 Armv7）：
-
 ```shell
 --with_cv: (OFF|ON)          是否编译CV相关预处理库, 默认为 OFF
 --with_log: (OFF|ON)         是否输出日志信息, 默认为 ON
@@ -51,7 +49,7 @@ inference_lite_lib.armmacos.armv8
 --with_extra: (OFF|ON)       是否编译OCR/NLP模型相关kernel&OP，默认为OFF，只编译CV模型相关kernel&OP
 ```
 
-- 裁剪预测库方法（只编译模型中的 kernel&OP，降低预测库体积），详情请参考: [裁剪预测库](library_tailoring)
+ 裁剪预测库方法（只编译模型中的kernel&OP，降低预测库体积），详情请参考:  [裁剪预测库](library_tailoring)
 
 ```shell
 ./lite/tools/build_ios.sh --with_strip=ON --opt_model_dir=%YourOptimizedModelDir%
