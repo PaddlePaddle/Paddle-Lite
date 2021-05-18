@@ -260,7 +260,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)
+                       [outc3] "+r"(outc3),
+                       [outc4] "+r"(outc4),
+                       [outc5] "+r"(outc5),
+                       [outc6] "+r"(outc6),
+                       [outc7] "+r"(outc7)
                      : [w0] "w"(w0),
                        [w1] "w"(w1),
                        [w2] "w"(w2),
@@ -304,7 +308,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)
+                       [outc3] "+r"(outc3),
+                       [outc4] "+r"(outc4),
+                       [outc5] "+r"(outc5),
+                       [outc6] "+r"(outc6),
+                       [outc7] "+r"(outc7)
                      : [w0] "w"(w0),
                        [w1] "w"(w1),
                        [w2] "w"(w2),
@@ -349,7 +357,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)
+                       [outc3] "+r"(outc3),
+                       [outc4] "+r"(outc4),
+                       [outc5] "+r"(outc5),
+                       [outc6] "+r"(outc6),
+                       [outc7] "+r"(outc7)
                      : [w0] "w"(w0),
                        [w1] "w"(w1),
                        [w2] "w"(w2),
@@ -399,7 +411,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                    [outc0] "+r"(outc0),
                    [outc1] "+r"(outc1),
                    [outc2] "+r"(outc2),
-                   [outc3] "+r"(outc3)
+                   [outc3] "+r"(outc3),
+                   [outc4] "+r"(outc4),
+                   [outc5] "+r"(outc5),
+                   [outc6] "+r"(outc6),
+                   [outc7] "+r"(outc7)
                  : [w0] "w"(w0),
                    [w1] "w"(w1),
                    [w2] "w"(w2),
@@ -445,7 +461,6 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
                                const float16_t* weights,
                                const float16_t* bias,
                                const operators::ConvParam& param,
-                               const operators::ActivationParam act_param,
                                ARMContext* ctx) {
   auto paddings = *param.paddings;
   int threads = ctx->threads();
@@ -463,6 +478,7 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
   ctx->ExtendWorkspace(sizeof(float16_t) * workspace_size);
 
   bool flag_bias = param.bias != nullptr;
+  auto act_param = param.activation_param;
 
   /// get workspace
   auto ptr_zero = ctx->workspace_data<float16_t>();
@@ -502,17 +518,6 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
       const float16_t* weight_c = weights + c * 25;  // kernel_w * kernel_h
       float16_t* dout_c00 = dout_batch + c * size_out_channel;
       float16_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-
-      if (flag_bias) {
-        bias_local[0] = bias[c];
-        bias_local[1] = bias[c + 1];
-        bias_local[2] = bias[c + 2];
-        bias_local[3] = bias[c + 3];
-        bias_local[4] = bias[c + 4];
-        bias_local[5] = bias[c + 5];
-        bias_local[6] = bias[c + 6];
-        bias_local[7] = bias[c + 7];
-      }
 #ifdef __aarch64__
       float16x8_t w0 = vld1q_f16(weight_c);       // w0, v23
       float16x8_t w1 = vld1q_f16(weight_c + 8);   // w1, v24

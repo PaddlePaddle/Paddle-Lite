@@ -289,6 +289,8 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
 
 PROFILE_INFO(kFloat, kFloat)
 
+#define CONV_DW_PARAM \
+  i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
@@ -315,20 +317,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  impl_(i_data,
-        o_data,
-        bs,
-        oc,
-        oh,
-        ow,
-        ic,
-        ih,
-        iw,
-        w_data,
-        b_data,
-        param,
-        &ctx,
-        w_scale_.data());
+  impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
 PROFILE_INFO(kInt8, kFloat)
@@ -359,20 +348,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  impl_(i_data,
-        o_data,
-        bs,
-        oc,
-        oh,
-        ow,
-        ic,
-        ih,
-        iw,
-        w_data,
-        b_data,
-        param,
-        &ctx,
-        w_scale_.data());
+  impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
 PROFILE_INFO(kInt8, kInt8)
@@ -403,20 +379,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  impl_(i_data,
-        o_data,
-        bs,
-        oc,
-        oh,
-        ow,
-        ic,
-        ih,
-        iw,
-        w_data,
-        b_data,
-        param,
-        &ctx,
-        w_scale_.data());
+  impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
 #ifdef ENABLE_ARM_FP16
@@ -455,7 +418,6 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
       lite::arm::math::conv_trans_weights_numc(
           w_data_in, w_data, oc, 1, cblock, kh * kw);
       flag_trans_weights_ = true;
-      impl_ = lite::arm::math::fp16::conv_depthwise_5x5_fp16;
       KERNEL_FUNC_NAME("conv_depthwise_5x5_fp16")
     } else {
       LOG(FATAL)
@@ -496,55 +458,18 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int oc = o_dims[1];
 
   if (kw == 3) {
-    lite::arm::math::fp16::conv_depthwise_3x3_fp16(i_data,
-                                                   o_data,
-                                                   bs,
-                                                   oc,
-                                                   oh,
-                                                   ow,
-                                                   ic,
-                                                   ih,
-                                                   iw,
-                                                   w_data,
-                                                   b_data,
-                                                   param,
-                                                   &ctx);
+    lite::arm::math::fp16::conv_depthwise_3x3_fp16(CONV_DW_PARAM);
   } else if (kw == 5) {
     if (sw == 1) {
-      lite::arm::math::fp16::conv_depthwise_5x5s1_fp16(i_data,
-                                                       o_data,
-                                                       bs,
-                                                       oc,
-                                                       oh,
-                                                       ow,
-                                                       ic,
-                                                       ih,
-                                                       iw,
-                                                       w_data,
-                                                       b_data,
-                                                       param,
-                                                       param.activation_param,
-                                                       &ctx);
+      lite::arm::math::fp16::conv_depthwise_5x5s1_fp16(CONV_DW_PARAM);
     } else {
-      lite::arm::math::fp16::conv_depthwise_5x5s2_fp16(i_data,
-                                                       o_data,
-                                                       bs,
-                                                       oc,
-                                                       oh,
-                                                       ow,
-                                                       ic,
-                                                       ih,
-                                                       iw,
-                                                       w_data,
-                                                       b_data,
-                                                       param,
-                                                       param.activation_param,
-                                                       &ctx);
+      lite::arm::math::fp16::conv_depthwise_5x5s2_fp16(CONV_DW_PARAM);
     }
   }
 }
 
 #endif
+#undef CONV_DW_PARAM
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

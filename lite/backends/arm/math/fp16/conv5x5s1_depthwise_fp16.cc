@@ -76,7 +76,7 @@ namespace fp16 {
   "fmla   v24.8h,  v18.8h,  v9.8h\n"  /* outr1 = w4 * r1, 9*/  \
   "fmla   v25.8h,  v18.8h,  v10.8h\n" /* outr2 = w4 * r1, 10*/ \
   "fmla   v26.8h,  v18.8h,  v11.8h\n" /* outr3 = w4 * r1, 11*/
-#define MULA_S1_R1(ptr0, ptr1)                                            \
+#define MULA_S1_ROW(ptr0, ptr1)                                           \
   "ldr    q18,  [%[wc0]], #16\n"      /* load w4, to q18*/                \
   "ldp    q6, q7,   [%[ptr0]], #32\n" /* load r0, 6-7 */                  \
   FMLA_S1_w0_0                                                            \
@@ -209,7 +209,7 @@ namespace fp16 {
   "ldp    q8, q9,   [%[inr3]], #32\n" /* load r0, 8-9 */                      \
   FMLA_S1_w1_0                                                                \
   FMLA_S1_w1_1                                                                \
-  "ldp    q10, q11   [%[inr3]] \n"                     /* load r0, 10 */      \
+  "ldp    q10, q11,   [%[inr3]] \n"                    /* load r0, 10 */      \
   FMLA_S1_w2_0                                                                \
   "sub    %[inr3], %[inr3], #32\n"    /* inr0 -= 32 */                        \
   FMLA_S1_w2_1                                                                \
@@ -365,7 +365,11 @@ void act_switch_5x5s1(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)
+                       [outc3] "+r"(outc3),
+                       [outc4] "+r"(outc4),
+                       [outc5] "+r"(outc5),
+                       [outc6] "+r"(outc6),
+                       [outc7] "+r"(outc7)
                      : [w0] "w"(w0),
                        [w1] "w"(w1),
                        [w2] "w"(w2),
@@ -385,6 +389,7 @@ void act_switch_5x5s1(const float16_t* inr0,
                        "v8",
                        "v9",
                        "v10",
+                       "v11",
                        "v14",
                        "v15",
                        "v16",
@@ -393,7 +398,11 @@ void act_switch_5x5s1(const float16_t* inr0,
                        "v19",
                        "v20",
                        "v21",
-                       "v22");
+                       "v22",
+                       "v23",
+                       "v24",
+                       "v25",
+                       "v26");
 #else
 #endif
         break;
@@ -409,7 +418,11 @@ void act_switch_5x5s1(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)
+                       [outc3] "+r"(outc3),
+                       [outc4] "+r"(outc4),
+                       [outc5] "+r"(outc5),
+                       [outc6] "+r"(outc6),
+                       [outc7] "+r"(outc7)
                      : [w0] "w"(w0),
                        [w1] "w"(w1),
                        [w2] "w"(w2),
@@ -430,6 +443,7 @@ void act_switch_5x5s1(const float16_t* inr0,
                        "v8",
                        "v9",
                        "v10",
+                       "v11",
                        "v14",
                        "v15",
                        "v16",
@@ -438,7 +452,11 @@ void act_switch_5x5s1(const float16_t* inr0,
                        "v19",
                        "v20",
                        "v21",
-                       "v22");
+                       "v22",
+                       "v23",
+                       "v24",
+                       "v25",
+                       "v26");
 #else
 #endif
         break;
@@ -454,7 +472,11 @@ void act_switch_5x5s1(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)
+                       [outc3] "+r"(outc3),
+                       [outc4] "+r"(outc4),
+                       [outc5] "+r"(outc5),
+                       [outc6] "+r"(outc6),
+                       [outc7] "+r"(outc7)
                      : [w0] "w"(w0),
                        [w1] "w"(w1),
                        [w2] "w"(w2),
@@ -475,6 +497,7 @@ void act_switch_5x5s1(const float16_t* inr0,
                        "v8",
                        "v9",
                        "v10",
+                       "v11",
                        "v14",
                        "v15",
                        "v16",
@@ -483,7 +506,11 @@ void act_switch_5x5s1(const float16_t* inr0,
                        "v19",
                        "v20",
                        "v21",
-                       "v22");
+                       "v22",
+                       "v23",
+                       "v24",
+                       "v25",
+                       "v26");
 #else
 #endif
         break;
@@ -504,7 +531,11 @@ void act_switch_5x5s1(const float16_t* inr0,
                    [outc0] "+r"(outc0),
                    [outc1] "+r"(outc1),
                    [outc2] "+r"(outc2),
-                   [outc3] "+r"(outc3)
+                   [outc3] "+r"(outc3),
+                   [outc4] "+r"(outc4),
+                   [outc5] "+r"(outc5),
+                   [outc6] "+r"(outc6),
+                   [outc7] "+r"(outc7)
                  : [w0] "w"(w0),
                    [w1] "w"(w1),
                    [w2] "w"(w2),
@@ -524,6 +555,7 @@ void act_switch_5x5s1(const float16_t* inr0,
                    "v8",
                    "v9",
                    "v10",
+                   "v11",
                    "v14",
                    "v15",
                    "v16",
@@ -532,7 +564,11 @@ void act_switch_5x5s1(const float16_t* inr0,
                    "v19",
                    "v20",
                    "v21",
-                   "v22");
+                   "v22",
+                   "v23",
+                   "v24",
+                   "v25",
+                   "v26");
 #else
 #endif
   }
@@ -549,7 +585,6 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
                                const float16_t* weights,
                                const float16_t* bias,
                                const operators::ConvParam& param,
-                               const operators::ActivationParam act_param,
                                ARMContext* ctx) {
   auto paddings = *param.paddings;
   int threads = ctx->threads();
@@ -567,6 +602,7 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
   ctx->ExtendWorkspace(sizeof(float16_t) * workspace_size);
 
   bool flag_bias = param.bias != nullptr;
+  auto act_param = param.activation_param;
 
   /// get workspace
   auto ptr_zero = ctx->workspace_data<float16_t>();
@@ -605,14 +641,8 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
           din_batch, pre_din, c, hs, he, ws, we, ic, win, ih, ptr_zero);
       const float16_t* weight_c = weights + c * 25;  // kernel_w * kernel_h
       float16_t* dout_c00 = dout_batch + c * size_out_channel;
-      float16_t bias_local[4] = {0, 0, 0, 0};
+      float16_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
-      if (flag_bias) {
-        bias_local[0] = bias[c];
-        bias_local[1] = bias[c + 1];
-        bias_local[2] = bias[c + 2];
-        bias_local[3] = bias[c + 3];
-      }
 #ifdef __aarch64__
       float16x8_t w0 = vld1q_f16(weight_c);       // w0, v23
       float16x8_t w1 = vld1q_f16(weight_c + 8);   // w1, v24
@@ -624,6 +654,7 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
         vbias = vld1q_f16(&bias[c]);  // v28
       }
       weight_c += 40;
+#else
 #endif
       for (int h = 0; h < oh; h += out_h_kernel) {
         float16_t* outc0 = dout_c00 + h * ow;
