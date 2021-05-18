@@ -25,7 +25,7 @@ namespace mir {
 
 void OpTransformationPass::CopyAttrFromOpInfo(cpp::OpDesc* op_desc,
                                               OpInfo* op_info,
-                                              std::string attr_name) {
+                                              const std::string& attr_name) {
   auto attr_type = op_info->GetAttrType(attr_name);
   switch (attr_type) {
     case OpDescAPI::AttrType::INT:
@@ -76,7 +76,7 @@ void OpTransformationPass::CopyAllOutputsFromOpInfo(cpp::OpDesc* op_desc,
 
 void OpTransformationPass::CopyInputScaleFromOpInfo(cpp::OpDesc* op_desc,
                                                     OpInfo* op_info,
-                                                    std::string name) {
+                                                    const std::string& name) {
   if (op_info->HasInputScale(name, true)) {
     op_desc->SetAttr<std::vector<float>>(name,
                                          op_info->GetInputScale(name, true));
@@ -85,7 +85,7 @@ void OpTransformationPass::CopyInputScaleFromOpInfo(cpp::OpDesc* op_desc,
 
 void OpTransformationPass::CopyOutputScaleFromOpInfo(cpp::OpDesc* op_desc,
                                                      OpInfo* op_info,
-                                                     std::string name) {
+                                                     const std::string& name) {
   if (op_info->HasOutputScale(name, true)) {
     op_desc->SetAttr<std::vector<float>>(name,
                                          op_info->GetOutputScale(name, true));

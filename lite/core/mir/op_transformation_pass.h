@@ -40,7 +40,7 @@ class OpTransformationPass : public ProgramPass {
   // Add attribute that's named with 'attr_name' from op_info
   void CopyAttrFromOpInfo(cpp::OpDesc* op_desc,
                           OpInfo* op_info,
-                          std::string attr_name);
+                          const std::string& attr_name);
   // Copy all inputs from op_info into opdesc
   void CopyAllInputsFromOpInfo(cpp::OpDesc* op_desc, OpInfo* op_info);
   // Copy all outputs from op_info into opdesc
@@ -48,11 +48,11 @@ class OpTransformationPass : public ProgramPass {
   // Copy an input scale that's named with 'name' from op_info
   void CopyInputScaleFromOpInfo(cpp::OpDesc* op_desc,
                                 OpInfo* op_info,
-                                std::string name);
+                                const std::string& name);
   // Copy an output scale that's named with 'name' from op_info
   void CopyOutputScaleFromOpInfo(cpp::OpDesc* op_desc,
                                  OpInfo* op_info,
-                                 std::string name);
+                                 const std::string& name);
   // Update a mir::node from op_desc
   void UpdateNodeFromOpdesc(mir::Node* node, cpp::OpDesc* op_desc);
 };
