@@ -21,6 +21,8 @@ limitations under the License. */
 #define MAX_VALUE FLT_MAX
 #define MIN_VALUE -FLT_MAX
 
+#define UP_DIV(x, y) (((x) + (y) - (1)) / (y))
+
 /////////////////////////////////
 // CL_DTYPE_float / CL_DTYPE_half
 /////////////////////////////////

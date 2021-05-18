@@ -32,8 +32,8 @@ void BilinearInterpImageCompute<P, PTYPE>::PrepareForRun() {
   auto output_dims = param.Out->dims();
 
   input_buffer_ = param.X->template data<P, MetalImage>();
-  output_buffer_ =
-      param.Out->template mutable_data<P, MetalImage>(output_dims, input_buffer_->transpose_);
+  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(
+      output_dims, input_buffer_->transpose_);
 
   int input_h = static_cast<int>(input_buffer_->pad_to_four_dim_[2]);
   int input_w = static_cast<int>(input_buffer_->pad_to_four_dim_[3]);
@@ -61,8 +61,10 @@ void BilinearInterpImageCompute<P, PTYPE>::PrepareForRun() {
 
   BilinearInterPMetalParam metal_param{ratio_h, ratio_w, align_delta};
 
-  param_buffer_ = metal_context_->CreateBuffer(
-      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = metal_context_->CreateBuffer(*device,
+                                               &metal_param,
+                                               sizeof(metal_param),
+                                               METAL_ACCESS_FLAG::CPUWriteOnly);
 
   std::string function_name = "";
   if (std::is_same<float, P>::value) {
@@ -85,14 +87,18 @@ void BilinearInterpImageCompute<P, PTYPE>::Run() {
   metal_context_ = (MetalContext*)context.context();
 
   {
-    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+    auto encoder = std::make_shared<MetalEncoder>(
+        metal_context_->cmd_buf_.get(), &kernel_->program_);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                    static_cast<MetalUint>(output_height),
                                    static_cast<MetalUint>(output_array_length)};
 
-    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
+                                        atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                        atIndex:(1)];
+    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer())
+                                        offset:(0)atIndex:(0)];
 
     kernel_->Execute(*encoder, global_work_size, false);
   }
@@ -103,12 +109,17 @@ void BilinearInterpImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::BilinearInterpImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::BilinearInterpImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite::kernels::metal::
+    BilinearInterpImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::
+    BilinearInterpImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::BilinearInterpImageCompute<float, PRECISION(kFloat)> MetalBilinearInterpFp32;
-typedef paddle::lite::kernels::metal::BilinearInterpImageCompute<MetalHalf, PRECISION(kFP16)> MetalBilinearInterpFp16;
-
+typedef paddle::lite::kernels::metal::
+    BilinearInterpImageCompute<float, PRECISION(kFloat)>
+        MetalBilinearInterpFp32;
+typedef paddle::lite::kernels::metal::
+    BilinearInterpImageCompute<MetalHalf, PRECISION(kFP16)>
+        MetalBilinearInterpFp16;
 
 REGISTER_LITE_KERNEL(bilinear_interp,
                      kMetal,
@@ -138,13 +149,12 @@ REGISTER_LITE_KERNEL(bilinear_interp,
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    bilinear_interp,
-    kMetal,
-    kFP16,
-    kMetalTexture2DArray,
-    MetalBilinearInterpFp16,
-    def)
+REGISTER_LITE_KERNEL(bilinear_interp,
+                     kMetal,
+                     kFP16,
+                     kMetalTexture2DArray,
+                     MetalBilinearInterpFp16,
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),

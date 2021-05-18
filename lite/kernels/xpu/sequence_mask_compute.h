@@ -8,7 +8,8 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// WIfloatHOUfloat WARRANfloatIES OR CONDIfloatIONS OF ANY KIND, either express
+// or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
@@ -19,25 +20,19 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-template <typename T, PrecisionType PType>
-class BatchNormCompute : public KernelLite<TARGET(kARM), PType> {
+template <class T>
+class SequenceMaskCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::BatchNormParam;
+  using param_t = operators::SequenceMaskParam;
 
-  void PrepareForRun() override;
+  virtual void Run();
 
-  void Run() override;
-
-  virtual ~BatchNormCompute() = default;
-
- private:
-  Tensor new_scale;
-  Tensor new_bias;
+  virtual ~SequenceMaskCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

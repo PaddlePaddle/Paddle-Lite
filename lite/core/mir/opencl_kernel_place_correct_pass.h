@@ -67,15 +67,25 @@ class OpenCLKernelPlaceCorrectPass : public ProgramPass {
         VLOG(4) << "dims: " << dims << "\t dims[axis]: " << dims[axis];
 
         // OpenCL parallelism is low at this case,
-        // so we use host backendkernel.
+        // so we use host backend kernel.
         const int thres = 500;
         if (dims[axis] > thres) {
-          VLOG(4) << "Correct opencl softmax kernel place from device to host.";
-#if defined(LITE_WITH_ARM)
-          auto new_target = TargetType::kARM;
-#elif defined(LITE_WITH_X86)
-          auto new_target = TargetType::kX86;
-#endif
+          TargetType new_target = TARGET(kARM);
+          const auto& valid_places = graph->valid_places();
+          for (const auto& place : valid_places) {
+            if (place.target == TARGET(kARM)) {
+              new_target = place.target;
+              break;
+            } else if (place.target == TARGET(kX86)) {
+              new_target = place.target;
+              break;
+            }
+          }
+          VLOG(4) << string_format(
+              "Correct opencl %s kernel & tensor's place from %s to %s.",
+              op_type.c_str(),
+              TargetToStr(inst.place().target).c_str(),
+              TargetToStr(new_target).c_str());
           UpdateTarget(inst, new_target);
           UpdateTensor(inst, in, out, new_target);
         }

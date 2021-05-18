@@ -52,15 +52,7 @@ void GRUUnitCompute::PrepareForRun() {
                       weight_max_vector.data(),
                       8 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-// quant
-#if 1
-  quant_weight_guard_ =
-      TargetWrapperXPU::MallocScratchPad(weight_len * sizeof(float));
-  XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(quant_weight_guard_->addr_),
-                      weight_ptr,
-                      weight_len * sizeof(float),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-#else
+  // quant
   quant_weight_guard_ =
       TargetWrapperXPU::MallocScratchPad(weight_len * sizeof(int16_t));
   std::vector<int16_t> quant_weight_cpu(weight_len);
@@ -78,7 +70,6 @@ void GRUUnitCompute::PrepareForRun() {
                       quant_weight_cpu.data(),
                       weight_len * sizeof(int16_t),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-#endif
 }
 
 void GRUUnitCompute::Run() {
@@ -105,31 +96,31 @@ void GRUUnitCompute::Run() {
 
   const float* input_ptr = input->data<float>();
   const float* hidden_prev_ptr = hidden_prev->data<float>();
-  const float* weight_ptr =
-      reinterpret_cast<const float*>(quant_weight_guard_->addr_);
+  const int16_t* weight_ptr =
+      reinterpret_cast<const int16_t*>(quant_weight_guard_->addr_);
   const float* weight_maxptr =
       reinterpret_cast<const float*>(weight_max_guard_->addr_);
   const float* bias_ptr = (bias == nullptr) ? nullptr : bias->data<float>();
 
   float* hidden_ptr = hidden->mutable_data<float>(TARGET(kXPU));
 
-  int ret =
-      xdnn::gru_unit<float, float, float, int16_t>(ctx.GetRawContext(),
-                                                   input_ptr,
-                                                   hidden_prev_ptr,
-                                                   weight_ptr,
-                                                   hidden_ptr,
-                                                   batch_size,
-                                                   frame_size,
-                                                   nullptr,
-                                                   nullptr,
-                                                   weight_maxptr,
-                                                   nullptr,
-                                                   bias_ptr,
-                                                   xdnn::Activation_t::TANH,
-                                                   xdnn::Activation_t::SIGMOID,
-                                                   origin_mode);
-  CHECK_EQ(ret, 0) << "call xdnn::paddle_gru_unit failed!";
+  int ret = xdnn::gru_unit<float, int16_t, float, int16_t>(
+      ctx.GetRawContext(),
+      input_ptr,
+      hidden_prev_ptr,
+      weight_ptr,
+      hidden_ptr,
+      batch_size,
+      frame_size,
+      nullptr,
+      nullptr,
+      weight_maxptr,
+      nullptr,
+      bias_ptr,
+      xdnn::Activation_t::TANH,
+      xdnn::Activation_t::SIGMOID,
+      origin_mode);
+  CHECK_EQ(ret, 0) << "call xdnn::gru_unit failed!";
 }
 
 }  // namespace xpu
