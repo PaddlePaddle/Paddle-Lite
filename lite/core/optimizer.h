@@ -101,7 +101,7 @@ class Optimizer {
          "lite_reshape2_matmul_fuse_pass",              //
          "lite_matmul_element_add_fuse_pass",           //
          "lite_matmul_fuse_pass",                       //
-         "lite_fc_fuse_pass",                           //
+//         "lite_fc_fuse_pass",                           //
          "lite_shuffle_channel_fuse_pass",              //
          "lite_transpose_softmax_transpose_fuse_pass",  //
          "lite_interpolate_fuse_pass",                  //
@@ -114,8 +114,8 @@ class Optimizer {
          "lite_scaleacts_fuse_pass",                    //
          "lite_elementwise_scale_fuse_pass",            //
          "lite_instance_norm_activation_fuse_pass",     //
-         "lite_flatten_fc_fuse_pass",                   //
-         "lite_fc_prelu_fuse_pass",                     //
+//         "lite_flatten_fc_fuse_pass",                   //
+//         "lite_fc_prelu_fuse_pass",                     //
          "lite_elementwise_activation_fuse_pass",
          "lite_conv_scale_fuse_pass",
          "identity_dropout_eliminate_pass",
@@ -204,9 +204,9 @@ class Optimizer {
          "runtime_context_assign_pass",
          "argument_type_display_pass",
          "lite_inplace_fuse_pass",
-#if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
-         "memory_optimize_pass"
-#endif
+//#if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
+//         "memory_optimize_pass"
+//#endif
         }};
 
     // It's just a workaround to avoid repeated op fusion if the filter weights
