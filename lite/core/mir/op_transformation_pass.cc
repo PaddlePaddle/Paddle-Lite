@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/op_convertion_pass.h"
+#include "lite/core/mir/op_transformation_pass.h"
 #include <memory>
 #include <string>
 #include <utility>
@@ -23,9 +23,9 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-void OpConvertionPass::CopyAttrFromOpInfo(cpp::OpDesc* op_desc,
-                                          OpInfo* op_info,
-                                          std::string attr_name) {
+void OpTransformationPass::CopyAttrFromOpInfo(cpp::OpDesc* op_desc,
+                                              OpInfo* op_info,
+                                              std::string attr_name) {
   auto attr_type = op_info->GetAttrType(attr_name);
   switch (attr_type) {
     case OpDescAPI::AttrType::INT:
@@ -58,42 +58,42 @@ void OpConvertionPass::CopyAttrFromOpInfo(cpp::OpDesc* op_desc,
   }
 }
 
-void OpConvertionPass::CopyAllInputsFromOpInfo(cpp::OpDesc* op_desc,
-                                               OpInfo* op_info) {
+void OpTransformationPass::CopyAllInputsFromOpInfo(cpp::OpDesc* op_desc,
+                                                   OpInfo* op_info) {
   std::vector<std::string> input_names = op_info->input_argnames();
   for (auto& name : input_names) {
     op_desc->SetInput(name, op_info->Input(name));
   }
 }
 
-void OpConvertionPass::CopyAllOutputsFromOpInfo(cpp::OpDesc* op_desc,
-                                                OpInfo* op_info) {
+void OpTransformationPass::CopyAllOutputsFromOpInfo(cpp::OpDesc* op_desc,
+                                                    OpInfo* op_info) {
   std::vector<std::string> output_names = op_info->output_argnames();
   for (auto& name : output_names) {
     op_desc->SetOutput(name, op_info->Output(name));
   }
 }
 
-void OpConvertionPass::CopyInputScaleFromOpInfo(cpp::OpDesc* op_desc,
-                                                OpInfo* op_info,
-                                                std::string name) {
+void OpTransformationPass::CopyInputScaleFromOpInfo(cpp::OpDesc* op_desc,
+                                                    OpInfo* op_info,
+                                                    std::string name) {
   if (op_info->HasInputScale(name, true)) {
     op_desc->SetAttr<std::vector<float>>(name,
                                          op_info->GetInputScale(name, true));
   }
 }
 
-void OpConvertionPass::CopyOutputScaleFromOpInfo(cpp::OpDesc* op_desc,
-                                                 OpInfo* op_info,
-                                                 std::string name) {
+void OpTransformationPass::CopyOutputScaleFromOpInfo(cpp::OpDesc* op_desc,
+                                                     OpInfo* op_info,
+                                                     std::string name) {
   if (op_info->HasOutputScale(name, true)) {
     op_desc->SetAttr<std::vector<float>>(name,
                                          op_info->GetOutputScale(name, true));
   }
 }
 
-void OpConvertionPass::UpdateNodeFromOpdesc(mir::Node* node,
-                                            cpp::OpDesc* op_desc) {
+void OpTransformationPass::UpdateNodeFromOpdesc(mir::Node* node,
+                                                cpp::OpDesc* op_desc) {
   auto new_op = LiteOpRegistry::Global().Create(op_desc->Type());
   new_op->Attach(*op_desc, node->stmt()->op()->scope());
   new_op->SetValidPlaces(node->stmt()->op()->valid_places());
@@ -101,7 +101,7 @@ void OpConvertionPass::UpdateNodeFromOpdesc(mir::Node* node,
   node->stmt()->SetOp(new_op);
   node->stmt()->SetKernels(std::move(kernels));
 }
-void OpConvertionPass::ConvertDepthewiseConv2dTranspose2Conv2dTranspose(
+void OpTransformationPass::ConvertDepthewiseConv2dTranspose2Conv2dTranspose(
     mir::Node* node) {
   auto* op_info = node->stmt()->mutable_op_info();
   cpp::OpDesc op_desc;
@@ -126,11 +126,11 @@ void OpConvertionPass::ConvertDepthewiseConv2dTranspose2Conv2dTranspose(
   UpdateNodeFromOpdesc(node, &op_desc);
 }
 /*
-* Op convertion: We convert some ops into other types to reduce the topology
+* Op transformation: We convert some ops into other types to reduce the topology
 * complexity
-*    convertion 1 :  depthwise_conv2d_transpose  -----> conv2d_transpose
+*    transformation 1 :  depthwise_conv2d_transpose  -----> conv2d_transpose
 */
-void OpConvertionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void OpTransformationPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
     if (node->IsStmt() &&
         node->AsStmt().op_type() == "depthwise_conv2d_transpose") {
@@ -143,5 +143,6 @@ void OpConvertionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(op_convertion_pass, paddle::lite::mir::OpConvertionPass)
+REGISTER_MIR_PASS(op_transformation_pass,
+                  paddle::lite::mir::OpTransformationPass)
     .BindTargets({TARGET(kARM)});

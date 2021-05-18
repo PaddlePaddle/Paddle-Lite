@@ -23,15 +23,16 @@ namespace paddle {
 namespace lite {
 namespace mir {
 /*
- * Op convertion: We convert some ops into other types to reduce the topology
+ * Op transformation: We convert some ops into other types to reduce the
+ * topology
  * complexity
- *    convertion 1 :  depthwise_conv2d_transpose  -----> conv2d_transpose
+ *    transformation 1 :  depthwise_conv2d_transpose  -----> conv2d_transpose
  */
-class OpConvertionPass : public ProgramPass {
+class OpTransformationPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
   // remapping rules:
-  // convertion rule1: depthwise_conv2d_transpose  -----> conv2d_transpose
+  // transformation rule1: depthwise_conv2d_transpose  -----> conv2d_transpose
   void ConvertDepthewiseConv2dTranspose2Conv2dTranspose(mir::Node* node);
 
  private:
