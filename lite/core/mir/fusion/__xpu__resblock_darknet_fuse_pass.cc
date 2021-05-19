@@ -14,8 +14,6 @@
 
 #include <memory>
 #include <string>
-#include "lite/backends/xpu/math.h"
-#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
@@ -25,7 +23,6 @@ namespace mir {
 namespace fusion {
 
 /* fuse 2 xpu_conv2d and ew_add op as darknet53-like block */
-/* graph[1]: has_mid_conv = true                   */
 /*                in_Input                         */
 /*                /      \                         */
 /*              /          \                       */
@@ -158,18 +155,11 @@ class XPUResBlockDarknetFuser : public FuseBase {
     max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
-    // put definition of op_type in fusion.h ?
     std::vector<int> op_type{
         0, 0, 10};  // "__xpu__conv2d", "__xpu__conv2d", "elementwise_add"
-    std::vector<int> place_x{xdnn::block_position::PX,
-                             xdnn::block_position::P1,
-                             xdnn::block_position::P2};
-    std::vector<int> place_y{xdnn::block_position::PNONE,
-                             xdnn::block_position::PNONE,
-                             xdnn::block_position::PX};
-    std::vector<int> place_z{xdnn::block_position::P1,
-                             xdnn::block_position::P2,
-                             xdnn::block_position::PY};
+    std::vector<int> place_x{0, 1, 2};
+    std::vector<int> place_y{9, 9, 0};
+    std::vector<int> place_z{1, 2, 10};
     std::vector<int> block_lod{3};
 
     std::vector<int> conv_bias;
@@ -254,7 +244,7 @@ class XPUResBlockDarknetFuser : public FuseBase {
       }
     }
     // for ewadd_act_findmax fuse
-    act_type.push_back(xdnn::Activation_t::LINEAR);
+    act_type.push_back(0);
     act_param.push_back(0.f);
     op_desc.SetAttr("op_type", op_type);
     op_desc.SetAttr("place_x", place_x);
@@ -336,16 +326,6 @@ class XPUResBlockDarknetFuser : public FuseBase {
     IR_NODE_LINK_TO(new_op_node, matched.at("output"));
     IR_NODE_LINK_TO(new_op_node, max_output_node);
   }
-
-  // private:
-  // std::string first_op_type_;
-  // std::string branch_op_type_;
-  // std::string second_op_type_;
-  // std::string third_op_type_;
-  // bool first_op_bias_;
-  // bool second_op_bias_;
-  // bool third_op_bias_;
-  // bool branch_op_bias_;
 };
 
 }  // namespace fusion
