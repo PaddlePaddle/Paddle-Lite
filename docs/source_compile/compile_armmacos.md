@@ -6,7 +6,7 @@
 
 # 编译 Paddle-Lite Arm MacOs 预测库 (armv8)
 
-./lite/tools/build_armmacos.sh
+/lite/tools/build_macos.sh arm64
 
 **提示：** 编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在 git clone 完 Paddle-Lite 仓库代码后，手动删除本地仓库根目录下的 third-party 目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从 git repo 同步第三方库代码的时间。
 
@@ -32,7 +32,7 @@ inference_lite_lib.armmacos.armv8
 
  默认编译方法: (armv8)                                           
 ```shell
-./lite/tools/build_ios.sh
+./lite/tools/build_macos.sh arm64
 ```
 
 - 打印 help 信息：
@@ -43,16 +43,16 @@ inference_lite_lib.armmacos.armv8
 
 - 其他可选编译命令(Arm Macos M1 芯片只支持 Armv8,不支持 Armv7）：
 ```shell
---with_cv: (OFF|ON)          是否编译CV相关预处理库, 默认为 OFF
+--build_cv: (OFF|ON)          是否编译CV相关预处理库, 默认为 OFF
 --with_log: (OFF|ON)         是否输出日志信息, 默认为 ON
 --with_exception: (OFF|ON)   是否在错误发生时抛出异常，默认为 OFF
---with_extra: (OFF|ON)       是否编译OCR/NLP模型相关kernel&OP，默认为OFF，只编译CV模型相关kernel&OP
+--build_extra: (OFF|ON)       是否编译OCR/NLP模型相关kernel&OP，默认为OFF，只编译CV模型相关kernel&OP
 ```
 
  裁剪预测库方法（只编译模型中的kernel&OP，降低预测库体积），详情请参考:  [裁剪预测库](library_tailoring)
 
 ```shell
-./lite/tools/build_ios.sh --with_strip=ON --opt_model_dir=%YourOptimizedModelDir%
+./lite/tools/build_macos.sh --with_strip=ON --opt_model_dir=%YourOptimizedModelDir%
 
 # 编译选项说明
 --with_strip: (OFF|ON);   是否根据输入模型裁剪预测库，默认为OFF

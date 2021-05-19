@@ -49,6 +49,7 @@
 
 ## Lite settings
 set(PLATFORM "MACOS")
+
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv8"
     OR ARM_TARGET_ARCH_ABI STREQUAL "arm64-v8a")
   set(ARCHS "arm64")
