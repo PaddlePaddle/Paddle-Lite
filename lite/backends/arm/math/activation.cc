@@ -684,12 +684,49 @@ void act_hard_sigmoid<float>(const float* din,
                              const float slope,
                              const float offset,
                              int threads) {
-  for (int64_t i = 0; i < size; ++i) {
-    dout[0] = din[0] * slope + offset;
-    dout[0] = dout[0] < 1.0f ? dout[0] : 1.0f;
-    dout[0] = dout[0] > 0.0f ? dout[0] : 0.0f;
-    ++din;
-    ++dout;
+  float32x4_t vslope = vdupq_n_f32(slope);
+  float32x4_t vbias = vdupq_n_f32(offset);
+  float32x4_t vone = vdupq_n_f32(1.f);
+  float32x4_t vzero = vdupq_n_f32(0.f);
+  int cnt = size >> 4;
+  int rem = cnt & 15;
+  int rem_cnt = rem >> 2;
+  int rem_rem = rem & 3;
+  const float* din_ptr = din;
+  float* dout_ptr = dout;
+  for (int i = 0; i < cnt; i++) {
+    float32x4_t vin0 = vld1q_f32(din_ptr);
+    float32x4_t vin1 = vld1q_f32(din_ptr + 4);
+    float32x4_t vin2 = vld1q_f32(din_ptr + 8);
+    float32x4_t vin3 = vld1q_f32(din_ptr + 12);
+    float32x4_t vsum0 = vmlaq_f32(vbias, vin0, vslope);
+    float32x4_t vsum1 = vmlaq_f32(vbias, vin1, vslope);
+    float32x4_t vsum2 = vmlaq_f32(vbias, vin2, vslope);
+    float32x4_t vsum3 = vmlaq_f32(vbias, vin3, vslope);
+    float32x4_t vout0 = vminq_f32(vone, vmaxq_f32(vsum0, vzero));
+    float32x4_t vout1 = vminq_f32(vone, vmaxq_f32(vsum1, vzero));
+    float32x4_t vout2 = vminq_f32(vone, vmaxq_f32(vsum2, vzero));
+    float32x4_t vout3 = vminq_f32(vone, vmaxq_f32(vsum3, vzero));
+    din_ptr += 16;
+    vst1q_f32(dout_ptr, vsum0);
+    vst1q_f32(dout_ptr + 4, vsum1);
+    vst1q_f32(dout_ptr + 8, vsum2);
+    vst1q_f32(dout_ptr + 12, vsum3);
+    dout_ptr += 16;
+  }
+  for (int i = 0; i < rem_cnt; i++) {
+    float32x4_t vsum0 = vmlaq_f32(vbias, vld1q_f32(din_ptr), vslope);
+    din_ptr += 4;
+    float32x4_t vout0 = vminq_f32(vone, vmaxq_f32(vsum0, vzero));
+    vst1q_f32(dout_ptr, vsum0);
+    dout_ptr += 4;
+  }
+  for (int i = 0; i < rem_rem; i++) {
+    dout_ptr[0] = din_ptr[0] * slope + offset;
+    dout_ptr[0] = dout_ptr[0] < 1.0f ? dout_ptr[0] : 1.0f;
+    dout_ptr[0] = dout_ptr[0] > 0.0f ? dout_ptr[0] : 0.0f;
+    ++din_ptr;
+    ++dout_ptr;
   }
 }
 
@@ -734,52 +771,59 @@ void act_hard_swish<float>(const float* din,
                            float scale,
                            float offset,
                            int threads) {
-  int nums_per_thread = size / threads;
-  int remain = size - nums_per_thread * threads;
-  int neon_loop_cnt_dim4 = nums_per_thread >> 2;
-  int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
+  int cnt = size >> 4;
+  int rem = size & 15;
 
-  const float* ptr_in = din;
-  float* ptr_out = dout;
-  float scale_r = 1. / scale;
-  float32x4_t scale_v, offset_v, threshold_v, zero;
-  offset_v = vdupq_n_f32(offset);
-  scale_v = vdupq_n_f32(scale_r);
-  zero = vdupq_n_f32(0.);
-  threshold_v = vdupq_n_f32(threshold);
+  const float* din_ptr = din;
+  float* dout_ptr = dout;
+  int rem_cnt = rem >> 2;
+  int rem_rem = rem & 3;
+  float32x4_t voffset = vdupq_n_f32(offset);
+  float32x4_t vscale = vdupq_n_f32(1. / scale);
+  float32x4_t vzero = vdupq_n_f32(0.f);
+  float32x4_t vthreshold = vdupq_n_f32(threshold);
 
 #pragma omp parallel for
-  for (int i = 0; i < threads; i++) {
-    const float* ptr_in_thread = ptr_in + i * nums_per_thread;
-    float* ptr_out_thread = ptr_out + i * nums_per_thread;
-    for (int j = 0; j < neon_loop_cnt_dim4; j++) {
-      float32x4_t in = vld1q_f32(ptr_in_thread);
-      float32x4_t in_add_offset = vaddq_f32(in, offset_v);
-      float32x4_t tmp1 = vmaxq_f32(zero, in_add_offset);
-      float32x4_t tmp2 = vminq_f32(threshold_v, tmp1);
-      float32x4_t tmp3 = vmulq_f32(scale_v, in);
-      float32x4_t tmp4 = vmulq_f32(tmp2, tmp3);
-      vst1q_f32(ptr_out_thread, tmp4);
-      ptr_in_thread += 4;
-      ptr_out_thread += 4;
-    }
-
-    for (int j = 0; j < neon_loop_remain_dim4; j++) {
-      ptr_out_thread[0] =
-          std::min(std::max(0.f, ptr_in_thread[0] + offset), threshold) *
-          ptr_in_thread[0] * scale_r;
-      ptr_in_thread++;
-      ptr_out_thread++;
-    }
+  for (int i = 0; i < cnt; i++) {
+    din_ptr = din + i * 16;
+    dout_ptr = dout + i * 16;
+    float32x4_t vin0 = vld1q_f32(din_ptr);
+    float32x4_t vin1 = vld1q_f32(din_ptr + 4);
+    float32x4_t vin2 = vld1q_f32(din_ptr + 8);
+    float32x4_t vin3 = vld1q_f32(din_ptr + 12);
+    float32x4_t vsum0 = vaddq_f32(vin0, voffset);
+    float32x4_t vsum1 = vaddq_f32(vin1, voffset);
+    float32x4_t vsum2 = vaddq_f32(vin2, voffset);
+    float32x4_t vsum3 = vaddq_f32(vin3, voffset);
+    float32x4_t valpha0 = vmulq_f32(vin0, vscale);
+    float32x4_t valpha1 = vaddq_f32(vin1, vscale);
+    float32x4_t valpha2 = vaddq_f32(vin2, vscale);
+    float32x4_t valpha3 = vaddq_f32(vin3, vscale);
+    float32x4_t vbeta0 = vminq_f32(vthreshold, vmaxq_f32(vzero, vsum0));
+    float32x4_t vbeta1 = vminq_f32(vthreshold, vmaxq_f32(vzero, vsum1));
+    float32x4_t vbeta2 = vminq_f32(vthreshold, vmaxq_f32(vzero, vsum2));
+    float32x4_t vbeta3 = vminq_f32(vthreshold, vmaxq_f32(vzero, vsum3));
+    vst1q_f32(dout_ptr, vmulq_f32(vbeta0, valpha0));
+    vst1q_f32(dout_ptr + 4, vmulq_f32(vbeta1, valpha1));
+    vst1q_f32(dout_ptr + 8, vmulq_f32(vbeta2, valpha2));
+    vst1q_f32(dout_ptr + 12, vmulq_f32(vbeta3, valpha3));
   }
-
-  ptr_out = dout + threads * nums_per_thread;
-  ptr_in = din + threads * nums_per_thread;
-  for (int i = 0; i < remain; i++) {
-    ptr_out[0] = std::min(std::max(0.f, ptr_in[0] + offset), threshold) *
-                 ptr_in[0] * scale_r;
-    ptr_in++;
-    ptr_out++;
+  din_ptr = din + (cnt >> 4);
+  dout_ptr = dout + (cnt >> 4);
+  for (int i = 0; i < rem_cnt; i++) {
+    float32x4_t vin0 = vld1q_f32(din_ptr);
+    din_ptr += 4;
+    float32x4_t vsum0 = vaddq_f32(vin0, voffset);
+    float32x4_t valpha0 = vmulq_f32(vin0, vscale);
+    float32x4_t vbeta0 = vminq_f32(vthreshold, vmaxq_f32(vzero, vsum0));
+    vst1q_f32(dout_ptr, vmulq_f32(vbeta0, valpha0));
+    dout_ptr += 4;
+  }
+  for (int i = 0; i < rem_rem; i++) {
+    dout_ptr[0] = std::min(std::max(0.f, din_ptr[0] + offset), threshold) *
+                  din_ptr[0] / scale;
+    din_ptr++;
+    dout_ptr++;
   }
 }
 
