@@ -33,6 +33,7 @@ lite_cc_library(mir_passes
       fusion/__xpu__resblock_reduction_fuse_pass.cc
       fusion/__xpu__concat_conv2d_fuse_pass.cc
       fusion/__xpu__resblock_normal_fuse_pass.cc
+      fusion/__xpu__resblock_darknet_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
       fusion/__xpu__resnet_cbam_fuse_pass.cc
       fusion/__xpu__conv2d_pool2d_fuse_pass.cc
