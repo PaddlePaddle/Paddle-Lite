@@ -287,35 +287,10 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   last_shape_ = param.x->dims();
 }
 
-#ifdef ENABLE_ARM_FP16
-template <>
-void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {}
-
-template <>
-void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-  CHECK(this->ctx_);
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto w_dims = param.filter->dims();
-  auto kw = w_dims[3];
-  auto channel = w_dims[0];
-  auto hin = param.x->dims()[2];
-  auto win = param.x->dims()[3];
-  auto paddings = *param.paddings;
-  if (last_shape_ == param.x->dims()) {
-    return;
-  }
-  if (kw == 3) {
-    flag_trans_weights_ = false;
-    KERNEL_FUNC_NAME("conv_depthwise_3x3_fp16")
-  } else {
-    LOG(FATAL) << "DepthwiseConv FP16 Only Support 3x3!";
-  }
-}
-#endif
-
 PROFILE_INFO(kFloat, kFloat)
 
+#define CONV_DW_PARAM \
+  i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
@@ -342,20 +317,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  impl_(i_data,
-        o_data,
-        bs,
-        oc,
-        oh,
-        ow,
-        ic,
-        ih,
-        iw,
-        w_data,
-        b_data,
-        param,
-        &ctx,
-        w_scale_.data());
+  impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
 PROFILE_INFO(kInt8, kFloat)
@@ -386,20 +348,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  impl_(i_data,
-        o_data,
-        bs,
-        oc,
-        oh,
-        ow,
-        ic,
-        ih,
-        iw,
-        w_data,
-        b_data,
-        param,
-        &ctx,
-        w_scale_.data());
+  impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
 PROFILE_INFO(kInt8, kInt8)
@@ -430,24 +379,54 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  impl_(i_data,
-        o_data,
-        bs,
-        oc,
-        oh,
-        ow,
-        ic,
-        ih,
-        iw,
-        w_data,
-        b_data,
-        param,
-        &ctx,
-        w_scale_.data());
+  impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
 #ifdef ENABLE_ARM_FP16
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {}
 
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto w_dims = param.filter->dims();
+  auto kw = w_dims[3];
+  auto channel = w_dims[0];
+  auto hin = param.x->dims()[2];
+  auto win = param.x->dims()[3];
+  auto paddings = *param.paddings;
+  if (last_shape_ == param.x->dims()) {
+    return;
+  }
+  if (kw == 3) {
+    flag_trans_weights_ = false;
+    KERNEL_FUNC_NAME("conv_depthwise_3x3_fp16")
+  } else if (kw == 5) {
+    auto strides = param.strides;
+    if ((strides[0] == 1 && strides[1] == 1) ||
+        (strides[0] == 2 && strides[1] == 2)) {
+      // trans weights
+      constexpr int cblock = 8;
+      auto oc = w_dims[0];
+      auto kh = w_dims[2];
+      auto cround = ROUNDUP(oc, cblock);
+      weights_.Resize({cround, 1, kh, kw});
+      auto w_data = weights_.mutable_data<float16_t>();
+      auto w_data_in = param.filter->data<float16_t>();
+      lite::arm::math::conv_trans_weights_numc(
+          w_data_in, w_data, oc, 1, cblock, kh * kw);
+      flag_trans_weights_ = true;
+      KERNEL_FUNC_NAME("conv_depthwise_5x5_fp16")
+    } else {
+      LOG(FATAL)
+          << "5x5 depthwise conv only support stride == 1 or stride == 2";
+    }
+  } else {
+    LOG(FATAL) << "DepthwiseConv FP16 Only Support 3x3 or 5x5!";
+  }
+}
 PROFILE_INFO(kFP16, kFP16)
 
 template <>
@@ -467,6 +446,8 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
+  int kw = w_dims[3];
+  int sw = param.strides[0];
 
   int iw = x_dims[3];
   int ih = x_dims[2];
@@ -476,10 +457,19 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  lite::arm::math::fp16::conv_depthwise_3x3_fp16(
-      i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
+  if (kw == 3) {
+    lite::arm::math::fp16::conv_depthwise_3x3_fp16(CONV_DW_PARAM);
+  } else if (kw == 5) {
+    if (sw == 1) {
+      lite::arm::math::fp16::conv_depthwise_5x5s1_fp16(CONV_DW_PARAM);
+    } else {
+      lite::arm::math::fp16::conv_depthwise_5x5s2_fp16(CONV_DW_PARAM);
+    }
+  }
 }
+
 #endif
+#undef CONV_DW_PARAM
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
