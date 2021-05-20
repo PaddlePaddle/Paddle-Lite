@@ -29,7 +29,9 @@
 #ifdef LITE_WITH_NVTX
 #include "lite/backends/cuda/nvtx_wrapper.h"
 #endif
-
+#ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_runtime.h"
+#endif
 namespace paddle {
 namespace lite {
 
@@ -134,6 +136,16 @@ struct Instruction {
     }
   }
   void Sync() const { kernel_->mutable_context()->As<CUDAContext>().Sync(); }
+#endif
+
+#ifdef LITE_WITH_OPENCL
+  bool need_flush(const int inst_idx) const {
+    if (kernel_->target() == TargetType::kOpenCL && inst_idx % 10 == 0) {
+      return true;
+    }
+    return false;
+  }
+  void Flush() const { CLRuntime::Global()->command_queue().flush(); }
 #endif
 
 #ifdef LITE_WITH_PROFILE
