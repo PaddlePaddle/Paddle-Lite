@@ -148,6 +148,8 @@ class CLRuntime {
     return binary_path_name_;
   }
 
+  void Flush(const int index);
+
   bool Init();
 
   cl::Platform& platform();
