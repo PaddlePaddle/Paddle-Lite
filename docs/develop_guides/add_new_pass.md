@@ -29,7 +29,7 @@
 class Pass {
  public:
   // Pass的类型，Pass按照作用的不同可以分为三种
-  enum class Kind {   //种类的作用不太清楚
+  enum class Kind {
     // 1. 修改模型中的图拓扑结构的Pass
     kProgramWise = 0,
     // 2. 不修改图结构，修改状态的Pass
@@ -75,7 +75,7 @@ class DebugPass : public Pass {
 
 - `const Kind kind_` : Pass类型。pass 有三种基本基本类型 ：修改图结构的`ProgramPass`、修改状态量的`StmtPass`和Debug过程采集信息与控制可视化的`DebugPass`。
 - `std::string name_` ：pass 的名称
-- `std::set<TargetType> bound_targets_` : Pass运行的硬件平台，optimizer.Run()优化过程会根据硬件平台选择匹配的Pass。------根据硬件平台自动选择需要的pass
+- `std::set<TargetType> bound_targets_` : Pass运行的硬件平台，optimizer.Run()优化过程会根据硬件平台选择匹配的Pass。
 - `std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_` : Pass 绑定的kernel   (what's this used for)
 
 **主要接口**：
