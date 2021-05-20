@@ -8,7 +8,7 @@ lite_cc_library(math_host SRCS
     pad3d.cc
     concat.cc
     stack.cc
-    reduce_all.cc
+    reduce.cc
     argmax.cc
     topk.cc
     yolo_box.cc
