@@ -780,7 +780,7 @@ void act_hard_swish<float>(const float* din,
   int rem_rem = rem & 3;
   float32x4_t voffset = vdupq_n_f32(offset);
   float32x4_t vscale = vdupq_n_f32(1. / scale);
-  float32x4_t vzero = vdupq_n_f32(0.f);
+  float32x4_t vzero = vdupq_n_f32(0.);
   float32x4_t vthreshold = vdupq_n_f32(threshold);
 
 #pragma omp parallel for
@@ -796,20 +796,22 @@ void act_hard_swish<float>(const float* din,
     float32x4_t vsum2 = vaddq_f32(vin2, voffset);
     float32x4_t vsum3 = vaddq_f32(vin3, voffset);
     float32x4_t valpha0 = vmulq_f32(vin0, vscale);
-    float32x4_t valpha1 = vaddq_f32(vin1, vscale);
-    float32x4_t valpha2 = vaddq_f32(vin2, vscale);
-    float32x4_t valpha3 = vaddq_f32(vin3, vscale);
+    float32x4_t valpha1 = vmulq_f32(vin1, vscale);
+    float32x4_t valpha2 = vmulq_f32(vin2, vscale);
+    float32x4_t valpha3 = vmulq_f32(vin3, vscale);
     float32x4_t vbeta0 = vminq_f32(vthreshold, vmaxq_f32(vzero, vsum0));
     float32x4_t vbeta1 = vminq_f32(vthreshold, vmaxq_f32(vzero, vsum1));
     float32x4_t vbeta2 = vminq_f32(vthreshold, vmaxq_f32(vzero, vsum2));
     float32x4_t vbeta3 = vminq_f32(vthreshold, vmaxq_f32(vzero, vsum3));
+    float32x4_t vr1 = vmulq_f32(vbeta1, valpha1);
     vst1q_f32(dout_ptr, vmulq_f32(vbeta0, valpha0));
     vst1q_f32(dout_ptr + 4, vmulq_f32(vbeta1, valpha1));
     vst1q_f32(dout_ptr + 8, vmulq_f32(vbeta2, valpha2));
     vst1q_f32(dout_ptr + 12, vmulq_f32(vbeta3, valpha3));
+    dout_ptr += 16;
   }
-  din_ptr = din + (cnt >> 4);
-  dout_ptr = dout + (cnt >> 4);
+  din_ptr = din + (cnt << 4);
+  dout_ptr = dout + (cnt << 4);
   for (int i = 0; i < rem_cnt; i++) {
     float32x4_t vin0 = vld1q_f32(din_ptr);
     din_ptr += 4;
