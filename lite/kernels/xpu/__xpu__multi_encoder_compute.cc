@@ -142,10 +142,6 @@ int XPUMultiEncoderCompute::transformer_encoder_run() {
 
 void XPUMultiEncoderCompute::Run() {
   auto& param = this->Param<param_t>();
-
-  encoder_param_.batch_size = param.input->dims()[0];
-  encoder_param_.from_seq_len = param.input->dims()[1];
-  encoder_param_.to_seq_len = param.input->dims()[1];
   std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
   encoder_param_.mask_shape =
       std::vector<int>(mask_shape.begin(), mask_shape.end());
@@ -153,7 +149,6 @@ void XPUMultiEncoderCompute::Run() {
   encoder_param_.slice_ends = param.slice_ends;
   encoder_param_.slice_axes = param.slice_axes;
   const bool norm_before_ = param.norm_before;
-
   if (param.SeqLod && param.SeqLod->data<int>()) {
     auto& ctx = this->ctx_->As<XPUContext>();
     ctx.GetRawContext()->batch_split_type = -1;  // disable auto split batch
@@ -163,14 +158,13 @@ void XPUMultiEncoderCompute::Run() {
            sizeof(int) * param.SeqLod->numel());
     encoder_param_.adaptive_seqlen = true;
     encoder_param_.batch_size = param.SeqLod->numel() - 1;
-    int seq_pad_len = 0;
-    for (auto i = 1; i < param.SeqLod->numel(); i++) {
-      int cur_seqlen =
-          param.SeqLod->data<int>()[i] - param.SeqLod->data<int>()[i - 1];
-      seq_pad_len = seq_pad_len > cur_seqlen ? seq_pad_len : cur_seqlen;
-    }
-    encoder_param_.from_seq_len = seq_pad_len;
-    encoder_param_.to_seq_len = seq_pad_len;
+    encoder_param_.from_seq_len = param.PadSeqLen->data<int>()[0];
+    encoder_param_.to_seq_len = param.PadSeqLen->data<int>()[0];
+  } else {
+    encoder_param_.adaptive_seqlen = false;
+    encoder_param_.batch_size = param.input->dims()[0];
+    encoder_param_.from_seq_len = param.input->dims()[1];
+    encoder_param_.to_seq_len = param.input->dims()[1];
   }
   int r = -1;
   if (norm_before_) {
@@ -194,6 +188,8 @@ REGISTER_LITE_KERNEL(__xpu__multi_encoder,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("SeqLod",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("PadSeqLen",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("FCWeight", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("FCBias", {LiteType::GetTensorTy(TARGET(kXPU))})

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
 #include <string>
 #include "lite/core/op_lite.h"
 
@@ -21,11 +20,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class XPUConv2dOp : public OpLite {
+class XPUBiGRUOp : public OpLite {
  public:
-  XPUConv2dOp() {}
-
-  explicit XPUConv2dOp(const std::string &op_type) : OpLite(op_type) {}
+  XPUBiGRUOp() {}
+  explicit XPUBiGRUOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -35,11 +33,10 @@ class XPUConv2dOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "XPUConv2d"; }
+  std::string DebugString() const override { return "BiGRU Op"; }
 
  private:
-  mutable XPUBlockFuseParam param_;
-  std::string padding_algorithm_{""};
+  mutable BiGRUParam param_;
 };
 
 }  // namespace operators

@@ -8,35 +8,28 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// WIfloatHOUfloat WARRANfloatIES OR CONDIfloatIONS OF ANY KIND, either express
+// or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <class T>
+class SequenceMaskCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUFcParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::SequenceMaskParam;
 
   virtual void Run();
 
-  virtual ~XPUFcCompute() = default;
-
- private:
-  XPUScratchPadGuard quant_weight_guard_;
-  XPUScratchPadGuard weight_max_guard_;
-  // TODO(weihaoji): remove cpu w_max after xpu fc wrapper refactor
-  float w_max;
-  XPUScratchPadGuard input_max_guard_;
+  virtual ~SequenceMaskCompute() = default;
 };
 
 }  // namespace xpu

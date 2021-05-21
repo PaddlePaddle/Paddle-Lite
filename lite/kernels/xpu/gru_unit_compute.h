@@ -8,7 +8,8 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// WIfloatHOUfloat WARRANfloatIES OR CONDIfloatIONS OF ANY KIND, either express
+// or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
@@ -21,22 +22,21 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class GRUUnitCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUFcParam;
+  using param_t = operators::GRUUnitParam;
 
   void PrepareForRun() override;
 
   virtual void Run();
 
-  virtual ~XPUFcCompute() = default;
+  virtual ~GRUUnitCompute() = default;
 
  private:
-  XPUScratchPadGuard quant_weight_guard_;
+  float weight_s1_abs_max_;
+  float weight_s2_abs_max_;
   XPUScratchPadGuard weight_max_guard_;
-  // TODO(weihaoji): remove cpu w_max after xpu fc wrapper refactor
-  float w_max;
-  XPUScratchPadGuard input_max_guard_;
+  XPUScratchPadGuard quant_weight_guard_;
 };
 
 }  // namespace xpu

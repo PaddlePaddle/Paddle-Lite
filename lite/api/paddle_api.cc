@@ -440,6 +440,7 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
       CHECK(lite::TargetWrapperXPU::shared_l3_size >= l3_size)
           << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
     }
+    lite::TargetWrapperXPU::local_l3_size = 0;
   } else {
     lite::TargetWrapperXPU::local_l3_size = l3_size;
   }

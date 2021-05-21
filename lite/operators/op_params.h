@@ -1070,6 +1070,34 @@ struct GRUParam : ParamBase {
   WITH_INT8_CONFIG
 };
 
+struct BiGRUParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* fw_mul_w{nullptr};
+  const lite::Tensor* fw_mul_b{nullptr};
+  const lite::Tensor* fw_gru_w{nullptr};
+  const lite::Tensor* fw_gru_b{nullptr};
+  const lite::Tensor* bw_mul_w{nullptr};
+  const lite::Tensor* bw_mul_b{nullptr};
+  const lite::Tensor* bw_gru_w{nullptr};
+  const lite::Tensor* bw_gru_b{nullptr};
+  lite::Tensor* fw_output{nullptr};
+  lite::Tensor* bw_output{nullptr};
+
+  int fw_mul_x_num_col_dims{1};
+  int fw_mul_y_num_col_dims{1};
+  int bw_mul_x_num_col_dims{1};
+  int bw_mul_y_num_col_dims{1};
+
+  std::string fw_gru_gate_activation{"sigmoid"};
+  std::string fw_gru_activation{"tanh"};
+  std::string bw_gru_gate_activation{"sigmoid"};
+  std::string bw_gru_activation{"tanh"};
+  bool fw_gru_origin_mode{false};
+  bool bw_gru_origin_mode{false};
+  bool has_mul_b{false};
+  bool has_gru_b{false};
+};
+
 /// ----------------------- BeamSearchDecode operators ----------------------f
 struct BeamSearchDecodeParam : ParamBase {
   std::vector<lite::Tensor>* ids{nullptr};
@@ -1901,11 +1929,13 @@ struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* fc_weight_max{};
   const lite::Tensor* mask{nullptr};
   const lite::Tensor* SeqLod{nullptr};
+  const lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* output{nullptr};
 
   std::vector<int> slice_axes{};
   std::vector<int> slice_starts{};
   std::vector<int> slice_ends{};
+  std::vector<int> slice_decrease_axis{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -1921,6 +1951,7 @@ struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Tables;
   const lite::Tensor* Mask{nullptr};
   lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
 };
