@@ -56,158 +56,45 @@ struct MaxFunctor {
   if (ndim == NDIM && rdim == RDIM) {                                  \
     paddle::lite::kernels::x86::                                       \
         ReduceFunctor<lite::TargetType::kX86, T, NDIM, RDIM, FUNCTOR>( \
-            *input, Out, dims, keep_dim);                              \
+            *x, out, dims, keep_dim);                                  \
   }
 
-template <typename T>
-class ReduceSumCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+template <typename T, typename Functor>
+class ReduceCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::ReduceParam;
 
   void Run() override {
     auto& param = *param_.get_mutable<operators::ReduceParam>();
+    auto* x = param.X;
+    auto* out = param.Out;
+    out->template mutable_data<T>();
+    auto x_dims = x->dims();
+
+    const auto& dims = param.dim;
+    bool keep_dim = param.keep_dim;
     bool reduce_all = param.reduce_all;
-    auto* input = param.X;
-    auto* Out = param.Out;
-    param.Out->template mutable_data<T>();
-
-    const auto& dims = param.dim;
-    bool keep_dim = param.keep_dim;
-    if (reduce_all) {
+    if (reduce_all || dims.empty() || x_dims.size() == 1 ||
+        x_dims.size() == dims.size()) {
       // Flatten and reduce 1-D tensor
-      auto x = lite::fluid::EigenVector<T>::Flatten(*input);
-      auto out = lite::fluid::EigenScalar<T>::From(Out);
+      auto x_e = lite::fluid::EigenVector<T>::Flatten(*x);
+      auto out_e = lite::fluid::EigenScalar<T>::From(out);
       auto reduce_dim = Eigen::array<int, 1>({{0}});
-      SumFunctor functor;
-      functor(&x, &out, reduce_dim);
+      Functor functor;
+      functor(&x_e, &out_e, reduce_dim);
     } else {
-      int ndim = input->dims().size();
+      int ndim = x_dims.size();
       int rdim = dims.size();
-      HANDLE_DIM(4, 3, SumFunctor);
-      HANDLE_DIM(4, 2, SumFunctor);
-      HANDLE_DIM(4, 1, SumFunctor);
-      HANDLE_DIM(3, 2, SumFunctor);
-      HANDLE_DIM(3, 1, SumFunctor);
-      HANDLE_DIM(2, 1, SumFunctor);
-      HANDLE_DIM(1, 1, SumFunctor);
+      HANDLE_DIM(4, 3, Functor);
+      HANDLE_DIM(4, 2, Functor);
+      HANDLE_DIM(4, 1, Functor);
+      HANDLE_DIM(3, 2, Functor);
+      HANDLE_DIM(3, 1, Functor);
+      HANDLE_DIM(2, 1, Functor);
     }
   }
 
-  virtual ~ReduceSumCompute() = default;
-};
-
-template <typename T>
-class ReduceProdCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ReduceParam;
-
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ReduceParam>();
-    auto* input = param.X;
-    auto* Out = param.Out;
-    param.Out->template mutable_data<T>();
-
-    const auto& dims = param.dim;
-    bool keep_dim = param.keep_dim;
-
-    if (dims.size() == 0) {
-      // Flatten and reduce 1-D tensor
-      auto x = lite::fluid::EigenVector<T>::Flatten(*input);
-      auto out = lite::fluid::EigenScalar<T>::From(Out);
-      auto reduce_dim = Eigen::array<int, 1>({{0}});
-      MaxFunctor functor;
-      functor(&x, &out, reduce_dim);
-    } else {
-      int ndim = input->dims().size();
-      int rdim = dims.size();
-      HANDLE_DIM(4, 3, ProdFunctor);
-      HANDLE_DIM(4, 2, ProdFunctor);
-      HANDLE_DIM(4, 1, ProdFunctor);
-      HANDLE_DIM(3, 2, ProdFunctor);
-      HANDLE_DIM(3, 1, ProdFunctor);
-      HANDLE_DIM(2, 2, ProdFunctor);
-      HANDLE_DIM(2, 1, ProdFunctor);
-      HANDLE_DIM(1, 1, ProdFunctor);
-    }
-  }
-
-  virtual ~ReduceProdCompute() = default;
-};
-
-template <typename T>
-class ReduceMeanCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ReduceParam;
-
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ReduceParam>();
-    auto* input = param.X;
-    auto* Out = param.Out;
-    param.Out->template mutable_data<T>();
-
-    const auto& dims = param.dim;
-    bool keep_dim = param.keep_dim;
-
-    if (dims.size() == 0) {
-      // Flatten and reduce 1-D tensor
-      auto x = lite::fluid::EigenVector<T>::Flatten(*input);
-      auto out = lite::fluid::EigenScalar<T>::From(Out);
-      auto reduce_dim = Eigen::array<int, 1>({{0}});
-      MeanFunctor functor;
-      functor(&x, &out, reduce_dim);
-    } else {
-      int ndim = input->dims().size();
-      int rdim = dims.size();
-      HANDLE_DIM(4, 3, MeanFunctor);
-      HANDLE_DIM(4, 2, MeanFunctor);
-      HANDLE_DIM(4, 1, MeanFunctor);
-      HANDLE_DIM(3, 2, MeanFunctor);
-      HANDLE_DIM(3, 1, MeanFunctor);
-      HANDLE_DIM(2, 2, MeanFunctor);
-      HANDLE_DIM(2, 1, MeanFunctor);
-      HANDLE_DIM(1, 1, MeanFunctor);
-    }
-  }
-
-  virtual ~ReduceMeanCompute() = default;
-};
-
-template <typename T>
-class ReduceMaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ReduceParam;
-
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ReduceParam>();
-    auto* input = param.X;
-    auto* Out = param.Out;
-    param.Out->template mutable_data<T>();
-
-    const auto& dims = param.dim;
-    bool keep_dim = param.keep_dim;
-
-    if (dims.size() == 0) {
-      // Flatten and reduce 1-D tensor
-      auto x = lite::fluid::EigenVector<T>::Flatten(*input);
-      auto out = lite::fluid::EigenScalar<T>::From(Out);
-      auto reduce_dim = Eigen::array<int, 1>({{0}});
-      MaxFunctor functor;
-      functor(&x, &out, reduce_dim);
-    } else {
-      int ndim = input->dims().size();
-      int rdim = dims.size();
-      HANDLE_DIM(4, 3, MaxFunctor);
-      HANDLE_DIM(4, 2, MaxFunctor);
-      HANDLE_DIM(4, 1, MaxFunctor);
-      HANDLE_DIM(3, 2, MaxFunctor);
-      HANDLE_DIM(3, 1, MaxFunctor);
-      HANDLE_DIM(2, 2, MaxFunctor);
-      HANDLE_DIM(2, 1, MaxFunctor);
-      HANDLE_DIM(1, 1, MaxFunctor);
-    }
-  }
-
-  virtual ~ReduceMaxCompute() = default;
+  virtual ~ReduceCompute() = default;
 };
 
 }  // namespace x86

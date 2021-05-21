@@ -259,6 +259,17 @@ std::vector<PackParam> GenerateOpAttr(const T* w_ptr,
       act_iter += 3;
       actp_iter += 3;
       b_iter += 1;
+    } else if (op_type[op_idx] == 10) {
+      xdnn::Activation_t act((xdnn::Activation_t::act_enum)(*act_iter));
+      if (*act_iter == 5) {
+        act.leaky_alpha = *actp_iter;
+      } else if (*act_iter == 15) {
+        act.hard_sigmoid_slope = *actp_iter;
+      }
+      res.push_back(
+          {-1, -1, -1, -1, {}, {}, {}, -1, {act}, nullptr, nullptr, nullptr});
+      act_iter += 1;
+      actp_iter += 1;
     } else if (op_type[op_idx] == 20) {
       res.push_back(
           {-1, -1, -1, -1, {}, {}, {}, -1, {}, nullptr, nullptr, nullptr});
@@ -390,6 +401,14 @@ void XPUBlockFuseCompute<TM, TW, PType>::PrepareForRun() {
               pack_param[op_cnt].acts[1],
               pack_param[op_cnt].acts[2],
               true);
+          CHECK_EQ(r, 0);
+          break;
+        }
+        case 10: {
+          int r = cur_block.add_ew_layer(place_x[op_cnt],
+                                         place_y[op_cnt],
+                                         place_z[op_cnt],
+                                         pack_param[op_cnt].acts[0]);
           CHECK_EQ(r, 0);
           break;
         }
