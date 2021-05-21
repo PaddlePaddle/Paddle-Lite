@@ -31,7 +31,8 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   bool has_int8 = false;
   bool has_weight_quant = false;
   for (auto& place : graph->valid_places()) {
-    if (place.target == TARGET(kARM) || place.target == TARGET(kHost)) {
+    if (place.target == TARGET(kARM) || place.target == TARGET(kHost) ||
+        place.target == TARGET(kOpenCL)) {
       if (place.precision == PRECISION(kInt8)) {
         has_int8 = true;
       }
@@ -77,4 +78,4 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_conv_fuse_pass, paddle::lite::mir::ConvConvFusePass)
-    .BindTargets({TARGET(kARM)});
+    .BindTargets({TARGET(kARM), TARGET(kOpenCL)});
