@@ -708,17 +708,17 @@ void act_hard_sigmoid<float>(const float* din,
     float32x4_t vout2 = vminq_f32(vone, vmaxq_f32(vsum2, vzero));
     float32x4_t vout3 = vminq_f32(vone, vmaxq_f32(vsum3, vzero));
     din_ptr += 16;
-    vst1q_f32(dout_ptr, vsum0);
-    vst1q_f32(dout_ptr + 4, vsum1);
-    vst1q_f32(dout_ptr + 8, vsum2);
-    vst1q_f32(dout_ptr + 12, vsum3);
+    vst1q_f32(dout_ptr, vout0);
+    vst1q_f32(dout_ptr + 4, vout1);
+    vst1q_f32(dout_ptr + 8, vout2);
+    vst1q_f32(dout_ptr + 12, vout3);
     dout_ptr += 16;
   }
   for (int i = 0; i < rem_cnt; i++) {
     float32x4_t vsum0 = vmlaq_f32(vbias, vld1q_f32(din_ptr), vslope);
     din_ptr += 4;
     float32x4_t vout0 = vminq_f32(vone, vmaxq_f32(vsum0, vzero));
-    vst1q_f32(dout_ptr, vsum0);
+    vst1q_f32(dout_ptr, vout0);
     dout_ptr += 4;
   }
   for (int i = 0; i < rem_rem; i++) {
