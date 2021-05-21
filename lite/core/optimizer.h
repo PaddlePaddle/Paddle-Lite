@@ -86,6 +86,7 @@ class Optimizer {
     std::vector<std::string> passes_local{
         {"lite_quant_dequant_fuse_pass",             //
          "weight_quantization_preprocess_pass",      //
+         "op_transformation_pass",                   //
          "remove_scale1_pass",                       //
          "adaptive_1x1_pool2d_convert_global_pass",  //
          "lite_conv_elementwise_fuse_pass",          // conv-elemwise-bn
@@ -124,9 +125,9 @@ class Optimizer {
          "__xpu__resnet_cbam_fuse_pass",
          "__xpu__conv2d_fuse_pass",
          "__xpu__squeeze_excitation_fuse_pass",
-         "__xpu__bigru_fuse_pass",
          "__xpu__resblock_reduction_fuse_pass",
          "__xpu__resblock_normal_fuse_pass",
+         "__xpu__resblock_darknet_fuse_pass",
          "__xpu__conv2d_concat_pool2d_fuse_pass",
          "__xpu__consecutive_conv2d_fuse_pass",
          "__xpu__conv2d_pool2d_fuse_pass",
@@ -135,6 +136,7 @@ class Optimizer {
          "__xpu__sfa_head_meanstd_fuse_pass",
          "__xpu__sfa_head_moment_fuse_pass",
          "__xpu__mmdnn_fuse_pass",
+         "__xpu__bigru_fuse_pass",
          "__xpu__multi_encoder_fuse_pass",
          "__xpu__embedding_with_eltwise_add_fuse_pass",
          "__xpu__fc_fuse_pass",
