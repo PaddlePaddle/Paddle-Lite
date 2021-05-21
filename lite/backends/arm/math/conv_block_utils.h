@@ -141,6 +141,39 @@ static bool conv_trans_weights_numc(const Dtype* din,
   }
   return true;
 }
+
+/*preprocessing weights
+* group = 1 chin = 3
+* input weights: [chout, 3, kh, kw] --> outputs weights: [chout / n,
+* chin/ group, kh, kw, 3, n]
+*/
+template <typename Dtype>
+static bool conv_trans_weights_c4toc12(const Dtype* din,
+                                       Dtype* tmp_ptr,
+                                       Dtype* dout,
+                                       int chout,
+                                       int chin,
+                                       int n,
+                                       int kernel_size) {
+  // [chout, 3, kh, kw] -> [chout / n, 3, kh, kw, n]
+  int cout_round = (chout + 3) / 4;
+  int in_size = kernel_size * n;
+  int out_size = chin * n;
+  int size = in_size * chin;
+  conv_trans_weights_numc(din, tmp_ptr, chout, chin, n, kernel_size);
+  // [chout / n, 3, kh, kw, n] ->[chout / n, kh, kw, 3, n]
+  for (int i = 0; i < cout_round; i++) {
+    for (int j = 0; j < chin; j++) {
+      for (int k = 0; k < kernel_size; k++) {
+        for (int p = 0; p < n; p++) {
+          dout[i * size + j * n + k * out_size + p] =
+              din[i * size + j * in_size + k * n + p];
+        }
+      }
+    }
+  }
+}
+
 // for example: m = 4, n = 4
 // din = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9 , 10 ,11], [12, 13, 14, 15]]
 // dout = [[0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15]]

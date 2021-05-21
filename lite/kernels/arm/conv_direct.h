@@ -53,8 +53,18 @@ inline bool direct_conv_trans_weights(
   wout->Resize({cround, ic, kh, kw});
   auto w_in_data = win->data<float>();
   auto transed_w_data = wout->mutable_data<float>();
-  lite::arm::math::conv_trans_weights_numc(
-      w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
+  if (ic == 3 && kh == 2) {
+    // [chout, 3, kh, kw] -> [chout / cblock, kh, kw, 3, cblock]
+    Tensor tmp;
+    tmp.Resize({cround, ic, kh, kw});
+    auto tmp_data = tmp.mutable_data<float>();
+    lite::arm::math::conv_trans_weights_c4toc12(
+        w_in_data, tmp_data, transed_w_data, oc, ic, cblock, kh * kw);
+  } else {
+    // [chout, chin, kh, kw] -> [chout / n, chin, kh, kw, n]
+    lite::arm::math::conv_trans_weights_numc(
+        w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
+  }
   return false;
 }
 
