@@ -86,7 +86,7 @@ class Optimizer {
     std::vector<std::string> passes_local{
         {"lite_quant_dequant_fuse_pass",             //
          "weight_quantization_preprocess_pass",      //
-         "op_convertion_pass",                       //
+         "op_transformation_pass",                   //
          "remove_scale1_pass",                       //
          "adaptive_1x1_pool2d_convert_global_pass",  //
          "lite_conv_elementwise_fuse_pass",          // conv-elemwise-bn
