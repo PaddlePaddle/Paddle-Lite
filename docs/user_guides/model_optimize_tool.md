@@ -5,28 +5,22 @@ Paddle-Lite 提供了多种策略来自动优化原始的训练模型，其中�
 
 具体使用方法介绍如下：
 
-## opt 下载和使用方法
-### 方法一： 通过Python 安装和调用 opt 工具
-- 支持环境：`windows\Mac\Ubuntu`
-- 安装方法: 通过`pip`工具安装`Paddle-Lite`到`Python`
+## opt 安装和使用方法
+- 安装方法
+  - 环境要求：`windows\Mac\Ubuntu`
+  - 环境依赖： 
+    - python == `2.7`\`3.5`\`3.6`\`3.7`
+    - pip
 ```bash
-# 当前最新版本是 2.8
-pip install paddlelite==2.8
+# 当前最新版本是 2.9
+pip install paddlelite==2.9
 ```
-- 使用`opt`转化和分析模型
-    - 方法一： [使用终端命令](./opt/opt_python) （支持Mac/Ubuntu)
-    - 方法二： [使用python脚本](../api_reference/python_api/opt)（支持window/Mac/Ubuntu）
+- `opt`转化和分析模型： 可通过**终端命令**或**Python脚本**调用
+    - [终端命令方法](./opt/opt_python) （支持`Mac/Ubuntu`)
+    - [python脚本方法](../api_reference/python_api/opt)（支持`Window/Mac/Ubuntu`）
 
 
-### 方法二： 下载和调用 opt 可执行文件
-- 支持环境：`Mac\Ubuntu`
-- 安装方法: 直接下载可执行文件
-从[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)或[预测库下载界面](../quick_start/release_lib)下载与预测库版本一致的`opt`工具
-- 使用`opt`转化和分析模型
-    - 方法：[直接下载并执行opt可执行工具](./opt/opt_bin)（支持Mac/Ubuntu)
-
-
-## 合并x2paddle和opt的一键脚本
+## 合并x2paddle和opt功能的一键脚本
 
 **背景**：如果想用Paddle-Lite运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用opt将PaddlePaddle模型转化为Padde-Lite可支持格式。
 为了简化这一过程，我们提供了：
