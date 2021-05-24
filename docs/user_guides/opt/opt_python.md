@@ -6,47 +6,70 @@
 ### 安装Paddle-Lite
 
 ```
-# 当前最新版本是 2.8
-python -m pip install paddlelite==2.8
+# 当前最新版本是 2.9
+pip install paddlelite==2.9
 ```
 
+![install](https://paddlelite-data.bj.bcebos.com/doc_images/opt/install.gif)
+
 ### 帮助信息
+
 安装成功后可以查看帮助信息
 ```bash
  paddle_lite_opt
 ```
-![](https://paddlelite-data.bj.bcebos.com/model_optimize_tool/python_opt/help.jpg)
+![paddle_lite_opt](https://paddlelite-data.bj.bcebos.com/doc_images/opt/paddle_lite_opt.gif)
 
 ### 功能一：转化模型为Paddle-Lite格式
-opt可以将PaddlePaddle的部署模型格式转化为Paddle-Lite 支持的模型格式，期间执行的操作包括：
+opt可以将Paddle原生模型转化为Paddle-Lite 支持的移动端模型：
 
-- 将protobuf格式的模型文件转化为naive_buffer格式的模型文件，有效降低模型体积
-- 执行“量化、子图融合、混合调度、Kernel优选”等图优化操作，提升其在Paddle-Lite上的运行速度、内存占用等效果
+- 存储格式转换，有效降低模型体积
+- 执行“量化、子图融合、混合调度、Kernel优选”等优化操作，降低运行耗时与内存消耗
 
-模型优化过程：
+(1) 准备待优化的PaddlePaddle模型
 
-（1）准备待优化的PaddlePaddle模型
+- opt 支持下列5种模型格式
+  - 用 `--model_dir=` 指定模型文件夹位置
 
-PaddlePaddle模型有两种保存格式：
-   Combined Param：所有参数信息保存在单个文件`params`中，模型的拓扑信息保存在`__model__`文件中。
+```
+# contents in model directory should be in one of these formats:
+(1) __model__ + var1 + var2 + etc.
+(2) model + var1 + var2 + etc.
+(3) model.pdmodel + model.pdiparams
+(4) model + params
+(5) model + weights
+```
 
-![opt_combined_model](https://paddlelite-data.bj.bcebos.com/doc_images%2Fcombined_model.png)
+- 其他格式： 
+  - 用`--model_file=` 指定模型文件位置
+  - 用`--param_file=` 指定参数文件位置
+  
+```
+eg. model + param
+# 加载这种非标准格式时： 需要指定 模型和参数文件 位置
+paddle_lite_opt --model_file=./model --param_file=./param
+```
 
-   Seperated Param：参数信息分开保存在多个参数文件中，模型的拓扑信息保存在`__model__`文件中。
-![opt_seperated_model](https://paddlelite-data.bj.bcebos.com/doc_images%2Fseperated_model.png)
-
-(2) 终端中执行`opt`优化模型
+(2) 终端中执行`opt`命令转化模型
 **使用示例**：转化`mobilenet_v1`模型
 
 ```
 paddle_lite_opt --model_dir=./mobilenet_v1 \
       --valid_targets=arm \
-      --optimize_out_type=naive_buffer \
       --optimize_out=mobilenet_v1_opt
 ```
-以上命令可以将`mobilenet_v1`模型转化为arm硬件平台、naive_buffer格式的Paddle_Lite支持模型，优化后的模型文件为`mobilenet_v1_opt.nb`，转化结果如下图所示：
+以上命令可将`mobilenet_v1`转化为arm平台模型，优化后的模型文件是`mobilenet_v1_opt.nb`：
 
-![opt_resulted_model](https://paddlelite-data.bj.bcebos.com/doc_images/2.png)
+![trans](https://paddlelite-data.bj.bcebos.com/doc_images/opt/trans.gif)
+
+
+
+**注意**：若转化失败，提示模型格式不正确时
+
+- 用`--model_file=` 指定模型文件位置
+- 用`--param_file=` 指定参数文件位置
+
+![other_type](https://paddlelite-data.bj.bcebos.com/doc_images/opt/other_type_trans.gif)
 
 
 (3) **更详尽的转化命令**总结：
@@ -58,8 +81,8 @@ paddle_lite_opt \
     --param_file=<param_path> \
     --optimize_out_type=(protobuf|naive_buffer) \
     --optimize_out=<output_optimize_model_dir> \
-    --valid_targets=(arm|opencl|x86|x86_opencl|npu) \
-    --record_tailoring_info =(true|false) \
+    --valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_nna|intel_fpga)\
+    --enable_fp16=(true|false) \
     --quant_model=(true|false) \
     --quant_type=(QUANT_INT16|QUANT_INT8) 
 ```
@@ -71,8 +94,8 @@ paddle_lite_opt \
 | --param_file        | 待优化的PaddlePaddle模型（combined形式）的权重文件路径。 |
 | --optimize_out_type | 输出模型类型，目前支持两种类型：protobuf和naive_buffer，其中naive_buffer是一种更轻量级的序列化/反序列化实现。若您需要在mobile端执行模型预测，请将此选项设置为naive_buffer。默认为protobuf。 |
 | --optimize_out      | 优化模型的输出路径。                                         |
-| --valid_targets     | 指定模型可执行的backend，默认为arm。目前可支持x86、arm、opencl、x86_opencl、npu，可以同时指定多个backend(以空格分隔)，Model Optimize Tool将会自动选择最佳方式。如果需要支持华为NPU（Kirin 810/990 Soc搭载的达芬奇架构NPU），应当设置为"npu,arm"。 |
-| --record_tailoring_info | 当使用 [根据模型裁剪库文件](../../source_compile/library_tailoring.html) 功能时，则设置该选项为true，以记录优化后模型含有的kernel和OP信息，默认为false。 |
+| --valid_targets     | 指定模型可执行的backend，默认为arm。可以同时指定多个backend(以逗号分隔)，opt将会自动选择最佳方式。如果需要支持华为NPU（Kirin 810/990 Soc搭载的达芬奇架构NPU），应当设置为"npu,arm"。 |
+| --enable_fp16       | 设置是否使用opt中的Float16 低精度量化功能，Float16量化会提高速度提高、降低内存占用，但预测精度会有降低 |
 | --quant_model       | 设置是否使用opt中的动态离线量化功能。 |
 | --quant_type        | 指定opt中动态离线量化功能的量化类型，可以设置为QUANT_INT8和QUANT_INT16，即分别量化为8比特和16比特。 量化为int8对模型精度有一点影响，模型体积大概减小4倍。量化为int16对模型精度基本没有影，模型体积大概减小2倍。|
 
