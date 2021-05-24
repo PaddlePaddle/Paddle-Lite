@@ -40,6 +40,9 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   int ow = dim_out[3];
   int oh = dim_out[2];
   int ic = dim_in[1];
+  if (ic == 3) {
+    ic = 4;
+  }
   const int wout_round = ROUNDUP(ow, OUT_W_BLOCK);
   const int win_round = wout_round * 2 /*stride_w*/ + 1;
   const int hin_r_block = OUT_H_BLOCK * 2 /*stride_h*/ + 1;
@@ -1636,7 +1639,7 @@ void conv_3x3s2_direct_fp32(const float* i_data,
   //! 3x3s2 convolution, implemented by direct algorithm
   //! prepack input to tmp buffer
   //! write output to tmp buffer
-  if (ic == 3) {
+  if (ic == 3 && (oc % 4 == 0)) {
     conv_3x3s2_direct_fp32_c3(
         i_data, o_data, bs, oc, oh, ow, ic, ih, win, weights, bias, param, ctx);
     return;
@@ -2273,59 +2276,59 @@ void conv_3x3s2_direct_fp32(const float* i_data,
 #ifdef __aarch64__
 #else
 #define FMLA_W00                                 \
-  "vmla.f32   q12, q6, d0[0]           @ mul \n" \
-  "vmla.f32   q13, q6, d2[0]           @ mul \n" \
-  "vmla.f32   q14, q6, d4[0]           @ mul \n" \
-  "vmla.f32   q15, q6, d6[0]           @ mul \n" \
-  "vld1.32  {d12-d13}, [%[wc0]]!       @ load w2, w3\n"
-#define FMLA_W01                                 \
-  "vmla.f32   q12, q7, d0[1]           @ mul \n" \
-  "vmla.f32   q13, q7, d2[1]           @ mul \n" \
-  "vmla.f32   q14, q7, d4[1]           @ mul \n" \
-  "vmla.f32   q15, q7, d6[1]           @ mul \n" \
-  "vld1.32  {d14-d15}, [%[wc0]]!       @ load w2, w3\n"
-#define FMLA_W02                                 \
-  "vmla.f32   q12, q8, d1[0]           @ mul \n" \
-  "vmla.f32   q13, q8, d3[0]           @ mul \n" \
-  "vmla.f32   q14, q8, d5[0]           @ mul \n" \
-  "vmla.f32   q15, q8, d7[0]           @ mul \n" \
-  "vld1.32  {d16-d17}, [%[wc0]]!       @ load w2, w3\n"
+  "vmla.f32   q15, q9, d12[0]          @ mul \n" \
+  "vmla.f32   q12, q9, d0[0]           @ mul \n" \
+  "vmla.f32   q13, q9, d4[0]           @ mul \n" \
+  "vmla.f32   q14, q9, d8[0]           @ mul \n" \
+  "vld1.32  {d18-d19}, [%[wc0]]!       @ load w2, w3\n"
+#define FMLA_W01                                  \
+  "vmla.f32   q15, q10, d12[1]          @ mul \n" \
+  "vmla.f32   q12, q10, d0[1]           @ mul \n" \
+  "vmla.f32   q13, q10, d4[1]           @ mul \n" \
+  "vmla.f32   q14, q10, d8[1]           @ mul \n" \
+  "vld1.32  {d20-d21}, [%[wc0]]!        @ load w2, w3\n"
+#define FMLA_W02                                  \
+  "vmla.f32   q15, q11, d13[0]          @ mul \n" \
+  "vmla.f32   q12, q11, d1[0]           @ mul \n" \
+  "vmla.f32   q13, q11, d5[0]           @ mul \n" \
+  "vmla.f32   q14, q11, d9[0]           @ mul \n" \
+  "vld1.32  {d22-d23}, [%[wc0]]!        @ load w2, w3\n"
 #define FMLA_W10                                 \
-  "vmla.f32   q12, q6, d2[0]           @ mul \n" \
-  "vmla.f32   q13, q6, d4[0]           @ mul \n" \
-  "vmla.f32   q14, q6, d6[0]           @ mul \n" \
-  "vmla.f32   q15, q6, d8[0]           @ mul \n" \
-  "vld1.32  {d12-d13}, [%[wc0]]!       @ load w2, w3\n"
-#define FMLA_W11                                 \
-  "vmla.f32   q12, q7, d2[1]           @ mul \n" \
-  "vmla.f32   q13, q7, d4[1]           @ mul \n" \
-  "vmla.f32   q14, q7, d6[1]           @ mul \n" \
-  "vmla.f32   q15, q7, d8[1]           @ mul \n" \
-  "vld1.32  {d14-d15}, [%[wc0]]!       @ load w2, w3\n"
-#define FMLA_W12                                 \
-  "vmla.f32   q12, q8, d3[0]           @ mul \n" \
-  "vmla.f32   q13, q8, d5[0]           @ mul \n" \
-  "vmla.f32   q14, q8, d7[0]           @ mul \n" \
-  "vmla.f32   q15, q8, d9[0]           @ mul \n" \
-  "vld1.32  {d16-d17}, [%[wc0]]!       @ load w2, w3\n"
+  "vmla.f32   q15, q9, d14[0]          @ mul \n" \
+  "vmla.f32   q12, q9, d2[0]           @ mul \n" \
+  "vmla.f32   q13, q9, d6[0]           @ mul \n" \
+  "vmla.f32   q14, q9, d10[0]          @ mul \n" \
+  "vld1.32  {d18-d19}, [%[wc0]]!       @ load w2, w3\n"
+#define FMLA_W11                                  \
+  "vmla.f32   q15, q10, d14[1]          @ mul \n" \
+  "vmla.f32   q12, q10, d2[1]           @ mul \n" \
+  "vmla.f32   q13, q10, d6[1]           @ mul \n" \
+  "vmla.f32   q14, q10, d10[1]          @ mul \n" \
+  "vld1.32  {d20-d21}, [%[wc0]]!        @ load w2, w3\n"
+#define FMLA_W12                                  \
+  "vmla.f32   q15, q11, d15[0]          @ mul \n" \
+  "vmla.f32   q12, q11, d3[0]           @ mul \n" \
+  "vmla.f32   q13, q11, d7[0]           @ mul \n" \
+  "vmla.f32   q14, q11, d11[0]          @ mul \n" \
+  "vld1.32  {d22-d23}, [%[wc0]]!        @ load w2, w3\n"
 #define FMLA_W20                                 \
-  "vmla.f32   q12, q6, d4[0]           @ mul \n" \
-  "vmla.f32   q13, q6, d6[0]           @ mul \n" \
-  "vmla.f32   q14, q6, d8[0]           @ mul \n" \
-  "vmla.f32   q15, q6, d10[0]          @ mul \n" \
-  "vld1.32  {d12-d13}, [%[wc0]]!       @ load w2, w3\n"
-#define FMLA_W21                                 \
-  "vmla.f32   q12, q7, d4[1]           @ mul \n" \
-  "vmla.f32   q13, q7, d6[1]           @ mul \n" \
-  "vmla.f32   q14, q7, d8[1]           @ mul \n" \
-  "vmla.f32   q15, q7, d10[1]          @ mul \n" \
-  "vld1.32  {d14-d15}, [%[wc0]]!       @ load w2, w3\n"
-#define FMLA_W22                                 \
-  "vmla.f32   q12, q8, d5[0]           @ mul \n" \
-  "vmla.f32   q13, q8, d7[0]           @ mul \n" \
-  "vmla.f32   q14, q8, d9[0]           @ mul \n" \
-  "vmla.f32   q15, q8, d11[0]          @ mul \n" \
-  "vld1.32  {d16-d17}, [%[wc0]]!       @ load w2, w3\n"
+  "vmla.f32   q15, q9, d0[0]           @ mul \n" \
+  "vmla.f32   q12, q9, d4[0]           @ mul \n" \
+  "vmla.f32   q13, q9, d8[0]           @ mul \n" \
+  "vmla.f32   q14, q9, d12[0]          @ mul \n" \
+  "vld1.32  {d18-d19}, [%[wc0]]!       @ load w2, w3\n"
+#define FMLA_W21                                  \
+  "vmla.f32   q15, q10, d0[1]           @ mul \n" \
+  "vmla.f32   q12, q10, d4[1]           @ mul \n" \
+  "vmla.f32   q13, q10, d8[1]           @ mul \n" \
+  "vmla.f32   q14, q10, d12[1]          @ mul \n" \
+  "vld1.32  {d20-d21}, [%[wc0]]!        @ load w2, w3\n"
+#define FMLA_W22                                  \
+  "vmla.f32   q15, q11, d1[0]           @ mul \n" \
+  "vmla.f32   q12, q11, d5[0]           @ mul \n" \
+  "vmla.f32   q13, q11, d9[0]           @ mul \n" \
+  "vmla.f32   q14, q11, d13[0]          @ mul \n" \
+  "vld1.32  {d22-d23}, [%[wc0]]!        @ load w2, w3\n"
 #endif
 void conv_3x3s2_direct_fp32_c3(const float* i_data,
                                float* o_data,
@@ -2346,7 +2349,7 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
   //! write output to tmp buffer
   auto paddings = *param.paddings;
   auto act_param = param.activation_param;
-  bool flag_bias = (bias == nullptr);
+  bool flag_bias = (param.bias != nullptr);
   auto out_h_block = 1;
   int in_channel = 4;
   const int threads = ctx->threads();
@@ -2408,7 +2411,6 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
       alpha = act_param.Leaky_relu_alpha;
     }
   }
-
   for (int n = 0; n < bs; ++n) {
     const float* din_batch = i_data + n * in_channel * size_in_channel;
     float* dout_batch = o_data + n * oc * size_out_channel;
@@ -2474,281 +2476,302 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
           // clang-format off
           asm volatile(
             "ldp    q0, q1,   [%[r0]], #32\n"
-            "ldp    q6, q7,   [%[wc]], #32\n"
+            "ldp    q9, q10,   [%[wc]], #32\n"
             "ldp    q19, q20,   [%[r2]], #32\n"
             "ldp    q2, q3,   [%[r0]], #32\n"
             "ldp    q21, q22,   [%[r2]], #32\n"
-            "ldp    q8, q9,   [%[wc]], #32\n"
+            "ldp    q11, q12,   [%[wc]], #32\n"
+            "ldp    q4, q5,   [%[r0]], #32\n"
+            "ldp    q23, q24,   [%[r2]], #32\n"
             "1:      \n"
             /* line 0 */
             // compute zero i00-i20
-            "fmul   v15.4s,  v6.4s,  v0.s[0]\n"
-            "fmul   v16.4s,  v6.4s,  v1.s[0]\n"
-            "fmul   v17.4s,  v6.4s,  v2.s[0]\n"
-            "fmul   v18.4s,  v6.4s,  v3.s[0]\n"
-            "fmul   v25.4s,  v6.4s,  v19.s[0]\n"
-            "fmul   v26.4s,  v6.4s,  v20.s[0]\n"
-            "fmul   v27.4s,  v6.4s,  v21.s[0]\n"
-            "fmul   v28.4s,  v6.4s,  v22.s[0]\n"
-            "ldp    q4, q5,   [%[r0]]\n"
-            "ldp    q23, q24,   [%[r2]]\n"
-            "fmla   v15.4s,  v7.4s,  v0.s[1]\n"
-            "fmla   v16.4s,  v7.4s,  v1.s[1]\n"
-            "fmla   v17.4s,  v7.4s,  v2.s[1]\n"
-            "fmla   v18.4s,  v7.4s,  v3.s[1]\n"
-            "fmla   v25.4s,  v7.4s,  v19.s[1]\n"
-            "fmla   v26.4s,  v7.4s,  v20.s[1]\n"
-            "fmla   v27.4s,  v7.4s,  v21.s[1]\n"
-            "fmla   v28.4s,  v7.4s,  v22.s[1]\n"
-            "ldp    q10, q11,   [%[wc]], #32\n"
-            "fmla   v15.4s,  v8.4s,  v0.s[2]\n"
-            "fmla   v16.4s,  v8.4s,  v1.s[2]\n"
-            "fmla   v17.4s,  v8.4s,  v2.s[2]\n"
-            "fmla   v18.4s,  v8.4s,  v3.s[2]\n"
-            "fmla   v25.4s,  v8.4s,  v19.s[2]\n"
-            "fmla   v26.4s,  v8.4s,  v20.s[2]\n"
-            "fmla   v27.4s,  v8.4s,  v21.s[2]\n"
-            "fmla   v28.4s,  v8.4s,  v22.s[2]\n"
+            "ldp    q6, q7,   [%[r0]], #32\n"
+            "ldp    q25, q26,   [%[r2]], #32\n"
+            "fmul   v15.4s,  v9.4s,  v0.s[0]\n"
+            "fmul   v16.4s,  v9.4s,  v2.s[0]\n"
+            "fmul   v17.4s,  v9.4s,  v4.s[0]\n"
+            "fmul   v18.4s,  v9.4s,  v6.s[0]\n"
+            "fmul   v28.4s,  v9.4s,  v19.s[0]\n"
+            "fmul   v29.4s,  v9.4s,  v21.s[0]\n"
+            "fmul   v30.4s,  v9.4s,  v23.s[0]\n"
+            "fmul   v31.4s,  v9.4s,  v25.s[0]\n"
+            "ldr    q8,   [%[r0]]\n"
+            "ldr    q27,   [%[r2]]\n"
+            "fmla   v15.4s,  v10.4s,  v0.s[1]\n"
+            "fmla   v16.4s,  v10.4s,  v2.s[1]\n"
+            "fmla   v17.4s,  v10.4s,  v4.s[1]\n"
+            "fmla   v18.4s,  v10.4s,  v6.s[1]\n"
+            "fmla   v28.4s,  v10.4s,  v19.s[1]\n"
+            "fmla   v29.4s,  v10.4s,  v21.s[1]\n"
+            "fmla   v30.4s,  v10.4s,  v23.s[1]\n"
+            "fmla   v31.4s,  v10.4s,  v25.s[1]\n"
+            "ldp    q13, q14,   [%[wc]], #32\n"
+            "fmla   v15.4s,  v11.4s,  v0.s[2]\n"
+            "fmla   v16.4s,  v11.4s,  v2.s[2]\n"
+            "fmla   v17.4s,  v11.4s,  v4.s[2]\n"
+            "fmla   v18.4s,  v11.4s,  v6.s[2]\n"
+            "fmla   v28.4s,  v11.4s,  v19.s[2]\n"
+            "fmla   v29.4s,  v11.4s,  v21.s[2]\n"
+            "fmla   v30.4s,  v11.4s,  v23.s[2]\n"
+            "fmla   v31.4s,  v11.4s,  v25.s[2]\n"
             // compute one i01-i21
-            "ldp    q12, q13,   [%[wc]], #32\n"
-            "fmla   v15.4s,  v9.4s,  v1.s[0]\n"
-            "fmla   v16.4s,  v9.4s,  v2.s[0]\n"
-            "fmla   v17.4s,  v9.4s,  v3.s[0]\n"
-            "fmla   v18.4s,  v9.4s,  v4.s[0]\n"
-            "fmla   v25.4s,  v9.4s,  v20.s[0]\n"
-            "fmla   v26.4s,  v9.4s,  v21.s[0]\n"
-            "fmla   v27.4s,  v9.4s,  v22.s[0]\n"
-            "fmla   v28.4s,  v9.4s,  v23.s[0]\n"
-            "ldr    q14,   [%[wc]], #16\n"
+            "ldp    q9, q10, [%[wc]], #32\n"
+            "fmla   v15.4s,  v12.4s,  v1.s[0]\n"
+            "fmla   v16.4s,  v12.4s,  v3.s[0]\n"
+            "fmla   v17.4s,  v12.4s,  v5.s[0]\n"
+            "fmla   v18.4s,  v12.4s,  v7.s[0]\n"
+            "fmla   v28.4s,  v12.4s,  v20.s[0]\n"
+            "fmla   v29.4s,  v12.4s,  v22.s[0]\n"
+            "fmla   v30.4s,  v12.4s,  v24.s[0]\n"
+            "fmla   v31.4s,  v12.4s,  v26.s[0]\n"
+            "ldp   q11, q12, [%[wc]], #32\n"
 
-            "fmla   v15.4s,  v10.4s,  v1.s[1]\n"
-            "fmla   v16.4s,  v10.4s,  v2.s[1]\n"
-            "fmla   v17.4s,  v10.4s,  v3.s[1]\n"
-            "fmla   v18.4s,  v10.4s,  v4.s[1]\n"
-            "fmla   v25.4s,  v10.4s,  v20.s[1]\n"
-            "fmla   v26.4s,  v10.4s,  v21.s[1]\n"
-            "fmla   v27.4s,  v10.4s,  v22.s[1]\n"
-            "fmla   v28.4s,  v10.4s,  v23.s[1]\n"
-            "ldp    q6, q7,   [%[wc]], #32\n"
+            "fmla   v15.4s,  v13.4s,  v1.s[1]\n"
+            "fmla   v16.4s,  v13.4s,  v3.s[1]\n"
+            "fmla   v17.4s,  v13.4s,  v5.s[1]\n"
+            "fmla   v18.4s,  v13.4s,  v7.s[1]\n"
+            "fmla   v28.4s,  v13.4s,  v20.s[1]\n"
+            "fmla   v29.4s,  v13.4s,  v22.s[1]\n"
+            "fmla   v30.4s,  v13.4s,  v24.s[1]\n"
+            "fmla   v31.4s,  v13.4s,  v26.s[1]\n"
 
-            "fmla   v15.4s,  v11.4s,  v1.s[2]\n"
-            "fmla   v16.4s,  v11.4s,  v2.s[2]\n"
-            "fmla   v17.4s,  v11.4s,  v3.s[2]\n"
-            "fmla   v18.4s,  v11.4s,  v4.s[2]\n"
-            "fmla   v25.4s,  v11.4s,  v20.s[2]\n"
-            "fmla   v26.4s,  v11.4s,  v21.s[2]\n"
-            "fmla   v27.4s,  v11.4s,  v22.s[2]\n"
-            "fmla   v28.4s,  v11.4s,  v23.s[2]\n"
+            "fmla   v15.4s,  v14.4s,  v1.s[2]\n"
+            "fmla   v16.4s,  v14.4s,  v3.s[2]\n"
+            "fmla   v17.4s,  v14.4s,  v5.s[2]\n"
+            "fmla   v18.4s,  v14.4s,  v7.s[2]\n"
+            "fmla   v28.4s,  v14.4s,  v20.s[2]\n"
+            "fmla   v29.4s,  v14.4s,  v22.s[2]\n"
+            "fmla   v30.4s,  v14.4s,  v24.s[2]\n"
+            "fmla   v31.4s,  v14.4s,  v26.s[2]\n"
             "ldp    q0, q1,   [%[r1]], #32\n"
-            "ldp    q8, q9,   [%[wc]], #32\n"
+            "ldp    q13, q14,   [%[wc]], #32\n"
             // compute two i02-i22
-            "fmla   v15.4s,  v12.4s,  v2.s[0]\n"
-            "fmla   v16.4s,  v12.4s,  v3.s[0]\n"
-            "fmla   v17.4s,  v12.4s,  v4.s[0]\n"
-            "fmla   v18.4s,  v12.4s,  v5.s[0]\n"
-            "fmla   v25.4s,  v12.4s,  v21.s[0]\n"
-            "fmla   v26.4s,  v12.4s,  v22.s[0]\n"
-            "fmla   v27.4s,  v12.4s,  v23.s[0]\n"
-            "fmla   v28.4s,  v12.4s,  v24.s[0]\n"
+            "fmla   v15.4s,  v9.4s,  v2.s[0]\n"
+            "fmla   v16.4s,  v9.4s,  v4.s[0]\n"
+            "fmla   v17.4s,  v9.4s,  v6.s[0]\n"
+            "fmla   v18.4s,  v9.4s,  v8.s[0]\n"
+            "fmla   v28.4s,  v9.4s,  v21.s[0]\n"
+            "fmla   v29.4s,  v9.4s,  v23.s[0]\n"
+            "fmla   v30.4s,  v9.4s,  v25.s[0]\n"
+            "fmla   v31.4s,  v9.4s,  v27.s[0]\n"
 
-            "ldp    q10, q11,   [%[wc]], #32\n"
-            "fmla   v15.4s,  v13.4s,  v2.s[1]\n"
-            "fmla   v16.4s,  v13.4s,  v3.s[1]\n"
-            "fmla   v17.4s,  v13.4s,  v4.s[1]\n"
-            "fmla   v18.4s,  v13.4s,  v5.s[1]\n"
-            "fmla   v25.4s,  v13.4s,  v21.s[1]\n"
-            "fmla   v26.4s,  v13.4s,  v22.s[1]\n"
-            "fmla   v27.4s,  v13.4s,  v23.s[1]\n"
-            "fmla   v28.4s,  v13.4s,  v24.s[1]\n"
-            "ldp    q12, q13,   [%[wc]], #32\n"
+            "fmla   v15.4s,  v10.4s,  v2.s[1]\n"
+            "fmla   v16.4s,  v10.4s,  v4.s[1]\n"
+            "fmla   v17.4s,  v10.4s,  v6.s[1]\n"
+            "fmla   v18.4s,  v10.4s,  v8.s[1]\n"
+            "fmla   v28.4s,  v10.4s,  v21.s[1]\n"
+            "fmla   v29.4s,  v10.4s,  v23.s[1]\n"
+            "fmla   v30.4s,  v10.4s,  v25.s[1]\n"
+            "fmla   v31.4s,  v10.4s,  v27.s[1]\n"
+            "ldp    q9, q10,   [%[wc]], #32\n"
 
-            "fmla   v15.4s,  v14.4s,  v2.s[2]\n"
-            "fmla   v16.4s,  v14.4s,  v3.s[2]\n"
-            "fmla   v17.4s,  v14.4s,  v4.s[2]\n"
-            "fmla   v18.4s,  v14.4s,  v5.s[2]\n"
-            "fmla   v25.4s,  v14.4s,  v21.s[2]\n"
-            "fmla   v26.4s,  v14.4s,  v22.s[2]\n"
-            "fmla   v27.4s,  v14.4s,  v23.s[2]\n"
-            "fmla   v28.4s,  v14.4s,  v24.s[2]\n"
+            "fmla   v15.4s,  v11.4s,  v2.s[2]\n"
+            "fmla   v16.4s,  v11.4s,  v4.s[2]\n"
             "ldp    q2, q3,   [%[r1]], #32\n"
+            "fmla   v17.4s,  v11.4s,  v6.s[2]\n"
+            "fmla   v18.4s,  v11.4s,  v8.s[2]\n"
+            "ldp    q4, q5,   [%[r1]], #32\n"
+            "fmla   v28.4s,  v11.4s,  v21.s[2]\n"
+            "fmla   v29.4s,  v11.4s,  v23.s[2]\n"
+            "fmla   v30.4s,  v11.4s,  v25.s[2]\n"
+            "fmla   v31.4s,  v11.4s,  v27.s[2]\n"
+            "ldp    q6, q7,   [%[r1]], #32\n"
             /* line 1 */
-            "fmla   v15.4s,  v6.4s,  v0.s[0]\n"
-            "fmla   v16.4s,  v6.4s,  v1.s[0]\n"
-            "fmla   v17.4s,  v6.4s,  v2.s[0]\n"
-            "fmla   v18.4s,  v6.4s,  v3.s[0]\n"
-            "ldr    q14,   [%[wc]], #16\n"
-            "fmla   v15.4s,  v7.4s,  v0.s[1]\n"
-            "fmla   v16.4s,  v7.4s,  v1.s[1]\n"
-            "fmla   v17.4s,  v7.4s,  v2.s[1]\n"
-            "fmla   v18.4s,  v7.4s,  v3.s[1]\n"
-            "fmla   v15.4s,  v8.4s,  v0.s[2]\n"
-            "fmla   v16.4s,  v8.4s,  v1.s[2]\n"
-            "fmla   v17.4s,  v8.4s,  v2.s[2]\n"
-            "fmla   v18.4s,  v8.4s,  v3.s[2]\n"
-            "ldp    q4, q5,   [%[r1]]\n"
+            "fmla   v15.4s,  v12.4s,  v0.s[0]\n"
+            "fmla   v16.4s,  v12.4s,  v2.s[0]\n"
+            "fmla   v17.4s,  v12.4s,  v4.s[0]\n"
+            "fmla   v18.4s,  v12.4s,  v6.s[0]\n"
+            "ldp    q11, q12,   [%[wc]], #32\n"
+            "fmla   v15.4s,  v13.4s,  v0.s[1]\n"
+            "fmla   v16.4s,  v13.4s,  v2.s[1]\n"
+            "fmla   v17.4s,  v13.4s,  v4.s[1]\n"
+            "fmla   v18.4s,  v13.4s,  v6.s[1]\n"
+            "ldr    q8,   [%[r1]]\n"
+            "fmla   v15.4s,  v14.4s,  v0.s[2]\n"
+            "fmla   v16.4s,  v14.4s,  v2.s[2]\n"
+            "fmla   v17.4s,  v14.4s,  v4.s[2]\n"
+            "fmla   v18.4s,  v14.4s,  v6.s[2]\n"
+            "ldp    q13, q14,   [%[wc]], #32\n"
 
             "fmla   v15.4s,  v9.4s,  v1.s[0]\n"
-            "fmla   v16.4s,  v9.4s,  v2.s[0]\n"
-            "fmla   v17.4s,  v9.4s,  v3.s[0]\n"
-            "fmla   v18.4s,  v9.4s,  v4.s[0]\n"
+            "fmla   v16.4s,  v9.4s,  v3.s[0]\n"
+            "fmla   v17.4s,  v9.4s,  v5.s[0]\n"
+            "fmla   v18.4s,  v9.4s,  v7.s[0]\n"
             "fmla   v15.4s,  v10.4s,  v1.s[1]\n"
-            "fmla   v16.4s,  v10.4s,  v2.s[1]\n"
-            "fmla   v17.4s,  v10.4s,  v3.s[1]\n"
-            "fmla   v18.4s,  v10.4s,  v4.s[1]\n"
+            "fmla   v16.4s,  v10.4s,  v3.s[1]\n"
+            "fmla   v17.4s,  v10.4s,  v5.s[1]\n"
+            "fmla   v18.4s,  v10.4s,  v7.s[1]\n"
             "fmla   v15.4s,  v11.4s,  v1.s[2]\n"
-            "fmla   v16.4s,  v11.4s,  v2.s[2]\n"
-            "fmla   v17.4s,  v11.4s,  v3.s[2]\n"
-            "fmla   v18.4s,  v11.4s,  v4.s[2]\n"
+            "fmla   v16.4s,  v11.4s,  v3.s[2]\n"
+            "fmla   v17.4s,  v11.4s,  v5.s[2]\n"
+            "fmla   v18.4s,  v11.4s,  v7.s[2]\n"
             "ldp    q0, q1,   [%[r3]], #32\n"
+            "sub    %[wc], %[wc], #144\n"
             
             "fmla   v15.4s,  v12.4s,  v2.s[0]\n"
-            "fmla   v16.4s,  v12.4s,  v3.s[0]\n"
-            "fmla   v17.4s,  v12.4s,  v4.s[0]\n"
-            "fmla   v18.4s,  v12.4s,  v5.s[0]\n"
+            "fmla   v16.4s,  v12.4s,  v4.s[0]\n"
+            "fmla   v17.4s,  v12.4s,  v6.s[0]\n"
+            "fmla   v18.4s,  v12.4s,  v8.s[0]\n"
             "fmla   v15.4s,  v13.4s,  v2.s[1]\n"
-            "fmla   v16.4s,  v13.4s,  v3.s[1]\n"
-            "fmla   v17.4s,  v13.4s,  v4.s[1]\n"
-            "fmla   v18.4s,  v13.4s,  v5.s[1]\n"
+            "fmla   v16.4s,  v13.4s,  v4.s[1]\n"
+            "fmla   v17.4s,  v13.4s,  v6.s[1]\n"
+            "fmla   v18.4s,  v13.4s,  v8.s[1]\n"
             "fmla   v15.4s,  v14.4s,  v2.s[2]\n"
-            "fmla   v16.4s,  v14.4s,  v3.s[2]\n"
-            "fmla   v17.4s,  v14.4s,  v4.s[2]\n"
-            "fmla   v18.4s,  v14.4s,  v5.s[2]\n"
+            "fmla   v16.4s,  v14.4s,  v4.s[2]\n"
             "ldp    q2, q3,   [%[r3]], #32\n"
+            "fmla   v17.4s,  v14.4s,  v6.s[2]\n"
+            "fmla   v18.4s,  v14.4s,  v8.s[2]\n"
+            "ldp    q4, q5,   [%[r3]], #32\n"
+            "ldp    q6, q7,   [%[r3]], #32\n"
 
-            "fmla   v25.4s,  v6.4s,  v0.s[0]\n"
-            "fmla   v26.4s,  v6.4s,  v1.s[0]\n"
-            "fmla   v27.4s,  v6.4s,  v2.s[0]\n"
-            "fmla   v28.4s,  v6.4s,  v3.s[0]\n"
-            "ldp    q4, q5,   [%[r3]]\n"
-            "fmla   v25.4s,  v7.4s,  v0.s[1]\n"
-            "fmla   v26.4s,  v7.4s,  v1.s[1]\n"
-            "fmla   v27.4s,  v7.4s,  v2.s[1]\n"
-            "fmla   v28.4s,  v7.4s,  v3.s[1]\n"
-            "fmla   v25.4s,  v8.4s,  v0.s[2]\n"
-            "fmla   v26.4s,  v8.4s,  v1.s[2]\n"
-            "fmla   v27.4s,  v8.4s,  v2.s[2]\n"
-            "fmla   v28.4s,  v8.4s,  v3.s[2]\n"
-            "ldp    q6, q7,   [%[wc]], #32\n"
+            "fmla   v28.4s,  v9.4s, v1.s[0]\n"
+            "fmla   v29.4s,  v9.4s, v3.s[0]\n"
+            "ldr    q8,   [%[r3]]\n"
+            "fmla   v30.4s,  v9.4s, v5.s[0]\n"
+            "fmla   v31.4s,  v9.4s, v7.s[0]\n"
+            "fmla   v28.4s,  v10.4s, v1.s[1]\n"
+            "fmla   v29.4s,  v10.4s, v3.s[1]\n"
+            "fmla   v30.4s,  v10.4s, v5.s[1]\n"
+            "fmla   v31.4s,  v10.4s, v7.s[1]\n"
+            "ldp    q9, q10,   [%[wc]], #32\n"
+            "fmla   v28.4s,  v11.4s, v1.s[2]\n"
+            "fmla   v29.4s,  v11.4s, v3.s[2]\n"
+            "fmla   v30.4s,  v11.4s, v5.s[2]\n"
+            "fmla   v31.4s,  v11.4s, v7.s[2]\n"
 
-            "fmla   v25.4s,  v9.4s,  v1.s[0]\n"
-            "fmla   v26.4s,  v9.4s,  v2.s[0]\n"
-            "fmla   v27.4s,  v9.4s,  v3.s[0]\n"
-            "fmla   v28.4s,  v9.4s,  v4.s[0]\n"
-            "ldp    q8, q9,   [%[wc]], #32\n"
-            "fmla   v25.4s,  v10.4s,  v1.s[1]\n"
-            "fmla   v26.4s,  v10.4s,  v2.s[1]\n"
-            "fmla   v27.4s,  v10.4s,  v3.s[1]\n"
-            "fmla   v28.4s,  v10.4s,  v4.s[1]\n"
-            "fmla   v25.4s,  v11.4s,  v1.s[2]\n"
-            "fmla   v26.4s,  v11.4s,  v2.s[2]\n"
-            "fmla   v27.4s,  v11.4s,  v3.s[2]\n"
-            "fmla   v28.4s,  v11.4s,  v4.s[2]\n"
+            "fmla   v28.4s,  v12.4s, v2.s[0]\n"
+            "fmla   v29.4s,  v12.4s, v4.s[0]\n"
+            "fmla   v30.4s,  v12.4s, v6.s[0]\n"
+            "fmla   v31.4s,  v12.4s, v8.s[0]\n"
+            "ldp    q11, q12,   [%[wc]], #32\n"
+            "fmla   v28.4s,  v13.4s, v2.s[1]\n"
+            "fmla   v29.4s,  v13.4s, v4.s[1]\n"
+            "fmla   v30.4s,  v13.4s, v6.s[1]\n"
+            "fmla   v31.4s,  v13.4s, v8.s[1]\n"
+            "fmla   v28.4s,  v14.4s, v2.s[2]\n"
+            "fmla   v29.4s,  v14.4s, v4.s[2]\n"
+            "fmla   v30.4s,  v14.4s, v6.s[2]\n"
+            "fmla   v31.4s,  v14.4s, v8.s[2]\n"
+            "add    %[wc], %[wc], #80\n"
+
+            "fmla   v28.4s,  v9.4s, v0.s[0]\n"
+            "fmla   v29.4s,  v9.4s, v2.s[0]\n"
+            "fmla   v30.4s,  v9.4s, v4.s[0]\n"
+            "fmla   v31.4s,  v9.4s, v6.s[0]\n"
+            "ldp    q13, q14,   [%[wc]], #32\n" // line 2 w0-w2
+            "fmla   v28.4s,  v10.4s, v0.s[1]\n"
+            "fmla   v29.4s,  v10.4s, v2.s[1]\n"
+            "fmla   v30.4s,  v10.4s, v4.s[1]\n"
+            "fmla   v31.4s,  v10.4s, v6.s[1]\n"
+            "fmla   v28.4s,  v11.4s, v0.s[2]\n"
+            "fmla   v29.4s,  v11.4s, v2.s[2]\n"
             "ldp    q0, q1,   [%[r4]], #32\n"
-            
-            "fmla   v25.4s,  v12.4s,  v2.s[0]\n"
-            "fmla   v26.4s,  v12.4s,  v3.s[0]\n"
-            "fmla   v27.4s,  v12.4s,  v4.s[0]\n"
-            "fmla   v28.4s,  v12.4s,  v5.s[0]\n"
-            "ldp    q10, q11,   [%[wc]], #32\n"
-            "fmla   v25.4s,  v13.4s,  v2.s[1]\n"
-            "fmla   v26.4s,  v13.4s,  v3.s[1]\n"
-            "fmla   v27.4s,  v13.4s,  v4.s[1]\n"
-            "fmla   v28.4s,  v13.4s,  v5.s[1]\n"
-            "fmla   v25.4s,  v14.4s,  v2.s[2]\n"
-            "fmla   v26.4s,  v14.4s,  v3.s[2]\n"
-            "fmla   v27.4s,  v14.4s,  v4.s[2]\n"
-            "fmla   v28.4s,  v14.4s,  v5.s[2]\n"
+            "fmla   v30.4s,  v11.4s, v4.s[2]\n"
+            "fmla   v31.4s,  v11.4s, v6.s[2]\n"
             "ldp    q2, q3,   [%[r4]], #32\n"
+            "ldp    q9, q10,   [%[wc]], #32\n"
             /* line 2 */
-            "fmla   v15.4s,  v6.4s,  v19.s[0]\n"
-            "fmla   v16.4s,  v6.4s,  v20.s[0]\n"
-            "fmla   v17.4s,  v6.4s,  v21.s[0]\n"
-            "fmla   v18.4s,  v6.4s,  v22.s[0]\n"
-            "ldp    q4, q5,   [%[r4]]\n"
-            "fmla   v25.4s,  v6.4s,  v0.s[0]\n"
-            "fmla   v26.4s,  v6.4s,  v1.s[0]\n"
-            "fmla   v27.4s,  v6.4s,  v2.s[0]\n"
-            "fmla   v28.4s,  v6.4s,  v3.s[0]\n"
-            "ldp    q12, q13,   [%[wc]], #32\n"
+            "ldp    q4, q5,   [%[r4]], #32\n"
+            "fmla   v15.4s,  v13.4s,  v19.s[0]\n"
+            "fmla   v16.4s,  v13.4s,  v21.s[0]\n"
+            "fmla   v17.4s,  v13.4s,  v23.s[0]\n"
+            "fmla   v18.4s,  v13.4s,  v25.s[0]\n"
+            "ldp    q6, q7,   [%[r4]], #32\n"
+            "ldp    q11, q12,   [%[wc]], #32\n"
+            "fmla   v28.4s,  v13.4s,  v0.s[0]\n"
+            "fmla   v29.4s,  v13.4s,  v2.s[0]\n"
+            "fmla   v30.4s,  v13.4s,  v4.s[0]\n"
+            "fmla   v31.4s,  v13.4s,  v6.s[0]\n"
+            "ldr    q8,   [%[r4]]\n"
 
-            "fmla   v15.4s,  v7.4s,  v19.s[1]\n"
-            "fmla   v16.4s,  v7.4s,  v20.s[1]\n"
-            "fmla   v17.4s,  v7.4s,  v21.s[1]\n"
-            "fmla   v18.4s,  v7.4s,  v22.s[1]\n"
-            "fmla   v25.4s,  v7.4s,  v0.s[1]\n"
-            "fmla   v26.4s,  v7.4s,  v1.s[1]\n"
-            "fmla   v27.4s,  v7.4s,  v2.s[1]\n"
-            "fmla   v28.4s,  v7.4s,  v3.s[1]\n"
-            "ldr    q14,   [%[wc]], #16\n"
-            "fmla   v15.4s,  v8.4s,  v19.s[2]\n"
-            "fmla   v16.4s,  v8.4s,  v20.s[2]\n"
-            "fmla   v17.4s,  v8.4s,  v21.s[2]\n"
-            "fmla   v18.4s,  v8.4s,  v22.s[2]\n"
-            "fmla   v25.4s,  v8.4s,  v0.s[2]\n"
-            "fmla   v26.4s,  v8.4s,  v1.s[2]\n"
-            "fmla   v27.4s,  v8.4s,  v2.s[2]\n"
-            "fmla   v28.4s,  v8.4s,  v3.s[2]\n"
+            "fmla   v15.4s,  v14.4s,  v19.s[1]\n"
+            "fmla   v16.4s,  v14.4s,  v21.s[1]\n"
+            "fmla   v17.4s,  v14.4s,  v23.s[1]\n"
+            "fmla   v18.4s,  v14.4s,  v25.s[1]\n"
+            "fmla   v28.4s,  v14.4s,  v0.s[1]\n"
+            "fmla   v29.4s,  v14.4s,  v2.s[1]\n"
+            "fmla   v30.4s,  v14.4s,  v4.s[1]\n"
+            "fmla   v31.4s,  v14.4s,  v6.s[1]\n"
+            "ldp    q13, q14,   [%[wc]], #32\n"
+            "fmla   v15.4s,  v9.4s,  v19.s[2]\n"
+            "fmla   v16.4s,  v9.4s,  v21.s[2]\n"
+            "fmla   v17.4s,  v9.4s,  v23.s[2]\n"
+            "fmla   v18.4s,  v9.4s,  v25.s[2]\n"
+            "fmla   v28.4s,  v9.4s,  v0.s[2]\n"
+            "fmla   v29.4s,  v9.4s,  v2.s[2]\n"
+            "fmla   v30.4s,  v9.4s,  v4.s[2]\n"
+            "fmla   v31.4s,  v9.4s,  v6.s[2]\n"
 
-            "fmla   v15.4s,  v9.4s,  v20.s[0]\n"
-            "fmla   v16.4s,  v9.4s,  v21.s[0]\n"
-            "fmla   v17.4s,  v9.4s,  v22.s[0]\n"
-            "fmla   v18.4s,  v9.4s,  v23.s[0]\n"
-            "fmla   v25.4s,  v9.4s,  v1.s[0]\n"
-            "fmla   v26.4s,  v9.4s,  v2.s[0]\n"
-            "fmla   v27.4s,  v9.4s,  v3.s[0]\n"
-            "fmla   v28.4s,  v9.4s,  v4.s[0]\n"
-            "fmla   v15.4s,  v10.4s,  v20.s[1]\n"
-            "fmla   v16.4s,  v10.4s,  v21.s[1]\n"
-            "fmla   v17.4s,  v10.4s,  v22.s[1]\n"
-            "fmla   v18.4s,  v10.4s,  v23.s[1]\n"
-            "fmla   v25.4s,  v10.4s,  v1.s[1]\n"
-            "fmla   v26.4s,  v10.4s,  v2.s[1]\n"
-            "fmla   v27.4s,  v10.4s,  v3.s[1]\n"
-            "fmla   v28.4s,  v10.4s,  v4.s[1]\n"
-            "fmla   v15.4s,  v11.4s,  v20.s[2]\n"
-            "fmla   v16.4s,  v11.4s,  v21.s[2]\n"
-            "fmla   v17.4s,  v11.4s,  v22.s[2]\n"
-            "fmla   v18.4s,  v11.4s,  v23.s[2]\n"
-            "fmla   v25.4s,  v11.4s,  v1.s[2]\n"
-            "fmla   v26.4s,  v11.4s,  v2.s[2]\n"
-            "fmla   v27.4s,  v11.4s,  v3.s[2]\n"
-            "fmla   v28.4s,  v11.4s,  v4.s[2]\n"
+            "fmla   v15.4s,  v10.4s,  v20.s[0]\n"
+            "fmla   v16.4s,  v10.4s,  v22.s[0]\n"
+            "fmla   v17.4s,  v10.4s,  v24.s[0]\n"
+            "fmla   v18.4s,  v10.4s,  v26.s[0]\n"
+            "fmla   v28.4s,  v10.4s,  v1.s[0]\n"
+            "fmla   v29.4s,  v10.4s,  v3.s[0]\n"
+            "fmla   v30.4s,  v10.4s,  v5.s[0]\n"
+            "fmla   v31.4s,  v10.4s,  v7.s[0]\n"
+            "ldr    q9,   [%[wc]], #16\n"
+
+            "fmla   v15.4s,  v11.4s,  v20.s[1]\n"
+            "fmla   v16.4s,  v11.4s,  v22.s[1]\n"
+            "fmla   v17.4s,  v11.4s,  v24.s[1]\n"
+            "fmla   v18.4s,  v11.4s,  v26.s[1]\n"
+            "fmla   v28.4s,  v11.4s,  v1.s[1]\n"
+            "fmla   v29.4s,  v11.4s,  v3.s[1]\n"
+            "fmla   v30.4s,  v11.4s,  v5.s[1]\n"
+            "fmla   v31.4s,  v11.4s,  v7.s[1]\n"
+
+            "fmla   v15.4s,  v12.4s,  v20.s[2]\n"
+            "fmla   v16.4s,  v12.4s,  v22.s[2]\n"
+            "fmla   v17.4s,  v12.4s,  v24.s[2]\n"
+            "fmla   v18.4s,  v12.4s,  v26.s[2]\n"
+            "fmla   v28.4s,  v12.4s,  v1.s[2]\n"
+            "fmla   v29.4s,  v12.4s,  v3.s[2]\n"
+            "fmla   v30.4s,  v12.4s,  v5.s[2]\n"
+            "fmla   v31.4s,  v12.4s,  v7.s[2]\n"
 
             "sub %[wc], %[wc], #432\n"
-            "fmla   v15.4s,  v12.4s,  v21.s[0]\n"
-            "fmla   v16.4s,  v12.4s,  v22.s[0]\n"
-            "fmla   v17.4s,  v12.4s,  v23.s[0]\n"
-            "fmla   v18.4s,  v12.4s,  v24.s[0]\n"
-            "fmla   v25.4s,  v12.4s,  v2.s[0]\n"
-            "fmla   v26.4s,  v12.4s,  v3.s[0]\n"
-            "fmla   v27.4s,  v12.4s,  v4.s[0]\n"
-            "fmla   v28.4s,  v12.4s,  v5.s[0]\n"
-            "fmla   v15.4s,  v13.4s,  v21.s[1]\n"
-            "fmla   v16.4s,  v13.4s,  v22.s[1]\n"
-            "fmla   v17.4s,  v13.4s,  v23.s[1]\n"
-            "fmla   v18.4s,  v13.4s,  v24.s[1]\n"
-            "fmla   v25.4s,  v13.4s,  v2.s[1]\n"
-            "fmla   v26.4s,  v13.4s,  v3.s[1]\n"
-            "fmla   v27.4s,  v13.4s,  v4.s[1]\n"
-            "fmla   v28.4s,  v13.4s,  v5.s[1]\n"
-            "fmla   v15.4s,  v14.4s,  v21.s[2]\n"
-            "fmla   v16.4s,  v14.4s,  v22.s[2]\n"
-            "fmla   v17.4s,  v14.4s,  v23.s[2]\n"
-            "fmla   v18.4s,  v14.4s,  v24.s[2]\n"
-            "fmla   v25.4s,  v14.4s,  v2.s[2]\n"
-            "fmla   v26.4s,  v14.4s,  v3.s[2]\n"
-            "fmla   v27.4s,  v14.4s,  v4.s[2]\n"
-            "fmla   v28.4s,  v14.4s,  v5.s[2]\n"
+            "fmla   v15.4s,  v13.4s,  v21.s[0]\n"
+            "fmla   v16.4s,  v13.4s,  v23.s[0]\n"
+            "fmla   v17.4s,  v13.4s,  v25.s[0]\n"
+            "fmla   v18.4s,  v13.4s,  v27.s[0]\n"
+            "fmla   v28.4s,  v13.4s,  v2.s[0]\n"
+            "fmla   v29.4s,  v13.4s,  v4.s[0]\n"
+            "fmla   v30.4s,  v13.4s,  v6.s[0]\n"
+            "fmla   v31.4s,  v13.4s,  v8.s[0]\n"
+
+            "fmla   v15.4s,  v14.4s,  v21.s[1]\n"
+            "fmla   v16.4s,  v14.4s,  v23.s[1]\n"
+            "fmla   v17.4s,  v14.4s,  v25.s[1]\n"
+            "fmla   v18.4s,  v14.4s,  v27.s[1]\n"
+            "fmla   v28.4s,  v14.4s,  v2.s[1]\n"
+            "fmla   v29.4s,  v14.4s,  v4.s[1]\n"
+            "fmla   v30.4s,  v14.4s,  v6.s[1]\n"
+            "fmla   v31.4s,  v14.4s,  v8.s[1]\n"
 
             "ldp    q0, q1,   [%[r0]], #32\n"
+            "fmla   v15.4s,  v9.4s,  v21.s[2]\n"
+            "fmla   v16.4s,  v9.4s,  v23.s[2]\n"
+            "fmla   v17.4s,  v9.4s,  v25.s[2]\n"
+            "fmla   v18.4s,  v9.4s,  v27.s[2]\n"
+            "ldp    q19, q20,   [%[r2]], #32\n"
+            "fmla   v28.4s,  v9.4s,  v2.s[2]\n"
+            "fmla   v29.4s,  v9.4s,  v4.s[2]\n"
+            "fmla   v30.4s,  v9.4s,  v6.s[2]\n"
+            "fmla   v31.4s,  v9.4s,  v8.s[2]\n"
+
             "subs   %w[cnt], %w[cnt], #1\n"
             "stp    q15, q16,  [%[ptr_out0]], #32\n"
-            "ldp    q19, q20,   [%[r2]], #32\n"
-            "stp    q25, q26,  [%[ptr_out1]], #32\n"
             "ldp    q2, q3,   [%[r0]], #32\n"
-            "stp    q17, q18,  [%[ptr_out0]], #32\n"
+            "stp    q28, q29,  [%[ptr_out1]], #32\n"
             "ldp    q21, q22,   [%[r2]], #32\n"
-            "stp    q27, q28,  [%[ptr_out1]], #32\n"
+            "ldp    q9, q10,   [%[wc]], #32\n"
+            "stp    q17, q18,  [%[ptr_out0]], #32\n"
+            "ldp    q4, q5,   [%[r0]], #32\n"
+            "stp    q30, q31,  [%[ptr_out1]], #32\n"
+            "ldp    q23, q24,   [%[r2]], #32\n"
+            "ldp    q11, q12,   [%[wc]], #32\n"
             "bne    1b\n"
             : [cnt] "+r"(cnt), [r0] "+r"(r0), [r1] "+r"(r1),
               [r2] "+r"(r2), [r3] "+r"(r3), [r4] "+r"(r4),
@@ -2757,7 +2780,7 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
             : "cc","memory","v0","v1","v2","v3","v4",
               "v5","v6","v7","v8","v9","v10","v11","v12","v13",
               "v14","v15","v16","v17","v18", "v19", "v20", "v21", "v22",
-              "v23", "v24", "v25", "v26", "v27", "v28");
+              "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30", "v31");
           // clang-format on
           block_inr0 = block_inr4;
           block_inr1 = block_inr0 + in_len;
@@ -2784,57 +2807,69 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
           // clang-format off
           asm volatile(
             "vld1.32  {d0-d3}, [%[r0]]!          @ load q0, q1\n"
-            "vld1.32  {d12-d15}, [%[wc0]]!       @ load w0, w1\n"
+            "vld1.32  {d18-d19}, [%[wc0]]!       @ load w0, w1\n"
             "vld1.32  {d4-d7}, [%[r0]]!          @ load q2, q3\n"
-            "vld1.32  {d16-d17}, [%[wc0]]!       @ load w2, w3\n"
-            "vld1.32  {d8-d11}, [%[r0]]          @ load r0\n"
+            "vld1.32  {d20-d21}, [%[wc0]]!       @ load w2, w3\n"
+            "vld1.32  {d8-d11}, [%[r0]]!          @ load q4, q5\n"
+            "vld1.32  {d22-d23}, [%[wc0]]!       @ load w2, w3\n"
             "1: \n"
+            "vld1.32  {d12-d15}, [%[r0]]!          @ load q9, q10\n"
             /* line 0*/
-            "vmul.f32   q12, q6, d0[0]           @ mul \n"
-            "vmul.f32   q13, q6, d2[0]           @ mul \n"
-            "vmul.f32   q14, q6, d4[0]           @ mul \n"
-            "vmul.f32   q15, q6, d6[0]           @ mul \n"
-            "vld1.32  {d12-d13}, [%[wc0]]!       @ load w2, w3\n"
+            "vmul.f32   q15, q9, d12[0]          @ mul \n"
+            "vmul.f32   q12, q9, d0[0]           @ mul \n"
+            "vmul.f32   q13, q9, d4[0]           @ mul \n"
+            "vmul.f32   q14, q9, d8[0]           @ mul \n"
+            "vld1.32  {d18-d19}, [%[wc0]]!       @ load w2, w3\n"
             FMLA_W01
             FMLA_W02
 
             FMLA_W10
-            "vld1.32  {d0-d1}, [%[r1]]!          @ load q0, q1\n"
             FMLA_W11
             FMLA_W12
-            "vld1.32  {d2-d3}, [%[r1]]!          @ load q0, q1\n"
+            "vld1.32  {d0-d1}, [%[r0]]          @ load q0, q1\n"
 
             FMLA_W20
             FMLA_W21
-            "vld1.32  {d4}, [%[r1]]!          @ load q0, q1\n"
-            FMLA_W22
-            "vld1.32  {d5-d7}, [%[r1]]!          @ load q0, q1\n"
+            "vmla.f32   q15, q11, d1[0]          @ mul \n"
+            "vld1.32  {d0-d3}, [%[r1]]!          @ load q0, q1\n"
+            "vmla.f32   q12, q11, d5[0]           @ mul \n"
+            "vld1.32  {d4-d7}, [%[r1]]!          @ load q0, q1\n"
+            "vmla.f32   q13, q11, d9[0]           @ mul \n"
+            "vld1.32  {d8-d11}, [%[r1]]!          @ load q0, q1\n"
+            "vmla.f32   q14, q11, d13[0]           @ mul \n"
+            "vld1.32  {d12-d15}, [%[r1]]!          @ load q0, q1\n"
+            "vld1.32  {d22-d23}, [%[wc0]]!       @ load w2, w3\n"
             /* line 1*/
             FMLA_W00
-            "vld1.32  {d8-d11}, [%[r1]]          @ load q0, q1\n"
             FMLA_W01
             FMLA_W02
 
             FMLA_W10
-            "vld1.32  {d0-d1}, [%[r2]]!          @ load q0, q1\n"
             FMLA_W11
             FMLA_W12
-            "vld1.32  {d2-d3}, [%[r2]]!          @ load q0, q1\n"
+            "vld1.32  {d0-d1}, [%[r1]]          @ load q0, q1\n"
+
             FMLA_W20
             FMLA_W21
-            "vld1.32  {d4}, [%[r2]]!          @ load q0, q1\n"
-            FMLA_W22
-            "vld1.32  {d5-d7}, [%[r2]]!          @ load q0, q1\n"
+            "vmla.f32   q15, q11, d1[0]          @ mul \n"
+            "vld1.32  {d0-d3}, [%[r2]]!          @ load q0, q1\n"
+            "vmla.f32   q12, q11, d5[0]           @ mul \n"
+            "vld1.32  {d4-d7}, [%[r2]]!          @ load q0, q1\n"
+            "vmla.f32   q13, q11, d9[0]           @ mul \n"
+            "vld1.32  {d8-d11}, [%[r2]]!          @ load q0, q1\n"
+            "vmla.f32   q14, q11, d13[0]           @ mul \n"
+            "vld1.32  {d12-d15}, [%[r2]]!          @ load q0, q1\n"
+            "vld1.32  {d22-d23}, [%[wc0]]!       @ load w2, w3\n"
 
             /* line 2*/
             FMLA_W00
-            "vld1.32  {d8-d11}, [%[r2]]          @ load q0, q1\n"
             FMLA_W01
             FMLA_W02
 
             FMLA_W10
             FMLA_W11
             FMLA_W12
+            "vld1.32  {d0-d1}, [%[r2]]          @ load q0, q1\n"
 
             "sub %[wc0], %[wc0], #342\n"
             FMLA_W20
@@ -2845,7 +2880,7 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
             "vst1.32    {d24-d27}, [%[ptr_out]]! @ store \n"
             "vld1.32  {d4-d7}, [%[r0]]!          @ load q2, q3\n"
             "vst1.32    {d28-d31}, [%[ptr_out]]! @ store \n"
-            "vld1.32  {d8-d11}, [%[r0]]          @ load r0\n"
+            "vld1.32  {d8-d11}, [%[r0]]!          @ load q4, q5\n"
             "bne    1b\n"
 
           : [cnt] "+r"(cnt),
@@ -2857,7 +2892,7 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
               "q11","q12","q13","q14","q15"
           );
           // clang-format on
-          block_inr0 = block_inr4;
+          block_inr0 = block_inr2;
           block_inr1 = block_inr0 + in_len;
           block_inr2 = block_inr1 + in_len;
         }
