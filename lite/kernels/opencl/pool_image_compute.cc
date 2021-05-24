@@ -66,6 +66,29 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 #endif
 
+  void ReInitWhenNeeded() override {
+    const auto& param = *param_.get_mutable<param_t>();
+    auto& x_dims = param.x->dims();
+
+    if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
+        first_epoch_for_reinit_) {
+      last_x_dims_ = x_dims;
+      first_epoch_for_reinit_ = false;
+      const auto& out_dims = param.output->dims();
+
+      x_img = DATA_GPU(param.x);
+      auto out_image_shape = InitImageDimInfoWith(out_dims);
+#ifdef LITE_WITH_LOG
+      VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
+              << out_image_shape["height"];
+#endif
+      out_img = MUTABLE_DATA_GPU(param.output,
+                                 out_image_shape["width"],
+                                 out_image_shape["height"],
+                                 nullptr);
+    }
+  }
+
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
     const auto& in_dims = param.x->dims();
@@ -114,17 +137,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     }
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-
-    auto* x_img = DATA_GPU(param.x);
-    auto out_image_shape = InitImageDimInfoWith(out_dims);
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
-            << out_image_shape["height"];
-#endif
-    auto* out_img = MUTABLE_DATA_GPU(param.output,
-                                     out_image_shape["width"],
-                                     out_image_shape["height"],
-                                     nullptr);
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
@@ -176,9 +188,13 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
  private:
+  bool first_epoch_for_reinit_{true};
+  DDim last_x_dims_;
   std::string kernel_func_name_{"pool_"};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
+  cl::Image2D* x_img{nullptr};
+  cl::Image2D* out_img{nullptr};
 };
 
 }  // namespace opencl
