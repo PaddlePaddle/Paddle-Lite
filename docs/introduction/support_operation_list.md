@@ -94,7 +94,7 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 
 ### 附加算子
 
-附加算子共计131个，需要在编译时打开`--build_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
+附加算子共计131个，需要在编译时打开`--with_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
 
 | OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU | 英特尔FPGA |
 |-:|-|-|-|-|-|-|-|-|-|-|-|
