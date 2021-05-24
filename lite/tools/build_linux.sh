@@ -82,6 +82,7 @@ function init_cmake_mutable_options {
         with_x86=ON
         arm_target_os=""
         with_light_weight_framework=OFF
+        WITH_TINY_PUBLISH=OFF
     else
         with_arm=ON
         arm_arch=$ARCH
@@ -95,7 +96,6 @@ function init_cmake_mutable_options {
 
     if [ "${WITH_BAIDU_XPU}" == "ON" ]; then
         WITH_EXTRA=ON
-        WITH_TINY_PUBLISH=OFF
     fi
 
     cmake_mutable_options="-DLITE_WITH_ARM=$with_arm \
@@ -420,7 +420,6 @@ function main {
         esac
     done
 
-    # compiling result contains light_api lib only, recommanded.
     make_publish_so
 }
 
