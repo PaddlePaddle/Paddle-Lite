@@ -96,7 +96,7 @@ __kernel void pool_avg(__read_only image2d_t input,
   div = (CL_DTYPE)((end_h - start_h)*(end_w - start_w));
 #else
   div = (CL_DTYPE)(ksize_w * ksize_h);
-#endif 
+#endif
   CL_DTYPE4 avg = sum / div;
   const int pos_out_x = mad24(out_c, out_width, out_w);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_out_x, out_nh), avg);
@@ -132,18 +132,12 @@ __kernel void pool_avg_global(__read_only image2d_t input,
       CL_DTYPE4 tmp = READ_IMG_TYPE(
           CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
 
-      sum.x = convert_float(tmp.x) + sum.x;
-      sum.y = convert_float(tmp.y) + sum.y;
-      sum.z = convert_float(tmp.z) + sum.z;
-      sum.w = convert_float(tmp.w) + sum.w;
+      sum = convert_float4(tmp) + sum;
     }
   }
   const float global_size_div = 1.0f / (in_height * in_width);
   CL_DTYPE4 avg;
-  avg.x = CONVERT_TYPE_TO((sum.x * global_size_div), CL_COMPUTE_DTYPE);
-  avg.y = CONVERT_TYPE_TO((sum.y * global_size_div), CL_COMPUTE_DTYPE);
-  avg.z = CONVERT_TYPE_TO((sum.z * global_size_div), CL_COMPUTE_DTYPE);
-  avg.w = CONVERT_TYPE_TO((sum.w * global_size_div), CL_COMPUTE_DTYPE);
+  avg = CONVERT_TYPE_TO((sum * global_size_div), CL_COMPUTE_DTYPE4);
 
 #ifdef DEBUG
   if (out_c == 0) {
