@@ -56,6 +56,10 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
         kernel_func_name_, "image/pool_kernel.cl", build_options_, time_stamp_);
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel = context.cl_context()->GetKernel(kernel_key.str());
   }
 
 #ifdef LITE_WITH_PROFILE
@@ -86,95 +90,95 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                  out_image_shape["width"],
                                  out_image_shape["height"],
                                  nullptr);
+      auto& context = ctx_->As<OpenCLContext>();
+      CHECK(context.cl_context() != nullptr);
+
+      const auto& in_dims = param.x->dims();
+      const std::string pooling_type = param.pooling_type;
+      const bool global_pooling = param.global_pooling;
+      std::vector<int> paddings = *param.paddings;
+      std::vector<int> strides = param.strides;
+      std::vector<int> ksize = param.ksize;
+
+#ifdef LITE_WITH_LOG
+      VLOG(4) << "global_pooling: " << global_pooling;
+      VLOG(4) << "pooling_type: " << pooling_type;
+      VLOG(4) << "paddings : " << paddings[0] << "  " << paddings[1] << "  "
+              << paddings[2] << "  " << paddings[3] << "  ";
+#endif
+
+      if (global_pooling) {
+        for (size_t i = 0; i < ksize.size(); ++i) {
+          paddings[2 * i] = 0;
+          paddings[2 * i + 1] = 0;
+          ksize[i] = static_cast<int>(in_dims[i + 2]);
+        }
+      }
+
+#ifdef LITE_WITH_LOG
+      VLOG(4) << "in_dims : [" << in_dims.size() << "]" << in_dims[0] << "  "
+              << in_dims[1] << "  " << in_dims[2] << "  " << in_dims[3];
+      VLOG(4) << "out_dims : [" << out_dims.size() << "]" << out_dims[0] << "  "
+              << out_dims[1] << "  " << out_dims[2] << "  " << out_dims[3];
+      VLOG(4) << "paddings fixed : " << paddings[0] << "  " << paddings[1]
+              << "  " << paddings[2] << "  " << paddings[3] << "  ";
+      VLOG(4) << "strides : [" << strides.size() << "]" << strides[0] << "  "
+              << strides[1];
+      VLOG(4) << "ksize : [" << ksize.size() << "]" << ksize[0] << "  "
+              << ksize[1] << "  " << ksize[2] << "  " << ksize[3];
+      VLOG(4) << "paddings : [" << paddings.size() << "]" << paddings[0] << "  "
+              << paddings[1] << "  " << paddings[2] << "  " << paddings[3];
+#endif
+
+      bool pads_equal = ((abs(paddings[0] - paddings[1]) < 2) &&
+                         (abs(paddings[2] - paddings[3]) < 2));
+      if (!pads_equal) {
+        LOG(FATAL)
+            << "padding requires pad_left == pad_right, pad_top == pad_bottom";
+      }
+
+      int c_block = (out_dims[1] + 3) / 4;
+      int w = out_dims[3];
+      int nh = out_dims[0] * out_dims[2];
+      global_work_size = cl::NDRange(c_block, w, nh);
+#ifdef LITE_WITH_LOG
+      VLOG(4) << "global_work_size : [" << 3 << "]" << c_block << "  " << w
+              << "  " << nh << "  ";
+#endif
+      cl_int status;
+      int arg_idx = 2;
+      status = kernel.setArg(arg_idx, static_cast<const int>(in_dims[2]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[3]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[2]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[3]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[0]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[1]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(strides[1]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[2]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
+      CL_CHECK_FATAL(status);
     }
   }
 
   void Run() override {
-    const auto& param = *param_.get_mutable<param_t>();
-    const auto& in_dims = param.x->dims();
-    const auto& out_dims = param.output->dims();
-    const std::string pooling_type = param.pooling_type;
-    const bool global_pooling = param.global_pooling;
-    std::vector<int> paddings = *param.paddings;
-    std::vector<int> strides = param.strides;
-    std::vector<int> ksize = param.ksize;
-
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "global_pooling: " << global_pooling;
-    VLOG(4) << "pooling_type: " << pooling_type;
-    VLOG(4) << "paddings : " << paddings[0] << "  " << paddings[1] << "  "
-            << paddings[2] << "  " << paddings[3] << "  ";
-#endif
-
-    if (global_pooling) {
-      for (size_t i = 0; i < ksize.size(); ++i) {
-        paddings[2 * i] = 0;
-        paddings[2 * i + 1] = 0;
-        ksize[i] = static_cast<int>(in_dims[i + 2]);
-      }
-    }
-
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "in_dims : [" << in_dims.size() << "]" << in_dims[0] << "  "
-            << in_dims[1] << "  " << in_dims[2] << "  " << in_dims[3];
-    VLOG(4) << "out_dims : [" << out_dims.size() << "]" << out_dims[0] << "  "
-            << out_dims[1] << "  " << out_dims[2] << "  " << out_dims[3];
-    VLOG(4) << "paddings fixed : " << paddings[0] << "  " << paddings[1] << "  "
-            << paddings[2] << "  " << paddings[3] << "  ";
-    VLOG(4) << "strides : [" << strides.size() << "]" << strides[0] << "  "
-            << strides[1];
-    VLOG(4) << "ksize : [" << ksize.size() << "]" << ksize[0] << "  "
-            << ksize[1] << "  " << ksize[2] << "  " << ksize[3];
-    VLOG(4) << "paddings : [" << paddings.size() << "]" << paddings[0] << "  "
-            << paddings[1] << "  " << paddings[2] << "  " << paddings[3];
-#endif
-
-    bool pads_equal = ((abs(paddings[0] - paddings[1]) < 2) &&
-                       (abs(paddings[2] - paddings[3]) < 2));
-    if (!pads_equal) {
-      LOG(FATAL)
-          << "padding requires pad_left == pad_right, pad_top == pad_bottom";
-    }
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-
-    int c_block = (out_dims[1] + 3) / 4;
-    int w = out_dims[3];
-    int nh = out_dims[0] * out_dims[2];
-    auto global_work_size = cl::NDRange(c_block, w, nh);
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "global_work_size : [" << 3 << "]" << c_block << "  " << w
-            << "  " << nh << "  ";
-#endif
     cl_int status;
     int arg_idx = 0;
-    status = kernel.setArg(arg_idx, *x_img);
+    status = kernel.setArg(arg_idx++, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_img);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[2]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_dims[3]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[2]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(out_dims[3]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[0]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(ksize[1]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[0]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(strides[1]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[2]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(paddings[0]));
+    status = kernel.setArg(arg_idx++, *out_img);
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,
@@ -193,8 +197,10 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{"pool_"};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
+  cl::Kernel kernel;
   cl::Image2D* x_img{nullptr};
   cl::Image2D* out_img{nullptr};
+  cl::NDRange global_work_size;
 };
 
 }  // namespace opencl
