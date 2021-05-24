@@ -175,8 +175,8 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
   ```shell
   cd PaddleLite-linux-demo/image_classification_demo/shell
   ./update_libs.sh <lite_inference_dir> <demo_libs_dir>
-  # For amd64，lite_inference_dir一般为编译生成的build.lite.linux.x86.baidu_xpu/inference_lite_lib，demo_libs_dir为PaddleLite-linux-demolibs/PaddleLite/amd64
-  # For arm64，lite_inference_dir一般为编译生成的build.lite.linux.armv8.baidu_xpu/inference_lite_lib.armlinux.armv8.xpu，demo_libs_dir为PaddleLite-linux-demolibs/PaddleLite/amd64
+  # For amd64，lite_inference_dir一般为编译生成的build.lite.linux.x86.gcc.baidu_xpu/inference_lite_lib，demo_libs_dir为PaddleLite-linux-demolibs/PaddleLite/amd64
+  # For arm64，lite_inference_dir一般为编译生成的build.lite.linux.armv8.gcc.baidu_xpu/inference_lite_lib.armlinux.armv8.xpu，demo_libs_dir为PaddleLite-linux-demolibs/PaddleLite/amd64
   ```
 
   备注：替换头文件后需要重新编译示例程序

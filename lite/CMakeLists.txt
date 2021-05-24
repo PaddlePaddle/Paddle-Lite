@@ -348,7 +348,7 @@ endif(LITE_WITH_CUDA)
 if(LITE_WITH_XPU AND NOT XPU_SDK_ROOT)
     add_custom_command(TARGET publish_inference POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${THIRD_PARTY_PATH}/install/xpu" "${INFER_LITE_PUBLISH_ROOT}/third_party/xpu")
-endif(LITE_WITH_XPU)
+endif()
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)

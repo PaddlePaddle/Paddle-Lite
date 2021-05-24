@@ -24,6 +24,9 @@ WITH_EXCEPTION=OFF
 # options of striping lib according to input model.
 WITH_STRIP=OFF
 OPTMODEL_DIR=""
+# options of compiling x86 lib
+WITH_STATIC_MKL=OFF
+WITH_AVX=ON
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
 # options of compiling rockchip NPU lib.
@@ -44,6 +47,9 @@ INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
 WITH_TRAIN=OFF
 # options of building tiny publish so
 WITH_TINY_PUBLISH=ON
+# options of profiling
+WITH_PROFILE=OFF
+WITH_PRECISION_PROFILE=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -88,6 +94,7 @@ function init_cmake_mutable_options {
         arm_arch=$ARCH
         arm_target_os=armlinux
         with_light_weight_framework=ON
+        WITH_AVX=OFF
     fi
 
     if [ "${WITH_STRIP}" == "ON" ]; then
@@ -108,12 +115,13 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DPY_VERSION=$PY_VERSION \
                         -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
-                        -DWITH_STATIC_MKL=$WITH_STATIC_LIB \
                         -DLITE_WITH_CV=$WITH_CV \
                         -DLITE_WITH_LOG=$WITH_LOG \
                         -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
                         -DLITE_BUILD_TAILOR=$WITH_STRIP \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
+                        -DWITH_STATIC_MKL=${WITH_STATIC_MKL} \
+                        -DWITH_AVX=${WITH_AVX} \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
@@ -126,6 +134,8 @@ function init_cmake_mutable_options {
                         -DIMAGINATION_NNA_SDK_ROOT=${IMAGINATION_NNA_SDK_ROOT} \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
+                        -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+                        -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
 }
@@ -208,7 +218,7 @@ function make_publish_so {
        build_dir=${build_dir}.opencl
     fi
     if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
-       build_dir=$workspace/build.lite.linux.$ARCH.baidu_xpu
+       build_dir=${build_dir}.baidu_xpu
     fi
 
     if [ -d $build_dir ]; then
@@ -248,7 +258,7 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh help                                                                                                                 |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                                  |"
-    echo -e "|     --arch: (armv8|armv7hf|armv7|x86), default is armv8                                                                                                  |"
+    echo -e "|     --arch: (armv8|armv7hf|armv7|x86), default is armv8                                                                                              |"
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                                         |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP), default is OFF  |"
     echo -e "|     --with_python: (OFF|ON); controls whether to build python lib or whl, default is OFF                                                             |"
@@ -257,12 +267,19 @@ function print_usage {
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                                            |"
+    echo -e "|     --with_profile: (OFF|ON); controls whether to profile speed, default is OFF                                                                      |"
+    echo -e "|     --with_exception: (OFF|ON); controls whether to profile precision, default is OFF                                                                |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:                                                                                                 |"
     echo -e "|     ./lite/tools/build_linux.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                                |"
     echo -e "|     --with_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF                                                    |"
     echo -e "|     --opt_model_dir: (absolute path to optimized model dir) required when compiling striped library                                                  |"
     echo -e "|  detailed information about striping lib:  https://paddle-lite.readthedocs.io/zh/latest/user_guides/library_tailoring.html                           |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of x86 library compiling:                                                                                                                 |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=x86                                                                                                           |"
+    echo -e "|     --with_static_mkl: (OFF|ON); controls whether to compile static mkl lib, default is OFF                                                          |"
+    echo -e "|     --with_avx: (OFF|ON); controls whether to use avx , default is ON                                                                                |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of opencl library compiling:                                                                                                              |"
     echo -e "|     ./lite/tools/build_linux.sh --with_opencl=ON                                                                                                     |"
@@ -346,6 +363,14 @@ function main {
                 OPTMODEL_DIR="${i#*=}"
                 shift
                 ;;
+            --with_static_mkl=*)
+                WITH_STATIC_MKL="${i#*=}"
+                shift
+                ;;
+            --with_avx=*)
+                WITH_AVX="${i#*=}"
+                shift
+                ;;
             # compiling lib which can operate on opencl and cpu.
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
@@ -393,6 +418,14 @@ function main {
                 ;;
             --intel_fpga_sdk_root=*)
                 INTEL_FPGA_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --with_profile=*)
+                WITH_PROFILE="${i#*=}"
+                shift
+                ;;
+            --with_precision_profile=*)
+                WITH_PRECISION_PROFILE="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF
