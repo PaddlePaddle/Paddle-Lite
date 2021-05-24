@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -27,6 +28,10 @@ class SequenceConcatCompute
 
   void Run() override;
   virtual ~SequenceConcatCompute() = default;
+
+ private:
+  std::vector<lite::Tensor> ts_;
+  std::vector<lite::Tensor*> tp_;
 };
 
 }  // namespace cuda
