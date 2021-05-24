@@ -209,17 +209,15 @@ void SequenceTopkAvgPoolingCompute<T>::Run() {
   auto &ctx = this->ctx_->template As<CUDAContext>();
   auto cuda_stream = ctx.exec_stream();
 
-  CHECK(param.X->lod().size() > 0 && param.X->lod()[0].size() > 0)
-      << "X sequence offset is not valid";
   CHECK(param.ROW->lod().size() > 0 && param.ROW->lod()[0].size() > 0)
       << "ROW sequence offset is not valid";
 
-  int width_offset_len = param.X->lod()[0].size();
+  int width_offset_len = param.COLUMN->lod()[0].size();
   lite::DDim width_offset_shape(std::vector<int64_t>{width_offset_len});
   _width_offset.Resize(width_offset_shape);
   std::vector<int> width_lod_0(width_offset_len, 0);
-  for (size_t i = 0; i < param.X->lod()[0].size(); ++i) {
-    width_lod_0[i] = static_cast<int>(param.X->lod()[0][i]);
+  for (size_t i = 0; i < param.COLUMN->lod()[0].size(); ++i) {
+    width_lod_0[i] = static_cast<int>(param.COLUMN->lod()[0][i]);
   }
   cudaMemcpyAsync(_width_offset.mutable_data<int>(TARGET(kCUDA)),
                   &width_lod_0[0],

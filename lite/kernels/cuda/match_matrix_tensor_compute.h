@@ -16,6 +16,7 @@
 #include <memory>
 #include "lite/backends/cuda/blas.h"
 #include "lite/backends/cuda/math/gemm.h"
+#include "lite/backends/cuda/math/transpose.h"
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -23,8 +24,9 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
+template <typename T, PrecisionType PType>
 class MatchMatrixTensorCompute
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kCUDA), PType, DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::MatchMatrixTensorParam;
 
@@ -33,11 +35,13 @@ class MatchMatrixTensorCompute
   virtual ~MatchMatrixTensorCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_;
-  lite::Tensor _input_l_transform;
-  lite::Tensor _input_l_transform_reorganize;
-  lite::Tensor _output_tmp;
-  lite::Tensor _offset_r;
+  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_;
+  lite::cuda::math::Transpose<T> trans_;
+
+  lite::Tensor input_l_transform_;
+  lite::Tensor input_l_transform_reorganize_;
+  lite::Tensor offset_r_;
+  lite::Tensor offset_l_;
 };
 
 }  // namespace cuda

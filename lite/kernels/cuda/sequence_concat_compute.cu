@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <vector>
+
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/kernels/cuda/sequence_concat_compute.h"
@@ -63,21 +64,90 @@ __global__ void concat_impl_2d_impl(const int inner_size,
   }
 }
 
+template <typename dtype>
+__global__ void ReorganizeOutput(const dtype* src,
+                                 dtype* dst,
+                                 const int dst_count,
+                                 const int channel,
+                                 const int src_height,
+                                 const int src_width,
+                                 const int dst_height,
+                                 const int dst_width) {
+  CUDA_KERNEL_LOOP(tid, dst_count) {
+    int w_id = tid % dst_width;
+    int h_id = tid / dst_width % dst_height;
+    int c_id = tid / dst_height / dst_width % channel;
+    if (h_id < src_height && w_id < src_width) {
+      dst[tid] = src[c_id * src_height * src_width + h_id * src_width + w_id];
+    } else {
+      dst[tid] = 0.f;
+    }
+  }
+}
+
 void SequenceConcatCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
 
+  // if input lod's size is 3, we should de preprocess
+  ts_.resize(param.X.size());
+  tp_.resize(param.X.size());
+  int height = -1;
+  int width = -1;
+  for (size_t i = 0; i < param.X.size(); ++i) {
+    if (param.X[i]->lod().size() == 1) {
+      tp_[i] = param.X[i];
+      if (height == -1) {
+        height = param.X[i]->dims()[2];
+        width = param.X[i]->dims()[3];
+      } else {
+        CHECK_EQ(height, param.X[i]->dims()[2])
+            << "the height should be the same";
+        CHECK_EQ(width, param.X[i]->dims()[3])
+            << "the width should be the same";
+      }
+    }
+  }
+
+  for (size_t i = 0; i < param.X.size(); ++i) {
+    if (param.X[i]->lod().size() == 3) {
+      int batch = param.X[i]->lod()[0].size() - 1;
+      int cur_c = param.X[i]->lod()[2][0];
+      ts_[i].Resize({batch, cur_c, height, width});
+      tp_[i] = &ts_[i];
+      auto* out_data = ts_[i].mutable_data<float>(TARGET(kCUDA));
+      auto* src_data = param.X[i]->data<float>();
+      for (size_t j = 0; j < batch; ++j) {
+        int cur_h = param.X[i]->lod()[0][j + 1] - param.X[i]->lod()[0][j];
+        int cur_w = param.X[i]->lod()[1][j + 1] - param.X[i]->lod()[1][j];
+        ReorganizeOutput<<<CUDA_GET_BLOCKS(height * width * cur_c),
+                           CUDA_NUM_THREADS,
+                           0,
+                           stream>>>(src_data,
+                                     out_data,
+                                     height * width * cur_c,
+                                     cur_c,
+                                     cur_h,
+                                     cur_w,
+                                     height,
+                                     width);
+
+        src_data += cur_c * cur_h * cur_w;
+        out_data += cur_c * height * width;
+      }
+    }
+  }
+
   const int BLOCK_SIZE = 32;
   const int axis = 1;
-  int num_concats = param.X[0]->dims().count(0, axis);
-  int concat_input_size =
-      param.X[0]->dims().count(axis + 1, param.X[0]->dims().size());
+  int num_concats = tp_[0]->dims().count(0, axis);
+  int concat_input_size = tp_[0]->dims().count(axis + 1, tp_[0]->dims().size());
 
   int input_size = param.X.size();
   std::vector<std::vector<int64_t>> shapes_in(input_size);
   for (int i = 0; i < input_size; ++i) {
-    shapes_in[i] = param.X[i]->dims().Vectorize();
+    shapes_in[i] = tp_[i]->dims().Vectorize();
   }
   std::vector<int64_t> shape_out = shapes_in[0];
 
@@ -100,8 +170,8 @@ void SequenceConcatCompute::Run() {
   const int out_concat_axis = shape_out[axis];
 
   for (int i = 0; i < input_size; ++i) {
-    std::vector<int64_t> in_shape = param.X[i]->dims().Vectorize();
-    const auto* in_data = param.X[i]->data<float>();
+    std::vector<int64_t> in_shape = tp_[i]->dims().Vectorize();
+    const auto* in_data = tp_[i]->data<float>();
     const int in_concat_axis = in_shape[axis];
     const int in_concat_size = in_concat_axis * concat_input_size;
     const int nthreads = in_concat_size * num_concats;
