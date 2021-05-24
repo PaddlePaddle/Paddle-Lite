@@ -54,7 +54,7 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/baidu/PaddleLite-linux-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/baidu/PaddleLite-linux-demo_v2_9_0.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-linux-demo
@@ -163,9 +163,9 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
 
   ```shell
   $ # Compiling environment: x86_64, centos6.3, gcc8.2
-  $ wget -O xpu_toolchain.tar.gz https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-centos6.3-x86_64-gcc8.2.0-latest.tar.gz
+  $ wget -O xpu_toolchain.tar.gz https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-centos6.3-x86_64-gcc8.2.0-2.0.0.66.tar.gz
   $ # Compiling environment：arm64(phytium), ubuntu18.04.4, gcc-linaro-5.4.1-2017.01-x86_64_aarch64-linux-gnu
-  $ # wget -O xpu_toolchain.tar.gz https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-ubuntu18.04.4-cross_compiling-aarch64-gcc5.4-latest.tar.gz
+  $ # wget -O xpu_toolchain.tar.gz https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-ubuntu18.04.4-cross_compiling-aarch64-gcc5.4-2.0.0.61.tar.gz
   $ tar -xvf xpu_toolchain.tar.gz
   ```
 
