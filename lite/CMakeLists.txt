@@ -345,7 +345,7 @@ if(LITE_WITH_CUDA)
     add_dependencies(publish_inference publish_inference_cuda_cxx_demos)
 endif(LITE_WITH_CUDA)
 
-if(LITE_WITH_XPU)
+if(LITE_WITH_XPU AND NOT XPU_SDK_ROOT)
     add_custom_command(TARGET publish_inference POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${THIRD_PARTY_PATH}/install/xpu" "${INFER_LITE_PUBLISH_ROOT}/third_party/xpu")
 endif(LITE_WITH_XPU)

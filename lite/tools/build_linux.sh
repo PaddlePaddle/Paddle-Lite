@@ -42,6 +42,8 @@ WITH_INTEL_FPGA=OFF
 INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk" 
 # options of adding training ops
 WITH_TRAIN=OFF
+# options of building tiny publish so
+WITH_TINY_PUBLISH=ON
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -58,19 +60,55 @@ readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/t
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for linux compiling.
 readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
-                            -DLITE_WITH_ARM=ON \
-                            -DLITE_WITH_X86=OFF \
-                            -DARM_TARGET_OS=armlinux \
-                            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+                            -DCMAKE_BUILD_TYPE=Release \
                             -DWITH_TESTING=OFF"
 # mutable options for linux compiling.
 function init_cmake_mutable_options {
-    cmake_mutable_options="-DARM_TARGET_ARCH_ABI=$ARCH \
+    if [ "$WITH_PYTHON" = "ON" -a "$WITH_TINY_PUBLISH" = "ON" ]; then
+        echo "Warning: build full_publish to use python."
+        WITH_TINY_PUBLISH=OFF
+    fi
+    if [ "$WITH_TRAIN" = "ON" -a "$WITH_TINY_PUBLISH" = "ON" ]; then
+        echo "Warning: build full_publish to add training ops."
+        WITH_TINY_PUBLISH=OFF
+    fi
+
+    if [ "$BUILD_TAILOR" = "ON" -a "$OPTMODEL_DIR" = "" ]; then
+        echo "Error: set OPTMODEL_DIR if BUILD_TAILOR is ON."
+        exit 1
+    fi
+
+    if [ "${ARCH}" == "x86" ]; then
+        with_x86=ON
+        arm_target_os=""
+        with_light_weight_framework=OFF
+    else
+        with_arm=ON
+        arm_arch=$ARCH
+        arm_target_os=armlinux
+        with_light_weight_framework=ON
+    fi
+
+    if [ "${WITH_STRIP}" == "ON" ]; then
+        WITH_EXTRA=ON
+    fi
+
+    if [ "${WITH_BAIDU_XPU}" == "ON" ]; then
+        WITH_EXTRA=ON
+        WITH_TINY_PUBLISH=OFF
+    fi
+
+    cmake_mutable_options="-DLITE_WITH_ARM=$with_arm \
+                        -DLITE_WITH_X86=$with_x86 \
+                        -DARM_TARGET_ARCH_ABI=$arm_arch \
+                        -DARM_TARGET_OS=$arm_target_os \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
+                        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$with_light_weight_framework \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DPY_VERSION=$PY_VERSION \
                         -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
+                        -DWITH_STATIC_MKL=$WITH_STATIC_LIB \
                         -DLITE_WITH_CV=$WITH_CV \
                         -DLITE_WITH_LOG=$WITH_LOG \
                         -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -87,7 +125,8 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_IMAGINATION_NNA=$WITH_IMAGINATION_NNA \
                         -DIMAGINATION_NNA_SDK_ROOT=${IMAGINATION_NNA_SDK_ROOT} \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
-                        -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT}"
+                        -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
+                        -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
 }
 #####################################################################################################
@@ -155,29 +194,21 @@ function prepare_thirdparty {
 # 4. compiling functions
 ####################################################################################################
 
-# 4.1 function of tiny_publish compiling
+# 4.1 function of publish compiling
 # here we only compile light_api lib
-function make_tiny_publish_so {
-    is_tiny=${1:-ON}
-    if [ "$WITH_PYTHON" = "ON" -a "$is_tiny" = "ON" ]; then
-        echo "Warning: build full_publish to use python."
-        is_tiny=OFF
-    fi
-    if [ "$WITH_TRAIN" = "ON" -a "$is_tiny" = "ON" ]; then
-        echo "Warning: build full_publish to add training ops."
-        is_tiny=OFF
-    fi
-    if [ "$BUILD_TAILOR" = "ON" -a "$OPTMODEL_DIR" = "" ]; then
-        echo "Error: set OPTMODEL_DIR if BUILD_TAILOR is ON."
-    fi
+function make_publish_so {
+    init_cmake_mutable_options
 
-    if [ "$is_tiny" = "OFF" ]; then
+    if [ "$WITH_TINY_PUBLISH" = "OFF" ]; then
         prepare_thirdparty
     fi
 
     build_dir=$workspace/build.lite.linux.$ARCH.$TOOLCHAIN
     if [ "${WITH_OPENCL}" = "ON" ]; then
        build_dir=${build_dir}.opencl
+    fi
+    if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
+       build_dir=$workspace/build.lite.linux.$ARCH.baidu_xpu
     fi
 
     if [ -d $build_dir ]; then
@@ -191,15 +222,10 @@ function make_tiny_publish_so {
     if [ "${WITH_OPENCL}" = "ON" ]; then
        prepare_opencl_source_code $workspace $build_dir
     fi
-    if [ "${WITH_STRIP}" == "ON" ]; then
-        WITH_EXTRA=ON
-    fi
 
-    init_cmake_mutable_options
     cmake $workspace \
        ${CMAKE_COMMON_OPTIONS} \
-       ${cmake_mutable_options} \
-       -DLITE_ON_TINY_PUBLISH=$is_tiny
+       ${cmake_mutable_options}
 
     if [ "${WITH_OPENCL}" = "ON" ]; then
        make opencl_clhpp -j$NUM_PROC 
@@ -210,12 +236,7 @@ function make_tiny_publish_so {
 }
 ####################################################################################################
 
-# 4.2 function of full_publish compiling
-# here we compile both light_api lib and full_api lib
-function make_full_publish_so {
-    make_tiny_publish_so OFF
-}
-####################################################################################################
+
 
 function print_usage {
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
@@ -227,7 +248,7 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh help                                                                                                                 |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                                  |"
-    echo -e "|     --arch: (armv8|armv7hf|armv7), default is armv8                                                                                                  |"
+    echo -e "|     --arch: (armv8|armv7hf|armv7|x86), default is armv8                                                                                                  |"
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                                         |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP), default is OFF  |"
     echo -e "|     --with_python: (OFF|ON); controls whether to build python lib or whl, default is OFF                                                             |"
@@ -255,22 +276,18 @@ function print_usage {
     echo -e "|  detailed information about Paddle-Lite RKNPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html                           |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
-    echo -e "|     ./lite/tools/build_linux.sh --with_baidu_xpu=ON                                                                                                  |"
-    echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF                                                        |"
-    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) optional                                                                                      |"
-    echo -e "|     --baidu_xpu_sdk_url: (baidu_xpu sdk download url) optional                                                                                       |"
-    echo -e "|     --baidu_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional                                                       |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_baidu_xpu=ON                                                                                       |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=armv8 --with_baidu_xpu=ON                                                                                     |"
+    echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF.                                                       |"
+    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) optional, default is None                                                                     |"
+    echo -e "|     --baidu_xpu_sdk_url: (baidu_xpu sdk download url) optional, default is 'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'     |"
+    echo -e "|     --baidu_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                      |"
+    echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
 
 function main {
-    if [ -z "$1" ]; then
-        # compiling result contains light_api lib only, recommanded.
-        make_tiny_publish_so
-        exit 0
-    fi
-
     # Parse command line.
     for i in "$@"; do
         case $i in
@@ -385,7 +402,8 @@ function main {
                 ;;
             # compiling result contains both light_api and cxx_api lib.
             full_publish)
-                make_full_publish_so
+                WITH_TINY_PUBLISH=OFF
+                make_publish_so
                 exit 0
                 ;;
             # print help info
@@ -401,8 +419,9 @@ function main {
                 ;;
         esac
     done
+
     # compiling result contains light_api lib only, recommanded.
-    make_tiny_publish_so
+    make_publish_so
 }
 
 main $@
