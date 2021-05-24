@@ -8,6 +8,9 @@ X2Paddle可以将caffe、tensorflow、onnx模型转换成Paddle支持的模型�
 
 ## 安装
 
+- 环境依赖
+  - python >= 3.5
+  - paddlepaddle >= 2.0.0
 ```
 pip install x2paddle
 ```
