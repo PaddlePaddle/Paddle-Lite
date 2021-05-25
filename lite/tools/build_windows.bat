@@ -215,7 +215,7 @@ goto:eof
             -DPYTHON_EXECUTABLE="%python_path%"
 
     ninja extern_mklml
-    ninja -j %cores%
+    ninja publish_inference -j %cores%
 goto:eof
 
 
