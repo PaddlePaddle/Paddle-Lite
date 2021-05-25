@@ -62,7 +62,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
                                           config.mlu_input_layout(),
                                           config.mlu_firstconv_param());
 #endif  // LITE_WITH_MLU
-
 #ifdef LITE_WITH_BM
     Env<TARGET(kBM)>::Init();
     int device_id = 0;
@@ -71,7 +70,15 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     }
     TargetWrapper<TARGET(kBM)>::SetDevice(device_id);
 #endif  // LITE_WITH_BM
-
+#ifdef LITE_WITH_XPU
+    ContextScheduler::Global().InitXpuContext(
+        config_.xpu_l3_size(),
+        config_.xpu_l3_locked(),
+        config_.xpu_conv_autotune(),
+        config_.xpu_conv_autotune_file(),
+        config_.xpu_multi_encoder_precision(),
+        config_.xpu_multi_encoder_adaptive_seqlen());
+#endif  // LITE_WITH_XPU
     auto use_layout_preprocess_pass =
         config.model_dir().find("OPENCL_PRE_PRECESS");
     VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;

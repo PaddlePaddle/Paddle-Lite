@@ -459,38 +459,28 @@ CxxConfig::mlu_firstconv_param() const {
 
 // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
 void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
-#ifdef LITE_WITH_XPU
   CxxConfig::set_xpu_l3_cache_method(l3_size, false);
-#else
-  LOG(WARNING) << "The invoking of the function "
-                  "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
-                  "rebuild it with LITE_WITH_XPU=ON.";
-#endif
 }
 
 void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
-#ifdef LITE_WITH_XPU
-  static std::mutex set_l3_mutex;
-  const std::lock_guard<std::mutex> lock(set_l3_mutex);
-  if (locked) {
-    if (!lite::TargetWrapperXPU::IsSharedL3Created()) {
-      lite::TargetWrapperXPU::shared_l3_size =
-          lite::TargetWrapperXPU::shared_l3_size > l3_size
-              ? lite::TargetWrapperXPU::shared_l3_size
-              : l3_size;
-    } else {
-      CHECK(lite::TargetWrapperXPU::shared_l3_size >= l3_size)
-          << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
-    }
-    lite::TargetWrapperXPU::local_l3_size = 0;
-  } else {
-    lite::TargetWrapperXPU::local_l3_size = l3_size;
-  }
-#else
-  LOG(WARNING) << "The invoking of the function "
-                  "'set_xpu_l3_cache_method' is ignored, please "
-                  "rebuild it with LITE_WITH_XPU=ON.";
-#endif
+  xpu_l3_size_ = l3_size;
+  xpu_l3_locked_ = locked;
+}
+
+size_t CxxConfig::xpu_l3_size() const { return xpu_l3_size_; }
+
+bool CxxConfig::xpu_l3_locked() const { return xpu_l3_locked_; }
+
+void CxxConfig::set_xpu_conv_autotune(bool autotune,
+                                      const std::string &autotune_file) {
+  xpu_conv_autotune_ = autotune;
+  xpu_conv_autotune_file_ = autotune_file;
+}
+
+bool CxxConfig::xpu_conv_autotune() const { return xpu_conv_autotune_; }
+
+std::string CxxConfig::xpu_conv_autotune_file() const {
+  return xpu_conv_autotune_file_;
 }
 
 void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
@@ -504,37 +494,21 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 
 // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
 void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
-#ifdef LITE_WITH_XPU
   CxxConfig::set_xpu_multi_encoder_method(precision, false);
-#else
-  LOG(WARNING) << "The invoking of the function "
-                  "'set_xpu_multi_encoder_precision' is "
-                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
-#endif
 }
 
 void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
                                              bool adaptive_seqlen) {
-#ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::multi_encoder_precision = precision;
-  lite::TargetWrapperXPU::multi_encoder_adaptive_seqlen = adaptive_seqlen;
-#else
-  LOG(WARNING) << "The invoking of the function "
-                  "'set_xpu_multi_encoder_method' is "
-                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
-#endif
+  xpu_multi_encoder_precision_ = precision;
+  xpu_multi_encoder_adaptive_seqlen_ = adaptive_seqlen;
 }
 
-void CxxConfig::set_xpu_conv_autotune(bool autotune,
-                                      const std::string &autotune_file) {
-#ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::conv_autotune = autotune;
-  lite::TargetWrapperXPU::conv_autotune_file = autotune_file;
-#else
-  LOG(WARNING) << "The invoking of the function "
-                  "'set_xpu_conv_autotune' is ignored, please "
-                  "rebuild it with LITE_WITH_XPU=ON.";
-#endif
+std::string CxxConfig::xpu_multi_encoder_precision() const {
+  return xpu_multi_encoder_precision_;
+}
+
+bool CxxConfig::xpu_multi_encoder_adaptive_seqlen() const {
+  return xpu_multi_encoder_adaptive_seqlen_;
 }
 
 template <class T>
@@ -592,6 +566,11 @@ _SetPreferredInputsForWarmup(double);
 _SetPreferredInputsForWarmup(int32_t);
 _SetPreferredInputsForWarmup(int64_t);
 #undef _SetPreferredInputsForWarmup
+
+const std::map<int, std::vector<std::shared_ptr<void>>>
+    &CxxConfig::preferred_inputs_for_warmup() const {
+  return preferred_inputs_for_warmup_;
+}
 
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory

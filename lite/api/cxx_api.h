@@ -164,13 +164,30 @@ class LITE_API Predictor {
     CheckInputValid();
 
 #ifdef LITE_WITH_XPU
-    lite::TargetWrapperXPU::MallocL3Cache();
+    // must get context from kernel because context from ContextScheduler may be
+    // different now
+    auto* insts = program_->mutable_instructions();
+    XPUContext* ctx = nullptr;
+    for (size_t i = 0; i < insts->size(); i++) {
+      if (insts->at(i).kernel()->target() == TARGET(kXPU)) {
+        ctx = &(
+            insts->at(i).mutable_kernel()->mutable_context()->As<XPUContext>());
+        break;
+      }
+    }
+    if (ctx != nullptr) {
+      lite::TargetWrapperXPU::MallocL3Cache(
+          ctx->GetRawContext(), ctx->L3Size(), ctx->L3Locked());
+    }
 #endif
 
     program_->Run();
 
 #ifdef LITE_WITH_XPU
-    lite::TargetWrapperXPU::FreeL3Cache();
+    if (ctx != nullptr) {
+      lite::TargetWrapperXPU::FreeL3Cache(
+          ctx->GetRawContext(), ctx->L3Size(), ctx->L3Locked());
+    }
 #endif
   }
 

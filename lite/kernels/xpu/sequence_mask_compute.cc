@@ -26,7 +26,7 @@ namespace xpu {
 
 template <class T>
 void SequenceMaskCompute<T>::Run() {
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
 
   int max_len = param.maxlen;

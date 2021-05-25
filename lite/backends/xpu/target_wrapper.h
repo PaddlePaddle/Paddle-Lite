@@ -14,11 +14,11 @@
 
 #pragma once
 
-#include <memory>                                 // std::unique_ptr
-#include <mutex>                                  // NOLINT
-#include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
-#include "lite/core/target_wrapper.h"             // TargetWrapper
-#include "lite/utils/cp_logging.h"                // CHECK_EQ
+#include <memory>
+#include <mutex>  // NOLINT
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/core/target_wrapper.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/macros.h"
 
 #define XPU_CALL(func)                                        \
@@ -69,23 +69,12 @@ class TargetWrapper<TARGET(kXPU)> {
 
   static XPUScratchPadGuard MallocScratchPad(size_t size);
 
-  static xdnn::Context* GetRawContext() {
-    if (tls_raw_ctx_ == nullptr) {
-      tls_raw_ctx_ = xdnn::create_context();
-      CHECK(tls_raw_ctx_);
-      if (conv_autotune) {
-        tls_raw_ctx_->_xpu1_conv_selector.set_autotune_loop(true);
-        tls_raw_ctx_->_xpu1_conv_selector.set_inference_mode(true);
-      }
-      if (!conv_autotune_file.empty()) {
-        tls_raw_ctx_->_xpu1_conv_selector.set_autotune_file(
-            conv_autotune_file.c_str());
-      }
-    }
-    return tls_raw_ctx_;
-  }
-  static void MallocL3Cache();
-  static void FreeL3Cache();
+  static void MallocL3Cache(xdnn::Context* tls_raw_ctx,
+                            size_t l3_size,
+                            bool locked);
+  static void FreeL3Cache(xdnn::Context* tls_raw_ctx,
+                          size_t l3_size,
+                          bool locked);
   static bool IsSharedL3Created() {
     return shared_l3_ptr_ == nullptr ? false : true;
   }
@@ -100,15 +89,9 @@ class TargetWrapper<TARGET(kXPU)> {
     XPU_CALL(xpu_set_device(dev_no));
   }
 
-  static LITE_THREAD_LOCAL std::string multi_encoder_precision;  // NOLINT
-  static LITE_THREAD_LOCAL size_t local_l3_size;
-  static LITE_THREAD_LOCAL bool conv_autotune;
-  static LITE_THREAD_LOCAL std::string conv_autotune_file;  // NOLINT
-  static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
   static size_t shared_l3_size;
 
  private:
-  static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
 };

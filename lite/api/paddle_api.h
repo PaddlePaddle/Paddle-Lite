@@ -253,6 +253,12 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<float> mlu_first_conv_mean_{};
   std::vector<float> mlu_first_conv_std_{};
 #endif
+  size_t xpu_l3_size_{0xfffc00};
+  bool xpu_l3_locked_{false};
+  bool xpu_conv_autotune_{false};
+  std::string xpu_conv_autotune_file_;
+  std::string xpu_multi_encoder_precision_;
+  bool xpu_multi_encoder_adaptive_seqlen_{false};
 
  public:
   void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
@@ -321,9 +327,13 @@ class LITE_API CxxConfig : public ConfigBase {
   // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
   void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
+  size_t xpu_l3_size() const;
+  bool xpu_l3_locked() const;
 
   void set_xpu_conv_autotune(bool autotune = true,
                              const std::string& autotune_file = "");
+  bool xpu_conv_autotune() const;
+  std::string xpu_conv_autotune_file() const;
 
   // XPU only, specify the target device ID for the current thread.
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
@@ -334,6 +344,8 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
   void set_xpu_multi_encoder_method(const std::string& precision = "int16",
                                     bool adaptive_seqlen = false);
+  std::string xpu_multi_encoder_precision() const;
+  bool xpu_multi_encoder_adaptive_seqlen() const;
 
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when
@@ -346,9 +358,7 @@ class LITE_API CxxConfig : public ConfigBase {
                                        const T fill_value = 0,
                                        const void* data = nullptr);
   const std::map<int, std::vector<std::shared_ptr<void>>>&
-  preferred_inputs_for_warmup() const {
-    return preferred_inputs_for_warmup_;
-  }
+  preferred_inputs_for_warmup() const;
 
   void set_quant_model(bool quant_model) { quant_model_ = quant_model; }
   bool quant_model() const { return quant_model_; }

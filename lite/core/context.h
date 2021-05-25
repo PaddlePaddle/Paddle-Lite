@@ -265,14 +265,93 @@ class Context<TargetType::kXPU> {
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
-  void CopySharedTo(XPUContext* ctx) {}
+  void Init(const size_t l3_size,
+            const bool locked,
+            const bool autotune,
+            const std::string autotune_file,
+            const std::string precision,
+            const bool adaptive_seqlen) {
+    l3_size_ = l3_size;
+    l3_locked_ = locked;
+    conv_autotune_ = autotune;
+    conv_autotune_file_ = autotune_file;
+    multi_encoder_precision_ = precision;
+    multi_encoder_adaptive_seqlen_ = adaptive_seqlen;
 
-  // TODO(miaotianxiang): remove this
-  static xdnn::Context* GetRawContext() {
-    return TargetWrapperXPU::GetRawContext();
+    InitL3();
+    CreateTlsRawCtx();
   }
 
+  void CopySharedTo(XPUContext* ctx) {
+    l3_size_ = ctx->L3Size();
+    l3_locked_ = ctx->L3Locked();
+    conv_autotune_ = ctx->ConvAutotune();
+    conv_autotune_file_ = ctx->ConvAutotuneFile();
+    multi_encoder_precision_ = ctx->MultiEncoderPrecision();
+    multi_encoder_adaptive_seqlen_ = ctx->MultiEncoderAdaptiveSeqlen();
+    tls_raw_ctx_ = ctx->TlsRawCtx();
+  }
+
+  xdnn::Context* GetRawContext() { return tls_raw_ctx_.get(); }
+
+  size_t L3Size() const { return l3_size_; }
+
+  bool L3Locked() const { return l3_locked_; }
+
+  bool ConvAutotune() const { return conv_autotune_; }
+
+  std::string ConvAutotuneFile() const { return conv_autotune_file_; }
+
+  std::string MultiEncoderPrecision() const { return multi_encoder_precision_; }
+
+  bool MultiEncoderAdaptiveSeqlen() const {
+    return multi_encoder_adaptive_seqlen_;
+  }
+
+  std::shared_ptr<xdnn::Context> TlsRawCtx() const { return tls_raw_ctx_; }
+
   std::string name() const { return "XPUContext"; }
+
+ private:
+  void InitL3() {
+    static std::mutex set_l3_mutex;
+    const std::lock_guard<std::mutex> lock(set_l3_mutex);
+    if (l3_locked_) {
+      if (!lite::TargetWrapperXPU::IsSharedL3Created()) {
+        lite::TargetWrapperXPU::shared_l3_size =
+            lite::TargetWrapperXPU::shared_l3_size > l3_size_
+                ? lite::TargetWrapperXPU::shared_l3_size
+                : l3_size_;
+      } else {
+        CHECK(lite::TargetWrapperXPU::shared_l3_size >= l3_size_)
+            << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
+      }
+    }
+  }
+
+  std::shared_ptr<xdnn::Context> CreateTlsRawCtx() {
+    tls_raw_ctx_ = std::shared_ptr<xdnn::Context>(
+        xdnn::create_context(), [](xdnn::Context* x) { destroy_context(x); });
+    CHECK(tls_raw_ctx_ != nullptr);
+    if (conv_autotune_) {
+      tls_raw_ctx_->_xpu1_conv_selector.set_autotune_loop(true);
+      tls_raw_ctx_->_xpu1_conv_selector.set_inference_mode(true);
+    }
+    if (!conv_autotune_file_.empty()) {
+      tls_raw_ctx_->_xpu1_conv_selector.set_autotune_file(
+          conv_autotune_file_.c_str());
+    }
+    return tls_raw_ctx_;
+  }
+
+ private:
+  size_t l3_size_{0};
+  bool l3_locked_{false};
+  std::string multi_encoder_precision_;
+  bool multi_encoder_adaptive_seqlen_{false};
+  bool conv_autotune_{false};
+  std::string conv_autotune_file_;
+  std::shared_ptr<xdnn::Context> tls_raw_ctx_;
 };
 #endif
 
@@ -611,6 +690,18 @@ class ContextScheduler {
     }
     return ctx;
   }
+
+#ifdef LITE_WITH_XPU
+  void InitXpuContext(const size_t l3_size,
+                      const bool locked,
+                      const bool autotune,
+                      const std::string autotune_file,
+                      const std::string precision,
+                      const bool adaptive_seqlen) {
+    kernel_contexts_[TARGET(kXPU)].As<XPUContext>().Init(
+        l3_size, locked, autotune, autotune_file, precision, adaptive_seqlen);
+  }
+#endif
 
  private:
   template <TargetType Type, typename ContextT>

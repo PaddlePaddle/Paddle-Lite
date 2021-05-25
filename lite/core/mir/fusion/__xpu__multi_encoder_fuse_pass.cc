@@ -955,25 +955,25 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     // lite/backends/xpu/target_wrapper.cc is only compiled iff
     // LITE_WITH_XPU==ON. To suppress linkage error, we use
     // #ifdef here. Any better idea?
+    auto ctx =
+        ContextScheduler::Global().NewContext(TARGET(kXPU))->As<XPUContext>();
+    std::string multi_encoder_precision = ctx.MultiEncoderPrecision();
     if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
+        multi_encoder_precision == "int31") {
       fc_precision = "int31";
       VLOG(3) << "Use int31 in XPUMultiEncoderOp, "
-              << "lite::TargetWrapperXPU::multi_encoder_precision="
-              << lite::TargetWrapperXPU::multi_encoder_precision;
+              << "multi_encoder_precision=" << multi_encoder_precision;
     } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
+               multi_encoder_precision == "int8") {
       fc_precision = "int8";
       VLOG(3) << "Use int8 in XPUMultiEncoderOp, "
-              << "lite::TargetWrapperXPU::multi_encoder_precision="
-              << lite::TargetWrapperXPU::multi_encoder_precision;
+              << "multi_encoder_precision=" << multi_encoder_precision;
     } else {
       fc_precision = "int16";
       VLOG(3) << "Use int16 in XPUMultiEncoderOp, "
-              << "lite::TargetWrapperXPU::multi_encoder_precision="
-              << lite::TargetWrapperXPU::multi_encoder_precision;
+              << "multi_encoder_precision=" << multi_encoder_precision;
     }
-    adaptive_seqlen = lite::TargetWrapperXPU::multi_encoder_adaptive_seqlen;
+    adaptive_seqlen = ctx.MultiEncoderAdaptiveSeqlen();
 #endif
 
     for (auto& act_type : act_types) {
