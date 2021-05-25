@@ -67,6 +67,7 @@ readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for linux compiling.
 readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DCMAKE_BUILD_TYPE=Release \
+                            -DWITH_MKLDNN=OFF \
                             -DWITH_TESTING=OFF"
 # mutable options for linux compiling.
 function init_cmake_mutable_options {
@@ -120,8 +121,8 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
                         -DLITE_BUILD_TAILOR=$WITH_STRIP \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-                        -DWITH_STATIC_MKL=${WITH_STATIC_MKL} \
-                        -DWITH_AVX=${WITH_AVX} \
+                        -DWITH_STATIC_MKL=$WITH_STATIC_MKL \
+                        -DWITH_AVX=$WITH_AVX \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
@@ -268,7 +269,7 @@ function print_usage {
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                                            |"
     echo -e "|     --with_profile: (OFF|ON); controls whether to profile speed, default is OFF                                                                      |"
-    echo -e "|     --with_exception: (OFF|ON); controls whether to profile precision, default is OFF                                                                |"
+    echo -e "|     --with_precision_profile: (OFF|ON); controls whether to profile precision, default is OFF                                                        |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:                                                                                                 |"
     echo -e "|     ./lite/tools/build_linux.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                                |"
