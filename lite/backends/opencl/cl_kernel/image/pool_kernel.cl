@@ -108,7 +108,7 @@ __kernel void pool_local(__read_only image2d_t input,
     __private const int local_block_size,
     __private const int2 local_block_size_wh, /* 16, 49 */
     __private const int2 local_block_count_wh, /* 2, 1 */
-    __local CL_DTYPE* local_output) {
+    __local CL_DTYPE4* local_output) {
   const int out_c = get_global_id(0) / local_block_size;
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);

@@ -42,18 +42,35 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     const auto& param = *param_.get_mutable<param_t>();
-
+    const auto& in_dims = param.x->dims();
+    const auto& out_dims = param.output->dims();
     const bool global_pooling = param.global_pooling;
     const bool exclusive = param.exclusive;
+    std::vector<int> ksize = param.ksize;
+    std::vector<int> paddings = *param.paddings;
     if (exclusive) {
       build_options_ += " -DEXCLUSIVE";
     }
     if (global_pooling) {
       build_options_ += " -DGLOBAL";
+      for (size_t i = 0; i < ksize.size(); ++i) {
+        paddings[2 * i] = 0;
+        paddings[2 * i + 1] = 0;
+        ksize[i] = static_cast<int>(in_dims[i + 2]);
+      }
     }
     if (param.pooling_type == "avg") {
       build_options_ += " -DPOOL_AVG";
     }
+
+    run_local_work_ =
+        out_dims[0] * UP_DIV(out_dims[1], 4) * out_dims[2] * out_dims[3] <
+            low_op_parallelism_thre_ &&
+        ksize[0] * ksize[1] >= high_op_intensity_thre_;
+    if (run_local_work_) {
+      kernel_func_name_ += "_local";
+    }
+
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
@@ -139,13 +156,74 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
             << "padding requires pad_left == pad_right, pad_top == pad_bottom";
       }
 
-      int c_block = (out_dims[1] + 3) / 4;
-      int w = out_dims[3];
-      int nh = out_dims[0] * out_dims[2];
-      global_work_size_ = cl::NDRange(c_block, w, nh);
+      const int out_c_blks = UP_DIV(out_dims[1], 4);
+      uint32_t workgroup_size = 0;
+
+      int type_size =
+          (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
+              ? sizeof(uint16_t)
+              : sizeof(float);
+      if (param.global_pooling && param.pooling_type == "avg") {
+        type_size = sizeof(float);
+      }
+      uint32_t local_mem_size =
+          CLRuntime::Global()->GetDeviceInfo()["CL_DEVICE_LOCAL_MEM_SIZE_KB"] *
+          1024;
+      uint32_t workgroupsize_max =
+          CLRuntime::Global()->GetDeviceInfo()["CL_DEVICE_MAX_WORK_GROUP_SIZE"];
+
+      uint32_t compute_intensity = param.ksize[0] * param.ksize[1];
+      run_local_work_ = out_dims[0] * out_c_blks * out_dims[2] * out_dims[3] <
+                            low_op_parallelism_thre_ &&
+                        compute_intensity >= high_op_intensity_thre_;
+      if (run_local_work_) {
+        workgroup_size =
+            std::min(static_cast<uint32_t>(local_mem_size / (4 * type_size)),
+                     workgroupsize_max);
+        workgroup_size =
+            std::min(static_cast<uint32_t>(compute_intensity), workgroup_size);
+        uint32_t temp_size = 1;
+        while ((temp_size <<= 1) <= workgroup_size) {
+        }
+        workgroup_size = temp_size >> 1;
+
+        int workgroup_w_size = 1, workgroup_h_size;
+        while ((workgroup_w_size <<= 1) <= param.ksize[0] &&
+               workgroup_w_size <= workgroup_size) {
+        }
+        workgroup_w_size >>= 1;
+        workgroup_h_size = workgroup_size / workgroup_w_size;
+
+        global_work_size_ =
+            cl::NDRange{static_cast<cl::size_type>(out_c_blks * workgroup_size),
+                        static_cast<cl::size_type>(out_dims[3]),
+                        static_cast<cl::size_type>(out_dims[0] * out_dims[2])};
+        local_work_size_ =
+            cl::NDRange{static_cast<cl::size_type>(workgroup_size), 1, 1};
+
+        int local_block_size_shape[2] = {workgroup_w_size, workgroup_h_size};
+        int local_block_count_shape[2] = {
+            UP_DIV(param.ksize[0], workgroup_w_size),
+            UP_DIV(param.ksize[1], workgroup_h_size)};
+
+        int idx = 12;
+        kernel_.setArg(idx++, static_cast<int32_t>(workgroup_size));
+        kernel_.setArg(
+            idx++, sizeof(local_block_size_shape), local_block_size_shape);
+        kernel_.setArg(
+            idx++, sizeof(local_block_count_shape), local_block_count_shape);
+        kernel_.setArg(idx++, workgroup_size * 4 * type_size, nullptr);
+      } else {
+        global_work_size_ =
+            cl::NDRange(out_c_blks, out_dims[3], out_dims[0] * out_dims[2]);
+        local_work_size_ = cl::NullRange;
+      }
+
 #ifdef LITE_WITH_LOG
-      VLOG(4) << "global_work_size_ : [" << 3 << "]" << c_block << "  " << w
-              << "  " << nh << "  ";
+      VLOG(4) << "global_work_size_ : [" << 3 << "]"
+              << static_cast<int>(global_work_size_[0]) << "  "
+              << static_cast<int>(global_work_size_[1]) << "  "
+              << static_cast<int>(global_work_size_[2]) << "  ";
 #endif
       cl_int status;
       int arg_idx = 2;
@@ -187,7 +265,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                   kernel_,
                                   cl::NullRange,
                                   global_work_size_,
-                                  cl::NullRange,
+                                  local_work_size_,
                                   nullptr,
                                   event_);
     CL_CHECK_FATAL(status);
@@ -203,6 +281,10 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
   cl::Image2D* x_img_{nullptr};
   cl::Image2D* out_img_{nullptr};
   cl::NDRange global_work_size_;
+  cl::NDRange local_work_size_;
+  bool run_local_work_{false};
+  const uint32_t low_op_parallelism_thre_{256};
+  const uint32_t high_op_intensity_thre_{128};
 };
 
 }  // namespace opencl
