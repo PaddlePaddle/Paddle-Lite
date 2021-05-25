@@ -148,6 +148,8 @@ class CLRuntime {
     return binary_path_name_;
   }
 
+  void Flush(const int index);
+
   bool Init();
 
   cl::Platform& platform();
@@ -325,6 +327,8 @@ class CLRuntime {
   // magic number for precompiled binary
   const std::string sn_key_{"lite_opencl_precompiled_binary_identifier"};
   bool gotten_bin_flag_{false};
+  // magic number for cl flush judgement
+  const int opencl_flush_period_ = 10;
 };
 
 }  // namespace lite

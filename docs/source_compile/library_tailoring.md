@@ -5,17 +5,12 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 
 ## 效果展示(Android动态预测库体积)
 
-| 测试模型 | 裁剪开关  | **libpaddle_lite_jni.so** |转化后模型中的OP|
+| 测试模型 | 裁剪开关  | **libpaddle_light_api_shared.so** |转化后模型中的OP|
 | ------------------ | ---------------------------- | -------- |------------------|
-| mobilenetv1（armv8） | 裁剪前 | 1.5M                | feed,etch,conv2d,depthwise_conv2d,fc,fpool2d,softmax     |
-| mobilenetv1（armv8） | 裁剪后 |  788K              |feed,etch,conv2d,depthwise_conv2d,fc,fpool2d,softmax|
-| mobilenetv2（armv8） | 裁剪前 | 1.5M                | feed,fetch,conv2d,depthwise_conv2d,elementwise_add,fc,pool2d,relu6,softmax |
-| mobilenetv2（armv8） | 裁剪后 |  912K          |feed,fetch,conv2d,depthwise_conv2d,elementwise_add,fc,pool2d,relu6,softmax|
-| mobilenetv1（armv7） | 裁剪前 | 938K     |feed,fetch,concat,conv2d,dropout,fc,pool2d,softmax|
-| mobilenetv1（armv7） | 裁剪后 | 607K   |feed,fetch,concat,conv2d,dropout,fc,pool2d,softmax|
-| mobilenetv2（armv7） | 裁剪前 | 938K | feed,fetch,conv2d,depthwise_conv2d,elementwise_add,fc,pool2d,relu6,softmax |
-| mobilenetv2（armv7） | 裁剪后 |687K          |feed,fetch,conv2d,depthwise_conv2d,elementwise_add,fc,pool2d,relu6,softmax|
-
+| mobilenetv1（armv8） | 裁剪前 | 1.5 MB       | conv2d,depthwise_conv2d,fc,pool2d,softmax |
+| mobilenetv1（armv8） | 裁剪后 |  859 KB     | conv2d,depthwise_conv2d,fc,pool2d,softmax |
+| mobilenetv1（armv7） | 裁剪前 | 967 KB | conv2d,depthwise_conv2d,fc,pool2d,softmax |
+| mobilenetv1（armv7） | 裁剪后 | 563 KB |conv2d,depthwise_conv2d,fc,pool2d,softmax|
 
 
 ## 实现过程：

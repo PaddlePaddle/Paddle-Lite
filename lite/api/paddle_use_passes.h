@@ -17,6 +17,7 @@
 
 USE_MIR_PASS(demo);
 USE_MIR_PASS(static_kernel_pick_pass);
+USE_MIR_PASS(op_transformation_pass);
 USE_MIR_PASS(variable_place_inference_pass);
 USE_MIR_PASS(type_target_cast_pass);
 USE_MIR_PASS(__fpga_kernel_place_correct_pass);
@@ -92,6 +93,7 @@ USE_MIR_PASS(__xpu__mmdnn_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_fuse_pass);
 USE_MIR_PASS(__xpu__resblock_reduction_fuse_pass);
 USE_MIR_PASS(__xpu__resblock_normal_fuse_pass);
+USE_MIR_PASS(__xpu__resblock_darknet_fuse_pass);
 USE_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass);
 USE_MIR_PASS(__xpu__sfa_head_moment_fuse_pass);
 USE_MIR_PASS(__xpu__softmax_topk_fuse_pass);

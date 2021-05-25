@@ -13,31 +13,26 @@
 // limitations under the License.
 
 #pragma once
+#include <stdint.h>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-template <typename T, PrecisionType PType>
-class BatchNormCompute : public KernelLite<TARGET(kARM), PType> {
+template <typename T, typename Functor>
+class ReduceCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::BatchNormParam;
-
-  void PrepareForRun() override;
-
   void Run() override;
 
-  virtual ~BatchNormCompute() = default;
+  virtual ~ReduceCompute() = default;
 
  private:
-  Tensor new_scale;
-  Tensor new_bias;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
