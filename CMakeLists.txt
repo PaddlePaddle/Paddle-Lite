@@ -265,6 +265,7 @@ endif()
 
 include(coveralls)
 
+include(configure)          # add paddle env configuration
 include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
 
@@ -279,7 +280,6 @@ include(external/eigen)     # download eigen3
 include(external/xxhash)    # download install xxhash needed for x86 jit
 
 include(cudnn)
-include(configure)          # add paddle env configuration
 
 if(LITE_WITH_CUDA)
   include(cuda)
