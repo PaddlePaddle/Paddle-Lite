@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-//  metal_context_oc.h
-//  PaddleLiteiOS
-//
-//  Created by hxwc on 2021/3/22.
-//
-
 #ifndef LITE_BACKENDS_METAL_METAL_CONTEXT_IMP_H_
 #define LITE_BACKENDS_METAL_METAL_CONTEXT_IMP_H_
 

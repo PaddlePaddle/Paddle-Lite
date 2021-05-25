@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-//  mps_conv_datasource.h
-//  PaddleLiteiOS
-//
-//  Created by hxwc on 2021/3/30.
-//
-
 #ifndef LITE_BACKENDS_METAL_MPS_CONV_DATASOURCE_H_
 #define LITE_BACKENDS_METAL_MPS_CONV_DATASOURCE_H_
 

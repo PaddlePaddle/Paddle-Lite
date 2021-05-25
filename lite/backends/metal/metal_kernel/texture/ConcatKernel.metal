@@ -31,7 +31,7 @@ struct ConcatParam {
 #define VY 3
 #define VZ 4
 
-// R:输入维度 N:输入个数 V：方向
+// R:input dim size N:input number V：direction
 
 // >> normal mode (loop mode)
 

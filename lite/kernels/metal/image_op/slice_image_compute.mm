@@ -1,9 +1,17 @@
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
-//  slice_image_compute.m
-//  PaddleLiteiOS
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//  Created by hxwc on 2021/4/13.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -18,7 +26,7 @@ namespace kernels {
 namespace metal {
 
 void SliceImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+  auto& context = ctx_->As<MTLContext>();
   metal_context_ = (MetalContext*)context.context();
 
   const auto& param = this->Param<param_t>();
@@ -26,7 +34,7 @@ void SliceImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
   input_buffer_ = param.X->data<MetalHalf, MetalImage>();
-  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
   setup_without_mps();
@@ -58,7 +66,7 @@ void SliceImageCompute::setup_without_mps() {
   // 只支持C通道拆分
   if (axes.size() == 1 && axes[0] == 1) {
   } else {
-    throw std::logic_error("slice: only support channel axe");
+    LOG(FATAL) << "slice: only support channel axe";
   }
   auto starts = param.starts;
   auto ends = param.ends;

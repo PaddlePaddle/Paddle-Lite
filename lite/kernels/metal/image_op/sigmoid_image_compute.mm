@@ -26,7 +26,7 @@ namespace kernels {
 namespace metal {
 
 void SigmoidImageCompute::PrepareForRun() {
-  auto &context = ctx_->As<ContextMetal>();
+  auto &context = ctx_->As<MTLContext>();
   metal_context_ = (MetalContext *)context.context();
 
   const auto &param = this->Param<param_t>();
@@ -35,7 +35,7 @@ void SigmoidImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
   input_buffer_ = param.X->data<MetalHalf, MetalImage>();
-  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
   function_name_ = "sigmoid";

@@ -182,6 +182,9 @@ RuntimeProgram::RuntimeProgram(
   if (opencl_valid) {
     unique_opencl_ctx->As<OpenCLContext>().InitOnce();
   }
+#elif LITE_WITH_METAL
+  metal_ctx_ = std::make_unique<KernelContext>();
+  (*metal_ctx_).As<MTLContext>().InitOnce();
 #endif
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
@@ -302,6 +305,10 @@ RuntimeProgram::RuntimeProgram(
       kernel->SetContext(
           ContextScheduler::Global().NewContext(kernel->target()));
     }
+#elif LITE_WITH_METAL
+    std::unique_ptr<KernelContext> ctx(new KernelContext());
+    (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
+    kernel->SetContext(std::move(ctx));
 #else
     if (kernel != nullptr) {
       kernel->SetContext(
@@ -314,6 +321,15 @@ RuntimeProgram::RuntimeProgram(
 }
 
 #ifdef LITE_WITH_METAL
+void RuntimeProgram::ConfigMetalContext(std::string lib_path,
+                                        bool use_mps,
+                                        bool use_aggressive) {
+  MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
+  context->set_metal_path(lib_path);
+  context->set_use_mps(use_mps);
+  context->set_use_aggressive(use_aggressive);
+}
+
 void RuntimeProgram::SaveOutput() {
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
@@ -339,7 +355,8 @@ void RuntimeProgram::Run() {
 #endif
 
 #ifdef LITE_WITH_METAL
-  TargetWrapperMetal::CreateCommandBuffer(this);
+  MetalContext* cmd_ctx = (*metal_ctx_).As<MTLContext>().context();
+  cmd_ctx->CreateCommandBuffer();
 #endif
 
   int idx = -1;
@@ -380,7 +397,8 @@ void RuntimeProgram::Run() {
   }
 
 #ifdef LITE_WITH_METAL
-  TargetWrapperMetal::WaitForCompleted();
+  MetalContext* wait_ctx = (*metal_ctx_).As<MTLContext>().context();
+  wait_ctx->WaitAllCompleted();
 #endif
 
 #ifdef LITE_WITH_PROFILE

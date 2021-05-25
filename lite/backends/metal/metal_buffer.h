@@ -29,18 +29,21 @@ namespace paddle {
 namespace lite {
 
 /**
- * rawdata 默认为NCHW
- * MTLBuffer为NHWC
+ * Data arrangement :
+ * rawdata is NCHW
+ * MTLBuffer is NHWC
  */
 class MetalBuffer {
  public:
-  // 使用场景：shader params 只包含GPU的MTLBuffer
+  // scenes: metal shader params.
+  // only contains MTLBuffer eg: conv2d params
   MetalBuffer(MetalContext* context,
               size_t size,
               void* data = nullptr,
               METAL_ACCESS_FLAG access = METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  // 使用场景：shader input or output 只包含GPU的MTLBuffer eg:io_copy fetch
+  // scenes: shader input or output
+  // only contains MTLBuffer eg: io_copy input or fetch output
   MetalBuffer(MetalContext* context,
               const DDim& inDim,
               size_t size,
@@ -48,7 +51,8 @@ class MetalBuffer {
               METAL_PRECISION_TYPE precision = METAL_PRECISION_TYPE::FLOAT,
               METAL_ACCESS_FLAG access = METAL_ACCESS_FLAG::CPUShared);
 
-  // 使用场景：shader weight 既包含CPU的raw_data_ 也包含GPU的MTLBuffer
+  // scenes: shader weight
+  // contains raw_data_ and MTLBuffer eg: conv2d filter
   MetalBuffer(MetalContext* context,
               const DDim& inDim,
               METAL_PRECISION_TYPE precision = METAL_PRECISION_TYPE::HALF);
@@ -59,7 +63,7 @@ class MetalBuffer {
   bool convert_to_nhwc_{true};
   bool with_transpose_{false};
   bool pad_when_one_channel_{false};
-  DataLayout data_layout_{DataLayout::kNCHW};
+  DataLayout data_layout_{DataLayout::kNCHW};  // raw data layout
   METAL_ACCESS_FLAG access_{METAL_ACCESS_FLAG::CPUWriteOnly};
   METAL_PRECISION_TYPE precision_{METAL_PRECISION_TYPE::HALF};
 
@@ -85,24 +89,16 @@ class MetalBuffer {
   DDim tensor_dim_;
   MetalContext* metal_context_;
 
-  void* rawdata_ = nullptr;  // 默认NCHW 原始数据
-  size_t mtl_size_;          // MTLBuffer大小（byte大小）
+  void* rawdata_ = nullptr;  // cpu raw data NCHW
+  size_t mtl_size_;          // MTLBuffer byte size
   size_t precision_size_;
-  bool can_copy_to_{true};  // 是否能copy to someone
+  bool can_copy_to_{true};  // is can copy to someone
 
 #if defined(__OBJC__)
   id<MTLBuffer> buffer_{nil};  // NHWC GPU数据
 #endif
 
-  void Convert2NHWC();  // NCHW转NHWC
-
- public:
-  void Read(void* data, size_t size, size_t offset) const;
-  void Write(const void* src, size_t size, size_t offset) const;
-  void Copy(const MetalBuffer& src,
-            size_t size,
-            size_t src_offset,
-            size_t dst_offset) const;
+  void Convert2NHWC();  // NCHW to NHWC
 };
 
 }  // namespace lite

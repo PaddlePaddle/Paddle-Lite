@@ -16,25 +16,26 @@
 #include <cstdlib>
 
 #include "lite/backends/metal/metal_debug.h"
+#include "lite/backends/metal/target_wrapper.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
 
-void MetalDebug::print_log(const std::string& name, MetalImage* metalImg) {
+void MetalDebug::print_log(const std::string& name, MetalImage* metalImg, int inCount) {
   auto size = metalImg->tensor_dim_.production();
-  float* data = (float*)malloc(sizeof(float) * size);
+  float* data = (float*)TargetWrapperMetal::Malloc(sizeof(float) * size);
   metalImg->template CopyToNCHW<float>(data);
-  print_float(name, data, (int)size);
-  free(data);
+  print_float(name, data, (int)size, inCount);
+  TargetWrapperMetal::Free(data);
 }
 
-void MetalDebug::print_log(const std::string& name, MetalBuffer* metalBuf) {
+void MetalDebug::print_log(const std::string& name, MetalBuffer* metalBuf, int inCount) {
   auto size = metalBuf->tensor_dim().production();
-  float* data = (float*)malloc(metalBuf->mtl_size());
+  float* data = (float*)TargetWrapperMetal::Malloc(metalBuf->mtl_size());
   metalBuf->template CopyToNCHW<float>(data);
-  print_float(name, data, (int)size);
-  free(data);
+  print_float(name, data, (int)size, inCount);
+  TargetWrapperMetal::Free(data);
 }
 
 void MetalDebug::print_float(const std::string& name, float* data, int size, int inCount) {
@@ -56,10 +57,6 @@ void MetalDebug::print_float(const std::string& name, float* data, int size, int
   for (int i = 0; i < realCount; i++) {
     float value = vec[i * stride].first;
     int index = vec[i * stride].second;
-    //    float value = vec[i].first;
-    //    int index = vec[i].second;
-    //    float value = vec[vec.size() - 1 - i].first;
-    //    int index = vec[vec.size() - 1 - i].second;
     if (i == 0) {
       printf("[(%d: %lf),", index, value);
     } else if (i == realCount - 1) {
@@ -71,9 +68,6 @@ void MetalDebug::print_float(const std::string& name, float* data, int size, int
   if (name == "fetch") {
     layer_count_ = 0;
     NSLog(@"====================================================");
-    NSLog(@"");
-    NSLog(@"");
-    NSLog(@"");
   }
 }
 
@@ -95,7 +89,7 @@ void MetalDebug::SaveOutput_(std::string name, MetalImage* image, DumpMode mode)
 
 void MetalDebug::DumpImage(const std::string& name, MetalImage* image, DumpMode mode) {
   auto length = image->tensor_dim_.production();
-  auto buf = (float*)malloc(sizeof(float) * length);
+  auto buf = (float*)TargetWrapperMetal::Malloc(sizeof(float) * length);
   image->CopyToNCHW<float>(buf);
 
   std::string filename = name + ".txt";
@@ -104,13 +98,13 @@ void MetalDebug::DumpImage(const std::string& name, MetalImage* image, DumpMode 
     if (mode == DumpMode::kFile || mode == DumpMode::kBoth) fprintf(fp, "%f\n", buf[i]);
     if (mode == DumpMode::kStd || mode == DumpMode::kBoth) VLOG(4) << buf[i];
   }
-  free(buf);
+  TargetWrapperMetal::Free(buf);
   fclose(fp);
 }
 
 void MetalDebug::DumpBuffer(const std::string& name, MetalBuffer* buffer, DumpMode mode) {
   int64_t length = buffer->tensor_dim().production();
-  auto buf = (float*)malloc(sizeof(float) * length);
+  auto buf = (float*)TargetWrapperMetal::Malloc(sizeof(float) * length);
   std::string filename = name + ".txt";
   FILE* fp = fopen(filename.c_str(), "w");
   buffer->CopyToNCHW<float>(buf);
@@ -118,18 +112,7 @@ void MetalDebug::DumpBuffer(const std::string& name, MetalBuffer* buffer, DumpMo
     if (mode == DumpMode::kFile || mode == DumpMode::kBoth) fprintf(fp, "%f\n", buf[i]);
     if (mode == DumpMode::kStd || mode == DumpMode::kBoth) VLOG(4) << buf[i];
   }
-  free(buf);
-  fclose(fp);
-}
-
-void MetalDebug::DumpNCHWFloat(const std::string& name, float* data, int length, DumpMode mode) {
-  std::string filename = name + ".txt";
-  FILE* fp = fopen(filename.c_str(), "w");
-  for (int i = 0; i < length; ++i) {
-    if (mode == DumpMode::kFile || mode == DumpMode::kBoth) fprintf(fp, "%f\n", data[i]);
-    if (mode == DumpMode::kStd || mode == DumpMode::kBoth) VLOG(4) << data[i];
-  }
-  free(data);
+  TargetWrapperMetal::Free(buf);
   fclose(fp);
 }
 

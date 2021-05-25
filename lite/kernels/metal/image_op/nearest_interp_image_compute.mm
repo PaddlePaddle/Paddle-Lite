@@ -26,7 +26,7 @@ namespace kernels {
 namespace metal {
 
 void NearestInterpImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+  auto& context = ctx_->As<MTLContext>();
   metal_context_ = (MetalContext*)context.context();
 
   const auto& param = this->Param<param_t>();
@@ -35,7 +35,7 @@ void NearestInterpImageCompute::PrepareForRun() {
 #else
   input_buffer_ = param.X->data<MetalHalf, MetalImage>();
   output_buffer_ =
-      param.Out->mutable_data<MetalHalf, MetalImage>(output_dims, input_buffer_->transpose_);
+      param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims, input_buffer_->transpose_);
 #endif
 
   setup_without_mps();

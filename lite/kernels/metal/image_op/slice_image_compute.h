@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-//  slice_image_compute.h
-//  PaddleLiteiOS
-//
-//  Created by hxwc on 2021/4/13.
-//
 #ifndef LITE_KERNELS_METAL_IMAGE_OP_SLICE_IMAGE_COMPUTE_H_
 #define LITE_KERNELS_METAL_IMAGE_OP_SLICE_IMAGE_COMPUTE_H_
 

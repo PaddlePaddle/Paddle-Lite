@@ -1,4 +1,3 @@
-#import <__bit_reference>
 // Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +15,8 @@
 #include "lite/backends/metal/metal_image.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_half.h"
+#include "lite/backends/metal/target_wrapper.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -61,9 +62,9 @@ void MetalImage::InitTexture() {
   std::vector<DDim::value_type> dim = {};
   switch (tensor_dim_.size()) {
     case 4: {
-      // eg:tensor={1,24,208,208}转换为dim={1,208,208,24}
-      // GPU上的arraylength方向使用24 大小为(24+3)/4=6
-      // 注：仅支持N=1
+      // attention: only support N=1
+      // eg:tensor={1,24,208,208} to dim={1,208,208,24}
+      // size of 'arraylength' direction is 24 ,value = (24+3)/4=6
       std::vector<int> transpose = {0, 2, 3, 1};
       for_each(transpose.begin(), transpose.end(), [&](int i) -> void {
         dim.emplace_back(pad_to_four_dim_[i]);
@@ -72,23 +73,27 @@ void MetalImage::InitTexture() {
     case 3:
     case 2:
     case 1: {
-      // eg1:tensor={1,36,3549}转换为dim={1,1,36,3549}
-      // GPU上的arraylength方向使用3549大小为(3549+3)/4=888 width方向使用36大小为36
-      // height方向使用1大小为1 eg12:tensor={1,24}转换为dim={1,1,1,24}
-      // GPU上的arraylength方向使用24 大小为(24+3)/4=6  width方向使用1大小为1 height方向使用1大小为1
+      // attention: data arrangement ruler
+      // eg1:tensor={1,36,3549} to dim={1,1,36,3549}
+      // direction 'arraylength' use '3549' value=(3549+3)/4=888;
+      // direction 'width' use '36' value=36  direction 'height' use '1' value=1
+      // eg2:tensor={1,24} to dim={1,1,1,24}
+      // direction 'arraylength' use '24' value=(24+3)/4=6;
+      // direction 'width' use '1' value=1  direction 'height' use '1' value=1
       std::vector<int> transpose = {0, 1, 2, 3};
       for_each(transpose.begin(), transpose.end(), [&](int i) -> void {
         dim.emplace_back(pad_to_four_dim_[i]);
       });
     } break;
     default:
-      throw std::logic_error("metal_image: Dim size is error");
+      LOG(FATAL) << "metal_image: Dim size is error";
   }
   dim_ = DDimLite(dim);
 
   // GPU上数据排布
   if (transpose_ == transpose_nhwc) {
-    // 使用场景：OP层中的上层输出下层输入 tensor.size可能是1、2、3、4
+    // scenes: Input of the previous kernel, output of the next kernel
+    // attention: tensor.size=1、2、3、4
     switch (tensor_dim_.size()) {
       case 4:
         desc_.width = static_cast<NSUInteger>(dim[2]);
@@ -106,36 +111,26 @@ void MetalImage::InitTexture() {
         desc_.width = static_cast<NSUInteger>(dim[2]);
         desc_.height = static_cast<NSUInteger>(dim[1]);
         desc_.arrayLength = static_cast<NSUInteger>(((dim[3] + 3) / 4) * (dim[0]));
-        // 手百上还未出现width!=1情况 如果出现时注意测试
+        //baidu app: width===1 attention width!=1
         if (dim[2] != 1) {
-          throw std::logic_error("metal_image: Attention this dim");
+          LOG(FATAL) << "metal_image: Attention this dim";
         }
         break;
       default:
-        throw std::logic_error("metal_image: Dim size is error");
+        LOG(FATAL) << "metal_image: Dim size is error";
     }
   } else if (transpose_ == transpose_nchw) {
-    // 使用场景：OP运算时使用的参数 tensor传入转为texture使用 目前tensor.size都是1或2
-    // 其他情况还未遇到
+    // scenes: the parameters used in the kernel calculation
+    // eg: conv2d biasTexture, which come from io_copy_host_to_metal
+    // attention: tensor.size=1、2
     switch (tensor_dim_.size()) {
       case 4: {
-        throw std::logic_error("metal_image: InitTexture(0123) - tensor dim = 4");
-        // 目前未遇到 数据可按照以下两种方式 遇到时再决定
-        /*// 1、注意这里按照 N*(ceil(C+3)/4)填充
-        desc_.width = static_cast<NSUInteger>(dim[3]);
-        desc_.height = static_cast<NSUInteger>(dim[2]);
-        desc_.arrayLength = static_cast<NSUInteger>(((dim[1] + 3) / 4) * (dim[0]));
-        // 2、注意这里按照 (ceil(N*C+3)/4) 填充
-        desc_.width = static_cast<NSUInteger>(dim[3]);
-        desc_.height = static_cast<NSUInteger>(dim[2]);
-        desc_.arrayLength = static_cast<NSUInteger>(((dim[1] + 3) / 4) * (dim[0]));*/
+        // attention: This situation has not been encountered
+        LOG(FATAL) << "metal_image: InitTexture(0123) - tensor dim = 4";
       } break;
       case 3: {
-        throw std::logic_error("metal_image: InitTexture(0123) - tensor dim = 3");
-        /* //目前未遇到 遇到时注意测试
-        desc_.width = static_cast<NSUInteger>(dim[2]);
-        desc_.height = static_cast<NSUInteger>(dim[1]);
-        desc_.arrayLength = static_cast<NSUInteger>(((dim[3] + 3) / 4) * (dim[0]));*/
+        // attention: This situation has not been encountered
+        LOG(FATAL) << "metal_image: InitTexture(0123) - tensor dim = 3";
       } break;
       case 2:
       case 1: {
@@ -144,10 +139,10 @@ void MetalImage::InitTexture() {
         desc_.arrayLength = static_cast<NSUInteger>(((dim[3] + 3) / 4) * (dim[0]));
       } break;
       default:
-        throw std::logic_error("metal_image: Dim size is error");
+        LOG(FATAL) << "metal_image: Dim size is error";
     }
   } else {
-    throw std::logic_error("metal_image: unsupported tensor dim count");
+    LOG(FATAL) << "metal_image: unsupported tensor dim count";
   }
   texture_width_ = desc_.width;
   texture_height_ = desc_.height;
@@ -200,7 +195,7 @@ DDim MetalImage::FourDimFrom(DDim in_dim) {
     }
     four_dim = DDimLite(four_dim_num);
   } else {
-    throw std::logic_error("Error: cannot support such dims");
+    LOG(FATAL) << "Error: cannot support such dims";
   }
   return four_dim;
 }
@@ -220,27 +215,25 @@ int MetalImage::ElementCount() const {
   } else if (desc_) {
     return (int)(desc_.width * desc_.height * desc_.arrayLength * 4);
   } else {
-    throw std::logic_error("metal_image: texture desc = nil");
+    LOG(FATAL) << "metal_image: texture desc = nil";
   }
 }
 
-// MTLTextureDescriptor* MetalImage::descriptor() const {
-//  return desc_;
-// }
-
-// 与texture desc逻辑一致
-// 使用场景：OP运算时使用的参数 tensor传入转为texture使用
-// 目前tensor.size都是1或2 其他情况还未遇到
-// tensor=4的情况：metal未实现算子时，cpu处理完后再给gpu
+// the same logic with above 'texture desc'
+// scene1: the parameters used in the kernel calculation
+// eg: io_copy_host_to_metal, tensor.size=1,2
+// scene2: the unimplemented kernel in metal,
+//         CPU process data and return to metal
+// eg: io_copy_host_to_metal, tensor.size=4
 template <typename SP>
 void MetalImage::CopyFromNCHW(const SP *src) {
   auto rcount = texture_width_ * texture_height_ * array_length_ * channels_per_pixel_;
 
   if (precision_type_ == METAL_PRECISION_TYPE::FLOAT && std::is_same<SP, float>::value) {
-    throw std::logic_error("metal_image: CopyFromNCHW - precision = FLOAT");
+    LOG(FATAL) << "metal_image: CopyFromNCHW - precision = FLOAT";
   } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<SP, float>::value) {
-    //注意：此逻辑与initTexture逻辑一致
-    auto nvalue = (MetalHalf *)malloc(sizeof(MetalHalf) * rcount);
+    //attenion：ruler same with InitTexture
+    auto nvalue = (MetalHalf *)TargetWrapperMetal::Malloc(sizeof(MetalHalf) * rcount);
     if (tensor_dim_.size() == 4) {
       size_t n = dim_[0];
       size_t h = dim_[1];
@@ -264,7 +257,7 @@ void MetalImage::CopyFromNCHW(const SP *src) {
         }
       }
     } else if (tensor_dim_.size() == 3) {
-      throw std::logic_error("MetalImage: CopyFromNCHW - tensor dim = 3");
+      LOG(FATAL) << "MetalImage: CopyFromNCHW - tensor dim = 3";
     } else {
       // 4维以下与texture desc逻辑一致
       size_t n = dim_[0];
@@ -310,9 +303,9 @@ void MetalImage::CopyFromNCHW(const SP *src) {
               bytesPerImage:bytes_per_image];
     }
 
-    free(nvalue);
+    TargetWrapperMetal::Free(nvalue);
   } else {
-    throw std::logic_error("ERROR: do not support this half format");
+    LOG(FATAL) << "ERROR: do not support this half format";
     return;
   }
 }
@@ -326,7 +319,7 @@ __unused void MetalImage::Zero() const {
   else if (precision_type_ == METAL_PRECISION_TYPE::HALF)
     size_p = 2;
   auto rcount = texture_width_ * texture_height_ * 1 * channels_per_pixel_;
-  char *nvalue = (char *)malloc(size_p * rcount);
+  char *nvalue = (char *)TargetWrapperMetal::Malloc(size_p * rcount);
   memset(nvalue, 0, size_p * rcount);
 
   auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * size_p;
@@ -349,7 +342,7 @@ __unused void MetalImage::Zero() const {
             bytesPerImage:bytes_per_image];
   }
 
-  free(nvalue);
+  TargetWrapperMetal::Free(nvalue);
 }
 
 template <typename P>
@@ -367,7 +360,7 @@ void MetalImage::CopyToNCHW(P *dst) const {
   auto dstCounts = array_length_ * channels_per_pixel_ * texture_width_ * texture_height_;
 
   if (precision_type_ == METAL_PRECISION_TYPE::FLOAT && std::is_same<P, float>::value) {
-    auto pointer = (float *)malloc(sizeof(float) * dstCounts);
+    auto pointer = (float *)TargetWrapperMetal::Malloc(sizeof(float) * dstCounts);
 
     auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(float);
     auto bytes_per_image = image_.height * bytes_per_row;
@@ -428,9 +421,9 @@ void MetalImage::CopyToNCHW(P *dst) const {
         }
       }
     }
-    free(pointer);
+    TargetWrapperMetal::Free(pointer);
   } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<P, float>::value) {
-    auto pointer = (MetalHalf *)malloc(sizeof(MetalHalf) * dstCounts);
+    auto pointer = (MetalHalf *)TargetWrapperMetal::Malloc(sizeof(MetalHalf) * dstCounts);
 
     auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
     auto bytes_per_image = image_.height * bytes_per_row;
@@ -470,21 +463,6 @@ void MetalImage::CopyToNCHW(P *dst) const {
           }
         }
       }
-      /*
-      size_t N = new_dims[0];
-      size_t C = new_dims[1];
-      size_t H = new_dims[2];
-      size_t W = new_dims[3];
-      size_t c = N * C ;
-      for (int i1 = 0; i1 < c; ++i1) {
-        for (int i2 = 0; i2 < H; ++i2) {
-          for (int i3 = 0; i3 < W; ++i3) {
-            auto dx = i1 * W * H + i2 * W + i3;
-            auto sx = i3 * 4 + i2 * W * 4 + (i1 / 4) * H * W * 4 + i1 % 4;
-            dst[dx] = MetalHalf2Float(pointer[sx]);
-          }
-        }
-      }*/
     } else if (tensor_dim_.size() == 3) {
       size_t N = new_dims[0];
       size_t H = new_dims[1];
@@ -509,9 +487,9 @@ void MetalImage::CopyToNCHW(P *dst) const {
         }
       }
     }
-    free(pointer);
+    TargetWrapperMetal::Free(pointer);
   } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<P, MetalHalf>::value) {
-    throw std::logic_error("metal_image: CopyToNCHW-half2half");
+    LOG(FATAL) << "metal_image: CopyToNCHW-half2half";
   }
 }
 

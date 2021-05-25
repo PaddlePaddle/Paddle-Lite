@@ -27,7 +27,7 @@ namespace kernels {
 namespace metal {
 
 void FetchImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+  auto& context = ctx_->As<MTLContext>();
   metal_context_ = (MetalContext*)context.context();
 
   const auto& param = this->Param<param_t>();
@@ -48,7 +48,7 @@ void FetchImageCompute::PrepareForRun() {
   auto output_dims = DDimLite({count});
   output_tensor->Resize(output_dims);
   auto data = output_tensor->template mutable_data<float>(TARGET(kHost), size);
-  memset(data, 0, size);
+  TargetWrapperMetal::MemsetSync(data, 0, size);
   //输出MTLBuffer（注：输入，输出为NCHW结果）
   //  auto out_length = input_buffer_->ElementCount() * sizeof(float);
   output_buffer_ = make_shared<MetalBuffer>(metal_context_, output_dims, size);
@@ -75,7 +75,7 @@ void FetchImageCompute::Run() {
   auto data = output_tensor->data<float>();
   auto size = param.input->dims().production();
   float* buf = (float*)[output_buffer_->buffer() contents];
-  memcpy((void*)data, (void*)buf, size * sizeof(float));
+  TargetWrapperMetal::MemcpySync((void*)data, (void*)buf, size * sizeof(float));
 }
 
 void FetchImageCompute::setup_without_mps() {
@@ -93,9 +93,9 @@ void FetchImageCompute::setup_without_mps() {
   if (input_buffer_->transpose_ == transpose_nhwc) {
     function_name_ = "fetch";
   } else if (input_buffer_->transpose_ == transpose_nchw) {
-    throw std::logic_error("fetch: all transpose should be {0, 2, 3, 1}");
+    LOG(FATAL) << "fetch: all transpose should be {0, 2, 3, 1}";
   } else {
-    throw std::logic_error("fetch: unsupported tensor transpose");
+    LOG(FATAL) << "fetch: unsupported tensor transpose";
   }
 
   // pipline

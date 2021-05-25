@@ -21,34 +21,21 @@
 namespace paddle {
 namespace lite {
 
-size_t TargetWrapperMetal::num_devices() { return ctx_.GetDevicesNum(); }
-
-void* TargetWrapperMetal::Malloc(size_t size) { return nullptr; }
-
-void TargetWrapperMetal::WaitForCompleted() {
-  auto backend = (__bridge MetalContextImp*)ctx_.backend();
-  [backend waitUntilCompleted];
-}
-
 template <>
-void* TargetWrapperMetal::MallocImage<float>(const DDim dim,
-                                             std::vector<int> transpose,
-                                             void* host_ptr) {
-  auto image = new MetalImage(&ctx_, dim, transpose, METAL_PRECISION_TYPE::FLOAT);
-  if (host_ptr) image->CopyFromNCHW<float>((float*)host_ptr);
+void* TargetWrapperMetal::MallocImage<float>(MetalContext *context,
+                                             const DDim dim,
+                                             std::vector<int> transpose) {
+  auto image = new MetalImage(context, dim, transpose, METAL_PRECISION_TYPE::FLOAT);
   return (void*)image;
 }
 
 template <>
-void* TargetWrapperMetal::MallocImage<MetalHalf>(const DDim dim,
-                                                 std::vector<int> transpose,
-                                                 void* host_ptr) {
-  auto image = new MetalImage(&ctx_, dim, transpose, METAL_PRECISION_TYPE::HALF);
-  if (host_ptr) image->CopyFromNCHW<MetalHalf>((MetalHalf*)host_ptr);
+void* TargetWrapperMetal::MallocImage<MetalHalf>(MetalContext *context,
+                                                 const DDim dim,
+                                                 std::vector<int> transpose) {
+  auto image = new MetalImage(context, dim, transpose, METAL_PRECISION_TYPE::HALF);
   return (void*)image;
 }
-
-void* TargetWrapperMetal::MallocBuffer(size_t size, METAL_ACCESS_FLAG access) { return nullptr; }
 
 void TargetWrapperMetal::FreeImage(void* image) {
   if (image != nullptr) {
@@ -57,40 +44,28 @@ void TargetWrapperMetal::FreeImage(void* image) {
   }
 }
 
+void* TargetWrapperMetal::Malloc(size_t size) {
+  return malloc(size);
+}
+
 void TargetWrapperMetal::Free(void* ptr) {
-  if (ptr != nullptr) {
-    delete (MetalBuffer*)ptr;
+  if (ptr) {
+    free(ptr);
     ptr = nullptr;
   }
-  return;
 }
 
 void TargetWrapperMetal::MemcpySync(void* dst, const void* src, size_t size, IoDirection dir) {
-  switch (dir) {
-    case IoDirection::DtoD: {
-      auto dst_buffer = (MetalBuffer*)dst;
-      auto src_buffer = (MetalBuffer*)src;
-      dst_buffer->Copy(reinterpret_cast<const MetalBuffer&>(src_buffer), size, 0, 0);
-      break;
-    }
-    case IoDirection::HtoD: {
-      auto dst_buffer = (MetalBuffer*)dst;
-      dst_buffer->Read(const_cast<void*>(src), size, 0);
-      break;
-    }
-    case IoDirection::DtoH: {
-      auto src_buffer = (MetalBuffer*)src;
-      src_buffer->Write(const_cast<void*>(dst), size, 0);
-      break;
-    }
-    default:
-      LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);
+  if (size > 0) {
+    memcpy(dst, src, size);
   }
 }
 
-void TargetWrapperMetal::MemsetSync(void* devPtr, int value, size_t count) { return; }
-
-LITE_THREAD_LOCAL MetalContext TargetWrapperMetal::ctx_;
+void TargetWrapperMetal::MemsetSync(void* dst, int value, size_t size) {
+  if (size) {
+    memset(dst, value, size);
+  }
+}
 
 }  // namespace lite
 }  // namespace paddle

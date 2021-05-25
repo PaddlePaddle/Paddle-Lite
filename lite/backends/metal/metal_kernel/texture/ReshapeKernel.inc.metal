@@ -28,15 +28,16 @@ kernel void reshape(texture2d_array<ftype, access::read> inTexture
       gid.z >= outTexture.get_array_size())
     return;
 
-  // 输出坐标：GPU上坐标{x,y,z,n} 此时一个位置表示4个数据
-  // 每个数据都是C通道上的数据
+  // output coordinate: GPU coordinate is {x,y,z,n}
+  // One location contains four data, every data is on the C channel
   int oxyzn[4] = {int(gid.x), int(gid.y), int(gid.z), 0};
-  // 输出位置：CPU上坐标 {z/outC, y, x, z%outC} 即为NHWC表示
-  // Tensor数据转换后上传到CPU之前的数据表示的位置
+  // output coordinate: CPU: {z/outC, y, x, z%outC} layout: NHWC
+  // Tensor data: after data conversion, before uploading to the GPU
   int oabcd[4];
-  // 输入坐标 GPU
+  // input coordinate: GPU
   int ixyzn[4];
-  // 输入位置：CPU Tensor转换后上传到GPU前的数据表示的位置
+  // input coordinate: CPU
+  // Tensor data: after data conversion, before uploading to the GPU
   int iabcd[4];
 
   ftype4 r = ftype4(0.0);
@@ -44,20 +45,22 @@ kernel void reshape(texture2d_array<ftype, access::read> inTexture
   int count = lrp.odim[0] * lrp.odim[1] * lrp.odim[2] * lrp.odim[3];
   for (int n = 0; n < 4; n++) {
     oxyzn[3] = n;
-    // 输出C通道大小
+    // size of C channnel
     int oC = lrp.odim[lrp.otrans[3]];
-    // GPU坐标转为NHWC坐标（即上传到GPU前的数据表示的位置）
+    // GPU coordinate to NCHW coordinate
+    // That is, the position represented by the data before uploading to the GPU
     xyzn2abcd_4(oC, oxyzn, oabcd);
     int tabcd[4];
-    // 按照Tensor的转换来转换坐标 此处逻辑与Metal_image中desc_逻辑一致
-    // 4维有转换即Tensor的NCHW->NHWC 3维则没有
-    // eg: tensor={1, 24, 208, 208} -> dim={1, 208, 208, 24}
-    // eg: tensor={1, 9, 3549} -> dim={1, 1, 9, 3549}
+    // Convert coordinates according to Tensor conversion
+    // attention: The same logic with the 'initTexture' logic in 'metal_image'
+    // 4-dims conversion: Tensor NCHW->NHWC  3-dims isn't converted
+    // eg1: tensor={1, 24, 208, 208} -> dim={1, 208, 208, 24}
+    // eg2: tensor={1, 9, 3549} -> dim={1, 1, 9, 3549}
     invtrans(lrp.otrans, oabcd, tabcd);
-    // CPU上的NHWC位置转为CPU上Tensor的NHWC位置
+    // CPU NHWC coordinate -> CPU NHWC coordinate
     int index = abcd2index(lrp.odim, tabcd);
     if (index < count) {
-      // 下面逻辑与上述逻辑一致 相反的过程而已
+      // The following logic is consistent with the above, just the opposite process
       index2abcd(lrp.idim, index, tabcd);
       trans(lrp.itrans, tabcd, iabcd);
       int iC = lrp.idim[lrp.itrans[3]];

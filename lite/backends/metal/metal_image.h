@@ -47,7 +47,7 @@ class MetalImage {
   MetalImage(MetalContext* context,
              const DDim& in_dim,
              std::vector<int> in_transpose = {0, 2, 3, 1},
-             METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::FLOAT,
+             METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::HALF,
              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
   void UpdateDims(MetalContext* context,
@@ -63,7 +63,6 @@ class MetalImage {
   static DDim FourDimFrom(DDim in_dim);
   __unused void Zero() const;
 
-  // std::recursive_mutex buffer_lock_;
   size_t size_{};
   bool use_mps_ = false;
   size_t channels_per_pixel_{};

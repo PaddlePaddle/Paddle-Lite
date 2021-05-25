@@ -27,7 +27,7 @@ namespace kernels {
 namespace metal {
 
 void FeedImageCompute::PrepareForRun() {
-  auto& context = ctx_->As<ContextMetal>();
+  auto& context = ctx_->As<MTLContext>();
   metal_context_ = (MetalContext*)context.context();
 
   const auto& param = this->Param<param_t>();
@@ -38,7 +38,7 @@ void FeedImageCompute::PrepareForRun() {
   param.out->Resize(input_dims);
 #ifdef LITE_WITH_METAL_FULL
 #else
-  output_buffer_ = param.out->mutable_data<MetalHalf, MetalImage>(output_dims);
+  output_buffer_ = param.out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
   auto input_c = input_dims[1];
   if (input_c == 1) {

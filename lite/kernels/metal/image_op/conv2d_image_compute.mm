@@ -20,6 +20,7 @@
 #include "lite/core/program.h"
 #include "lite/kernels/metal/image_op/conv2d_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -27,7 +28,7 @@ namespace kernels {
 namespace metal {
 
 void Conv2dImageCompute::PrepareForRun() {
-  auto &context = ctx_->As<ContextMetal>();
+  auto &context = ctx_->As<MTLContext>();
   metal_context_ = (MetalContext *)context.context();
 
   const auto &param = this->Param<param_t>();
@@ -49,7 +50,7 @@ void Conv2dImageCompute::PrepareForRun() {
         activate_type_ = (uint16_t)param.activation_param.active_type;
       } break;
       default: {
-        throw std::logic_error("Conv2d: cannot support the activate type");
+        LOG(FATAL) << "Conv2d: cannot support the activate type";
       } break;
     }
   }
@@ -57,18 +58,18 @@ void Conv2dImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
   input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-  output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+  output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
   if (param.bias) {
     bias_buffer_ = param.bias->data<MetalHalf, MetalImage>();
   } else {
-    auto *blank_host = (float *)malloc(sizeof(float) * output_dims[1]);
-    memset(blank_host, 0, sizeof(MetalHalf) * output_dims[1]);
+    auto *blank_host = (float *)TargetWrapperMetal::Malloc(sizeof(float) * output_dims[1]);
+    TargetWrapperMetal::MemsetSync(blank_host, 0, sizeof(MetalHalf) * output_dims[1]);
     DDim blank_dim = DDimLite({output_dims[1]});
     Tensor blank_tensor_;
     blank_tensor_.Resize(blank_dim);
-    blank_buffer_ = blank_tensor_.mutable_data<MetalHalf, MetalImage>(blank_dim);
+    blank_buffer_ = blank_tensor_.mutable_data<MetalHalf, MetalImage>(metal_context_, blank_dim);
     blank_buffer_->CopyFromNCHW<float>(blank_host);
-    free(blank_host);
+    TargetWrapperMetal::Free(blank_host);
     blank_host = nullptr;
   }
 #endif
@@ -81,7 +82,8 @@ void Conv2dImageCompute::PrepareForRun() {
     if (metal_context_->use_mps()) {
       int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
       int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
-      // 输入输出的C通道数（应该大于等于4，输入输出Texture都是按照RGBA组织的）
+      // intput & output C channel must >=3
+      // attention: should be >=4, texture data layout is RGBA
       if (input_c >= 3 && output_c >= 3) {
         should_use_mps = true;
       }
@@ -99,7 +101,7 @@ void Conv2dImageCompute::PrepareForRun() {
     }
   }
 
-  // MPS不支持relu6
+  // MPS don't support relu6
   switch (param.activation_param.active_type) {
     case lite_api::ActivationType::kIndentity:
     case lite_api::ActivationType::kRelu:
@@ -117,7 +119,7 @@ void Conv2dImageCompute::PrepareForRun() {
     setup_with_mps();
   } else {
     if (function_name_.empty()) {
-      throw std::logic_error("conv2d: cannot find the name");
+      LOG(FATAL) << "conv2d: cannot find the name";
     } else {
       setup_without_mps();
     }
@@ -281,7 +283,7 @@ void Conv2dImageCompute::setup_without_mps() {
     }
     if (add_by_channel == 1 || params_fast == 1) {
     } else {
-      throw std::logic_error("conv2d: add only support by channel");
+      LOG(FATAL) << "conv2d: add only support by channel";
     }
 
     element_params = {params_fast,
@@ -300,7 +302,7 @@ void Conv2dImageCompute::setup_without_mps() {
                        bias_buffer_->transpose_[3]}};
   } else {
   }
-  // relu操作
+  // relu
   ActivationMetalParam activation_params{(unsigned short)activate_type_, 0.0, 0.0, 0.0, 0.0};
   switch (param.activation_param.active_type) {
     case lite_api::ActivationType::kIndentity:
@@ -315,7 +317,7 @@ void Conv2dImageCompute::setup_without_mps() {
     default:
       break;
   }
-  // 传入shader参数
+  // set shader params
   MetalConvParam conv_params{(short)offsetX,
                              (short)offsetY,
                              (short)offsetZ,
@@ -340,12 +342,12 @@ void Conv2dImageCompute::setup_without_mps() {
     DataConverter<float> *converter = new WinogradPointerConverter<float>();
     auto from_dim = param.filter->dims();
     auto to_capacity = converter->Capacity(from_dim);
-    auto to_filter = (float *)malloc(sizeof(float) * to_capacity);
+    auto to_filter = (float *)TargetWrapperMetal::Malloc(sizeof(float) * to_capacity);
     try {
       converter->Convert(const_cast<float *>(filter), to_filter, from_dim);
     } catch (std::exception &error) {
-      free(to_filter);
-      throw std::logic_error("metal_conv2d: still not finish winograd");
+      TargetWrapperMetal::Free(to_filter);
+      LOG(FATAL) << "metal_conv2d: still not finish winograd";
     }
     auto to_dim = converter->GetToDim(from_dim);
     filter_buffer_ =
@@ -360,7 +362,7 @@ void Conv2dImageCompute::setup_without_mps() {
       filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
     }
     filter_buffer_->CopyFromNCHW<float>(to_filter);
-    free(to_filter);
+    TargetWrapperMetal::Free(to_filter);
   } else {
     bool pad_when_one_ch =
         !(param.filter->dims()[1] == 1 && param.filter->dims()[0] == param.x->dims()[1]);

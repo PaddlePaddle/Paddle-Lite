@@ -27,7 +27,7 @@ namespace kernels {
 namespace metal {
 
 void ElementwiseAddImageCompute::PrepareForRun() {
-  auto &context = ctx_->As<ContextMetal>();
+  auto &context = ctx_->As<MTLContext>();
   metal_context_ = (MetalContext *)context.context();
 
   const auto &param = this->Param<param_t>();
@@ -36,19 +36,19 @@ void ElementwiseAddImageCompute::PrepareForRun() {
 
 #ifdef LITE_WITH_METAL_FULL
 #else
-  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
   input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
   input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
 #endif
 
-  // 是否使用mps
+  // use MPS or not
   bool should_use_mps = false;
   if (@available(iOS 10.0, *)) {
     if (metal_context_->use_mps()) {
       should_use_mps = true;
     }
   }
-  // X Y 完全相同
+  // X Y same dims
   if ((input_buffer_x_->dim_ == input_buffer_y_->dim_) &&
       (input_buffer_x_->transpose_ == input_buffer_y_->transpose_)) {
   } else {
@@ -136,7 +136,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
   }
   if (add_by_channel == 1 || params_fast == 1) {
   } else {
-    throw std::logic_error("elementwise_add: add only support by channel");
+    LOG(FATAL) << "elementwise_add: add only support by channel";
   }
 
   ElementwiseAddMetalParam element_params = {params_fast,

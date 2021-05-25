@@ -67,15 +67,14 @@ struct MetalActivationParam {
 };
 
 struct ElementwiseAddParam {
-  int32_t fast;          // 对位相加
-  int32_t addByChannel;  // 仅c通道相加
-  int32_t axis;          // y 的维度对应到 x 维度上时的索引
-  int32_t ylen;          // y维度
-  int32_t xdim[4];  // x的GPU存储维度（已经经过数据转换，如果有的话，比如[NCHW-CPU]
-                    // -> [NHWC-GPU]）
-  int32_t xtrans[4];  // x转换维度（转换后存到GPU）
-  int32_t ydim[4];    // y的GPU存储维度
-  int32_t ytrans[4];  // y转换维度（转换后存到GPU）
+  int32_t fast;          // wise element add
+  int32_t addByChannel;  // only C channell
+  int32_t axis;          // input_y index at input_x
+  int32_t ylen;          // input_y axis
+  int32_t xdim[4];       // input_x dim [NCHW-CPU]-> [NHWC-GPU]
+  int32_t xtrans[4];     // input_x transpose dim
+  int32_t ydim[4];       // input_y dim on gpu
+  int32_t ytrans[4];     // input_x transpose dim
 };
 
 struct ElementwiseParam {

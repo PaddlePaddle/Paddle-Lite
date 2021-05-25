@@ -27,7 +27,7 @@ namespace kernels {
 namespace metal {
 
 void PoolImageCompute::PrepareForRun() {
-  auto &context = ctx_->As<ContextMetal>();
+  auto &context = ctx_->As<MTLContext>();
   metal_context_ = (MetalContext *)context.context();
 
   const auto &param = this->Param<param_t>();
@@ -37,7 +37,7 @@ void PoolImageCompute::PrepareForRun() {
 #else
   input_buffer_ = param.x->data<MetalHalf, MetalImage>();
   output_buffer_ =
-      param.output->mutable_data<MetalHalf, MetalImage>(output_dims, input_buffer_->transpose_);
+      param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims, input_buffer_->transpose_);
 #endif
 
   // 是否使用mps
@@ -109,20 +109,20 @@ void PoolImageCompute::run_without_mps() {
 void PoolImageCompute::setup_without_mps() {
   const auto &param = this->Param<param_t>();
 
-  int pool_type;
+  int pool_type = 0;
   if (param.pooling_type == "max")
     pool_type = 0;
   else if (param.pooling_type == "avg")
     pool_type = 1;
   else {
-    throw std::logic_error("pool: no such pooling type\n");
+    LOG(FATAL) << "pool: no such pooling type\n";
   }
   if (param.global_pooling) {
     if (pool_type == 1) {
-      // global_pooling只支持avg形式
+      // global_pooling only support 'avg'
       function_name_ = "global_pool";
     } else {
-      throw std::logic_error("pool: global_pooling no such pooling type\n");
+      LOG(FATAL) << "pool: global_pooling no such pooling type\n";
     }
   } else {
     auto kw = param.ksize[1];
