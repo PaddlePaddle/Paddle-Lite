@@ -200,6 +200,10 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
                         static_cast<cl::size_type>(out_dims[0] * out_dims[2])};
         local_work_size_ =
             cl::NDRange{static_cast<cl::size_type>(workgroup_size), 1, 1};
+        LOG(INFO) << "GWS: " << global_work_size_[0] << ", "
+                  << global_work_size_[1] << ", " << global_work_size_[2];
+        LOG(INFO) << "LWS: " << local_work_size_[0] << ", "
+                  << local_work_size_[1] << ", " << local_work_size_[2];
 
         int local_block_size_shape[2] = {workgroup_w_size, workgroup_h_size};
         int local_block_count_shape[2] = {UP_DIV(ksize[0], workgroup_w_size),
@@ -260,13 +264,16 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel_.setArg(arg_idx++, *out_img_);
     CL_CHECK_FATAL(status);
 
+    cl::Event myevent;
     status = EnqueueNDRangeKernel(context,
                                   kernel_,
                                   cl::NullRange,
                                   global_work_size_,
                                   local_work_size_,
                                   nullptr,
-                                  event_);
+                                  myevent);
+    float time = CLRuntime::Global()->GetCommandTime(myevent);
+    LOG(INFO) << "POOL TIME: " << time;
     CL_CHECK_FATAL(status);
   }
 
