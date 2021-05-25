@@ -58,6 +58,18 @@ struct Item {
   }
 };
 
+LoD ToAbsOffset(const LoD &in) {
+  if (in.empty() || in.size() == 1) return in;
+  LoD result = in;
+  for (auto level = static_cast<int>(in.size() - 2); level >= 0; level--) {
+    for (size_t i = 0; i < in[level].size(); ++i) {
+      size_t index = in[level][i];
+      result[level][i] = result[level + 1][index];
+    }
+  }
+  return result;
+}
+
 /*
  * Prune the source sentences all branchs finished, and it is optional.
  * Pruning must one step later than finishing (thus pre_ids is needed here),
@@ -149,7 +161,7 @@ std::vector<std::vector<Item>> SelectTopBeamSizeItems(const Tensor *pre_ids,
 
   // find the current candidates
   // auto abs_lod = framework::ToAbsOffset(scores->lod());
-  auto abs_lod = scores->lod();
+  auto abs_lod = ToAbsOffset(scores->lod());
   auto *pre_ids_data = pre_ids->data<int64_t>();
   auto *pre_scores_data = pre_scores->data<float>();
 
@@ -206,7 +218,7 @@ void beam_search(const Tensor *pre_ids,
                  int beam_size,
                  int end_id,
                  bool is_accumulated) {
-  auto abs_lod = scores->lod();
+  auto abs_lod = ToAbsOffset(scores->lod());
   auto &high_level = abs_lod[level];
   auto items = SelectTopBeamSizeItems(pre_ids,
                                       pre_scores,
