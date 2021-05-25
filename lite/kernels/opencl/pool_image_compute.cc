@@ -172,7 +172,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       uint32_t workgroupsize_max =
           CLRuntime::Global()->GetDeviceInfo()["CL_DEVICE_MAX_WORK_GROUP_SIZE"];
 
-      uint32_t compute_intensity = param.ksize[0] * param.ksize[1];
+      uint32_t compute_intensity = ksize[0] * ksize[1];
       run_local_work_ = out_dims[0] * out_c_blks * out_dims[2] * out_dims[3] <
                             low_op_parallelism_thre_ &&
                         compute_intensity >= high_op_intensity_thre_;
@@ -188,7 +188,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         workgroup_size = temp_size >> 1;
 
         int workgroup_w_size = 1, workgroup_h_size;
-        while ((workgroup_w_size <<= 1) <= param.ksize[0] &&
+        while ((workgroup_w_size <<= 1) <= ksize[0] &&
                workgroup_w_size <= workgroup_size) {
         }
         workgroup_w_size >>= 1;
@@ -202,9 +202,8 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
             cl::NDRange{static_cast<cl::size_type>(workgroup_size), 1, 1};
 
         int local_block_size_shape[2] = {workgroup_w_size, workgroup_h_size};
-        int local_block_count_shape[2] = {
-            UP_DIV(param.ksize[0], workgroup_w_size),
-            UP_DIV(param.ksize[1], workgroup_h_size)};
+        int local_block_count_shape[2] = {UP_DIV(ksize[0], workgroup_w_size),
+                                          UP_DIV(ksize[1], workgroup_h_size)};
 
         int idx = 12;
         kernel_.setArg(idx++, static_cast<int32_t>(workgroup_size));
