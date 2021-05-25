@@ -113,16 +113,17 @@ __kernel void pool_local(__read_only image2d_t input,
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
   const int out_n = out_nh / out_height;
-  const int out_h = out_nh % out_height;
+  // const int out_h = out_nh % out_height;
+  const int out_h = out_nh - mul24(out_h, out_height);
 
   const int local_id = get_local_id(0);
   const int local_width_id = local_id % local_block_size_wh.x; // [0, 16)
   const int local_height_id = local_id / local_block_size_wh.x; // [0, 48)
 
-  const int input_start = out_n * in_height;
-  const int input_channel_start = out_c * in_width;
-  const int input_height_start = out_h * stride_h - pad_top;
-  const int input_width_start = out_w * stride_w - pad_left;
+  const int input_start = mul24(out_n, in_height);
+  const int input_channel_start = mul24(out_c, in_width);
+  const int input_height_start = mad24(out_h, stride_h, -pad_top);
+  const int input_width_start = mad24(out_w, stride_w, -pad_left);
 
 #ifdef POOL_AVG
   __local float4* avg_output = (__local float4*)local_output;
