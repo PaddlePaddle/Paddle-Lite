@@ -109,6 +109,9 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   const cl::Image2D* alpha_image_p_{nullptr};
   const cl::Image2D* output_image_p_{nullptr};
 
+  std::unique_ptr<Tensor> w_gpu_t_{nullptr};
+  std::unique_ptr<Tensor> bias_gpu_t_{nullptr};
+
   const cl::Buffer* filter_buffer_p_{nullptr};
   const cl::Buffer* bias_buffer_p_{nullptr};
 
@@ -129,6 +132,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int groups_{-1};
   bool relu_fused_{false};
   bool has_bias_{false};
+  bool is_mali_{false};
 
   int input_tensor_n_{-1};
   int input_tensor_c_{-1};

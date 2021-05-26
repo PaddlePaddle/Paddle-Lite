@@ -100,9 +100,7 @@ void test_range(Place place, float abs_error = 1e-5) {
 
 TEST(Range, precision) {
   Place place;
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_X86)
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;

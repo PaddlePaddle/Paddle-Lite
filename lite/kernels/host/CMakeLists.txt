@@ -13,7 +13,6 @@ add_kernel(expand_compute_host Host basic SRCS expand_compute.cc DEPS ${lite_ker
 add_kernel(expand_as_compute_host Host basic SRCS expand_as_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(fill_constant_compute_host Host basic SRCS fill_constant_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(fill_constant_batch_size_like_compute_host Host basic SRCS fill_constant_batch_size_like_compute.cc DEPS ${lite_kernel_deps})
-add_kernel(deformable_conv_compute_host Host basic SRCS deformable_conv_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(stack_compute_host Host basic SRCS stack_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(lod_array_length_compute_host Host basic SRCS lod_array_length_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(unbind_compute_host Host basic SRCS unbind_compute.cc DEPS ${lite_kernel_deps})
@@ -22,7 +21,8 @@ add_kernel(assign_value_compute_host Host basic SRCS assign_value_compute.cc DEP
 add_kernel(yolo_box_compute_host Host basic SRCS yolo_box_compute.cc DEPS ${lite_kernel_deps} math_host)
 
 # extra kernels
-add_kernel(reduce_all_compute_host Host extra SRCS reduce_all_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(deformable_conv_compute_host Host extra SRCS deformable_conv_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(reduce_compute_host Host extra SRCS reduce_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(unstack_compute_host Host extra SRCS unstack_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(norm_compute_host Host extra SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(shape_compute_host Host extra SRCS shape_compute.cc DEPS ${lite_kernel_deps})

@@ -86,6 +86,7 @@ class Optimizer {
     std::vector<std::string> passes_local{
         {"lite_quant_dequant_fuse_pass",             //
          "weight_quantization_preprocess_pass",      //
+         "op_transformation_pass",                   //
          "remove_scale1_pass",                       //
          "adaptive_1x1_pool2d_convert_global_pass",  //
          "lite_conv_elementwise_fuse_pass",          // conv-elemwise-bn
@@ -114,6 +115,7 @@ class Optimizer {
          "lite_scaleacts_fuse_pass",                    //
          "lite_elementwise_scale_fuse_pass",            //
          "lite_instance_norm_activation_fuse_pass",     //
+         "lite_flatten_fc_fuse_pass",                   //
          "lite_fc_prelu_fuse_pass",                     //
          "lite_elementwise_activation_fuse_pass",
          "lite_conv_scale_fuse_pass",
@@ -125,15 +127,16 @@ class Optimizer {
          "__xpu__squeeze_excitation_fuse_pass",
          "__xpu__resblock_reduction_fuse_pass",
          "__xpu__resblock_normal_fuse_pass",
+         "__xpu__resblock_darknet_fuse_pass",
          "__xpu__conv2d_concat_pool2d_fuse_pass",
          "__xpu__consecutive_conv2d_fuse_pass",
          "__xpu__conv2d_pool2d_fuse_pass",
          "__xpu__concat_conv2d_fuse_pass",
          "__xpu__consecutive_block_fuse_pass",
-         "__xpu__link_previous_out_max_pass",
          "__xpu__sfa_head_meanstd_fuse_pass",
          "__xpu__sfa_head_moment_fuse_pass",
          "__xpu__mmdnn_fuse_pass",
+         "__xpu__bigru_fuse_pass",
          "__xpu__multi_encoder_fuse_pass",
          "__xpu__embedding_with_eltwise_add_fuse_pass",
          "__xpu__fc_fuse_pass",
@@ -142,6 +145,7 @@ class Optimizer {
          "__xpu__multi_encoder_slice_link_fuse_pass",
          "__xpu__generate_sequence_fuse_pass",
          "__xpu__logit_fuse_pass",
+         "__xpu__link_previous_out_max_pass",
          "ssd_boxes_calc_offline_pass",
          // Only for fully quantized model, infer the output scale and fix the
          // attribute 'enable_int8' for all of the quantized ops.
@@ -164,6 +168,7 @@ class Optimizer {
          "variable_place_inference_pass",  // inference arg/var's
          "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
          "__fpga_kernel_place_correct_pass",
+         "opencl_kernel_place_correct_pass",
          "mlu_postprocess_pass",
          // info(target/precision/layout/device)
          // using kernel info

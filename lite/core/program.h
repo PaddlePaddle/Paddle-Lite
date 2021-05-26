@@ -143,13 +143,11 @@ struct Instruction {
 #endif
 
 #ifdef LITE_WITH_OPENCL
-  bool need_flush(const int inst_idx) const {
-    if (kernel_->target() == TargetType::kOpenCL && inst_idx % 10 == 0) {
-      return true;
+  void Flush(const int inst_idx) const {
+    if (TargetType::kOpenCL == kernel_->target()) {
+      CLRuntime::Global()->Flush(inst_idx);
     }
-    return false;
   }
-  void Flush() const { CLRuntime::Global()->command_queue().flush(); }
 #endif
 
 #ifdef LITE_WITH_PROFILE

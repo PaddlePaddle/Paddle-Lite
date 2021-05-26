@@ -247,7 +247,7 @@ void TestSplitSectionsTensorList(Place place,
                true);
 }
 
-#if defined(LITE_WITH_X86)
+#if defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
 TEST(split_x86, precision) {
   Place place{TARGET(kHost)};
   float abs_error = 1e-5;
@@ -255,22 +255,6 @@ TEST(split_x86, precision) {
   TestSplitBase<float>(place, abs_error, "def");
   TestSplitBase<int>(place, abs_error, "int32");
   TestSplitBase<int64_t>(place, abs_error, "int64");
-  TestSplitAxis(place, abs_error);
-  TestSplitNum(place, abs_error);
-  TestSplitSections(place, abs_error);
-  TestSplitAxisTensor(place, abs_error);
-  TestSplitSectionsTensorList(place, abs_error);
-}
-#endif
-
-#if defined(LITE_WITH_ARM)
-TEST(split_arm, precision) {
-  Place place{TARGET(kARM)};
-  Place place_int64{TARGET(kARM), PRECISION(kInt64)};
-  float abs_error = 1e-5;
-
-  TestSplitBase<float>(place, abs_error, "def");
-  TestSplitBase<int64_t>(place_int64, abs_error, "def");
   TestSplitAxis(place, abs_error);
   TestSplitNum(place, abs_error);
   TestSplitSections(place, abs_error);
