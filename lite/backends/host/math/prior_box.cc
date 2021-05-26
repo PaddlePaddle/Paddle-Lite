@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/prior_box_compute.h"
+#include "lite/backends/host/math/prior_box.h"
 #include <algorithm>
-#include <string>
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
+#include <cmath>
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace host {
+namespace math {
 
-inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
-                               bool flip,
-                               std::vector<float>* output_aspect_ratior) {
+void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
+                        bool flip,
+                        std::vector<float>* output_aspect_ratior) {
   constexpr float epsilon = 1e-6;
   output_aspect_ratior->clear();
   output_aspect_ratior->push_back(1.0f);
@@ -48,32 +46,27 @@ inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
   }
 }
 
-inline void fast_free(void* ptr) {
-  if (ptr) {
-    free(static_cast<void**>(ptr)[-1]);
-  }
-}
-void density_prior_box(const lite::Tensor* input,
-                       const lite::Tensor* image,
-                       lite::Tensor* boxes,
-                       lite::Tensor* variances,
-                       const std::vector<float>& min_size_,
-                       const std::vector<float>& fixed_size_,
-                       const std::vector<float>& fixed_ratio_,
-                       const std::vector<int>& density_size_,
-                       const std::vector<float>& max_size_,
-                       const std::vector<float>& aspect_ratio_,
-                       const std::vector<float>& variance_,
-                       int img_w_,
-                       int img_h_,
-                       float step_w_,
-                       float step_h_,
-                       float offset_,
-                       int prior_num_,
-                       bool is_flip_,
-                       bool is_clip_,
-                       const std::vector<std::string>& order_,
-                       bool min_max_aspect_ratios_order) {
+void DensityPriorBox(const lite::Tensor* input,
+                     const lite::Tensor* image,
+                     lite::Tensor* boxes,
+                     lite::Tensor* variances,
+                     const std::vector<float>& min_size_,
+                     const std::vector<float>& fixed_size_,
+                     const std::vector<float>& fixed_ratio_,
+                     const std::vector<int>& density_size_,
+                     const std::vector<float>& max_size_,
+                     const std::vector<float>& aspect_ratio_,
+                     const std::vector<float>& variance_,
+                     int img_w_,
+                     int img_h_,
+                     float step_w_,
+                     float step_h_,
+                     float offset_,
+                     int prior_num_,
+                     bool is_flip_,
+                     bool is_clip_,
+                     const std::vector<std::string>& order_,
+                     bool min_max_aspect_ratios_order) {
   // compute output shape
   int win1 = input->dims()[3];
   int hin1 = input->dims()[2];
@@ -110,14 +103,13 @@ void density_prior_box(const lite::Tensor* input,
       float box_height;
       if (fixed_size_.size() > 0) {
         // add
-        for (int s = 0; s < fixed_size_.size(); ++s) {
+        for (size_t s = 0; s < fixed_size_.size(); ++s) {
           int fixed_size = fixed_size_[s];
-          int com_idx = 0;
           box_width = fixed_size;
           box_height = fixed_size;
 
           if (fixed_ratio_.size() > 0) {
-            for (int r = 0; r < fixed_ratio_.size(); ++r) {
+            for (size_t r = 0; r < fixed_ratio_.size(); ++r) {
               float ar = fixed_ratio_[r];
               int density = density_size_[s];
               int shift = step_average / density;
@@ -194,7 +186,7 @@ void density_prior_box(const lite::Tensor* input,
             }
 
             // rest of priors: will never come here!!!
-            for (int r = 0; r < aspect_ratio_.size(); ++r) {
+            for (size_t r = 0; r < aspect_ratio_.size(); ++r) {
               float ar = aspect_ratio_[r];
 
               if (fabs(ar - 1.) < 1e-6) {
@@ -247,7 +239,8 @@ void density_prior_box(const lite::Tensor* input,
         float* com_buf =
             reinterpret_cast<float*>(TargetWrapper<TARGET(kHost)>::Malloc(
                 sizeof(float) * aspect_ratio_.size() * 4));
-        for (int s = 0; s < min_size_.size(); ++s) {
+
+        for (size_t s = 0; s < min_size_.size(); ++s) {
           int min_idx = 0;
           int max_idx = 0;
           int com_idx = 0;
@@ -278,7 +271,7 @@ void density_prior_box(const lite::Tensor* input,
           }
 
           //! rest of priors
-          for (int r = 0; r < aspect_ratio_.size(); ++r) {
+          for (size_t r = 0; r < aspect_ratio_.size(); ++r) {
             float ar = aspect_ratio_[r];
             if (fabs(ar - 1.) < 1e-6) {
               continue;
@@ -319,7 +312,7 @@ void density_prior_box(const lite::Tensor* input,
   //! clip the prior's coordinate such that it is within [0, 1]
   if (is_clip_) {
     for (int d = 0; d < channel_size; ++d) {
-      _cpu_data[d] = std::min(std::max(_cpu_data[d], 0.f), 1.f);
+      _cpu_data[d] = (std::min)((std::max)(_cpu_data[d], 0.f), 1.f);
     }
   }
   //! set the variance.
@@ -336,74 +329,7 @@ void density_prior_box(const lite::Tensor* input,
   }
 }
 
-void PriorBoxCompute::ReInitWhenNeeded() {
-  auto& param = this->template Param<param_t>();
-  auto input_dims = param.input->dims();
-  auto image_dims = param.image->dims();
-  if (last_input_shape_ == input_dims && last_image_shape_ == image_dims) {
-    return;
-  }
-  bool is_flip = param.flip;
-  bool is_clip = param.clip;
-  std::vector<float> min_size = param.min_sizes;
-  std::vector<float> max_size = param.max_sizes;
-  std::vector<float> aspect_ratio = param.aspect_ratios;
-  std::vector<float> variance = param.variances_;
-  int img_w = param.img_w;
-  int img_h = param.img_h;
-  float step_w = param.step_w;
-  float step_h = param.step_h;
-  float offset = param.offset;
-  std::vector<float> aspect_ratios_vec;
-  ExpandAspectRatios(aspect_ratio, is_flip, &aspect_ratios_vec);
-  size_t prior_num = aspect_ratios_vec.size() * min_size.size();
-  prior_num += max_size.size();
-  std::vector<std::string> order = param.order;
-  bool min_max_aspect_ratios_order = param.min_max_aspect_ratios_order;
-  density_prior_box(param.input,
-                    param.image,
-                    &boxes_tmp_,
-                    &variances_tmp_,
-                    min_size,
-                    std::vector<float>(),
-                    std::vector<float>(),
-                    std::vector<int>(),
-                    max_size,
-                    aspect_ratios_vec,
-                    variance,
-                    img_w,
-                    img_h,
-                    step_w,
-                    step_h,
-                    offset,
-                    prior_num,
-                    is_flip,
-                    is_clip,
-                    order,
-                    min_max_aspect_ratios_order);
-  last_input_shape_ = input_dims;
-  last_image_shape_ = image_dims;
-}
-
-void PriorBoxCompute::Run() {
-  auto& param = this->template Param<param_t>();
-  param.boxes->CopyDataFrom(boxes_tmp_);
-  param.variances->CopyDataFrom(variances_tmp_);
-}
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace math
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(prior_box,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::PriorBoxCompute,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Image", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
