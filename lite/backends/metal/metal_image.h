@@ -41,7 +41,7 @@ class MetalImage {
 
     int ElementCount() const;
 
-    //源数据 mps计算时使用
+    //  source tensor for mps
     void* src_tensor_{nullptr};
 
     MetalImage(MetalContext* context,

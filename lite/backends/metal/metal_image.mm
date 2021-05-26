@@ -88,7 +88,7 @@ void MetalImage::InitTexture() {
     }
     dim_ = DDimLite(dim);
 
-    // GPU上数据排布
+    //  data layout on GPU
     if (transpose_ == transpose_nhwc) {
         // scenes: Input of the previous kernel, output of the next kernel
         // attention: tensor.size=1、2、3、4
@@ -257,7 +257,7 @@ void MetalImage::CopyFromNCHW(const SP *src) {
         } else if (tensor_dim_.size() == 3) {
             LOG(FATAL) << "MetalImage: CopyFromNCHW - tensor dim = 3";
         } else {
-            // 4维以下与texture desc逻辑一致
+            // dimension bellow 4 similar to texture desc
             size_t n = dim_[0];
             size_t h = dim_[1];
             size_t w = dim_[2];

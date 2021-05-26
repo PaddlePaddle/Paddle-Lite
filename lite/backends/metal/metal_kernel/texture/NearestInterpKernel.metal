@@ -34,7 +34,7 @@ kernel void nearest_interp(texture2d_array<ftype, access::read> inTexture
     return;
   float ratio_h = param.ratio_h;
   float ratio_w = param.ratio_w;
-  // 如果使用中心对齐，align_delta=0.5，否则为-1，在CPU中计算后传入
+  //  if align center then align_delta=0.5, else align_delta=-1; calculate on CPU
   float align_delta = param.align_delta;
 
   uint x = uint(floor(gid.x * ratio_w + align_delta));
