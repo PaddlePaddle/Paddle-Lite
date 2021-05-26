@@ -197,7 +197,7 @@ __kernel void pool_local(__read_only image2d_t input,
               select(input_channel_start + input_width_idx, -1, (input_width_idx < 0 || input_width_idx >= in_width));
 
           if (input_width_idx != -1) {
-            FLOAT4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(input_width_idx, input_height_idx));
+            CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(input_width_idx, input_height_idx));
             local_output[local_id] = fmax(input_data, local_output[local_id]);
           }
           pos_w += local_block_size_wh.x;
