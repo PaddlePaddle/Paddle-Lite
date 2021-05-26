@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,49 +14,29 @@
 
 #pragma once
 #include <string>
-#include <vector>
 #include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class ReduceMaxOp : public OpLite {
+class XPUBiGRUOp : public OpLite {
  public:
-  ReduceMaxOp() {}
-  explicit ReduceMaxOp(const std::string &op_type) : OpLite(op_type) {}
+  XPUBiGRUOp() {}
+  explicit XPUBiGRUOp(const std::string &op_type) : OpLite(op_type) {}
+
   bool CheckShape() const override;
+
   bool InferShapeImpl() const override;
+
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "reduce_max"; }
-
-#ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
-    ch->input_shape = ch->DimToStr(param_.X->dims());
-    ch->output_shape = ch->DimToStr(param_.Out->dims());
-    ch->remark = "keep_dim" + std::to_string(param_.keep_dim);
-
-    auto dims = param_.dim;
-    auto in_sum = param_.X->numel();
-    if (dims.size() == 0 || dims.size() == 1) {
-      ch->macs = 1.f * in_sum;
-    } else if (dims.size() == 2) {
-      ch->macs = 2.f * in_sum;
-    } else {
-      LOG(FATAL) << "This dims size of ReduceMaxParm: " << dims.size()
-                 << " doesn't support";
-      ch->macs = 0.f;
-    }
-  }
-#endif
+  std::string DebugString() const override { return "BiGRU Op"; }
 
  private:
-  mutable ReduceParam param_;
+  mutable BiGRUParam param_;
 };
 
 }  // namespace operators

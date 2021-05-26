@@ -27,7 +27,6 @@ namespace arm {
 namespace math {
 
 #ifdef __aarch64__
-int conv_3x3s2_direct_int8_c_num() { return 8; }
 template <typename Dtype>
 void conv_3x3s2_direct_int8(const int8_t* din,
                             Dtype* dout,
@@ -476,7 +475,6 @@ void conv_3x3s2_direct_int8(const int8_t* din,
 }
 
 #else  // __aarch64__
-int conv_3x3s2_direct_int8_c_num() { return 4; }
 
 template <typename Dtype>
 void conv_3x3s2_direct_int8(const int8_t* din,

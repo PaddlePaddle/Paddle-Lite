@@ -36,6 +36,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 # 4.add executable output
 add_executable(${TARGET} ${TARGET}.cc)
 target_link_libraries(${TARGET} -lpaddle_light_api_shared)
+target_link_libraries(${TARGET} -ldl)
 
 ###############################################################
 # How to use one of static libaray:                           #
