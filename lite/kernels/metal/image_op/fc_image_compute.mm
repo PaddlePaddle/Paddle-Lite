@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/fc_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/metal/image_op/fc_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
@@ -26,7 +26,7 @@ namespace kernels {
 namespace metal {
 
 void FCImageCompute::PrepareForRun() {
-    auto& context = ctx_->As<ContextMetal>();
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
@@ -38,7 +38,7 @@ void FCImageCompute::PrepareForRun() {
     input_buffer_ = param.input->data<MetalHalf, MetalImage>();
     weight_buffer_ = param.w->data<MetalHalf, MetalImage>();
     bias_buffer_ = param.bias->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     setup_without_mps();
@@ -74,11 +74,11 @@ void FCImageCompute::setup_without_mps() {
     if (weight_buffer_->transpose_ == transpose_nchw && weight_buffer_->tensor_dim_.size() == 2 &&
         bias_buffer_->tensor_dim_.size() == 1) {
     } else {
-        throw std::logic_error("fc: unsupported mul input and output");
+        LOG(FATAL) << "fc: unsupported mul input and output";
     }
 
     if (input_buffer_->dim_[0] != 1) {
-        throw std::logic_error("fc: attention this input.dim[0]");
+        LOG(FATAL) << "fc: attention this input.dim[0]";
     }
 
     function_name_ = "mul_add";

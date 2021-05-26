@@ -42,10 +42,9 @@ class FeedImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override;
-  //  void SaveOutput() override {
-  //    MetalDebug::SaveOutput("feed", output_buffer_);
-  //  };
+  void SaveOutput() override {
+    MetalDebug::SaveOutput(function_name_, output_buffer_);
+  };
 
  private:
   std::shared_ptr<MetalBuffer> input_buffer_;

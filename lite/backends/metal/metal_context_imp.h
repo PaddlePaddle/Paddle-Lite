@@ -1,26 +1,34 @@
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
-//  metal_context_oc.h
-//  PaddleLiteiOS
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//  Created by hxwc on 2021/3/22.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#ifndef METAL_CONTEXT_OC_H
-#define METAL_CONTEXT_OC_H
+#ifndef LITE_BACKENDS_METAL_METAL_CONTEXT_IMP_H_
+#define LITE_BACKENDS_METAL_METAL_CONTEXT_IMP_H_
 
-#include "lite/backends/metal/metal_common.h"
 #include <Metal/Metal.h>
 #include <MetalPerformanceShaders/MetalPerformanceShaders.h>
 #include <string>
+#include "lite/backends/metal/metal_common.h"
 
 extern NSString* cString2NSString(std::string cStr);
 
 @interface MetalContextImp : NSObject
-@property (strong, nonatomic, readonly) id<MTLDevice> device;
+@property(strong, nonatomic, readonly) id<MTLDevice> device;
 
 - (void)setMetalPath:(std::string)path;
 
-- (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size access:(paddle::lite::METAL_ACCESS_FLAG)access;
+- (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size
+                          access:(paddle::lite::METAL_ACCESS_FLAG)access;
 - (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size
                            bytes:(void*)bytes
                           access:(paddle::lite::METAL_ACCESS_FLAG)access;
@@ -28,7 +36,8 @@ extern NSString* cString2NSString(std::string cStr);
 
 - (id<MTLHeap>)newHeapForTexDesc:(MTLTextureDescriptor*)desc;
 - (bool)isNeedNewHeap:(id<MTLHeap>)heap texDesc:(MTLTextureDescriptor*)desc;
-- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap;
+- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc
+                                      heap:(id<MTLHeap>)heap;
 
 // MPS使用
 - (id<MTLCommandBuffer>)commandBuffer;
@@ -57,4 +66,4 @@ extern NSString* cString2NSString(std::string cStr);
 
 @end
 
-#endif
+#endif  // LITE_BACKENDS_METAL_METAL_CONTEXT_IMP_H_
