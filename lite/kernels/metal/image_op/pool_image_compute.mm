@@ -58,17 +58,13 @@ void PoolImageCompute<P, PTYPE>::PrepareForRun() {
     auto ph = 0;
   }
 
-  PoolMetalParam pool_params{
-      kw, kh, sw, sh, pw, ph, pool_type, param.exclusive};
+  PoolMetalParam pool_params{kw, kh, sw, sh, pw, ph, pool_type, param.exclusive};
 
-  params_buffer_ =
-      metal_context_->CreateBuffer(*device,
-                                   &pool_params,
-                                   sizeof(pool_params),
-                                   METAL_ACCESS_FLAG::CPUWriteOnly);
+  params_buffer_ = metal_context_->CreateBuffer(
+      *device, &pool_params, sizeof(pool_params), METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  output_buffer_ = param.output->template mutable_data<P, MetalImage>(
-      output_dims, input_buffer_->transpose_);
+  output_buffer_ =
+      param.output->template mutable_data<P, MetalImage>(output_dims, input_buffer_->transpose_);
 
   std::string function_name = "";
   if (std::is_same<float, P>::value) {
@@ -92,17 +88,12 @@ void PoolImageCompute<P, PTYPE>::Run() {
   MetalUint output_height = output_buffer_->image().height;
   MetalUint output_array_length = output_buffer_->image().arrayLength;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
-                                                &kernel_->program_);
-  MetalUint3 global_work_size = {
-      output_width, output_height, output_array_length};
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {output_width, output_height, output_array_length};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
-                                      atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                      atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer())
-                                      offset:(0)atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
   kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -112,18 +103,17 @@ void PoolImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::
-    PoolImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::PoolImageCompute<MetalHalf,
-                                                              PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::PoolImageCompute<float, PRECISION(kFloat)>
-    MetalPoolFp32;
-typedef paddle::lite::kernels::metal::PoolImageCompute<MetalHalf,
-                                                       PRECISION(kFP16)>
-    MetalPoolFp16;
+template class paddle::lite::kernels::metal::PoolImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::PoolImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::PoolImageCompute<float, PRECISION(kFloat)> MetalPoolFp32;
+typedef paddle::lite::kernels::metal::PoolImageCompute<MetalHalf, PRECISION(kFP16)> MetalPoolFp16;
 
-REGISTER_LITE_KERNEL(
-    pool2d, kMetal, kFloat, kMetalTexture2DArray, MetalPoolFp32, def)
+REGISTER_LITE_KERNEL(pool2d,
+                     kMetal,
+                     kFloat,
+                     kMetalTexture2DArray,
+                     MetalPoolFp32,
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFloat),
@@ -134,8 +124,12 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    pool2d, kMetal, kFP16, kMetalTexture2DArray, MetalPoolFp16, def)
+REGISTER_LITE_KERNEL(pool2d,
+                     kMetal,
+                     kFP16,
+                     kMetalTexture2DArray,
+                     MetalPoolFp16,
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),

@@ -14,10 +14,10 @@
 
 #include "lite/kernels/metal/image_op/box_coder_image_compute.h"
 #include <algorithm>
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -34,14 +34,12 @@ void BoxCoderImageCompute<P, PTYPE>::PrepareForRun() {
   auto output_dims = param.proposals->dims();
   auto prior_box_dims = param.prior_box->dims();
 
-  assert(param.code_type == "decode_center_size" &&
-         param.box_normalized == true);
+  assert(param.code_type == "decode_center_size" && param.box_normalized == true);
 
   prior_box_buffer_ = param.prior_box->template data<P, MetalImage>();
   prior_box_var_buffer_ = param.prior_box_var->template data<P, MetalImage>();
   target_box_buffer_ = param.target_box->template data<P, MetalImage>();
-  output_buffer_ =
-      param.proposals->template mutable_data<P, MetalImage>(output_dims);
+  output_buffer_ = param.proposals->template mutable_data<P, MetalImage>(output_dims);
 
   std::string function_name = "";
   if (std::is_same<float, P>::value) {
@@ -55,6 +53,7 @@ void BoxCoderImageCompute<P, PTYPE>::PrepareForRun() {
   kernel_ = metal_context_->GetKernel(*device, function_name);
 }
 
+
 template <typename P, PrecisionType PTYPE>
 void BoxCoderImageCompute<P, PTYPE>::Run() {
   auto output_width = output_buffer_->texture_width_;
@@ -64,20 +63,15 @@ void BoxCoderImageCompute<P, PTYPE>::Run() {
   auto& context = this->ctx_->template As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
-                                                &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(prior_box_buffer_->image())
-                                      atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(prior_box_var_buffer_->image())
-                                      atIndex:(1)];
-  [encoder->metal_command_encoder_ setTexture:(target_box_buffer_->image())
-                                      atIndex:(2)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                      atIndex:(3)];
+  [encoder->metal_command_encoder_ setTexture:(prior_box_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(prior_box_var_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(target_box_buffer_->image()) atIndex:(2)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(3)];
 
   kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -87,54 +81,57 @@ void BoxCoderImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::
-    BoxCoderImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::
-    BoxCoderImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite::kernels::metal::BoxCoderImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::BoxCoderImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::BoxCoderImageCompute<float,
-                                                           PRECISION(kFloat)>
-    MetalBoxCoderFp32;
-typedef paddle::lite::kernels::metal::BoxCoderImageCompute<MetalHalf,
-                                                           PRECISION(kFP16)>
-    MetalBoxCoderFp16;
+typedef paddle::lite::kernels::metal::BoxCoderImageCompute<float, PRECISION(kFloat)> MetalBoxCoderFp32;
+typedef paddle::lite::kernels::metal::BoxCoderImageCompute<MetalHalf, PRECISION(kFP16)> MetalBoxCoderFp16;
 
-REGISTER_LITE_KERNEL(
-    box_coder, kMetal, kFloat, kMetalTexture2DArray, MetalBoxCoderFp32, def)
-    .BindInput("PriorBox",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("PriorBoxVar",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("TargetBox",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("OutputBox",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
-    .Finalize();
 
-REGISTER_LITE_KERNEL(
-    box_coder, kMetal, kFP16, kMetalTexture2DArray, MetalBoxCoderFp16, def)
-    .BindInput("PriorBox",
+REGISTER_LITE_KERNEL(box_coder,
+                     kMetal,
+                     kFloat,
+                     kMetalTexture2DArray,
+                     MetalBoxCoderFp32,
+                     def)
+        .BindInput("PriorBox",
+                   {LiteType::GetTensorTy(TARGET(kMetal),
+                                          PRECISION(kFloat),
+                                          DATALAYOUT(kMetalTexture2DArray))})
+        .BindInput("PriorBoxVar",
+                   {LiteType::GetTensorTy(TARGET(kMetal),
+                                          PRECISION(kFloat),
+                                          DATALAYOUT(kMetalTexture2DArray))})
+        .BindInput("TargetBox",
+                   {LiteType::GetTensorTy(TARGET(kMetal),
+                                          PRECISION(kFloat),
+                                          DATALAYOUT(kMetalTexture2DArray))})
+        .BindOutput("OutputBox",
+                    {LiteType::GetTensorTy(TARGET(kMetal),
+                                           PRECISION(kFloat),
+                                           DATALAYOUT(kMetalTexture2DArray))})
+        .Finalize();
+
+REGISTER_LITE_KERNEL(box_coder,
+                     kMetal,
+                     kFP16,
+                     kMetalTexture2DArray,
+                     MetalBoxCoderFp16,
+                     def)
+        .BindInput("PriorBox",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("PriorBoxVar",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("TargetBox",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("OutputBox",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
-    .Finalize();
+        .BindInput("PriorBoxVar",
+                   {LiteType::GetTensorTy(TARGET(kMetal),
+                                                         PRECISION(kFP16),
+                                                         DATALAYOUT(kMetalTexture2DArray))})
+        .BindInput("TargetBox",
+                   {LiteType::GetTensorTy(TARGET(kMetal),
+                                          PRECISION(kFP16),
+                                          DATALAYOUT(kMetalTexture2DArray))})
+        .BindOutput("OutputBox",
+                    {LiteType::GetTensorTy(TARGET(kMetal),
+                                           PRECISION(kFP16),
+                                           DATALAYOUT(kMetalTexture2DArray))})
+        .Finalize();

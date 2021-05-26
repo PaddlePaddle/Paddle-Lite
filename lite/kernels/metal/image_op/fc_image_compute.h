@@ -16,7 +16,6 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_FC_IMAGE_COMPUTE_H_
 
 #include <memory>
-
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/reshape_image_compute.h"

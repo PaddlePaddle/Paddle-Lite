@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/conv2d_transpose_image_compute.h"
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
+
 
 namespace paddle {
 namespace lite {
@@ -36,18 +37,15 @@ void Conv2dTransposeImageCompute<P, PTYPE>::PrepareForRun() {
   if (param.activation_param.has_active) {
     if (lite_api::ActivationType::kRelu == param.activation_param.active_type)
       activate_type_ = 1;
-    else if (lite_api::ActivationType::kRelu6 ==
-             param.activation_param.active_type) {
+    else if (lite_api::ActivationType::kRelu6 == param.activation_param.active_type) {
       activate_type_ = 2;
-      relu6_thredhold_ =
-          static_cast<short>(param.activation_param.hard_swish_threshold);
+      relu6_thredhold_ = static_cast<short>(param.activation_param.hard_swish_threshold);
     } else {
       throw std::logic_error("cannot support the activate type");
     }
   }
 
-  output_buffer_ =
-      param.output->template mutable_data<P, MetalImage>(output_dims);
+  output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
 
   auto* blank_host = (float*)malloc(sizeof(float) * output_dims[1]);
   memset(blank_host, 0, sizeof(float) * output_dims[1]);
@@ -57,11 +55,9 @@ void Conv2dTransposeImageCompute<P, PTYPE>::PrepareForRun() {
   p->template CopyFromNCHW<float>(blank_host);
   free(blank_host);
 
-  function_name_ =
-      KernelFunctionName(param, metal_context_->use_aggressive_optimization());
+  function_name_ = KernelFunctionName(param, metal_context_->use_aggressive_optimization());
   if (function_name_.empty()) {
-    throw std::logic_error(
-        "ERROR: cannot find the kernel name of this conv2d_transpose");
+    throw std::logic_error("ERROR: cannot find the kernel name of this conv2d_transpose");
   }
 
   if (activate_type_ == 2) {
@@ -81,20 +77,15 @@ void Conv2dTransposeImageCompute<P, PTYPE>::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
-                                                &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
-                                      atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                      atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer())
-                                      offset:(0)atIndex:(0)];
-  [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer())
-                                      offset:(0)atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+  [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0)atIndex:(1)];
 
   kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -128,8 +119,8 @@ std::string Conv2dTransposeImageCompute<P, PTYPE>::KernelFunctionName(
 }
 
 template <typename P, PrecisionType PTYPE>
-bool Conv2dTransposeImageCompute<P, PTYPE>::HasPrefix(
-    const std::string& function_name, const std::string& prefix) {
+bool Conv2dTransposeImageCompute<P, PTYPE>::HasPrefix(const std::string& function_name,
+                                            const std::string& prefix) {
   if (function_name.size() >= prefix.size() &&
       function_name.compare(0, prefix.size(), prefix) == 0) {
     return true;
@@ -195,8 +186,8 @@ void Conv2dTransposeImageCompute<P, PTYPE>::SetupWithoutMPS() {
 
   int add_by_channel = 0;
   if (bias_buffer_->tensor_dim_.size() == 1 &&
-      (axis == 1 || (axis == -1 && bias_buffer_->tensor_dim_[0] ==
-                                       output_buffer_->pad_to_four_dim_[1]))) {
+      (axis == 1 ||
+       (axis == -1 && bias_buffer_->tensor_dim_[0] == output_buffer_->pad_to_four_dim_[1]))) {
     add_by_channel = 1;
   }
 
@@ -229,19 +220,12 @@ void Conv2dTransposeImageCompute<P, PTYPE>::SetupWithoutMPS() {
                                            hasAdd,
                                            addParam};
 
-  params_buffer_ =
-      metal_context_->CreateBuffer(*device,
-                                   &metalParam,
-                                   sizeof(metalParam),
-                                   METAL_ACCESS_FLAG::CPUWriteOnly);
+  params_buffer_ = metal_context_->CreateBuffer(
+      *device, &metalParam, sizeof(metalParam), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   if (HasPrefix(function_name_, "conv_transpose2x2")) {
-    filter_buffer_ = std::make_shared<MetalBuffer>(*device,
-                                                   param.filter->dims(),
-                                                   METAL_PRECISION_TYPE::HALF,
-                                                   false,
-                                                   false,
-                                                   true);
+    filter_buffer_ = std::make_shared<MetalBuffer>(
+        *device, param.filter->dims(), METAL_PRECISION_TYPE::HALF, false, false, true);
   } else {
     throw std::logic_error("ERROR: conv_transpose still cannot support this");
   }
@@ -253,20 +237,16 @@ void Conv2dTransposeImageCompute<P, PTYPE>::SetupWithoutMPS() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::
-    Conv2dTransposeImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::
-    Conv2dTransposeImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite::kernels::metal::Conv2dTransposeImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::Conv2dTransposeImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::
-    Conv2dTransposeImageCompute<float, PRECISION(kFloat)>
-        MetalConv2dTransposeFp32;
-typedef paddle::lite::kernels::metal::
-    Conv2dTransposeImageCompute<MetalHalf, PRECISION(kFP16)>
-        MetalConv2dTransposeFp16;
+typedef paddle::lite::kernels::metal::Conv2dTransposeImageCompute<float, PRECISION(kFloat)> MetalConv2dTransposeFp32;
+typedef paddle::lite::kernels::metal::Conv2dTransposeImageCompute<MetalHalf, PRECISION(kFP16)> MetalConv2dTransposeFp16;
 
-// TODO:(lzy) need debug to open the kernel
-// REGISTER_LITE_KERNEL(conv2d_transpose,
+
+
+//TODO:(lzy) need debug to open the kernel
+//REGISTER_LITE_KERNEL(conv2d_transpose,
 //                     kMetal,
 //                     kFloat,
 //                     kMetalTexture2DArray,
@@ -290,7 +270,7 @@ typedef paddle::lite::kernels::metal::
 //                                       DATALAYOUT(kMetalTexture2DArray))})
 //    .Finalize();
 //
-// REGISTER_LITE_KERNEL(conv2d_transpose,
+//REGISTER_LITE_KERNEL(conv2d_transpose,
 //                     kMetal,
 //                     kFP16,
 //                     kMetalTexture2DArray,

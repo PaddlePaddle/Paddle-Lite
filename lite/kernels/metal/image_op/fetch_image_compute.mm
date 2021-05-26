@@ -55,8 +55,7 @@ void FetchImageCompute<P, PTYPE>::PrepareForRun() {
           function_name = "fetch_half";
           break;
         default:
-          throw std::logic_error(
-              "ERROR: half compute unsupported tensor dim count");
+          throw std::logic_error("ERROR: half compute unsupported tensor dim count");
       }
     }
   } else if (std::is_same<P, float>::value) {
@@ -73,8 +72,7 @@ void FetchImageCompute<P, PTYPE>::PrepareForRun() {
           function_name = "fetch_float";
           break;
         default:
-          throw std::logic_error(
-              "ERROR: float compute unsupported tensor dim count");
+          throw std::logic_error("ERROR: float compute unsupported tensor dim count");
       }
     }
   } else {
@@ -122,21 +120,17 @@ void FetchImageCompute<P, PTYPE>::Run() {
 
   if (insert_shape) {
     reshape_.Run();
-    auto encoder = std::make_shared<MetalEncoder>(
-        metal_context_->cmd_buf_.get(), &kernel_->program_);
+    auto encoder =
+        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     auto shape_buffer = shape_out_dev.data<P, MetalImage>();
-    [encoder->metal_command_encoder_ setTexture:shape_buffer->image()
-                                        atIndex:(0)];
-    [encoder->metal_command_encoder_ setBuffer:output_buffer_->buffer()
-                                        offset:(0)atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:shape_buffer->image() atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:output_buffer_->buffer() offset:(0)atIndex:(0)];
     kernel_->Execute(*encoder, global_work_size, false);
   } else {
-    auto encoder = std::make_shared<MetalEncoder>(
-        metal_context_->cmd_buf_.get(), &kernel_->program_);
-    [encoder->metal_command_encoder_ setTexture:input_buffer_->image()
-                                        atIndex:(0)];
-    [encoder->metal_command_encoder_ setBuffer:output_buffer_->buffer()
-                                        offset:(0)atIndex:(0)];
+    auto encoder =
+        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+    [encoder->metal_command_encoder_ setTexture:input_buffer_->image() atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:output_buffer_->buffer() offset:(0)atIndex:(0)];
     kernel_->Execute(*encoder, global_work_size, false);
   }
 
@@ -152,37 +146,37 @@ void FetchImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::
-    FetchImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::
-    FetchImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::FetchImageCompute<float,
-                                                        PRECISION(kFloat)>
-    MetalFetchFp32;
-typedef paddle::lite::kernels::metal::FetchImageCompute<MetalHalf,
-                                                        PRECISION(kFP16)>
-    MetalFetchFp16;
+template class paddle::lite::kernels::metal::FetchImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::FetchImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::FetchImageCompute<float, PRECISION(kFloat)> MetalFetchFp32;
+typedef paddle::lite::kernels::metal::FetchImageCompute<MetalHalf, PRECISION(kFP16)> MetalFetchFp16;
 
-REGISTER_LITE_KERNEL(
-    fetch, kMetal, kFloat, kMetalTexture2DArray, MetalFetchFp32, def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
+REGISTER_LITE_KERNEL(fetch,
+                     kMetal,
+                     kFloat,
+                     kMetalTexture2DArray,
+                     MetalFetchFp32,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost),
+                                              PRECISION(kFloat),
+                                              DATALAYOUT(kNCHW)
+                                              )})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    fetch, kMetal, kFP16, kMetalTexture2DArray, MetalFetchFp16, def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
+REGISTER_LITE_KERNEL(fetch,
+                     kMetal,
+                     kFP16,
+                     kMetalTexture2DArray,
+                     MetalFetchFp16,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
+                                           PRECISION(kFP16),
+                                           DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost),
+                                              PRECISION(kFloat),
+                                              DATALAYOUT(kNCHW)
+                                          )})
     .Finalize();

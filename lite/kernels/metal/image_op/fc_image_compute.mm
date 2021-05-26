@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/fc_image_compute.h"
-#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/backends/metal/metal_debug.h"
 
 using namespace std;
 
@@ -49,12 +49,10 @@ void FCImageCompute<P, PTYPE>::PrepareForRun() {
 
   std::vector<int> nhwc = {0, 1, 2, 3};
   input_x_mul_dim_ = DDimLite({s1, s2});
-  assert(weight_buffer_->transpose_ == nhwc &&
-         weight_buffer_->tensor_dim_.size() == 2 &&
+  assert(weight_buffer_->transpose_ == nhwc && weight_buffer_->tensor_dim_.size() == 2 &&
          s2 == weight_buffer_->tensor_dim_[0]);
 
-  output_buffer_ =
-      param.output->template mutable_data<P, MetalImage>(output_dims);
+  output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
 
   if (input_dims.size() != 2 || input_buffer_->transpose_ != nhwc) {
     insert_shape = true;
@@ -93,34 +91,25 @@ void FCImageCompute<P, PTYPE>::Run() {
   MetalUint output_height = output_buffer_->image().height;
   MetalUint output_array_length = output_buffer_->image().arrayLength;
 
-  MetalUint3 global_work_size = {
-      output_width, output_height, output_array_length};
+  MetalUint3 global_work_size = {output_width, output_height, output_array_length};
   if (insert_shape) {
     reshape_.Run();
-    auto encoder = std::make_shared<MetalEncoder>(
-        metal_context_->cmd_buf_.get(), &kernel_->program_);
+    auto encoder =
+        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     auto shape_buffer = shape_out_dev_.data<P, MetalImage>();
-    [encoder->metal_command_encoder_ setTexture:(shape_buffer->image())
-                                        atIndex:(0)];
-    [encoder->metal_command_encoder_ setTexture:(weight_buffer_->image())
-                                        atIndex:(1)];
-    [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image())
-                                        atIndex:(2)];
-    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                        atIndex:(3)];
+    [encoder->metal_command_encoder_ setTexture:(shape_buffer->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(weight_buffer_->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image()) atIndex:(2)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(3)];
 
     kernel_->Execute(*encoder, global_work_size, false);
   } else {
-    auto encoder = std::make_shared<MetalEncoder>(
-        metal_context_->cmd_buf_.get(), &kernel_->program_);
-    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
-                                        atIndex:(0)];
-    [encoder->metal_command_encoder_ setTexture:(weight_buffer_->image())
-                                        atIndex:(1)];
-    [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image())
-                                        atIndex:(2)];
-    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                        atIndex:(3)];
+    auto encoder =
+        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(weight_buffer_->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image()) atIndex:(2)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(3)];
     kernel_->Execute(*encoder, global_work_size, false);
   }
 }
@@ -130,50 +119,47 @@ void FCImageCompute<P, PTYPE>::Run() {
 }
 }
 
-template class paddle::lite::kernels::metal::FCImageCompute<float,
-                                                            PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::FCImageCompute<MetalHalf,
-                                                            PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::FCImageCompute<float, PRECISION(kFloat)>
-    MetalFCFp32;
-typedef paddle::lite::kernels::metal::FCImageCompute<MetalHalf,
-                                                     PRECISION(kFP16)>
-    MetalFCFp16;
+template class paddle::lite::kernels::metal::FCImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::FCImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::FCImageCompute<float, PRECISION(kFloat)> MetalFCFp32;
+typedef paddle::lite::kernels::metal::FCImageCompute<MetalHalf, PRECISION(kFP16)> MetalFCFp16;
 
-REGISTER_LITE_KERNEL(fc, kMetal, kFloat, kMetalTexture2DArray, MetalFCFp32, def)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("Bias",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("W",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
-    .Finalize();
+REGISTER_LITE_KERNEL(fc,
+                     kMetal,
+                     kFloat,
+                     kMetalTexture2DArray,
+                     MetalFCFp32,
+                     def)
+        .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal),
+                                                   PRECISION(kFloat),
+                                                   DATALAYOUT(kMetalTexture2DArray))})
+        .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kMetal),
+                                                PRECISION(kFloat),
+                                                  DATALAYOUT(kMetalTexture2DArray))})
+        .BindInput("W", {LiteType::GetTensorTy(TARGET(kMetal),
+                         PRECISION(kFloat),
+                         DATALAYOUT(kMetalTexture2DArray))})
+        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
+                                                     PRECISION(kFloat),
+                                                     DATALAYOUT(kMetalTexture2DArray))})
+        .Finalize();
 
-REGISTER_LITE_KERNEL(fc, kMetal, kFP16, kMetalTexture2DArray, MetalFCFp16, def)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("Bias",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("W",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+REGISTER_LITE_KERNEL(fc,
+                     kMetal,
+                     kFP16,
+                     kMetalTexture2DArray,
+                     MetalFCFp16,
+                     def)
+.BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal),
+                                           PRECISION(kFP16),
+                                           DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kMetal),
+                                              PRECISION(kFP16),
+                                              DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kMetal),
+                                           PRECISION(kFP16),
+                                           DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
+                                              PRECISION(kFP16),
+                                              DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
