@@ -106,14 +106,10 @@ class Optimizer {
  protected:
   void SpecifyKernelPickTactic(core::KernelPickFactor factor);
 
-  // Specify the passes and run them. NOTE legancy, to discarded latter.
-  void RunPasses(const std::vector<std::string>& passes);
-
   // Run all the added passes.
   void ApplyPasses(std::vector<std::unique_ptr<mir::SSAGraph>>* graphes);
 
  private:
-  // std::vector<std::unique_ptr<mir::SSAGraph>> graphs_;
   std::vector<Place> valid_places_;
   Scope* exec_scope_{};
 
