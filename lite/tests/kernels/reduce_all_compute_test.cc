@@ -249,7 +249,7 @@ class ReduceAllComputeTester : public arena::TestCase {
       int dim_index = 0;
       int out_index = 0;
       for (size_t i = 0; i < x_rank; ++i) {
-        if (dim_index < dim_.size() &&
+        if (dim_index < static_cast<int>(dim_.size()) &&
             dim_[dim_index] == static_cast<DDim::value_type>(i)) {
           if (keep_dim_) {
             out_dims[out_index++] = 1;
@@ -375,9 +375,8 @@ void test_reduce_all(Place place, float abs_err) {
 }
 
 TEST(ReduceAll, precision) {
-  Place place;
+  Place place(TARGET(kHost));
   float abs_err = 2e-5;
-  place = Place(TARGET(kHost));
   test_reduce_all(place, abs_err);
 }
 

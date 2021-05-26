@@ -53,13 +53,16 @@ void ReluImageCompute<P, PTYPE>::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
+                                                &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
+                                      atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                      atIndex:(1)];
 
   kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -75,8 +78,10 @@ void Relu6ImageCompute<P, PTYPE>::PrepareForRun() {
   auto input_dims = param.X->dims();
 
   Relu6MetalParam metal_param{param.hard_swish_threshold};
-  param_buffer_ = metal_context_->CreateBuffer(
-      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = metal_context_->CreateBuffer(*device,
+                                               &metal_param,
+                                               sizeof(metal_param),
+                                               METAL_ACCESS_FLAG::CPUWriteOnly);
 
   output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
   input_buffer_ = param.X->template data<P, MetalImage>();
@@ -102,14 +107,18 @@ void Relu6ImageCompute<P, PTYPE>::Run() {
   auto& context = this->ctx_->template As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
+                                                &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
+                                      atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                      atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer())
+                                      offset:(0)atIndex:(0)];
   kernel_->Execute(*encoder, global_work_size, false);
 }
 
@@ -118,69 +127,71 @@ void Relu6ImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ReluImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ReluImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::ReluImageCompute<float, PRECISION(kFloat)> MetalReluFp32;
-typedef paddle::lite::kernels::metal::ReluImageCompute<MetalHalf, PRECISION(kFP16)> MetalReluFp16;
+template class paddle::lite::kernels::metal::
+    ReluImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::ReluImageCompute<MetalHalf,
+                                                              PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::ReluImageCompute<float, PRECISION(kFloat)>
+    MetalReluFp32;
+typedef paddle::lite::kernels::metal::ReluImageCompute<MetalHalf,
+                                                       PRECISION(kFP16)>
+    MetalReluFp16;
 
-template class paddle::lite::kernels::metal::Relu6ImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::Relu6ImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::Relu6ImageCompute<float, PRECISION(kFloat)> MetalRelu6Fp32;
-typedef paddle::lite::kernels::metal::Relu6ImageCompute<MetalHalf, PRECISION(kFP16)> MetalRelu6Fp16;
+template class paddle::lite::kernels::metal::
+    Relu6ImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::
+    Relu6ImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::Relu6ImageCompute<float,
+                                                        PRECISION(kFloat)>
+    MetalRelu6Fp32;
+typedef paddle::lite::kernels::metal::Relu6ImageCompute<MetalHalf,
+                                                        PRECISION(kFP16)>
+    MetalRelu6Fp16;
 
-REGISTER_LITE_KERNEL(relu,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalReluFp32,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
-
-REGISTER_LITE_KERNEL(relu6,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalRelu6Fp32,
-                     def)
-.BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
+REGISTER_LITE_KERNEL(
+    relu, kMetal, kFloat, kMetalTexture2DArray, MetalReluFp32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFloat),
                                        DATALAYOUT(kMetalTexture2DArray))})
-.BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                              PRECISION(kFloat),
-                                              DATALAYOUT(kMetalTexture2DArray))})
-.Finalize();
+    .Finalize();
 
+REGISTER_LITE_KERNEL(
+    relu6, kMetal, kFloat, kMetalTexture2DArray, MetalRelu6Fp32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-REGISTER_LITE_KERNEL(relu,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalReluFp16,
-                     def)
-.BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
+REGISTER_LITE_KERNEL(
+    relu, kMetal, kFP16, kMetalTexture2DArray, MetalReluFp16, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kMetalTexture2DArray))})
-.BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                          PRECISION(kFP16),
-                                          DATALAYOUT(kMetalTexture2DArray))})
-.Finalize();
+    .Finalize();
 
-REGISTER_LITE_KERNEL(relu6,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalRelu6Fp16,
-                     def)
-.BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
+REGISTER_LITE_KERNEL(
+    relu6, kMetal, kFP16, kMetalTexture2DArray, MetalRelu6Fp16, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kMetalTexture2DArray))})
-.BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                          PRECISION(kFP16),
-                                          DATALAYOUT(kMetalTexture2DArray))})
-.Finalize();
+    .Finalize();

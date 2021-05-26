@@ -22,8 +22,6 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-std::string padding_algorithm_ = "";  // NOLINT
-
 bool XPUConv2dOp::CheckShape() const {
   CHECK(param_.input) << "Input(Input) of ConvXPUOp should not be null.";
   CHECK(param_.output) << "Input(Filter) of ConvXPUOp should not be null.";

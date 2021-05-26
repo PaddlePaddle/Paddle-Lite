@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/elementwise_add_image_compute.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
-#include "lite/backends/metal/metal_debug.h"
 
 using namespace std;
 
@@ -61,9 +61,8 @@ void ElementwiseAddImageCompute<P, PTYPE>::PrepareForRun() {
 
   int add_by_channel = 0;
   if (input_buffer_y_->tensor_dim_.size() == 1 &&
-      (axis == 1 || (axis == -1 &&
-                     input_buffer_y_->tensor_dim_[0] ==
-                         input_buffer_x_->pad_to_four_dim_[1]))) {
+      (axis == 1 || (axis == -1 && input_buffer_y_->tensor_dim_[0] ==
+                                       input_buffer_x_->pad_to_four_dim_[1]))) {
     add_by_channel = 1;
   }
 
@@ -83,10 +82,11 @@ void ElementwiseAddImageCompute<P, PTYPE>::PrepareForRun() {
        input_buffer_y_->transpose_[2],
        input_buffer_y_->transpose_[3]}};
 
-  params_buffer_ = metal_context_->CreateBuffer(*device,
-                                         &element_params,
-                                         sizeof(element_params),
-                                         METAL_ACCESS_FLAG::CPUWriteOnly);
+  params_buffer_ =
+      metal_context_->CreateBuffer(*device,
+                                   &element_params,
+                                   sizeof(element_params),
+                                   METAL_ACCESS_FLAG::CPUWriteOnly);
   std::string function_name = "";
   if (std::is_same<float, P>::value) {
     function_name = "elementwise_add";
@@ -97,7 +97,6 @@ void ElementwiseAddImageCompute<P, PTYPE>::PrepareForRun() {
   kernel_ = metal_context_->GetKernel(*device, function_name);
 }
 
-
 template <typename P, PrecisionType PTYPE>
 void ElementwiseAddImageCompute<P, PTYPE>::Run() {
   const auto& param = this->template Param<param_t>();
@@ -105,15 +104,20 @@ void ElementwiseAddImageCompute<P, PTYPE>::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
+                                                &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_x_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
-  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_x_->image())
+                                      atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image())
+                                      atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                      atIndex:(2)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer())
+                                      offset:(0)atIndex:(0)];
 
   kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -123,12 +127,17 @@ void ElementwiseAddImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ElementwiseAddImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ElementwiseAddImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite::kernels::metal::
+    ElementwiseAddImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::
+    ElementwiseAddImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::ElementwiseAddImageCompute<float, PRECISION(kFloat)> MetalElementwiseAddFp32;
-typedef paddle::lite::kernels::metal::ElementwiseAddImageCompute<MetalHalf, PRECISION(kFP16)> MetalElementwiseAddFp16;
-
+typedef paddle::lite::kernels::metal::
+    ElementwiseAddImageCompute<float, PRECISION(kFloat)>
+        MetalElementwiseAddFp32;
+typedef paddle::lite::kernels::metal::
+    ElementwiseAddImageCompute<MetalHalf, PRECISION(kFP16)>
+        MetalElementwiseAddFp16;
 
 REGISTER_LITE_KERNEL(elementwise_add,
                      kMetal,
@@ -150,13 +159,12 @@ REGISTER_LITE_KERNEL(elementwise_add,
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    elementwise_add,
-    kMetal,
-    kFP16,
-    kMetalTexture2DArray,
-    MetalElementwiseAddFp16,
-    def)
+REGISTER_LITE_KERNEL(elementwise_add,
+                     kMetal,
+                     kFP16,
+                     kMetalTexture2DArray,
+                     MetalElementwiseAddFp16,
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),

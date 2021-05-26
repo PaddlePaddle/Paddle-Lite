@@ -28,16 +28,20 @@ namespace metal {
  * This kernel copies a tensor from host to Metal Texture(NHWC).
  */
 class IoCopyHostToMetalTexture
-    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal),
+                        PRECISION(kFloat),
+                        DATALAYOUT(kMetalTexture2DArray)> {
  public:
   void PrepareForRun() override {
     auto& context = ctx_->As<ContextMetal>();
     metal_context_ = (MetalContext*)context.context();
     auto device = metal_context_->GetDefaultDevice();
     auto& param = Param<operators::IoCopyParam>();
-    CHECK(param.x->target() == TARGET(kHost) || param.x->target() == TARGET(kARM) ||
+    CHECK(param.x->target() == TARGET(kHost) ||
+          param.x->target() == TARGET(kARM) ||
           param.x->target() == TARGET(kX86));
-    output_buffer_ = param.y->template mutable_data<float, MetalImage>(param.y->dims());
+    output_buffer_ =
+        param.y->template mutable_data<float, MetalImage>(param.y->dims());
     auto input_dims = param.x->dims();
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
@@ -60,21 +64,27 @@ class IoCopyHostToMetalTexture
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
       auto mem_size = param.x->dims().production() * sizeof(float);
-      auto src_buffer_ = metal_context_->CreateBuffer(
-          *device, const_cast<float*>(src), mem_size, METAL_ACCESS_FLAG::CPUWriteOnly);
+      auto src_buffer_ =
+          metal_context_->CreateBuffer(*device,
+                                       const_cast<float*>(src),
+                                       mem_size,
+                                       METAL_ACCESS_FLAG::CPUWriteOnly);
 
       auto output_width = output_buffer_->texture_width_;
       auto output_height = output_buffer_->texture_height_;
       auto output_array_length = output_buffer_->array_length_;
 
-      auto encoder =
-          std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-      MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                     static_cast<MetalUint>(output_height),
-                                     static_cast<MetalUint>(output_array_length)};
+      auto encoder = std::make_shared<MetalEncoder>(
+          metal_context_->cmd_buf_.get(), &kernel_->program_);
+      MetalUint3 global_work_size = {
+          static_cast<MetalUint>(output_width),
+          static_cast<MetalUint>(output_height),
+          static_cast<MetalUint>(output_array_length)};
 
-      [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer()) offset:(0)atIndex:(0)];
-      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(0)];
+      [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer())
+                                          offset:(0)atIndex:(0)];
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                          atIndex:(0)];
 
       kernel_->Execute(*encoder, global_work_size, false);
     } else {
@@ -92,8 +102,11 @@ class IoCopyHostToMetalTexture
 
       auto out_place = type->place();
       out_place.target = TARGET(kMetal);
-      auto* out_type = Type::Get(
-          type->id(), out_place.target, out_place.precision, out_place.layout, out_place.device);
+      auto* out_type = Type::Get(type->id(),
+                                 out_place.target,
+                                 out_place.precision,
+                                 out_place.layout,
+                                 out_place.device);
       return out_type;
     };
     return res;
@@ -112,9 +125,10 @@ class IoCopyHostToMetalTexture
  * This kernel copies a tensor from Metal to host space.
  */
 class IoCopykMetalTextureToHost
-    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal),
+                        PRECISION(kFloat),
+                        DATALAYOUT(kMetalTexture2DArray)> {
  public:
-
   void Run() override {
     auto& context = ctx_->As<ContextMetal>();
     metal_context_ = (MetalContext*)context.context();
@@ -139,21 +153,26 @@ class IoCopykMetalTextureToHost
 };
 
 class IoCopyHostToMetalTextureHalf
-    : public KernelLite<TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal),
+                        PRECISION(kFP16),
+                        DATALAYOUT(kMetalTexture2DArray)> {
  public:
   void PrepareForRun() override {
     auto& context = ctx_->As<ContextMetal>();
     metal_context_ = (MetalContext*)context.context();
     auto device = metal_context_->GetDefaultDevice();
     auto& param = Param<operators::IoCopyParam>();
-    CHECK(param.x->target() == TARGET(kHost) || param.x->target() == TARGET(kARM) ||
+    CHECK(param.x->target() == TARGET(kHost) ||
+          param.x->target() == TARGET(kARM) ||
           param.x->target() == TARGET(kX86));
-    output_buffer_ = param.y->template mutable_data<MetalHalf, MetalImage>(param.y->dims());
+    output_buffer_ =
+        param.y->template mutable_data<MetalHalf, MetalImage>(param.y->dims());
     auto input_dims = param.x->dims();
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
-      std::string function_name = "buffer_to_texture_array_n_channel_kernel_half";
+      std::string function_name =
+          "buffer_to_texture_array_n_channel_kernel_half";
       queue_ = metal_context_->CreateQueue(*device);
       kernel_ = metal_context_->GetKernel(*device, function_name);
     }
@@ -171,20 +190,26 @@ class IoCopyHostToMetalTextureHalf
       auto& context = ctx_->As<ContextMetal>();
       metal_context_ = (MetalContext*)context.context();
       auto device = metal_context_->GetDefaultDevice();
-      auto src_buffer_ = metal_context_->CreateBuffer(
-          *device, const_cast<float*>(src), mem_size, METAL_ACCESS_FLAG::CPUWriteOnly);
+      auto src_buffer_ =
+          metal_context_->CreateBuffer(*device,
+                                       const_cast<float*>(src),
+                                       mem_size,
+                                       METAL_ACCESS_FLAG::CPUWriteOnly);
       auto output_width = output_buffer_->texture_width_;
       auto output_height = output_buffer_->texture_height_;
       auto output_array_length = output_buffer_->array_length_;
 
-      auto encoder =
-          std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-      MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                     static_cast<MetalUint>(output_height),
-                                     static_cast<MetalUint>(output_array_length)};
+      auto encoder = std::make_shared<MetalEncoder>(
+          metal_context_->cmd_buf_.get(), &kernel_->program_);
+      MetalUint3 global_work_size = {
+          static_cast<MetalUint>(output_width),
+          static_cast<MetalUint>(output_height),
+          static_cast<MetalUint>(output_array_length)};
 
-      [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer()) offset:(0)atIndex:(0)];
-      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(0)];
+      [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer())
+                                          offset:(0)atIndex:(0)];
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                          atIndex:(0)];
       kernel_->Execute(*encoder, global_work_size, false);
     } else {
       output_buffer_->CopyFromNCHW<float>(src);
@@ -201,8 +226,11 @@ class IoCopyHostToMetalTextureHalf
 
       auto out_place = type->place();
       out_place.target = TARGET(kMetal);
-      auto* out_type = Type::Get(
-          type->id(), out_place.target, out_place.precision, out_place.layout, out_place.device);
+      auto* out_type = Type::Get(type->id(),
+                                 out_place.target,
+                                 out_place.precision,
+                                 out_place.layout,
+                                 out_place.device);
       return out_type;
     };
     return res;
@@ -221,7 +249,9 @@ class IoCopyHostToMetalTextureHalf
  * This kernel copies a tensor from Metal to host space.
  */
 class IoCopykMetalTextureToHostHalf
-    : public KernelLite<TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal),
+                        PRECISION(kFP16),
+                        DATALAYOUT(kMetalTexture2DArray)> {
  public:
   void Run() override {
     auto& context = ctx_->As<ContextMetal>();
@@ -234,25 +264,28 @@ class IoCopykMetalTextureToHostHalf
     CHECK(param.x->target() == TARGET(kMetal));
     auto src = param.x->template data<float, MetalImage>();
 
-
     auto mem_size = param.x->dims().production() * sizeof(float);
     auto data = param.y->template mutable_data<float>(TARGET(kHost), mem_size);
     src->template CopyToNCHW<float>(data);
   }
 
   std::string doc() const override { return "Copy IO from kMetal to HOST"; }
-    MetalContext* metal_context_;
+  MetalContext* metal_context_;
   float d2h_duration_{0};
 };
 
 class IoCopyHostToMetalTextureHalf2Half
-    : public KernelLite<TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal),
+                        PRECISION(kAny),
+                        DATALAYOUT(kMetalTexture2DArray)> {
  public:
   void PrepareForRun() override {
     auto& param = Param<operators::IoCopyParam>();
-    CHECK(param.x->target() == TARGET(kHost) || param.x->target() == TARGET(kARM) ||
+    CHECK(param.x->target() == TARGET(kHost) ||
+          param.x->target() == TARGET(kARM) ||
           param.x->target() == TARGET(kX86));
-    output_buffer_ = param.y->template mutable_data<MetalHalf, MetalImage>(param.y->dims());
+    output_buffer_ =
+        param.y->template mutable_data<MetalHalf, MetalImage>(param.y->dims());
     auto input_dims = param.x->dims();
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
@@ -260,7 +293,8 @@ class IoCopyHostToMetalTextureHalf2Half
       auto& context = ctx_->As<ContextMetal>();
       metal_context_ = (MetalContext*)context.context();
       auto device = metal_context_->GetDefaultDevice();
-      std::string function_name = "buffer_to_texture_array_n_channel_kernel_half";
+      std::string function_name =
+          "buffer_to_texture_array_n_channel_kernel_half";
       queue_ = metal_context_->CreateQueue(*device);
       kernel_ = metal_context_->GetKernel(*device, function_name);
     }
@@ -278,20 +312,26 @@ class IoCopyHostToMetalTextureHalf2Half
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
       auto mem_size = param.x->dims().production() * sizeof(MetalHalf);
-      auto src_buffer_ = metal_context_->CreateBuffer(
-          *device, const_cast<MetalHalf*>(src), mem_size, METAL_ACCESS_FLAG::CPUReadWrite);
+      auto src_buffer_ =
+          metal_context_->CreateBuffer(*device,
+                                       const_cast<MetalHalf*>(src),
+                                       mem_size,
+                                       METAL_ACCESS_FLAG::CPUReadWrite);
       auto output_width = output_buffer_->texture_width_;
       auto output_height = output_buffer_->texture_height_;
       auto output_array_length = output_buffer_->array_length_;
 
-      auto encoder =
-          std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-      MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                     static_cast<MetalUint>(output_height),
-                                     static_cast<MetalUint>(output_array_length)};
+      auto encoder = std::make_shared<MetalEncoder>(
+          metal_context_->cmd_buf_.get(), &kernel_->program_);
+      MetalUint3 global_work_size = {
+          static_cast<MetalUint>(output_width),
+          static_cast<MetalUint>(output_height),
+          static_cast<MetalUint>(output_array_length)};
 
-      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(0)];
-      [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer()) offset:(0) atIndex:(0)];
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                          atIndex:(0)];
+      [encoder->metal_command_encoder_ setBuffer:(src_buffer_->buffer())
+                                          offset:(0)atIndex:(0)];
 
       kernel_->Execute(*encoder, global_work_size, false);
     } else {
@@ -309,8 +349,11 @@ class IoCopyHostToMetalTextureHalf2Half
 
       auto out_place = type->place();
       out_place.target = TARGET(kMetal);
-      auto* out_type = Type::Get(
-          type->id(), out_place.target, out_place.precision, out_place.layout, out_place.device);
+      auto* out_type = Type::Get(type->id(),
+                                 out_place.target,
+                                 out_place.precision,
+                                 out_place.layout,
+                                 out_place.device);
       return out_type;
     };
     return res;
@@ -329,7 +372,9 @@ class IoCopyHostToMetalTextureHalf2Half
  * This kernel copies a tensor from Metal to host space.
  */
 class IoCopykMetalTextureToHostHalf2Half
-    : public KernelLite<TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal),
+                        PRECISION(kFP16),
+                        DATALAYOUT(kMetalTexture2DArray)> {
  public:
   void Run() override {
     auto& param = this->Param<operators::IoCopyParam>();
@@ -337,7 +382,8 @@ class IoCopykMetalTextureToHostHalf2Half
     auto src = param.x->template data<MetalHalf, MetalImage>();
 
     auto mem_size = param.x->dims().production() * sizeof(MetalHalf);
-    auto data = param.y->template mutable_data<MetalHalf>(TARGET(kHost), mem_size);
+    auto data =
+        param.y->template mutable_data<MetalHalf>(TARGET(kHost), mem_size);
     src->template CopyToNCHW<MetalHalf>(data);
   }
 
@@ -351,19 +397,20 @@ class IoCopykMetalTextureToHostHalf2Half
 }  // namespace lite
 }  // namespace paddle
 
-
 REGISTER_LITE_KERNEL(io_copy,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::IoCopyHostToMetalTexture,
                      host_to_device_image)
-.BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost),
-                                           PRECISION(kFloat),
-                                           DATALAYOUT(kNCHW))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                              PRECISION(kFloat),
-                                              DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
@@ -372,12 +419,14 @@ REGISTER_LITE_KERNEL(io_copy,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::IoCopykMetalTextureToHost,
                      device_image_to_host)
-.BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal),
-                                           PRECISION(kFloat),
-                                           DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost),
-                                              PRECISION(kFloat),
-                                              DATALAYOUT(kNCHW))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -386,14 +435,15 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::IoCopyHostToMetalTexture,
                      host_to_device_image)
-.BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost),
-                                           PRECISION(kFloat),
-                                           DATALAYOUT(kNCHW))})
-.BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                              PRECISION(kFloat),
-                                              DATALAYOUT(kMetalTexture2DArray))})
-.Finalize();
-
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
                      kMetal,
@@ -401,14 +451,15 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::IoCopykMetalTextureToHost,
                      device_image_to_host)
-.BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal),
-                                           PRECISION(kFloat),
-                                           DATALAYOUT(kMetalTexture2DArray))})
-.BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost),
-                                              PRECISION(kFloat),
-                                              DATALAYOUT(kNCHW))})
-.Finalize();
-
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
                      kMetal,
@@ -416,27 +467,32 @@ REGISTER_LITE_KERNEL(io_copy,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::IoCopyHostToMetalTextureHalf,
                      host_to_device_image)
-        .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kNCHW))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-REGISTER_LITE_KERNEL(io_copy,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::IoCopykMetalTextureToHostHalf,
-                     device_image_to_host)
-        .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFP16),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost),
-                                                  PRECISION(kFloat),
-                                                  DATALAYOUT(kNCHW))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    io_copy,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::IoCopykMetalTextureToHostHalf,
+    device_image_to_host)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
                      kMetal,
@@ -444,27 +500,29 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::IoCopyHostToMetalTextureHalf,
                      host_to_device_image)
-        .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kNCHW))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-
-REGISTER_LITE_KERNEL(io_copy_once,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::IoCopykMetalTextureToHostHalf,
-                     device_image_to_host)
-        .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFP16),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost),
-                                                  PRECISION(kFloat),
-                                                  DATALAYOUT(kNCHW))})
-        .Finalize();
-
-
+REGISTER_LITE_KERNEL(
+    io_copy_once,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::IoCopykMetalTextureToHostHalf,
+    device_image_to_host)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();

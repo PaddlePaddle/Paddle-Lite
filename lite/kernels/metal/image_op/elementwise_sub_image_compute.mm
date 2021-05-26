@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/elementwise_sub_image_compute.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
-#include "lite/backends/metal/metal_debug.h"
 
 using namespace std;
 
@@ -24,7 +24,6 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
-
 
 template <typename P, PrecisionType PTYPE>
 void ElementwiseSubImageCompute<P, PTYPE>::PrepareForRun() {
@@ -42,12 +41,14 @@ void ElementwiseSubImageCompute<P, PTYPE>::PrepareForRun() {
 
   bool valid = false;
   int by_channel = 0;
-  if (input_buffer_x_->tensor_dim_.size() == 4 && input_buffer_y_->tensor_dim_.size() == 4 &&
-      param.axis == -1 && input_buffer_y_->tensor_dim_[2] == 1 &&
+  if (input_buffer_x_->tensor_dim_.size() == 4 &&
+      input_buffer_y_->tensor_dim_.size() == 4 && param.axis == -1 &&
+      input_buffer_y_->tensor_dim_[2] == 1 &&
       input_buffer_y_->tensor_dim_[3] == 1) {
     by_channel = 1;
     valid = true;
-  } else if (input_buffer_x_->tensor_dim_.size() == input_buffer_y_->tensor_dim_.size()) {
+  } else if (input_buffer_x_->tensor_dim_.size() ==
+             input_buffer_y_->tensor_dim_.size()) {
     valid = true;
     for (int i = 0; i < input_buffer_x_->tensor_dim_.size(); i++) {
       if (input_buffer_x_->tensor_dim_[i] != input_buffer_y_->tensor_dim_[i]) {
@@ -60,12 +61,16 @@ void ElementwiseSubImageCompute<P, PTYPE>::PrepareForRun() {
     }
   }
   if (!valid) {
-    throw std::logic_error("ERROR: elementwise_sub only supports : 1. input shapes are the same. "
-                           "2. multiply by channel.");
+    throw std::logic_error(
+        "ERROR: elementwise_sub only supports : 1. input shapes are the same. "
+        "2. multiply by channel.");
   }
   ElementwiseMetalParam element_params = {by_channel};
-  params_buffer_ = metal_context_->CreateBuffer(
-      *device, &element_params, sizeof(element_params), METAL_ACCESS_FLAG::CPUWriteOnly);
+  params_buffer_ =
+      metal_context_->CreateBuffer(*device,
+                                   &element_params,
+                                   sizeof(element_params),
+                                   METAL_ACCESS_FLAG::CPUWriteOnly);
 
   std::string function_name = "";
   if (std::is_same<float, P>::value) {
@@ -86,15 +91,20 @@ void ElementwiseSubImageCompute<P, PTYPE>::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
+                                                &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_x_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
-  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_x_->image())
+                                      atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image())
+                                      atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                      atIndex:(2)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer())
+                                      offset:(0)atIndex:(0)];
 
   kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -104,11 +114,16 @@ void ElementwiseSubImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ElementwiseSubImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ElementwiseSubImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::ElementwiseSubImageCompute<float, PRECISION(kFloat)> MetalElementwiseSubFp32;
-typedef paddle::lite::kernels::metal::ElementwiseSubImageCompute<MetalHalf, PRECISION(kFP16)> MetalElementwiseSubFp16;
-
+template class paddle::lite::kernels::metal::
+    ElementwiseSubImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::
+    ElementwiseSubImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::
+    ElementwiseSubImageCompute<float, PRECISION(kFloat)>
+        MetalElementwiseSubFp32;
+typedef paddle::lite::kernels::metal::
+    ElementwiseSubImageCompute<MetalHalf, PRECISION(kFP16)>
+        MetalElementwiseSubFp16;
 
 REGISTER_LITE_KERNEL(elementwise_sub,
                      kMetal,

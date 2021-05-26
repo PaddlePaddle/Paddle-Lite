@@ -46,10 +46,12 @@ void MulImageCompute<P, PTYPE>::PrepareForRun() {
 
   std::vector<int> nhwc = {0, 1, 2, 3};
   this->input_x_mul_dim_ = DDimLite({s1, s2});
-  assert(input_buffer_y_->transpose_ == nhwc && input_buffer_y_->tensor_dim_.size() == 2 &&
+  assert(input_buffer_y_->transpose_ == nhwc &&
+         input_buffer_y_->tensor_dim_.size() == 2 &&
          s2 == input_buffer_y_->tensor_dim_[0]);
 
-  output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
+  output_buffer_ =
+      param.output->template mutable_data<P, MetalImage>(output_dims);
 
   if (input_dims.size() != 2 || input_buffer_x_->transpose_ != nhwc) {
     insert_shape = true;
@@ -87,22 +89,29 @@ void MulImageCompute<P, PTYPE>::Run() {
   MetalUint output_height = output_buffer_->image().height;
   MetalUint output_array_length = output_buffer_->image().arrayLength;
 
-  MetalUint3 global_work_size = {output_width, output_height, output_array_length};
+  MetalUint3 global_work_size = {
+      output_width, output_height, output_array_length};
   if (insert_shape) {
     reshape_.Run();
-    auto encoder =
-        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+    auto encoder = std::make_shared<MetalEncoder>(
+        metal_context_->cmd_buf_.get(), &kernel_->program_);
     auto shape_buffer = shape_out_dev.template data<P, MetalImage>();
-    [encoder->metal_command_encoder_ setTexture:(shape_buffer->image()) atIndex:(0)];
-    [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image()) atIndex:(1)];
-    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+    [encoder->metal_command_encoder_ setTexture:(shape_buffer->image())
+                                        atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image())
+                                        atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                        atIndex:(2)];
     kernel_->Execute(*encoder, global_work_size, false);
   } else {
-    auto encoder =
-        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-    [encoder->metal_command_encoder_ setTexture:(input_buffer_x_->image()) atIndex:(0)];
-    [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image()) atIndex:(1)];
-    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+    auto encoder = std::make_shared<MetalEncoder>(
+        metal_context_->cmd_buf_.get(), &kernel_->program_);
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_x_->image())
+                                        atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image())
+                                        atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                        atIndex:(2)];
     kernel_->Execute(*encoder, global_work_size, false);
   }
 }
@@ -112,19 +121,19 @@ void MulImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::MulImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::MulImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite::kernels::metal::MulImageCompute<float,
+                                                             PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::MulImageCompute<MetalHalf,
+                                                             PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::MulImageCompute<float, PRECISION(kFloat)> MetalMulFp32;
-typedef paddle::lite::kernels::metal::MulImageCompute<MetalHalf, PRECISION(kFP16)> MetalMulFp16;
+typedef paddle::lite::kernels::metal::MulImageCompute<float, PRECISION(kFloat)>
+    MetalMulFp32;
+typedef paddle::lite::kernels::metal::MulImageCompute<MetalHalf,
+                                                      PRECISION(kFP16)>
+    MetalMulFp16;
 
-
-REGISTER_LITE_KERNEL(mul,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalMulFp32,
-                     def)
+REGISTER_LITE_KERNEL(
+    mul, kMetal, kFloat, kMetalTexture2DArray, MetalMulFp32, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFloat),
@@ -139,13 +148,8 @@ REGISTER_LITE_KERNEL(mul,
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-
-REGISTER_LITE_KERNEL(mul,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalMulFp16,
-                     def)
+REGISTER_LITE_KERNEL(
+    mul, kMetal, kFP16, kMetalTexture2DArray, MetalMulFp16, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),

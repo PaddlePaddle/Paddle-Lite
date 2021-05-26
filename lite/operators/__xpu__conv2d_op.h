@@ -39,6 +39,7 @@ class XPUConv2dOp : public OpLite {
 
  private:
   mutable XPUBlockFuseParam param_;
+  std::string padding_algorithm_{""};
 };
 
 }  // namespace operators

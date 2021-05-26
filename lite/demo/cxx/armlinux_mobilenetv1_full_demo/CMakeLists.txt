@@ -7,11 +7,14 @@ set(ARMLINUX_ARCH_ABI armv8)
 
 # 1. path to Paddle-Lite lib
 set(LITE_DIR "${PROJECT_SOURCE_DIR}/../../../cxx")
+set(GFLAGS_DIR "${PROJECT_SOURCE_DIR}/../../../../third_party/install/gflags")
 
 # 2. link Paddle-Lite directory
 link_directories(${LITE_DIR}/lib)
+link_directories(${GFLAGS_DIR}/lib)
 
 include_directories(${LITE_DIR}/include)
+include_directories(${GFLAGS_DIR}/include)
 
 # 3. compile options 
 if(ARMLINUX_ARCH_ABI STREQUAL "armv8")
@@ -36,7 +39,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 # 4.add executable output
 add_executable(${TARGET} ${TARGET}.cc)
 target_link_libraries(${TARGET} -lpaddle_full_api_shared)
-
+target_link_libraries(${TARGET} libgflags.a)
+target_link_libraries(${TARGET} -ldl)
+target_link_libraries(${TARGET} -lpthread)
 ###############################################################
 # How to use one of static libaray:                           #
 #  `libpaddle_api_full_bundled.a`                             #

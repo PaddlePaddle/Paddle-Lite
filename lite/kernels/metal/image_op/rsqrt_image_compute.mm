@@ -52,13 +52,16 @@ void RsqrtImageCompute<P, PTYPE>::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
+                                                &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
+                                      atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                      atIndex:(1)];
   kernel_->Execute(*encoder, global_work_size, false);
 }
 
@@ -67,37 +70,38 @@ void RsqrtImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::RsqrtImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::RsqrtImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite::kernels::metal::
+    RsqrtImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::
+    RsqrtImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::RsqrtImageCompute<float, PRECISION(kFloat)> MetalRsqrtFp32;
-typedef paddle::lite::kernels::metal::RsqrtImageCompute<MetalHalf, PRECISION(kFP16)> MetalRsqrtFp16;
+typedef paddle::lite::kernels::metal::RsqrtImageCompute<float,
+                                                        PRECISION(kFloat)>
+    MetalRsqrtFp32;
+typedef paddle::lite::kernels::metal::RsqrtImageCompute<MetalHalf,
+                                                        PRECISION(kFP16)>
+    MetalRsqrtFp16;
 
-REGISTER_LITE_KERNEL(rsqrt,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalRsqrtFp32,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    rsqrt, kMetal, kFloat, kMetalTexture2DArray, MetalRsqrtFp32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-
-REGISTER_LITE_KERNEL(rsqrt,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalRsqrtFp16,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    rsqrt, kMetal, kFP16, kMetalTexture2DArray, MetalRsqrtFp16, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();

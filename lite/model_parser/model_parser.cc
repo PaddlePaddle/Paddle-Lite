@@ -133,13 +133,13 @@ void PrintPbModelErrorMessage() {
                 "these formats:\n"
              << "          (1) __model__ + var1 + var2 + etc.\n"
              << "          (2) model + var1 + var2 + etc.\n"
-             << "          (3) pdmodel + pdiparams\n"
+             << "          (3) model.pdmodel + model.pdiparams\n"
              << "          (4) model + params\n"
              << "          (5) model + weights\n"
              << "      2. You can also appoint the model and params file in "
                 "custom format:\n"
              << "          eg. |-- set_model_file('custom_model_name')\n"
-             << "              |-- set_params_file('custom_params_name')'";
+             << "              |-- set_param_file('custom_params_name')'";
 }
 // Find correct model filename
 std::string FindModelFileName(const std::string &model_dir,
@@ -154,8 +154,8 @@ std::string FindModelFileName(const std::string &model_dir,
       prog_path = model_dir + "/__model__";
     } else if (IsFileExists(model_dir + "/model")) {
       prog_path = model_dir + "/model";
-    } else if (IsFileExists(model_dir + "/pdmodel")) {
-      prog_path = model_dir + "/pdmodel";
+    } else if (IsFileExists(model_dir + "/model.pdmodel")) {
+      prog_path = model_dir + "/model.pdmodel";
     } else {
       PrintPbModelErrorMessage();
     }
@@ -177,7 +177,9 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
                              const lite_api::CxxModelBuffer &model_buffer,
                              Scope *scope) {
   auto *main_block = cpp_prog->GetBlock<cpp::BlockDesc>(0);
+  std::string log_info = "Loading non-combined params data from " + model_dir;
   // Check param files format
+  // default format: non-combined params
   for (auto &var : main_block->GetVars()) {
     if (var.Name() != "feed" && var.Name() != "fetch" && var.Persistable()) {
       if (IsFileExists(model_dir + "/" + var.Name())) {
@@ -200,16 +202,18 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
           params_path = model_dir + "/params";
         } else if (IsFileExists(model_dir + "/weights")) {
           params_path = model_dir + "/weights";
-        } else if (IsFileExists(model_dir + "/pdiparams")) {
-          params_path = model_dir + "/pdiparams";
+        } else if (IsFileExists(model_dir + "/model.pdiparams")) {
+          params_path = model_dir + "/model.pdiparams";
         } else {
           PrintPbModelErrorMessage();
         }
+        log_info = "Loading params data from " + params_path;
         LoadCombinedParamsPb(params_path, scope, *cpp_prog, model_buffer);
         break;
       }
     }
   }
+  OPT_LOG << log_info;
 }
 
 void LoadModelPb(const std::string &model_dir,
@@ -224,7 +228,10 @@ void LoadModelPb(const std::string &model_dir,
   cpp_prog->ClearBlocks();
 
   // Load model topology data from file.
-  std::string prog_path = FindModelFileName(model_dir, model_file, combined);
+  std::string prog_path =
+      model_buffer.is_empty()
+          ? FindModelFileName(model_dir, model_file, combined)
+          : "";
   OPT_LOG << "Loading topology data from " << prog_path;
   framework::proto::ProgramDesc pb_proto_prog =
       *LoadProgram(prog_path, model_buffer);
@@ -234,19 +241,19 @@ void LoadModelPb(const std::string &model_dir,
 
   // Load params data from file.
   // NOTE: Only main block be used now.
-  CHECK(!(!combined && !model_buffer.is_empty()))
+  CHECK(combined || model_buffer.is_empty())
       << "If you want use the model_from_memory,"
       << " you should load the combined model using cfg.set_model_buffer "
          "interface.";
   if (!combined) {
-    OPT_LOG << "Loading non-combined params data from " << model_dir;
     LoadNonCombinedParamsPb(model_dir, cpp_prog, model_buffer, scope);
   } else {
-    OPT_LOG << "Loading params data from " << param_file;
-    if (!IsFileExists(param_file)) {
-      LOG(FATAL) << "Error, the param file '" << param_file
-                 << "' is not existed. Please confirm that you have inputed "
-                    "correct param file path.";
+    if (model_buffer.is_empty()) {
+      OPT_LOG << "Loading params data from " << param_file;
+      CHECK(IsFileExists(param_file))
+          << "Error, the param file '" << param_file
+          << "' is not existed. Please confirm that you have inputed "
+             "correct param file path.";
     }
 
     LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_buffer);

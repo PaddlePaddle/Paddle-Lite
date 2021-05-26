@@ -53,13 +53,16 @@ void ExpImageCompute<P, PTYPE>::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
+                                                &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
+                                      atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                      atIndex:(1)];
   kernel_->Execute(*encoder, global_work_size, false);
 }
 
@@ -68,36 +71,36 @@ void ExpImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ExpImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ExpImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::ExpImageCompute<float, PRECISION(kFloat)> MetalExpFp32;
-typedef paddle::lite::kernels::metal::ExpImageCompute<MetalHalf, PRECISION(kFP16)> MetalExpFp16;
+template class paddle::lite::kernels::metal::ExpImageCompute<float,
+                                                             PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::ExpImageCompute<MetalHalf,
+                                                             PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::ExpImageCompute<float, PRECISION(kFloat)>
+    MetalExpFp32;
+typedef paddle::lite::kernels::metal::ExpImageCompute<MetalHalf,
+                                                      PRECISION(kFP16)>
+    MetalExpFp16;
 
-REGISTER_LITE_KERNEL(exp,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalExpFp32,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    exp, kMetal, kFloat, kMetalTexture2DArray, MetalExpFp32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-
-REGISTER_LITE_KERNEL(exp,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalExpFp16,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    exp, kMetal, kFP16, kMetalTexture2DArray, MetalExpFp16, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();

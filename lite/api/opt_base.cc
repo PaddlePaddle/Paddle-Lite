@@ -59,14 +59,13 @@ void OptBase::SetPassesInternal(
   opt_config_.set_passes_internal(passes_internal);
 }
 
-void OptBase::SetValidPlaces(const std::string& valid_places,
-                             bool enable_fp16) {
+void OptBase::SetValidPlaces(const std::string& valid_places) {
   valid_places_.clear();
   auto target_reprs = lite::Split(valid_places, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
-      if (enable_fp16) {
-        valid_places.emplace_back(
+      if (enable_fp16_) {
+        valid_places_.emplace_back(
             Place{TARGET(kARM), PRECISION(kFP16), DATALAYOUT(kNCHW)});
       }
       valid_places_.emplace_back(
@@ -108,8 +107,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places,
       valid_places_.emplace_back(
           Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else if (target_repr == "intel_fpga") {
-      valid_places.emplace_back(TARGET(kIntelFPGA));
-      valid_places.emplace_back(
+      valid_places_.emplace_back(TARGET(kIntelFPGA));
+      valid_places_.emplace_back(
           Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else {
       OPT_LOG_FATAL << lite::string_format(
@@ -141,10 +140,6 @@ void OptBase::Run() {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
-    auto resulted_model_name =
-        record_strip_info_ ? "information of striped model" : "optimized model";
-    OPT_LOG << "Save the " << resulted_model_name << " into :" << lite_out_name_
-            << "successfully";
   }
 }
 
@@ -153,13 +148,12 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
                           const std::string& param_path,
                           const std::string& model_type,
                           const std::string& valid_places,
-                          const bool enable_fp16,
                           const std::string& optimized_out_path) {
   SetModelDir(model_dir_path);
   SetModelFile(model_path);
   SetParamFile(param_path);
   SetModelType(model_type);
-  SetValidPlaces(valid_places, enable_fp16);
+  SetValidPlaces(valid_places);
   SetOptimizeOut(optimized_out_path);
   CheckIfModelSupported(false);
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
@@ -170,10 +164,6 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
-    auto resulted_model_name =
-        record_strip_info_ ? "information of striped model" : "optimized model";
-    OPT_LOG << "Save the " << resulted_model_name << " into :" << lite_out_name_
-            << "successfully";
   }
 }
 // collect ops info of modelset
@@ -220,8 +210,6 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
           lite::Join<std::string>({input_model_dir, param_file}, "/");
     }
 
-    OPT_LOG << "Start model transformation ... ";
-
     opt_config_.set_model_dir(input_model_dir);
     opt_config_.set_model_file(model_file);
     opt_config_.set_param_file(param_file);
@@ -229,8 +217,6 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info);
-
-    OPT_LOG << "Transformation done. ";
   }
 
   // 3. if record_strip_info = true, we will record striping info
@@ -317,7 +303,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
       "  Arguments of enable_fp16 in opt: \n"
-      "        `--enable_fp16(true|false)`\n"
+      "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"

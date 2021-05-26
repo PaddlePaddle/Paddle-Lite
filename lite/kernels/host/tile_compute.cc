@@ -67,14 +67,16 @@ void TileCompute<T, PType>::Run() {
   tmp_dst_tensor.Resize(out_dims);
   auto tmp_src = tmp_src_tensor.mutable_data<T>();
   auto tmp_dst = tmp_dst_tensor.mutable_data<T>();
-  for (int i = 0; i < in->dims().production(); i++) {
+  for (int i = 0; i < in_dims.production(); i++) {
     tmp_src[i] = in_data[i];
   }
+
   for (int i = bcast_dims.size() - 1; i >= 0; i--) {
     if (bcast_dims[i] > 1) {
-      for (int m = 0; m < in_stride[i]; m++) {
+      int num = in_stride[1] / in_stride[i + 1];
+      int dst_stride = in_stride[i + 1] * bcast_dims[i + 1];
+      for (int m = 0; m < num; m++) {
         for (int j = 0; j < bcast_dims[i]; j++) {
-          int dst_stride = in_stride[i + 1] * bcast_dims[i + 1];
           std::memcpy(tmp_dst + j * dst_stride + m * bcast_dims[i] * dst_stride,
                       tmp_src + m * in_stride[i + 1],
                       dst_stride * sizeof(T));

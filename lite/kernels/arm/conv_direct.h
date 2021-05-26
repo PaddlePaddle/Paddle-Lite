@@ -70,10 +70,12 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kFloat)>(
     float out_scale,
     std::vector<float>& merge_scale,  // NOLINT
     float* relu_clipped_coef) {
+  CHECK_EQ(stride, 2);
+#ifdef __aarch64__
+  int cblock = 8;
+#else
   int cblock = 4;
-  if (stride == 2) {
-    cblock = lite::arm::math::conv_3x3s2_direct_int8_c_num();
-  }
+#endif
   int oc = win->dims()[0];
   int ic = win->dims()[1];
   int kh = win->dims()[2];
@@ -110,10 +112,12 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
     float out_scale,
     std::vector<float>& merge_scale,  // NOLINT
     float* relu_clipped_coef) {
+  CHECK_EQ(stride, 2);
+#ifdef __aarch64__
+  int cblock = 8;
+#else
   int cblock = 4;
-  if (stride == 2) {
-    cblock = lite::arm::math::conv_3x3s2_direct_int8_c_num();
-  }
+#endif
   int oc = win->dims()[0];
   int ic = win->dims()[1];
   int kh = win->dims()[2];

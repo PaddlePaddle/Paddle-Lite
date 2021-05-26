@@ -1920,7 +1920,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vmax.f32   q5,   q5,   q0 \n" /* relu*/     \
   "vmax.f32   q6,   q6,   q0 \n" /* relu*/     \
   "vmax.f32   q7,   q7,   q0 \n" /* relu*/     \
-  "vld1.32    {d2-d3}, [%[alpha]]! \n"         \
+  "vld1.32    {d2-d3}, [%[alpha]] \n"          \
   "vmax.f32   q8,   q8,   q0 \n" /* relu*/     \
   "vmax.f32   q9,   q9,   q0 \n" /* relu*/     \
   "vmax.f32   q10,  q10,  q0 \n" /* relu*/     \
@@ -1943,46 +1943,46 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vmin.f32   q15,  q15,  q1 \n" /* relu6*/    \
   "b      12f                \n" /* relu6 end */
 
-#define GEMM_DOT_LEAKY_RELU                                \
-  "14:                      \n"                            \
-  "vmov.f32   q0, #0.0      \n"      /* for leakyrelu*/    \
-  "vld1.32  {d2-d3}, [%[alpha]]! \n" /* leakyrelu alpha */ \
-  "vcge.f32 q2,   q4,   q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q4,   q1  \n"      /* vmulq_f32 */       \
-  "vbif     q4,   q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q5,   q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q5,   q1  \n"      /* vmulq_f32 */       \
-  "vbif     q5,   q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q6,   q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q6,   q1  \n"      /* vmulq_f32 */       \
-  "vbif     q6,   q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q7,   q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q7,   q1  \n"      /* vmulq_f32 */       \
-  "vbif     q7,   q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q8,   q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q8,   q1  \n"      /* vmulq_f32 */       \
-  "vbif     q8,   q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q9,   q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q9,   q1  \n"      /* vmulq_f32 */       \
-  "vbif     q9,   q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q10,  q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q10,  q1  \n"      /* vmulq_f32 */       \
-  "vbif     q10,  q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q11,  q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q11,  q1  \n"      /* vmulq_f32 */       \
-  "vbif     q11,  q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q12,  q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q12,  q1  \n"      /* vmulq_f32 */       \
-  "vbif     q12,  q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q13,  q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q13,  q1  \n"      /* vmulq_f32 */       \
-  "vbif     q13,  q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q14,  q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q14,  q1  \n"      /* vmulq_f32 */       \
-  "vbif     q14,  q3,   q2  \n"      /* choose*/           \
-  "vcge.f32 q2,   q15,  q0  \n"      /* vcgeq_f32 */       \
-  "vmla.f32 q3,   q15,  q1  \n"      /* vmulq_f32 */       \
-  "vbif     q15,  q3,   q2  \n"      /* choose*/           \
+#define GEMM_DOT_LEAKY_RELU                               \
+  "14:                      \n"                           \
+  "vmov.f32   q0, #0.0      \n"     /* for leakyrelu*/    \
+  "vld1.32  {d2-d3}, [%[alpha]] \n" /* leakyrelu alpha */ \
+  "vcge.f32 q2,   q4,   q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q4,   q1  \n"     /* vmulq_f32 */       \
+  "vbif     q4,   q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q5,   q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q5,   q1  \n"     /* vmulq_f32 */       \
+  "vbif     q5,   q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q6,   q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q6,   q1  \n"     /* vmulq_f32 */       \
+  "vbif     q6,   q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q7,   q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q7,   q1  \n"     /* vmulq_f32 */       \
+  "vbif     q7,   q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q8,   q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q8,   q1  \n"     /* vmulq_f32 */       \
+  "vbif     q8,   q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q9,   q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q9,   q1  \n"     /* vmulq_f32 */       \
+  "vbif     q9,   q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q10,  q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q10,  q1  \n"     /* vmulq_f32 */       \
+  "vbif     q10,  q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q11,  q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q11,  q1  \n"     /* vmulq_f32 */       \
+  "vbif     q11,  q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q12,  q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q12,  q1  \n"     /* vmulq_f32 */       \
+  "vbif     q12,  q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q13,  q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q13,  q1  \n"     /* vmulq_f32 */       \
+  "vbif     q13,  q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q14,  q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q14,  q1  \n"     /* vmulq_f32 */       \
+  "vbif     q14,  q3,   q2  \n"     /* choose*/           \
+  "vcge.f32 q2,   q15,  q0  \n"     /* vcgeq_f32 */       \
+  "vmul.f32 q3,   q15,  q1  \n"     /* vmulq_f32 */       \
+  "vbif     q15,  q3,   q2  \n"     /* choose*/           \
   "12:                      \n"
 
 #define GEMM_DOT_ST_INT8                                     \

@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#include "lite/kernels/metal/image_op/softmax_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/kernels/metal/image_op/softmax_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
@@ -48,10 +47,13 @@ void SoftmaxImageCompute<P, PTYPE>::PrepareForRun() {
       (int)input_buffer_->pad_to_four_dim_[3],
   };
 
-  param_buffer_ = metal_context_->CreateBuffer(
-      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = metal_context_->CreateBuffer(*device,
+                                               &metal_param,
+                                               sizeof(metal_param),
+                                               METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
+  output_buffer_ =
+      param.output->template mutable_data<P, MetalImage>(output_dims);
 
   std::string function_name = GetFunctionName(input_dims, axis);
   assert(!function_name.empty());
@@ -61,8 +63,8 @@ void SoftmaxImageCompute<P, PTYPE>::PrepareForRun() {
 }
 
 template <typename P, PrecisionType PTYPE>
-std::string SoftmaxImageCompute<P, PTYPE>::GetFunctionName(const DDimLite& input_dims,
-                                                           int axis) const {
+std::string SoftmaxImageCompute<P, PTYPE>::GetFunctionName(
+    const DDimLite& input_dims, int axis) const {
   std::string function_name = "";
   if (std::is_same<P, float>::value) {
     if (input_dims.size() == 4) {
@@ -128,14 +130,18 @@ void SoftmaxImageCompute<P, PTYPE>::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
+                                                &kernel_->program_);
   MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
+                                      atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
+                                      atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer())
+                                      offset:(0)atIndex:(0)];
 
   kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -145,38 +151,37 @@ void SoftmaxImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::SoftmaxImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::SoftmaxImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::SoftmaxImageCompute<float, PRECISION(kFloat)>
+template class paddle::lite::kernels::metal::
+    SoftmaxImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::
+    SoftmaxImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite::kernels::metal::SoftmaxImageCompute<float,
+                                                          PRECISION(kFloat)>
     MetalSoftmaxFp32;
-typedef paddle::lite::kernels::metal::SoftmaxImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite::kernels::metal::SoftmaxImageCompute<MetalHalf,
+                                                          PRECISION(kFP16)>
     MetalSoftmaxFp16;
 
-REGISTER_LITE_KERNEL(softmax,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalSoftmaxFp32,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    softmax, kMetal, kFloat, kMetalTexture2DArray, MetalSoftmaxFp32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-
-REGISTER_LITE_KERNEL(softmax,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalSoftmaxFp16,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    softmax, kMetal, kFP16, kMetalTexture2DArray, MetalSoftmaxFp16, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
