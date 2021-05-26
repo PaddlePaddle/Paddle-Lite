@@ -98,6 +98,13 @@ if((LITE_WITH_OPENCL AND (ARM_TARGET_LANG STREQUAL "clang")) OR LITE_WITH_PYTHON
 else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables")
 endif()
+
+if((LITE_WITH_METAL AND (ARM_TARGET_LANG STREQUAL "clang")) OR LITE_WITH_PYTHON OR LITE_WITH_EXCEPTION OR (NOT LITE_ON_TINY_PUBLISH))
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -fasynchronous-unwind-tables -funwind-tables")
+else ()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables")
+endif()
+
 if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -Ofast -Os -fomit-frame-pointer")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -ffunction-sections")
@@ -150,8 +157,16 @@ if(LITE_WITH_OPENMP)
         message(FATAL_ERROR "Could not found OpenMP!")
     endif()
 endif()
+
+if (CMAKE_CXX_FLAGS)
 string(REGEX REPLACE " \\-g " " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+endif()
+
+if (CMAKE_C_FLAGS)
 string(REGEX REPLACE " \\-g " " " CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+endif ()
+
+
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 # third party cmake args

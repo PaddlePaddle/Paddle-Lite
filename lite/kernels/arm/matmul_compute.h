@@ -30,6 +30,8 @@ class MatMulCompute : public KernelLite<TARGET(kARM), PType> {
 
   void PrepareForRun() override;
 
+  void ReInitWhenNeeded() override;
+
   void Run() override;
 
   virtual ~MatMulCompute() = default;

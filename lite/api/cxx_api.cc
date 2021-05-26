@@ -147,8 +147,8 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   }
   std::fclose(opf_source);
   std::fclose(opf);
-  LOG(INFO) << "operators information of tailored model is stored into: "
-            << opf_path;
+  OPT_LOG << "operators information of tailored model is stored into: "
+          << opf_path;
 
   // write Kernel_type and Kernel_path into file
   for (auto kernel_info = kernels_info.begin();
@@ -168,11 +168,11 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   }
   std::fclose(kpf_source);
   std::fclose(kpf);
-  LOG(INFO) << "kernels information of tailored model is stored into: "
-            << kpf_path;
+  OPT_LOG << "kernels information of tailored model is stored into: "
+          << kpf_path;
 }
 
-#ifndef LITE_WITH_FPGA
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
 lite::Tensor *Predictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -244,8 +244,7 @@ void Predictor::PrepareFeedFetch() {
   }
 }
 
-#ifndef LITE_WITH_FPGA
-
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"
@@ -266,7 +265,6 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
   return outputs;
 }
 #else
-
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
   CHECK(_fetch_list) << "no fatch variable in exec_scope";
@@ -456,14 +454,14 @@ void Predictor::CheckPaddleOpVersions(
           // registry.
           if ((model_op_version_index > iter->second) &&
               (model_op_version_index != -1)) {
-            LOG(WARNING) << "Error: incompatible paddle op version. Kernel ("
-                         << kernel->name() << ") requires that op_version("
-                         << iter->first << ")==" << iter->second
-                         << ". However, the op_version(" << iter->first
-                         << ") in this models is " << model_op_version_index
-                         << ". It's suggested to use PaddlePaddle and "
-                            "Paddle-Lite of the same op_version("
-                         << iter->first << ").";
+            LOG(INFO) << "Warning: incompatible paddle op version. Kernel ("
+                      << kernel->name() << ") requires that op_version("
+                      << iter->first << ")==" << iter->second
+                      << ". However, the op_version(" << iter->first
+                      << ") in this models is " << model_op_version_index
+                      << ". It's suggested to use PaddlePaddle and "
+                         "Paddle-Lite of the same op_version("
+                      << iter->first << ").";
           }
         }
       }

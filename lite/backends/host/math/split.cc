@@ -63,6 +63,13 @@ template void split(const int64_t* din,
                     const int axis,
                     const std::vector<int>& in_strides);
 
+#ifdef ENABLE_ARM_FP16
+template void split(const lite_api::float16_t* din,
+                    const std::vector<lite::Tensor*>& dout,
+                    const int axis,
+                    const std::vector<int>& in_strides);
+#endif
+
 }  // namespace math
 }  // namespace host
 }  // namespace lite

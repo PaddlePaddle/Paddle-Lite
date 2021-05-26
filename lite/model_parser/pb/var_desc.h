@@ -76,11 +76,11 @@ class VarDesc : public VarDescAPI {
 
   size_t GetTensorDescNum() const;
 
-  void SetShape(const std::vector<int64_t> &dims);
+  void SetShape(const std::vector<int64_t> &dims) override;
 
   void SetShapes(const std::vector<std::vector<int64_t>> &multiple_dims);
 
-  std::vector<int64_t> GetShape() const;
+  std::vector<int64_t> GetShape() const override;
 
   std::vector<std::vector<int64_t>> GetShapes() const;
 

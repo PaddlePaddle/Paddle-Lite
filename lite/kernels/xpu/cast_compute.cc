@@ -48,7 +48,10 @@ void CastCompute<InType>::Run() {
     r = xdnn::cast_v2<InType, int64_t>(
         ctx.GetRawContext(), in_data, out_data, numel);
   } else {
-    CHECK(false);
+    LOG(FATAL) << "cast from in_type("
+               << lite_api::PrecisionToStr(
+                      lite_api::PrecisionTypeTrait<InType>::Type())
+               << ") to out_type(" << out_dtype << ") is not supported.";
   }
   CHECK_EQ(r, 0);
 }

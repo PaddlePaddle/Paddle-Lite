@@ -26,8 +26,31 @@ void FillAnyLikeCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   int write_size = param.X->numel();
+
+  int dtype = param.dtype;
+  if (dtype == -1) {
+    switch (param.X->precision()) {
+      case PRECISION(kFloat):
+        dtype = static_cast<int32_t>(lite::core::FluidType::FP32);
+        break;
+      case PRECISION(kInt32):
+        dtype = static_cast<int32_t>(lite::core::FluidType::INT32);
+        break;
+      case PRECISION(kInt8):
+        dtype = static_cast<int32_t>(lite::core::FluidType::INT8);
+        break;
+      case PRECISION(kInt64):
+        dtype = static_cast<int32_t>(lite::core::FluidType::INT64);
+        break;
+      default:
+        LOG(FATAL) << "not supported x dtype: "
+                   << lite_api::PrecisionToStr(param.X->precision());
+        break;
+    }
+  }
+
   int r = 0;
-  switch (param.dtype) {
+  switch (dtype) {
     case 1: {
       auto data = param.Out->mutable_data<int16_t>(TARGET(kXPU));
       r = xdnn::constant<int16_t>(ctx.GetRawContext(),
@@ -52,7 +75,6 @@ void FillAnyLikeCompute::Run() {
                                   static_cast<int64_t>(param.value));
       break;
     }
-    case -1:
     case 5: {
       auto data = param.Out->mutable_data<float>(TARGET(kXPU));
       r = xdnn::constant<float>(ctx.GetRawContext(),

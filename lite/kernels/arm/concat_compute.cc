@@ -68,7 +68,7 @@ void ConcatCompute::Run() {
     axis = axis_tensor_data[0];
   }
   if (axis < 0) {
-    axis += inputs[0]->dims().size();
+    axis += static_cast<int>(inputs[0]->dims().size());
   }
 
   lite_api::PrecisionType type = PRECISION(kUnk);

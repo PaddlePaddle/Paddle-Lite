@@ -169,6 +169,11 @@ if (LITE_WITH_OPENCL)
     add_definitions("-DLITE_WITH_OPENCL")
 endif()
 
+if (LITE_WITH_METAL)
+    add_definitions("-DLITE_WITH_METAL")
+endif()
+
+
 if (LITE_WITH_FPGA)
 add_definitions("-DLITE_WITH_FPGA")
 endif()

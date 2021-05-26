@@ -31,8 +31,29 @@ void FillAnyLikeCompute::FillAnyData() {
 
 void FillAnyLikeCompute::Run() {
   auto& param = *param_.get_mutable<param_t>();
-  switch (param.dtype) {
-    case -1:
+  int dtype = param.dtype;
+  if (dtype == -1) {
+    switch (param.X->precision()) {
+      case PRECISION(kFloat):
+        dtype = static_cast<int32_t>(lite::core::FluidType::FP32);
+        break;
+      case PRECISION(kInt32):
+        dtype = static_cast<int32_t>(lite::core::FluidType::INT32);
+        break;
+      case PRECISION(kInt8):
+        dtype = static_cast<int32_t>(lite::core::FluidType::INT8);
+        break;
+      case PRECISION(kInt64):
+        dtype = static_cast<int32_t>(lite::core::FluidType::INT64);
+        break;
+      default:
+        LOG(FATAL) << "not supported x dtype: "
+                   << lite_api::PrecisionToStr(param.X->precision());
+        break;
+    }
+  }
+
+  switch (dtype) {
     case static_cast<int32_t>(lite::core::FluidType::FP32):
       FillAnyData<float>();
       break;

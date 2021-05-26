@@ -42,6 +42,9 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
       LOG(FATAL) << "Unsupported activation type: "
                  << scale_param_->activation_type;
     }
+    if (scale_param_->fuse_scaleact) {
+      kernel_func_name_ = "scaleacts";
+    }
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/scale_kernel.cl",
                                     build_options_,
@@ -87,6 +90,8 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
       bias *= scale;
     }
     const float alpha = scale_param_->alpha;
+    const float scale1 = scale_param_->scale1;
+    const float bias1 = scale_param_->bias1;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -103,6 +108,12 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(4, alpha);
     CL_CHECK_FATAL(status);
+    if (kernel_func_name_ == "scaleacts") {
+      status = kernel.setArg(5, scale1);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(6, bias1);
+      CL_CHECK_FATAL(status);
+    }
 
     status = EnqueueNDRangeKernel(context,
                                   kernel,

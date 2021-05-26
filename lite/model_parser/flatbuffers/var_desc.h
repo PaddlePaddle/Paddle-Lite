@@ -67,7 +67,7 @@ class VarDescView : public VarDescAPI {
  public:
   VarDescView() = default;
   void SetDataType(Type data_type) { LITE_MODEL_INTERFACE_NOT_IMPLEMENTED; }
-  void SetShape(const std::vector<int64_t>& dims) {
+  void SetShape(const std::vector<int64_t>& dims) override {
     LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   }
 

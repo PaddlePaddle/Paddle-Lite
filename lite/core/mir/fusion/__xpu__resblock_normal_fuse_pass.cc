@@ -79,8 +79,8 @@ class XPUResBlockNormalFuser : public FuseBase {
                                   const std::string& third_op_type = "",
                                   bool first_op_bias = true,
                                   bool branch_op_bias = true,
-                                  bool second_op_bias = true,
-                                  bool third_op_bias = true) {
+                                  bool second_op_bias = false,
+                                  bool third_op_bias = false) {
     first_op_type_ = first_op_type;
     second_op_type_ = second_op_type;
     third_op_type_ = third_op_type;
@@ -539,9 +539,13 @@ class XPUResBlockNormalFusePass : public ProgramPass {
                                           true);
     fuser2(graph.get());
 
-    fusion::XPUResBlockNormalFuser fuser3(
-        "__xpu__conv2d", "__xpu__conv2d", "", "", true, true);
-    fuser3(graph.get());
+    for (auto bias1 : {true, false}) {
+      for (auto bias2 : {true, false}) {
+        fusion::XPUResBlockNormalFuser fuser3(
+            "__xpu__conv2d", "__xpu__conv2d", "", "", bias1, bias2);
+        fuser3(graph.get());
+      }
+    }
   }
 };
 

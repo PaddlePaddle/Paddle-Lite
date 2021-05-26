@@ -21,6 +21,8 @@ limitations under the License. */
 #define MAX_VALUE FLT_MAX
 #define MIN_VALUE -FLT_MAX
 
+#define UP_DIV(x, y) (((x) + (y) - (1)) / (y))
+
 /////////////////////////////////
 // CL_DTYPE_float / CL_DTYPE_half
 /////////////////////////////////
@@ -93,7 +95,11 @@ __constant sampler_t SAMPLER =
 inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
   CL_DTYPE output = in;
 #ifdef PRELU
+#ifdef CL_DTYPE_half
   output = select(prelu_alpha * in, in, (ushort)(isgreaterequal(in, 0)));
+#else
+  output = select(prelu_alpha * in, in, (uint)(isgreaterequal(in, 0)));
+#endif
 #endif
 
 #ifdef RELU
@@ -105,15 +111,12 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
 #endif
 
 #ifdef LEAKY_RELU
-#ifdef CL_DTYPE_float
-  output = select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in,
-                  in,
-                  (int)(isgreaterequal(in, 0)));  // NOLINT
-#endif
-
 #ifdef CL_DTYPE_half
   output = select(
       (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (ushort)(isgreaterequal(in, 0)));
+#else
+  output = select(
+      (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (uint)(isgreaterequal(in, 0)));
 #endif
 #endif
 
@@ -151,11 +154,6 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in, CL_DTYPE4 prelu_alpha) {
 #ifdef LEAKY_RELU
   output = select(
       (CL_DTYPE4)(LEAKY_RELU_ALPHA)*in, in, isgreaterequal(in, (CL_DTYPE4)0));
-// same as bellow:
-// output = select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in,
-//                 in,
-//                 (ushort4)((in.x >= 0) << 15, (in.y >= 0) << 15, (in.z >= 0)
-//                 << 15, (in.w >= 0) << 15));
 #endif
 
 #ifdef HARD_SWISH

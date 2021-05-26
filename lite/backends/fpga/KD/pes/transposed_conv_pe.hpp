@@ -123,6 +123,7 @@ class TransposedConvPE : public PE {
 
     padded_input_.flush();
     padded_input_.copyScaleFrom(param_.input);
+    padded_input_.copyMaxFrom(param_.input);
   }
 
   bool dispatch() {
@@ -136,12 +137,11 @@ class TransposedConvPE : public PE {
                      param_.output->shape().channel();
       param_.output->unalignImage();
       param_.output->setOffset(off_addr);
-      float scale = 0.0;
+      float max_val = 0.0;
       for (auto conv_param : param_.splitParams()) {
-        scale = std::max(scale, conv_param->output.scale()[0]);
+        max_val = std::max(max_val, half_to_float(conv_param->output.max()[0]));
       }
-      param_.output->scale()[0] = scale;
-      param_.output->scale()[1] = 1.0f / scale;
+      param_.output->max()[0] = max_val;
     }
     return ret;
   }

@@ -150,7 +150,7 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
                     max_diff);
           print_diff_info(max_diff, max_ratio);
           if (std::abs(max_ratio) > 1e-3f) {
-            if (max_diff > 5e-4f) {
+            if (max_diff > 4e-3f) {
               int64_t size = tout_basic.numel();
               int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
               print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
@@ -223,8 +223,9 @@ TEST(TestPoolRand, test_pool_rand) {
                             bool adaptive = false;
                             bool use_quantizer = false;
                             std::vector<DDim> dims;
-                            for (auto& batch : {1, 2}) {
-                              for (auto& h : {1, 2, 3, 4, 11, 19, 32, 28}) {
+                            for (auto& batch : {1}) {
+                              for (auto& h :
+                                   {1, 2, 3, 4, 11, 15, 19, 31, 32, 28}) {
                                 dims.push_back(DDim({batch, cin, h, h}));
                               }
                             }

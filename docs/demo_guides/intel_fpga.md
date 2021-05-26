@@ -24,7 +24,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ### 已支持的Paddle模型
 
-- [ssd_mobilenet_v1_pascalvoc](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)
+- [SSD-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -76,8 +76,9 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
         - labels
           - pascalvoc_label_list # 检测label文件
         - models
+          - ssd_mobilenet_v1_fp32_300_fluid # Paddle fluid non-combined格式的SSD-MobileNetV1 float32模型
           - ssd_mobilenet_v1_fp32_300_for_intel_fpga
-          - ssd_mobilenet_v1_fp32_300_for_intel_fpga.nb # 已通过opt转好的、适合英特尔FPGA的mobilenetv1量化模型
+            - model.nb # 已通过opt转好的、适合英特尔FPGA的SSD-MobileNetV1 float32模型
       - shell
         - CMakeLists.txt # 示例程序CMake脚本
         - build
@@ -105,9 +106,11 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
   2）build.sh建议在docker环境中执行，目前英特尔FPGA在PaddleLite上只支持armhf。
 
   运行适用于英特尔FPGA的ssd_mobilenet_v1量化模型
-  $ cd PaddleLite-linux-demo/ssd_detection/shell
+  $ cd PaddleLite-linux-demo/ssd_detection/assets/models
+  $ cp ssd_mobilenet_v1_fp32_300_for_intel_fpga/model.nb ssd_mobilenet_v1_fp32_300_fluid.nb
+  $ cd ../../shell
   $ vim ./run.sh
-    MODEL_NAME设置为ssd_mobilenet_v1_fp32_300_for_intel_fpga
+    MODEL_NAME设置为ssd_mobilenet_v1_fp32_300_fluid
   $ ./run.sh
     iter 0 cost: 3079.443115 ms
     iter 1 cost: 3072.508057 ms
@@ -127,16 +130,16 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ### 更新模型
 
-- 通过Paddle Fluid训练，或X2Paddle转换得到MobileNetv1 foat32模型[ssd_mobilenet_v1_fp32_300_fluid](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)；
+- 通过Paddle Fluid训练，或X2Paddle转换得到SSD-MobileNetV1 float32模型[ssd_mobilenet_v1_fp32_300_fluid](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成英特尔FPGA模型，仅需要将valid_targets设置为intel_fpga,arm即可。
   ```shell
-  $ ./opt --model_dir=ssd_mobilenet_v1_fp32_300_for_intel_fpga \
+  $ ./opt --model_dir=ssd_mobilenet_v1_fp32_300_fluid \
       --optimize_out_type=naive_buffer \
       --optimize_out=opt_model \
       --valid_targets=intel_fpga,arm
   
   替换自带的英特尔FPGA模型
-  $ cp opt_model.nb ssd_mobilenet_v1_fp32_300_for_intel_fpga/ssd_mobilenet_v1_fp32_300_for_intel_fpga.nb
+  $ cp opt_model.nb ssd_mobilenet_v1_fp32_300_for_intel_fpga/model.nb
   ```
 
 - 注意：opt生成的模型只是标记了英特尔FPGA支持的Paddle算子，并没有真正生成英特尔FPGA模型，只有在执行时才会将标记的Paddle算子转成英特尔FPGA的APIs，最终生成并执行模型。

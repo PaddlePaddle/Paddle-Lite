@@ -56,6 +56,7 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
     auto& mask_dims = param.Mask->dims();
     auto batch_size = mask_dims[0];
     auto pad_seq_len = mask_dims[1];
+    param.PadSeqLen->mutable_data<int>()[0] = pad_seq_len;
     CHECK_EQ(batch_size, id_dims[0]);
     CHECK_EQ(idx_len, param.Mask->numel());
     auto* seq_lod = param.SeqLod;
@@ -140,5 +141,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("SeqLod",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("PadSeqLen",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();

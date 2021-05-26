@@ -5,6 +5,7 @@ message(STATUS "LITE_WITH_CUDA:\t${LITE_WITH_CUDA}")
 message(STATUS "LITE_WITH_X86:\t${LITE_WITH_X86}")
 message(STATUS "LITE_WITH_ARM:\t${LITE_WITH_ARM}")
 message(STATUS "LITE_WITH_OPENCL:\t${LITE_WITH_OPENCL}")
+message(STATUS "LITE_WITH_METAL:\t${LITE_WITH_METAL}")
 message(STATUS "LITE_WITH_NPU:\t${LITE_WITH_NPU}")
 message(STATUS "LITE_WITH_RKNPU:\t${LITE_WITH_RKNPU}")
 message(STATUS "LITE_WITH_XPU:\t${LITE_WITH_XPU}")
@@ -66,7 +67,7 @@ if (WITH_TESTING)
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "fast_rcnn_fluid184.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ocr_rec_quant_mul_lstm_for_arm.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "nlp_quant_lstm_int8_arm.tar.gz")
-        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "lac_crf_fp32_arm.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "lac_fp32_arm.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "transformer_nlp2_fp32_arm.tar.gz")
     else()
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "GoogleNet_inference.tar.gz")
@@ -94,7 +95,7 @@ if (WITH_TESTING)
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "bert_base_chinese_data.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ocr_rec_img_txt.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "nlp_quant_lstm_int8_data_txt.tar.gz")
-    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "lac_crf_data_txt.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "lac_data_txt.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "transformer_nlp2_data_txt.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "roadsign_data_128.tar.gz")
     if (NOT "${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS}" STREQUAL "")
@@ -113,6 +114,9 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (LITE_WITH_OPENCL)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.opencl")
     endif(LITE_WITH_OPENCL)
+    if (LITE_WITH_METAL)
+        set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.metal")
+    endif(LITE_WITH_METAL)
     if (LITE_WITH_NPU)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.npu")
     endif(LITE_WITH_NPU)
@@ -341,6 +345,11 @@ if(LITE_WITH_CUDA)
     add_dependencies(publish_inference publish_inference_cuda_cxx_demos)
 endif(LITE_WITH_CUDA)
 
+if(LITE_WITH_XPU AND NOT XPU_SDK_ROOT)
+    add_custom_command(TARGET publish_inference POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${THIRD_PARTY_PATH}/install/xpu" "${INFER_LITE_PUBLISH_ROOT}/third_party/xpu")
+endif()
+
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)
         # add cxx lib
@@ -389,21 +398,31 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             add_dependencies(publish_inference tiny_publish_lib)
         else()
             if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
+                # compile cplus shared library, pack the cplus demo and lib into the publish directory.
                 add_custom_target(tiny_publish_cxx_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-                    COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_light_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/cv/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                     )
                 add_dependencies(tiny_publish_cxx_lib paddle_light_api_shared)
-                add_dependencies(tiny_publish_cxx_lib paddle_api_light_bundled)
                 add_dependencies(publish_inference tiny_publish_cxx_lib)
                 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
                     add_custom_command(TARGET tiny_publish_cxx_lib POST_BUILD
                                 COMMAND ${CMAKE_STRIP} "-s" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/libpaddle_light_api_shared.so)
+                endif()
+                # compile cplus static library, pack static lib into the publish directory.
+                if(LITE_WITH_STATIC_LIB)
+                    add_custom_target(tiny_publish_cxx_static_lib ${TARGET}
+                        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
+                        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+                        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                        COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                        )
+                    add_dependencies(tiny_publish_cxx_static_lib paddle_api_light_bundled)
+                    add_dependencies(publish_inference tiny_publish_cxx_static_lib)
                 endif()
             endif()
         endif()
@@ -442,6 +461,8 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_full/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobile_full/Makefile"
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_light" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_light/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobile_light/Makefile"
+                COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobilenetv1_light_from_buffer" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_light/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light_from_buffer/Makefile"
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/ssd_detection" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/ssd_detection/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/ssd_detection/Makefile"
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/yolov3_detection" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
@@ -469,6 +490,8 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/README.md" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_light" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_light/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobile_light/Makefile"
+                COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobilenetv1_light_from_buffer" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/mobile_light/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light_from_buffer/Makefile"
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/ssd_detection" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/ssd_detection/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/ssd_detection/Makefile"
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/yolov3_detection" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
@@ -513,6 +536,19 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         add_dependencies(tiny_publish_cxx_lib publish_inference_opencl)
        endif()
     endif()
+
+    if (LITE_WITH_METAL)
+        add_custom_target(metal_lib_publish DEPENDS LiteMetalLIB
+                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/metal/"
+                COMMAND cp -r "${CMAKE_BINARY_DIR}/lite.metallib" "${INFER_LITE_PUBLISH_ROOT}/metal/"
+                COMMENT "COPY lite.metallib")
+
+        if (NOT LITE_ON_TINY_PUBLISH)
+            add_dependencies(publish_inference_cxx_lib metal_lib_publish)
+        else ()
+            add_dependencies(tiny_publish_lib metal_lib_publish)
+        endif ()
+    endif ()
 endif()
 
 if (ARM_TARGET_OS STREQUAL "armlinux")
@@ -547,6 +583,7 @@ if (LITE_WITH_BM)
     add_dependencies(publish_inference_bm_cxx_demos paddle_full_api_shared)
     add_dependencies(publish_inference publish_inference_bm_cxx_demos)
 endif()
+
 if (LITE_WITH_MLU)
     add_custom_target(publish_inference_mlu_cxx_demos ${TARGET}
         COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"

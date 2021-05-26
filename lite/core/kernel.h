@@ -58,6 +58,10 @@ class KernelBase {
   /// Run the kernel. Before Run, both the param_ and context_ should be valid.
   virtual void Run() = 0;
 
+#ifdef LITE_WITH_METAL
+  virtual void SaveOutput() {}
+#endif
+
 #ifdef LITE_WITH_PROFILE
   void SetProfiler(profile::Profiler* profiler, int id) {
     profiler_ = profiler;
@@ -95,6 +99,9 @@ class KernelBase {
 #endif
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
+#endif
+#if defined(LITE_WITH_METAL)
+    WorkSpace::Global_METAL().AllocReset();
 #endif
 #if defined(LITE_WITH_MLU)
     WorkSpace::Global_MLU().AllocReset();

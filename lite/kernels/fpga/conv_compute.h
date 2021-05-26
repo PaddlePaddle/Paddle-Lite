@@ -38,6 +38,7 @@ class ConvCompute
  private:
   zynqmp::ConvPE conv_pe_;
   zynqmp::DepthwiseConvPE dw_conv_pe_;
+  float16 input_max_ = 0;
 };
 
 }  // namespace fpga

@@ -49,7 +49,6 @@
 #include "lite/backends/arm/math/pad2d.h"
 #include "lite/backends/arm/math/pooling.h"
 #include "lite/backends/arm/math/power.h"
-#include "lite/backends/arm/math/prior_box.h"
 #include "lite/backends/arm/math/quantize.h"
 #include "lite/backends/arm/math/reduce_max.h"
 #include "lite/backends/arm/math/reduce_max_min.h"
@@ -68,7 +67,6 @@
 #include "lite/backends/arm/math/slice.h"
 #include "lite/backends/arm/math/softmax.h"
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
-#include "lite/backends/arm/math/yolo_box.h"
 
 namespace paddle {
 namespace lite {

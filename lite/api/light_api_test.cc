@@ -45,6 +45,10 @@ TEST(LightAPI, load) {
     LOG(INFO) << "outputnames: " << outputs[i];
   }
 
+  auto& precisions = predictor.GetInputPrecisions();
+  ASSERT_EQ(precisions.size(), 1);
+  ASSERT_EQ(precisions[0], PrecisionType::kFloat);
+
   predictor.Run();
 
   const auto* output = predictor.GetOutput(0);

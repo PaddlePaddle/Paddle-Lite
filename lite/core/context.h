@@ -15,6 +15,10 @@
 #pragma once
 
 #include "lite/utils/any.h"
+
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/context.h"
+#endif
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/context.h"
 #endif
@@ -557,6 +561,12 @@ class ContextScheduler {
             &ctx->As<OpenCLContext>());
         break;
 #endif
+#ifdef LITE_WITH_METAL
+      case TARGET(kMetal):
+        kernel_contexts_[TargetType::kMetal].As<ContextMetal>().CopySharedTo(
+            &ctx->As<ContextMetal>());
+        break;
+#endif
 #ifdef LITE_WITH_FPGA
       case TARGET(kFPGA):
         kernel_contexts_[TargetType::kFPGA].As<FPGAContext>().CopySharedTo(
@@ -621,6 +631,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_OPENCL
     InitContext<TargetType::kOpenCL, OpenCLContext>();
+#endif
+#ifdef LITE_WITH_METAL
+    InitContext<TargetType::kMetal, ContextMetal>();
 #endif
 #ifdef LITE_WITH_FPGA
     InitContext<TargetType::kFPGA, FPGAContext>();

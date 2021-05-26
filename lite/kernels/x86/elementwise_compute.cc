@@ -182,6 +182,17 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(elementwise_pow,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::ElementwisePowCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_mod,
                      kX86,
                      kFloat,

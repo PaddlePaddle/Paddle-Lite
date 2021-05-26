@@ -45,10 +45,10 @@ bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
       scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
   param_.output =
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
-  param_.output_max =
-      scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
   param_.filter =
       scope->FindVar(op_desc.Input("Filter").front())->GetMutable<Tensor>();
+  param_.output_max =
+      scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
 
   param_.op_type = op_desc.GetAttr<std::vector<int>>("op_type");
   param_.place_x = op_desc.GetAttr<std::vector<int>>("place_x");
@@ -106,6 +106,9 @@ bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
       act_n += 3;
       act_param_n += 3;
       bias_n += 1;
+    } else if (param_.op_type[i] == 10) {
+      act_n += 1;
+      act_param_n += 1;
     }
   }
   CHECK_EQ(f_n, param_.filter_dims.size());

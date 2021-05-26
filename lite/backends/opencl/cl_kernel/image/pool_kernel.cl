@@ -24,18 +24,19 @@ __kernel void pool_max(__read_only image2d_t input,
                        __private const int ksize_w,
                        __private const int stride_h,
                        __private const int stride_w,
-                       __private const int4 pad) {
+                       __private const int pad_top,
+                       __private const int pad_left) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
 
-  int start_h = out_h * stride_h - (pad.x - pad.y);
+  int start_h = out_h * stride_h - pad_top;
   int end_h = min(start_h + ksize_h, in_height);
   start_h = max(start_h, 0);
 
-  int start_w = out_w * stride_w - (pad.w - pad.z);
+  int start_w = out_w * stride_w - pad_left;
   int end_w = min(start_w + ksize_w, in_width);
   start_w = max(start_w, 0);
 
@@ -64,18 +65,19 @@ __kernel void pool_avg(__read_only image2d_t input,
                        __private const int ksize_w,
                        __private const int stride_h,
                        __private const int stride_w,
-                       __private const int4 pad) {
+                       __private const int pad_top,
+                       __private const int pad_left) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
 
-  int start_h = out_h * stride_h - pad.x;
+  int start_h = out_h * stride_h - pad_top;
   int end_h = min(start_h + ksize_h, in_height);
   start_h = max(start_h, 0);
 
-  int start_w = out_w * stride_w - pad.z;
+  int start_w = out_w * stride_w - pad_left;
   int end_w = min(start_w + ksize_w, in_width);
   start_w = max(start_w, 0);
 
@@ -94,7 +96,7 @@ __kernel void pool_avg(__read_only image2d_t input,
   div = (CL_DTYPE)((end_h - start_h)*(end_w - start_w));
 #else
   div = (CL_DTYPE)(ksize_w * ksize_h);
-#endif
+#endif 
   CL_DTYPE4 avg = sum / div;
   const int pos_out_x = mad24(out_c, out_width, out_w);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_out_x, out_nh), avg);
@@ -110,7 +112,8 @@ __kernel void pool_avg_global(__read_only image2d_t input,
                               __private const int ksize_w,
                               __private const int stride_h,
                               __private const int stride_w,
-                              __private const int4 pad) {
+                              __private const int pad_top,
+                              __private const int pad_left) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);   // =1
   const int out_nh = get_global_id(2);  // = n*1
@@ -179,7 +182,8 @@ __kernel void pool_max_global(__read_only image2d_t input,
                               __private const int ksize_w,
                               __private const int stride_h,
                               __private const int stride_w,
-                              __private const int4 pad) {
+                              __private const int pad_top,
+                              __private const int pad_left) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);   // =1
   const int out_nh = get_global_id(2);  // = n*1
