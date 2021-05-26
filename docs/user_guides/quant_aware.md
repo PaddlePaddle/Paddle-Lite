@@ -24,7 +24,7 @@ Paddle模型量化包含三种量化方法，分别是动态离线量化方法�
 
 ## 1 简介
 
-量化训练是使用较多练数据，对训练好的预测模型进行量化。该方法使用模拟量化的思想，在训练阶段更新权重，实现减小量化误差。
+量化训练是使用较多训练数据，对训练好的预测模型进行量化。该方法使用模拟量化的思想，在训练阶段更新权重，实现减小量化误差。
 
 使用条件：
 * 有预训练模型
@@ -45,14 +45,15 @@ Paddle模型量化包含三种量化方法，分别是动态离线量化方法�
 
 ## 2 产出量化模型
 
-目前，PaddleSlim 框架的量化训练主要针对卷积层和全连接层，对应算子是conv2d、depthwise_conv2d、conv2d_tranpose和mul。Paddle-Lite支持运行PaddlePaddle框架量化训练产出的模型，可以进一步加快模型在移动端的执行速度。
+目前，PaddleSlim 的量化训练主要针对卷积层和全连接层，对应算子是conv2d、depthwise_conv2d、conv2d_tranpose和mul。Paddle-Lite支持运行PaddleSlim量化训练产出的模型，可以进一步加快模型在移动端的执行速度。
 
-温馨提示：如果您是初次接触PaddlePaddle框架，建议首先学习[新人入门](https://www.paddlepaddle.org.cn/documentation/docs/zh/beginners_guide/index_cn.html)和[使用指南](https://www.paddlepaddle.org.cn/documentation/docs/zh/advanced_guide/index_cn.html)。
+温馨提示：如果您是初次接触PaddlePaddle框架，建议首先学习[使用文档](https://www.paddlepaddle.org.cn/documentation/docs/zh/beginners_guide/index_cn.html)。
 
 使用PaddleSlim模型压缩工具训练量化模型，请参考文档：
-* 量化训练[快速开始教程](https://paddleslim.readthedocs.io/zh_CN/latest/quick_start/quant_aware_tutorial.html)
-* 量化训练[API接口说明](https://paddleslim.readthedocs.io/zh_CN/latest/api_cn/quantization_api.html)
-* 量化训练[Demo](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/quant/quant_aware)
+* 量化训练[快速开始教程](https://paddleslim.readthedocs.io/zh_CN/latest/quick_start/index.html)
+* 量化训练[API接口说明](https://paddleslim.readthedocs.io/zh_CN/latest/api_cn/index.html)
+* 量化训练[Demo](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/quant)
+
 
 ## 3 使用Paddle-Lite运行量化模型推理
 
