@@ -34,29 +34,27 @@ namespace kernels {
 namespace metal {
 
 class ElementwiseMulImageCompute
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ElementwiseParam;
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::ElementwiseParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput(function_name_, output_buffer_);
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
+    };
 
- private:
-  void setup_without_mps();
+   private:
+    void setup_without_mps();
 
-  MetalImage* output_buffer_;
-  const MetalImage* input_buffer_x_;
-  const MetalImage* input_buffer_y_;
-  std::shared_ptr<MetalBuffer> params_buffer_;
+    MetalImage* output_buffer_;
+    const MetalImage* input_buffer_x_;
+    const MetalImage* input_buffer_y_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
 
-  void* pipline_;
-  std::string function_name_;
-  MetalContext* metal_context_;
+    void* pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
 };
 
 }  // namespace metal

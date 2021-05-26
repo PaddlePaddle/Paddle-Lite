@@ -32,26 +32,25 @@ namespace kernels {
 namespace metal {
 
 template <typename P, PrecisionType PTYPE>
-class TanhImageCompute : public KernelLite<TARGET(kMetal),
-                                           PTYPE,
-                                           DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ActivationParam;
+class TanhImageCompute
+    : public KernelLite<TARGET(kMetal), PTYPE, DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::ActivationParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("tanh", output_buffer_);
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput("tanh", output_buffer_);
+    };
 
- private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
+   private:
+    const MetalImage* input_buffer_;
+    MetalImage* output_buffer_;
+    std::shared_ptr<MetalBuffer> param_buffer_;
+    std::shared_ptr<MetalKernel> kernel_;
+    std::shared_ptr<MetalQueue> queue_;
+    std::shared_ptr<MetalEncoder> encoder_;
+    MetalContext* metal_context_;
 };
 
 }  // namespace metal
