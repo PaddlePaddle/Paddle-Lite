@@ -1123,7 +1123,7 @@ int DeviceInfo::Setup() {
 }
 
 void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
-#ifdef ARM_WITH_OMP
+#if defined(ARM_WITH_OMP) || defined(LITE_USE_THREAD_POOL)
   thread_num = std::min(thread_num, core_num_);
 #else
   thread_num = 1;  // force thread_num to 1 if OpenMP is disabled

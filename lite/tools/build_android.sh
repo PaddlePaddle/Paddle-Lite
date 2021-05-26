@@ -32,6 +32,7 @@ BUILD_ARM82_FP16=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
+WITH_THREAD_POOL=OFF
 # options of compiling NPU lib.
 WITH_HUAWEI_KIRIN_NPU=OFF
 HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
@@ -222,7 +223,8 @@ function make_tiny_publish_so {
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
-      -DANDROID_STL_TYPE=$ANDROID_STL"
+      -DANDROID_STL_TYPE=$ANDROID_STL \
+      -DLITE_THREAD_POOL=$WITH_THREAD_POOL"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -422,6 +424,11 @@ function main {
             # ON or OFF, default OFF
             --with_strip=*)
                 WITH_STRIP="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default OFF
+            --with_thread_pool=*)
+                WITH_THREAD_POOL="${i#*=}"
                 shift
                 ;;
             # string, absolute path to optimized model dir

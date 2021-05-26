@@ -20,6 +20,7 @@ BUILD_PYTHON=OFF
 BUILD_DIR=$(pwd)
 OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
+BUILD_THREAD_POOL=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
 WITH_MKL=ON
@@ -197,6 +198,7 @@ function make_tiny_publish_so {
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
+      -DLITE_THREAD_POOL=$BUILD_THREAD_POOL \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -618,6 +620,10 @@ function main {
                 ;;
             --build_tailor=*)
                 BUILD_TAILOR="${i#*=}"
+                shift
+                ;;
+            --build_thread_pool=*)
+                BUILD_THREAD_POOL="${i#*=}"
                 shift
                 ;;
             --with_log=*)
