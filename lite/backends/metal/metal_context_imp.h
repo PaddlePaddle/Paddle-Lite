@@ -37,10 +37,10 @@ extern NSString* cString2NSString(std::string cStr);
 - (bool)isNeedNewHeap:(id<MTLHeap>)heap texDesc:(MTLTextureDescriptor*)desc;
 - (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap;
 
-// MPS使用
+// for MPS
 - (id<MTLCommandBuffer>)commandBuffer;
 - (void)commit:(id<MTLCommandBuffer>)cmdBuf;
-// SELF算子使用
+// for custom kernel
 - (id<MTLComputeCommandEncoder>)commandEncoder;
 - (id<MTLComputePipelineState>)pipline:(std::string)name;
 
