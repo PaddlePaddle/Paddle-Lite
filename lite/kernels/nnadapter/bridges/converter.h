@@ -41,7 +41,12 @@ class Converter {
                                const std::string& name = "");
   NNAdapterOperand* AddOperand(NNAdapterOperand* operand,
                                const std::string& name);
-  void SetOperand(NNAdapterOperand* operand, void* buffer, size_t length);
+  void SetOperandCopyFrom(NNAdapterOperand* operand,
+                          void* buffer,
+                          size_t length);
+  void SetOperandReferenceTo(NNAdapterOperand* operand,
+                             void* buffer,
+                             size_t length);
 
  private:
   std::map<std::string, NNAdapterOperand*> operands_;

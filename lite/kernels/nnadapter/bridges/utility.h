@@ -49,7 +49,12 @@ bool IsDimensionCompatible(const NNAdapterOperandType* target,
 
 // Paddle to NNAdapter
 std::vector<int32_t> ConvertDimensions(const DDim& input_dimensions);
+std::vector<int32_t> ConvertDimensions(
+    const std::vector<int64_t>& input_dimensions);
 void ConvertDimensions(const DDim& input_dimensions,
+                       int32_t* output_dimensions,
+                       uint32_t* output_dimension_count);
+void ConvertDimensions(const std::vector<int64_t>& input_dimensions,
                        int32_t* output_dimensions,
                        uint32_t* output_dimension_count);
 // NNAdapter to Paddle

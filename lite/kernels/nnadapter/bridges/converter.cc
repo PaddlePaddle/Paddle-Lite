@@ -71,10 +71,16 @@ NNAdapterOperand* Converter::AddOperand(NNAdapterOperand* operand,
   return operand;
 }
 
-void Converter::SetOperand(NNAdapterOperand* operand,
-                           void* buffer,
-                           size_t length) {
-  NNAdapterModel_setOperand_invoke(operand, buffer, length);
+void Converter::SetOperandCopyFrom(NNAdapterOperand* operand,
+                                   void* buffer,
+                                   size_t length) {
+  NNAdapterModel_setOperandCopyFrom_invoke(operand, buffer, length);
+}
+
+void Converter::SetOperandReferenceTo(NNAdapterOperand* operand,
+                                      void* buffer,
+                                      size_t length) {
+  NNAdapterModel_setOperandReferenceTo_invoke(operand, buffer, length);
 }
 
 }  // namespace nnadapter

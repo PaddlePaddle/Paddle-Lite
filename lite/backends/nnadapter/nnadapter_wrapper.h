@@ -24,6 +24,8 @@ class NNAdapterWrapper final {
   static NNAdapterWrapper& Global();
   bool Supported() { return initialized_ && supported_; }
 
+  typedef int (*NNAdapter_getVersion_fn)(uint32_t* version);
+  typedef int (*NNAdapter_getDeviceCount_fn)(uint32_t* numDevices);
   typedef int (*NNAdapterDevice_acquire_fn)(const char* name,
                                             NNAdapterDevice** device);
   typedef void (*NNAdapterDevice_release_fn)(NNAdapterDevice* device);
@@ -45,9 +47,11 @@ class NNAdapterWrapper final {
   typedef int (*NNAdapterModel_addOperand_fn)(NNAdapterModel* model,
                                               const NNAdapterOperandType* type,
                                               NNAdapterOperand** operand);
-  typedef int (*NNAdapterModel_setOperand_fn)(NNAdapterOperand* operand,
-                                              void* buffer,
-                                              uint32_t length);
+  typedef int (*NNAdapterModel_setOperandCopyFrom_fn)(NNAdapterOperand* operand,
+                                                      void* buffer,
+                                                      uint32_t length);
+  typedef int (*NNAdapterModel_setOperandReferenceTo_fn)(
+      NNAdapterOperand* operand, void* buffer, uint32_t length);
   typedef int (*NNAdapterModel_addOperation_fn)(NNAdapterModel* model,
                                                 NNAdapterOperationType type,
                                                 NNAdapterOperation** operation);
@@ -100,6 +104,8 @@ class NNAdapterWrapper final {
 
 #define NNADAPTER_DECLARE_FUNCTION(name) name##_fn name;
 
+  NNADAPTER_DECLARE_FUNCTION(NNAdapter_getVersion)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapter_getDeviceCount)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterDevice_acquire)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterDevice_release)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterDevice_getName)
@@ -112,7 +118,8 @@ class NNAdapterWrapper final {
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_destroy)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_finish)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_addOperand)
-  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperand)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperandCopyFrom)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperandReferenceTo)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_addOperation)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperation)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_identifyInputsAndOutputs)
@@ -136,6 +143,14 @@ class NNAdapterWrapper final {
   bool supported_{false};
   void* library_{nullptr};
 };
+
+inline int NNAdapter_getVersion(uint32_t* version) {
+  return NNAdapterWrapper::Global().NNAdapter_getVersion(version);
+}
+
+inline int NNAdapter_getDeviceCount(uint32_t* numDevices) {
+  return NNAdapterWrapper::Global().NNAdapter_getDeviceCount(numDevices);
+}
 
 inline int NNAdapterDevice_acquire_invoke(const char* name,
                                           NNAdapterDevice** device) {
@@ -196,10 +211,16 @@ inline int NNAdapterModel_addOperand_invoke(NNAdapterModel* model,
       model, type, operand);
 }
 
-inline int NNAdapterModel_setOperand_invoke(NNAdapterOperand* operand,
-                                            void* buffer,
-                                            uint32_t length) {
-  return NNAdapterWrapper::Global().NNAdapterModel_setOperand(
+inline int NNAdapterModel_setOperandCopyFrom_invoke(NNAdapterOperand* operand,
+                                                    void* buffer,
+                                                    uint32_t length) {
+  return NNAdapterWrapper::Global().NNAdapterModel_setOperandCopyFrom(
+      operand, buffer, length);
+}
+
+inline int NNAdapterModel_setOperandReferenceTo_invoke(
+    NNAdapterOperand* operand, void* buffer, uint32_t length) {
+  return NNAdapterWrapper::Global().NNAdapterModel_setOperandReferenceTo(
       operand, buffer, length);
 }
 

@@ -63,6 +63,8 @@ bool NNAdapterWrapper::Initialize() {
     VLOG(4) << #name << " is loaded.";                              \
   } while (false);
 
+  NNADAPTER_LOAD_FUNCTION(NNAdapter_getVersion)
+  NNADAPTER_LOAD_FUNCTION(NNAdapter_getDeviceCount)
   NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_acquire)
   NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_release)
   NNADAPTER_LOAD_FUNCTION(NNAdapterDevice_getName)
@@ -75,7 +77,8 @@ bool NNAdapterWrapper::Initialize() {
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_destroy)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_finish)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_addOperand)
-  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setOperand)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setOperandCopyFrom)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setOperandReferenceTo)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_addOperation)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setOperation)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_identifyInputsAndOutputs)

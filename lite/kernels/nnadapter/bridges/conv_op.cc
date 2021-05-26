@@ -111,13 +111,13 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Filter operand
   CHECK(op_info->HasInputScale(filter_scale_name, true));
   auto filter_scale = op_info->GetInputScale(filter_scale_name, true);
-  bool is_perchannel_filter_scales = IsPerChannelScales(filter_scale);
-  VLOG(5) << "is_perchannel_filter_scales: " << is_perchannel_filter_scales;
+  bool is_per_channel = IsPerChannelScales(filter_scale);
+  VLOG(5) << "is_per_channel: " << is_per_channel;
   NNAdapterOperandType filter_type;
   memset(&filter_type, 0, sizeof(NNAdapterOperandType));
   ConvertDimensions(
       filter_dims, filter_type.dimensions, &filter_type.dimension_count);
-  if (is_perchannel_filter_scales) {
+  if (is_per_channel) {
     // Per channel
     filter_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
     filter_type.symm_per_channel_params.scales = &filter_scale[0];
@@ -129,46 +129,49 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     filter_type.symm_per_layer_params.scale = filter_scale[0];
   }
   auto filter_operand = converter->AddOperand(&filter_type, filter_name);
-  converter->SetOperand(
+  converter->SetOperandReferenceTo(
       filter_operand, filter->raw_data(), filter->memory_size());
 
-  // Paddings, strides and dilations operands
+  // Paddings, strides, dilations and group operands
   NNAdapterOperandType int32_type;
   memset(&int32_type, 0, sizeof(NNAdapterOperandType));
   int32_type.precision = NNADAPTER_INT32;
   int32_type.dimension_count = 0;
 
   auto padding_width_left_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(
+  converter->SetOperandCopyFrom(
       padding_width_left_operand, &paddings[0], sizeof(int32_t));
 
   auto padding_width_right_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(
+  converter->SetOperandCopyFrom(
       padding_width_right_operand, &paddings[1], sizeof(int32_t));
 
   auto padding_height_top_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(
+  converter->SetOperandCopyFrom(
       padding_height_top_operand, &paddings[2], sizeof(int32_t));
 
   auto padding_height_bottom_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(
+  converter->SetOperandCopyFrom(
       padding_height_bottom_operand, &paddings[3], sizeof(int32_t));
 
   auto stride_width_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(stride_width_operand, &strides[0], sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      stride_width_operand, &strides[0], sizeof(int32_t));
 
   auto stride_height_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(stride_height_operand, &strides[1], sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      stride_height_operand, &strides[1], sizeof(int32_t));
 
   auto dilation_width_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(dilation_width_operand, &dilations[0], sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      dilation_width_operand, &dilations[0], sizeof(int32_t));
 
   auto dilation_height_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(
+  converter->SetOperandCopyFrom(
       dilation_height_operand, &dilations[1], sizeof(int32_t));
 
   auto group_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(group_operand, &groups, sizeof(int32_t));
+  converter->SetOperandCopyFrom(group_operand, &groups, sizeof(int32_t));
 
   // Bias
   NNAdapterOperandType bias_type;
@@ -177,7 +180,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < filter_scale.size(); i++) {
     bias_scale[i] = input_scale * filter_scale[i];
   }
-  if (is_perchannel_filter_scales) {
+  if (is_per_channel) {
     // Per channel
     bias_type.precision = NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
     bias_type.symm_per_channel_params.scales = &bias_scale[0];
@@ -204,10 +207,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     Quantize(bias_data, output_channel_size, bias_scale, &quant_bias_data[0]);
   }
   auto bias_operand = converter->AddOperand(&bias_type, bias_name);
-  converter->SetOperand(bias_operand,
-                        &quant_bias_data[0],
-                        sizeof(int32_t) * quant_bias_data.size());
-
+  converter->SetOperandCopyFrom(bias_operand,
+                                &quant_bias_data[0],
+                                sizeof(int32_t) * quant_bias_data.size());
   // Fuse code operand
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
@@ -221,8 +223,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     return FAILED;
   }
   auto fuse_code_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(fuse_code_operand, &fuse_code_value, sizeof(int32_t));
-
+  converter->SetOperandCopyFrom(
+      fuse_code_operand, &fuse_code_value, sizeof(int32_t));
   // Output operand
   CHECK(op_info->HasOutputScale(output_scale_name, true));
   auto output_scale = op_info->GetOutputScale(output_scale_name, true)[0];

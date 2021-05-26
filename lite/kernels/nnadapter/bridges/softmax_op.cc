@@ -68,7 +68,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int32_type.precision = NNADAPTER_INT32;
   int32_type.dimension_count = 0;
   auto axis_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(axis_operand, &axis, sizeof(int32_t));
+  converter->SetOperandCopyFrom(axis_operand, &axis, sizeof(int32_t));
 
   // Output operand
   CHECK(op_info->HasOutputScale(out_scale_name, true));

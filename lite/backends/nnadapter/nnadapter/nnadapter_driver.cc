@@ -19,7 +19,7 @@
 #include <set>
 #include <sstream>
 #include <utility>
-#include "nnadapter_logging.h"  // NOLINT
+#include "nnadapter_common.h"  // NOLINT
 
 namespace nnadapter {
 namespace driver {
@@ -156,95 +156,110 @@ class Dot {
   std::vector<Attr> attrs_;
 };
 
-std::string string_format(const std::string fmt_str, ...) {
-  // Reserve two times as much as the length of the fmt_str
-  int final_n, n = (static_cast<int>(fmt_str.size())) * 2;
-  std::unique_ptr<char[]> formatted;
-  va_list ap;
-  while (1) {
-    formatted.reset(new char[n]);
-    // Wrap the plain char array into the unique_ptr
-    std::strcpy(&formatted[0], fmt_str.c_str());  // NOLINT
-    va_start(ap, fmt_str);
-    final_n = vsnprintf(&formatted[0], n, fmt_str.c_str(), ap);
-    va_end(ap);
-    if (final_n < 0 || final_n >= n)
-      n += abs(final_n - n + 1);
-    else
-      break;
-  }
-  return std::string(formatted.get());
-}
-
-std::string OperationTypeToString(NNAdapterOperationType type) {
-#define OPERATION_TYPE_TO_STRING(type) \
-  case NNADAPTER_##type:               \
-    name = #type;                      \
-    break;
-
-  std::string name;
-  switch (type) {
-    OPERATION_TYPE_TO_STRING(ADD);
-    OPERATION_TYPE_TO_STRING(AVERAGE_POOL_2D);
-    OPERATION_TYPE_TO_STRING(CONV_2D);
-    OPERATION_TYPE_TO_STRING(DIV);
-    OPERATION_TYPE_TO_STRING(FULLY_CONNECTED);
-    OPERATION_TYPE_TO_STRING(HARD_SIGMOID);
-    OPERATION_TYPE_TO_STRING(HARD_SWISH);
-    OPERATION_TYPE_TO_STRING(MAX_POOL_2D);
-    OPERATION_TYPE_TO_STRING(MUL);
-    OPERATION_TYPE_TO_STRING(RELU);
-    OPERATION_TYPE_TO_STRING(RELU6);
-    OPERATION_TYPE_TO_STRING(SIGMOID);
-    OPERATION_TYPE_TO_STRING(SOFTMAX);
-    OPERATION_TYPE_TO_STRING(SUB);
-    OPERATION_TYPE_TO_STRING(TANH);
-    OPERATION_TYPE_TO_STRING(TRANSPOSE);
-    default:
-      name = "UNKNOWN";
-      break;
-  }
-
-#undef OPERATION_TYPE_TO_STRING
-  return name;
-}
-
-std::string Visualize(Model* model) {
-#define APPEND_OPERAND_NODE()                                     \
-  auto operand_name =                                             \
-      string_format("@0x%X", reinterpret_cast<int64_t>(operand)); \
-  if (!visited_operands.count(operand)) {                         \
-    dot.AddNode(operand_name, {});                                \
-    visited_operands.insert(operand);                             \
-  }                                                               \
-  std::vector<Dot::Attr> attrs;                                   \
-  attrs.emplace_back("label", string_format("%d", i));
+NNADAPTER_EXPORT std::string Visualize(Model* model) {
+#define APPEND_OPERAND_NODE(mode)                                           \
+  auto operand_id =                                                         \
+      string_format("@0x%X", reinterpret_cast<int64_t>(operand));           \
+  auto operand_label = OperandValueToString(operand);                       \
+  if (!visited_operands.count(operand)) {                                   \
+    dot.AddNode(operand_id, {}, operand_label);                             \
+    visited_operands.insert(operand);                                       \
+  }                                                                         \
+  std::vector<Dot::Attr> attrs;                                             \
+  auto& attr_args = mode ? output_args : input_args;                        \
+  std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown"; \
+  attrs.emplace_back("label", string_format("%d:%s", i, attr_label.c_str()));
 
   Dot dot;
   std::ostringstream os;
   auto operations = SortOperationsInTopologicalOrder(model);
   std::set<Operand*> visited_operands;
   for (auto* operation : operations) {
-    std::string operation_name = OperationTypeToString(operation->type);
-    operation_name = string_format("%s@0x%X",
-                                   operation_name.c_str(),
-                                   reinterpret_cast<int64_t>(operation));
-    dot.AddNode(operation_name,
+    std::string operation_id =
+        string_format("@0x%X", reinterpret_cast<int64_t>(operation));
+    std::string operation_label = OperationTypeToString(operation->type);
+    dot.AddNode(operation_id,
                 {Dot::Attr("shape", "box"),
                  Dot::Attr("style", "filled"),
                  Dot::Attr("color", "black"),
-                 Dot::Attr("fillcolor", "yellow")});
+                 Dot::Attr("fillcolor", "yellow")},
+                operation_label);
+    std::vector<std::string> input_args, output_args;
+    switch (operation->type) {
+      case NNADAPTER_HARD_SIGMOID:
+      case NNADAPTER_HARD_SWISH:
+      case NNADAPTER_RELU:
+      case NNADAPTER_RELU6:
+      case NNADAPTER_SIGMOID:
+      case NNADAPTER_TANH:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SOFTMAX:
+        input_args = {"input", "axis"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CONV_2D:
+        input_args = {"input",
+                      "filter",
+                      "bias",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "group",
+                      "fuse_code",
+                      "dilation_width",
+                      "dilation_height"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_MAX_POOL_2D:
+        input_args = {"input",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "filter_width",
+                      "filter_height",
+                      "fuse_code",
+                      "ceil_mode",
+                      "count_include_pad"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_FULLY_CONNECTED:
+        input_args = {"input", "weight", "bias", "fuse_code"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_ADD:
+      case NNADAPTER_SUB:
+      case NNADAPTER_MUL:
+      case NNADAPTER_DIV:
+        input_args = {"input0", "input1", "fuse_code"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_TRANSPOSE:
+        input_args = {"input", "perm"};
+        output_args = {"output"};
+        break;
+      default:
+        break;
+    }
     size_t input_count = operation->input_operands.size();
     for (size_t i = 0; i < input_count; i++) {
       auto* operand = operation->input_operands[i];
-      APPEND_OPERAND_NODE()
-      dot.AddEdge(operand_name, operation_name, attrs);
+      APPEND_OPERAND_NODE(0)
+      dot.AddEdge(operand_id, operation_id, attrs);
     }
     size_t output_count = operation->output_operands.size();
     for (size_t i = 0; i < output_count; i++) {
       auto* operand = operation->output_operands[i];
-      APPEND_OPERAND_NODE()
-      dot.AddEdge(operation_name, operand_name, attrs);
+      APPEND_OPERAND_NODE(1)
+      dot.AddEdge(operation_id, operand_id, attrs);
     }
   }
   os << dot.Build();
@@ -253,7 +268,208 @@ std::string Visualize(Model* model) {
   return os.str();
 }
 
-std::vector<Operation*> SortOperationsInTopologicalOrder(Model* model) {
+NNADAPTER_EXPORT int32_t ProductionOfDimensions(
+    int32_t* input_dimensions, uint32_t input_dimensions_count) {
+  int32_t production = 1;
+  for (uint32_t i = 0; i < input_dimensions_count; i++) {
+    auto dimension = input_dimensions[i];
+    NNADAPTER_CHECK_GT(dimension, 0);
+    production *= dimension;
+  }
+  return production;
+}
+
+NNADAPTER_EXPORT void TransposeDimensions(
+    int32_t* input_dimensions,
+    const std::vector<int32_t>& permutation,
+    int32_t* output_dimensions_ptr) {
+  size_t permutation_count = permutation.size();
+  std::vector<int32_t> origin_dimensions(input_dimensions,
+                                         input_dimensions + permutation_count);
+  for (size_t i = 0; i < permutation_count; i++) {
+    auto dimension = origin_dimensions[permutation[i]];
+    if (output_dimensions_ptr != nullptr) {
+      output_dimensions_ptr[i] = dimension;
+    } else {
+      input_dimensions[i] = dimension;
+    }
+  }
+}
+
+NNADAPTER_EXPORT void TransposeOperand(Operand* operand,
+                                       std::vector<int32_t> permutation) {
+  auto is_constant_copy = operand->type.lifetime == NNADAPTER_CONSTANT_COPY;
+  auto is_constant_reference =
+      operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
+  auto is_constant = is_constant_copy || is_constant_reference;
+  NNADAPTER_CHECK(!permutation.empty()) << "Permutation is empty!";
+  NNADAPTER_CHECK_EQ(permutation.size(), operand->type.dimension_count)
+      << "The rank of permutation and operand mismatch!";
+  if (is_constant) {
+#define OPERAND_TRANSPOSE_DATA(bytes, dtype)                          \
+  case bytes: {                                                       \
+    auto src_buffer = reinterpret_cast<dtype*>(origin_buffer);        \
+    auto dst_buffer = reinterpret_cast<dtype*>(transform_buffer);     \
+    TransposeData<dtype>(                                             \
+        src_buffer, dst_buffer, permutation, dimensions, dimensions); \
+  } break;
+    auto origin_buffer = operand->buffer;
+    auto transform_buffer = malloc(operand->length);
+    NNADAPTER_CHECK(transform_buffer) << "Out of memory!";
+    auto dimensions = operand->type.dimensions;
+    int bytes = OperandPrecisionLength(operand->type.precision);
+    switch (bytes) {
+      OPERAND_TRANSPOSE_DATA(1, int8_t);
+      OPERAND_TRANSPOSE_DATA(2, int16_t);
+      OPERAND_TRANSPOSE_DATA(4, int32_t);
+      OPERAND_TRANSPOSE_DATA(8, int64_t);
+      default:
+        NNADAPTER_LOG(ERROR)
+            << "Missing the processing of "
+            << OperandPrecisionCodeToString(operand->type.precision)
+            << " for the transpose of operand.";
+        break;
+    }
+    if (is_constant_reference) {
+      operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+    } else {
+      // Free th origin buffer and replace it with the new one
+      free(origin_buffer);
+    }
+    operand->buffer = transform_buffer;
+#undef OPERAND_TRANSPOSE_DATA
+  } else {
+    // Only transpose the dimensions the non-constant operands
+    TransposeDimensions(operand->type.dimensions, permutation);
+  }
+}
+
+std::string OperandValueToString(Operand* operand) {
+  auto label = string_format("@0x%X", reinterpret_cast<int64_t>(operand));
+  auto& type = operand->type;
+  auto buffer = operand->buffer;
+  auto length = operand->length;
+  auto is_constant_copy = type.lifetime == NNADAPTER_CONSTANT_COPY;
+  auto is_constant_reference = type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
+  auto is_constant = is_constant_copy || is_constant_reference;
+  auto is_scalar = type.dimension_count == 0;
+  auto is_vector = type.dimension_count == 1;
+  // Only peek the value from the constant scalar operand
+  if (is_constant && is_scalar) {
+#define OPERAND_SCALAR_VALUE_TO_STRING(ntype, dtype, dspecifier)               \
+  case NNADAPTER_##ntype:                                                      \
+    label = string_format("%" #dspecifier, *reinterpret_cast<dtype*>(buffer)); \
+    break;
+    switch (type.precision) {
+      OPERAND_SCALAR_VALUE_TO_STRING(BOOL8, bool, d);
+      OPERAND_SCALAR_VALUE_TO_STRING(INT8, int8_t, d);
+      OPERAND_SCALAR_VALUE_TO_STRING(UINT8, uint8_t, u);
+      OPERAND_SCALAR_VALUE_TO_STRING(INT16, int16_t, d);
+      OPERAND_SCALAR_VALUE_TO_STRING(UINT16, uint16_t, u);
+      OPERAND_SCALAR_VALUE_TO_STRING(INT32, int32_t, d);
+      OPERAND_SCALAR_VALUE_TO_STRING(UINT32, uint32_t, u);
+      OPERAND_SCALAR_VALUE_TO_STRING(INT64, int64_t, lld);
+      OPERAND_SCALAR_VALUE_TO_STRING(UINT64, uint64_t, lld);
+      OPERAND_SCALAR_VALUE_TO_STRING(FLOAT16, int16_t, d);
+      OPERAND_SCALAR_VALUE_TO_STRING(FLOAT32, float, f);
+      OPERAND_SCALAR_VALUE_TO_STRING(FLOAT64, double, f);
+      default:
+        NNADAPTER_LOG(ERROR) << "Can't peek the scalar value for "
+                             << OperandPrecisionCodeToString(type.precision)
+                             << ".";
+        break;
+    }
+#undef OPERAND_SCALAR_VALUE_TO_STRING
+  } else if (is_constant && is_vector) {
+    auto count = type.dimensions[0];
+    if (count <= 4) {
+#define OPERAND_VECTOR_VALUE_TO_STRING(ntype, dtype, dspecifier)     \
+  case NNADAPTER_##ntype:                                            \
+    for (uint32_t i = 0; i < count; i++) {                           \
+      label += string_format("%" #dspecifier ",",                    \
+                             (reinterpret_cast<dtype*>(buffer))[i]); \
+    }                                                                \
+    break;
+      label = "[";
+      switch (type.precision) {
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_BOOL8, bool, d);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_INT8, int8_t, d);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_UINT8, uint8_t, u);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_INT16, int16_t, d);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_UINT16, uint16_t, u);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_INT32, int32_t, d);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_UINT32, uint32_t, u);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_INT64, int64_t, lld);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_UINT64, uint64_t, lld);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_FLOAT16, int16_t, d);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_FLOAT32, float, f);
+        OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_FLOAT64, double, f);
+        default:
+          NNADAPTER_LOG(ERROR) << "Can't peek the vector value for "
+                               << OperandPrecisionCodeToString(type.precision)
+                               << ".";
+          break;
+      }
+      label += "]";
+    }
+#undef OPERAND_VECTOR_VALUE_TO_STRING
+  } else {
+    // Dimension2String
+    label += "[";
+    for (uint32_t i = 0; i < type.dimension_count; i++) {
+      label += string_format("%d,", type.dimensions[i]);
+    }
+    label += "]";
+  }
+  return string_format(
+      "%s:%s", label.c_str(), OperandPrecisionName(type.precision).c_str());
+}
+
+NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
+  const uint32_t max_scale_display_size = 20;
+  std::ostringstream os;
+  os << " precision: " << OperandPrecisionCodeToString(type->precision)
+     << std::endl;
+  os << " layout: " << OperandLayoutCodeToString(type->layout) << std::endl;
+  os << " lifetime: " << OperandLifetimeCodeToString(type->lifetime)
+     << std::endl;
+  os << " dimensions: [";
+  for (uint32_t i = 0; i < type->dimension_count; i++) {
+    os << type->dimensions[i] << ",";
+  }
+  os << "]" << std::endl;
+  switch (type->precision) {
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER: {
+      os << " scale: " << type->symm_per_layer_params.scale;
+    } break;
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL: {
+      os << " scales: [";
+      for (uint32_t i = 0; i < max_scale_display_size &&
+                           i < type->symm_per_channel_params.scale_count;
+           i++) {
+        os << type->symm_per_channel_params.scales[i] << ",";
+      }
+      if (type->symm_per_channel_params.scale_count > max_scale_display_size) {
+        os << "...";
+      }
+      os << "]";
+      os << " channel_dim: " << type->symm_per_channel_params.channel_dim;
+    } break;
+    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER: {
+      os << " scale: " << type->asymm_per_layer_params.scale;
+      os << " zero_point: " << type->asymm_per_layer_params.zero_point;
+    } break;
+    default:
+      break;
+  }
+  return os.str();
+}
+
+NNADAPTER_EXPORT std::vector<Operation*> SortOperationsInTopologicalOrder(
+    Model* model) {
   std::vector<Operation*> operations;  // Operations in topological order
   std::vector<Operation*> queue;
   // Use to find all of adjacent operations according to a given operand.
@@ -291,6 +507,50 @@ std::vector<Operation*> SortOperationsInTopologicalOrder(Model* model) {
     }
   }
   return operations;
+}
+
+NNADAPTER_EXPORT Operand* AddOperand(Model* model) {
+  model->operands.emplace_back();
+  return &model->operands.back();
+}
+
+NNADAPTER_EXPORT Operand* AddScalarInt32ConstantOperand(Model* model,
+                                                        int32_t value) {
+  return AddScalarConstantOperand<int32_t>(model, value, NNADAPTER_INT32);
+}
+
+NNADAPTER_EXPORT Operand* AddScalarFloat32ConstantOperand(Model* model,
+                                                          float value) {
+  return AddScalarConstantOperand<float>(model, value, NNADAPTER_FLOAT32);
+}
+
+NNADAPTER_EXPORT Operand* AddVectorInt32ConstantOperand(Model* model,
+                                                        const int32_t* values,
+                                                        uint32_t num_values) {
+  return AddVectorConstantOperand<int32_t>(
+      model, values, num_values, NNADAPTER_TENSOR_INT32);
+}
+
+NNADAPTER_EXPORT Operand* AddVectorFloat32ConstantOperand(Model* model,
+                                                          const float* values,
+                                                          uint32_t num_values) {
+  return AddVectorConstantOperand<float>(
+      model, values, num_values, NNADAPTER_TENSOR_FLOAT32);
+}
+
+NNADAPTER_EXPORT Operand* AddVectorInt32ConstantOperand(
+    Model* model, const std::vector<int32_t>& values) {
+  return AddVectorInt32ConstantOperand(model, &values[0], values.size());
+}
+
+NNADAPTER_EXPORT Operand* AddVectorFloat32ConstantOperand(
+    Model* model, const std::vector<float>& values) {
+  return AddVectorFloat32ConstantOperand(model, &values[0], values.size());
+}
+
+NNADAPTER_EXPORT Operation* AddOperation(Model* model) {
+  model->operations.emplace_back();
+  return &model->operations.back();
 }
 
 }  // namespace driver

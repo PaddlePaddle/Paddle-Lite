@@ -18,8 +18,12 @@
 #include <stdint.h>
 #include <sys/cdefs.h>
 
+enum { NNADAPTER_VERSION = 1 };
+
 /**
  * Result codes.
+ *
+ * Available since version 1.
  */
 typedef enum {
   NNADAPTER_NO_ERROR = 0,
@@ -32,6 +36,8 @@ enum { NNADAPTER_MAX_SIZE_OF_DIMENSIONS = 8 };
 
 /**
  * Operand precision codes.
+ *
+ * Available since version 1.
  */
 typedef enum {
   /**
@@ -81,6 +87,8 @@ typedef enum {
 
 /**
  * Operand layout codes.
+ *
+ * Available since version 1.
  */
 typedef enum {
   NNADAPTER_NCHW = 0,
@@ -91,18 +99,27 @@ typedef enum {
  * Operand life time codes, where to find the data for a operand.
  * * NNADAPTER_TEMPORARY_VARIABLE: A temporary operand in a newtork, There is no
  need to set its data during building a network.
- * * NNADAPTER_CONSTANT: A constant operand, copy to an new space allocated
+ * * NNADAPTER_CONSTANT_COPY: A constant operand, copy to an new space allocated
  internally during building a network.
+ * * NNADAPTER_CONSTANT_REFERENCE: A constant operand, reference to the external
+ buffer, the caller or driver must not change the content of the buffer.
+ * * NNADAPTER_MODEL_INPUT: indicate the operand is the input of model.
+ * * NNADAPTER_MODEL_OUTPUT: indicate the operand is the output of model.
+ *
+ * Available since version 1.
  */
 typedef enum {
   NNADAPTER_TEMPORARY_VARIABLE = 0,
-  NNADAPTER_CONSTANT = 1,
-  NNADAPTER_MODEL_INPUT = 2,
-  NNADAPTER_MODEL_OUTPUT = 3,
+  NNADAPTER_CONSTANT_COPY = 1,
+  NNADAPTER_CONSTANT_REFERENCE = 2,
+  NNADAPTER_MODEL_INPUT = 3,
+  NNADAPTER_MODEL_OUTPUT = 4,
 } NNAdapterOperandLifetimeCode;
 
 /**
  * Operation codes.
+ *
+ * Available since version 1.
  */
 typedef enum {
   /**
@@ -119,6 +136,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, The result with the same type as two inputs.
+   *
+   * Available since version 1.
    */
   NNADAPTER_ADD = 0,
 
@@ -161,6 +180,8 @@ typedef enum {
    * filter_height) / stride_height + 1)
    *         W_out = ceil((W_in + padding_width_left + padding_width_right -
    * filter_width) / stride_width + 1)
+   *
+   * Available since version 1.
    */
   NNADAPTER_AVERAGE_POOL_2D = 1,
 
@@ -218,6 +239,8 @@ typedef enum {
    *      W_out = (W_in + padding_width_left + padding_width_right -
    * (dilation_width * (filter_width - 1)
    *              + 1)) / stride_width + 1
+   *
+   * Available since version 1.
    */
   NNADAPTER_CONV_2D = 2,
 
@@ -235,6 +258,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, The result with the same type as two inputs.
+   *
+   * Available since version 1.
    */
   NNADAPTER_DIV = 3,
 
@@ -269,6 +294,8 @@ typedef enum {
    * Outputs:
    * * 0: output, A 2-D tensor with shape [batch_size, num_units], and its type
    * is the same as input.
+   *
+   * Available since version 1.
    */
   NNADAPTER_FULLY_CONNECTED = 4,
 
@@ -284,6 +311,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
    */
   NNADAPTER_HARD_SIGMOID = 5,
 
@@ -299,6 +328,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
    */
   NNADAPTER_HARD_SWISH = 6,
 
@@ -341,6 +372,8 @@ typedef enum {
    * filter_height) / stride_height + 1)
    *         W_out = ceil((W_in + padding_width_left + padding_width_right -
    * filter_width) / stride_width + 1)
+   *
+   * Available since version 1.
    */
   NNADAPTER_MAX_POOL_2D = 7,
 
@@ -358,6 +391,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, The result with the same type as two inputs.
+   *
+   * Available since version 1.
    */
   NNADAPTER_MUL = 8,
 
@@ -373,6 +408,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
    */
   NNADAPTER_RELU = 9,
 
@@ -388,6 +425,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
    */
   NNADAPTER_RELU6 = 10,
 
@@ -403,6 +442,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
    */
   NNADAPTER_SIGMOID = 11,
 
@@ -423,6 +464,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
    */
   NNADAPTER_SOFTMAX = 12,
 
@@ -440,6 +483,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, The result with the same type as two inputs.
+   *
+   * Available since version 1.
    */
   NNADAPTER_SUB = 13,
 
@@ -455,6 +500,8 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
    */
   NNADAPTER_TANH = 14,
 
@@ -474,12 +521,16 @@ typedef enum {
    *
    * Outputs:
    * * 0: output, A tensor with the same type as input.
+   *
+   * Available since version 1.
    */
   NNADAPTER_TRANSPOSE = 15,
 } NNAdapterOperationCode;
 
 /**
  * Fused activation function types.
+ *
+ * Available since version 1.
  */
 typedef enum {
   /** NO fused activation function. */
@@ -494,6 +545,8 @@ typedef enum {
 
 /**
  * Device codes.
+ *
+ * Available since version 1.
  */
 typedef enum {
   NNADAPTER_CPU = 0,
@@ -506,6 +559,8 @@ typedef int32_t NNAdapterDeviceType;
 /**
  * The quantization parameters for NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER
  * operand.
+ *
+ * Available since version 1.
  */
 typedef struct NNAdapterSymmPerLayerQuantParams {
   float scale;
@@ -514,6 +569,8 @@ typedef struct NNAdapterSymmPerLayerQuantParams {
 /**
  * The quantization parameters for NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL
  * operand.
+ *
+ * Available since version 1.
  */
 typedef struct NNAdapterSymmPerChannelQuantParams {
   uint32_t channel_dim;
@@ -524,6 +581,8 @@ typedef struct NNAdapterSymmPerChannelQuantParams {
 /**
  * The quantization parameters for NNADAPTER_TENSOR_QUANT_INT8_ASYMM_PER_LAYER
  * operand.
+ *
+ * Available since version 1.
  */
 typedef struct NNAdapterAsymmPerLayerQuantParams {
   float scale;
@@ -532,6 +591,8 @@ typedef struct NNAdapterAsymmPerLayerQuantParams {
 
 /**
  * The type of an operand, include both scalars and tensors.
+ *
+ * Available since version 1.
  */
 typedef struct NNAdapterOperandType {
   /**
@@ -575,10 +636,45 @@ typedef struct NNAdapterOperandType {
 
 typedef int32_t NNAdapterOperationType;
 
+/**
+ * An opaque type for Device.
+ *
+ * Available since version 1.
+ */
 typedef struct NNAdapterDevice NNAdapterDevice;
+/**
+ * An opaque type for Context(multiple-devices).
+ *
+ * Available since version 1.
+ */
 typedef struct NNAdapterContext NNAdapterContext;
+/**
+ * An opaque type for Operand.
+ *
+ * Available since version 1.
+ */
 typedef struct NNAdapterOperand NNAdapterOperand;
+/**
+ * An opaque type for Operation.
+ *
+ * Available since version 1.
+ */
 typedef struct NNAdapterOperation NNAdapterOperation;
+/**
+ * An opaque type for Model.
+ *
+ * Available since version 1.
+ */
 typedef struct NNAdapterModel NNAdapterModel;
+/**
+ * An opaque type for Compilation.
+ *
+ * Available since version 1.
+ */
 typedef struct NNAdapterCompilation NNAdapterCompilation;
+/**
+ * An opaque type for Execution.
+ *
+ * Available since version 1.
+ */
 typedef struct NNAdapterExecution NNAdapterExecution;

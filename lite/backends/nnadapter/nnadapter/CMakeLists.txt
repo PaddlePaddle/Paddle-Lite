@@ -19,8 +19,10 @@ set(NNADAPTER_DRIVER_PREFIX nnadapter_driver)
 add_definitions(-DNNADAPTER_DRIVER_PREFIX=${NNADAPTER_DRIVER_PREFIX})
 
 add_library(nnadapter_logging STATIC nnadapter_logging.cc)
+add_library(nnadapter_common STATIC nnadapter_common.cc)
 add_library(nnadapter_driver STATIC nnadapter_driver.cc)
+add_library(nnadapter_optimizer STATIC nnadapter_optimizer.cc)
 add_library(nnadapter SHARED nnadapter_api.cc nnadapter_runtime.cc)
-target_link_libraries(nnadapter nnadapter_logging nnadapter_driver)
+target_link_libraries(nnadapter "-Wl,--start-group" nnadapter_logging nnadapter_common nnadapter_driver nnadapter_optimizer "-Wl,--end-group")
 
 add_subdirectory(drivers)

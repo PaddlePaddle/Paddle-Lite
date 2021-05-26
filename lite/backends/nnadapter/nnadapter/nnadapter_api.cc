@@ -22,6 +22,24 @@
 extern "C" {
 #endif
 
+NNADAPTER_EXPORT int NNAdapter_getVersion(uint32_t* version) {
+  if (!version) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  *version = NNADAPTER_VERSION;
+  return NNADAPTER_NO_ERROR;
+}
+
+NNADAPTER_EXPORT int NNAdapter_getDeviceCount(uint32_t* numDevices) {
+  if (!numDevices) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  // TODO(hong19860320) Find all driver libraries and register them to
+  // DeviceManager.
+  NNADAPTER_LOG(ERROR) << "Unsupported.";
+  return NNADAPTER_NO_ERROR;
+}
+
 NNADAPTER_EXPORT int NNAdapterDevice_acquire(const char* name,
                                              NNAdapterDevice** device) {
   if (!name || !device) {
@@ -89,9 +107,9 @@ NNADAPTER_EXPORT int NNAdapterDevice_getVersion(const NNAdapterDevice* device,
   return NNADAPTER_NO_ERROR;
 }
 
-int NNAdapterContext_create(NNAdapterDevice** devices,
-                            uint32_t num_devices,
-                            NNAdapterContext** context) {
+NNADAPTER_EXPORT int NNAdapterContext_create(NNAdapterDevice** devices,
+                                             uint32_t num_devices,
+                                             NNAdapterContext** context) {
   if (!devices || !num_devices || !context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -108,7 +126,7 @@ int NNAdapterContext_create(NNAdapterDevice** devices,
   return NNADAPTER_NO_ERROR;
 }
 
-void NNAdapterContext_destroy(NNAdapterContext* context) {
+NNADAPTER_EXPORT void NNAdapterContext_destroy(NNAdapterContext* context) {
   if (!context) {
     auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
     delete x;
@@ -158,9 +176,8 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperand(NNAdapterModel* model,
   return result;
 }
 
-NNADAPTER_EXPORT int NNAdapterModel_setOperand(NNAdapterOperand* operand,
-                                               void* buffer,
-                                               uint32_t length) {
+NNADAPTER_EXPORT int NNAdapterModel_setOperandCopyFrom(
+    NNAdapterOperand* operand, void* buffer, uint32_t length) {
   if (!operand || !buffer || !length) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -169,8 +186,18 @@ NNADAPTER_EXPORT int NNAdapterModel_setOperand(NNAdapterOperand* operand,
   if (!o->buffer) return NNADAPTER_OUT_OF_MEMORY;
   memcpy(o->buffer, buffer, length);
   o->length = length;
-  o->type.lifetime = NNADAPTER_CONSTANT;
-  return NNADAPTER_NO_ERROR;
+  o->type.lifetime = NNADAPTER_CONSTANT_COPY;
+}
+
+NNADAPTER_EXPORT int NNAdapterModel_setOperandReferenceTo(
+    NNAdapterOperand* operand, void* buffer, uint32_t length) {
+  if (!operand || !buffer || !length) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto o = reinterpret_cast<nnadapter::driver::Operand*>(operand);
+  o->buffer = buffer;
+  o->length = length;
+  o->type.lifetime = NNADAPTER_CONSTANT_REFERENCE;
 }
 
 NNADAPTER_EXPORT int NNAdapterModel_addOperation(
@@ -267,7 +294,7 @@ NNADAPTER_EXPORT int NNAdapterCompilation_finish(
   return c->Finish();
 }
 
-int NNAdapterCompilation_queryInputsAndOutputs(
+NNADAPTER_EXPORT int NNAdapterCompilation_queryInputsAndOutputs(
     NNAdapterCompilation* compilation,
     uint32_t* input_count,
     NNAdapterOperandType** input_types,

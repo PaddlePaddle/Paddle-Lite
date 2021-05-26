@@ -105,39 +105,44 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int32_type.dimension_count = 0;
 
   auto padding_width_left_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(
-      padding_width_left_operand, &paddings[0], sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      padding_width_left_operand, &paddings[2], sizeof(int32_t));
 
   auto padding_width_right_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(
-      padding_width_right_operand, &paddings[1], sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      padding_width_right_operand, &paddings[3], sizeof(int32_t));
 
   auto padding_height_top_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(
-      padding_height_top_operand, &paddings[2], sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      padding_height_top_operand, &paddings[0], sizeof(int32_t));
 
   auto padding_height_bottom_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(
-      padding_height_bottom_operand, &paddings[3], sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      padding_height_bottom_operand, &paddings[1], sizeof(int32_t));
 
   auto stride_width_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(stride_width_operand, &strides[0], sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      stride_width_operand, &strides[1], sizeof(int32_t));
 
   auto stride_height_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(stride_height_operand, &strides[1], sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      stride_height_operand, &strides[0], sizeof(int32_t));
 
   auto filter_width_operand = converter->AddOperand(&int32_type);
   int32_t filter_width = global_pooling ? x_dims[3] : ksize[1];
-  converter->SetOperand(filter_width_operand, &filter_width, sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      filter_width_operand, &filter_width, sizeof(int32_t));
 
   auto filter_height_operand = converter->AddOperand(&int32_type);
   int32_t filter_height = global_pooling ? x_dims[2] : ksize[0];
-  converter->SetOperand(filter_height_operand, &filter_height, sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      filter_height_operand, &filter_height, sizeof(int32_t));
 
   // Fuse code operand
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   auto fuse_code_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(fuse_code_operand, &fuse_code_value, sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      fuse_code_operand, &fuse_code_value, sizeof(int32_t));
 
   NNAdapterOperandType bool8_type;
   memset(&bool8_type, 0, sizeof(NNAdapterOperandType));
@@ -145,11 +150,11 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   bool8_type.dimension_count = 0;
 
   auto ceil_mode_operand = converter->AddOperand(&bool8_type);
-  converter->SetOperand(ceil_mode_operand, &ceil_mode, sizeof(int8_t));
+  converter->SetOperandCopyFrom(ceil_mode_operand, &ceil_mode, sizeof(int8_t));
 
   int8_t count_include_pad = exclusive ? 0 : 1;
   auto count_include_pad_operand = converter->AddOperand(&bool8_type);
-  converter->SetOperand(
+  converter->SetOperandCopyFrom(
       count_include_pad_operand, &count_include_pad, sizeof(int8_t));
 
   // Output operand

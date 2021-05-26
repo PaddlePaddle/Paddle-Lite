@@ -54,23 +54,24 @@ bool NeuronAdapterWrapper::Initialize() {
       found_path = candidate_path;
       break;
     }
-    VLOG(4) << "Failed to load the Neuron Adapter library from "
-            << candidate_path << "," << std::string(dlerror());
+    NNADAPTER_VLOG(4) << "Failed to load the Neuron Adapter library from "
+                      << candidate_path << "," << std::string(dlerror());
   }
   if (!library_) {
     return false;
   }
-  VLOG(4) << "The Neuron Adapter library " << found_path << " is loaded.";
+  NNADAPTER_VLOG(4) << "The Neuron Adapter library " << found_path
+                    << " is loaded.";
 
-#define NEURON_ADAPTER_LOAD_FUNCTION(name)                          \
-  do {                                                              \
-    name = (name##_fn)dlsym(library_, #name);                       \
-    if (name == nullptr) {                                          \
-      LOG(WARNING) << "Cannot find the symbol " << #name << " in "  \
-                   << found_path << ". " << std::string(dlerror()); \
-      return false;                                                 \
-    }                                                               \
-    VLOG(4) << #name << " is loaded.";                              \
+#define NEURON_ADAPTER_LOAD_FUNCTION(name)                                    \
+  do {                                                                        \
+    name = (name##_fn)dlsym(library_, #name);                                 \
+    if (name == nullptr) {                                                    \
+      NNADAPTER_LOG(WARNING) << "Cannot find the symbol " << #name << " in "  \
+                             << found_path << ". " << std::string(dlerror()); \
+      return false;                                                           \
+    }                                                                         \
+    NNADAPTER_VLOG(4) << #name << " is loaded.";                              \
   } while (false);
 
   NEURON_ADAPTER_LOAD_FUNCTION(Neuron_getVersion)
@@ -102,7 +103,7 @@ bool NeuronAdapterWrapper::Initialize() {
   NEURON_ADAPTER_LOAD_FUNCTION(Neuron_getDevice)
   NEURON_ADAPTER_LOAD_FUNCTION(NeuronDevice_getName)
 #undef NEURON_ADAPTER_LOAD_FUNCTION
-  VLOG(4) << "Extract all of symbols from " << found_path << " done.";
+  NNADAPTER_VLOG(4) << "Extract all of symbols from " << found_path << " done.";
   return true;
 }
 

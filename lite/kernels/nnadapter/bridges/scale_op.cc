@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
@@ -83,12 +84,13 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       NNAdapterOperandType scale_type;
       memset(&scale_type, 0, sizeof(NNAdapterOperandType));
       scale_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-      scale_type.symm_per_layer_params.scale = scale;
+      scale_type.symm_per_layer_params.scale = fabs(scale);
       scale_type.dimension_count = 1;
       scale_type.dimensions[0] = 1;
       auto scale_operand = converter->AddOperand(&scale_type);
-      int8_t quant_scale_data = 1;
-      converter->SetOperand(scale_operand, &quant_scale_data, sizeof(int8_t));
+      int8_t quant_scale_data = scale > 0.0f ? 1 : -1;
+      converter->SetOperandCopyFrom(
+          scale_operand, &quant_scale_data, sizeof(int8_t));
 
       // Immediate operand for input*scale
       NNAdapterOperand* immediate_operand = output_operand;
@@ -96,7 +98,7 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         NNAdapterOperandType immediate_type;
         memset(&immediate_type, 0, sizeof(NNAdapterOperandType));
         immediate_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-        immediate_type.symm_per_layer_params.scale = x_scale * scale;
+        immediate_type.symm_per_layer_params.scale = x_scale * fabs(scale);
         ConvertDimensions(
             x_dims, immediate_type.dimensions, &immediate_type.dimension_count);
         immediate_operand = converter->AddOperand(&immediate_type);
@@ -116,12 +118,13 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       NNAdapterOperandType bias_type;
       memset(&bias_type, 0, sizeof(NNAdapterOperandType));
       bias_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-      bias_type.symm_per_layer_params.scale = bias;
+      bias_type.symm_per_layer_params.scale = fabs(bias);
       bias_type.dimension_count = 1;
       bias_type.dimensions[0] = 1;
       auto bias_operand = converter->AddOperand(&bias_type);
-      int8_t quant_bias_data = 1;
-      converter->SetOperand(bias_operand, &quant_bias_data, sizeof(int8_t));
+      int8_t quant_bias_data = bias > 0.0f ? 1 : -1;
+      converter->SetOperandCopyFrom(
+          bias_operand, &quant_bias_data, sizeof(int8_t));
 
       // Add operation for input+bias or input*scale+bias
       std::vector<NNAdapterOperand*> input_operands = {input_operand,

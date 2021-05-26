@@ -56,6 +56,12 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(5) << "input dims: " << input_dims << " w dims: " << w_dims
           << " out_dims: " << out_dims << " M: " << M << " K: " << K
           << " N: " << N;
+  std::string activation_type;
+  if (op_info->HasAttr("activation_type")) {
+    activation_type = op_info->GetAttr<std::string>("activation_type");
+  }
+  CHECK(activation_type.empty()) << "Unsupport activation_type "
+                                 << activation_type << " is found.";
 
   // Input operand
   CHECK(op_info->HasInputScale(input_scale_name, true));
@@ -76,15 +82,15 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Weight operand
   CHECK(op_info->HasInputScale(w_scale_name, true));
   auto w_scale = op_info->GetInputScale(w_scale_name, true);
-  bool is_perchannel_weight_scales = IsPerChannelScales(w_scale);
-  VLOG(5) << "is_perchannel_weight_scales: " << is_perchannel_weight_scales;
+  bool is_per_channel = IsPerChannelScales(w_scale);
+  VLOG(5) << "is_per_channel: " << is_per_channel;
   NNAdapterOperandType weight_type;
   memset(&weight_type, 0, sizeof(NNAdapterOperandType));
   weight_type.dimension_count = w_dims.size();
   // Transpose to [k, n] to [n, k]
   weight_type.dimensions[0] = static_cast<int32_t>(w_dims[1]);
   weight_type.dimensions[1] = static_cast<int32_t>(w_dims[0]);
-  if (is_perchannel_weight_scales) {
+  if (is_per_channel) {
     // Per channel
     weight_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
     weight_type.symm_per_channel_params.scales = &w_scale[0];
@@ -99,9 +105,9 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto w_data = w->mutable_data<int8_t>();
   std::vector<int8_t> transpose_weight_data(w_dims.production(), 0);
   Transpose(w_data, &transpose_weight_data[0], {1, 0}, w_dims.Vectorize());
-  converter->SetOperand(weight_operand,
-                        &transpose_weight_data[0],
-                        sizeof(int8_t) * transpose_weight_data.size());
+  converter->SetOperandCopyFrom(weight_operand,
+                                &transpose_weight_data[0],
+                                sizeof(int8_t) * transpose_weight_data.size());
 
   // Bias
   NNAdapterOperandType bias_type;
@@ -110,7 +116,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < w_scale.size(); i++) {
     bias_scale[i] = input_scale * w_scale[i];
   }
-  if (is_perchannel_weight_scales) {
+  if (is_per_channel) {
     // Per channel
     bias_type.precision = NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
     bias_type.symm_per_channel_params.scales = &bias_scale[0];
@@ -134,9 +140,9 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     Quantize(bias_data, N, bias_scale, &quant_bias_data[0]);
   }
   auto bias_operand = converter->AddOperand(&bias_type, bias_name);
-  converter->SetOperand(bias_operand,
-                        &quant_bias_data[0],
-                        sizeof(int32_t) * quant_bias_data.size());
+  converter->SetOperandCopyFrom(bias_operand,
+                                &quant_bias_data[0],
+                                sizeof(int32_t) * quant_bias_data.size());
 
   // Fuse code operand
   NNAdapterOperandType int32_type;
@@ -146,7 +152,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   auto fuse_code_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(fuse_code_operand, &fuse_code_value, sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      fuse_code_operand, &fuse_code_value, sizeof(int32_t));
 
   // Output operand
   CHECK(op_info->HasOutputScale(out_scale_name, true));

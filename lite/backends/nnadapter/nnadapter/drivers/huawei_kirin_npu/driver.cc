@@ -14,6 +14,7 @@
 
 #include <map>
 #include <vector>
+#include "../../nnadapter_common.h"   // NOLINT
 #include "../../nnadapter_driver.h"   // NOLINT
 #include "../../nnadapter_logging.h"  // NOLINT
 

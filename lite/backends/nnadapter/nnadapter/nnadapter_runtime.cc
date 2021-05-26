@@ -16,6 +16,7 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <string.h>
+#include "nnadapter_common.h"   // NOLINT
 #include "nnadapter_logging.h"  // NOLINT
 
 namespace nnadapter {
@@ -96,7 +97,7 @@ std::pair<void*, Device*> Context::GetFirstDevice() {
 
 Model::~Model() {
   for (auto& operand : model_.operands) {
-    if (operand.type.lifetime == NNADAPTER_CONSTANT && operand.buffer) {
+    if (operand.type.lifetime == NNADAPTER_CONSTANT_COPY && operand.buffer) {
       free(operand.buffer);
     }
     if ((operand.type.precision ==
@@ -111,8 +112,7 @@ Model::~Model() {
 
 int Model::AddOperand(const NNAdapterOperandType& type,
                       driver::Operand** operand) {
-  model_.operands.emplace_back();
-  *operand = &model_.operands.back();
+  *operand = driver::AddOperand(&model_);
   memcpy(&(*operand)->type, &type, sizeof(NNAdapterOperandType));
   if (type.precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
       type.precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL) {
@@ -129,8 +129,7 @@ int Model::AddOperand(const NNAdapterOperandType& type,
 
 int Model::AddOperation(NNAdapterOperationType type,
                         driver::Operation** operation) {
-  model_.operations.emplace_back();
-  *operation = &model_.operations.back();
+  *operation = driver::AddOperation(&model_);
   (*operation)->type = type;
   return NNADAPTER_NO_ERROR;
 }
@@ -195,8 +194,12 @@ int Compilation::Finish() {
   completed_ = true;
   auto first_device = context_->GetFirstDevice();
   // TODO(hong19860320) Support the task partition for multi-devices
-  return first_device.second->CreateProgram(
+  NNADAPTER_VLOG(5) << "origin model:\n" << driver::Visualize(&model_->model_);
+  int result = first_device.second->CreateProgram(
       first_device.first, &model_->model_, &cache_, &program_);
+  NNADAPTER_VLOG(5) << "optimized model:\n"
+                    << driver::Visualize(&model_->model_);
+  return result;
 }
 
 int Compilation::QueryInputsAndOutputs(uint32_t* input_count,

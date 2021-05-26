@@ -52,12 +52,17 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                       : "";
   // Check whether the two dimensions are compatiable(Numpy-style broadcasting
   // https://numpy.org/doc/stable/user/basics.broadcasting.html).
-  for (size_t i = axis; i < x_dims.size(); i++) {
-    if (x_dims[i] != y_dims[i - axis]) {
-      if (y_dims[i - axis] != 1) {
-        LOG(WARNING) << "Incompatible broadcasting at " << i << " with axis "
-                     << axis << ":" << y_dims[i - axis];
+  // Fill the dimension of Y with 1
+  std::vector<int64_t> y_shape(x_dims.size(), 1);
+  for (int i = axis; i < x_dims.size(); i++) {
+    if (i < axis + y_dims.size()) {
+      if (x_dims[i] != y_dims[i - axis]) {
+        LOG(ERROR) << "Incompatible broadcasting at " << i << " with axis "
+                   << axis << ", expect " << x_dims[i] << " but received "
+                   << y_dims[i - axis] << ".";
         return FAILED;
+      } else {
+        y_shape[i] = x_dims[i];
       }
     }
   }
@@ -90,7 +95,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     input1_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
     input1_type.symm_per_layer_params.scale = y_scale;
     ConvertDimensions(
-        y_dims, input1_type.dimensions, &input1_type.dimension_count);
+        y_shape, input1_type.dimensions, &input1_type.dimension_count);
     input1_operand = converter->AddOperand(&input1_type, y_name);
   }
 
@@ -112,7 +117,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     return FAILED;
   }
   auto fuse_code_operand = converter->AddOperand(&int32_type);
-  converter->SetOperand(fuse_code_operand, &fuse_code_value, sizeof(int32_t));
+  converter->SetOperandCopyFrom(
+      fuse_code_operand, &fuse_code_value, sizeof(int32_t));
 
   // Output operand
   CHECK(op_info->HasOutputScale(out_scale_name, true));

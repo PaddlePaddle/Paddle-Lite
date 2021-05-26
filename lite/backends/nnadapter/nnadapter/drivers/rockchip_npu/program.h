@@ -48,7 +48,8 @@ class Program {
 
  private:
   Context* context_{nullptr};
-  std::map<driver::Operand*, std::shared_ptr<rk::nn::Tensor>> nodes_;
+  // NNAdapter operand to rknn tensor
+  std::map<driver::Operand*, std::shared_ptr<rk::nn::Tensor>> tensors_;
   rk::nn::Graph* graph_{nullptr};
   rk::nn::Exection* execution_{nullptr};
   std::vector<rk::nn::InputInfo> input_info_;

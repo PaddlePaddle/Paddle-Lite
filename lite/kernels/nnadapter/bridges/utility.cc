@@ -133,7 +133,27 @@ std::vector<int32_t> ConvertDimensions(const DDim& input_dimensions) {
   return output_dimensions;
 }
 
+std::vector<int32_t> ConvertDimensions(
+    const std::vector<int64_t>& input_dimensions) {
+  std::vector<int32_t> output_dimensions(input_dimensions.size());
+  for (size_t i = 0; i < input_dimensions.size(); i++) {
+    output_dimensions[i] = static_cast<int32_t>(input_dimensions[i]);
+  }
+  return output_dimensions;
+}
+
 void ConvertDimensions(const DDim& input_dimensions,
+                       int32_t* output_dimensions,
+                       uint32_t* output_dimension_count) {
+  CHECK(output_dimensions);
+  CHECK(output_dimension_count);
+  *output_dimension_count = input_dimensions.size();
+  for (size_t i = 0; i < input_dimensions.size(); i++) {
+    output_dimensions[i] = static_cast<int32_t>(input_dimensions[i]);
+  }
+}
+
+void ConvertDimensions(const std::vector<int64_t>& input_dimensions,
                        int32_t* output_dimensions,
                        uint32_t* output_dimension_count) {
   CHECK(output_dimensions);
@@ -163,6 +183,7 @@ PrecisionType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
     case NNADAPTER_TENSOR_INT8:
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
       output_precision = PRECISION(kInt8);
       break;
     case NNADAPTER_TENSOR_INT16:
@@ -171,6 +192,7 @@ PrecisionType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
     case NNADAPTER_TENSOR_INT32:
     case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
     case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
       output_precision = PRECISION(kInt32);
       break;
     case NNADAPTER_TENSOR_INT64:

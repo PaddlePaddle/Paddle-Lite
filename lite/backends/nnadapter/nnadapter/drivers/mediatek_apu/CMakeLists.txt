@@ -20,9 +20,9 @@ add_definitions(-DNNADAPTER_DRIVER_TARGET=${NNADAPTER_DRIVER_TARGET})
 
 include(dependencies.cmake)
 
-set(NNADAPTER_DRIVER_SRCS driver.cc context.cc program.cc utility.cc)
-set(NNADAPTER_DRIVER_DEPS nnadapter_logging nnadapter_driver)
+set(NNADAPTER_DRIVER_SRCS neuron_adapter_wrapper.cc context.cc utility.cc driver.cc program.cc)
+set(NNADAPTER_DRIVER_DEPS nnadapter_logging nnadapter_common nnadapter_driver nnadapter_optimizer ${${NNADAPTER_DRIVER_NAME}_deps})
 
 add_library(${NNADAPTER_DRIVER_TARGET} SHARED ${NNADAPTER_DRIVER_SRCS})
-target_link_libraries(${NNADAPTER_DRIVER_TARGET} ${NNADAPTER_DRIVER_DEPS})
+target_link_libraries(${NNADAPTER_DRIVER_TARGET} "-Wl,--start-group" ${NNADAPTER_DRIVER_DEPS} "-Wl,--end-group")
 set(nnadapter_drivers ${nnadapter_drivers} ${NNADAPTER_DRIVER_TARGET} CACHE INTERNAL "")
