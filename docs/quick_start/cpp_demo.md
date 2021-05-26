@@ -25,7 +25,7 @@
 
 | Arch  |with_extra|arm_stl|with_cv|下载|
 |:-------:|:-----:|:-----:|:-----:|:-------:|
-|armv8|OFF|c++_static|OFF|[2.9-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
+|armv8|OFF|c++_static|OFF|[2.9](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
 
 **解压后内容结构如下：**
 
