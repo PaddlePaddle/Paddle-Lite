@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vector>
-
-#include "lite/backends/opencl/cl_half.h"
-#include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/replace_stl/stream.h"
-#include "lite/utils/string.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
-#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -109,6 +101,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                   out_image_shape["width"],
                                   out_image_shape["height"],
                                   nullptr);
+
       auto& context = ctx_->As<OpenCLContext>();
       CHECK(context.cl_context() != nullptr);
 
@@ -119,13 +112,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       std::vector<int> strides = param.strides;
       std::vector<int> ksize = param.ksize;
 
-#ifdef LITE_WITH_LOG
-      VLOG(4) << "global_pooling: " << global_pooling;
-      VLOG(4) << "pooling_type: " << pooling_type;
-      VLOG(4) << "paddings : " << paddings[0] << "  " << paddings[1] << "  "
-              << paddings[2] << "  " << paddings[3] << "  ";
-#endif
-
       if (global_pooling) {
         for (size_t i = 0; i < ksize.size(); ++i) {
           paddings[2 * i] = 0;
@@ -133,21 +119,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
           ksize[i] = static_cast<int>(in_dims[i + 2]);
         }
       }
-
-#ifdef LITE_WITH_LOG
-      VLOG(4) << "in_dims : [" << in_dims.size() << "]" << in_dims[0] << "  "
-              << in_dims[1] << "  " << in_dims[2] << "  " << in_dims[3];
-      VLOG(4) << "out_dims : [" << out_dims.size() << "]" << out_dims[0] << "  "
-              << out_dims[1] << "  " << out_dims[2] << "  " << out_dims[3];
-      VLOG(4) << "paddings fixed : " << paddings[0] << "  " << paddings[1]
-              << "  " << paddings[2] << "  " << paddings[3] << "  ";
-      VLOG(4) << "strides : [" << strides.size() << "]" << strides[0] << "  "
-              << strides[1];
-      VLOG(4) << "ksize : [" << ksize.size() << "]" << ksize[0] << "  "
-              << ksize[1] << "  " << ksize[2] << "  " << ksize[3];
-      VLOG(4) << "paddings : [" << paddings.size() << "]" << paddings[0] << "  "
-              << paddings[1] << "  " << paddings[2] << "  " << paddings[3];
-#endif
 
       bool pads_equal = ((abs(paddings[0] - paddings[1]) < 2) &&
                          (abs(paddings[2] - paddings[3]) < 2));
@@ -163,7 +134,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
           (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
               ? sizeof(uint16_t)
               : sizeof(float);
-      if (param.global_pooling && param.pooling_type == "avg") {
+      if (global_pooling && pooling_type == "avg") {
         type_size = sizeof(float);
       }
       uint32_t local_mem_size =
@@ -194,27 +165,19 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         workgroup_w_size >>= 1;
         workgroup_h_size = workgroup_size / workgroup_w_size;
 
-        global_work_size_ =
-            cl::NDRange{static_cast<cl::size_type>(out_c_blks * workgroup_size),
-                        static_cast<cl::size_type>(out_dims[3]),
-                        static_cast<cl::size_type>(out_dims[0] * out_dims[2])};
-        local_work_size_ =
-            cl::NDRange{static_cast<cl::size_type>(workgroup_size), 1, 1};
-        LOG(INFO) << "GWS: " << global_work_size_[0] << ", "
-                  << global_work_size_[1] << ", " << global_work_size_[2];
-        LOG(INFO) << "LWS: " << local_work_size_[0] << ", "
-                  << local_work_size_[1] << ", " << local_work_size_[2];
+        global_work_size_ = cl::NDRange(out_c_blks * workgroup_size,
+                                        (out_dims[3]),
+                                        (out_dims[0] * out_dims[2]));
+        local_work_size_ = cl::NDRange(workgroup_size, 1, 1);
 
-        int local_block_size_shape[2] = {workgroup_w_size, workgroup_h_size};
-        int local_block_count_shape[2] = {UP_DIV(ksize[0], workgroup_w_size),
-                                          UP_DIV(ksize[1], workgroup_h_size)};
+        cl_int2 local_block_size_shape = {workgroup_w_size, workgroup_h_size};
+        cl_int2 local_block_count_shape = {UP_DIV(ksize[0], workgroup_w_size),
+                                           UP_DIV(ksize[1], workgroup_h_size)};
 
         int idx = 12;
-        kernel_.setArg(idx++, static_cast<int32_t>(workgroup_size));
-        kernel_.setArg(
-            idx++, sizeof(local_block_size_shape), local_block_size_shape);
-        kernel_.setArg(
-            idx++, sizeof(local_block_count_shape), local_block_count_shape);
+        kernel_.setArg(idx++, static_cast<int>(workgroup_size));
+        kernel_.setArg(idx++, local_block_size_shape);
+        kernel_.setArg(idx++, local_block_count_shape);
         kernel_.setArg(idx++, workgroup_size * 4 * type_size, nullptr);
       } else {
         global_work_size_ =
@@ -222,34 +185,43 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         local_work_size_ = cl::NullRange;
       }
 
-#ifdef LITE_WITH_LOG
-      VLOG(4) << "global_work_size_ : [" << 3 << "]"
-              << static_cast<int>(global_work_size_[0]) << "  "
-              << static_cast<int>(global_work_size_[1]) << "  "
-              << static_cast<int>(global_work_size_[2]) << "  ";
-#endif
       cl_int status;
       int arg_idx = 2;
-      status = kernel_.setArg(arg_idx, static_cast<const int>(in_dims[2]));
+      status = kernel_.setArg(arg_idx++, static_cast<int>(in_dims[2]));
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(++arg_idx, static_cast<const int>(in_dims[3]));
+      status = kernel_.setArg(arg_idx++, static_cast<int>(in_dims[3]));
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(++arg_idx, static_cast<const int>(out_dims[2]));
+      status = kernel_.setArg(arg_idx++, static_cast<int>(out_dims[2]));
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(++arg_idx, static_cast<const int>(out_dims[3]));
+      status = kernel_.setArg(arg_idx++, static_cast<int>(out_dims[3]));
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(++arg_idx, static_cast<const int>(ksize[0]));
+      status = kernel_.setArg(arg_idx++, ksize[0]);
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(++arg_idx, static_cast<const int>(ksize[1]));
+      status = kernel_.setArg(arg_idx++, ksize[1]);
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(++arg_idx, static_cast<const int>(strides[0]));
+      status = kernel_.setArg(arg_idx++, strides[0]);
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(++arg_idx, static_cast<const int>(strides[1]));
+      status = kernel_.setArg(arg_idx++, strides[1]);
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(++arg_idx, static_cast<const int>(paddings[2]));
+      status = kernel_.setArg(arg_idx++, paddings[2]);
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(++arg_idx, static_cast<const int>(paddings[0]));
+      status = kernel_.setArg(arg_idx++, paddings[0]);
       CL_CHECK_FATAL(status);
+
+#ifdef LITE_WITH_LOG
+      VLOG(4) << "in_dims: " << in_dims;
+      VLOG(4) << "out_dims: " << out_dims;
+      VLOG(4) << "global_pooling: " << global_pooling;
+      VLOG(4) << "pooling_type: " << pooling_type;
+      VLOG(4) << "strides: " << strides[0] << "  " << strides[1];
+      VLOG(4) << "ksize: " << ksize[0] << "  " << ksize[1] << "  " << ksize[2]
+              << "  " << ksize[3];
+      VLOG(4) << "paddings: " << paddings[0] << "  " << paddings[1] << "  "
+              << paddings[2] << "  " << paddings[3];
+      VLOG(4) << "global_work_size: " << static_cast<int>(global_work_size_[0])
+              << "  " << static_cast<int>(global_work_size_[1]) << "  "
+              << static_cast<int>(global_work_size_[2]);
+#endif
     }
   }
 
@@ -264,16 +236,13 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel_.setArg(arg_idx++, *out_img_);
     CL_CHECK_FATAL(status);
 
-    cl::Event myevent;
     status = EnqueueNDRangeKernel(context,
                                   kernel_,
                                   cl::NullRange,
                                   global_work_size_,
                                   local_work_size_,
                                   nullptr,
-                                  myevent);
-    float time = CLRuntime::Global()->GetCommandTime(myevent);
-    LOG(INFO) << "POOL TIME: " << time;
+                                  event_);
     CL_CHECK_FATAL(status);
   }
 

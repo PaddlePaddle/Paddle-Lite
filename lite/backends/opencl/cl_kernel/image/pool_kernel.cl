@@ -16,17 +16,17 @@ limitations under the License. */
 
 
 __kernel void pool(__read_only image2d_t input,
-                              __write_only image2d_t output,
-                              __private const int in_height,
-                              __private const int in_width,
-                              __private const int out_height,
-                              __private const int out_width,
-                              __private const int ksize_h,
-                              __private const int ksize_w,
-                              __private const int stride_h,
-                              __private const int stride_w,
-                              __private const int pad_top,
-                              __private const int pad_left) {
+                   __write_only image2d_t output,
+                   __private const int in_height,
+                   __private const int in_width,
+                   __private const int out_height,
+                   __private const int out_width,
+                   __private const int ksize_h,
+                   __private const int ksize_w,
+                   __private const int stride_h,
+                   __private const int stride_w,
+                   __private const int pad_top,
+                   __private const int pad_left) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -94,21 +94,21 @@ __kernel void pool(__read_only image2d_t input,
 }
 
 __kernel void pool_local(__read_only image2d_t input,
-                              __write_only image2d_t output,
-                              __private const int in_height,
-                              __private const int in_width,
-                              __private const int out_height,
-                              __private const int out_width,
-                              __private const int ksize_h,
-                              __private const int ksize_w,
-                              __private const int stride_h,
-                              __private const int stride_w,
-                              __private const int pad_top,
-                              __private const int pad_left,
-    __private const int local_block_size,
-    __private const int2 local_block_size_wh, /* 16, 49 */
-    __private const int2 local_block_count_wh, /* 2, 1 */
-    __local CL_DTYPE4* local_output) {
+                         __write_only image2d_t output,
+                         __private const int in_height,
+                         __private const int in_width,
+                         __private const int out_height,
+                         __private const int out_width,
+                         __private const int ksize_h,
+                         __private const int ksize_w,
+                         __private const int stride_h,
+                         __private const int stride_w,
+                         __private const int pad_top,
+                         __private const int pad_left,
+                         __private const int local_block_size,
+                         __private const int2 local_block_size_wh,
+                         __private const int2 local_block_count_wh,
+                         __local CL_DTYPE4* local_output) {
   const int out_c = get_global_id(0) / local_block_size;
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -117,8 +117,8 @@ __kernel void pool_local(__read_only image2d_t input,
   const int out_h = out_nh - mul24(out_h, out_height);
 
   const int local_id = get_local_id(0);
-  const int local_width_id = local_id % local_block_size_wh.x; // [0, 16)
-  const int local_height_id = local_id / local_block_size_wh.x; // [0, 48)
+  const int local_width_id = local_id % local_block_size_wh.x;
+  const int local_height_id = local_id / local_block_size_wh.x;
 
   const int input_start = mul24(out_n, in_height);
   const int input_channel_start = mul24(out_c, in_width);
@@ -135,12 +135,12 @@ __kernel void pool_local(__read_only image2d_t input,
     int pos_w = local_width_id;
     int input_height_idx = input_height_start + pos_h;
     input_height_idx =
-            select(input_start + input_height_idx, -1, (input_height_idx < 0 || input_height_idx >= in_height));
+        select(input_start + input_height_idx, -1, (input_height_idx < 0 || input_height_idx >= in_height));
     for (int local_w_block_id = 0; local_w_block_id < local_block_count_wh.x; local_w_block_id++) {
       if (pos_w >= ksize_w) break;
       int input_width_idx = input_width_start + pos_w;
       input_width_idx =
-                select(input_channel_start + input_width_idx, -1, (input_width_idx < 0 || input_width_idx >= in_width));
+          select(input_channel_start + input_width_idx, -1, (input_width_idx < 0 || input_width_idx >= in_width));
       float4 input_data = read_imagef(input, SAMPLER, (int2)(input_width_idx, input_height_idx));
       avg_output[local_id] += input_data;
       pos_w += local_block_size_wh.x;
@@ -152,14 +152,14 @@ __kernel void pool_local(__read_only image2d_t input,
 
   for (int stride_h = (local_block_size_wh.y >> 1); stride_h > 0; stride_h >>= 1) {
     if (local_height_id < stride_h) {
-        avg_output[local_id] += avg_output[local_id + stride_h * local_block_size_wh.x];
+      avg_output[local_id] += avg_output[local_id + stride_h * local_block_size_wh.x];
     }
     barrier(CLK_LOCAL_MEM_FENCE);
   }
 
   for (int stride_w = (local_block_size_wh.x >> 1); stride_w > 0; stride_w >>= 1) {
     if (local_height_id == 0 && local_width_id < stride_w) {
-        avg_output[local_id] += avg_output[local_id + stride_w];
+      avg_output[local_id] += avg_output[local_id + stride_w];
     }
     barrier(CLK_LOCAL_MEM_FENCE);
   }
