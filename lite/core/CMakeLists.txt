@@ -15,6 +15,9 @@ lite_cc_library (target_wrapper SRCS target_wrapper.cc
 )
 
 lite_cc_library (memory SRCS memory.cc DEPS target_wrapper)
+if (LITE_THREAD_POOL)
+  lite_cc_library(thread_pool SRCS thread_pool.cc)
+endif()
 
 set (tensor_extra_deps "")
 if (LITE_WITH_FPGA)

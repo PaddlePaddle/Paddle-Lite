@@ -21,6 +21,7 @@
 #include "lite/backends/arm/math/packed_sgemm.h"
 #include "lite/backends/arm/math/sgemv.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
 
@@ -125,8 +126,7 @@ void im2col_s1<float>(const float* data_im,
   const int out_channel_size = output_h * output_w;
   const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
   memset(data_col, 0, output_plane_size * channels * sizeof(float));
-#pragma omp parallel for
-  for (int c = 0; c < channels; c++) {
+  LITE_PARALLEL_BEGIN(c, tid, channels) {
     int data_im_z = c * in_channel_size;
     int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
@@ -161,6 +161,7 @@ void im2col_s1<float>(const float* data_im,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -185,8 +186,7 @@ void im2col_s1<int8_t>(const int8_t* data_im,
   const int out_channel_size = output_h * output_w;
   const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
   memset(data_col, 0, output_plane_size * channels * sizeof(int8_t));
-#pragma omp parallel for
-  for (int c = 0; c < channels; c++) {
+  LITE_PARALLEL_BEGIN(c, tid, channels) {
     int data_im_z = c * in_channel_size;
     int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
@@ -225,6 +225,7 @@ void im2col_s1<int8_t>(const int8_t* data_im,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -251,8 +252,7 @@ void im2col_s2<float>(const float* data_im,
   const int out_channel_size = output_h * output_w;
   const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
   memset(data_col, 0, output_plane_size * channels * sizeof(float));
-#pragma omp parallel for
-  for (int c = 0; c < channels; c++) {
+  LITE_PARALLEL_BEGIN(c, tid, channels) {
     int data_im_z = c * in_channel_size;
     int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
@@ -289,6 +289,7 @@ void im2col_s2<float>(const float* data_im,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -315,8 +316,7 @@ void im2col_s2<int8_t>(const int8_t* data_im,
   const int out_channel_size = output_h * output_w;
   const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
   memset(data_col, 0, output_plane_size * channels * sizeof(int8_t));
-#pragma omp parallel for
-  for (int c = 0; c < channels; c++) {
+  LITE_PARALLEL_BEGIN(c, tid, channels) {
     int data_im_z = c * in_channel_size;
     int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
@@ -357,6 +357,7 @@ void im2col_s2<int8_t>(const int8_t* data_im,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 /**

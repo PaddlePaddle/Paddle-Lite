@@ -19,6 +19,7 @@
 #include "lite/backends/arm/math/elementwise_common_broadcast_config.h"
 #include "lite/backends/arm/math/elementwise_naive_impl.h"
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -43,8 +44,9 @@ void elementwise_add<float>(const float* dinx,
                             int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+  // #pragma omp parallel for
+  //   for (int i = 0; i < cnt; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -69,6 +71,7 @@ void elementwise_add<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
