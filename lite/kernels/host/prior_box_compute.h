@@ -19,9 +19,9 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class PriorBoxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class PriorBoxCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::PriorBoxParam;
 
@@ -36,7 +36,7 @@ class PriorBoxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   DDim last_image_shape_;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

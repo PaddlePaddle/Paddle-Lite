@@ -728,24 +728,21 @@ void test_prior_box(Place place) {
 }
 
 TEST(PriorBox, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place(TARGET(kHost));
   test_prior_box(place);
-#endif
 }
 
 TEST(DensityPriorBox, precision) {
-#if defined(LITE_WITH_X86) && !defined(LITE_WITH_XPU)
-  Place place(TARGET(kX86));
-  test_density_prior_box(place);
+  Place place;
+#if defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+
   test_density_prior_box(place);
-#endif
 }
 
 }  // namespace lite
