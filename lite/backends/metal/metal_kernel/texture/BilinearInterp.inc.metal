@@ -43,10 +43,10 @@ kernel void FUNC(bilinear_interp,
     if (h1 >= input.get_height()) {
       h1 = h0;
     }
-    VECTOR(P, 4) r0 = input.read(uint2(w0, h0), gid.z);  // 左下
-    VECTOR(P, 4) r1 = input.read(uint2(w1, h0), gid.z);  // 右下
-    VECTOR(P, 4) r2 = input.read(uint2(w0, h1), gid.z);  // 左上
-    VECTOR(P, 4) r3 = input.read(uint2(w1, h1), gid.z);  // 右上
+    VECTOR(P, 4) r0 = input.read(uint2(w0, h0), gid.z);  // bottom left
+    VECTOR(P, 4) r1 = input.read(uint2(w1, h0), gid.z);  // bottom right
+    VECTOR(P, 4) r2 = input.read(uint2(w0, h1), gid.z);  // top left
+    VECTOR(P, 4) r3 = input.read(uint2(w1, h1), gid.z);  // top right
 
     r = h2lambda * (w2lambda * r0 + w1lambda * r1) +
         h1lambda * (w2lambda * r2 + w1lambda * r3);
