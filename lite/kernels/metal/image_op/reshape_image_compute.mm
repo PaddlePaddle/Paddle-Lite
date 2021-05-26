@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/reshape_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/kernels/metal/image_op/reshape_image_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -23,7 +23,7 @@ namespace kernels {
 namespace metal {
 
 void ReshapeImageCompute::PrepareForRun() {
-    auto& context = ctx_->As<ContextMetal>();
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
@@ -32,7 +32,7 @@ void ReshapeImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     setup_without_mps();
@@ -56,18 +56,19 @@ void ReshapeImageCompute::setup_without_mps() {
     int irank = (int)input_buffer_->tensor_dim_.size();
     int orank = (int)output_buffer_->tensor_dim_.size();
 
-    // CPU上Tensor数据NCHW表示
+    // intput dims: CPU NCHW
     std::vector<int> idm = {1, 1, 1, 1};
     for (int i = 0; i < irank; i++) {
         idm[4 - irank + i] = (int)input_buffer_->tensor_dim_[i];
     }
-    // CPU上NHWC数据表示（CPU上Tensor数据NCHW转换而来）
-    //注意：4维有转换 3维没有转换 与Texture中的desc_逻辑一致
+    // input transpose
+    // attention:  4-dims conversion: Tensor NCHW->NHWC  3-dims isn't converted
+    // the same logic with 'InitTexture' of 'metal_image'
     std::vector<int> it = {0, 2, 3, 1};
     if (input_buffer_->tensor_dim_.size() < 4) {
         it = {0, 1, 2, 3};
     }
-
+    //output dims and transpose
     std::vector<int> odm = {1, 1, 1, 1};
     for (int i = 0; i < orank; i++) {
         odm[4 - orank + i] = (int)(output_buffer_->tensor_dim_[i]);

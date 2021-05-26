@@ -44,8 +44,8 @@
 #endif  // LITE_WITH_XPU
 
 #ifdef LITE_WITH_METAL
-#include "lite/backends/metal/metal_image.h"
 #include "lite/backends/metal/metal_buffer.h"
+#include "lite/backends/metal/metal_image.h"
 #include "lite/backends/metal/target_wrapper.h"
 #endif  // LITE_WITH_METAL
 
@@ -178,32 +178,29 @@ class Buffer {
 
 #ifdef LITE_WITH_METAL
   template <typename T>
-  void ResetLazyMetalImage(TargetType target,
+  void ResetLazyMetalImage(MetalContext* context,
                            const DDim& dim,
-                           std::vector<int> transpose = {0, 2, 3, 1},
-                           void* host_ptr = nullptr) {
-		CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
-		Free();
-		data_ = TargetWrapperMetal::MallocImage<T>(dim, transpose, host_ptr);
-		target_ = target;
-		metal_use_image2d_ = true;
-		space_ = sizeof(T) * dim.production();
-		dim_ = dim;
+                           std::vector<int> transpose = {0, 2, 3, 1}) {
+    CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
+    Free();
+    dim_ = dim;
+    target_ = TARGET(kMetal);
+    metal_use_image2d_ = true;
+    space_ = sizeof(T) * dim.production();
+    data_ = TargetWrapperMetal::MallocImage<T>(context, dim, transpose);
   }
 
   template <typename T>
-  void ResetLazyMetalBuffer(TargetType target,
-														size_t count,
-														METAL_ACCESS_FLAG access) {
-		CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
-		Free();
-		size_t size = count * sizeof(T);
-		data_ = TargetWrapperMetal::MallocBuffer(size, access);
-		target_ = target;
-		metal_use_image2d_ = false;
-		space_ = size;
-		dim_ = DDimLite({static_cast<long long>(count)});
-	}
+  void ResetLazyMetalBuffer(MetalContext* context,
+                            size_t count,
+                            METAL_ACCESS_FLAG access) {
+    CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
+    Free();
+    target_ = TARGET(kMetal);
+    space_ = count * sizeof(T);
+    metal_use_image2d_ = false;
+    dim_ = DDimLite({static_cast<int64_t>(count)});
+  }
 #endif
 
   void Free() {
@@ -213,7 +210,6 @@ class Buffer {
       } else if (cl_use_image2d_) {
         TargetFree(target_, data_, "cl_use_image2d_");
       } else if (metal_use_image2d_) {
-//        TargetFree(target_, data_, "metal_use_image2d_");
       }
     }
     data_ = nullptr;

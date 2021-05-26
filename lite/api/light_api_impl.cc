@@ -46,6 +46,10 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   mode_ = config.power_mode();
   threads_ = config.threads();
 
+#ifdef LITE_WITH_METAL
+  raw_predictor_->ConfigMetalContext(config);
+#endif
+
 #ifdef LITE_WITH_NPU
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration

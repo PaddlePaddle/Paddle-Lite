@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/relu_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/kernels/metal/image_op/relu_image_compute.h"
 
 using namespace std;
 
@@ -25,7 +25,7 @@ namespace kernels {
 namespace metal {
 
 void ReluImageCompute::PrepareForRun() {
-    auto& context = ctx_->As<ContextMetal>();
+    auto &context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
@@ -33,7 +33,7 @@ void ReluImageCompute::PrepareForRun() {
     auto input_dims = param.X->dims();
 #ifdef LITE_WITH_METAL_FULL
 #else
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
 #endif
 
@@ -57,7 +57,7 @@ void ReluImageCompute::Run() {
 }
 
 void Relu6ImageCompute::PrepareForRun() {
-    auto& context = ctx_->As<ContextMetal>();
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
@@ -65,7 +65,7 @@ void Relu6ImageCompute::PrepareForRun() {
     auto input_dims = param.X->dims();
 #ifdef LITE_WITH_METAL_FULL
 #else
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
 #endif
     Relu6MetalParam params{param.hard_swish_threshold};
@@ -91,7 +91,7 @@ void Relu6ImageCompute::Run() {
 }
 
 void LeakyReluImageCompute::PrepareForRun() {
-    auto& context = ctx_->As<ContextMetal>();
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
@@ -99,7 +99,7 @@ void LeakyReluImageCompute::PrepareForRun() {
     auto input_dims = param.X->dims();
 #ifdef LITE_WITH_METAL_FULL
 #else
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
 #endif
     LeakyReluMetalParam params{param.Leaky_relu_alpha};

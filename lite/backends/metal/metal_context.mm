@@ -13,11 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/metal/metal_context.h"
-#include "lite/backends/metal/metal_buffer.h"
-#include "lite/backends/metal/metal_common.h"
 #include "lite/backends/metal/metal_context_imp.h"
-#include "lite/backends/metal/metal_image.h"
-#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -31,6 +27,7 @@ MetalContext::MetalContext() {
 
 MetalContext::~MetalContext() {
     CFRelease(mContext);
+    mContext = nullptr;
 }
 
 void MetalContext::PrepareDevices() {
@@ -52,7 +49,8 @@ void MetalContext::CreateCommandBuffer(RuntimeProgram* program) {
     program_ = program;
 }
 
-void MetalContext::WaitUntilCompleted() {
+void MetalContext::WaitAllCompleted() {
+    [(__bridge MetalContextImp*)mContext waitAllCompleted];
 }
 
 const void* MetalContext::GetDefaultDevice() {
