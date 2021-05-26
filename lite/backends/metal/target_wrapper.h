@@ -29,24 +29,22 @@ using TargetWrapperMetal = TargetWrapper<TARGET(kMetal)>;
 
 template <>
 class TargetWrapper<TARGET(kMetal)> {
- public:
-  template <typename T>
-  static void* MallocImage(MetalContext* context,
-                           const DDim dim,
-                           std::vector<int> transport);
+   public:
+    template <typename T>
+    static void* MallocImage(MetalContext* context, const DDim dim, std::vector<int> transport);
 
-  static void FreeImage(void* image);
+    static void FreeImage(void* image);
 
-  static void* Malloc(size_t size);
+    static void* Malloc(size_t size);
 
-  static void Free(void* ptr);
+    static void Free(void* ptr);
 
-  static void MemcpySync(void* dst,
-                         const void* src,
-                         size_t size,
-                         IoDirection dir = lite::IoDirection::HtoH);
+    static void MemcpySync(void* dst,
+                           const void* src,
+                           size_t size,
+                           IoDirection dir = lite::IoDirection::HtoH);
 
-  static void MemsetSync(void* dst, int value, size_t size);
+    static void MemsetSync(void* dst, int value, size_t size);
 };
 }  // namespace lite
 }  // namespace paddle
