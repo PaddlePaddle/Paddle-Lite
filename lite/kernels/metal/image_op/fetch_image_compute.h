@@ -34,28 +34,27 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class FetchImageCompute : public KernelLite<TARGET(kMetal),
-                                            PRECISION(kFloat),
-                                            DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::FetchParam;
+class FetchImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::FetchParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("fetch", output_buffer_.get());
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput("fetch", output_buffer_.get());
+    };
 
- private:
-  void setup_without_mps();
+   private:
+    void setup_without_mps();
 
-  const MetalImage* input_buffer_;
-  std::shared_ptr<MetalBuffer> output_buffer_;
-  std::shared_ptr<MetalBuffer> params_buffer_;
+    const MetalImage* input_buffer_;
+    std::shared_ptr<MetalBuffer> output_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
 
-  void* pipline_;
-  std::string function_name_;
-  MetalContext* metal_context_;
+    void* pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
 };
 
 }  // namespace metal

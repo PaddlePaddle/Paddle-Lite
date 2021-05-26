@@ -29,63 +29,63 @@ namespace paddle {
 namespace lite {
 
 class MetalImage {
- public:
-  MetalImage() = delete;
-  virtual ~MetalImage();
+   public:
+    MetalImage() = delete;
+    virtual ~MetalImage();
 
 #if defined(__OBJC__)
-  id<MTLTexture> image() const;
+    id<MTLTexture> image() const;
 #else
-  void* image() const;
+    void* image() const;
 #endif
 
-  int ElementCount() const;
+    int ElementCount() const;
 
-  //源数据 mps计算时使用
-  void* src_tensor_{nullptr};
+    //源数据 mps计算时使用
+    void* src_tensor_{nullptr};
 
-  MetalImage(MetalContext* context,
-             const DDim& in_dim,
-             std::vector<int> in_transpose = {0, 2, 3, 1},
-             METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::HALF,
-             METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
+    MetalImage(MetalContext* context,
+               const DDim& in_dim,
+               std::vector<int> in_transpose = {0, 2, 3, 1},
+               METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::HALF,
+               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
-  void UpdateDims(MetalContext* context,
-                  const DDim& in_tensor_dim,
-                  std::vector<int> in_transpose);
+    void UpdateDims(MetalContext* context,
+                    const DDim& in_tensor_dim,
+                    std::vector<int> in_transpose);
 
-  template <typename SP>
-  void CopyFromNCHW(const SP* src);
+    template <typename SP>
+    void CopyFromNCHW(const SP* src);
 
-  template <typename DP>
-  void CopyToNCHW(DP* dst) const;
+    template <typename DP>
+    void CopyToNCHW(DP* dst) const;
 
-  static DDim FourDimFrom(DDim in_dim);
-  __unused void Zero() const;
+    static DDim FourDimFrom(DDim in_dim);
+    __unused void Zero() const;
 
-  size_t size_{};
-  bool use_mps_ = false;
-  size_t channels_per_pixel_{};
-  size_t array_length_{};
-  size_t texture_width_{};
-  size_t texture_height_{};
+    size_t size_{};
+    bool use_mps_ = false;
+    size_t channels_per_pixel_{};
+    size_t array_length_{};
+    size_t texture_width_{};
+    size_t texture_height_{};
 
-  DDim tensor_dim_;
-  DDim dim_;
-  DDim pad_to_four_dim_;
-  std::vector<int> transpose_ = {0, 1, 2, 3};
+    DDim tensor_dim_;
+    DDim dim_;
+    DDim pad_to_four_dim_;
+    std::vector<int> transpose_ = {0, 1, 2, 3};
 
- private:
-  void InitTexture();
-  const METAL_PRECISION_TYPE precision_type_;
-  const METAL_ACCESS_FLAG flag_;
+   private:
+    void InitTexture();
+    const METAL_PRECISION_TYPE precision_type_;
+    const METAL_ACCESS_FLAG flag_;
 
 #if defined(__OBJC__)
-  id<MTLTexture> image_{nil};
-  MTLTextureDescriptor* desc_{nil};
+    id<MTLTexture> image_{nil};
+    MTLTextureDescriptor* desc_{nil};
 #else
-  void* image_{nullptr};
-  void* desc_{nullptr};
+    void* image_{nullptr};
+    void* desc_{nullptr};
 #endif
 };
 
