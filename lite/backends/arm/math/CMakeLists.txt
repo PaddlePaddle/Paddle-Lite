@@ -80,7 +80,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       gemm_s8.cc
       sgemv.cc
       gemv_arm_int8.cc
-      conv3x3s1_direct_fp32.cc
       conv3x3s2_direct_fp32.cc
       conv3x3s1p01_depthwise_fp32_relu.cc
       conv3x3s2p01_depthwise_fp32_relu.cc
@@ -88,7 +87,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv3x3s2p01_depthwise_fp32.cc
       conv3x3s1px_depthwise_fp32.cc
       conv3x3s2px_depthwise_fp32.cc
-      conv3x3s1_direct_int8.cc
       conv3x3s2_direct_int8.cc
       conv3x3s1_depthwise_int8.cc
       conv3x3s2_depthwise_int8.cc
@@ -112,7 +110,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       box_coder.cc
       shuffle_channel.cc
       activation.cc
-      yolo_box.cc
       dropout.cc
       power.cc
       interpolate.cc
@@ -122,7 +119,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       col_im_transform.cc
       conv_transpose_depthwise.cc
       im2sequence.cc
-      prior_box.cc
       norm.cc
       pad2d.cc
       negative.cc

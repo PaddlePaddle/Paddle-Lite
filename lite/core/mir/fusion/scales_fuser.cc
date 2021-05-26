@@ -29,7 +29,9 @@ void ScalesFuser::BuildPattern() {
     bool bias_after_scale =
         const_cast<Node*>(node)->AsStmt().op_info()->GetAttr<bool>(
             "bias_after_scale");
-    return bias_after_scale;
+    bool has_act =
+        const_cast<Node*>(node)->AsStmt().op_info()->HasAttr("activation_type");
+    return bias_after_scale && (!has_act);
   };
 
   // create op nodes

@@ -77,6 +77,7 @@ void LightPredictor::Build(const std::string& model_dir,
   PrepareFeedFetch();
 }
 
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
 Tensor* LightPredictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -86,6 +87,17 @@ Tensor* LightPredictor::GetInput(size_t offset) {
                 << " in exec_scope";
   return in_var->GetMutable<lite::Tensor>();
 }
+#else
+Tensor* LightPredictor::GetInput(size_t offset) {
+  auto* _feed_list = program_->exec_scope()->FindVar("feed");
+  CHECK(_feed_list) << "no feed variable in exec_scope";
+  auto* feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
+  if (offset >= feed_list->size()) {
+    feed_list->resize(offset + 1);
+  }
+  return &feed_list->at(offset);
+}
+#endif
 
 // get input by name
 Tensor* LightPredictor::GetInputByName(const std::string& name) {
@@ -103,6 +115,7 @@ Tensor* LightPredictor::GetInputByName(const std::string& name) {
   }
 }
 
+#if !defined(LITE_WITH_METAL)
 const Tensor* LightPredictor::GetOutput(size_t offset) {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"
@@ -112,6 +125,16 @@ const Tensor* LightPredictor::GetOutput(size_t offset) {
                  << " in exec_scope";
   return out_var->GetMutable<lite::Tensor>();
 }
+#else
+const lite::Tensor* LightPredictor::GetOutput(size_t offset) {
+  auto* _fetch_list = program_->exec_scope()->FindVar("fetch");
+  CHECK(_fetch_list) << "no fetch variable in exec_scope";
+  auto& fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+  CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
+  return &fetch_list.at(offset);
+}
+#endif
+
 // get inputs names
 std::vector<std::string> LightPredictor::GetInputNames() {
   return input_names_;
@@ -119,6 +142,10 @@ std::vector<std::string> LightPredictor::GetInputNames() {
 // get outputnames
 std::vector<std::string> LightPredictor::GetOutputNames() {
   return output_names_;
+}
+// get input tensor precision type
+const std::vector<PrecisionType>& LightPredictor::GetInputPrecisions() const {
+  return input_precisions_;
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
@@ -137,6 +164,7 @@ void LightPredictor::PrepareFeedFetch() {
   }
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
+  input_precisions_.resize(feeds.size());
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
@@ -144,6 +172,9 @@ void LightPredictor::PrepareFeedFetch() {
   for (size_t i = 0; i < fetchs.size(); i++) {
     output_names_[fetchs[i]->GetAttr<int>("col")] =
         fetchs[i]->Input("X").front();
+  }
+  for (size_t i = 0; i < feeds.size(); i++) {
+    input_precisions_[i] = GetInput(i)->precision();
   }
 }
 
@@ -162,7 +193,13 @@ void LightPredictor::BuildRuntimeProgram(
     for (size_t var_idx = 0; var_idx < var_size; ++var_idx) {
       auto var_desc = block_desc->GetVar<cpp::VarDesc>(var_idx);
       if (!var_desc->Persistable()) {
-        exe_scope->Var(var_desc->Name());
+        auto* var = exe_scope->Var(var_desc->Name());
+        if (var_desc->GetType() == lite::VarDescAPI::Type::LOD_TENSOR) {
+          const auto var_data_type =
+              ConvertPrecisionType(var_desc->GetDataType());
+          auto* tensor = var->GetMutable<lite::Tensor>();
+          tensor->set_precision(var_data_type);
+        }
       } else {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") continue;
         scope_->Var(var_desc->Name());
@@ -234,7 +271,8 @@ void LightPredictor::DequantizeWeight() {
                 const int16_t* int_data = tmp_tensor.data<int16_t>();
                 PROCESS_CONV2D_DATA()
               }
-            } else if (op_type == "fc" || op_type == "mul") {
+            } else if (op_type == "fc" || op_type == "mul" ||
+                       op_type == "lookup_table") {
               int64_t chin = input_tensor->dims()[0];
               int64_t chout = input_tensor->dims()[1];
               CHECK_EQ(scale_list.size(), chout);
@@ -290,6 +328,19 @@ void LightPredictor::WeightFP32ToFP16() {
   }
 }
 #endif
+
+void LightPredictor::CheckInputValid() {
+  for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
+    if (GetInput(idx)->precision() != input_precisions_[idx]) {
+      LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
+                   << ") Tensor name (" << input_names_[idx]
+                   << ") Require Precision type ("
+                   << PrecisionToStr(input_precisions_[idx])
+                   << ") Input Precision type ("
+                   << PrecisionToStr(GetInput(idx)->precision()) << ").";
+    }
+  }
+}
 
 }  // namespace lite
 }  // namespace paddle

@@ -101,6 +101,15 @@ class SqrtCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~SqrtCompute() = default;
 };
 
+class RsqrtCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~RsqrtCompute() = default;
+};
+
 class PowCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::PowParam;
@@ -162,6 +171,15 @@ class SoftsignCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual void Run();
 
   virtual ~SoftsignCompute() = default;
+};
+
+class SwishCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~SwishCompute() = default;
 };
 
 }  // namespace xpu

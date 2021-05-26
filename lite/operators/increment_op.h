@@ -38,6 +38,11 @@ class IncrementOp : public OpLite {
 
   std::string DebugString() const override { return "increment"; }
 
+  bool InferType() override {
+    param_.Out->set_precision(param_.X->precision());
+    return true;
+  }
+
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
     ch->input_shape = ch->DimToStr(param_.X->dims());

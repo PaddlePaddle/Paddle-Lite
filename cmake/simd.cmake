@@ -4,6 +4,10 @@
 include(CheckCXXSourceRuns)
 include(CheckCXXSourceCompiles)
 
+if(IOS)
+return ()
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(FMA_FLAG "-mfma")
     set(MMX_FLAG "-mmmx")

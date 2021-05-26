@@ -23,6 +23,7 @@ DLEngine::DLEngine() {
   int ret = get_device_info(info_);
   filter::set_filter_capacity(info_.filter_cap);
   filter::set_colunm(info_.column);
+  set_pool_cap(info_.pool_cap);
 }
 
 }  // namespace zynqmp

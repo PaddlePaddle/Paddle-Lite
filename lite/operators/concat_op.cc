@@ -39,7 +39,7 @@ bool ConcatOpLite::InferShapeImpl() const {
     axis = axis_tensor_val[0];
   }
   if (axis < 0) {
-    axis += inputs[0]->dims().size();
+    axis += static_cast<int>(inputs[0]->dims().size());
   }
 
   auto out_dims = inputs[0]->dims();

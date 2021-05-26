@@ -36,7 +36,7 @@ void OptBase::SetModelType(std::string optimize_out_type) {
   } else if (optimize_out_type == "naive_buffer") {
     model_type_ = LiteModelType::kNaiveBuffer;
   } else {
-    LOG(FATAL) << "Unsupported Model type :" << optimize_out_type;
+    OPT_LOG_FATAL << "Unsupported Model type :" << optimize_out_type;
   }
 }
 
@@ -50,7 +50,7 @@ void OptBase::SetQuantType(const std::string& quant_type) {
   } else if (quant_type == "QUANT_INT16") {
     opt_config_.set_quant_type(lite_api::QuantType::QUANT_INT16);
   } else {
-    LOG(FATAL) << "Unsupported quant type: " << quant_type;
+    OPT_LOG_FATAL << "Unsupported quant type: " << quant_type;
   }
 }
 
@@ -59,14 +59,13 @@ void OptBase::SetPassesInternal(
   opt_config_.set_passes_internal(passes_internal);
 }
 
-void OptBase::SetValidPlaces(const std::string& valid_places,
-                             bool enable_fp16) {
+void OptBase::SetValidPlaces(const std::string& valid_places) {
   valid_places_.clear();
   auto target_reprs = lite::Split(valid_places, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
-      if (enable_fp16) {
-        valid_places.emplace_back(
+      if (enable_fp16_) {
+        valid_places_.emplace_back(
             Place{TARGET(kARM), PRECISION(kFP16), DATALAYOUT(kNCHW)});
       }
       valid_places_.emplace_back(
@@ -108,11 +107,11 @@ void OptBase::SetValidPlaces(const std::string& valid_places,
       valid_places_.emplace_back(
           Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else if (target_repr == "intel_fpga") {
-      valid_places.emplace_back(TARGET(kIntelFPGA));
-      valid_places.emplace_back(
+      valid_places_.emplace_back(TARGET(kIntelFPGA));
+      valid_places_.emplace_back(
           Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else {
-      LOG(FATAL) << lite::string_format(
+      OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
           "'valid_targets'",
           target_repr.c_str());
@@ -141,10 +140,6 @@ void OptBase::Run() {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
-    auto resulted_model_name =
-        record_strip_info_ ? "information of striped model" : "optimized model";
-    std::cout << "Save the " << resulted_model_name
-              << " into :" << lite_out_name_ << "successfully";
   }
 }
 
@@ -153,13 +148,12 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
                           const std::string& param_path,
                           const std::string& model_type,
                           const std::string& valid_places,
-                          const bool enable_fp16,
                           const std::string& optimized_out_path) {
   SetModelDir(model_dir_path);
   SetModelFile(model_path);
   SetParamFile(param_path);
   SetModelType(model_type);
-  SetValidPlaces(valid_places, enable_fp16);
+  SetValidPlaces(valid_places);
   SetOptimizeOut(optimized_out_path);
   CheckIfModelSupported(false);
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
@@ -170,10 +164,6 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
-    auto resulted_model_name =
-        record_strip_info_ ? "information of striped model" : "optimized model";
-    std::cout << "Save the " << resulted_model_name
-              << " into :" << lite_out_name_ << "successfully";
   }
 }
 // collect ops info of modelset
@@ -201,7 +191,7 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
   lite::MkDirRecur(lite_out_name_);
   auto model_dirs = lite::ListDir(model_set_dir_, true);
   if (model_dirs.size() == 0) {
-    LOG(FATAL) << "[" << model_set_dir_ << "] does not contain any model";
+    OPT_LOG_FATAL << "[" << model_set_dir_ << "] does not contain any model";
   }
 
   // 2. optimize each model in inputed model set dir.
@@ -220,8 +210,6 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
           lite::Join<std::string>({input_model_dir, param_file}, "/");
     }
 
-    std::cout << "Start optimize model: " << input_model_dir;
-
     opt_config_.set_model_dir(input_model_dir);
     opt_config_.set_model_file(model_file);
     opt_config_.set_param_file(param_file);
@@ -229,8 +217,6 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info);
-
-    std::cout << "Optimize done. ";
   }
 
   // 3. if record_strip_info = true, we will record striping info
@@ -244,8 +230,8 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
         lite_out_name_, model_dirs, lite::TAILORD_KERNELS_SOURCE_LIST_FILENAME);
     CollectModelMetaInfo(
         lite_out_name_, model_dirs, lite::TAILORD_KERNELS_LIST_NAME);
-    std::cout << "Record the information of stripped models into :"
-              << lite_out_name_ << "successfully";
+    OPT_LOG << "Record the information of stripped models into :"
+            << lite_out_name_ << "successfully";
   }
 }
 
@@ -290,9 +276,12 @@ void OptBase::PrintHelpInfo() {
       "places\n"
       "        `check_if_model_supported()`   Check if the input model is "
       "supported\n"
+      "  How to print detailed information: export GLOG_v=1 \n"
       "------------------------------------------------------------------------"
       "-----------------------------------------------------------\n";
-  std::cout << "opt version:" << opt_version << std::endl << help_info;
+  OPT_LOG << "opt version:" << opt_version;
+  OPT_LOG << help_info;
+  exit(1);
 }
 
 void OptBase::PrintExecutableBinHelpInfo() {
@@ -314,7 +303,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
       "  Arguments of enable_fp16 in opt: \n"
-      "        `--enable_fp16(true|false)`\n"
+      "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
@@ -326,8 +315,8 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
       "nna|intel_fpga)`"
       "  Display operators in the input model\n";
-  std::cout << "paddlelite opt version:" << opt_version << std::endl
-            << help_info << std::endl;
+  OPT_LOG << "paddlelite opt version:" << opt_version;
+  OPT_LOG << help_info;
 }
 
 // 2. Print supported info of inputed ops
@@ -385,7 +374,7 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
 }
 
 void OptBase::DisplayKernelsInfo() {  // Display kernel information
-  std::cout << ::paddle::lite::KernelRegistry::Global().DebugString();
+  OPT_LOG << ::paddle::lite::KernelRegistry::Global().DebugString();
 }
 void OptBase::PrintAllOps() {
   // 1. Get supported ops on these targets
@@ -408,7 +397,7 @@ void OptBase::PrintSupportedOps() {
   for (size_t i = 1; i < target_types.size(); i++) {
     targets_str = targets_str + TargetToStr(target_types[i]);
   }
-  std::cout << "Supported OPs on '" << targets_str << "': " << std::endl;
+  OPT_LOG << "Supported OPs on '" << targets_str << "': ";
   target_types.push_back(TARGET(kHost));
   target_types.push_back(TARGET(kUnk));
 
@@ -438,11 +427,15 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
   std::set<std::string> valid_ops_set(valid_ops.begin(), valid_ops.end());
 
   // 2.Load model into program to get ops in model
-  std::string prog_path = opt_config_.model_dir() + "/__model__";
+  bool is_combined_params_form = false;
   if (!(opt_config_.model_file()).empty() &&
       !(opt_config_.param_file()).empty()) {
-    prog_path = opt_config_.model_file();
+    is_combined_params_form = true;
   }
+  std::string prog_path = lite::FindModelFileName(opt_config_.model_dir(),
+                                                  (opt_config_.model_file()),
+                                                  is_combined_params_form);
+
   lite::cpp::ProgramDesc cpp_prog;
   framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
@@ -464,7 +457,7 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
   }
   // 3. Print ops_info of input model and check if this model is supported
   if (print_ops_info) {
-    std::cout << "OPs in the input model include:\n";
+    OPT_LOG << "OPs in the input model include:";
     PrintOpsInfo(input_model_ops);
   }
   if (!unsupported_ops.empty()) {
@@ -485,14 +478,13 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
       targets_str = targets_str + "," + TargetToStr(targets[i]);
     }
 
-    LOG(ERROR) << "Error: This model is not supported, because "
-               << unsupported_ops.size() << " ops are not supported on '"
-               << targets_str << "'. These unsupported ops are: '"
-               << unsupported_ops_str << "'.";
-    exit(1);
+    OPT_LOG_FATAL << "Error: This model is not supported, because "
+                  << unsupported_ops.size() << " ops are not supported on '"
+                  << targets_str << "'. These unsupported ops are: '"
+                  << unsupported_ops_str << "'.";
   }
   if (print_ops_info) {
-    std::cout << "Paddle-Lite supports this model!" << std::endl;
+    OPT_LOG << "Paddle-Lite supports this model!";
     exit(1);
   }
 }

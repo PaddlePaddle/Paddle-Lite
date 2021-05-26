@@ -131,6 +131,65 @@ static void softmax(Tensor *X, Tensor *Y) {
   }
 }
 
+void fpga_softmax(int axis,
+                  Tensor *input,
+                  Tensor *output,
+                  PoolingPE *poolingPE_) {
+  Tensor norm_exp_output;
+  norm_exp_output.mutableData<float16>(FP16, output->shape());
+  norm_exp_output.shape().setLayoutType(output->shape().getLayoutType());
+
+  PoolingArgs norm_exp_args = {0};
+  norm_exp_args.mode = 0x4;
+  norm_exp_args.kernel_reciprocal = 1.0f;
+  norm_exp_args.image.address = input->data<void>();
+  norm_exp_args.image.channels = input->shape().channel();
+  norm_exp_args.image.height = input->shape().height();
+  norm_exp_args.image.width = input->shape().width();
+  norm_exp_args.image.pad_height = 0;
+  norm_exp_args.image.pad_width = 0;
+  norm_exp_args.image.scale_address = input->max();
+  norm_exp_args.output.address = norm_exp_output.mutableData<float16>();
+  norm_exp_args.output.scale_address = norm_exp_output.max();
+  norm_exp_args.kernel.height = 1;
+  norm_exp_args.kernel.width = 1;
+  norm_exp_args.kernel.stride_h = 1;
+  norm_exp_args.kernel.stride_w = 1;
+  norm_exp_args.out_height = norm_exp_output.shape().height();
+  norm_exp_args.out_width = norm_exp_output.shape().width();
+
+  input->flush();
+
+  compute_fpga_pool(norm_exp_args);
+
+  norm_exp_output.invalidate();
+
+  PoolingArgs prob_args = {0};
+  prob_args.mode = 0x8;
+  prob_args.kernel_reciprocal = 1.0f;
+  prob_args.image.address = norm_exp_output.data<float16>();
+  prob_args.image.channels = norm_exp_output.shape().channel();
+  prob_args.image.height = norm_exp_output.shape().height();
+  prob_args.image.width = norm_exp_output.shape().width();
+  prob_args.image.pad_height = 0;
+  prob_args.image.pad_width = 0;
+  prob_args.image.scale_address = norm_exp_output.max();
+  prob_args.output.address = output->mutableData<float16>();
+  prob_args.output.scale_address = output->max();
+  prob_args.kernel.height = 1;
+  prob_args.kernel.width = 1;
+  prob_args.kernel.stride_h = 1;
+  prob_args.kernel.stride_w = 1;
+  prob_args.out_height = output->shape().height();
+  prob_args.out_width = output->shape().width();
+
+  compute_fpga_pool(prob_args);
+  struct FpgaRegWriteArgs args;
+  args.value = 0;
+  args.address = 0x890;
+  output->invalidate();
+}
+
 bool SoftmaxPE::init() {
   Tensor *output = param_.output;
   output->setAligned(false);
@@ -138,24 +197,32 @@ bool SoftmaxPE::init() {
   return true;
 }
 
+void SoftmaxPE::apply() { use_cpu_ = param_.input->shape().dimSize() <= 2; }
+
 bool SoftmaxPE::dispatch() {
   Tensor *input = param_.input;
   Tensor *output = param_.output;
+  int axis = param_.axis;
 
-  Tensor float_input;
-  Tensor float_output;
-  float_input.mutableData<float>(DataType::FP32, input->shape());
-  input->syncToDevice();
-  float_input.copyFrom(input);
+  if (use_cpu_) {
+    Tensor float_input;
+    Tensor float_output;
+    float_input.mutableData<float>(DataType::FP32, input->shape());
+    input->syncToDevice();
+    float_input.copyFrom(input);
 
-  float *out_data =
-      float_output.mutableData<float>(DataType::FP32, input->shape());
+    float *out_data =
+        float_output.mutableData<float>(DataType::FP32, input->shape());
 
-  softmax(&float_input, &float_output);
-  float_output.flush();
+    softmax(&float_input, &float_output);
+    float_output.flush();
 
-  output->copyFrom(&float_output);
-  output->flush();
+    output->copyFrom(&float_output);
+    output->flush();
+  } else {
+    fpga_softmax(axis, input, output, &poolingPE_);
+  }
+
   return true;
 }
 

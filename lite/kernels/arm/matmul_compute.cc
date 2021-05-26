@@ -29,7 +29,13 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 }
 
 template <>
-void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
+void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {}
+
+template <>
+void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {}
+
+template <>
+void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = Param<param_t>();
   auto x_dims = param.X->dims();

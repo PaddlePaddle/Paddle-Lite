@@ -51,7 +51,7 @@ namespace arm {
 #define FUNCS_PARAM i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
-  WINOGRAD_INIT(3)
+  WINOGRAD_INIT(4)
   const int new_input_size =
       ic_pad * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1);
   const int temp_size = (tile_block * (oc_pad + ic_pad) * wino_iw * wino_iw +

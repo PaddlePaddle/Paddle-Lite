@@ -19,6 +19,8 @@ TOOLCHAIN=gcc
 WITH_EXTRA=OFF
 # ON or OFF, default ON.
 WITH_JAVA=ON
+# ON or OFF, default is OFF
+WITH_STATIC_LIB=OFF
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
 # controls whether to hide log information, default is ON.
@@ -194,6 +196,7 @@ function make_tiny_publish_so {
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
+      -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
@@ -257,6 +260,7 @@ function make_full_publish_so {
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
+      -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
@@ -301,6 +305,7 @@ function print_usage {
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                         |"
     echo -e "|     --android_stl: (c++_static|c++_shared), default is c++_static                                                                    |"
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
+    echo -e "|     --with_static_lib: (OFF|ON); controls whether to publish c++ api static lib, default is OFF                                      |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
@@ -466,6 +471,11 @@ function main {
             # controls whether to include FP16 kernels, default is OFF
             --with_arm82_fp16=*)
                 BUILD_ARM82_FP16="${i#*=}"
+                shift
+                ;;
+            # controls whether to compile cplus static library, default is OFF
+            --with_static_lib=*)
+                WITH_STATIC_LIB="${i#*=}"
                 shift
                 ;;
             help)

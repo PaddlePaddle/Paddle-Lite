@@ -29,7 +29,9 @@ void ConcatCompute<InType>::Run() {
 
   auto ins = param.x;
   auto out = param.output;
-  int64_t axis = param.axis;
+  int64_t axis = param.axis < 0
+                     ? param.axis + static_cast<int>(ins[0]->dims().size())
+                     : param.axis;
 
   std::vector<const float*> x_list;
   std::vector<std::vector<int>> xdims_list;
@@ -38,9 +40,9 @@ void ConcatCompute<InType>::Run() {
       xdims_list.push_back(std::vector<int>());
       for (int j = 0; j < ins[i]->dims().size(); j++) {
         xdims_list[i].push_back(ins[i]->dims()[j]);
-        if (sizeof(InType) == 8) {
-          xdims_list[i].back() = xdims_list[i].back() * 2;
-        }
+      }
+      if (sizeof(InType) == 8) {
+        xdims_list[i].back() = xdims_list[i].back() * 2;
       }
       x_list.push_back(
           reinterpret_cast<const float*>(ins[i]->template data<InType>()));
@@ -69,7 +71,7 @@ REGISTER_LITE_KERNEL(concat,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::xpu::ConcatCompute<float>,
-                     concat_fp32)
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindInput("AxisTensor",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})

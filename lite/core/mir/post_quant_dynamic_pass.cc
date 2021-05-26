@@ -25,7 +25,11 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-const std::vector<std::string> PostQuantDynamicPass::quant_axis1_ops{"mul"};
+const std::vector<std::string> PostQuantDynamicPass::quant_axis1_ops = {
+    "mul", "lookup_table"};
+
+std::vector<std::string> PostQuantDynamicPass::quant_ops = {
+    "conv2d", "mul", "lookup_table"};
 
 static bool abs_compare(float a, float b) {
   return std::fabs(a) < std::fabs(b);
@@ -164,8 +168,8 @@ void PostQuantDynamicPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto* node : graph->StmtTopologicalOrder()) {
     if (node->IsStmt()) {
       const std::string op_type = node->stmt()->op_type();
-      auto iter = std::find(quant_ops_.begin(), quant_ops_.end(), op_type);
-      if (iter != quant_ops_.end()) {
+      auto iter = std::find(quant_ops.begin(), quant_ops.end(), op_type);
+      if (iter != quant_ops.end()) {
         nodes.push_back(node);
       }
     }

@@ -45,6 +45,7 @@ class ScaleOp : public OpLite {
     ch->remark =
         param_.activation_type + "alpha" + std::to_string(param_.alpha);
     ch->macs = param_.x->numel() * 1.f;
+    if (param_.fuse_scaleact) ch->macs *= 2;
   }
 #endif
 

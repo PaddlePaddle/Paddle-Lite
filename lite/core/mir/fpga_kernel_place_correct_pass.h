@@ -125,6 +125,13 @@ class FPGAKernelPlaceCorrectPass : public ProgramPass {
         }
       }
 
+      if (inst.op_type() == "scale") {
+        if (p != PrecisionType::kFP16) {
+          UpdateTarget(inst, TargetType::kARM);
+          UpdateTensor(inst, in, out, TargetType::kARM);
+        }
+      }
+
       if (inst.op_type() == "elementwise_mul") {
         UpdateTarget(inst, TargetType::kFPGA);
         for (auto* in : x->inlinks) {
