@@ -17,16 +17,5 @@
 
 namespace paddle {
 namespace lite {
-
-void ContextMetal::InitOnce() {
-    TargetWrapperMetal::ctx_.PrepareDevices();
-    this->context_ = &TargetWrapperMetal::ctx_;
-}
-
-void ContextMetal::CopySharedTo(ContextMetal* ctx) {
-    ctx->context_ = context_;
-    return;
-}
-
 }  // namespace lite
 }  // namespace paddle

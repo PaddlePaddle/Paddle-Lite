@@ -257,10 +257,20 @@ class LITE_API RuntimeProgram {
   // according to the instructions
   void SaveToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
 
+#ifdef LITE_WITH_METAL
+  void ConfigMetalContext(std::string lib_path,
+                          bool use_mps = false,
+                          bool use_aggressive = false);
+#endif
+
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<std::vector<Instruction>> instructions_;
   Scope* exec_scope_{};
+
+#ifdef LITE_WITH_METAL
+  std::unique_ptr<KernelContext> metal_ctx_{nullptr};
+#endif
 
 #ifdef LITE_WITH_PROFILE
   profile::Profiler profiler_;

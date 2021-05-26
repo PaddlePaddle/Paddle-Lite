@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/feed_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/metal/image_op/feed_image_compute.h"
 
 using namespace std;
 
@@ -27,7 +27,7 @@ namespace kernels {
 namespace metal {
 
 void FeedImageCompute::PrepareForRun() {
-    auto& context = ctx_->As<ContextMetal>();
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
@@ -38,7 +38,7 @@ void FeedImageCompute::PrepareForRun() {
     param.out->Resize(input_dims);
 #ifdef LITE_WITH_METAL_FULL
 #else
-    output_buffer_ = param.out->mutable_data<MetalHalf, MetalImage>(output_dims);
+    output_buffer_ = param.out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
     auto input_c = input_dims[1];
     if (input_c == 1) {
@@ -73,12 +73,6 @@ void FeedImageCompute::Run() {
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
 }
-
-void FeedImageCompute::SaveOutput() {
-    const auto& param = this->Param<param_t>();
-    std::string name = metal_context_->program()->exec_scope()->FindTensorNameString(param.out);
-    MetalDebug::SaveOutput(function_name_ + " : " + name, output_buffer_);
-};
 
 }  // namespace metal
 }  // namespace kernels

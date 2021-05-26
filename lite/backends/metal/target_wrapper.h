@@ -30,51 +30,23 @@ using TargetWrapperMetal = TargetWrapper<TARGET(kMetal)>;
 template <>
 class TargetWrapper<TARGET(kMetal)> {
  public:
-  static size_t num_devices();
-  static size_t GetCurDevice() {
-    int dev_id = 0;
-    return dev_id;
-  }
-
-  static void CreateCommandBuffer(RuntimeProgram* program) {
-    assert(program);
-    ctx_.CreateCommandBuffer(program);
-    return;
-  }
-
-  static void WaitForCompleted();
-
-  static void set_metal_path(std::string path) { ctx_.set_metal_path(path); }
-
-  static void set_metal_use_aggressive_optimization(bool flag) {
-    ctx_.set_use_aggressive_optimization(flag);
-  }
-
-  static void set_metal_use_mps(bool flag) { ctx_.set_use_mps(flag); }
-
   template <typename T>
-  static void* MallocImage(const DDim dim,
-                           std::vector<int> transport,
-                           void* host_ptr = nullptr);
-
-  static void* MallocBuffer(size_t size, METAL_ACCESS_FLAG access);
+  static void* MallocImage(MetalContext* context,
+                           const DDim dim,
+                           std::vector<int> transport);
 
   static void FreeImage(void* image);
 
   static void* Malloc(size_t size);
+
   static void Free(void* ptr);
 
   static void MemcpySync(void* dst,
                          const void* src,
                          size_t size,
-                         IoDirection dir);
+                         IoDirection dir = lite::IoDirection::HtoH);
 
-  static void MemsetSync(void* devPtr, int value, size_t count);
-
-  static void* Map(void* data, int offset, size_t size);
-  static void UnMap(void* data);
-
-  static LITE_THREAD_LOCAL MetalContext ctx_;
+  static void MemsetSync(void* dst, int value, size_t size);
 };
 }  // namespace lite
 }  // namespace paddle
