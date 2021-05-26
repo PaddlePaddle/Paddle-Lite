@@ -662,10 +662,9 @@ int Program::ConvertSoftmax(driver::Operation* operation) {
   // Convert to Neuron operands and operations
   auto input_index = ConvertOperand(input_operand);
   auto beta_index = AddScalarFloat32ConstantOperand(1.0f);
-  // auto axis_index = AddScalarInt32ConstantOperand(axis);
+  auto axis_index = AddScalarInt32ConstantOperand(axis);
   auto output_index = ConvertOperand(output_operand);
-  std::vector<uint32_t> input_indexes = {input_index,
-                                         beta_index /*, axis_index*/};
+  std::vector<uint32_t> input_indexes = {input_index, beta_index, axis_index};
   std::vector<uint32_t> output_indexes = {output_index};
   NNADAPTER_CHECK_EQ(NeuronModel_addOperation_invoke(model_,
                                                      NEURON_SOFTMAX,
