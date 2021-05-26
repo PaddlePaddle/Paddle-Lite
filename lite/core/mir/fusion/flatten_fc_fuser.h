@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,27 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <memory>
+#include <string>
+#include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace host {
+namespace mir {
+namespace fusion {
 
-class ReduceAllCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+class FlattenFcFuser : public FuseBase {
  public:
-  void Run() override;
-
-  virtual ~ReduceAllCompute() = default;
+  explicit FlattenFcFuser(const std::string& type) {}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
 };
 
-}  // namespace host
-}  // namespace kernels
+}  // namespace fusion
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

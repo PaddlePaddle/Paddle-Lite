@@ -21,7 +21,8 @@
 #include "lite/operators/op_params.h"
 
 typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::kernels::arm::BatchNormCompute BatchNormCompute;
+typedef paddle::lite::kernels::arm::BatchNormCompute<float, PRECISION(kFloat)>
+    BatchNormCompute;
 using paddle::lite::profile::Timer;
 
 int main(int argc, char** argv) {

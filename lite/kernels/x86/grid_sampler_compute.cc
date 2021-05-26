@@ -293,6 +293,7 @@ void BilinearInter(const X86Context& ctx,
 
 template <class T>
 void GridSamplerCompute<T>::Run() {
+#ifndef WIN32
   auto& param = this->Param<param_t>();
   auto& context = ctx_->As<X86Context>();
   auto* input = param.x;
@@ -328,6 +329,11 @@ void GridSamplerCompute<T>::Run() {
     grid_y_t = grid_y_t.round();
     GetGridPointValue<T>(*input, output, grid_x, grid_y);
   }
+#else
+  LOG(FATAL) << "Error: This model is not supported on Windows Os yet, because "
+                "grid_sample op is not supported on windows Paddle-Lite, "
+                "please update your Paddle-Lite version.";
+#endif
 }
 
 }  // namespace x86

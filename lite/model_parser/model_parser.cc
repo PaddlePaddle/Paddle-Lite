@@ -177,7 +177,9 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
                              const lite_api::CxxModelBuffer &model_buffer,
                              Scope *scope) {
   auto *main_block = cpp_prog->GetBlock<cpp::BlockDesc>(0);
+  std::string log_info = "Loading non-combined params data from " + model_dir;
   // Check param files format
+  // default format: non-combined params
   for (auto &var : main_block->GetVars()) {
     if (var.Name() != "feed" && var.Name() != "fetch" && var.Persistable()) {
       if (IsFileExists(model_dir + "/" + var.Name())) {
@@ -205,11 +207,13 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
         } else {
           PrintPbModelErrorMessage();
         }
+        log_info = "Loading params data from " + params_path;
         LoadCombinedParamsPb(params_path, scope, *cpp_prog, model_buffer);
         break;
       }
     }
   }
+  OPT_LOG << log_info;
 }
 
 void LoadModelPb(const std::string &model_dir,
@@ -242,7 +246,6 @@ void LoadModelPb(const std::string &model_dir,
       << " you should load the combined model using cfg.set_model_buffer "
          "interface.";
   if (!combined) {
-    OPT_LOG << "Loading non-combined params data from " << model_dir;
     LoadNonCombinedParamsPb(model_dir, cpp_prog, model_buffer, scope);
   } else {
     if (model_buffer.is_empty()) {

@@ -46,6 +46,18 @@ void SplitCompute<T, PType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+#ifdef ENABLE_ARM_FP16
+REGISTER_LITE_KERNEL(split, kHost, kFP16, kNCHW, SplitFP16T, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFP16))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("SectionsTensorList",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFP16))})
+    .Finalize();
+
+#endif  // ENABLE_ARM_FP16
+
 REGISTER_LITE_KERNEL(split, kHost, kFloat, kNCHW, SplitFloat, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("AxisTensor",

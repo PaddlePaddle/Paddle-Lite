@@ -621,7 +621,13 @@ class XPUMmdnnMatchConvTopkFuser2 : public FuseBase {
 
 class XPUMmdnnBidSeqRevEmbEltwiseFuser : public FuseBase {
  public:
+  explicit XPUMmdnnBidSeqRevEmbEltwiseFuser(bool customize_op)
+      : customize_op_(customize_op) {}
+
   void BuildPattern() override {
+    std::string eltwise_add_op_name =
+        customize_op_ ? "search_seq_arithmetic" : "elementwise_add";
+
     auto* input0 = VarNode("input0")->AsInput();
     auto* input1 = VarNode("input1")->AsInput();
     auto* emb_tbl = VarNode("emb_tbl")->AsInput();
@@ -634,11 +640,10 @@ class XPUMmdnnBidSeqRevEmbEltwiseFuser : public FuseBase {
     auto* emb1_out =
         VarNode("emb1_out")->assert_is_op_output("lookup_table", "Out");
 
-    auto* eltwise01 = OpNode("eltwise01", "search_seq_arithmetic");
-    auto* eltwise01_out =
-        VarNode("eltwise01_out")
-            ->assert_is_op_output("search_seq_arithmetic", "Out")
-            ->AsOutput();
+    auto* eltwise01 = OpNode("eltwise01", eltwise_add_op_name);
+    auto* eltwise01_out = VarNode("eltwise01_out")
+                              ->assert_is_op_output(eltwise_add_op_name, "Out")
+                              ->AsOutput();
 
     // rev emb
     auto* seq_rev2 = OpNode("seq_rev2", "sequence_reverse")->AsIntermediate();
@@ -659,11 +664,10 @@ class XPUMmdnnBidSeqRevEmbEltwiseFuser : public FuseBase {
                          ->AsIntermediate();
 
     auto* eltwise23 =
-        OpNode("eltwise23", "search_seq_arithmetic")->AsIntermediate();
-    auto* eltwise23_out =
-        VarNode("eltwise23_out")
-            ->assert_is_op_output("search_seq_arithmetic", "Out")
-            ->AsOutput();
+        OpNode("eltwise23", eltwise_add_op_name)->AsIntermediate();
+    auto* eltwise23_out = VarNode("eltwise23_out")
+                              ->assert_is_op_output(eltwise_add_op_name, "Out")
+                              ->AsOutput();
 
     *input0 >> *emb0 >> *emb0_out >> *eltwise01 >> *eltwise01_out;
     *emb_tbl >> *emb0;
@@ -692,6 +696,9 @@ class XPUMmdnnBidSeqRevEmbEltwiseFuser : public FuseBase {
     DirectedLink(matched.at("eltwise01_out"), new_seq_rev_node);
     DirectedLink(new_seq_rev_node, matched.at("eltwise23_out"));
   }
+
+ private:
+  bool customize_op_;
 };
 
 class XPUMmdnnBidEmbAttFuser : public FuseBase {
@@ -1615,8 +1622,12 @@ class XPUMmdnnFusePass : public ProgramPass {
     fusion::XPUMmdnnMatchConvTopkFuser2 match_conv_topk_fuser2;
     match_conv_topk_fuser2(graph.get());
 
-    fusion::XPUMmdnnBidSeqRevEmbEltwiseFuser bi_seq_rev_emb_eltwise_fuser;
-    bi_seq_rev_emb_eltwise_fuser(graph.get());
+    fusion::XPUMmdnnBidSeqRevEmbEltwiseFuser bi_seq_rev_emb_eltwise_fuser_false(
+        false);
+    bi_seq_rev_emb_eltwise_fuser_false(graph.get());
+    fusion::XPUMmdnnBidSeqRevEmbEltwiseFuser bi_seq_rev_emb_eltwise_fuser_true(
+        true);
+    bi_seq_rev_emb_eltwise_fuser_true(graph.get());
     fusion::XPUMmdnnBidEmbGrnnAttFuser bid_emb_grnn_att_fuser;
     bid_emb_grnn_att_fuser(graph.get());
     fusion::XPUMmdnnBidEmbGrnnAttFuser2 bid_emb_grnn_att_fuser2;
