@@ -377,7 +377,11 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
 
 endif()
 
+if (LITE_THREAD_POOL)
+  lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core thread_pool)
+else()
 lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core)
+endif()
 
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.
