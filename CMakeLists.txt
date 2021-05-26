@@ -112,6 +112,7 @@ lite_option(LITE_WITH_NVTX      "Enable nvtx or not, please enable LITE_WITH_CUD
 lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 lite_option(LITE_WITH_BENCHMARK_TEST "Build benchmark test cases" OFF)
+lite_option(LITE_THREAD_POOL    "Enable thread pool in lite" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA    "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 lite_option(LITE_BUILD_TAILOR   "Enable tailoring library according to model" OFF)
@@ -203,6 +204,11 @@ else()
             COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/tune_cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
             )
+endif()
+
+if(LITE_THREAD_POOL)
+  add_definitions(-DLITE_USE_THREAD_POOL)
+  set(LITE_WITH_OPENMP OFF)
 endif()
 
 # for opencl

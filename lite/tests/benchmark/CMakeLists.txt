@@ -1,10 +1,10 @@
-if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_MLU AND NOT LITE_WITH_XPU) AND (LITE_WITH_ARM))
-    lite_cc_test(get_conv_latency SRCS src/get_conv_latency.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
-    lite_cc_test(get_batchnorm_latency SRCS src/get_batchnorm_latency.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels})
-    lite_cc_test(get_pooling_latency SRCS src/get_pooling_latency.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels})
-    lite_cc_test(get_fc_latency SRCS src/get_fc_latency.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels})
-    lite_cc_test(get_activation_latency SRCS src/get_activation_latency.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels})
-endif()
+# if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_MLU AND NOT LITE_WITH_XPU) AND (LITE_WITH_ARM))
+#     lite_cc_test(get_conv_latency SRCS src/get_conv_latency.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
+#     lite_cc_test(get_batchnorm_latency SRCS src/get_batchnorm_latency.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels})
+#     lite_cc_test(get_pooling_latency SRCS src/get_pooling_latency.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels})
+#     lite_cc_test(get_fc_latency SRCS src/get_fc_latency.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels})
+#     lite_cc_test(get_activation_latency SRCS src/get_activation_latency.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels})
+# endif()
 
 IF (LITE_WITH_BENCHMARK_TEST)
     # auto download google benchmark if necessary

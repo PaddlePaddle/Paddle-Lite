@@ -21,6 +21,8 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #endif
+#include "lite/core/parallel_defines.h"
+#include "lite/core/thread_pool.h"
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
@@ -45,7 +47,12 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   }
   mode_ = config.power_mode();
   threads_ = config.threads();
-
+#ifdef LITE_USE_THREAD_POOL
+  int thread_num = ThreadPool::init(threads_);
+  if (thread_num > 1) {
+    ThreadPool::acquire_thread_pool();
+  }
+#endif
 #ifdef LITE_WITH_NPU
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration
@@ -87,6 +94,12 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   VLOG(3) << "x86_math_num_threads() is set successfully and the "
              "number of threads is:"
           << real_num_threads;
+#endif
+}
+
+LightPredictorImpl::~LightPredictorImpl() {
+#ifdef LITE_USE_THREAD_POOL
+  ThreadPool::release_thread_pool();
 #endif
 }
 

@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/packed_sgemm.h"
 #include <arm_neon.h>
 #include "lite/backends/arm/math/conv_block_utils.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -457,8 +458,11 @@ void prepackA_8x12(float *dout,
   memset(zerobuff, 0, sizeof(float) * x_len);
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
 
-#pragma omp parallel for
-  for (int y = m0; y < mmax; y += 8) {
+  // #pragma omp parallel for
+  //   for (int y = m0; y < mmax; y += 8) {
+  int work_size = (mmax - m0 + 7) / 8;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+    int y = m0 + yy * 8;
     float *outptr = dout + stride * (y - m0) / 8;
 
     const float *inptr0 = inptr + y * ldin + k0;
@@ -675,6 +679,7 @@ void prepackA_8x12(float *dout,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void prepackA_4x8(float *outptr,
@@ -691,8 +696,11 @@ void prepackA_4x8(float *outptr,
 
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
   float32x4_t valpha = vdupq_n_f32(alpha);
-#pragma omp parallel for
-  for (int y = m0; y < mmax; y += 4) {
+  // #pragma omp parallel for
+  //   for (int y = m0; y < mmax; y += 4) {
+  int work_size = (mmax - m0 + 3) / 4;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+    int y = m0 + yy * 4;
     const float *inptr0 = inptr + y * ldin + k0;
     const float *inptr1 = inptr0 + ldin;
     const float *inptr2 = inptr1 + ldin;
@@ -814,6 +822,7 @@ void prepackA_4x8(float *outptr,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void pack_m4(float *dout,
@@ -830,8 +839,11 @@ void pack_m4(float *dout,
   memset(zerobuff, 0, sizeof(float) * x_len);
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
 
-#pragma omp parallel for
-  for (int y = m0; y < mmax; y += 4) {
+  // #pragma omp parallel for
+  //   for (int y = m0; y < mmax; y += 4) {
+  int work_size = (mmax - m0 + 3) / 4;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+    int y = m0 + yy * 4;
     float *outptr = dout + stride * (y - m0) / 4;
 
     const float *inptr0 = inptr + y * ldin + k0;
@@ -956,6 +968,7 @@ void pack_m4(float *dout,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void prepackA_trans_8x12(float *outptr,
@@ -982,8 +995,11 @@ void prepackA_trans_8x12(float *outptr,
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
   float32x4_t valpha = vdupq_n_f32(alpha);
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len - 3; y += 4) {
+  int work_size = y_len / 4;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+    int y = yy * 4;
     const float *ptr0 = inptr + y * ldin;
     const float *ptr1 = ptr0 + ldin;
     const float *ptr2 = ptr1 + ldin;
@@ -1080,9 +1096,13 @@ void prepackA_trans_8x12(float *outptr,
       vst1q_f32(outptr_row_col + 28, vr31_1);
     }
   }
+  LITE_PARALLEL_END();
 
-#pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  // #pragma omp parallel for
+  //   for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  int work_size_1 = y_len - 4 * (y_len / 4);
+  LITE_PARALLEL_BEGIN(yy, tid, work_size_1) {
+    int y = 4 * (y_len / 4) + yy;
     const float *ptr0 = inptr + y * ldin;
     float *outptr_row_col = outptr + y * 8;
     int i = 0;
@@ -1116,6 +1136,7 @@ void prepackA_trans_8x12(float *outptr,
       vst1q_f32(outptr_row_col + 4, vr1_1);
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void prepackA_trans_4x8(float *outptr,
@@ -1145,8 +1166,11 @@ void prepackA_trans_4x8(float *outptr,
   uint32x4_t vmask1 =
       vcltq_u32(vld1q_u32(mask_buffer), vdupq_n_u32(right_remain));
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len - 3; y += 4) {
+  int work_size = y_len / 4;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+    int y = yy * 4;
     const float *ptr0 = inptr + y * ldin;
     const float *ptr1 = ptr0 + ldin;
     const float *ptr2 = ptr1 + ldin;
@@ -1229,8 +1253,12 @@ void prepackA_trans_4x8(float *outptr,
       // clang-format on
     }
   }
-#pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  LITE_PARALLEL_END();
+  // #pragma omp parallel for
+  //   for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  int work_size_1 = y_len - 4 * (y_len / 4);
+  LITE_PARALLEL_BEGIN(yy, tid, work_size_1) {
+    int y = 4 * (y_len / 4) + yy;
     const float *ptr0 = inptr + y * ldin;
     float *outptr_row_col = outptr + y * 4;
     int i = 0;
@@ -1268,6 +1296,7 @@ void prepackA_trans_4x8(float *outptr,
           : "v0", "v1", "cc", "memory");
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void pack_trans_m4(float *outptr,
@@ -1292,8 +1321,11 @@ void pack_trans_m4(float *outptr,
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
   float32x4_t valpha = vdupq_n_f32(alpha);
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len - 3; y += 4) {
+  int work_size = y_len / 4;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+    int y = 4 * yy;
     const float *ptr0 = inptr + y * ldin;
     const float *ptr1 = ptr0 + ldin;
     const float *ptr2 = ptr1 + ldin;
@@ -1362,9 +1394,13 @@ void pack_trans_m4(float *outptr,
       vst1q_f32(outptr_row_col + 12, vr30_1);
     }
   }
+  LITE_PARALLEL_END();
 
-#pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  // #pragma omp parallel for
+  //   for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  int work_size_1 = y_len - 4 * (y_len / 4);
+  LITE_PARALLEL_BEGIN(yy, tid, work_size_1) {
+    int y = 4 * (y_len / 4) + yy;
     const float *ptr0 = inptr + y * ldin;
     float *outptr_row_col = outptr + y * 4;
     int i = 0;
@@ -1391,6 +1427,7 @@ void pack_trans_m4(float *outptr,
       vst1q_f32(outptr_row_col, vr0_1);
     }
   }
+  LITE_PARALLEL_END();
 }
 
 #else  // __aarch64__
@@ -1993,8 +2030,11 @@ void loadb(
     stride_w = stride_w << 2;    // stride_w * 4
     stride_w2 = stride_w2 << 2;  // stride_w2 * 4
   }
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len - 3; y += 4) {
+  int work_size = y_len / 4;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+    int y = 4 * yy;
     const uint32_t *ptr0 = inptr + y * ldin;
     const uint32_t *ptr1 = ptr0 + ldin;
     const uint32_t *ptr2 = ptr1 + ldin;
@@ -2083,9 +2123,13 @@ void loadb(
       }
     }
   }
+  LITE_PARALLEL_END();
 
-#pragma omp parallel for
-  for (int y = cnt_y; y < y_len; ++y) {
+  // #pragma omp parallel for
+  //   for (int y = cnt_y; y < y_len; ++y) {
+  int work_size_1 = y_len - cnt_y;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size_1) {
+    int y = cnt_y + yy;
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * cnt_num;  // 12;
 
@@ -2120,6 +2164,7 @@ void loadb(
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void loadb_trans(
@@ -2450,8 +2495,11 @@ void loadb_eight(
   uint32x4_t vmask2 =
       vcltq_u32(vld1q_u32(mask_buffer + 4), vdupq_n_u32(right_remain));
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len - 3; y += 4) {
+  int work_size = y_len / 4;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+    int y = yy * 4;
     const uint32_t *ptr0 = inptr + y * ldin;
     const uint32_t *ptr1 = ptr0 + ldin;
     const uint32_t *ptr2 = ptr1 + ldin;
@@ -2518,8 +2566,12 @@ void loadb_eight(
           : "v0", "v1", "v2", "v3", "cc", "memory");
     }
   }
-#pragma omp parallel for
-  for (int y = cnt_y; y < y_len; ++y) {
+  LITE_PARALLEL_END();
+  // #pragma omp parallel for
+  //   for (int y = cnt_y; y < y_len; ++y) {
+  int work_size_1 = y_len - cnt_y;
+  LITE_PARALLEL_BEGIN(yy, tid, work_size_1) {
+    int y = yy + cnt_y;
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * 8;
     int i = 0;
@@ -2545,6 +2597,7 @@ void loadb_eight(
           : "v0", "v1", "cc", "memory");
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void loadb_trans_eight(
@@ -3241,8 +3294,11 @@ void sgemm_prepacked_8x12(bool is_transB,
     } else {
       loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (unsigned int y = 0; y < M; y += MBLOCK) {
+    int work_size = (M + MBLOCK - 1) / MBLOCK;
+    LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+      int y = yy * MBLOCK;
       unsigned int ymax = y + MBLOCK;
       if (ymax > M) {
         ymax = M;
@@ -4246,6 +4302,7 @@ void sgemm_prepacked_8x12(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -4318,8 +4375,11 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
     } else {
       loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (unsigned int y = 0; y < M; y += MBLOCK) {
+    int work_size = (M + MBLOCK - 1) / MBLOCK;
+    LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+      int y = yy * MBLOCK;
       unsigned int ymax = y + MBLOCK;
       if (ymax > M) {
         ymax = M;
@@ -5602,6 +5662,7 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -5677,8 +5738,11 @@ void sgemm_prepacked_4x8(bool is_transB,
     } else {
       loadb_eight(b_pannel, B, ldb, 0, K, x0, xmax);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += m_block) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (unsigned int y = 0; y < M; y += m_block) {
+    int work_size = (M + m_block - 1) / m_block;
+    LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+      int y = yy * m_block;
       unsigned int ymax = y + m_block;
       if (ymax > M) {
         ymax = M;
@@ -6007,6 +6071,7 @@ void sgemm_prepacked_4x8(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -6083,8 +6148,11 @@ void sgemm_prepacked_4x4(bool is_transB,
     } else {
       pack_trans_m4(b_pannel, B, 1.0f, ldb, x0, xmax, 0, K);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += m_block) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (unsigned int y = 0; y < M; y += m_block) {
+    int work_size = (M + m_block - 1) / m_block;
+    LITE_PARALLEL_BEGIN(yy, tid, work_size) {
+      int y = yy * m_block;
       unsigned int ymax = y + m_block;
       if (ymax > M) {
         ymax = M;
@@ -6345,6 +6413,7 @@ void sgemm_prepacked_4x4(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 #else  // __aarch64__

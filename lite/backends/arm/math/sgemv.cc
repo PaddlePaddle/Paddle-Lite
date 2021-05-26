@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/sgemv.h"
 #include <arm_neon.h>
 #include <algorithm>
+#include "lite/core/parallel_defines.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -146,8 +147,9 @@ void sgemv_trans(const int M,
   } else {
     memset(y_buf, 0, valid_ths * M * sizeof(float));
   }
-#pragma omp parallel for
-  for (int t = 0; t < valid_ths; ++t) {
+  // #pragma omp parallel for
+  //   for (int t = 0; t < valid_ths; ++t) {
+  LITE_PARALLEL_BEGIN(t, tid, valid_ths) {
     float *block_y = y_buf + t * M;
     const float *block_x = x + t * valid_block;
     const float *block_A = A + t * valid_block * M;
@@ -321,13 +323,15 @@ void sgemv_trans(const int M,
       }
     }
   }
+  LITE_PARALLEL_END();
   int cnt4 = M >> 2;
   int remain = M & 3;
   //! do reduction
   int rdc_ths = valid_ths >> 1;
   while (rdc_ths > 0) {
-#pragma omp parallel for
-    for (int t = 0; t < rdc_ths; ++t) {
+    // #pragma omp parallel for
+    //     for (int t = 0; t < rdc_ths; ++t) {
+    LITE_PARALLEL_BEGIN(t, tid, rdc_ths) {
       float *y0 = y_buf + t * M;
       for (int i = t + rdc_ths; i < valid_ths; i += rdc_ths) {
         float *y0_ptr = y0;
@@ -345,6 +349,7 @@ void sgemv_trans(const int M,
         }
       }
     }
+    LITE_PARALLEL_END();
     valid_ths = rdc_ths;
     rdc_ths = rdc_ths >> 1;
   }
@@ -1670,58 +1675,82 @@ void sgemv(const int M,
 
   if (has_a53) {
     if (has_beta) {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
+      // #pragma omp parallel for
+      //       for (int j = 0; j < out_cnt; j++) {
+      LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(
             SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_BETA MAIN_ASM);
       }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
+      LITE_PARALLEL_END();
+      //! deal with remains
+      // #pragma omp parallel for
+      //       for (int j = out_cnt * 8; j < M; ++j) {
+      int work_size = M - out_cnt * 8;
+      LITE_PARALLEL_BEGIN(jj, tid, work_size) {
+        int j = jj + out_cnt * 8;
         REMAIN
         asm volatile(
             SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_BETA REMAIN_ASM);
       }
+      LITE_PARALLEL_END();
     } else {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
+      // #pragma omp parallel for
+      //       for (int j = 0; j < out_cnt; j++) {
+      LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8 MAIN_ASM);
       }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
+      LITE_PARALLEL_END();
+      //! deal with remains
+      // #pragma omp parallel for
+      //       for (int j = out_cnt * 8; j < M; ++j) {
+      int work_size = M - out_cnt * 8;
+      LITE_PARALLEL_BEGIN(jj, tid, work_size) {
+        int j = jj + out_cnt * 8;
         REMAIN
         asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1 REMAIN_ASM);
       }
+      LITE_PARALLEL_END();
     }
   } else {
     if (has_beta) {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
+      // #pragma omp parallel for
+      //       for (int j = 0; j < out_cnt; j++) {
+      LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_BETA MAIN_ASM);
       }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
+      LITE_PARALLEL_END();
+      //! deal with remains
+      // #pragma omp parallel for
+      //       for (int j = out_cnt * 8; j < M; ++j) {
+      int work_size = M - out_cnt * 8;
+      LITE_PARALLEL_BEGIN(jj, tid, work_size) {
+        int j = jj + out_cnt * 8;
         REMAIN
         asm volatile(
             SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_BETA REMAIN_ASM);
       }
+      LITE_PARALLEL_END();
     } else {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
+      // #pragma omp parallel for
+      //       for (int j = 0; j < out_cnt; j++) {
+      LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8 MAIN_ASM);
       }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
+      LITE_PARALLEL_END();
+      //! deal with remains
+      // #pragma omp parallel for
+      //       for (int j = out_cnt * 8; j < M; ++j) {
+      int work_size = M - out_cnt * 8;
+      LITE_PARALLEL_BEGIN(jj, tid, work_size) {
+        int j = jj + out_cnt * 8;
         REMAIN
         asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1 REMAIN_ASM);
       }
+      LITE_PARALLEL_END();
     }
   }
 #else  // __aarch64__
@@ -1838,7 +1867,6 @@ void sgemv_relu(const int M,
   int tail = N & 7;
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   float32x4_t vbeta = vdupq_n_f32(beta);
-
 #ifdef __aarch64__
   int out_cnt = M >> 3;
   if (has_a53) {

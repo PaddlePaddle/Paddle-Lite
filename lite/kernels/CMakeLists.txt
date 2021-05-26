@@ -1,6 +1,9 @@
 message(STATUS "add lite kernels")
 
 set(lite_kernel_deps type_system kernel op op_registry context tensor any CACHE INTERNAL "" FORCE)
+if(LITE_THREAD_POOL)
+  set(lite_kernel_deps ${lite_kernel_deps} thread_pool)
+endif()
 
 add_subdirectory(host)
 add_subdirectory(arm)
