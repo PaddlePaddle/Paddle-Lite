@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/time.h>
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/target_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include <sys/time.h>
 
 #undef LITE_WITH_LOG
 
@@ -33,7 +33,7 @@ class IoCopyHostToMetalTexture
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     public:
     void PrepareForRun() override {
-        auto& context = ctx_->As<ContextMetal>();
+        auto& context = ctx_->As<MTLContext>();
         metal_context_ = (MetalContext*)context.context();
 
         auto& param = Param<operators::IoCopyParam>();
@@ -42,31 +42,16 @@ class IoCopyHostToMetalTexture
 
         auto input_dims = param.x->dims();
         auto src = param.x->template data<float>();
-        //没有metal算子情况：CPU算子计算完回传给metal 后续metal继续计算
+        // scene: have not metal kernel, so use CPU kernel then return to GPU
         if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
             (input_dims.size() == 3 && input_dims[0] <= 4)) {
-            output_buffer_ = param.y->template mutable_data<MetalHalf, MetalImage>(param.y->dims());
-
-            /*//注意：大小应与Texture desc大小逻辑一致
-            //否则shader读取buffer赋值给Image时会Buffer数据不够长找不到数据而报错
-            auto page_count = ((param.x->dims()[0] * param.x->dims()[1] + 3 ) / 4);
-            auto count = page_count * 4 * param.x->dims()[2] * param.x->dims()[3];
-            auto mem_size = count * sizeof(float);
-            //CPU与GPU共享内存
-            src_buffer_ = std::make_shared<MetalBuffer>(metal_context_,
-                                                        param.x->dims(),
-                                                        mem_size,
-                                                        (void *)src);
-
-            function_name_ = "buf_to_tex_c_n";
-            //pipline
-            auto backend = (__bridge MetalContextImp *)metal_context_->backend();
-            pipline_ = (__bridge_retained void *)[backend pipline:function_name_];*/
+            output_buffer_ = param.y->template mutable_data
+                            <MetalHalf, MetalImage>(metal_context_, param.y->dims());
         }
-        //算子参数 常驻内存 初始化一次即可
+        // scene: op params, resident memory can be initialized once
         else {
-            output_buffer_ = param.y->template mutable_data<MetalHalf, MetalImage>(param.y->dims(),
-                                                                                   {0, 1, 2, 3});
+            output_buffer_ = param.y->template mutable_data
+                            <MetalHalf, MetalImage>(metal_context_, param.y->dims(), {0, 1, 2, 3});
             output_buffer_->src_tensor_ = (void*)param.x;
             output_buffer_->CopyFromNCHW<float>(src);
             function_name_ = "host_to_metal-prepare";
@@ -80,23 +65,8 @@ class IoCopyHostToMetalTexture
 
         if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
             (input_dims.size() == 3 && input_dims[0] <= 4)) {
-            //此方法也ok
             auto src = param.x->template data<float>();
             output_buffer_->CopyFromNCHW<float>(src);
-
-            /*//
-            auto outTexture = output_buffer_->image();
-            auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
-            auto backend = (__bridge MetalContextImp *)metal_context_->backend();
-
-            auto encoder = [backend commandEncoder];
-            [encoder setBuffer:(src_buffer_->buffer()) offset:(0) atIndex:(0)];
-            [encoder setTexture:(output_buffer_->image()) atIndex:(0)];
-
-            [backend dispatchEncoder:encoder
-                             pipline:pipline
-                          outTexture:outTexture];
-            [backend commit];*/
         } else {
         }
     }
@@ -143,7 +113,7 @@ class IoCopykMetalTextureToHost
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     public:
     void PrepareForRun() override {
-        auto& context = ctx_->As<ContextMetal>();
+        auto& context = ctx_->As<MTLContext>();
         metal_context_ = (MetalContext*)context.context();
     }
 

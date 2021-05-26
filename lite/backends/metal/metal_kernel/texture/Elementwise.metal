@@ -31,46 +31,50 @@ kernel void elementwise_add(texture2d_array<ftype, access::read> inputX
     return;
   ftype4 rx, ry;
   rx = inputX.read(gid.xy, gid.z);
+  // elementwise add
   if (pm.fast == 1) {
     ry = inputY.read(gid.xy, gid.z);
-  } else if (pm.addByChannel == 1) {
+  }
+  // add at C channel
+  else if (pm.addByChannel == 1) {
     ry = inputY.read(uint2(gid.z, 0), 0);
   } else {
-    // X数据存储坐标（GPU上的WHNC表示）
+    // X coordinate GPU NHNC
     int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0};
-    // X数据存储坐标（CPU上的NHWC表示）(eg:NHWC)
+    // X coordinate CPU NHWC
     int32_t x_abcd[4];
-    // X数据转换后坐标系（CPU上）(eg:NHWC->NCHW) 注意：有Y复用了这个值
+    // X coordinate after conversion CPU (eg:NHWC->NCHW) 注意：有Y复用了这个值
+    // attention: Y coordinate also use this value
     int32_t t_abcd[4];
-    // Y数据存储坐标系
+    // Y coordinate CPU NHWC
     int32_t y_abcd[4] = {0, 0, 0, 0};
-    // Y数据存储坐标系（GPU上的WHNC表示）
+    // Y coordinate GPU NHNC
     int32_t y_xyzn[4];
-    // X数据转换维度
+    // X transpose dims
     int32_t xtrans[4] = {
         pm.xtrans[0], pm.xtrans[1], pm.xtrans[2], pm.xtrans[3]};
-    // Y数据转换维度
+    // Y transpose dims
     int32_t ytrans[4] = {
         pm.ytrans[0], pm.ytrans[1], pm.ytrans[2], pm.ytrans[3]};
-    //
+    //attribute
     int32_t yshift = 4 - pm.ylen - pm.axis;
-    //利用X坐标计算Y坐标读取Y数据（Y维度适配X维度）
+    // use X coordinate to calculate Y coordinate , then read Y data
     for (int n = 0; n < 4; n++) {
-      // ry的读取Index值
+      // ry Index值
       x_xyzn[3] = n;
-      // X由[WHNC-GPU] -> [NHWC-CPU]
+      // X [WHNC-GPU] -> [NHWC-CPU]
       xyzn2abcd(pm.xdim[3], x_xyzn, x_abcd);
-      // X由[NHWC-CPU] -> [NCHW-CPU]
+      // X [NHWC-CPU] -> [NCHW-CPU]
       invtrans(xtrans, x_abcd, t_abcd);
-      // Y对齐X坐标[NCHW-CPU]
+      // Y align X [NCHW-CPU]
       for (int k = pm.axis; k < (pm.axis + pm.ylen); k++) {
         y_abcd[yshift + k] = t_abcd[k];
       }
-      // Y由[NCHW-CPU] -> [NHWC-CPU]
+      // Y [NCHW-CPU] -> [NHWC-CPU]
       trans(ytrans, y_abcd, t_abcd);
-      // Y由[NHWC-CPU] -> [WHNC-GPU]
+      // Y [NHWC-CPU] -> [WHNC-GPU]
       abcd2xyzn(pm.ydim[3], t_abcd, y_xyzn);
-      //读取Y
+      // read Y
       ry[n] = inputY.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
     }
   }

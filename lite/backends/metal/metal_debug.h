@@ -55,9 +55,13 @@ class MetalDebug {
                           MetalImage* image,
                           DumpMode mode = DumpMode::kBoth);
 
-  static void print_log(const std::string& name, MetalImage* metalImg);
+  static void print_log(const std::string& name,
+                        MetalImage* metalImg,
+                        int inCount = 80);
 
-  static void print_log(const std::string& name, MetalBuffer* metalImg);
+  static void print_log(const std::string& name,
+                        MetalBuffer* metalImg,
+                        int inCount = 80);
 
   static void print_float(const std::string& name,
                           float* data,
@@ -71,11 +75,6 @@ class MetalDebug {
   static void DumpBuffer(const std::string& name,
                          MetalBuffer* image,
                          DumpMode mode = DumpMode::kBoth);
-
-  static void DumpNCHWFloat(const std::string& name,
-                            float* data,
-                            int length,
-                            DumpMode mode = DumpMode::kBoth);
 
  private:
   static LITE_THREAD_LOCAL std::map<std::string, int> op_stats_;

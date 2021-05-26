@@ -1,12 +1,19 @@
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
-//  metal_context_oc.m
-//  PaddleLiteiOS
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//  Created by hxwc on 2021/3/22.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "lite/backends/metal/metal_context_imp.h"
-//#include <map>
+#include "lite/utils/cp_logging.h"
 
 extern NSString* cString2NSString(std::string cStr) {
     return [NSString stringWithCString:cStr.c_str() encoding:[NSString defaultCStringEncoding]];
@@ -40,7 +47,7 @@ extern NSString* cString2NSString(std::string cStr) {
             library = [self.device newLibraryWithFile:path error:NULL];
         }
         if (nil == library) {
-            printf("Can't load metallib(%s)\n", [path cStringUsingEncoding:NSUTF8StringEncoding]);
+            LOG(INFO) << "Can't load metallib: " << [path cStringUsingEncoding:NSUTF8StringEncoding];
         }
     });
     return library;
@@ -136,7 +143,6 @@ extern NSString* cString2NSString(std::string cStr) {
 - (void)commit {
     [_commandBuffer commit];
     [_waitings addObject:_commandBuffer];
-    //	[_commandBuffer waitUntilCompleted];
     _commandBuffer = [_commandQueue commandBuffer];
 }
 
@@ -146,15 +152,14 @@ extern NSString* cString2NSString(std::string cStr) {
     _commandBuffer = [_commandQueue commandBuffer];
 }
 
-// mps使用
+// mps
 - (id<MTLCommandBuffer>)commandBuffer {
     id<MTLCommandBuffer> result = [_commandQueue commandBuffer];
     assert(nil != result);
     return result;
-    //	return _commandBuffer;
 }
 
-// mps使用
+// mps
 - (void)commit:(id<MTLCommandBuffer>)cmdBuf {
     assert(nil != cmdBuf);
     [cmdBuf commit];
@@ -165,22 +170,9 @@ extern NSString* cString2NSString(std::string cStr) {
         if (buffer.status >= MTLCommandBufferStatusCompleted) {
             continue;
         }
-#if LITE_WHIT_METAL_BENCHMARK
-        NSTimeInterval begin = [NSDate timeIntervalSinceReferenceDate];
         [buffer waitUntilCompleted];
-        NSTimeInterval end = [NSDate timeIntervalSinceReferenceDate];
-        if (@available(iOS 10.3, *)) {
-            printf("[METAL] commit costs: %.3fms\t(kernel: %.3fms, GPU: %.3fms)\n",
-                   (end - begin) * 1000.f, (buffer.kernelEndTime - buffer.kernelStartTime) * 1000.f,
-                   (buffer.GPUEndTime - buffer.GPUStartTime) * 1000.f);
-        } else {
-            printf("[METAL] commit costs: %.3fms\n", (end - begin) * 1000.f);
-        }
-#else
-        [buffer waitUntilCompleted];
-#endif
         if (buffer.error) {
-            printf("[METAL] %s\n", buffer.error.localizedDescription.UTF8String);
+            LOG(INFO) << "[METAL]: " << buffer.error.localizedDescription.UTF8String;
         }
     }
     [_waitings removeAllObjects];

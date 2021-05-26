@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/elementwise_mul_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/metal/image_op/elementwise_mul_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
@@ -26,7 +26,7 @@ namespace kernels {
 namespace metal {
 
 void ElementwiseMulImageCompute::PrepareForRun() {
-    auto& context = ctx_->As<ContextMetal>();
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
@@ -37,7 +37,7 @@ void ElementwiseMulImageCompute::PrepareForRun() {
 #else
     input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
     input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     setup_without_mps();
@@ -97,7 +97,7 @@ void ElementwiseMulImageCompute::setup_without_mps() {
         valid = false;
     }
     if (!valid) {
-        throw std::logic_error("elementwise_mul: only supports : 1.same shapes 2.by channel.");
+        LOG(FATAL) << "elementwise_mul: only supports : 1.same shapes 2.by channel.";
     }
 
     ElementwiseMetalParam element_params = {by_channel};

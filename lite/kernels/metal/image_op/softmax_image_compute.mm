@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/softmax_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/kernels/metal/image_op/softmax_image_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -25,7 +25,7 @@ namespace kernels {
 namespace metal {
 
 void SoftmaxImageCompute::PrepareForRun() {
-    auto& context = ctx_->As<ContextMetal>();
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
@@ -34,7 +34,7 @@ void SoftmaxImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     //是否使用mps
@@ -89,7 +89,7 @@ void SoftmaxImageCompute::setup_without_mps() {
         axis += input_dims.size();
     }
 
-    std::string function_name = "";
+    std::string function_name = "softmax";
     if (input_dims.size() == 4) {
         if (axis == 1) {
             function_name = "softmax_c_d3_common";
@@ -113,7 +113,6 @@ void SoftmaxImageCompute::setup_without_mps() {
             function_name = "softmax_w_2d_common";
         }
     }
-    //	function_name = "softmax";
     function_name_ = function_name;
 
     // pipline
