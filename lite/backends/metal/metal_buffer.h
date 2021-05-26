@@ -101,7 +101,7 @@ class MetalBuffer {
     bool can_copy_to_{true};  // is can copy to someone
 
 #if defined(__OBJC__)
-    id<MTLBuffer> buffer_{nil};  // NHWC GPU数据
+    id<MTLBuffer> buffer_{nil};  // NHWC GPU data
 #endif
 
     void Convert2NHWC();  // NCHW to NHWC
