@@ -70,6 +70,7 @@ using RKNPUContext = Context<TargetType::kRKNPU>;
 using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
 using ImaginationNNAContext = Context<TargetType::kImaginationNNA>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
+using MTLContext = Context<TargetType::kMetal>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -470,6 +471,25 @@ class Context<TargetType::kOpenCL> {
 };
 #endif
 
+#ifdef LITE_WITH_METAL
+template <>
+class Context<TargetType::kMetal> {
+ public:
+  void InitOnce() { context_ = std::make_shared<MetalContext>(); }
+
+  void CopySharedTo(MTLContext* ctx) {
+    if (ctx && context_) {
+      ctx->context_ = context_;
+    }
+  }
+
+  MetalContext* context() { return context_.get(); }
+
+ private:
+  std::shared_ptr<MetalContext> context_{nullptr};
+};
+#endif
+
 // Context for running a kernel.
 // Holds the necessary resource and information.
 class KernelContext {
@@ -563,8 +583,8 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_METAL
       case TARGET(kMetal):
-        kernel_contexts_[TargetType::kMetal].As<ContextMetal>().CopySharedTo(
-            &ctx->As<ContextMetal>());
+        kernel_contexts_[TargetType::kMetal].As<MTLContext>().CopySharedTo(
+            &ctx->As<MTLContext>());
         break;
 #endif
 #ifdef LITE_WITH_FPGA
@@ -633,7 +653,7 @@ class ContextScheduler {
     InitContext<TargetType::kOpenCL, OpenCLContext>();
 #endif
 #ifdef LITE_WITH_METAL
-    InitContext<TargetType::kMetal, ContextMetal>();
+    InitContext<TargetType::kMetal, MTLContext>();
 #endif
 #ifdef LITE_WITH_FPGA
     InitContext<TargetType::kFPGA, FPGAContext>();

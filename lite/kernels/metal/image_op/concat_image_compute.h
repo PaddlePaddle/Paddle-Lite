@@ -35,29 +35,28 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-class ConcatImageCompute : public KernelLite<TARGET(kMetal),
-                                             PTYPE,
-                                             DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ConcatParam;
+class ConcatImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::ConcatParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("concat", output_buffer_);
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
+    };
 
- private:
-  std::vector<const MetalImage*> input_buffers_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
+   private:
+    void setup_without_mps();
 
-  std::string v_ = "normal";
+    std::vector<const MetalImage*> input_buffers_;
+    MetalImage* output_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
+
+    void* pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
+    std::string v_ = "normal";
 };
 
 }  // namespace metal

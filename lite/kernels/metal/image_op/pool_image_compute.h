@@ -16,6 +16,7 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_POOL_IMAGE_COMPUTE_H_
 
 #include <memory>
+#include <string>
 
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
@@ -33,28 +34,37 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-class PoolImageCompute : public KernelLite<TARGET(kMetal),
-                                           PTYPE,
-                                           DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::PoolParam;
+class PoolImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::PoolParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("pool", output_buffer_);
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput("pool", output_buffer_);
+    };
+    virtual ~PoolImageCompute();
 
- private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
+   private:
+    bool use_mps_{false};
+    void* mps_pool_op_{nullptr};
+    void* mps_input_image_{nullptr};
+    void* mps_output_image_{nullptr};
 
-  std::shared_ptr<MetalBuffer> params_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
+    void setup_with_mps();
+    void setup_without_mps();
+
+    void run_with_mps();
+    void run_without_mps();
+
+    const MetalImage* input_buffer_;
+    MetalImage* output_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
+
+    void* pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
 };
 
 }  // namespace metal

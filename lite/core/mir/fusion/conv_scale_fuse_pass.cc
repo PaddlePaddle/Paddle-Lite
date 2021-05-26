@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/conv_scale_fuse_pass.h"
-#include <list>
 #include <memory>
 #include <vector>
 #include "lite/core/mir/fusion/conv_scale_fuser.h"
@@ -29,32 +28,6 @@ void ConvScaleFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // initialze fuser params
   std::vector<bool> conv_has_bias_cases{true, /*unsuppoted: false*/};
   std::vector<std::string> conv_type_cases{"conv2d", "depthwise_conv2d"};
-  bool has_int8 = false;
-  bool has_weight_quant = false;
-  for (auto& place : graph->valid_places()) {
-    if (place.target == TARGET(kARM) || place.target == TARGET(kHost)) {
-      if (place.precision == PRECISION(kInt8)) {
-        has_int8 = true;
-      }
-    } else {
-      VLOG(5) << "place.target: " << static_cast<int>(place.target);
-      return;
-    }
-  }
-  const std::list<mir::Node>& nodes = graph->nodes();
-  for (auto& node : nodes) {
-    if (node.IsStmt()) {
-      auto* op_info = (node.stmt())->op_info();
-      if (op_info->HasAttr("quantization_type")) {
-        has_weight_quant = true;
-        break;
-      }
-    }
-  }
-  // only support arm-fp32
-  if (has_int8 || has_weight_quant) {
-    return;
-  }
 
   // start fuse using params
   for (auto conv_has_bias : conv_has_bias_cases) {

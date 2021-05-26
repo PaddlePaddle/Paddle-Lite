@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/exp_image_compute.h"
-#include "lite/backends/metal/metal_debug.h"
+#include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/metal/image_op/exp_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
@@ -23,47 +23,35 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void ExpImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
+void ExpImageCompute::PrepareForRun() {
+    auto &context = ctx_->As<MTLContext>();
+    metal_context_ = (MetalContext*)context.context();
 
-  const auto& param = this->template Param<param_t>();
-  auto output_dims = param.Out->dims();
+    const auto& param = this->Param<param_t>();
+    auto output_dims = param.Out->dims();
+#ifdef LITE_WITH_METAL_FULL
+#else
+    input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+#endif
 
-  input_buffer_ = param.X->template data<P, MetalImage>();
-  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
-
-  std::string function_name = "";
-  if (std::is_same<float, P>::value) {
-    function_name = "exp";
-  } else if (std::is_same<MetalHalf, P>::value) {
-    function_name = "exp_half";
-  }
-  assert(!function_name.empty());
-
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
+    function_name_ = "exp";
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
 }
 
-template <typename P, PrecisionType PTYPE>
-void ExpImageCompute<P, PTYPE>::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
+void ExpImageCompute::Run() {
+    auto outTexture = output_buffer_->image();
+    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
-                                                &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
+    auto encoder = [backend commandEncoder];
+    [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
-                                      atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                      atIndex:(1)];
-  kernel_->Execute(*encoder, global_work_size, false);
+    [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    [backend commit];
 }
 
 }  // namespace metal
@@ -71,18 +59,8 @@ void ExpImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ExpImageCompute<float,
-                                                             PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ExpImageCompute<MetalHalf,
-                                                             PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::ExpImageCompute<float, PRECISION(kFloat)>
-    MetalExpFp32;
-typedef paddle::lite::kernels::metal::ExpImageCompute<MetalHalf,
-                                                      PRECISION(kFP16)>
-    MetalExpFp16;
-
 REGISTER_LITE_KERNEL(
-    exp, kMetal, kFloat, kMetalTexture2DArray, MetalExpFp32, def)
+    exp, kMetal, kFloat, kMetalTexture2DArray, paddle::lite::kernels::metal::ExpImageCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFloat),
@@ -94,13 +72,11 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    exp, kMetal, kFP16, kMetalTexture2DArray, MetalExpFp16, def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+    exp, kMetal, kFP16, kMetalTexture2DArray, paddle::lite::kernels::metal::ExpImageCompute, def)
+    .BindInput(
+        "X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput(
+        "Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

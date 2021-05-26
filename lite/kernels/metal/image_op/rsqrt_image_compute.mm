@@ -24,45 +24,43 @@ namespace metal {
 
 template <typename P, PrecisionType PTYPE>
 void RsqrtImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
+    auto& context = this->ctx_->template As<ContextMetal>();
+    metal_context_ = (MetalContext*)context.context();
+    auto device = metal_context_->GetDefaultDevice();
 
-  const auto& param = this->template Param<param_t>();
-  auto output_dims = param.Out->dims();
+    const auto& param = this->template Param<param_t>();
+    auto output_dims = param.Out->dims();
 
-  input_buffer_ = param.X->template data<P, MetalImage>();
-  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
+    input_buffer_ = param.X->template data<P, MetalImage>();
+    output_buffer_ = param.Out->template mutable_data<P, MetalImage>(output_dims);
 
-  std::string function_name = "";
-  if (std::is_same<float, P>::value) {
-    function_name = "rsqrt";
-  } else if (std::is_same<float, P>::value) {
-    function_name = "rsqrt_half";
-  }
-  assert(!function_name.empty());
+    std::string function_name = "";
+    if (std::is_same<float, P>::value) {
+        function_name = "rsqrt";
+    } else if (std::is_same<float, P>::value) {
+        function_name = "rsqrt_half";
+    }
+    assert(!function_name.empty());
 
-  kernel_ = metal_context_->GetKernel(*device, function_name);
-  queue_ = metal_context_->GetDefaultQueue(*device);
+    kernel_ = metal_context_->GetKernel(*device, function_name);
+    queue_ = metal_context_->GetDefaultQueue(*device);
 }
 
 template <typename P, PrecisionType PTYPE>
 void RsqrtImageCompute<P, PTYPE>::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
+    auto output_width = output_buffer_->texture_width_;
+    auto output_height = output_buffer_->texture_height_;
+    auto output_array_length = output_buffer_->array_length_;
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
-                                                &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
+    auto encoder =
+        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
-                                      atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                      atIndex:(1)];
-  kernel_->Execute(*encoder, global_work_size, false);
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+    kernel_->Execute(*encoder, global_work_size, false);
 }
 
 }  // namespace metal
@@ -70,20 +68,13 @@ void RsqrtImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::
-    RsqrtImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::
-    RsqrtImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite::kernels::metal::RsqrtImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite::kernels::metal::RsqrtImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::RsqrtImageCompute<float,
-                                                        PRECISION(kFloat)>
-    MetalRsqrtFp32;
-typedef paddle::lite::kernels::metal::RsqrtImageCompute<MetalHalf,
-                                                        PRECISION(kFP16)>
-    MetalRsqrtFp16;
+typedef paddle::lite::kernels::metal::RsqrtImageCompute<float, PRECISION(kFloat)> MetalRsqrtFp32;
+typedef paddle::lite::kernels::metal::RsqrtImageCompute<MetalHalf, PRECISION(kFP16)> MetalRsqrtFp16;
 
-REGISTER_LITE_KERNEL(
-    rsqrt, kMetal, kFloat, kMetalTexture2DArray, MetalRsqrtFp32, def)
+REGISTER_LITE_KERNEL(rsqrt, kMetal, kFloat, kMetalTexture2DArray, MetalRsqrtFp32, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFloat),
@@ -94,14 +85,11 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    rsqrt, kMetal, kFP16, kMetalTexture2DArray, MetalRsqrtFp16, def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+REGISTER_LITE_KERNEL(rsqrt, kMetal, kFP16, kMetalTexture2DArray, MetalRsqrtFp16, def)
+    .BindInput(
+        "X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput(
+        "Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
