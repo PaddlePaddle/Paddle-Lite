@@ -12,17 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/yolo_box_compute.h"
+#pragma once
+#include <stdint.h>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-REGISTER_LITE_KERNEL(yolo_box,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::YoloBoxCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("ImgSize",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+template <typename T, typename Functor>
+class ReduceCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ReduceCompute() = default;
+
+ private:
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

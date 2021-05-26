@@ -61,8 +61,8 @@ function CheckLibSizeDiff() {
     fi
     current_size=`stat -c%s build.lite.android.armv8.gcc/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so`
 
-    # step2: record lib size of current develop branch
-    git checkout develop
+    # step2: record lib size of the reference branch: name of which is marked by environmental var $BRANCH
+    git checkout $BRANCH
     git clean -f . && git checkout .
 
     lite/tools/build_android.sh --arch=armv8 --toolchain=gcc --android_stl=c++_static --with_log=OFF

@@ -329,6 +329,28 @@ class SqrtCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~SqrtCompute() = default;
 };
 
+template <typename T>
+struct RsqrtFunctor : public BaseActivationFunctor<T> {
+  template <typename Device, typename X, typename Out>
+  void operator()(Device d, X x, Out out) const {
+    out.device(d) = x.rsqrt();
+  }
+};
+
+template <typename T>
+class RsqrtCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ActivationParam>();
+    param.Out->template mutable_data<T>();
+    Activate<RsqrtFunctor<T>>(param.X, param.Out);
+  }
+
+  virtual ~RsqrtCompute() = default;
+};
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite

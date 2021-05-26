@@ -47,4 +47,4 @@ void ConvScaleFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_conv_scale_fuse_pass,
                   paddle::lite::mir::ConvScaleFusePass)
-    .BindTargets({TARGET(kOpenCL)});
+    .BindTargets({TARGET(kOpenCL), TARGET(kARM)});

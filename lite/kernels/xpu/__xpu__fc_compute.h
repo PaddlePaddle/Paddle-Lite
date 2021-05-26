@@ -36,6 +36,7 @@ class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   XPUScratchPadGuard weight_max_guard_;
   // TODO(weihaoji): remove cpu w_max after xpu fc wrapper refactor
   float w_max;
+  XPUScratchPadGuard input_max_guard_;
 };
 
 }  // namespace xpu
