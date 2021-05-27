@@ -2871,7 +2871,7 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
             FMLA_W12
             "vld1.32  {d0-d1}, [%[r2]]          @ load q0, q1\n"
 
-            "sub %[wc0], %[wc0], #342\n"
+            "sub %[wc0], %[wc0], #432\n"
             FMLA_W20
             FMLA_W21
             FMLA_W22
