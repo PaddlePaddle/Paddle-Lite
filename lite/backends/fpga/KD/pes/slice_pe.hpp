@@ -63,6 +63,7 @@ class SlicePE : public PE {
         output_data[i] = input_data[i + start];
       }
     }
+    output->flush();
 
     return true;
   }
