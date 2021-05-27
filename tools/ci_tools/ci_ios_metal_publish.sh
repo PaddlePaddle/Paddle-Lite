@@ -55,7 +55,11 @@ function publish_inference_lib {
 
 
 # Compiling test
+TOTAL_ERRORS=0
 for arch in ${ARCH[@]}; do
   cd $WORKSPACE
   publish_inference_lib $arch ON
+  TOTAL_ERRORS=$(expr $TOTAL_ERRORS + $?)
 done    
+
+exit $TOTAL_ERRORS
