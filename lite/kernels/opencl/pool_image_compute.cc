@@ -12,12 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+#include <string>
+#include "lite/backends/opencl/cl_half.h"
+#include "lite/backends/opencl/cl_image_converter.h"
+#include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
+#include "lite/operators/op_params.h"
+#include "lite/utils/logging.h"
+#include "lite/utils/replace_stl/stream.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
+#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -134,14 +143,14 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
           (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
               ? sizeof(uint16_t)
               : sizeof(float);
-      if (global_pooling && pooling_type == "avg") {
+      if (pooling_type == "avg") {
         type_size = sizeof(float);
       }
       uint32_t local_mem_size =
           CLRuntime::Global()->GetDeviceInfo()["CL_DEVICE_LOCAL_MEM_SIZE_KB"] *
           1024;
       uint32_t workgroupsize_max =
-          CLRuntime::Global()->GetDeviceInfo()["CL_DEVICE_MAX_WORK_GROUP_SIZE"];
+          CLRuntime::Global()->GetMaxWorkGroupSize(kernel_);
 
       uint32_t compute_intensity = ksize[0] * ksize[1];
       run_local_work_ = out_dims[0] * out_c_blks * out_dims[2] * out_dims[3] <
@@ -153,6 +162,10 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
                      workgroupsize_max);
         workgroup_size =
             std::min(static_cast<uint32_t>(compute_intensity), workgroup_size);
+        LOG(INFO) << "local_mem_size: " << local_mem_size
+                  << " , workgroupsize_max: " << workgroupsize_max
+                  << " , compute_intensity: " << compute_intensity
+                  << " , workgroup_size: " << workgroup_size;
         uint32_t temp_size = 1;
         while ((temp_size <<= 1) <= workgroup_size) {
         }
@@ -221,6 +234,9 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       VLOG(4) << "global_work_size: " << static_cast<int>(global_work_size_[0])
               << "  " << static_cast<int>(global_work_size_[1]) << "  "
               << static_cast<int>(global_work_size_[2]);
+      VLOG(4) << "local_work_size: " << static_cast<int>(local_work_size_[0])
+              << "  " << static_cast<int>(local_work_size_[1]) << "  "
+              << static_cast<int>(local_work_size_[2]);
 #endif
     }
   }
@@ -236,13 +252,24 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel_.setArg(arg_idx++, *out_img_);
     CL_CHECK_FATAL(status);
 
-    status = EnqueueNDRangeKernel(context,
-                                  kernel_,
-                                  cl::NullRange,
-                                  global_work_size_,
-                                  local_work_size_,
-                                  nullptr,
-                                  event_);
+    if (run_local_work_) {
+      status = EnqueueNDRangeKernel(context,
+                                    kernel_,
+                                    cl::NullRange,
+                                    global_work_size_,
+                                    local_work_size_,
+                                    nullptr,
+                                    event_);
+    } else {
+      status = EnqueueNDRangeKernel(context,
+                                    kernel_,
+                                    cl::NullRange,
+                                    global_work_size_,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+    }
+
     CL_CHECK_FATAL(status);
   }
 

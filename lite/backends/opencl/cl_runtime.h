@@ -199,6 +199,9 @@ class CLRuntime {
     return device_->getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
   }
 
+  // get kernel enqueue max work group size
+  uint64_t GetMaxWorkGroupSize(const cl::Kernel& kernel);
+
   double GetCommandTime(const cl::Event& event);
 
   double GetQueuedTime(const cl::Event& event);
