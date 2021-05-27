@@ -40,9 +40,9 @@ class TargetWrapper<TARGET(kMetal)> {
     static void Free(void* ptr);
 
     static void MemcpySync(void* dst,
-                           const void* src,
-                           size_t size,
-                           IoDirection dir = lite::IoDirection::HtoH);
+        const void* src,
+        size_t size,
+        IoDirection dir = lite::IoDirection::HtoH);
 
     static void MemsetSync(void* dst, int value, size_t size);
 };

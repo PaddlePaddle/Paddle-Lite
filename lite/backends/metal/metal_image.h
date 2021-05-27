@@ -45,14 +45,14 @@ class MetalImage {
     void* src_tensor_{nullptr};
 
     MetalImage(MetalContext* context,
-               const DDim& in_dim,
-               std::vector<int> in_transpose = {0, 2, 3, 1},
-               METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::HALF,
-               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
+        const DDim& in_dim,
+        std::vector<int> in_transpose = {0, 2, 3, 1},
+        METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::HALF,
+        METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
     void UpdateDims(MetalContext* context,
-                    const DDim& in_tensor_dim,
-                    std::vector<int> in_transpose);
+        const DDim& in_tensor_dim,
+        std::vector<int> in_transpose);
 
     template <typename SP>
     void CopyFromNCHW(const SP* src);

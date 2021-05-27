@@ -60,12 +60,12 @@ class MetalDebug {
     static void print_float(const std::string& name, float* data, int size, int inCount = 80);
 
     static void DumpImage(const std::string& name,
-                          MetalImage* image,
-                          DumpMode mode = DumpMode::kBoth);
+        MetalImage* image,
+        DumpMode mode = DumpMode::kBoth);
 
     static void DumpBuffer(const std::string& name,
-                           MetalBuffer* image,
-                           DumpMode mode = DumpMode::kBoth);
+        MetalBuffer* image,
+        DumpMode mode = DumpMode::kBoth);
 
    private:
     static LITE_THREAD_LOCAL std::map<std::string, int> op_stats_;
