@@ -11,7 +11,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
 
 readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
-
+# are you ok
 # global variables
 CMAKE_EXTRA_OPTIONS=""
 BUILD_EXTRA=OFF
