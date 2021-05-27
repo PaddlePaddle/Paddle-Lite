@@ -35,7 +35,7 @@ kernel void fetch(texture2d_array<ftype, access::read> inTexture [[texture(0)]],
   }
 
   uint count = param.idim[0] * param.idim[1] * param.idim[2] * param.idim[3];
-  //输入为4维 CPU为NCHW GPU为NHWC
+  //  dimensions == 4, data layout on CPU is NCHW, data layout on GPU is NHWC
   if (param.isize == 4) {
     const ftype4 input = inTexture.read(gid.xy, gid.z);
     uint delta = input_width * input_height;
@@ -58,7 +58,7 @@ kernel void fetch(texture2d_array<ftype, access::read> inTexture [[texture(0)]],
       output[dst] = input.w;
     }
   }
-  //输入为4维以下 CPU为NCHW GPU为NCHW 但CPU上texture的width=H height=W
+  //  dimensions < 4, data layout on CPU is NCHW(texture width is H, height is W), data layout on GPU is NCHW
   //arraylength=(W+3)/4
   else {
     const ftype4 input = inTexture.read(gid.xy, gid.z);
