@@ -80,6 +80,7 @@ Welcome to Paddle-Lite's documentation!
   source_compile/compile_andriod
   source_compile/compile_ios
   source_compile/compile_linux
+  source_compile/compile_windows
   source_compile/compile_options
   source_compile/library_tailoring
 
