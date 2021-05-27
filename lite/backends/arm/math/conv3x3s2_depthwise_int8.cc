@@ -458,24 +458,20 @@ void conv_depthwise_3x3s2_common_int8(Dtype* dout,
     }
   }
 }
-#define FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val) \
-  int8x8_t wr00 = vdup_n_s8(weight_ptr[0]);          \
-  int8x8_t wr10 = vdup_n_s8(weight_ptr[3]);          \
-  int8x8_t wr20 = vdup_n_s8(weight_ptr[6]);          \
-  int8x8_t wr01 = vdup_n_s8(weight_ptr[1]);          \
-  int8x8_t wr11 = vdup_n_s8(weight_ptr[4]);          \
-  int8x8_t wr21 = vdup_n_s8(weight_ptr[7]);          \
-  int8x8_t wr02 = vdup_n_s8(weight_ptr[2]);          \
-  int8x8_t wr12 = vdup_n_s8(weight_ptr[5]);          \
-  int8x8_t wr22 = vdup_n_s8(weight_ptr[8]);          \
-  float v_bias[8] = {bias_val,                       \
-                     bias_val,                       \
-                     bias_val,                       \
-                     bias_val,                       \
-                     bias_val,                       \
-                     bias_val,                       \
-                     bias_val,                       \
-                     bias_val};
+#define FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val, scale_val, max_val)    \
+  int8x8_t wr00 = vdup_n_s8(weight_ptr[0]);                                 \
+  int8x8_t wr10 = vdup_n_s8(weight_ptr[3]);                                 \
+  int8x8_t wr20 = vdup_n_s8(weight_ptr[6]);                                 \
+  int8x8_t wr01 = vdup_n_s8(weight_ptr[1]);                                 \
+  int8x8_t wr11 = vdup_n_s8(weight_ptr[4]);                                 \
+  int8x8_t wr21 = vdup_n_s8(weight_ptr[7]);                                 \
+  int8x8_t wr02 = vdup_n_s8(weight_ptr[2]);                                 \
+  int8x8_t wr12 = vdup_n_s8(weight_ptr[5]);                                 \
+  int8x8_t wr22 = vdup_n_s8(weight_ptr[8]);                                 \
+  float v_bias[20] = {bias_val,  bias_val,  bias_val, bias_val,  bias_val,  \
+                      bias_val,  bias_val,  bias_val, scale_val, scale_val, \
+                      scale_val, scale_val, max_val,  max_val,   max_val,   \
+                      max_val,   alpha[0],  alpha[0], alpha[0],  alpha[0]};
 
 #define INIT_PTR_3x3_S2_INT8(Dtype, din, w_in) \
   Dtype* doutr0 = nullptr;                     \
@@ -582,6 +578,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   vst1_u8(vmask + 8, vmask_rp2);
   return std::make_pair(cnt_col, cnt_remain);
 }
+// clang-format off
 #ifdef __aarch64__
 #define INIT_INT8_S2                                    \
   "PRFM PLDL1KEEP, [%[din_ptr0]]                    \n" \
@@ -595,78 +592,82 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "ld2    {v6.8b, v7.8b}, [%[din_ptr3]], #16        \n" \
   "ld2    {v8.8b, v9.8b}, [%[din_ptr4]], #16        \n"
 
-#define LEFT_COMPUTE_INT8_S2                                              \
-  "movi    v16.4s, #0                               \n"                   \
-  "movi    v17.4s, #0                               \n"                   \
-  "ext    v10.8b, %[vzero].8b, v1.8b, #7            \n"                   \
-  "ext    v11.8b, %[vzero].8b, v5.8b, #7            \n"                   \
-  "smull  v12.8h, v0.8b, %[wr01].8b                 \n"                   \
-  "smull  v14.8h, v4.8b, %[wr01].8b                 \n"                   \
-  "smull  v13.8h, v1.8b, %[wr02].8b                 \n"                   \
-  "smull  v15.8h, v5.8b, %[wr02].8b                 \n"                   \
-  "movi    v18.4s, #0                               \n"                   \
-  "movi    v19.4s, #0                               \n"                   \
-  "sub    %[din_ptr0], %[din_ptr0], #1              \n"                   \
-  "sub    %[din_ptr2], %[din_ptr2], #1              \n"                   \
-  "smlal  v12.8h, v10.8b, %[wr00].8b                \n"                   \
-  "smlal  v14.8h, v11.8b, %[wr00].8b                \n" /* line 2 */      \
-  "smlal  v13.8h, v4.8b, %[wr21].8b                 \n"                   \
-  "saddw  v16.4s, v16.4s, v12.4h                    \n"                   \
-  "saddw2 v17.4s, v17.4s, v12.8h                    \n"                   \
-  "saddw  v18.4s, v18.4s, v14.4h                    \n"                   \
-  "saddw2  v19.4s, v19.4s, v14.8h                   \n"                   \
-  "smull  v12.8h, v5.8b, %[wr22].8b                 \n"                   \
-  "saddw  v16.4s, v16.4s, v13.4h                    \n"                   \
-  "saddw2 v17.4s, v17.4s, v13.8h                    \n"                   \
-  "smull  v13.8h, v11.8b, %[wr20].8b                \n" /* line 1 */      \
-  "ext    v10.8b, %[vzero].8b, v3.8b, #7            \n"                   \
-  "ext    v11.8b, %[vzero].8b, v7.8b, #7            \n"                   \
-  "smlal  v15.8h, v6.8b, %[wr11].8b                 \n"                   \
-  "smlal  v12.8h, v2.8b, %[wr11].8b                 \n"                   \
-  "smull  v14.8h, v7.8b, %[wr12].8b                 \n"                   \
-  "smlal  v13.8h, v3.8b, %[wr12].8b                 \n"                   \
-  "sub    %[din_ptr1], %[din_ptr1], #1              \n"                   \
-  "sub    %[din_ptr3], %[din_ptr3], #1              \n"                   \
-  "saddw  v18.4s, v18.4s, v15.4h                    \n"                   \
-  "saddw2 v19.4s, v19.4s, v15.8h                    \n"                   \
-  "saddw  v16.4s, v16.4s, v12.4h                    \n"                   \
-  "saddw2 v17.4s, v17.4s, v12.8h                    \n"                   \
-  "smlal  v14.8h, v11.8b, %[wr10].8b                \n"                   \
-  "smull  v12.8h, v10.8b, %[wr10].8b                \n"                   \
-  "saddw  v16.4s, v16.4s, v13.4h                    \n"                   \
-  "saddw2 v17.4s, v17.4s, v13.8h                    \n" /* line 2 */      \
-  "ext    v11.8b, %[vzero].8b, v9.8b, #7            \n"                   \
-  "saddw  v18.4s, v18.4s, v14.4h                    \n"                   \
-  "saddw2 v19.4s, v19.4s, v14.8h                    \n"                   \
-  "saddw  v16.4s, v16.4s, v12.4h                    \n"                   \
-  "saddw2 v17.4s, v17.4s, v12.8h                    \n"                   \
-  "smull  v15.8h, v9.8b, %[wr22].8b                 \n"                   \
-  "smull  v14.8h, v8.8b, %[wr21].8b                 \n"                   \
-  "sub    %[din_ptr4], %[din_ptr4], #1              \n"                   \
-  "ld2    {v0.8b, v1.8b}, [%[din_ptr0]], #16        \n"                   \
-  "ld2    {v4.8b, v5.8b}, [%[din_ptr2]], #16        \n"                   \
-  "saddw  v18.4s, v18.4s, v15.4h                    \n"                   \
-  "saddw2  v19.4s, v19.4s, v15.8h                   \n"                   \
-  "smlal  v14.8h, v11.8b, %[wr20].8b                \n"                   \
-  "ld2    {v2.8b, v3.8b}, [%[din_ptr1]], #16        \n"                   \
-  "ld2    {v6.8b, v7.8b}, [%[din_ptr3]], #16        \n"                   \
-  "ld2    {v8.8b, v9.8b}, [%[din_ptr4]], #16        \n"                   \
-  "saddw  v18.4s, v18.4s, v14.4h                    \n"                   \
-  "saddw2  v19.4s, v19.4s, v14.8h                   \n" /* int32->fp32 */ \
-  "ld1     {v14.4s}, [%[scale_val]]                 \n"                   \
-  "scvtf   v10.4s, v16.4s                           \n"                   \
-  "scvtf   v11.4s, v17.4s                           \n"                   \
-  "ld1    {v16.4s}, [%[bias_val]]                   \n"                   \
-  "ld1    {v17.4s}, [%[bias_val]]                   \n"                   \
-  "scvtf   v12.4s, v18.4s                           \n"                   \
-  "scvtf   v13.4s, v19.4s                           \n"                   \
-  "ld1    {v18.4s}, [%[bias_val]]                   \n"                   \
-  "ld1    {v19.4s}, [%[bias_val]]                   \n"                   \
-  "fmla   v16.4s, v10.4s, v14.4s                    \n"                   \
-  "fmla   v17.4s, v11.4s, v14.4s                    \n"                   \
-  "fmla   v18.4s, v12.4s, v14.4s                    \n"                   \
-  "fmla   v19.4s, v13.4s, v14.4s                    \n"                   \
-  "cmp    %w[cnt], #1                               \n"
+#define LEFT_COMPUTE_INT8_S2                            \
+  "movi    v16.4s, #0                               \n" \
+  "movi    v17.4s, #0                               \n" \
+  "ext    v10.8b, %[vzero].8b, v1.8b, #7            \n" \
+  "ext    v11.8b, %[vzero].8b, v5.8b, #7            \n" \
+  "smull  v12.8h, v0.8b, %[wr01].8b                 \n" \
+  "smull  v14.8h, v4.8b, %[wr01].8b                 \n" \
+  "smull  v13.8h, v1.8b, %[wr02].8b                 \n" \
+  "smull  v15.8h, v5.8b, %[wr02].8b                 \n" \
+  "movi    v18.4s, #0                               \n" \
+  "movi    v19.4s, #0                               \n" \
+  "sub    %[din_ptr0], %[din_ptr0], #1              \n" \
+  "sub    %[din_ptr2], %[din_ptr2], #1              \n" \
+  "smlal  v12.8h, v10.8b, %[wr00].8b                \n" \
+  "smlal  v14.8h, v11.8b, %[wr00].8b                \n" \
+  /* line 2 */                                          \
+  "smlal  v13.8h, v4.8b, %[wr21].8b                 \n" \
+  "saddw  v16.4s, v16.4s, v12.4h                    \n" \
+  "saddw2 v17.4s, v17.4s, v12.8h                    \n" \
+  "saddw  v18.4s, v18.4s, v14.4h                    \n" \
+  "saddw2  v19.4s, v19.4s, v14.8h                   \n" \
+  "smull  v12.8h, v5.8b, %[wr22].8b                 \n" \
+  "saddw  v16.4s, v16.4s, v13.4h                    \n" \
+  "saddw2 v17.4s, v17.4s, v13.8h                    \n" \
+  "smull  v13.8h, v11.8b, %[wr20].8b                \n" \
+  /* line 1 */                                          \
+  "ext    v10.8b, %[vzero].8b, v3.8b, #7            \n" \
+  "ext    v11.8b, %[vzero].8b, v7.8b, #7            \n" \
+  "smlal  v15.8h, v6.8b, %[wr11].8b                 \n" \
+  "smlal  v12.8h, v2.8b, %[wr11].8b                 \n" \
+  "smull  v14.8h, v7.8b, %[wr12].8b                 \n" \
+  "smlal  v13.8h, v3.8b, %[wr12].8b                 \n" \
+  "sub    %[din_ptr1], %[din_ptr1], #1              \n" \
+  "sub    %[din_ptr3], %[din_ptr3], #1              \n" \
+  "saddw  v18.4s, v18.4s, v15.4h                    \n" \
+  "saddw2 v19.4s, v19.4s, v15.8h                    \n" \
+  "saddw  v16.4s, v16.4s, v12.4h                    \n" \
+  "saddw2 v17.4s, v17.4s, v12.8h                    \n" \
+  "smlal  v14.8h, v11.8b, %[wr10].8b                \n" \
+  "smull  v12.8h, v10.8b, %[wr10].8b                \n" \
+  "saddw  v16.4s, v16.4s, v13.4h                    \n" \
+  "saddw2 v17.4s, v17.4s, v13.8h                    \n" \
+  /* line 2 */                                          \
+  "ext    v11.8b, %[vzero].8b, v9.8b, #7            \n" \
+  "saddw  v18.4s, v18.4s, v14.4h                    \n" \
+  "saddw2 v19.4s, v19.4s, v14.8h                    \n" \
+  "saddw  v16.4s, v16.4s, v12.4h                    \n" \
+  "saddw2 v17.4s, v17.4s, v12.8h                    \n" \
+  "smull  v15.8h, v9.8b, %[wr22].8b                 \n" \
+  "smull  v14.8h, v8.8b, %[wr21].8b                 \n" \
+  "sub    %[din_ptr4], %[din_ptr4], #1              \n" \
+  "ld2    {v0.8b, v1.8b}, [%[din_ptr0]], #16        \n" \
+  "ld2    {v4.8b, v5.8b}, [%[din_ptr2]], #16        \n" \
+  "saddw  v18.4s, v18.4s, v15.4h                    \n" \
+  "saddw2  v19.4s, v19.4s, v15.8h                   \n" \
+  "smlal  v14.8h, v11.8b, %[wr20].8b                \n" \
+  "ld2    {v2.8b, v3.8b}, [%[din_ptr1]], #16        \n" \
+  "ld2    {v6.8b, v7.8b}, [%[din_ptr3]], #16        \n" \
+  "ld2    {v8.8b, v9.8b}, [%[din_ptr4]], #16        \n" \
+  "saddw  v18.4s, v18.4s, v14.4h                    \n" \
+  "saddw2  v19.4s, v19.4s, v14.8h                   \n" \
+  /* int32->fp32 */                                     \
+  "ldr     q14, [%[bias_val], #32]                  \n" \
+  "scvtf   v10.4s, v16.4s                           \n" \
+  "scvtf   v11.4s, v17.4s                           \n" \
+  "ld1    {v16.4s}, [%[bias_val]]                   \n" \
+  "ld1    {v17.4s}, [%[bias_val]]                   \n" \
+  "scvtf   v12.4s, v18.4s                           \n" \
+  "scvtf   v13.4s, v19.4s                           \n" \
+  "ld1    {v18.4s}, [%[bias_val]]                   \n" \
+  "ld1    {v19.4s}, [%[bias_val]]                   \n" \
+  "fmla   v16.4s, v10.4s, v14.4s                    \n" \
+  "fmla   v17.4s, v11.4s, v14.4s                    \n" \
+  "fmla   v18.4s, v12.4s, v14.4s                    \n" \
+  "fmla   v19.4s, v13.4s, v14.4s                    \n" \
+  "cmp    %w[cnt], #16                              \n"
 
 #define RESULT_INT8_S2_RELU                             \
   "fmax   v16.4s,  v16.4s, %[vzero].4s              \n" \
@@ -675,14 +676,14 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "fmax   v19.4s,  v19.4s, %[vzero].4s              \n"
 
 #define RESULT_INT8_S2_RELU6                            \
-  "ld1    {v14.4s}, [%[alpha_val]]                  \n" \
+  "ldr     q14, [%[bias_val], #64]                  \n" \
   "fmin   v16.4s,  v16.4s, v14.4s                   \n" \
   "fmin   v17.4s,  v17.4s, v14.4s                   \n" \
   "fmin   v18.4s,  v18.4s, v14.4s                   \n" \
   "fmin   v19.4s,  v19.4s, v14.4s                   \n"
 
 #define RESULT_INT8_S2_LEAKY_RELU                       \
-  "ld1    {v14.4s}, [%[alpha_val]]                  \n" \
+  "ldr     q14, [%[bias_val], #64]                  \n" \
   "fcmge  v10.4s,  v16.4s, %[vzero].4s              \n" \
   "fmul   v20.4s,  v16.4s, v14.4s                   \n" \
   "fcmge  v11.4s,  v17.4s, %[vzero].4s              \n" \
@@ -696,28 +697,33 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "bif    v18.16b, v20.16b, v10.16b                 \n" \
   "bif    v19.16b, v21.16b, v11.16b                 \n"
 
-#define RESULT_INT8_INT8_S2                                                \
-  /*fp32->mul scale->int32->int16->int8*/                                  \
-  "ld1 {v14.4s}, [%[max_val]]                       \n" /* data >= -127 */ \
-  "fcmge v10.4s, v16.4s, v14.4s                     \n"                    \
-  "fcmge v11.4s, v17.4s, v14.4s                     \n"                    \
-  "fcmge v12.4s, v18.4s, v14.4s                     \n"                    \
-  "fcmge v13.4s, v19.4s, v14.4s                     \n" /* choose data */  \
-  "bif v16.16b, v14.16b, v10.16b                    \n"                    \
-  "bif v17.16b, v14.16b, v11.16b                    \n"                    \
-  "bif v18.16b, v14.16b, v12.16b                    \n"                    \
-  "bif v19.16b, v14.16b, v13.16b                    \n" /* fp32 - int32 */ \
-  "fcvtas  v10.4s, v16.4s                           \n"                    \
-  "fcvtas  v11.4s, v17.4s                           \n"                    \
-  "fcvtas  v12.4s, v18.4s                           \n"                    \
-  "fcvtas  v13.4s, v19.4s                           \n" /* int32-int16 */  \
-  "sqxtn   v16.4h, v10.4s                           \n"                    \
-  "sqxtn2  v16.8h, v11.4s                           \n"                    \
-  "sqxtn   v18.4h, v12.4s                           \n"                    \
-  "sqxtn2  v18.8h, v13.4s                           \n" /* int16-int8 */   \
-  "sqxtn  v17.8b, v16.8h                            \n"                    \
-  "sqxtn  v19.8b, v18.8h                            \n"                    \
-  "st1    {v17.8b}, [%[ptr_out0]], #8               \n"                    \
+#define RESULT_INT8_INT8_S2                             \
+  /*fp32->mul scale->int32->int16->int8*/               \
+  "ldr q14, [%[bias_val], #48]                      \n" \
+  /* data >= -127 */                                    \
+  "fcmge v10.4s, v16.4s, v14.4s                     \n" \
+  "fcmge v11.4s, v17.4s, v14.4s                     \n" \
+  "fcmge v12.4s, v18.4s, v14.4s                     \n" \
+  "fcmge v13.4s, v19.4s, v14.4s                     \n" \
+  /* choose data */                                     \
+  "bif v16.16b, v14.16b, v10.16b                    \n" \
+  "bif v17.16b, v14.16b, v11.16b                    \n" \
+  "bif v18.16b, v14.16b, v12.16b                    \n" \
+  "bif v19.16b, v14.16b, v13.16b                    \n" \
+  /* fp32 - int32 */                                    \
+  "fcvtas  v10.4s, v16.4s                           \n" \
+  "fcvtas  v11.4s, v17.4s                           \n" \
+  "fcvtas  v12.4s, v18.4s                           \n" \
+  "fcvtas  v13.4s, v19.4s                           \n" \
+  /* int32-int16 */                                     \
+  "sqxtn   v16.4h, v10.4s                           \n" \
+  "sqxtn2  v16.8h, v11.4s                           \n" \
+  "sqxtn   v18.4h, v12.4s                           \n" \
+  "sqxtn2  v18.8h, v13.4s                           \n" \
+  /* int16-int8 */                                      \
+  "sqxtn  v17.8b, v16.8h                            \n" \
+  "sqxtn  v19.8b, v18.8h                            \n" \
+  "st1    {v17.8b}, [%[ptr_out0]], #8               \n" \
   "st1    {v19.8b}, [%[ptr_out1]], #8               \n"
 
 #define RESULT_INT8_FP32_S2                             \
@@ -726,161 +732,169 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "st1    {v17.4s}, [%[ptr_out0]], #16              \n" \
   "st1    {v19.4s}, [%[ptr_out1]], #16              \n"
 
-#define MID_COMPUTE_INT8_S2                                               \
-  "blt    1f                                        \n"                   \
-  "2:                                               \n"                   \
-  "ld1    {v12.8b}, [%[din_ptr0]]                   \n"                   \
-  "ld1    {v13.8b}, [%[din_ptr2]]                   \n"                   \
-  "movi    v18.4s, #0                               \n"                   \
-  "movi    v19.4s, #0                               \n"                   \
-  "movi    v20.4s, #0                               \n"                   \
-  "movi    v21.4s, #0                               \n"                   \
-  "ext    v10.8b, v0.8b, v12.8b, #1                \n"                    \
-  "ext    v11.8b, v4.8b, v13.8b, #1                \n"                    \
-  "smull  v14.8h, v0.8b, %[wr00].8b                 \n"                   \
-  "smull  v16.8h, v4.8b, %[wr00].8b                 \n"                   \
-  "smull  v15.8h, v1.8b, %[wr01].8b                 \n"                   \
-  "smull  v17.8h, v5.8b, %[wr01].8b                 \n"                   \
-  "ld1    {v12.8h}, [%[din_ptr1]]                   \n"                   \
-  "ld1    {v13.8h}, [%[din_ptr3]]                   \n"                   \
-  "smlal  v14.8h, v10.8b, %[wr02].8b                \n"                   \
-  "smlal  v16.8h, v11.8b, %[wr02].8b                \n"                   \
-  "smlal  v15.8h, v4.8b, %[wr20].8b                 \n"                   \
-  "saddw  v18.4s,  v18.4s, v14.4h                   \n"                   \
-  "saddw2 v19.4s,  v19.4s, v14.8h                   \n"                   \
-  "saddw  v20.4s,  v20.4s, v16.4h                   \n"                   \
-  "saddw2 v21.4s,  v21.4s, v16.8h                   \n"                   \
-  "ext    v10.8b, v2.8b, v12.8b, #1                \n"                    \
-  "saddw  v18.4s,  v18.4s, v15.4h                   \n"                   \
-  "saddw2 v19.4s,  v19.4s, v15.8h                   \n"                   \
-  "smull  v14.8h, v5.8b, %[wr21].8b                 \n"                   \
-  "smull  v15.8h, v11.8b, %[wr22].8b                \n"                   \
-  "ext    v11.8b, v6.8b, v13.8b, #1                \n" /* line 1 */       \
-  "smlal  v17.8h,  v6.8b,  %[wr10].8b               \n"                   \
-  "smlal  v14.8h,  v2.8b,  %[wr10].8b               \n"                   \
-  "smull  v16.8h,  v7.8b,  %[wr11].8b               \n"                   \
-  "smlal  v15.8h,  v3.8b,  %[wr11].8b               \n"                   \
-  "saddw  v20.4s,  v20.4s, v17.4h                   \n"                   \
-  "saddw2 v21.4s,  v21.4s, v17.8h                   \n"                   \
-  "saddw  v18.4s,  v18.4s, v14.4h                   \n"                   \
-  "saddw2 v19.4s,  v19.4s, v14.8h                   \n"                   \
-  "ld1    {v12.8h}, [%[din_ptr4]]                   \n"                   \
-  "smull  v14.8h,  v10.8b,  %[wr12].8b              \n"                   \
-  "smlal  v16.8h,  v11.8b,  %[wr12].8b              \n" /* line 2 */      \
-  "saddw  v18.4s,  v18.4s, v15.4h                   \n"                   \
-  "saddw2 v19.4s,  v19.4s, v15.8h                   \n"                   \
-  "ext    v11.8b, v8.8b, v12.8b, #1                \n"                    \
-  "smull  v17.8h,  v8.8b,  %[wr20].8b               \n"                   \
-  "saddw  v20.4s,  v20.4s, v16.4h                   \n"                   \
-  "saddw2 v21.4s,  v21.4s, v16.8h                   \n"                   \
-  "saddw  v18.4s,  v18.4s, v14.4h                   \n"                   \
-  "saddw2 v19.4s,  v19.4s, v14.8h                   \n"                   \
-  "smull  v16.8h,  v9.8b,  %[wr21].8b               \n"                   \
-  "smlal  v17.8h,  v11.8b,  %[wr22].8b              \n"                   \
-  "ld2    {v0.8b, v1.8b}, [%[din_ptr0]], #16        \n"                   \
-  "ld2    {v4.8b, v5.8b}, [%[din_ptr2]], #16        \n"                   \
-  "saddw  v20.4s,  v20.4s, v16.4h                   \n"                   \
-  "saddw2 v21.4s,  v21.4s, v16.8h                   \n"                   \
-  "ld2    {v2.8b, v3.8b}, [%[din_ptr1]], #16        \n"                   \
-  "ld2    {v6.8b, v7.8b}, [%[din_ptr3]], #16        \n"                   \
-  "saddw  v20.4s,  v20.4s, v17.4h                   \n"                   \
-  "saddw2 v21.4s,  v21.4s, v17.8h                   \n"                   \
-  "ld2    {v8.8b, v9.8b}, [%[din_ptr4]], #16        \n" /* int32->fp32 */ \
-  "ld1     {v14.4s}, [%[scale_val]]                 \n"                   \
-  "scvtf   v10.4s, v18.4s                           \n"                   \
-  "scvtf   v11.4s, v19.4s                           \n"                   \
-  "ld1    {v16.4s}, [%[bias_val]]                   \n"                   \
-  "ld1    {v17.4s}, [%[bias_val]]                   \n"                   \
-  "scvtf   v12.4s, v20.4s                           \n"                   \
-  "scvtf   v13.4s, v21.4s                           \n"                   \
-  "ld1    {v18.4s}, [%[bias_val]]                   \n"                   \
-  "ld1    {v19.4s}, [%[bias_val]]                   \n"                   \
-  "fmla   v16.4s, v10.4s, v14.4s                    \n"                   \
-  "fmla   v17.4s, v11.4s, v14.4s                    \n"                   \
-  "fmla   v18.4s, v12.4s, v14.4s                    \n"                   \
-  "fmla   v19.4s, v13.4s, v14.4s                    \n"                   \
-  "subs   %w[cnt], %w[cnt], #1                      \n"
 
-#define RIGHT_COMPUTE_INT8_S2                                        \
-  "bne    2b                                        \n"              \
-  "1:                                               \n"              \
-  "cmp    %w[remain], #1                            \n"              \
-  "blt    4f                                        \n"              \
-  "3:                                               \n"              \
-  "ld1    {v12.8b}, [%[vmask]], #8                  \n"              \
-  "ld1    {v13.8b}, [%[vmask]]                      \n"              \
-  "movi    v18.4s, #0                               \n"              \
-  "movi    v19.4s, #0                               \n"              \
-  "bif    v0.8b, %[vzero].8b, v12.8b                \n"              \
-  "bif    v1.8b, %[vzero].8b, v13.8b                \n"              \
-  "bif    v4.8b, %[vzero].8b, v12.8b                \n"              \
-  "bif    v5.8b, %[vzero].8b, v13.8b                \n"              \
-  "bif    v2.8b, %[vzero].8b, v12.8b                \n"              \
-  "bif    v3.8b, %[vzero].8b, v13.8b                \n"              \
-  "ext    v10.8b, v0.8b, %[vzero].8b, #1            \n"              \
-  "ext    v11.8b, v4.8b, %[vzero].8b, #1            \n"              \
-  "bif    v6.16b, %[vzero].16b, v12.16b             \n"              \
-  "bif    v7.16b, %[vzero].16b, v13.16b             \n"              \
-  "movi    v20.4s, #0                               \n"              \
-  "movi    v21.4s, #0                               \n"              \
-  "smull  v14.8h, v0.8b, %[wr00].8b                 \n"              \
-  "smull  v16.8h, v4.8b, %[wr00].8b                 \n"              \
-  "smull  v15.8h, v1.8b, %[wr01].8b                 \n"              \
-  "smull  v17.8h, v5.8b, %[wr01].8b                 \n"              \
-  "smlal  v14.8h, v10.8b, %[wr02].8b                \n"              \
-  "smlal  v16.8h, v11.8b, %[wr02].8b                \n"              \
-  "smlal  v15.8h, v4.8b, %[wr20].8b                 \n"              \
-  "saddw  v18.4s, v18.4s, v14.4h                    \n"              \
-  "saddw2 v19.4s, v19.4s, v14.8h                    \n"              \
-  "saddw  v20.4s, v20.4s, v16.4h                    \n"              \
-  "saddw2 v21.4s, v21.4s, v16.8h                    \n"              \
-  "bif    v8.16b, %[vzero].16b, v12.16b             \n"              \
-  "bif    v9.16b, %[vzero].16b, v13.16b             \n"              \
-  "saddw  v18.4s, v18.4s, v15.4h                    \n"              \
-  "saddw2 v19.4s, v19.4s, v15.8h                    \n"              \
-  "smull  v14.8h, v5.8b, %[wr21].8b                 \n"              \
-  "smull  v15.8h, v11.8b, %[wr22].8b                \n"              \
-  "ext    v10.8b, v2.8b, %[vzero].8b, #1            \n"              \
-  "ext    v11.8b, v6.8b, %[vzero].8b, #1            \n" /* line 1 */ \
-  "smlal  v17.8h, v6.8b, %[wr10].8b                 \n"              \
-  "smlal  v14.8h, v2.8b, %[wr10].8b                 \n"              \
-  "smull  v16.8h, v7.8b, %[wr11].8b                 \n"              \
-  "smlal  v15.8h, v3.8b, %[wr11].8b                 \n"              \
-  "saddw  v20.4s, v20.4s, v17.4h                    \n"              \
-  "saddw2 v21.4s, v21.4s, v17.8h                    \n"              \
-  "saddw  v18.4s, v18.4s, v14.4h                    \n"              \
-  "saddw2 v19.4s, v19.4s, v14.8h                    \n"              \
-  "smlal v16.8h, v11.8b, %[wr12].8b                 \n"              \
-  "smull v14.8h, v10.8b, %[wr12].8b                 \n"              \
-  "saddw  v18.4s, v18.4s, v15.4h                    \n"              \
-  "saddw2 v19.4s, v19.4s, v15.8h                    \n" /* line 2 */ \
-  "ext    v11.8b, v8.8b, %[vzero].8b, #1         \n"                 \
-  "saddw  v20.4s, v20.4s, v16.4h                    \n"              \
-  "saddw2 v21.4s, v21.4s, v16.8h                    \n"              \
-  "smull  v17.8h, v8.8b, %[wr20].8b                 \n"              \
-  "smull  v16.8h, v9.8b, %[wr21].8b                 \n"              \
-  "saddw  v20.4s, v20.4s, v16.4h                    \n"              \
-  "saddw2 v21.4s, v21.4s, v16.8h                    \n"              \
-  "smlal  v17.8h, v11.8b, %[wr22].8b                \n"              \
-  "scvtf   v10.4s, v18.4s                           \n"              \
-  "scvtf   v11.4s, v19.4s                           \n"              \
-  "saddw  v20.4s, v20.4s, v17.4h                    \n"              \
+#define MID_COMPUTE_INT8_S2                             \
+  "blt    1f                                        \n" \
+  "2:                                               \n" \
+  "ld1    {v12.8b}, [%[din_ptr0]]                   \n" \
+  "ld1    {v13.8b}, [%[din_ptr2]]                   \n" \
+  "movi    v18.4s, #0                               \n" \
+  "movi    v19.4s, #0                               \n" \
+  "movi    v20.4s, #0                               \n" \
+  "movi    v21.4s, #0                               \n" \
+  "ext    v10.8b, v0.8b, v12.8b, #1                \n" \
+  "ext    v11.8b, v4.8b, v13.8b, #1                \n" \
+  "smull  v14.8h, v0.8b, %[wr00].8b                 \n" \
+  "smull  v16.8h, v4.8b, %[wr00].8b                 \n" \
+  "smull  v15.8h, v1.8b, %[wr01].8b                 \n" \
+  "smull  v17.8h, v5.8b, %[wr01].8b                 \n" \
+  "ld1    {v12.8h}, [%[din_ptr1]]                   \n" \
+  "ld1    {v13.8h}, [%[din_ptr3]]                   \n" \
+  "smlal  v14.8h, v10.8b, %[wr02].8b                \n" \
+  "smlal  v16.8h, v11.8b, %[wr02].8b                \n" \
+  "smlal  v15.8h, v4.8b, %[wr20].8b                 \n" \
+  "saddw  v18.4s,  v18.4s, v14.4h                   \n" \
+  "saddw2 v19.4s,  v19.4s, v14.8h                   \n" \
+  "saddw  v20.4s,  v20.4s, v16.4h                   \n" \
+  "saddw2 v21.4s,  v21.4s, v16.8h                   \n" \
+  "ext    v10.8b, v2.8b, v12.8b, #1                \n" \
+  "saddw  v18.4s,  v18.4s, v15.4h                   \n" \
+  "saddw2 v19.4s,  v19.4s, v15.8h                   \n" \
+  "smull  v14.8h, v5.8b, %[wr21].8b                 \n" \
+  "smull  v15.8h, v11.8b, %[wr22].8b                \n" \
+  "ext    v11.8b, v6.8b, v13.8b, #1                \n" \
+  /* line 1 */                                          \
+  "smlal  v17.8h,  v6.8b,  %[wr10].8b               \n" \
+  "smlal  v14.8h,  v2.8b,  %[wr10].8b               \n" \
+  "smull  v16.8h,  v7.8b,  %[wr11].8b               \n" \
+  "smlal  v15.8h,  v3.8b,  %[wr11].8b               \n" \
+  "saddw  v20.4s,  v20.4s, v17.4h                   \n" \
+  "saddw2 v21.4s,  v21.4s, v17.8h                   \n" \
+  "saddw  v18.4s,  v18.4s, v14.4h                   \n" \
+  "saddw2 v19.4s,  v19.4s, v14.8h                   \n" \
+  "ld1    {v12.8h}, [%[din_ptr4]]                   \n" \
+  "smull  v14.8h,  v10.8b,  %[wr12].8b              \n" \
+  "smlal  v16.8h,  v11.8b,  %[wr12].8b              \n" \
+  /* line 2 */                                          \
+  "saddw  v18.4s,  v18.4s, v15.4h                   \n" \
+  "saddw2 v19.4s,  v19.4s, v15.8h                   \n" \
+  "ext    v11.8b, v8.8b, v12.8b, #1                \n" \
+  "smull  v17.8h,  v8.8b,  %[wr20].8b               \n" \
+  "saddw  v20.4s,  v20.4s, v16.4h                   \n" \
+  "saddw2 v21.4s,  v21.4s, v16.8h                   \n" \
+  "saddw  v18.4s,  v18.4s, v14.4h                   \n" \
+  "saddw2 v19.4s,  v19.4s, v14.8h                   \n" \
+  "smull  v16.8h,  v9.8b,  %[wr21].8b               \n" \
+  "smlal  v17.8h,  v11.8b,  %[wr22].8b              \n" \
+  "ld2    {v0.8b, v1.8b}, [%[din_ptr0]], #16        \n" \
+  "ld2    {v4.8b, v5.8b}, [%[din_ptr2]], #16        \n" \
+  "saddw  v20.4s,  v20.4s, v16.4h                   \n" \
+  "saddw2 v21.4s,  v21.4s, v16.8h                   \n" \
+  "ld2    {v2.8b, v3.8b}, [%[din_ptr1]], #16        \n" \
+  "ld2    {v6.8b, v7.8b}, [%[din_ptr3]], #16        \n" \
+  "saddw  v20.4s,  v20.4s, v17.4h                   \n" \
+  "saddw2 v21.4s,  v21.4s, v17.8h                   \n" \
+  "ld2    {v8.8b, v9.8b}, [%[din_ptr4]], #16        \n" \
+  /* int32->fp32 */                                     \
+  "ldr     q14, [%[bias_val], #32]                  \n" \
+  "scvtf   v10.4s, v18.4s                           \n" \
+  "scvtf   v11.4s, v19.4s                           \n" \
+  "ld1    {v16.4s}, [%[bias_val]]                   \n" \
+  "ld1    {v17.4s}, [%[bias_val]]                   \n" \
+  "scvtf   v12.4s, v20.4s                           \n" \
+  "scvtf   v13.4s, v21.4s                           \n" \
+  "ld1    {v18.4s}, [%[bias_val]]                   \n" \
+  "ld1    {v19.4s}, [%[bias_val]]                   \n" \
+  "sub   %w[cnt], %w[cnt], #16                      \n" \
+  "fmla   v16.4s, v10.4s, v14.4s                    \n" \
+  "fmla   v17.4s, v11.4s, v14.4s                    \n" \
+  "fmla   v18.4s, v12.4s, v14.4s                    \n" \
+  "fmla   v19.4s, v13.4s, v14.4s                    \n" \
+  "cmp   %w[cnt], #16                               \n"
+
+#define RIGHT_COMPUTE_INT8_S2                           \
+  "bge    2b                                        \n" \
+  "1:                                               \n" \
+  "cmp    %w[cnt], #1                               \n" \
+  "blt    4f                                        \n" \
+  "3:                                               \n" \
+  "ld1    {v12.8b}, [%[vmask]], #8                  \n" \
+  "ld1    {v13.8b}, [%[vmask]]                      \n" \
+  "movi    v18.4s, #0                               \n" \
+  "movi    v19.4s, #0                               \n" \
+  "bif    v0.8b, %[vzero].8b, v12.8b                \n" \
+  "bif    v1.8b, %[vzero].8b, v13.8b                \n" \
+  "bif    v4.8b, %[vzero].8b, v12.8b                \n" \
+  "bif    v5.8b, %[vzero].8b, v13.8b                \n" \
+  "bif    v2.8b, %[vzero].8b, v12.8b                \n" \
+  "bif    v3.8b, %[vzero].8b, v13.8b                \n" \
+  "ext    v10.8b, v0.8b, %[vzero].8b, #1            \n" \
+  "ext    v11.8b, v4.8b, %[vzero].8b, #1            \n" \
+  "bif    v6.16b, %[vzero].16b, v12.16b             \n" \
+  "bif    v7.16b, %[vzero].16b, v13.16b             \n" \
+  "movi    v20.4s, #0                               \n" \
+  "movi    v21.4s, #0                               \n" \
+  "smull  v14.8h, v0.8b, %[wr00].8b                 \n" \
+  "smull  v16.8h, v4.8b, %[wr00].8b                 \n" \
+  "smull  v15.8h, v1.8b, %[wr01].8b                 \n" \
+  "smull  v17.8h, v5.8b, %[wr01].8b                 \n" \
+  "smlal  v14.8h, v10.8b, %[wr02].8b                \n" \
+  "smlal  v16.8h, v11.8b, %[wr02].8b                \n" \
+  "smlal  v15.8h, v4.8b, %[wr20].8b                 \n" \
+  "saddw  v18.4s, v18.4s, v14.4h                    \n" \
+  "saddw2 v19.4s, v19.4s, v14.8h                    \n" \
+  "saddw  v20.4s, v20.4s, v16.4h                    \n" \
+  "saddw2 v21.4s, v21.4s, v16.8h                    \n" \
+  "bif    v8.16b, %[vzero].16b, v12.16b             \n" \
+  "bif    v9.16b, %[vzero].16b, v13.16b             \n" \
+  "saddw  v18.4s, v18.4s, v15.4h                    \n" \
+  "saddw2 v19.4s, v19.4s, v15.8h                    \n" \
+  "smull  v14.8h, v5.8b, %[wr21].8b                 \n" \
+  "smull  v15.8h, v11.8b, %[wr22].8b                \n" \
+  "ext    v10.8b, v2.8b, %[vzero].8b, #1            \n" \
+  "ext    v11.8b, v6.8b, %[vzero].8b, #1            \n" \
+  /* line 1 */                                          \
+  "smlal  v17.8h, v6.8b, %[wr10].8b                 \n" \
+  "smlal  v14.8h, v2.8b, %[wr10].8b                 \n" \
+  "smull  v16.8h, v7.8b, %[wr11].8b                 \n" \
+  "smlal  v15.8h, v3.8b, %[wr11].8b                 \n" \
+  "saddw  v20.4s, v20.4s, v17.4h                    \n" \
+  "saddw2 v21.4s, v21.4s, v17.8h                    \n" \
+  "saddw  v18.4s, v18.4s, v14.4h                    \n" \
+  "saddw2 v19.4s, v19.4s, v14.8h                    \n" \
+  "smlal v16.8h, v11.8b, %[wr12].8b                 \n" \
+  "smull v14.8h, v10.8b, %[wr12].8b                 \n" \
+  "saddw  v18.4s, v18.4s, v15.4h                    \n" \
+  "saddw2 v19.4s, v19.4s, v15.8h                    \n" \
+  /* line 2 */                                          \
+  "ext    v11.8b, v8.8b, %[vzero].8b, #1         \n" \
+  "saddw  v20.4s, v20.4s, v16.4h                    \n" \
+  "saddw2 v21.4s, v21.4s, v16.8h                    \n" \
+  "smull  v17.8h, v8.8b, %[wr20].8b                 \n" \
+  "smull  v16.8h, v9.8b, %[wr21].8b                 \n" \
+  "saddw  v20.4s, v20.4s, v16.4h                    \n" \
+  "saddw2 v21.4s, v21.4s, v16.8h                    \n" \
+  "smlal  v17.8h, v11.8b, %[wr22].8b                \n" \
+  "scvtf   v10.4s, v18.4s                           \n" \
+  "scvtf   v11.4s, v19.4s                           \n" \
+  "saddw  v20.4s, v20.4s, v17.4h                    \n" \
   "saddw2 v21.4s, v21.4s, v17.8h                    \n"
 
-#define RIGHT_RESULT_INT8_FP32_S2                                         \
-  "ld1     {v4.4s}, [%[scale_val]]                  \n"                   \
-  "ldp    q12, q13, [%[rmask]]                      \n" /* int32->fp32 */ \
-  "ld1    {v16.4s}, [%[bias_val]]                   \n"                   \
-  "ld1    {v17.4s}, [%[bias_val]]                   \n"                   \
-  "scvtf   v14.4s, v20.4s                           \n"                   \
-  "ldp    q0, q1,   [%[ptr_out0]]                   \n"                   \
-  "scvtf   v15.4s, v21.4s                           \n"                   \
-  "ld1    {v18.4s}, [%[bias_val]]                   \n"                   \
-  "ld1    {v19.4s}, [%[bias_val]]                   \n"                   \
-  "ldp    q2, q3,   [%[ptr_out1]]                   \n"                   \
-  "fmla   v16.4s, v10.4s, v4.4s                     \n"                   \
-  "fmla   v17.4s, v11.4s, v4.4s                     \n"                   \
-  "fmla   v18.4s, v14.4s, v4.4s                     \n"                   \
+#define RIGHT_RESULT_INT8_FP32_S2                       \
+  "ldr     q4, [%[bias_val], #32]                  \n" \
+  "ldp    q12, q13, [%[rmask]]                      \n" \
+  /* int32->fp32 */                                     \
+  "ld1    {v16.4s}, [%[bias_val]]                   \n" \
+  "ld1    {v17.4s}, [%[bias_val]]                   \n" \
+  "scvtf   v14.4s,  v20.4s                          \n" \
+  "ldp    q0, q1,   [%[ptr_out0]]                   \n" \
+  "scvtf   v15.4s, v21.4s                           \n" \
+  "ld1    {v18.4s}, [%[bias_val]]                   \n" \
+  "ld1    {v19.4s}, [%[bias_val]]                   \n" \
+  "ldp    q2, q3,   [%[ptr_out1]]                   \n" \
+  "fmla   v16.4s, v10.4s, v4.4s                     \n" \
+  "fmla   v17.4s, v11.4s, v4.4s                     \n" \
+  "fmla   v18.4s, v14.4s, v4.4s                     \n" \
   "fmla   v19.4s, v15.4s, v4.4s                     \n"
 
 #define RIGHT_RESULT_INT8_FP32_ST                       \
@@ -894,51 +908,57 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "st1    {v19.4s}, [%[ptr_out1]], #16              \n" \
   "4:                                               \n"
 
-#define RIGHT_RESULT_INT8_INT8_S2                                         \
-  "ld1     {v4.4s}, [%[scale_val]]                  \n" /* int32->fp32 */ \
-  "ld1    {v16.4s}, [%[bias_val]]                   \n"                   \
-  "ld1    {v17.4s}, [%[bias_val]]                   \n"                   \
-  "scvtf   v14.4s, v20.4s                           \n"                   \
-  "scvtf   v15.4s, v21.4s                           \n"                   \
-  "ld1 {v0.4s}, [%[max_val]]                       \n"                    \
-  "ld1    {v18.4s}, [%[bias_val]]                   \n"                   \
-  "ld1    {v19.4s}, [%[bias_val]]                   \n"                   \
-  "fmla   v16.4s, v10.4s, v4.4s                     \n"                   \
-  "fmla   v17.4s, v11.4s, v4.4s                     \n"                   \
-  "fmla   v18.4s, v14.4s, v4.4s                     \n"                   \
+#define RIGHT_RESULT_INT8_INT8_S2                       \
+  "ldr     q4, [%[bias_val], #32]                  \n" \
+  /* int32->fp32 */                                     \
+  "ld1    {v16.4s}, [%[bias_val]]                   \n" \
+  "ld1    {v17.4s}, [%[bias_val]]                   \n" \
+  "scvtf   v14.4s, v20.4s                           \n" \
+  "scvtf   v15.4s, v21.4s                           \n" \
+  "ldr    q0,   [%[bias_val], #48]                  \n" \
+  "ld1    {v18.4s}, [%[bias_val]]                   \n" \
+  "ld1    {v19.4s}, [%[bias_val]]                   \n" \
+  "fmla   v16.4s, v10.4s, v4.4s                     \n" \
+  "fmla   v17.4s, v11.4s, v4.4s                     \n" \
+  "fmla   v18.4s, v14.4s, v4.4s                     \n" \
   "fmla   v19.4s, v15.4s, v4.4s                     \n"
 
-#define RIGHT_RESULT_INT8_INT8_ST                                           \
-  /* data >= -127 */                                                        \
-  "fcmge v10.4s, v16.4s, v0.4s                       \n"                    \
-  "fcmge v11.4s, v17.4s, v0.4s                       \n"                    \
-  "fcmge v14.4s, v18.4s, v0.4s                       \n"                    \
-  "fcmge v15.4s, v19.4s, v0.4s                       \n" /* choose data */  \
-  "bif v16.16b, v0.16b, v10.16b                     \n"                     \
-  "bif v17.16b, v0.16b, v11.16b                     \n"                     \
-  "bif v18.16b, v0.16b, v14.16b                     \n"                     \
-  "bif v19.16b, v0.16b, v15.16b                      \n" /* fp32 - int32 */ \
-  "fcvtas  v10.4s, v16.4s                           \n"                     \
-  "fcvtas  v11.4s, v17.4s                           \n"                     \
-  "fcvtas  v12.4s, v18.4s                           \n"                     \
-  "fcvtas  v13.4s, v19.4s                           \n"                     \
-  "ld1     {v0.8b}, [%[ptr_out0]]                   \n"                     \
-  "ld1     {v1.8b}, [%[ptr_out1]]                   \n" /* int32-int16 */   \
-  "sqxtn   v16.4h, v10.4s                           \n"                     \
-  "sqxtn2  v16.8h, v11.4s                           \n"                     \
-  "sqxtn   v18.4h, v12.4s                           \n"                     \
-  "sqxtn2  v18.8h, v13.4s                           \n"                     \
-  "ld1    {v12.8b}, [%[rmask]]                      \n" /* int16-int8 */    \
-  "sqxtn  v17.8b, v16.8h                            \n"                     \
-  "sqxtn  v19.8b, v18.8h                            \n"                     \
-  "bif    v17.8b, v0.8b, v12.8b                     \n"                     \
-  "bif    v19.8b, v1.8b, v12.8b                     \n"                     \
-  "st1    {v17.8b}, [%[ptr_out0]]                   \n"                     \
-  "st1    {v19.8b}, [%[ptr_out1]]                   \n"                     \
+#define RIGHT_RESULT_INT8_INT8_ST                       \
+  /* data >= -127 */                                    \
+  "fcmge v10.4s, v16.4s, v0.4s                       \n" \
+  "fcmge v11.4s, v17.4s, v0.4s                       \n" \
+  "fcmge v14.4s, v18.4s, v0.4s                       \n" \
+  "fcmge v15.4s, v19.4s, v0.4s                       \n" \
+  /* choose data */                                     \
+  "bif v16.16b, v0.16b, v10.16b                     \n" \
+  "bif v17.16b, v0.16b, v11.16b                     \n" \
+  "bif v18.16b, v0.16b, v14.16b                     \n" \
+  "bif v19.16b, v0.16b, v15.16b                      \n" \
+  /* fp32 - int32 */                                    \
+  "fcvtas  v10.4s, v16.4s                           \n" \
+  "fcvtas  v11.4s, v17.4s                           \n" \
+  "fcvtas  v12.4s, v18.4s                           \n" \
+  "fcvtas  v13.4s, v19.4s                           \n" \
+  "ld1     {v0.8b}, [%[ptr_out0]]                   \n" \
+  "ld1     {v1.8b}, [%[ptr_out1]]                   \n" \
+  /* int32-int16 */                                     \
+  "sqxtn   v16.4h, v10.4s                           \n" \
+  "sqxtn2  v16.8h, v11.4s                           \n" \
+  "sqxtn   v18.4h, v12.4s                           \n" \
+  "sqxtn2  v18.8h, v13.4s                           \n" \
+  "ld1    {v12.8b}, [%[rmask]]                      \n" \
+  /* int16-int8 */                                      \
+  "sqxtn  v17.8b, v16.8h                            \n" \
+  "sqxtn  v19.8b, v18.8h                            \n" \
+  "bif    v17.8b, v0.8b, v12.8b                     \n" \
+  "bif    v19.8b, v1.8b, v12.8b                     \n" \
+  "st1    {v17.8b}, [%[ptr_out0]]                   \n" \
+  "st1    {v19.8b}, [%[ptr_out1]]                   \n" \
   "4:                                               \n"
 
 #else
 #endif
+// clang-format on
 
 void conv_3x3s2p1_depthwise_int8(int8_t* dout,
                                  const int8_t* din,
@@ -967,8 +987,8 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
+  cnt_col = (cnt_col << 4 | cnt_remain);
   uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
-  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
   vst1_u8(rmask, vrmask_rp);
   float32x4_t vzero = vdupq_n_f32(0);
   for (int n = 0; n < num; ++n) {
@@ -980,9 +1000,9 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? static_cast<const float>(bias[c]) : 0;
       const int8_t* weight_ptr = weights + c * 9;
-      float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
+      // float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
       // clang-format off
-      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val, scale[c], -127.f)
       INIT_PTR_3x3_S2_INT8(int8_t, din_ch_ptr, win)
       for (int i = 0; i < hin; i += 4) {
         ASSIGN_PTR_3x3_S2_INT8(wout)
@@ -1000,8 +1020,7 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
               [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [remain] "r"(cnt_remain), [rmask] "r"(rmask), \
-              [max_val] "r" (max_val), [scale_val] "r"(scale_val)
+              [rmask] "r"(rmask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1042,6 +1061,7 @@ void conv_3x3s2p1_depthwise_int8(float* dout,
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
+  cnt_col = (cnt_col << 4 | cnt_remain);
   uint32x4_t vrmask_rp1 =
       vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx));
   uint32x4_t vrmask_rp2 =
@@ -1060,7 +1080,7 @@ void conv_3x3s2p1_depthwise_int8(float* dout,
       const int8_t* weight_ptr = weights + c * 9;
       float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
       // clang-format off
-      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val, scale[c], -127.f)
       INIT_PTR_3x3_S2_INT8(float, din_ch_ptr, win)
       for (int i = 0; i < hin; i += 4) {
         ASSIGN_PTR_3x3_S2_INT8(wout)
@@ -1078,8 +1098,7 @@ void conv_3x3s2p1_depthwise_int8(float* dout,
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
               [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [remain] "r"(cnt_remain), [rmask] "r"(rmask), \
-              [scale_val] "r"(scale_val)
+              [rmask] "r"(rmask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1120,6 +1139,7 @@ void conv_3x3s2p1_depthwise_int8_relu(int8_t* dout,
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
+  cnt_col = (cnt_col << 4 | cnt_remain);
   uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
   float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
   vst1_u8(rmask, vrmask_rp);
@@ -1135,7 +1155,7 @@ void conv_3x3s2p1_depthwise_int8_relu(int8_t* dout,
       const int8_t* weight_ptr = weights + c * 9;
       float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
       // clang-format off
-      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val, scale[c], -127.f)
       INIT_PTR_3x3_S2_INT8(int8_t, din_ch_ptr, win)
       for (int i = 0; i < hin; i += 4) {
         ASSIGN_PTR_3x3_S2_INT8(wout)
@@ -1153,8 +1173,7 @@ void conv_3x3s2p1_depthwise_int8_relu(int8_t* dout,
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
               [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [remain] "r"(cnt_remain), [rmask] "r"(rmask), \
-              [max_val] "r" (max_val), [scale_val] "r"(scale_val)
+              [rmask] "r"(rmask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1195,6 +1214,7 @@ void conv_3x3s2p1_depthwise_int8_relu(float* dout,
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
+  cnt_col = (cnt_col << 4 | cnt_remain);
   uint32x4_t vrmask_rp1 =
       vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx));
   uint32x4_t vrmask_rp2 =
@@ -1213,7 +1233,7 @@ void conv_3x3s2p1_depthwise_int8_relu(float* dout,
       const int8_t* weight_ptr = weights + c * 9;
       float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
       // clang-format off
-      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val, scale[c], -127.f)
       INIT_PTR_3x3_S2_INT8(float, din_ch_ptr, win)
       for (int i = 0; i < hin; i += 4) {
         ASSIGN_PTR_3x3_S2_INT8(wout)
@@ -1231,8 +1251,8 @@ void conv_3x3s2p1_depthwise_int8_relu(float* dout,
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
               [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [remain] "r"(cnt_remain), [rmask] "r"(rmask), \
-              [scale_val] "r"(scale_val)
+              [rmask] "r"(rmask) //[remain] "r"(cnt_remain), 
+              // [scale_val] "r"(scale_val)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1273,6 +1293,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
+  cnt_col = (cnt_col << 4 | cnt_remain);
   uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
   float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
   vst1_u8(rmask, vrmask_rp);
@@ -1288,7 +1309,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
       const int8_t* weight_ptr = weights + c * 9;
       float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
       // clang-format off
-      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val, scale[c], -127.f)
       INIT_PTR_3x3_S2_INT8(int8_t, din_ch_ptr, win)
       for (int i = 0; i < hin; i += 4) {
         ASSIGN_PTR_3x3_S2_INT8(wout)
@@ -1306,8 +1327,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
               [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [remain] "r"(cnt_remain), [rmask] "r"(rmask), \
-              [max_val] "r" (max_val), [scale_val] "r"(scale_val), [alpha_val] "r"(alpha)
+              [rmask] "r"(rmask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1348,6 +1368,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(float* dout,
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
+  cnt_col = (cnt_col << 4 | cnt_remain);
   uint32x4_t vrmask_rp1 =
       vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx));
   uint32x4_t vrmask_rp2 =
@@ -1366,7 +1387,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(float* dout,
       const int8_t* weight_ptr = weights + c * 9;
       float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
       // clang-format off
-      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val, scale[c], -127.f)
       INIT_PTR_3x3_S2_INT8(float, din_ch_ptr, win)
       for (int i = 0; i < hin; i += 4) {
         ASSIGN_PTR_3x3_S2_INT8(wout)
@@ -1384,8 +1405,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(float* dout,
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
               [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [remain] "r"(cnt_remain), [rmask] "r"(rmask), \
-              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha)
+              [rmask] "r"(rmask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1426,6 +1446,7 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(int8_t* dout,
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
+  cnt_col = (cnt_col << 4 | cnt_remain);
   uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
   float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
   vst1_u8(rmask, vrmask_rp);
@@ -1441,7 +1462,7 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(int8_t* dout,
       const int8_t* weight_ptr = weights + c * 9;
       float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
       // clang-format off
-      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val, scale[c], -127.f)
       INIT_PTR_3x3_S2_INT8(int8_t, din_ch_ptr, win)
       for (int i = 0; i < hin; i += 4) {
         ASSIGN_PTR_3x3_S2_INT8(wout)
@@ -1459,8 +1480,7 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(int8_t* dout,
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
               [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [remain] "r"(cnt_remain), [rmask] "r"(rmask), \
-              [max_val] "r" (max_val), [scale_val] "r"(scale_val), [alpha_val] "r"(alpha)
+              [rmask] "r"(rmask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1501,6 +1521,7 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(float* dout,
   auto&& res = right_mask_3x3s2p1_int8(win, wout, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
+  cnt_col = (cnt_col << 4 | cnt_remain);
   uint32x4_t vrmask_rp1 =
       vcgtq_u32(vdupq_n_u32(cnt_remain), vld1q_u32(out_pad_idx));
   uint32x4_t vrmask_rp2 =
@@ -1519,7 +1540,7 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(float* dout,
       const int8_t* weight_ptr = weights + c * 9;
       float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
       // clang-format off
-      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val)
+      FILL_WEIGHTS_BIAS_INT8(weight_ptr, bias_val, scale[c], -127.f)
       INIT_PTR_3x3_S2_INT8(float, din_ch_ptr, win)
       for (int i = 0; i < hin; i += 4) {
         ASSIGN_PTR_3x3_S2_INT8(wout)
@@ -1537,8 +1558,7 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(float* dout,
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
               [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), \
-              [remain] "r"(cnt_remain), [rmask] "r"(rmask), \
-              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha)
+              [rmask] "r"(rmask)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
