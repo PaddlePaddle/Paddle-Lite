@@ -43,6 +43,13 @@ const std::set<std::string> kSubblockUnsupportedPasses(
 /*
  * lite::Optimizer optimize a program. It utilize the mir passes to analysis the
  * program and export an optimized program.
+ * Example :
+ *       // (1) Create an optimizer
+ *       Optimizer optim(valid_places, kernel_pick_factor);
+ *       // (2) add an optimizer method
+ *       optim.AddPass("post_quant_dynamic_pass");
+ *       // (3) analysis a program to export an optimized program
+ *       auto program_ = optim.Run(std::move(program));
  */
 class Optimizer {
  public:
@@ -52,71 +59,30 @@ class Optimizer {
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
   }
 
-  //! Append a pass to the optimizer.
-  void AddPass(const std::string& pass_name) {
-    mir::Pass* pass = mir::PassManager::Global().LookUp(pass_name);
-    passes_.push_back(pass);
-  }
-
-  std::unique_ptr<RuntimeProgram> Run(Program&& program) {
-    auto block_size = program.block_size();
-    for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
-      std::unique_ptr<mir::SSAGraph> graph;
-      graph.reset(new mir::SSAGraph);
-      graph->Build(program, valid_places_, block_idx);
-      graph->SetValidPlaces(valid_places_);
-      graphs_.emplace_back(std::move(graph));
-    }
-
-    SpecifyKernelPickTactic(kernel_pick_factor_);
-    InitTargetTypeTransformPass();
-    InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
-    InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
-
-    ApplyPasses(&graphs_);
-
-    exec_scope_ = program.exec_scope();
-
-    return GenRuntimeProgram(&graphs_);
-  }
-
-  const Scope* exec_scope() const { return exec_scope_; }
-
-  std::unique_ptr<RuntimeProgram> GenRuntimeProgram(
-      std::vector<std::unique_ptr<mir::SSAGraph>>* graphs) {
-    auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
-        "generate_program_pass");
-    for (auto& graph : *graphs) {
-      pass->Apply(graph);
-    }
-    auto program = pass->GenProgram();
-    CHECK(exec_scope_);
-    program->set_exec_scope(exec_scope_);
-    return program;
-  }
-
-  void InitTargetTypeTransformPass();
-
-  void InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
-
-  void InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
-
-  Scope* exec_scope() { return exec_scope_; }
+  // Append a pass to the optimizer.
+  void AddPass(const std::string& pass_name);
+  // Optimize a program to generate a runtime program.
+  std::unique_ptr<RuntimeProgram> Run(Program&& program);
 
  protected:
-  void SpecifyKernelPickTactic(core::KernelPickFactor factor);
-
   // Run all the added passes.
   void ApplyPasses(std::vector<std::unique_ptr<mir::SSAGraph>>* graphes);
+
+  // Generate the optimized runtime program.
+  std::unique_ptr<RuntimeProgram> GenRuntimeProgram(
+      std::vector<std::unique_ptr<mir::SSAGraph>>* graphs);
+
+  void InitTargetTypeTransformPass();
+  void InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
+  void InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
+  void SpecifyKernelPickTactic(core::KernelPickFactor factor);
+  Scope* exec_scope() { return exec_scope_; }
 
  private:
   std::vector<Place> valid_places_;
   Scope* exec_scope_{};
-
   std::vector<mir::Pass*> passes_;
-
   std::vector<std::unique_ptr<mir::SSAGraph>> graphs_;
-
   core::KernelPickFactor kernel_pick_factor_;
 };
 

@@ -22,6 +22,46 @@
 namespace paddle {
 namespace lite {
 
+void Optimizer::AddPass(const std::string& pass_name) {
+  mir::Pass* pass = mir::PassManager::Global().LookUp(pass_name);
+  passes_.push_back(pass);
+}
+
+std::unique_ptr<RuntimeProgram> Optimizer::GenRuntimeProgram(
+    std::vector<std::unique_ptr<mir::SSAGraph>>* graphs) {
+  auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
+      "generate_program_pass");
+  for (auto& graph : *graphs) {
+    pass->Apply(graph);
+  }
+  auto program = pass->GenProgram();
+  CHECK(exec_scope_);
+  program->set_exec_scope(exec_scope_);
+  return program;
+}
+
+std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
+  auto block_size = program.block_size();
+  for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
+    std::unique_ptr<mir::SSAGraph> graph;
+    graph.reset(new mir::SSAGraph);
+    graph->Build(program, valid_places_, block_idx);
+    graph->SetValidPlaces(valid_places_);
+    graphs_.emplace_back(std::move(graph));
+  }
+
+  SpecifyKernelPickTactic(kernel_pick_factor_);
+  InitTargetTypeTransformPass();
+  InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
+  InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
+
+  ApplyPasses(&graphs_);
+
+  exec_scope_ = program.exec_scope();
+
+  return GenRuntimeProgram(&graphs_);
+}
+
 void Optimizer::SpecifyKernelPickTactic(core::KernelPickFactor factor) {
   auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
       "static_kernel_pick_pass");
