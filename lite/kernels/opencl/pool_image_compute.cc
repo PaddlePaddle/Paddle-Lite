@@ -153,10 +153,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
                      workgroupsize_max);
         workgroup_size =
             std::min(static_cast<uint32_t>(compute_intensity), workgroup_size);
-        LOG(INFO) << "local_mem_size: " << local_mem_size
-                  << " , workgroupsize_max: " << workgroupsize_max
-                  << " , compute_intensity: " << compute_intensity
-                  << " , workgroup_size: " << workgroup_size;
         uint32_t temp_size = 1;
         while ((temp_size <<= 1) <= workgroup_size) {
         }
@@ -225,9 +221,13 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       VLOG(4) << "global_work_size: " << static_cast<int>(global_work_size_[0])
               << "  " << static_cast<int>(global_work_size_[1]) << "  "
               << static_cast<int>(global_work_size_[2]);
-      VLOG(4) << "local_work_size: " << static_cast<int>(local_work_size_[0])
-              << "  " << static_cast<int>(local_work_size_[1]) << "  "
-              << static_cast<int>(local_work_size_[2]);
+      if (local_work_size_ == cl::NullRange) {
+        VLOG(4) << "local_work_size: cl::NullRange";
+      } else {
+        VLOG(4) << "local_work_size: " << static_cast<int>(local_work_size_[0])
+                << "  " << static_cast<int>(local_work_size_[1]) << "  "
+                << static_cast<int>(local_work_size_[2]);
+      }
 #endif
     }
   }
