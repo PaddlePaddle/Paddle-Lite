@@ -25,7 +25,7 @@
 
 | Arch  |with_extra|arm_stl|with_cv|下载|
 |:-------:|:-----:|:-----:|:-----:|:-------:|
-|armv8|OFF|c++_static|OFF|[2.8-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.8/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
+|armv8|OFF|c++_static|OFF|[2.9](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
 
 **解压后内容结构如下：**
 
@@ -59,14 +59,14 @@ tar zxf mobilenet_v1.tar.gz
 
 ```shell
 # Linux
-wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.6.1/opt
+wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/opt_linux
 chmod +x opt
 ./opt --model_dir=./mobilenet_v1 \
       --optimize_out_type=naive_buffer \
       --optimize_out=./mobilenet_v1_opt
 
 # Mac
-wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.6.1/opt_mac
+wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/opt_mac
 chmod +x opt_mac
 ./opt_mac --model_dir=./mobilenet_v1 \
           --optimize_out_type=naive_buffer \
