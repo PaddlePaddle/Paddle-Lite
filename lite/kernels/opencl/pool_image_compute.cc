@@ -12,21 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-#include <string>
-#include "lite/backends/opencl/cl_half.h"
-#include "lite/backends/opencl/cl_image_converter.h"
-#include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/logging.h"
-#include "lite/utils/replace_stl/stream.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
-#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -252,24 +243,13 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel_.setArg(arg_idx++, *out_img_);
     CL_CHECK_FATAL(status);
 
-    if (run_local_work_) {
-      status = EnqueueNDRangeKernel(context,
-                                    kernel_,
-                                    cl::NullRange,
-                                    global_work_size_,
-                                    local_work_size_,
-                                    nullptr,
-                                    event_);
-    } else {
-      status = EnqueueNDRangeKernel(context,
-                                    kernel_,
-                                    cl::NullRange,
-                                    global_work_size_,
-                                    cl::NullRange,
-                                    nullptr,
-                                    event_);
-    }
-
+    status = EnqueueNDRangeKernel(context,
+                                  kernel_,
+                                  cl::NullRange,
+                                  global_work_size_,
+                                  local_work_size_,
+                                  nullptr,
+                                  event_);
     CL_CHECK_FATAL(status);
   }
 
