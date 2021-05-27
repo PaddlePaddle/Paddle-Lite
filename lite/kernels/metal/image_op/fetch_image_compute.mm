@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/metal/image_op/fetch_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/kernels/metal/image_op/fetch_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
@@ -49,7 +49,7 @@ void FetchImageCompute::PrepareForRun() {
     output_tensor->Resize(output_dims);
     auto data = output_tensor->template mutable_data<float>(TARGET(kHost), size);
     TargetWrapperMetal::MemsetSync(data, 0, size);
-    //output: MTLBuffer（ps：output layout is NCHW）
+    // output: MTLBuffer（ps：output layout is NCHW）
     output_buffer_ = make_shared<MetalBuffer>(metal_context_, output_dims, size);
 
     setup_without_mps();
@@ -62,8 +62,8 @@ void FetchImageCompute::Run() {
 
     auto encoder = [backend commandEncoder];
     [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
-    [encoder setBuffer:(output_buffer_->buffer()) offset:(0)atIndex:(0)];
-    [encoder setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(1)];
+    [encoder setBuffer:(output_buffer_->buffer()) offset:(0) atIndex:(0)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(1)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:inTexture];
     [backend waitUntilCompleted];
@@ -108,14 +108,14 @@ void FetchImageCompute::setup_without_mps() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(fetch,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::FetchImageCompute,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::FetchImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .Finalize();

@@ -61,6 +61,5 @@ void MetalContext::set_metal_path(std::string path) {
     metal_path_ = path;
     [(__bridge MetalContextImp*)mContext setMetalPath:path];
 }
-
 }
 }

@@ -3,12 +3,12 @@
 Language:        Cpp
 # BasedOnStyle:  Chromium
 AccessModifierOffset: -1
-AlignAfterOpenBracket: true
+AlignAfterOpenBracket: false
 AlignConsecutiveAssignments: false
 AlignEscapedNewlinesLeft: true
 AlignOperands:   true
 AlignTrailingComments: true
-AllowAllParametersOfDeclarationOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: false
@@ -17,7 +17,7 @@ AllowShortLoopsOnASingleLine: true
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: true
-BinPackArguments: true
+BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBinaryOperators: false
 BreakBeforeBraces: Attach

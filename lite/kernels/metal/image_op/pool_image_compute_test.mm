@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/pool_image_compute.h"
+#include "lite/core/op_registry.h"
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
@@ -24,8 +24,12 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
-static int PoolOutputSize(
-    int input_size, int filter_size, int pad_left, int pad_right, int stride, bool ceil_mode) {
+static int PoolOutputSize(int input_size,
+    int filter_size,
+    int pad_left,
+    int pad_right,
+    int stride,
+    bool ceil_mode) {
     int output_size;
     if (!ceil_mode) {
         output_size = (input_size - filter_size + pad_left + pad_right) / stride + 1;
@@ -57,9 +61,12 @@ static std::vector<int64_t> compute_output_shape(operators::PoolParam* param_, b
     } else {
         auto paddings = *param_->paddings;
         for (size_t i = 0; i < param_->ksize.size(); ++i) {
-            output_shape.push_back(PoolOutputSize(x_dims[i + axis], param_->ksize[i],
-                                                  paddings[2 * i], paddings[2 * i + 1],
-                                                  param_->strides[i], param_->ceil_mode));
+            output_shape.push_back(PoolOutputSize(x_dims[i + axis],
+                param_->ksize[i],
+                paddings[2 * i],
+                paddings[2 * i + 1],
+                param_->strides[i],
+                param_->ceil_mode));
         }
     }
     if (!is_nchw) output_shape.push_back(x_dims[3]);
@@ -171,8 +178,8 @@ void pool_compute_ref(const operators::PoolParam& param) {
 }
 
 TEST(pool_metal, retrive_op) {
-    auto pool = KernelRegistry::Global().Create("pool2d", TARGET(kMetal), PRECISION(kFloat),
-                                                DATALAYOUT(kMetalTexture2DArray));
+    auto pool = KernelRegistry::Global().Create(
+        "pool2d", TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray));
     ASSERT_FALSE(pool.empty());
     ASSERT_TRUE(pool.front());
 }
@@ -262,9 +269,10 @@ TEST(pool_metal, compute) {
                                                         x_from_dev.mutable_data<float>();
                                                     x_dev_ptr->CopyToNCHW<float>(x_from_dev_ptr);
                                                     for (int i = 0;
-                                                         i < x_from_dev.dims().production(); i++) {
-                                                        ASSERT_NEAR(x_from_dev_ptr[i], x_data[i],
-                                                                    1e-5);
+                                                         i < x_from_dev.dims().production();
+                                                         i++) {
+                                                        ASSERT_NEAR(
+                                                            x_from_dev_ptr[i], x_data[i], 1e-5);
                                                     }
                                                 }
 

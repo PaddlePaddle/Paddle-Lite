@@ -61,8 +61,8 @@ void BilinearInterpImageCompute<P, PTYPE>::PrepareForRun() {
 
     BilinearInterPMetalParam metal_param{ratio_h, ratio_w, align_delta};
 
-    param_buffer_ = metal_context_->CreateBuffer(*device, &metal_param, sizeof(metal_param),
-                                                 METAL_ACCESS_FLAG::CPUWriteOnly);
+    param_buffer_ = metal_context_->CreateBuffer(
+        *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
     std::string function_name = "";
     if (std::is_same<float, P>::value) {
@@ -88,12 +88,14 @@ void BilinearInterpImageCompute<P, PTYPE>::Run() {
         auto encoder =
             std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
         MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                       static_cast<MetalUint>(output_height),
-                                       static_cast<MetalUint>(output_array_length)};
+            static_cast<MetalUint>(output_height),
+            static_cast<MetalUint>(output_array_length)};
 
         [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
         [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-        [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
+        [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer())
+                                            offset:(0)
+                                           atIndex:(0)];
 
         kernel_->Execute(*encoder, global_work_size, false);
     }
@@ -106,43 +108,49 @@ void BilinearInterpImageCompute<P, PTYPE>::Run() {
 
 template class paddle::lite::kernels::metal::BilinearInterpImageCompute<float, PRECISION(kFloat)>;
 template class paddle::lite::kernels::metal::BilinearInterpImageCompute<MetalHalf,
-                                                                        PRECISION(kFP16)>;
+    PRECISION(kFP16)>;
 
 typedef paddle::lite::kernels::metal::BilinearInterpImageCompute<float, PRECISION(kFloat)>
     MetalBilinearInterpFp32;
 typedef paddle::lite::kernels::metal::BilinearInterpImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalBilinearInterpFp16;
 
-REGISTER_LITE_KERNEL(
-    bilinear_interp, kMetal, kFloat, kMetalTexture2DArray, MetalBilinearInterpFp32, def)
+REGISTER_LITE_KERNEL(bilinear_interp,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    MetalBilinearInterpFp32,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("OutSize",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("SizeTensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("Scale",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    bilinear_interp, kMetal, kFP16, kMetalTexture2DArray, MetalBilinearInterpFp16, def)
-    .BindInput(
-        "X",
+REGISTER_LITE_KERNEL(bilinear_interp,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    MetalBilinearInterpFp16,
+    def)
+    .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("OutSize",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("SizeTensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("Scale",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
-    .BindOutput(
-        "Out",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

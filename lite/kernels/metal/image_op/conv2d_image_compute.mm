@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/metal/image_op/conv2d_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_converter.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/backends/metal/mps_conv_datasource.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
-#include "lite/kernels/metal/image_op/conv2d_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 #include "lite/utils/cp_logging.h"
 
@@ -28,7 +28,7 @@ namespace kernels {
 namespace metal {
 
 void Conv2dImageCompute::PrepareForRun() {
-    auto &context = ctx_->As<MTLContext>();
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
@@ -49,9 +49,7 @@ void Conv2dImageCompute::PrepareForRun() {
             case lite_api::ActivationType::kLeakyRelu: {
                 activate_type_ = (uint16_t)param.activation_param.active_type;
             } break;
-            default: {
-                LOG(FATAL) << "Conv2d: cannot support the activate type";
-            } break;
+            default: { LOG(FATAL) << "Conv2d: cannot support the activate type"; } break;
         }
     }
 
@@ -67,7 +65,8 @@ void Conv2dImageCompute::PrepareForRun() {
         DDim blank_dim = DDimLite({output_dims[1]});
         Tensor blank_tensor_;
         blank_tensor_.Resize(blank_dim);
-        blank_buffer_ = blank_tensor_.mutable_data<MetalHalf, MetalImage>(metal_context_, blank_dim);
+        blank_buffer_ =
+            blank_tensor_.mutable_data<MetalHalf, MetalImage>(metal_context_, blank_dim);
         blank_buffer_->CopyFromNCHW<float>(blank_host);
         TargetWrapperMetal::Free(blank_host);
         blank_host = nullptr;
@@ -76,7 +75,7 @@ void Conv2dImageCompute::PrepareForRun() {
 
     function_name_ =
         KernelFunctionName(param, metal_context_->use_winograde(), metal_context_->use_quadruple());
-    //use mps or not
+    // use mps or not
     bool should_use_mps = false;
     if (@available(iOS 11.3, *)) {
         if (metal_context_->use_mps()) {
@@ -154,8 +153,8 @@ void Conv2dImageCompute::run_without_mps() {
         [encoder setTexture:(blank_buffer_->image()) atIndex:(1)];
     }
     [encoder setTexture:(output_buffer_->image()) atIndex:(2)];
-    [encoder setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
-    [encoder setBuffer:(filter_buffer_->buffer()) offset:(0)atIndex:(1)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
+    [encoder setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
 
     bool quadruple = false;
     if (IsWinoGrad(function_name_) || IsQuadruple(function_name_)) {
@@ -167,8 +166,8 @@ void Conv2dImageCompute::run_without_mps() {
 }
 
 std::string Conv2dImageCompute::KernelFunctionName(const param_t& param,
-                                                   bool use_winograde,
-                                                   bool use_quadruple) {
+    bool use_winograde,
+    bool use_quadruple) {
     auto filter_n = param.filter->dims()[0];
     auto filter_c = param.filter->dims()[1];
     auto filter_h = param.filter->dims()[2];
@@ -280,7 +279,8 @@ void Conv2dImageCompute::setup_without_mps() {
         int add_by_channel = 0;
         if (bias_buffer_->tensor_dim_.size() == 1 &&
             (axis == 1 ||
-             (axis == -1 && bias_buffer_->tensor_dim_[0] == output_buffer_->pad_to_four_dim_[1]))) {
+                (axis == -1 &&
+                    bias_buffer_->tensor_dim_[0] == output_buffer_->pad_to_four_dim_[1]))) {
             add_by_channel = 1;
         }
         if (add_by_channel == 1 || params_fast == 1) {
@@ -289,15 +289,19 @@ void Conv2dImageCompute::setup_without_mps() {
         }
 
         element_params = {params_fast,
-                          add_by_channel,
-                          params_axis,
-                          (int)bias_buffer_->tensor_dim_.size(),
-                          {xdim[0], xdim[1], xdim[2], xdim[3]},
-                          {output_buffer_->transpose_[0], output_buffer_->transpose_[1],
-                           output_buffer_->transpose_[2], output_buffer_->transpose_[3]},
-                          {ydim[0], ydim[1], ydim[2], ydim[3]},
-                          {bias_buffer_->transpose_[0], bias_buffer_->transpose_[1],
-                           bias_buffer_->transpose_[2], bias_buffer_->transpose_[3]}};
+            add_by_channel,
+            params_axis,
+            (int)bias_buffer_->tensor_dim_.size(),
+            {xdim[0], xdim[1], xdim[2], xdim[3]},
+            {output_buffer_->transpose_[0],
+                output_buffer_->transpose_[1],
+                output_buffer_->transpose_[2],
+                output_buffer_->transpose_[3]},
+            {ydim[0], ydim[1], ydim[2], ydim[3]},
+            {bias_buffer_->transpose_[0],
+                bias_buffer_->transpose_[1],
+                bias_buffer_->transpose_[2],
+                bias_buffer_->transpose_[3]}};
     } else {
     }
     // relu
@@ -317,20 +321,20 @@ void Conv2dImageCompute::setup_without_mps() {
     }
     // set shader params
     MetalConvParam conv_params{(short)offsetX,
-                               (short)offsetY,
-                               (short)offsetZ,
-                               (unsigned short)(param.strides[1]),
-                               (unsigned short)(param.strides[0]),
-                               (unsigned short)((*param.dilations)[1]),
-                               (unsigned short)((*param.dilations)[0]),
-                               (unsigned short)(param.groups),
-                               (unsigned short)(iC),
-                               (unsigned short)(fC),
-                               (unsigned short)(oC),
-                               (unsigned short)(param.bias ? 1 : 0),
-                               (unsigned short)(param.activation_param.has_active ? 1 : 0),
-                               element_params,
-                               activation_params};
+        (short)offsetY,
+        (short)offsetZ,
+        (unsigned short)(param.strides[1]),
+        (unsigned short)(param.strides[0]),
+        (unsigned short)((*param.dilations)[1]),
+        (unsigned short)((*param.dilations)[0]),
+        (unsigned short)(param.groups),
+        (unsigned short)(iC),
+        (unsigned short)(fC),
+        (unsigned short)(oC),
+        (unsigned short)(param.bias ? 1 : 0),
+        (unsigned short)(param.activation_param.has_active ? 1 : 0),
+        element_params,
+        activation_params};
 
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(conv_params), &conv_params);
@@ -442,8 +446,8 @@ void Conv2dImageCompute::setup_with_mps() {
         auto filter = param.filter->data<float>();
         bool pad_when_one_ch =
             !(param.filter->dims()[1] == 1 && param.filter->dims()[0] == param.x->dims()[1]);
-        filter_buffer_ = std::make_shared<MetalBuffer>(metal_context_, param.filter->dims(),
-                                                       METAL_PRECISION_TYPE::HALF);
+        filter_buffer_ = std::make_shared<MetalBuffer>(
+            metal_context_, param.filter->dims(), METAL_PRECISION_TYPE::HALF);
         filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
         filter_buffer_->CopyFromNCHW<float>(filter);
         scoure.weights = filter_buffer_->rawdata();
@@ -538,42 +542,39 @@ Conv2dImageCompute::~Conv2dImageCompute() {
 #pragma mark -
 
 REGISTER_LITE_KERNEL(conv2d,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::Conv2dImageCompute,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::Conv2dImageCompute,
+    def)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Bias",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Filter",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Output",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(conv2d,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::Conv2dImageCompute,
-                     def)
-    .BindInput(
-        "Input",
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::Conv2dImageCompute,
+    def)
+    .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput(
-        "Bias",
+    .BindInput("Bias",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Filter",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
-    .BindOutput(
-        "Output",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

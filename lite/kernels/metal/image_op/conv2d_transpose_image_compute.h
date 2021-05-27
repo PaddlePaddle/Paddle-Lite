@@ -50,7 +50,7 @@ class Conv2dTransposeImageCompute
     std::shared_ptr<MetalBuffer> param_buffer_;
 
     static std::string KernelFunctionName(const param_t& param,
-                                          bool use_aggressive_optimization = false);
+        bool use_aggressive_optimization = false);
 
     static bool HasPrefix(const std::string& function_name, const std::string& prefix_name);
 

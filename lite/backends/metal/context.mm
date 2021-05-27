@@ -16,6 +16,5 @@
 #include "lite/backends/metal/context.h"
 
 namespace paddle {
-namespace lite {
-}  // namespace lite
+namespace lite {}  // namespace lite
 }  // namespace paddle

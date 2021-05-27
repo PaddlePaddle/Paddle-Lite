@@ -22,10 +22,10 @@ namespace paddle {
 namespace lite {
 
 MetalImage::MetalImage(MetalContext* context,
-                       const DDim& in_dim,
-                       std::vector<int> in_transpose,
-                       const METAL_PRECISION_TYPE precision_type,
-                       const METAL_ACCESS_FLAG flag)
+    const DDim& in_dim,
+    std::vector<int> in_transpose,
+    const METAL_PRECISION_TYPE precision_type,
+    const METAL_ACCESS_FLAG flag)
     : precision_type_(precision_type), flag_(flag) {
     auto backend = (__bridge MetalContextImp*)context->backend();
     auto four_dim = FourDimFrom(in_dim);
@@ -40,8 +40,8 @@ MetalImage::MetalImage(MetalContext* context,
 }
 
 void MetalImage::UpdateDims(MetalContext* context,
-                            const DDim& in_tensor_dim,
-                            std::vector<int> in_transpose) {
+    const DDim& in_tensor_dim,
+    std::vector<int> in_transpose) {
     auto backend = (__bridge MetalContextImp*)context->backend();
     auto four_dim = FourDimFrom(in_tensor_dim);
     tensor_dim_ = in_tensor_dim;
@@ -66,8 +66,9 @@ void MetalImage::InitTexture() {
             // eg:tensor={1,24,208,208} to dim={1,208,208,24}
             // size of 'arraylength' direction is 24 ,value = (24+3)/4=6
             std::vector<int> transpose = {0, 2, 3, 1};
-            for_each(transpose.begin(), transpose.end(),
-                     [&](int i) -> void { dim.emplace_back(pad_to_four_dim_[i]); });
+            for_each(transpose.begin(), transpose.end(), [&](int i) -> void {
+                dim.emplace_back(pad_to_four_dim_[i]);
+            });
         } break;
         case 3:
         case 2:
@@ -80,8 +81,9 @@ void MetalImage::InitTexture() {
             // direction 'arraylength' use '24' value=(24+3)/4=6;
             // direction 'width' use '1' value=1  direction 'height' use '1' value=1
             std::vector<int> transpose = {0, 1, 2, 3};
-            for_each(transpose.begin(), transpose.end(),
-                     [&](int i) -> void { dim.emplace_back(pad_to_four_dim_[i]); });
+            for_each(transpose.begin(), transpose.end(), [&](int i) -> void {
+                dim.emplace_back(pad_to_four_dim_[i]);
+            });
         } break;
         default:
             LOG(FATAL) << "metal_image: Dim size is error";
@@ -109,7 +111,7 @@ void MetalImage::InitTexture() {
                 desc_.width = static_cast<NSUInteger>(dim[2]);
                 desc_.height = static_cast<NSUInteger>(dim[1]);
                 desc_.arrayLength = static_cast<NSUInteger>(((dim[3] + 3) / 4) * (dim[0]));
-                //baidu app: width===1 attention width!=1
+                // baidu app: width===1 attention width!=1
                 if (dim[2] != 1) {
                     LOG(FATAL) << "metal_image: Attention this dim";
                 }
@@ -184,9 +186,9 @@ DDim MetalImage::FourDimFrom(DDim in_dim) {
         four_dim = in_dim;
     } else if (in_dim.size() < 4) {
         std::vector<DDim::value_type> four_dim_num = {static_cast<DDim::value_type>(1),
-                                                      static_cast<DDim::value_type>(1),
-                                                      static_cast<DDim::value_type>(1),
-                                                      static_cast<DDim::value_type>(1)};
+            static_cast<DDim::value_type>(1),
+            static_cast<DDim::value_type>(1),
+            static_cast<DDim::value_type>(1)};
 
         for (int i = 0; i < in_dim.size(); ++i) {
             four_dim_num[4 - in_dim.size() + i] = in_dim[i];
@@ -224,13 +226,13 @@ int MetalImage::ElementCount() const {
 //         CPU process data and return to metal
 // eg: io_copy_host_to_metal, tensor.size=4
 template <typename SP>
-void MetalImage::CopyFromNCHW(const SP *src) {
+void MetalImage::CopyFromNCHW(const SP* src) {
     auto rcount = texture_width_ * texture_height_ * array_length_ * channels_per_pixel_;
-    
+
     if (precision_type_ == METAL_PRECISION_TYPE::FLOAT && std::is_same<SP, float>::value) {
         LOG(FATAL) << "metal_image: CopyFromNCHW - precision = FLOAT";
     } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<SP, float>::value) {
-        //attenion：ruler same with InitTexture
+        // attenion：ruler same with InitTexture
         auto nvalue = (MetalHalf*)TargetWrapperMetal::Malloc(sizeof(MetalHalf) * rcount);
         if (tensor_dim_.size() == 4) {
             size_t n = dim_[0];
@@ -286,11 +288,10 @@ void MetalImage::CopyFromNCHW(const SP *src) {
         auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
         auto bytes_per_image = image_.height * bytes_per_row;
         const MTLRegion region{.origin = {0, 0, 0},
-                               .size = {
-                                   image_.width,
-                                   image_.height,
-                                   image_.depth,
-                               }};
+            .size =
+                {
+                    image_.width, image_.height, image_.depth,
+                }};
 
         for (int i = 0; i < array_length_; ++i) {
             auto p = nvalue + image_.width * image_.height * channels_per_pixel_ * i;
@@ -324,11 +325,10 @@ __unused void MetalImage::Zero() const {
     auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * size_p;
     auto bytes_per_image = image_.height * bytes_per_row;
     const MTLRegion region{.origin = {0, 0, 0},
-                           .size = {
-                               image_.width,
-                               image_.height,
-                               image_.depth,
-                           }};
+        .size =
+            {
+                image_.width, image_.height, image_.depth,
+            }};
 
     {
         int i = static_cast<int>(array_length_ - 1);
@@ -359,25 +359,25 @@ void MetalImage::CopyToNCHW(P* dst) const {
     auto dstCounts = array_length_ * channels_per_pixel_ * texture_width_ * texture_height_;
 
     if (precision_type_ == METAL_PRECISION_TYPE::FLOAT && std::is_same<P, float>::value) {
-        auto pointer = (float *)TargetWrapperMetal::Malloc(sizeof(float) * dstCounts);
+        auto pointer = (float*)TargetWrapperMetal::Malloc(sizeof(float) * dstCounts);
 
         auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(float);
         auto bytes_per_image = image_.height * bytes_per_row;
 
         const MTLRegion region{.origin = {0, 0, 0},
-                               .size = {
-                                   image_.width,
-                                   image_.height,
-                                   image_.depth,
-                               }};
+            .size =
+                {
+                    image_.width, image_.height, image_.depth,
+                }};
         for (int i = 0; i < array_length_; ++i) {
             auto p = pointer + image_.width * image_.height * channels_per_pixel_ * i;
 
             [image_ getBytes:(p)
-                 bytesPerRow:(bytes_per_row)
-               bytesPerImage:(bytes_per_image)
-                  fromRegion:(region)
-                 mipmapLevel:(0)slice:static_cast<NSUInteger>(i)];
+                  bytesPerRow:(bytes_per_row)
+                bytesPerImage:(bytes_per_image)
+                   fromRegion:(region)
+                  mipmapLevel:(0)
+                        slice:static_cast<NSUInteger>(i)];
         }
 
         int index = 0;
@@ -388,8 +388,10 @@ void MetalImage::CopyToNCHW(P* dst) const {
                         for (int i3 = 0; i3 < W; ++i3) {
                             std::vector<int> ig = {i0, i1, i2, i3};
                             auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-                            std::vector<int> jg = {ig[transpose_[0]], ig[transpose_[1]],
-                                                   ig[transpose_[2]], ig[transpose_[3]]};
+                            std::vector<int> jg = {ig[transpose_[0]],
+                                ig[transpose_[1]],
+                                ig[transpose_[2]],
+                                ig[transpose_[3]]};
                             auto k = jg[0] * dim_[3] + jg[3];
                             auto jx = ((k / 4) * dim_[1] * dim_[2] * 4) + (jg[1] * dim_[2] * 4) +
                                       (jg[2] * 4) + (k % 4);
@@ -405,8 +407,10 @@ void MetalImage::CopyToNCHW(P* dst) const {
                         for (int i3 = 0; i3 < W; ++i3) {
                             std::vector<int> ig = {i0, i1, i2, i3};
                             auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-                            std::vector<int> jg = {ig[transpose_[0]], ig[transpose_[1]],
-                                                   ig[transpose_[2]], ig[transpose_[3]]};
+                            std::vector<int> jg = {ig[transpose_[0]],
+                                ig[transpose_[1]],
+                                ig[transpose_[2]],
+                                ig[transpose_[3]]};
                             auto k = jg[1];
                             auto jx = ((k / 4) * dim_[2] * dim_[3] * 4) + (jg[1] * dim_[3] * 4) +
                                       (jg[3] * 4) + (k % 4);
@@ -430,20 +434,19 @@ void MetalImage::CopyToNCHW(P* dst) const {
         auto bytes_per_image = image_.height * bytes_per_row;
 
         const MTLRegion region{.origin = {0, 0, 0},
-                               .size = {
-                                   image_.width,
-                                   image_.height,
-                                   image_.depth,
-                               }};
+            .size =
+                {
+                    image_.width, image_.height, image_.depth,
+                }};
         for (int i = 0; i < array_length_; ++i) {
             auto p = pointer + image_.width * image_.height * channels_per_pixel_ * i;
 
             [image_ getBytes:p
-                 bytesPerRow:bytes_per_row
-               bytesPerImage:bytes_per_image
-                  fromRegion:region
-                 mipmapLevel:0
-                       slice:static_cast<NSUInteger>(i)];
+                  bytesPerRow:bytes_per_row
+                bytesPerImage:bytes_per_image
+                   fromRegion:region
+                  mipmapLevel:0
+                        slice:static_cast<NSUInteger>(i)];
         }
 
         int index = 0;
@@ -454,8 +457,10 @@ void MetalImage::CopyToNCHW(P* dst) const {
                         for (int i3 = 0; i3 < W; ++i3) {
                             std::vector<int> ig = {i0, i1, i2, i3};
                             auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-                            std::vector<int> jg = {ig[transpose_[0]], ig[transpose_[1]],
-                                                   ig[transpose_[2]], ig[transpose_[3]]};
+                            std::vector<int> jg = {ig[transpose_[0]],
+                                ig[transpose_[1]],
+                                ig[transpose_[2]],
+                                ig[transpose_[3]]};
                             auto k = jg[0] * dim_[3] + jg[3];
                             auto jx = ((k / 4) * dim_[1] * dim_[2] * 4) + (jg[1] * dim_[2] * 4) +
                                       (jg[2] * 4) + (k % 4);

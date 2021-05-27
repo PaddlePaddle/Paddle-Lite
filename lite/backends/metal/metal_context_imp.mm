@@ -47,7 +47,8 @@ extern NSString* cString2NSString(std::string cStr) {
             library = [self.device newLibraryWithFile:path error:NULL];
         }
         if (nil == library) {
-            LOG(INFO) << "Can't load metallib: " << [path cStringUsingEncoding:NSUTF8StringEncoding];
+            LOG(INFO) << "Can't load metallib: "
+                      << [path cStringUsingEncoding:NSUTF8StringEncoding];
         }
     });
     return library;
@@ -128,8 +129,8 @@ extern NSString* cString2NSString(std::string cStr) {
     }
 
     NSError* error = nil;
-    id<MTLComputePipelineState> pipline = [_device newComputePipelineStateWithFunction:function
-                                                                                 error:&error];
+    id<MTLComputePipelineState> pipline =
+        [_device newComputePipelineStateWithFunction:function error:&error];
     assert(nil != pipline);
     return pipline;
 }

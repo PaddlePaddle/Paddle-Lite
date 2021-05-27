@@ -71,9 +71,10 @@ void PriorBoxImageCompute<P, PTYPE>::PrepareForRun() {
 
     auto aspect_ratios_size = (uint32_t)(output_aspect_ratios.size());
 
-    new_aspect_ratio_buffer_ = metal_context_->CreateBuffer(*device, output_aspect_ratios.data(),
-                                                            aspect_ratios_size * sizeof(float),
-                                                            METAL_ACCESS_FLAG::CPUWriteOnly);
+    new_aspect_ratio_buffer_ = metal_context_->CreateBuffer(*device,
+        output_aspect_ratios.data(),
+        aspect_ratios_size * sizeof(float),
+        METAL_ACCESS_FLAG::CPUWriteOnly);
 
     auto max_sizes_size = (uint32_t)(param.max_sizes.size());
     auto min_sizes_size = (uint32_t)(param.min_sizes.size());
@@ -83,16 +84,21 @@ void PriorBoxImageCompute<P, PTYPE>::PrepareForRun() {
     float minSize = (bool)(*(param.min_sizes.end())) ? *(param.min_sizes.end()) : 0.0f;
     float maxSize = (bool)(*(param.max_sizes.end())) ? *(param.min_sizes.end()) : 0.0f;
 
-    PriorBoxMetalParam prior_box_param = {param.offset,   step_w,
-                                          step_h,         minSize,
-                                          maxSize,        image_width,
-                                          image_height,   param.clip,
-                                          num_priors,     aspect_ratios_size,
-                                          min_sizes_size, max_sizes_size};
+    PriorBoxMetalParam prior_box_param = {param.offset,
+        step_w,
+        step_h,
+        minSize,
+        maxSize,
+        image_width,
+        image_height,
+        param.clip,
+        num_priors,
+        aspect_ratios_size,
+        min_sizes_size,
+        max_sizes_size};
 
-    new_aspect_ratio_buffer_ =
-        metal_context_->CreateBuffer(*device, &prior_box_param, sizeof(prior_box_param),
-                                     METAL_ACCESS_FLAG::CPUWriteOnly);
+    new_aspect_ratio_buffer_ = metal_context_->CreateBuffer(
+        *device, &prior_box_param, sizeof(prior_box_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
     std::string function_name = "";
     if (std::is_same<float, P>::value) {
@@ -119,14 +125,15 @@ void PriorBoxImageCompute<P, PTYPE>::Run() {
     auto encoder =
         std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
+        static_cast<MetalUint>(output_height),
+        static_cast<MetalUint>(output_array_length)};
 
     [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
     [encoder->metal_command_encoder_ setTexture:(image_buffer_->image()) atIndex:(1)];
     [encoder->metal_command_encoder_ setBuffer:(new_aspect_ratio_buffer_->buffer())
-                                        offset:(0)atIndex:(0)];
-    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(1)];
+                                        offset:(0)
+                                       atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(1)];
     [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
     [encoder->metal_command_encoder_ setBytes:(param.variances_.data())
                                        length:(sizeof(float) * param.variances_.size())
@@ -149,34 +156,30 @@ typedef paddle::lite::kernels::metal::PriorBoxImageCompute<MetalHalf, PRECISION(
 
 REGISTER_LITE_KERNEL(prior_box, kMetal, kFloat, kMetalTexture2DArray, MetalPriorBoxFp32, def)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Image",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Boxes",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Variances",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(prior_box, kMetal, kFP16, kMetalTexture2DArray, MetalPriorBoxFp16, def)
-    .BindInput(
-        "Input",
+    .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput(
-        "Image",
+    .BindOutput("Image",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput(
-        "Boxes",
+    .BindOutput("Boxes",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput(
-        "Variances",
+    .BindOutput("Variances",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

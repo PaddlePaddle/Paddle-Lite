@@ -36,8 +36,8 @@ void PoolImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-    output_buffer_ =
-        param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims, input_buffer_->transpose_);
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(
+        metal_context_, output_dims, input_buffer_->transpose_);
 #endif
 
     // use mps or not
@@ -102,7 +102,7 @@ void PoolImageCompute::run_without_mps() {
     } else {
         [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
         [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
-        [encoder setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+        [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
         [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     }
@@ -231,31 +231,29 @@ PoolImageCompute::~PoolImageCompute() {
 #pragma mark -
 
 REGISTER_LITE_KERNEL(pool2d,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::PoolImageCompute,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::PoolImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(pool2d,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::PoolImageCompute,
-                     def)
-    .BindInput(
-        "X",
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::PoolImageCompute,
+    def)
+    .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput(
-        "Out",
+    .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

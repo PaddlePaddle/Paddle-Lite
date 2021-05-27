@@ -145,14 +145,14 @@ void SplitImageCompute<P, PTYPE>::Run() {
     auto encoder =
         std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
+        static_cast<MetalUint>(output_height),
+        static_cast<MetalUint>(output_array_length)};
 
     NSUInteger image_index = 0;
     [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(image_index++)];
     for (auto item : output_buffers_)
         [encoder->metal_command_encoder_ setTexture:(item->image()) atIndex:(image_index++)];
-    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(0)];
 
     kernel_->Execute(*encoder, global_work_size, false);
 }
@@ -169,29 +169,27 @@ typedef paddle::lite::kernels::metal::SplitImageCompute<MetalHalf, PRECISION(kFP
 
 REGISTER_LITE_KERNEL(split, kMetal, kFloat, kMetalTexture2DArray, MetalSplitFp32, def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
     .BindInput("SectionsTensorList",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(split, kMetal, kFP16, kMetalTexture2DArray, MetalSplitFp16, def)
-    .BindInput(
-        "X",
+    .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
 
     .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
     .BindInput("SectionsTensorList",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
-    .BindOutput(
-        "Out",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

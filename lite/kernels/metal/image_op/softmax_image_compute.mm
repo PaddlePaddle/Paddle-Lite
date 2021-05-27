@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/metal/image_op/softmax_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
-#include "lite/kernels/metal/image_op/softmax_image_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -74,7 +74,7 @@ void SoftmaxImageCompute::run_without_mps() {
     auto encoder = [backend commandEncoder];
     [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
     [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
-    [encoder setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
@@ -183,31 +183,29 @@ SoftmaxImageCompute::~SoftmaxImageCompute() {
 #pragma mark -
 
 REGISTER_LITE_KERNEL(softmax,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::SoftmaxImageCompute,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::SoftmaxImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(softmax,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::SoftmaxImageCompute,
-                     def)
-    .BindInput(
-        "X",
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::SoftmaxImageCompute,
+    def)
+    .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput(
-        "Out",
+    .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cassert>
+#include "lite/backends/metal/target_wrapper.h"
 #include "lite/backends/metal/metal_buffer.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_image.h"
-#include "lite/backends/metal/target_wrapper.h"
+#include <cassert>
 
 namespace paddle {
 namespace lite {
 
 template <>
-void* TargetWrapperMetal::MallocImage<float>(MetalContext *context,
-                                             const DDim dim,
-                                             std::vector<int> transpose) {
+void* TargetWrapperMetal::MallocImage<float>(MetalContext* context,
+    const DDim dim,
+    std::vector<int> transpose) {
     auto image = new MetalImage(context, dim, transpose, METAL_PRECISION_TYPE::FLOAT);
     return (void*)image;
 }
 
 template <>
-void* TargetWrapperMetal::MallocImage<MetalHalf>(MetalContext *context,
-                                                 const DDim dim,
-                                                 std::vector<int> transpose) {
+void* TargetWrapperMetal::MallocImage<MetalHalf>(MetalContext* context,
+    const DDim dim,
+    std::vector<int> transpose) {
     auto image = new MetalImage(context, dim, transpose, METAL_PRECISION_TYPE::HALF);
     return (void*)image;
 }

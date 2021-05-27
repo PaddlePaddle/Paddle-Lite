@@ -51,8 +51,9 @@ void MetalDebug::print_float(const std::string& name, float* data, int size, int
     int realCount = (int)size / stride;
     layer_count_++;
     NSLog(@"---------------------------------------------------");
-    NSLog(@"%d : %@", layer_count_,
-          [NSString stringWithCString:name.c_str() encoding:NSASCIIStringEncoding]);
+    NSLog(@"%d : %@",
+        layer_count_,
+        [NSString stringWithCString:name.c_str() encoding:NSASCIIStringEncoding]);
     for (int i = 0; i < realCount; i++) {
         float value = vec[i * stride].first;
         int index = vec[i * stride].second;

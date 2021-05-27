@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/metal/image_op/concat_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/kernels/metal/image_op/concat_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
@@ -57,7 +57,7 @@ void ConcatImageCompute::Run() {
     if (v_ == "normal") {
         [encoder setTexture:output_buffer_->image() atIndex:(idx)];
     }
-    [encoder setBuffer:params_buffer_->buffer() offset:(0)atIndex:(0)];
+    [encoder setBuffer:params_buffer_->buffer() offset:(0) atIndex:(0)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
@@ -127,11 +127,10 @@ void ConcatImageCompute::setup_without_mps() {
         }
     }
     ConcatMetalParam concat_params{{odm[0], odm[1], odm[2], odm[3]},
-                                   static_cast<int>(axis),
-                                   0,
-                                   {transpose[0], transpose[1], transpose[2], transpose[3]},
-                                   {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3],
-                                    (int)vdim[4], (int)vdim[5]}};
+        static_cast<int>(axis),
+        0,
+        {transpose[0], transpose[1], transpose[2], transpose[3]},
+        {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3], (int)vdim[4], (int)vdim[5]}};
 
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(concat_params), &concat_params);
@@ -149,35 +148,33 @@ void ConcatImageCompute::setup_without_mps() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(concat,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ConcatImageCompute,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ConcatImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(concat,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ConcatImageCompute,
-                     def)
-    .BindInput(
-        "X",
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ConcatImageCompute,
+    def)
+    .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
-    .BindOutput(
-        "Out",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

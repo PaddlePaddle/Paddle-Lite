@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/relu_image_compute.h"
+#include "lite/core/op_registry.h"
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
@@ -53,8 +53,8 @@ void relu_compute_ref(const operators::ActivationParam& param) {
 }
 
 TEST(relu_metal, retrive_op) {
-    auto relu = KernelRegistry::Global().Create("relu", TARGET(kMetal), PRECISION(kFloat),
-                                                DATALAYOUT(kMetalTexture2DArray));
+    auto relu = KernelRegistry::Global().Create(
+        "relu", TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray));
 
     ASSERT_FALSE(relu.empty());
     ASSERT_TRUE(relu.front());
@@ -76,7 +76,7 @@ TEST(relu_metal, compute) {
                             for (auto epsilon : {1e-4f, 1e-5f}) {
                                 for (auto momentum : {0.9f, 0.99f}) {
                                     for (auto data_layout :
-                                         {DATALAYOUT(kNCHW) /*, DATALAYOUT(kNHWC)*/}) {
+                                        {DATALAYOUT(kNCHW) /*, DATALAYOUT(kNHWC)*/}) {
                                         Tensor x;
                                         Tensor x_dev;
                                         Tensor scale;
@@ -131,10 +131,8 @@ TEST(relu_metal, compute) {
                                             x_data[i] = sign * static_cast<float>(i % 64);
                                         }
 
-                                        auto x_dev_ptr =
-                                            x_dev.mutable_data<float, MetalImage>(x_dev.dims(),
-                                                                                  {0, 2, 3, 1},
-                                                                                  (void*)x_data);
+                                        auto x_dev_ptr = x_dev.mutable_data<float, MetalImage>(
+                                            x_dev.dims(), {0, 2, 3, 1}, (void*)x_data);
                                         auto y_host_ptr = y.mutable_data<float>();
 
                                         {
@@ -191,8 +189,8 @@ TEST(relu_metal, compute) {
 }
 
 TEST(relu_metal_half, retrive_op_half) {
-    auto relu_half = KernelRegistry::Global().Create("relu", TARGET(kMetal), PRECISION(kFP16),
-                                                     DATALAYOUT(kMetalTexture2DArray));
+    auto relu_half = KernelRegistry::Global().Create(
+        "relu", TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray));
     ASSERT_FALSE(relu_half.empty());
     ASSERT_TRUE(relu_half.front());
 }
@@ -213,7 +211,7 @@ TEST(relu_metal_half, compute) {
                             for (auto epsilon : {1e-4f, 1e-5f}) {
                                 for (auto momentum : {0.9f, 0.99f}) {
                                     for (auto data_layout :
-                                         {DATALAYOUT(kNCHW) /*, DATALAYOUT(kNHWC)*/}) {
+                                        {DATALAYOUT(kNCHW) /*, DATALAYOUT(kNHWC)*/}) {
                                         Tensor x;
                                         Tensor x_dev;
                                         Tensor scale;
@@ -272,9 +270,8 @@ TEST(relu_metal_half, compute) {
                                         //                    x_dev.mutable_data<float,
                                         //                    metal_image>(n,
                                         //                    c, h, w, (void*)x_data);
-                                        auto x_dev_ptr =
-                                            x_dev.mutable_data<MetalHalf, MetalImage>(x_dev.dims(),
-                                                                                      {0, 2, 3, 1});
+                                        auto x_dev_ptr = x_dev.mutable_data<MetalHalf, MetalImage>(
+                                            x_dev.dims(), {0, 2, 3, 1});
                                         x_dev_ptr->CopyFromNCHW<float>(x_data);
                                         auto y_host_ptr = y.mutable_data<float>();
 

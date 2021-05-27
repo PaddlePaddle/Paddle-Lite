@@ -65,8 +65,8 @@ class Conv2dImageCompute
     bool canMPSAddByElement();
 
     static std::string KernelFunctionName(const param_t& param,
-                                          bool use_winograde = false,
-                                          bool use_quadruple = false);
+        bool use_winograde = false,
+        bool use_quadruple = false);
 
     static bool IsWinoGrad(const std::string& function_name);
     bool IsQuadruple(const std::string& function_name);

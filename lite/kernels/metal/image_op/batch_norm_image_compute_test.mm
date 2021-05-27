@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/batch_norm_image_compute.h"
+#include "lite/core/op_registry.h"
 #include <cmath>
 #include <gtest/gtest.h>
 #include <memory>
@@ -83,9 +83,8 @@ void batch_norm_compute_ref(const operators::BatchNormParam& param) {
 }
 
 TEST(batch_norm_metal, retrive_op) {
-    auto batch_norm =
-        KernelRegistry::Global().Create("batch_norm", TARGET(kMetal), PRECISION(kFloat),
-                                        DATALAYOUT(kMetalTexture2DArray));
+    auto batch_norm = KernelRegistry::Global().Create(
+        "batch_norm", TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray));
     ASSERT_FALSE(batch_norm.empty());
     ASSERT_TRUE(batch_norm.front());
 }
@@ -106,7 +105,7 @@ TEST(batch_norm_metal, compute) {
                             for (auto epsilon : {/*1e-4f,*/ 1e-5f}) {
                                 for (auto momentum : {/*0.9f,*/ 0.99f}) {
                                     for (auto data_layout :
-                                         {DATALAYOUT(kNCHW) /*, DATALAYOUT(kNHWC)*/}) {
+                                        {DATALAYOUT(kNCHW) /*, DATALAYOUT(kNHWC)*/}) {
                                         Tensor x;
                                         Tensor x_dev;
                                         Tensor scale;
@@ -176,10 +175,8 @@ TEST(batch_norm_metal, compute) {
                                             variance_data[i] = static_cast<float>(i) * 2.08f + 1.5f;
                                         }
 
-                                        auto x_dev_ptr =
-                                            x_dev.mutable_data<float, MetalImage>(x.dims(),
-                                                                                  {0, 2, 3, 1},
-                                                                                  (void*)x_data);
+                                        auto x_dev_ptr = x_dev.mutable_data<float, MetalImage>(
+                                            x.dims(), {0, 2, 3, 1}, (void*)x_data);
                                         auto y_host_ptr = y.mutable_data<float>();
 
                                         if (false) {

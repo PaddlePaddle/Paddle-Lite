@@ -26,27 +26,27 @@ namespace lite {
 #define C(i, j) cur_c[i * ldc + j]
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
-                       Dtype2* dout,
-                       int num,
-                       int chout,
-                       int hout,
-                       int wout,
-                       int chin,
-                       int hin,
-                       int win,
-                       const Dtype1* weights,
-                       const Dtype2* bias,
-                       int group,
-                       int kernel_w,
-                       int kernel_h,
-                       int stride_w,
-                       int stride_h,
-                       int dila_w,
-                       int dila_h,
-                       int pad_w,
-                       int pad_h,
-                       bool flag_bias,
-                       std::string flag_relu) {
+    Dtype2* dout,
+    int num,
+    int chout,
+    int hout,
+    int wout,
+    int chin,
+    int hin,
+    int win,
+    const Dtype1* weights,
+    const Dtype2* bias,
+    int group,
+    int kernel_w,
+    int kernel_h,
+    int stride_w,
+    int stride_h,
+    int dila_w,
+    int dila_h,
+    int pad_w,
+    int pad_h,
+    bool flag_bias,
+    std::string flag_relu) {
     Dtype2 beta = 0;
     auto src_data = din;
     auto dst_data_ref = dout;
@@ -113,14 +113,14 @@ static void conv_basic(const Dtype1* din,
 
 template <typename T>
 void gemm_batch_bias(const int batch_size,
-                     const T* a,
-                     const int M,
-                     const int K,
-                     const T* b,
-                     const int K_,
-                     const int N,
-                     T* biases,
-                     T* c) {
+    const T* a,
+    const int M,
+    const int K,
+    const T* b,
+    const int K_,
+    const int N,
+    T* biases,
+    T* c) {
     EXPECT_TRUE(K_ == K && M > 0 && N > 0 && K > 0);
     for (int bidx = 0; bidx < batch_size; ++bidx) {
         const T* cur_b = b + K * N * bidx;
@@ -147,8 +147,11 @@ void gemm_batch_bias(const int batch_size,
     }
 }
 
-void PrintData(
-    std::string name, float* a, const int rows, const int cols, const int batch_size = 1) {
+void PrintData(std::string name,
+    float* a,
+    const int rows,
+    const int cols,
+    const int batch_size = 1) {
     std::cout << "==== " << name << " ====" << std::endl;
     for (int b = 0; b < batch_size; ++b) {
         std::cout << "-- bidx = " << b << " --" << std::endl;
@@ -169,9 +172,22 @@ TEST(depthwise_conv2d, buffer_compare) {
 
     auto image = a.mutable_data<MetalHalf, MetalImage>(x_dim);
 
-    std::vector<float> input = {0.610179, -0.340205, 3.278859,  2.392035, 0.952910, 3.035821,
-                                3.706363, 4.150465,  -0.470437, 0.273920, 4.507082, 2.403983,
-                                2.947067, 1.090603,  7.417082,  5.028472};
+    std::vector<float> input = {0.610179,
+        -0.340205,
+        3.278859,
+        2.392035,
+        0.952910,
+        3.035821,
+        3.706363,
+        4.150465,
+        -0.470437,
+        0.273920,
+        4.507082,
+        2.403983,
+        2.947067,
+        1.090603,
+        7.417082,
+        5.028472};
 
     image->CopyFromNCHW<float>(input.data());
 
@@ -228,16 +244,17 @@ TEST(conv2d, compute_conv2d_gemm) {
                                 int m = oc;
                                 int k = ic * ksize * ksize;
                                 int n = oc;
-                                LOG(INFO)
-                                    << "bs=" << batch_size << " oc=" << oc << " ic=" << ic
-                                    << " ih=" << ih << " iw=" << iw << " oh=" << oh << " ow=" << ow
-                                    << " bias_flag=" << bias_flag << " relu_flag=" << relu_flag;
-                                LOG(INFO)
-                                    << "m=oc=" << oc << " k=ic*ksize*ksize=" << ic * ksize * ksize
-                                    << " n=oc=" << oc;
+                                LOG(INFO) << "bs=" << batch_size << " oc=" << oc << " ic=" << ic
+                                          << " ih=" << ih << " iw=" << iw << " oh=" << oh
+                                          << " ow=" << ow << " bias_flag=" << bias_flag
+                                          << " relu_flag=" << relu_flag;
+                                LOG(INFO) << "m=oc=" << oc
+                                          << " k=ic*ksize*ksize=" << ic * ksize * ksize
+                                          << " n=oc=" << oc;
 
-                                auto kernels = KernelRegistry::Global().Create(
-                                    "conv2d", TARGET(kMetal), PRECISION(kFloat),
+                                auto kernels = KernelRegistry::Global().Create("conv2d",
+                                    TARGET(kMetal),
+                                    PRECISION(kFloat),
                                     DATALAYOUT(kMetalTexture2DArray));
                                 ASSERT_FALSE(kernels.empty());
                                 auto kernel = std::move(kernels.front());
@@ -340,13 +357,28 @@ TEST(conv2d, compute_conv2d_gemm) {
 
                                 // run cpu ref
                                 auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kHost));
-                                conv_basic<float, float>(x_data_cpu.data(), out_ref_data,
-                                                         batch_size, oc, oh, ow, ic, ih, iw,
-                                                         filter_data,
-                                                         bias_cpu_data,  // mapped_bias,
-                                                         group, ksize, ksize, stride, stride,
-                                                         dilation, dilation, pad, pad, bias_flag,
-                                                         relu_flag);
+                                conv_basic<float, float>(x_data_cpu.data(),
+                                    out_ref_data,
+                                    batch_size,
+                                    oc,
+                                    oh,
+                                    ow,
+                                    ic,
+                                    ih,
+                                    iw,
+                                    filter_data,
+                                    bias_cpu_data,  // mapped_bias,
+                                    group,
+                                    ksize,
+                                    ksize,
+                                    stride,
+                                    stride,
+                                    dilation,
+                                    dilation,
+                                    pad,
+                                    pad,
+                                    bias_flag,
+                                    relu_flag);
 
                                 auto* out_data = out.data<float, MetalImage>();
 
@@ -356,16 +388,22 @@ TEST(conv2d, compute_conv2d_gemm) {
                                 // a: filter_d ==> <m, k> <=> <oc, ic>
                                 // b: x_d      ==> <k, n> <=> <ic, ih*iw>
                                 // c: output_d ==> <m, n> <=> <oc, ih*iw>
-                                PrintData("mapped_filter", static_cast<float*>(mapped_filter), m,
-                                          k);
-                                PrintData("mapped_x", static_cast<float*>(mapped_x), k, n,
-                                          batch_size);
+                                PrintData(
+                                    "mapped_filter", static_cast<float*>(mapped_filter), m, k);
+                                PrintData(
+                                    "mapped_x", static_cast<float*>(mapped_x), k, n, batch_size);
                                 PrintData("mapped_bias", static_cast<float*>(mapped_bias), m, 1);
                                 std::cout << "mapped_bias[0]:" << mapped_bias[0] << std::endl;
-                                PrintData("out_ref_data", static_cast<float*>(out_ref_data), m, n,
-                                          batch_size);
-                                PrintData("mapped_out", static_cast<float*>(mapped_out), m, n,
-                                          batch_size);
+                                PrintData("out_ref_data",
+                                    static_cast<float*>(out_ref_data),
+                                    m,
+                                    n,
+                                    batch_size);
+                                PrintData("mapped_out",
+                                    static_cast<float*>(mapped_out),
+                                    m,
+                                    n,
+                                    batch_size);
 #endif
 
                                 for (int i = 0; i < 100; i++) {

@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "lite/backends/metal/metal_buffer.h"
-#include <cassert>
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/target_wrapper.h"
 #include "lite/utils/cp_logging.h"
+#include <cassert>
 
 namespace paddle {
 namespace lite {
@@ -33,11 +33,11 @@ MetalBuffer::MetalBuffer(MetalContext* context, size_t size, void* data, METAL_A
 }
 
 MetalBuffer::MetalBuffer(MetalContext* context,
-                         const DDim& inDim,
-                         size_t size,
-                         void* data,
-                         METAL_PRECISION_TYPE precision,
-                         METAL_ACCESS_FLAG access)
+    const DDim& inDim,
+    size_t size,
+    void* data,
+    METAL_PRECISION_TYPE precision,
+    METAL_ACCESS_FLAG access)
     : metal_context_(context),
       mtl_size_(size),
       dim_(inDim),
@@ -84,7 +84,7 @@ void MetalBuffer::CopyFromNCHW(const float* src) {
     if (precision_ == METAL_PRECISION_TYPE::FLOAT)
         TargetWrapperMetal::MemcpySync(rawdata_, src, tensor_length);
     else if (precision_ == METAL_PRECISION_TYPE::HALF) {
-        MetalFloatArray2HalfArray(src, (MetalHalf *)rawdata_, tensor_count);
+        MetalFloatArray2HalfArray(src, (MetalHalf*)rawdata_, tensor_count);
     }
 
     // data convert: NCHW -> NHWC
@@ -93,7 +93,7 @@ void MetalBuffer::CopyFromNCHW(const float* src) {
         data_layout_ = DataLayout::kNHWC;
     }
 
-    //scenes: conv tranpose
+    // scenes: conv tranpose
     if (with_transpose_ && tensor_dim_.size() == 4) {
         auto transpose_pointer = TargetWrapperMetal::Malloc(tensor_length);
         auto n = tensor_dim_[0];
@@ -153,7 +153,8 @@ void MetalBuffer::CopyFromNCHW(const float* src) {
             if (data_layout_ == DataLayout::kNCHW) {
                 // attention: pad N channel
                 // eg: conv2d shader filter is 1-dimensional array, 'grid.z' is output coordinate
-                // shader use 'gid.z' to get 'filter' value, report an error when the boundary is exceeded
+                // shader use 'gid.z' to get 'filter' value, report an error when the boundary is
+                // exceeded
                 int padNCount =
                     static_cast<int>((((dim_[0] + 3) / 4) * 4 * paddedC) * dim_[2] * dim_[3]);
                 void* convertedPointer = TargetWrapperMetal::Malloc(padNCount * precision_size_);
@@ -199,8 +200,8 @@ void MetalBuffer::CopyFromNCHW(const float* src) {
                 }
                 // upload to GPU
                 NSInteger new_length = padNCount * precision_size_;
-                buffer_ = [backend newDeviceBuffer:new_length
-                                            access:METAL_ACCESS_FLAG::CPUReadWrite];
+                buffer_ =
+                    [backend newDeviceBuffer:new_length access:METAL_ACCESS_FLAG::CPUReadWrite];
                 TargetWrapperMetal::MemcpySync(buffer_.contents, convertedPointer, new_length);
                 mtl_size_ = new_length;
                 if (convertedPointer != nullptr) {
@@ -209,7 +210,7 @@ void MetalBuffer::CopyFromNCHW(const float* src) {
             } else if (data_layout_ == DataLayout::kNHWC) {
                 int padNCount =
                     static_cast<int>((((dim_[0] + 3) / 4) * 4 * paddedC) * dim_[1] * dim_[2]);
-                void *convertedPointer = TargetWrapperMetal::Malloc(padNCount * precision_size_);
+                void* convertedPointer = TargetWrapperMetal::Malloc(padNCount * precision_size_);
                 // pad 0.0f
                 if (precision_ == METAL_PRECISION_TYPE::FLOAT) {
                     auto data_src = (float*)rawdata_;
@@ -242,8 +243,8 @@ void MetalBuffer::CopyFromNCHW(const float* src) {
                 }
                 // upload to GPU
                 NSInteger new_length = padNCount * precision_size_;
-                buffer_ = [backend newDeviceBuffer:new_length
-                                            access:METAL_ACCESS_FLAG::CPUReadWrite];
+                buffer_ =
+                    [backend newDeviceBuffer:new_length access:METAL_ACCESS_FLAG::CPUReadWrite];
                 TargetWrapperMetal::MemcpySync(buffer_.contents, convertedPointer, new_length);
                 mtl_size_ = new_length;
                 if (convertedPointer != nullptr) {
@@ -287,11 +288,12 @@ void MetalBuffer::CopyToNCHW(float* dst) {
     if (data_layout_ == DataLayout::kNCHW) {
         TargetWrapperMetal::MemcpySync((void*)dst, src_ptr, size);
     } else if (data_layout_ == DataLayout::kNHWC) {
-        MetalConverter::NHWC2NCHW<float, float>(dst, (float*)src_ptr,
-                                                static_cast<int>(tensor_dim_[0]),
-                                                static_cast<int>(tensor_dim_[1]),
-                                                static_cast<int>(tensor_dim_[2]),
-                                                static_cast<int>(tensor_dim_[3]));
+        MetalConverter::NHWC2NCHW<float, float>(dst,
+            (float*)src_ptr,
+            static_cast<int>(tensor_dim_[0]),
+            static_cast<int>(tensor_dim_[1]),
+            static_cast<int>(tensor_dim_[2]),
+            static_cast<int>(tensor_dim_[3]));
     }
     TargetWrapperMetal::Free(src_ptr);
 }
@@ -318,23 +320,23 @@ P* MetalBuffer::Convert(DataConverter<P>* converter) {
 
 void MetalBuffer::Convert2NHWC() {
     if (tensor_dim_.size() != 4) return;
-    void* new_pointer = TargetWrapperMetal::Malloc(
-        static_cast<size_t>(precision_size_ * tensor_dim_.production()));
+    void* new_pointer =
+        TargetWrapperMetal::Malloc(static_cast<size_t>(precision_size_ * tensor_dim_.production()));
 
     if (precision_ == METAL_PRECISION_TYPE::FLOAT) {
         MetalConverter::NCHW2NHWC<float, float>((float*)new_pointer,
-                                                (float*)rawdata_,
-                                                static_cast<int>(tensor_dim_[0]),
-                                                static_cast<int>(tensor_dim_[1]),
-                                                static_cast<int>(tensor_dim_[2]),
-                                                static_cast<int>(tensor_dim_[3]));
+            (float*)rawdata_,
+            static_cast<int>(tensor_dim_[0]),
+            static_cast<int>(tensor_dim_[1]),
+            static_cast<int>(tensor_dim_[2]),
+            static_cast<int>(tensor_dim_[3]));
     } else if (precision_ == METAL_PRECISION_TYPE::HALF) {
         MetalConverter::NCHW2NHWC<MetalHalf, MetalHalf>((MetalHalf*)new_pointer,
-                                                        (MetalHalf*)rawdata_,
-                                                        static_cast<int>(tensor_dim_[0]),
-                                                        static_cast<int>(tensor_dim_[1]),
-                                                        static_cast<int>(tensor_dim_[2]),
-                                                        static_cast<int>(tensor_dim_[3]));
+            (MetalHalf*)rawdata_,
+            static_cast<int>(tensor_dim_[0]),
+            static_cast<int>(tensor_dim_[1]),
+            static_cast<int>(tensor_dim_[2]),
+            static_cast<int>(tensor_dim_[3]));
     }
 
     int temp = static_cast<int>(dim_[3]);

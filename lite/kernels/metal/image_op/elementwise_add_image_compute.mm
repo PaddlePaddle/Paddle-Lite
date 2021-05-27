@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/metal/image_op/elementwise_add_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/kernels/metal/image_op/elementwise_add_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
@@ -54,7 +54,7 @@ void ElementwiseAddImageCompute::PrepareForRun() {
     } else {
         should_use_mps = false;
     }
-    // X Y output
+// X Y output
 #ifdef LITE_WITH_METAL_FULL
     if ([input_buffer_x_->image() pixelFormat] == MTLPixelFormatRGBA32Float &&
         [input_buffer_y_->image() pixelFormat] == MTLPixelFormatRGBA32Float &&
@@ -98,7 +98,7 @@ void ElementwiseAddImageCompute::run_without_mps() {
     [encoder setTexture:(input_buffer_x_->image()) atIndex:(0)];
     [encoder setTexture:(input_buffer_y_->image()) atIndex:(1)];
     [encoder setTexture:(output_buffer_->image()) atIndex:(2)];
-    [encoder setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
@@ -131,7 +131,8 @@ void ElementwiseAddImageCompute::setup_without_mps() {
     int add_by_channel = 0;
     if (input_buffer_y_->tensor_dim_.size() == 1 &&
         (axis == 1 ||
-         (axis == -1 && input_buffer_y_->tensor_dim_[0] == input_buffer_x_->pad_to_four_dim_[1]))) {
+            (axis == -1 &&
+                input_buffer_y_->tensor_dim_[0] == input_buffer_x_->pad_to_four_dim_[1]))) {
         add_by_channel = 1;
     }
     if (add_by_channel == 1 || params_fast == 1) {
@@ -139,17 +140,20 @@ void ElementwiseAddImageCompute::setup_without_mps() {
         LOG(FATAL) << "elementwise_add: add only support by channel";
     }
 
-    ElementwiseAddMetalParam element_params = {
-        params_fast,
+    ElementwiseAddMetalParam element_params = {params_fast,
         add_by_channel,
         params_axis,
         (int)input_buffer_y_->tensor_dim_.size(),
         {xdim[0], xdim[1], xdim[2], xdim[3]},
-        {input_buffer_x_->transpose_[0], input_buffer_x_->transpose_[1],
-         input_buffer_x_->transpose_[2], input_buffer_x_->transpose_[3]},
+        {input_buffer_x_->transpose_[0],
+            input_buffer_x_->transpose_[1],
+            input_buffer_x_->transpose_[2],
+            input_buffer_x_->transpose_[3]},
         {ydim[0], ydim[1], ydim[2], ydim[3]},
-        {input_buffer_y_->transpose_[0], input_buffer_y_->transpose_[1],
-         input_buffer_y_->transpose_[2], input_buffer_y_->transpose_[3]}};
+        {input_buffer_y_->transpose_[0],
+            input_buffer_y_->transpose_[1],
+            input_buffer_y_->transpose_[2],
+            input_buffer_y_->transpose_[3]}};
 
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(element_params), &element_params);
@@ -222,38 +226,35 @@ ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
 #pragma mark -
 
 REGISTER_LITE_KERNEL(elementwise_add,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ElementwiseAddImageCompute,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ElementwiseAddImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_add,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ElementwiseAddImageCompute,
-                     def)
-    .BindInput(
-        "X",
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ElementwiseAddImageCompute,
+    def)
+    .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput(
-        "Y",
+    .BindInput("Y",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput(
-        "Out",
+    .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
