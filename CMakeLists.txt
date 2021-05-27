@@ -25,6 +25,8 @@ else()
     set(CMAKE_CXX_STANDARD 11)
 endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include(system)
 include(cross_compiling/preproject)
 
