@@ -367,3 +367,76 @@
   "sdot   v28.4s,  v4.16b,  v1.4b[2]\n"  /* out22 = b2 * a10[0], b2 = q7*/ \
   "sdot   v31.4s,  v4.16b,  v1.4b[3]\n"  /* out23 = b2 * a10[0], b2 = q7*/ \
   "11: \n"                               /* end */
+
+#define GEMM_SDOT_INT8_KERNEL_8x8     \
+  "prfm   pldl1keep, [%[a_ptr], #64]\n"  /* preload a*/                     \
+  "eor    v8.16b,  v8.16b,  v8.16b \n"     /* out0 = 0 */                   \
+  "eor    v11.16b, v11.16b, v11.16b\n"     /* out0 = 0 */                   \
+  "eor    v14.16b, v14.16b, v14.16b\n"     /* out0 = 0 */                   \
+  "eor    v17.16b, v17.16b, v17.16b\n"     /* out0 = 0 */                   \
+  "eor    v20.16b, v20.16b, v20.16b\n"     /* out0 = 0 */                   \
+  "eor    v23.16b, v23.16b, v23.16b\n"     /* out0 = 0 */                   \
+  "eor    v26.16b, v26.16b, v26.16b\n"     /* out0 = 0 */                   \
+  "eor    v29.16b, v29.16b, v29.16b\n"     /* out0 = 0 */                   \
+  "prfm   pldl1keep, [%[b_ptr], #64]\n"  /* preload b*/                     \
+  "eor    v9.16b,  v9.16b,  v9.16b \n"     /* out0 = 0 */                   \
+  "eor    v12.16b, v12.16b, v12.16b\n"     /* out0 = 0 */                   \
+  "eor    v15.16b, v15.16b, v15.16b\n"     /* out0 = 0 */                   \
+  "eor    v18.16b, v18.16b, v18.16b\n"     /* out0 = 0 */                   \
+  "eor    v21.16b, v21.16b, v21.16b\n"     /* out0 = 0 */                   \
+  "eor    v24.16b, v24.16b, v24.16b\n"     /* out0 = 0 */                   \
+  "eor    v27.16b, v27.16b, v27.16b\n"     /* out0 = 0 */                   \
+  "eor    v30.16b, v30.16b, v30.16b\n"     /* out0 = 0 */                   \
+  "1:\n"                                                                    \
+  "ldp    q0, q1, [%[a_ptr]], #32\n"                                        \
+  "ldp    q4, q5, [%[b_ptr]], #32\n"                                        \
+  "sdot v8.4s, v4.16b, v0.4b[0]\n"                                          \
+  "sdot v11.4s, v4.16b, v0.4b[1]\n"                                         \
+  "sdot v14.4s, v4.16b, v0.4b[2]\n"                                         \
+  "sdot v17.4s, v4.16b, v0.4b[3]\n"                                         \
+  "prfm   pldl1keep, [%[a_ptr], #64]\n"  /* preload a*/                     \
+  "sdot v20.4s, v4.16b, v1.4b[0]\n"                                         \
+  "sdot v23.4s, v4.16b, v1.4b[1]\n"                                         \
+  "sdot v26.4s, v4.16b, v1.4b[2]\n"                                         \
+  "sdot v29.4s, v4.16b, v1.4b[3]\n"                                         \
+  "prfm   pldl1keep, [%[a_ptr], #128]\n"  /* preload b*/                    \
+  "prfm   pldl1keep, [%[b_ptr], #64]\n"  /* preload b*/                     \
+  "sdot v9.4s, v5.16b, v0.4b[0]\n"                                          \
+  "sdot v12.4s, v5.16b, v0.4b[1]\n"                                         \
+  "sdot v15.4s, v5.16b, v0.4b[2]\n"                                         \
+  "sdot v18.4s, v5.16b, v0.4b[3]\n"                                         \
+  "prfm   pldl1keep, [%[b_ptr], #128]\n"  /* preload b*/                    \
+  "sdot v21.4s, v5.16b, v1.4b[0]\n"                                         \
+  "sdot v24.4s, v5.16b, v1.4b[1]\n"                                         \
+  "sdot v27.4s, v5.16b, v1.4b[2]\n"                                         \
+  "sdot v30.4s, v5.16b, v1.4b[3]\n"                                         \
+  "subs %w[k], %w[k], #1\n"                                                 \
+  "bne 1b\n"
+
+#define GEMM_SDOT_INT8_KERNEL_8x4     \
+  "prfm   pldl1keep, [%[a_ptr], #64]\n"  /* preload a*/                      \
+  "eor    v8.16b,  v8.16b,  v8.16b \n"     /* out0 = 0 */                    \
+  "eor    v11.16b, v11.16b, v11.16b\n"     /* out0 = 0 */                    \
+  "eor    v14.16b, v14.16b, v14.16b\n"     /* out0 = 0 */                    \
+  "eor    v17.16b, v17.16b, v17.16b\n"     /* out0 = 0 */                    \
+  "prfm   pldl1keep, [%[b_ptr], #32]\n"  /* preload b*/                      \
+  "eor    v20.16b, v20.16b, v20.16b\n"     /* out0 = 0 */                    \
+  "eor    v23.16b, v23.16b, v23.16b\n"     /* out0 = 0 */                    \
+  "eor    v26.16b, v26.16b, v26.16b\n"     /* out0 = 0 */                    \
+  "eor    v29.16b, v29.16b, v29.16b\n"     /* out0 = 0 */                    \
+  "1:\n"                              \
+  "ldp    q0, q1, [%[a_ptr]], #32\n"  \
+  "ldr    q4,  [%[b_ptr]], #16\n"     \
+  "sdot v8.4s,  v4.16b, v0.4b[0]\n"    \
+  "sdot v11.4s, v4.16b, v0.4b[1]\n"   \
+  "prfm   pldl1keep, [%[a_ptr], #64]\n"  /* preload a*/                      \
+  "sdot v14.4s, v4.16b, v0.4b[2]\n"   \
+  "sdot v17.4s, v4.16b, v0.4b[3]\n"   \
+  "prfm   pldl1keep, [%[a_ptr], #64]\n"  /* preload a*/                      \
+  "sdot v20.4s, v4.16b, v1.4b[0]\n"   \
+  "sdot v23.4s, v4.16b, v1.4b[1]\n"   \
+  "prfm   pldl1keep, [%[b_ptr], #32]\n"  /* preload b*/                      \
+  "sdot v26.4s, v4.16b, v1.4b[2]\n"   \
+  "sdot v29.4s, v4.16b, v1.4b[3]\n"   \
+  "subs %w[k], %w[k], #1\n"           \
+  "bne 1b\n"
