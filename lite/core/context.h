@@ -284,13 +284,29 @@ class Context<TargetType::kXPU> {
   }
 
   void CopySharedTo(XPUContext* ctx) {
-    SetAttrs(ctx->L3Size(),
-             ctx->L3Locked(),
-             ctx->ConvAutotune(),
-             ctx->ConvAutotuneFile(),
-             ctx->MultiEncoderPrecision(),
-             ctx->MultiEncoderAdaptiveSeqlen(),
-             ctx->TlsRawCtx());
+    ctx->SetAttrs(l3_size_,
+                  l3_locked_,
+                  conv_autotune_,
+                  conv_autotune_file_,
+                  multi_encoder_precision_,
+                  multi_encoder_adaptive_seqlen_,
+                  tls_raw_ctx_);
+  }
+
+  void SetAttrs(const size_t l3_size,
+                const bool locked,
+                const bool autotune,
+                const std::string autotune_file,
+                const std::string precision,
+                const bool adaptive_seqlen,
+                std::shared_ptr<xdnn::Context> tls_raw_ctx) {
+    l3_size_ = l3_size;
+    l3_locked_ = locked;
+    conv_autotune_ = autotune;
+    conv_autotune_file_ = autotune_file;
+    multi_encoder_precision_ = precision;
+    multi_encoder_adaptive_seqlen_ = adaptive_seqlen;
+    tls_raw_ctx_ = tls_raw_ctx;
   }
 
   xdnn::Context* GetRawContext() { return tls_raw_ctx_.get(); }
@@ -314,22 +330,6 @@ class Context<TargetType::kXPU> {
   std::string name() const { return "XPUContext"; }
 
  private:
-  void SetAttrs(const size_t l3_size,
-                const bool locked,
-                const bool autotune,
-                const std::string autotune_file,
-                const std::string precision,
-                const bool adaptive_seqlen,
-                std::shared_ptr<xdnn::Context> tls_raw_ctx) {
-    l3_size_ = l3_size;
-    l3_locked_ = locked;
-    conv_autotune_ = autotune;
-    conv_autotune_file_ = autotune_file;
-    multi_encoder_precision_ = precision;
-    multi_encoder_adaptive_seqlen_ = adaptive_seqlen;
-    tls_raw_ctx_ = tls_raw_ctx;
-  }
-
   void InitL3() {
     static std::mutex set_l3_mutex;
     const std::lock_guard<std::mutex> lock(set_l3_mutex);
