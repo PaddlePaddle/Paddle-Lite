@@ -80,14 +80,17 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     for (auto& input : inputs) {
       cl_int4 in_shape = {1, 1, 1, 1};
       for (auto j = 0; j < input->dims().size(); ++j) {
-        in_shape.s[4 - j] = input->dims()[j];
+        in_shape.s[4 - input->dims().size() + j] = input->dims()[j];
       }
       if (in_shape.s[1] % 4 != 0) {
         align_ = false;
       }
     }
 
-    if (inputs.size() == 2) {
+    if (!(flag_ == 1 && !align_) && inputs.size() <= 6) {
+      kernel_func_name_ = "Concat" + std::to_string(inputs.size()) +
+                          "InputAxis" + std::to_string(flag_);
+    } else if (inputs.size() == 2) {
       kernel_func_name_ = "concat2";
     } else if (inputs.size() == 3 && axis_ == 1 &&
                output_tensor_dims.size() == 4) {
@@ -95,9 +98,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     } else if (inputs.size() == 4 && axis_ == 1 &&
                output_tensor_dims.size() == 4) {
       kernel_func_name_ = "concatByCWith4Inputs";
-    } else if (!(flag_ == 1 && !align_) && inputs.size() <= 6) {
-      kernel_func_name_ = "Concat" + std::to_string(inputs.size()) +
-                          "InputAxis" + std::to_string(flag_);
+      "InputAxis" + std::to_string(flag_);
     } else {
       // note: do layout transform between image and buffer,
       // before and after concat(buffer impl.)
@@ -164,7 +165,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                         output_image_shape["width"] /
                         output_tensor_dims[output_tensor_dims.size() - 1]),
                     static_cast<cl::size_type>(output_image_shape["height"])};
-    if (!(flag_ == 1 && !align_)) {
+    if (!(flag_ == 1 && !align_) && inputs.size() <= 6) {
       global_work_size =
           cl::NDRange{static_cast<cl::size_type>(
                           output_image_shape["width"] /
@@ -185,6 +186,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << " out dims: " << output_tensor_dims;
     VLOG(4) << "axis_: " << axis_;
     VLOG(4) << "flag_: " << flag_;
+    VLOG(4) << "align_: " << ((align_ == true) ? "true" : "false");
 
     VLOG(4) << TargetToStr(concat_param_->output->target());
     VLOG(4) << "output_image_shape(w,h): " << output_image_shape["width"] << " "
@@ -193,6 +195,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "width_: " << width_;
     VLOG(4) << "global_work_size: " << global_work_size[0] << "  "
             << global_work_size[1] << "  " << global_work_size[2];
+    VLOG(4) << "kernel_func_name: " << kernel_func_name_;
 #endif
 
     auto& context = ctx_->As<OpenCLContext>();
@@ -201,7 +204,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-    if (!(flag_ == 1 && !align_)) {
+    if (!(flag_ == 1 && !align_) && inputs.size() <= 6) {
       cl_int status;
       int arg_cnt = 0;
       for (auto& input : inputs) {
