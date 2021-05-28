@@ -309,7 +309,12 @@ class Context<TargetType::kXPU> {
     tls_raw_ctx_ = tls_raw_ctx;
   }
 
-  xdnn::Context* GetRawContext() { return tls_raw_ctx_.get(); }
+  xdnn::Context* GetRawContext() {
+    if (tls_raw_ctx_ == nullptr) {
+      CreateTlsRawCtx();
+    }
+    return tls_raw_ctx_.get();
+  }
 
   size_t L3Size() const { return l3_size_; }
 
@@ -362,7 +367,7 @@ class Context<TargetType::kXPU> {
   }
 
  private:
-  size_t l3_size_{0};
+  size_t l3_size_{0xfffc00};
   bool l3_locked_{false};
   std::string multi_encoder_precision_;
   bool multi_encoder_adaptive_seqlen_{false};
