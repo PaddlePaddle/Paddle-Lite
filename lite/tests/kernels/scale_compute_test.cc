@@ -55,7 +55,7 @@ class ScaleComputeTester : public arena::TestCase {
   template <typename T>
   void RunBaselineHelper(Scope* scope) {
     auto* x = scope->FindTensor(x_);
-    auto* x_data = x->data<T>();
+    auto* x_data = x->template data<T>();
     auto* out = scope->NewTensor(out_);
     out->Resize(x_dims_);
 
@@ -65,7 +65,7 @@ class ScaleComputeTester : public arena::TestCase {
       bias *= scale;
     }
 
-    auto out_data = out->mutable_data<T>();
+    auto out_data = out->template mutable_data<T>();
     for (int i = 0; i < x_dims_.production(); i++) {
       out_data[i] = x_data[i] * scale + bias;
     }
