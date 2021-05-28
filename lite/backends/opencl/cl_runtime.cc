@@ -830,6 +830,14 @@ void CLRuntime::GetAdrenoContextProperties(
   properties->push_back(0);
 }
 
+uint64_t CLRuntime::GetMaxWorkGroupSize(const cl::Kernel& kernel) {
+  uint64_t max_workgroup_size = 0;
+  int ret = kernel.getWorkGroupInfo(
+      *device_, CL_KERNEL_WORK_GROUP_SIZE, &max_workgroup_size);
+  if (ret != 0) max_workgroup_size = 0;
+  return max_workgroup_size;
+}
+
 void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
                               const std::string& path,
                               const std::string& name,
