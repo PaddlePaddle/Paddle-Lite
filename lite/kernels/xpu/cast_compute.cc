@@ -21,41 +21,56 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename InType>
-void CastCompute<InType>::Run() {
-  auto& param = this->template Param<param_t>();
-  auto& ctx = this->ctx_->template As<XPUContext>();
+template <typename in_type>
+int XpuCastCompute(xdnn::Context* ctx, const operators::CastParam& param) {
+  auto* in_data = param.X->data<in_type>();
+  int numel = param.X->numel();
+  int ret = -1;
+  int out_type = param.out_dtype;
+  if (out_type == 2) {
+    auto* out_data = param.Out->mutable_data<int>(TARGET(kXPU));
+    ret = xdnn::cast_v2<in_type, int>(ctx, in_data, out_data, numel);
+  } else if (out_type == 3) {
+    auto* out_data = param.Out->mutable_data<int64_t>(TARGET(kXPU));
+    ret = xdnn::cast_v2<in_type, int64_t>(ctx, in_data, out_data, numel);
+  } else if (out_type == 5) {
+    auto* out_data = param.Out->mutable_data<float>(TARGET(kXPU));
+    ret = xdnn::cast_v2<in_type, float>(ctx, in_data, out_data, numel);
+  }
+  return ret;
+}
 
-  auto* x = param.X;
-  auto* out = param.Out;
-  int out_dtype = param.out_dtype;
-  auto* in_data = x->template data<InType>();
-  int numel = x->numel();
-  if (numel <= 0) {
+void CastCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+  if (param.X->numel() <= 0) {
     return;
   }
-  int r = -1;
   // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
   // SIZE_T = 19;UINT8 = 20;INT8 = 21;
-  if (out_dtype == 5) {
-    auto* out_data = out->template mutable_data<float>(TARGET(kXPU));
-    r = xdnn::cast_v2<InType, float>(
-        ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == 2) {
-    auto* out_data = out->template mutable_data<int>(TARGET(kXPU));
-    r = xdnn::cast_v2<InType, int>(
-        ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == 3) {
-    auto* out_data = out->template mutable_data<int64_t>(TARGET(kXPU));
-    r = xdnn::cast_v2<InType, int64_t>(
-        ctx.GetRawContext(), in_data, out_data, numel);
-  } else {
-    LOG(FATAL) << "cast from in_type("
-               << lite_api::PrecisionToStr(
-                      lite_api::PrecisionTypeTrait<InType>::Type())
-               << ") to out_type(" << out_dtype << ") is not supported.";
+  auto precision = param.X->precision();
+  switch (precision) {
+    case PRECISION(kInt32): {
+      int r = XpuCastCompute<int>(ctx.GetRawContext(), param);
+      CHECK_EQ(r, 0);
+      break;
+    }
+    case PRECISION(kInt64): {
+      int r = XpuCastCompute<int64_t>(ctx.GetRawContext(), param);
+      CHECK_EQ(r, 0);
+      break;
+    }
+    case PRECISION(kFloat): {
+      int r = XpuCastCompute<float>(ctx.GetRawContext(), param);
+      CHECK_EQ(r, 0);
+      break;
+    }
+    default: {
+      LOG(FATAL) << "unsupported data precision: "
+                 << lite_api::PrecisionToStr(precision);
+      break;
+    }
   }
-  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -63,32 +78,8 @@ void CastCompute<InType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(cast,
-                     kXPU,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<float>,
-                     cast_fp32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(cast,
-                     kXPU,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<int>,
-                     cast_i32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(cast,
-                     kXPU,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<int64_t>,
-                     cast_i64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+REGISTER_LITE_KERNEL(
+    cast, kXPU, kAny, kNCHW, paddle::lite::kernels::xpu::CastCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();
