@@ -1436,7 +1436,7 @@ CL_DTYPE4 alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6, alpha7;
      __private const int global_size_dim1,
      __private const int global_size_dim2,
      __read_only image2d_t input_image,
-     __global half4* filter,
+     __global CL_DTYPE4* filter,
      __read_only image2d_t bias,
      __write_only image2d_t output_image,
      __private const int stride,
@@ -1473,7 +1473,7 @@ CL_DTYPE4 alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6, alpha7;
    CL_DTYPE4 output_w1 = 0.0f;
  #endif
 
-   __global half4* weight_ptr = filter + out_c * 4 * input_c;
+   __global CL_DTYPE4* weight_ptr = filter + out_c * 4 * input_c;
 
    for (int i = 0; i < input_c; ++i) {
      CL_DTYPE4 input_w0  = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, (int2)(pos_in_w0_x, pos_in_y));
@@ -1536,7 +1536,7 @@ CL_DTYPE4 alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6, alpha7;
      __private const int global_size_dim1,
      __private const int global_size_dim2,
      __read_only image2d_t input_image,
-     __global half4* filter,
+     __global CL_DTYPE4* filter,
      __read_only image2d_t bias,
      __write_only image2d_t output_image,
      __private const int stride,
@@ -1570,7 +1570,7 @@ CL_DTYPE4 alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6, alpha7;
    CL_DTYPE4 output_w1_c1 = 0.0f;
  #endif
 
-   __global half4* weight_ptr  = filter + out_c * 4  * input_c;
+   __global CL_DTYPE4* weight_ptr  = filter + out_c * 4  * input_c;
 
    for (int i = 0; i < input_c; ++i) {
      CL_DTYPE4 input_w0  = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, (int2)(pos_in_w0_x, pos_in_y));
@@ -1661,7 +1661,7 @@ CL_DTYPE4 alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6, alpha7;
      __private const int global_size_dim1,
      __private const int global_size_dim2,
      __read_only image2d_t input_image,
-     __global half4* filter,
+     __global CL_DTYPE4* filter,
      __read_only image2d_t bias,
      __write_only image2d_t output_image,
      __private const int stride,
@@ -1704,7 +1704,7 @@ CL_DTYPE4 alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6, alpha7;
    CL_DTYPE4 out_w1_h1_c1 = 0.0f;
  #endif
 
-   __global half4* weight_ptr  = filter + out_c * 4  * input_c;
+   __global CL_DTYPE4* weight_ptr  = filter + out_c * 4  * input_c;
 
    for (int i = 0; i < input_c; ++i) {
      CL_DTYPE4 input_w0_h0  = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, (int2)(pos_in_w0_x, pos_in_h0_y));
