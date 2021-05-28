@@ -99,22 +99,6 @@ void packb_sdot_int8(int8_t* out,
                      int n0,
                      int nmax);
 
-void packb_sdot_int8_n8_k4(int8_t* out,
-                           const int8_t* in,
-                           int ldin,
-                           int k0,
-                           int kmax,
-                           int n0,
-                           int nmax);
-
-void packb_sdot_int8_n4_k4(int8_t* out,
-                           const int8_t* in,
-                           int ldin,
-                           int k0,
-                           int kmax,
-                           int n0,
-                           int nmax);
-
 void packb_sdot_trans_int8(int8_t* out,
                            const int8_t* in,
                            int ldin,
