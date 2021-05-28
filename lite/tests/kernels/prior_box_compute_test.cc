@@ -258,7 +258,7 @@ void prior_box_compute_ref(const lite::Tensor* input,
         float* com_buf = reinterpret_cast<float*>(
             fast_malloc(sizeof(float) * aspect_ratio_.size() * 4));
 
-        for (int s = 0; s < min_size_.size(); ++s) {
+        for (size_t s = 0; s < min_size_.size(); ++s) {
           int min_idx = 0;
           int max_idx = 0;
           int com_idx = 0;
@@ -289,7 +289,7 @@ void prior_box_compute_ref(const lite::Tensor* input,
           }
 
           //! rest of priors
-          for (int r = 0; r < aspect_ratio_.size(); ++r) {
+          for (size_t r = 0; r < aspect_ratio_.size(); ++r) {
             float ar = aspect_ratio_[r];
             if (fabs(ar - 1.) < 1e-6) {
               continue;
