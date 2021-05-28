@@ -27,7 +27,6 @@ add_kernel(elementwise_compute_arm ARM basic SRCS elementwise_compute.cc DEPS ${
 add_kernel(pool_compute_arm ARM basic SRCS pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(concat_compute_arm ARM basic SRCS concat_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(pad2d_compute_arm ARM basic SRCS pad2d_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(prior_box_compute_arm ARM basic SRCS prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(calib_compute_arm ARM basic SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(transpose_compute_arm ARM basic SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(shuffle_channel_compute_arm ARM basic SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -56,7 +55,6 @@ add_kernel(group_norm_compute ARM extra SRCS group_norm_compute.cc DEPS ${lite_k
 ## 3. extra kernels
 add_kernel(lrn_compute_arm ARM extra SRCS lrn_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(decode_bboxes_compute_arm ARM extra SRCS decode_bboxes_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(density_prior_box_compute_arm ARM basic SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(axpy_compute_arm ARM extra SRCS axpy_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(reduce_max_compute_arm ARM extra SRCS reduce_max_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(reduce_min_compute_arm ARM extra SRCS reduce_min_compute.cc DEPS ${lite_kernel_deps} math_arm)

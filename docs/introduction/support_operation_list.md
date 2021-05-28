@@ -1,6 +1,6 @@
 # 支持算子
 
-当前Paddle-Lite共计支持算子204个，其中基础算子78个，附加算子127个。
+当前Paddle-Lite共计支持算子209个，其中基础算子78个，附加算子131个。
 
 ### 基础算子
 
@@ -94,7 +94,7 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 
 ### 附加算子
 
-附加算子共计127个，需要在编译时打开`--build_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
+附加算子共计131个，需要在编译时打开`--with_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
 
 | OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU | 英特尔FPGA |
 |-:|-|-|-|-|-|-|-|-|-|-|-|
@@ -110,6 +110,7 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 | clip | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | collect_fpn_proposals | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | conditional_block | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| correlation | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | crf_decoding | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | crop | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | ctc_align | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
@@ -163,6 +164,7 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 | not_equal | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | one_hot | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | pixel_shuffle | Y | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| polygon_box_transform | Y | 　 | 　 |   | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | pow | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | print | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | read_from_array | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
@@ -173,7 +175,9 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 | relu_clipped | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 | 　 |
 | retinanet_detection_output | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | roi_align | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| roi_perspective_transform | Y | 　 | 　 |   | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | rsqrt | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| scatter_nd_add | Y　 |   |   | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | search_aligned_mat_mul | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | search_attention_padding_mask | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | search_grnn | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |

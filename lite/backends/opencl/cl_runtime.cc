@@ -29,6 +29,13 @@ CLRuntime* CLRuntime::Global() {
   return &cl_runtime_;
 }
 
+void CLRuntime::Flush(const int index) {
+  if (is_cl_runtime_initialized_ && gpu_type_ == GpuType::ARM_MALI &&
+      index % opencl_flush_period_ == 0) {
+    command_queue_->flush();
+  }
+}
+
 CLRuntime::~CLRuntime() {
   SaveProgram();
   SaveTuned();

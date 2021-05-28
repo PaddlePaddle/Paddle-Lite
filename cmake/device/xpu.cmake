@@ -17,6 +17,8 @@ if(NOT LITE_WITH_XPU)
 endif()
 
 set(XPU_SOURCE_DIR ${THIRD_PARTY_PATH}/xpu)
+set(XPU_DOWNLOAD_DIR ${XPU_SOURCE_DIR}/download)
+set(XPU_INSTALL_DIR ${THIRD_PARTY_PATH}/install)
 
 if(NOT XPU_SDK_ROOT)
     INCLUDE(ExternalProject)
@@ -36,22 +38,21 @@ if(NOT XPU_SDK_ROOT)
     endif()
 
     # get xre from XPU_XRE_URL
-    set(XPU_XRE_FILE "xre-${XPU_SDK_ENV}")
-    set(XPU_XRE_URL "${XPU_SDK_URL}/${XPU_XRE_FILE}.tar.gz")
+    set(XPU_XRE_URL "${XPU_SDK_URL}/xre-${XPU_SDK_ENV}.tar.gz")
     message(STATUS "XPU_XRE_URL: ${XPU_XRE_URL}")
 
     ExternalProject_Add(
         extern_xpu_xre
         ${EXTERNAL_PROJECT_LOG_ARGS}
-        DOWNLOAD_DIR          ${XPU_SOURCE_DIR}
-        DOWNLOAD_COMMAND      wget --no-check-certificate -c -q ${XPU_XRE_URL} && tar xf ${XPU_XRE_FILE}.tar.gz
-        CONFIGURE_COMMAND     ""
-        BUILD_COMMAND         ""
-        UPDATE_COMMAND        ""
-        INSTALL_COMMAND       ""
+        DOWNLOAD_DIR            ${XPU_DOWNLOAD_DIR}
+        DOWNLOAD_COMMAND        wget --no-check-certificate -c -q ${XPU_XRE_URL} && tar xf xre-${XPU_SDK_ENV}.tar.gz
+        CONFIGURE_COMMAND       ""
+        BUILD_COMMAND           ""
+        UPDATE_COMMAND          ""
+        INSTALL_COMMAND         ${CMAKE_COMMAND} -E copy_directory ${XPU_DOWNLOAD_DIR}/xre-${XPU_SDK_ENV} ${XPU_INSTALL_DIR}/xpu/xre
     )
 
-    set(XPU_XRE_ROOT            "${XPU_SOURCE_DIR}/${XPU_XRE_FILE}/xre"  CACHE PATH "xpu xre include directory" FORCE)
+    set(XPU_XRE_ROOT            "${XPU_INSTALL_DIR}/xpu/xre"  CACHE PATH "xpu xre include directory" FORCE)
     set(XPU_XRE_INCLUDE_DIR     "${XPU_XRE_ROOT}/include" CACHE PATH "xpu xre include directory" FORCE)
     set(XPURT_LIB               "${XPU_XRE_ROOT}/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
 
@@ -64,22 +65,21 @@ if(NOT XPU_SDK_ROOT)
     set(xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
 
     # get xdnn from XPU_XDNN_URL
-    set(XPU_XDNN_FILE "xdnn-${XPU_SDK_ENV}")
-    set(XPU_XDNN_URL "${XPU_SDK_URL}/${XPU_XDNN_FILE}.tar.gz")
+    set(XPU_XDNN_URL "${XPU_SDK_URL}/xdnn-${XPU_SDK_ENV}.tar.gz")
     message(STATUS "XPU_XDNN_URL: ${XPU_XDNN_URL}")
 
     ExternalProject_Add(
         extern_xpu_xdnn
         ${EXTERNAL_PROJECT_LOG_ARGS}
-        DOWNLOAD_DIR          ${XPU_SOURCE_DIR}
-        DOWNLOAD_COMMAND      wget --no-check-certificate -c -q ${XPU_XDNN_URL} && tar xf ${XPU_XDNN_FILE}.tar.gz
-        CONFIGURE_COMMAND     ""
-        BUILD_COMMAND         ""
-        UPDATE_COMMAND        ""
-        INSTALL_COMMAND       ""
+        DOWNLOAD_DIR            ${XPU_DOWNLOAD_DIR}
+        DOWNLOAD_COMMAND        wget --no-check-certificate -c -q ${XPU_XDNN_URL} && tar xf xdnn-${XPU_SDK_ENV}.tar.gz
+        CONFIGURE_COMMAND       ""
+        BUILD_COMMAND           ""
+        UPDATE_COMMAND          ""
+        INSTALL_COMMAND         ${CMAKE_COMMAND} -E copy_directory ${XPU_DOWNLOAD_DIR}/xdnn-${XPU_SDK_ENV} ${XPU_INSTALL_DIR}/xpu/xdnn
     )
 
-    set(XPU_XDNN_ROOT           "${XPU_SOURCE_DIR}/${XPU_XDNN_FILE}/xdnn" CACHE PATH "xpu xdnn root" FORCE)
+    set(XPU_XDNN_ROOT           "${XPU_INSTALL_DIR}/xpu/xdnn" CACHE PATH "xpu xdnn root" FORCE)
     set(XPU_XDNN_INCLUDE_DIR    "${XPU_XDNN_ROOT}/include" CACHE PATH "xpu xdnn include directory" FORCE)
     set(XPUAPI_LIB              "${XPU_XDNN_ROOT}/so/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
 
