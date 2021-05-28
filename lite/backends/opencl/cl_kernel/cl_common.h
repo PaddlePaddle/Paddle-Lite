@@ -88,20 +88,6 @@ inline CL_DTYPE activation(CL_DTYPE in
 #ifdef RELU6
   output = clamp(in, (CL_DTYPE)0, (CL_DTYPE)6);
 #endif
-
-#ifdef LEAKY_RELU
-#ifdef CL_DTYPE_float
-  output = select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in,
-                  in,
-                  (int)(isgreaterequal(in, 0)));  // NOLINT
-#endif
-
-#ifdef CL_DTYPE_half
-  output = select(
-      (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (ushort)(isgreaterequal(in, 0)));
-#endif
-#endif
-
   return output;
 }
 
@@ -124,11 +110,5 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
   in = fmax((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
   output = fmin((CL_DTYPE4)(6.0f, 6.0f, 6.0f, 6.0f), in);
 #endif
-
-#ifdef LEAKY_RELU
-  output = select(
-      (CL_DTYPE4)(LEAKY_RELU_ALPHA)*in, in, isgreaterequal(in, (CL_DTYPE4)0));
-#endif
-
   return output;
 }

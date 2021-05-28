@@ -42,13 +42,6 @@ class ShuffleChannelOpLite : public OpLite {
   std::string DebugString() const override { return "shuffle_channel"; }
 
  private:
-#ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
-    ch->input_shape = ch->DimToStr(param_.X->dims());
-    ch->output_shape = ch->DimToStr(param_.Out->dims());
-    ch->remark = "group" + std::to_string(param_.group);
-  }
-#endif
   mutable ShuffleChannelParam param_;
 };
 
