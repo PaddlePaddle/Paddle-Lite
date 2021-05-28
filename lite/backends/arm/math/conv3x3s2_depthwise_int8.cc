@@ -928,11 +928,13 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "saddw  v18.4s, v18.4s, v15.4h                    \n" \
   "saddw2 v19.4s, v19.4s, v15.8h                    \n" \
   /* line 2 */                                          \
-  "ext    v11.8b, v8.8b, %[vzero].8b, #1         \n" \
+  "ext    v11.8b, v8.8b, %[vzero].8b, #1            \n" \
   "saddw  v20.4s, v20.4s, v16.4h                    \n" \
   "saddw2 v21.4s, v21.4s, v16.8h                    \n" \
   "smull  v17.8h, v8.8b, %[wr20].8b                 \n" \
   "smull  v16.8h, v9.8b, %[wr21].8b                 \n" \
+  "saddw  v18.4s, v18.4s, v14.4h                    \n" \
+  "saddw2 v19.4s, v19.4s, v14.8h                    \n" \
   "saddw  v20.4s, v20.4s, v16.4h                    \n" \
   "saddw2 v21.4s, v21.4s, v16.8h                    \n" \
   "smlal  v17.8h, v11.8b, %[wr22].8b                \n" \
