@@ -2776,7 +2776,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vbif     q14,  q3,   q2  \n"     /* choose*/           \
   "vcge.f32 q2,   q15,  q0  \n"     /* vcgeq_f32 */       \
   "vmul.f32 q3,   q15,  q1  \n"     /* vmulq_f32 */       \
-  "vbif     q15,  q3,   q2  \n"     /* choose*/
+  "vbif     q15,  q3,   q2  \n"     /* choose*/           \
+  "12:                      \n"
 
 #define GEMM_DOT_ST_INT8                                     \
   "add %[alpha],    #16             \n"                      \
@@ -4941,6 +4942,26 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
       Dtype* pout5 = cout5;
       Dtype* pout6 = cout6;
       Dtype* pout7 = cout7;
+      if ((y + 7) >= ymax) {
+        switch ((y + 7) - ymax) {
+          case 6:
+            c_ptr1 = cout1;
+          case 5:
+            c_ptr2 = cout2;
+          case 4:
+            c_ptr3 = cout3;
+          case 3:
+            c_ptr4 = cout4;
+          case 2:
+            c_ptr5 = cout5;
+          case 1:
+            c_ptr6 = cout6;
+          case 0:
+            c_ptr7 = cout7;
+          default:
+            break;
+        }
+      }
 
       // const int8_t *a_ptr_l = A_packed + y * K;
       const int8_t* a_ptr_l = A_packed + y * kup;
