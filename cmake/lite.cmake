@@ -252,7 +252,7 @@ function(lite_cc_binary TARGET)
     if(NOT WIN32)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     endif()
-    if (NOT APPLE)
+    if (NOT APPLE AND NOT WIN32)
         # strip binary target to reduce size
         if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             add_custom_command(TARGET ${TARGET} POST_BUILD
