@@ -1109,7 +1109,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "vcgt.f32 q9, q10, q0                             \n" \
   "vcgt.f32 q15, q11, q0                            \n" \
   "vbif.f32 q12, q14, q9                            \n" \
-  "vmov.f32 q9, #-127.0                             \n"\
+  "vld1.32 {d18-d19}, [%[max_val]]                  \n" \
   "vbif.f32 q13, q14, q15                           \n" \
   "vadd.f32 q10, q10, q12                           \n" \
   "vadd.f32 q11, q11, q13                           \n" \
@@ -1253,16 +1253,16 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "vcgt.f32 q15, q11, q0                            \n" \
   "vbif.f32 q12, q14, q9                            \n" \
   "vbif.f32 q13, q14, q15                           \n" \
-  "vld1.8  {d10}, [%[rmask]]                        \n" \
-  "vmov.f32 q8, #-127.0                             \n" \
+  "vld1.8  {d12}, [%[rmask]]                        \n" \
+  "vld1.32 {d18-d19}, [%[max_val]]                  \n" \
   "vadd.f32 q10, q10, q12                           \n" \
   "vadd.f32 q11, q11, q13                           \n" \
   /* data >= -127 */                                    \
-  "vld1.8  {d11}, [%[ptr_out0]]                     \n" \
-  "vcge.f32 q14, q10, q8                            \n" \
-  "vcge.f32 q15, q11, q8                            \n" \
-  "vbif     q10, q8, q14                            \n" \
-  "vbif     q11, q8, q15                            \n" \
+  "vld1.8  {d14}, [%[ptr_out0]]                     \n" \
+  "vcge.f32 q14, q10, q9                            \n" \
+  "vcge.f32 q15, q11, q9                            \n" \
+  "vbif     q10, q9, q14                            \n" \
+  "vbif     q11, q9, q15                            \n" \
   /* fp32 - int32 */                                    \
   "vcvt.s32.f32  q12, q10                           \n" \
   "vcvt.s32.f32  q13, q11                           \n" \
@@ -1270,9 +1270,9 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   "vqmovn.s32 d20, q12                              \n" \
   "vqmovn.s32 d21, q13                              \n" \
   /* int16-int8 */                                      \
-  "vqmovn.s16 d12, q10                              \n" \
-  "vbif   d12, d11, d10                             \n" \
-  "vst1.8 {d12}, [%[ptr_out0]]!                     \n" \
+  "vqmovn.s16 d24, q10                              \n" \
+  "vbif   d24, d14, d12                             \n" \
+  "vst1.8 {d24}, [%[ptr_out0]]!                     \n" \
   "4:                                               \n"
 #endif
 // clang-format on
@@ -1308,6 +1308,7 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
   uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
   vst1_u8(rmask, vrmask_rp);
   float32x4_t vzero = vdupq_n_f32(0);
+  float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     int8_t* dout_batch = dout + n * chin * size_out_channel;
@@ -1355,7 +1356,8 @@ void conv_3x3s2p1_depthwise_int8(int8_t* dout,
           RIGHT_COMPUTE_INT8_S2 RIGHT_RESULT_INT8_INT8_S2 RIGHT_RESULT_INT8_INT8_ST
             : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
               [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
-            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), [scale_val] "r"(scale_val)
+            : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), \
+              [scale_val] "r"(scale_val), [max_val] "r"(max_val)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
               "q10", "q11", "q12", "q13", "q14", "q15"
         );
@@ -1540,7 +1542,7 @@ void conv_3x3s2p1_depthwise_int8_relu(int8_t* dout,
             : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
               [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
             : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), \
-              [wei_ptr] "r"(weight_ptr), [scale_val] "r"(scale_val)
+              [wei_ptr] "r"(weight_ptr), [scale_val] "r"(scale_val), [max_val] "r"(max_val)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
               "q10", "q11", "q12", "q13", "q14", "q15"
         );
@@ -1676,9 +1678,9 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
   uint32_t cnt_remain = res.second;
   cnt_col = (cnt_col << 4 | cnt_remain);
   uint8x8_t vrmask_rp = vcgt_u8(vdup_n_u8(cnt_remain), vld1_u8(out_pad_idx));
+  float32x4_t vzero = vdupq_n_f32(0.f);
   float max_val[4] = {-127.f, -127.f, -127.f, -127.f};
   vst1_u8(rmask, vrmask_rp);
-  float32x4_t vzero = vdupq_n_f32(0);
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * chin * size_in_channel;
     int8_t* dout_batch = dout + n * chin * size_out_channel;
@@ -1715,7 +1717,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
       }
 #else
       float scale_val[4] = {scale[c], scale[c], scale[c], scale[c]};
-      for (int i = 0; i < hin; i += 4) {
+      for (int i = 0; i < hin; i += 2) {
         ASSIGN_PTR_3x3_S2_INT8(wout)
         TOP_BOTTOM_BORDER_3x3_S2P1_INT8(win, hin, hout)
         uint32_t cnt = cnt_col;
@@ -1726,7 +1728,7 @@ void conv_3x3s2p1_depthwise_int8_relu6(int8_t* dout,
             : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
               [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
             : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), \
-              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha)
+              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha), [max_val] "r"(max_val)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
               "q10", "q11", "q12", "q13", "q14", "q15"
         );
@@ -1911,7 +1913,7 @@ void conv_3x3s2p1_depthwise_int8_leaky_relu(int8_t* dout,
             : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
               [din_ptr2] "+r"(din_ptr2), [ptr_out0] "+r"(doutr0)
             : [bias_val] "r"(v_bias), [rmask] "r"(rmask), [vmask] "r" (vmask), [wei_ptr] "r"(weight_ptr), \
-              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha)
+              [scale_val] "r"(scale_val), [alpha_val] "r"(alpha), [max_val] "r"(max_val)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
               "q10", "q11", "q12", "q13", "q14", "q15"
         );
