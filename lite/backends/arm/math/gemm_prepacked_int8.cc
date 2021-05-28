@@ -99,22 +99,6 @@ void packb_sdot_int8(int8_t* out,
                      int n0,
                      int nmax);
 
-void packb_sdot_int8_n8_k4(int8_t* out,
-                           const int8_t* in,
-                           int ldin,
-                           int k0,
-                           int kmax,
-                           int n0,
-                           int nmax);
-
-void packb_sdot_int8_n4_k4(int8_t* out,
-                           const int8_t* in,
-                           int ldin,
-                           int k0,
-                           int kmax,
-                           int n0,
-                           int nmax);
-
 void packb_sdot_trans_int8(int8_t* out,
                            const int8_t* in,
                            int ldin,
@@ -1366,6 +1350,22 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "11: \n"                               /* end */
 #endif
 
+#define GEMM_SDOT_RELU_8x4                         \
+  "cmp    %w[relu],   #0\n"       /* skip relu */  \
+  "beq    12f\n"                                   \
+  "cmp    %w[relu],    #1\n"    /* skip relu */    \
+  "bne    13f\n"                /* other act */    \
+  "movi   v2.4s, #0\n"             /* for relu*/   \
+  "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/       \
+  "fmax   v11.4s, v11.4s, v2.4s\n" /* relu*/       \
+  "fmax   v14.4s, v14.4s, v2.4s\n" /* relu*/       \
+  "fmax   v17.4s,v17.4s,v2.4s\n"   /* relu*/       \
+  "fmax   v20.4s, v20.4s, v2.4s\n" /* relu*/       \
+  "fmax   v23.4s, v23.4s, v2.4s\n" /* relu*/       \
+  "fmax   v26.4s, v26.4s, v2.4s\n" /* relu*/       \
+  "fmax   v29.4s, v29.4s, v2.4s\n" /* relu*/       \
+  "b      12f                    \n"   /* relu end */
+
 #define GEMM_SDOT_RELU_8x8                         \
   "cmp    %w[relu],   #0\n"       /* skip relu */  \
   "beq    12f\n"                                   \
@@ -1388,22 +1388,6 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fmax   v27.4s, v27.4s, v2.4s\n" /* relu*/       \
   "fmax   v29.4s, v29.4s, v2.4s\n" /* relu*/       \
   "fmax   v30.4s, v30.4s, v2.4s\n" /* relu*/       \
-  "b      12f                    \n"   /* relu end */
-
-#define GEMM_SDOT_RELU_8x4                         \
-  "cmp    %w[relu],   #0\n"       /* skip relu */  \
-  "beq    12f\n"                                   \
-  "cmp    %w[relu],    #1\n"    /* skip relu */    \
-  "bne    13f\n"                /* other act */    \
-  "movi   v2.4s, #0\n"             /* for relu*/   \
-  "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/       \
-  "fmax   v11.4s, v11.4s, v2.4s\n" /* relu*/       \
-  "fmax   v14.4s, v14.4s, v2.4s\n" /* relu*/       \
-  "fmax   v17.4s,v17.4s,v2.4s\n"   /* relu*/       \
-  "fmax   v20.4s, v20.4s, v2.4s\n" /* relu*/       \
-  "fmax   v23.4s, v23.4s, v2.4s\n" /* relu*/       \
-  "fmax   v26.4s, v26.4s, v2.4s\n" /* relu*/       \
-  "fmax   v29.4s, v29.4s, v2.4s\n" /* relu*/       \
   "b      12f                    \n"   /* relu end */
 
 #define GEMM_SDOT_RELU                             \
@@ -1876,19 +1860,19 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fmla v30.4s, v5.4s,v1.s[3]\n"  /*  71, mul scale to get final result */ \
   "fmla v31.4s, v6.4s,v1.s[3]\n"  /*  72, mul scale to get final result */
 
-#define GEMM_SDOT_FP32_OUT                                         \
-  GEMM_SDOT_CVT_INT32_TO_FP32                                      \
-  GEMM_SDOT_RELU                                                   \
-  GEMM_SDOT_RELU6                                                  \
-  GEMM_SDOT_LEAKY_RELU                                             \
-  "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   /* store r0 */ \
-  "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" /* store r1 */ \
-  "st1 {v14.4s, v15.4s, v16.4s},[%[c_ptr2]], #48\n" /* store r2 */ \
-  "st1 {v17.4s, v18.4s, v19.4s},[%[c_ptr3]], #48\n" /* store r3 */ \
-  "st1 {v20.4s, v21.4s, v22.4s},[%[c_ptr4]], #48\n" /* store r4 */ \
-  "st1 {v23.4s, v24.4s, v25.4s},[%[c_ptr5]], #48\n" /* store r5 */ \
-  "st1 {v26.4s, v27.4s, v28.4s},[%[c_ptr6]], #48\n" /* store r6 */ \
-  "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" /* store r7 */
+#define GEMM_SDOT_FP32_OUT_8x4                                \
+  GEMM_SDOT_CVT_INT32_TO_FP32_8x4                             \
+  GEMM_SDOT_RELU_8x4                                          \
+  GEMM_SDOT_RELU6_8x4                                         \
+  GEMM_SDOT_LEAKY_RELU_8x4                                    \
+  "st1 {v8.4s},[%[c_ptr0]],  #16\n" /* store r0 */            \
+  "st1 {v11.4s},[%[c_ptr1]], #16\n" /* store r1 */            \
+  "st1 {v14.4s},[%[c_ptr2]], #16\n" /* store r2 */            \
+  "st1 {v17.4s},[%[c_ptr3]], #16\n" /* store r3 */            \
+  "st1 {v20.4s},[%[c_ptr4]], #16\n" /* store r4 */            \
+  "st1 {v23.4s},[%[c_ptr5]], #16\n" /* store r5 */            \
+  "st1 {v26.4s},[%[c_ptr6]], #16\n" /* store r6 */            \
+  "st1 {v29.4s},[%[c_ptr7]], #16\n" /* store r7 */
 
 #define GEMM_SDOT_FP32_OUT_8x8                                \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x8                             \
@@ -1904,19 +1888,19 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v26.4s, v27.4s},[%[c_ptr6]], #32\n" /* store r6 */    \
   "st1 {v29.4s, v30.4s},[%[c_ptr7]], #32\n" /* store r7 */
 
-#define GEMM_SDOT_FP32_OUT_8x4                                \
-  GEMM_SDOT_CVT_INT32_TO_FP32_8x4                             \
-  GEMM_SDOT_RELU_8x4                                          \
-  GEMM_SDOT_RELU6_8x4                                         \
-  GEMM_SDOT_LEAKY_RELU_8x4                                    \
-  "st1 {v8.4s},[%[c_ptr0]],  #16\n" /* store r0 */            \
-  "st1 {v11.4s},[%[c_ptr1]], #16\n" /* store r1 */            \
-  "st1 {v14.4s},[%[c_ptr2]], #16\n" /* store r2 */            \
-  "st1 {v17.4s},[%[c_ptr3]], #16\n" /* store r3 */            \
-  "st1 {v20.4s},[%[c_ptr4]], #16\n" /* store r4 */            \
-  "st1 {v23.4s},[%[c_ptr5]], #16\n" /* store r5 */            \
-  "st1 {v26.4s},[%[c_ptr6]], #16\n" /* store r6 */            \
-  "st1 {v29.4s},[%[c_ptr7]], #16\n" /* store r7 */
+#define GEMM_SDOT_FP32_OUT                                         \
+  GEMM_SDOT_CVT_INT32_TO_FP32                                      \
+  GEMM_SDOT_RELU                                                   \
+  GEMM_SDOT_RELU6                                                  \
+  GEMM_SDOT_LEAKY_RELU                                             \
+  "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   /* store r0 */ \
+  "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" /* store r1 */ \
+  "st1 {v14.4s, v15.4s, v16.4s},[%[c_ptr2]], #48\n" /* store r2 */ \
+  "st1 {v17.4s, v18.4s, v19.4s},[%[c_ptr3]], #48\n" /* store r3 */ \
+  "st1 {v20.4s, v21.4s, v22.4s},[%[c_ptr4]], #48\n" /* store r4 */ \
+  "st1 {v23.4s, v24.4s, v25.4s},[%[c_ptr5]], #48\n" /* store r5 */ \
+  "st1 {v26.4s, v27.4s, v28.4s},[%[c_ptr6]], #48\n" /* store r6 */ \
+  "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" /* store r7 */
 
 #define GEMM_SDOT_INT8_OUT_8x4                                     \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x4                                  \
@@ -2776,7 +2760,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vbif     q14,  q3,   q2  \n"     /* choose*/           \
   "vcge.f32 q2,   q15,  q0  \n"     /* vcgeq_f32 */       \
   "vmul.f32 q3,   q15,  q1  \n"     /* vmulq_f32 */       \
-  "vbif     q15,  q3,   q2  \n"     /* choose*/
+  "vbif     q15,  q3,   q2  \n"     /* choose*/           \
+  "12:                      \n"
 
 #define GEMM_DOT_ST_INT8                                     \
   "add %[alpha],    #16             \n"                      \
@@ -4941,7 +4926,6 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
       Dtype* pout5 = cout5;
       Dtype* pout6 = cout6;
       Dtype* pout7 = cout7;
-
       if ((y + 7) >= ymax) {
         switch ((y + 7) - ymax) {
           case 6:
@@ -4962,6 +4946,7 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
             break;
         }
       }
+
       // const int8_t *a_ptr_l = A_packed + y * K;
       const int8_t* a_ptr_l = A_packed + y * kup;
       const int8_t* b_ptr = b_pannel;
