@@ -37,9 +37,6 @@ add_kernel(pad2d_opencl_image OPENCL basic SRCS pad2d_image_compute.cc DEPS ${cl
 add_kernel(box_coder_opencl_image OPENCL basic SRCS box_coder_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(pixel_shuffle_opencl_image OPENCL basic SRCS pixel_shuffle_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(expand_opencl_image OPENCL basic SRCS expand_image_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(shuffle_channel_opencl_image OPENCL basic SRCS shuffle_channel_image_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(split_opencl_image OPENCL basic SRCS split_image_compute.cc DEPS ${cl_kernel_deps})
-
 
 # extra
 # wait to add ...
