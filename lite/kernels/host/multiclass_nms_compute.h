@@ -22,6 +22,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+template <typename T, typename IndexT>
 class MulticlassNmsCompute
     : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:

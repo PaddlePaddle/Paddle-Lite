@@ -103,8 +103,7 @@ void ConcatCompute::Run() {
       break;
     default:
       LOG(FATAL) << "Concat does not implement for the "
-                 << "input type:"
-                 << static_cast<int>(inputs.front()->precision());
+                 << "input type:" << static_cast<int>(type);
   }
 }
 

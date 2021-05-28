@@ -537,7 +537,7 @@ void TestMulticlassNms(Place place, float abs_error) {
 TEST(multiclass_nms, precision) {
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;
