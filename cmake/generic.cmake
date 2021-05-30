@@ -330,6 +330,11 @@ function(cc_library TARGET_NAME)
       endif()
       if(${source_file} MATCHES "__generated_code__.cc")
         list(APPEND full_path_src ${source_file})
+      elseif(${source_file} MATCHES "arm_for_strip.cc" OR
+             ${source_file} MATCHES "host_for_strip.cc" OR
+             ${source_file} MATCHES "opencl_for_strip.cc" OR
+             ${source_file} MATCHES "x86_for_strip.cc")
+        list(APPEND full_path_src ${source_file})
       else()
         if(NOT ${source_file} MATCHES "framework.pb.cc" AND NOT ${source_file} MATCHES "__generated_code__.cc")
           list(APPEND full_path_src ${CMAKE_CURRENT_SOURCE_DIR}/${source_file})

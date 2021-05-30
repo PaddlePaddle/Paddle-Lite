@@ -159,12 +159,6 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
     std::string kernel_path = kernel2pathmap[*kernel_info];
     fputs(kernel_path.c_str(), kpf_source);
     fputc('\n', kpf_source);
-    if (kernel_path == "conv_compute.cc") {
-      fputs(
-          "conv_depthwise.cc\nconv_direct.cc\nconv_gemmlike.cc\nconv_"
-          "winograd.cc\n",
-          kpf_source);
-    }
   }
   std::fclose(kpf_source);
   std::fclose(kpf);
