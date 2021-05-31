@@ -5450,35 +5450,111 @@ void packb_sdot_int8_n12_n8_n4(int8_t* out,
   }
   if ((x_len - x) >= 8) {
     for (int y = 0; y < y_len; y += 4) {
-      int x_tmp = x;
-      for (; x_tmp < x + 8; x_tmp++) {
-        inptr = in + k0 * ldin + n0 + x_tmp;
-        const int8_t* inptr0 = inptr + y * ldin;
-        const int8_t* inptr1 = inptr0 + ldin;
-        const int8_t* inptr2 = inptr1 + ldin;
-        const int8_t* inptr3 = inptr2 + ldin;
-        *out0++ = *inptr0++;
-        *out0++ = *inptr1++;
-        *out0++ = *inptr2++;
-        *out0++ = *inptr3++;
-      }
+      inptr = in + k0 * ldin + n0 + x;
+      const int8_t* inptr0 = inptr + y * ldin;
+      const int8_t* inptr1 = inptr0 + ldin;
+      const int8_t* inptr2 = inptr1 + ldin;
+      const int8_t* inptr3 = inptr2 + ldin;
+      asm volatile(
+          "ld1 {v0.8b}, [%[inptr0]] \n"
+          "ld1 {v1.8b}, [%[inptr1]] \n"
+          "ld1 {v2.8b}, [%[inptr2]] \n"
+          "ld1 {v3.8b}, [%[inptr3]] \n"
+          "trn1 v4.8b, v0.8b, v1.8b \n"  // v4 = a0b0a2b2a4b4a6b6
+          "trn2 v5.8b, v0.8b, v1.8b \n"  // v4 = a1b1a3b3a5b5a7b7
+          "trn1 v6.8b, v2.8b, v3.8b \n"  // v4 = c0d0c2d2a4b4a6b6
+          "trn2 v7.8b, v2.8b, v3.8b \n"  // v4 = c1d1c3d3a5b5a7b7
+          "trn1 v0.4h, v4.4h, v6.4h \n"  // v4 = a0b0c0d0a4b4c4d4
+          "trn2 v1.4h, v4.4h, v6.4h \n"  // v4 = a2b2c2d2a6b6c6d6
+          "trn1 v2.4h, v5.4h, v7.4h \n"  // v4 = a1b1c1d1a5b5c5d5
+          "trn2 v3.4h, v5.4h, v7.4h \n"  // v4 = a3b3c3d3a7b7c7d7
+          "trn1 v4.2s, v0.2s, v2.2s \n"  // v4 =a0b0c0d0a1b1c1d1
+          "trn2 v5.2s, v0.2s, v2.2s \n"  // v4 =a4b4c4d4a5b5c5d5
+          "trn1 v6.2s, v1.2s, v3.2s \n"  // v4 =a2b2c2d2a3b3c3d3
+          "trn2 v7.2s, v1.2s, v3.2s \n"  // v4 =a6b6c6d6a7b7c7d7
+          "st1 {v4.2s}, [%[outr]], #8\n"
+          "st1 {v6.2s}, [%[outr]], #8\n"
+          "st1 {v5.2s}, [%[outr]], #8\n"
+          "st1 {v7.2s}, [%[outr]], #8\n"
+          : [inptr0] "+r"(inptr0),
+            [inptr1] "+r"(inptr1),
+            [inptr2] "+r"(inptr2),
+            [inptr3] "+r"(inptr3),
+            [outr] "+r"(out0)
+          :
+          : "x1",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "cc",
+            "memory");
     }
     x += 8;
   }
   if ((x_len - x) >= 4) {
     for (int y = 0; y < y_len; y += 4) {
-      int x_tmp = x;
-      for (; x_tmp < x + 4; x_tmp++) {
-        inptr = in + k0 * ldin + n0 + x_tmp;
-        const int8_t* inptr0 = inptr + y * ldin;
-        const int8_t* inptr1 = inptr0 + ldin;
-        const int8_t* inptr2 = inptr1 + ldin;
-        const int8_t* inptr3 = inptr2 + ldin;
-        *out0++ = *inptr0++;
-        *out0++ = *inptr1++;
-        *out0++ = *inptr2++;
-        *out0++ = *inptr3++;
-      }
+      inptr = in + k0 * ldin + n0 + x;
+      const int8_t* inptr0 = inptr + y * ldin;
+      const int8_t* inptr1 = inptr0 + ldin;
+      const int8_t* inptr2 = inptr1 + ldin;
+      const int8_t* inptr3 = inptr2 + ldin;
+      asm volatile(
+          "ld1 {v0.8b}, [%[inptr0]] \n"
+          "ld1 {v1.8b}, [%[inptr1]] \n"
+          "ld1 {v2.8b}, [%[inptr2]] \n"
+          "ld1 {v3.8b}, [%[inptr3]] \n"
+          "trn1 v4.8b, v0.8b, v1.8b \n"  // v4 = a0b0a2b2a4b4a6b6
+          "trn2 v5.8b, v0.8b, v1.8b \n"  // v4 = a1b1a3b3a5b5a7b7
+          "trn1 v6.8b, v2.8b, v3.8b \n"  // v4 = c0d0c2d2a4b4a6b6
+          "trn2 v7.8b, v2.8b, v3.8b \n"  // v4 = c1d1c3d3a5b5a7b7
+          "trn1 v0.4h, v4.4h, v6.4h \n"  // v4 = a0b0c0d0a4b4c4d4
+          "trn2 v1.4h, v4.4h, v6.4h \n"  // v4 = a2b2c2d2a6b6c6d6
+          "trn1 v2.4h, v5.4h, v7.4h \n"  // v4 = a1b1c1d1a5b5c5d5
+          "trn2 v3.4h, v5.4h, v7.4h \n"  // v4 = a3b3c3d3a7b7c7d7
+          "trn1 v4.2s, v0.2s, v2.2s \n"  // v4 =a0b0c0d0a1b1c1d1
+          "trn1 v6.2s, v1.2s, v3.2s \n"  // v4 =a2b2c2d2a3b3c3d3
+          "st1 {v4.2s}, [%[outr]], #8\n"
+          "st1 {v6.2s}, [%[outr]], #8\n"
+          : [inptr0] "+r"(inptr0),
+            [inptr1] "+r"(inptr1),
+            [inptr2] "+r"(inptr2),
+            [inptr3] "+r"(inptr3),
+            [outr] "+r"(out0)
+          :
+          : "x1",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "cc",
+            "memory");
     }
     x += 4;
   }
@@ -5689,11 +5765,54 @@ void packb_sdot_int8_n12_n8_n4_trans(int8_t* out,
       for (int i = 1; i < 8; i++) {
         inptr_row[i] = inptr_row[i - 1] + ldin;
       }
-      for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 4; j++) {
-          *out0++ = inptr_row[i][j];
-        }
-      }
+      asm volatile(
+          "mov x1, #4 \n"
+          "ld1  {v0.8b}, [%[inptr0]], x1 \n"  // q0=A0A1A2A3A4A5A6A7
+          "ld1  {v1.8b}, [%[inptr1]], x1 \n"  // q0=B0b1b2b3A4A5A6A7
+          "ld1  {v2.8b}, [%[inptr2]], x1 \n"  // q0=c0c1c2c3A4A5A6A7
+          "ld1  {v3.8b}, [%[inptr3]], x1 \n"  // q0=d0d1d2d3A4A5A6A7
+          "ld1  {v4.8b}, [%[inptr4]], x1 \n"  // q0=A0A1A2A3A4A5A6A7
+          "ld1  {v5.8b}, [%[inptr5]], x1 \n"  // q0=B0b1b2b3A4A5A6A7
+          "ld1  {v6.8b}, [%[inptr6]], x1 \n"  // q0=c0c1c2c3A4A5A6A7
+          "ld1  {v7.8b}, [%[inptr7]], x1 \n"  // q0=d0d1d2d3A4A5A6A7
+          "trn1  v8.2s, v0.2s, v1.2s \n"      // v0=a0a1a2a3'b0b1b2b3 -00 01
+          "trn1  v9.2s, v2.2s, v3.2s \n"      // v0=c0c1a2a3'd0b1b2b3 -02 03
+          "trn1  v10.2s, v4.2s, v5.2s \n"     // v0=a0b0a0b0'a4b4a4b4 -04 05
+          "trn1  v11.2s, v6.2s, v7.2s \n"     // v0=a0b0a0b0'a4b4a4b4 -06 07
+          "st1 {v8.8b}, [%[outptr_row0]], #8 \n"
+          "st1 {v9.8b}, [%[outptr_row0]], #8 \n"
+          "st1 {v10.8b}, [%[outptr_row0]], #8 \n"
+          "st1 {v11.8b}, [%[outptr_row0]], #8 \n"
+          : [inptr0] "+r"(inptr_row[0]),
+            [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]),
+            [inptr3] "+r"(inptr_row[3]),
+            [inptr4] "+r"(inptr_row[4]),
+            [inptr5] "+r"(inptr_row[5]),
+            [inptr6] "+r"(inptr_row[6]),
+            [inptr7] "+r"(inptr_row[7]),
+            [outptr_row0] "+r"(out0)
+          :
+          : "x1",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "cc",
+            "memory");
     }
     y += 8;
   }
@@ -5704,11 +5823,42 @@ void packb_sdot_int8_n12_n8_n4_trans(int8_t* out,
       for (int i = 1; i < 4; i++) {
         inptr_row[i] = inptr_row[i - 1] + ldin;
       }
-      for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-          *out0++ = inptr_row[i][j];
-        }
-      }
+      asm volatile(
+          "mov x1, #4 \n"
+          "ld1  {v0.8b}, [%[inptr0]], x1 \n"  // q0=A0A1A2A3A4A5A6A7
+          "ld1  {v1.8b}, [%[inptr1]], x1 \n"  // q0=B0b1b2b3A4A5A6A7
+          "ld1  {v2.8b}, [%[inptr2]], x1 \n"  // q0=c0c1c2c3A4A5A6A7
+          "ld1  {v3.8b}, [%[inptr3]], x1 \n"  // q0=d0d1d2d3A4A5A6A7
+          "trn1  v8.2s, v0.2s, v1.2s \n"      // v0=a0a1a2a3'b0b1b2b3 -00 01
+          "trn1  v9.2s, v2.2s, v3.2s \n"      // v0=c0c1a2a3'd0b1b2b3 -02 03
+          "st1 {v8.8b}, [%[outptr_row0]], #8 \n"
+          "st1 {v9.8b}, [%[outptr_row0]], #8 \n"
+          : [inptr0] "+r"(inptr_row[0]),
+            [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]),
+            [inptr3] "+r"(inptr_row[3]),
+            [outptr_row0] "+r"(out0)
+          :
+          : "x1",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "cc",
+            "memory");
     }
     y += 4;
   }
@@ -5724,11 +5874,42 @@ void packb_sdot_int8_n12_n8_n4_trans(int8_t* out,
           inptr_row[4 - i] = zerobuff;
         }
       }
-      for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-          *out0++ = inptr_row[i][j];
-        }
-      }
+      asm volatile(
+          "mov x1, #4 \n"
+          "ld1  {v0.8b}, [%[inptr0]], x1 \n"  // q0=A0A1A2A3A4A5A6A7
+          "ld1  {v1.8b}, [%[inptr1]], x1 \n"  // q0=B0b1b2b3A4A5A6A7
+          "ld1  {v2.8b}, [%[inptr2]], x1 \n"  // q0=c0c1c2c3A4A5A6A7
+          "ld1  {v3.8b}, [%[inptr3]], x1 \n"  // q0=d0d1d2d3A4A5A6A7
+          "trn1  v8.2s, v0.2s, v1.2s \n"      // v0=a0a1a2a3'b0b1b2b3 -00 01
+          "trn1  v9.2s, v2.2s, v3.2s \n"      // v0=c0c1a2a3'd0b1b2b3 -02 03
+          "st1 {v8.8b}, [%[outptr_row0]], #8 \n"
+          "st1 {v9.8b}, [%[outptr_row0]], #8 \n"
+          : [inptr0] "+r"(inptr_row[0]),
+            [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]),
+            [inptr3] "+r"(inptr_row[3]),
+            [outptr_row0] "+r"(out0)
+          :
+          : "x1",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "cc",
+            "memory");
     }
   }
 }
