@@ -39,7 +39,7 @@ class ShapeComputeTester : public arena::TestCase {
     int64_t sz = input->dims().size();
     out->Resize(DDim({sz}));
     auto* out_data = out->mutable_data<int>();
-    for (int i = 0; i < input->dims().size(); ++i) {
+    for (size_t i = 0; i < input->dims().size(); ++i) {
       out_data[i] = input->dims()[i];
     }
   }

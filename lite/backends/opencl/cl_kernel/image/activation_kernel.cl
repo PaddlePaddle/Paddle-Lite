@@ -65,7 +65,9 @@ __kernel void hard_sigmoid(__read_only image2d_t input,
   const int y = get_global_id(1);  // image_height
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
-  CL_DTYPE4 out = clamp(in * (CL_DTYPE4)(scale) + (CL_DTYPE4)(value_offset), (CL_DTYPE4)(0.0), (CL_DTYPE4)(1.0));
+  CL_DTYPE4 out = clamp(in * (CL_DTYPE4)(scale) + (CL_DTYPE4)(value_offset),
+                        (CL_DTYPE4)(0.0),
+                        (CL_DTYPE4)(1.0));
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
@@ -103,8 +105,9 @@ __kernel void prelu_channel(__read_only image2d_t input,
   const int x = get_global_id(0);
   const int y = get_global_id(1);
   const int c_idx = x / width;
-  CL_DTYPE4 in      = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
-  CL_DTYPE4 v_alpha = READ_IMG_TYPE(CL_DTYPE_CHAR, alpha, SAMPLER, (int2)(c_idx, 0));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+  CL_DTYPE4 v_alpha =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, alpha, SAMPLER, (int2)(c_idx, 0));
   in = select(in, in * v_alpha, in < ((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f)));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
@@ -119,8 +122,9 @@ __kernel void prelu_element(__read_only image2d_t input,
   const int y = get_global_id(1);
   const int h_idx = y % height;
 
-  CL_DTYPE4 in      = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
-  CL_DTYPE4 v_alpha = READ_IMG_TYPE(CL_DTYPE_CHAR, alpha, SAMPLER, (int2)(x, h_idx));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+  CL_DTYPE4 v_alpha =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, alpha, SAMPLER, (int2)(x, h_idx));
   in = select(in, in * v_alpha, in < ((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f)));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
@@ -162,10 +166,10 @@ __kernel void swish(__read_only image2d_t input,
 }
 
 __kernel void hard_swish(__read_only image2d_t input,
-                        __write_only image2d_t output,
-                        __private const float threshold,
-                        __private const float scale,
-                        __private const float offset) {
+                         __write_only image2d_t output,
+                         __private const float threshold,
+                         __private const float scale,
+                         __private const float offset) {
   const int x = get_global_id(0);
   const int y = get_global_id(1);
 
@@ -208,7 +212,7 @@ __kernel void rsqrt_func(__read_only image2d_t input,
 }
 
 __kernel void square_func(__read_only image2d_t input,
-                        __write_only image2d_t output) {
+                          __write_only image2d_t output) {
   const int x = get_global_id(0);
   const int y = get_global_id(1);
 
@@ -220,5 +224,3 @@ __kernel void square_func(__read_only image2d_t input,
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
-
-

@@ -18,6 +18,7 @@ Usage: parser kernel registries from .cc source files into python struct `Kernel
        we will generate `all_kernel_faked.cc` by calling this module. 
 """
 import logging
+import sys
 
 class SyntaxParser(object):
     def __init__(self, str):
@@ -256,6 +257,106 @@ class RegisterLiteKernelParser(SyntaxParser):
             else:
                 break
 
+    def pick_kernel_class(self, op_name, device_target, data_type, layout_type, alias_name, first_flag, file_path):
+        """pick the actual used kernel on the basis of kernel attribute information.
+
+        self.str() stores the original source content. Kernel attributes include op_name,
+        device_target, data_type, layout_type and alias_name and these five attributes is
+        unique with regard to each kernel. We first divide the whole code into two sections,
+        one is the kernel class definition code and the other one is kernel register code
+        indentified by `REGISTER_LITE_KERNEL` and only class name alias indentified by
+        `using` or `typedef` keyword is allowed between them. We subtract the kernel class
+        definition code and class name alias code when first_flag is `True` and register
+        code is obtained whenever first_flag is `True` or `False`.
+
+        Args:
+            op_name:  the 1st attribute of the kernel, such as `conv2d`.
+            device_target:  the 2nd attribute of the kernel, such as `kARM`.
+            data_type:  the 3rd attribute of the kernel, such as `kFloat`.
+            layout_type:  the 4th attribute of the kernel, such as `kNCHW`.
+            alias_name:  the 5th attribute of the kernel, such as `def`.
+            first_flag:  the first time to pick the some kind of kernel.
+            file_path:  the path to store the tailored kernel result.
+        Returns:
+            no val is returned as the `res_str` is stored into file_path.
+        """
+        f = open(file_path, 'a+')
+        dst = f.read()
+        res_str = ""
+        main_idx = self.str.find("}  // namespace paddle", 0)
+        if main_idx != -1:
+            main_idx += len("}  // namespace paddle")
+        else:
+            main_idx = self.str.find("} /* namespace paddle */", 0)
+            if main_idx != -1:
+                main_idx += len("} /* namespace paddle */")
+            else:
+                sys.exit(-1)
+        if first_flag == "True":
+            res_str += self.str[: main_idx] + "\n"
+            self.cur_pos = main_idx + 1
+            while self.cur_pos < len(self.str):
+                start = self.str.find("typedef", self.cur_pos)
+                if start != -1:
+                    end = self.str.find(";", start)
+                    if end != -1:
+                        res_str += self.str[start: end + len(";")] + "\n"
+                        self.cur_pos = end + len(";")
+                    else:
+                        break
+                else:
+                    break
+            self.cur_pos = main_idx + 1
+            while self.cur_pos < len(self.str):
+                start = self.str.find("using", self.cur_pos)
+                if start != -1:
+                    end = self.str.find(";", start)
+                    if end != -1:
+                        res_str += self.str[start: end + len(";")] + "\n"
+                        self.cur_pos = end + len(";")
+                    else:
+                        break
+                else:
+                    break
+        self.cur_pos = main_idx + 1
+        while self.cur_pos < len(self.str):
+            start = self.str.find(self.KEYWORD, self.cur_pos)
+            if start != -1:
+                end = self.str.find(".Finalize();", self.cur_pos)
+                if end != -1:
+                    end += len(".Finalize();")
+                else:
+                    break
+                left_brace = self.str.find("(", start)
+                pos = left_brace + 1
+                brace_num = 1
+                while True:
+                    if self.str[pos] == ')':
+                        brace_num -= 1
+                    elif self.str[pos] == '(':
+                        brace_num += 1
+                    if brace_num == 0:
+                        break
+                    pos += 1
+                right_brace = pos
+                kernel_attr = self.str[left_brace + 1 : right_brace].replace('\n', '').replace(' ', '').split(",")
+                if len(kernel_attr) != 6:
+                    sys.exit(1)
+                op_name_ = kernel_attr[0]
+                device_target_ = kernel_attr[1]
+                data_type_ = kernel_attr[2]
+                layout_type_ = kernel_attr[3]
+                alias_name_ = kernel_attr[5]
+                if ((op_name_ == op_name) and (device_target_ == device_target) and
+                    (data_type_ == data_type) and (layout_type_ == layout_type) and
+                    (alias_name_ == alias_name)) :
+                    res_str += self.str[start: end] + "\n\n"
+                self.cur_pos = end + 1
+            else:
+                break
+        f.write(res_str)
+        f.close()
+
     def eat_class(self):
         start = self.cur_pos
         self.eat_word()
@@ -414,8 +515,8 @@ class RegisterLiteOpParser(SyntaxParser):
 
 
 if __name__ == '__main__':
-    with open('/home/chunwei/project2/Paddle-Lite/lite/kernels/arm/activation_compute.cc') as f:
+    with open('/Paddle-Lite/lite/kernels/arm/conv_compute.cc') as f:
         c = f.read()
         kernel_parser = RegisterLiteKernelParser(c)
-
-        kernel_parser.parse()
+        kernel_parser.pick_kernel_class("conv2d", "kARM", "kFloat", "kNCHW", "def", "True",
+                            "/Paddle-Lite/build.lite.android.armv8.clang/conv_compute.cc")

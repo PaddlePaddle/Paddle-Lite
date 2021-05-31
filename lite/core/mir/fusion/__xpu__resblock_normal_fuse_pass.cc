@@ -462,7 +462,7 @@ class XPUResBlockNormalFuser : public FuseBase {
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     if (encode_bias_size.back() > 0) {
       std::unique_ptr<float[]> encode_bias(new float[encode_bias_size.back()]);
-      for (int i = 0; i < bias_name.size(); i++) {
+      for (size_t i = 0; i < bias_name.size(); i++) {
         auto* bias_t = scope->FindMutableTensor(bias_name[i]);
         float* bias_on_host = bias_t->mutable_data<float>();
         memcpy(encode_bias.get() + encode_bias_size[i],

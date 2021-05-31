@@ -229,7 +229,6 @@ class LITE_API Predictor {
   void CheckInputValid();
 
  private:
-  Optimizer optimizer_;
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
   Scope* exec_scope_;
