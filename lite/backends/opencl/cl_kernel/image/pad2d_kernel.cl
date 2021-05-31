@@ -14,14 +14,17 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void pad2d_constant(
-    __read_only image2d_t input, __write_only image2d_t output,
-    const int in_height, const int in_width,
-    const int out_height, const int out_width,
-    const int pad_h0, const int pad_h1,
-    const int pad_w0, const int pad_w1,
-    const float pad_value) {
-        
+__kernel void pad2d_constant(__read_only image2d_t input,
+                             __write_only image2d_t output,
+                             const int in_height,
+                             const int in_width,
+                             const int out_height,
+                             const int out_width,
+                             const int pad_h0,
+                             const int pad_h1,
+                             const int pad_w0,
+                             const int pad_w1,
+                             const float pad_value) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -42,14 +45,17 @@ __kernel void pad2d_constant(
   }
 }
 
-__kernel void pad2d_reflect(
-    __read_only image2d_t input, __write_only image2d_t output,
-    const int in_height, const int in_width,
-    const int out_height, const int out_width,
-    const int pad_h0, const int pad_h1,
-    const int pad_w0, const int pad_w1,
-    const float pad_value) {
-        
+__kernel void pad2d_reflect(__read_only image2d_t input,
+                            __write_only image2d_t output,
+                            const int in_height,
+                            const int in_width,
+                            const int out_height,
+                            const int out_width,
+                            const int pad_h0,
+                            const int pad_h1,
+                            const int pad_w0,
+                            const int pad_w1,
+                            const float pad_value) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -70,14 +76,17 @@ __kernel void pad2d_reflect(
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, pixel);
 }
 
-__kernel void pad2d_edge(
-    __read_only image2d_t input, __write_only image2d_t output,
-    const int in_height, const int in_width,
-    const int out_height, const int out_width,
-    const int pad_h0, const int pad_h1,
-    const int pad_w0, const int pad_w1,
-    const float pad_value) {
-        
+__kernel void pad2d_edge(__read_only image2d_t input,
+                         __write_only image2d_t output,
+                         const int in_height,
+                         const int in_width,
+                         const int out_height,
+                         const int out_width,
+                         const int pad_h0,
+                         const int pad_h1,
+                         const int pad_w0,
+                         const int pad_w1,
+                         const float pad_value) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
