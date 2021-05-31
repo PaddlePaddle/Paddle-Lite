@@ -215,6 +215,49 @@ PrecisionType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
   return output_precision;
 }
 
+int PrecisionLength(NNAdapterOperandPrecisionCode precision) {
+  switch (precision) {
+    case NNADAPTER_BOOL8:
+    case NNADAPTER_INT8:
+    case NNADAPTER_UINT8:
+    case NNADAPTER_TENSOR_BOOL8:
+    case NNADAPTER_TENSOR_INT8:
+    case NNADAPTER_TENSOR_UINT8:
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+      return 1;
+    case NNADAPTER_INT16:
+    case NNADAPTER_UINT16:
+    case NNADAPTER_FLOAT16:
+    case NNADAPTER_TENSOR_INT16:
+    case NNADAPTER_TENSOR_UINT16:
+    case NNADAPTER_TENSOR_FLOAT16:
+      return 2;
+    case NNADAPTER_INT32:
+    case NNADAPTER_UINT32:
+    case NNADAPTER_FLOAT32:
+    case NNADAPTER_TENSOR_INT32:
+    case NNADAPTER_TENSOR_UINT32:
+    case NNADAPTER_TENSOR_FLOAT32:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
+      return 4;
+    case NNADAPTER_INT64:
+    case NNADAPTER_UINT64:
+    case NNADAPTER_FLOAT64:
+    case NNADAPTER_TENSOR_INT64:
+    case NNADAPTER_TENSOR_UINT64:
+    case NNADAPTER_TENSOR_FLOAT64:
+      return 8;
+    default:
+      LOG(ERROR) << "Failed to get the length of type(" << precision << ").";
+      break;
+  }
+  return 0;
+}
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite

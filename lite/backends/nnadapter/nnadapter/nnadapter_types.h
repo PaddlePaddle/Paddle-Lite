@@ -96,7 +96,7 @@ typedef enum {
 } NNAdapterOperandLayoutCode;
 
 /**
- * Operand life time codes, where to find the data for a operand.
+ * Operand life time codes(internal type), where to find the data for a operand.
  * * NNADAPTER_TEMPORARY_VARIABLE: A temporary operand in a newtork, There is no
  need to set its data during building a network.
  * * NNADAPTER_CONSTANT_COPY: A constant operand, copy to an new space allocated

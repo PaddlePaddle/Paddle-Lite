@@ -13,8 +13,7 @@
 // limitations under the License.
 
 #include "../../nnadapter_logging.h"  // NOLINT
-#include "context.h"                  // NOLINT
-#include "program.h"                  // NOLINT
+#include "converter.h"                // NOLINT
 
 namespace nnadapter {
 namespace driver {

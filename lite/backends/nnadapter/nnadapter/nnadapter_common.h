@@ -15,6 +15,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "nnadapter_types.h"  // NOLINT
 
 namespace nnadapter {
@@ -30,7 +31,35 @@ std::string OperandLifetimeCodeToString(NNAdapterOperandLifetimeCode type);
 std::string OperationTypeToString(NNAdapterOperationType type);
 std::string FuseCodeToString(NNAdapterFuseCode type);
 std::string DeviceCodeToString(NNAdapterDeviceCode type);
+std::string DimensionsToString(const int32_t* dimensions,
+                               uint32_t dimension_count);
 int OperandPrecisionLength(NNAdapterOperandPrecisionCode type);
 std::string OperandPrecisionName(NNAdapterOperandPrecisionCode type);
+bool IsPerLayerQuantization(NNAdapterOperandPrecisionCode type);
+bool IsPerChannelQuantization(NNAdapterOperandPrecisionCode type);
+bool IsAsymmetricQuantization(NNAdapterOperandPrecisionCode type);
+bool IsSymmetricQuantization(NNAdapterOperandPrecisionCode type);
+bool IsAsymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
+bool IsSymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
+bool IsSymmPerChannelQuantization(NNAdapterOperandPrecisionCode type);
+bool IsUInt8AsymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
+bool IsInt8SymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
+bool IsInt8SymmPerChannelQuantization(NNAdapterOperandPrecisionCode type);
+bool IsUInt32AsymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
+bool IsInt32SymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
+bool IsInt32SymmPerChannelQuantization(NNAdapterOperandPrecisionCode type);
+
+// Utilities for NNAdapter dimensions
+int64_t ProductionOfDimensions(const int32_t* input_dimensions,
+                               uint32_t input_dimension_count);
+int64_t ProductionOfDimensions(const std::vector<int32_t>& input_dimensions);
+void TransposeDimensions(int32_t* input_dimensions,
+                         const std::vector<int32_t>& permutation,
+                         int32_t* output_dimensions_ptr = nullptr);
+void ReshapeDimensions(int32_t* input_dimensions,
+                       uint32_t* input_dimension_count,
+                       const std::vector<int32_t>& dimensions,
+                       int32_t* output_dimensions_ptr = nullptr,
+                       uint32_t* output_dimension_count_ptr = nullptr);
 
 }  // namespace nnadapter

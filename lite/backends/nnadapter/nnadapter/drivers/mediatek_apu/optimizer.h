@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "context.h"  // NOLINT
+#pragma once
+
+#include "../../nnadapter_driver.h"  // NOLINT
 
 namespace nnadapter {
 namespace driver {
 namespace mediatek_apu {
 
-Context::Context() {}
-
-Context::~Context() {}
+void ApplyConstraintsToQuantizationParameters(driver::Model* model);
 
 }  // namespace mediatek_apu
 }  // namespace driver

@@ -64,6 +64,8 @@ DDim ConvertDimensions(int32_t* input_dimensions,
 // NNAdapter to Paddle
 PrecisionType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision);
 
+int PrecisionLength(NNAdapterOperandPrecisionCode precision);
+
 template <typename T>
 void Quantize(const float* input_data,
               size_t input_size,
@@ -109,13 +111,13 @@ template <typename T>
 void Transpose(const T* input,
                T* output,
                const std::vector<int>& perm,
-               const std::vector<int64_t>& input_dimensions,
-               std::vector<int64_t>* output_dimensions_ptr = nullptr) {
+               const DDim& input_dimensions,
+               DDim* output_dimensions_ptr = nullptr) {
   auto dimension_count = input_dimensions.size();
   CHECK_GE(dimension_count, 2);
   auto perm_count = perm.size();
   CHECK_EQ(dimension_count, perm_count);
-  std::vector<int64_t> output_dimensions(input_dimensions);
+  DDim output_dimensions(input_dimensions);
   for (size_t i = 0; i < perm_count; i++) {
     output_dimensions[i] = input_dimensions[perm[i]];
   }

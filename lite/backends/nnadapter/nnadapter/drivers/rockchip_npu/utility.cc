@@ -66,7 +66,7 @@ rk::nn::PrecisionType ConvertPrecision(
       output_precision = rk::nn::PrecisionType::FLOAT64;
       break;
     default:
-      NNADAPTER_LOG(FATAL)
+      NNADAPTER_LOG(ERROR)
           << "Failed to convert the NNAdapter operand precision code("
           << input_precision << ") to rk::nn::PrecisionType !";
       break;
@@ -85,7 +85,7 @@ rk::nn::DataLayoutType ConvertDataLayout(
       output_layout = rk::nn::DataLayoutType::NHWC;
       break;
     default:
-      NNADAPTER_LOG(FATAL)
+      NNADAPTER_LOG(ERROR)
           << "Failed to convert the NNAdapter operand layout code("
           << input_layout << ") to rk::nn::DataLayoutType !";
       break;

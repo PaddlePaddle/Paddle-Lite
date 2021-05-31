@@ -18,12 +18,20 @@
 #include <memory>
 #include <vector>
 #include "../../nnadapter_driver.h"  // NOLINT
-#include "context.h"                 // NOLINT
 #include "rknpu/rknpu_pub.h"         // NOLINT
 
 namespace nnadapter {
 namespace driver {
 namespace rockchip_npu {
+
+class Context {
+ public:
+  Context();
+  ~Context();
+
+ private:
+  void* context_{nullptr};
+};
 
 class Program {
  public:

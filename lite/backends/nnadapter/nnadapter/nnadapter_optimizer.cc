@@ -21,8 +21,8 @@
 namespace nnadapter {
 namespace driver {
 
-void ConvertOperandFromSymmToAsymm(driver::Operand* operand,
-                                   int32_t zero_point) {
+static void ConvertOperandFromSymmToAsymm(driver::Operand* operand,
+                                          int32_t zero_point) {
   switch (operand->type.precision) {
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER: {
       operand->type.precision = NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER;
@@ -55,7 +55,7 @@ void ConvertOperandFromSymmToAsymm(driver::Operand* operand,
   }
 }
 
-void ConvertQuantizationFromSymmToAsymm(driver::Model* model) {
+NNADAPTER_EXPORT void ConvertQuantizationFromSymmToAsymm(driver::Model* model) {
   std::vector<Operation*> operations =
       driver::SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -106,38 +106,13 @@ void ConvertQuantizationFromSymmToAsymm(driver::Model* model) {
   }
 }
 
-// mode: 0 only for inputs, 1 only for outputs, 2 for inputs and outputs
-void ReplaceOperationInputsOutputs(driver::Model* model,
-                                   const Operand* pattern,
-                                   Operand* replace,
-                                   int mode) {
-  if (mode == 0 || mode == 2) {
-    for (auto& operation : model->operations) {
-      for (auto& input_operand : operation.input_operands) {
-        if (input_operand == pattern) {
-          input_operand = replace;
-        }
-      }
-    }
-  }
-  if (mode == 1 || mode == 2) {
-    for (auto& operation : model->operations) {
-      for (auto& output_operand : operation.output_operands) {
-        if (output_operand == pattern) {
-          output_operand = replace;
-        }
-      }
-    }
-  }
-}
-
-void InsertNCHWToNHWCConversionToInputsOutputs(driver::Model* model) {
+static void InsertNCHWToNHWCConversionToInputsOutputs(driver::Model* model) {
   for (auto& model_input_operand : model->input_operands) {
     if (model_input_operand->type.dimension_count == 4) {
       // Insert a transpose operation at the front of the model input operand to
       // convert NCHW to NHWC
       std::vector<int32_t> permutation = {0, 2, 3, 1};
-      auto perm_operand = AddVectorInt32ConstantOperand(model, permutation);
+      auto perm_operand = AddInt32ConstantOperand(model, permutation);
       auto input_operand = AddOperand(model);
       memcpy(&input_operand->type,
              &model_input_operand->type,
@@ -160,7 +135,7 @@ void InsertNCHWToNHWCConversionToInputsOutputs(driver::Model* model) {
       // Insert a transpose operation at the back of the model output operand to
       // convert NHWC to NCHW
       std::vector<int32_t> permutation = {0, 3, 1, 2};
-      auto perm_operand = AddVectorInt32ConstantOperand(model, permutation);
+      auto perm_operand = AddInt32ConstantOperand(model, permutation);
       auto output_operand = AddOperand(model);
       memcpy(&output_operand->type,
              &model_output_operand->type,
@@ -179,21 +154,16 @@ void InsertNCHWToNHWCConversionToInputsOutputs(driver::Model* model) {
   }
 }
 
-void ConvertOperandFromNCHWToNHWC(
-    driver::Operand* operand, std::vector<std::vector<int32_t>> permutations) {
-  auto& type = operand->type;
-  auto is_nhwc = type.layout == NNADAPTER_NHWC;
-  auto dimension_count = type.dimension_count;
-  if (is_nhwc) return;
-  for (auto& permutation : permutations) {
-    if (dimension_count == permutation.size()) {
-      TransposeOperand(operand, permutation);
-    }
-  }
-  type.layout = NNADAPTER_NHWC;
+inline bool IsOperandConvertToNHWC(driver::Operand* operand) {
+  return operand->type.layout == NNADAPTER_NHWC;
 }
 
-void ConvertAverageAndMaxPool2DFromNCHWToNHWC(driver::Operation* operation) {
+inline bool MarkOperandConvertToNHWC(driver::Operand* operand) {
+  return operand->type.layout = NNADAPTER_NHWC;
+}
+
+static void ConvertAverageAndMaxPool2DFromNCHWToNHWC(
+    driver::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -201,12 +171,94 @@ void ConvertAverageAndMaxPool2DFromNCHWToNHWC(driver::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 12);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
-  ConvertOperandFromNCHWToNHWC(input_operand, {{0, 2, 3, 1}});
+  auto input_dimension_count = input_operand->type.dimension_count;
   auto output_operand = output_operands[0];
-  ConvertOperandFromNCHWToNHWC(output_operand, {{0, 2, 3, 1}});
+  switch (input_dimension_count) {
+    case 4: {
+      if (!IsOperandConvertToNHWC(input_operand)) {
+        TransposeOperand(input_operand, {0, 2, 3, 1});
+        MarkOperandConvertToNHWC(input_operand);
+      }
+      TransposeOperand(output_operand, {0, 2, 3, 1});
+      MarkOperandConvertToNHWC(output_operand);
+    } break;
+    default:
+      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+                           << input_dimension_count;
+      break;
+  }
 }
 
-void ConvertSoftmaxFromNCHWToNHWC(driver::Operation* operation) {
+static int ConvertActivationUnaryOperationsFromNCHWToNHWC(
+    driver::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 1);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto input_dimension_count = input_operand->type.dimension_count;
+  auto output_operand = output_operands[0];
+  switch (input_dimension_count) {
+    case 4: {
+      if (!IsOperandConvertToNHWC(input_operand)) {
+        TransposeOperand(input_operand, {0, 2, 3, 1});
+        MarkOperandConvertToNHWC(input_operand);
+      }
+      TransposeOperand(output_operand, {0, 2, 3, 1});
+      MarkOperandConvertToNHWC(output_operand);
+    } break;
+    default:
+      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+                           << input_dimension_count;
+      break;
+  }
+}
+
+static void ConvertElementwiseBinaryOperationsFromNCHWToNHWC(
+    driver::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input0_operand = input_operands[0];
+  auto input0_dimension_count = input0_operand->type.dimension_count;
+  NNADAPTER_CHECK_GT(input0_dimension_count, 0);
+  auto input1_operand = input_operands[1];
+  auto input1_dimension_count = input1_operand->type.dimension_count;
+  NNADAPTER_CHECK_GT(input1_dimension_count, 0);
+  auto output_operand = output_operands[0];
+  switch (input0_dimension_count) {
+    case 4: {
+      if (!IsOperandConvertToNHWC(input0_operand)) {
+        TransposeOperand(input0_operand, {0, 2, 3, 1});
+        MarkOperandConvertToNHWC(input0_operand);
+      }
+      if (!IsOperandConvertToNHWC(input1_operand)) {
+        if (input1_dimension_count == 2) {
+          // Pad 1 to the tail of the dimensions and transpose it as input0
+          ReshapeOperand(input1_operand, {0, 0, 1});
+        } else if (input1_dimension_count == 3) {
+          TransposeOperand(input1_operand, {1, 2, 0});
+        } else if (input1_dimension_count == 4) {
+          TransposeOperand(input1_operand, {0, 2, 3, 1});
+        }
+        MarkOperandConvertToNHWC(input1_operand);
+      }
+      TransposeOperand(output_operand, {0, 2, 3, 1});
+      MarkOperandConvertToNHWC(output_operand);
+    } break;
+    default:
+      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+                           << input0_dimension_count;
+      break;
+  }
+}
+
+static void ConvertSoftmaxFromNCHWToNHWC(driver::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -214,14 +266,23 @@ void ConvertSoftmaxFromNCHWToNHWC(driver::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
-  NNADAPTER_CHECK_EQ(input_operand->type.dimension_count, 2);
-  ConvertOperandFromNCHWToNHWC(input_operand, {{}});
+  auto input_dimension_count = input_operand->type.dimension_count;
   auto output_operand = output_operands[0];
-  NNADAPTER_CHECK_EQ(output_operand->type.dimension_count, 2);
-  ConvertOperandFromNCHWToNHWC(output_operand, {{}});
+  switch (input_dimension_count) {
+    case 2: {
+      if (!IsOperandConvertToNHWC(input_operand)) {
+        MarkOperandConvertToNHWC(input_operand);
+      }
+      MarkOperandConvertToNHWC(output_operand);
+    } break;
+    default:
+      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+                           << input_dimension_count;
+      break;
+  }
 }
 
-void ConvertFullyConnectedFromNCHWToNHWC(driver::Operation* operation) {
+static void ConvertFullyConnectedFromNCHWToNHWC(driver::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -229,16 +290,28 @@ void ConvertFullyConnectedFromNCHWToNHWC(driver::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 4);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
-  ConvertOperandFromNCHWToNHWC(input_operand, {{0, 2, 3, 1}});
+  int input_dimension_count = input_operand->type.dimension_count;
   auto weight_operand = input_operands[1];
-  ConvertOperandFromNCHWToNHWC(input_operand, {{}});
   auto bias_operand = input_operands[2];
-  ConvertOperandFromNCHWToNHWC(input_operand, {{}});
   auto output_operand = output_operands[0];
-  ConvertOperandFromNCHWToNHWC(output_operand, {{}});
+  switch (input_dimension_count) {
+    case 4: {
+      if (!IsOperandConvertToNHWC(input_operand)) {
+        TransposeOperand(input_operand, {0, 2, 3, 1});
+        MarkOperandConvertToNHWC(input_operand);
+      }
+      MarkOperandConvertToNHWC(weight_operand);
+      MarkOperandConvertToNHWC(bias_operand);
+      MarkOperandConvertToNHWC(output_operand);
+    } break;
+    default:
+      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+                           << input_dimension_count;
+      break;
+  }
 }
 
-void ConvertConv2DFromNCHWToNHWC(driver::Operation* operation) {
+static void ConvertConv2DFromNCHWToNHWC(driver::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -246,7 +319,12 @@ void ConvertConv2DFromNCHWToNHWC(driver::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 13);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
-  ConvertOperandFromNCHWToNHWC(input_operand, {{0, 2, 3, 1}});
+  int input_dimension_count = input_operand->type.dimension_count;
+  NNADAPTER_CHECK_EQ(input_dimension_count, 4);
+  if (!IsOperandConvertToNHWC(input_operand)) {
+    TransposeOperand(input_operand, {0, 2, 3, 1});
+    MarkOperandConvertToNHWC(input_operand);
+  }
   auto input_channel_size = input_operand->type.dimensions[3];
   auto filter_operand = input_operands[1];
   bool is_per_channel = filter_operand->type.precision ==
@@ -270,14 +348,16 @@ void ConvertConv2DFromNCHWToNHWC(driver::Operation* operation) {
     // filter_width, C_in]
     filter_permutation = {0, 2, 3, 1};
   }
-  ConvertOperandFromNCHWToNHWC(filter_operand, {filter_permutation});
+  TransposeOperand(filter_operand, filter_permutation);
+  MarkOperandConvertToNHWC(filter_operand);
   auto bias_operand = input_operands[2];
-  ConvertOperandFromNCHWToNHWC(bias_operand, {{}});
+  MarkOperandConvertToNHWC(bias_operand);
   auto output_operand = output_operands[0];
-  ConvertOperandFromNCHWToNHWC(output_operand, {{0, 2, 3, 1}});
+  TransposeOperand(output_operand, {0, 2, 3, 1});
+  MarkOperandConvertToNHWC(output_operand);
 }
 
-void ConvertDataLayoutFromNCHWToNHWC(driver::Model* model) {
+NNADAPTER_EXPORT void ConvertDataLayoutFromNCHWToNHWC(driver::Model* model) {
   std::vector<Operation*> operations =
       driver::SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -295,36 +375,28 @@ void ConvertDataLayoutFromNCHWToNHWC(driver::Model* model) {
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_SIGMOID:
-        NNADAPTER_LOG(ERROR) << "Unsupported "
-                             << OperationTypeToString(operation->type)
-                             << " is found.";
+        ConvertActivationUnaryOperationsFromNCHWToNHWC(operation);
         break;
       case NNADAPTER_SOFTMAX:
         ConvertSoftmaxFromNCHWToNHWC(operation);
         break;
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
-        NNADAPTER_LOG(ERROR) << "Unsupported "
-                             << OperationTypeToString(operation->type)
-                             << " is found.";
+      case NNADAPTER_MUL:
+      case NNADAPTER_SUB:
+        ConvertElementwiseBinaryOperationsFromNCHWToNHWC(operation);
         break;
       case NNADAPTER_FULLY_CONNECTED:
         ConvertFullyConnectedFromNCHWToNHWC(operation);
         break;
-      case NNADAPTER_MUL:
-      case NNADAPTER_SUB:
-        NNADAPTER_LOG(ERROR) << "Unsupported "
-                             << OperationTypeToString(operation->type)
-                             << " is found.";
         break;
       case NNADAPTER_CONV_2D:
         ConvertConv2DFromNCHWToNHWC(operation);
         break;
       default:
-        NNADAPTER_LOG(ERROR)
-            << "Missing the processing of "
-            << OperationTypeToString(operation->type)
-            << " for the conversion of symm2asymm quantization.";
+        NNADAPTER_LOG(ERROR) << "Missing the processing of "
+                             << OperationTypeToString(operation->type)
+                             << " for the conversion from NCHW to NHWC.";
         break;
     }
   }

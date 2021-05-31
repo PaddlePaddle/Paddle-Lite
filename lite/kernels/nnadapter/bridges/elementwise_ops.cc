@@ -33,14 +33,23 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
+  auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
+  auto x_scale =
+      has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto y_name = op_info->Input("Y").front();
   auto y_scale_name = "Y0_scale";
+  auto has_y_scale = op_info->HasInputScale(y_scale_name, true);
+  auto y_scale =
+      has_y_scale ? op_info->GetInputScale(y_scale_name, true)[0] : 0.f;
   auto y = scope->FindMutableTensor(y_name);
   auto y_dims = y->dims();
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
+  auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
+  auto out_scale =
+      has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
   auto axis = op_info->GetAttr<int>("axis");
@@ -68,43 +77,33 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Input0 operand
-  CHECK(op_info->HasInputScale(x_scale_name, true));
-  auto x_scale = op_info->GetInputScale(x_scale_name, true)[0];
   NNAdapterOperand* input0_operand = nullptr;
   if (converter->HasOperand(x_name)) {
     input0_operand = converter->GetOperand(x_name);
   } else {
-    NNAdapterOperandType input0_type;
-    memset(&input0_type, 0, sizeof(NNAdapterOperandType));
-    input0_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-    input0_type.symm_per_layer_params.scale = x_scale;
-    ConvertDimensions(
-        x_dims, input0_type.dimensions, &input0_type.dimension_count);
-    input0_operand = converter->AddOperand(&input0_type, x_name);
+    if (has_x_scale) {
+      input0_operand =
+          converter->AddQuant8VariableOperand(x_dims, x_scale, x_name);
+    } else {
+      input0_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
+    }
   }
 
   // Input1 operand
-  CHECK(op_info->HasInputScale(y_scale_name, true));
-  auto y_scale = op_info->GetInputScale(y_scale_name, true)[0];
   NNAdapterOperand* input1_operand = nullptr;
   if (converter->HasOperand(y_name)) {
     input1_operand = converter->GetOperand(y_name);
   } else {
-    NNAdapterOperandType input1_type;
-    memset(&input1_type, 0, sizeof(NNAdapterOperandType));
-    input1_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-    input1_type.symm_per_layer_params.scale = y_scale;
-    ConvertDimensions(
-        y_shape, input1_type.dimensions, &input1_type.dimension_count);
-    input1_operand = converter->AddOperand(&input1_type, y_name);
+    if (has_y_scale) {
+      input1_operand =
+          converter->AddQuant8VariableOperand(DDim(y_shape), y_scale, y_name);
+    } else {
+      input1_operand =
+          converter->AddFloat32VariableOperand(DDim(y_shape), y_name);
+    }
   }
 
   // Fuse code operand
-  NNAdapterOperandType int32_type;
-  memset(&int32_type, 0, sizeof(NNAdapterOperandType));
-  int32_type.precision = NNADAPTER_INT32;
-  int32_type.dimension_count = 0;
-
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
     fuse_code_value = 1;
@@ -116,24 +115,20 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     LOG(WARNING) << "Unsupported activation type: " << act_type;
     return FAILED;
   }
-  auto fuse_code_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      fuse_code_operand, &fuse_code_value, sizeof(int32_t));
+  auto fuse_code_operand = converter->AddInt32ConstantOperand(fuse_code_value);
 
   // Output operand
-  CHECK(op_info->HasOutputScale(out_scale_name, true));
-  auto out_scale = op_info->GetOutputScale(out_scale_name, true)[0];
-  NNAdapterOperandType output_type;
-  memset(&output_type, 0, sizeof(NNAdapterOperandType));
-  output_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-  output_type.symm_per_layer_params.scale = out_scale;
-  ConvertDimensions(
-      out_dims, output_type.dimensions, &output_type.dimension_count);
-  auto output_operand = converter->AddOperand(&output_type, out_name);
+  NNAdapterOperand* output_operand = nullptr;
+  if (has_out_scale) {
+    output_operand =
+        converter->AddQuant8VariableOperand(out_dims, out_scale, out_name);
+  } else {
+    output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
+  }
 
   // ADD, SUB, MUL and DIV operation
-  std::vector<NNAdapterOperand*> input_operands = {input0_operand,
-                                                   input1_operand};
+  std::vector<NNAdapterOperand*> input_operands = {
+      input0_operand, input1_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* elementwise_operation = nullptr;
   if (op_type == "elementwise_add" ||

@@ -194,11 +194,8 @@ int Compilation::Finish() {
   completed_ = true;
   auto first_device = context_->GetFirstDevice();
   // TODO(hong19860320) Support the task partition for multi-devices
-  NNADAPTER_VLOG(5) << "origin model:\n" << driver::Visualize(&model_->model_);
   int result = first_device.second->CreateProgram(
       first_device.first, &model_->model_, &cache_, &program_);
-  NNADAPTER_VLOG(5) << "optimized model:\n"
-                    << driver::Visualize(&model_->model_);
   return result;
 }
 

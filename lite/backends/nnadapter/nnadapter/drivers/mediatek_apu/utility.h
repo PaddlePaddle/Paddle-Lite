@@ -28,6 +28,7 @@ int ConvertDataLayout(NNAdapterOperandLayoutCode input_layout);
 std::vector<uint32_t> ConvertDimensions(int32_t* input_dimensions,
                                         uint32_t input_dimensions_count);
 int32_t ConvertFuseCode(int32_t input_code);
+int PrecisionLength(int precision);
 
 }  // namespace mediatek_apu
 }  // namespace driver

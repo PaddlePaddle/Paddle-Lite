@@ -31,24 +31,73 @@ class Converter {
   explicit Converter(NNAdapterModel* model) : model_(model) {}
   ~Converter() {}
 
+  // NNAdapter operand
+  bool HasOperand(const std::string& name);
+  NNAdapterOperand* GetOperand(std::string name);
+  NNAdapterOperand* AddOperand(NNAdapterOperand* operand,
+                               const std::string& name);
+  // Scalar or tensor constant operand with basic type
+  NNAdapterOperand* AddBool8ConstantOperand(bool value);
+  NNAdapterOperand* AddInt32ConstantOperand(int32_t value);
+  NNAdapterOperand* AddFloat32ConstantOperand(float value);
+  NNAdapterOperand* AddInt32ConstantOperand(int32_t* values,
+                                            const DDim& dimensions,
+                                            bool copy = true);
+  NNAdapterOperand* AddFloat32ConstantOperand(float* values,
+                                              const DDim& dimensions,
+                                              bool copy = true);
+  // Quant8 constant operand with symmetric per-layer quantizion
+  NNAdapterOperand* AddQuant8ConstantOperand(int8_t* values,
+                                             const DDim& dimensions,
+                                             float quant_scale,
+                                             bool copy = true);
+  // Quant8 constant operand with symmetric per-channel quantizion
+  NNAdapterOperand* AddQuant8ConstantOperand(int8_t* values,
+                                             const DDim& dimensions,
+                                             float* quant_scales,
+                                             uint32_t quant_scale_count,
+                                             uint32_t quant_channel_dim = 0,
+                                             bool copy = true);
+  // Quant32 constant operand with symmetric per-layer quantizion
+  NNAdapterOperand* AddQuant32ConstantOperand(int32_t* values,
+                                              const DDim& dimensions,
+                                              float quant_scale,
+                                              bool copy = true);
+  // Quant32 constant operand with symmetric per-channel quantizion
+  NNAdapterOperand* AddQuant32ConstantOperand(int32_t* values,
+                                              const DDim& dimensions,
+                                              float* quant_scales,
+                                              uint32_t quant_scale_count,
+                                              uint32_t quant_channel_dim = 0,
+                                              bool copy = true);
+  // Quant8 variable operand with symmetric per-layer quantizion
+  NNAdapterOperand* AddQuant8VariableOperand(const DDim& dimensions,
+                                             float quant_scale,
+                                             const std::string& name = "");
+  NNAdapterOperand* AddFloat32VariableOperand(const DDim& dimensions,
+                                              const std::string& name = "");
+
+  // NNAdapter operation
   NNAdapterOperation* AddOperation(NNAdapterOperationType type);
   void SetOperation(NNAdapterOperation* operation,
                     std::vector<NNAdapterOperand*>* input_operands,
                     std::vector<NNAdapterOperand*>* output_operands);
-  bool HasOperand(const std::string& name);
-  NNAdapterOperand* GetOperand(std::string name);
-  NNAdapterOperand* AddOperand(NNAdapterOperandType* type,
-                               const std::string& name = "");
-  NNAdapterOperand* AddOperand(NNAdapterOperand* operand,
-                               const std::string& name);
-  void SetOperandCopyFrom(NNAdapterOperand* operand,
-                          void* buffer,
-                          size_t length);
-  void SetOperandReferenceTo(NNAdapterOperand* operand,
-                             void* buffer,
-                             size_t length);
 
  private:
+  NNAdapterOperand* AddOperand(NNAdapterOperandType* type,
+                               const std::string& name = "");
+  void SetOperand(NNAdapterOperand* operand,
+                  void* buffer,
+                  size_t length,
+                  bool copy = true);
+  NNAdapterOperand* AddOperand(const DDim& dimensions,
+                               NNAdapterOperandPrecisionCode precision,
+                               float* quant_scales = nullptr,
+                               uint32_t quant_scale_count = 0,
+                               uint32_t quant_channel_dim = 0,
+                               void* buffer = nullptr,
+                               bool copy = true,
+                               const std::string& name = "");
   std::map<std::string, NNAdapterOperand*> operands_;
   NNAdapterModel* model_{nullptr};
 };

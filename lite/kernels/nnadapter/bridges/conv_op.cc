@@ -34,14 +34,25 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
   auto input_scale_name = "Input0_scale";
+  auto has_input_scale = op_info->HasInputScale(input_scale_name, true);
+  auto input_scale =
+      has_input_scale ? op_info->GetInputScale(input_scale_name, true)[0] : 0.f;
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
   auto filter_name = op_info->Input("Filter").front();
   auto filter_scale_name = "Filter0_scale";
+  auto has_filter_scale = op_info->HasInputScale(filter_scale_name, true);
+  auto filter_scale = has_filter_scale
+                          ? op_info->GetInputScale(filter_scale_name, true)
+                          : std::vector<float>({});
   auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
   auto output_name = op_info->Output("Output").front();
   auto output_scale_name = "Output0_scale";
+  auto has_output_scale = op_info->HasOutputScale(output_scale_name, true);
+  auto output_scale = has_output_scale
+                          ? op_info->GetOutputScale(output_scale_name, true)[0]
+                          : 0.f;
   auto output = scope->FindMutableTensor(output_name);
   auto output_dims = output->dims();
   auto batch_size = input_dims[0];
@@ -93,108 +104,46 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
 
   // Input operand
-  CHECK(op_info->HasInputScale(input_scale_name, true));
-  auto input_scale = op_info->GetInputScale(input_scale_name, true)[0];
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(input_name)) {
     input_operand = converter->GetOperand(input_name);
   } else {
-    NNAdapterOperandType input_type;
-    memset(&input_type, 0, sizeof(NNAdapterOperandType));
-    input_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-    input_type.symm_per_layer_params.scale = input_scale;
-    ConvertDimensions(
-        input_dims, input_type.dimensions, &input_type.dimension_count);
-    input_operand = converter->AddOperand(&input_type, input_name);
+    if (has_input_scale) {
+      input_operand = converter->AddQuant8VariableOperand(
+          input_dims, input_scale, input_name);
+    } else {
+      input_operand =
+          converter->AddFloat32VariableOperand(input_dims, input_name);
+    }
   }
 
   // Filter operand
-  CHECK(op_info->HasInputScale(filter_scale_name, true));
-  auto filter_scale = op_info->GetInputScale(filter_scale_name, true);
-  bool is_per_channel = IsPerChannelScales(filter_scale);
-  VLOG(5) << "is_per_channel: " << is_per_channel;
-  NNAdapterOperandType filter_type;
-  memset(&filter_type, 0, sizeof(NNAdapterOperandType));
-  ConvertDimensions(
-      filter_dims, filter_type.dimensions, &filter_type.dimension_count);
-  if (is_per_channel) {
-    // Per channel
-    filter_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
-    filter_type.symm_per_channel_params.scales = &filter_scale[0];
-    filter_type.symm_per_channel_params.scale_count = filter_scale.size();
-    filter_type.symm_per_channel_params.channel_dim = 0;
+  NNAdapterOperand* filter_operand = nullptr;
+  bool is_per_channel = false;
+  if (has_filter_scale) {
+    is_per_channel = IsPerChannelScales(filter_scale);
+    VLOG(5) << "is_per_channel: " << is_per_channel;
+    auto filter_data = filter->mutable_data<int8_t>();
+    if (is_per_channel) {
+      filter_operand = converter->AddQuant8ConstantOperand(filter_data,
+                                                           filter_dims,
+                                                           &filter_scale[0],
+                                                           filter_scale.size(),
+                                                           0,
+                                                           false);
+    } else {
+      filter_operand = converter->AddQuant8ConstantOperand(
+          filter_data, filter_dims, filter_scale[0], false);
+    }
   } else {
-    // Per layer
-    filter_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-    filter_type.symm_per_layer_params.scale = filter_scale[0];
+    auto filter_data = filter->mutable_data<float>();
+    filter_operand =
+        converter->AddFloat32ConstantOperand(filter_data, filter_dims, false);
   }
-  auto filter_operand = converter->AddOperand(&filter_type, filter_name);
-  converter->SetOperandReferenceTo(
-      filter_operand, filter->raw_data(), filter->memory_size());
-
-  // Paddings, strides, dilations and group operands
-  NNAdapterOperandType int32_type;
-  memset(&int32_type, 0, sizeof(NNAdapterOperandType));
-  int32_type.precision = NNADAPTER_INT32;
-  int32_type.dimension_count = 0;
-
-  auto padding_width_left_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      padding_width_left_operand, &paddings[0], sizeof(int32_t));
-
-  auto padding_width_right_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      padding_width_right_operand, &paddings[1], sizeof(int32_t));
-
-  auto padding_height_top_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      padding_height_top_operand, &paddings[2], sizeof(int32_t));
-
-  auto padding_height_bottom_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      padding_height_bottom_operand, &paddings[3], sizeof(int32_t));
-
-  auto stride_width_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      stride_width_operand, &strides[0], sizeof(int32_t));
-
-  auto stride_height_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      stride_height_operand, &strides[1], sizeof(int32_t));
-
-  auto dilation_width_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      dilation_width_operand, &dilations[0], sizeof(int32_t));
-
-  auto dilation_height_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      dilation_height_operand, &dilations[1], sizeof(int32_t));
-
-  auto group_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(group_operand, &groups, sizeof(int32_t));
 
   // Bias
-  NNAdapterOperandType bias_type;
-  memset(&bias_type, 0, sizeof(NNAdapterOperandType));
-  std::vector<float> bias_scale(filter_scale.size());
-  for (size_t i = 0; i < filter_scale.size(); i++) {
-    bias_scale[i] = input_scale * filter_scale[i];
-  }
-  if (is_per_channel) {
-    // Per channel
-    bias_type.precision = NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
-    bias_type.symm_per_channel_params.scales = &bias_scale[0];
-    bias_type.symm_per_channel_params.scale_count = bias_scale.size();
-    bias_type.symm_per_channel_params.channel_dim = 0;
-  } else {
-    // Per layer
-    bias_type.precision = NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER;
-    bias_type.symm_per_layer_params.scale = bias_scale[0];
-  }
-  bias_type.dimension_count = 1;
-  bias_type.dimensions[0] = static_cast<int32_t>(output_channel_size);
-  std::vector<int32_t> quant_bias_data(output_channel_size, 0);
   std::string bias_name = output_name + "_dummy_bias";
+  float* bias_data = nullptr;
   if (HasInput(op_info, scope, "Bias")) {
     bias_name = op_info->Input("Bias").front();
     auto bias = scope->FindMutableTensor(bias_name);
@@ -203,13 +152,55 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           (bias_dims.size() == 2 && bias_dims[0] == 1 &&
            bias_dims[1] == output_channel_size))
         << "The dimensions of bias only supports [C_out], [1, C_out]";
-    auto* bias_data = bias->mutable_data<float>();
-    Quantize(bias_data, output_channel_size, bias_scale, &quant_bias_data[0]);
+    bias_data = bias->mutable_data<float>();
   }
-  auto bias_operand = converter->AddOperand(&bias_type, bias_name);
-  converter->SetOperandCopyFrom(bias_operand,
-                                &quant_bias_data[0],
-                                sizeof(int32_t) * quant_bias_data.size());
+  DDim bias_dims({output_channel_size});
+  NNAdapterOperand* bias_operand = nullptr;
+  if (has_input_scale && has_filter_scale) {
+    std::vector<float> bias_scale(filter_scale.size());
+    for (size_t i = 0; i < filter_scale.size(); i++) {
+      bias_scale[i] = input_scale * filter_scale[i];
+    }
+    std::vector<int32_t> quant_bias_data(output_channel_size, 0);
+    if (bias_data) {
+      Quantize(bias_data, output_channel_size, bias_scale, &quant_bias_data[0]);
+    }
+    if (is_per_channel) {
+      bias_operand = converter->AddQuant32ConstantOperand(
+          &quant_bias_data[0], bias_dims, &bias_scale[0], bias_scale.size());
+    } else {
+      bias_operand = converter->AddQuant32ConstantOperand(
+          &quant_bias_data[0], bias_dims, bias_scale[0]);
+    }
+  } else {
+    if (bias_data) {
+      bias_operand =
+          converter->AddFloat32ConstantOperand(bias_data, bias_dims, false);
+    } else {
+      // Dummy bias
+      std::vector<float> dummy_bias_data(output_channel_size, 0);
+      bias_operand =
+          converter->AddFloat32ConstantOperand(&dummy_bias_data[0], bias_dims);
+    }
+  }
+
+  // Paddings, strides, dilations and group operands
+  auto padding_width_left_operand =
+      converter->AddInt32ConstantOperand(paddings[2]);
+  auto padding_width_right_operand =
+      converter->AddInt32ConstantOperand(paddings[3]);
+  auto padding_height_top_operand =
+      converter->AddInt32ConstantOperand(paddings[0]);
+  auto padding_height_bottom_operand =
+      converter->AddInt32ConstantOperand(paddings[1]);
+  auto stride_width_operand = converter->AddInt32ConstantOperand(strides[1]);
+  auto stride_height_operand = converter->AddInt32ConstantOperand(strides[0]);
+  auto dilation_width_operand =
+      converter->AddInt32ConstantOperand(dilations[1]);
+  auto dilation_height_operand =
+      converter->AddInt32ConstantOperand(dilations[0]);
+  auto group_operand = converter->AddInt32ConstantOperand(groups);
+
   // Fuse code operand
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
@@ -222,19 +213,17 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     LOG(WARNING) << "Unsupported activation type: " << act_type;
     return FAILED;
   }
-  auto fuse_code_operand = converter->AddOperand(&int32_type);
-  converter->SetOperandCopyFrom(
-      fuse_code_operand, &fuse_code_value, sizeof(int32_t));
+  auto fuse_code_operand = converter->AddInt32ConstantOperand(fuse_code_value);
+
   // Output operand
-  CHECK(op_info->HasOutputScale(output_scale_name, true));
-  auto output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
-  NNAdapterOperandType output_type;
-  memset(&output_type, 0, sizeof(NNAdapterOperandType));
-  output_type.precision = NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
-  output_type.symm_per_layer_params.scale = output_scale;
-  ConvertDimensions(
-      output_dims, output_type.dimensions, &output_type.dimension_count);
-  auto output_operand = converter->AddOperand(&output_type, output_name);
+  NNAdapterOperand* output_operand = nullptr;
+  if (has_output_scale) {
+    output_operand = converter->AddQuant8VariableOperand(
+        output_dims, output_scale, output_name);
+  } else {
+    output_operand =
+        converter->AddFloat32VariableOperand(output_dims, output_name);
+  }
 
   // Conv2D operation
   std::vector<NNAdapterOperand*> input_operands = {

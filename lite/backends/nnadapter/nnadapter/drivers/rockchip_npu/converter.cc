@@ -12,16 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "program.h"  // NOLINT
+#include "converter.h"  // NOLINT
 #include <memory>
 #include <vector>
-#include "../../nnadapter_common.h"   // NOLINT
-#include "../../nnadapter_logging.h"  // NOLINT
-#include "utility.h"                  // NOLINT
+#include "../../nnadapter_common.h"     // NOLINT
+#include "../../nnadapter_logging.h"    // NOLINT
+#include "../../nnadapter_optimizer.h"  // NOLINT
+#include "utility.h"                    // NOLINT
 
 namespace nnadapter {
 namespace driver {
 namespace rockchip_npu {
+
+Context::Context() {
+  // TODO(hong19860320) create the raw context from rknpu ddk driver
+}
+
+Context::~Context() {}
 
 Program::~Program() {
   if (!execution_) {
@@ -33,7 +40,10 @@ Program::~Program() {
 }
 
 int Program::Build(driver::Model* model, driver::Cache* cache) {
-  NNADAPTER_VLOG(5) << "\n" << Visualize(model);
+  NNADAPTER_VLOG(5) << "Init:\n\n" << Visualize(model);
+  // ApplyConstraintsToQuantizationParameters(model);
+  NNADAPTER_VLOG(5) << "After applying quantization contraints:\n"
+                    << driver::Visualize(model);
   // Convert a NNAdapter model to a rknpu graph
   tensors_.clear();
   graph_ = new rk::nn::Graph();
@@ -172,17 +182,16 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
   attr->precision = ConvertPrecision(operand->type.precision);
   attr->layout = ConvertDataLayout(operand->type.layout);
   switch (operand->type.precision) {
-    CONVERT_QUANT_INTx_SYMM_PER_LAYER(8) CONVERT_QUANT_INTx_SYMM_PER_LAYER(32)
-            CONVERT_QUANT_INTx_SYMM_PER_CHANNEL(8)
-                CONVERT_QUANT_INTx_SYMM_PER_CHANNEL(32) default
-        : NNADAPTER_LOG(WARNING)
-          << "Can not convert an operand@0x"
-          << std::hex
-          << operand
-          << " with precision="
-          << operand->type.precision
-          << " to rk::nn::Tensor !";
-    break;
+    CONVERT_QUANT_INTx_SYMM_PER_LAYER(8);
+    CONVERT_QUANT_INTx_SYMM_PER_LAYER(32);
+    CONVERT_QUANT_INTx_SYMM_PER_CHANNEL(8);
+    CONVERT_QUANT_INTx_SYMM_PER_CHANNEL(32);
+    default:
+      NNADAPTER_LOG(ERROR) << "Can not convert an operand@0x" << std::hex
+                           << operand
+                           << " with precision=" << operand->type.precision
+                           << " to rk::nn::Tensor !";
+      break;
   }
   auto tensor = graph_->CreateTensor(attr, operand->buffer);
   NNADAPTER_CHECK(tensor);
@@ -203,18 +212,18 @@ int Program::ConvertConv2D(driver::Operation* operation) {
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandTypeToString(&input_operand->type);
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
   auto input_channel_size = input_operand->type.dimensions[1];
   // Filter
   auto filter_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "filter: " << OperandTypeToString(&filter_operand->type);
+  NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);
   auto output_channel_size = filter_operand->type.dimensions[0];
   auto filter_channel_size = filter_operand->type.dimensions[1];
   auto filter_height = filter_operand->type.dimensions[2];
   auto filter_width = filter_operand->type.dimensions[3];
   // Bias
   auto bias_operand = input_operands[2];
-  NNADAPTER_VLOG(5) << "bias: " << OperandTypeToString(&bias_operand->type);
+  NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);
   // Paddings
   auto padding_width_left =
       *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
@@ -246,7 +255,7 @@ int Program::ConvertConv2D(driver::Operation* operation) {
                     << "]";
   // Output
   auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandTypeToString(&output_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   // Check depthwise mode
   bool is_depthwise_mode =
       (input_channel_size == group && output_channel_size == group &&
@@ -299,16 +308,16 @@ int Program::ConvertFullyConnected(driver::Operation* operation) {
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandTypeToString(&input_operand->type);
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
   // Weight
   auto weight_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "weight: " << OperandTypeToString(&weight_operand->type);
+  NNADAPTER_VLOG(5) << "weight: " << OperandToString(weight_operand);
   NNADAPTER_CHECK_EQ(weight_operand->type.dimension_count, 2);
   auto num_units = weight_operand->type.dimensions[0];
   auto input_size = weight_operand->type.dimensions[1];
   // Bias
   auto bias_operand = input_operands[2];
-  NNADAPTER_VLOG(5) << "bias: " << OperandTypeToString(&bias_operand->type);
+  NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimension_count, 1);
   NNADAPTER_CHECK_EQ(num_units, bias_operand->type.dimensions[0]);
   // Fuse code
@@ -316,7 +325,7 @@ int Program::ConvertFullyConnected(driver::Operation* operation) {
   NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
   // Output
   auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandTypeToString(&output_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to rknn tensors and operators
   auto input_tensor = ConvertOperand(input_operand);
@@ -351,7 +360,7 @@ int Program::ConvertAverageAndMaxPool2D(driver::Operation* operation) {
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandTypeToString(&input_operand->type);
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
   // Paddings
   auto padding_width_left =
       *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
@@ -391,7 +400,7 @@ int Program::ConvertAverageAndMaxPool2D(driver::Operation* operation) {
       << "rknpu_ddk doesn't suppport count_include_pad=true";
   // Output
   auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandTypeToString(&output_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to rknn tensors and operators
   auto input_tensor = ConvertOperand(input_operand);
@@ -431,17 +440,22 @@ int Program::ConvertElementwiseBinaryOperations(driver::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(input_count, 3);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input0
   auto input0_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input0: " << OperandTypeToString(&input0_operand->type);
+  NNADAPTER_VLOG(5) << "input0: " << OperandToString(input0_operand);
   // Input1
   auto input1_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "input1: " << OperandTypeToString(&input1_operand->type);
+  NNADAPTER_VLOG(5) << "input1: " << OperandToString(input1_operand);
+  // Fuse code
+  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
+  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
+  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
+      << "Unsupported fuse_code(" << fuse_code << ") is found.";
   // Output
   auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandTypeToString(&output_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to rknn tensors and operators
   auto input0_tensor = ConvertOperand(input0_operand);
@@ -477,7 +491,7 @@ int Program::ConvertSoftmax(driver::Operation* operation) {
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandTypeToString(&input_operand->type);
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
   // Axis
   auto axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
   if (axis < 0) {
@@ -486,7 +500,7 @@ int Program::ConvertSoftmax(driver::Operation* operation) {
   NNADAPTER_VLOG(5) << "axis=" << axis;
   // Output
   auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandTypeToString(&output_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to rknn tensors and operators
   auto input_tensor = ConvertOperand(input_operand);
@@ -510,10 +524,10 @@ int Program::ConvertActivationUnaryOperations(driver::Operation* operation) {
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandTypeToString(&input_operand->type);
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
   // Output
   auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandTypeToString(&output_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to rknn tensors and operators
   auto input_tensor = ConvertOperand(input_operand);

@@ -20,6 +20,140 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
+bool Converter::HasOperand(const std::string& name) {
+  return operands_.find(name) != operands_.end();
+}
+
+NNAdapterOperand* Converter::GetOperand(std::string name) {
+  CHECK(HasOperand(name)) << "Operand '" << name << "' is not found!";
+  return operands_[name];
+}
+
+NNAdapterOperand* Converter::AddOperand(NNAdapterOperand* operand,
+                                        const std::string& name) {
+  CHECK(!operand);
+  CHECK(!name.empty());
+  operands_[name] = operand;
+  return operand;
+}
+
+NNAdapterOperand* Converter::AddBool8ConstantOperand(bool value) {
+  int8_t int8_value = value ? static_cast<int8_t>(1) : static_cast<int8_t>(0);
+  return AddOperand(DDim(std::vector<int64_t>({})),
+                    NNADAPTER_BOOL8,
+                    nullptr,
+                    0,
+                    0,
+                    &int8_value);
+}
+
+NNAdapterOperand* Converter::AddInt32ConstantOperand(int32_t value) {
+  return AddOperand(
+      DDim(std::vector<int64_t>({})), NNADAPTER_INT32, nullptr, 0, 0, &value);
+}
+
+NNAdapterOperand* Converter::AddFloat32ConstantOperand(float value) {
+  return AddOperand(
+      DDim(std::vector<int64_t>({})), NNADAPTER_FLOAT32, nullptr, 0, 0, &value);
+}
+
+NNAdapterOperand* Converter::AddInt32ConstantOperand(int32_t* values,
+                                                     const DDim& dimensions,
+                                                     bool copy) {
+  return AddOperand(
+      dimensions, NNADAPTER_TENSOR_INT32, nullptr, 0, 0, values, copy);
+}
+
+NNAdapterOperand* Converter::AddFloat32ConstantOperand(float* values,
+                                                       const DDim& dimensions,
+                                                       bool copy) {
+  return AddOperand(
+      dimensions, NNADAPTER_TENSOR_FLOAT32, nullptr, 0, 0, values, copy);
+}
+
+NNAdapterOperand* Converter::AddQuant8ConstantOperand(int8_t* values,
+                                                      const DDim& dimensions,
+                                                      float quant_scale,
+                                                      bool copy) {
+  return AddOperand(dimensions,
+                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER,
+                    &quant_scale,
+                    1,
+                    0,
+                    values,
+                    copy);
+}
+
+NNAdapterOperand* Converter::AddQuant8ConstantOperand(
+    int8_t* values,
+    const DDim& dimensions,
+    float* quant_scales,
+    uint32_t quant_scale_count,
+    uint32_t quant_channel_dim,
+    bool copy) {
+  return AddOperand(dimensions,
+                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL,
+                    quant_scales,
+                    quant_scale_count,
+                    quant_channel_dim,
+                    values,
+                    copy);
+}
+
+NNAdapterOperand* Converter::AddQuant32ConstantOperand(int32_t* values,
+                                                       const DDim& dimensions,
+                                                       float quant_scale,
+                                                       bool copy) {
+  return AddOperand(dimensions,
+                    NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER,
+                    &quant_scale,
+                    1,
+                    0,
+                    values,
+                    copy);
+}
+
+NNAdapterOperand* Converter::AddQuant32ConstantOperand(
+    int32_t* values,
+    const DDim& dimensions,
+    float* quant_scales,
+    uint32_t quant_scale_count,
+    uint32_t quant_channel_dim,
+    bool copy) {
+  return AddOperand(dimensions,
+                    NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL,
+                    quant_scales,
+                    quant_scale_count,
+                    quant_channel_dim,
+                    values,
+                    copy);
+}
+
+NNAdapterOperand* Converter::AddQuant8VariableOperand(const DDim& dimensions,
+                                                      float quant_scale,
+                                                      const std::string& name) {
+  return AddOperand(dimensions,
+                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER,
+                    &quant_scale,
+                    1,
+                    0,
+                    nullptr,
+                    false,
+                    name);
+}
+
+NNAdapterOperand* Converter::AddFloat32VariableOperand(
+    const DDim& dimensions, const std::string& name) {
+  return AddOperand(dimensions,
+                    NNADAPTER_TENSOR_FLOAT32,
+                    nullptr,
+                    0,
+                    0,
+                    nullptr,
+                    false,
+                    name);
+}
+
 NNAdapterOperation* Converter::AddOperation(NNAdapterOperationType type) {
   NNAdapterOperation* operation = nullptr;
   NNAdapterModel_addOperation_invoke(model_, type, &operation);
@@ -34,15 +168,6 @@ void Converter::SetOperation(NNAdapterOperation* operation,
                                      &((*input_operands)[0]),
                                      output_operands->size(),
                                      &((*output_operands)[0]));
-}
-
-bool Converter::HasOperand(const std::string& name) {
-  return operands_.find(name) != operands_.end();
-}
-
-NNAdapterOperand* Converter::GetOperand(std::string name) {
-  CHECK(HasOperand(name)) << "Operand '" << name << "' is not found!";
-  return operands_[name];
 }
 
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
@@ -63,24 +188,60 @@ NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
   return operand;
 }
 
-NNAdapterOperand* Converter::AddOperand(NNAdapterOperand* operand,
+void Converter::SetOperand(NNAdapterOperand* operand,
+                           void* buffer,
+                           size_t length,
+                           bool copy) {
+  if (copy) {
+    NNAdapterModel_setOperandCopyFrom_invoke(operand, buffer, length);
+  } else {
+    NNAdapterModel_setOperandReferenceTo_invoke(operand, buffer, length);
+  }
+}
+
+NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
+                                        NNAdapterOperandPrecisionCode precision,
+                                        float* quant_scales,
+                                        uint32_t quant_scale_count,
+                                        uint32_t quant_channel_dim,
+                                        void* buffer,
+                                        bool copy,
                                         const std::string& name) {
-  CHECK(!operand);
-  CHECK(!name.empty());
-  operands_[name] = operand;
+  NNAdapterOperandType type;
+  memset(&type, 0, sizeof(NNAdapterOperandType));
+  bool is_scalar = dimensions.size() == 0;
+  if (!is_scalar) {
+    ConvertDimensions(dimensions, type.dimensions, &type.dimension_count);
+  }
+  type.precision = precision;
+  if (quant_scales && quant_scale_count > 0) {
+    // Quant type
+    if (quant_scale_count > 1) {
+      // Symmetric per-channel quantization
+      CHECK(precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
+            precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL);
+      type.symm_per_channel_params.scales = quant_scales;
+      type.symm_per_channel_params.scale_count = quant_scale_count;
+      type.symm_per_channel_params.channel_dim = quant_channel_dim;
+    } else {
+      // Symmetric per-layer quantization
+      CHECK(precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ||
+            precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER);
+      type.symm_per_layer_params.scale = quant_scales[0];
+    }
+  } else {
+    // Basic type, without any quantization parameters
+  }
+  auto operand = AddOperand(&type, name);
+  if (buffer) {
+    // Constant operand
+    auto length =
+        PrecisionLength(precision) * (!is_scalar ? dimensions.production() : 1);
+    SetOperand(operand, buffer, length, copy);
+  } else {
+    // Variable/Input/Output operand
+  }
   return operand;
-}
-
-void Converter::SetOperandCopyFrom(NNAdapterOperand* operand,
-                                   void* buffer,
-                                   size_t length) {
-  NNAdapterModel_setOperandCopyFrom_invoke(operand, buffer, length);
-}
-
-void Converter::SetOperandReferenceTo(NNAdapterOperand* operand,
-                                      void* buffer,
-                                      size_t length) {
-  NNAdapterModel_setOperandReferenceTo_invoke(operand, buffer, length);
 }
 
 }  // namespace nnadapter
