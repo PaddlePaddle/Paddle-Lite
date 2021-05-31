@@ -103,9 +103,10 @@ template <class T, class Functor>
 void ReduceCompute<T, Functor>::Run() {
   auto& param = Param<operators::ReduceParam>();
   auto& ctx = this->ctx_->As<XPUContext>();
+  auto x_dims = param.X->dims();
   size_t x_rank = x_dims.size();
   auto dims = param.dim;
-  bool reduce_all = param_.reduce_all;
+  bool reduce_all = param.reduce_all;
 
   for (size_t i = 0; i < dims.size(); ++i) {
     if (dims[i] < 0) {
@@ -113,13 +114,12 @@ void ReduceCompute<T, Functor>::Run() {
     }
   }
   if (reduce_all || dims.size() == 0) {
-    dims.reverse(x_rank);
+    dims.reserve(x_rank);
     for (auto i = 0; i < x_rank; i++) {
       dims[i] = i;
     }
   }
   std::stable_sort(dims.begin(), dims.end());
-  auto x_dims = param.X->dims();
   std::vector<int> x_shape;
   for (size_t i = 0; i < x_dims.size(); i++) {
     x_shape.push_back(static_cast<int>(x_dims[i]));
