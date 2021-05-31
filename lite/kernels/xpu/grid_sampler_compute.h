@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,14 +21,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>
-class ScaleCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class GridSamplerCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ScaleParam;
+  using param_t = operators::GridSamplerParam;
 
   virtual void Run();
 
-  virtual ~ScaleCompute() = default;
+  virtual ~GridSamplerCompute() = default;
 };
 
 }  // namespace xpu

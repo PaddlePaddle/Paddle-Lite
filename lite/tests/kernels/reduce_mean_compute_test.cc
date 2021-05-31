@@ -373,6 +373,9 @@ void test_reduce_mean(Place place, float abs_err) {
 TEST(ReduceMean, precision) {
   Place place;
   float abs_err = 2e-5;
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = Place(TARGET(kXPU));
+#endif
 #ifdef LITE_WITH_X86
   place = Place(TARGET(kX86));
 #endif
