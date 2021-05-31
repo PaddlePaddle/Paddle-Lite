@@ -58,23 +58,23 @@ function publish_inference_lib {
       x86
     # Step2. Checking results: cplus and python inference lib.
     if [ -d build.lite.x86.opencl/inference_lite_lib/cxx/lib ] && [ -d build.lite.x86.opencl/inference_lite_lib/python/install/dist ]; then
-      # test python installer
-      cd build.lite.x86.opencl
-      python$python_version -m pip install --force-reinstall  inference_lite_lib/python/install/dist/*.whl
-      # download test model
-      prepare_model mobilenet_v1 $mobilenet_v1_url
-      # test opt
-      paddle_lite_opt
-      paddle_lite_opt --model_dir=mobilenet_v1 --optimize_out=mobilenet_v1_arm
-      paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86 --optimize_out=mobilenet_v1_x86
-      paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86_opencl --optimize_out=mobilenet_v1_x86_opencl
-      # test inference demo
-      cd inference_lite_lib/demo/python
-      python$python_version mobilenetv1_full_api.py  --model_dir=$WORKSPACE/build.lite.x86.opencl/mobilenet_v1
-      python$python_version mobilenetv1_light_api.py  --model_dir=$WORKSPACE/build.lite.x86.opencl/mobilenet_v1_x86.nb
-      python$python_version mobilenetv1_light_api.py  --model_dir=$WORKSPACE/build.lite.x86.opencl/mobilenet_v1_x86_opencl.nb
-      # uninstall
-	  python$python_version -m pip uninstall -y paddlelite
+#      # test python installer
+#      cd build.lite.x86.opencl
+#      python$python_version -m pip install --force-reinstall  inference_lite_lib/python/install/dist/*.whl
+#      # download test model
+#      prepare_model mobilenet_v1 $mobilenet_v1_url
+#      # test opt
+#      paddle_lite_opt
+#      paddle_lite_opt --model_dir=mobilenet_v1 --optimize_out=mobilenet_v1_arm
+#      paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86 --optimize_out=mobilenet_v1_x86
+#      paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86_opencl --optimize_out=mobilenet_v1_x86_opencl
+#      # test inference demo
+#      cd inference_lite_lib/demo/python
+#      python$python_version mobilenetv1_full_api.py  --model_dir=$WORKSPACE/build.lite.x86.opencl/mobilenet_v1
+#      python$python_version mobilenetv1_light_api.py  --model_dir=$WORKSPACE/build.lite.x86.opencl/mobilenet_v1_x86.nb
+#      python$python_version mobilenetv1_light_api.py  --model_dir=$WORKSPACE/build.lite.x86.opencl/mobilenet_v1_x86_opencl.nb
+#      # uninstall
+#      python$python_version -m pip uninstall -y paddlelite
     else
       # Error message.
       echo "**************************************************************************************"
