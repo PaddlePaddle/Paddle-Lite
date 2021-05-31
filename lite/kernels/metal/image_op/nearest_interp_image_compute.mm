@@ -13,87 +13,77 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/nearest_interp_image_compute.h"
-#include "lite/backends/metal/metal_debug.h"
+#include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+
+using namespace std;
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void NearestInterpImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
+void NearestInterpImageCompute::PrepareForRun() {
+    auto& context = ctx_->As<MTLContext>();
+    metal_context_ = (MetalContext*)context.context();
 
-  const auto& param = this->template Param<param_t>();
-  auto output_dims = param.Out->dims();
+    const auto& param = this->Param<param_t>();
+    auto output_dims = param.Out->dims();
+#ifdef LITE_WITH_METAL_FULL
+#else
+    input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(
+        metal_context_, output_dims, input_buffer_->transpose_);
+#endif
 
-  input_buffer_ = param.X->template data<P, MetalImage>();
-  output_buffer_ = param.Out->template mutable_data<P, MetalImage>(
-      output_dims, input_buffer_->transpose_);
-
-  int input_h = static_cast<int>(input_buffer_->pad_to_four_dim_[2]);
-  int input_w = static_cast<int>(input_buffer_->pad_to_four_dim_[3]);
-  int output_h = static_cast<int>(output_buffer_->pad_to_four_dim_[2]);
-  int output_w = static_cast<int>(output_buffer_->pad_to_four_dim_[3]);
-
-  float ratio_w = 1.0f;
-  float ratio_h = 1.0f;
-  float align_delta = 0.0f;
-  if (param.align_corners) {
-    ratio_w = (float(input_w) - 1.0f) / (float(output_w) - 1.0f);
-    ratio_h = (float(input_h) - 1.0f) / (float(output_h) - 1.0f);
-    align_delta = 0.5f;
-  } else {
-    ratio_w = float(input_w) / float(output_w);
-    ratio_h = float(input_h) / float(output_h);
-    align_delta = 0.0;
-  }
-
-  NearestInterpMetalParam metal_param{ratio_h, ratio_w, align_delta};
-
-  param_buffer_ = metal_context_->CreateBuffer(*device,
-                                               &metal_param,
-                                               sizeof(metal_param),
-                                               METAL_ACCESS_FLAG::CPUWriteOnly);
-
-  std::string function_name = "";
-  if (std::is_same<float, P>::value) {
-    function_name = "nearest_interp";
-  } else if (std::is_same<MetalHalf, P>::value) {
-    function_name = "nearest_interp_half";
-  }
-  assert(!function_name.empty());
-
-  kernel_ = metal_context_->GetKernel(*device, function_name);
-  queue_ = metal_context_->GetDefaultQueue(*device);
+    setup_without_mps();
 }
 
-template <typename P, PrecisionType PTYPE>
-void NearestInterpImageCompute<P, PTYPE>::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
+void NearestInterpImageCompute::Run() {
+    auto outTexture = output_buffer_->image();
+    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
-                                                &kernel_->program_);
+    auto encoder = [backend commandEncoder];
+    [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
+    [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    [backend commit];
+}
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
-                                      atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                      atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer())
-                                      offset:(0)atIndex:(0)];
+void NearestInterpImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
 
-  kernel_->Execute(*encoder, global_work_size, false);
+    int input_h = static_cast<int>(input_buffer_->pad_to_four_dim_[2]);
+    int input_w = static_cast<int>(input_buffer_->pad_to_four_dim_[3]);
+    int output_h = static_cast<int>(output_buffer_->pad_to_four_dim_[2]);
+    int output_w = static_cast<int>(output_buffer_->pad_to_four_dim_[3]);
+
+    float ratio_w = 1.0f;
+    float ratio_h = 1.0f;
+    float align_delta = 0.0f;
+    if (param.align_corners) {
+        ratio_w = (float(input_w) - 1.0f) / (float(output_w) - 1.0f);
+        ratio_h = (float(input_h) - 1.0f) / (float(output_h) - 1.0f);
+        align_delta = 0.5f;
+    } else {
+        ratio_w = float(input_w) / float(output_w);
+        ratio_h = float(input_h) / float(output_h);
+        align_delta = 0.0;
+    }
+
+    NearestInterpMetalParam interp_param{ratio_h, ratio_w, align_delta};
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(interp_param), &interp_param);
+
+    function_name_ = "nearest_interp";
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
 }
 
 }  // namespace metal
@@ -101,69 +91,42 @@ void NearestInterpImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::
-    NearestInterpImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::
-    NearestInterpImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::
-    NearestInterpImageCompute<float, PRECISION(kFloat)>
-        MetalNearestInterpFp32;
-typedef paddle::lite::kernels::metal::
-    NearestInterpImageCompute<MetalHalf, PRECISION(kFP16)>
-        MetalNearestInterpFp16;
-
 REGISTER_LITE_KERNEL(nearest_interp,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     MetalNearestInterpFp32,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::NearestInterpImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("OutSize",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("SizeTensor",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("Scale",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(nearest_interp,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     MetalNearestInterpFp16,
-                     def)
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::NearestInterpImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("OutSize",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("SizeTensor",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("Scale",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

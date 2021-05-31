@@ -20,6 +20,10 @@
 
 #ifndef LITE_WITH_FPGA
 
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/target_wrapper.h"
+#endif  // LITE_WITH_METAL
+
 #include <algorithm>
 #include <functional>  // for multiplies
 #include <memory>
@@ -116,26 +120,23 @@ class TensorLite {
 
   template <typename T, typename R>
   typename std::enable_if<IsImage<R>::value, R>::type *mutable_data(
+      MetalContext *context,
       const DDim &dim,
-      std::vector<int> transport = {0, 2, 3, 1},
-      void *host_ptr = nullptr) {
-    target_ = TARGET(kMetal);
-    buffer_->ResetLazyMetalImage<T>(target_, dim, transport, host_ptr);
+      std::vector<int> transport = {0, 2, 3, 1}) {
     dims_ = dim;
+    target_ = TARGET(kMetal);
+    buffer_->ResetLazyMetalImage<T>(context, dim, transport);
     return static_cast<MetalImage *>(buffer_->data());
   }
 
   template <typename T, typename R>
   typename std::enable_if<IsBuffer<R>::value, R>::type *mutable_data(
-      const DDim &dim,
-      bool transpose = false,
-      bool to_nhwc = true,
-      bool pad_when_one_c = false,
-      void *host_ptr = nullptr) {
+      MetalContext *context,
+      size_t count,
+      METAL_ACCESS_FLAG access = METAL_ACCESS_FLAG::CPUReadWrite) {
     target_ = TARGET(kMetal);
-    buffer_->ResetLazyMetalBuffer<T>(
-        target_, dim, transpose, to_nhwc, pad_when_one_c, host_ptr);
-    dims_ = dim;
+    buffer_->ResetLazyMetalBuffer<T>(context, count, access);
+    dims_ = DDimLite({static_cast<int64_t>(count)});
     return static_cast<MetalBuffer *>(buffer_->data());
   }
 #endif
