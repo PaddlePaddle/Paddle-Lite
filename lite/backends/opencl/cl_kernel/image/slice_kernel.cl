@@ -14,60 +14,61 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void slice(__read_only image2d_t input, __write_only image2d_t output,
-                    __private const int start, __private const int end,
-                    __private const int dims_w){
+__kernel void slice(__read_only image2d_t input,
+                    __write_only image2d_t output,
+                    __private const int start,
+                    __private const int end,
+                    __private const int dims_w) {
+  const int c = get_global_id(0);
+  const int w = get_global_id(1);
+  const int nh = get_global_id(2);
 
-                    const int c = get_global_id(0);
-                    const int w = get_global_id(1);
-                    const int nh = get_global_id(2);
+  int2 output_pos;
+  output_pos.x = c * dims_w + w;
+  output_pos.y = nh;
 
-                    int2 output_pos;
-                    output_pos.x = c * dims_w + w;
-                    output_pos.y = nh;
+  int2 input_pos;
+  CL_DTYPE4 input_data;
+  CL_DTYPE4 output_data;
 
-                    int2 input_pos;
-                    CL_DTYPE4 input_data;
-                    CL_DTYPE4 output_data;
-
-                    if (start % 4 == 0) {
-                        input_pos.x = (4 * c + start) / 4 * dims_w + w;
-                        input_pos.y = nh;
-                        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER,input_pos);
-                        output_data = input_data;
-                    } else if (start % 4 == 1) {
-                        input_pos.x = (4 * c + start) / 4 * dims_w + w;
-                        input_pos.y = nh;
-                        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER,input_pos);
-                        output_data.x = input_data.y;
-                        output_data.y = input_data.z;
-                        output_data.z = input_data.w;
-                        input_pos.x = input_pos.x + dims_w;
-                        input_pos.y = nh;
-                        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER,input_pos);
-                        output_data.w = input_data.x;
-                    } else if (start % 4 == 2) {
-                        input_pos.x = (4 * c + start) / 4 * dims_w + w;
-                        input_pos.y = nh;
-                        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER,input_pos);
-                        output_data.x = input_data.z;
-                        output_data.y = input_data.w;
-                        input_pos.x = input_pos.x + dims_w;
-                        input_pos.y = nh;
-                        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER,input_pos);
-                        output_data.z = input_data.x;
-                        output_data.w = input_data.y;
-                    } else if (start % 4 == 3) {
-                        input_pos.x = (4 * c + start) / 4 * dims_w + w;
-                        input_pos.y = nh;
-                        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER,input_pos);
-                        output_data.x = input_data.w;
-                        input_pos.x = input_pos.x + dims_w;
-                        input_pos.y = nh;
-                        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER,input_pos);
-                        output_data.y = input_data.x;
-                        output_data.z = input_data.y;
-                        output_data.w = input_data.z;
-                    }
-                    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, output_data);
+  if (start % 4 == 0) {
+    input_pos.x = (4 * c + start) / 4 * dims_w + w;
+    input_pos.y = nh;
+    input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
+    output_data = input_data;
+  } else if (start % 4 == 1) {
+    input_pos.x = (4 * c + start) / 4 * dims_w + w;
+    input_pos.y = nh;
+    input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
+    output_data.x = input_data.y;
+    output_data.y = input_data.z;
+    output_data.z = input_data.w;
+    input_pos.x = input_pos.x + dims_w;
+    input_pos.y = nh;
+    input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
+    output_data.w = input_data.x;
+  } else if (start % 4 == 2) {
+    input_pos.x = (4 * c + start) / 4 * dims_w + w;
+    input_pos.y = nh;
+    input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
+    output_data.x = input_data.z;
+    output_data.y = input_data.w;
+    input_pos.x = input_pos.x + dims_w;
+    input_pos.y = nh;
+    input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
+    output_data.z = input_data.x;
+    output_data.w = input_data.y;
+  } else if (start % 4 == 3) {
+    input_pos.x = (4 * c + start) / 4 * dims_w + w;
+    input_pos.y = nh;
+    input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
+    output_data.x = input_data.w;
+    input_pos.x = input_pos.x + dims_w;
+    input_pos.y = nh;
+    input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
+    output_data.y = input_data.x;
+    output_data.z = input_data.y;
+    output_data.w = input_data.z;
+  }
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, output_data);
 }

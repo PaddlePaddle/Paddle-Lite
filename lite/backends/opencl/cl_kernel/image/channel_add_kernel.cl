@@ -14,21 +14,24 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void channel_add(__read_only image2d_t input, __read_only image2d_t bias, __write_only image2d_t outputImage, __private const int w) {
-     int x = get_global_id(0);
-     int y = get_global_id(1);
+__kernel void channel_add(__read_only image2d_t input,
+                          __read_only image2d_t bias,
+                          __write_only image2d_t outputImage,
+                          __private const int w) {
+  int x = get_global_id(0);
+  int y = get_global_id(1);
 
-     int2 coords;
-     coords.x = x;
-     coords.y = y;
+  int2 coords;
+  coords.x = x;
+  coords.y = y;
 
-     int2 coords_bias;
-     coords_bias.x = x/w;
-     coords_bias.y = 0;
+  int2 coords_bias;
+  coords_bias.x = x / w;
+  coords_bias.y = 0;
 
-     CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);
-     CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords_bias);
-     CL_DTYPE4 output = in + biase;
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);
+  CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords_bias);
+  CL_DTYPE4 output = in + biase;
 
-     WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
- }
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
+}

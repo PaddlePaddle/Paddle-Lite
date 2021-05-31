@@ -14,7 +14,6 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-
 __kernel void nearest_interp(__read_only image2d_t input,
                              __write_only image2d_t output,
                              __private const float scale_h,
@@ -23,7 +22,6 @@ __kernel void nearest_interp(__read_only image2d_t input,
                              __private const int out_dims_h,
                              __private const int in_dims_w,
                              __private const int out_dims_w) {
-
   const int c = get_global_id(0);
   const int w = get_global_id(1);
   const int nh = get_global_id(2);
@@ -39,7 +37,9 @@ __kernel void nearest_interp(__read_only image2d_t input,
   input_pos.x = c * in_dims_w + w / scale_w;
   input_pos.y = out_n * in_dims_h + out_h / scale_h;
 
-  CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(input_pos.x, input_pos.y));
+  CL_DTYPE4 input_data = READ_IMG_TYPE(
+      CL_DTYPE_CHAR, input, SAMPLER, (int2)(input_pos.x, input_pos.y));
 
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(output_pos.x , output_pos.y), input_data);
+  WRITE_IMG_TYPE(
+      CL_DTYPE_CHAR, output, (int2)(output_pos.x, output_pos.y), input_data);
 }
