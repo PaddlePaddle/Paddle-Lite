@@ -57,7 +57,7 @@ REGISTER_LITE_KERNEL(scale,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::xpu::ScaleCompute<float>,
-                     xpu_scale_fp32)
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
@@ -67,7 +67,7 @@ REGISTER_LITE_KERNEL(scale,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::xpu::ScaleCompute<int>,
-                     xpu_scale_i32)
+                     int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
