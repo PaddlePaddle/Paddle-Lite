@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/shuffle_channel_compute.h"
-#include "lite/backends/arm/math/funcs.h"
-
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
@@ -24,24 +22,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <>
-void ShuffleChannelCompute<float, PRECISION(kFloat)>::Run() {
-  auto& param = Param<operators::ShuffleChannelParam>();
-  const float* x_data = param.X->data<float>();
-  float* output_data = param.Out->mutable_data<float>();
-  DDim x_dims = param.X->dims();
-  int group = param.group;
-  int num = param.X->dims()[0];
-  int channel = param.X->dims()[1];
-  int height = param.X->dims()[2];
-  int width = param.X->dims()[3];
-  lite::arm::math::shuffle_channel(
-      x_data, output_data, group, num, channel, height, width);
-}
-
 #ifdef ENABLE_ARM_FP16
-template <>
-void ShuffleChannelCompute<float16_t, PRECISION(kFP16)>::Run() {
+void ShuffleChannelCompute::Run() {
   auto& param = Param<operators::ShuffleChannelParam>();
   const float16_t* x_data = param.X->data<float16_t>();
   auto* output_data = param.Out->mutable_data<float16_t>();
@@ -61,19 +43,14 @@ void ShuffleChannelCompute<float16_t, PRECISION(kFP16)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using float_shuffle =
-    paddle::lite::kernels::arm::ShuffleChannelCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(shuffle_channel, kARM, kFloat, kNCHW, float_shuffle, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();
-
 #ifdef ENABLE_ARM_FP16
-using fp16_shuffle =
-    paddle::lite::kernels::arm::ShuffleChannelCompute<float16_t,
-                                                      PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(shuffle_channel, kARM, kFP16, kNCHW, fp16_shuffle, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+REGISTER_LITE_KERNEL(shuffle_channel,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ShuffleChannelCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
-#endif
+#endif  // ENABLE_ARM_FP16

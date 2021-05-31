@@ -64,7 +64,6 @@
 #include "lite/backends/arm/math/sequence_pool_grad.h"
 #include "lite/backends/arm/math/sgemm.h"
 #include "lite/backends/arm/math/sgemv.h"
-#include "lite/backends/arm/math/shuffle_channel.h"
 #include "lite/backends/arm/math/slice.h"
 #include "lite/backends/arm/math/softmax.h"
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
