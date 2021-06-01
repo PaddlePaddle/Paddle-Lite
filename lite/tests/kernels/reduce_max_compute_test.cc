@@ -438,6 +438,8 @@ TEST(ReduceMax, precision) {
   Place place;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #endif

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/scale_compute.h"
+#include "lite/kernels/xpu/fill_zeros_like_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,30 +21,17 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>
-void ScaleCompute<T>::Run() {
+template <class T>
+void FillZerosLikeCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
+  T zero(0);
+  int ret = xdnn::constant<T>(ctx.GetRawContext(),
+                              param.Out->template mutable_data<T>(TARGET(kXPU)),
+                              param.Out->numel(),
+                              zero);
 
-  auto& x_dims = param.x->dims();
-  if (std::fabs(param.scale - 1.0f) < 1e-7 && std::fabs(param.bias) < 1e-7) {
-    auto x = param.x;
-    param.output->ShareDataWith(*x);
-    param.output->Resize(param.output->dims());
-  } else {
-    int r = xdnn::scale<T>(
-        ctx.GetRawContext(),
-        param.x->template data<T>(),                          /* x */
-        param.output->template mutable_data<T>(TARGET(kXPU)), /* y */
-        x_dims.production(),                                  /* len */
-        param.bias_after_scale, /* bias_after_scale */
-        param.scale,            /* alpha */
-        param.bias);            /* beta */
-    CHECK_EQ(r, 0);
-  }
-  if (!param.x->lod().empty()) {
-    param.output->set_lod(param.x->lod());
-  }
+  CHECK_EQ(ret, 0);
 }
 
 }  // namespace xpu
@@ -52,22 +39,32 @@ void ScaleCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(scale,
+REGISTER_LITE_KERNEL(fill_zeros_like,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ScaleCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+                     paddle::lite::kernels::xpu::FillZerosLikeCompute<float>,
+                     float32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(scale,
+REGISTER_LITE_KERNEL(fill_zeros_like,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ScaleCompute<int>,
+                     paddle::lite::kernels::xpu::FillZerosLikeCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(fill_zeros_like,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::FillZerosLikeCompute<int64_t>,
+                     int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();
