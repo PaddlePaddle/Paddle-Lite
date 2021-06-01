@@ -2166,14 +2166,14 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
               asm volatile (
                GEMM_DOT_INT8_KERNEL GEMM_DOT_FP32_OUT
                : [a_ptr] "+r"(a_ptr),
-                 [b_ptr] "+r"(b_ptr),
+                 [b_ptr] "+&r"(b_ptr),
                  [k] "+r"(k),
-                 [c_ptr0] "+r"(c_ptr0),
-                 [c_ptr1] "+r"(c_ptr1),
-                 [c_ptr2] "+r"(c_ptr2),
-                 [c_ptr3] "+r"(c_ptr3),
-                 [c_ptr4] "+r"(c_ptr4),
-                 [c_ptr5] "+r"(c_ptr5)
+                 [c_ptr0] "+&r"(c_ptr0),
+                 [c_ptr1] "+&r"(c_ptr1),
+                 [c_ptr2] "+&r"(c_ptr2),
+                 [c_ptr3] "+&r"(c_ptr3),
+                 [c_ptr4] "+&r"(c_ptr4),
+                 [c_ptr5] "+&r"(c_ptr5)
                : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu) ,[alpha] "r"(alpha)
                : "q0","q1","q2",
                  "q3","q4","q5","q6","q7","q8","q9","q10",
