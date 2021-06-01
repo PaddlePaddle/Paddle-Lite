@@ -115,20 +115,16 @@ int NNAdapterModel_addOperand(NNAdapterModel* model,
                               NNAdapterOperand** operand);
 /**
  * Set the memory for an constant operand.
- * * NNAdapterModel_setOperandCopyFrom, the content of the buffer will copied
- * into the model.
- * * NNAdapterModel_setOperandReferenceTo, the pointer of the buffer will stored
- * in the model, so the caller or driver must not change the content of the
- * buffer.
+ * * When 'copy' is true, the content of the buffer will copied into the model.
+ * * When 'copy' is false, the pointer of the buffer will stored in the model,
+ * so the caller or driver must not change the content of the buffer.
  *
  * Available since version 1.
  */
-int NNAdapterModel_setOperandCopyFrom(NNAdapterOperand* operand,
-                                      void* buffer,
-                                      uint32_t length);
-int NNAdapterModel_setOperandReferenceTo(NNAdapterOperand* operand,
-                                         void* buffer,
-                                         uint32_t length);
+int NNAdapterModel_setOperand(NNAdapterOperand* operand,
+                              void* buffer,
+                              uint32_t length,
+                              bool copy);
 /**
  * Add an operation to a model.
  *

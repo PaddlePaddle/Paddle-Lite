@@ -192,11 +192,7 @@ void Converter::SetOperand(NNAdapterOperand* operand,
                            void* buffer,
                            size_t length,
                            bool copy) {
-  if (copy) {
-    NNAdapterModel_setOperandCopyFrom_invoke(operand, buffer, length);
-  } else {
-    NNAdapterModel_setOperandReferenceTo_invoke(operand, buffer, length);
-  }
+  NNAdapterModel_setOperand_invoke(operand, buffer, length, copy);
 }
 
 NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,

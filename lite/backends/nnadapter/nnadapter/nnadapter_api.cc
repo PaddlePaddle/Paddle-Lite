@@ -176,28 +176,24 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperand(NNAdapterModel* model,
   return result;
 }
 
-NNADAPTER_EXPORT int NNAdapterModel_setOperandCopyFrom(
-    NNAdapterOperand* operand, void* buffer, uint32_t length) {
+NNADAPTER_EXPORT int NNAdapterModel_setOperand(NNAdapterOperand* operand,
+                                               void* buffer,
+                                               uint32_t length,
+                                               bool copy) {
   if (!operand || !buffer || !length) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto o = reinterpret_cast<nnadapter::driver::Operand*>(operand);
-  o->buffer = malloc(length);
-  if (!o->buffer) return NNADAPTER_OUT_OF_MEMORY;
-  memcpy(o->buffer, buffer, length);
-  o->length = length;
-  o->type.lifetime = NNADAPTER_CONSTANT_COPY;
-}
-
-NNADAPTER_EXPORT int NNAdapterModel_setOperandReferenceTo(
-    NNAdapterOperand* operand, void* buffer, uint32_t length) {
-  if (!operand || !buffer || !length) {
-    return NNADAPTER_INVALID_PARAMETER;
+  if (copy) {
+    o->buffer = malloc(length);
+    if (!o->buffer) return NNADAPTER_OUT_OF_MEMORY;
+    memcpy(o->buffer, buffer, length);
+    o->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  } else {
+    o->buffer = buffer;
+    o->type.lifetime = NNADAPTER_CONSTANT_REFERENCE;
   }
-  auto o = reinterpret_cast<nnadapter::driver::Operand*>(operand);
-  o->buffer = buffer;
   o->length = length;
-  o->type.lifetime = NNADAPTER_CONSTANT_REFERENCE;
 }
 
 NNADAPTER_EXPORT int NNAdapterModel_addOperation(

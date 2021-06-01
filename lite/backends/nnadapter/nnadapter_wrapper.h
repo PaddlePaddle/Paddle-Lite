@@ -47,11 +47,10 @@ class NNAdapterWrapper final {
   typedef int (*NNAdapterModel_addOperand_fn)(NNAdapterModel* model,
                                               const NNAdapterOperandType* type,
                                               NNAdapterOperand** operand);
-  typedef int (*NNAdapterModel_setOperandCopyFrom_fn)(NNAdapterOperand* operand,
-                                                      void* buffer,
-                                                      uint32_t length);
-  typedef int (*NNAdapterModel_setOperandReferenceTo_fn)(
-      NNAdapterOperand* operand, void* buffer, uint32_t length);
+  typedef int (*NNAdapterModel_setOperand_fn)(NNAdapterOperand* operand,
+                                              void* buffer,
+                                              uint32_t length,
+                                              bool copy);
   typedef int (*NNAdapterModel_addOperation_fn)(NNAdapterModel* model,
                                                 NNAdapterOperationType type,
                                                 NNAdapterOperation** operation);
@@ -118,8 +117,7 @@ class NNAdapterWrapper final {
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_destroy)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_finish)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_addOperand)
-  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperandCopyFrom)
-  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperandReferenceTo)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperand)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_addOperation)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperation)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_identifyInputsAndOutputs)
@@ -211,17 +209,12 @@ inline int NNAdapterModel_addOperand_invoke(NNAdapterModel* model,
       model, type, operand);
 }
 
-inline int NNAdapterModel_setOperandCopyFrom_invoke(NNAdapterOperand* operand,
-                                                    void* buffer,
-                                                    uint32_t length) {
-  return NNAdapterWrapper::Global().NNAdapterModel_setOperandCopyFrom(
-      operand, buffer, length);
-}
-
-inline int NNAdapterModel_setOperandReferenceTo_invoke(
-    NNAdapterOperand* operand, void* buffer, uint32_t length) {
-  return NNAdapterWrapper::Global().NNAdapterModel_setOperandReferenceTo(
-      operand, buffer, length);
+inline int NNAdapterModel_setOperand_invoke(NNAdapterOperand* operand,
+                                            void* buffer,
+                                            uint32_t length,
+                                            bool copy) {
+  return NNAdapterWrapper::Global().NNAdapterModel_setOperand(
+      operand, buffer, length, copy);
 }
 
 inline int NNAdapterModel_addOperation_invoke(NNAdapterModel* model,
