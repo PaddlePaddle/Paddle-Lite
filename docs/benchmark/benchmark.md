@@ -30,7 +30,7 @@
       * 2.45GHz（大四核），1.9GHz（小四核）
 
 * 测试说明
-    * branch: release/v2.8
+    * branch: release/v2.9
     * warmup=10, repeats=100，统计平均时间，单位是ms
     * 当线程数为1时，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH，否者设置LITE_POWER_NO_BIND
     * 模型的输入图像的维度是{1, 3, 224, 224}，输入图像的每一位数值是1
@@ -116,8 +116,8 @@ mobilenet_v2 |38.90 |21.64 |12.33 | 33.03 |18.71 |10.77
 骁龙835|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
 ----| ---- | ---- | ---- | ----  |----  |----
 threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |60.97 |32.29 |18.70 |66.63 |33.56 |17.24 
-mobilenet_v2 |47.33 |25.83 |15.36 |49.42 |25.31 |13.29 
+mobilenet_v1 |60.48 |31.94 |16.53 |56.70 |29.73 |15.22 
+mobilenet_v2 |47.02 |25.34 |13.57 |41.75 |22.27 |11.94 
 
 
 ## 华为麒麟NPU的性能数据
