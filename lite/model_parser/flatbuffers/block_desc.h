@@ -28,6 +28,10 @@ namespace fbs {
 
 class BlockDescView : public BlockDescAPI {
  public:
+  BlockDescView() = default;
+
+  BlockDescView(const BlockDescView&) = delete;
+
   explicit BlockDescView(proto::BlockDesc const* desc) : desc_(desc) {
     CHECK(desc_);
     vars_.resize(VarsSize());
@@ -78,8 +82,6 @@ class BlockDescView : public BlockDescAPI {
     return desc_->forward_block_idx();
   }
 
-  BlockDescView() = default;
-
  private:
   proto::BlockDesc const* desc_;  // not_own
   std::vector<std::unique_ptr<VarDescView>> vars_;
@@ -90,6 +92,9 @@ class BlockDescView : public BlockDescAPI {
 class BlockDesc : public BlockDescAPI {
  public:
   BlockDesc() : owned_(true), desc_(new proto::BlockDescT()) {}
+
+  BlockDesc(const BlockDesc&) = delete;
+
   explicit BlockDesc(proto::BlockDescT* desc) : desc_(desc) {
     CHECK(desc_);
     SyncVars();

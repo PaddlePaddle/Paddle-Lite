@@ -55,6 +55,8 @@ OpDesc* BlockDesc::AddOp<OpDesc>() {
 }
 
 void BlockDesc::CopyFrom(const BlockDesc& desc) {
+  ops_.clear();
+  vars_.clear();
   SetIdx(desc.Idx());
   SetParentIdx(desc.ParentIdx());
   SetForwardBlockIdx(desc.ForwardBlockIdx());

@@ -33,6 +33,9 @@ namespace fbs {
 class ProgramDescView : public ProgramDescAPI {
  public:
   ProgramDescView() = default;
+
+  ProgramDescView(const ProgramDescView&) = delete;
+
   explicit ProgramDescView(model_parser::Buffer&& buf) {
     Init(std::forward<model_parser::Buffer>(buf));
   }
@@ -103,16 +106,14 @@ class ProgramDescView : public ProgramDescAPI {
   proto::ProgramDesc const* desc_;
   model_parser::Buffer buf_;
   std::vector<std::unique_ptr<BlockDescView>> blocks_;
-
- private:
-  ProgramDescView& operator=(const ProgramDescView&) = delete;
-  ProgramDescView(const ProgramDescView&) = delete;
 };
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
+
+  ProgramDesc(const ProgramDesc&) = delete;
 
   explicit ProgramDesc(const model_parser::Buffer& buf) {
     const auto* raw_buf = proto::GetProgramDesc(buf.data());
