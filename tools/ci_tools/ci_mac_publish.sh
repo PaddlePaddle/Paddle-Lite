@@ -58,7 +58,7 @@ function publish_inference_lib {
       x86
     # Step2. Checking results: cplus and python inference lib.
     build_dir=build.lite.x86
-    if [ ${BUILD_OPENCL} = ON]; then
+    if [ ${BUILD_OPENCL} = ON ]; then
       build_dir=build.lite.x86.opencl
     fi
     if [ -d ${build_dir}/inference_lite_lib/cxx/lib ] && [ -d ${build_dir}/inference_lite_lib/python/install/dist ]; then
