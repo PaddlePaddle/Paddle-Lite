@@ -84,7 +84,11 @@ struct ReduceAllFunctor {
                         T* out,
                         const std::vector<int>& xshape,
                         const std::vector<int>& dims) const {
-    return xdnn::reduce_all<T>(ctx, x, out, xshape, dims);
+    return xdnn::reduce_all<int8_t>(ctx,
+                                    reinterpret_cast<const int8_t*>(x),
+                                    reinterpret_cast<int8_t*>(out),
+                                    xshape,
+                                    dims);
   }
 };
 
@@ -95,7 +99,11 @@ struct ReduceAnyFunctor {
                         T* out,
                         const std::vector<int>& xshape,
                         const std::vector<int>& dims) const {
-    return xdnn::reduce_any<T>(ctx, x, out, xshape, dims);
+    return xdnn::reduce_any<int8_t>(ctx,
+                                    reinterpret_cast<const int8_t*>(x),
+                                    reinterpret_cast<int8_t*>(out),
+                                    xshape,
+                                    dims);
   }
 };
 
@@ -105,18 +113,19 @@ void ReduceCompute<T, Functor>::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
   auto x_dims = param.X->dims();
   size_t x_rank = x_dims.size();
-  auto dims = param.dim;
   bool reduce_all = param.reduce_all;
 
-  for (size_t i = 0; i < dims.size(); ++i) {
-    if (dims[i] < 0) {
-      dims[i] = x_rank + dims[i];
-    }
-  }
-  if (reduce_all || dims.size() == 0) {
-    dims.reserve(x_rank);
+  std::vector<int> dims;
+  if (reduce_all || param.dim.size() == 0) {
     for (auto i = 0; i < x_rank; i++) {
-      dims[i] = i;
+      dims.push_back(i);
+    }
+  } else {
+    dims = param.dim;
+    for (size_t i = 0; i < dims.size(); ++i) {
+      if (dims[i] < 0) {
+        dims[i] = x_rank + dims[i];
+      }
     }
   }
   std::stable_sort(dims.begin(), dims.end());
@@ -141,8 +150,8 @@ void ReduceCompute<T, Functor>::Run() {
 }  // namespace paddle
 
 namespace xpu = paddle::lite::kernels::xpu;
-using ReduceAll = xpu::ReduceCompute<int8_t, xpu::ReduceAllFunctor<int8_t>>;
-using ReduceAny = xpu::ReduceCompute<int8_t, xpu::ReduceAnyFunctor<int8_t>>;
+using ReduceAll = xpu::ReduceCompute<bool, xpu::ReduceAllFunctor<bool>>;
+using ReduceAny = xpu::ReduceCompute<bool, xpu::ReduceAnyFunctor<bool>>;
 using ReduceMeanFloat32 =
     xpu::ReduceCompute<float, xpu::ReduceMeanFunctor<float>>;
 using ReduceSumFloat32 =

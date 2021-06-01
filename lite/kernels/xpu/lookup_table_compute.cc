@@ -25,17 +25,20 @@ void LookupTableCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int num = param.Ids->numel();
-  int embed_dim = param.W->dims()[1];
+  int ym = param.Ids->numel();
+  int xm = param.W->dims()[0];
+  int n = param.W->dims()[1];
 
   int r = xdnn::embedding<float, int64_t>(
-      ctx.GetRawContext(),                          /* context */
-      num,                                          /* num */
-      param.Ids->data<int64_t>(),                   /* indices */
-      embed_dim,                                    /* embed_dim */
-      param.W->data<float>(),                       /* table */
+      ctx.GetRawContext(), /* context */
+      param.W->data<float>(),
+      param.Ids->data<int64_t>(),
       param.Out->mutable_data<float>(TARGET(kXPU)), /* top */
-      param.padding_idx /* padding_idx */);
+      xm,
+      n,
+      ym,
+      param.padding_idx);
+
   CHECK_EQ(r, 0);
 }
 
@@ -53,4 +56,16 @@ REGISTER_LITE_KERNEL(lookup_table,
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(lookup_table_v2,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::LookupTableCompute,
+                     def)
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindPaddleOpVersion("lookup_table_v2", 1)
     .Finalize();
