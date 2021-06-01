@@ -51,7 +51,7 @@ class ProgramDescView : public ProgramDescAPI {
     desc_ = proto::GetProgramDesc(buf_.data());
     blocks_.resize(desc_->blocks()->size());
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {
-      blocks_[idx] = BlockDescView(desc_->blocks()->Get(idx));
+      blocks_[idx].reset(new BlockDescView(desc_->blocks()->Get(idx)));
     }
   }
 
@@ -77,7 +77,9 @@ class ProgramDescView : public ProgramDescAPI {
     return nullptr;
   }
 
-  const std::vector<BlockDescView>& GetBlocks() const { return blocks_; }
+  const std::vector<std::unique_ptr<BlockDescView>>& GetBlocks() const {
+    return blocks_;
+  }
 
   bool HasVersion() const override { return desc_->version() != nullptr; }
 
@@ -100,7 +102,7 @@ class ProgramDescView : public ProgramDescAPI {
  private:
   proto::ProgramDesc const* desc_;
   model_parser::Buffer buf_;
-  std::vector<BlockDescView> blocks_;
+  std::vector<std::unique_ptr<BlockDescView>> blocks_;
 
  private:
   ProgramDescView& operator=(const ProgramDescView&) = delete;

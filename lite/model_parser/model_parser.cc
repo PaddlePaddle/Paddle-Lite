@@ -181,14 +181,14 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
   // Check param files format
   // default format: non-combined params
   for (auto &var : main_block->GetVars()) {
-    if (var.Name() != "feed" && var.Name() != "fetch" && var.Persistable()) {
-      if (IsFileExists(model_dir + "/" + var.Name())) {
-        VLOG(4) << "reading weight " << var.Name();
-        model_parser::BinaryFileReader reader(model_dir + "/" + var.Name());
+    if (var->Name() != "feed" && var->Name() != "fetch" && var->Persistable()) {
+      if (IsFileExists(model_dir + "/" + var->Name())) {
+        VLOG(4) << "reading weight " << var->Name();
+        model_parser::BinaryFileReader reader(model_dir + "/" + var->Name());
         model_parser::pb::LoDTensorDeserializer loader;
-        switch (var.GetType()) {
+        switch (var->GetType()) {
           case VarDescAPI::Type::LOD_TENSOR:
-            LoadLoDTensor(&loader, &reader, scope->Var(var.Name()));
+            LoadLoDTensor(&loader, &reader, scope->Var(var->Name()));
             break;
           default:
             CHECK(false) << "unknown weight type";

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 #include <vector>
 #include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/general/op_desc.h"
@@ -30,6 +31,12 @@ namespace general {
 class BlockDesc : public BlockDescAPI {
  public:
   BlockDesc() = default;
+
+  BlockDesc(const BlockDesc& desc);
+
+  BlockDesc& operator=(const BlockDesc& desc);
+
+  BlockDesc(BlockDesc&& desc) = default;
 
   int32_t Idx() const override { return idx_; }
 
@@ -49,7 +56,7 @@ class BlockDesc : public BlockDescAPI {
   template <typename T>
   T const* GetVar(int32_t idx) const;
 
-  std::vector<VarDesc>& GetVars() { return vars_; }
+  std::vector<std::unique_ptr<VarDesc>>& GetVars() { return vars_; }
 
   template <typename T>
   T* AddVar();
@@ -71,11 +78,14 @@ class BlockDesc : public BlockDescAPI {
 
   void SetForwardBlockIdx(int32_t idx) override { forward_block_idx_ = idx; }
 
+ protected:
+  void CopyFrom(const BlockDesc& desc);
+
  private:
   int32_t idx_;
   int32_t parent_idx_;
-  std::vector<OpDesc> ops_;
-  std::vector<VarDesc> vars_;
+  std::vector<std::unique_ptr<OpDesc>> ops_;
+  std::vector<std::unique_ptr<VarDesc>> vars_;
   int32_t forward_block_idx_;
 };
 

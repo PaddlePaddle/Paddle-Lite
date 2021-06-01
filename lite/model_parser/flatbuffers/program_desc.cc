@@ -29,7 +29,7 @@ template <>
 BlockDescView const* ProgramDescView::GetBlock<BlockDescView>(
     int32_t idx) const {
   CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
-  return &blocks_[idx];
+  return blocks_[idx].get();
 }
 
 template <>
