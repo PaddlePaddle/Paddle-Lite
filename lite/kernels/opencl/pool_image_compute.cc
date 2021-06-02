@@ -76,8 +76,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
-    ch->global_work_size = ch->NDRangeToStr(global_work_size_);
-    ch->local_work_size = ch->NDRangeToStr(local_work_size_);
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
   }
@@ -92,17 +90,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
       const auto& out_dims = param.output->dims();
-
-      x_img_ = DATA_GPU(param.x);
-      auto out_image_shape = InitImageDimInfoWith(out_dims);
-#ifdef LITE_WITH_LOG
-      VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
-              << out_image_shape["height"];
-#endif
-      out_img_ = MUTABLE_DATA_GPU(param.output,
-                                  out_image_shape["width"],
-                                  out_image_shape["height"],
-                                  nullptr);
 
       auto& context = ctx_->As<OpenCLContext>();
       CHECK(context.cl_context() != nullptr);
@@ -235,8 +222,20 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
+    const auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
+
+    x_img_ = DATA_GPU(param.x);
+    auto out_image_shape = InitImageDimInfoWith(param.output->dims());
+#ifdef LITE_WITH_LOG
+    VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
+            << out_image_shape["height"];
+#endif
+    out_img_ = MUTABLE_DATA_GPU(param.output,
+                                out_image_shape["width"],
+                                out_image_shape["height"],
+                                nullptr);
 
     cl_int status;
     int arg_idx = 0;
