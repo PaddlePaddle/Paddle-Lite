@@ -524,7 +524,6 @@ void CLImageConverterWinoTransWeight::NCHWToImage(float *tensor,
   std::vector<float> GT = {
       1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
   CHECK(tensor_dim.size() == 4) << " Tensor dim is not 4.";
-  auto weight_dest_data = static_cast<half_t *>(image);
   int co = tensor_dim[0];
   int ci = tensor_dim[1];
   int kernelCount = tensor_dim[2];
@@ -532,7 +531,15 @@ void CLImageConverterWinoTransWeight::NCHWToImage(float *tensor,
   int unitCo = 4;
   int alpha = 4;
   int num_count = 16 * ((co + 3) / 4) * ((ci + 3) / 4) * 4 * 4;
-  memset(weight_dest_data, 0, num_count * sizeof(half_t));
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
+  // auto weight_dest_data = static_cast<half_t *>(image);
+  if (fp16_support_) {
+    memset(image_fp16, 0, num_count * sizeof(half_t));
+  } else {
+    memset(image_fp32, 0, num_count * sizeof(float));
+  }
+
   std::vector<float> M(12);
   std::vector<float> K_Transform(16);
   auto weightPtr = tensor;
@@ -541,31 +548,32 @@ void CLImageConverterWinoTransWeight::NCHWToImage(float *tensor,
   alpha_index = 0;
   oz_index = 1;
 
-  // float *image_fp32 = static_cast<float *>(image);
-  // half_t *image_fp16 = static_cast<half_t *>(image);
   for (int oz = 0; oz < co; ++oz) {
     auto srcOz = weightPtr + oz * ci * kernelCount * kernelCount;
 
     int ozC4 = oz / unitCo;
     int mx = oz % unitCo;
-
-    auto dstOz = weight_dest_data + ((ci + 3) / 4) * 4 * 4 * ozC4 + mx;
+    auto dstOz_fp16 = image_fp16 + ((ci + 3) / 4) * 4 * 4 * ozC4 + mx;
+    auto dstOz_fp32 = image_fp32 + ((ci + 3) / 4) * 4 * 4 * ozC4 + mx;
     for (int sz = 0; sz < ci; ++sz) {
       int szC4 = sz / unitCi;
       int my = sz % unitCi;
       auto srcSz = srcOz + kernelCount * kernelCount * sz;
 
-      // M = G * K
       matmul(M.data(), G.data(), srcSz, 4, 3, 3);
 
-      // K_Transform = M*GT
       matmul(K_Transform.data(), M.data(), GT.data(), 4, 3, 4);
 
-      auto dstSz = dstOz + szC4 * 16 + unitCo * my;
-      // [alpha][alpha][oc4][ic4][16]
+      auto dstSz_fp16 = dstOz_fp16 + szC4 * 16 + unitCo * my;
+      auto dstSz_fp32 = dstOz_fp32 + szC4 * 16 + unitCo * my;
       for (int i = 0; i < 16; ++i) {
-        *(dstSz + i * ((co + 3) / 4) * ((ci + 3) / 4) * 4 * 4) =
-            Float2Half(K_Transform.data()[i]);
+        if (fp16_support_) {
+          *(dstSz_fp16 + i * ((co + 3) / 4) * ((ci + 3) / 4) * 4 * 4) =
+              Float2Half(K_Transform.data()[i]);
+        } else {
+          *(dstSz_fp32 + i * ((co + 3) / 4) * ((ci + 3) / 4) * 4 * 4) =
+              K_Transform.data()[i];
+        }
       }
     }
   }
