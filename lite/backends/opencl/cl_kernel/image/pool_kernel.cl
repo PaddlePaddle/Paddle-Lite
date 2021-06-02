@@ -47,6 +47,7 @@ __kernel void pool(__read_only image2d_t input,
 
 #ifdef POOL_AVG
 
+  CL_DTYPE4 res = (CL_DTYPE4)(0.0f);
   int div;
 #ifdef EXCLUSIVE
   div = (end_h - start_h) * (end_w - start_w);
@@ -63,10 +64,14 @@ __kernel void pool(__read_only image2d_t input,
     }
   }
   res_f32 /= (float)div;
-  CL_DTYPE4 res = CONVERT_TYPE_TO(res_f32, CL_COMPUTE_DTYPE4);
+#ifdef CL_DTYPE_half
+  res = convert_half4(res_f32);
+#else
+  res = res_f32;
+#endif
+
 #else
   // pool_avg: use default precision
-  CL_DTYPE4 res = (CL_DTYPE4)(0.0f);
   for (int y = start_h; y < end_h; ++y) {
     for (int x = start_w; x < end_w; ++x) {
       res += READ_IMG_TYPE(
@@ -177,7 +182,13 @@ __kernel void pool_local(__read_only image2d_t input,
     avg_output[local_id] = avg_output[local_id] / (float)block_size;
 
     const int output_channel_width_idx = mad24(out_c, out_width, out_w);
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(output_channel_width_idx, out_nh), CONVERT_TYPE_TO(avg_output[local_id], CL_COMPUTE_DTYPE4));
+#ifdef CL_DTYPE_half
+    CL_DTYPE4 res = convert_half(avg_output[local_id]);
+#else
+    CL_DTYPE4 res = avg_output[local_id];
+#endif
+    WRITE_IMG_TYPE(
+        CL_DTYPE_CHAR, output, (int2)(output_channel_width_idx, out_nh), res);
   }
 #else
   local_output[local_id] = (CL_DTYPE4)(-FLT_MAX);
@@ -352,7 +363,10 @@ __kernel void pool_avg_global(__read_only image2d_t input,
   }
   const float global_size_div = 1.0f / (in_height * in_width);
   CL_DTYPE4 avg;
-  avg = CONVERT_TYPE_TO((sum * global_size_div), CL_COMPUTE_DTYPE4);
+  avg.x = CONVERT_TYPE_TO((sum.x * global_size_div), CL_COMPUTE_DTYPE);
+  avg.y = CONVERT_TYPE_TO((sum.y * global_size_div), CL_COMPUTE_DTYPE);
+  avg.z = CONVERT_TYPE_TO((sum.z * global_size_div), CL_COMPUTE_DTYPE);
+  avg.w = CONVERT_TYPE_TO((sum.w * global_size_div), CL_COMPUTE_DTYPE);
 
 #ifdef DEBUG
   if (out_c == 0) {
