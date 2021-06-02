@@ -904,6 +904,16 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
+
+using elementwise_mod_int32_f =
+    paddle::lite::kernels::arm::ElementwiseModCompute<int32_t,
+                                                      PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mod, kARM, kFloat, kNCHW, elementwise_mod_int32_f, int32_mod)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
 #endif  // LITE_BUILD_EXTRA
 
 using elementwise_pow_fp32_t =

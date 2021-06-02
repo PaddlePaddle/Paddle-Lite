@@ -2265,12 +2265,89 @@ template void elementwise_mod<int64_t>(const int64_t* dinx,
                                        int64_t* dout,
                                        int num);
 
+template <>
+void elementwise_mod<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  int cnt = num >> 2;
+  int remain = num % 4;
+#pragma omp parallel for
+  for (int i = 0; i < cnt; i++) {
+    const int32_t* dinx_ptr = dinx + (i << 2);
+    const int32_t* diny_ptr = diny + (i << 2);
+    int32_t* dout_ptr = dout + (i << 2);
+
+    register int32_t dinx0 = dinx_ptr[0];
+    register int32_t dinx1 = dinx_ptr[1];
+    register int32_t dinx2 = dinx_ptr[2];
+    register int32_t dinx3 = dinx_ptr[3];
+
+    register int32_t diny0 = diny_ptr[0];
+    register int32_t diny1 = diny_ptr[1];
+    register int32_t diny2 = diny_ptr[2];
+    register int32_t diny3 = diny_ptr[3];
+
+    dout_ptr[0] = dinx0 % diny0;
+    dout_ptr[1] = dinx1 % diny1;
+    dout_ptr[2] = dinx2 % diny2;
+    dout_ptr[3] = dinx3 % diny3;
+  }
+  if (remain > 0) {
+    const int32_t* dinx_ptr = dinx + (cnt << 2);
+    const int32_t* diny_ptr = diny + (cnt << 2);
+    int32_t* dout_ptr = dout + (cnt << 2);
+    for (int i = 0; i < remain; i++) {
+      *dout_ptr++ = *dinx_ptr++ % *diny_ptr++;
+    }
+  }
+}
+
 template void elementwise_mod_broadcast<int64_t>(const int64_t* dinx,
                                                  const int64_t* diny,
                                                  int64_t* dout,
                                                  int batch,
                                                  int channels,
                                                  int num);
+
+template <>
+void elementwise_mod_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int32_t* din_ptr = dinx + offset;
+      const int32_t diny_data = diny[j];
+      int32_t* dout_ptr = dout + offset;
+
+      int cnt = num >> 2;
+      int remain = num % 4;
+      for (int k = 0; k < cnt; ++k) {
+        register int32_t dinx0 = din_ptr[0];
+        register int32_t dinx1 = din_ptr[1];
+        register int32_t dinx2 = din_ptr[2];
+        register int32_t dinx3 = din_ptr[3];
+        dout_ptr[0] = dinx0 % diny_data;
+        dout_ptr[1] = dinx1 % diny_data;
+        dout_ptr[2] = dinx2 % diny_data;
+        dout_ptr[3] = dinx3 % diny_data;
+        din_ptr += 4;
+        dout_ptr += 4;
+      }
+      if (remain > 0) {
+        for (int p = 0; p < remain; p++) {
+          *dout_ptr++ = *din_ptr++ % diny_data;
+        }
+      }
+    }
+  }
+}
+
 template <>
 void elementwise_pow<int32_t>(const int32_t* dinx,
                               const int32_t* diny,
