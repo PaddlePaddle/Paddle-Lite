@@ -12,49 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <map>
-#include <vector>
-#include "../../nnadapter_common.h"   // NOLINT
-#include "../../nnadapter_driver.h"   // NOLINT
 #include "../../nnadapter_logging.h"  // NOLINT
+#include "converter.h"                // NOLINT
 
 namespace nnadapter {
 namespace driver {
 namespace huawei_kirin_npu {
-
-class Context {
- public:
-  Context() {}
-  ~Context() {}
-
- private:
-  void* context_{nullptr};
-};
-
-class Program {
- public:
-  explicit Program(Context* context) : context_(context) {}
-  ~Program() {}
-
-  int Build(driver::Model* model, driver::Cache* cache) {
-    std::vector<Operation*> operations =
-        driver::SortOperationsInTopologicalOrder(model);
-    for (auto operation : operations) {
-      switch (operation->type) {
-        case NNADAPTER_CONV_2D:
-        default:
-          NNADAPTER_LOG(ERROR) << "Unsupported operation(" << operation->type
-                               << ") is found.";
-          break;
-      }
-    }
-    return NNADAPTER_NO_ERROR;
-  }
-
- private:
-  Context* context_{nullptr};
-  std::map<driver::Operand*, int> nodes_;
-};
 
 int CreateContext(void** context) {
   if (!context) {
@@ -115,7 +78,8 @@ int ExecuteProgram(void* program,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto p = reinterpret_cast<Program*>(program);
-  return NNADAPTER_NO_ERROR;
+  return p->Execute(
+      input_count, input_arguments, output_count, output_arguments);
 }
 
 }  // namespace huawei_kirin_npu
