@@ -26,11 +26,20 @@ namespace arm {
 inline std::vector<int64_t> get_new_data_from_tensorlist(
     const std::vector<lite::Tensor*>& list_new_data_tensor) {
   // get tensor
+
   std::vector<int64_t> vec_new_data;
   for (size_t i = 0; i < list_new_data_tensor.size(); ++i) {
     auto tensor = list_new_data_tensor[i];
     CHECK_EQ(tensor->dims(), DDim({1})) << "shape of dim tensor should be [1]";
-    vec_new_data.push_back(static_cast<int64_t>(*tensor->data<int64_t>()));
+    if (tensor->precision() == PrecisionType::kInt32) {
+      vec_new_data.push_back(static_cast<int64_t>(*tensor->data<int32_t>()));
+    } else if (tensor->precision() == PrecisionType::kInt64) {
+      vec_new_data.push_back(static_cast<int64_t>(*tensor->data<int64_t>()));
+    } else {
+      LOG(FATAL) << "slice StartsTensor or EndsTensor :The dtype of Tensor "
+                    "must be int32 "
+                    "or int64";
+    }
   }
   return vec_new_data;
 }
@@ -38,9 +47,20 @@ inline std::vector<int64_t> get_new_data_from_tensorlist(
 inline std::vector<int64_t> get_new_data_from_tensor(
     const lite::Tensor* new_data_tensor) {
   std::vector<int64_t> vec_new_data;
-  auto* new_data = new_data_tensor->data<int64_t>();
-  vec_new_data =
-      std::vector<int64_t>(new_data, new_data + new_data_tensor->numel());
+  if (new_data_tensor->precision() == PrecisionType::kInt32) {
+    auto* new_data = new_data_tensor->data<int32_t>();
+    // a int32->int64 convert here
+    vec_new_data =
+        std::vector<int64_t>(new_data, new_data + new_data_tensor->numel());
+  } else if (new_data_tensor->precision() == PrecisionType::kInt64) {
+    auto* new_data = new_data_tensor->data<int64_t>();
+    vec_new_data =
+        std::vector<int64_t>(new_data, new_data + new_data_tensor->numel());
+  } else {
+    LOG(FATAL) << "slice StartsTensor or EndsTensor :The dtype of Tensor must "
+                  "be int32 "
+                  "or int64";
+  }
   return vec_new_data;
 }
 
@@ -176,6 +196,21 @@ void SliceCompute<T, PType>::Run() {
 using slice_float =
     paddle::lite::kernels::arm::SliceCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_float, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    slice, kARM, kFloat, kNCHW, slice_float, float_i64_starts_ends)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("StartsTensor",
