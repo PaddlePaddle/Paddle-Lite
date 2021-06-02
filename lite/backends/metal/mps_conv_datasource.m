@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/backends/metal/mps_conv_datasource.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
+@implementation MPSConvDataSource
 
-class DensityPriorBoxCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::DensityPriorBoxParam;
+- (MPSDataType)dataType {
+	return MPSDataTypeFloat16;
+}
 
-  void Run() override;
+- (MPSCNNConvolutionDescriptor * __nonnull) descriptor {
+	return _descriptor;
+}
 
-  virtual ~DensityPriorBoxCompute() = default;
-};
+- (void *)weights {
+	return _weights;
+}
 
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+- (float *)biasTerms {
+	return _biasTerms;
+}
+
+- (BOOL)load {
+	return YES;
+}
+
+- (void)purge{
+
+}
+
+- (NSString*)label {
+	return @"mps_conv_add_relu_label";
+}
+
+- (nonnull id)copyWithZone:(nullable NSZone *)zone {
+	return self;
+}
+
+@end

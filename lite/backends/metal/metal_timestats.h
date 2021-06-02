@@ -15,34 +15,35 @@
 #pragma once
 
 #include <sys/time.h>
+
 #include <iostream>
 #include <string>
+
 #include "lite/utils/cp_logging.h"
 
 #ifdef USE_METAL_STATS
-#define METAL_TIME_STATS(object_name, stat_name) \
-  MetalTimeStats object_name(stat_name);
+#define METAL_TIME_STATS(object_name, stat_name) MetalTimeStats object_name(stat_name);
 #else
 #define METAL_TIME_STATS(object_name, stat_name)
 #endif
 
 class MetalTimeStats {
- public:
-  explicit MetalTimeStats(std::string name) : name_(name) {
-    gettimeofday(&start_, NULL);
-  }
+   public:
+    explicit MetalTimeStats(std::string name) : name_(name) {
+        gettimeofday(&start_, NULL);
+    }
 
-  virtual ~MetalTimeStats() {
-    gettimeofday(&end_, NULL);
-    double run_time = (end_.tv_sec - start_.tv_sec) * 1.0e6 +
-                      static_cast<double>(end_.tv_usec - start_.tv_usec);
-    LOG(INFO) << "Module " << name_ << " run_time is " << run_time << " us "
-              << "\n";
-  }
+    virtual ~MetalTimeStats() {
+        gettimeofday(&end_, NULL);
+        double run_time = (end_.tv_sec - start_.tv_sec) * 1.0e6 +
+                          static_cast<double>(end_.tv_usec - start_.tv_usec);
+        LOG(INFO) << "Module " << name_ << " run_time is " << run_time << " us "
+                  << "\n";
+    }
 
- private:
-  struct timeval start_;
-  struct timeval end_;
-  struct timeval system_start;
-  std::string name_;
+   private:
+    struct timeval start_;
+    struct timeval end_;
+    struct timeval system_start;
+    std::string name_;
 };

@@ -16,6 +16,8 @@ set MSVC_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
 set WITH_OPENCL=OFF
 set WITH_AVX=ON
+set CMAKE_GENERATOR=Visual Studio 14 2015
+set ARCH=""
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
 set THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
@@ -40,6 +42,8 @@ if /I "%1"=="with_extra" (
     set OPTMODEL_DIR="%2"
 ) else if /I  "%1"=="build_x86" (
     set BUILD_PLATFORM=Win32
+) else if /I  "%1"=="use_ninja" (
+    set CMAKE_GENERATOR=Ninja
 ) else if /I  "%1"=="with_dynamic_crt" (
     set MSVC_STATIC_CRT=OFF
 ) else if /I  "%1"=="with_static_mkl" (
@@ -127,6 +131,15 @@ copy "%root_dir%\lite\tools\debug\analysis_tool.py" "%DEBUG_TOOL_PATH_PREFIX%\"
 
 cd "%build_directory%"
 
+if "%CMAKE_GENERATOR%"=="Ninja" (
+    pip install ninja
+    if %errorlevel% NEQ 0 (
+        echo pip install ninja failed!
+        exit /b 7
+    )
+    goto ninja_build
+)
+
     cmake %root_dir%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_MKL=ON      ^
@@ -168,6 +181,43 @@ if "%BUILD_FOR_CI%"=="ON" (
     msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
 )
 goto:eof
+
+:ninja_build
+    if "%BUILD_PLATFORM%"=="x64" (
+        call "%vcvarsall_dir%" amd64
+        set ARCH="amd64"
+    ) else (
+        call "%vcvarsall_dir%" x86
+        set ARCH="i386"
+    )
+ 
+    cmake %root_dir%  -G Ninja -DARCH=%ARCH% ^
+            -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
+            -DWITH_MKL=ON      ^
+            -DWITH_MKLDNN=OFF   ^
+            -DWITH_AVX=%WITH_AVX% ^
+            -DLITE_WITH_X86=ON  ^
+            -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
+            -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
+            -DWITH_LITE=ON ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DTHIRD_PARTY_BUILD_TYPE=Release ^
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
+            -DLITE_WITH_ARM=OFF ^
+            -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
+            -DLITE_BUILD_EXTRA=%BUILD_EXTRA% ^
+            -DLITE_WITH_PYTHON=%WITH_PYTHON% ^
+            -DWITH_TESTING=%WITH_TESTING%    ^
+            -DLITE_WITH_LOG=%WITH_LOG%       ^
+            -DWITH_STATIC_MKL=%WITH_STATIC_MKL%  ^
+            -DLITE_BUILD_TAILOR=%WITH_STRIP%  ^
+            -DLITE_OPTMODEL_DIR=%OPTMODEL_DIR%  ^
+            -DPYTHON_EXECUTABLE="%python_path%"
+
+    ninja extern_mklml
+    ninja publish_inference -j %cores%
+goto:eof
+
 
 :prepare_thirdparty
     if  EXIST "%workspace%\third-party" (

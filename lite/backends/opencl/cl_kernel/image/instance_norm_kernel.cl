@@ -45,7 +45,8 @@ __kernel void instance_norm(__private const int in_width,
   float4 sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      sum += read_imagef(input, SAMPLER, (int2)(xOffset + xIndex, yOffset + yIndex));
+      sum += read_imagef(
+          input, SAMPLER, (int2)(xOffset + xIndex, yOffset + yIndex));
     }
   }
   shared_mem[local_id] = sum;
@@ -80,7 +81,10 @@ __kernel void instance_norm(__private const int in_width,
   sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      float4 temp = read_imagef(input, SAMPLER, (int2)(xOffset + xIndex, yOffset + yIndex)) - mean_val;
+      float4 temp =
+          read_imagef(
+              input, SAMPLER, (int2)(xOffset + xIndex, yOffset + yIndex)) -
+          mean_val;
       sum += temp * temp;
     }
   }
@@ -112,8 +116,8 @@ __kernel void instance_norm(__private const int in_width,
   const float4 sigma = sqrt(shared_mem[0] + (float4)(epsilon));
 
   float4 s = 1 / sigma;
-  float4 vscale = read_imagef(scale, SAMPLER, (int2)(c, n*in_c_group));
-  float4 vbias  = read_imagef(bias, SAMPLER, (int2)(c, n*in_c_group));
+  float4 vscale = read_imagef(scale, SAMPLER, (int2)(c, n * in_c_group));
+  float4 vbias = read_imagef(bias, SAMPLER, (int2)(c, n * in_c_group));
   vscale *= s;
 
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
@@ -136,60 +140,60 @@ __kernel void instance_norm_paddle(__read_only image2d_t input,
                                    __read_only image2d_t bias,
                                    const float epsilon,
                                    const int in_h,
-                                   const int in_w){
-    __local CL_DTYPE4 saved_mean[1024];
-    __local CL_DTYPE4 saved_variance[1024];
+                                   const int in_w) {
+  __local CL_DTYPE4 saved_mean[1024];
+  __local CL_DTYPE4 saved_variance[1024];
 
-    const int lid = get_local_id(0);
-    const int lsize = get_local_size(0);
-    const int gidx = get_group_id(0);
-    const int gidy = get_group_id(1);
-    const int spatial_size = in_h * in_w;
+  const int lid = get_local_id(0);
+  const int lsize = get_local_size(0);
+  const int gidx = get_group_id(0);
+  const int gidy = get_group_id(1);
+  const int spatial_size = in_h * in_w;
 
-    CL_DTYPE4 mean = (CL_DTYPE4)(0.f, 0.f, 0.f, 0.f);
-    CL_DTYPE4 variance = (CL_DTYPE4)(0.f, 0.f, 0.f, 0.f);
-    CL_DTYPE4 vepsilon = (CL_DTYPE4)(epsilon, epsilon, epsilon, epsilon);
+  CL_DTYPE4 mean = (CL_DTYPE4)(0.f, 0.f, 0.f, 0.f);
+  CL_DTYPE4 variance = (CL_DTYPE4)(0.f, 0.f, 0.f, 0.f);
+  CL_DTYPE4 vepsilon = (CL_DTYPE4)(epsilon, epsilon, epsilon, epsilon);
 
-    const int x_offset = gidx * in_w;
-    const int y_offset = gidy * in_h;
+  const int x_offset = gidx * in_w;
+  const int y_offset = gidy * in_h;
 
-    int2 coor;
-    for (int i = lid; i < spatial_size; i += lsize) {
-        coor.x = i % in_w + x_offset;
-        coor.y = i / in_w + y_offset;
-        CL_DTYPE4 pixel = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coor);
-        mean += pixel;
-        variance += pixel * pixel;
+  int2 coor;
+  for (int i = lid; i < spatial_size; i += lsize) {
+    coor.x = i % in_w + x_offset;
+    coor.y = i / in_w + y_offset;
+    CL_DTYPE4 pixel = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coor);
+    mean += pixel;
+    variance += pixel * pixel;
+  }
+  saved_mean[lid] = mean;
+  saved_variance[lid] = variance;
+  barrier(CLK_LOCAL_MEM_FENCE);
+
+  //! do reduction
+  int dynamic_size = lsize >> 1;
+  for (; dynamic_size > 0; dynamic_size >>= 1) {
+    if (lid < dynamic_size) {
+      saved_mean[lid] += saved_mean[lid + dynamic_size];
+      saved_variance[lid] += saved_variance[lid + dynamic_size];
     }
-    saved_mean[lid] = mean;
-    saved_variance[lid] = variance;
     barrier(CLK_LOCAL_MEM_FENCE);
+  }
 
-    //! do reduction
-    int dynamic_size = lsize >> 1;
-    for (; dynamic_size > 0; dynamic_size >>= 1){
-        if (lid < dynamic_size) {
-          saved_mean[lid] += saved_mean[lid + dynamic_size];
-          saved_variance[lid] += saved_variance[lid + dynamic_size];
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
+  mean = saved_mean[0] / spatial_size;
+  variance = saved_variance[0] / spatial_size - mean * mean;
+  variance = rsqrt(variance + vepsilon);
 
-    mean = saved_mean[0] / spatial_size;
-    variance = saved_variance[0] / spatial_size - mean * mean;
-    variance = rsqrt(variance + vepsilon);
-    
-    //! do instance norm
-    coor.x = gidx;
-    coor.y = gidy;
-    CL_DTYPE4 vscale = READ_IMG_TYPE(CL_DTYPE_CHAR, scale, SAMPLER, coor);
-    vscale *= variance;
-    CL_DTYPE4 vbias = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coor);
-    for (int i = lid; i < spatial_size; i += lsize) {
-        coor.x = i % in_w + x_offset;
-        coor.y = i / in_w + y_offset;
-        CL_DTYPE4 pixel = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coor);
-        pixel = (pixel - mean) * vscale + vbias;
-        WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, coor, pixel);
-    }
+  //! do instance norm
+  coor.x = gidx;
+  coor.y = gidy;
+  CL_DTYPE4 vscale = READ_IMG_TYPE(CL_DTYPE_CHAR, scale, SAMPLER, coor);
+  vscale *= variance;
+  CL_DTYPE4 vbias = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coor);
+  for (int i = lid; i < spatial_size; i += lsize) {
+    coor.x = i % in_w + x_offset;
+    coor.y = i / in_w + y_offset;
+    CL_DTYPE4 pixel = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coor);
+    pixel = (pixel - mean) * vscale + vbias;
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, coor, pixel);
+  }
 }

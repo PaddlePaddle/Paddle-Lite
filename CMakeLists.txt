@@ -19,11 +19,13 @@ include(lite_utils)
 set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-if(LITE_WITH_XTCL)
+if(LITE_WITH_XTCL OR LITE_WITH_METAL)
     set(CMAKE_CXX_STANDARD 14)
 else()
     set(CMAKE_CXX_STANDARD 11)
 endif()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(system)
 include(cross_compiling/preproject)
@@ -35,7 +37,9 @@ message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: "
         "${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "AR tools: ${CMAKE_AR}")
 
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
+if(NOT APPLE)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
+endif()
 
 if(WIN32)
     option(MSVC_STATIC_CRT "use static C Runtime library by default" ON)
@@ -278,8 +282,8 @@ include(external/mkldnn)    # download, build, install mkldnn
 include(external/eigen)     # download eigen3
 include(external/xxhash)    # download install xxhash needed for x86 jit
 
-include(cudnn)
 include(configure)          # add paddle env configuration
+include(cudnn)
 
 if(LITE_WITH_CUDA)
   include(cuda)

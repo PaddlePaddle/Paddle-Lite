@@ -60,7 +60,7 @@ REGISTER_LITE_KERNEL(yolo_box,
                      kNCHW,
                      paddle::lite::kernels::host::YoloBoxCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("ImgSize",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kHost))})

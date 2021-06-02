@@ -29,17 +29,19 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/lite.metallib
 find_library(METAL_LIBRARY Metal REQUIRED)
 find_library(FOUNDATION_LIBRARY Foundation)
 
-lite_cc_library(metal_target_wrapper SRCS context.mm
-        metal_context.mm
-        metal_kernel.mm
-        metal_device.mm
-        metal_queue.mm
+add_library(
+        metal_target_wrapper
+        context.mm
         metal_buffer.mm
-        metal_image.mm
-        metal_half.mm
+        metal_context.mm
+        metal_context_imp.mm
         metal_converter.mm
+        metal_debug.mm
+        metal_half.mm
+        metal_image.mm
+        mps_conv_datasource.m
         target_wrapper.mm
-        metal_debug.mm )
+        )
 
 target_link_libraries(metal_target_wrapper ${METAL_LIBRARY} ${FOUNDATION_LIBRARY})
 
