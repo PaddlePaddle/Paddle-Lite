@@ -108,7 +108,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       concat.cc
       type_trans.cc
       box_coder.cc
-      shuffle_channel.cc
       activation.cc
       dropout.cc
       power.cc

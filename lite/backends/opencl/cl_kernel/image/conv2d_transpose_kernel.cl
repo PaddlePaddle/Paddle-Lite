@@ -30,7 +30,6 @@ __kernel void conv2d_transpose(
     __private const int2 kernel_shape,
     __private const int kernel_size,
     __private const int input_c_blks) {
-
   const int out_c_blk_idx = get_global_id(0);
   const int out_w_idx = get_global_id(1);
   const int out_nh_idx = get_global_id(2);
@@ -71,8 +70,8 @@ __kernel void conv2d_transpose(
     kernel_x_2 = kernel_x_0 + 2;
     kernel_x_3 = kernel_x_0 + 3;
     int in_idx = mul24(ic, input_shape.x);
-    for (int k_y = deal_kernel_height, idx_h = kernel_start_y;
-         k_y >= 0; k_y -= stride_shape.y, idx_h++) {
+    for (int k_y = deal_kernel_height, idx_h = kernel_start_y; k_y >= 0;
+         k_y -= stride_shape.y, idx_h++) {
       int in_y_idx = mad24(
           out_n_idx, input_shape.y, idx_h);  // height idx of input image2d
       int in_nh_value =

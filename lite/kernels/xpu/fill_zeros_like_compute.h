@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -20,11 +21,15 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class ReduceMeanCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <class T>
+class FillZerosLikeCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  void Run() override;
+  using param_t = operators::FillAnyLikeParam;
 
-  virtual ~ReduceMeanCompute() = default;
+  virtual void Run();
+
+  virtual ~FillZerosLikeCompute() = default;
 };
 
 }  // namespace xpu

@@ -18,16 +18,17 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
-template <typename T>
-void shuffle_channel(const T* inputs,
-                     T* outputs,
+namespace fp16 {
+typedef __fp16 float16_t;
+void shuffle_channel(const float16_t* inputs,
+                     float16_t* outputs,
                      int group,
                      int num,
                      int channel,
                      int height,
                      int width);
 
+}  // namespace fp16
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

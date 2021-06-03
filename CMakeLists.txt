@@ -19,11 +19,13 @@ include(lite_utils)
 set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-if(LITE_WITH_XTCL)
+if(LITE_WITH_XTCL OR LITE_WITH_METAL)
     set(CMAKE_CXX_STANDARD 14)
 else()
     set(CMAKE_CXX_STANDARD 11)
 endif()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(system)
 include(cross_compiling/preproject)
