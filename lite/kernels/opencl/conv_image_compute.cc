@@ -898,12 +898,12 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     min_lws_time = DBL_MAX;
     local_work_size_wino1_ = *lwss1.begin();
     min_lws = *lwss1.begin();
-    for (cl::NDRange cur_lws : lwss) {
+    for (cl::NDRange cur_lws : lwss1) {
       local_work_size_wino1_ = cur_lws;
       double cur_lws_time = 0.0f;
       for (size_t i = 0; i < repeats; ++i) {
         Run();
-        cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
+        cur_lws_time += CLRuntime::Global()->GetCommandTime(event_1);
       }
       cur_lws_time /= repeats;
       if (min_lws_time > cur_lws_time) {
@@ -917,12 +917,12 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     min_lws_time = DBL_MAX;
     local_work_size_wino2_ = *lwss2.begin();
     min_lws = *lwss2.begin();
-    for (cl::NDRange cur_lws : lwss) {
+    for (cl::NDRange cur_lws : lwss2) {
       local_work_size_wino2_ = cur_lws;
       double cur_lws_time = 0.0f;
       for (size_t i = 0; i < repeats; ++i) {
         Run();
-        cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
+        cur_lws_time += CLRuntime::Global()->GetCommandTime(event_2);
       }
       cur_lws_time /= repeats;
       if (min_lws_time > cur_lws_time) {
@@ -1804,7 +1804,7 @@ void ConvImageCompute::Run() {
                                    global_work_size_wino1_,
                                    local_work_size_wino1_,
                                    nullptr,
-                                   event_);
+                                   event_1);
     CL_CHECK_FATAL(status_);
 
     // kernel transform_to_output
@@ -1826,7 +1826,7 @@ void ConvImageCompute::Run() {
                                    global_work_size_wino2_,
                                    local_work_size_wino2_,
                                    nullptr,
-                                   event_);
+                                   event_2);
     CL_CHECK_FATAL(status_);
   } else {
     // define image pointer for input, output

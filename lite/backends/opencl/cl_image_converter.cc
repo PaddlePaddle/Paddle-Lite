@@ -61,7 +61,6 @@ void CLImageConverterDefault::NCHWToImage(float *nchw,
   half_t *image_fp16 = static_cast<half_t *>(image);
 
   float *p = nchw;
-  printf("################fp16_support_=%d\n", fp16_support_);
   size_t i0 = 0;
   for (size_t n = 0; n < N; n++) {
     for (size_t c = 0; c < w_block * 4; c++) {
