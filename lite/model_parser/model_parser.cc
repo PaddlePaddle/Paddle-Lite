@@ -181,7 +181,7 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
   // Check param files format
   // default format: non-combined params
   for (auto &var : main_block->GetVars()) {
-    if (var->Name() != "feed" && var->Name() != "fetch" && var->Persistable()) {
+    if (IsParamVarDesc(*var)) {
       if (IsFileExists(model_dir + "/" + var->Name())) {
         VLOG(4) << "reading weight " << var->Name();
         model_parser::BinaryFileReader reader(model_dir + "/" + var->Name());
@@ -288,9 +288,7 @@ void SaveModelPb(const std::string &model_dir,
     SaveCombinedParamsPb(combined_params_path, exec_scope, cpp_prog);
   } else {
     for (auto &item : pb_proto_prog.blocks(0).vars()) {
-      if (item.name() == "feed" || item.name() == "fetch" ||
-          !item.persistable())
-        continue;
+      if (!pb::IsParamVarDesc(item)) continue;
       const std::string path = model_dir + "/" + item.name();
 
       model_parser::BinaryFileWriter file(path);
@@ -449,8 +447,7 @@ void SaveCombinedParamsNaive(const std::string &path,
   std::set<std::string> unique_var_names;
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
     auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable() ||
-        unique_var_names.count(var.Name()) > 0)
+    if (!IsParamVarDesc(var) || unique_var_names.count(var.Name()) > 0)
       continue;
     naive_buffer::ParamDesc param_desc(desc.AddParam());
     SetParamInfoNaive(&param_desc, exec_scope, var.Name());
@@ -532,8 +529,7 @@ void SaveModelNaive(const std::string &model_file,
   std::set<std::string> unique_var_names;
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
     auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable() ||
-        unique_var_names.count(var.Name()) > 0)
+    if (!IsParamVarDesc(var) || unique_var_names.count(var.Name()) > 0)
       continue;
     unique_var_names.emplace(var.Name());
   }
@@ -658,8 +654,7 @@ void LoadCombinedParamsNaive(const std::string &path,
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
     auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
-      continue;
+    if (!IsParamVarDesc(var)) continue;
     CHECK(param_names.count(var.Name())) << "Persistable var[" << var.Name()
                                          << "] not found";
   }
@@ -705,8 +700,7 @@ void LoadModelNaive(const std::string &model_dir,
     auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
     for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
       auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-      if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable())
-        continue;
+      if (!IsParamVarDesc(var)) continue;
 
       std::string file_path = model_dir + "/" + var.Name() + ".nb";
       VLOG(4) << "reading weight " << var.Name();
