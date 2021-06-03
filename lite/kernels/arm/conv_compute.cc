@@ -97,7 +97,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
-             pads_equal) {
+             pads_equal && !ctx.has_dot()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run WinogradConv Int8";
   } else {
@@ -122,7 +122,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
-             pads_equal) {
+             pads_equal && !ctx.has_dot()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run WinogradConv Int8";
   } else {
