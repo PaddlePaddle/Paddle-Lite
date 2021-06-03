@@ -285,8 +285,8 @@ namespace math {
   "movi   v13.4s, #0x0                     \n" \
   "bne 1b                                  \n" \
   "3:                                      \n" \
-  "ld1 {v20.8b}, [%[vmask]], #8            \n" \
-  "ld1 {v22.8b}, [%[vmask]]                \n" \
+  "ld1 {v20.16b}, [%[vmask]]               \n" \
+  "mov v22.d[0], v20.d[1]                  \n" \
   "bif v0.8b, v21.8b, v20.8b               \n" \
   "bif v1.8b, v21.8b, v22.8b               \n" \
   "bif v2.8b, v21.8b, v20.8b               \n" \
@@ -428,8 +428,8 @@ namespace math {
   "movi   v13.4s, #0x0                    \n"   \
   "bne 1b                                 \n"   \
   "3:                                      \n"  \
-  "ld1 {v20.8b}, [%[vmask]], #8            \n"  \
-  "ld1 {v22.8b}, [%[vmask]]                \n"  \
+  "ld1 {v20.16b}, [%[vmask]]            \n"     \
+  "mov v22.d[0], v20.d[1]                \n"    \
   "bif v0.8b, v21.8b, v20.8b               \n"  \
   "bif v1.8b, v21.8b, v22.8b               \n"  \
   "bif v2.8b, v21.8b, v20.8b               \n"  \
@@ -4978,12 +4978,12 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_int8(int8_t* dout,
                     RIGHT_OUT_INT8_STORE
                     :   [cnt]"+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
                         [din_ptr3] "+r"(din_ptr3), [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), \
-                        [vmask] "+r" (val_mask), [rmask] "+r" (rst_mask)
+                        [rmask] "+r" (rst_mask)
                     :   [v0]"w"(wr00), [v1]"w"(wr01), [v2]"w"(wr02), [v3]"w"(wr10), \
                         [vmax_ptr]"r"(vmax_ptr), \
                         //[bias_val] "r" (vbias), [scale_val] "r"(vscale),
                         [v4]"w"(wr11), [v5]"w"(wr12), [v6]"w"(wr20), [v7]"w"(wr21), [v8] "w" (wr22), \
-                        [v_bias]"w"(v_bias), [v_scale] "w"(v_scale), [alpha] "r" (alpha)
+                        [v_bias]"w"(v_bias), [v_scale] "w"(v_scale), [alpha] "r" (alpha), [vmask] "r" (val_mask)
                     :"cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",\
                       "v10", "v11", "v12","v13","v14","v15", \
                       "v18",\
@@ -7555,8 +7555,8 @@ void conv_depthwise_3x3s1p0_bias_relu6_int8_int8(int8_t* dout,
                     "bne 1b                                 \n"                
                 //right
                     "3:                                      \n" 
-                    "ld1 {v20.8b}, [%[vmask]], #8            \n"
-                    "ld1 {v22.8b}, [%[vmask]]                \n"
+                    "ld1 {v20.16b}, [%[vmask]]               \n"
+                    "mov v22.d[0], v20.d[1]                  \n"
                     "bif v0.8b, v21.8b, v20.8b               \n"  /* a(0, 0) to a(0, 7) */
                     "bif v1.8b, v21.8b, v22.8b               \n"  /* a(0, 8) to a(0, 15) */
                     "bif v2.8b, v21.8b, v20.8b               \n"  /* a(1, 0) to a(1, 7) */
@@ -7670,11 +7670,11 @@ void conv_depthwise_3x3s1p0_bias_relu6_int8_int8(int8_t* dout,
                     "st1    {v8.8b}, [%[ptr_out1]], #8     \n"  /* store q10, q11 -> ptr_out 0 */
                     :   [cnt]"+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
                         [din_ptr3] "+r"(din_ptr3), [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), \
-                        [vmask] "+r" (val_mask), [rmask] "+r" (rst_mask)
+                        [rmask] "+r" (rst_mask)
                     :   [v0]"w"(wr00), [v1]"w"(wr01), [v2]"w"(wr02), [v3]"w"(wr10), \
                         [vmax_ptr]"r"(vmax_ptr), \
                         [v4]"w"(wr11), [v5]"w"(wr12), [v6]"w"(wr20), [v7]"w"(wr21), [v8] "w" (wr22), \
-                        [v_bias]"w"(v_bias), [v_scale] "w"(v_scale), [alpha] "r" (alpha)
+                        [v_bias]"w"(v_bias), [v_scale] "w"(v_scale), [alpha] "r" (alpha), [vmask] "r" (val_mask)
                     :"cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",\
                       "v10", "v11", "v12","v13","v14","v15", \
                       "v18",\
