@@ -183,7 +183,7 @@ __kernel void pool_local(__read_only image2d_t input,
 
     const int output_channel_width_idx = mad24(out_c, out_width, out_w);
 #ifdef CL_DTYPE_half
-    CL_DTYPE4 res = convert_half(avg_output[local_id]);
+    CL_DTYPE4 res = convert_half4(avg_output[local_id]);
 #else
     CL_DTYPE4 res = avg_output[local_id];
 #endif
