@@ -53,8 +53,8 @@ class VarDesc : public VarDescAPI {
 
  private:
   std::string name_;
-  Type type_;
-  Type data_type_;
+  Type type_{};
+  Type data_type_{Type::FP32};
   bool persistable_;
   std::vector<int64_t> shape_;
 };

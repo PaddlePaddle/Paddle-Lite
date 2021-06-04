@@ -195,7 +195,7 @@ struct PMNode {
   PMPattern* pattern_;
   std::string name_;
   std::string op_type_;
-  Type type_;
+  Type type_{};
   Role role_{Role::kUnknown};
 };
 
