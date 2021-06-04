@@ -219,6 +219,8 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(device/xpu) # check and prepare XPU SDK
     include(device/apu) # check and prepare APU SDK
 
+    include(external/gflags)    # download, build, install gflags
+
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.
     if (NOT LITE_ON_TINY_PUBLISH)

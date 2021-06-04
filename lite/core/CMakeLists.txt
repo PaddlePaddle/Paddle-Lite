@@ -140,10 +140,11 @@ lite_cc_library(program SRCS program.cc
     PROFILE_DEPS lite_profiler
     CUDA_DEPS nvtx_wrapper cuda_type_trans)
 
+add_subdirectory(profile)
+
 if (NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)
   add_subdirectory(mir)
-  add_subdirectory(profile)
   add_subdirectory(arena)
 endif()
 

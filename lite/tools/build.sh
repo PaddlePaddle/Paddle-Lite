@@ -157,6 +157,7 @@ function make_tiny_publish_so {
   mkdir -p $build_dir
   cd $build_dir
 
+  prepare_thirdparty
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
   fi
@@ -173,13 +174,15 @@ function make_tiny_publish_so {
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
-      -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_LOG=ON \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
+      -DLITE_WITH_PROFILE=ON \
+      -DLITE_WITH_PRECISION_PROFILE=ON \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
