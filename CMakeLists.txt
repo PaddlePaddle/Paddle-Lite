@@ -220,12 +220,12 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(device/apu) # check and prepare APU SDK
 
     include(external/gflags)    # download, build, install gflags
-
+    include(external/glog)      # download, build, install glog
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.
     if (NOT LITE_ON_TINY_PUBLISH)
         # include the necessary thirdparty dependencies
-        include(external/gflags)    # download, build, install gflags
+#        include(external/gflags)    # download, build, install gflags
         # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
         # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
         include(external/gtest)     # download, build, install gtest

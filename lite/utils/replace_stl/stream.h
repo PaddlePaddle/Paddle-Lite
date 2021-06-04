@@ -14,7 +14,8 @@
 
 #pragma once
 
-#if defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_XCODE)
+#if defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_XCODE) && \
+    !defined(LITE_WITH_PROFILE)
 #include <stdlib.h>
 #include <string>
 #else
@@ -23,7 +24,8 @@
 #include <sstream>
 #endif
 
-#if defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_XCODE)
+#if defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_XCODE) && \
+    !defined(LITE_WITH_PROFILE)
 namespace paddle {
 namespace lite {
 

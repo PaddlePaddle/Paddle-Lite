@@ -1,8 +1,8 @@
-if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
-  lite_cc_library(place SRCS paddle_place.cc DEPS logging)
-else()
+#if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
+#  lite_cc_library(place SRCS paddle_place.cc DEPS logging)
+#else()
   lite_cc_library(place SRCS paddle_place.cc DEPS glog)
-endif()
+#endif()
 
 if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
@@ -99,7 +99,7 @@ else()
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
     add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
-    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers)
+    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers glog extern_glog)
     if (IOS)
         # only sttaic lib is produced for IOS platform.
         add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
@@ -121,6 +121,10 @@ else()
         # 2. produce dynamic lib from PADDLELITE_OBJS
         add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
         set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
+
+        # Need to add HIAI runtime libs (libhiai.so) dependency
+        target_link_libraries(paddle_light_api_shared glog gflags)
+
         #   2.1 link `paddle_light_api_shared` to third-party libs
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
@@ -464,7 +468,7 @@ lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params tensor device_info)
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.
 if (LITE_ON_TINY_PUBLISH)
-    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream)
+    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
 else()
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
 endif()
