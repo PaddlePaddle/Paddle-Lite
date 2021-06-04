@@ -28,15 +28,19 @@ namespace fbs {
 
 class BlockDescView : public BlockDescAPI {
  public:
+  BlockDescView() = default;
+
+  BlockDescView(const BlockDescView&) = delete;
+
   explicit BlockDescView(proto::BlockDesc const* desc) : desc_(desc) {
     CHECK(desc_);
     vars_.resize(VarsSize());
     ops_.resize(OpsSize());
     for (size_t idx = 0; idx < VarsSize(); ++idx) {
-      vars_[idx] = VarDescView(desc_->vars()->Get(idx));
+      vars_[idx].reset(new VarDescView(desc_->vars()->Get(idx)));
     }
     for (size_t idx = 0; idx < OpsSize(); ++idx) {
-      ops_[idx] = OpDescView(desc_->ops()->Get(idx));
+      ops_[idx].reset(new OpDescView(desc_->ops()->Get(idx)));
     }
   }
 
@@ -70,24 +74,27 @@ class BlockDescView : public BlockDescAPI {
     return nullptr;
   }
 
-  const std::vector<VarDescView>& GetVars() const { return vars_; }
+  const std::vector<std::unique_ptr<VarDescView>>& GetVars() const {
+    return vars_;
+  }
 
   int32_t ForwardBlockIdx() const override {
     return desc_->forward_block_idx();
   }
 
-  BlockDescView() = default;
-
  private:
   proto::BlockDesc const* desc_;  // not_own
-  std::vector<VarDescView> vars_;
-  std::vector<OpDescView> ops_;
+  std::vector<std::unique_ptr<VarDescView>> vars_;
+  std::vector<std::unique_ptr<OpDescView>> ops_;
 };
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 class BlockDesc : public BlockDescAPI {
  public:
   BlockDesc() : owned_(true), desc_(new proto::BlockDescT()) {}
+
+  BlockDesc(const BlockDesc&) = delete;
+
   explicit BlockDesc(proto::BlockDescT* desc) : desc_(desc) {
     CHECK(desc_);
     SyncVars();
