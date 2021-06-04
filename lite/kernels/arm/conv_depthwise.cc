@@ -107,7 +107,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   // s2: only support pad=1
   bool support_act_type_s1 =
       (has_act == false) ||
-      (has_act == true && (act_type == lite_api::ActivationType::kRelu);
+      (has_act == true && (act_type == lite_api::ActivationType::kRelu));
   bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] < 2);
   bool support_pad_type_s2 = pads_equal && (paddings[0] == 1);
   bool support_stride_type_s1 = (strides[0] == 1 && strides[1] == 1);
@@ -204,7 +204,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {
   // s2: only support pad=1
   bool support_act_type_s1 =
       (has_act == false) ||
-      (has_act == true && (act_type == lite_api::ActivationType::kRelu);
+      (has_act == true && (act_type == lite_api::ActivationType::kRelu));
   bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] < 2);
   bool support_pad_type_s2 = pads_equal && (paddings[0] == 1);
   bool support_stride_type_s1 = (strides[0] == 1 && strides[1] == 1);
