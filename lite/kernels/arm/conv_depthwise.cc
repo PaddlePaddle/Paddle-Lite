@@ -106,20 +106,25 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   auto act_param = param.activation_param;
   bool has_act = act_param.has_active;
   lite_api::ActivationType act_type = act_param.active_type;
-  // no activation and relu activation is supported now
-  bool support_act_type =
+  // s1: no activation and relu activation is supported now
+  // s2: only support pad=1
+  bool support_act_type_s1 =
       (has_act == false) ||
-      (has_act == true && act_type == lite_api::ActivationType::kRelu);
-  bool support_pad_type =
-      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
-      (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
-  bool support_stride_type = (strides[0] == 1 && strides[1] == 1);
-  bool support_width_type = iw > 9 ? true : false;
+      (has_act == true && (act_type == lite_api::ActivationType::kRelu));
+  bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] < 2);
+  bool support_pad_type_s2 = pads_equal && (paddings[0] == 1);
+  bool support_stride_type_s1 = (strides[0] == 1 && strides[1] == 1);
+  bool support_stride_type_s2 = (strides[0] == 2 && strides[1] == 2);
+  bool support_width_type_s1 = iw > 9 ? true : false;
+  bool support_width_type_s2 = iw > 18 ? true : false;
+  bool s1_trans =
+      (!support_act_type_s1 || !pads_equal || !support_width_type_s1);
+  bool s2_trans = (!support_pad_type_s2 || !support_width_type_s2);
   /// select dw conv kernel
   if (kw == 3) {
     // trans weights
-    if (!support_act_type || !support_pad_type || !support_stride_type ||
-        !support_width_type) {
+    if ((support_stride_type_s1 && s1_trans) ||
+        (support_stride_type_s2 && s2_trans)) {
       if (flag_trans_weights_) return;
       int cround = ROUNDUP(w_dims[0], 8);
       auto kh = w_dims[2];
@@ -202,20 +207,26 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {
   auto act_param = param.activation_param;
   bool has_act = act_param.has_active;
   lite_api::ActivationType act_type = act_param.active_type;
-  // no activation and relu activation is supported now
-  bool support_act_type =
+  // s1: no activation and relu activation is supported now
+  // s2: only support pad=1
+  bool support_act_type_s1 =
       (has_act == false) ||
-      (has_act == true && act_type == lite_api::ActivationType::kRelu);
-  bool support_pad_type =
-      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
-      (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
-  bool support_stride_type = (strides[0] == 1 && strides[1] == 1);
-  bool support_width_type = iw > 9 ? true : false;
+      (has_act == true && (act_type == lite_api::ActivationType::kRelu));
+  bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] < 2);
+  bool support_pad_type_s2 = pads_equal && (paddings[0] == 1);
+  bool support_stride_type_s1 = (strides[0] == 1 && strides[1] == 1);
+  bool support_stride_type_s2 = (strides[0] == 2 && strides[1] == 2);
+  bool support_width_type_s1 = iw > 9 ? true : false;
+  bool support_width_type_s2 = iw > 18 ? true : false;
+  bool s1_trans =
+      (!support_act_type_s1 || !pads_equal || !support_width_type_s1);
+  bool s2_trans = (!support_pad_type_s2 || !support_width_type_s2);
+
   /// select dw conv kernel
   if (kw == 3) {
     // trans weights
-    if (!support_act_type || !support_pad_type || !support_stride_type ||
-        !support_width_type) {
+    if ((support_stride_type_s1 && s1_trans) ||
+        (support_stride_type_s2 && s2_trans)) {
       if (flag_trans_weights_) return;
       int cround = ROUNDUP(w_dims[0], 8);
       auto kh = w_dims[2];
