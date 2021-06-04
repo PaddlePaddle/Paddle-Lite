@@ -207,6 +207,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFP16, kNCHW, ConvFp16, def)
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
+
 #endif  // ENABLE_ARM_FP16
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
