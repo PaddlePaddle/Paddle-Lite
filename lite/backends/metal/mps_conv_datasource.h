@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include "lite/core/kernel.h"
+#ifndef LITE_BACKENDS_METAL_MPS_CONV_DATASOURCE_H_
+#define LITE_BACKENDS_METAL_MPS_CONV_DATASOURCE_H_
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace xpu {
+#include <MetalPerformanceShaders/MetalPerformanceShaders.h>
 
-class ReduceSumCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  void Run() override;
+@interface MPSConvDataSource : NSObject <MPSCNNConvolutionDataSource> {
+}
+@property (nonatomic, assign) void* weights;
+@property (nonatomic, assign) float* biasTerms;
+@property (nonatomic, strong) MPSCNNConvolutionDescriptor* descriptor;
 
-  virtual ~ReduceSumCompute() = default;
-};
+@end
 
-}  // namespace xpu
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+#endif  // LITE_BACKENDS_METAL_MPS_CONV_DATASOURCE_H_

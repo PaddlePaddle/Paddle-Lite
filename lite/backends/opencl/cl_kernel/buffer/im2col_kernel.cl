@@ -17,22 +17,29 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel
-void im2col(__global const CL_DTYPE* data_im, const int img_offset,
-            const int col_chw,
-            const int height, const int width,
-            const int kernel_h, const int kernel_w,
-            const int pad_h, const int pad_w,
-            const int stride_h, const int stride_w,
-            const int dilation_h, const int dilation_w,
-            const int height_col, const int width_col,
-            __global CL_DTYPE* col_data, const int col_offset) {
-  int index = get_global_id(0); // [0, col_chw)
+__kernel void im2col(__global const CL_DTYPE* data_im,
+                     const int img_offset,
+                     const int col_chw,
+                     const int height,
+                     const int width,
+                     const int kernel_h,
+                     const int kernel_w,
+                     const int pad_h,
+                     const int pad_w,
+                     const int stride_h,
+                     const int stride_w,
+                     const int dilation_h,
+                     const int dilation_w,
+                     const int height_col,
+                     const int width_col,
+                     __global CL_DTYPE* col_data,
+                     const int col_offset) {
+  int index = get_global_id(0);  // [0, col_chw)
 
   data_im = data_im + img_offset;
   col_data = col_data + col_offset;
 
-  if(index < col_chw) {
+  if (index < col_chw) {
     int w_out = index % width_col;
     int h_index = index / width_col;
     int h_out = h_index % height_col;
@@ -54,8 +61,8 @@ void im2col(__global const CL_DTYPE* data_im, const int img_offset,
         int h = h_in + dh;
         int w = w_in + dw;
         *col_data_ptr = (h >= 0 && w >= 0 && h < height && w < width)
-        ? data_im_ptr[dh * width + dw]
-        : 0;
+                            ? data_im_ptr[dh * width + dw]
+                            : 0;
         col_data_ptr += height_col * width_col;
         dw += dilation_w;
       }
@@ -63,4 +70,3 @@ void im2col(__global const CL_DTYPE* data_im, const int img_offset,
     }
   }
 }
-

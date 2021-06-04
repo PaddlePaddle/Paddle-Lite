@@ -67,7 +67,7 @@ class ExpandAsComputeTester : public arena::TestCase {
     for (int i = out_shape.size() - 2; i >= 0; --i) {
       out_stride[i] = out_shape[i + 1] * out_stride[i + 1];
     }
-    for (size_t out_id = 0; out_id < out_shape.production(); ++out_id) {
+    for (int out_id = 0; out_id < out_shape.production(); ++out_id) {
       int in_id = 0;
       for (int i = expand_times_.size() - 1; i >= 0; --i) {
         int in_j = (out_id / out_stride[i]) % in_shape[i];

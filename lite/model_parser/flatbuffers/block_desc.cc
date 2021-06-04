@@ -34,13 +34,13 @@ proto::OpDesc const* BlockDescView::GetOp<proto::OpDesc>(int32_t idx) const {
 template <>
 VarDescView const* BlockDescView::GetVar<VarDescView>(int32_t idx) const {
   CHECK_LT(idx, static_cast<int32_t>(VarsSize())) << "idx >= vars.size()";
-  return &vars_[idx];
+  return vars_[idx].get();
 }
 
 template <>
 OpDescView const* BlockDescView::GetOp<OpDescView>(int32_t idx) const {
   CHECK_LT(idx, static_cast<int32_t>(OpsSize())) << "idx >= ops.size()";
-  return &ops_[idx];
+  return ops_[idx].get();
 }
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC

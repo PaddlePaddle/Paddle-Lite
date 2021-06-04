@@ -13,25 +13,23 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
+namespace fp16 {
+typedef __fp16 float16_t;
+void shuffle_channel(const float16_t* inputs,
+                     float16_t* outputs,
+                     int group,
+                     int num,
+                     int channel,
+                     int height,
+                     int width);
 
-class DensityPriorBoxCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::DensityPriorBoxParam;
-
-  void Run() override;
-
-  virtual ~DensityPriorBoxCompute() = default;
-};
-
+}  // namespace fp16
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

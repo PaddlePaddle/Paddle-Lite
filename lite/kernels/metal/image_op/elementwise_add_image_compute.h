@@ -33,29 +33,39 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class ElementwiseAddImageCompute
-    : public KernelLite<TARGET(kMetal),
-                        PTYPE,
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ElementwiseParam;
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::ElementwiseParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("elementwise_add", output_buffer_);
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput("elementwise_add", output_buffer_);
+    };
+    virtual ~ElementwiseAddImageCompute();
 
- private:
-  const MetalImage* input_buffer_x_;
-  const MetalImage* input_buffer_y_;
-  std::shared_ptr<MetalBuffer> params_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
+   private:
+    bool use_mps_{false};
+    void* mps_add_op_{nullptr};
+    void* mps_input_image_{nullptr};
+    void* mps_input_image_y_{nullptr};
+    void* mps_output_image_{nullptr};
+
+    void setup_with_mps();
+    void setup_without_mps();
+
+    void run_with_mps();
+    void run_without_mps();
+
+    MetalImage* output_buffer_;
+    const MetalImage* input_buffer_x_;
+    const MetalImage* input_buffer_y_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
+
+    void* pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
 };
 
 }  // namespace metal

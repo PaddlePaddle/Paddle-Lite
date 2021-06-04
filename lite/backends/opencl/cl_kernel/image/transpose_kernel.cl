@@ -21,9 +21,9 @@ __kernel void transpose_general_buffer(__global const CL_DTYPE* src,
                                        __private const int out_tensor_h,
                                        __private const int out_tensor_w,
                                        __private const int out_tensor_hw) {
-  int hidx = get_global_id(0); // [0, h) columns of dst
-  int widx = get_global_id(1); // [0, w) rows of dst
-  int chidx = get_global_id(2); // [0, ch) channels of dst
+  int hidx = get_global_id(0);   // [0, h) columns of dst
+  int widx = get_global_id(1);   // [0, w) rows of dst
+  int chidx = get_global_id(2);  // [0, ch) channels of dst
 
   // idx = chidx * out_tensor_hw + hidx * out_tensor_w + widx
   const int idx = mad((CL_DTYPE)chidx,
@@ -96,11 +96,11 @@ __kernel void transpose_4d(__read_only image2d_t input_image,
   }
   if (out_C - out_c * 4 >= 2) {
     input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, input_pos1);
-    if(out_w % 4 == 0) {
+    if (out_w % 4 == 0) {
       output.y = input1.x;
-    } else if(out_w % 4 == 1) {
+    } else if (out_w % 4 == 1) {
       output.y = input1.y;
-    } else if(out_w % 4 == 2) {
+    } else if (out_w % 4 == 2) {
       output.y = input1.z;
     } else {
       output.y = input1.w;
@@ -111,7 +111,7 @@ __kernel void transpose_4d(__read_only image2d_t input_image,
 
   if (out_C - out_c * 4 >= 3) {
     input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, input_pos2);
-    if (out_w % 4 == 0){
+    if (out_w % 4 == 0) {
       output.z = input2.x;
     } else if (out_w % 4 == 1) {
       output.z = input2.y;
@@ -152,17 +152,17 @@ __kernel void transpose_2d(__read_only image2d_t input_image,
   const int out_nh = get_global_id(2);
   const int out_n = 1;
   const int out_h = out_nh % out_H;
-  
+
   const int in_n = 1;
   const int in_c = out_c;
   const int in_w = out_h;
   const int in_h = out_w;
-  
+
   int2 input_pos;
   int2 output_pos;
   input_pos.x = in_c * in_W + in_w;
   input_pos.y = in_n * in_h;
-  
+
   output_pos.x = out_c * out_W + out_w;
   output_pos.y = out_n * out_h;
 

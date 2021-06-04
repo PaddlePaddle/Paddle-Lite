@@ -75,6 +75,18 @@ struct DivFunctor {
   }
 };
 
+template <typename T>
+struct MaxFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_max<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
 template <class T, class Functor>
 void ElementwiseCompute<T, Functor>::Run() {
   auto& param = this->template Param<param_t>();
@@ -124,6 +136,8 @@ using AddInt32 = xpu::ElementwiseCompute<int, xpu::AddFunctor<int>>;
 using SubFloat32 = xpu::ElementwiseCompute<float, xpu::SubFunctor<float>>;
 using MulFloat32 = xpu::ElementwiseCompute<float, xpu::MulFunctor<float>>;
 using DivFloat32 = xpu::ElementwiseCompute<float, xpu::DivFunctor<float>>;
+using MaxFloat32 = xpu::ElementwiseCompute<float, xpu::MaxFunctor<float>>;
+using MaxInt32 = xpu::ElementwiseCompute<int, xpu::MaxFunctor<int>>;
 
 REGISTER_LITE_KERNEL(elementwise_add, kXPU, kFloat, kNCHW, AddFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -153,4 +167,16 @@ REGISTER_LITE_KERNEL(elementwise_div, kXPU, kFloat, kNCHW, DivFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_max, kXPU, kFloat, kNCHW, MaxFloat32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_max, kXPU, kFloat, kNCHW, MaxInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
