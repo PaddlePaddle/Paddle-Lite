@@ -13,38 +13,44 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/shuffle_channel_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
+#ifdef ENABLE_ARM_FP16
 void ShuffleChannelCompute::Run() {
   auto& param = Param<operators::ShuffleChannelParam>();
-  const float* x_data = param.X->data<float>();
-  float* output_data = param.Out->mutable_data<float>();
+  const float16_t* x_data = param.X->data<float16_t>();
+  auto* output_data = param.Out->mutable_data<float16_t>();
   DDim x_dims = param.X->dims();
   int group = param.group;
   int num = param.X->dims()[0];
   int channel = param.X->dims()[1];
   int height = param.X->dims()[2];
   int width = param.X->dims()[3];
-  lite::arm::math::shuffle_channel(
+  lite::arm::math::fp16::shuffle_channel(
       x_data, output_data, group, num, channel, height, width);
 }
+#endif
 
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
+#ifdef ENABLE_ARM_FP16
 REGISTER_LITE_KERNEL(shuffle_channel,
                      kARM,
-                     kFloat,
+                     kFP16,
                      kNCHW,
                      paddle::lite::kernels::arm::ShuffleChannelCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
+#endif  // ENABLE_ARM_FP16

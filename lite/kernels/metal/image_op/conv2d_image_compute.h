@@ -28,54 +28,64 @@
 
 #include "lite/backends/metal/metal_context.h"
 #include "lite/backends/metal/metal_debug.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
-                                             PTYPE,
-                                             DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ConvParam;
+class Conv2dImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::ConvParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("conv2d", output_buffer_);
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override;
+    //  void SaveOutput() override {
+    //    MetalDebug::SaveOutput("conv2d", output_buffer_);
+    //  };
+    virtual ~Conv2dImageCompute();
 
- private:
-  const MetalImage* input_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
+   private:
+    bool use_mps_{false};
+    void* mps_conv_op_{nullptr};
+    void* mps_input_image_{nullptr};
+    void* mps_output_image_{nullptr};
 
-  static std::string KernelFunctionName(
-      const param_t& param, bool use_aggressive_optimization = false);
+    void setup_with_mps();
+    void setup_without_mps();
 
-  static bool IsWinoGrad(const std::string& function_name);
+    void run_with_mps();
+    void run_without_mps();
 
- private:
-  void SetupWithMPS();
-  void SetupWithoutMPS();
+    bool canAddUseMPS();
+    bool canMPSAddByChannel();
+    bool canMPSAddByElement();
 
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalBuffer> filter_buffer_;
-  std::shared_ptr<MetalBuffer> params_buffer_;
-  const MetalImage* bias_buffer_;
+    static std::string KernelFunctionName(const param_t& param,
+        bool use_winograde = false,
+        bool use_quadruple = false);
 
-  Tensor blank_tensor_;
-  std::string function_name_;
-  bool use_winograd_;
+    static bool IsWinoGrad(const std::string& function_name);
+    bool IsQuadruple(const std::string& function_name);
 
-  int16_t activate_type_ = 0;
-  int16_t relu6_thredhold_ = 6;
+   private:
+    bool is_depthwise_{false};
+    uint16_t activate_type_ = 0;
+    std::string name_param_out_;
 
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
+    void* pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
+
+    MetalImage* output_buffer_;
+    const MetalImage* input_buffer_;
+    const MetalImage* bias_buffer_;
+    MetalImage* blank_buffer_;
+    std::shared_ptr<MetalBuffer> filter_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
 };
 
 }  // namespace metal

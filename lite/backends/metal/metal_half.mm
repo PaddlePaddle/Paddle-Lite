@@ -19,6 +19,7 @@ namespace lite {
 
 // ftp://ftp.fox-toolkit.org/pub/fasthalffloatconversion.pdf
 
+// clang-format off
 static const uint32_t mantissatable[2048] = {
     0x00000000, 0x33800000, 0x34000000, 0x34400000, 0x34800000, 0x34a00000, 0x34c00000, 0x34e00000,
     0x35000000, 0x35100000, 0x35200000, 0x35300000, 0x35400000, 0x35500000, 0x35600000, 0x35700000,
@@ -374,27 +375,29 @@ static const uint8_t shifttable[512] = {
     0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18,
     0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x0d};
 
+// clang-format off
+
 MetalHalf MetalFloat2Half(float f) {
-  uint32_t v = *reinterpret_cast<uint32_t *>(&f);
-  return static_cast<MetalHalf>(basetable[(v >> 23) & 0x1ff] +
-                                ((v & 0x007fffff) >> shifttable[(v >> 23) & 0x1ff]));
+    uint32_t v = *reinterpret_cast<uint32_t*>(&f);
+    return static_cast<MetalHalf>(basetable[(v >> 23) & 0x1ff] +
+                                  ((v & 0x007fffff) >> shifttable[(v >> 23) & 0x1ff]));
 }
 
 float MetalHalf2Float(MetalHalf h) {
-  uint32_t v = mantissatable[offsettable[h >> 10] + (h & 0x3ff)] + exponenttable[h >> 10];
-  return *reinterpret_cast<float *>(&v);
+    uint32_t v = mantissatable[offsettable[h >> 10] + (h & 0x3ff)] + exponenttable[h >> 10];
+    return *reinterpret_cast<float*>(&v);
 }
 
-void MetalFloatArray2HalfArray(const float *f_array, MetalHalf *h_array, int count) {
-  for (int i = 0; i < count; ++i) {
-    h_array[i] = MetalFloat2Half(f_array[i]);
-  }
+void MetalFloatArray2HalfArray(const float* f_array, MetalHalf* h_array, int count) {
+    for (int i = 0; i < count; ++i) {
+        h_array[i] = MetalFloat2Half(f_array[i]);
+    }
 }
 
-void MetalHalfArray2FloatArray(const MetalHalf *h_array, float *f_array, int count) {
-  for (int i = 0; i < count; ++i) {
-    f_array[i] = MetalHalf2Float(h_array[i]);
-  }
+void MetalHalfArray2FloatArray(const MetalHalf* h_array, float* f_array, int count) {
+    for (int i = 0; i < count; ++i) {
+        f_array[i] = MetalHalf2Float(h_array[i]);
+    }
 }
 
 }  // namespace lite

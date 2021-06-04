@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +14,24 @@
 
 #pragma once
 
+#include "lite/core/kernel.h"
+
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace xpu {
 
-template <typename T>
-void shuffle_channel(const T* inputs,
-                     T* outputs,
-                     int group,
-                     int num,
-                     int channel,
-                     int height,
-                     int width);
+template <typename T, typename Functor>
+class ReduceCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ReduceParam;
 
-}  // namespace math
-}  // namespace arm
+  virtual void Run();
+
+  virtual ~ReduceCompute() = default;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

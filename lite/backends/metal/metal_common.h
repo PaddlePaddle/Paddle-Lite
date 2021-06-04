@@ -17,72 +17,68 @@
 
 #include <algorithm>
 
-typedef uint32_t MetalUint;
-typedef uint16_t MetalHalf;
-
 namespace paddle {
 namespace lite {
 
-enum class METAL_PRECISION_TYPE {
-  FLOAT = 0,
-  HALF = 1,
-  INT8 = 2,
-  INT16 = 3,
-  INT32 = 4
-};
+enum class DataLayout { kNCHW = 0, kNHWC };
 
-enum class METAL_ACCESS_FLAG { CPUReadWrite = 0, CPUWriteOnly, CPUTransparent };
+enum class METAL_PRECISION_TYPE { FLOAT = 0, HALF = 1, INT8 = 2, INT16 = 3, INT32 = 4 };
+
+enum class METAL_ACCESS_FLAG { CPUReadWrite = 0, CPUWriteOnly, CPUTransparent, CPUShared };
+
+typedef uint32_t MetalUint;
+typedef uint16_t MetalHalf;
 
 struct MetalUint2 {
- public:
-  uint32_t x;
-  uint32_t y;
+   public:
+    uint32_t x;
+    uint32_t y;
 
-  void MaxThan1() {
-    x = std::max<decltype(x)>(x, 1);
-    y = std::max<decltype(y)>(y, 1);
-  }
+    void MaxThan1() {
+        x = std::max<decltype(x)>(x, 1);
+        y = std::max<decltype(y)>(y, 1);
+    }
 };
 
 struct MetalUint3 {
- public:
-  MetalUint x;
-  MetalUint y;
-  MetalUint z;
+   public:
+    MetalUint x;
+    MetalUint y;
+    MetalUint z;
 
-  void MaxThan1() {
-    x = std::max<decltype(x)>(x, 1);
-    y = std::max<decltype(y)>(y, 1);
-    z = std::max<decltype(z)>(z, 1);
-  }
+    void MaxThan1() {
+        x = std::max<decltype(x)>(x, 1);
+        y = std::max<decltype(y)>(y, 1);
+        z = std::max<decltype(z)>(z, 1);
+    }
 };
 
 struct MetalUint4 {
- public:
-  MetalUint r;
-  MetalUint g;
-  MetalUint b;
-  MetalUint a;
+   public:
+    MetalUint r;
+    MetalUint g;
+    MetalUint b;
+    MetalUint a;
 
-  void MaxThan1() {
-    r = std::max<decltype(r)>(r, 1);
-    g = std::max<decltype(g)>(g, 1);
-    b = std::max<decltype(b)>(b, 1);
-    a = std::max<decltype(a)>(a, 1);
-  }
+    void MaxThan1() {
+        r = std::max<decltype(r)>(r, 1);
+        g = std::max<decltype(g)>(g, 1);
+        b = std::max<decltype(b)>(b, 1);
+        a = std::max<decltype(a)>(a, 1);
+    }
 };
 
 #define UP_DIV(x, y) (((x) + (y)-1) / (y))
 #define ROUND_UP(x, y) (((x) + (y)-1) / (y) * (y))
 
 static uint32_t SmallestLog2(uint32_t integer) {
-  if (integer == 0) return 0;
-  uint32_t power = 0;
-  while ((integer & 0b1) == 0) {
-    integer = integer >> 1;
-    power++;
-  }
-  return power;
+    if (integer == 0) return 0;
+    uint32_t power = 0;
+    while ((integer & 0b1) == 0) {
+        integer = integer >> 1;
+        power++;
+    }
+    return power;
 }
 
 }  // namespace lite

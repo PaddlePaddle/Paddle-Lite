@@ -237,10 +237,16 @@ function(merge_static_libs TARGET_NAME)
     endforeach()
     # msvc will put libarary in directory of "/Release/xxxlib" by default
     #       COMMAND cmake -E remove "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${TARGET_NAME}.lib"
-    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-      COMMAND cmake -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}"
-      COMMAND lib /OUT:${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/lib${TARGET_NAME}.lib ${libfiles}
-      )
+    if(${CMAKE_GENERATOR} MATCHES "Ninja")
+	  add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+		COMMAND lib /OUT:${CMAKE_CURRENT_BINARY_DIR}/lib${TARGET_NAME}.lib ${libfiles}
+		)
+	else()
+	  add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+	    COMMAND cmake -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}"
+		COMMAND lib /OUT:${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/lib${TARGET_NAME}.lib ${libfiles}
+		)
+	endif()
   endif(WIN32)
 endfunction(merge_static_libs)
 
@@ -323,6 +329,11 @@ function(cc_library TARGET_NAME)
         list(APPEND cc_library_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/${source}.h)
       endif()
       if(${source_file} MATCHES "__generated_code__.cc")
+        list(APPEND full_path_src ${source_file})
+      elseif(${source_file} MATCHES "arm_for_strip.cc" OR
+             ${source_file} MATCHES "host_for_strip.cc" OR
+             ${source_file} MATCHES "opencl_for_strip.cc" OR
+             ${source_file} MATCHES "x86_for_strip.cc")
         list(APPEND full_path_src ${source_file})
       else()
         if(NOT ${source_file} MATCHES "framework.pb.cc" AND NOT ${source_file} MATCHES "__generated_code__.cc")

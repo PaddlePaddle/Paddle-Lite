@@ -314,7 +314,7 @@ CHECK_BLOCK_DESC(pb, framework::proto);
 
 template <>
 void CheckBlockDesc<cpp::BlockDesc>(const cpp::BlockDesc& some_desc) {
-  auto desc = some_desc;
+  auto& desc = some_desc;
   ASSERT_EQ(desc.Idx(), 1);
   ASSERT_EQ(desc.ParentIdx(), -1);
   ASSERT_EQ(desc.ForwardBlockIdx(), 2);

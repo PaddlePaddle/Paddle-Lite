@@ -376,9 +376,15 @@ void test_reduce_any(Place place, float abs_err) {
 }
 
 TEST(ReduceAny, precision) {
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  Place place(TARGET(kXPU));
+  float abs_err = 2e-5;
+  test_reduce_any(place, abs_err);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   Place place(TARGET(kHost));
   float abs_err = 2e-5;
   test_reduce_any(place, abs_err);
+#endif
 }
 
 }  // namespace lite

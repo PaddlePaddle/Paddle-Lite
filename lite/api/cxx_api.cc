@@ -159,12 +159,6 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
     std::string kernel_path = kernel2pathmap[*kernel_info];
     fputs(kernel_path.c_str(), kpf_source);
     fputc('\n', kpf_source);
-    if (kernel_path == "conv_compute.cc") {
-      fputs(
-          "conv_depthwise.cc\nconv_direct.cc\nconv_gemmlike.cc\nconv_"
-          "winograd.cc\n",
-          kpf_source);
-    }
   }
   std::fclose(kpf_source);
   std::fclose(kpf);
@@ -373,8 +367,11 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   factor.ConsiderPrecision();
   factor.ConsiderDataLayout();
 
-  optimizer_.Run(std::move(program), inner_places, factor, passes);
-  exec_scope_ = optimizer_.exec_scope();
+  exec_scope_ = program.exec_scope();
+
+  program_ =
+      RunDefaultOptimizer(std::move(program), inner_places, factor, passes);
+
   PrepareFeedFetch();
   // Verify if the ops version of current runtime program is
   // the same with that in models.
@@ -382,7 +379,6 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
 }
 
 void Predictor::GenRuntimeProgram() {
-  program_ = optimizer_.GenRuntimeProgram();
   CHECK_EQ(exec_scope_, program_->exec_scope());
   program_generated_ = true;
 }

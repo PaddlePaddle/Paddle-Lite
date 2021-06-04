@@ -16,6 +16,7 @@
 #define LITE_KERNELS_METAL_IMAGE_OP_FEED_IMAGE_COMPUTE_H_
 
 #include <memory>
+#include <string>
 
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
@@ -33,28 +34,25 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-class FeedImageCompute : public KernelLite<TARGET(kMetal),
-                                           PTYPE,
-                                           DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::FeedParam;
+class FeedImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::FeedParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("feed", output_buffer_);
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
+    };
 
- private:
-  std::shared_ptr<MetalBuffer> input_buffer_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
-  const MetalDevice* device_;
+   private:
+    std::shared_ptr<MetalBuffer> input_buffer_;
+    std::shared_ptr<MetalBuffer> param_buffer_;
+    MetalImage* output_buffer_;
+
+    void* pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
 };
 
 }  // namespace metal
