@@ -205,14 +205,15 @@ class RegisterLiteKernelParser(SyntaxParser):
         # Get the code location of extra kernels registry
         # extra kernels registries are surrounded by
         # "#ifdef LITE_BUILD_EXTRA" and "#endif // LITE_BUILD_EXTRA"
-        while self.cur_pos < len(self.str):
-            start = self.str.find("#ifdef LITE_BUILD_EXTRA", self.cur_pos)
+        tmp_pos = self.cur_pos
+        while tmp_pos < len(self.str):
+            start = self.str.find("#ifdef LITE_BUILD_EXTRA", tmp_pos)
             if start != -1:
-               self.cur_pos = start
-               end = self.str.find("#endif  // LITE_BUILD_EXTRA", self.cur_pos)
+               tmp_pos = start
+               end = self.str.find("#endif  // LITE_BUILD_EXTRA", tmp_pos)
                if end != -1:
                    extra_command += extra_command + list(range(start, end + 1))
-                   self.cur_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
+                   tmp_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
                else:
                    break
             else:
@@ -220,14 +221,15 @@ class RegisterLiteKernelParser(SyntaxParser):
         # Get the code location of arm_fp16 kernels registry
         # arm_fp16 kernels registries are surrounded by
         # "#ifdef ENABLE_ARM_FP16" and "#endif"
-        while self.cur_pos < len(self.str):
-            start = self.str.find("#ifdef ENABLE_ARM_FP16", self.cur_pos)
+        tmp_pos = self.cur_pos
+        while tmp_pos < len(self.str):
+            start = self.str.find("#ifdef ENABLE_ARM_FP16", tmp_pos)
             if start != -1:
-               self.cur_pos = start
-               end = self.str.find("#endif  // ENABLE_ARM_FP16", self.cur_pos)
+               tmp_pos = start
+               end = self.str.find("#endif  // ENABLE_ARM_FP16", tmp_pos)
                if end != -1:
                    arm_fp16_command += arm_fp16_command + list(range(start, end + 1))
-                   self.cur_pos = end + len("#endif  // ENABLE_ARM_FP16") -1
+                   tmp_pos = end + len("#endif  // ENABLE_ARM_FP16") -1
                else:
                    break
             else:

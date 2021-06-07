@@ -366,6 +366,26 @@ REGISTER_LITE_KERNEL(less_equal, kHost, kInt64, kAny, less_equal_int64, def)
     .BindPaddleOpVersion("less_equal", 1)
     .Finalize();
 
+// float kernel has higher priority
+using less_equal_int64_f = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kFloat),
+    paddle::lite::kernels::host::_LessEqualFunctor<int64_t>>;
+REGISTER_LITE_KERNEL(less_equal, kHost, kFloat, kAny, less_equal_int64_f, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .BindPaddleOpVersion("less_equal", 1)
+    .Finalize();
+
 using greater_than_float = paddle::lite::kernels::host::CompareCompute<
     PRECISION(kFloat),
     paddle::lite::kernels::host::_GreaterThanFunctor<float>>;
@@ -376,6 +396,22 @@ REGISTER_LITE_KERNEL(greater_than, kHost, kFloat, kAny, greater_than_float, def)
     .BindInput("Y",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindPaddleOpVersion("greater_than", 1)
+    .Finalize();
+
+using greater_than_int32 = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kInt32),
+    paddle::lite::kernels::host::_GreaterThanFunctor<int32_t>>;
+REGISTER_LITE_KERNEL(greater_than, kHost, kInt32, kAny, greater_than_int32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(
                     TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
@@ -398,19 +434,24 @@ REGISTER_LITE_KERNEL(greater_than, kHost, kInt64, kAny, greater_than_int64, def)
     .BindPaddleOpVersion("greater_than", 1)
     .Finalize();
 
-using greater_than_int32 = paddle::lite::kernels::host::CompareCompute<
-    PRECISION(kInt32),
-    paddle::lite::kernels::host::_GreaterThanFunctor<int32_t>>;
-REGISTER_LITE_KERNEL(greater_than, kHost, kInt32, kAny, greater_than_int32, def)
+// float kernel has higher priority
+using greater_than_int64_f = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kFloat),
+    paddle::lite::kernels::host::_GreaterThanFunctor<int64_t>>;
+REGISTER_LITE_KERNEL(
+    greater_than, kHost, kFloat, kAny, greater_than_int64_f, int64)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
     .BindInput("Y",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
     .BindPaddleOpVersion("greater_than", 1)
     .Finalize();
 
