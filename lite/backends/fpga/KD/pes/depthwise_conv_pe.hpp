@@ -65,6 +65,8 @@ class DepthwiseConvPE : public PE {
       memcpy(padded_filter_data,
              param.filter->data<float>(),
              param.filter->memorySize());
+      param_.filter->releaseData();
+      param_.filter->shareDataWith(&padded_filter);
       Shape& in_shape = param.input->shape();
       Shape input_shape(NHWC,
                         {in_shape.num(),
