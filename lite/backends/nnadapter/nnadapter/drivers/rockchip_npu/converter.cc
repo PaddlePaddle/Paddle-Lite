@@ -40,9 +40,10 @@ Program::~Program() {
 }
 
 int Program::Build(driver::Model* model, driver::Cache* cache) {
-  NNADAPTER_VLOG(5) << "Init:\n\n" << Visualize(model);
-  // ApplyConstraintsToQuantizationParameters(model);
-  NNADAPTER_VLOG(5) << "After applying quantization contraints:\n"
+  // Convert the quantization parameters of the operands in the NNAdapter model
+  NNADAPTER_VLOG(5) << "Origin model:" << std::endl << driver::Visualize(model);
+  ConvertModelFromSymmToAsymmQuantization(model);
+  NNADAPTER_VLOG(5) << "Optimized model:" << std::endl
                     << driver::Visualize(model);
   // Convert a NNAdapter model to a rknpu graph
   tensors_.clear();
@@ -92,6 +93,7 @@ int Program::Build(driver::Model* model, driver::Cache* cache) {
   auto input_count = model->input_operands.size();
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors(input_count);
   input_info_.resize(input_count);
+  input_zero_points_.resize(input_count);
   for (size_t i = 0; i < input_count; i++) {
     auto operand = model->input_operands[i];
     NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
@@ -103,10 +105,12 @@ int Program::Build(driver::Model* model, driver::Cache* cache) {
     input_info_[i].pass_through = false;
     input_info_[i].type = ConvertPrecision(operand->type.precision);
     input_info_[i].layout = ConvertDataLayout(operand->type.layout);
+    input_zero_points_[i] = operand->type.asymm_per_layer_params.zero_point;
   }
   auto output_count = model->output_operands.size();
   std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors(output_count);
   output_info_.resize(output_count);
+  output_zero_points_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
     NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
@@ -118,6 +122,7 @@ int Program::Build(driver::Model* model, driver::Cache* cache) {
     output_info_[i].want_float = false;
     output_info_[i].type = ConvertPrecision(operand->type.precision);
     output_info_[i].layout = ConvertDataLayout(operand->type.layout);
+    output_zero_points_[i] = operand->type.asymm_per_layer_params.zero_point;
   }
   graph_->SetInputsOutputs(input_tensors, output_tensors);
   // Create an execution to build the graph to the device-related program.
@@ -134,6 +139,12 @@ int Program::Execute(uint32_t input_count,
   NNADAPTER_CHECK_EQ(output_info_.size(), output_count);
   for (uint32_t i = 0; i < input_count; i++) {
     auto& argument = input_arguments[i];
+    auto buffer = reinterpret_cast<uint8_t*>(argument.buffer);
+    auto zero_point = input_zero_points_[argument.index];
+    for (int j = 0; j < argument.length; j++) {
+      buffer[j] =
+          static_cast<uint8_t>(static_cast<int16_t>(buffer[j]) + zero_point);
+    }
     input_info_[argument.index].buf = argument.buffer;
     input_info_[argument.index].size = argument.length;
   }
@@ -145,6 +156,15 @@ int Program::Execute(uint32_t input_count,
   NNADAPTER_CHECK_EQ(execution_->SetInputs(input_info_), rk::nn::RK_SUCCESS);
   NNADAPTER_CHECK_EQ(execution_->Run(), rk::nn::RK_SUCCESS);
   NNADAPTER_CHECK_EQ(execution_->GetOutputs(output_info_), rk::nn::RK_SUCCESS);
+  for (uint32_t i = 0; i < output_count; i++) {
+    auto& argument = output_arguments[i];
+    auto buffer = reinterpret_cast<uint8_t*>(argument.buffer);
+    auto zero_point = output_zero_points_[argument.index];
+    for (int j = 0; j < argument.length; j++) {
+      buffer[j] =
+          static_cast<int8_t>(static_cast<int16_t>(buffer[j]) - zero_point);
+    }
+  }
   return NNADAPTER_NO_ERROR;
 }
 
@@ -153,26 +173,6 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
   if (tensors_.find(operand) != tensors_.end()) {
     return tensors_.at(operand);
   }
-
-#define CONVERT_QUANT_INTx_SYMM_PER_LAYER(bits)           \
-  case NNADAPTER_TENSOR_QUANT_INT##bits##_SYMM_PER_LAYER: \
-    attr->qntBits = bits;                                 \
-    attr->qntType = rk::nn::QuantizationType::SYMMETRIC;  \
-    attr->qntParamSymmetric.scale.resize(1);              \
-    attr->qntParamSymmetric.scale[0] =                    \
-        operand->type.symm_per_layer_params.scale;        \
-    break;
-#define CONVERT_QUANT_INTx_SYMM_PER_CHANNEL(bits)                              \
-  case NNADAPTER_TENSOR_QUANT_INT##bits##_SYMM_PER_CHANNEL:                    \
-    attr->qntBits = bits;                                                      \
-    attr->qntType = rk::nn::QuantizationType::SYMMETRIC;                       \
-    attr->qntParamSymmetric.scale.resize(                                      \
-        operand->type.symm_per_channel_params.scale_count);                    \
-    memcpy(&attr->qntParamSymmetric.scale[0],                                  \
-           operand->type.symm_per_channel_params.scales,                       \
-           operand->type.symm_per_channel_params.scale_count * sizeof(float)); \
-    break;
-
   auto attr = std::make_shared<rk::nn::TensorAttr>();
   attr->name = string_format("0x%X", operand);
   attr->role = operand->buffer == nullptr ? rk::nn::TensorRole::VAR
@@ -182,10 +182,23 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
   attr->precision = ConvertPrecision(operand->type.precision);
   attr->layout = ConvertDataLayout(operand->type.layout);
   switch (operand->type.precision) {
-    CONVERT_QUANT_INTx_SYMM_PER_LAYER(8);
-    CONVERT_QUANT_INTx_SYMM_PER_LAYER(32);
-    CONVERT_QUANT_INTx_SYMM_PER_CHANNEL(8);
-    CONVERT_QUANT_INTx_SYMM_PER_CHANNEL(32);
+    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+      attr->qntBits = 8;
+      attr->qntType = rk::nn::QuantizationType::AFFINE_ASYMMETRIC;
+      attr->qntParamAffineAsymmetric.scale.resize(1);
+      attr->qntParamAffineAsymmetric.scale[0] =
+          operand->type.asymm_per_layer_params.scale;
+      attr->qntParamAffineAsymmetric.zero_point.resize(1);
+      attr->qntParamAffineAsymmetric.zero_point[0] =
+          operand->type.asymm_per_layer_params.zero_point;
+      break;
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
+      attr->qntBits = 32;
+      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
+      attr->qntParamSymmetric.scale.resize(1);
+      attr->qntParamSymmetric.scale[0] =
+          operand->type.symm_per_layer_params.scale;
+      break;
     default:
       NNADAPTER_LOG(ERROR) << "Can not convert an operand@0x" << std::hex
                            << operand
@@ -197,9 +210,6 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
   NNADAPTER_CHECK(tensor);
   // Use to find the tensor based on the pointer of operand
   tensors_[operand] = tensor;
-
-#undef CONVERT_QUANT_INTx_SYMM_PER_LAYER
-#undef CONVERT_QUANT_INTx_SYMM_PER_CHANNEL
   return tensor;
 }
 

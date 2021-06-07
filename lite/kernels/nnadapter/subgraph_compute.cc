@@ -108,18 +108,16 @@ bool DeviceProgram::BuildAndCacheToFiles(
         << "No operand found for input '" << input_names[i] << "'!";
     auto operand = converter.GetOperand(input_names[i]);
     input_operands.push_back(operand);
-    VLOG(3) << "Found an operand @0x" << std::hex
-            << reinterpret_cast<int64_t>(operand) << " for input '"
-            << input_names[i] << "'.";
+    VLOG(3) << "Found an operand @0x" << string_format("%x", operand)
+            << " for input '" << input_names[i] << "'.";
   }
   for (int i = 0; i < output_names.size(); i++) {
     CHECK(converter.HasOperand(output_names[i]))
         << "No operand found for output '" << output_names[i] << "'!";
     auto operand = converter.GetOperand(output_names[i]);
     output_operands.push_back(operand);
-    VLOG(3) << "Found an operand @0x" << std::hex
-            << reinterpret_cast<int64_t>(operand) << " for output '"
-            << output_names[i] << "'.";
+    VLOG(3) << "Found an operand @0x" << string_format("%x", operand)
+            << " for output '" << output_names[i] << "'.";
   }
   NNAdapterModel_identifyInputsAndOutputs_invoke(model_,
                                                  input_operands.size(),

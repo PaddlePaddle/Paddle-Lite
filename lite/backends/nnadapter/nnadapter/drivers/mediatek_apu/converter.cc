@@ -45,12 +45,12 @@ Program::~Program() {
 int Program::Build(driver::Model* model, driver::Cache* cache) {
   // Convert the data layout and quantization parameters of the operands in the
   // NNAdapter model
-  ConvertQuantizationFromSymmToAsymm(model);
+  NNADAPTER_VLOG(5) << "Origin model:" << std::endl << driver::Visualize(model);
+  ConvertModelFromSymmToAsymmQuantization(model);
   ApplyConstraintsToQuantizationParameters(model);
-  ConvertDataLayoutFromNCHWToNHWC(model);
-  NNADAPTER_VLOG(5)
-      << "After applying symm2asymm, NCHW2NHWC and quantization contraints:\n"
-      << driver::Visualize(model);
+  ConvertModelFromNCHWToNHWCDataLayout(model);
+  NNADAPTER_VLOG(5) << "Optimized model:" << std::endl
+                    << driver::Visualize(model);
   // Convert the NNAdapter model to Neuron model
   operand_indexes_.clear();
   operand_index_ = 0;

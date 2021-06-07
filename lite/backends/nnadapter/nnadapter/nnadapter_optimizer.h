@@ -19,8 +19,8 @@
 namespace nnadapter {
 namespace driver {
 
-void ConvertQuantizationFromSymmToAsymm(driver::Model *model);
-void ConvertDataLayoutFromNCHWToNHWC(driver::Model *model);
+void ConvertModelFromSymmToAsymmQuantization(driver::Model *model);
+void ConvertModelFromNCHWToNHWCDataLayout(driver::Model *model);
 
 }  // namespace driver
 }  // namespace nnadapter

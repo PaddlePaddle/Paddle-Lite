@@ -48,14 +48,30 @@ static void ConvertOperandFromSymmToAsymm(driver::Operand* operand,
         }
       }
     } break;
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL: {
-    } break;
     default:
       break;
   }
 }
 
-NNADAPTER_EXPORT void ConvertQuantizationFromSymmToAsymm(driver::Model* model) {
+static void PropagateAsymmZeroPoint(Operand* reference_operand,
+                                    Operand* target_operand) {
+  auto& reference_type = reference_operand->type;
+  auto& target_type = target_operand->type;
+  auto reference_precision = reference_type.precision;
+  auto target_precision = target_type.precision;
+  if (IsAsymmPerLayerQuantization(reference_precision) &&
+      IsAsymmPerLayerQuantization(target_precision)) {
+    target_type.asymm_per_layer_params.zero_point =
+        reference_type.asymm_per_layer_params.zero_point;
+  } else {
+    NNADAPTER_LOG(ERROR) << "Unhandled case: reference_precision="
+                         << reference_type.precision
+                         << ", target_precision=" << target_precision;
+  }
+}
+
+NNADAPTER_EXPORT void ConvertModelFromSymmToAsymmQuantization(
+    driver::Model* model) {
   std::vector<Operation*> operations =
       driver::SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -74,6 +90,7 @@ NNADAPTER_EXPORT void ConvertQuantizationFromSymmToAsymm(driver::Model* model) {
       case NNADAPTER_HARD_SWISH: {
         ConvertOperandFromSymmToAsymm(input_operands[0], 128);
         ConvertOperandFromSymmToAsymm(output_operands[0], 128);
+        PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);
       } break;
       case NNADAPTER_SIGMOID:
       case NNADAPTER_SOFTMAX: {
@@ -357,7 +374,8 @@ static void ConvertConv2DFromNCHWToNHWC(driver::Operation* operation) {
   MarkOperandConvertToNHWC(output_operand);
 }
 
-NNADAPTER_EXPORT void ConvertDataLayoutFromNCHWToNHWC(driver::Model* model) {
+NNADAPTER_EXPORT void ConvertModelFromNCHWToNHWCDataLayout(
+    driver::Model* model) {
   std::vector<Operation*> operations =
       driver::SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {

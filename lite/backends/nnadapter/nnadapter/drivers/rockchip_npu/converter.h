@@ -62,6 +62,8 @@ class Program {
   rk::nn::Exection* execution_{nullptr};
   std::vector<rk::nn::InputInfo> input_info_;
   std::vector<rk::nn::OutputInfo> output_info_;
+  std::vector<int32_t> input_zero_points_;
+  std::vector<int32_t> output_zero_points_;
 };
 
 }  // namespace rockchip_npu

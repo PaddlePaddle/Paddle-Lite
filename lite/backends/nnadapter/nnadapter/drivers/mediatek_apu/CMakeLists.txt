@@ -20,7 +20,7 @@ add_definitions(-DNNADAPTER_DRIVER_TARGET=${NNADAPTER_DRIVER_TARGET})
 
 include(dependencies.cmake)
 
-set(NNADAPTER_DRIVER_SRCS neuron_adapter_wrapper.cc utility.cc driver.cc optimizer.cc converter.cc)
+set(NNADAPTER_DRIVER_SRCS neuron_adapter_wrapper.cc utility.cc optimizer.cc converter.cc driver.cc)
 set(NNADAPTER_DRIVER_DEPS nnadapter_logging nnadapter_common nnadapter_driver nnadapter_optimizer ${${NNADAPTER_DRIVER_NAME}_deps})
 
 add_library(${NNADAPTER_DRIVER_TARGET} SHARED ${NNADAPTER_DRIVER_SRCS})

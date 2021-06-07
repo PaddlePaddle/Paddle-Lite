@@ -23,8 +23,8 @@ namespace nnadapter {
 namespace driver {
 namespace mediatek_apu {
 
-static void MakeQuantizationParametersSameAs(Operand* reference_operand,
-                                             Operand* target_operand) {
+static void PropagateQuantizationParameters(Operand* reference_operand,
+                                            Operand* target_operand) {
   auto& reference_type = reference_operand->type;
   auto& target_type = target_operand->type;
   auto reference_precision = reference_type.precision;
@@ -52,9 +52,9 @@ static void MakeQuantizationParametersSameAs(Operand* reference_operand,
   }
 }
 
-static void MakeBiasScaleEqualInputScaleXWeightScale(Operand* input_operand,
-                                                     Operand* weight_operand,
-                                                     Operand* bias_operand) {
+static void UpdateBiasScaleWithInputScaleXWeightScale(Operand* input_operand,
+                                                      Operand* weight_operand,
+                                                      Operand* bias_operand) {
   auto& input_type = input_operand->type;
   auto& weight_type = weight_operand->type;
   auto& bias_type = bias_operand->type;
@@ -159,15 +159,15 @@ void ApplyConstraintsToQuantizationParameters(driver::Model* model) {
       case NNADAPTER_RELU6:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_AVERAGE_POOL_2D:
-        MakeQuantizationParametersSameAs(input_operands[0], output_operands[0]);
+      case NNADAPTER_TRANSPOSE:
+        PropagateQuantizationParameters(input_operands[0], output_operands[0]);
         break;
       case NNADAPTER_CONV_2D:
       case NNADAPTER_FULLY_CONNECTED:
-        MakeBiasScaleEqualInputScaleXWeightScale(
+        UpdateBiasScaleWithInputScaleXWeightScale(
             input_operands[0], input_operands[1], input_operands[2]);
         break;
       case NNADAPTER_TANH:
-      case NNADAPTER_TRANSPOSE:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_SIGMOID:
