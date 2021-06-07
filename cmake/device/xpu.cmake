@@ -115,7 +115,7 @@ if (LITE_WITH_XTCL)
     set (XPU_XTCL_INCLUDE_DIR  "${XPU_SDK_ROOT}/XTCL/include" CACHE PATH "xpu xtcl include directory" FORCE)
     set (XTCL_LIB              "${XPU_SDK_ROOT}/XTCL/lib/libxtcl.a" CACHE FILEPATH "libxtcl.a" FORCE)
     set (TVM_LIB               "${XPU_SDK_ROOT}/XTCL/shlib/libtvm.so" CACHE FILEPATH "libtvm.so" FORCE)
-    set (LLVM_8_LIB            "${XPU_SDK_ROOT}/XTCL/shlib/libLLVM-8.so" CACHE FILEPATH "libLLVM-8.so" FORCE)
+    set (LLVM_10_LIB           "${XPU_SDK_ROOT}/XTCL/shlib/libLLVM-10.so" CACHE FILEPATH "libLLVM-10.so" FORCE)
     set (XPUJITC_LIB           "${XPU_SDK_ROOT}/XTCL/shlib/libxpujitc.so" CACHE FILEPATH "libxpujitc.so" FORCE)
 
     include_directories (${XPU_XTCL_INCLUDE_DIR})
@@ -126,14 +126,14 @@ if (LITE_WITH_XTCL)
     add_library (tvm SHARED IMPORTED GLOBAL)
     set_property (TARGET tvm PROPERTY IMPORTED_LOCATION ${TVM_LIB})
 
-    add_library (llvm_8 SHARED IMPORTED GLOBAL)
-    set_property (TARGET llvm_8 PROPERTY IMPORTED_LOCATION ${LLVM_8_LIB})
+    add_library (llvm_10 SHARED IMPORTED GLOBAL)
+    set_property (TARGET llvm_10 PROPERTY IMPORTED_LOCATION ${LLVM_10_LIB})
 
     add_library(xpujitc SHARED IMPORTED GLOBAL)
     set_property(TARGET xpujitc PROPERTY IMPORTED_LOCATION ${XPUJITC_LIB})
 
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1")
 
-    set (xpu_runtime_libs xtcl tvm xpuapi xpurt llvm_8 xpujitc CACHE INTERNAL "xpu runtime libs")
-    set (xpu_builder_libs xtcl tvm xpuapi xpurt llvm_8 xpujitc CACHE INTERNAL "xpu builder libs")
+    set (xpu_runtime_libs xtcl tvm xpuapi xpurt llvm_10 xpujitc CACHE INTERNAL "xpu runtime libs")
+    set (xpu_builder_libs xtcl tvm xpuapi xpurt llvm_10 xpujitc CACHE INTERNAL "xpu builder libs")
 endif ()

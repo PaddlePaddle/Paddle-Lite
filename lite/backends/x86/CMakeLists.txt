@@ -12,7 +12,7 @@ lite_cc_library(dynamic_loader SRCS dynamic_loader.cc)
 if(WITH_MKL AND (NOT WITH_STATIC_MKL))
     lite_cc_library(dynload_mklml SRCS mklml.cc DEPS dynamic_loader mklml)
 endif()
-lite_cc_library(x86_cpu_info SRCS cpu_info.cc)
+lite_cc_library(x86_cpu_info SRCS cpu_info.cc DEPS xbyak)
 
 add_subdirectory(jit)
 add_subdirectory(math)

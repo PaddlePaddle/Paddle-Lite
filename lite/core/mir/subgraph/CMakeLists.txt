@@ -1,6 +1,9 @@
-lite_cc_library(subgraph_detector
-    SRCS subgraph_detector.cc
-    DEPS mir_pass types subgraph_op)
+if (WITH_TESTING)
+    lite_cc_library(subgraph_detector SRCS subgraph_detector.cc DEPS mir_pass types subgraph_op gtest gflags)
+else()
+    lite_cc_library(subgraph_detector SRCS subgraph_detector.cc DEPS mir_pass types subgraph_op)
+endif()
+
 lite_cc_library(subgraph_pass
     SRCS subgraph_pass.cc
     DEPS mir_pass types context ${mir_fusers} subgraph_detector)
