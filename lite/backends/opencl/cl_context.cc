@@ -41,27 +41,28 @@ void CLContext::AddKernel(const std::string &kernel_name,
   VLOG(3) << " --- end get program --- ";
   VLOG(3) << " --- to create kernel: " << kernel_name << " --- ";
 #endif
-  std::shared_ptr<cl::Kernel> kernel(
-      new cl::Kernel(program, kernel_name.c_str(), &status));
+  // std::shared_ptr<cl::Kernel> kernel(
+  //     new cl::Kernel(program, kernel_name.c_str(), &status));
+  cl::Kernel kernel = cl::Kernel(program, kernel_name.c_str(), &status);
   CL_CHECK_FATAL(status);
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- end create kernel --- ";
 #endif
-  kernels_.emplace_back(std::move(kernel));
+  kernels_.push_back(kernel);
   STL::stringstream kernel_key;
   kernel_key << kernel_name << options << time_stamp;
   kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
 }
 
-cl::Kernel &CLContext::GetKernel(const int index) {
+cl::Kernel CLContext::GetKernel(const int index) {
   CHECK(static_cast<size_t>(index) < kernels_.size())
       << "The index must be less than the size of kernels.";
-  CHECK(kernels_[index] != nullptr)
-      << "The target kernel pointer cannot be null.";
-  return *(kernels_[index]);
+  // CHECK(kernels_[index] != nullptr)
+  //     << "The target kernel pointer cannot be null.";
+  return (kernels_[index]);
 }
 
-cl::Kernel &CLContext::GetKernel(const std::string &name) {
+cl::Kernel CLContext::GetKernel(const std::string &name) {
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- Get kernel name: " << name
           << "\tkernel nums: " << kernels_.size() << " --- ";

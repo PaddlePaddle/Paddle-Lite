@@ -188,46 +188,46 @@ void ElementwiseAddImageCompute::Run() {
 #endif
 
   cl_int status;
-  auto kernel = kernel_;
+  // auto kernel = kernel_; // this will cause implicitly invoke clReleaseKernel
   if (kernel_func_name_ == "elementwise_add") {
     int output_w = y_dims[3];
     int output_h = y_dims[2];
-    status = kernel.setArg(0, *x_img);
+    status = kernel_.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *y_img);
+    status = kernel_.setArg(1, *y_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *out_img);
+    status = kernel_.setArg(2, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, output_h);
+    status = kernel_.setArg(3, output_h);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, output_w);
+    status = kernel_.setArg(4, output_w);
     CL_CHECK_FATAL(status);
   } else if (kernel_func_name_ == "channel_add") {
     if (y->persistable()) {
       y_img = GET_DATA_GPU(y_weights_image_);
     }
     const int opt = y_dims[0] == 1;
-    status = kernel.setArg(0, *x_img);
+    status = kernel_.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *y_img);
+    status = kernel_.setArg(1, *y_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *out_img);
+    status = kernel_.setArg(2, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, tensor_w);
+    status = kernel_.setArg(3, tensor_w);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, opt);
+    status = kernel_.setArg(4, opt);
     CL_CHECK_FATAL(status);
   } else if (kernel_func_name_ == "width_add") {
     if (y->persistable()) {
       y_img = GET_DATA_GPU(y_weights_image_);
     }
-    status = kernel.setArg(0, *x_img);
+    status = kernel_.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *y_img);
+    status = kernel_.setArg(1, *y_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *out_img);
+    status = kernel_.setArg(2, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, tensor_w);
+    status = kernel_.setArg(3, tensor_w);
     CL_CHECK_FATAL(status);
   } else {
     LOG(FATAL) << "Unsupported kernel: " << kernel_func_name_;
@@ -237,7 +237,7 @@ void ElementwiseAddImageCompute::Run() {
   CHECK(context.cl_context() != nullptr);
 
   status = EnqueueNDRangeKernel(context,
-                                kernel,
+                                kernel_,
                                 cl::NullRange,
                                 global_work_size_,
                                 cl::NullRange,

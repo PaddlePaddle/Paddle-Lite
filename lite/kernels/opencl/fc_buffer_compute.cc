@@ -146,30 +146,30 @@ class FcCompute
     auto* out_buf =
         fc_param_->output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
-    auto kernel = kernel_;
+    // auto kernel = kernel_;
     cl_int status;
-    status = kernel.setArg(0, *x_buf);
+    status = kernel_.setArg(0, *x_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *w_buf);
+    status = kernel_.setArg(1, *w_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *bias_buf);
+    status = kernel_.setArg(2, *bias_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, *out_buf);
+    status = kernel_.setArg(3, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, static_cast<const int>(m_));
+    status = kernel_.setArg(4, static_cast<const int>(m_));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, static_cast<const int>(n_));
+    status = kernel_.setArg(5, static_cast<const int>(n_));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(6, static_cast<const int>(k_));
+    status = kernel_.setArg(6, static_cast<const int>(k_));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(7, *alpha_buf);
+    status = kernel_.setArg(7, *alpha_buf);
     CL_CHECK_FATAL(status);
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
     status = EnqueueNDRangeKernel(context,
-                                  kernel,
+                                  kernel_,
                                   cl::NullRange,
                                   global_work_size_,
                                   cl::NullRange,
