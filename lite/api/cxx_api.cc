@@ -462,16 +462,27 @@ void Predictor::CheckPaddleOpVersions(
     }
   }
 }
-// #ifdef LITE_WITH_TRAIN
-// void Predictor::FeedVars(const std::vector<framework::Tensor> &tensors) {
-//   auto var = scope_->FindVar("feed");
-//   auto &feed_list = *(var->GetMutable<std::vector<lite::Tensor>>());
-//   feed_list.resize(tensors.size());
 
-//   for (size_t i = 0; i < tensors.size(); ++i)
-//     feed_list[i].ShareDataWith(tensors[i]);
-// }
-// #endif
+bool Predictor::TryShrinkMemory() {
+  std::vector<std::string> local_var_names = scope_->LocalVarNames();
+  for (auto var_name : local_var_names) {
+    Variable *var = scope_->FindLocalVar(var_name);
+    if (var->IsType<lite::Tensor>()) {
+      auto *tensor = scope_->FindMutableTensor(var_name);
+      if (!tensor->persistable()) {
+        tensor->clear();
+      }
+    } else if (var->IsType<std::vector<Tensor>>()) {
+      auto tensor_array = scope_->FindMutableTensorList(var_name);
+      for (auto &tensor : *tensor_array) {
+        tensor.clear();
+      }
+    } else {
+      continue;
+    }
+  }
+  return true;
+}
 
 void Predictor::CheckInputValid() {
   for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {

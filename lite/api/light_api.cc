@@ -342,5 +342,33 @@ void LightPredictor::CheckInputValid() {
   }
 }
 
+///
+/// \brief Release all tmp tensor to compress the size of the memory pool.
+/// The memory pool is considered to be composed of a list of chunks, if
+/// the chunk is not occupied, it can be released.
+///
+/// \return a boolean variable.
+///
+bool LightPredictor::TryShrinkMemory() {
+  std::vector<std::string> local_var_names = scope_->LocalVarNames();
+  for (auto var_name : local_var_names) {
+    Variable* var = scope_->FindLocalVar(var_name);
+    if (var->IsType<lite::Tensor>()) {
+      auto* tensor = scope_->FindMutableTensor(var_name);
+      if (!tensor->persistable()) {
+        tensor->clear();
+      }
+    } else if (var->IsType<std::vector<Tensor>>()) {
+      auto tensor_array = scope_->FindMutableTensorList(var_name);
+      for (auto& tensor : *tensor_array) {
+        tensor.clear();
+      }
+    } else {
+      continue;
+    }
+  }
+  return true;
+}
+
 }  // namespace lite
 }  // namespace paddle

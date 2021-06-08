@@ -53,6 +53,13 @@ TEST(CxxApi, run) {
 
   predictor->Run();
 
+  predictor->TryShrinkMemory();
+  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+  auto* data = input_tensor->mutable_data<float>();
+  for (int i = 0; i < 100 * 100; i++) {
+    data[i] = i;
+  }
+
   auto output = predictor->GetTensor(outputs[0]);
   auto* out = output->data<float>();
   LOG(INFO) << out[0];
@@ -130,6 +137,14 @@ TEST(LightApi, run) {
     data[i] = i;
   }
 
+  predictor->Run();
+
+  predictor->TryShrinkMemory();
+  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+  auto* data = input_tensor->mutable_data<float>();
+  for (int i = 0; i < 100 * 100; i++) {
+    data[i] = i;
+  }
   predictor->Run();
 
   auto output = predictor->GetOutput(0);
