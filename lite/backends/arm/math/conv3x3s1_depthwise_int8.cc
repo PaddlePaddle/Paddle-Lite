@@ -30,8 +30,7 @@ namespace math {
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
 
 #ifdef __aarch64__
-#define INIT_INT8_S1                     \
-                                         \
+#define INIT_S1                          \
   "PRFM PLDL1KEEP, [%[din_ptr0]] \n"     \
   "PRFM PLDL1KEEP, [%[din_ptr1]] \n"     \
   "PRFM PLDL1KEEP, [%[din_ptr2]] \n"     \
@@ -46,7 +45,7 @@ namespace math {
   "movi   v12.4s, #0x0\n"                \
   "movi   v13.4s, #0x0\n"
 
-#define INIT_INT8_LEFT                      \
+#define LEFT_COMPUTE_S1                     \
   "smull  v18.8h,  %[v1].8b,  v0.8b   \n"   \
   "ext v4.8b, v21.8b, v0.8b, #7       \n"   \
   "ext v5.8b, v0.8b, v1.8b, #1        \n"   \
@@ -124,7 +123,7 @@ namespace math {
   "fmla   v14.4s, v12.4s, %[v_scale].4s \n" \
   "fmla   v15.4s, v13.4s, %[v_scale].4s \n"
 
-#define RELU6_LEFT                         \
+#define LEFT_RELU6                         \
   "movi   v21.4s, #0x0\n"                  \
   "fmax  v20.4s, v20.4s, v21.4s        \n" \
   "fmax  v22.4s, v22.4s, v21.4s        \n" \
@@ -137,21 +136,21 @@ namespace math {
   "fmin  v15.4s, v15.4s, v21.4s        \n" \
   "movi   v21.4s, #0x0\n"
 
-#define RELU_LEFT                          \
+#define LEFT_RELU                          \
   "fmax  v20.4s, v20.4s, v21.4s        \n" \
   "fmax  v22.4s, v22.4s, v21.4s        \n" \
   "fmax  v14.4s, v14.4s, v21.4s        \n" \
   "fmax  v15.4s, v15.4s, v21.4s        \n"
 
-#define STORE_MIDDLE_FLOAT                 \
+#define LEFT_STORE_FLOAT                   \
   "stp    q20, q22, [%[ptr_out0]], #32 \n" \
   "stp     q14, q15, [%[ptr_out1]], #32   \n"
 
-#define STORE_MIDDLE_INT8                     \
+#define LEFT_STORE_INT8                       \
   "st1    {v20.8b}, [%[ptr_out0]], #8     \n" \
   "st1    {v14.8b}, [%[ptr_out1]], #8     \n"
 
-#define MIDDLE                                       \
+#define MID_COMPUTE_S1                               \
   "movi   v12.4s, #0x0\n"                            \
   "movi   v13.4s, #0x0\n"                            \
   "cmp  %[cnt], #1                \n"                \
@@ -227,14 +226,6 @@ namespace math {
   "fmla   v18.4s, v12.4s, %[v_scale].4s          \n" \
   "fmla   v19.4s, v13.4s, %[v_scale].4s          \n"
 
-#define MIDDLE_FLOAT \
-  STORE_MIDDLE_FLOAT \
-  MIDDLE
-
-#define MIDDLE_INT8 \
-  STORE_MIDDLE_INT8 \
-  MIDDLE
-
 #define INT8_MIDDLE_OUT                        \
   "ld1 {v4.4s}, [%[vmax_ptr]]              \n" \
   "fcmge v11.4s, v20.4s, v4.4s             \n" \
@@ -257,13 +248,13 @@ namespace math {
   "sqxtn   v18.8b, v21.8h                  \n" \
   "movi   v21.4s, #0x0                     \n"
 
-#define RELU_MIDDLE                         \
+#define MID_RELU                            \
   "fmax  v20.4s, v20.4s, v21.4s         \n" \
   "fmax  v22.4s, v22.4s, v21.4s         \n" \
   "fmax  v18.4s, v18.4s, v21.4s         \n" \
   "fmax  v19.4s, v19.4s, v21.4s         \n"
 
-#define RELU6_MIDDLE                        \
+#define MID_RELU6                           \
   "movi   v21.4s, #0x0\n"                   \
   "fmax  v20.4s, v20.4s, v21.4s         \n" \
   "fmax  v22.4s, v22.4s, v21.4s         \n" \
@@ -369,7 +360,7 @@ namespace math {
   RIGHT
 
 #define RIGHT_RELU                            \
-  "fmax  v6.4s, v6.4s, v21.4s            \n"  \
+  "fmax  v6.4s, v6.4s, v21.4s             \n" \
   "fmax  v7.4s, v7.4s, v21.4s             \n" \
   "fmax  v8.4s, v8.4s, v21.4s             \n" \
   "fmax  v9.4s, v9.4s, v21.4s             \n"
@@ -387,8 +378,8 @@ namespace math {
   "fmin  v9.4s, v9.4s, v21.4s             \n" \
   "movi   v21.4s, #0x0\n"
 
-#define STORE_END_OUT_END                     \
-  "stp     q6, q7, [%[ptr_out0]], #32     \n" \
+#define STORE_RIGHT_OUT_END                   \
+  "stp   q6, q7, [%[ptr_out0]], #32       \n" \
   "stp   q8, q9, [%[ptr_out1]], #32       \n"
 
 #define RIGHT_END                             \
@@ -397,9 +388,9 @@ namespace math {
 
 #define RIGHT_END_FLOAT \
   RIGHT_END             \
-  STORE_END_OUT_END
+  STORE_RIGHT_OUT_END
 
-#define INT8_OUT_LEFT                          \
+#define LEFT_RESULT_S1                         \
   "ld1 {v4.4s}, [%[vmax_ptr]]              \n" \
   "fcmge v11.4s, v20.4s, v4.4s             \n" \
   "bif v20.16b, v4.16b, v11.16b            \n" \
@@ -1057,7 +1048,6 @@ void conv_depthwise_3x3s1p1_bias_int8_float(float* dout,
       int8x8_t wr02 = vdup_n_s8(wei_ptr[2]);
       int8x8_t wr12 = vdup_n_s8(wei_ptr[5]);
       int8x8_t wr22 = vdup_n_s8(wei_ptr[8]);
-
       float32x4_t v_bias = vdupq_n_f32(vbias[0]);
       float32x4_t v_scale = vdupq_n_f32(vscale[0]);
 #endif
@@ -1123,9 +1113,10 @@ void conv_depthwise_3x3s1p1_bias_int8_float(float* dout,
 // clang-format off
 #ifdef __aarch64__
                 asm volatile(
-                    INIT_INT8_S1
-                    INIT_INT8_LEFT
-                    MIDDLE_FLOAT
+                    INIT_S1
+                    LEFT_COMPUTE_S1
+                    LEFT_STORE_FLOAT 
+                    MID_COMPUTE_S1
                     RIGHT_FLOAT
                     RIGHT_END_FLOAT
                     :   [cnt]"+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2), \
@@ -1590,10 +1581,11 @@ void conv_depthwise_3x3s1p1_bias_int8_int8(int8_t* dout,
 // clang-format off
 #ifdef __aarch64__
                 asm volatile(
-                    INIT_INT8_S1
-                    INIT_INT8_LEFT
-                    INT8_OUT_LEFT
-                    MIDDLE_INT8
+                    INIT_S1
+                    LEFT_COMPUTE_S1
+                    LEFT_RESULT_S1
+                    LEFT_STORE_INT8
+                    MID_COMPUTE_S1
                     INT8_MIDDLE_OUT
                     RIGHT_INT8
                     RIGHT_OUT_INT8
@@ -3376,11 +3368,12 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_float(float* dout,
 // clang-format off
 #ifdef __aarch64__
                 asm volatile(
-                    INIT_INT8_S1
-                    INIT_INT8_LEFT
-                    RELU_LEFT
-                    MIDDLE_FLOAT
-                    RELU_MIDDLE
+                    INIT_S1
+                    LEFT_COMPUTE_S1
+                    LEFT_RELU
+                    LEFT_STORE_FLOAT 
+                    MID_COMPUTE_S1
+                    MID_RELU
                     RIGHT_FLOAT
                     RIGHT_RELU
                     RIGHT_END_FLOAT
@@ -3861,11 +3854,12 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_float(float* dout,
 // clang-format off
 #ifdef __aarch64__
                 asm volatile(
-                    INIT_INT8_S1
-                    INIT_INT8_LEFT
-                    RELU6_LEFT
-                    MIDDLE_FLOAT
-                    RELU6_MIDDLE
+                    INIT_S1
+                    LEFT_COMPUTE_S1
+                    LEFT_RELU6
+                    LEFT_STORE_FLOAT 
+                    MID_COMPUTE_S1
+                    MID_RELU6
                     RIGHT_FLOAT
                     RIGHT_RELU6
                     RIGHT_END_FLOAT
@@ -4365,12 +4359,13 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_int8(int8_t* dout,
 // clang-format off
 #ifdef __aarch64__
                 asm volatile(
-                    INIT_INT8_S1
-                    INIT_INT8_LEFT
-                    RELU_LEFT
-                    INT8_OUT_LEFT
-                    MIDDLE_INT8
-                    RELU_MIDDLE
+                    INIT_S1
+                    LEFT_COMPUTE_S1
+                    LEFT_RELU
+                    LEFT_RESULT_S1
+                    LEFT_STORE_INT8
+                    MID_COMPUTE_S1
+                    MID_RELU
                     INT8_MIDDLE_OUT
                     RIGHT_INT8
                     RIGHT_RELU
@@ -4965,12 +4960,13 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_int8(int8_t* dout,
 // clang-format off
 #ifdef __aarch64__
                 asm volatile(
-                    INIT_INT8_S1
-                    INIT_INT8_LEFT
-                    RELU6_LEFT
-                    INT8_OUT_LEFT
-                    MIDDLE_INT8
-                    RELU6_MIDDLE
+                    INIT_S1
+                    LEFT_COMPUTE_S1
+                    LEFT_RELU6
+                    LEFT_RESULT_S1
+                    LEFT_STORE_INT8
+                    MID_COMPUTE_S1
+                    MID_RELU6
                     INT8_MIDDLE_OUT
                     RIGHT_INT8
                     RIGHT_RELU6
