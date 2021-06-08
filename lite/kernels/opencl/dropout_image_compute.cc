@@ -48,6 +48,9 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                     "image/dropout_kernel.cl",
                                     build_options_,
                                     time_stamp_);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
   }
 
   void Run() override {
@@ -75,18 +78,15 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     cl_int status;
-    status = kernel.setArg(0, *x_img);
+    status = kernel_.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *out_img);
+    status = kernel_.setArg(1, *out_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, out_w);
+    status = kernel_.setArg(2, out_w);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, dropout_prob);
+    status = kernel_.setArg(3, dropout_prob);
     CL_CHECK_FATAL(status);
 
     const std::vector<size_t>& default_work_size = DefaultGlobalWorkSize(
@@ -100,7 +100,7 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
                     static_cast<cl::size_type>(default_work_size.data()[2])};
 
     status = EnqueueNDRangeKernel(context,
-                                  kernel,
+                                  kernel_,
                                   cl::NullRange,
                                   global_work_size,
                                   cl::NullRange,
@@ -121,6 +121,7 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{"dropout"};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
+  cl::Kernel kernel_;
 };
 
 }  // namespace opencl

@@ -54,9 +54,6 @@ void CLContext::AddKernel(const std::string &kernel_name,
 }
 
 cl::Kernel &CLContext::GetKernel(const int index) {
-#ifdef LITE_WITH_LOG
-  VLOG(3) << " --- kernel count: " << kernels_.size() << " --- ";
-#endif
   CHECK(static_cast<size_t>(index) < kernels_.size())
       << "The index must be less than the size of kernels.";
   CHECK(kernels_[index] != nullptr)
@@ -65,6 +62,10 @@ cl::Kernel &CLContext::GetKernel(const int index) {
 }
 
 cl::Kernel &CLContext::GetKernel(const std::string &name) {
+#ifdef LITE_WITH_LOG
+  VLOG(3) << " --- Get kernel name: " << name
+          << "\tkernel nums: " << kernels_.size() << " --- ";
+#endif
   auto it = kernel_offset_.find(name);
   CHECK(it != kernel_offset_.end()) << "Cannot find the kernel function: "
                                     << name;
