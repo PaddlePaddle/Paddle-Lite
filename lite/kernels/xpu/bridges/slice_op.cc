@@ -68,9 +68,10 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       strides.push_back(1);
     }
   }
+
   graph->Add(out_name,
              graph->builder_.CreateStridedSlice(
-                 *input_node->data(), begin, end, strides));
+                 *input_node->data(), begin, end, strides, "end"));
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

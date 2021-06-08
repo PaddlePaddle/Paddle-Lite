@@ -245,12 +245,20 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
       lite::arm::math::fp16::pooling3x3s1p0_max_fp16(
           POOL_IN_PARAM, paddings[1], paddings[3]);
       return;
+    } else if (pooling_type == "avg") {
+      lite::arm::math::fp16::pooling3x3s1p0_avg_fp16(
+          POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
+      return;
     }
   } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 1 &&
              pads_equal && kps_equal) {
     if (pooling_type == "max") {
       lite::arm::math::fp16::pooling3x3s1p1_max_fp16(
           POOL_IN_PARAM, paddings[1], paddings[3]);
+      return;
+    } else if (pooling_type == "avg") {
+      lite::arm::math::fp16::pooling3x3s1p1_avg_fp16(
+          POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
       return;
     }
   }
