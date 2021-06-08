@@ -17,12 +17,6 @@
 #include <vector>
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/model_parser/flatbuffers/program_desc.h"
-#include "lite/model_parser/naive_buffer/block_desc.h"
-#include "lite/model_parser/naive_buffer/op_desc.h"
-#include "lite/model_parser/naive_buffer/op_version_map.h"
-#include "lite/model_parser/naive_buffer/program_desc.h"
-#include "lite/model_parser/naive_buffer/var_desc.h"
-
 #include "lite/model_parser/pb/block_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
 #include "lite/model_parser/pb/op_version_map.h"
@@ -90,13 +84,6 @@ void TransformVarDescAnyToCpp<fbs::VarDesc>(const fbs::VarDesc &any_desc,
   }
 }
 
-template <>
-void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
-    const naive_buffer::VarDesc &any_desc, cpp::VarDesc *cpp_desc) {
-  cpp_desc->SetName(any_desc.Name());
-  cpp_desc->SetType(any_desc.GetType());
-  cpp_desc->SetPersistable(any_desc.Persistable());
-}
 #endif
 /// For OpDesc transform
 template <typename OpDescType>
@@ -331,10 +318,6 @@ void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   }
 
 #ifndef LITE_ON_TINY_PUBLISH
-TRANS_VAR_ANY_WITH_CPP_IMPL(naive_buffer::VarDesc);
-TRANS_OP_ANY_WITH_CPP_IMPL(naive_buffer::OpDesc);
-TRANS_BLOCK_ANY_WITH_CPP_IMPL(OpDesc, VarDesc, naive_buffer, naive_buffer);
-TRANS_PROGRAM_ANY_WITH_CPP_IMPL(BlockDesc, naive_buffer, naive_buffer);
 TRANS_VAR_ANY_WITH_CPP_IMPL(fbs::VarDesc);
 TRANS_OP_ANY_WITH_CPP_IMPL(fbs::OpDesc);
 TRANS_BLOCK_ANY_WITH_CPP_IMPL(OpDescT, VarDescT, fbs, fbs);
