@@ -28,18 +28,18 @@ namespace lite {
 class CLContext {
  public:
   ~CLContext() {
-    GetCommandQueue().finish();
-    for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
-      // Note(ysh329): Don't need `clReleaseKernel`
-      kernels_[kidx].reset();
-    }
-    kernels_.clear();
-    kernel_offset_.clear();
-    for (auto &p : CLRuntime::Global()->program_map()) {
-      // Note(ysh329): Dont't need `clReleaseProgram`
-      p.second.reset();
-    }
-    CLRuntime::Global()->program_map().clear();
+    // GetCommandQueue().finish();
+    // for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
+    //   // Note(ysh329): Don't need `clReleaseKernel`
+    //   kernels_[kidx].reset();
+    // }
+    // kernels_.clear();
+    // kernel_offset_.clear();
+    // for (auto &p : CLRuntime::Global()->program_map()) {
+    //   // Note(ysh329): Dont't need `clReleaseProgram`
+    //   p.second.reset();
+    // }
+    // CLRuntime::Global()->program_map().clear();
     LOG(INFO) << "release cl::Program, cl::Kernel finished.";
   }
 
@@ -52,9 +52,9 @@ class CLContext {
                  const std::string &options = "",
                  const std::string &time_stamp = "");
 
-  cl::Kernel &GetKernel(const int index);
+  cl::Kernel GetKernel(const int index);
 
-  cl::Kernel &GetKernel(const std::string &name);
+  cl::Kernel GetKernel(const std::string &name);
 
   cl_int RunKernel(const cl::Kernel &kernel,
                    const cl::NDRange &global,
@@ -75,7 +75,7 @@ class CLContext {
   bool IsArmMali();
 
  private:
-  std::vector<std::shared_ptr<cl::Kernel>> kernels_;
+  std::vector<cl::Kernel> kernels_;
   std::map<std::string, int> kernel_offset_;
   std::map<std::string, cl::NDRange> tuned_lwss_map_;
 };
