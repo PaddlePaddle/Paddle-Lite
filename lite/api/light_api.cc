@@ -342,13 +342,6 @@ void LightPredictor::CheckInputValid() {
   }
 }
 
-///
-/// \brief Release all tmp tensor to compress the size of the memory pool.
-/// The memory pool is considered to be composed of a list of chunks, if
-/// the chunk is not occupied, it can be released.
-///
-/// \return a boolean variable.
-///
 bool LightPredictor::TryShrinkMemory() {
   std::vector<std::string> local_var_names = scope_->LocalVarNames();
   for (auto var_name : local_var_names) {
