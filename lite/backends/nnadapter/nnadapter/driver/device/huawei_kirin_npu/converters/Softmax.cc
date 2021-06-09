@@ -37,11 +37,20 @@ int Program::ConvertSoftmax(Operation* operation) {
     axis += input_operand->type.dimension_count;
   }
   NNADAPTER_VLOG(5) << "axis=" << axis;
+  NNADAPTER_CHECK(!(axis == 2 && input_operand->type.dimension_count > 3 &&
+                    input_operand->type.dimensions[3] != 1))
+      << "Unsupported case: axis = " << axis
+      << " dims = " << DimensionsToString(input_operand->type.dimensions,
+                                          input_operand->type.dimension_count);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to HiAI operators
+  auto input_operator = ConvertOperand(input_operand);
+  auto softmax_operator = AddOperator<ge::op::Softmax>(output_operand);
+  softmax_operator->set_input_x(*input_operator);
+  softmax_operator->set_attr_axis(axis);
   return NNADAPTER_NO_ERROR;
 }
 

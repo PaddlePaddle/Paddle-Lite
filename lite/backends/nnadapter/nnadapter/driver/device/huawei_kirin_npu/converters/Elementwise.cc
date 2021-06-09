@@ -37,13 +37,44 @@ int Program::ConvertElementwise(Operation* operation) {
   // Fuse code
   auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
   NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
-  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
-      << "Unsupported fuse_code(" << fuse_code << ") is found.";
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to hiai tensors and operators
+  // Convert to HiAI operators
+  auto input0_operator = ConvertOperand(input0_operand);
+  auto input1_operator = ConvertOperand(input1_operand);
+  std::shared_ptr<ge::Operator> eltwise_operator = nullptr;
+  if (operation->type == NNADAPTER_ADD) {
+    auto add_operator = AddOperator<ge::op::Add>(output_operand);
+    add_operator->set_input_x1(*input0_operator);
+    add_operator->set_input_x2(*input1_operator);
+    eltwise_operator = add_operator;
+  } else if (operation->type == NNADAPTER_SUB) {
+    auto sub_operator = AddOperator<ge::op::Sub>(output_operand);
+    sub_operator->set_input_x1(*input0_operator);
+    sub_operator->set_input_x2(*input1_operator);
+    eltwise_operator = sub_operator;
+  } else if (operation->type == NNADAPTER_MUL) {
+    auto mul_operator = AddOperator<ge::op::Mul>(output_operand);
+    mul_operator->set_input_x(*input0_operator);
+    mul_operator->set_input_y(*input1_operator);
+    eltwise_operator = mul_operator;
+  } else if (operation->type == NNADAPTER_DIV) {
+    auto div_operator = AddOperator<ge::op::RealDiv>(output_operand);
+    div_operator->set_input_x1(*input0_operator);
+    div_operator->set_input_x2(*input1_operator);
+    eltwise_operator = div_operator;
+  } else {
+    NNADAPTER_LOG(ERROR) << "Unsupported element-wise operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
+  }
+  if (fuse_code != NNADAPTER_FUSED_NONE) {
+    auto act_operator = AddOperator<ge::op::Activation>(output_operand);
+    act_operator->set_input_x(*eltwise_operator);
+    act_operator->set_attr_mode(ConvertFuseCode(fuse_code));
+  }
   return NNADAPTER_NO_ERROR;
 }
 

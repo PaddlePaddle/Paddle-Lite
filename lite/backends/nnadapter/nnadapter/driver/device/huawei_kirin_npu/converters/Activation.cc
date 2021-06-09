@@ -36,6 +36,28 @@ int Program::ConvertActivation(Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to HiAI operators
+  auto input_operator = ConvertOperand(input_operand);
+  auto act_operator = AddOperator<ge::op::Activation>(output_operand);
+  act_operator->set_input_x(*input_operator);
+  switch (operation->type) {
+    case NNADAPTER_SIGMOID:
+      act_operator->set_attr_mode(0);
+      break;
+    case NNADAPTER_RELU:
+      act_operator->set_attr_mode(1);
+      break;
+    case NNADAPTER_RELU6:
+      act_operator->set_attr_mode(3);
+      break;
+    case NNADAPTER_TANH:
+      act_operator->set_attr_mode(2);
+      break;
+    default:
+      NNADAPTER_LOG(ERROR) << "Unsupported activation operation type "
+                           << OperationTypeToString(operation->type)
+                           << " is found.";
+      break;
+  }
   return NNADAPTER_NO_ERROR;
 }
 

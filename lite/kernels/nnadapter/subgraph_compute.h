@@ -84,7 +84,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
 };
 
 class SubgraphCompute : public KernelLite<TARGET(kNNAdapter),
-                                          PRECISION(kInt8),
+                                          PRECISION(kAny),
                                           DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::SubgraphParam;

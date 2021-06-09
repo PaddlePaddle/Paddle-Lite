@@ -370,16 +370,16 @@ void SubgraphCompute::Run() {
 
 REGISTER_LITE_KERNEL(subgraph,
                      kNNAdapter,
-                     kInt8,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::nnadapter::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kInt8),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Outputs",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kInt8),
+                                       PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
     .Finalize();

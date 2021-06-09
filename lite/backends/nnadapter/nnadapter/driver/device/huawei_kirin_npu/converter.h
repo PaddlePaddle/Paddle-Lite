@@ -60,12 +60,15 @@ class Program {
  private:
   // Operand converters
   template <typename T>
-  std::shared_ptr<T> AddOperator(Operand* operand) {
+  std::shared_ptr<T> AddOperator(
+      Operand* operand = nullptr /* anonymous operand */) {
     auto it = operators_.find(operand);
     if (it != operators_.end()) {
-      // Only temporary variable node can be shared with the same operand
-      if (operand->type.lifetime != NNADAPTER_TEMPORARY_VARIABLE) {
-        NNADAPTER_LOG(FATAL)
+      // Only temporary variable or model output node can be shared with the
+      // same operand
+      if (typeid(T) == typeid(ge::op::Const) ||
+          typeid(T) == typeid(ge::op::Data)) {
+        NNADAPTER_LOG(ERROR)
             << "Duplicate mapping a non-temporary variable NNAdapter operand@0x"
             << std::hex << operand << " to a HiAI IR.";
         return nullptr;

@@ -73,6 +73,35 @@ int Program::ConvertPool2D(Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to HiAI operators
+  auto input_operator = ConvertOperand(input_operand);
+  auto pool2d_operator = AddOperator<ge::op::Pooling>(output_operand);
+  pool2d_operator->set_input_x(*input_operator);
+  if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
+    pool2d_operator->set_attr_mode(1);
+    NNADAPTER_CHECK(!count_include_pad) << "Only count_include_pad=false is "
+                                           "supported for the pooling type "
+                                           "'avg' in HiAI";
+  } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
+    pool2d_operator->set_attr_mode(0);
+  } else {
+    NNADAPTER_LOG(ERROR) << "Unsupported pooling operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
+  }
+  pool2d_operator->set_attr_pad_mode(0);  // NOTSET
+  pool2d_operator->set_attr_global_pooling(global_pooling);
+  pool2d_operator->set_attr_window(
+      ge::AttrValue::LIST_INT({filter_height, filter_width}));
+  pool2d_operator->set_attr_pad(ge::AttrValue::LIST_INT({padding_height_bottom,
+                                                         padding_height_top,
+                                                         padding_width_right,
+                                                         padding_width_left}));
+  pool2d_operator->set_attr_stride(
+      ge::AttrValue::LIST_INT({stride_height, stride_width}));
+  if (ceil_mode) {
+    pool2d_operator->set_attr_ceil_mode(1);
+    pool2d_operator->set_attr_data_mode(0);
+  }
   return NNADAPTER_NO_ERROR;
 }
 

@@ -16,6 +16,7 @@
 #include "driver/utility/debug.h"
 #include "driver/utility/modeling.h"
 #include "utility/micros.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace driver {
@@ -72,22 +73,22 @@ int Program::Build(Model* model, Cache* cache) {
   }
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
-  std::vector<ge::Operator> input_nodes(input_count);
+  std::vector<ge::Operator> input_operators(input_count);
   for (size_t i = 0; i < input_count; i++) {
     auto operand = model->input_operands[i];
     NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-    input_nodes[i] = *operators_[operand].back();
+    input_operators[i] = *operators_[operand].back();
   }
   auto output_count = model->output_operands.size();
-  std::vector<ge::Operator> output_nodes(output_count);
+  std::vector<ge::Operator> output_operators(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
     NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-    output_nodes[i] = *operators_[operand].back();
+    output_operators[i] = *operators_[operand].back();
   }
   // Build a HiAI IR graph to a HiAI OM model, and serialize it into a buffer
   std::vector<char> model_buffer;
-  if (!BuildOMModelToBuffer(input_nodes, output_nodes, &model_buffer)) {
+  if (!BuildOMModelToBuffer(input_operators, output_operators, &model_buffer)) {
     NNADAPTER_LOG(WARNING)
         << "Failed to build a HiAI OM model and serialize it into a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
@@ -95,6 +96,7 @@ int Program::Build(Model* model, Cache* cache) {
   // Load a HiAI OM model from a buffer, and create a HiAI model manager
   // client(from HiAI service) for inference
   bool model_comp = true;
+  model_name_ = string_format("@0x%X", model);
   model_client_ = LoadOMModelFromBuffer(model_name_,
                                         &model_buffer,
                                         &model_comp,
@@ -106,6 +108,47 @@ int Program::Build(Model* model, Cache* cache) {
     NNADAPTER_LOG(WARNING) << "Failed to load a HiAI OM model from a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
+  // Initialize the HiAI input and output tensors
+  std::vector<hiai::TensorDimension> input_dimensions, output_dimensions;
+  if (model_client_->GetModelIOTensorDim(
+          model_name_, input_dimensions, output_dimensions) !=
+      hiai::AI_SUCCESS) {
+    NNADAPTER_LOG(WARNING) << "Failed to call GetModelIOTensorDim to get the "
+                              "dimensions of input and output tensors!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  NNADAPTER_CHECK_EQ(input_dimensions.size(), input_count);
+  NNADAPTER_CHECK_EQ(output_dimensions.size(), output_count);
+  input_tensors_.resize(input_count);
+  output_tensors_.resize(output_count);
+  for (size_t i = 0; i < input_count; i++) {
+    auto n = input_dimensions[i].GetNumber();
+    auto c = input_dimensions[i].GetChannel();
+    auto h = input_dimensions[i].GetHeight();
+    auto w = input_dimensions[i].GetWidth();
+    NNADAPTER_VLOG(3) << "HiAI input tensors[" << i << "]: " << n << "," << c
+                      << "," << h << "," << w;
+    NNADAPTER_CHECK_EQ(
+        ProductionOfDimensions(model->input_operands[i]->type.dimensions,
+                               model->input_operands[i]->type.dimension_count),
+        n * c * h * w);
+    input_tensors_[i].reset(new hiai::AiTensor);
+    input_tensors_[i]->Init(&(input_dimensions[i]));
+  }
+  for (size_t i = 0; i < output_count; i++) {
+    auto n = output_dimensions[i].GetNumber();
+    auto c = output_dimensions[i].GetChannel();
+    auto h = output_dimensions[i].GetHeight();
+    auto w = output_dimensions[i].GetWidth();
+    NNADAPTER_VLOG(3) << "HiAI output tensors[" << i << "]: " << n << "," << c
+                      << "," << h << "," << w;
+    NNADAPTER_CHECK_EQ(
+        ProductionOfDimensions(model->output_operands[i]->type.dimensions,
+                               model->output_operands[i]->type.dimension_count),
+        n * c * h * w);
+    output_tensors_[i].reset(new hiai::AiTensor);
+    output_tensors_[i]->Init(&(output_dimensions[i]));
+  }
   return NNADAPTER_NO_ERROR;
 }
 
@@ -115,9 +158,23 @@ int Program::Execute(uint32_t input_count,
                      Argument* output_arguments) {
   for (uint32_t i = 0; i < input_count; i++) {
     auto& argument = input_arguments[i];
+    std::memcpy(input_tensors_[argument.index]->GetBuffer(),
+                argument.buffer,
+                argument.length);
   }
+  std::string key = "model_name";  // Note: key seems must be model_name
+  hiai::AiContext model_context;
+  model_context.AddPara(key, model_name_);
+  int istamp;
+  NNADAPTER_CHECK_EQ(
+      model_client_->Process(
+          model_context, input_tensors_, output_tensors_, 1000, istamp),
+      hiai::AI_SUCCESS);
   for (uint32_t i = 0; i < output_count; i++) {
     auto& argument = output_arguments[i];
+    std::memcpy(argument.buffer,
+                output_tensors_[argument.index]->GetBuffer(),
+                argument.length);
   }
   return NNADAPTER_NO_ERROR;
 }

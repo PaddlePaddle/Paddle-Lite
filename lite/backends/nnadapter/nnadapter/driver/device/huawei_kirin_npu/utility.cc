@@ -41,6 +41,10 @@ std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
     NNADAPTER_LOG(WARNING) << "Unable to get HiAI DDK version!";
   }
   // Check model compatibility
+  NNADAPTER_VLOG(3) << "freq_level: " << freq_level
+                    << " framework_type: " << framework_type
+                    << " model_type: " << model_type
+                    << " device_type: " << device_type;
   auto model_desc = std::make_shared<hiai::AiModelDescription>(
       model_name, freq_level, framework_type, model_type, device_type);
   model_desc->SetModelBuffer(
@@ -139,6 +143,7 @@ bool BuildOMModelToBuffer(
     return false;
   }
   model_buffer->resize(om_buffer.length);
+  NNADAPTER_VLOG(3) << "HiAI OM model size:" << om_buffer.length;
   memcpy(reinterpret_cast<void*>(model_buffer->data()),
          reinterpret_cast<void*>(om_buffer.data),
          om_buffer.length);

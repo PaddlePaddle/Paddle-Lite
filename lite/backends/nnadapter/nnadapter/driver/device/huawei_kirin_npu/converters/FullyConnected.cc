@@ -16,6 +16,7 @@
 #include "driver/utility/debug.h"
 #include "utility/logging.h"
 #include "utility/string.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace driver {
@@ -37,6 +38,10 @@ int Program::ConvertFullyConnected(Operation* operation) {
   NNADAPTER_CHECK_EQ(weight_operand->type.dimension_count, 2);
   auto num_units = weight_operand->type.dimensions[0];
   auto input_size = weight_operand->type.dimensions[1];
+  auto batch_size =
+      ProductionOfDimensions(input_operand->type.dimensions,
+                             input_operand->type.dimension_count) /
+      input_size;
   // Bias
   auto bias_operand = input_operands[2];
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);
@@ -49,7 +54,30 @@ int Program::ConvertFullyConnected(Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to hiai tensors and operators
+  // Convert to HiAI operators
+  // Add input operator and reshape it to (batch_size, input_size, 1, 1)
+  auto input_operator = ConvertOperand(input_operand);
+  auto reshaped_input_operator = AddOperator<ge::op::Reshape>();
+  reshaped_input_operator->set_input_tensor(*input_operator);
+  reshaped_input_operator->set_attr_shape({batch_size, input_size, 1, 1});
+  reshaped_input_operator->set_attr_axis(0);
+  // Add weight operator and reshape to to (num_units, input_size, 1, 1)
+  auto weight_operator =
+      ConvertOperand(weight_operand, {num_units, input_size, 1, 1});
+  // Add bias operator and reshape to to (1, num_units, 1, 1)
+  auto bias_operator = ConvertOperand(bias_operand, {1, num_units, 1, 1});
+  // Add fc operator and reshape back to the origin dimension of output operand
+  auto fc_operator = AddOperator<ge::op::FullConnection>(output_operand);
+  fc_operator->set_input_x(*reshaped_input_operator);
+  fc_operator->set_input_w(*weight_operator);
+  fc_operator->set_input_b(*bias_operator);
+  auto reshaped_fc_operator = AddOperator<ge::op::Reshape>(output_operand);
+  reshaped_fc_operator->set_input_tensor(*fc_operator);
+  auto output_dimensions = ConvertDimensions(
+      output_operand->type.dimensions, output_operand->type.dimension_count);
+  reshaped_fc_operator->set_attr_shape(ge::AttrValue::LIST_INT(
+      output_dimensions.begin(), output_dimensions.end()));
+  reshaped_fc_operator->set_attr_axis(0);
   return NNADAPTER_NO_ERROR;
 }
 
