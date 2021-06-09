@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#include "lite/backends/nnadapter/nnadapter/nnadapter_types.h"
+#include "lite/backends/nnadapter/nnadapter/nnadapter.h"
 
 namespace paddle {
 namespace lite {

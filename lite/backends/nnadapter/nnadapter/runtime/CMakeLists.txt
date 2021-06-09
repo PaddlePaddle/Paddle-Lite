@@ -12,17 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Enable throwing exception when check failed in nnadapter_logging.cc
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -fasynchronous-unwind-tables -funwind-tables")
+add_library(nnadapter_runtime_device STATIC device.cc)
+add_library(nnadapter_runtime_context STATIC context.cc)
+add_library(nnadapter_runtime_model STATIC model.cc)
+add_library(nnadapter_runtime_compilation STATIC compilation.cc)
+add_library(nnadapter_runtime_execution STATIC execution.cc)
 
-set(NNADAPTER_DRIVER_PREFIX nnadapter_driver)
-add_definitions(-DNNADAPTER_DRIVER_PREFIX=${NNADAPTER_DRIVER_PREFIX})
-
-include_directories(.)
-
-add_subdirectory(utility)
-add_subdirectory(runtime)
-add_subdirectory(driver)
-
-add_library(nnadapter SHARED nnadapter.cc)
-target_link_libraries(nnadapter "-Wl,--start-group" ${nnadapter_utility} ${nnadapter_runtime} ${nnadapter_driver} "-Wl,--end-group")
+set(nnadapter_runtime nnadapter_runtime_device nnadapter_runtime_context nnadapter_runtime_model nnadapter_runtime_compilation nnadapter_runtime_execution CACHE INTERNAL "")
