@@ -58,12 +58,7 @@ float CopyToHostSync(void* target, const void* source, size_t size) {
   auto d2h_copy_start = GetCurrentUS();
 #endif
   // CLRuntime::Global()->command_queue().finish();
-  TargetWrapperCL::MemcpyAsync(target,
-                               source,
-                               size,
-                               IoDirection::DtoH,
-                               CLRuntime::Global()->command_queue());
-  CLRuntime::Global()->command_queue().flush();
+  TargetWrapperCL::MemcpySync(target, source, size, IoDirection::DtoH);
 #ifdef LITE_WITH_PROFILE
   auto d2h_duration = (GetCurrentUS() - d2h_copy_start) / 1000.0;
   return d2h_duration;
