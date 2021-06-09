@@ -41,7 +41,8 @@ CLRuntime::~CLRuntime() {
   SaveTuned();
 
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
+  LOG(INFO) << "~CLRuntime(): is_cl_runtime_initialized_:"
+            << is_cl_runtime_initialized_;
 #endif
   if (is_cl_runtime_initialized_ == false) {
     return;
@@ -102,7 +103,12 @@ bool CLRuntime::Init() {
   if ((is_platform_init == true) && (is_device_init == true)) {
     is_platform_device_init_success_ = true;
     context_ = CreateContext();
-    command_queue_ = CreateCommandQueue(context());
+    // command_queue_ = CreateCommandQueue(context());
+    cl_command_queue_properties properties = 0;
+    command_queue_ = std::make_shared<cl::CommandQueue>(
+        context(), device(), properties, &status_);
+    // use in is opencl valid check, do not exit here when release.
+    CL_CHECK_ERROR(status_);
     is_cl_runtime_initialized_ = true;
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "set is_cl_runtime_initialized_ = true";
@@ -872,7 +878,13 @@ void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
   } else {
     LOG(INFO) << "Not found tuned file:" << tuned_file;
   }
-  command_queue_ = CreateCommandQueue(context());
+  // command_queue_ = CreateCommandQueue(context());
+  cl_command_queue_properties properties = 0;
+  command_queue_ = std::make_shared<cl::CommandQueue>(
+      context(), device(), properties, &status_);
+  // use in is opencl valid check, do not exit here when release.
+  CL_CHECK_ERROR(status_);
+  LOG(INFO) << "command_queue_.use_count(): " << command_queue_.use_count();
 }
 
 bool CLRuntime::HasTunedLocalWorkSizeMap(const std::string& key,

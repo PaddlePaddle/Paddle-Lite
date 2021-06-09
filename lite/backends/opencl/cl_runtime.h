@@ -252,23 +252,25 @@ class CLRuntime {
     return context;
   }
 
-  std::shared_ptr<cl::CommandQueue> CreateCommandQueue(
-      const cl::Context& context) {
-    cl_command_queue_properties properties = 0;
+  /*
+    std::shared_ptr<cl::CommandQueue> CreateCommandQueue(
+        const cl::Context& context) {
+      cl_command_queue_properties properties = 0;
 
-#ifdef LITE_WITH_PROFILE
-    properties |= CL_QUEUE_PROFILING_ENABLE;
-#endif  // LITE_WITH_PROFILE
-    if (auto_tune_ > 0) {
+  #ifdef LITE_WITH_PROFILE
       properties |= CL_QUEUE_PROFILING_ENABLE;
-    }
+  #endif  // LITE_WITH_PROFILE
+      if (auto_tune_ > 0) {
+        properties |= CL_QUEUE_PROFILING_ENABLE;
+      }
 
-    auto queue = std::make_shared<cl::CommandQueue>(
-        context, device(), properties, &status_);
-    // use in is opencl valid check, do not exit here when release.
-    CL_CHECK_ERROR(status_);
-    return queue;
-  }
+      auto queue = std::make_shared<cl::CommandQueue>(
+          context, device(), properties, &status_);
+      // use in is opencl valid check, do not exit here when release.
+      CL_CHECK_ERROR(status_);
+      return queue;
+    }
+    */
 
   OpenCLVersion ParseDeviceVersion(const std::string& device_version);
 
