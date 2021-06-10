@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pscore.error;
+
+enum Code {
+  // Not an error.
+  OK = 0;
+
+  // The operation is cancelled.
+  CANCELLED = 1;
+
+  // Unknown error.
+  UNKNOWN = 2;
+
+  INVALID_ARGUMENT = 3;
+
+  NOT_FOUND = 5;
+
+  RESOURCE_EXHAUSTED = 8;
+
+  PERMISSION_DENIED = 7;
+}
+
