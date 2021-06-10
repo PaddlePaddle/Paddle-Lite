@@ -55,7 +55,6 @@ TEST(CxxApi, run) {
 
   predictor->TryShrinkMemory();
   input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  auto* data = input_tensor->mutable_data<float>();
   for (int i = 0; i < 100 * 100; i++) {
     data[i] = i;
   }
@@ -141,7 +140,6 @@ TEST(LightApi, run) {
 
   predictor->TryShrinkMemory();
   input_tensor->Resize(std::vector<int64_t>({100, 100}));
-  auto* data = input_tensor->mutable_data<float>();
   for (int i = 0; i < 100 * 100; i++) {
     data[i] = i;
   }
