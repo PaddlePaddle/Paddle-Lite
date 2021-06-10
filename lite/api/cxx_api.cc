@@ -464,9 +464,10 @@ void Predictor::CheckPaddleOpVersions(
 }
 
 bool Predictor::TryShrinkMemory() {
+#ifdef LITE_WITH_ARM
   // Clear ArmL3Cache
   lite::DeviceInfo::Global().ClearArmL3Cache();
-
+#endif
   std::vector<std::string> local_var_names =
       program_->exec_scope()->LocalVarNames();
   for (auto var_name : local_var_names) {
