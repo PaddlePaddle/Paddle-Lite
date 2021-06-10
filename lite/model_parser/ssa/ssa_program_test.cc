@@ -161,43 +161,9 @@ void PrintGeneralProgram(const general::ProgramDesc& general_prog) {
   }
 }
 
-void DebugPrintVars(const ssa::PlainProgramDesc& desc) {
-  for (auto& block : desc.blocks()) {
-    for (auto& var : block->scope()->GetRootVars()) {
-      std::cout << "==== var: " << var.lock()->mangled_name() << std::endl;
-      for (auto& kid : var.lock()->kids()) {
-        std::cout << kid.lock()->block_idx() << ", "
-                  << kid.lock()->mangled_name() << std::endl;
-      }
-    }
-  }
-}
-
-void DebugPrintOps(const ssa::BlockDesc& desc) {
-  for (auto& op : desc.ops()) {
-    std::cout << "===== " << op.type() << ", " << desc.idx()
-              << " =====" << std::endl;
-    for (auto& input : op.inputs()) {
-      std::cout << "input : " << input.first << std::endl;
-      for (auto& var : input.second) {
-        std::cout << "  -- " << var.lock()->mangled_name() << ", "
-                  << var.lock()->block_idx() << std::endl;
-      }
-    }
-    for (auto& input : op.outputs()) {
-      std::cout << "output : " << input.first << std::endl;
-      for (auto& var : input.second) {
-        std::cout << "  -- " << var.lock()->mangled_name() << ", "
-                  << var.lock()->block_idx() << std::endl;
-      }
-    }
-  }
-}
-
 void test() {
   ProgramDescGenerator program_gen(BlockOps_0());
   general::ProgramDesc cpp_desc{program_gen.general_program()};
-  // PrintGeneralProgram(cpp_desc);
   ssa::PlainProgramDesc plain_program(cpp_desc);
   ssa::ProgramDescConverter converter(plain_program);
   PrintGeneralProgram(converter.general_program());
