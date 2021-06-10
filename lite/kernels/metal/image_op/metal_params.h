@@ -242,4 +242,13 @@ struct FetchMetalParam {
     int idim[4];
 };
 
+struct Pad2dParam {
+    uint16_t paddingTop;
+    uint16_t paddingBottom;
+    uint16_t paddingLeft;
+    uint16_t paddingRight;
+    float padValue;
+    uint16_t mode;
+};
+
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_
