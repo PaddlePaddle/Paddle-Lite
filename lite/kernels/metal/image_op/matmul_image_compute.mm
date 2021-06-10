@@ -74,7 +74,7 @@ void MatMulImageCompute::setup_without_mps() {
         LOG(FATAL) << "mat_mul: only supports : 1.same shapes 2.by channel.";
     }
 
-    // inputy来源：4维-参数来自于上一个输入 3维-参数来自于外部tensor
+    // input y：4-dims come from last output; 3-dims come from tensor input;
     function_name_ = "mat_mul";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
