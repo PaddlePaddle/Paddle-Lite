@@ -109,7 +109,8 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   // no activation and relu activation is supported now
   bool support_act_type =
       (has_act == false) ||
-      (has_act == true && (act_type == lite_api::ActivationType::kRelu));
+      (has_act == true && (act_type == lite_api::ActivationType::kRelu ||
+                           act_type == lite_api::ActivationType::kRelu6));
   bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] < 2);
   bool support_pad_type_s2 = pads_equal && (paddings[0] == 1);
   bool support_stride_type_s1 = (strides[0] == 1 && strides[1] == 1);
@@ -216,8 +217,8 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {
   // no activation and relu activation is supported now
   bool support_act_type =
       (has_act == false) ||
-<<<<<<< 9724e33aaee4886586b7cf7e1c03973a7f1ddab9
-      (has_act == true && (act_type == lite_api::ActivationType::kRelu));
+      (has_act == true && (act_type == lite_api::ActivationType::kRelu ||
+                           act_type == lite_api::ActivationType::kRelu6));
   bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] < 2);
   bool support_pad_type_s2 = pads_equal && (paddings[0] == 1);
   bool support_stride_type_s1 = (strides[0] == 1 && strides[1] == 1);
