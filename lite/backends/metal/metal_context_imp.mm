@@ -198,8 +198,8 @@ extern NSString* cString2NSString(std::string cStr) {
         width = MIN(width, outTexture.width);
         height = pipline.threadExecutionWidth / width;
         height = MIN(height, outTexture.height);
-        groupWidth = (outTexture.width / 4 + width - 1) / width;
-        groupHeight = (outTexture.height / 1 + height - 1) / height;
+        groupWidth = (outTexture.width / 2 + width - 1) / width;
+        groupHeight = (outTexture.height / 2 + height - 1) / height;
     } else {
         width = pipline.threadExecutionWidth;
         width = MIN(width, outTexture.width);

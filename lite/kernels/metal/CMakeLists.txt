@@ -44,6 +44,8 @@ add_kernel(exp_metal_image APPLE_METAL basic SRCS image_op/exp_image_compute.mm 
 # add_kernel(box_coder_metal_image APPLE_METAL basic SRCS image_op/box_coder_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(fetch_metal_image APPLE_METAL basic SRCS image_op/fetch_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(slice_metal_compute APPLE_METAL basic SRCS image_op/slice_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(matmul_metal_compute APPLE_METAL basic SRCS image_op/matmul_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(pad2d_metal_compute APPLE_METAL basic SRCS image_op/pad2d_image_compute.mm DEPS metal_target_wrapper)
 
 
 add_library(METAL_BASE STATIC IMPORTED )
