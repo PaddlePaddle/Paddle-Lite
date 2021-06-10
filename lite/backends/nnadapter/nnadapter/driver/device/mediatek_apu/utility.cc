@@ -60,7 +60,7 @@ int ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
       output_precision = NEURON_TENSOR_QUANT8_ASYMM;
       break;
     default:
-      NNADAPTER_LOG(ERROR)
+      NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
           << OperandPrecisionCodeToString(input_precision)
           << ") to the Neuron operand precision code!";
@@ -102,7 +102,7 @@ int32_t ConvertFuseCode(int32_t input_fuse_code) {
       output_fuse_code = NEURON_FUSED_RELU6;
       break;
     default:
-      NNADAPTER_LOG(ERROR) << "Failed to convert the NNAdapter fuse code("
+      NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter fuse code("
                            << input_fuse_code << ") to the Neuron fuse code!";
       break;
   }
@@ -129,7 +129,7 @@ int PrecisionLength(int precision) {
     case NEURON_TENSOR_FLOAT32:
       return 4;
     default:
-      NNADAPTER_LOG(ERROR) << "Failed to get the length of type(" << precision
+      NNADAPTER_LOG(FATAL) << "Failed to get the length of type(" << precision
                            << ")!";
       break;
   }

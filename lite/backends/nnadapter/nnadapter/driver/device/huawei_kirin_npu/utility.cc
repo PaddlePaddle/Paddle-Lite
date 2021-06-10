@@ -14,6 +14,7 @@
 
 #include "driver/device/huawei_kirin_npu/utility.h"
 #include "utility/logging.h"
+#include "utility/string.h"
 
 namespace nnadapter {
 namespace driver {
@@ -92,25 +93,25 @@ std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
               model_buffer->size());
           NNADAPTER_VLOG(3) << "Rebuild the compatible model done.";
         } else {
-          NNADAPTER_LOG(WARNING)
+          NNADAPTER_LOG(FATAL)
               << "Failed to call BuildModel to rebuild the compatible model!";
         }
         model_builder->MemBufferDestroy(new_model_buffer);
       } else {
-        NNADAPTER_LOG(WARNING) << "Failed to call OutputMemBufferCreate for "
-                                  "storing a new compatiable HiAI OM model!";
+        NNADAPTER_LOG(FATAL) << "Failed to call OutputMemBufferCreate for "
+                                "storing a new compatiable HiAI OM model!";
       }
       model_builder->MemBufferDestroy(org_model_buffer);
     } else {
-      NNADAPTER_LOG(WARNING) << "Failed to call InputMemBufferCreate for "
-                                "writing an old compatiable HiAI OM model!";
+      NNADAPTER_LOG(FATAL) << "Failed to call InputMemBufferCreate for writing "
+                              "an old compatiable HiAI OM model!";
     }
   }
   // Load the compatible model
   std::vector<std::shared_ptr<hiai::AiModelDescription>> model_descs{
       model_desc};
   if (model_client->Load(model_descs) != hiai::AI_SUCCESS) {
-    NNADAPTER_LOG(WARNING)
+    NNADAPTER_LOG(FATAL)
         << "Failed to call AiModelMngerClient to load a HiAI OM model!";
     return nullptr;
   }
@@ -132,13 +133,13 @@ bool BuildOMModelToBuffer(
   domi::HiaiIrBuild ir_build;
   domi::ModelBufferData om_buffer;
   if (!ir_build.CreateModelBuff(om_model, om_buffer)) {
-    NNADAPTER_LOG(WARNING)
+    NNADAPTER_LOG(FATAL)
         << "Failed to call CreateModelBuff for storing a HiAI OM model!";
     return false;
   }
   if (!ir_build.BuildIRModel(om_model, om_buffer)) {
-    NNADAPTER_LOG(WARNING) << "Failed to call BuildIRModel for converting a "
-                              "HiAI IR graph to a HiAI OM model!";
+    NNADAPTER_LOG(FATAL) << "Failed to call BuildIRModel for converting a HiAI "
+                            "IR graph to a HiAI OM model!";
     ir_build.ReleaseModelBuff(om_buffer);
     return false;
   }
@@ -195,9 +196,10 @@ ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
       output_precision = ge::DT_DOUBLE;
       break;
     default:
-      NNADAPTER_LOG(ERROR)
+      NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
-          << input_precision << ") to HiAI ge::DataType !";
+          << OperandPrecisionCodeToString(input_precision)
+          << ") to HiAI ge::DataType !";
       break;
   }
   return output_precision;
@@ -213,9 +215,10 @@ ge::Format ConvertDataLayout(NNAdapterOperandLayoutCode input_layout) {
       output_layout = ge::FORMAT_NHWC;
       break;
     default:
-      NNADAPTER_LOG(ERROR)
+      NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand layout code("
-          << input_layout << ") to HiAI ge::Format !";
+          << OperandLayoutCodeToString(input_layout)
+          << ") to HiAI ge::Format !";
       break;
   }
   return output_layout;
@@ -246,7 +249,7 @@ int32_t ConvertFuseCode(int32_t input_fuse_code) {
       output_act_mode = 14;
       break;
     default:
-      NNADAPTER_LOG(ERROR) << "Failed to convert the NNAdapter fuse code("
+      NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter fuse code("
                            << input_fuse_code
                            << ") to a HiAI activation operator!";
       break;

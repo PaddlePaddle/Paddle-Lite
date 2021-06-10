@@ -68,7 +68,7 @@ class Program {
       // same operand
       if (typeid(T) == typeid(ge::op::Const) ||
           typeid(T) == typeid(ge::op::Data)) {
-        NNADAPTER_LOG(ERROR)
+        NNADAPTER_LOG(FATAL)
             << "Duplicate mapping a non-temporary variable NNAdapter operand@0x"
             << std::hex << operand << " to a HiAI IR.";
         return nullptr;

@@ -47,9 +47,11 @@ static void PropagateQuantizationParameters(Operand* reference_operand,
     }
     target_type.symm_per_layer_params = reference_type.symm_per_layer_params;
   } else {
-    NNADAPTER_LOG(ERROR) << "Unhandled case: reference_precision="
-                         << reference_type.precision
-                         << ", target_precision=" << target_precision;
+    NNADAPTER_LOG(FATAL) << "Unhandled case: reference_precision="
+                         << OperandPrecisionCodeToString(
+                                reference_type.precision)
+                         << ", target_precision="
+                         << OperandPrecisionCodeToString(target_precision);
   }
 }
 
@@ -140,10 +142,12 @@ static void UpdateBiasScaleWithInputScaleXWeightScale(Operand* input_operand,
       memcpy(old_bias_scale, &new_bias_scale[0], channel_size * sizeof(float));
     }
   } else {
-    NNADAPTER_LOG(ERROR) << "Unhandled case: input_precision="
-                         << input_type.precision
-                         << " weight_precision=" << weight_type.precision
-                         << " bias_precision=" << bias_type.precision;
+    NNADAPTER_LOG(FATAL) << "Unhandled case: input_precision="
+                         << OperandPrecisionCodeToString(input_type.precision)
+                         << " weight_precision="
+                         << OperandPrecisionCodeToString(weight_type.precision)
+                         << " bias_precision="
+                         << OperandPrecisionCodeToString(bias_type.precision);
   }
 }
 
@@ -178,7 +182,7 @@ void ApplyConstraintsToQuantizationParameters(Model* model) {
       case NNADAPTER_SUB:
         break;
       default:
-        NNADAPTER_LOG(ERROR)
+        NNADAPTER_LOG(FATAL)
             << "Missing the processing of "
             << OperationTypeToString(operation->type)
             << " for applying the contraints to quantization parameters.";

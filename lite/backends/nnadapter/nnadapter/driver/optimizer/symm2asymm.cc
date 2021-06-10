@@ -66,9 +66,11 @@ static void PropagateAsymmZeroPoint(Operand* reference_operand,
     target_type.asymm_per_layer_params.zero_point =
         reference_type.asymm_per_layer_params.zero_point;
   } else {
-    NNADAPTER_LOG(ERROR) << "Unhandled case: reference_precision="
-                         << reference_type.precision
-                         << ", target_precision=" << target_precision;
+    NNADAPTER_LOG(FATAL) << "Unhandled case: reference_precision="
+                         << OperandPrecisionCodeToString(
+                                reference_type.precision)
+                         << ", target_precision="
+                         << OperandPrecisionCodeToString(target_precision);
   }
 }
 
@@ -114,7 +116,7 @@ NNADAPTER_EXPORT void ConvertModelFromSymmToAsymmQuantization(Model* model) {
         ConvertOperandFromSymmToAsymm(output_operands[0], 128);
       } break;
       default:
-        NNADAPTER_LOG(ERROR)
+        NNADAPTER_LOG(FATAL)
             << "Missing the processing of "
             << OperationTypeToString(operation->type)
             << " for the conversion of symm2asymm quantization.";

@@ -61,8 +61,8 @@ int Program::Build(Model* model, Cache* cache) {
   NNADAPTER_VLOG(3) << "Neuron Adapter version: " << version;
   int result = NeuronModel_create_invoke(&model_);
   if (result != NEURON_NO_ERROR) {
-    NNADAPTER_LOG(WARNING) << "Failed to create a Neuron Model(" << result
-                           << ")!";
+    NNADAPTER_LOG(FATAL) << "Failed to create a Neuron Model(" << result
+                         << ")!";
     return result;
   }
   std::vector<Operation*> operations = SortOperationsInTopologicalOrder(model);
@@ -99,7 +99,7 @@ int Program::Build(Model* model, Cache* cache) {
         ConvertTranspose(operation);
         break;
       default:
-        NNADAPTER_LOG(ERROR) << "Unsupported operation("
+        NNADAPTER_LOG(FATAL) << "Unsupported operation("
                              << OperationTypeToString(operation->type)
                              << ") is found.";
         break;
@@ -148,31 +148,31 @@ int Program::Build(Model* model, Cache* cache) {
                                                   &output_operand_indexes[0]);
   if (result != NEURON_NO_ERROR) {
     NeuronModel_free_invoke(model_);
-    NNADAPTER_LOG(WARNING) << "Failed to identify the inputs and outputs("
-                           << result << ")!";
+    NNADAPTER_LOG(FATAL) << "Failed to identify the inputs and outputs("
+                         << result << ")!";
     return result;
   }
   result = NeuronModel_finish_invoke(model_);
   if (result != NEURON_NO_ERROR) {
     NeuronModel_free_invoke(model_);
-    NNADAPTER_LOG(WARNING) << "Failed to finish the Neuron model(" << result
-                           << ")!";
+    NNADAPTER_LOG(FATAL) << "Failed to finish the Neuron model(" << result
+                         << ")!";
     return result;
   }
   // Build model
   result = NeuronCompilation_create_invoke(model_, &compilation_);
   if (result != NEURON_NO_ERROR) {
     NeuronModel_free_invoke(model_);
-    NNADAPTER_LOG(WARNING) << "Failed to create a Neuron Compilation(" << result
-                           << ")!";
+    NNADAPTER_LOG(FATAL) << "Failed to create a Neuron Compilation(" << result
+                         << ")!";
     return result;
   }
   result = NeuronCompilation_finish_invoke(compilation_);
   if (result != NEURON_NO_ERROR) {
     NeuronModel_free_invoke(model_);
     NeuronCompilation_free_invoke(compilation_);
-    NNADAPTER_LOG(WARNING) << "Failed to compile the Neuron Model(" << result
-                           << ")!";
+    NNADAPTER_LOG(FATAL) << "Failed to compile the Neuron Model(" << result
+                         << ")!";
     return result;
   }
   // Create an execution for inference
@@ -180,9 +180,8 @@ int Program::Build(Model* model, Cache* cache) {
   if (result != NEURON_NO_ERROR) {
     NeuronModel_free_invoke(model_);
     NeuronCompilation_free_invoke(compilation_);
-    NNADAPTER_LOG(WARNING)
-        << "Failed to create a Neuron Execution for inference(" << result
-        << ")!";
+    NNADAPTER_LOG(FATAL) << "Failed to create a Neuron Execution for inference("
+                         << result << ")!";
     return result;
   }
   return NNADAPTER_NO_ERROR;
@@ -485,7 +484,7 @@ uint32_t Program::ConvertOperand(Operand* operand) {
       }
     } break;
     default:
-      NNADAPTER_LOG(ERROR) << "Missing the processing "
+      NNADAPTER_LOG(FATAL) << "Missing the processing "
                            << OperationTypeToString(type.precision)
                            << " for the conversion of Neuron operands.";
       break;

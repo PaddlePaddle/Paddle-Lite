@@ -99,7 +99,7 @@ static void ConvertPool2DFromNCHWToNHWC(Operation* operation) {
       MarkOperandConvertToNHWC(output_operand);
     } break;
     default:
-      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+      NNADAPTER_LOG(FATAL) << "Unhandled case: dimension_count="
                            << input_dimension_count;
       break;
   }
@@ -125,7 +125,7 @@ static void ConvertActivationFromNCHWToNHWC(Operation* operation) {
       MarkOperandConvertToNHWC(output_operand);
     } break;
     default:
-      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+      NNADAPTER_LOG(FATAL) << "Unhandled case: dimension_count="
                            << input_dimension_count;
       break;
   }
@@ -166,7 +166,7 @@ static void ConvertElementwiseFromNCHWToNHWC(Operation* operation) {
       MarkOperandConvertToNHWC(output_operand);
     } break;
     default:
-      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+      NNADAPTER_LOG(FATAL) << "Unhandled case: dimension_count="
                            << input0_dimension_count;
       break;
   }
@@ -190,7 +190,7 @@ static void ConvertSoftmaxFromNCHWToNHWC(Operation* operation) {
       MarkOperandConvertToNHWC(output_operand);
     } break;
     default:
-      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+      NNADAPTER_LOG(FATAL) << "Unhandled case: dimension_count="
                            << input_dimension_count;
       break;
   }
@@ -219,7 +219,7 @@ static void ConvertFullyConnectedFromNCHWToNHWC(Operation* operation) {
       MarkOperandConvertToNHWC(output_operand);
     } break;
     default:
-      NNADAPTER_LOG(ERROR) << "Unhandled case: dimension_count="
+      NNADAPTER_LOG(FATAL) << "Unhandled case: dimension_count="
                            << input_dimension_count;
       break;
   }
@@ -307,7 +307,7 @@ NNADAPTER_EXPORT void ConvertModelFromNCHWToNHWCDataLayout(Model* model) {
         ConvertConv2DFromNCHWToNHWC(operation);
         break;
       default:
-        NNADAPTER_LOG(ERROR) << "Missing the processing of "
+        NNADAPTER_LOG(FATAL) << "Missing the processing of "
                              << OperationTypeToString(operation->type)
                              << " for the conversion from NCHW to NHWC.";
         break;

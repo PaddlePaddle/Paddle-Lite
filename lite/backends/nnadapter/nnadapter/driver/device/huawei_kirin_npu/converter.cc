@@ -65,7 +65,7 @@ int Program::Build(Model* model, Cache* cache) {
         ConvertActivation(operation);
         break;
       default:
-        NNADAPTER_LOG(ERROR) << "Unsupported operation("
+        NNADAPTER_LOG(FATAL) << "Unsupported operation("
                              << OperationTypeToString(operation->type)
                              << ") is found.";
         break;
@@ -89,7 +89,7 @@ int Program::Build(Model* model, Cache* cache) {
   // Build a HiAI IR graph to a HiAI OM model, and serialize it into a buffer
   std::vector<char> model_buffer;
   if (!BuildOMModelToBuffer(input_operators, output_operators, &model_buffer)) {
-    NNADAPTER_LOG(WARNING)
+    NNADAPTER_LOG(FATAL)
         << "Failed to build a HiAI OM model and serialize it into a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
@@ -105,7 +105,7 @@ int Program::Build(Model* model, Cache* cache) {
                                         context_->model_type(),
                                         context_->device_type());
   if (!model_client_) {
-    NNADAPTER_LOG(WARNING) << "Failed to load a HiAI OM model from a buffer!";
+    NNADAPTER_LOG(FATAL) << "Failed to load a HiAI OM model from a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   // Initialize the HiAI input and output tensors
@@ -113,8 +113,8 @@ int Program::Build(Model* model, Cache* cache) {
   if (model_client_->GetModelIOTensorDim(
           model_name_, input_dimensions, output_dimensions) !=
       hiai::AI_SUCCESS) {
-    NNADAPTER_LOG(WARNING) << "Failed to call GetModelIOTensorDim to get the "
-                              "dimensions of input and output tensors!";
+    NNADAPTER_LOG(FATAL) << "Failed to call GetModelIOTensorDim to get the "
+                            "dimensions of input and output tensors!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   NNADAPTER_CHECK_EQ(input_dimensions.size(), input_count);

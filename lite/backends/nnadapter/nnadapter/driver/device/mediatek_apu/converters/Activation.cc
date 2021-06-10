@@ -48,7 +48,7 @@ int Program::ConvertActivation(Operation* operation) {
   } else if (operation->type == NNADAPTER_TANH) {
     op_type = NEURON_TANH;
   } else {
-    NNADAPTER_LOG(ERROR) << "Unsupported activation operation type "
+    NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }

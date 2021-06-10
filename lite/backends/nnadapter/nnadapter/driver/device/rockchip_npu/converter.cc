@@ -81,7 +81,7 @@ int Program::Build(Model* model, Cache* cache) {
         ConvertActivation(operation);
         break;
       default:
-        NNADAPTER_LOG(ERROR) << "Unsupported operation("
+        NNADAPTER_LOG(FATAL) << "Unsupported operation("
                              << OperationTypeToString(operation->type)
                              << ") is found.";
         break;
@@ -197,9 +197,10 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(Operand* operand) {
           operand->type.symm_per_layer_params.scale;
       break;
     default:
-      NNADAPTER_LOG(ERROR) << "Can not convert an operand@0x" << std::hex
-                           << operand
-                           << " with precision=" << operand->type.precision
+      NNADAPTER_LOG(FATAL) << "Can not convert an operand@0x" << std::hex
+                           << operand << " with precision="
+                           << OperandPrecisionCodeToString(
+                                  operand->type.precision)
                            << " to rk::nn::Tensor !";
       break;
   }

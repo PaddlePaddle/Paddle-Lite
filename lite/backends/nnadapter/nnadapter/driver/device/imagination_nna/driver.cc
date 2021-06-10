@@ -43,7 +43,7 @@ class Program {
       switch (operation->type) {
         case NNADAPTER_CONV_2D:
         default:
-          NNADAPTER_LOG(ERROR) << "Unsupported operation(" << operation->type
+          NNADAPTER_LOG(FATAL) << "Unsupported operation(" << operation->type
                                << ") is found.";
           break;
       }
@@ -63,7 +63,7 @@ int CreateContext(void** context) {
   auto c = new Context();
   if (!c) {
     *context = nullptr;
-    NNADAPTER_LOG(ERROR) << "Failed to create context for imagination_nna.";
+    NNADAPTER_LOG(FATAL) << "Failed to create context for imagination_nna.";
     return NNADAPTER_OUT_OF_MEMORY;
   }
   *context = reinterpret_cast<void*>(c);

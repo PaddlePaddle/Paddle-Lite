@@ -84,7 +84,7 @@ int Program::ConvertPool2D(Operation* operation) {
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
     pool2d_operator->set_attr_mode(0);
   } else {
-    NNADAPTER_LOG(ERROR) << "Unsupported pooling operation type "
+    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }

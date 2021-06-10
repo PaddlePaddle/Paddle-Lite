@@ -65,7 +65,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<int64_t> y_shape(x_dims.size(), 1);
   for (int i = axis; i < x_dims.size(); i++) {
     if (i < axis + y_dims.size()) {
-      if (x_dims[i] != y_dims[i - axis]) {
+      if (x_dims[i] != y_dims[i - axis] && x_dims[i] != 1 &&
+          y_dims[i - axis] != 1) {
         LOG(ERROR) << "Incompatible broadcasting at " << i << " with axis "
                    << axis << ", expect " << x_dims[i] << " but received "
                    << y_dims[i - axis] << ".";

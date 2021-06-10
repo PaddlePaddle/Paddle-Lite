@@ -298,6 +298,56 @@ class VariablePlaceInferencePass : public DebugPass {
     }
   }
 
+  // Only for the subgraph kernel whose output argument precision is defined as
+  // PRECISION(kAny), infer the precision of the output data variables based on
+  // the quantizaiton parameters
+  void InferenceSubgraphWithUncertainPrecision(
+      SSAGraph* graph,
+      const std::vector<TargetType>& valid_targets = {TARGET(kNNAdapter)}) {
+    for (auto& node : graph->StmtTopologicalOrder()) {
+      auto& inst = node->AsStmt();
+      const auto* op_info = inst.op_info();
+      const auto& op_type = op_info->Type();
+      auto& kernel = inst.picked_kernel();
+      if (op_type != "subgraph") continue;
+      if (std::find(valid_targets.begin(),
+                    valid_targets.end(),
+                    kernel.target()) == valid_targets.end())
+        continue;
+      const auto* decl_output_type = kernel.GetOutputDeclType("Outputs");
+      if (decl_output_type->precision() != PRECISION(kAny)) continue;
+      auto output_data_names =
+          op_info->GetAttr<std::vector<std::string>>("output_data_names");
+      for (auto* out : node->outlinks) {
+        CHECK(out->IsArg());
+        auto out_var_name = out->AsArg().name;
+        // Only infer the precision of the output data variables which have the
+        // quantization parameters
+        if (!op_info->HasOutputScale(out_var_name)) continue;
+        if (std::find(output_data_names.begin(),
+                      output_data_names.end(),
+                      out_var_name) == output_data_names.end())
+          continue;
+        CHECK(out->AsArg().type);
+        auto& out_var_type = out->AsArg().type;
+        auto out_var_target = out_var_type->target();
+        auto out_var_precision = out_var_type->precision();
+        // Skip if its precision is already set
+        if (out_var_precision == PRECISION(kInt8)) continue;
+        auto out_var_layout = out_var_type->layout();
+        // Set the precision of the output variable to PRECISION(kInt8)
+        if (out_var_type->IsTensor()) {
+          out_var_type = LiteType::GetTensorTy(
+              out_var_target, PRECISION(kInt8), out_var_layout);
+        } else if (out_var_type->IsTensorList()) {
+          out_var_type = LiteType::GetTensorListTy(
+              out_var_target, PRECISION(kInt8), out_var_layout);
+        }
+        VLOG(4) << "Update " << out_var_name << " to " << *out_var_type;
+      }
+    }
+  }
+
  private:
   // The default target for arguments, e.g. load weights to CPU memory for
   // CUDA computation by default.

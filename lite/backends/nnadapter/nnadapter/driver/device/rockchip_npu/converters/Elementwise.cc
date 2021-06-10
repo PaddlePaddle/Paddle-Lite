@@ -60,7 +60,7 @@ int Program::ConvertElementwise(Operation* operation) {
   } else if (operation->type == NNADAPTER_DIV) {
     op_type = rk::nn::OperatorType::DIVIDE;
   } else {
-    NNADAPTER_LOG(ERROR) << "Unsupported element-wise operation type "
+    NNADAPTER_LOG(FATAL) << "Unsupported element-wise operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }

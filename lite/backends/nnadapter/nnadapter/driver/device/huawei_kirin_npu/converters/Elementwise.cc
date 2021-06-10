@@ -66,7 +66,7 @@ int Program::ConvertElementwise(Operation* operation) {
     div_operator->set_input_x2(*input1_operator);
     eltwise_operator = div_operator;
   } else {
-    NNADAPTER_LOG(ERROR) << "Unsupported element-wise operation type "
+    NNADAPTER_LOG(FATAL) << "Unsupported element-wise operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }

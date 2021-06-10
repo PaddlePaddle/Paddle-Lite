@@ -106,7 +106,7 @@ int Program::ConvertConv2D(Operation* operation) {
   } else if (fuse_code == NNADAPTER_FUSED_RELU) {
     attr.has_relu = true;
   } else {
-    NNADAPTER_LOG(ERROR) << "Unsupported fuse_code(" << fuse_code
+    NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
                          << ") is found.";
   }
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {

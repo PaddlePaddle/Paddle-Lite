@@ -50,7 +50,7 @@ int Program::ConvertActivation(Operation* operation) {
   } else if (operation->type == NNADAPTER_TANH) {
     op_type = rk::nn::OperatorType::TANH;
   } else {
-    NNADAPTER_LOG(ERROR) << "Unsupported activation unary operation type "
+    NNADAPTER_LOG(FATAL) << "Unsupported activation unary operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }

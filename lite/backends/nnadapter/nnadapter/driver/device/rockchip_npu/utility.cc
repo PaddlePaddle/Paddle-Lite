@@ -14,6 +14,7 @@
 
 #include "driver/device/rockchip_npu/utility.h"
 #include "utility/logging.h"
+#include "utility/string.h"
 
 namespace nnadapter {
 namespace driver {
@@ -66,9 +67,10 @@ rk::nn::PrecisionType ConvertPrecision(
       output_precision = rk::nn::PrecisionType::FLOAT64;
       break;
     default:
-      NNADAPTER_LOG(ERROR)
+      NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
-          << input_precision << ") to rk::nn::PrecisionType !";
+          << OperandPrecisionCodeToString(input_precision)
+          << ") to rk::nn::PrecisionType !";
       break;
   }
   return output_precision;
@@ -85,9 +87,10 @@ rk::nn::DataLayoutType ConvertDataLayout(
       output_layout = rk::nn::DataLayoutType::NHWC;
       break;
     default:
-      NNADAPTER_LOG(ERROR)
+      NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand layout code("
-          << input_layout << ") to rk::nn::DataLayoutType !";
+          << OperandLayoutCodeToString(input_layout)
+          << ") to rk::nn::DataLayoutType !";
       break;
   }
   return output_layout;

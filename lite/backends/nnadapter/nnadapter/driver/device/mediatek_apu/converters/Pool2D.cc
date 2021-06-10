@@ -103,7 +103,7 @@ int Program::ConvertPool2D(Operation* operation) {
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
     op_type = NEURON_MAX_POOL_2D;
   } else {
-    NNADAPTER_LOG(ERROR) << "Unsupported pooling operation type "
+    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }

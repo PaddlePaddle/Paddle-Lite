@@ -27,7 +27,7 @@ int CreateContext(void** context) {
   auto c = new Context();
   if (!c) {
     *context = nullptr;
-    NNADAPTER_LOG(ERROR) << "Failed to create context for mediatek_apu.";
+    NNADAPTER_LOG(FATAL) << "Failed to create context for mediatek_apu.";
     return NNADAPTER_OUT_OF_MEMORY;
   }
   *context = reinterpret_cast<void*>(c);

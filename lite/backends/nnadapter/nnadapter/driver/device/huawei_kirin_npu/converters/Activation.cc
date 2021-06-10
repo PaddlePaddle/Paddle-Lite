@@ -53,7 +53,7 @@ int Program::ConvertActivation(Operation* operation) {
       act_operator->set_attr_mode(2);
       break;
     default:
-      NNADAPTER_LOG(ERROR) << "Unsupported activation operation type "
+      NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
                            << OperationTypeToString(operation->type)
                            << " is found.";
       break;
