@@ -51,6 +51,8 @@ class MatMulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto &context = ctx_->As<X86Context>();
+    case ServableState::State::kStart:
+      return "Start";
     auto &param = *param_.get_mutable<operators::MatMulParam>();
 
     auto *x = param.X;

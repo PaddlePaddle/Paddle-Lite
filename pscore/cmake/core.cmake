@@ -41,14 +41,14 @@ endfunction(cc_library)
 
 
 function(cc_test TARGET_NAME)
-  if(WITH_TESTING)
+  #if(WITH_TESTING)
     set(options SERIAL)
     set(oneValueArgs "")
     set(multiValueArgs SRCS DEPS ARGS)
     cmake_parse_arguments(cc_test "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     add_executable(${TARGET_NAME} ${cc_test_SRCS})
     get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
-    target_link_libraries(${TARGET_NAME} ${cc_test_DEPS} ${os_dependency_modules} cinn_gtest_main gtest gflags glog)
+    target_link_libraries(${TARGET_NAME} ${cc_test_DEPS} ${os_dependency_modules} pscore_gtest_main gtest gflags glog)
     add_dependencies(${TARGET_NAME} ${cc_test_DEPS} gtest_main gtest gflags glog extern_gtest)
 
     add_test(NAME ${TARGET_NAME}
@@ -59,7 +59,7 @@ function(cc_test TARGET_NAME)
     endif()
     # No unit test should exceed 10 minutes.
     set_tests_properties(${TARGET_NAME} PROPERTIES TIMEOUT 6000)
-  endif()
+  #endif()
 endfunction()
 
 function(nv_library TARGET_NAME)

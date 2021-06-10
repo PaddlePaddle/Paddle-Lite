@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# the gtest is only used when WITH_TESTING=ON
 IF(WITH_TESTING)
-    IF(WITH_TESTING)
-        ENABLE_TESTING()
-    ENDIF(WITH_TESTING)
+    ENABLE_TESTING()
 
     INCLUDE(ExternalProject)
 
-    SET(GTEST_SOURCES_DIR ${CMAKE_SOURCE_DIR}/third-party/googletest)
+    SET(GTEST_SOURCES_DIR ${THIRD_PARTY_PATH}/gtest)
     SET(GTEST_INSTALL_DIR ${THIRD_PARTY_PATH}/install/gtest)
     SET(GTEST_INCLUDE_DIR "${GTEST_INSTALL_DIR}/include" CACHE PATH "gtest include directory." FORCE)
 
@@ -45,24 +42,31 @@ IF(WITH_TESTING)
 
     SET(OPTIONAL_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
         "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
-        "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
+        "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0"
         "-DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}"
         "-DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}"
         "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
         "-DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}"
         "-DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}")
 
+    if(ANDROID)
+        SET(OPTIONAL_ARGS ${OPTIONAL_ARGS}
+            "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}"
+            "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}"
+            "-DCMAKE_ANDROID_ARCH_ABI=${CMAKE_ANDROID_ARCH_ABI}"
+            "-DCMAKE_ANDROID_NDK=${CMAKE_ANDROID_NDK}"
+            "-DCMAKE_ANDROID_STL_TYPE=${CMAKE_ANDROID_STL_TYPE}")
+    endif()
+
     ExternalProject_Add(
         extern_gtest
         ${EXTERNAL_PROJECT_LOG_ARGS}
         DEPENDS         ${GTEST_DEPENDS}
-        GIT_REPOSITORY  ""
-        SOURCE_DIR      ${GTEST_SOURCES_DIR}
+        GIT_REPOSITORY  "https://github.com/google/googletest.git"
         GIT_TAG         "release-1.8.0"
-        PREFIX          ${GTEST_INSTALL_DIR}
+        PREFIX          ${GTEST_SOURCES_DIR}
         UPDATE_COMMAND  ""
-        CMAKE_ARGS      ${CROSS_COMPILE_CMAKE_ARGS}
-                        ${OPTIONAL_ARGS}
+        CMAKE_ARGS      ${OPTIONAL_ARGS}
                         -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_DIR}
                         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
                         -DBUILD_GMOCK=ON
@@ -82,5 +86,7 @@ IF(WITH_TESTING)
     ADD_LIBRARY(gtest_main STATIC IMPORTED GLOBAL)
     SET_PROPERTY(TARGET gtest_main PROPERTY IMPORTED_LOCATION ${GTEST_MAIN_LIBRARIES})
     ADD_DEPENDENCIES(gtest_main extern_gtest)
+
+    INCLUDE_DIRECTORIES(${GTEST_INCLUDE_DIR})
 
 ENDIF()

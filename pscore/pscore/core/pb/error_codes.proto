@@ -19,5 +19,7 @@ enum Code {
   RESOURCE_EXHAUSTED = 8;
 
   PERMISSION_DENIED = 7;
+
+  NOT_IMPLEMENTED = 9;
 }
 

@@ -36,10 +36,18 @@ find_package(CUDA QUIET)
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
   "A path setting third party libraries download & build directories.")
 
+option(WITH_TESTING ON)
+set(WITH_TESTING ON)
+
 include(cmake/core.cmake)
 include(cmake/external/protobuf.cmake)
+include(cmake/external/gflags.cmake)
+include(cmake/external/absl.cmake)
+include(cmake/external/glog.cmake)
+include(cmake/external/gtest.cmake)
 
 include_directories("${CMAKE_SOURCE_DIR}")
 include_directories("${CMAKE_BINARY_DIR}")
+
 
 add_subdirectory(pscore)
