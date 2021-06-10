@@ -213,7 +213,7 @@ void TestGroupNorm(Place place,
 
 TEST(GroupNorm, precision) {
   Place place;
-  float abs_error = 3e-4;
+  float abs_error = 1e-3;
   std::vector<std::string> ignored_outs = {};
 #ifdef LITE_WITH_ARM
   place = TARGET(kARM);
