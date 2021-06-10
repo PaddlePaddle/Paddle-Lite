@@ -835,7 +835,7 @@ void LoadModelNaiveV0FromFile(const std::string &filename,
   const std::string paddle_version = version();
   const std::string opt_version_str = opt_version;
   if (paddle_version != opt_version_str) {
-    LOG(WARNING) << "warning: the version of opt that transformed this model "
+    LOG(FATAL) << "Error: the version of opt that transformed this model "
                     "is not consistent with current Paddle-Lite version."
                     "\n      version of opt:"
                  << static_cast<const char *>(opt_version)
