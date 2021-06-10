@@ -18,6 +18,8 @@ namespace paddle {
 namespace lite {
 namespace general {
 
+ProgramDesc::ProgramDesc(const ProgramDesc& other) { CopyFrom(other); }
+
 void ProgramDesc::CopyFrom(const ProgramDesc& other) {
   version_ = other.Version();
   blocks_.clear();
@@ -28,13 +30,17 @@ void ProgramDesc::CopyFrom(const ProgramDesc& other) {
 
 template <>
 BlockDesc* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
   return blocks_[idx].get();
 }
 
 template <>
 BlockDesc const* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
   return blocks_[idx].get();
 }
 

@@ -21,6 +21,8 @@ namespace fbs {
 template <>
 proto::BlockDesc const* ProgramDescView::GetBlock<proto::BlockDesc>(
     int32_t idx) const {
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
   CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
   return desc_->blocks()->Get(idx);
 }
@@ -28,6 +30,8 @@ proto::BlockDesc const* ProgramDescView::GetBlock<proto::BlockDesc>(
 template <>
 BlockDescView const* ProgramDescView::GetBlock<BlockDescView>(
     int32_t idx) const {
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
   CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
   return blocks_[idx].get();
 }
@@ -43,6 +47,8 @@ proto::OpVersionMap* ProgramDescView::GetOpVersionMap<proto::OpVersionMap>() {
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 template <>
 proto::BlockDescT* ProgramDesc::GetBlock<proto::BlockDescT>(int32_t idx) {
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
   CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= vars.size()";
   return blocks_[idx]->raw_desc();
 }
