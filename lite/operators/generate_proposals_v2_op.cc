@@ -37,7 +37,6 @@ bool GenerateProposalsV2OpLite::CheckShape() const {
   auto vars_dims = param_.Variances->dims();
 
   CHECK_OR_FALSE(bbox_dims[1] = 4 * scores_dims[1]);
-  CHECK_OR_FALSE(scores_dims[1] == anchors_dims[2]);
   CHECK_OR_FALSE(anchors_dims == vars_dims);
 
   return true;

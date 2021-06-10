@@ -23,7 +23,7 @@
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
 #ifdef ENABLE_ARM_FP16
-#include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 namespace paddle {
 namespace lite {
@@ -85,13 +85,17 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
       workspace_size_ = k * n * sizeof(float);
     }
     if (!flag_trans_weights_ && n > 1 && m > 1) {
+      if (param.filter->precision() == PrecisionType::kFP16) {
 #ifdef ENABLE_ARM_FP16
-      lite::arm::math::fp16::trans_gemm_weights_fp16(
-          *(param.filter), weights_, param.groups, &ctx);
+        lite::arm::math::fp16::trans_gemm_weights_fp16(
+            *(param.filter), weights_, param.groups, &ctx);
 #else
-      lite::arm::math::trans_gemm_weights<Ptype>(
-          *(param.filter), weights_, param.groups, &ctx);
+        LOG(FATAL) << "FP16 conv must open ENABLE_ARM_FP16";
 #endif
+      } else {
+        lite::arm::math::trans_gemm_weights<Ptype>(
+            *(param.filter), weights_, param.groups, &ctx);
+      }
       flag_trans_weights_ = true;
     } else if (n == 1 || m == 1) {
       flag_trans_weights_ = false;
@@ -108,16 +112,19 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
   }
 
   std::string kernel_func_name_{"NotImplForConvGemm"};
-
-#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name
-
 #define PROFILE_INFO(dtype1, dtype2)                                        \
   template <>                                                               \
   void GemmLikeConv<PRECISION(dtype1), PRECISION(dtype2)>::                 \
       SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
     ch->kernel_func_name = kernel_func_name_;                               \
   }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
+
   /// todo, support inplace weights transform
  protected:
   using param_t = operators::ConvParam;

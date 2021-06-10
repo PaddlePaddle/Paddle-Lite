@@ -259,11 +259,14 @@ void test_grid_sampler(Place place) {
                 auto& ctx = tester->context()->As<ARMContext>();
                 ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
 #endif
+#ifdef LITE_WITH_X86
+                if (padding_mode == "reflection" || mode == "nearest") continue;
+#endif
                 arena::Arena arena(std::move(tester), place, 6e-5);
-                LOG(INFO) << "run n: " << n << ", c: " << c << ", h: " << h
-                          << ", w: " << w << ", align_corners:" << align_corners
-                          << ", mode:" << mode
-                          << ", padding_mode:" << padding_mode;
+                VLOG(5) << "run n: " << n << ", c: " << c << ", h: " << h
+                        << ", w: " << w << ", align_corners:" << align_corners
+                        << ", mode:" << mode
+                        << ", padding_mode:" << padding_mode;
                 if (!arena.TestPrecision()) {
                   LOG(ERROR) << "No Pass!!";
                   return;
@@ -281,10 +284,16 @@ void test_grid_sampler(Place place) {
 }
 
 TEST(GridSampler, precision) {
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_grid_sampler(place);
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
 #endif
+
+  test_grid_sampler(place);
 }
 
 }  // namespace lite

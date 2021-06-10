@@ -18,6 +18,7 @@
 #endif
 // "supported_kernel_op_info.h", "all_kernel_faked.cc" and "kernel_src_map.h"
 // are created automatically during opt's compiling period
+#include <algorithm>
 #include <iomanip>
 #include "all_kernel_faked.cc"  // NOLINT
 #include "kernel_src_map.h"     // NOLINT
@@ -65,6 +66,7 @@ DEFINE_string(quant_type,
               "QUANT_INT16",
               "Set the quant_type for post_quant_dynamic, "
               "and it should be QUANT_INT8 or QUANT_INT16 for now.");
+DEFINE_bool(enable_fp16, false, "Set kernel_type run in FP16.");
 DEFINE_bool(record_tailoring_info,
             false,
             "Record kernels and operators information of the optimized model "
@@ -90,11 +92,15 @@ void DisplayKernels() {
   LOG(INFO) << ::paddle::lite::KernelRegistry::Global().DebugString();
 }
 
-std::vector<Place> ParserValidPlaces() {
+std::vector<Place> ParserValidPlaces(bool enable_fp16) {
   std::vector<Place> valid_places;
   auto target_reprs = lite::Split(FLAGS_valid_targets, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
+      if (enable_fp16) {
+        valid_places.emplace_back(
+            Place{TARGET(kARM), PRECISION(kFP16), DATALAYOUT(kNCHW)});
+      }
       valid_places.emplace_back(
           Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(
@@ -116,6 +122,20 @@ std::vector<Place> ParserValidPlaces() {
           Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
+    } else if (target_repr == "arm_metal") {
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(TARGET(kARM));
+      valid_places.emplace_back(TARGET(kHost));
+    } else if (target_repr == "x86_metal") {
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(TARGET(kX86));
+      valid_places.emplace_back(TARGET(kHost));
     } else if (target_repr == "x86") {
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
@@ -149,8 +169,12 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(TARGET(kImaginationNNA));
       valid_places.emplace_back(
           Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
+    } else if (target_repr == "intel_fpga") {
+      valid_places.emplace_back(TARGET(kIntelFPGA));
+      valid_places.emplace_back(
+          Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else {
-      LOG(FATAL) << lite::string_format(
+      OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
           "'valid_targets'",
           target_repr.c_str());
@@ -189,7 +213,7 @@ void RunOptimize(const std::string& model_dir,
   } else if (quant_type == "QUANT_INT16") {
     config.set_quant_type(QuantType::QUANT_INT16);
   } else {
-    LOG(FATAL) << "Unsupported quant type: " << quant_type;
+    OPT_LOG_FATAL << "Unsupported quant type: " << quant_type;
   }
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
@@ -199,7 +223,7 @@ void RunOptimize(const std::string& model_dir,
   } else if (optimize_out_type == "naive_buffer") {
     model_type = LiteModelType::kNaiveBuffer;
   } else {
-    LOG(FATAL) << "Unsupported Model type :" << optimize_out_type;
+    OPT_LOG_FATAL << "Unsupported Model type :" << optimize_out_type;
   }
 
   OpKernelInfoCollector::Global().SetKernel2path(kernel2path_map);
@@ -239,31 +263,34 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kAPU",
                                       "kHuaweiAscendNPU",
                                       "kImaginationNNA",
+                                      "kIntelFPGA",
                                       "kAny",
                                       "kUnk"};
   size_t maximum_optype_length = 0;
   for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
-    maximum_optype_length = it->first.size() > maximum_optype_length
-                                ? it->first.size()
-                                : maximum_optype_length;
+    maximum_optype_length = std::max(it->first.size(), maximum_optype_length);
   }
   std::cout << std::setiosflags(std::ios::internal);
   std::cout << std::setw(maximum_optype_length) << "OP_name";
   for (size_t i = 0; i < targets.size(); i++) {
-    std::cout << std::setw(10) << targets[i].substr(1);
+    size_t max_len = std::max(static_cast<size_t>(10), targets[i].size() + 1);
+    std::cout << std::setw(max_len) << targets[i].substr(1);
   }
   std::cout << std::endl;
+
   if (valid_ops.empty()) {
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
       std::cout << std::setw(maximum_optype_length) << it->first;
       auto ops_valid_places = it->second;
       for (size_t i = 0; i < targets.size(); i++) {
+        size_t max_len =
+            std::max(static_cast<size_t>(10), targets[i].size() + 1);
         if (std::find(ops_valid_places.begin(),
                       ops_valid_places.end(),
                       targets[i]) != ops_valid_places.end()) {
-          std::cout << std::setw(10) << "Y";
+          std::cout << std::setw(max_len) << "Y";
         } else {
-          std::cout << std::setw(10) << " ";
+          std::cout << std::setw(max_len) << " ";
         }
       }
       std::cout << std::endl;
@@ -278,12 +305,14 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
       // Print OP info.
       auto ops_valid_places = supported_ops.at(*op);
       for (size_t i = 0; i < targets.size(); i++) {
+        size_t max_len =
+            std::max(static_cast<size_t>(10), targets[i].size() + 1);
         if (std::find(ops_valid_places.begin(),
                       ops_valid_places.end(),
                       targets[i]) != ops_valid_places.end()) {
-          std::cout << std::setw(10) << "Y";
+          std::cout << std::setw(max_len) << "Y";
         } else {
-          std::cout << std::setw(10) << " ";
+          std::cout << std::setw(max_len) << " ";
         }
       }
       std::cout << std::endl;
@@ -306,28 +335,31 @@ void PrintHelpInfo() {
       "        "
       "`--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
       "ascend_npu|"
-      "imagination_nna)`\n"
+      "imagination_nna|intel_fpga)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
+      "  Arguments of enable_fp16 in opt: \n"
+      "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
       "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
       "ascend_npu|"
-      "imagination_nna)"
+      "imagination_nna|intel_fpga)"
       "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
       "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
       "ascend_npu|"
-      "imagination_nna)"
+      "imagination_nna|intel_fpga)"
       "`"
-      "  Display operators in the input model\n";
-  std::cout << "opt version:" << opt_version << std::endl
-            << help_info << std::endl;
+      "  Display operators in the input model\n"
+      "  How to print detailed information: export GLOG_v=1 \n";
+  OPT_LOG << "opt version:" << opt_version;
+  OPT_LOG << help_info;
   exit(1);
 }
 
@@ -335,18 +367,18 @@ void PrintHelpInfo() {
 void ParseInputCommand() {
   if (FLAGS_quant_model) {
     if (FLAGS_quant_type != "QUANT_INT8" && FLAGS_quant_type != "QUANT_INT16") {
-      LOG(FATAL)
+      OPT_LOG_FATAL
           << "quant_type should be `QUANT_INT8` or `QUANT_INT16` for now.";
     }
   }
 
   if (FLAGS_print_all_ops) {
-    std::cout << "All OPs supported by Paddle-Lite: " << supported_ops.size()
-              << " ops in total." << std::endl;
+    OPT_LOG << "All OPs supported by Paddle-Lite: " << supported_ops.size()
+            << " ops in total.";
     PrintOpsInfo();
     exit(1);
   } else if (FLAGS_print_supported_ops) {
-    auto valid_places = paddle::lite_api::ParserValidPlaces();
+    auto valid_places = paddle::lite_api::ParserValidPlaces(FLAGS_enable_fp16);
     // get valid_targets string
     std::vector<TargetType> target_types = {};
     for (size_t i = 0; i < valid_places.size(); i++) {
@@ -357,7 +389,7 @@ void ParseInputCommand() {
       targets_str = targets_str + TargetToStr(target_types[i]);
     }
 
-    std::cout << "Supported OPs on '" << targets_str << "': " << std::endl;
+    OPT_LOG << "Supported OPs on '" << targets_str << "': ";
     target_types.push_back(TARGET(kHost));
     target_types.push_back(TARGET(kUnk));
 
@@ -373,7 +405,7 @@ void ParseInputCommand() {
 // test whether this model is supported
 void CheckIfModelSupported() {
   // 1. parse valid places and valid targets
-  auto valid_places = paddle::lite_api::ParserValidPlaces();
+  auto valid_places = paddle::lite_api::ParserValidPlaces(FLAGS_enable_fp16);
   // set valid_ops
   auto valid_ops = supported_ops_target[static_cast<int>(TARGET(kHost))];
   auto valid_unktype_ops = supported_ops_target[static_cast<int>(TARGET(kUnk))];
@@ -388,10 +420,13 @@ void CheckIfModelSupported() {
   std::set<std::string> valid_ops_set(valid_ops.begin(), valid_ops.end());
 
   // 2.Load model into program to get ops in model
-  std::string prog_path = FLAGS_model_dir + "/__model__";
+  bool is_combined_params_form = false;
   if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
-    prog_path = FLAGS_model_file;
+    is_combined_params_form = true;
   }
+  std::string prog_path = lite::FindModelFileName(
+      FLAGS_model_dir, FLAGS_model_file, is_combined_params_form);
+
   lite::cpp::ProgramDesc cpp_prog;
   framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
@@ -413,7 +448,7 @@ void CheckIfModelSupported() {
   }
   // 3. Print ops_info of input model and check if this model is supported
   if (FLAGS_print_model_ops) {
-    std::cout << "OPs in the input model include:\n";
+    OPT_LOG << "OPs in the input model include:";
     PrintOpsInfo(input_model_ops);
   }
   if (!unsupported_ops.empty()) {
@@ -434,14 +469,13 @@ void CheckIfModelSupported() {
       targets_str = targets_str + "," + TargetToStr(targets[i]);
     }
 
-    LOG(ERROR) << "Error: This model is not supported, because "
-               << unsupported_ops.size() << " ops are not supported on '"
-               << targets_str << "'. These unsupported ops are: '"
-               << unsupported_ops_str << "'.";
-    exit(1);
+    OPT_LOG_FATAL << "Error: This model is not supported, because "
+                  << unsupported_ops.size() << " ops are not supported on '"
+                  << targets_str << "'. These unsupported ops are: '"
+                  << unsupported_ops_str << "'.";
   }
   if (FLAGS_print_model_ops) {
-    std::cout << "Paddle-Lite supports this model!" << std::endl;
+    OPT_LOG << "Paddle-Lite supports this model!";
     exit(1);
   }
 }
@@ -452,7 +486,8 @@ void Main() {
     exit(0);
   }
 
-  auto valid_places = ParserValidPlaces();
+  auto valid_places = ParserValidPlaces(FLAGS_enable_fp16);
+
   if (FLAGS_model_set_dir == "") {
     RunOptimize(FLAGS_model_dir,
                 FLAGS_model_file,
@@ -475,7 +510,8 @@ void Main() {
   lite::MkDirRecur(FLAGS_optimize_out);
   auto model_dirs = lite::ListDir(FLAGS_model_set_dir, true);
   if (model_dirs.size() == 0) {
-    LOG(FATAL) << "[" << FLAGS_model_set_dir << "] does not contain any model";
+    OPT_LOG_FATAL << "[" << FLAGS_model_set_dir
+                  << "] does not contain any model";
   }
   // Optimize models in FLAGS_model_set_dir
   for (const auto& name : model_dirs) {
@@ -494,7 +530,7 @@ void Main() {
           lite::Join<std::string>({input_model_dir, FLAGS_param_filename}, "/");
     }
 
-    LOG(INFO) << "Start optimize model: " << input_model_dir;
+    OPT_LOG << "Start transformation ... ";
     RunOptimize(input_model_dir,
                 model_file,
                 param_file,
@@ -504,7 +540,7 @@ void Main() {
                 FLAGS_record_tailoring_info,
                 FLAGS_quant_model,
                 FLAGS_quant_type);
-    LOG(INFO) << "Optimize done. ";
+    OPT_LOG << "Transformation done. ";
   }
 
   // Collect all models information

@@ -80,10 +80,11 @@ class TrigonometricComputeImage2D
   }
 
   void Run() override {
-    auto* x_img = trigonometric_param_->X->data<half_t, cl::Image2D>();
-    auto* out_img =
-        trigonometric_param_->Out->mutable_data<half_t, cl::Image2D>(
-            out_img_shape_[0], out_img_shape_[1]);
+    auto* x_img = GET_DATA_GPU(trigonometric_param_->X);
+    auto* out_img = MUTABLE_DATA_GPU(trigonometric_param_->Out,
+                                     out_img_shape_[0],
+                                     out_img_shape_[1],
+                                     nullptr);
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);

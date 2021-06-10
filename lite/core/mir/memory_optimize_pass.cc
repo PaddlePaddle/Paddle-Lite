@@ -59,17 +59,21 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   };
 
   // The all of input and output variables of the Ops will not be reused.
-  std::set<std::string> invalid_op_nodes = {"while",
-                                            "conditional_block",
-                                            "conditional_block_infer",
-                                            "merge_lod_tensor_infer",
-                                            "merge_lod_tensor",
-                                            "equal",
-                                            "lod_reset",
-                                            "yolo_box",
-                                            "subgraph",
-                                            "feed",
-                                            "fetch"};
+  std::set<std::string> invalid_op_nodes = {
+      "while",
+      "conditional_block",
+      "conditional_block_infer",
+      "merge_lod_tensor_infer",
+      "merge_lod_tensor",
+      "equal",
+      "lod_reset",
+      "yolo_box",
+      "subgraph",
+      "feed",
+      "fetch",
+      "cast",
+      "expand",
+  };
 
   auto insert_invalid_op_nodes_for_specific_target = [&](
       std::set<std::string> op_node_set, TargetType specific_target) {
@@ -345,4 +349,5 @@ REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
                      TARGET(kAPU),
                      TARGET(kMLU),
                      TARGET(kHuaweiAscendNPU),
-                     TARGET(kImaginationNNA)});
+                     TARGET(kImaginationNNA),
+                     TARGET(kMetal)});

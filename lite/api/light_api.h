@@ -62,7 +62,10 @@ class LITE_API LightPredictor {
     Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
   }
 
-  void Run() { program_->Run(); }
+  void Run() {
+    CheckInputValid();
+    program_->Run();
+  }
 
   // Get offset-th col of feed inputs.
   Tensor* GetInput(size_t offset);
@@ -79,10 +82,24 @@ class LITE_API LightPredictor {
   // get inputnames and get outputnames.
   std::vector<std::string> GetInputNames();
   std::vector<std::string> GetOutputNames();
+  // get input tensor precision type
+  const std::vector<PrecisionType>& GetInputPrecisions() const;
   void PrepareFeedFetch();
   Scope* scope() { return scope_.get(); }
 
+#ifdef LITE_WITH_METAL
+  void ConfigMetalContext(const lite_api::MobileConfig& config) {
+    program_->ConfigMetalContext(config.metal_lib_path(),
+                                 config.metal_use_mps(),
+                                 config.metal_use_aggressive());
+  }
+#endif
+
  private:
+  // check if the input tensor precision type is correct.
+  // would be called in Run().
+  void CheckInputValid();
+
   void Build(const std::string& lite_model_file,
              bool model_from_memory = false);
 
@@ -99,12 +116,17 @@ class LITE_API LightPredictor {
 
   void DequantizeWeight();
 
+#ifdef ENABLE_ARM_FP16
+  void WeightFP32ToFP16();
+#endif
+
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
+  std::vector<PrecisionType> input_precisions_;
 };
 
 class LightPredictorImpl : public lite_api::PaddlePredictor {

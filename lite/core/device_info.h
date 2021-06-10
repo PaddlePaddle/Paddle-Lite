@@ -14,16 +14,21 @@
 
 #pragma once
 
-#include <cstdarg>
 #include <string>
 #include <vector>
+
 #include "lite/api/paddle_api.h"
+#include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/macros.h"
+
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/target_wrapper.h"
+#endif
 #ifdef LITE_WITH_MLU
 #include "lite/backends/mlu/mlu_utils.h"
 #endif
-#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {

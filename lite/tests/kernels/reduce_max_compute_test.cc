@@ -229,9 +229,9 @@ void reduce_third_of_three(
       dst[i * second_in + j] = src[i * second_in * third_in + j * second_in];
       for (int k = 0; k < third_in; k++) {
         dst[i * second_in + j] =
-            src[i * second_in * third_in + j * second_in + k] >
+            src[i * second_in * third_in + j * third_in + k] >
                     dst[i * second_in + j]
-                ? src[i * second_in * third_in + j * second_in + k]
+                ? src[i * second_in * third_in + j * third_in + k]
                 : dst[i * second_in + j];
       }
     }
@@ -275,7 +275,7 @@ class ReduceMaxComputeTester : public arena::TestCase {
     auto* out = scope->NewTensor(output_);
     auto x_rank = x_dims_.size();
     if (!dim_.empty()) {
-      for (int i = 0; i < dim_.size(); i++) {
+      for (size_t i = 0; i < dim_.size(); i++) {
         if (dim_[i] < 0) {
           dim_[i] += x_rank;
         }
@@ -295,7 +295,7 @@ class ReduceMaxComputeTester : public arena::TestCase {
         out_dims.push_back(1);
       }
     } else {
-      for (int i = 0; i < x_dims_.size(); i++) {
+      for (size_t i = 0; i < x_dims_.size(); i++) {
         out_dims.push_back(x_dims_[i]);
       }
       if (keep_dim_) {
@@ -309,6 +309,9 @@ class ReduceMaxComputeTester : public arena::TestCase {
         }
         out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
                        out_dims.end());
+      }
+      if (!keep_dim_ && out_dims.empty()) {
+        out_dims.push_back(1);
       }
       out->Resize(DDim(out_dims));
     }
@@ -398,7 +401,7 @@ class ReduceMaxComputeTester : public arena::TestCase {
   }
 };
 
-void test_reduce_max(Place place) {
+void test_reduce_max_4d(Place place) {
   std::vector<std::vector<int>> reduce_dim{
       {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
   for (auto n : {1, 3}) {
@@ -421,7 +424,7 @@ void test_reduce_max(Place place) {
   }
 }
 
-void test_reduce_max_for_three(Place place) {
+void test_reduce_max_3d(Place place) {
   std::vector<std::vector<int>> reduce_dim{{0}, {1}, {2}};
   for (bool keep_dim : {false, true}) {
     for (auto dim : reduce_dim) {
@@ -435,14 +438,17 @@ void test_reduce_max_for_three(Place place) {
 }
 
 TEST(ReduceMax, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_reduce_max(place);
-  test_reduce_max_for_three(place);
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #endif
+
+  test_reduce_max_4d(place);
+  test_reduce_max_3d(place);
 }
 
 }  // namespace lite

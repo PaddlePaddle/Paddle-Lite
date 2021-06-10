@@ -14,80 +14,121 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-#if 0
-// naive gemm: keep for check
-__kernel
-void mat_mul(__global const CL_DTYPE* x,
-             __global const CL_DTYPE* y,
-             __global CL_DTYPE* out,
-             const int M, const int N, const int K) {
-  const int row = get_global_id(0); // [0, M) columns of out == m
-  const int col = get_global_id(1); // [0, N) rows of out == n
+#undef A
+#undef B
+#undef C
 
-  if ((col >= N) || (row >= M)) {
-    return;
+#define C(i, j, ldc) c[mad24(i, ldc, j)]
+#define A(i, j, lda) a[mad24(i, lda, j)]
+#define B(i, j, ldb) b[mad24(i, ldb, j)]
+
+__kernel void mat_mul_naive(__global const CL_DTYPE* a,
+                            __global const CL_DTYPE* b,
+                            __global CL_DTYPE* c,
+                            const int M,
+                            const int N,
+                            const int K,
+                            const int lda,
+                            const int ldb,
+                            const int ldc,
+                            const float alpha) {
+  const int m = get_global_id(0);
+  const int n = get_global_id(1);
+
+  CL_DTYPE res = 0.f;
+  for (short k = 0; k < K; ++k) {
+    res += A(m, k, lda) * B(k, n, ldb);
   }
-
-  CL_DTYPE x0, y0,
-        out0 = 0;
-
-  for (int p = 0; p < K; ++p) {
-    x0 = *(x + row * K + p);
-    y0 = *(y + p * N + col);
-    out0 += x0 * y0;
-  }
-
-  out[row * N + col] = out0;
+  C(m, n, ldc) = res * alpha;
 }
-#endif // naive gemm
 
-__kernel
-void mat_mul(__global const CL_DTYPE* a,
-             __global const CL_DTYPE* b,
-             __global CL_DTYPE* c,
-             const int M, const int N, const int K) {
-    const int row = get_global_id(0) << 2; // id: [0, M>>2) height of out == M
-    const int col = get_global_id(1) << 2; // id: [0, N>>2) width of out == N
+// gemv_1x4: M = 1
+// a: param.input  {M, K}
+// b: param.w      {K, N}
+// c: param.output {M, N}
+__kernel void gemv_1x4(__global const CL_DTYPE* a,
+                       __global const CL_DTYPE* b,
+                       __global CL_DTYPE* c,
+                       const int M,
+                       const int N,
+                       const int K,
+                       const int lda,
+                       const int ldb,
+                       const int ldc,
+                       const CL_DTYPE alpha) {
+  const int col = get_global_id(0)
+                  << 2;  // gws[0]: [0, N >> 2) height of B == N
 
-    if (row+3 < M && col+3 < N) {
-        CL_DTYPE c00 = 0, c01 = 0, c02 = 0, c03 = 0,
-                 c10 = 0, c11 = 0, c12 = 0, c13 = 0,
-                 c20 = 0, c21 = 0, c22 = 0, c23 = 0,
-                 c30 = 0, c31 = 0, c32 = 0, c33 = 0;
+  if (col + 3 < N) {
+    half4 a1x4 = 0.0f, b0_1x4 = 0.0f, b1_1x4 = 0.0f, b2_1x4 = 0.0f,
+          b3_1x4 = 0.0f, c1x4 = 0.0f;
 
-        for (int p = 0; p < K; p++) {
+    // main loop of K
+    short p = 0;
+    __global CL_DTYPE* base_b = (__global CL_DTYPE*)&B(p, col, ldb);
+    for (; p < K - 3; p += 4) {
+      a1x4 = convert_half4(vload4(0, &A(0, p, lda)));
 
-            CL_DTYPE a00 = *(a + row       * K + p), 
-                     a10 = *(a + (row + 1) * K + p), 
-                     a20 = *(a + (row + 2) * K + p), 
-                     a30 = *(a + (row + 3) * K + p),  
+      b0_1x4 = convert_half4(vload4(0, base_b));
+      b1_1x4 = convert_half4(vload4(0, base_b + ldb));
+      b2_1x4 = convert_half4(vload4(0, base_b + ldb * 2));
+      b3_1x4 = convert_half4(vload4(0, base_b + ldb * 3));
 
-                     b00 = *(b + p * N + col),
-                     b01 = *(b + p * N + (col+1)),
-                     b02 = *(b + p * N + (col+2)),
-                     b03 = *(b + p * N + (col+3));
-        
-            c00 += a00 * b00; c01 += a00 * b01; c02 += a00 * b02; c03 += a00 * b03;
-            c10 += a10 * b00; c11 += a10 * b01; c12 += a10 * b02; c13 += a10 * b03;
-            c20 += a20 * b00; c21 += a20 * b01; c22 += a20 * b02; c23 += a20 * b03;
-            c30 += a30 * b00; c31 += a30 * b01; c32 += a30 * b02; c33 += a30 * b03;
-        }
-        c[row*N+col] = c00;     c[row*N+(col+1)] = c01;     c[row*N+(col+2)] = c02;     c[row*N+(col+3)] = c03;
-        c[(row+1)*N+col] = c10; c[(row+1)*N+(col+1)] = c11; c[(row+1)*N+(col+2)] = c12; c[(row+1)*N+(col+3)] = c13;
-        c[(row+2)*N+col] = c20; c[(row+2)*N+(col+1)] = c21; c[(row+2)*N+(col+2)] = c22; c[(row+2)*N+(col+3)] = c23;
-        c[(row+3)*N+col] = c30; c[(row+3)*N+(col+1)] = c31; c[(row+3)*N+(col+2)] = c32; c[(row+3)*N+(col+3)] = c33;
-    } else {
-        for(int cidx = col; cidx < N; ++cidx) {
-            for (int ridx = row; ridx < M; ++ridx) {
-                CL_DTYPE a0, b0, c0 = 0;
-                for (int p = 0; p < K; ++p) {
-                    a0 = *(a + ridx * K + p);
-                    b0 = *(b + p * N + cidx),
-                    c0 += a0 * b0;
-                }
-                c[ridx * N + cidx] = c0;
-            }
-        }
+      c1x4 = mad(a1x4.x, b0_1x4, c1x4);
+      c1x4 = mad(a1x4.y, b1_1x4, c1x4);
+      c1x4 = mad(a1x4.z, b2_1x4, c1x4);
+      c1x4 = mad(a1x4.w, b3_1x4, c1x4);
+
+      base_b += 4 * ldb;
     }
-} 
 
+    // compute left K with b3_1x4 unused
+    b2_1x4 = 0.0f;
+    b1_1x4 = 0.0f;
+    b0_1x4 = 0.0f;
+    a1x4 = 0.0f;
+
+    switch (K - p) {
+      case 3: {
+        b2_1x4 = convert_half4(vload4(0, &B(p + 2, col, ldb)));
+        a1x4.z = a[p + 2];
+      }
+      case 2: {
+        b1_1x4 = convert_half4(vload4(0, &B(p + 1, col, ldb)));
+        a1x4.y = a[p + 1];
+      }
+      case 1: {
+        b0_1x4 = convert_half4(vload4(0, &B(p, col, ldb)));
+        a1x4.x = a[p];
+      }
+    }
+    c1x4 = mad(a1x4.x, b0_1x4, c1x4);
+    c1x4 = mad(a1x4.y, b1_1x4, c1x4);
+    c1x4 = mad(a1x4.z, b2_1x4, c1x4);
+    c1x4 = c1x4 * (half4)alpha;
+
+    if (col % 4 == 0) {
+      float4 c_res = convert_float4(c1x4);
+      vstore4(c_res, 0, c + col);
+    } else {
+      switch (col % 4) {
+        case 3:
+          c[col + 2] = c1x4.z;
+        case 2:
+          c[col + 1] = c1x4.y;
+        case 1:
+          c[col] = c1x4.x;
+      }
+    }
+  } else {
+    for (short col_idx = col; col_idx < N; ++col_idx) {
+      half c0 = 0, a0 = 0, b0 = 0;
+      for (short p = 0; p < K; ++p) {
+        b0 = B(p, col_idx, ldb);
+        a0 = A(0, p, lda);
+        c0 = mad(a0, b0, c0);
+      }
+      C(0, col_idx, ldc) = c0 * alpha;
+    }
+  }
+}

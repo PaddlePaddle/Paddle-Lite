@@ -152,6 +152,56 @@ void AbsCompute::Run() {
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
+void GeluCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  bool approximate = param.gelu_approximate;
+  lite::arm::math::act_gelu<float>(
+      x_data, output_data, x_dims.production(), approximate, ctx.threads());
+}
+
+template <typename T>
+void ErfCompute<T>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->template data<T>();
+  auto output_data = param.Out->template mutable_data<T>();
+  float alpha = param.Elu_alpha;
+  lite::arm::math::erf<T>(
+      x_data, output_data, x_dims.production(), ctx.threads());
+}
+template class ErfCompute<float>;
+
+template <typename T>
+void SignCompute<T>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->template data<T>();
+  auto output_data = param.Out->template mutable_data<T>();
+  float alpha = param.Elu_alpha;
+  lite::arm::math::sign<T>(
+      x_data, output_data, x_dims.production(), ctx.threads());
+}
+template class SignCompute<float>;
+
+template <typename T>
+void SoftPlusCompute<T>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->template data<T>();
+  auto output_data = param.Out->template mutable_data<T>();
+  float alpha = param.Elu_alpha;
+  lite::arm::math::softplus<T>(
+      x_data, output_data, x_dims.production(), ctx.threads());
+}
+template class SoftPlusCompute<float>;
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -235,4 +285,28 @@ REGISTER_LITE_KERNEL(
     abs, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::AbsCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    gelu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::GeluCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using float_erf = paddle::lite::kernels::arm::ErfCompute<float>;
+REGISTER_LITE_KERNEL(erf, kARM, kAny, kNCHW, float_erf, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .Finalize();
+
+using float_sign = paddle::lite::kernels::arm::SignCompute<float>;
+REGISTER_LITE_KERNEL(sign, kARM, kAny, kNCHW, float_sign, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .Finalize();
+
+using float_softplus = paddle::lite::kernels::arm::SoftPlusCompute<float>;
+REGISTER_LITE_KERNEL(softplus, kARM, kAny, kNCHW, float_softplus, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

@@ -14,13 +14,16 @@
 
 #include "lite/kernels/arm/activation_compute.h"
 #include "lite/backends/arm/math/funcs.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-void ReluCompute::Run() {
+template <>
+void ReluCompute<PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
@@ -29,6 +32,19 @@ void ReluCompute::Run() {
   lite::arm::math::act_relu<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
+
+#ifdef ENABLE_ARM_FP16
+template <>
+void ReluCompute<PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float16_t>();
+  auto output_data = param.Out->mutable_data<float16_t>();
+  lite::arm::math::fp16::act_relu<float16_t>(
+      x_data, output_data, x_dims.production(), ctx.threads());
+}
+#endif
 
 void LeakyReluCompute::Run() {
   auto& param = this->Param<param_t>();
@@ -121,12 +137,28 @@ void EluCompute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+#ifdef ENABLE_ARM_FP16
+REGISTER_LITE_KERNEL(relu,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ReluCompute<PRECISION(kFP16)>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
 
-REGISTER_LITE_KERNEL(
-    relu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ReluCompute, def)
+REGISTER_LITE_KERNEL(relu,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ReluCompute<PRECISION(kFloat)>,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(leaky_relu,
                      kARM,
                      kFloat,

@@ -53,6 +53,32 @@ void ScaleCompute<T, PType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+#ifdef LITE_BUILD_EXTRA
+using scale_int32_f =
+    paddle::lite::kernels::arm::ScaleCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(scale, kARM, kFloat, kNCHW, scale_int32_f, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using scale_int64_f =
+    paddle::lite::kernels::arm::ScaleCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(scale, kARM, kFloat, kNCHW, scale_int64_f, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+#endif  // LITE_BUILD_EXTRA
+
+#ifdef ENABLE_ARM_FP16
+using scale_float16 =
+    paddle::lite::kernels::arm::ScaleCompute<float16_t, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(scale, kARM, kFP16, kNCHW, scale_float16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+#endif  // ENABLE_ARM_FP16
+
 using scale_float =
     paddle::lite::kernels::arm::ScaleCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(scale, kARM, kFloat, kNCHW, scale_float, def)
@@ -65,4 +91,11 @@ using scale_int32 =
 REGISTER_LITE_KERNEL(scale, kARM, kInt32, kNCHW, scale_int32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using scale_int64 =
+    paddle::lite::kernels::arm::ScaleCompute<int64_t, PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(scale, kARM, kInt64, kNCHW, scale_int64, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

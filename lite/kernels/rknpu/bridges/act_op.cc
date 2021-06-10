@@ -58,17 +58,17 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int bit_length = 8;
   PrecisionType precision = PRECISION(kFloat);
 
-  if (op_info->HasAttr("enable_int8")) {
-    enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    CHECK(op_info->HasInputScale(x_scale_name, true));
+  if (op_info->HasInputScale(x_scale_name, true) &&
+      op_info->HasOutputScale(out_scale_name, true)) {
+    enable_int8 = true;
     input_scale = op_info->GetInputScale(x_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(out_scale_name, true));
     output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
-
-    if (enable_int8) {
-      precision = PRECISION(kInt8);
-    }
+    precision = PRECISION(kInt8);
+  } else {
+    enable_int8 = false;
+    LOG(WARNING) << "[RK-NPU] the op is float-type " << op_type;
+    precision = PRECISION(kFloat);
   }
 
   for (size_t i = 0; i < x_dims.size(); i++) {
@@ -116,6 +116,9 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else if (op_type == "sigmoid") {
     auto sigmoid = rGraph->AddOperator(
         rk::nn::OperatorType::SIGMOID, inputs, outputs, nullptr);
+  } else if (op_type == "relu6") {
+    auto relu6 = rGraph->AddOperator(
+        rk::nn::OperatorType::RELU6, inputs, outputs, nullptr);
   } else {
     LOG(WARNING) << "[RK-NPU] only support relu and sigmod, "
                     "but the activation type is "
@@ -134,5 +137,8 @@ REGISTER_SUBGRAPH_BRIDGE(relu,
                          kRKNPU,
                          paddle::lite::subgraph::rknpu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(sigmoid,
+                         kRKNPU,
+                         paddle::lite::subgraph::rknpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu6,
                          kRKNPU,
                          paddle::lite::subgraph::rknpu::ActConverter);

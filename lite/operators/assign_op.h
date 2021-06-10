@@ -37,6 +37,13 @@ class AssignOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "assign"; }
 
+  bool InferType() override {
+    if (param_.X) {
+      param_.Out->set_precision(param_.X->precision());
+    }
+    return true;
+  }
+
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
     auto input_dims = param_.X->dims();

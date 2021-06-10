@@ -22,7 +22,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T, PrecisionType PType>
+template <typename TM, typename TW, PrecisionType PType>
 class XPUBlockFuseCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::XPUBlockFuseParam;
@@ -32,7 +32,11 @@ class XPUBlockFuseCompute : public KernelLite<TARGET(kXPU), PType> {
   void Run() override;
 
  private:
-  std::vector<xdnn::fusion_block<float, int16_t, int16_t, T>> xpu_fusion_block;
+  std::vector<xdnn::fusion_block<float, TW, TW, TM>> xpu_fusion_block;
+  XPUScratchPadGuard quant_filter_guard;
+  TW* quant_filter;
+  XPUScratchPadGuard filter_max_guard;
+  float* filter_max;
 };
 
 }  // namespace xpu

@@ -101,8 +101,8 @@ void PatternMatcher::operator()(SSAGraph *graph,
 
   auto subgraphs = DetectPatterns();
   UniquePatterns(&subgraphs);
-  RemoveOverlappedMatch(&subgraphs);
   ValidateByNodeRole(&subgraphs);
+  RemoveOverlappedMatch(&subgraphs);
 
   if (subgraphs.empty()) return;
   LOG(INFO) << "detected " << subgraphs.size() << " subgraph";

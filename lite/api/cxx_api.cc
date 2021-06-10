@@ -141,11 +141,14 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
     std::string op_path = op2pathmap[*op_info];
     fputs(op_path.c_str(), opf_source);
     fputc('\n', opf_source);
+    if (op_path == "calib_once_op.cc") {
+      fputs("calib_op.cc\n", opf_source);
+    }
   }
   std::fclose(opf_source);
   std::fclose(opf);
-  LOG(INFO) << "operators information of tailored model is stored into: "
-            << opf_path;
+  OPT_LOG << "operators information of tailored model is stored into: "
+          << opf_path;
 
   // write Kernel_type and Kernel_path into file
   for (auto kernel_info = kernels_info.begin();
@@ -156,20 +159,14 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
     std::string kernel_path = kernel2pathmap[*kernel_info];
     fputs(kernel_path.c_str(), kpf_source);
     fputc('\n', kpf_source);
-    if (kernel_path == "conv_compute.cc") {
-      fputs(
-          "conv_depthwise.cc\nconv_direct.cc\nconv_gemmlike.cc\nconv_"
-          "winograd.cc\n",
-          kpf_source);
-    }
   }
   std::fclose(kpf_source);
   std::fclose(kpf);
-  LOG(INFO) << "kernels information of tailored model is stored into: "
-            << kpf_path;
+  OPT_LOG << "kernels information of tailored model is stored into: "
+          << kpf_path;
 }
 
-#ifndef LITE_WITH_FPGA
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
 lite::Tensor *Predictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -197,6 +194,11 @@ std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 // get outputnames
 std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 
+// get input tensor precision type
+const std::vector<PrecisionType> &Predictor::GetInputPrecisions() const {
+  return input_precisions_;
+}
+
 // get param names
 std::vector<std::string> Predictor::GetParamNames() {
   return exec_scope_->AttributeVarNames();
@@ -222,6 +224,7 @@ void Predictor::PrepareFeedFetch() {
 
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
+  input_precisions_.resize(feeds.size());
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
@@ -230,10 +233,12 @@ void Predictor::PrepareFeedFetch() {
     output_names_[fetchs[i]->GetAttr<int>("col")] =
         fetchs[i]->Input("X").front();
   }
+  for (size_t i = 0; i < feeds.size(); i++) {
+    input_precisions_[i] = GetInput(i)->precision();
+  }
 }
 
-#ifndef LITE_WITH_FPGA
-
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"
@@ -254,7 +259,6 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
   return outputs;
 }
 #else
-
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
   CHECK(_fetch_list) << "no fatch variable in exec_scope";
@@ -363,8 +367,11 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   factor.ConsiderPrecision();
   factor.ConsiderDataLayout();
 
-  optimizer_.Run(std::move(program), inner_places, factor, passes);
-  exec_scope_ = optimizer_.exec_scope();
+  exec_scope_ = program.exec_scope();
+
+  program_ =
+      RunDefaultOptimizer(std::move(program), inner_places, factor, passes);
+
   PrepareFeedFetch();
   // Verify if the ops version of current runtime program is
   // the same with that in models.
@@ -372,7 +379,6 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
 }
 
 void Predictor::GenRuntimeProgram() {
-  program_ = optimizer_.GenRuntimeProgram();
   CHECK_EQ(exec_scope_, program_->exec_scope());
   program_generated_ = true;
 }
@@ -442,14 +448,14 @@ void Predictor::CheckPaddleOpVersions(
           // registry.
           if ((model_op_version_index > iter->second) &&
               (model_op_version_index != -1)) {
-            LOG(WARNING) << "Error: incompatible paddle op version. Kernel ("
-                         << kernel->name() << ") requires that op_version("
-                         << iter->first << ")==" << iter->second
-                         << ". However, the op_version(" << iter->first
-                         << ") in this models is " << model_op_version_index
-                         << ". It's suggested to use PaddlePaddle and "
-                            "Paddle-Lite of the same op_version("
-                         << iter->first << ").";
+            LOG(INFO) << "Warning: incompatible paddle op version. Kernel ("
+                      << kernel->name() << ") requires that op_version("
+                      << iter->first << ")==" << iter->second
+                      << ". However, the op_version(" << iter->first
+                      << ") in this models is " << model_op_version_index
+                      << ". It's suggested to use PaddlePaddle and "
+                         "Paddle-Lite of the same op_version("
+                      << iter->first << ").";
           }
         }
       }
@@ -466,6 +472,19 @@ void Predictor::CheckPaddleOpVersions(
 //     feed_list[i].ShareDataWith(tensors[i]);
 // }
 // #endif
+
+void Predictor::CheckInputValid() {
+  for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
+    if (GetInput(idx)->precision() != input_precisions_[idx]) {
+      LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
+                   << ") Tensor name (" << input_names_[idx]
+                   << ") Require Precision type ("
+                   << PrecisionToStr(input_precisions_[idx])
+                   << ") Input Precision type ("
+                   << PrecisionToStr(GetInput(idx)->precision()) << ").";
+    }
+  }
+}
 
 }  // namespace lite
 }  // namespace paddle

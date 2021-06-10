@@ -214,7 +214,7 @@ class ReduceAllComputeTester : public arena::TestCase {
     auto* x = scope->FindMutableTensor(input_);
     const auto* x_data = x->data<bool>();
     auto* out = scope->NewTensor(output_);
-    auto x_rank = x_dims_.size();
+    size_t x_rank = x_dims_.size();
     if (!dim_.empty()) {
       for (size_t i = 0; i < dim_.size(); i++) {
         if (dim_[i] < 0) {
@@ -223,36 +223,44 @@ class ReduceAllComputeTester : public arena::TestCase {
       }
     }
 
-    std::stable_sort(dim_.begin(), dim_.end());
+    std::set<int> dims_set(dim_.begin(), dim_.end());
+    bool full_dim = true;
+    for (size_t i = 0; i < x_rank; i++) {
+      if (dims_set.find(i) == dims_set.end()) {
+        full_dim = false;
+        break;
+      }
+    }
+    reduce_all_ = (reduce_all_ || full_dim);
     if (dim_.size() == 0) {
       reduce_all_ = true;
     }
+
     std::vector<int64_t> out_dims;
     if (reduce_all_) {
-      if (keep_dim_) {
-        out_dims.push_back(x_rank);
-        out_dims.push_back(1);
-      } else {
-        out_dims.push_back(1);
-      }
+      if (keep_dim_)
+        out_dims = std::vector<int64_t>(x_rank, 1);
+      else
+        out_dims = std::vector<int64_t>{1};
     } else {
-      for (size_t i = 0; i < x_dims_.size(); i++) {
-        out_dims.push_back(x_dims_[i]);
-      }
-      if (keep_dim_) {
-        for (size_t i = 0; i < dim_.size(); ++i) {
-          out_dims[dim_[i]] = 1L;
+      size_t out_rank = keep_dim_ ? x_rank : x_rank - dim_.size();
+      out_dims.resize(out_rank);
+      std::stable_sort(dim_.begin(), dim_.end());
+      int dim_index = 0;
+      int out_index = 0;
+      for (size_t i = 0; i < x_rank; ++i) {
+        if (dim_index < static_cast<int>(dim_.size()) &&
+            dim_[dim_index] == static_cast<DDim::value_type>(i)) {
+          if (keep_dim_) {
+            out_dims[out_index++] = 1;
+          }
+          dim_index++;
+        } else {
+          out_dims[out_index++] = x_dims_[i];
         }
-      } else {
-        int64_t kDelFlag = -2;
-        for (size_t i = 0; i < dim_.size(); ++i) {
-          out_dims[dim_[i]] = kDelFlag;
-        }
-        out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
-                       out_dims.end());
       }
-      out->Resize(DDim(out_dims));
     }
+    out->Resize(DDim(out_dims));
 
     auto* out_data = out->mutable_data<bool>();
     size_t new_dims[] = {1, 1, 1, 1};
@@ -264,7 +272,7 @@ class ReduceAllComputeTester : public arena::TestCase {
     int in_h = new_dims[2];
     int in_w = new_dims[3];
 
-    if (dim_.size() == 0) {
+    if (reduce_all_) {
       reduce_all_all(x_data, out_data, in_n, in_c, in_h, in_w);
     } else if (dim_.size() == 1) {
       switch (dim_[0]) {
@@ -367,10 +375,15 @@ void test_reduce_all(Place place, float abs_err) {
 }
 
 TEST(ReduceAll, precision) {
-  Place place;
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  Place place(TARGET(kXPU));
   float abs_err = 2e-5;
-  place = Place(TARGET(kHost));
   test_reduce_all(place, abs_err);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  Place place(TARGET(kHost));
+  float abs_err = 2e-5;
+  test_reduce_all(place, abs_err);
+#endif
 }
 
 }  // namespace lite

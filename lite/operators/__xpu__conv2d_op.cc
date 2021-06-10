@@ -22,17 +22,14 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-std::string padding_algorithm_ = "";  // NOLINT
-
 bool XPUConv2dOp::CheckShape() const {
-  CHECK(param_.Input) << "Input(Input) of ConvXPUOp should not be null.";
-  CHECK(param_.Output) << "Input(Filter) of ConvXPUOp should not be null.";
-  CHECK(param_.Filter) << "Output(Output) of ConvXPUOp should not be null.";
-  // bias is optional.
+  CHECK(param_.input) << "Input(Input) of ConvXPUOp should not be null.";
+  CHECK(param_.output) << "Input(Filter) of ConvXPUOp should not be null.";
+  CHECK(param_.filter) << "Output(Output) of ConvXPUOp should not be null.";
 
-  const auto in_dims = param_.Input->dims();
-  const auto filter_dims = param_.Filter->dims();
-  int groups = param_.groups;
+  const auto in_dims = param_.input->dims();
+  const auto filter_dims = param_.filter->dims();
+  int groups = param_.groups.front();
 
   CHECK_EQ(in_dims.size(), 4UL) << "Conv intput should be 4-D tensor.";
   CHECK_EQ(in_dims.size(), filter_dims.size())
@@ -65,8 +62,8 @@ inline int ConvOutputSize(int input_size,
 
 // copy from conv_op.cc
 bool XPUConv2dOp::InferShapeImpl() const {
-  const auto in_dims = param_.Input->dims();
-  const auto filter_dims = param_.Filter->dims();
+  const auto in_dims = param_.input->dims();
+  const auto filter_dims = param_.filter->dims();
 
   operators::UpdatePaddingAndDilation(param_.paddings.get(),
                                       param_.dilations.get(),
@@ -87,11 +84,19 @@ bool XPUConv2dOp::InferShapeImpl() const {
   }
 
   // Set output and output max dims
-  param_.Output->Resize(lite::DDim(output_shape));
-  param_.OutputMax->Resize({4});
+  param_.output->Resize(lite::DDim(output_shape));
+  param_.output_max->Resize({4});
   // share LoD
-  param_.Output->set_lod(param_.Input->lod());
+  param_.output->set_lod(param_.input->lod());
 
+  if (param_.has_branch) {
+    const auto branch_dims = param_.branch->dims();
+    CHECK_EQ(branch_dims.size(), 4UL)
+        << "ConvXPUOp branch should be 4-D tensor.";
+    for (auto i = 0; i < 4; i++) {
+      CHECK_EQ(output_shape[i], branch_dims[i]);
+    }
+  }
   return true;
 }
 
@@ -99,30 +104,39 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter").front()));
-  CHECK(scope->FindVar(op_desc.Input("FilterMax").front()));
   CHECK(scope->FindVar(op_desc.Output("Output").front()));
   CHECK(scope->FindVar(op_desc.Output("OutputMax").front()));
 
-  param_.Input =
+  param_.input =
       scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
-  param_.Filter =
+  param_.filter =
       scope->FindVar(op_desc.Input("Filter").front())->GetMutable<Tensor>();
-  param_.FilterMax =
-      scope->FindVar(op_desc.Input("FilterMax").front())->GetMutable<Tensor>();
-  param_.Output =
+  param_.output =
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
-  param_.OutputMax =
+  param_.output_max =
       scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
 
+  param_.op_type = op_desc.GetAttr<std::vector<int>>("op_type");
+  param_.place_x = op_desc.GetAttr<std::vector<int>>("place_x");
+  param_.place_y = op_desc.GetAttr<std::vector<int>>("place_y");
+  param_.place_z = op_desc.GetAttr<std::vector<int>>("place_z");
+  param_.filter_dims = op_desc.GetAttr<std::vector<int>>("filter_dims");
+  CHECK_EQ(param_.filter_dims.size(), 4UL);
   param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
+  CHECK_EQ(param_.strides.size(), 2UL);
   std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
   auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+  CHECK_EQ(dilations.size(), 2UL);
   param_.dilations = std::make_shared<std::vector<int>>(dilations);
-  param_.groups = op_desc.GetAttr<int>("groups");
-  param_.act_type = op_desc.GetAttr<int>("act_type");
-  param_.act_param = op_desc.GetAttr<float>("act_param");
-  param_.filter_dims = op_desc.GetAttr<std::vector<int>>("filter_dims");
+  param_.groups = op_desc.GetAttr<std::vector<int>>("groups");
+  CHECK_EQ(param_.groups.size(), 1UL);
+  param_.act_type = op_desc.GetAttr<std::vector<int>>("act_type");
+  CHECK_EQ(param_.act_type.size(), 1UL);
+  param_.act_param = op_desc.GetAttr<std::vector<float>>("act_param");
+  CHECK_EQ(param_.act_param.size(), 1UL);
   param_.has_branch = op_desc.GetAttr<bool>("has_branch");
+  param_.block_lod = op_desc.GetAttr<std::vector<int>>("block_lod");
+  param_.has_bias = op_desc.GetAttr<bool>("has_bias");
 
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
@@ -132,7 +146,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.Branch =
+        param_.branch =
             const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
       }
     }
@@ -143,7 +157,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.Bias =
+        param_.bias =
             const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
       }
     }
@@ -152,7 +166,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   if (op_desc.HasAttr("has_input_max") &&
       op_desc.GetAttr<bool>("has_input_max")) {
     CHECK(scope->FindVar(op_desc.Input("InputMax").front()));
-    param_.InputMax =
+    param_.input_max =
         scope->FindVar(op_desc.Input("InputMax").front())->GetMutable<Tensor>();
   }
 

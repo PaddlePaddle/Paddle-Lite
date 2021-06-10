@@ -25,3 +25,27 @@ REGISTER_LITE_KERNEL(concat,
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(concat,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::ConcatCompute<int>,
+                     int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(concat,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::ConcatCompute<int64_t>,
+                     int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .Finalize();

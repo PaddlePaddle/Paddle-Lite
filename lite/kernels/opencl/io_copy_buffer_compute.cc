@@ -94,8 +94,10 @@ class IoCopyHostToOpenCLCompute
 
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
+    CHECK(param.x);
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kARM));
+
     auto mem_size = param.x->memory_size();
 #ifdef LITE_WITH_LOG
     VLOG(2) << "param.x->memory_size():" << mem_size;
@@ -105,6 +107,8 @@ class IoCopyHostToOpenCLCompute
     VLOG(2) << "param.y->dims():" << param.y->dims();
 #endif
     auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
+    CHECK(data);
+    CHECK(param.x->raw_data());
     h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
   }
 

@@ -37,17 +37,6 @@ void elementwise_add<int32_t>(const int32_t* dinx,
 }
 
 template <>
-void elementwise_add<int64_t>(const int64_t* dinx,
-                              const int64_t* diny,
-                              int64_t* dout,
-                              int num) {
-  neon_elementwise_range_to_range<
-      MergeConfig<AddConfig<int64_t>,
-                  ActiveConfig<ActiveType::NO_ACTIVE, int64_t>>>(
-      dinx, diny, dout, num);
-}
-
-template <>
 void elementwise_add<float>(const float* dinx,
                             const float* diny,
                             float* dout,
@@ -91,6 +80,17 @@ void elementwise_add<float>(const float* dinx,
       diny_ptr++;
     }
   }
+}
+
+template <>
+void elementwise_add<int64_t>(const int64_t* dinx,
+                              const int64_t* diny,
+                              int64_t* dout,
+                              int num) {
+  neon_elementwise_range_to_range<
+      MergeConfig<AddConfig<int64_t>,
+                  ActiveConfig<ActiveType::NO_ACTIVE, int64_t>>>(
+      dinx, diny, dout, num);
 }
 
 template <>
@@ -144,6 +144,17 @@ void elementwise_add_relu<float>(const float* dinx,
       dinx_ptr++;
       diny_ptr++;
     }
+  }
+}
+
+template <>
+void elementwise_add_relu<int64_t>(const int64_t* dinx,
+                                   const int64_t* diny,
+                                   int64_t* dout,
+                                   int num) {
+  for (int i = 0; i < num; i++) {
+    int64_t tmp = dinx[i] + diny[i];
+    dout[i] = tmp > 0 ? tmp : 0;
   }
 }
 
@@ -229,29 +240,6 @@ void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
 }
 
 template <>
-void elementwise_add_broadcast<int64_t>(const int64_t* dinx,
-                                        const int64_t* diny,
-                                        int64_t* dout,
-                                        int batch,
-                                        int channels,
-                                        int num) {
-#pragma omp parallel for collapse(2)
-  for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
-      int offset = (i * channels + j) * num;
-      const auto* dinx_ptr = dinx + offset;
-      const auto* diny_ptr = diny + j;
-      auto* dout_ptr = dout + offset;
-
-      neon_elementwise_range_to_one<
-          MergeConfig<AddConfig<int64_t>,
-                      ActiveConfig<ActiveType::NO_ACTIVE, int64_t>>>(
-          dinx_ptr, diny_ptr, dout_ptr, num);
-    }
-  }
-}
-
-template <>
 void elementwise_add_broadcast<float>(const float* dinx,
                                       const float* diny,
                                       float* dout,
@@ -312,6 +300,29 @@ void elementwise_add_broadcast<float>(const float* dinx,
           dout_ptr++;
           din_ptr++;
         }
+      }
+    }
+  }
+}
+
+template <>
+void elementwise_add_broadcast<int64_t>(const int64_t* dinx,
+                                        const int64_t* diny,
+                                        int64_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int64_t* dinx_ptr = dinx + offset;
+      const int64_t diny_data = diny[j];
+      int64_t* dout_ptr = dout + offset;
+      for (int k = 0; k < num; ++k) {
+        *dout_ptr = *dinx_ptr + diny_data;
+        dout_ptr++;
+        dinx_ptr++;
       }
     }
   }
@@ -397,6 +408,30 @@ void elementwise_add_relu_broadcast<float>(const float* dinx,
 }
 
 template <>
+void elementwise_add_relu_broadcast<int64_t>(const int64_t* dinx,
+                                             const int64_t* diny,
+                                             int64_t* dout,
+                                             int batch,
+                                             int channels,
+                                             int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int64_t* dinx_ptr = dinx + offset;
+      const int64_t diny_data = diny[j];
+      int64_t* dout_ptr = dout + offset;
+      for (int k = 0; k < num; ++k) {
+        int64_t tmp = *dinx_ptr + diny_data;
+        *dout_ptr = tmp > 0 ? tmp : 0;
+        dout_ptr++;
+        dinx_ptr++;
+      }
+    }
+  }
+}
+
+template <>
 void elementwise_add_grad<float>(const float* dout_grad,
                                  float* x_grad,
                                  int num) {
@@ -472,6 +507,16 @@ void elementwise_sub<int32_t>(const int32_t* dinx,
       MergeConfig<SubConfig<int32_t>,
                   ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
       dinx, diny, dout, num);
+}
+
+template <>
+void elementwise_sub<int64_t>(const int64_t* dinx,
+                              const int64_t* diny,
+                              int64_t* dout,
+                              int num) {
+  for (int i = 0; i < num; i++) {
+    dout[i] = dinx[i] - diny[i];
+  }
 }
 
 template <>
@@ -593,6 +638,29 @@ void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
           MergeConfig<SubConfig<int32_t>,
                       ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
           dinx_ptr, diny_ptr, dout_ptr, num);
+    }
+  }
+}
+
+template <>
+void elementwise_sub_broadcast<int64_t>(const int64_t* dinx,
+                                        const int64_t* diny,
+                                        int64_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int64_t* dinx_ptr = dinx + offset;
+      const int64_t diny_data = diny[j];
+      int64_t* dout_ptr = dout + offset;
+      for (int k = 0; k < num; ++k) {
+        *dout_ptr = *dinx_ptr - diny_data;
+        dout_ptr++;
+        dinx_ptr++;
+      }
     }
   }
 }
@@ -1916,6 +1984,61 @@ void elementwise_div_broadcast<float>(const float* dinx,
 }
 
 template <>
+void elementwise_floor_div<int32_t>(const int32_t* dinx,
+                                    const int32_t* diny,
+                                    int32_t* dout,
+                                    int num) {
+  naive_elementwise_op<int32_t, naive_floor_div<int32_t>>(
+      dinx, diny, dout, num);
+}
+
+template <>
+void elementwise_floor_div<int64_t>(const int64_t* dinx,
+                                    const int64_t* diny,
+                                    int64_t* dout,
+                                    int num) {
+  for (int i = 0; i < num; i++) {
+    *dout = static_cast<int64_t>(std::trunc(*dinx / *diny));
+    dout++;
+    dinx++;
+    diny++;
+  }
+}
+
+template <>
+void elementwise_floor_div_broadcast<int32_t>(const int32_t* dinx,
+                                              const int32_t* diny,
+                                              int32_t* dout,
+                                              int batch,
+                                              int channels,
+                                              int num) {
+  naive_elementwise_op_broadcast<int32_t, naive_floor_div<int32_t>>(
+      dinx, diny, dout, batch, channels, num);
+}
+
+template <>
+void elementwise_floor_div_broadcast<int64_t>(const int64_t* dinx,
+                                              const int64_t* diny,
+                                              int64_t* dout,
+                                              int batch,
+                                              int channels,
+                                              int num) {
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int64_t* din_ptr = dinx + offset;
+      const int64_t diny_data = diny[j];
+      int64_t* dout_ptr = dout + offset;
+      for (int p = 0; p < num; p++) {
+        *dout_ptr = static_cast<int64_t>(std::trunc(*din_ptr / diny_data));
+        dout_ptr++;
+        din_ptr++;
+      }
+    }
+  }
+}
+
+template <>
 void elementwise_div_relu<float>(const float* dinx,
                                  const float* diny,
                                  float* dout,
@@ -2142,12 +2265,89 @@ template void elementwise_mod<int64_t>(const int64_t* dinx,
                                        int64_t* dout,
                                        int num);
 
+template <>
+void elementwise_mod<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  int cnt = num >> 2;
+  int remain = num % 4;
+#pragma omp parallel for
+  for (int i = 0; i < cnt; i++) {
+    const int32_t* dinx_ptr = dinx + (i << 2);
+    const int32_t* diny_ptr = diny + (i << 2);
+    int32_t* dout_ptr = dout + (i << 2);
+
+    register int32_t dinx0 = dinx_ptr[0];
+    register int32_t dinx1 = dinx_ptr[1];
+    register int32_t dinx2 = dinx_ptr[2];
+    register int32_t dinx3 = dinx_ptr[3];
+
+    register int32_t diny0 = diny_ptr[0];
+    register int32_t diny1 = diny_ptr[1];
+    register int32_t diny2 = diny_ptr[2];
+    register int32_t diny3 = diny_ptr[3];
+
+    dout_ptr[0] = dinx0 % diny0;
+    dout_ptr[1] = dinx1 % diny1;
+    dout_ptr[2] = dinx2 % diny2;
+    dout_ptr[3] = dinx3 % diny3;
+  }
+  if (remain > 0) {
+    const int32_t* dinx_ptr = dinx + (cnt << 2);
+    const int32_t* diny_ptr = diny + (cnt << 2);
+    int32_t* dout_ptr = dout + (cnt << 2);
+    for (int i = 0; i < remain; i++) {
+      *dout_ptr++ = *dinx_ptr++ % *diny_ptr++;
+    }
+  }
+}
+
 template void elementwise_mod_broadcast<int64_t>(const int64_t* dinx,
                                                  const int64_t* diny,
                                                  int64_t* dout,
                                                  int batch,
                                                  int channels,
                                                  int num);
+
+template <>
+void elementwise_mod_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int32_t* din_ptr = dinx + offset;
+      const int32_t diny_data = diny[j];
+      int32_t* dout_ptr = dout + offset;
+
+      int cnt = num >> 2;
+      int remain = num % 4;
+      for (int k = 0; k < cnt; ++k) {
+        register int32_t dinx0 = din_ptr[0];
+        register int32_t dinx1 = din_ptr[1];
+        register int32_t dinx2 = din_ptr[2];
+        register int32_t dinx3 = din_ptr[3];
+        dout_ptr[0] = dinx0 % diny_data;
+        dout_ptr[1] = dinx1 % diny_data;
+        dout_ptr[2] = dinx2 % diny_data;
+        dout_ptr[3] = dinx3 % diny_data;
+        din_ptr += 4;
+        dout_ptr += 4;
+      }
+      if (remain > 0) {
+        for (int p = 0; p < remain; p++) {
+          *dout_ptr++ = *din_ptr++ % diny_data;
+        }
+      }
+    }
+  }
+}
+
 template <>
 void elementwise_pow<int32_t>(const int32_t* dinx,
                               const int32_t* diny,

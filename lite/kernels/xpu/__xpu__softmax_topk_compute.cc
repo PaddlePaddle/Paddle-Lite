@@ -22,6 +22,12 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+void SoftmaxTopkCompute::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  indices_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(param.indices->numel() * sizeof(int));
+}
+
 void SoftmaxTopkCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -32,48 +38,23 @@ void SoftmaxTopkCompute::Run() {
     xdims.push_back(param.x->dims().data()[i]);
   }
   int axis = param.axis < 0 ? param.axis + xdims.size() : param.axis;
-  XPUScratchPadGuard indices_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      param.indices->numel() * sizeof(int), false /* use_l3 */);
+  indices_xpu_guard_->Reserve(param.indices->numel() * sizeof(int));
   int* indices_int32_device = reinterpret_cast<int*>(indices_xpu_guard_->addr_);
   int64_t* indices_int64_device =
       param.indices->mutable_data<int64_t>(TARGET(kXPU));
-  if (xdims[axis] >= 16384) {
-    int r = xdnn::sorted_softmax_topk<float, int>(
-        ctx.GetRawContext(),
-        param.x->data<float>(),
-        param.output->mutable_data<float>(TARGET(kXPU)),
-        indices_int32_device,
-        xdims,
-        axis,
-        K);
-    CHECK_EQ(r, 0);
-  } else {
-    int n = xdims.back();
-    int m = param.x->numel() / n;
-    XPUScratchPadGuard softmax_out_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(
-            param.output->numel() * sizeof(float), false /* use_l3 */);
-    float* softmax_out_xpu_ptr =
-        reinterpret_cast<float*>(softmax_out_xpu_guard_->addr_);
-    int r = xdnn::softmax(ctx.GetRawContext(),
-                          param.x->data<float>(),
-                          softmax_out_xpu_ptr,
-                          xdims,
-                          axis);
-    CHECK_EQ(r, 0);
-    r = xdnn::sorted_topk(ctx.GetRawContext(),
-                          softmax_out_xpu_ptr,
-                          param.output->mutable_data<float>(TARGET(kXPU)),
-                          indices_int32_device,
-                          m,
-                          n,
-                          K);
-    CHECK_EQ(r, 0);
-  }
-  int r = xdnn::cast_v2<int, int64_t>(ctx.GetRawContext(),
-                                      indices_int32_device,
-                                      indices_int64_device,
-                                      param.indices->numel());
+  int r = xdnn::sorted_softmax_topk<float, int>(
+      ctx.GetRawContext(),
+      param.x->data<float>(),
+      param.output->mutable_data<float>(TARGET(kXPU)),
+      indices_int32_device,
+      xdims,
+      axis,
+      K);
+  CHECK_EQ(r, 0);
+  r = xdnn::cast_v2<int, int64_t>(ctx.GetRawContext(),
+                                  indices_int32_device,
+                                  indices_int64_device,
+                                  param.indices->numel());
   CHECK_EQ(r, 0);
 }
 

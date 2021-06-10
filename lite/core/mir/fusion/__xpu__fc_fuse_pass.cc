@@ -25,44 +25,62 @@ namespace fusion {
 
 class XPUFcFuser : public FuseBase {
  public:
-  explicit XPUFcFuser(bool with_relu) : with_relu_(with_relu) {}
+  explicit XPUFcFuser(bool with_bias, const std::string& act_type) {
+    with_bias_ = with_bias;
+    act_type_ = act_type;
+  }
 
   void BuildPattern() override {
-    // create nodes.
-    auto* x = VarNode("x")->assert_is_op_input("mul", "X");
-    auto* W = VarNode("W")->assert_is_op_input("mul", "Y");
-    auto* b = VarNode("b")->assert_is_persistable_var();
-    auto* mul = OpNode("mul", "mul");
-    auto* mul_out = VarNode("mul_out");
-    auto* add = OpNode("add", "elementwise_add");
-    auto* Out = VarNode("Out");
-
-    // create topology.
-    std::vector<PMNode*> mul_inputs{W, x};
-    std::vector<PMNode*> add_inputs{mul_out, b};
-    mul_inputs >> *mul >> *mul_out;
-
-    // Some op specialities.
-    mul_out->AsIntermediate();
-    mul->AsIntermediate();
-    add->AsIntermediate();
-
-    if (with_relu_) {
-      auto* add_out = VarNode("add_out");
-      auto* relu = OpNode("relu", "relu");
-      std::vector<PMNode*> relu_inputs{add_out};
-      add_inputs >> *add >> *add_out;
-      relu_inputs >> *relu >> *Out;
-      add_out->AsIntermediate();
-      relu->AsIntermediate();
-    } else {
-      add_inputs >> *add >> *Out;
+    auto* x = VarNode("x")->assert_is_op_input("mul", "X")->AsInput();
+    auto* W = VarNode("W")->assert_is_op_input("mul", "Y")->AsInput();
+    auto* mul = OpNode("mul", "mul")->AsIntermediate();
+    auto* mul_out = VarNode("mul_out")->assert_is_op_output("mul", "Out");
+    PMNode* bias = nullptr;
+    PMNode* add = nullptr;
+    PMNode* add_out = nullptr;
+    PMNode* act = nullptr;
+    PMNode* act_out = nullptr;
+    if (with_bias_) {
+      mul_out->assert_is_op_input("elementwise_add", "X");
+      bias = VarNode("bias")
+                 ->assert_is_op_input("elementwise_add", "Y")
+                 ->assert_is_persistable_var()
+                 ->AsInput();
+      add = OpNode("add", "elementwise_add")->AsIntermediate();
+      add_out =
+          VarNode("add_out")->assert_is_op_output("elementwise_add", "Out");
     }
+    if (act_type_ != "linear") {
+      act = OpNode("act", act_type_)->AsIntermediate();
+      act_out = VarNode("act_out")->assert_is_op_output(act_type_, "Out");
+    }
+    *x >> *mul >> *mul_out;
+    if (with_bias_) {
+      mul_out->AsIntermediate();
+      *mul_out >> *add >> *add_out;
+      *bias >> *add;
+    } else {
+      add_out = mul_out;
+    }
+    if (act_type_ != "linear") {
+      add_out->assert_is_op_input(act_type_, "X")->AsIntermediate();
+      *add_out >> *act >> *act_out;
+    } else {
+      act_out = add_out;
+    }
+    *W >> *mul;
+    act_out->AsOutput();
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    cpp::OpDesc op_desc = *matched.at("mul")->stmt()->op_info();
     auto mul = matched.at("mul")->stmt()->op();
     auto* scope = mul->scope();
+    op_desc.mutable_inputs()->clear();
+    op_desc.mutable_outputs()->clear();
+    op_desc.SetType("__xpu__fc");
+    op_desc.SetInput("Input", {matched.at("x")->arg()->name});
+    op_desc.SetInput("Filter", {matched.at("W")->arg()->name});
 
     std::string precision = "int16";
 #ifdef LITE_WITH_XPU
@@ -70,78 +88,78 @@ class XPUFcFuser : public FuseBase {
         lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
       precision = "int31";
       VLOG(3) << "Use int31 in XPUFcOp";
+    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
+               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
+      precision = "int8";
+      VLOG(3) << "Use int8 in XPUFcOp";
     }
 #endif
-    // convert W from float to int16, and transpose W
-    auto weight_name = matched.at("W")->arg()->name;
-    auto* weight_t = scope->FindMutableTensor(weight_name);
-    auto weight_dims = weight_t->dims();
-    int weight_len = weight_t->numel();
-    float* weight_on_host = weight_t->mutable_data<float>();
-    float max_f =
-        paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
-
-    if (precision == "int31") {
-      std::unique_ptr<float[]> weight_trans_fp32(new float[weight_len]);
-      paddle::lite::xpu::math::Transpose(weight_on_host,
-                                         weight_trans_fp32.get(),
-                                         weight_dims[0],
-                                         weight_dims[1]);
-      memcpy(
-          weight_on_host, weight_trans_fp32.get(), weight_len * sizeof(float));
-    } else {
-      std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
-      std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
-      paddle::lite::xpu::math::ConvertFP32ToInt16(
-          weight_on_host, weight_int16.get(), max_f, weight_len);
-      paddle::lite::xpu::math::Transpose(weight_int16.get(),
-                                         weight_trans_int16.get(),
-                                         weight_dims[0],
-                                         weight_dims[1]);
-      memcpy(weight_on_host,
-             weight_trans_int16.get(),
-             weight_len * sizeof(int16_t));
+    if (with_bias_) {
+      op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
     }
+    op_desc.SetAttr<bool>("has_bias", with_bias_);
+    std::string output_name, output_node_name;
+    if (act_type_ != "linear") {
+      output_name = matched.at("act_out")->arg()->name;
+      output_node_name = "act_out";
+    } else if (with_bias_) {
+      output_name = matched.at("add_out")->arg()->name;
+      output_node_name = "add_out";
+    } else {
+      output_name = matched.at("mul_out")->arg()->name;
+      output_node_name = "mul_out";
+    }
+    op_desc.SetOutput("Output", {output_name});
+    op_desc.SetAttr<std::string>("precision", precision);
+    std::map<std::string, int> act_map{{"linear", 0},
+                                       {"relu", 1},
+                                       {"sigmoid", 2},
+                                       {"tanh", 3},
+                                       {"leaky_relu", 5},
+                                       {"hard_swish", 14},
+                                       {"hard_sigmoid", 15},
+                                       {"relu6", 17}};
 
-    auto op_desc = GenOpDesc(matched, max_f, true, precision);
+    float act_param_ = 0.0f;
+    if (act_type_ == "leaky_relu") {
+      auto act_op_desc = *matched.at("act")->stmt()->op_info();
+      act_param_ = act_op_desc.GetAttr<float>("alpha");
+    } else if (act_type_ == "hard_sigmoid") {
+      auto act_op_desc = *matched.at("act")->stmt()->op_info();
+      act_param_ = act_op_desc.GetAttr<float>("slope");
+    }
+    op_desc.SetAttr<int>("act_type", act_map[act_type_]);
+    op_desc.SetAttr<float>("act_param", act_param_);
+    op_desc.SetAttr(
+        "in_num_col_dims",
+        matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
+
+    std::string max_output_name = output_name + "_max";
+    auto* max_output_node = graph->NewArgumentNode(max_output_name);
+    max_output_node->arg()->type = LiteType::GetTensorTy(
+        TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    auto* max_output_tensor = scope->NewTensor(max_output_name);
+    max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_output_tensor->set_persistable(true);
+    op_desc.SetOutput("OutputMax", {max_output_name});
+
     auto fc_op = LiteOpRegistry::Global().Create("__xpu__fc");
     auto& valid_places = mul->valid_places();
     fc_op->Attach(op_desc, scope);
-
     auto* new_op_node = graph->GraphCreateInstructNode(fc_op, valid_places);
 
     IR_NODE_LINK_TO(matched.at("W"), new_op_node);
     IR_NODE_LINK_TO(matched.at("x"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("b"), new_op_node);
-    IR_NODE_LINK_TO(new_op_node, matched.at("Out"));
+    if (with_bias_) {
+      IR_NODE_LINK_TO(matched.at("bias"), new_op_node);
+    }
+    IR_NODE_LINK_TO(new_op_node, matched.at(output_node_name));
+    DirectedLink(new_op_node, max_output_node);
   }
 
  private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched,
-                        float w_max,
-                        bool transpose_w,
-                        const std::string& precision) {
-    cpp::OpDesc op_desc = *matched.at("mul")->stmt()->op_info();
-    op_desc.mutable_inputs()->clear();
-    op_desc.mutable_outputs()->clear();
-    op_desc.SetType("__xpu__fc");
-    op_desc.SetInput("Input", {matched.at("x")->arg()->name});
-    op_desc.SetInput("W", {matched.at("W")->arg()->name});
-    op_desc.SetInput("Bias", {matched.at("b")->arg()->name});
-    op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
-    op_desc.SetAttr(
-        "in_num_col_dims",
-        matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
-    op_desc.SetAttr("w_max", w_max);
-    op_desc.SetAttr("transpose_w", transpose_w);
-    if (with_relu_) {
-      op_desc.SetAttr("activation_type", std::string{"relu"});
-    }
-    op_desc.SetAttr<std::string>("precision", precision);
-    return op_desc;
-  }
-
-  bool with_relu_;
+  bool with_bias_;
+  std::string act_type_;
 };
 
 }  // namespace fusion
@@ -150,12 +168,20 @@ class XPUFcFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
-
-    fusion::XPUFcFuser fuser(true /* with_relu */);
-    fuser(graph.get());
-
-    fusion::XPUFcFuser fuser2(false /* with_relu */);
-    fuser2(graph.get());
+    // TODO(weihaoji) support with_no_bias and more activation types
+    for (auto with_bias : {true, /*false*/}) {
+      for (auto act_type : {"relu",
+                            /*"sigmoid",
+                            "tanh",
+                            "leaky_relu",
+                            "hard_swish",
+                            "hard_sigmoid",
+                            "relu6",*/
+                            "linear"}) {
+        fusion::XPUFcFuser fuser(with_bias, act_type);
+        fuser(graph.get());
+      }
+    }
   }
 };
 

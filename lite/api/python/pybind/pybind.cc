@@ -64,6 +64,7 @@ void BindLiteOpt(py::module *m) {
       .def("set_model_file", &OptBase::SetModelFile)
       .def("set_param_file", &OptBase::SetParamFile)
       .def("set_valid_places", &OptBase::SetValidPlaces)
+      .def("enable_fp16", &OptBase::EnableFloat16)
       .def("set_optimize_out", &OptBase::SetOptimizeOut)
       .def("set_model_type", &OptBase::SetModelType)
       .def("set_quant_model", &OptBase::SetQuantModel)
@@ -72,6 +73,7 @@ void BindLiteOpt(py::module *m) {
       .def("set_passes_internal", &OptBase::SetPassesInternal)
       .def("run", &OptBase::Run)
       .def("run_optimize", &OptBase::RunOptimize)
+      .def("version", &OptBase::OptVersion)
       .def("help", &OptBase::PrintHelpInfo)
       .def("executablebin_help", &OptBase::PrintExecutableBinHelpInfo)
       .def("print_supported_ops", &OptBase::PrintSupportedOps)
@@ -202,6 +204,7 @@ void BindLitePlace(py::module *m) {
       .value("APU", TargetType::kAPU)
       .value("HUAWEI_ASCEND_NPU", TargetType::kHuaweiAscendNPU)
       .value("IMAGINATION_NNA", TargetType::kImaginationNNA)
+      .value("INTEL_FPGA", TargetType::kIntelFPGA)
       .value("Any", TargetType::kAny);
 
   // PrecisionType

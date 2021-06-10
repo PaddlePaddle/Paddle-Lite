@@ -23,8 +23,10 @@ namespace host {
 
 void WhileCompute::PrepareForRun() {
   auto &param = this->Param<param_t>();
-  program_.reset(new RuntimeProgram(
-      param.program_desc, param.exec_scope, param.block_idx));
+  if (program_ == nullptr) {
+    program_.reset(new RuntimeProgram(
+        param.program_desc, param.exec_scope, param.block_idx));
+  }
 }
 void WhileCompute::Run() {
   auto &param = this->Param<param_t>();
@@ -41,15 +43,19 @@ void WhileCompute::Run() {
 REGISTER_LITE_KERNEL(
     while, kHost, kAny, kAny, paddle::lite::kernels::host::WhileCompute, def)
     .BindInput("X",
-               {LiteType::GetTensorListTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindInput("Condition",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kBool),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorListTy(
-                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .BindOutput("StepScopes",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();

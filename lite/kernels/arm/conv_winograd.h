@@ -21,6 +21,10 @@
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -41,6 +45,18 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
     ch->kernel_func_name = kernel_func_name_;
   }
   std::string kernel_func_name_{"NotImplForConvWino"};
+#define PROFILE_INFO(dtype1, dtype2)                                        \
+  template <>                                                               \
+  void WinogradConv<PRECISION(dtype1), PRECISION(dtype2)>::                 \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
+  }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
+
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
 
  protected:
@@ -66,6 +82,18 @@ class WinogradConv<PRECISION(kInt8), OutType>
     ch->kernel_func_name = kernel_func_name_;
   }
   std::string kernel_func_name_{"NotImplForConvWino"};
+#define PROFILE_INFO(kInt8, dtype2)                                         \
+  template <>                                                               \
+  void WinogradConv<PRECISION(kInt8), PRECISION(dtype2)>::                  \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
+  }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
+
+#else
+#define PROFILE_INFO(kInt8, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
 
  protected:

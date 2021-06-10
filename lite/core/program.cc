@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/core/program.h"
+
 #include <algorithm>
 #include <map>
 #include <set>
+
 #include "lite/model_parser/cpp_desc.h"
 #include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
@@ -27,8 +29,10 @@
 namespace paddle {
 namespace lite {
 
+#ifndef LITE_ON_TINY_PUBLISH
 void RuntimeProgram::SaveToProgram(
     std::shared_ptr<cpp::ProgramDesc> program_desc) {
+  LOG(INFO) << "Into SaveToProgram";
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
   CHECK_GT(block_size, 0) << "No block found!";
@@ -71,9 +75,18 @@ void RuntimeProgram::SaveToProgram(
         auto* v = block_desc->AddVar<cpp::VarDesc>();
         v->SetName(var_name);
         auto it = origin_var_maps.find(var_name);
-        if (it != origin_var_maps.end()) {
+        auto* var = scope->FindVar(var_name);
+        if (it != origin_var_maps.end() && (it->second.Persistable())) {
           v->SetType(it->second.GetType());
           v->SetPersistable(it->second.Persistable());
+          if (it->second.GetType() == cpp::VarDesc::Type::LOD_TENSOR) {
+            if (var != nullptr) {
+              auto tensor = var->GetMutable<Tensor>();
+              if (tensor != nullptr && tensor->persistable()) {
+                v->SetPersistable(tensor->persistable());
+              }
+            }
+          }
           if (var_name != "feed" && var_name != "fetch") {
             v->SetShape(it->second.GetShape());
             v->SetDataType(it->second.GetDataType());
@@ -87,7 +100,7 @@ void RuntimeProgram::SaveToProgram(
             op_info->GetOutputArgname(var_name, &arg_name);
             decl_type = kernel->GetOutputDeclType(arg_name);
           }
-          if (decl_type->IsTensor()) {
+          if (decl_type->IsTensor() && var->IsType<lite::Tensor>()) {
             v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
             auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
             v->SetPersistable(tensor->persistable());
@@ -95,13 +108,13 @@ void RuntimeProgram::SaveToProgram(
               v->SetShape(tensor->dims().data());
               auto precision = tensor->precision();
               switch (precision) {
-#define SET_DATATYPE(precision__, data_type)           \
-  case PrecisionType::precision__:                     \
-    v->SetDataType(data_type);                         \
-    LOG(INFO) << "Update var " << var_name << " done"; \
+#define SET_DATATYPE(precision__, data_type) \
+  case PrecisionType::precision__:           \
+    v->SetDataType(data_type);               \
     break
                 SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
                 SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
+                SET_DATATYPE(kUnk, VarDescAPI::VarDataType::FP32);
                 SET_DATATYPE(kFP16, VarDescAPI::VarDataType::FP16);
                 SET_DATATYPE(kInt8, VarDescAPI::VarDataType::INT8);
                 SET_DATATYPE(kInt16, VarDescAPI::VarDataType::INT16);
@@ -114,12 +127,13 @@ void RuntimeProgram::SaveToProgram(
                                << var_name << " in op " << op_type;
               }
             }
-          } else if (decl_type->IsTensorList()) {
+          } else if (decl_type->IsTensorList() ||
+                     var->IsType<std::vector<lite::Tensor>>()) {
             // Set persistable=false for tensor array
             v->SetType(cpp::VarDesc::Type::LOD_TENSOR_ARRAY);
             v->SetPersistable(false);
           } else {
-            CHECK(false) << "Unsupported decl type " << *decl_type
+            LOG(WARNING) << "Unsupported decl type " << *decl_type
                          << " for var " << var_name << " in op " << op_type;
           }
         }
@@ -149,7 +163,9 @@ void RuntimeProgram::SaveToProgram(
       }
     }
   }
+  LOG(INFO) << "SaveToProgram done";
 }
+#endif
 
 // Create runtime program from sub_block desc according to block_idx and
 // program_desc, which is used for while/conditional_block/subgraph op.
@@ -167,6 +183,9 @@ RuntimeProgram::RuntimeProgram(
   if (opencl_valid) {
     unique_opencl_ctx->As<OpenCLContext>().InitOnce();
   }
+#elif LITE_WITH_METAL
+  metal_ctx_ = std::make_unique<KernelContext>();
+  (*metal_ctx_).As<MTLContext>().InitOnce();
 #endif
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
@@ -184,7 +203,26 @@ RuntimeProgram::RuntimeProgram(
     // if (op_type == "feed" || op_type == "fetch") continue;
     // Create op and pick up the best kernel
     auto op = LiteOpRegistry::Global().Create(op_type);
-    CHECK(op) << "no Op found for " << op_type;
+
+// Error message: if current kernel is not supported, WITH_EXTRA lib is
+// suggested.
+#ifndef LITE_BUILD_EXTRA
+    std::string ops_error_message =
+        "\nError: Please use Paddle-Lite lib with all ops, which is marked "
+        "with "
+        "`with_extra`. Current lib is of tiny_publish, in which only basic "
+        "ops are included and we can not create operator '" +
+        op_type +
+        "'.\n Two ways are suggested to get Paddle-Lite lib with all ops:\n    "
+        "1. Download pre-compiled lib which is marked with `with_extra`.\n    "
+        "2. Compile Paddle-Lite with command `--with_extra=ON`.";
+#else
+    std::string ops_error_message =
+        "\nError: This model is not supported, because operator '" + op_type +
+        "' is not supported by Paddle-Lite.";
+#endif
+    CHECK(op) << ops_error_message;
+
     if (op_type == "while") {
       static_cast<operators::WhileOp*>(op.get())->SetProgramDesc(program_desc);
     } else if (op_type == "conditional_block") {
@@ -205,8 +243,30 @@ RuntimeProgram::RuntimeProgram(
       KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
       VLOG(3) << "Found the attr '" << kKernelTypeAttr << "': " << kernel_type
               << " for " << op_type;
+
+// Error message: if current kernel is not supported, WITH_EXTRA lib is
+// suggested.
+#ifndef LITE_BUILD_EXTRA
+      std::string kernels_error_message =
+          "\nError: Please use Paddle-Lite lib with all ops, which is marked "
+          "with "
+          "`with_extra`. Current lib is of tiny_publish, in which only basic "
+          "kernels "
+          "are included and we can not create kernel for '" +
+          op_type +
+          "'.\n Two ways are suggested to get Paddle-Lite lib with all "
+          "kernels:\n    "
+          "1. Download pre-commit lib which is marked with `with_extra`.\n    "
+          "2. "
+          "Compile Paddle-Lite with command `--with_extra=ON`.";
+#else
+      std::string kernels_error_message =
+          "\nError: This model is not supported, because kernel for '" +
+          op_type + "' is not supported by Paddle-Lite.";
+#endif
+
       auto kernels = op->CreateKernels({place});
-      CHECK_GT(kernels.size(), 0) << "No kernels found for " << op_type;
+      CHECK_GT(kernels.size(), 0) << kernels_error_message;
       auto it = std::find_if(
           kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
             return it->alias() == alias;
@@ -246,6 +306,10 @@ RuntimeProgram::RuntimeProgram(
       kernel->SetContext(
           ContextScheduler::Global().NewContext(kernel->target()));
     }
+#elif LITE_WITH_METAL
+    std::unique_ptr<KernelContext> ctx(new KernelContext());
+    (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
+    kernel->SetContext(std::move(ctx));
 #else
     if (kernel != nullptr) {
       kernel->SetContext(
@@ -256,6 +320,24 @@ RuntimeProgram::RuntimeProgram(
   }
   Init();
 }
+
+#ifdef LITE_WITH_METAL
+void RuntimeProgram::ConfigMetalContext(std::string lib_path,
+                                        bool use_mps,
+                                        bool use_aggressive) {
+  MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
+  context->set_metal_path(lib_path);
+  context->set_use_mps(use_mps);
+  context->set_use_aggressive(use_aggressive);
+}
+
+void RuntimeProgram::SaveOutput() {
+  auto& insts = instructions_[kRootBlockIdx];
+  for (auto& inst : insts) {
+    inst.SaveOutput();
+  }
+}
+#endif
 
 void RuntimeProgram::Run() {
 #ifdef LITE_WITH_PRECISION_PROFILE
@@ -273,11 +355,16 @@ void RuntimeProgram::Run() {
   }
 #endif
 
+#ifdef LITE_WITH_METAL
+  MetalContext* cmd_ctx = (*metal_ctx_).As<MTLContext>().context();
+  cmd_ctx->CreateCommandBuffer(this);
+#endif
+
   int idx = -1;
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
-#ifndef LITE_WITH_FPGA
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
     if (inst.is_feed_fetch_op()) continue;
 #endif
 #ifdef LITE_WITH_NVTX
@@ -295,13 +382,26 @@ void RuntimeProgram::Run() {
 
     inst.Run();
 
+#ifdef LITE_WITH_OPENCL
+    // delegate flush judgement to specify target , it is too heavy for Inst
+    inst.Flush(idx);
+#endif
+
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
-    precision_profiler_summary +=
-        inst_precision_profiler.GetInstPrecision(&inst);
+    if (inst.op()->Type() != "while") {
+      precision_profiler_summary +=
+          inst_precision_profiler.GetInstPrecision(&inst);
+    }
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
+
+#ifdef LITE_WITH_METAL
+  MetalContext* wait_ctx = (*metal_ctx_).As<MTLContext>().context();
+  wait_ctx->WaitAllCompleted();
+#endif
+
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
 #endif
@@ -390,11 +490,33 @@ void Program::PrepareWorkspace(
       auto* var_desc = block_desc->GetVar<cpp::VarDesc>(var_idx);
       const auto& var_name = var_desc->Name();
       const auto& var_type = var_desc->GetType();
+      VLOG(4) << "Var " << var_name << " in block " << block_idx;
+      VLOG(4) << " - type " << static_cast<int>(var_type);
+
+#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
+      if (!var_desc->Persistable()) {
+#endif
+        // Collect precision info into var_type_map_
+        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
+          const auto& var_data_type =
+              VarDescType2PrecisionType(var_desc->GetDataType());
+          if (var_data_type != PRECISION(kUnk)) {
+            var_type_map_[var_name] = LiteType::GetTensorTy(
+                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
+          }
+          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
+        } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
+          var_type_map_[var_name] = LiteType::GetTensorListTy(
+              TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+        }
+#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
+      }
+#endif
+
+      // Create tensors or wights from variable description.
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
         auto* var = exec_scope_->Var(var_name);
-        VLOG(4) << "Var " << var_name << " in block " << block_idx;
-        VLOG(4) << " - type " << static_cast<int>(var_type);
         if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
           const auto& var_data_type =
               VarDescType2PrecisionType(var_desc->GetDataType());
@@ -413,24 +535,13 @@ void Program::PrepareWorkspace(
             tensor->Resize(var_shape);
             VLOG(4) << " - dims " << tensor->dims().repr();
           }
+          tensor->set_precision(var_data_type);
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
         }
       } else {
         if (var_name == "feed" || var_name == "fetch") continue;
-#ifndef LITE_WITH_XPU
-        // Collect precision info into var_type_map_
-        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
-          const auto& var_data_type =
-              VarDescType2PrecisionType(var_desc->GetDataType());
-          if (var_data_type != PRECISION(kUnk)) {
-            var_type_map_[var_name] = LiteType::GetTensorTy(
-                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
-          }
-          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
-        }
-#endif
         weights_.push_back(var_name);
         scope_->Var(var_name);
       }
@@ -444,6 +555,12 @@ void Program::PrepareWorkspace(
     sub_tensor->CopyDataFrom(*tensor);
   }
 }
+
+#ifdef LITE_WITH_METAL
+void Instruction::SaveOutput() {
+  if (kernel_) kernel_->SaveOutput();
+}
+#endif
 
 void Instruction::Run() {
 #ifdef LITE_WITH_PROFILE
@@ -472,7 +589,8 @@ void Instruction::Run() {
 #ifdef LITE_WITH_PROFILE
   if (first_epoch_for_profiler_) {
     kernel_->SetIsKernelTest(false);
-    SetProfileRuntimeOpInfo(profiler_->GetOpCharacter(profile_id_));
+    auto* op_ch = profiler_->GetOpCharacter(profile_id_);
+    SetProfileRuntimeOpInfo(op_ch);
     first_epoch_for_profiler_ = false;
   }
 #endif

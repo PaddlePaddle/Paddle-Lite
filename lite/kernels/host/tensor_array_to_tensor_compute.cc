@@ -44,6 +44,29 @@ void TensorArrayToTensorCompute::Run() {
   } else {
     lite::host::math::concat_func<float>(inputs, axis, out);
   }
+
+#define PROCESS(precision, dtype)                              \
+  case PRECISION(precision): {                                 \
+    if (use_stack) {                                           \
+      lite::host::math::stack_func<dtype>(inputs, axis, out);  \
+    } else {                                                   \
+      lite::host::math::concat_func<dtype>(inputs, axis, out); \
+    }                                                          \
+    break;                                                     \
+  }
+
+  CHECK(!inputs.empty()) << "Inputs(X) should not be empty.";
+  auto precision = inputs[0]->precision();
+  switch (precision) {
+    PROCESS(kFloat, float)
+    PROCESS(kFP64, double)
+    PROCESS(kInt32, int32_t)
+    PROCESS(kInt64, int64_t)
+    default:
+      LOG(FATAL) << "unsupported input(x) type:" << static_cast<int>(precision);
+  }
+  param.X->clear();
+#undef PROCESS
 }
 
 }  // namespace host
@@ -53,11 +76,12 @@ void TensorArrayToTensorCompute::Run() {
 
 REGISTER_LITE_KERNEL(tensor_array_to_tensor,
                      kHost,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::host::TensorArrayToTensorCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("OutIndex", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("OutIndex",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();

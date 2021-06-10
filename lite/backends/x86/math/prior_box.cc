@@ -41,16 +41,17 @@ void density_prior_box(const int64_t img_width,
   int step_average = static_cast<int>((step_width + step_height) * 0.5);
 
   std::vector<float> sqrt_fixed_ratios;
-#ifdef PADDLE_WITH_MKLML
-#pragma omp parallel for
-#endif
   for (size_t i = 0; i < fixed_ratios.size(); i++) {
     sqrt_fixed_ratios.push_back(sqrt(fixed_ratios[i]));
   }
 
 #ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
 #pragma omp parallel for collapse(2)
-#endif
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
   for (int64_t h = 0; h < feature_height; ++h) {
     for (int64_t w = 0; w < feature_width; ++w) {
       float center_x = (w + offset) * step_width;
@@ -97,8 +98,12 @@ void density_prior_box(const int64_t img_width,
   }
 //! set the variance.
 #ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
 #pragma omp parallel for collapse(3)
-#endif
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
   for (int h = 0; h < feature_height; ++h) {
     for (int w = 0; w < feature_width; ++w) {
       for (int i = 0; i < num_priors; ++i) {

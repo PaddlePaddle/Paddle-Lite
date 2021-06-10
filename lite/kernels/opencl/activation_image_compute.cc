@@ -60,33 +60,60 @@ class ActivationComputeImageDefault
           tensor_hold_alpha_image_ = std::unique_ptr<Tensor>(new Tensor);
           kernel_func_name_ = "prelu_channel";
           auto& out_dims = act_param_->Out->dims();
-          width_ = out_dims[3];
+          if (out_dims.size() == 4) {
+            width_ = out_dims[3];
+            CLImageConverterFolder alpha_converter;
+            const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
+                act_param_->Prelu_alpha->dims());
+            tensor_hold_alpha_image_->Resize(
+                {1, alpha_image_dims[0], alpha_image_dims[1], 4});
 
-          CLImageConverterFolder alpha_converter;
-          const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
-              act_param_->Prelu_alpha->dims());
-          tensor_hold_alpha_image_->Resize(
-              {1, alpha_image_dims[0], alpha_image_dims[1], 4});
+            auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
+            auto* alpha_cpu_data =
+                act_param_->Prelu_alpha->mutable_data<float>();
+            alpha_converter.NCHWToImage(alpha_cpu_data,
+                                        alpha_image_data,
+                                        act_param_->Prelu_alpha->dims());
 
-          auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
-          auto* alpha_cpu_data = act_param_->Prelu_alpha->mutable_data<float>();
-          alpha_converter.NCHWToImage(alpha_cpu_data,
-                                      alpha_image_data,
-                                      act_param_->Prelu_alpha->dims());
+            MUTABLE_DATA_GPU(alpha_gpu_image_,
+                             alpha_image_dims[0],
+                             alpha_image_dims[1],
+                             alpha_image_data);
+          } else if (out_dims.size() == 2) {
+            width_ = 1;
+            CLImageConverterDefault alpha_converter;
+            const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
+                act_param_->Prelu_alpha->dims());
+            tensor_hold_alpha_image_->Resize(
+                {1, alpha_image_dims[0], alpha_image_dims[1], 4});
 
-          MUTABLE_DATA_GPU(alpha_gpu_image_,
-                           alpha_image_dims[0],
-                           alpha_image_dims[1],
-                           alpha_image_data);
+            auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
+            auto* alpha_cpu_data =
+                act_param_->Prelu_alpha->mutable_data<float>();
+            alpha_converter.NCHWToImage(alpha_cpu_data,
+                                        alpha_image_data,
+                                        act_param_->Prelu_alpha->dims());
+
+            MUTABLE_DATA_GPU(alpha_gpu_image_,
+                             alpha_image_dims[0],
+                             alpha_image_dims[1],
+                             alpha_image_data);
+          } else {
+            LOG(FATAL) << "unsupport dims.size(): " << out_dims.size();
+          }
         } else {
           alpha_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
           tensor_hold_alpha_image_ = std::unique_ptr<Tensor>(new Tensor);
           kernel_func_name_ = "prelu_element";
           auto& in_dim = act_param_->X->dims();
-          height_ = in_dim[2];
+          if (in_dim.size() > 3) {
+            height_ = in_dim[2];
+          } else {
+            height_ = 1;
+          }
           scale_ = act_param_->Leaky_relu_alpha;
 
-          CLImageConverterFolder alpha_converter;
+          CLImageConverterDefault alpha_converter;
           const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
               act_param_->Prelu_alpha->dims());
           tensor_hold_alpha_image_->Resize(
@@ -247,7 +274,7 @@ class ActivationComputeImageDefault
   }
 #endif
 
- private:
+ protected:
   param_t* act_param_{nullptr};
   DDim x_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
@@ -271,10 +298,122 @@ class ActivationComputeImageDefault
   std::unique_ptr<Tensor> alpha_gpu_image_{nullptr};
   std::unique_ptr<Tensor> tensor_hold_alpha_image_{nullptr};
 };
+
+class SqrtComputeImageDefault : public ActivationComputeImageDefault {
+  std::string doc() const override {
+    return "Sqrt using cl::Image2D(ImageDefault/RGBA), kFP16";
+  }
+
+  void PrepareForRun() override {
+    kernel_func_name_ = "sqrt_func";
+#ifdef LITE_WITH_LOG
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+#endif
+
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/activation_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+  }
+
+  void Run() override {
+    auto* x_img = GET_DATA_GPU(act_param_->X);
+    auto* out_img = MUTABLE_DATA_GPU(
+        act_param_->Out, out_img_shape_[0], out_img_shape_[1], nullptr);
+    auto kernel = kernel_;
+    cl_int status;
+    status = kernel.setArg(0, *x_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(1, *out_img);
+    CL_CHECK_FATAL(status);
+
+#ifdef LITE_WITH_LOG
+    const auto& x_dims = act_param_->X->dims();
+    const auto& y_dims = act_param_->Out->dims();  // useless: check dim only
+    VLOG(4) << TargetToStr(act_param_->X->target());
+    VLOG(4) << TargetToStr(act_param_->Out->target());
+    VLOG(4) << "x_img_shape_(w,h):" << x_img_shape_[0] << " "
+            << x_img_shape_[1];
+    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
+            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
+    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
+            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
+    VLOG(4) << "kernel func name:" << kernel_func_name_;
+#endif
+
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    status = EnqueueNDRangeKernel(context,
+                                  kernel,
+                                  cl::NullRange,
+                                  global_work_size_,
+                                  cl::NullRange,
+                                  nullptr,
+                                  event_);
+    CL_CHECK_FATAL(status);
+  }
+};
+
+class SquareComputeImageDefault : public SqrtComputeImageDefault {
+  std::string doc() const override {
+    return "Square using cl::Image2D(ImageDefault/RGBA), kFP16";
+  }
+
+  void PrepareForRun() override {
+    act_param_ = param_.get_mutable<param_t>();
+    act_type_ = static_cast<int>(act_param_->active_type);
+    kernel_func_name_ = "square_func";
+#ifdef LITE_WITH_LOG
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+#endif
+
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/activation_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+  }
+};
+
+class RsqrtComputeImageDefault : public SqrtComputeImageDefault {
+  std::string doc() const override {
+    return "Rsqrt using cl::Image2D(ImageDefault/RGBA), kFP16";
+  }
+
+  void PrepareForRun() override {
+    act_param_ = param_.get_mutable<param_t>();
+    act_type_ = static_cast<int>(act_param_->active_type);
+    kernel_func_name_ = "rsqrt_func";
+#ifdef LITE_WITH_LOG
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+#endif
+
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/activation_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+  }
+};
+
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
 // leakyRelu
 REGISTER_LITE_KERNEL(
     leaky_relu,
@@ -451,6 +590,57 @@ REGISTER_LITE_KERNEL(
                                       DATALAYOUT(kImageDefault))})
     .BindInput("mode", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// sqrt
+REGISTER_LITE_KERNEL(sqrt,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::SqrtComputeImageDefault,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// rsqrt
+REGISTER_LITE_KERNEL(rsqrt,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::RsqrtComputeImageDefault,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// square
+REGISTER_LITE_KERNEL(square,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::SquareComputeImageDefault,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

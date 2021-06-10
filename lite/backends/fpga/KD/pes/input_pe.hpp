@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include "lite/backends/fpga/KD/pe.hpp"
 #include "lite/backends/fpga/KD/pe_params.hpp"
+#include "lite/backends/fpga/KD/pes/bypass_pe.hpp"
 namespace paddle {
 namespace zynqmp {
 
@@ -35,15 +36,30 @@ class InputPE : public PE {
     Tensor* src = input;
     input->flush();
     Tensor half_tensor;
-    if (input->dataType() == DataType::FP32) {
-      half_tensor.mutableData<void*>(DataType::FP16, input->shape());
-      half_tensor.copyFrom(input);
-      src = &half_tensor;
+    DataType dataType = input->dataType();
+    switch (dataType) {
+      case FP32:
+        half_tensor.mutableData<void*>(DataType::FP16, input->shape());
+        half_tensor.copyFrom(input);
+        src = &half_tensor;
+        output->mutableData<void>();
+        src->alignImage();
+        output->copyFrom(src);
+        break;
+      case FP16:
+        input->setAligned(true);
+        bypassPE_.param().input = input;
+        bypassPE_.param().output = output;
+        bypassPE_.init();
+        bypassPE_.apply();
+        bypassPE_.dispatch();
+        break;
+      default:
+        output->mutableData<void>();
+        src->alignImage();
+        output->copyFrom(src);
+        break;
     }
-    output->mutableData<void>();
-    src->alignImage();
-    output->copyFrom(src);
-    // src->alignImage(output, true);
     return true;
   }
 
@@ -51,6 +67,7 @@ class InputPE : public PE {
 
  private:
   InputParam param_;
+  BypassPE bypassPE_;
 };
 }  // namespace zynqmp
 }  // namespace paddle

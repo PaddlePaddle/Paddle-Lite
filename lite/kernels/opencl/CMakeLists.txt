@@ -20,6 +20,7 @@ add_kernel(activation_opencl_image OPENCL basic SRCS activation_image_compute.cc
 add_kernel(reshape_opencl_image OPENCL basic SRCS reshape_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(transpose_opencl_image OPENCL basic SRCS transpose_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl_image OPENCL basic SRCS conv_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(conv_transpose_opencl_image OPENCL basic SRCS conv_transpose_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(layout_opencl_image OPENCL basic SRCS layout_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(concat_opencl_image OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(split_opencl_image OPENCL basic SRCS split_image_compute.cc DEPS ${cl_kernel_deps})
@@ -40,7 +41,7 @@ add_kernel(trigonometric_opencl_image OPENCL basic SRCS trigonometric_image_comp
 add_kernel(batch_norm_opencl_image OPENCL basic SRCS batch_norm_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(reduce_mean_opencl_image OPENCL basic SRCS reduce_mean_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(clip_opencl_image OPENCL basic SRCS clip_image_compute.cc DEPS ${cl_kernel_deps})
-#add_kernel(softmax_opencl_image OPENCL basic SRCS softmax_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(softmax_opencl_image OPENCL basic SRCS softmax_image_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 
@@ -58,6 +59,9 @@ lite_cc_test(test_conv_image_opencl SRCS conv_image_compute_test.cc
 
 lite_cc_test(test_depthwise_conv2d_image_opencl SRCS depthwise_conv2d_image_compute_test.cc
              DEPS conv_opencl_image op_registry program context)
+
+lite_cc_test(test_conv_transpose_image_opencl SRCS conv_transpose_image_compute_test.cc
+             DEPS conv_transpose_opencl_image op_registry program context)
 
 lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_test.cc
              DEPS nearest_interp_opencl_image layout_opencl_image op_registry program context)
@@ -138,6 +142,7 @@ add_kernel(shape_opencl_buffer OPENCL basic SRCS shape_buffer_compute.cc DEPS ${
 add_kernel(slice_opencl_buffer OPENCL basic SRCS slice_buffer_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(yolo_box_opencl_buffer OPENCL basic SRCS yolo_box_buffer_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
 add_kernel(squeeze_unsqueeze_opencl_buffer OPENCL basic SRCS squeeze_unsqueeze_buffer_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 

@@ -18,7 +18,6 @@ limitations under the License. */
 
 namespace paddle {
 namespace lite {
-
 DDim CLImageConverterDefault::InitImageDimInfoWith(const DDim &tensor_dim) {
   size_t new_dims[] = {1, 1, 1, 1};
   for (size_t j = 0; j < tensor_dim.size(); ++j) {
@@ -487,16 +486,97 @@ DDim CLImageConverterWinoTransWeight::InitImageDimInfoWith(
   size_t N, C;
   N = tensor_dim[0];
   C = tensor_dim[1];
-  size_t width = (C + 3) / 4;
-  size_t height = N * 16;  // N * (wino_blk_size + 2) * (wino_blk_size + 2)
+  size_t width = ((C + 3) / 4) * 4;
+  size_t height =
+      ((N + 3) / 4) * 16;  // N * (wino_blk_size + 2) * (wino_blk_size + 2)
   return DDim(
       std::vector<DDim::value_type>({static_cast<DDim::value_type>(width),
                                      static_cast<DDim::value_type>(height)}));
 }
+static void matmul(float *C, float *A, float *B, int h, int k, int w) {
+  float *a = A;
+  float *b = B;
+  float *c = C;
 
+  const int aw = k;
+  const int bw = w;
+  const int cw = w;
+  for (int y = 0; y < h; ++y) {
+    const auto aLine = a + y * aw;
+    auto cLine = c + y * cw;
+    for (int x = 0; x < w; ++x) {
+      auto bColumn = b + x;
+      float sum = 0.0f;
+      for (int i = 0; i < k; ++i) {
+        sum += aLine[i] * bColumn[i * bw];
+      }
+      cLine[x] = sum;
+    }
+  }
+}
 void CLImageConverterWinoTransWeight::NCHWToImage(float *tensor,
                                                   void *image,
-                                                  const DDim &tensor_dim) {}
+                                                  const DDim &tensor_dim) {
+  std::vector<float> G = {
+      1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f};
+
+  std::vector<float> GT = {
+      1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+  CHECK(tensor_dim.size() == 4) << " Tensor dim is not 4.";
+  int co = tensor_dim[0];
+  int ci = tensor_dim[1];
+  int kernelCount = tensor_dim[2];
+  int unitCi = 4;
+  int unitCo = 4;
+  int alpha = 4;
+  int num_count = 16 * ((co + 3) / 4) * ((ci + 3) / 4) * 4 * 4;
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
+  // auto weight_dest_data = static_cast<half_t *>(image);
+  if (fp16_support_) {
+    memset(image_fp16, 0, num_count * sizeof(half_t));
+  } else {
+    memset(image_fp32, 0, num_count * sizeof(float));
+  }
+
+  std::vector<float> M(12);
+  std::vector<float> K_Transform(16);
+  auto weightPtr = tensor;
+
+  int oz_index, alpha_index;
+  alpha_index = 0;
+  oz_index = 1;
+
+  for (int oz = 0; oz < co; ++oz) {
+    auto srcOz = weightPtr + oz * ci * kernelCount * kernelCount;
+
+    int ozC4 = oz / unitCo;
+    int mx = oz % unitCo;
+    auto dstOz_fp16 = image_fp16 + ((ci + 3) / 4) * 4 * 4 * ozC4 + mx;
+    auto dstOz_fp32 = image_fp32 + ((ci + 3) / 4) * 4 * 4 * ozC4 + mx;
+    for (int sz = 0; sz < ci; ++sz) {
+      int szC4 = sz / unitCi;
+      int my = sz % unitCi;
+      auto srcSz = srcOz + kernelCount * kernelCount * sz;
+
+      matmul(M.data(), G.data(), srcSz, 4, 3, 3);
+
+      matmul(K_Transform.data(), M.data(), GT.data(), 4, 3, 4);
+
+      auto dstSz_fp16 = dstOz_fp16 + szC4 * 16 + unitCo * my;
+      auto dstSz_fp32 = dstOz_fp32 + szC4 * 16 + unitCo * my;
+      for (int i = 0; i < 16; ++i) {
+        if (fp16_support_) {
+          *(dstSz_fp16 + i * ((co + 3) / 4) * ((ci + 3) / 4) * 4 * 4) =
+              Float2Half(K_Transform.data()[i]);
+        } else {
+          *(dstSz_fp32 + i * ((co + 3) / 4) * ((ci + 3) / 4) * 4 * 4) =
+              K_Transform.data()[i];
+        }
+      }
+    }
+  }
+}
 
 void CLImageConverterWinoTransWeight::ImageToNCHW(void *image,
                                                   float *tensor,
@@ -509,7 +589,7 @@ DDim CLImageConverterNBlock::InitImageDimInfoWith(const DDim &tensor_dim) {
   C = tensor_dim[1];
   H = tensor_dim[2];
   W = tensor_dim[3];
-  size_t width = C;
+  size_t width = ((C + 3) / 4) * 4;
   size_t height = ((N + 3) / 4) * H * W;
   return DDim(
       std::vector<DDim::value_type>({static_cast<DDim::value_type>(width),
@@ -533,6 +613,132 @@ void CLImageConverterNBlock::NCHWToImage(float *nchw,
 
   size_t height = in_image_dim[1];
   size_t n_block = height / (W * H);
+  size_t c_block4 = in_image_dim[0];
+
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
+
+  float *p = nchw;
+  size_t i0 = 0;
+  for (size_t n = 0; n < n_block * 4; n++) {
+    for (size_t c = 0; c < c_block4; c++) {
+      for (size_t h = 0; h < H; h++) {
+        for (size_t w = 0; w < W; w++) {
+          size_t img_idx =
+              (((n / 4) * W * H + h * W + w) * c_block4 + c) * 4 + n % 4;
+          if (n < N && c < C) {
+            fp16_support_ ? image_fp16[img_idx] = Float2Half(*p)
+                          : image_fp32[img_idx] = *p;
+            p++;
+          } else {
+            fp16_support_ ? image_fp16[img_idx] = Float2Half(0.f)
+                          : image_fp32[img_idx] = 0.f;
+          }
+        }
+      }
+    }
+  }
+}
+
+void CLImageConverterNBlock::ImageToNCHW(void *image,
+                                         float *tensor,
+                                         const DDim &image_dim,
+                                         const DDim &tensor_dim) {}
+
+DDim CLImageConverterN2Block::InitImageDimInfoWith(const DDim &tensor_dim) {
+  CHECK(tensor_dim.size() == 4) << " Tensor dim is not 4.";
+  size_t N, C, H, W;
+  N = tensor_dim[0];
+  C = tensor_dim[1];
+  H = tensor_dim[2];
+  W = tensor_dim[3];
+  size_t width = (C + 3) / 4 * 2 * 4;
+  size_t height = ((N + 7) / 8) * H * W;
+  return DDim(
+      std::vector<DDim::value_type>({static_cast<DDim::value_type>(width),
+                                     static_cast<DDim::value_type>(height)}));
+}
+
+void CLImageConverterN2Block::NCHWToImage(float *nchw,
+                                          void *image,
+                                          const DDim &tensor_dim) {
+  CHECK(tensor_dim.size() == 4) << " Tensor dim is not 4.";
+  size_t N, C, H, W;
+  N = tensor_dim[0];
+  C = tensor_dim[1];
+  H = tensor_dim[2];
+  W = tensor_dim[3];
+
+  DDim in_image_dim = InitImageDimInfoWith(tensor_dim);
+
+  VLOG(3) << " tensor dim: " << tensor_dim;
+  VLOG(3) << " image dim: " << in_image_dim;
+
+  size_t height = in_image_dim[1];
+  size_t n_block = height / (W * H);
+  size_t c_block = (C + 3) / 4;
+
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
+
+  float *p = nchw;
+  size_t i0 = 0;
+  for (size_t n = 0; n < n_block * 8; n++) {
+    for (size_t c = 0; c < c_block * 4; c++) {
+      for (size_t h = 0; h < H; h++) {
+        for (size_t w = 0; w < W; w++) {
+          size_t img_idx = ((n / 8) * W * H + h * W + w) * c_block * 4 * 8 +
+                           (c / 4) * 32 + ((n % 8) / 4) * 16 + (c % 4) * 4 +
+                           (n % 8) % 4;
+          if (n < N && c < C) {
+            fp16_support_ ? image_fp16[img_idx] = Float2Half(*p)
+                          : image_fp32[img_idx] = *p;
+            p++;
+          } else {
+            fp16_support_ ? image_fp16[img_idx] = Float2Half(0.f)
+                          : image_fp32[img_idx] = 0.f;
+          }
+        }
+      }
+    }
+  }
+}
+
+void CLImageConverterN2Block::ImageToNCHW(void *image,
+                                          float *tensor,
+                                          const DDim &image_dim,
+                                          const DDim &tensor_dim) {}
+
+DDim CLImageConverterDWFilter::InitImageDimInfoWith(const DDim &tensor_dim) {
+  CHECK(tensor_dim.size() == 4) << " Tensor dim is not 4.";
+  size_t N, C, H, W;
+  N = tensor_dim[0];
+  C = tensor_dim[1];
+  H = tensor_dim[2];
+  W = tensor_dim[3];
+  size_t width = H * W;
+  size_t height = ((N + 3) / 4) * C;
+  return DDim(
+      std::vector<DDim::value_type>({static_cast<DDim::value_type>(width),
+                                     static_cast<DDim::value_type>(height)}));
+}
+
+void CLImageConverterDWFilter::NCHWToImage(float *nchw,
+                                           void *image,
+                                           const DDim &tensor_dim) {
+  CHECK(tensor_dim.size() == 4) << " Tensor dim is not 4.";
+  size_t N, C, H, W;
+  N = tensor_dim[0];
+  C = tensor_dim[1];
+  H = tensor_dim[2];
+  W = tensor_dim[3];
+
+  DDim in_image_dim = InitImageDimInfoWith(tensor_dim);
+  VLOG(3) << " tensor dim: " << tensor_dim;
+  VLOG(3) << " image dim: " << in_image_dim;
+
+  size_t height = in_image_dim[1];
+  size_t n_block = height / C;
 
   float *image_fp32 = static_cast<float *>(image);
   half_t *image_fp16 = static_cast<half_t *>(image);
@@ -558,10 +764,10 @@ void CLImageConverterNBlock::NCHWToImage(float *nchw,
   }
 }
 
-void CLImageConverterNBlock::ImageToNCHW(void *image,
-                                         float *tensor,
-                                         const DDim &image_dim,
-                                         const DDim &tensor_dim) {}
+void CLImageConverterDWFilter::ImageToNCHW(void *image,
+                                           float *tensor,
+                                           const DDim &image_dim,
+                                           const DDim &tensor_dim) {}
 
 }  // namespace lite
 }  // namespace paddle

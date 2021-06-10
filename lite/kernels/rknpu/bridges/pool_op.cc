@@ -54,21 +54,20 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   DataLayoutType layout = DATALAYOUT(kNCHW);
   PrecisionType precision = PRECISION(kFloat);
 
-  if (x->precision() == PRECISION(kInt8)) {
-    // enable_int8 = op_info->GetAttr<bool>("enable_int8");
+  if (op_info->HasInputScale(x_scale_name, true) &&
+      op_info->HasOutputScale(out_scale_name, true) &&
+      (x->precision() == PRECISION(kInt8))) {
     enable_int8 = true;
-    CHECK(op_info->HasInputScale(x_scale_name, true));
     input_scale = op_info->GetInputScale(x_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(out_scale_name, true));
     output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
-
-    if (enable_int8) {
-      precision = PRECISION(kInt8);
-      LOG(WARNING) << "[RKNPU] Pooling int8";
-    }
+    precision = PRECISION(kInt8);
+    LOG(WARNING) << "[RKNPU] Pooling int8";
+  } else {
+    enable_int8 = false;
+    LOG(WARNING) << "[RK-NPU] the op is float-type " << op_type;
+    precision = PRECISION(kFloat);
   }
-
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {

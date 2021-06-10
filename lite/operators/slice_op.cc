@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/operators/slice_op.h"
+
 #include <algorithm>
+
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -20,15 +22,14 @@ namespace lite {
 namespace operators {
 
 bool SliceOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
+  CHECK(param_.X);
+  CHECK(param_.Out);
   CHECK_LT(param_.X->dims().size(), 7u)
       << "The rank of input X should be less than 7";
   return true;
 }
 
 bool SliceOp::InferShapeImpl() const {
-  CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto in_dims = param_.X->dims();
   auto out_dims = in_dims;
@@ -119,13 +120,11 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   starts_size = param_.starts.size();
   ends_size = param_.ends.size();
 
+  param_.StartsTensorList.clear();
   if (opdesc.HasInput("StartsTensorList") &&
       !opdesc.Input("StartsTensorList").empty()) {
-    LOG(INFO) << "opdesc input size "
-              << opdesc.Input("StartsTensorList").size();
-    LOG(INFO) << "param init size " << param_.StartsTensorList.size();
-    auto StartsTensorList = opdesc.Input("StartsTensorList");
     param_.StartsTensorList.clear();
+    auto StartsTensorList = opdesc.Input("StartsTensorList");
     for (auto var : StartsTensorList) {
       param_.StartsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
@@ -134,10 +133,11 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
         << "StartsTensorList size can't be zero";
     starts_size = param_.StartsTensorList.size();
   }
+  param_.EndsTensorList.clear();
   if (opdesc.HasInput("EndsTensorList") &&
       !opdesc.Input("EndsTensorList").empty()) {
-    auto EndsTensorList = opdesc.Input("EndsTensorList");
     param_.EndsTensorList.clear();
+    auto EndsTensorList = opdesc.Input("EndsTensorList");
     for (auto var : EndsTensorList) {
       param_.EndsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());

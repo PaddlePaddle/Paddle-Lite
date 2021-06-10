@@ -23,7 +23,7 @@ namespace host {
 
 template <typename T, PrecisionType PType>
 class StridedSliceCompute
-    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kNCHW)> {
  public:
   void Run() override;
 

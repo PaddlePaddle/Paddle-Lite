@@ -30,8 +30,8 @@ class ElementwiseAddCompute : public KernelLite<TARGET(kARM), PType> {
   virtual ~ElementwiseAddCompute() = default;
 };
 
-class ElementwiseAddActivationCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ElementwiseAddActivationCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
@@ -108,6 +108,14 @@ class ElementwiseDivCompute : public KernelLite<TARGET(kARM), PType> {
   void Run() override;
 
   virtual ~ElementwiseDivCompute() = default;
+};
+
+template <typename T, PrecisionType PType>
+class ElementwiseFloorDivCompute : public KernelLite<TARGET(kARM), PType> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwiseFloorDivCompute() = default;
 };
 
 class ElementwiseDivActivationCompute

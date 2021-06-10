@@ -26,6 +26,7 @@ namespace filter {
 
 static int FILTER_SIZE = 2048;
 static int COLUMN = 4;
+static int DMA_UNIT = 128;
 
 void saveToFile(std::string name, void* data_in, int size) {
   std::ofstream ofs;
@@ -62,9 +63,15 @@ int calc_division_capacity(int chw) {
   int n = FILTER_SIZE / ((chw + 15) / 16) * filter_num_alignment;
   return n < FILTER_SIZE ? n : FILTER_SIZE;
 }
-
 int calc_split_num(int num, int division_capacity) {
-  return (num + division_capacity - 1) / division_capacity;
+  int dc_align = division_capacity < DMA_UNIT
+                     ? division_capacity
+                     : align_to_x_floor(division_capacity, DMA_UNIT);
+  if (num > division_capacity) {
+    return (num + dc_align - 1) / dc_align;
+  } else {
+    return 1;
+  }
 }
 
 int calc_division_number(int num, int group_num, int division_capacity) {
@@ -75,7 +82,10 @@ int calc_division_number(int num, int group_num, int division_capacity) {
 int calc_num_per_div(int num, int group_num, int division_capacity) {
   if (group_num == 1) {
     if (num > division_capacity) {
-      return division_capacity;
+      int dc_align = division_capacity < DMA_UNIT
+                         ? division_capacity
+                         : align_to_x_floor(division_capacity, DMA_UNIT);
+      return dc_align;
     } else {
       return num;
     }
@@ -245,6 +255,9 @@ int8_t* format_filter(float* data_in,
   for (int n = 0; n < num; n++) {
     float* filter_start = data_in + n * chw;
     float f_max = find_max(filter_start, chw);
+    if (f_max < max / 4) {
+      f_max = max / 4;
+    }
     int8_t* quantized_start = quantized_data + n * chw;
     quantize(filter_start, quantized_start, chw, f_max);
     filter_max.push_back(f_max);
@@ -339,31 +352,10 @@ size_t align_element_n(int16_t** data_in, int num, int height, int width) {
   return num_element * sizeof(int16_t);
 }
 
-void to_fp16(float* src,
-             float16* dst,
-             int num,
-             int height,
-             int width,
-             float* scale_ptr) {
-  int size = num * height * width;
-  for (int n = 0; n < num; n++) {
-    float scale_val = scale_ptr[n];
-    for (int h = 0; h < height; h++) {
-      for (int w = 0; w < width; w++) {
-        int index = n * height * width + h * width + w;
-        float value = src[index] * scale_val;
-        dst[index] = float_to_half(value);
-      }
-    }
-  }
-  fpga_flush(dst, size * sizeof(int16_t));
-}
-
 void quantize_to_fp16(
     float** data_in, int num, int height, int width, float* scale_ptr) {
   float* tmp = *data_in;
   int size = num * height * width;
-
   float16* tmp_data = (float16*)fpga_malloc(size * sizeof(float16));  // NOLINT
   for (int n = 0; n < num; n++) {
     float scale_val = scale_ptr[n];
@@ -376,9 +368,33 @@ void quantize_to_fp16(
     }
   }
   fpga_flush(tmp_data, size * sizeof(int16_t));
-  *data_in = (float*)tmp_data;  // NOLINT
+  *data_in = reinterpret_cast<float*>(tmp_data);  // NOLINT
   fpga_free(tmp);
 }
+
+int16_t* quantize_to_int16(float* data_in,
+                           int num,
+                           int height,
+                           int width,
+                           float* scale_ptr,
+                           float quant_scale) {
+  int size = num * height * width;
+
+  int16_t* tmp_data = (int16_t*)fpga_malloc(size * sizeof(int16_t));  // NOLINT
+  for (int n = 0; n < num; n++) {
+    float scale_val = scale_ptr != nullptr ? scale_ptr[n] : 1.0f;
+    for (int h = 0; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        int index = n * height * width + h * width + w;
+        float value = data_in[index] * scale_val;
+        tmp_data[index] = (int16_t)(value * quant_scale);
+      }
+    }
+  }
+  fpga_flush(tmp_data, size * sizeof(int16_t));
+  return tmp_data;
+}
+
 size_t format_dwconv_filter(
     float** data_in, int num, int height, int width, float* scale_ptr) {
   quantize_to_fp16(data_in, num, height, width, scale_ptr);
@@ -389,6 +405,23 @@ size_t format_dwconv_filter(
              align_to_x(num, FILTER_ELEMENT_ALIGNMENT) * height * width *
                  sizeof(int16_t));
   return size;
+}
+
+int16_t* format_dwconv_filter(float* data_in,
+                              int num,
+                              int height,
+                              int width,
+                              float* scale_ptr,
+                              int& mem_size,  // NOLINT
+                              float quant_scale) {
+  int16_t* quantize_data =
+      quantize_to_int16(data_in, num, height, width, scale_ptr, quant_scale);
+  convert_to_hwn(&quantize_data, num, height, width);
+  mem_size = align_element_n(&quantize_data, num, height, width);
+  fpga_flush(quantize_data,
+             align_to_x(num, FILTER_ELEMENT_ALIGNMENT) * height * width *
+                 sizeof(int16_t));
+  return quantize_data;
 }
 
 }  // namespace filter

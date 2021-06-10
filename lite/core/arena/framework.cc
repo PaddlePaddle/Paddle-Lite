@@ -281,7 +281,7 @@ bool TestCase::CheckPrecision(const Tensor* inst_tensor,
   if (precision_type == PRECISION(kAny)) {
     precision_type = base_tensor->precision();
   }
-#ifdef LITE_WITH_OPENCL
+#if defined(LITE_WITH_OPENCL) || defined(ENABLE_ARM_FP16)
   precision_type = base_tensor->precision();
 #endif
   CHECK(precision_type == base_tensor->precision())
@@ -289,7 +289,7 @@ bool TestCase::CheckPrecision(const Tensor* inst_tensor,
          "arg precision type is: "
       << PrecisionToStr(precision_type) << ", base tensor precision type is: "
       << PrecisionToStr(base_tensor->precision());
-#ifdef LITE_WITH_OPENCL
+#if defined(LITE_WITH_OPENCL) || defined(ENABLE_ARM_FP16)
 
 #else
   CHECK(inst_tensor->precision() == base_tensor->precision())
@@ -303,6 +303,12 @@ bool TestCase::CheckPrecision(const Tensor* inst_tensor,
     case PRECISION(kFloat):
       return CheckTensorPrecision<float>(
           inst_tensor, base_tensor, type, abs_error);
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+    case PRECISION(kUnk):
+      return CheckTensorPrecision<__fp16>(
+          inst_tensor, base_tensor, type, abs_error);
+#endif
     case PRECISION(kInt8):
       return CheckTensorPrecision<int8_t>(
           inst_tensor, base_tensor, type, abs_error);

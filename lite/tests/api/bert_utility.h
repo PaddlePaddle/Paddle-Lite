@@ -81,27 +81,6 @@ void ReadMmdnnRawData(const std::string& input_data_dir,
   }
 }
 
-template <class T = int64_t>
-void FillTensor(const std::shared_ptr<lite_api::PaddlePredictor>& predictor,
-                int tensor_id,
-                const std::vector<int64_t>& tensor_shape,
-                const std::vector<T>& tensor_value,
-                const std::vector<std::vector<uint64_t>> tensor_lod = {}) {
-  auto tensor_x = predictor->GetInput(tensor_id);
-  tensor_x->Resize(tensor_shape);
-  int64_t tensor_size = 1;
-  for (size_t i = 0; i < tensor_shape.size(); i++) {
-    tensor_size *= tensor_shape[i];
-  }
-  CHECK_EQ(static_cast<size_t>(tensor_size), tensor_value.size());
-  memcpy(tensor_x->mutable_data<T>(),
-         tensor_value.data(),
-         sizeof(T) * tensor_size);
-  if (!tensor_lod.empty()) {
-    tensor_x->SetLoD(tensor_lod);
-  }
-}
-
 float CalBertOutAccuracy(const std::vector<std::vector<float>>& out,
                          const std::string& out_file) {
   auto lines = ReadLines(out_file);

@@ -29,6 +29,7 @@ void ReluCompute::PrepareForRun() {
 
   relu_param.input = param.X->ZynqTensor();
   relu_param.output = param.Out->ZynqTensor();
+  relu_param.activeParam.type = zynqmp::TYPE_RELU;
   pe_.init();
   pe_.apply();
 }
@@ -52,8 +53,7 @@ void SigmoidCompute::Run() {
     out_data[i] = zynqmp::float_to_half(value);
     max = std::max(std::abs(value), max);
   }
-  param.Out->ZynqTensor()->scale()[0] = max / 127.0;
-  param.Out->ZynqTensor()->scale()[1] = 127.0 / max;
+  param.Out->ZynqTensor()->max()[0] = max;
   param.Out->ZynqTensor()->flush();
 }
 

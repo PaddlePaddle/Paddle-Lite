@@ -23,10 +23,10 @@ namespace kernels {
 namespace xpu {
 
 void SequenceConcatCompute::PrepareForRun() {
-  lod0_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
-  lod1_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  lod0_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
+  lod1_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
 
   lod0_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
   lod1_cpu.reset(new int[XPU_MAX_LOD_SIZE]);

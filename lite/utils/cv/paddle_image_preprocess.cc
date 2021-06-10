@@ -22,6 +22,10 @@
 #include "lite/utils/cv/image_flip.h"
 #include "lite/utils/cv/image_resize.h"
 #include "lite/utils/cv/image_rotate.h"
+#ifdef LITE_WITH_FPGA
+#include "lite/utils/cv/image2tensor_fpga.h"
+#endif
+
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -149,9 +153,29 @@ __attribute__((visibility("default"))) void ImagePreprocess::image_to_tensor(
     LayoutType layout,
     float* means,
     float* scales) {
+#ifdef LITE_WITH_FPGA
+  if (this->transParam_.ih > 1080) {
+    printf("input image height(%d > 1080) is not supported! \n",
+           this->transParam_.ih);
+    return;
+  }
+  Image2TensorFpga img2tensor;
+  img2tensor.choose(src,
+                    dstTensor,
+                    this->srcFormat_,
+                    this->dstFormat_,
+                    layout,
+                    this->transParam_.iw,
+                    this->transParam_.ih,
+                    this->transParam_.ow,
+                    this->transParam_.oh,
+                    means,
+                    scales);
+#else
   Image2Tensor img2tensor;
   img2tensor.choose(
       src, dstTensor, srcFormat, layout, srcw, srch, means, scales);
+#endif
 }
 
 __attribute__((visibility("default"))) void ImagePreprocess::image_to_tensor(
@@ -160,6 +184,26 @@ __attribute__((visibility("default"))) void ImagePreprocess::image_to_tensor(
     LayoutType layout,
     float* means,
     float* scales) {
+#ifdef LITE_WITH_FPGA
+  if (this->transParam_.ih > 1080) {
+    printf("input image height(%d > 1080) is not supported! \n",
+           this->transParam_.ih);
+    return;
+  }
+
+  Image2TensorFpga img2tensor;
+  img2tensor.choose(src,
+                    dstTensor,
+                    this->srcFormat_,
+                    this->dstFormat_,
+                    layout,
+                    this->transParam_.iw,
+                    this->transParam_.ih,
+                    this->transParam_.ow,
+                    this->transParam_.oh,
+                    means,
+                    scales);
+#else
   Image2Tensor img2tensor;
   img2tensor.choose(src,
                     dstTensor,
@@ -169,6 +213,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::image_to_tensor(
                     this->transParam_.oh,
                     means,
                     scales);
+#endif
 }
 
 __attribute__((visibility("default"))) void ImagePreprocess::image_crop(

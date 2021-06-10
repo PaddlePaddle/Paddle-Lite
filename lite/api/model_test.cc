@@ -34,6 +34,9 @@ DEFINE_string(input_shape,
 DEFINE_bool(use_optimize_nb,
             false,
             "optimized & naive buffer model for mobile devices");
+DEFINE_bool(use_fp16,
+            false,
+            "Register fp16 arm-cpu kernel when optimized model");
 DEFINE_string(backend,
               "arm_cpu",
               "choose backend for valid_places: arm_cpu | opencl. Compile "
@@ -64,9 +67,16 @@ void OutputOptModel(const std::string& load_model_dir,
         TARGET(kARM),  // enable kARM CPU kernel when no opencl kernel
     });
   } else {  // arm_cpu
-    config.set_valid_places({
-        Place{TARGET(kARM), PRECISION(kFloat)},
-    });
+    if (FLAGS_use_fp16) {
+      config.set_valid_places({
+          Place{TARGET(kARM), PRECISION(kFP16)},
+          Place{TARGET(kARM), PRECISION(kFloat)},
+      });
+    } else {
+      config.set_valid_places({
+          Place{TARGET(kARM), PRECISION(kFloat)},
+      });
+    }
   }
 #endif
   auto predictor = lite_api::CreatePaddlePredictor(config);

@@ -77,9 +77,13 @@ namespace fusion {
 class XPUConsecutiveBlockFuser : public FuseBase {
  public:
   explicit XPUConsecutiveBlockFuser(const std::string& block0_type,
-                                    const std::string& block1_type) {
+                                    const std::string& block1_type,
+                                    bool block0_with_bias,
+                                    bool block1_with_bias) {
     block0_type_ = block0_type;
     block1_type_ = block1_type;
+    block0_with_bias_ = block0_with_bias;
+    block1_with_bias_ = block1_with_bias;
   }
   void BuildPattern() override {
     auto* input =
@@ -87,13 +91,16 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     auto* filter0 = VarNode("filter0")
                         ->assert_is_op_input(block0_type_, "Filter")
                         ->AsIntermediate();
-    auto* filter_max0 = VarNode("filter_max0")
-                            ->assert_is_op_input(block0_type_, "FilterMax")
-                            ->AsIntermediate();
-    auto* bias0 = VarNode("bias0")
-                      ->assert_is_op_input(block0_type_, "Bias")
-                      ->AsIntermediate();
-    auto* block0 = OpNode("block0", block0_type_)->AsIntermediate();
+    PMNode* bias0 = nullptr;
+    PMNode* bias1 = nullptr;
+    if (block0_with_bias_) {
+      bias0 = VarNode("bias0")->assert_is_op_input(block0_type_, "Bias");
+    }
+    auto* block0 = OpNode("block0", block0_type_)
+                       ->assert_op_attr<bool>("has_bias", block0_with_bias_)
+                       ->assert_op_attr<bool>("has_branch", false)
+                       ->AsIntermediate();
+
     auto* block_out0 = VarNode("block_out0")
                            ->assert_is_op_output(block0_type_, "Output")
                            ->AsIntermediate();
@@ -103,13 +110,13 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     auto* filter1 = VarNode("filter1")
                         ->assert_is_op_input(block1_type_, "Filter")
                         ->AsIntermediate();
-    auto* filter_max1 = VarNode("filter_max1")
-                            ->assert_is_op_input(block1_type_, "FilterMax")
-                            ->AsIntermediate();
-    auto* bias1 = VarNode("bias1")
-                      ->assert_is_op_input(block1_type_, "Bias")
-                      ->AsIntermediate();
-    auto* block1 = OpNode("block1", block1_type_)->AsIntermediate();
+    if (block1_with_bias_) {
+      bias1 = VarNode("bias1")->assert_is_op_input(block1_type_, "Bias");
+    }
+    auto* block1 = OpNode("block1", block1_type_)
+                       ->assert_op_attr<bool>("has_bias", block1_with_bias_)
+                       ->assert_op_attr<bool>("has_branch", false)
+                       ->AsIntermediate();
     auto* block_out1 = VarNode("block_out1")
                            ->assert_is_op_output(block1_type_, "Output")
                            ->AsOutput();
@@ -117,19 +124,25 @@ class XPUConsecutiveBlockFuser : public FuseBase {
                                ->assert_is_op_output(block1_type_, "OutputMax")
                                ->AsOutput();
 
-    if (block0_type_ == "__xpu__conv2d") {
-      block0->assert_op_attr<bool>("has_branch", false);
-    } else if (block1_type_ == "__xpu__conv2d") {
-      block1->assert_op_attr<bool>("has_branch", false);
+    if (block0_with_bias_ && block1_with_bias_) {
+      bias0->AsIntermediate();
+      bias1->AsIntermediate();
+    } else if (block0_with_bias_) {
+      bias0->AsInput();
+    } else if (block1_with_bias_) {
+      bias1->AsInput();
     }
+
     *input >> *block0 >> *block_out0 >> *block1 >> *block_out1;
     *filter0 >> *block0;
-    *filter_max0 >> *block0;
-    *bias0 >> *block0;
+    if (block0_with_bias_) {
+      *bias0 >> *block0;
+    }
     *block0 >> *block_out_max0;
     *filter1 >> *block1;
-    *filter_max1 >> *block1;
-    *bias1 >> *block1;
+    if (block1_with_bias_) {
+      *bias1 >> *block1;
+    }
     *block1 >> *block_out_max1;
   }
 
@@ -137,12 +150,13 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     std::vector<std::string> block_name{"block0", "block1"};
     std::vector<std::string> filter_name{matched.at("filter0")->arg()->name,
                                          matched.at("filter1")->arg()->name};
-    std::vector<std::string> bias_name{matched.at("bias0")->arg()->name,
-                                       matched.at("bias1")->arg()->name};
-    std::vector<std::string> filter_max_name{
-        matched.at("filter_max0")->arg()->name,
-        matched.at("filter_max1")->arg()->name};
-
+    std::vector<std::string> bias_name;
+    if (block0_with_bias_) {
+      bias_name.push_back(matched.at("bias0")->arg()->name);
+    }
+    if (block1_with_bias_) {
+      bias_name.push_back(matched.at("bias1")->arg()->name);
+    }
     cpp::OpDesc op_desc;
     auto block_0 = matched.at("block0")->stmt()->op();
     auto* scope = block_0->scope();
@@ -163,20 +177,8 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     std::vector<int> act_type;
     std::vector<float> act_param;
     std::vector<int> block_lod;
+    std::vector<int> conv_bias;
 
-    if (block0_type_ == "__xpu__conv2d") {
-      op_type.push_back(0);
-      place_x.push_back(0);
-      place_y.push_back(9);
-      place_z.push_back(10);
-      block_lod.push_back(1);
-      conv_groups.push_back(
-          matched.at("block0")->stmt()->op_info()->GetAttr<int>("groups"));
-      act_type.push_back(
-          matched.at("block0")->stmt()->op_info()->GetAttr<int>("act_type"));
-      act_param.push_back(
-          matched.at("block0")->stmt()->op_info()->GetAttr<float>("act_param"));
-    }
     for (auto name : block_name) {
       auto cur_filter_dims =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
@@ -187,30 +189,6 @@ class XPUConsecutiveBlockFuser : public FuseBase {
       auto cur_paddings =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
               "paddings");
-      if (cur_paddings.size() == 2) {
-        for (size_t i = 0; i < cur_strides.size(); ++i) {
-          int copy_pad = *(cur_paddings.begin() + 2 * i);
-          cur_paddings.insert(cur_paddings.begin() + 2 * i + 1, copy_pad);
-        }
-      }
-      auto cur_conv_dilations =
-          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
-              "dilations");
-      filter_dims.insert(
-          filter_dims.end(), cur_filter_dims.begin(), cur_filter_dims.end());
-      conv_strides.insert(
-          conv_strides.end(), cur_strides.begin(), cur_strides.end());
-      conv_paddings.insert(
-          conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
-      conv_dilations.insert(conv_dilations.end(),
-                            cur_conv_dilations.begin(),
-                            cur_conv_dilations.end());
-
-      if (name == "block0" && block0_type_ == "__xpu__conv2d") {
-        continue;
-      } else if (name == "block1" && block1_type_ == "__xpu__conv2d") {
-        continue;
-      }
       auto cur_op_type =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
               "op_type");
@@ -235,6 +213,9 @@ class XPUConsecutiveBlockFuser : public FuseBase {
       auto cur_block_lod =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
               "block_lod");
+      auto cur_conv_bias =
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "conv_bias");
       op_type.insert(op_type.end(), cur_op_type.begin(), cur_op_type.end());
       place_x.insert(place_x.end(), cur_place_x.begin(), cur_place_x.end());
       place_y.insert(place_y.end(), cur_place_y.begin(), cur_place_y.end());
@@ -246,19 +227,26 @@ class XPUConsecutiveBlockFuser : public FuseBase {
           act_param.end(), cur_act_param.begin(), cur_act_param.end());
       block_lod.insert(
           block_lod.end(), cur_block_lod.begin(), cur_block_lod.end());
-    }
-    if (block1_type_ == "__xpu__conv2d") {
-      op_type.push_back(0);
-      place_x.push_back(0);
-      place_y.push_back(9);
-      place_z.push_back(10);
-      block_lod.push_back(1);
-      conv_groups.push_back(
-          matched.at("block1")->stmt()->op_info()->GetAttr<int>("groups"));
-      act_type.push_back(
-          matched.at("block1")->stmt()->op_info()->GetAttr<int>("act_type"));
-      act_param.push_back(
-          matched.at("block1")->stmt()->op_info()->GetAttr<float>("act_param"));
+      conv_bias.insert(
+          conv_bias.end(), cur_conv_bias.begin(), cur_conv_bias.end());
+      if (cur_paddings.size() == 2) {
+        for (size_t i = 0; i < cur_strides.size(); ++i) {
+          int copy_pad = *(cur_paddings.begin() + 2 * i);
+          cur_paddings.insert(cur_paddings.begin() + 2 * i + 1, copy_pad);
+        }
+      }
+      auto cur_conv_dilations =
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "dilations");
+      filter_dims.insert(
+          filter_dims.end(), cur_filter_dims.begin(), cur_filter_dims.end());
+      conv_strides.insert(
+          conv_strides.end(), cur_strides.begin(), cur_strides.end());
+      conv_paddings.insert(
+          conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
+      conv_dilations.insert(conv_dilations.end(),
+                            cur_conv_dilations.begin(),
+                            cur_conv_dilations.end());
     }
     op_desc.SetAttr("op_type", op_type);
     op_desc.SetAttr("place_x", place_x);
@@ -272,84 +260,69 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     op_desc.SetAttr("act_type", act_type);
     op_desc.SetAttr("act_param", act_param);
     op_desc.SetAttr("block_lod", block_lod);
+    op_desc.SetAttr("conv_bias", conv_bias);
+    op_desc.SetAttr<bool>("has_bias", (block0_with_bias_ || block1_with_bias_));
+    op_desc.SetAttr<bool>("has_branch", false);
 
     auto* filter0_t = scope->FindMutableTensor(filter_name[0]);
     auto* filter1_t = scope->FindMutableTensor(filter_name[1]);
     int filter0_numel = filter0_t->numel();
     int filter1_numel = filter1_t->numel();
-    std::unique_ptr<int16_t[]> encode_filter_int16(
-        new int16_t[filter0_numel + filter1_numel]);
-    int16_t* filter0_on_host = filter0_t->mutable_data<int16_t>();
-    int16_t* filter1_on_host = filter1_t->mutable_data<int16_t>();
+    std::unique_ptr<float[]> encode_filter_int16(
+        new float[filter0_numel + filter1_numel]);
+    float* filter0_on_host = filter0_t->mutable_data<float>();
+    float* filter1_on_host = filter1_t->mutable_data<float>();
     memcpy(encode_filter_int16.get(),
            filter0_on_host,
-           filter0_numel * sizeof(int16_t));
+           filter0_numel * sizeof(float));
     memcpy(encode_filter_int16.get() + filter0_numel,
            filter1_on_host,
-           filter1_numel * sizeof(int16_t));
+           filter1_numel * sizeof(float));
     std::string new_filter_name = "block_" + filter_name[0];
     auto* new_filter_node = graph->NewArgumentNode(new_filter_name);
     new_filter_node->arg()->is_weight = true;
     new_filter_node->arg()->type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kInt16), DATALAYOUT(kNCHW));
+        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_filter_t = scope->NewTensor(new_filter_name);
+    new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_filter_t->set_persistable(true);
     new_filter_t->Resize({filter0_numel + filter1_numel});
-    int16_t* new_filter_ptr = new_filter_t->mutable_data<int16_t>();
+    float* new_filter_ptr = new_filter_t->mutable_data<float>();
     memcpy(new_filter_ptr,
            encode_filter_int16.get(),
-           (filter0_numel + filter1_numel) * sizeof(int16_t));
+           (filter0_numel + filter1_numel) * sizeof(float));
     op_desc.SetInput("Filter", {new_filter_name});
 
-    auto* bias0_t = scope->FindMutableTensor(bias_name[0]);
-    auto* bias1_t = scope->FindMutableTensor(bias_name[1]);
-    int bias0_numel = bias0_t->numel();
-    int bias1_numel = bias1_t->numel();
-    std::unique_ptr<float[]> encode_bias(new float[bias0_numel + bias1_numel]);
-    float* bias0_on_host = bias0_t->mutable_data<float>();
-    float* bias1_on_host = bias1_t->mutable_data<float>();
-    memcpy(encode_bias.get(), bias0_on_host, bias0_numel * sizeof(float));
-    memcpy(encode_bias.get() + bias0_numel,
-           bias1_on_host,
-           bias1_numel * sizeof(float));
-    std::string new_bias_name = "block_" + bias_name[0];
+    std::string new_bias_name = new_filter_name + "_bias";
     auto* new_bias_node = graph->NewArgumentNode(new_bias_name);
     new_bias_node->arg()->is_weight = true;
     new_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_bias_t = scope->NewTensor(new_bias_name);
-    new_bias_t->Resize({bias0_numel + bias1_numel});
-    float* new_bias_ptr = new_bias_t->mutable_data<float>();
-    memcpy(new_bias_ptr,
-           encode_bias.get(),
-           (bias0_numel + bias1_numel) * sizeof(float));
-    op_desc.SetInput("Bias", {new_bias_name});
-
-    auto* filter_max0_t = scope->FindMutableTensor(filter_max_name[0]);
-    auto* filter_max1_t = scope->FindMutableTensor(filter_max_name[1]);
-    int filter_max0_numel = filter_max0_t->numel();
-    int filter_max1_numel = filter_max1_t->numel();
-    std::unique_ptr<float[]> encode_filter_max(
-        new float[filter_max0_numel + filter_max1_numel]);
-    float* filter_max0_on_host = filter_max0_t->mutable_data<float>();
-    float* filter_max1_on_host = filter_max1_t->mutable_data<float>();
-    memcpy(encode_filter_max.get(),
-           filter_max0_on_host,
-           filter_max0_numel * sizeof(float));
-    memcpy(encode_filter_max.get() + filter_max0_numel,
-           filter_max1_on_host,
-           filter_max1_numel * sizeof(float));
-    std::string new_filter_max_name = "block_" + filter_max_name[0];
-    auto* new_filter_max_node = graph->NewArgumentNode(new_filter_max_name);
-    new_filter_max_node->arg()->is_weight = true;
-    new_filter_max_node->arg()->type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    auto* new_filter_max_t = scope->NewTensor(new_filter_max_name);
-    new_filter_max_t->Resize({filter_max0_numel + filter_max1_numel});
-    float* new_filter_max_ptr = new_filter_max_t->mutable_data<float>();
-    memcpy(new_filter_max_ptr,
-           encode_filter_max.get(),
-           (filter_max0_numel + filter_max1_numel) * sizeof(float));
-    op_desc.SetInput("FilterMax", {new_filter_max_name});
+    new_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_bias_t->set_persistable(true);
+    if (block0_with_bias_ && block1_with_bias_) {
+      auto* bias0_t = scope->FindMutableTensor(bias_name[0]);
+      auto* bias1_t = scope->FindMutableTensor(bias_name[1]);
+      int bias0_numel = bias0_t->numel();
+      int bias1_numel = bias1_t->numel();
+      std::unique_ptr<float[]> encode_bias(
+          new float[bias0_numel + bias1_numel]);
+      float* bias0_on_host = bias0_t->mutable_data<float>();
+      float* bias1_on_host = bias1_t->mutable_data<float>();
+      memcpy(encode_bias.get(), bias0_on_host, bias0_numel * sizeof(float));
+      memcpy(encode_bias.get() + bias0_numel,
+             bias1_on_host,
+             bias1_numel * sizeof(float));
+      new_bias_t->Resize({bias0_numel + bias1_numel});
+      float* new_bias_ptr = new_bias_t->mutable_data<float>();
+      memcpy(new_bias_ptr,
+             encode_bias.get(),
+             (bias0_numel + bias1_numel) * sizeof(float));
+      op_desc.SetInput("Bias", {new_bias_name});
+    } else if (block0_with_bias_ || block1_with_bias_) {
+      op_desc.SetInput("Bias", {bias_name[0]});
+    }
 
     auto& valid_places = block_0->valid_places();
     auto block_op = LiteOpRegistry::Global().Create(op_desc.Type());
@@ -358,8 +331,13 @@ class XPUConsecutiveBlockFuser : public FuseBase {
 
     IR_NODE_LINK_TO(matched.at("input"), new_op_node);
     IR_NODE_LINK_TO(new_filter_node, new_op_node);
-    IR_NODE_LINK_TO(new_filter_max_node, new_op_node);
-    IR_NODE_LINK_TO(new_bias_node, new_op_node);
+    if (block0_with_bias_ && block1_with_bias_) {
+      IR_NODE_LINK_TO(new_bias_node, new_op_node);
+    } else if (block0_with_bias_) {
+      IR_NODE_LINK_TO(matched.at("bias0"), new_op_node);
+    } else if (block1_with_bias_) {
+      IR_NODE_LINK_TO(matched.at("bias1"), new_op_node);
+    }
     IR_NODE_LINK_TO(new_op_node, matched.at("block_out1"));
     IR_NODE_LINK_TO(new_op_node, matched.at("block_out_max1"));
   }
@@ -367,6 +345,8 @@ class XPUConsecutiveBlockFuser : public FuseBase {
  private:
   std::string block0_type_;
   std::string block1_type_;
+  bool block0_with_bias_;
+  bool block1_with_bias_;
 };
 
 }  // namespace fusion
@@ -374,26 +354,59 @@ class XPUConsecutiveBlockFuser : public FuseBase {
 class XPUConsecutiveBlockFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
+    for (auto block0_with_bias : {true, false}) {
+      for (auto block1_with_bias : {true, false}) {
+        fusion::XPUConsecutiveBlockFuser fuser(
+            "__xpu__conv2d",
+            "__xpu__squeeze_excitation_block",
+            block1_with_bias,
+            block0_with_bias);
+        fuser(graph.get());
+      }
+    }
+    for (auto block0_with_bias : {true, false}) {
+      for (auto block1_with_bias : {true, false}) {
+        fusion::XPUConsecutiveBlockFuser fuser(
+            "__xpu__block_fuse_op",
+            "__xpu__squeeze_excitation_block",
+            block1_with_bias,
+            block0_with_bias);
+        fuser(graph.get());
+      }
+    }
     bool changed = true;
     while (changed) {
       changed = false;
-      fusion::XPUConsecutiveBlockFuser fuser("__xpu__conv2d",
-                                             "__xpu__block_fuse_op");
-      changed = fuser(graph.get());
+      for (auto block0_with_bias : {true, false}) {
+        for (auto block1_with_bias : {true, false}) {
+          fusion::XPUConsecutiveBlockFuser fuser1("__xpu__conv2d",
+                                                  "__xpu__block_fuse_op",
+                                                  block1_with_bias,
+                                                  block0_with_bias);
+          bool cur_changed = fuser1(graph.get());
+          changed = cur_changed ? true : changed;
+          fusion::XPUConsecutiveBlockFuser fuser2("__xpu__block_fuse_op",
+                                                  "__xpu__conv2d",
+                                                  block1_with_bias,
+                                                  block0_with_bias);
+          cur_changed = fuser2(graph.get());
+          changed = cur_changed ? true : changed;
+        }
+      }
     }
     changed = true;
     while (changed) {
       changed = false;
-      fusion::XPUConsecutiveBlockFuser fuser("__xpu__block_fuse_op",
-                                             "__xpu__conv2d");
-      changed = fuser(graph.get());
-    }
-    changed = true;
-    while (changed) {
-      changed = false;
-      fusion::XPUConsecutiveBlockFuser fuser("__xpu__block_fuse_op",
-                                             "__xpu__block_fuse_op");
-      changed = fuser(graph.get());
+      for (auto block0_with_bias : {true, false}) {
+        for (auto block1_with_bias : {true, false}) {
+          fusion::XPUConsecutiveBlockFuser fuser3("__xpu__block_fuse_op",
+                                                  "__xpu__block_fuse_op",
+                                                  block1_with_bias,
+                                                  block0_with_bias);
+          bool cur_changed = fuser3(graph.get());
+          changed = cur_changed ? true : changed;
+        }
+      }
     }
   }
 };

@@ -14,14 +14,38 @@
 
 #include "lite/kernels/host/sequence_unpad_compute.h"
 
-REGISTER_LITE_KERNEL(sequence_unpad,
-                     kHost,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::SequenceUnpadCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+using SequenceUnpadFloat32 =
+    paddle::lite::kernels::host::SequenceUnpadCompute<float>;
+REGISTER_LITE_KERNEL(
+    sequence_unpad, kHost, kFloat, kAny, SequenceUnpadFloat32, float32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
     .BindInput("Length",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using SequenceUnpadInt64 =
+    paddle::lite::kernels::host::SequenceUnpadCompute<int64_t>;
+REGISTER_LITE_KERNEL(
+    sequence_unpad, kHost, kFloat, kAny, SequenceUnpadInt64, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Length",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
     .Finalize();

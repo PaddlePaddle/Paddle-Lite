@@ -318,22 +318,22 @@ class GRUUnitTester : public arena::TestCase {
 
     // set input data
     std::vector<float> data(dims_.production());
-    fill_data_rand(data.data(), 0.f, 1.f, dims_.production());
+    fill_data_rand(data.data(), -1.f, 1.f, dims_.production());
     SetCommonTensor(input_, dims_, data.data());
 
     // set hidden_prev data
     data.resize(hpdim.production());
-    fill_data_rand(data.data(), 0.f, 1.f, hpdim.production());
+    fill_data_rand(data.data(), -1.f, 1.f, hpdim.production());
     SetCommonTensor(hidden_prev_, hpdim, data.data());
 
     // set weight data
     data.resize(wdim.production());
-    fill_data_rand(data.data(), 0.f, 1.f, wdim.production());
+    fill_data_rand(data.data(), -1.f, 1.f, wdim.production());
     SetCommonTensor(weight_, wdim, data.data());
 
     // set bias data
     data.resize(bdim.production());
-    fill_data_rand(data.data(), 0.f, 1.f, bdim.production());
+    fill_data_rand(data.data(), -1.f, 1.f, bdim.production());
     SetCommonTensor(bias_, bdim, data.data());
   }
 };
@@ -346,17 +346,21 @@ void test_gru_unit(Place place) {
   auto& ctx = tester->context()->template As<ARMContext>();
   ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
 #endif
-  arena::Arena arena(std::move(tester), place, 2e-5);
+  arena::Arena arena(std::move(tester), place, 1e-4);
   arena.TestPrecision();
 }
 
 TEST(GRUUnit, precision) {
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_gru_unit(place);
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #else
-  Place place(TARGET(kHost));
+  return;
 #endif
+
+  test_gru_unit(place);
 }
 
 }  // namespace lite

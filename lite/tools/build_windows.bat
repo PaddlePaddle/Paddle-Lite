@@ -16,9 +16,11 @@ set MSVC_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
 set WITH_OPENCL=OFF
 set WITH_AVX=ON
+set CMAKE_GENERATOR=Visual Studio 14 2015
+set ARCH=""
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
-set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+set THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 
 set workspace=%source_path%
 set /a cores=%number_of_processors%-2 > null
@@ -40,6 +42,8 @@ if /I "%1"=="with_extra" (
     set OPTMODEL_DIR="%2"
 ) else if /I  "%1"=="build_x86" (
     set BUILD_PLATFORM=Win32
+) else if /I  "%1"=="use_ninja" (
+    set CMAKE_GENERATOR=Ninja
 ) else if /I  "%1"=="with_dynamic_crt" (
     set MSVC_STATIC_CRT=OFF
 ) else if /I  "%1"=="with_static_mkl" (
@@ -127,6 +131,15 @@ copy "%root_dir%\lite\tools\debug\analysis_tool.py" "%DEBUG_TOOL_PATH_PREFIX%\"
 
 cd "%build_directory%"
 
+if "%CMAKE_GENERATOR%"=="Ninja" (
+    pip install ninja
+    if %errorlevel% NEQ 0 (
+        echo pip install ninja failed!
+        exit /b 7
+    )
+    goto ninja_build
+)
+
     cmake %root_dir%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_MKL=ON      ^
@@ -169,36 +182,72 @@ if "%BUILD_FOR_CI%"=="ON" (
 )
 goto:eof
 
+:ninja_build
+    if "%BUILD_PLATFORM%"=="x64" (
+        call "%vcvarsall_dir%" amd64
+        set ARCH="amd64"
+    ) else (
+        call "%vcvarsall_dir%" x86
+        set ARCH="i386"
+    )
+ 
+    cmake %root_dir%  -G Ninja -DARCH=%ARCH% ^
+            -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
+            -DWITH_MKL=ON      ^
+            -DWITH_MKLDNN=OFF   ^
+            -DWITH_AVX=%WITH_AVX% ^
+            -DLITE_WITH_X86=ON  ^
+            -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
+            -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
+            -DWITH_LITE=ON ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DTHIRD_PARTY_BUILD_TYPE=Release ^
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
+            -DLITE_WITH_ARM=OFF ^
+            -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
+            -DLITE_BUILD_EXTRA=%BUILD_EXTRA% ^
+            -DLITE_WITH_PYTHON=%WITH_PYTHON% ^
+            -DWITH_TESTING=%WITH_TESTING%    ^
+            -DLITE_WITH_LOG=%WITH_LOG%       ^
+            -DWITH_STATIC_MKL=%WITH_STATIC_MKL%  ^
+            -DLITE_BUILD_TAILOR=%WITH_STRIP%  ^
+            -DLITE_OPTMODEL_DIR=%OPTMODEL_DIR%  ^
+            -DPYTHON_EXECUTABLE="%python_path%"
+
+    ninja extern_mklml
+    ninja publish_inference -j %cores%
+goto:eof
+
+
 :prepare_thirdparty
     if  EXIST "%workspace%\third-party" (
-        if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
-            echo "The directory of third_party exists, the third-party-05b862.tar.gz not exists."
+        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
+            echo "The directory of third_party exists, the third-party-ea5576.tar.gz not exists."
+            git submodule update --init --recursive
         ) else (
-               echo "The directory of third_party exists, the third-party-05b862.tar.gz exists."
+               echo "The directory of third_party exists, the third-party-ea5576.tar.gz exists."
                call:rm_rebuild_dir "%workspace%\third-party"
-               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
         )
     ) else (
-        if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
-            echo "The directory of third_party not exists, the third-party-05b862.tar.gz not exists."
+        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
+            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz not exists."
             call:download_third_party
-            if EXIST "%workspace%\third-party-05b862.tar.gz" (
-                !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+            if EXIST "%workspace%\third-party-ea5576.tar.gz" (
+                !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
             ) else (
-                echo "------------Can't download the third-party-05b862.tar.gz!------"
+                echo "------------Can't download the third-party-ea5576.tar.gz!------"
             )
         ) else (
-            echo "The directory of third_party not exists, the third-party-05b862.tar.gz exists."
-            !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz exists."
+            !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
         )
-
     )
-    git submodule update --init --recursive
 goto:eof
 
 :download_third_party
-powershell.exe (new-object System.Net.WebClient).DownloadFile('https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz', ^
-'%workspace%\third-party-05b862.tar.gz')
+powershell.exe (new-object System.Net.WebClient).DownloadFile('%THIRDPARTY_TAR%', ^
+'%workspace%\third-party-ea5576.tar.gz')
 goto:eof
 
 :prepare_opencl_source_code

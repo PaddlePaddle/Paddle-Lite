@@ -136,6 +136,14 @@ class ConvOpLite : public OpLite {
             op_desc.GetAttr<float>("slope");
         param_.activation_param.hard_sigmoid_offset =
             op_desc.GetAttr<float>("offset");
+      } else if (act_type == "prelu") {
+        param_.activation_param.active_type = lite_api::ActivationType::kPRelu;
+        param_.activation_param.Prelu_mode =
+            op_desc.GetAttr<std::string>("prelu_mode");
+        auto prelu_alpha_name = op_desc.Input("Prelu_alpha").front();
+        auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
+        param_.activation_param.Prelu_alpha =
+            const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>()));
       } else {
         LOG(FATAL) << "The fused conv only supports fuse with relu, leaky "
                       "relu, hard_swish, while the given activation type is "
@@ -173,6 +181,20 @@ class ConvOpLite : public OpLite {
       auto input_scale_name = "Input0_scale";
       if (op_info->HasInputScale(input_scale_name, true)) {
         param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+      }
+    }
+#endif
+
+#ifdef LITE_WITH_FPGA
+    if (std::find(input_arg_names.begin(), input_arg_names.end(), "Scale") !=
+        input_arg_names.end()) {
+      auto scale_arguments = op_desc.Input("Scale");
+      if (scale_arguments.size() > 0) {
+        auto scale_var = scope->FindVar(scale_arguments.front());
+        if (scale_var != nullptr) {
+          param_.scale =
+              const_cast<lite::Tensor*>(&(scale_var->Get<lite::Tensor>()));
+        }
       }
     }
 #endif

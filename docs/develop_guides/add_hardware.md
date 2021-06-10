@@ -32,7 +32,7 @@
 
   该步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir)
   
-  - Pass的注册方法、管理机制可以参考文档[新增Pass](./add_new_pass)；[Pass列表]((https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer.h#L87))是指按照规定的顺序处理的Pass的集合，它使用std::vector<<std::string>>存储，每个元素代表已注册到框架的Pass的名称，如果需要在Pass列表中新增一个Pass，只需在合适的位置增加一个字符串即可，例如，为了可视化conv_bn_fuse_pass优化后的计算图，可以在它后面增加一个名为[graph_visualize_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/mir/graph_visualize_pass.cc)的特殊Pass，用于在log中生成以DOT文本的表示计算图结构。
+  - Pass的注册方法、管理机制可以参考文档[新增Pass](./add_new_pass)；[Pass列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer.h#L87)是指按照规定的顺序处理的Pass的集合，它使用std::vector<<std::string>>存储，每个元素代表已注册到框架的Pass的名称，如果需要在Pass列表中新增一个Pass，只需在合适的位置增加一个字符串即可，例如，为了可视化conv_bn_fuse_pass优化后的计算图，可以在它后面增加一个名为[graph_visualize_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/mir/graph_visualize_pass.cc)的特殊Pass，用于在log中生成以DOT文本的表示计算图结构。
 
     ```cpp
     diff --git a/lite/core/optimizer.h b/lite/core/optimizer.h
@@ -85,8 +85,8 @@
   - Graph生成Model的接口；
   - 设置Model的输入、输出张量和Model执行的运行时接口；
   - 输入、输出张量的内存管理接口。
-
-  具体可参考华为[HiAI DDK v310](https://obs.cn-north-2.myhwclouds.com/hms-ds-wf/sdk/hwhiai-ddk-100.310.011.010.zip)、瑞芯微[rknpu_ddk](https://github.com/airockchip/rknpu_ddk.git)和[MTK Neuron Adapter](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz)（类似Android NNAPI）进行接口设计。
+  
+  具体可参考华为[HiAI DDK v330](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/hiai_ddk_lib_330.tar.gz)、瑞芯微[rknpu_ddk](https://github.com/airockchip/rknpu_ddk.git)和[MTK Neuron Adapter](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz)（类似Android NNAPI）进行接口设计。
 
 - **什么是子图？** 将计算图依据某种规则分割为多个部分，每个部分都被称为一个子图，它包含一个或多个算子和变量，规则一般依据硬件支持能力而定。
 
@@ -123,4 +123,155 @@
   - 为什么需要创建原始运行时程序？在硬件IR转换失败、Graph或Model生成失败的时候，例如不同硬件型号、不同软件版本导致的不兼容，或者运行在不支持该硬件的设备上时，就需要回退到原始运行时程序进行执行，完成推理任务。
 
 - **硬件接入时需要做哪些代码改动？**
-  - 参考最近接入的Imagination NNA的Pull Request的代码修改[https://github.com/PaddlePaddle/Paddle-Lite/pull/4335](https://github.com/PaddlePaddle/Paddle-Lite/pull/4335)
+  - 参考最近接入的Imagination NNA的Pull Request(PR)的代码修改[https://github.com/PaddlePaddle/Paddle-Lite/pull/4335](https://github.com/PaddlePaddle/Paddle-Lite/pull/4335)
+
+## 代码提交、Review、合入机制、CI机制
+  - 参考[编译环境准备](../source_compile/compile_env)中的Docker开发环境（由于代码提交时会使用git pre-commit hooks，对clang-format版本约束）
+  - 注册[github](https://www.github.com/)账户，将[Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite)代码仓库Fork到自己的账户.
+  - 将自己github账户的Paddle-Lite仓库克隆到本地。
+  ```
+  # git clone https://github.com/UserName/Paddle-Lite
+  # cd Paddle-Lite
+  ```
+  - 创建本地分支：从develop分支创建一个新的本地分支，命名规则为UserName/FeatureName，例如hongming/print_ssa_graph
+  ```
+  $ git checkout -b UserName/FeatureName
+  ```
+  - 启用pre-commit钩子：[pre-commit](http://pre-commit.com/) 作为git预提交钩子，帮助我们在git commit时进行自动代码（C++，Python）格式化和其它检查（如每个文件只有一个 EOL，Git 中不要添加大文件等），可通过以下命令进行安装（注意：pre-commit测试是 Travis-CI 中单元测试的一部分，不满足钩子的PR不能被提交到Paddle-Lite）：
+  ```
+  $ pip install pre-commit
+  $ pre-commit install
+  ```
+  - 修改代码：提交代码前通过git status和git diff命令查看代码改动是否符合预期，避免提交不必要或错误的修改。
+  ```
+  $ git status
+  On branch hongming/print_ssa_graph
+  Changes not staged for commit:
+    (use "git add <file>..." to update what will be committed)
+    (use "git checkout -- <file>..." to discard changes in working directory)
+    (commit or discard the untracked or modified content in submodules)
+
+          modified:   lite/core/optimizer.h
+
+  $ git diff
+  diff --git a/lite/core/optimizer.h b/lite/core/optimizer.h
+  index 00e9e07..1b273af 100644
+  --- a/lite/core/optimizer.h
+  +++ b/lite/core/optimizer.h
+  @@ -55,7 +55,8 @@ class Optimizer {
+
+       if (passes.empty()) {
+         std::vector<std::string> passes_local{
+  -          {"lite_quant_dequant_fuse_pass",     //
+  +          {"graph_visualze",
+  +           "lite_quant_dequant_fuse_pass",     //
+              "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
+  ```
+  - 提交代码：git add命令添加需要修改的文件，放弃提交可用git reset命令，放弃修改可使用git checkout -- [file_name]命令，每次代码提交时都需要填写说明，以便让他人知道这次提交做了哪些修改，可通过git commit命令完成，修改提交说明可通过git commit --amend命令；为了触发CI，提交说明最后结束前必须回车换行，然后添加test=develop，如果本次提交的Pull request仅修改doc目录下的文档，则额外加上test=document_fix加快CI流水线。
+  ```
+  $ git add lite/core/optimizer.h
+
+  $ git status
+  On branch hongming/print_ssa_graph
+  Changes to be committed:
+    (use "git reset HEAD <file>..." to unstage)
+
+          modified:   lite/core/optimizer.h
+
+  $ git commit -m "Add graph_visualze pass to output ssa graph
+  > test=develop"
+  CRLF end-lines remover...................................................Passed
+  Check for added large files..............................................Passed
+  Check for merge conflicts................................................Passed
+  Check for broken symlinks................................................Passed
+  Detect Private Key.......................................................Passed
+  Fix End of Files.........................................................Passed
+  clang-format.............................................................Passed
+  cpplint..................................................................Passed
+  copyright_checker........................................................Passed
+  [hongming/print_ssa_graph 75ecdce] Add graph_visualze pass to output ssa graph test=develop
+   1 file changed, 2 insertions(+), 1 deletion(-)
+  ```
+  - 同步本地仓库代码：在准备发起Pull Request前，需要将原仓库[https://github.com/PaddlePaddle/Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite)的develop分支的最新代码同步到本地仓库的新建分支。首先通过git remote -v命令查看当前远程仓库的名字，然后通过git remote add 命令添加原Paddle Lite仓库地址，最后使用git fetch和git pull命令将本地分支更新到最新代码。
+  ```
+  $ git remote -v
+  origin  https://github.com/UserName/Paddle-Lite.git (fetch)
+  origin  https://github.com/UserName/Paddle-Lite.git (push)
+
+  $ git remote add upstream https://github.com/PaddlePaddle/Paddle-Lite
+
+  $ git remote
+  origin
+  upstream
+
+  $ git fetch upstream
+  remote: Enumerating objects: 105, done.
+  remote: Counting objects: 100% (105/105), done.
+  remote: Compressing objects: 100% (6/6), done.
+  remote: Total 142 (delta 99), reused 100 (delta 99), pack-reused 37
+  Receiving objects: 100% (142/142), 52.47 KiB | 2.00 KiB/s, done.
+  Resolving deltas: 100% (103/103), completed with 45 local objects.
+  From https://github.com/PaddlePaddle/Paddle-Lite
+    a1527e8..d6cdb1e  develop    -> upstream/develop
+    2136df9..17a58b6  gh-pages   -> upstream/gh-pages
+    1091ab8..55be873  image-sr-v2 -> upstream/image-sr-v2
+   * [new branch]      release/v2.2.0 -> upstream/release/v2.2.0
+   * [new tag]         v2.2.0     -> v2.2.0
+
+  $ git branch
+  develop
+  * hongming/print_ssa_graph
+
+  $ git pull upstream develop
+  From https://github.com/PaddlePaddle/Paddle-Lite
+   * branch            develop    -> FETCH_HEAD
+  Removing lite/kernels/npu/bridges/transpose_op_test.cc
+  Removing lite/kernels/npu/bridges/batch_norm_op_test.cc
+  Merge made by the 'recursive' strategy.
+   lite/kernels/npu/bridges/batch_norm_op_test.cc | 168 ------------------------------------------------------------------------------------------------
+   lite/kernels/npu/bridges/transpose_op.cc       |   2 +-
+   lite/kernels/npu/bridges/transpose_op_test.cc  | 153 ---------------------------------------------------------------------------------------
+   lite/tests/kernels/CMakeLists.txt              |   4 +--
+   lite/tests/kernels/batch_norm_compute_test.cc  |   2 ++
+   lite/tests/kernels/transpose_compute_test.cc   |  44 ++++++++++++-------------
+   mobile/test/CMakeLists.txt                     |   6 ++++
+   mobile/test/net/test_mobilenet_male2fe.cpp     |  66 ++++++++++++++++++++++++++++++++++++++
+   8 files changed, 99 insertions(+), 346 deletions(-)
+   delete mode 100644 lite/kernels/npu/bridges/batch_norm_op_test.cc
+   delete mode 100644 lite/kernels/npu/bridges/transpose_op_test.cc
+   create mode 100644 mobile/test/net/test_mobilenet_male2fe.cpp
+  ```
+  - Push到远程仓库：将本地的修改推送到自己账户下的Paddle Lite仓库，即https://github.com/UserName/Paddle-Lite 。
+  ```
+  $ git branch
+  develop
+  * hongming/print_ssa_graph
+
+  $ git push origin hongming/print_ssa_graph
+  Counting objects: 8, done.
+  Delta compression using up to 2 threads.
+  Compressing objects: 100% (8/8), done.
+  Writing objects: 100% (8/8), 868 bytes | 0 bytes/s, done.
+  Total 8 (delta 6), reused 0 (delta 0)
+  remote: Resolving deltas: 100% (6/6), completed with 6 local objects.
+  remote: 
+  remote: Create a pull request for 'hongming/print_ssa_graph' on GitHub by visiting:
+  remote:      https://github.com/UserName/Paddle-Lite/pull/new/hongming/print_ssa_graph
+  remote: 
+  To https://github.com/UserName/Paddle-Lite.git
+   * [new branch]      hongming/print_ssa_graph -> hongming/print_ssa_graph
+  ```
+  - 发起Pull Request：登录github，在自己账户下找到并进入UserName/Paddle-Lite仓库，这时会自动提示创建Pull Request，点击Create Pull Request按钮，一般来说会自动选择比较更改的仓库和分支，如果需要手动设置，可将base repository选择为PaddlePaddle/Paddle-Lite，base分支为develop，然后将head repository选择为UserName/Paddle-Lite，compare分支为hongming/print_ssa_graph。PR（Pull Request）的标题必须用英文概括本次提交的修改内容，例如修复了什么问题，增加了什么功能。同时，为了便于其他人快速得知该PR影响了哪些模块，应该在标题前添加中括号+模块名称进行标识，例如"[HuaweiKirinNPU][BaiduXPU] Temporarily toggle printing ssa graph, test=develop"。 PR的描述必须详细描述本次修改的原因/背景、解决方法、对其它模块会产生何种影响（例如生成库的大小增量是多少），性能优化的PR需要有性能对比数据等。
+  - 签署CLA协议：在首次向Paddle-Lite提交Pull Request时，您需要您签署一次CLA(Contributor License Agreement)协议，以保证您的代码可以被合入。
+  - 等待CI测试完成：您在Pull Request中每提交一次新的commit后，都会触发一系列CI流水线（根据场景/硬件的不同，一般会有多个流水线），它将会在几个小时内完成，只需保证带有Required的流水线通过即可。例如下图所示，每项流水线测试通过后，都会在前面打勾，否则打叉，可点击Details查看日志定位错误原因：
+  ![](https://user-images.githubusercontent.com/9973393/113404216-631e0f00-93da-11eb-8dad-fb47c8f512de.png)
+  - PR Review：每个PR需要至少一个评审人apporve后才能进行代码合入，而且在请评审人review代码前，必须保证CI测试完成并通过全部测试项，否则评审人一般不做评审。根据PR修改的模块不同，代码评审人选择也不一样。例如：涉及到Core和API模块，需要@Superjomn进行Review，涉及到Subgraph相关的修改，需要@hong19860320或@zhupengyang进行Review。评审人的每个意见都必须回复，同意评审意见且按其修改完的，给个简单的Done即可，对评审意见不同意的，请给出您自己的反驳理由。
+  - PR 合入：一般PR会有多次commit，原则上是尽量少的commit，且每个commit的内容不能太随意。在合入代码时，需要对多个commit进行squash commits after push，该PR在评审人approve且CI完全通过后，会出现"Squash and Merge"按钮，如上图所示，届时可以联系Paddle同学完成PR的合入。
+
+## 硬件接入完成标志
+  - 代码合入到develop分支
+  - 提供完善的文档和Demo
+    - 参考[ImaginationNNA](../demo_guides/imagination_nna)的格式编写文档并提供Demo压缩包（由Paddle同学上传到百度云）
+    - 如果编译环境的docker镜像与PaddleLite所提供的不一致，需要额外提供构建docker镜像的docker file，保证用户能顺利编译获得产出
+  - 厂商提供测试设备，增加CI流水线（由Paddle同学负责）
+  - 双方兼容性认证

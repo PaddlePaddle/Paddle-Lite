@@ -383,6 +383,7 @@ void gemv_fp16(const float16_t *A,
                                   ptr_w6,
                                   ptr_w7,
                                   remain);
+      out_p = out_temp;
       ptr_acquire_remain<float16_t>(ptr_w,
                                     ptr_w0,
                                     ptr_w1,

@@ -41,6 +41,15 @@ TEST(CXXApi, test) {
   // LOG(INFO) << "out " << *out;
 }
 
+TEST(CXXApi, input_precision) {
+  lite::Predictor predictor;
+  std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
+  predictor.Build(FLAGS_model_dir, "", "", valid_places);
+  auto& precisions = predictor.GetInputPrecisions();
+  ASSERT_EQ(precisions.size(), 1);
+  ASSERT_EQ(precisions[0], PrecisionType::kFloat);
+}
+
 TEST(CXXApi, save_model) {
   lite::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});

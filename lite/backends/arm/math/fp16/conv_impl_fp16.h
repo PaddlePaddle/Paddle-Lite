@@ -29,21 +29,54 @@ typedef __fp16 float16_t;
       int kernel_w, int pad_top, int pad_bottom, int pad_left, int pad_right, \
       int dilation_h, int dilation_w, dtype *data_col
 
-#define GEMM_PARAM(dtype)                                                      \
+#define CONV_PARAM(dtype)                                                      \
   const dtype *i_data, dtype *o_data, int num, int oc, int oh, int ow, int ic, \
       int ih, int win, const dtype *weights, const dtype *bias,                \
       const operators::ConvParam &param, ARMContext *ctx
 
-void conv1x1s1_gemm_fp16(GEMM_PARAM(float16_t));
+#define DEPTHWISE_PARAM(dtype)                                            \
+  const dtype *din, dtype *dout, int num, int oc, int oh, int ow, int ic, \
+      int ih, int iw, const dtype *weights, const dtype *bias,            \
+      const operators::ConvParam &param, ARMContext *ctx
 
-void conv_im2col_gemm_fp16(GEMM_PARAM(float16_t));
+void conv1x1s1_gemm_fp16(CONV_PARAM(float16_t));
+
+void conv_im2col_gemm_fp16(CONV_PARAM(float16_t));
 
 void im2col_fp16(IM2COL_PARAM(float16_t), int stride_h, int stride_w);
 
 void im2col_common_fp16(IM2COL_PARAM(float16_t), int stride_h, int stride_w);
+
 void im2col_s1_fp16(IM2COL_PARAM(float16_t));
 
 void im2col_s2_fp16(IM2COL_PARAM(float16_t));
+
+size_t conv3x3s1_direct_workspace_size(const operators::ConvParam &param,
+                                       ARMContext *ctx);
+
+size_t conv3x3s2_direct_workspace_size(const operators::ConvParam &param,
+                                       ARMContext *ctx);
+
+void conv_3x3s1_direct_fp16(CONV_PARAM(float16_t));
+
+void conv_3x3s2_direct_fp16(CONV_PARAM(float16_t));
+
+void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t));
+
+void conv_depthwise_5x5s1_fp16(CONV_PARAM(float16_t));
+
+void conv_depthwise_5x5s2_fp16(CONV_PARAM(float16_t));
+
+void weight_trans_c8_4x4_fp16(
+    float16_t *dest, const float16_t *src, int ic, int oc, void *workspace);
+
+void weight_trans_c8_6x6_fp16(
+    float16_t *dest, const float16_t *src, int ic, int oc, void *workspace);
+
+void conv_compute_2x2_3x3_fp16(CONV_PARAM(float16_t));
+
+void conv_compute_4x4_3x3_fp16(CONV_PARAM(float16_t));
+
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

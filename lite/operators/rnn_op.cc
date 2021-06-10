@@ -57,6 +57,11 @@ bool RnnOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     param_.WeightList.push_back(
         scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
+  if (opdesc.HasInput("SequenceLength") &&
+      !opdesc.Input("SequenceLength").empty()) {
+    param_.SequenceLength =
+        scope->FindTensor(opdesc.Input("SequenceLength").front());
+  }
   param_.DropoutState = scope->FindVar(opdesc.Output("DropoutState").front())
                             ->GetMutable<lite::Tensor>();
   param_.Reserve = scope->FindVar(opdesc.Output("Reserve").front())

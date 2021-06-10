@@ -20,6 +20,7 @@ limitations under the License. */
 #include "lite/backends/fpga/KD/pe_params.hpp"
 #include "lite/backends/fpga/KD/pes/conv_pe.hpp"
 #include "lite/backends/fpga/KD/pes/conv_process.hpp"
+#include "lite/backends/fpga/KD/tensor_util.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -35,28 +36,36 @@ class FullyConnectedPE : public PE {
 
   void apply() {
     ConvParam& convParam_ = convPE_.param();
-    Tensor* input = param_.input;
-    convParam_.input = param_.input;
-    convParam_.output = param_.output;
+    int num = param_.filter->shape().channel();
+    int chw = param_.filter->shape().num();
+    int in_channel = chw;
 
+    Shape in_shape(NCHW, {1, in_channel, 1, 1});
+    input_.mutableData<float16>(FP16, in_shape);
+
+    convParam_.input = &input_;
+    convParam_.output = param_.output;
     convParam_.activeParam.type = param_.activeParam.type;
     convParam_.groups = 1;
     convParam_.strides = {1, 1};
     convParam_.paddings = {0, 0};
-    convParam_.kernelSize = {input->shape().width(), input->shape().height()};
+    convParam_.kernelSize = {1, 1};
     convParam_.dilations = {1, 1};
 
-    int num = param_.filter->shape().channel();
-    int chw = param_.filter->shape().num();
-
-    int height = param_.input->shape().height();
-    int width = param_.input->shape().width();
+    int height = input_.shape().height();
+    int width = input_.shape().width();
     int filter_channel = chw / height / width;
 
     int channel = param_.output->shape().channel();
+    Shape chw_shape(NCHW,
+                    {num,
+                     param_.input->shape().channel(),
+                     param_.input->shape().height(),
+                     param_.input->shape().width()});
     Shape shape(NCHW, {num, filter_channel, height, width});
-    Tensor* conv_filter = new Tensor();
-    float* new_filter_data = conv_filter->mutableData<float>(FP32, shape);
+    Tensor chw_filter;
+    Tensor* conv_filter = &chw_filter;
+    float* new_filter_data = conv_filter->mutableData<float>(FP32, chw_shape);
     float* filter_data = param_.filter->data<float>();
 
     for (int i = 0; i < num; i++) {
@@ -66,8 +75,10 @@ class FullyConnectedPE : public PE {
       }
     }
 
-    conv_filter->flush();
-    convParam_.filter = conv_filter;
+    chw_to_hwc(&chw_filter, &conv_filter_);
+    conv_filter_.mutableData<float>(FP32, shape);
+    convParam_.filter = &conv_filter_;
+    convParam_.filter->flush();
 
     Shape sb_shape(N, {channel});
     float* scale_data = convParam_.scale()->mutableData<float>(FP32, sb_shape);
@@ -110,23 +121,21 @@ class FullyConnectedPE : public PE {
     }
 
     output->flush();
-    output->scale()[0] = max / 127.0f;
-    output->scale()[1] = 127.0f / max;
+    output->max()[0] = float_to_half(max);
   }
 
   bool dispatch() {
-    // int num = param_.filter->shape().channel();
-    // if (num == 2) {
-    //   cpu_compute();
-    //   return 1;
-    // } else {
+    param_.input->invalidate();
+    input_.copyFrom(param_.input);
+    input_.flush();
     return convPE_.dispatch();
-    // }
   }
 
   FullyConnectedParam& param() { return param_; }
 
  private:
+  Tensor input_;
+  Tensor conv_filter_;
   FullyConnectedParam param_;
   ConvPE convPE_;
 };

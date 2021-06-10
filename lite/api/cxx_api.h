@@ -161,7 +161,17 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
+    CheckInputValid();
+
+#ifdef LITE_WITH_XPU
+    lite::TargetWrapperXPU::MallocL3Cache();
+#endif
+
     program_->Run();
+
+#ifdef LITE_WITH_XPU
+    lite::TargetWrapperXPU::FreeL3Cache();
+#endif
   }
 
   // Get offset-th col of feed inputs.
@@ -171,6 +181,8 @@ class LITE_API Predictor {
   // get inputnames and get outputnames.
   std::vector<std::string> GetInputNames();
   std::vector<std::string> GetOutputNames();
+  // get input tensor precision type
+  const std::vector<PrecisionType>& GetInputPrecisions() const;
   // get param names
   std::vector<std::string> GetParamNames();
 
@@ -211,9 +223,12 @@ class LITE_API Predictor {
 
   //   void FeedVars(const std::vector<framework::Tensor>& tensors);
   // #endif
+ private:
+  // check if the input tensor precision type is correct.
+  // would be called in Run().
+  void CheckInputValid();
 
  private:
-  Optimizer optimizer_;
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
   Scope* exec_scope_;
@@ -222,6 +237,7 @@ class LITE_API Predictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<Place> valid_places_;
+  std::vector<PrecisionType> input_precisions_;
 };
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {

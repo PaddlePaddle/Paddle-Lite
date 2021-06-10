@@ -6,7 +6,7 @@ TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -32,6 +32,9 @@ REMOTE_DEVICE_TYPE=0
 REMOTE_DEVICE_LIST="2GX0119401000796,0123456789ABCDEF"
 # Work directory of the remote devices for running the unit tests
 REMOTE_DEVICE_WORK_DIR="/data/local/tmp"
+# Xpu sdk option
+XPU_SDK_URL=""
+XPU_SDK_ENV=""
 
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
@@ -40,13 +43,13 @@ if [ ${os_name} == "Darwin" ]; then
 fi
 
 function prepare_thirdparty() {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
             wget $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
     fi
@@ -787,7 +790,8 @@ function baidu_xpu_build_and_test() {
     fi
     local unit_test_check_list=$2
     local unit_test_filter_type=$3
-    local sdk_root_dir="$(readlink -f ./output)"
+    local sdk_url=$4
+    local sdk_env=$5
 
     # Build all of unittests and model tests
     mkdir -p ./build
@@ -805,13 +809,15 @@ function baidu_xpu_build_and_test() {
         -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
-        -DLITE_WITH_XTCL=$with_xtcl\
-        -DXPU_SDK_ROOT="$sdk_root_dir"
+        -DXPU_SDK_URL=$sdk_url \
+        -DXPU_SDK_ENV=$sdk_env \
+        -DLITE_WITH_XTCL=$with_xtcl
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
     # Run all of unittests and model tests
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     export GLOG_v=$UNIT_TEST_LOG_LEVEL
+    export XPU_CONV_AUTOTUNE=5
     local unit_test_check_items=(${unit_test_check_list//,/ })
     for test_name in $(cat $TESTS_FILE); do
         local is_matched=0
@@ -875,6 +881,14 @@ function main() {
             REMOTE_DEVICE_WORK_DIR="${i#*=}"
             shift
             ;;
+        --xpu_sdk_url=*)
+            XPU_SDK_URL="${i#*=}"
+            shift
+            ;;
+        --xpu_sdk_env=*)
+            XPU_SDK_ENV="${i#*=}"
+            shift
+            ;;
         android_cpu_build_and_test)
             android_cpu_build_and_test
             shift
@@ -900,11 +914,11 @@ function main() {
             shift
             ;;
         baidu_xpu_disable_xtcl_build_and_test)
-            baidu_xpu_build_and_test OFF $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE
+            baidu_xpu_build_and_test OFF $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV
             shift
             ;;
         baidu_xpu_enable_xtcl_build_and_test)
-            baidu_xpu_build_and_test ON $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE
+            baidu_xpu_build_and_test ON $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV
             shift
             ;;
         *)

@@ -48,7 +48,7 @@ bool ExpandAsOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto Out_name = opdesc.Output("Out").front();
   param_.X = GetVar<lite::Tensor>(scope, X_name);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
-  auto Target_name = opdesc.Input("Target").front();
+  auto Target_name = opdesc.Input("target_tensor").front();
   param_.Target = GetVar<lite::Tensor>(scope, Target_name);
   return true;
 }

@@ -73,18 +73,13 @@ class GatherTreeComputeTest : public arena::TestCase {
 
   void PrepareData() override {
     int64_t size = ids_dims_.production();
-    std::vector<T> ids(ids_dims_.production());
-    fill_data_rand(ids.data(),
-                   static_cast<T>(0),
-                   static_cast<T>(size),
-                   ids_dims_.production());
+    std::vector<T> ids(size);
+    fill_data_rand(ids.data(), static_cast<T>(0), static_cast<T>(size), size);
     SetCommonTensor(ids_, ids_dims_, ids.data());
 
-    std::vector<T> parents(ids_dims_.production());
-    fill_data_rand(parents.data(),
-                   static_cast<T>(0),
-                   static_cast<T>(ids_dims_[2]),
-                   ids_dims_.production());
+    std::vector<T> parents(size);
+    fill_data_rand(
+        parents.data(), static_cast<T>(0), static_cast<T>(ids_dims_[2]), size);
     SetCommonTensor(parents_, ids_dims_, parents.data());
   }
 };

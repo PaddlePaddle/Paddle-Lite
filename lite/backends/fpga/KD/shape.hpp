@@ -86,6 +86,8 @@ class Shape {
 
   int alignedElementCount() { return aligment_fuction(*this); }
 
+  LayoutType getLayoutType() { return layoutType_; }
+
   void setLayoutType(LayoutType layout) {
     this->layoutType_ = layout;
     switch (layout) {

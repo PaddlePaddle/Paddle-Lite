@@ -26,8 +26,7 @@ void DensityPriorBoxCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   std::vector<float> variance = param.variances_;
   CHECK_EQ(variance.size(), 4);
-  variance_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false /* use_l3 */);
+  variance_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   XPU_CALL(xpu_memcpy(variance_xpu_guard_->addr_,
                       variance.data(),
                       variance.size() * sizeof(float),

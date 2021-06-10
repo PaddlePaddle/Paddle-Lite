@@ -15,14 +15,13 @@ limitations under the License. */
 #include <cl_common.h>
 
 __kernel void elementwise_add(__global const CL_DTYPE* x_data,
-                  __global const CL_DTYPE* y_data,
-                  __global CL_DTYPE* out_data,
-                  const int batch,
-                  const int channels,
-                  const int num) {
-
-  const int c = get_global_id(0); // c: [0, channels)
-  const int b = get_global_id(1); // b: [0, batch)
+                              __global const CL_DTYPE* y_data,
+                              __global CL_DTYPE* out_data,
+                              const int batch,
+                              const int channels,
+                              const int num) {
+  const int c = get_global_id(0);  // c: [0, channels)
+  const int b = get_global_id(1);  // b: [0, batch)
 
   if ((c >= channels) || (b >= batch)) {
     return;
@@ -34,10 +33,11 @@ __kernel void elementwise_add(__global const CL_DTYPE* x_data,
   const CL_DTYPE diny_data = y_data[c];
   __global CL_DTYPE* dout_ptr = out_data + offset;
 
-  for (int n = 0; n < num; ++n) { // n: [0, h*w)
+  for (int n = 0; n < num; ++n) {  // n: [0, h*w)
     *dout_ptr = *din_ptr + diny_data;
 #ifdef RELU
-    *dout_ptr = activation(*dout_ptr);
+    CL_DTYPE alpha;
+    *dout_ptr = activation(*dout_ptr, alpha);
 #endif
     ++dout_ptr;
     ++din_ptr;

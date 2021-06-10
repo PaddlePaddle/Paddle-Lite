@@ -40,6 +40,23 @@ class FcCompute
     auto w_t = fc_param_->w;
     auto bias_t = fc_param_->bias;
 
+    if (fc_param_->activation_type == "prelu") {
+      std::string prelu_mode = fc_param_->Prelu_mode;
+      build_options_ += " -DPRELU";
+      if (prelu_mode == "all") {
+        build_options_ += " -DPRELU_ONE";
+      } else {
+        build_options_ += " -DPRELU_MORE";
+      }
+      auto alpha_t = fc_param_->Prelu_alpha;
+      alpha_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+      auto alpha_gpu_data =
+          alpha_gpu_t_->mutable_data(TARGET(kOpenCL), alpha_t->memory_size());
+      TargetWrapperCL::MemcpySync(alpha_gpu_data,
+                                  alpha_t->raw_data(),
+                                  alpha_t->memory_size(),
+                                  IoDirection::HtoD);
+    }
     w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     auto w_gpu_data =
         w_gpu_t_->mutable_data(TARGET(kOpenCL), w_t->memory_size());
@@ -122,6 +139,10 @@ class FcCompute
     auto* x_buf = fc_param_->input->data<float, cl::Buffer>();
     auto* w_buf = w_gpu_t_->data<float, cl::Buffer>();
     auto* bias_buf = bias_gpu_t_->data<float, cl::Buffer>();
+    const cl::Buffer* alpha_buf = nullptr;
+    if (fc_param_->activation_type == "prelu") {
+      alpha_buf = alpha_gpu_t_->data<float, cl::Buffer>();
+    }
     auto* out_buf =
         fc_param_->output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
@@ -140,6 +161,8 @@ class FcCompute
     status = kernel.setArg(5, static_cast<const int>(n_));
     CL_CHECK_FATAL(status);
     status = kernel.setArg(6, static_cast<const int>(k_));
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(7, *alpha_buf);
     CL_CHECK_FATAL(status);
 
     auto& context = ctx_->As<OpenCLContext>();
@@ -167,13 +190,14 @@ class FcCompute
   int m_, n_, k_;
   param_t* fc_param_{nullptr};
   std::string kernel_func_name_{};
-  std::string build_options_{"-DCL_DTYPE_float "};
+  std::string build_options_{"-DCL_DTYPE_half "};
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
 
   std::unique_ptr<Tensor> w_gpu_t_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_t_{nullptr};
+  std::unique_ptr<Tensor> alpha_gpu_t_{nullptr};
 
   cl::NDRange global_work_size_;
   cl::Kernel kernel_;
@@ -189,6 +213,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();
 
@@ -197,5 +222,6 @@ REGISTER_LITE_KERNEL(
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();

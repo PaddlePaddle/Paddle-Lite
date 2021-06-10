@@ -55,6 +55,11 @@ T naive_div(T a, T b) {
 }
 
 template <class T>
+T naive_floor_div(T a, T b) {
+  return static_cast<T>(std::trunc(a / b));
+}
+
+template <class T>
 T naive_mod(T a, T b) {
   return a % b;
 }

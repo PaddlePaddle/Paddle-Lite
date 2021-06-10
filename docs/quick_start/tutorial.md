@@ -7,7 +7,8 @@ Lite是一种轻量级、灵活性强、易于扩展的高性能的深度学习�
 
 **一. 准备模型**
 
-Paddle Lite框架直接支持模型结构为[PaddlePaddle](https://github.com/PaddlePaddle/Paddle)深度学习框架产出的模型格式。目前PaddlePaddle用于推理的模型是通过[save_inference_model](https://www.paddlepaddle.org.cn/documentation/docs/zh/api_cn/io_cn/save_inference_model_cn.html#save-inference-model)这个API保存下来的。
+Paddle-Lite框架直接支持模型结构为[PaddlePaddle](https://www.paddlepaddle.org.cn/)深度学习框架产出的模型格式。在PaddlePaddle静态图模式下，使用save_inference_model这个API保存预测模型，Paddle-Lite对此类预测模型已经做了充分支持。在PaddlePaddle动态图模式下，使用paddle.jit.save这个API保存预测模型，Paddle-Lite可以支持绝大部分此类预测模型了。
+
 如果您手中的模型是由诸如Caffe、Tensorflow、PyTorch等框架产出的，那么您可以使用 [X2Paddle](https://github.com/PaddlePaddle/X2Paddle) 工具将模型转换为PadddlePaddle格式。
 
 **二. 模型优化**
@@ -19,7 +20,7 @@ Paddle Lite框架拥有优秀的加速、优化策略及实现，包含量化、
 
 **三. 下载或编译**
 
-Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，我们优先推荐您直接下载 [Paddle Lite预编译库](../quick_start/release_lib)。
+Paddle Lite提供了Android/iOS/ArmLinux/Windows/macOS/Ubuntu 平台的官方Release预测库下载，我们优先推荐您直接下载 [Paddle Lite预编译库](../quick_start/release_lib)。
 您也可以根据目标平台选择对应的[源码编译方法](../quick_start/release_lib)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/`文件夹下，只需要 [准备环境](../source_compile/compile_env) 和 [调用编译脚本](../quick_start/release_lib) 两个步骤即可一键编译得到目标平台的Paddle Lite预测库。
 
 **四. 开发应用程序**

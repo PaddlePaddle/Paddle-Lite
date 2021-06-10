@@ -45,6 +45,15 @@ rm ./lite/api/paddle_use_ops.h
   --with_extra=ON \
   --with_cv=ON \
   --with_opencl=ON
+或
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv7 \
+  --arm_lang=clang \
+  --android_stl=c++_shared \
+  --with_log=OFF \
+  --build_extra=ON \
+  opencl
 
 # android-armv8:cpu+gpu+cv+extra
 ./lite/tools/build_android.sh \
@@ -54,7 +63,15 @@ rm ./lite/api/paddle_use_ops.h
   --with_extra=ON \
   --with_cv=ON \
   --with_opencl=ON
-
+或
+./lite/tools/build.sh \
+  --arm_os=android \
+  --arm_abi=armv8 \
+  --arm_lang=clang \
+  --android_stl=c++_shared \
+  --with_log=OFF \
+  --build_extra=ON \
+  opencl
 
 # 注：编译帮助请执行: ./lite/tools/build_android.sh help
 ```
@@ -91,7 +108,7 @@ rm ./lite/api/paddle_use_ops.h
 
 - `cxx`:该目录是编译目标的C++的头文件和库文件;
 - `demo`:该目录包含了两个demo，用来调用使用`libpaddle_api_full_bundled.a`和`libpaddle_api_light_bundled.a`，分别对应`mobile_full`和`mobile_light`文件夹。编译对应的demo仅需在`mobile_full`或`mobile_light`文件夹下执行`make`
-  - `mobile_full`:使用cxx config，可直接加载fluid模型，若使用OpenCL需要在`mobilenetv1_full_api.cc`代码里开启`DEMO_USE_OPENCL`的宏，详细见该文件的代码注释;
+  - `mobile_full`:使用cxx config，可直接加载fluid模型，若使用OpenCL需要在运行时加入`--use_gpu=true`选项;
   - `mobile_light`:使用mobile config，只能加载`model_optimize_tool`优化过的模型。
 注：`opencl`实现的相关kernel已经打包到动态库中。
 
@@ -168,10 +185,13 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            /data/local/tmp/opencl/mobilenetv1_light_api \
            /data/local/tmp/opencl/mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb \
            1,3,224,224 \
-           100 10 0" # round=100, warmup=10, print_output_tensor=0
+           100 10 0 1 1 0" 
+           # repeats=100, warmup=10
+           # power_mode=0 绑定大核, thread_num=1
+           # accelerate_opencl=1 开启 opencl kernel cache & tuning，仅当模型运行在 opencl 后端时该选项才会生效
+           # print_output=0 不打印模型输出 tensors 详细数据
 ```
 
-**注：** 权重参数会在第一次运行时加载，且`.cl`文件也会在第一次运行时在线编译，所以第一次执行时间略长。一般将warmup的值设为10，repeats值设为多次。
 
 ### 2.2 运行示例2: test_mobilenetv1单元测试
 
@@ -222,7 +242,37 @@ adb shell "export GLOG_v=4; \
 
 **NOTE：** 对OpenCL的支持还在持续开发中。
 
-## 4. 常见问题
+## 4. 性能分析和精度分析
+
+Android 平台下分析：
+```
+# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
+./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_opencl=ON --with_extra=ON --with_profile=ON full_publish
+# 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_opencl=ON --with_extra=ON --with_precision_profile=ON full_publish
+```
+
+macOS x86 平台下分析：
+```
+# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
+./lite/tools/build.sh --build_opencl=ON --build_extra=ON --with_profile=ON x86
+# 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+./lite/tools/build.sh --build_opencl=ON --build_extra=ON --with_precision_profile=ON x86
+```
+
+Windows x86 平台下分析：
+```
+# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
+.\lite\tools\build_windows.bat with_opencl with_extra with_profile 
+# 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+.\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile 
+```
+详细输出信息的说明可查阅[调试工具](../user_guides/debug)。
+
+## 5. 常见问题
 
 1. opencl计算过程中大多以`cl::Image2D`的数据排布进行计算，不同gpu支持的最大`cl::Image2D`的宽度和高度有限制，模型输入的数据格式是buffer形式的`NCHW`数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的`cl::Image2D`最大宽度和高度均为16384），可以通过公式`image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4`计算当前层NCHW排布的Tensor所需的`cl::Image2D`的宽度和高度；
-2. 部署时需考虑不支持opencl的情况，可预先使用API`bool ::IsOpenCLBackendValid()`判断，对于不支持的情况加载CPU模型，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+2. 部署时需考虑不支持opencl的情况，可预先使用API`bool ::IsOpenCLBackendValid()`判断，对于不支持的情况加载CPU模型，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
+3. 对性能不满足需求的场景，可以考虑使用调优API`config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
+4. 对精度要求较高的场景，可以考虑通过API`config.set_opencl_precision(CL_PRECISION_FP32)`强制使用FP32精度，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
+5. 对首次加载耗时慢的问题，可以考虑使用API`config.set_opencl_binary_path_name(bin_path, bin_name)`，提高首次推理时，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。

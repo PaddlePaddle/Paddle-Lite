@@ -21,41 +21,43 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+#define WINOGRAD_INIT(cblock)                        \
+  auto& param = this->Param<param_t>();              \
+  auto& ctx = this->ctx_->template As<ARMContext>(); \
+  int threads = ctx.threads();                       \
+  auto x_dims = param.x->dims();                     \
+  auto w_dims = param.filter->dims();                \
+  auto o_dims = param.output->dims();                \
+  if (last_shape_ == x_dims) {                       \
+    return;                                          \
+  }                                                  \
+  last_shape_ = x_dims;                              \
+  /* update workspace size */                        \
+  int ic = x_dims[1];                                \
+  int ih = x_dims[2];                                \
+  int iw = x_dims[3];                                \
+  int oc = o_dims[1];                                \
+  int oh = o_dims[2];                                \
+  int ow = o_dims[3];                                \
+  int tile_block = 8;                                \
+  auto pad = *(param.paddings);                      \
+  int pad_h0 = pad[0];                               \
+  int pad_h1 = pad[1];                               \
+  int pad_w0 = pad[2];                               \
+  int pad_w1 = pad[3];                               \
+  int oc_pad = (oc + cblock - 1) / cblock * cblock;  \
+  int ic_pad = (ic + cblock - 1) / cblock * cblock;
+
+#define FUNCS_PARAM i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  int threads = ctx.threads();
-
-  auto x_dims = param.x->dims();
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-
-  if (last_shape_ == x_dims) {
-    return;
-  }
-  last_shape_ = x_dims;
-  //! update workspace size
-  int ic = x_dims[1];
-  int ih = x_dims[2];
-  int iw = x_dims[3];
-  int oc = o_dims[1];
-  int oh = o_dims[2];
-  int ow = o_dims[3];
-  int tile_block = 8;
-  auto pad = *(param.paddings);
-  int pad_h0 = pad[0];
-  int pad_h1 = pad[1];
-  int pad_w0 = pad[2];
-  int pad_w1 = pad[3];
-  int oc_pad = (oc + 3) / 4 * 4;
-  int ic_pad = (ic + 3) / 4 * 4;
+  WINOGRAD_INIT(4)
   const int new_input_size =
-      (ic + 3) / 4 * 4 * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1);
-  const int temp_size =
-      (tile_block * ((ic + 3) / 4 + (oc + 3) / 4) * 4 * wino_iw * wino_iw +
-       8 * wino_iw * wino_iw) *
-      threads;
+      ic_pad * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1);
+  const int temp_size = (tile_block * (oc_pad + ic_pad) * wino_iw * wino_iw +
+                         8 * wino_iw * wino_iw) *
+                        threads;
+
   workspace_size_ = (temp_size + new_input_size) * sizeof(float);
 
   // select best wino_unit
@@ -79,7 +81,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
     }
     last_function_ = 2;
   }
-  last_function_ = -1;
+  // last_function_ = -1;
 
   //! update trans weights impl
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
@@ -114,13 +116,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   ReInitWhenNeeded();
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kFloat, kFloat)
 
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
@@ -145,93 +141,28 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oc = o_dims[1];
 
   if (wino_iw == 8) {
-    lite::arm::math::conv_compute_6x6_3x3(i_data,
-                                          o_data,
-                                          bs,
-                                          oc,
-                                          oh,
-                                          ow,
-                                          ic,
-                                          ih,
-                                          iw,
-                                          w_data,
-                                          b_data,
-                                          param,
-                                          &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_compute_6x6_3x3";
-#endif
+    lite::arm::math::conv_compute_6x6_3x3(FUNCS_PARAM, param, &ctx);
+    KERNEL_FUNC_NAME("conv_compute_6x6_3x3")
   } else if (wino_iw == 6) {
-    lite::arm::math::conv_compute_4x4_3x3(i_data,
-                                          o_data,
-                                          bs,
-                                          oc,
-                                          oh,
-                                          ow,
-                                          ic,
-                                          ih,
-                                          iw,
-                                          w_data,
-                                          b_data,
-                                          param,
-                                          &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_compute_4x4_3x3";
-#endif
+    lite::arm::math::conv_compute_4x4_3x3(FUNCS_PARAM, param, &ctx);
+    KERNEL_FUNC_NAME("conv_compute_4x4_3x3")
   } else {
     int tile_block = 8;
     int block_count =
         (((ow + 1) / 2) * ((oh + 1) / 2) + tile_block - 1) / tile_block;
     if (block_count != 1) {
-      lite::arm::math::conv_compute_2x2_3x3(i_data,
-                                            o_data,
-                                            bs,
-                                            oc,
-                                            oh,
-                                            ow,
-                                            ic,
-                                            ih,
-                                            iw,
-                                            w_data,
-                                            b_data,
-                                            param,
-                                            &ctx);
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_compute_2x2_3x3";
-#endif
+      lite::arm::math::conv_compute_2x2_3x3(FUNCS_PARAM, param, &ctx);
+      KERNEL_FUNC_NAME("conv_compute_2x2_3x3")
     } else {
-      lite::arm::math::conv_compute_2x2_3x3_small(i_data,
-                                                  o_data,
-                                                  bs,
-                                                  oc,
-                                                  oh,
-                                                  ow,
-                                                  ic,
-                                                  ih,
-                                                  iw,
-                                                  w_data,
-                                                  b_data,
-                                                  param,
-                                                  &ctx);
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_compute_2x2_3x3_small";
-#endif
+      lite::arm::math::conv_compute_2x2_3x3_small(FUNCS_PARAM, param, &ctx);
+      KERNEL_FUNC_NAME("conv_compute_2x2_3x3_small")
     }
   }
 }
 
 template <PrecisionType OutType>
 void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  int threads = ctx.threads();
-
-  auto x_dims = param.x->dims();
-  if (last_shape_ == x_dims) {
-    return;
-  }
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
+  WINOGRAD_INIT(8)
   w_scale_ = param.weight_scale;
   if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
     LOG(FATAL) << "weights scale size must equal to filter size";
@@ -272,22 +203,6 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
     }
   }
 
-  last_shape_ = x_dims;
-  //! update workspace size
-  int ic = x_dims[1];
-  int ih = x_dims[2];
-  int iw = x_dims[3];
-  int oc = o_dims[1];
-  int oh = o_dims[2];
-  int ow = o_dims[3];
-  int tile_block = 8;
-  auto pad = *(param.paddings);
-  int pad_h0 = pad[0];
-  int pad_h1 = pad[1];
-  int pad_w0 = pad[2];
-  int pad_w1 = pad[3];
-  int oc_pad = (oc + 7) / 8 * 8;
-  int ic_pad = (ic + 7) / 8 * 8;
   const int new_input_size =
       ic_pad * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1) +
       oc_pad * oh * ow * sizeof(int32_t);
@@ -329,7 +244,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
       ws /= 576;
     }
   }
-  last_function_ = -1;
+  // last_function_ = -1;
 
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
   void* trans_tmp_ptr = malloc(sizeof(int32_t) * wino_iw * wino_iw * oc * ic);
@@ -395,86 +310,134 @@ void WinogradConv<PRECISION(kInt8), OutType>::Run() {
   if (OutType == PRECISION(kInt8)) {
     auto* o_data = param.output->template mutable_data<int8_t>();
     if (wino_iw == 6) {
-      lite::arm::math::conv_compute_4x4_3x3_int8<int8_t>(i_data,
-                                                         o_data,
-                                                         bs,
-                                                         oc,
-                                                         oh,
-                                                         ow,
-                                                         ic,
-                                                         ih,
-                                                         iw,
-                                                         w_data,
-                                                         b_data,
-                                                         w_scale_.data(),
-                                                         param,
-                                                         &ctx);
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_compute_4x4_3x3_int8_int8";
-#endif
+      lite::arm::math::conv_compute_4x4_3x3_int8<int8_t>(
+          FUNCS_PARAM, w_scale_.data(), param, &ctx);
+      KERNEL_FUNC_NAME("conv_compute_4x4_3x3_int8_int8")
     } else {
-      lite::arm::math::conv_compute_2x2_3x3_int8<int8_t>(i_data,
-                                                         o_data,
-                                                         bs,
-                                                         oc,
-                                                         oh,
-                                                         ow,
-                                                         ic,
-                                                         ih,
-                                                         iw,
-                                                         w_data,
-                                                         b_data,
-                                                         w_scale_.data(),
-                                                         param,
-                                                         &ctx);
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_compute_2x2_3x3_int8_int8";
-#endif
+      lite::arm::math::conv_compute_2x2_3x3_int8<int8_t>(
+          FUNCS_PARAM, w_scale_.data(), param, &ctx);
+      KERNEL_FUNC_NAME("conv_compute_2x2_3x3_int8_int8")
     }
   } else {
     auto* o_data = param.output->template mutable_data<float>();
     if (wino_iw == 6) {
-      lite::arm::math::conv_compute_4x4_3x3_int8<float>(i_data,
-                                                        o_data,
-                                                        bs,
-                                                        oc,
-                                                        oh,
-                                                        ow,
-                                                        ic,
-                                                        ih,
-                                                        iw,
-                                                        w_data,
-                                                        b_data,
-                                                        w_scale_.data(),
-                                                        param,
-                                                        &ctx);
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_compute_4x4_3x3_int8_float";
-#endif
+      lite::arm::math::conv_compute_4x4_3x3_int8<float>(
+          FUNCS_PARAM, w_scale_.data(), param, &ctx);
+      KERNEL_FUNC_NAME("conv_compute_4x4_3x3_int8_float")
     } else {
-      lite::arm::math::conv_compute_2x2_3x3_int8<float>(i_data,
-                                                        o_data,
-                                                        bs,
-                                                        oc,
-                                                        oh,
-                                                        ow,
-                                                        ic,
-                                                        ih,
-                                                        iw,
-                                                        w_data,
-                                                        b_data,
-                                                        w_scale_.data(),
-                                                        param,
-                                                        &ctx);
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_compute_2x2_3x3_int8_float";
-#endif
+      lite::arm::math::conv_compute_2x2_3x3_int8<float>(
+          FUNCS_PARAM, w_scale_.data(), param, &ctx);
+      KERNEL_FUNC_NAME("conv_compute_2x2_3x3_int8_float")
     }
   }
 }
+
+PROFILE_INFO(kInt8, kInt8)
+PROFILE_INFO(kInt8, kFloat)
 template class WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
 template class WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {
+  WINOGRAD_INIT(8)
+  const int new_input_size =
+      ic_pad * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1);
+  const int temp_size = (tile_block * (ic_pad + oc_pad) * wino_iw * wino_iw +
+                         8 * wino_iw * wino_iw) *
+                        threads;
+  workspace_size_ = (temp_size + new_input_size) * sizeof(float16_t);
+
+  // select best wino_unit
+  int wino_unit = ow * oh / (tile_block * threads);
+  if (wino_unit < 16) {
+    wino_iw = 4;
+    if (last_function_ == 0) {
+      return;
+    }
+    last_function_ = 0;
+  } else {
+    wino_iw = 6;
+    if (last_function_ == 1) {
+      return;
+    }
+    last_function_ = 1;
+  }
+  // last_function_ = -1;
+
+  weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
+  void* trans_tmp_ptr = malloc(sizeof(float16_t) * wino_iw * wino_iw * oc * ic);
+  auto weights_data_ = weights_.mutable_data<float16_t>();
+  memset(reinterpret_cast<char*>(weights_data_),
+         0,
+         weights_.numel() * sizeof(int16_t));
+  switch (wino_iw) {
+    case 4:
+      lite::arm::math::fp16::weight_trans_c8_4x4_fp16(
+          weights_data_,
+          param.filter->template data<float16_t>(),
+          ic,
+          oc,
+          trans_tmp_ptr);
+      break;
+    case 6:
+      lite::arm::math::fp16::weight_trans_c8_6x6_fp16(
+          weights_data_,
+          param.filter->template data<float16_t>(),
+          ic,
+          oc,
+          trans_tmp_ptr);
+      break;
+    default:
+      lite::arm::math::fp16::weight_trans_c8_6x6_fp16(
+          weights_data_,
+          param.filter->template data<float16_t>(),
+          ic,
+          oc,
+          trans_tmp_ptr);
+  }
+  free(trans_tmp_ptr);
+}
+
+template <>
+void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  ReInitWhenNeeded();
+}
+
+template <>
+void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  ctx.ExtendWorkspace(workspace_size_);
+  const auto* i_data = param.x->template data<float16_t>();
+  const auto* w_data = weights_.data<float16_t>();
+  const auto* b_data =
+      param.bias ? param.bias->template data<float16_t>() : nullptr;
+  auto* o_data = param.output->template mutable_data<float16_t>();
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];  // nchw
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+
+  if (wino_iw == 6) {
+    lite::arm::math::fp16::conv_compute_4x4_3x3_fp16(FUNCS_PARAM, param, &ctx);
+    KERNEL_FUNC_NAME("conv_compute_4x4_3x3_fp16")
+  } else {
+    lite::arm::math::fp16::conv_compute_2x2_3x3_fp16(FUNCS_PARAM, param, &ctx);
+    KERNEL_FUNC_NAME("conv_compute_2x2_3x3_fp16")
+  }
+}
+
+#endif
+#undef FUNCS_PARAM
+#undef WINOGRAD_INIT
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

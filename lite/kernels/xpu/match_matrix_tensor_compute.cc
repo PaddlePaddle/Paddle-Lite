@@ -23,12 +23,12 @@ namespace kernels {
 namespace xpu {
 
 void MatchMatrixTensorCompute::PrepareForRun() {
-  wx_max_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
-  offset_l_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
-  offset_r_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  wx_max_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
+  offset_l_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
+  offset_r_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
 
   offset_l_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
   offset_r_cpu.reset(new int[XPU_MAX_LOD_SIZE]);

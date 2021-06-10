@@ -4,6 +4,7 @@
 lite/model_parser/flatbuffers/framework.fbs
 lite/model_parser/flatbuffers/param.fbs
 lite/backends/opencl/utils/cache.fbs
+lite/backends/opencl/utils/tune_cache.fbs
 ```
 ### Step2. update flatbuffer pre-build results
 ```shell

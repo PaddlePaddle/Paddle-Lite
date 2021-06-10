@@ -35,8 +35,8 @@ void StackCompute<T, PType>::Run() {
 
   int pre = 1, post = 1;
   auto &dim = x[0]->dims();
-  for (auto i = 0; i < axis; ++i) pre *= dim[i];
-  for (auto i = axis; i < dim.size(); ++i) post *= dim[i];
+  for (int i = 0; i < axis; ++i) pre *= dim[i];
+  for (size_t i = axis; i < dim.size(); ++i) post *= dim[i];
 
   auto x_data_arr = x_datas.data();
 
@@ -69,12 +69,23 @@ REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_float, def)
     .Finalize();
 
 using stack_int32 =
-    paddle::lite::kernels::host::StackCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(stack, kHost, kInt32, kAny, stack_int32, def)
+    paddle::lite::kernels::host::StackCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_int32, int32_def)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
     .BindOutput("Y",
                 {LiteType::GetTensorTy(
                     TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .Finalize();
+
+using stack_int64 =
+    paddle::lite::kernels::host::StackCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_int64, int64_def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
     .Finalize();

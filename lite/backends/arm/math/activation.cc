@@ -806,6 +806,42 @@ void act_abs<float>(const float* din, float* dout, int size, int threads) {
   }
 }
 
+template <typename T>
+void erf(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = std::erf(din[0]);
+    din++;
+    dout++;
+  }
+}
+
+template void erf<float>(const float* din, float* dout, int size, int threads);
+
+template <typename T>
+void sign(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = (dout[0] >= (T)0) - ((T)0 >= dout[0]);
+    din++;
+    dout++;
+  }
+}
+
+template void sign<float>(const float* din, float* dout, int size, int threads);
+
+template <typename T>
+void softplus(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = log((T)1. + exp(din[i]));
+    din++;
+    dout++;
+  }
+}
+
+template void softplus<float>(const float* din,
+                              float* dout,
+                              int size,
+                              int threads);
+
 template <>
 void act_thresholded_relu<float>(
     const float* din, float* dout, int size, float threshold, int threads) {
@@ -901,6 +937,35 @@ void act_elu<float>(
     ptr_out++;
   }
 }
+
+// when using approximation
+// $out = \\frac{1}{2}x(1+tanh(\\sqrt{\\frac{2}{\\pi}}(x+0.044715x^{3}))$
+// or else
+// $out = \\frac{1 + erf(\\frac{x}{\\sqrt{2}})}{2} x$
+template <>
+void act_gelu<float>(
+    const float* din, float* dout, int size, bool approximate, int threads) {
+  if (approximate) {
+    const float pi = std::atan(1) * 4;
+    const float sqrt_2_div_pi = std::sqrt(2 / pi);
+    for (int i = 0; i < size; i++) {
+      float x = *din;
+      *dout = 0.5 * x *
+              (1 + std::tanh(sqrt_2_div_pi * (x + 0.044715 * std::pow(x, 3))));
+      ++din;
+      ++dout;
+    }
+  } else {
+    const float sqrt_2 = std::sqrt(2.0);
+    for (int i = 0; i < size; i++) {
+      float x = *din;
+      *dout = 0.5 * x * (1 + std::erf(x / sqrt_2));
+      ++din;
+      ++dout;
+    }
+  }
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

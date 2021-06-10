@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType ptype>
+class ReluCompute : public KernelLite<TARGET(kARM), ptype> {
  public:
   using param_t = operators::ActivationParam;
 

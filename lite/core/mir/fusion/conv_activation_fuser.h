@@ -27,10 +27,12 @@ class ConvActivationFuser : public FuseBase {
  public:
   explicit ConvActivationFuser(const std::string& conv_type,
                                const std::string& act_type,
-                               bool has_bias) {
+                               bool has_bias,
+                               bool has_alpha) {
     conv_type_ = conv_type;
     act_type_ = act_type;
     has_bias_ = has_bias;
+    has_alpha_ = has_alpha;
   }
 
   void BuildPattern() override;
@@ -41,6 +43,7 @@ class ConvActivationFuser : public FuseBase {
   std::string conv_type_;
   std::string act_type_;
   bool has_bias_;
+  bool has_alpha_;
 };
 
 }  // namespace fusion

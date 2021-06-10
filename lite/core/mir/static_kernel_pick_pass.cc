@@ -87,7 +87,7 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       // Just keep a single best kernel.
       // TODO(Superjomn) reconsider this.
       instruct.kernels().emplace_back(std::move(scored.front().second));
-      VLOG(2) << "pick " << instruct.kernels().front()->name() << "\n\n";
+      VLOG(2) << "pick " << instruct.kernels().front()->summary() << "\n\n";
 
     } else {
       bool out_type_int8 = true;

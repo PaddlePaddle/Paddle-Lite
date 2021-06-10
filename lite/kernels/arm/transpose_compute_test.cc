@@ -65,7 +65,7 @@ void transpose_compute_ref(const operators::TransposeParam& param) {
 // Transpose
 TEST(transpose_arm, init) {
   TransposeCompute transpose;
-  ASSERT_EQ(transpose.precision(), PRECISION(kFloat));
+  ASSERT_EQ(transpose.precision(), PRECISION(kAny));
   ASSERT_EQ(transpose.target(), TARGET(kARM));
 }
 
@@ -132,7 +132,7 @@ TEST(transpose, retrive_op) {
 // Transpose2
 TEST(transpose2_arm, init) {
   Transpose2Compute transpose2;
-  ASSERT_EQ(transpose2.precision(), PRECISION(kFloat));
+  ASSERT_EQ(transpose2.precision(), PRECISION(kAny));
   ASSERT_EQ(transpose2.target(), TARGET(kARM));
 }
 
@@ -201,5 +201,5 @@ TEST(transpose2, retrive_op) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(transpose, kARM, kFloat, kNCHW, def);
-USE_LITE_KERNEL(transpose2, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(transpose, kARM, kAny, kNCHW, def);
+USE_LITE_KERNEL(transpose2, kARM, kAny, kNCHW, def);

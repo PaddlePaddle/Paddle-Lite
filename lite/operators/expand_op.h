@@ -35,6 +35,11 @@ class ExpandOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "expand"; }
 
+  bool InferType() override {
+    param_.Out->set_precision(param_.X->precision());
+    return true;
+  }
+
  private:
   mutable ExpandParam param_;
 };

@@ -59,16 +59,13 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   DataLayoutType layout = DATALAYOUT(kNCHW);
   PrecisionType precision = PRECISION(kFloat);
 
-  if (op_info->HasAttr("enable_int8")) {
-    enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    CHECK(op_info->HasInputScale(input_scale_name, true));
+  if (op_info->HasInputScale(input_scale_name, true) &&
+      op_info->HasOutputScale(out_scale_name, true)) {
+    enable_int8 = true;
     input_scale = op_info->GetInputScale(input_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(out_scale_name, true));
     output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
-    if (enable_int8) {
-      precision = PRECISION(kInt8);
-    }
+    precision = PRECISION(kInt8);
   }
 
   // Create input node and reshape it to (m, k, 1, 1)

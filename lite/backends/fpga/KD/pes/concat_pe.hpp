@@ -29,11 +29,6 @@ class ConcatPE : public PE {
     Tensor* output = param_.output;
     output->setAligned(false);
     output->setDataLocation(CPU);
-    bool cacheable = true;
-    for (auto in : param_.inputs) {
-      cacheable &= in->cacheable();
-    }
-    output->setCacheable(cacheable);
     return true;
   }
 
@@ -91,15 +86,14 @@ class ConcatPE : public PE {
     Tensor* output = param_.output;
     Shape& output_shape = output->shape();
 
-    float scale = 0;
+    float max_val = 0;
     for (unsigned int n = 0; n < param_.inputs.size(); n++) {
       Tensor* input = param_.inputs[n];
       input->syncToCPU();
       input->unalignImage();
-      scale = std::max(scale, input->scale()[0]);
+      max_val = std::max(max_val, half_to_float(input->max()[0]));
     }
-    output->scale()[0] = scale;
-    output->scale()[1] = 1.0f / scale;
+    output->max()[0] = float_to_half(max_val);
 
     if (output_shape.dimSize() == 3) {
       concat3D();

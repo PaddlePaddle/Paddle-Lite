@@ -19,6 +19,9 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -68,7 +71,7 @@ void ConcatCompute::Run() {
     axis = axis_tensor_data[0];
   }
   if (axis < 0) {
-    axis += inputs[0]->dims().size();
+    axis += static_cast<int>(inputs[0]->dims().size());
   }
 
   lite_api::PrecisionType type = PRECISION(kUnk);
@@ -77,6 +80,25 @@ void ConcatCompute::Run() {
       if (type == PRECISION(kUnk)) {
         type = tensor->precision();
       } else {
+        VLOG(4) << "type: " << PrecisionRepr(type)
+                << ", tensor: " << PrecisionRepr(tensor->precision());
+#ifdef ENABLE_ARM_FP16
+        if (type != tensor->precision() &&
+            tensor->precision() == PrecisionType::kFP16 &&
+            type == PrecisionType::kFloat) {
+          // fp16 ==> flaot
+          Tensor tmp;
+          auto shape = tensor->dims();
+          tmp.Resize(shape);
+          tmp.set_precision(PrecisionType::kFloat);
+          auto dout = tmp.mutable_data<float>();
+          auto din = tensor->data<float16_t>();
+          auto size = tmp.numel();
+          lite::arm::math::fp16::fp16_to_fp32(din, dout, tensor->numel());
+          tensor->CopyDataFrom(tmp);
+          continue;
+        }
+#endif
         CHECK(type == tensor->precision()) << "The precision of "
                                            << "concat inputs should be same.";
       }
@@ -87,6 +109,11 @@ void ConcatCompute::Run() {
     case PRECISION(kFloat):
       ConcatFunc<float>(inputs, axis, out);
       break;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      ConcatFunc<__fp16>(inputs, axis, out);
+      break;
+#endif
     case PRECISION(kInt32):
       ConcatFunc<int32_t>(inputs, axis, out);
       break;

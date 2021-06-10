@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 set +x
-set -e
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
@@ -20,12 +19,16 @@ TOOLCHAIN=gcc
 WITH_EXTRA=OFF
 # ON or OFF, default ON.
 WITH_JAVA=ON
+# ON or OFF, default is OFF
+WITH_STATIC_LIB=OFF
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
 # controls whether to hide log information, default is ON.
 WITH_LOG=ON
 # controls whether to throw the exception when error occurs, default is OFF
 WITH_EXCEPTION=OFF
+# controls whether to include FP16 kernels, default is OFF
+BUILD_ARM82_FP16=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
@@ -54,7 +57,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
 # url that stores third-party zip file to accelerate third-paty lib installation
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for android compiling.
@@ -113,13 +116,13 @@ function prepare_opencl_source_code {
 # 3.3 prepare third_party libraries for compiling
 # here we store third_party libraries into Paddle-Lite/third-party
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
             wget $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
     fi
@@ -155,6 +158,7 @@ function set_android_api_level {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
+  # Step1. Create directory for compiling.
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
       build_dir=${build_dir}.opencl
@@ -162,21 +166,24 @@ function make_tiny_publish_so {
   if [ "${WITH_npu}" == "ON" ]; then
       build_dir=${build_dir}.npu
   fi
-
-
-  if [ -d $build_dir ]
-  then
+  if [ -d $build_dir ]; then
       rm -rf $build_dir
   fi
   mkdir -p $build_dir
   cd $build_dir
 
+  # Step2. prepare third-party libs: opencl libs.
   if [ "${WITH_OPENCL}" == "ON" ]; then
       prepare_opencl_source_code $workspace $build_dir
   fi
 
+  # Step3. apply cmake to generate makefiles.
   if [ "${WITH_STRIP}" == "ON" ]; then
       WITH_EXTRA=ON
+  fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      ARCH=armv8
   fi
 
   # android api level for android version
@@ -189,6 +196,7 @@ function make_tiny_publish_so {
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
+      -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
@@ -197,6 +205,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
   cmake $workspace \
@@ -205,11 +214,10 @@ function make_tiny_publish_so {
       ${cmake_mutable_options}  \
       -DLITE_ON_TINY_PUBLISH=ON
 
-  # todo: third_party of opencl should be moved into git submodule and cmake later
+  # Step4. Compile libs: cxx_lib, java_lib, opencl_lib
   if [ "${WITH_OPENCL}" == "ON" ]; then
       make opencl_clhpp -j$NUM_PROC
   fi
-
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
@@ -238,7 +246,10 @@ function make_full_publish_so {
   if [ "${WITH_STRIP}" == "ON" ]; then
       WITH_EXTRA=ON
   fi
-
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      ARCH=armv8
+  fi
   # android api level for android version
   set_android_api_level
 
@@ -249,6 +260,7 @@ function make_full_publish_so {
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
+      -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
@@ -259,6 +271,7 @@ function make_full_publish_so {
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_TRAIN=$WITH_TRAIN \
       -DLITE_WITH_PROFILE=$WITH_PROFILE \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
@@ -292,12 +305,15 @@ function print_usage {
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                         |"
     echo -e "|     --android_stl: (c++_static|c++_shared), default is c++_static                                                                    |"
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
+    echo -e "|     --with_static_lib: (OFF|ON); controls whether to publish c++ api static lib, default is OFF                                      |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|     --with_profile: (OFF|ON); controls whether to support time profile, default is OFF                                               |"
     echo -e "|     --with_precision_profile: (OFF|ON); controls whether to support precision profile, default is OFF                                |"
+    echo -e "|     --with_arm82_fp16: (OFF|ON); controls whether to include FP16 kernels, default is OFF                                            |"
+    echo -e "|                                  warning: when --with_arm82_fp16=ON, toolchain will be set as clang, arch will be set as armv8.      |"
     echo -e "|     --android_api_level: (16~27); control android api level, default is 16 on armv7 and 21 on armv8. You could set a specific        |"
     echo -e "|             android_api_level as you need.                                                                                           |"
     echo -e "|                       | Paddle-Lite Requird / ARM ABI      | armv7 | armv8 |                                                         |"
@@ -450,6 +466,16 @@ function main {
             # compiling lib with precision profile, default OFF.
             --with_precision_profile=*)
                 WITH_PRECISION_PROFILE="${i#*=}"
+                shift
+                ;;
+            # controls whether to include FP16 kernels, default is OFF
+            --with_arm82_fp16=*)
+                BUILD_ARM82_FP16="${i#*=}"
+                shift
+                ;;
+            # controls whether to compile cplus static library, default is OFF
+            --with_static_lib=*)
+                WITH_STATIC_LIB="${i#*=}"
                 shift
                 ;;
             help)

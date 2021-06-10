@@ -162,7 +162,11 @@ void test_sequence_pool(Place place) {
     for (auto h : {1, 3, 4}) {
       for (auto w : {1, 3, 4}) {
         for (auto pool_type :
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+             {"SUM", "MAX", "FIRST", "LAST"}) {
+#else
              {"SUM", "AVERAGE", "SQRT", "MAX", "MIN", "FIRST", "LAST"}) {
+#endif
           for (int seq_num : {1, 3, 5}) {
             std::vector<std::vector<uint64_t>> lod;
             lod.resize(1);
@@ -185,10 +189,12 @@ TEST(SequencePool, precision) {
 // #ifdef LITE_WITH_X86
 //   Place place(TARGET(kX86));
 // #endif
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  Place place(TARGET(kXPU));
+#elif defined(LITE_WITH_ARM)
   Place place(TARGET(kARM));
-  test_sequence_pool(place);
 #endif
+  test_sequence_pool(place);
 }
 
 }  // namespace lite

@@ -25,8 +25,8 @@ void StackCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   int n = param.X.size();
-  x_ptr_guard_ = TargetWrapperXPU::MallocScratchPad(
-      n * 8 /* sizeof(__global__ float*) */, false /* use_l3 */);
+  x_ptr_guard_ =
+      TargetWrapperXPU::MallocScratchPad(n * 8 /* sizeof(__global__ float*) */);
   x_ptr_cpu_.reserve(n);
 }
 

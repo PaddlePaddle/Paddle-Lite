@@ -160,9 +160,10 @@ void TestSquareGrad(DDim dims) {
 
 void TestReluGrad(DDim dims) {
   LOG(INFO) << "Test Relu grad";
-  std::unique_ptr<ActivationGradTester<arm::ReluCompute, host::ReluGradCompute>>
-      tester(new ActivationGradTester<arm::ReluCompute, host::ReluGradCompute>(
-          dims));
+  std::unique_ptr<ActivationGradTester<arm::ReluCompute<PRECISION(kFloat)>,
+                                       host::ReluGradCompute>>
+      tester(new ActivationGradTester<arm::ReluCompute<PRECISION(kFloat)>,
+                                      host::ReluGradCompute>(dims));
   tester->prepare_kernel();
   float delta = 0.001;
   float max_grad_delta = 0.005;

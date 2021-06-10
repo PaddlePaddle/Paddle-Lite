@@ -347,7 +347,7 @@ void test_matmul2x2_xtranspose(Place place, float abs_error) {
 void test_matmul2x2_ytranspose(Place place, float abs_error) {
   for (float alpha : {1.f, 2.f}) {
     test_matmul_helper(place, abs_error, {5, 2}, {3, 2}, false, true, alpha);
-    test_matmul_helper(place, abs_error, {2, 5}, {1, 5}, false, true, alpha);
+    test_matmul_helper(place, abs_error, {2, 4}, {3, 4}, false, true, alpha);
   }
 }
 
@@ -433,10 +433,15 @@ void test_matmulnxn_xtranspose(Place place, float abs_error) {
 
 void test_matmulnxn_ytranspose(Place place, float abs_error) {
   for (float alpha : {1.f, 2.f}) {
+#ifdef LITE_WITH_OPENCL
+    test_matmul_helper(place, abs_error, {3, 2}, {5, 2}, false, true, alpha);
+    test_matmul_helper(place, abs_error, {5, 6}, {8, 6}, false, true, alpha);
+#else
     test_matmul_helper(
         place, abs_error, {3, 4, 6, 2}, {3, 4, 5, 2}, false, true, alpha);
     test_matmul_helper(
         place, abs_error, {5, 3, 4}, {5, 6, 4}, false, true, alpha);
+#endif
   }
 }
 
@@ -563,6 +568,15 @@ TEST(Matmulnx2, precision) {
   test_matmulnx2_ytranspose(place, abs_error);
   test_matmulnx2_xytranspose(place, abs_error);
 }
+
+#ifdef LITE_WITH_OPENCL
+TEST(Matmul, opencl) {
+  Place place = TARGET(kOpenCL);
+  float abs_error = 2e-4;
+  test_matmul2x2(place, abs_error);
+  test_matmul2x2_ytranspose(place, abs_error);
+}
+#endif
 
 TEST(Matmulnxn, precision) {
   Place place;

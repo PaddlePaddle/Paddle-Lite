@@ -33,6 +33,8 @@ class IoCopyKernelPickPass : public StmtPass {
       CHECK(!kernels.empty()) << "No valid kernels found for IoCopy Op";
       const auto* inty = node.inlinks.front()->AsArg().type;
       const auto* outy = node.outlinks.front()->AsArg().type;
+      CHECK((inty->IsTensor() && outy->IsTensor()) ||
+            (inty->IsTensorList() && outy->IsTensorList()));
       LOG(INFO) << "input type " << *inty;
       LOG(INFO) << "output type " << *outy;
 
@@ -42,10 +44,18 @@ class IoCopyKernelPickPass : public StmtPass {
         CHECK_EQ(node.inlinks.size(), 1UL);
         CHECK_EQ(node.outlinks.size(), 1UL);
 
-        const Type* in_arg_ty = kernel->GetInputDeclType("Input");
-        const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+        const Type* in_arg_ty = nullptr;
+        const Type* out_arg_ty = nullptr;
+        if (inty->IsTensor()) {
+          in_arg_ty = kernel->GetInputDeclType("Input");
+          out_arg_ty = kernel->GetOutputDeclType("Out");
+        } else {
+          in_arg_ty = kernel->GetInputDeclType("InputArray");
+          out_arg_ty = kernel->GetOutputDeclType("OutArray");
+        }
         LOG(INFO) << "checking kernel candidate " << *in_arg_ty << "->"
                   << *out_arg_ty;
+
         if (TargetCompatibleTo(*inty, *in_arg_ty)) {
           // Both the input and output type matches, remove other kernels
           // directly.

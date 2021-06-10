@@ -125,6 +125,19 @@ void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               const std::string& param_buffer,
                               lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
+// Judge if file exists.
+bool FileExist(const std::string& file_name);
+// Print error message about LoadModelPb.
+void PrintPbModelErrorMessage();
+// Find correct model filename.
+std::string FindModelFileName(const std::string& model_dir,
+                              const std::string& model_file,
+                              bool combined);
+// load noncombined params from directory.
+void LoadNonCombinedParamsPb(const std::string& model_dir,
+                             cpp::ProgramDesc* cpp_prog,
+                             const lite_api::CxxModelBuffer& model_buffer,
+                             Scope* scope);
 #endif  // LITE_ON_TINY_PUBLISH
 void LoadModelFbsFromFile(model_parser::BinaryFileReader* reader,
                           Scope* scope,

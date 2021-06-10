@@ -21,15 +21,14 @@ namespace operators {
 
 bool FillZerosLikeOp::InferShapeImpl() const {
   param_.Out->Resize(param_.X->dims());
+  param_.Out->set_lod(param_.X->lod());
   return true;
 }
 
 bool FillZerosLikeOp::AttachImpl(const cpp::OpDesc& opdesc,
                                  lite::Scope* scope) {
-  param_.X = scope->FindVar(opdesc.Input("X").front())->GetMutable<Tensor>();
-  auto out_name = opdesc.Output("Out").front();
-  param_.Out = GetMutableVar<lite::Tensor>(scope, out_name);
-  param_.value = 0.f;
+  param_.X = scope->FindTensor(opdesc.Input("X").front());
+  param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   return true;
 }
 

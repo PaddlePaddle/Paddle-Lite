@@ -278,6 +278,13 @@ void elementwise_div_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 
 template <typename T>
+void elementwise_floor_div(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_floor_div_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
 void elementwise_div_relu(const T* dinx, const T* diny, T* dout, int num);
 
 template <typename T>

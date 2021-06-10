@@ -11,7 +11,6 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
 
 readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
-
 # global variables
 CMAKE_EXTRA_OPTIONS=""
 BUILD_EXTRA=OFF
@@ -37,7 +36,9 @@ BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
 BUILD_XTCL=OFF
-XPU_SDK_ROOT="$(pwd)/xpu_sdk_lib/"
+XPU_SDK_ROOT=""
+XPU_SDK_URL=""
+XPU_SDK_ENV=""
 BUILD_APU=OFF
 APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
@@ -54,8 +55,7 @@ MIN_ANDROID_API_LEVEL_ARMV8=21
 ANDROID_API_LEVEL="Default"
 CMAKE_API_LEVEL_OPTIONS=""
 
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
-
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 readonly workspace=$PWD
 
 function readlinkf() {
@@ -99,13 +99,13 @@ function prepare_opencl_source_code {
 }
 
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
             wget $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
     fi
@@ -185,6 +185,8 @@ function make_tiny_publish_so {
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DXPU_SDK_URL=$XPU_SDK_URL \
+      -DXPU_SDK_ENV=$XPU_SDK_ENV \
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
@@ -295,6 +297,8 @@ function make_full_publish_so {
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DXPU_SDK_URL=$XPU_SDK_URL \
+      -DXPU_SDK_ENV=$XPU_SDK_ENV \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_TRAIN=$BUILD_TRAIN \
@@ -344,6 +348,8 @@ function make_all_tests {
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DXPU_SDK_URL=$XPU_SDK_URL \
+      -DXPU_SDK_ENV=$XPU_SDK_ENV \
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
@@ -427,7 +433,9 @@ function make_cuda {
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
-            -DXPU_SDK_ROOT=$XPU_SDK_ROOT
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+            -DXPU_SDK_URL=$XPU_SDK_URL \
+            -DXPU_SDK_ENV=$XPU_SDK_ENV
  
   make -j$NUM_PROC
   make publish_inference -j$NUM_PROC
@@ -487,6 +495,8 @@ function make_x86 {
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+            -DXPU_SDK_URL=$XPU_SDK_URL \
+            -DXPU_SDK_ENV=$XPU_SDK_ENV \
             -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
             -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release \
@@ -674,7 +684,18 @@ function main {
                 shift
                 ;;
             --xpu_sdk_root=*)
-                XPU_SDK_ROOT=$(readlink -f ${i#*=})
+                XPU_SDK_ROOT=${i#*=}
+                if [ -n "${XPU_SDK_ROOT}" ]; then
+                    XPU_SDK_ROOT=$(readlink -f ${XPU_SDK_ROOT})
+                fi
+                shift
+                ;;
+            --xpu_sdk_url=*)
+                XPU_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --xpu_sdk_env=*)
+                XPU_SDK_ENV="${i#*=}"
                 shift
                 ;;
             --python_executable=*)

@@ -222,13 +222,13 @@ void pool_compute_ref(const operators::PoolParam& param) {
 }
 
 TEST(pool_arm, init) {
-  PoolCompute pool;
+  PoolCompute<PRECISION(kFloat), PRECISION(kFloat)> pool;
   ASSERT_EQ(pool.precision(), PRECISION(kFloat));
   ASSERT_EQ(pool.target(), TARGET(kARM));
 }
 
 TEST(pool_arm, compute) {
-  PoolCompute pool;
+  PoolCompute<PRECISION(kFloat), PRECISION(kFloat)> pool;
   operators::PoolParam param;
 
   lite::Tensor x;

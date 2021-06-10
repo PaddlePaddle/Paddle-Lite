@@ -50,17 +50,8 @@ class ScalePE : public PE {
     DepthwiseConvParam& dw_param = dw_pe_.param();
 
     int channel = input_shape.channel();
-    int repeat = 1;
-    int alignment = 16;
-    int length = channel;
-
-    if (channel % alignment != 0 || channel < alignment) {
-      int c_lcm = lcm(channel, alignment);
-      repeat = c_lcm / (channel);
-    }
-
-    // FPGA限制 H >2047, W >1023 , WC> 65536 ，需要使用CPU实现
-    Shape shape(N, {channel * repeat});
+    // FPGA limit H >2047, W >1023 , WC> 65536
+    Shape shape(N, {channel});
 
     float* filter_data = filter.mutableData<float>(FP32, shape);
     std::fill_n(filter_data, input->shape().channel(), 1.0f);
@@ -75,57 +66,41 @@ class ScalePE : public PE {
     if (param_.scale->dataType() == FP32) {
       if (param_.bias != nullptr) {
         float* bias_data_float = param_.bias->data<float>();
-        for (int i = 0; i < repeat; i++) {
-          for (int j = 0; j < length; j++) {
-            float16 value = float_to_half(bias_data_float[j]);
-            bias_data[i * length + j] = value;
-          }
+        for (int j = 0; j < channel; j++) {
+          bias_data[j] = float_to_half(bias_data_float[j]);
         }
       } else {
         float16 zero = float_to_half(0.0f);
-        for (int i = 0; i < repeat; i++) {
-          for (int j = 0; j < length; j++) {
-            bias_data[i * length + j] = zero;
-          }
+        for (int j = 0; j < channel; j++) {
+          bias_data[j] = zero;
         }
       }
       float* scale_data_float = param_.scale->data<float>();
-      for (int i = 0; i < repeat; i++) {
-        for (int j = 0; j < length; j++) {
-          float16 value = float_to_half(scale_data_float[j]);
-          scale_data[i * length + j] = value;
-        }
+      for (int j = 0; j < channel; j++) {
+        scale_data[j] = float_to_half(scale_data_float[j]);
       }
     } else {
       if (param_.bias != nullptr) {
-        float16* bias_data_float = param_.bias->data<float16>();
-        for (int i = 0; i < repeat; i++) {
-          for (int j = 0; j < length; j++) {
-            float16 value = bias_data_float[j];
-            bias_data[i * length + j] = value;
-          }
-        }
+        memcpy(
+            bias_data, param_.bias->data<float16>(), param_.bias->memorySize());
       } else {
         float16 zero = float_to_half(0.0f);
-        for (int i = 0; i < repeat; i++) {
-          for (int j = 0; j < length; j++) {
-            bias_data[i * length + j] = zero;
-          }
+        for (int j = 0; j < channel; j++) {
+          bias_data[j] = zero;
         }
       }
-
-      float16* scale_data_float = param_.scale->data<float16>();
-      for (int i = 0; i < repeat; i++) {
-        for (int j = 0; j < length; j++) {
-          float16 value = scale_data_float[j];
-          scale_data[i * length + j] = value;
-        }
-      }
+      memcpy(scale_data,
+             param_.scale->data<float16>(),
+             param_.scale->memorySize());
     }
+    scale->flush();
+    bias->flush();
+    filter.flush();
 
     dw_param.input = param_.input;
     dw_param.output = param_.output;
     dw_param.filter = &filter;
+    // inplace args;
 
     dw_param.strides = {1, 1};
     dw_param.paddings = {0, 0};
@@ -168,19 +143,16 @@ class ScalePE : public PE {
       }
     }
     output->flush();
-    output->scale()[0] = max / 127.0f;
-    output->scale()[1] = 127.0f / max;
+    output->max()[0] = max;
   }
 
   bool dispatch() {
-    if (param_.scale->dataType() == FP16) {
+    if (param_.re_assign == true) {
       DepthwiseConvParam& dw_param = dw_pe_.param();
-      memcpy(dw_param.quantizedFilter()->mutableData<float16>(),
+      memcpy(dw_param.scale()->mutableData<float16>(),
              param_.scale->data<float16>(),
-             param_.scale->shape().numel() * sizeof(float16));
-      dw_param.quantizedFilter()->scale()[0] = param_.scale->scale()[0];
-      dw_param.quantizedFilter()->scale()[1] = param_.scale->scale()[1];
-      dw_param.quantizedFilter()->flush();
+             param_.scale->memorySize());
+      dw_param.re_assign = true;
     }
     param_.input->syncToDevice();
     return dw_pe_.dispatch();

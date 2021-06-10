@@ -22,11 +22,13 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class PoolCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class PoolCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   using param_t = operators::PoolParam;
 
-  void PrepareForRun() override;
+  void PrepareForRun() { auto& ctx = this->ctx_->template As<ARMContext>(); }
+
   void Run() override;
 
   virtual ~PoolCompute() = default;

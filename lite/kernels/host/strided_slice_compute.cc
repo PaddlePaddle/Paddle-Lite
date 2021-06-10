@@ -210,8 +210,7 @@ void stride_slice(const T* input,
     for (size_t j = 0; j < out_dims.size(); j++) {
       int cur_id = index_id / dst_step[j];
       index_id = index_id % dst_step[j];
-      src_id +=
-          (cur_id + starts_indices[j] + strides_indices[j] - 1) * src_step[j];
+      src_id += (cur_id * strides_indices[j] + starts_indices[j]) * src_step[j];
     }
     out[dst_id] = input[src_id];
   }

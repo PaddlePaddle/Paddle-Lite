@@ -28,8 +28,12 @@ void ConvActivationFuser::BuildPattern() {
   auto* filter =
       VarNode("filter")->assert_is_op_input(conv_type_, "Filter")->AsInput();
   PMNode* bias = nullptr;
+  PMNode* alpha = nullptr;
   if (has_bias_) {
     bias = VarNode("bias")->assert_is_op_input(conv_type_, "Bias")->AsInput();
+  }
+  if (has_alpha_) {
+    alpha = VarNode("alpha")->assert_is_op_input(act_type_, "Alpha")->AsInput();
   }
   auto* conv2d = OpNode("conv2d", conv_type_)->AsIntermediate();
 
@@ -49,6 +53,9 @@ void ConvActivationFuser::BuildPattern() {
   if (has_bias_) {
     *bias >> *conv2d;
   }
+  if (has_alpha_) {
+    *alpha >> *act;
+  }
 }
 
 void ConvActivationFuser::InsertNewNode(SSAGraph* graph,
@@ -66,6 +73,9 @@ void ConvActivationFuser::InsertNewNode(SSAGraph* graph,
   IR_NODE_LINK_TO(matched.at("filter"), new_op_node);
   if (has_bias_) {
     IR_NODE_LINK_TO(matched.at("bias"), new_op_node);
+  }
+  if (has_alpha_) {
+    IR_NODE_LINK_TO(matched.at("alpha"), new_op_node);
   }
   IR_NODE_LINK_TO(new_op_node, matched.at("output"));
 }
@@ -97,6 +107,10 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
     float offset = act_op_desc.GetAttr<float>("offset");
     op_desc.SetAttr("slope", slope);
     op_desc.SetAttr("offset", offset);
+  } else if (act_type_ == "prelu") {
+    auto prelu_mode = act_op_desc.GetAttr<std::string>("mode");
+    op_desc.SetAttr("prelu_mode", prelu_mode);
+    op_desc.SetInput("Prelu_alpha", {matched.at("alpha")->arg()->name});
   }
   return op_desc;
 }

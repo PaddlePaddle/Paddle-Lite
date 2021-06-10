@@ -20,81 +20,26 @@
 
 #ifndef LITE_WITH_FPGA
 
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/target_wrapper.h"
+#endif  // LITE_WITH_METAL
+
 #include <algorithm>
 #include <functional>  // for multiplies
 #include <memory>
 #include <numeric>
 #include <string>
 #include <vector>
+#include "lite/core/dim.h"
 #include "lite/core/memory.h"
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
 namespace lite {
 
-class DDimLite;
 class TensorLite;
 
-using DDim = lite::DDimLite;
 using Tensor = lite::TensorLite;
-
-class DDimLite {
- public:
-  using value_type = int64_t;
-
-  DDimLite() = default;
-
-  explicit DDimLite(const std::vector<value_type> &x) { ConstructFrom(x); }
-  // DDimLite(std::initializer_list<value_type> init_list) :
-  // DDimLite(std::vector<value_type>(init_list)) {}
-
-  void ConstructFrom(const std::vector<value_type> &x) { data_ = x; }
-
-  value_type operator[](int offset) const { return data_[offset]; }
-  value_type &operator[](int offset) { return data_[offset]; }
-  std::vector<int64_t> Vectorize() const { return data_; }
-
-  size_t size() const { return data_.size(); }
-  bool empty() const { return data_.empty(); }
-
-  value_type production() const;
-
-  const std::vector<value_type> &data() const { return data_; }
-  value_type count(int start, int end) const;
-
-  DDimLite Slice(int start, int end) const;
-
-  DDimLite Flatten2D(int col) const {
-    return DDimLite(std::vector<value_type>(
-        {Slice(0, col).production(), Slice(col, size()).production()}));
-  }
-
-  std::string repr() const;
-
-  friend STL::ostream &operator<<(STL::ostream &os, const DDimLite &dims) {
-    os << dims.repr();
-    return os;
-  }
-
-  friend bool operator==(const DDimLite &a, const DDimLite &b) {
-    if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
-  friend bool operator!=(const DDimLite &a, const DDimLite &b) {
-    if (a.size() != b.size()) return true;
-    for (size_t i = 0; i < a.size(); i++) {
-      if (a[i] != b[i]) return true;
-    }
-    return false;
-  }
-
- private:
-  std::vector<value_type> data_;
-};
 
 using LoD = std::vector<std::vector<uint64_t>>;
 
@@ -162,6 +107,40 @@ class TensorLite {
   }
 #endif
 
+#ifdef LITE_WITH_METAL
+  template <class T>
+  struct IsImage {
+    enum { value = std::is_same<T, MetalImage>::value };
+  };
+
+  template <class T>
+  struct IsBuffer {
+    enum { value = std::is_same<T, MetalBuffer>::value };
+  };
+
+  template <typename T, typename R>
+  typename std::enable_if<IsImage<R>::value, R>::type *mutable_data(
+      MetalContext *context,
+      const DDim &dim,
+      std::vector<int> transport = {0, 2, 3, 1}) {
+    dims_ = dim;
+    target_ = TARGET(kMetal);
+    buffer_->ResetLazyMetalImage<T>(context, dim, transport);
+    return static_cast<MetalImage *>(buffer_->data());
+  }
+
+  template <typename T, typename R>
+  typename std::enable_if<IsBuffer<R>::value, R>::type *mutable_data(
+      MetalContext *context,
+      size_t count,
+      METAL_ACCESS_FLAG access = METAL_ACCESS_FLAG::CPUReadWrite) {
+    target_ = TARGET(kMetal);
+    buffer_->ResetLazyMetalBuffer<T>(context, count, access);
+    dims_ = DDimLite({static_cast<int64_t>(count)});
+    return static_cast<MetalBuffer *>(buffer_->data());
+  }
+#endif
+
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
@@ -171,6 +150,17 @@ class TensorLite {
     target_ = target;
     return mutable_data<T, R>();
   }
+
+  template <typename T, typename R = T>
+  R *mutable_data(TargetType target, size_t memory_size) {
+    precision_ = lite_api::PrecisionTypeTrait<T>::Type();
+    memory_size_ = memory_size;
+    buffer_->ResetLazy(target, memory_size_);
+    target_ = target;
+    return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
+                                 offset_);
+  }
+
   void *mutable_data(size_t memory_size);
   void *mutable_data(TargetType target, size_t memory_size);
 
@@ -272,6 +262,32 @@ const cl::Image2D *TensorLite::data<float, cl::Image2D>() const;
 
 template <>  // use uint16_t represent half float
 const cl::Image2D *TensorLite::data<uint16_t, cl::Image2D>() const;
+#endif
+
+#ifdef LITH_WITH_METAL
+template <>
+const metal_buffer *TensorLite::data<float, metal_buffer>() const;
+
+template <>  // use uint16_t represent half float
+const metal_buffer *TensorLite::data<uint16_t, metal_buffer>() const;
+
+template <>
+metal_buffer *TensorLite::mutable_data<float, metal_buffer>();
+
+template <>  // use uint16_t represent half float
+metal_buffer *TensorLite::mutable_data<uint16_t, metal_buffer>();
+
+template <>
+const metal_image *TensorLite::data<float, metal_image>() const;
+
+template <>  // use uint16_t represent half float
+const metal_image *TensorLite::data<uint16_t, metal_image>() const;
+
+template <>
+metal_image *TensorLite::mutable_data<float, metal_image>();
+
+template <>  // use uint16_t represent half float
+metal_image *TensorLite::mutable_data<uint16_t, metal_image>();
 #endif
 
 }  // namespace lite

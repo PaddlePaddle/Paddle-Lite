@@ -61,7 +61,7 @@ void GatherV2Func(const operators::GatherParam& param) {
   for (int i = 0; i < axis_index; i++) {
     inner_dim_size *= input_dim[i];
   }
-  for (int i = axis_index + 1; i < input_dim.size(); i++) {
+  for (size_t i = axis_index + 1; i < input_dim.size(); i++) {
     outer_dim_size *= input_dim[i];
   }
 

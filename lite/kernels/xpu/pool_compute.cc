@@ -106,8 +106,7 @@ void Pool2DCompute::Run() {
         xpu_x_padded_dims[3] = xpu_x_padded_dims[3] + paddings[2] + paddings[3];
         xpu_x_padded_guard_ = TargetWrapperXPU::MallocScratchPad(
             sizeof(float) * xpu_x_padded_dims[0] * xpu_x_padded_dims[1] *
-                xpu_x_padded_dims[2] * xpu_x_padded_dims[3],
-            false /* use_l3 */);
+            xpu_x_padded_dims[2] * xpu_x_padded_dims[3]);
         xpu_x_padded = reinterpret_cast<float*>(xpu_x_padded_guard_->addr_);
         int r = xdnn::pad<float>(ctx.GetRawContext(),
                                  param.x->data<float>(),

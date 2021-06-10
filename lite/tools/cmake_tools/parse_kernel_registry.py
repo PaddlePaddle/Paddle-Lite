@@ -46,7 +46,7 @@ with open(ops_list_path) as f:
             kernel_parser.parse(with_extra, enable_arm_fp16)
 
             for k in kernel_parser.kernels:
-                  kernel = "%s, %s, %s, %s, %s" % (
+                  kernel = "%s,%s,%s,%s,%s" % (
                      k.op_type,
                      k.target,
                      k.precision,

@@ -97,13 +97,16 @@ void test_norm(Place place) {
 }
 
 TEST(Norm, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_norm(place);
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  test_norm(place);
 }
 
 }  // namespace lite

@@ -126,8 +126,10 @@ void RunModel(std::string model_dir,
               const std::vector<shape_t>& input_shapes,
               size_t repeats,
               size_t warmup,
-              size_t print_output_elem,
-              size_t power_mode) {
+              size_t power_mode,
+              size_t thread_num,
+              size_t accelerate_opencl,
+              size_t print_output_elem) {
   // 1. Set MobileConfig
   MobileConfig config;
   config.set_model_from_file(model_dir);
@@ -140,38 +142,52 @@ void RunModel(std::string model_dir,
 
   bool is_opencl_backend_valid =
       ::IsOpenCLBackendValid(/*check_fp16_valid = false*/);
-  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
-            << std::endl;
-  /*  Uncomment code below to enable OpenCL
+  std::cout << "is_opencl_backend_valid:"
+            << (is_opencl_backend_valid ? "true" : "false") << std::endl;
   if (is_opencl_backend_valid) {
-    // give opencl nb model dir
-    config.set_model_from_file(model_dir);
+    if (accelerate_opencl != 0) {
+      // Set opencl kernel binary.
+      // Large addtitional prepare time is cost due to algorithm selecting and
+      // building kernel from source code.
+      // Prepare time can be reduced dramitically after building algorithm file
+      // and OpenCL kernel binary on the first running.
+      // The 1st running time will be a bit longer due to the compiling time if
+      // you don't call `set_opencl_binary_path_name` explicitly.
+      // So call `set_opencl_binary_path_name` explicitly is strongly
+      // recommended.
 
-    // opencl tune option
-    // CL_TUNE_NONE: 0
-    // CL_TUNE_RAPID: 1
-    // CL_TUNE_NORMAL: 2
-    // CL_TUNE_EXHAUSTIVE: 3
-    config.set_opencl_tune(CL_TUNE_NONE);
+      // Make sure you have write permission of the binary path.
+      // We strongly recommend each model has a unique binary name.
+      const std::string bin_path = "/data/local/tmp/";
+      const std::string bin_name = "lite_opencl_kernel.bin";
+      config.set_opencl_binary_path_name(bin_path, bin_name);
 
-    // opencl precision option
-    // CL_PRECISION_AUTO: 0, first fp16 if valid, default
-    // CL_PRECISION_FP32: 1, force fp32
-    // CL_PRECISION_FP16: 2, force fp16
-    config.set_opencl_precision(CL_PRECISION_FP16);
+      // opencl tune option
+      // CL_TUNE_NONE: 0
+      // CL_TUNE_RAPID: 1
+      // CL_TUNE_NORMAL: 2
+      // CL_TUNE_EXHAUSTIVE: 3
+      const std::string tuned_path = "/data/local/tmp/";
+      const std::string tuned_name = "lite_opencl_tuned.bin";
+      config.set_opencl_tune(CL_TUNE_NORMAL, tuned_path, tuned_name);
+
+      // opencl precision option
+      // CL_PRECISION_AUTO: 0, first fp16 if valid, default
+      // CL_PRECISION_FP32: 1, force fp32
+      // CL_PRECISION_FP16: 2, force fp16
+      config.set_opencl_precision(CL_PRECISION_FP16);
+    }
   } else {
-    std::cout << "Unsupport opencl nb model." << std::endl;
-    exit(1);
+    std::cout << "*** nb model will be running on cpu. ***" << std::endl;
     // you can give backup cpu nb model instead
     // config.set_model_from_file(cpu_nb_model_dir);
   }
-  */
 
   // NOTE: To load model transformed by model_optimize_tool before
   // release/v2.3.0, plese use `set_model_dir` API as listed below.
   // config.set_model_dir(model_dir);
   config.set_power_mode(static_cast<paddle::lite_api::PowerMode>(power_mode));
-
+  config.set_threads(thread_num);
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<MobileConfig>(config);
@@ -193,8 +209,15 @@ void RunModel(std::string model_dir,
   }
 
   // 4. Run predictor
+  double first_duration{-1};
   for (size_t widx = 0; widx < warmup; ++widx) {
-    predictor->Run();
+    if (widx == 0) {
+      auto start = GetCurrentUS();
+      predictor->Run();
+      first_duration = (GetCurrentUS() - start) / 1000.0;
+    } else {
+      predictor->Run();
+    }
   }
 
   double sum_duration = 0.0;  // millisecond;
@@ -212,6 +235,9 @@ void RunModel(std::string model_dir,
     min_duration = duration < min_duration ? duration : min_duration;
     std::cout << "run_idx:" << ridx + 1 << " / " << repeats << ": " << duration
               << " ms" << std::endl;
+    if (first_duration < 0) {
+      first_duration = duration;
+    }
   }
   avg_duration = sum_duration / static_cast<float>(repeats);
   std::cout << "\n======= benchmark summary =======\n"
@@ -219,6 +245,10 @@ void RunModel(std::string model_dir,
             << "model_dir:" << model_dir << "\n"
             << "warmup:" << warmup << "\n"
             << "repeats:" << repeats << "\n"
+            << "power_mode:" << power_mode << "\n"
+            << "thread_num:" << thread_num << "\n"
+            << "*** time info(ms) ***\n"
+            << "1st_duration:" << first_duration << "\n"
             << "max_duration:" << max_duration << "\n"
             << "min_duration:" << min_duration << "\n"
             << "avg_duration:" << avg_duration << "\n";
@@ -263,21 +293,41 @@ int main(int argc, char** argv) {
 
   int repeats = 10;
   int warmup = 10;
+  // set arm power mode:
+  // 0 for big cluster, high performance
+  // 1 for little cluster
+  // 2 for all cores
+  // 3 for no bind
+  size_t power_mode = 0;
+  size_t thread_num = 1;
+  int accelerate_opencl = 1;
   int print_output_elem = 0;
 
-  if (argc > 2 && argc < 6) {
-    std::cerr << "usage: ./" << argv[0] << "\n"
-              << "  <naive_buffer_model_dir>\n"
-              << "  <raw_input_shapes>, eg: 1,3,224,224 for 1 input; "
-                 "1,3,224,224:1,5 for 2 inputs\n"
-              << "  <repeats>\n"
-              << "  <warmup>\n"
-              << "  <print_output>" << std::endl;
+  if (argc > 2 && argc < 9) {
+    std::cerr
+        << "usage: ./" << argv[0] << "\n"
+        << "  <naive_buffer_model_dir>\n"
+        << "  <raw_input_shapes>, eg: 1,3,224,224 for 1 input; "
+           "1,3,224,224:1,5 for 2 inputs\n"
+        << "  <repeats>, eg: 100\n"
+        << "  <warmup>, eg: 10\n"
+        << "  <power_mode>, 0: big cluster, high performance\n"
+           "                1: little cluster\n"
+           "                2: all cores\n"
+           "                3: no bind\n"
+        << "  <thread_num>, eg: 1 for single thread \n"
+        << "  <accelerate_opencl>, this option takes effect only when model "
+           "can be running on opencl backend.\n"
+           "                       0: disable opencl kernel cache & tuning\n"
+           "                       1: enable opencl kernel cache & tuning\n"
+        << "  <print_output>, 0: disable print outputs to stdout\n"
+           "                  1: enable print outputs to stdout\n"
+        << std::endl;
     return 0;
   }
 
   std::string model_dir = argv[1];
-  if (argc >= 6) {
+  if (argc >= 9) {
     input_shapes.clear();
     std::string raw_input_shapes = argv[2];
     std::cout << "raw_input_shapes: " << raw_input_shapes << std::endl;
@@ -289,17 +339,20 @@ int main(int argc, char** argv) {
 
     repeats = atoi(argv[3]);
     warmup = atoi(argv[4]);
-    print_output_elem = atoi(argv[5]);
+    power_mode = atoi(argv[5]);
+    thread_num = atoi(argv[6]);
+    accelerate_opencl = atoi(argv[7]);
+    print_output_elem = atoi(argv[8]);
   }
-  // set arm power mode:
-  // 0 for big cluster, high performance
-  // 1 for little cluster
-  // 2 for all cores
-  // 3 for no bind
-  size_t power_mode = 0;
 
-  RunModel(
-      model_dir, input_shapes, repeats, warmup, print_output_elem, power_mode);
+  RunModel(model_dir,
+           input_shapes,
+           repeats,
+           warmup,
+           power_mode,
+           thread_num,
+           accelerate_opencl,
+           print_output_elem);
 
   return 0;
 }

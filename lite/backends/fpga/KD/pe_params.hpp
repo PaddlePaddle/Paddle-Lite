@@ -31,12 +31,18 @@ struct ReLUParam {
 };
 
 struct ActiveParam {
-  enum ActiveType type = TYPE_NONE;
+  enum ActivationType type = TYPE_NONE;
   float leaky_relu_factor;
 };
 
 struct PEParam {
   ActiveParam activeParam;
+};
+
+struct BypassParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  Tensor* output = nullptr;
 };
 
 struct InputParam : PEParam {
@@ -69,6 +75,7 @@ struct BasicConvParam {
   Tensor filter;
   Tensor scaleBias;
   ConvArgs args;
+  float16 output_max = 0;
 };
 
 struct ConvParam : PEParam {
@@ -79,6 +86,8 @@ struct ConvParam : PEParam {
 
   int groups = 1;
   bool deconv = false;
+  bool cpu_concat = false;
+
   std::vector<int> strides;
   std::vector<int> paddings;
   std::vector<int> kernelSize;
@@ -128,6 +137,7 @@ struct DepthwiseConvParam : ConvParam {
   Tensor* quantizedFilter() { return &quantizedFilter_; }
 
   DWconvArgs args;
+  bool re_assign = false;
 
  protected:
   Tensor quantizedFilter_;
@@ -204,8 +214,8 @@ struct FullyConnectedParam : PEParam {
 struct SoftmaxParam : PEParam {
  public:
   Tensor* input = nullptr;
-
   Tensor* output = nullptr;
+  int axis = -1;
 
  private:
   Tensor* floatInput = nullptr;
@@ -217,6 +227,17 @@ struct SplitParam : PEParam {
   std::vector<Tensor*> outputs;
   int axis = 1;
   int num = 1;
+};
+
+struct SliceParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  Tensor* output = nullptr;
+  std::vector<int> axes;
+  std::vector<int32_t> starts;
+  std::vector<int32_t> ends;
+  std::vector<int> decrease_axis;
+  std::vector<int> infer_flags;
 };
 
 struct NormParam : PEParam {
@@ -266,6 +287,7 @@ struct ScaleParam : PEParam {
   Tensor* output = nullptr;
   Tensor* scale = nullptr;
   Tensor* bias = nullptr;
+  bool re_assign = false;
 
   Tensor* alignedScale() { return &alignedScale_; }
 

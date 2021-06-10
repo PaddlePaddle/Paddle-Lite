@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -32,7 +33,12 @@ class WhileCompute
   using param_t = operators::WhileParam;
 
   void Run() override;
+
   void PrepareForRun() override;
+
+  void SetRuntimeProgram(std::unique_ptr<RuntimeProgram>* program) {
+    program_ = std::move(*program);
+  }
 
   virtual ~WhileCompute() = default;
 

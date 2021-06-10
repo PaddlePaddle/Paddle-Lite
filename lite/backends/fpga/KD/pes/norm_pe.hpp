@@ -34,15 +34,7 @@ class NormPE : public PE {
   }
 
   void apply() {
-    inplace_args_.relu_enable = false;
-    inplace_args_.power_enable = false;
-    inplace_args_.normalize_enable = true;
-
     Shape& input_shape = param_.input->shape();
-
-    norm_param_args_.channel = input_shape.channel();
-    norm_param_args_.hight_width = input_shape.height() * input_shape.width();
-
     float16* mid_data =
         mid_out_.mutableData<float16>(FP16, param_.output->shape());
 
@@ -51,32 +43,42 @@ class NormPE : public PE {
     bypass_args_.input_layout_type = LAYOUT_HWC;
     bypass_args_.output_layout_type = LAYOUT_HWC;
     bypass_args_.image.address = param_.input->data<void>();
-    bypass_args_.image.scale_address = param_.input->scale();
+    bypass_args_.image.scale_address = param_.input->max();
     bypass_args_.image.channels = input_shape.channel();
     bypass_args_.image.height = input_shape.height();
     bypass_args_.image.width = input_shape.width();
     bypass_args_.output.address = mid_out_.data<void>();
-    bypass_args_.output.scale_address = mid_out_.scale();
+    bypass_args_.output.scale_address = mid_out_.max();
+
+    bypass_args_.inplace.normalize_param.channel = input_shape.channel();
+    bypass_args_.inplace.normalize_param.hight_width =
+        input_shape.height() * input_shape.width();
+    bypass_args_.inplace.normalize_param.enabled = true;
 
     norm_args_.input_image_address = mid_data;
     norm_args_.image_width = input_shape.width();
     norm_args_.image_height = input_shape.height();
     norm_args_.image_channel = input_shape.channel();
-    norm_args_.output_image_address = param_.output->data<float>();
+    norm_args_.output_image_address = param_.output->data<float16>();
     norm_args_.output_scale_address =
-        reinterpret_cast<uint32_t*>(param_.output->scale());
+        reinterpret_cast<uint32_t*>(param_.output->max());
+    norm_args_.inplace = bypass_args_.inplace;
+    norm_args_.inplace.normalize_param.enabled = false;
+
+    if (DLEngine::get_instance().isZU3()) {
+      cpu_compute_ = true;
+    }
+    cpu_compute_ = true;
   }
 
-  void cpuCompute() {
+  void cpu_compute() {
     Tensor input_float;
     Tensor float_out;
     input_float.mutableData<float>(FP32, param_.input->shape());
     float_out.mutableData<float>(FP32, param_.output->shape());
 
-    // param_.input->syncToDevice();
     input_float.copyFrom(param_.input);
     input_float.syncToCPU();
-    // input_float.saveToFile("normalize_", true);
 
     int channel = input_float.shape().channel();
     int height = input_float.shape().height();
@@ -102,24 +104,17 @@ class NormPE : public PE {
       }
     }
     float_out.flush();
-    // float_out.saveToFile("normalize_", true);
     param_.output->copyFrom(&float_out);
   }
 
   bool dispatch() {
-    // cpuCompute();
-    // std::cout << "FPGA normalize ---------------------" << std::endl;
-
-    param_.input->syncToDevice();
-    config_norm_param(norm_param_args_);
-    inplace_args_.normalize_enable = true;
-    config_inplace(inplace_args_);
+    if (cpu_compute_) {
+      cpu_compute();
+      return true;
+    }
 
     perform_bypass(bypass_args_);
-    inplace_args_.normalize_enable = false;
-    config_inplace(inplace_args_);
     compute_norm(norm_args_);
-
     return true;
   }
 
@@ -128,11 +123,9 @@ class NormPE : public PE {
  private:
   NormParam param_;
   Tensor mid_out_;
-  InplaceArgs inplace_args_ = {0};
-  NormalizeParameterArgs norm_param_args_ = {0};
   BypassArgs bypass_args_;
-
   NormalizeArgs norm_args_ = {0};
+  bool cpu_compute_ = false;
 };
 
 }  // namespace zynqmp

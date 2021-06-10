@@ -42,6 +42,24 @@ class NormOp : public OpLite {
   mutable NormParam param_;
 };
 
+class PNormOpLite : public OpLite {
+ public:
+  PNormOpLite() {}
+  explicit PNormOpLite(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "p_norm"; }
+
+ private:
+  mutable PNormParam param_;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

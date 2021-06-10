@@ -22,7 +22,6 @@ static DDim GetOutputShape(const std::vector<int> &squeeze_dims,
                            const DDim &in_dims,
                            bool is_runtime) {
   size_t num_squeeze_dims = squeeze_dims.size();
-  int cnt_squeezed_dims = 0;
   bool should_squeeze[9] = {false};
 
   // Determines number of dimensions of output tensor after squeeze.
@@ -31,7 +30,6 @@ static DDim GetOutputShape(const std::vector<int> &squeeze_dims,
     for (size_t idx = 0; idx < in_dims.size(); ++idx) {
       if (in_dims[idx] == 1) {
         should_squeeze[idx] = true;
-        ++cnt_squeezed_dims;
       }
     }
   } else {
@@ -42,24 +40,26 @@ static DDim GetOutputShape(const std::vector<int> &squeeze_dims,
       CHECK_GE(current, 0)
           << "Invalid axis, the negative axis is out of range.";
 
-      if (is_runtime) {
-        CHECK_EQ(in_dims[current], 1) << "Invalid axis index, the axis that "
-                                         "will be squeezed should be equal "
-                                         "to 1.";
+      if (!should_squeeze[current]) {
+        if (is_runtime) {
+          if (in_dims[current] == 1) {
+            should_squeeze[current] = true;
+          }
+        } else {
+          // At compile time, dim of -1 or 1 is allowed to squeeze
+          if (in_dims[current] == 1 || in_dims[current] == -1) {
+            should_squeeze[current] = true;
+          }
+        }
       }
-
-      if (!(should_squeeze[current])) {
-        ++cnt_squeezed_dims;
-      }
-      should_squeeze[current] = true;
     }
   }
 
   // Make output dimensions
-  std::vector<int64_t> output_shape(in_dims.size() - cnt_squeezed_dims, 0);
-  for (size_t in_idx = 0, out_idx = 0; in_idx < in_dims.size(); ++in_idx) {
-    if (!should_squeeze[in_idx]) {
-      output_shape[out_idx++] = in_dims[in_idx];
+  std::vector<int64_t> output_shape;
+  for (int i = 0; i < in_dims.size(); ++i) {
+    if (!should_squeeze[i]) {
+      output_shape.push_back(in_dims[i]);
     }
   }
   return DDim(output_shape);
@@ -93,6 +93,9 @@ bool SqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   }
   CHECK(param_.X) << "Input(X) of SqueezeOp should not be null.";
   CHECK(param_.Out) << "Output(Out) of SqueezeOp should not be null.";
+  if (opdesc.HasAttr("inplace")) {
+    param_.inplace = opdesc.GetAttr<bool>("inplace");
+  }
   return true;
 }
 

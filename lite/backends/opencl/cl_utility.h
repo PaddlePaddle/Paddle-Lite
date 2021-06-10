@@ -21,7 +21,7 @@ limitations under the License. */
 namespace paddle {
 namespace lite {
 
-const char* opencl_error_to_str(cl_int error);
+const char *opencl_error_to_str(cl_int error);
 
 #define CL_CHECK_ERROR(err_code__)                                   \
   if (err_code__ != CL_SUCCESS) {                                    \
@@ -56,8 +56,15 @@ const char* opencl_error_to_str(cl_int error);
         __LINE__);                                                   \
   }
 #else
-#define CL_CHECK_FATAL(err_code__)
+#define CL_CHECK_FATAL(err_code__) \
+  if (err_code__ != CL_SUCCESS) {  \
+    LOG(FATAL);                    \
+  }
+
 #endif
+
+#define UP_DIV(x, y) (((x) + (y) - (1)) / (y))
+#define ROUND_UP(x, y) (((x) + (y) - (1)) / (y) * (y))
 
 #define EnqueueNDRangeKernel(                                      \
     context, kernel, gws_offset, gws, lws, event_wait_list, event) \
@@ -65,25 +72,39 @@ const char* opencl_error_to_str(cl_int error);
       kernel, gws_offset, gws, lws, event_wait_list, &event)
 
 // mutable_data
-#define MUTABLE_DATA_GPU(tensor_instance_p, img_w, img_h, ptr)     \
-  (fp16_support_)                                                  \
-      ? (tensor_instance_p)                                        \
-            ->mutable_data<half_t, cl::Image2D>(img_w, img_h, ptr) \
-      : (tensor_instance_p)                                        \
-            ->mutable_data<float, cl::Image2D>(img_w, img_h, ptr)
+#define MUTABLE_DATA_GPU(tensor_ins_p, img_w, img_h, ptr)                    \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)      \
+      ? (tensor_ins_p)->mutable_data<half_t, cl::Image2D>(img_w, img_h, ptr) \
+      : (tensor_ins_p)->mutable_data<float, cl::Image2D>(img_w, img_h, ptr)
 
-#define DATA_GPU(tensor_instance_p)                                          \
-  (fp16_support_) ? (tensor_instance_p)->mutable_data<half_t, cl::Image2D>() \
-                  : (tensor_instance_p)->mutable_data<float, cl::Image2D>()
+#define DATA_GPU(tensor_ins_p)                                          \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) \
+      ? (tensor_ins_p)->mutable_data<half_t, cl::Image2D>()             \
+      : (tensor_ins_p)->mutable_data<float, cl::Image2D>()
 
-#define GET_DATA_GPU(tensor_instance_p)                              \
-  (fp16_support_) ? (tensor_instance_p)->data<half_t, cl::Image2D>() \
-                  : (tensor_instance_p)->data<float, cl::Image2D>()
+#define GET_DATA_GPU(tensor_ins_p)                                      \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) \
+      ? (tensor_ins_p)->data<half_t, cl::Image2D>()                     \
+      : (tensor_ins_p)->data<float, cl::Image2D>()
 
-#define MUTABLE_DATA_CPU(tensor_instance_p)                             \
-  (fp16_support_)                                                       \
-      ? static_cast<void*>((tensor_instance_p)->mutable_data<half_t>()) \
-      : static_cast<void*>((tensor_instance_p)->mutable_data<float>())
+#define MUTABLE_DATA_CPU(tensor_ins_p)                                  \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) \
+      ? static_cast<void *>((tensor_ins_p)->mutable_data<half_t>())     \
+      : static_cast<void *>((tensor_ins_p)->mutable_data<float>())
+
+template <typename T, typename Dim>
+inline void IOHW2OIHW(const T *src, T *dst, Dim O, Dim I, Dim H, Dim W) {
+  for (Dim i = 0; i < I; i++) {
+    for (Dim o = 0; o < O; o++) {
+      for (Dim h = 0; h < H; h++) {
+        for (Dim w = 0; w < W; w++) {
+          dst[o * I * H * W + i * H * W + h * W + w] =
+              src[i * O * H * W + o * H * W + h * W + w];
+        }
+      }
+    }
+  }
+};
 
 }  // namespace lite
 }  // namespace paddle

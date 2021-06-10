@@ -21,6 +21,7 @@
 namespace paddle {
 namespace lite {
 
+template <class T = float>
 class Pad2dComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -46,16 +47,14 @@ class Pad2dComputeTester : public arena::TestCase {
         data_format_(data_format) {}
 
   void RunBaseline(Scope* scope) override {
-    LOG(INFO) << "into runbase";
     auto* out = scope->NewTensor(out_);
     CHECK(out);
     int out_h = dims_[2] + paddings_[0] + paddings_[1];
     int out_w = dims_[3] + paddings_[2] + paddings_[3];
     out->Resize(lite::DDim({dims_[0], dims_[1], out_h, out_w}));
-    auto* out_data = out->mutable_data<float>();
+    auto* out_data = out->template mutable_data<T>();
     auto* x = scope->FindTensor(x_);
-    const auto* x_data = x->data<float>();
-    LOG(INFO) << "get nums";
+    const auto* x_data = x->template data<T>();
 
     auto output_dims = out->dims();
     int n = output_dims[0];
@@ -87,8 +86,8 @@ class Pad2dComputeTester : public arena::TestCase {
 #pragma omp parallel for
 #endif
     for (int i = 0; i < n * c; ++i) {
-      const float* din_batch = x_data + i * spatial_size_in;
-      float* dout_batch = out_data + i * spatial_size_out;
+      const T* din_batch = x_data + i * spatial_size_in;
+      T* dout_batch = out_data + i * spatial_size_out;
       int in_y = 0;
       int in_x = 0;
       for (int y = 0; y < h; ++y) {
@@ -103,19 +102,19 @@ class Pad2dComputeTester : public arena::TestCase {
                       : pad_value;
               break;
             case 1:
-              in_x = std::min(std::max(pad_left, x), in_w + pad_left - 1) -
-                     pad_left;
-              in_y =
-                  std::min(std::max(pad_top, y), in_h + pad_top - 1) - pad_top;
-              dout_batch[y * w + x] = din_batch[in_y * in_w + in_x];
-              break;
-            case 2:
               in_y = y - pad_top;
               in_x = x - pad_left;
               in_y = std::max(in_y, -in_y);
               in_y = std::min(in_y, 2 * in_h - in_y - 2);
               in_x = std::max(in_x, -in_x);
               in_x = std::min(in_x, 2 * in_w - in_x - 2);
+              dout_batch[y * w + x] = din_batch[in_y * in_w + in_x];
+              break;
+            case 2:
+              in_x = std::min(std::max(pad_left, x), in_w + pad_left - 1) -
+                     pad_left;
+              in_y =
+                  std::min(std::max(pad_top, y), in_h + pad_top - 1) - pad_top;
               dout_batch[y * w + x] = din_batch[in_y * in_w + in_x];
               break;
             default:
@@ -137,28 +136,65 @@ class Pad2dComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> x(dims_.production());
-    fill_data_rand(x.data(), -1.f, 1.f, dims_.production());
-    SetCommonTensor(x_, dims_, x.data());
+    std::vector<T> dx(dims_.production());
+    for (size_t i = 0; i < dims_.production(); i++) {
+      dx[i] = static_cast<T>((i % 3) * 1.1f);
+    }
+    SetCommonTensor(x_, dims_, dx.data());
   }
 };
 
-void TestPad2d(const Place& place, float abs_error = 2e-5) {
+template <class T = float>
+void TestPad2d(const Place& place,
+               const std::string& alias,
+               std::string pad_mode,
+               std::vector<int> paddings,
+               float pad_value,
+               std::string data_format,
+               float abs_error = 2e-5) {
+  std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester<T>(
+      place, "def", pad_mode, paddings, pad_value, data_format));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
+
+TEST(Pad2d, precision) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<std::string> pad_mode_list = {"constant", "edge", "reflect"};
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+  pad_mode_list = {"constant",
+                   "reflect"};  // XPU support constant and reflect now
+#elif defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
+#endif
   std::string data_format = "NCHW";
   for (int pad_top : {0, 1}) {
     for (int pad_bottom : {0, 1}) {
       for (int pad_left : {0, 1}) {
         for (int pad_right : {0, 1}) {
           std::vector<int> paddings{pad_top, pad_bottom, pad_left, pad_right};
-          for (std::string pad_mode : {"constant", "edge", "reflect"}) {
+          for (std::string pad_mode : pad_mode_list) {
             for (float pad_value : {0.f, 1.0f}) {
-              LOG(INFO) << "pad param: " << pad_mode << " " << pad_value << " "
-                        << paddings[0] << " " << paddings[1] << " "
-                        << paddings[2] << " " << paddings[3];
-              std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester(
-                  place, "def", pad_mode, paddings, pad_value, data_format));
-              arena::Arena arena(std::move(tester), place, abs_error);
-              arena.TestPrecision();
+              VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
+                      << paddings[0] << " " << paddings[1] << " " << paddings[2]
+                      << " " << paddings[3];
+              TestPad2d(place,
+                        "def",
+                        pad_mode,
+                        paddings,
+                        pad_value,
+                        data_format,
+                        abs_error);
             }
           }
         }
@@ -167,19 +203,36 @@ void TestPad2d(const Place& place, float abs_error = 2e-5) {
   }
 }
 
-TEST(Scale, precision) {
-  Place place;
+#if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
+TEST(Pad2d_fp16, precision) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#else
-  return;
-#endif
-  TestPad2d(place, abs_error);
+  std::string data_format = "NCHW";
+  for (int pad_top : {0, 1}) {
+    for (int pad_bottom : {0, 1}) {
+      for (int pad_left : {0, 1}) {
+        for (int pad_right : {0, 1}) {
+          std::vector<int> paddings{pad_top, pad_bottom, pad_left, pad_right};
+          for (std::string pad_mode : {"constant", "edge", "reflect"}) {
+            for (float pad_value : {0.f, 1.0f}) {
+              VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
+                      << paddings[0] << " " << paddings[1] << " " << paddings[2]
+                      << " " << paddings[3];
+              TestPad2d<float16_t>(place,
+                                   "def",
+                                   pad_mode,
+                                   paddings,
+                                   pad_value,
+                                   data_format,
+                                   abs_error);
+            }
+          }
+        }
+      }
+    }
+  }
 }
+#endif
 
 }  // namespace lite
 }  // namespace paddle

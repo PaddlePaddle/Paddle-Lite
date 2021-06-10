@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 
   Timer t0;
   if (act_type == 1) {
-    paddle::lite::kernels::arm::ReluCompute act_compute;
+    paddle::lite::kernels::arm::ReluCompute<PRECISION(kFloat)> act_compute;
     act_compute.SetParam(act_param);
     std::unique_ptr<paddle::lite::KernelContext> ctx1(
         new paddle::lite::KernelContext);

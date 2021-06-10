@@ -206,6 +206,7 @@ REGISTER_LITE_KERNEL(batch_norm,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("ReserveSpace", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("VarianceOut", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -230,6 +231,7 @@ REGISTER_LITE_KERNEL(sync_batch_norm,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("ReserveSpace", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("VarianceOut", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kARM))})

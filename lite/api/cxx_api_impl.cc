@@ -141,6 +141,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
           << real_num_threads;
 #endif
 
+#ifdef LITE_WITH_XPU
   auto preferred_inputs = config.preferred_inputs_for_warmup();
   for (auto &preferred_input : preferred_inputs) {
     auto &input_tensors = preferred_input.second;
@@ -185,6 +186,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     }
     Run();
   }
+#endif
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {

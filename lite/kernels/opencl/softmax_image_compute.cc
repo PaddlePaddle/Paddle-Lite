@@ -34,10 +34,8 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     softmax_param_ = param_.get_mutable<param_t>();
     auto x_dims = softmax_param_->x->dims();
     int axis = softmax_param_->axis;
+    axis = axis < 0 ? x_dims.size() + axis : axis;
     axis_ = 4 - x_dims.size() + axis;
-    if (axis < 0) {
-      axis_ = 3;
-    }
     if (axis_ == 3) {
       kernel_func_name_ = "softmax_width";
     } else if (axis_ == 2) {

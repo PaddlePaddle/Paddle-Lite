@@ -41,7 +41,7 @@ TEST(CONTENT_DNN, test_content_dnn_fp32_baidu_xpu) {
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kX86), PRECISION(kInt64)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
-  config.set_xpu_workspace_l3_size_per_thread();
+  config.set_xpu_l3_cache_method(16773120, false);
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string input_data_file =

@@ -79,6 +79,7 @@ bool CropPE::dispatch() {
   }
   out->flush();
   out->copyScaleFrom(input);
+  out->copyMaxFrom(input);
   return true;
 }
 
