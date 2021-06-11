@@ -669,18 +669,19 @@ class GenerateProposalsV2ComputeTester : public arena::TestCase {
 };
 
 TEST(GenerateProposalsV2, precision) {
-  // The unit test for generate_proposals_v2 needs the params,
-  // which is obtained by runing model by paddle.
-  LOG(INFO) << "test generate proposals v2 op";
-#ifdef LITE_WITH_ARM
-  {
-    Place place(TARGET(kARM));
-    std::unique_ptr<arena::TestCase> tester(
-        new GenerateProposalsV2ComputeTester(place, "def"));
-    arena::Arena arena(std::move(tester), place, 2e-5);
-    EXPECT_TRUE(arena.TestPrecision());
-  }
+  Place place;
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  std::unique_ptr<arena::TestCase> tester(
+      new GenerateProposalsV2ComputeTester(place, "def"));
+  arena::Arena arena(std::move(tester), place, 2e-5);
+  arena.TestPrecision();
 }
 
 }  // namespace lite

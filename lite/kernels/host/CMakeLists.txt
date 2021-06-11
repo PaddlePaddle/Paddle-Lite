@@ -24,6 +24,8 @@ add_kernel(yolo_box_compute_host Host basic SRCS yolo_box_compute.cc DEPS ${lite
 # extra kernels
 add_kernel(deformable_conv_compute_host Host extra SRCS deformable_conv_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(reduce_compute_host Host extra SRCS reduce_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(generate_proposals_compute_host Host extra SRCS generate_proposals_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(generate_proposals_v2_compute_host Host extra SRCS generate_proposals_v2_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(unstack_compute_host Host extra SRCS unstack_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(norm_compute_host Host extra SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(shape_compute_host Host extra SRCS shape_compute.cc DEPS ${lite_kernel_deps})

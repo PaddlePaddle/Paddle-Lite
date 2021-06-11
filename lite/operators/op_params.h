@@ -1515,6 +1515,7 @@ struct GenerateProposalsV2Param : ParamBase {
   float nms_thresh{0.5f};
   float min_size{0.1f};
   float eta{1.0f};
+  bool pixel_offset{true};
 
   // outputs
   lite::Tensor* RpnRois{};

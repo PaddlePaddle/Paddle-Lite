@@ -13,23 +13,22 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/operators/generate_proposals_v2_op.h"
+#include "lite/operators/generate_proposals_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
 
-class GenerateProposalsV2Compute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class GenerateProposalsCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::GenerateProposalsV2Param;
+  using param_t = operators::GenerateProposalsParam;
 
   void Run() override;
 
-  virtual ~GenerateProposalsV2Compute() = default;
+  virtual ~GenerateProposalsCompute() = default;
 };
 
 }  // namespace host
