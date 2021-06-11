@@ -1,5 +1,4 @@
 #include "pscore/core/resource.h"
-#include <gtest/gtest.h>
 
 namespace pscore {
 
@@ -33,11 +32,12 @@ struct ResourceTest : public Resource {
 
 }  // namespace
 
-TEST(Resource, basic) {
-  ResourceTest resource("ResourceTest", 100, 200);
-  ResourceTest consume("ResourceTest", 10, 20);
 
-  ASSERT_TRUE(resource.TryConsume(consume));
-}
 
 }  // namespace pscore
+
+#define CATCH_CONFIG_MAIN
+
+int main() {
+  return 0;
+}

@@ -48,8 +48,8 @@ function(cc_test TARGET_NAME)
     cmake_parse_arguments(cc_test "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
     add_executable(${TARGET_NAME} ${cc_test_SRCS})
     get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
-    target_link_libraries(${TARGET_NAME} ${cc_test_DEPS} ${os_dependency_modules} pscore_gtest_main gtest gflags glog)
-    add_dependencies(${TARGET_NAME} ${cc_test_DEPS} gtest_main gtest gflags glog extern_gtest)
+    target_link_libraries(${TARGET_NAME} ${cc_test_DEPS} ${os_dependency_modules} gflags glog Catch2::Catch2)
+    add_dependencies(${TARGET_NAME} ${cc_test_DEPS} gflags glog)
 
     add_test(NAME ${TARGET_NAME}
       COMMAND ${TARGET_NAME} "${cc_test_ARGS}"

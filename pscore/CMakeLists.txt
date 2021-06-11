@@ -14,11 +14,15 @@
 
 cmake_minimum_required(VERSION 3.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+set(CMAKE_CXX_COMPILER_WORKS ON)
+
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(CMAKE_CXX_STANDARD 14)
+find_package(Catch2 REQUIRED)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -27,6 +31,15 @@ if(NOT APPLE)
 endif()
 
 project(pscore CXX C)
+
+# assume built-in pthreads on MacOS
+IF(APPLE)
+  set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+  set(CMAKE_HAVE_THREADS_LIBRARY 1)
+  set(CMAKE_USE_WIN32_THREADS_INIT 0)
+  set(CMAKE_USE_PTHREADS_INIT 1)
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+ENDIF()
 
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
@@ -44,7 +57,7 @@ include(cmake/external/protobuf.cmake)
 include(cmake/external/gflags.cmake)
 include(cmake/external/absl.cmake)
 include(cmake/external/glog.cmake)
-include(cmake/external/gtest.cmake)
+#include(cmake/external/gtest.cmake)
 
 include_directories("${CMAKE_SOURCE_DIR}")
 include_directories("${CMAKE_BINARY_DIR}")
