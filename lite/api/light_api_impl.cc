@@ -140,6 +140,10 @@ std::vector<std::string> LightPredictorImpl::GetOutputNames() {
   return raw_predictor_->GetOutputNames();
 }
 
+bool LightPredictorImpl::TryShrinkMemory() {
+  return raw_predictor_->TryShrinkMemory();
+}
+
 }  // namespace lite
 
 namespace lite_api {
