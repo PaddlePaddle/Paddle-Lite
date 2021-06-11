@@ -283,10 +283,6 @@ void ConvImageCompute::PrepareForRun() {
 
       auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
       converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
-      // for(int i = 0; i < 10; i++)
-      // {
-      //   printf("filter_cpu = %f")
-      // }
       MUTABLE_DATA_GPU(filter_gpu_image_,
                        filter_image_w_,
                        filter_image_h_,
@@ -785,8 +781,9 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                        CL_KERNEL_WORK_GROUP_SIZE,
                                        &max_work_group_size);
-      std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
-          global_work_size_, max_work_group_size);
+      std::set<cl::NDRange, CLContext::CompareByRange> lwss =
+          context.cl_context()->GenerateLocalWorkSizes(global_work_size_,
+                                                       max_work_group_size);
       CHECK(lwss.size() > 0)
           << "Possible local work sizes should bigger than zero";
       local_work_size_ = *lwss.begin();
@@ -864,20 +861,27 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                      CL_KERNEL_WORK_GROUP_SIZE,
                                      &max_work_group_size);
-    std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
-        global_work_size_, max_work_group_size);
-    std::set<cl::NDRange> lwss1 = context.cl_context()->GenerateLocalWorkSizes(
-        global_work_size_wino1_, max_work_group_size);
-    std::set<cl::NDRange> lwss2 = context.cl_context()->GenerateLocalWorkSizes(
-        global_work_size_wino2_, max_work_group_size);
+    std::set<cl::NDRange, CLContext::CompareByRange> lwss =
+        context.cl_context()->GenerateLocalWorkSizes(global_work_size_,
+                                                     max_work_group_size);
+    std::set<cl::NDRange, CLContext::CompareByRange> lwss1 =
+        context.cl_context()->GenerateLocalWorkSizes(global_work_size_wino1_,
+                                                     max_work_group_size);
+    std::set<cl::NDRange, CLContext::CompareByRange> lwss2 =
+        context.cl_context()->GenerateLocalWorkSizes(global_work_size_wino2_,
+                                                     max_work_group_size);
+
     if (max_work_group_size <= 0 || !use_lws_ ||
         CLRuntime::Global()->auto_tune() <= 0) {
       return;
     }
 
     // first
+    if (lwss.size() < 1) {
+      return;
+    }
     double min_lws_time = DBL_MAX;
-    local_work_size_ = *lwss.begin();
+
     cl::NDRange min_lws = *lwss.begin();
     for (cl::NDRange cur_lws : lwss) {
       local_work_size_ = cur_lws;
@@ -895,8 +899,10 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     local_work_size_ = min_lws;
 
     // second
+    if (lwss1.size() < 1) {
+      return;
+    }
     min_lws_time = DBL_MAX;
-    local_work_size_wino1_ = *lwss1.begin();
     min_lws = *lwss1.begin();
     for (cl::NDRange cur_lws : lwss1) {
       local_work_size_wino1_ = cur_lws;
@@ -914,8 +920,10 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     local_work_size_wino1_ = min_lws;
 
     // third
+    if (lwss2.size() < 1) {
+      return;
+    }
     min_lws_time = DBL_MAX;
-    local_work_size_wino2_ = *lwss2.begin();
     min_lws = *lwss2.begin();
     for (cl::NDRange cur_lws : lwss2) {
       local_work_size_wino2_ = cur_lws;
@@ -952,11 +960,13 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                      CL_KERNEL_WORK_GROUP_SIZE,
                                      &max_work_group_size);
-    std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
-        global_work_size_, max_work_group_size);
-    CHECK(lwss.size() > 0)
-        << "Possible local work sizes should bigger than zero";
-    local_work_size_ = *lwss.begin();
+    std::set<cl::NDRange, CLContext::CompareByRange> lwss =
+        context.cl_context()->GenerateLocalWorkSizes(global_work_size_,
+                                                     max_work_group_size);
+    if (lwss.size() < 1) {
+      local_work_size_ = cl::NullRange;
+      return;
+    }
     if (max_work_group_size <= 0 || !use_lws_ ||
         CLRuntime::Global()->auto_tune() <= 0) {
       if (!use_lws_) {
@@ -1158,13 +1168,16 @@ void ConvImageCompute::SetGlobalWorkSize() {
     const int batch_round_h = input_tensor_n_ * round_up_output_height;
     global_work_size_ = cl::NDRange{
         static_cast<size_t>(input_channel_blocks * round_up_ouptut_width),
-        static_cast<size_t>(batch_round_h)};
+        static_cast<size_t>(batch_round_h),
+        1};
     global_work_size_wino1_ = cl::NDRange{
         static_cast<size_t>(output_channel_blocks * round_up_4x4_ouptut_width),
-        static_cast<size_t>(16 * batch_round_h)};
+        static_cast<size_t>(16 * batch_round_h),
+        1};
     global_work_size_wino2_ = cl::NDRange{
         static_cast<size_t>(output_channel_blocks * round_up_ouptut_width),
-        static_cast<size_t>(batch_round_h)};
+        static_cast<size_t>(batch_round_h),
+        1};
   } else if (kernel_func_names_[0] == "conv2d_3x3_multi_batch" ||
              kernel_func_names_[0] == "conv2d_3x3_opt") {
     int w_blk_size = 5;
