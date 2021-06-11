@@ -17,6 +17,8 @@ set -e
 ARCH=(armv8 armv7)
 # Toolchain: gcc or clang, default gcc.
 TOOLCHAIN=(gcc clang)
+# WITH_EXTRA: with extra ops or not
+WITH_EXTRA=(ON OFF)
 # Absolute path of Paddle-Lite source code.
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
@@ -62,7 +64,9 @@ function publish_inference_lib {
 # Compiling test
 for arch in ${ARCH[@]}; do
   for toolchain in ${TOOLCHAIN[@]}; do
-    cd $WORKSPACE
-    publish_inference_lib $arch $toolchain ON
+    for with_extra in ${WITH_EXTRA[@]}; do
+      cd $WORKSPACE
+      publish_inference_lib $arch $toolchain $with_extra
+    done
   done
 done    
