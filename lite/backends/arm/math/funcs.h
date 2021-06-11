@@ -21,7 +21,6 @@
 
 #include "lite/backends/arm/math/activation.h"
 #include "lite/backends/arm/math/affine_channel.h"
-#include "lite/backends/arm/math/anchor_generator.h"
 #include "lite/backends/arm/math/argmax.h"
 #include "lite/backends/arm/math/axpy.h"
 #include "lite/backends/arm/math/box_coder.h"
