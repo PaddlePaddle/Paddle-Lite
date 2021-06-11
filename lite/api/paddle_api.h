@@ -111,6 +111,9 @@ class LITE_API PaddlePredictor {
   // Get output names
   virtual std::vector<std::string> GetParamNames();
 
+  /// Release all tmp tensor to compress the size of the memory pool.
+  virtual bool TryShrinkMemory() = 0;
+
   // Get Input by name
   virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;
 
