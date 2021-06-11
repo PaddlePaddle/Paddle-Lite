@@ -12,7 +12,7 @@ lite_cc_library(target_wrapper SRCS target_wrapper.cc
   BM_DEPS target_wrapper_bm
   MLU_DEPS target_wrapper_mlu)
 
-lite_cc_library(memory SRCS memory.cc DEPS target_wrapper CL_DEPS cl_target_wrapper)
+lite_cc_library(memory SRCS memory.cc DEPS target_wrapper CL_DEPS cl_target_wrapper XPU_DEPS target_wrapper_xpu)
 
 set(tensor_extra_deps "")
 if (LITE_WITH_FPGA)

@@ -69,7 +69,7 @@ class Gemm {
   int ldc_{-1};
 };
 
-#if (CUBLAS_VER_MAJOR * 10 + CUBLAS_VER_MINOR) >= 101
+#if (CUBLAS_VER_MAJOR * 10 + CUBLAS_VER_MINOR) == 101
 
 template <typename PtypeIn, typename PtypeOut>
 class LtGemm {
