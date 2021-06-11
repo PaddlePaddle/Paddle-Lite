@@ -347,9 +347,9 @@ bool LightPredictor::TryShrinkMemory() {
   // Clear ArmL3Cache
   lite::DeviceInfo::Global().ClearArmL3Cache();
 #endif
-  std::vector<std::string> local_var_names =
+  const std::vector<std::string>& local_var_names =
       program_->exec_scope()->LocalVarNames();
-  for (auto var_name : local_var_names) {
+  for (auto& var_name : local_var_names) {
     Variable* var = program_->exec_scope()->FindLocalVar(var_name);
     if (var->IsType<lite::Tensor>()) {
       // Clear unpersistable tensors
@@ -359,7 +359,7 @@ bool LightPredictor::TryShrinkMemory() {
       }
     } else if (var->IsType<std::vector<Tensor>>()) {
       // Clear unpersistable tensor vector
-      auto tensor_array =
+      auto* tensor_array =
           program_->exec_scope()->FindMutableTensorList(var_name);
       for (auto& tensor : *tensor_array) {
         if (!tensor.persistable()) {
