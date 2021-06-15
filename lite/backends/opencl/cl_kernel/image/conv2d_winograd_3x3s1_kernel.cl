@@ -481,3 +481,106 @@ __kernel void transform_to_output(__read_only image2d_t matrix_m,
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(ox.s1, oy.s1), output3);
   }
 }
+
+__kernel void matrix_inner_product_mali(__read_only image2d_t matrix_v,
+                                        __global CL_DTYPE4 *filter_u,
+                                        __write_only image2d_t matrix_m,
+                                        __private const int round_w,
+                                        __private const int round_4x4_w,
+                                        __private const int batch_round_h,
+                                        __private const int out_channel_block,
+                                        __private const int in_channel_block,
+                                        __private const int global_size_dim0,
+                                        __private const int global_size_dim1) {
+  const int output_cw_block_idx = get_global_id(0);  // c/4  w/2/4
+  const int output_16_bh_idx = get_global_id(1);     // 16 b h/2
+
+  if (output_cw_block_idx >= global_size_dim0 ||
+      output_16_bh_idx >= global_size_dim1) {
+    return;
+  }
+  const int c_block_idx = output_cw_block_idx / round_4x4_w;
+  const int w_block_idx = output_cw_block_idx - mul24(c_block_idx, round_4x4_w);
+  const int4 w_idx = (int4)(w_block_idx << 2) + (int4)(0, 1, 2, 3);
+
+  const int alpha = output_16_bh_idx / batch_round_h;
+  const int u_bh_idx = mul24(alpha, out_channel_block) + c_block_idx;
+
+  CL_DTYPE4 m0 = (CL_DTYPE4)(0);
+  CL_DTYPE4 m1 = (CL_DTYPE4)(0);
+  CL_DTYPE4 m2 = (CL_DTYPE4)(0);
+  CL_DTYPE4 m3 = (CL_DTYPE4)(0);
+
+  __global CL_DTYPE4 *filter_u_ptr = filter_u + in_channel_block * 4 * u_bh_idx;
+  for (int input_c_block_idx = 0; input_c_block_idx < in_channel_block;
+       ++input_c_block_idx) {
+    const int4 input_c_idx =
+        (int4)(input_c_block_idx << 2) + (int4)(0, 1, 2, 3);
+    int4 v_cw_idx =
+        select(mad24((int4)(input_c_block_idx), (int4)(round_w), w_idx),
+               (int4)(-1),
+               w_idx >= (int4)(round_w));
+    CL_DTYPE4 v_in0 = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                    matrix_v,
+                                    SAMPLER,
+                                    (int2)(v_cw_idx.s0, output_16_bh_idx));
+    CL_DTYPE4 v_in1 = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                    matrix_v,
+                                    SAMPLER,
+                                    (int2)(v_cw_idx.s1, output_16_bh_idx));
+    CL_DTYPE4 v_in2 = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                    matrix_v,
+                                    SAMPLER,
+                                    (int2)(v_cw_idx.s2, output_16_bh_idx));
+    CL_DTYPE4 v_in3 = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                    matrix_v,
+                                    SAMPLER,
+                                    (int2)(v_cw_idx.s3, output_16_bh_idx));
+
+    m0 = mad(v_in0.s0, filter_u_ptr[0], m0);
+    m0 = mad(v_in0.s1, filter_u_ptr[1], m0);
+    m0 = mad(v_in0.s2, filter_u_ptr[2], m0);
+    m0 = mad(v_in0.s3, filter_u_ptr[3], m0);
+
+    m1 = mad(v_in1.s0, filter_u_ptr[0], m1);
+    m1 = mad(v_in1.s1, filter_u_ptr[1], m1);
+    m1 = mad(v_in1.s2, filter_u_ptr[2], m1);
+    m1 = mad(v_in1.s3, filter_u_ptr[3], m1);
+
+    m2 = mad(v_in2.s0, filter_u_ptr[0], m2);
+    m2 = mad(v_in2.s1, filter_u_ptr[1], m2);
+    m2 = mad(v_in2.s2, filter_u_ptr[2], m2);
+    m2 = mad(v_in2.s3, filter_u_ptr[3], m2);
+
+    m3 = mad(v_in3.s0, filter_u_ptr[0], m3);
+    m3 = mad(v_in3.s1, filter_u_ptr[1], m3);
+    m3 = mad(v_in3.s2, filter_u_ptr[2], m3);
+    m3 = mad(v_in3.s3, filter_u_ptr[3], m3);
+    filter_u_ptr += 4;
+  }
+
+  const int output_cw_idx = mad24(c_block_idx, round_w, w_idx.s0);
+  WRITE_IMG_TYPE(
+      CL_DTYPE_CHAR, matrix_m, (int2)(output_cw_idx, output_16_bh_idx), m0);
+
+  if (w_idx.s1 < round_w) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR,
+                   matrix_m,
+                   (int2)(output_cw_idx + 1, output_16_bh_idx),
+                   m1);
+  }
+
+  if (w_idx.s2 < round_w) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR,
+                   matrix_m,
+                   (int2)(output_cw_idx + 2, output_16_bh_idx),
+                   m2);
+  }
+
+  if (w_idx.s3 < round_w) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR,
+                   matrix_m,
+                   (int2)(output_cw_idx + 3, output_16_bh_idx),
+                   m3);
+  }
+}
