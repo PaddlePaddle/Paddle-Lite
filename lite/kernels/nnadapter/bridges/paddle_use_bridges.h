@@ -32,3 +32,8 @@ USE_SUBGRAPH_BRIDGE(fusion_elementwise_sub_activation, kNNAdapter);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_mul_activation, kNNAdapter);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation, kNNAdapter);
 USE_SUBGRAPH_BRIDGE(scale, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(reshape, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(reshape2, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(transpose, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(transpose2, kNNAdapter);
+USE_SUBGRAPH_BRIDGE(concat, kNNAdapter);

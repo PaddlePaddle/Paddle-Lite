@@ -99,8 +99,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
   // Check depthwise mode
   bool is_depthwise_mode =
-      (input_channel_size == groups && output_channel_size == groups &&
-       filter_channel_size == 1);
+      (groups != 1 && input_channel_size == groups &&
+       filter_channel_size == 1 && output_channel_size % groups == 0);
   VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
 
   // Input operand

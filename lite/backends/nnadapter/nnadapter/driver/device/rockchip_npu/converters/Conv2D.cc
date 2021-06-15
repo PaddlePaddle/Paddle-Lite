@@ -75,9 +75,7 @@ int Program::ConvertConv2D(Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   // Check depthwise mode
-  bool is_depthwise_mode =
-      (input_channel_size == group && output_channel_size == group &&
-       filter_channel_size == 1);
+  bool is_depthwise_mode = (group != 1 && input_channel_size == group);
   NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
 
   // Convert to rknn tensors and operators
@@ -95,7 +93,7 @@ int Program::ConvertConv2D(Operation* operation) {
   attr.pad[2] = padding_height_top;
   attr.pad[3] = padding_height_bottom;
   attr.group = group;
-  attr.multiplier = is_depthwise_mode ? 1 : 0;
+  attr.multiplier = is_depthwise_mode ? output_channel_size / group : 0;
   attr.weights = output_channel_size;
   attr.dilation[0] = dilation_width;
   attr.dilation[1] = dilation_height;

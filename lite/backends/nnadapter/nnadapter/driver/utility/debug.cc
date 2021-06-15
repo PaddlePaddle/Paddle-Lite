@@ -157,17 +157,19 @@ class Dot {
 };
 
 NNADAPTER_EXPORT std::string Visualize(Model* model) {
-#define APPEND_OPERAND_NODE(mode)                                           \
-  auto operand_id =                                                         \
-      string_format("@0x%X", reinterpret_cast<int64_t>(operand));           \
-  auto operand_label = OperandValueToString(operand);                       \
-  if (!visited_operands.count(operand)) {                                   \
-    dot.AddNode(operand_id, {}, operand_label);                             \
-    visited_operands.insert(operand);                                       \
-  }                                                                         \
-  std::vector<Dot::Attr> attrs;                                             \
-  auto& attr_args = mode ? output_args : input_args;                        \
-  std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown"; \
+#define APPEND_OPERAND_NODE(mode)                                             \
+  auto operand_id =                                                           \
+      string_format("@0x%X", reinterpret_cast<int64_t>(operand));             \
+  auto operand_label = OperandValueToString(operand);                         \
+  if (!visited_operands.count(operand)) {                                     \
+    dot.AddNode(operand_id, {}, operand_label);                               \
+    visited_operands.insert(operand);                                         \
+  }                                                                           \
+  std::vector<Dot::Attr> attrs;                                               \
+  auto& attr_args = mode ? output_args : input_args;                          \
+  std::string attr_label =                                                    \
+      i < attr_args.size() ? attr_args[i]                                     \
+                           : string_format(mode ? "output%d" : "input%d", i); \
   attrs.emplace_back("label", string_format("%d:%s", i, attr_label.c_str()));
 
   Dot dot;
@@ -193,6 +195,10 @@ NNADAPTER_EXPORT std::string Visualize(Model* model) {
       case NNADAPTER_SIGMOID:
       case NNADAPTER_TANH:
         input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_RESHAPE:
+        input_args = {"input", "shape"};
         output_args = {"output"};
         break;
       case NNADAPTER_SOFTMAX:

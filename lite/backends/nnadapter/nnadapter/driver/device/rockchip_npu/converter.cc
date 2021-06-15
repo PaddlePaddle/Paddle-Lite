@@ -58,6 +58,9 @@ int Program::Build(Model* model, Cache* cache) {
       case NNADAPTER_CONV_2D:
         ConvertConv2D(operation);
         break;
+      case NNADAPTER_CONCAT:
+        ConvertConcat(operation);
+        break;
       case NNADAPTER_FULLY_CONNECTED:
         ConvertFullyConnected(operation);
         break;
@@ -79,6 +82,12 @@ int Program::Build(Model* model, Cache* cache) {
       case NNADAPTER_RELU6:
       case NNADAPTER_TANH:
         ConvertActivation(operation);
+        break;
+      case NNADAPTER_RESHAPE:
+        ConvertReshape(operation);
+        break;
+      case NNADAPTER_TRANSPOSE:
+        ConvertTranspose(operation);
         break;
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("

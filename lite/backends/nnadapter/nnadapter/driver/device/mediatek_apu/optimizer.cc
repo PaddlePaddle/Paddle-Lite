@@ -159,10 +159,11 @@ void ApplyConstraintsToQuantizationParameters(Model* model) {
     auto& input_operands = operation->input_operands;
     auto& output_operands = operation->output_operands;
     switch (operation->type) {
+      case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
-      case NNADAPTER_MAX_POOL_2D:
-      case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_RESHAPE:
       case NNADAPTER_TRANSPOSE:
         PropagateQuantizationParameters(input_operands[0], output_operands[0]);
         break;

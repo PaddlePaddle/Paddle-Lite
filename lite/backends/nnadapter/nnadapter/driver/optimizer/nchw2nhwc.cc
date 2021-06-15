@@ -246,7 +246,7 @@ static void ConvertConv2DFromNCHWToNHWC(Operation* operation) {
   NNADAPTER_VLOG(5) << "is_per_channel:" << is_per_channel;
   auto group = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);
   // Check depthwise mode
-  bool is_depthwise_mode = input_channel_size == group;
+  bool is_depthwise_mode = group != 1 && input_channel_size == group;
   NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
   std::vector<int32_t> filter_permutation = {};
   if (is_per_channel) {

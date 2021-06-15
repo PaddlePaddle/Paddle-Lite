@@ -54,6 +54,9 @@ class Program {
   int ConvertElementwise(Operation* operation);
   int ConvertSoftmax(Operation* operation);
   int ConvertActivation(Operation* operation);
+  int ConvertReshape(Operation* operation);
+  int ConvertTranspose(Operation* operation);
+  int ConvertConcat(Operation* operation);
 
  private:
   Context* context_{nullptr};

@@ -78,7 +78,7 @@ int Program::ConvertConv2D(Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   // Check depthwise mode
-  bool is_depthwise_mode = input_channel_size == group;
+  bool is_depthwise_mode = (group != 1 && input_channel_size == group);
   NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
 
   // Convert to Neuron operands and operations

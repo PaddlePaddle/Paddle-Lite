@@ -128,7 +128,7 @@ typedef enum {
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
    * Inputs:
-   * * 0: input0, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: input1, A tensor with the same type as input0.
@@ -147,7 +147,7 @@ typedef enum {
    * stride sizes, and pad lengths.
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
    * H_in, W_in].
@@ -187,12 +187,32 @@ typedef enum {
   NNADAPTER_AVERAGE_POOL_2D = 1,
 
   /**
+   * Concatenates a list of tensors into a single tensor along the given
+   * dimension. All input tensors must have the same shape, except for the
+   * dimension size of the axis to concatenate on.
+   *
+   * Inputs:
+   * * 0 ~ n-1: input0 ~ inputn-1, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, A NNADAPTER_INT32 scalar. It represents the dimension along
+   * which axis to concat on. It should be in range [-R, R), where R is the rank
+   * of input, negative value works the same way as axis+R.
+   *
+   * Outputs:
+   * * 0: output, The result with the same type as the inputs.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_CONCAT = 2,
+
+  /**
    * Performs a normal or depthwise 2-D convolution operation.
    * The CONV_2D op computes a 2-D convolution based on the input, filter,
    * strides, paddings, dilations, groups and etc.
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
    * H_in, W_in].
@@ -243,14 +263,14 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_CONV_2D = 2,
+  NNADAPTER_CONV_2D = 3,
 
   /**
    * Performs element-wise binary division(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: input1, A tensor with the same type as input0.
@@ -262,7 +282,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_DIV = 3,
+  NNADAPTER_DIV = 4,
 
   /**
    * Add a fully connected layer.
@@ -270,7 +290,7 @@ typedef enum {
    *     output = activation(input * weight' + bias)
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor of at least rank 2, If
    * its rank is greater than 2, it will be flattened to a 2-D Tensor with the
@@ -298,7 +318,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_FULLY_CONNECTED = 4,
+  NNADAPTER_FULLY_CONNECTED = 5,
 
   /**
    * Applies the hard-sigmoid activation to the input tensor element-wise.
@@ -306,7 +326,7 @@ typedef enum {
    *     output = max(0, min(1, alpha * input + beta))
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
@@ -315,7 +335,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_HARD_SIGMOID = 5,
+  NNADAPTER_HARD_SIGMOID = 6,
 
   /**
    * Applies the hard-swish activation to the input tensor element-wise.
@@ -323,7 +343,7 @@ typedef enum {
    *     output = input * max(0, min(1, alpha * input + beta))
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
@@ -332,14 +352,14 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_HARD_SWISH = 6,
+  NNADAPTER_HARD_SWISH = 7,
 
   /**
    * Applies a 2-D max pooling across the input according to kernel sizes,
    * stride sizes, and pad lengths.
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
    * H_in, W_in].
@@ -376,14 +396,14 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_MAX_POOL_2D = 7,
+  NNADAPTER_MAX_POOL_2D = 8,
 
   /**
    * Performs element-wise binary multiplication(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
    * Inputs:
-   * * 0: input0, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: input1, A tensor with the same type as input0.
@@ -395,7 +415,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_MUL = 8,
+  NNADAPTER_MUL = 9,
 
   /**
    * Applies rectified linear activation to the input tensor element-wise.
@@ -403,7 +423,7 @@ typedef enum {
    *     output = max(0, input)
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
@@ -412,7 +432,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_RELU = 9,
+  NNADAPTER_RELU = 10,
 
   /**
    * Applies rectified linear 6 activation to the input tensor element-wise.
@@ -420,7 +440,7 @@ typedef enum {
    *     output = min(6, max(0, input))
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
@@ -429,7 +449,30 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_RELU6 = 10,
+  NNADAPTER_RELU6 = 11,
+
+  /**
+   * Reshapes a tensor similar to numpy.reshape.
+   * The output tensor has the same data as the input tensor but with a new
+   * shape.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 2: shape, An 1-D NNADAPTER_TENSOR_INT32 shape tensor which specifies the
+   * new shape, At most one dimension of the new shape can be -1. In this case,
+   * the value is inferred from the size of the tensor and the remaining
+   * dimensions. A dimension could also be 0, in which case the actual dimension
+   * value is unchanged.
+   *
+   * Outputs:
+   * * 0: output, A tensor with a new shape, and its type and data is same as
+   * input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_RESHAPE = 12,
 
   /**
    * Applies sigmoid activation to the input tensor element-wise.
@@ -446,7 +489,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SIGMOID = 11,
+  NNADAPTER_SIGMOID = 13,
 
   /**
    * Computes the normalized exponential values for the input tensor
@@ -468,7 +511,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SOFTMAX = 12,
+  NNADAPTER_SOFTMAX = 14,
 
   /**
    * Performs element-wise binary subtraction(with Numpy-style broadcasting
@@ -487,7 +530,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SUB = 13,
+  NNADAPTER_SUB = 15,
 
   /**
    * Applies the hyperbolic tangent activation to the input tensor element-wise.
@@ -504,7 +547,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_TANH = 14,
+  NNADAPTER_TANH = 16,
 
   /**
    * Transposes the input according to the perm, similar to numpy.transpose
@@ -516,7 +559,7 @@ typedef enum {
    * * 0: input0, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: perm, An optional 1-D NNADAPTER_TENSOR_INT32 Tensor, reverse the
+   * * 1: perm, An optional 1-D NNADAPTER_TENSOR_INT32 tensor, reverse the
    * dimensions of input if perm is not given, otherwise permute the axes
    * according to the values given.
    *
@@ -525,7 +568,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_TRANSPOSE = 15,
+  NNADAPTER_TRANSPOSE = 17,
 } NNAdapterOperationCode;
 
 /**

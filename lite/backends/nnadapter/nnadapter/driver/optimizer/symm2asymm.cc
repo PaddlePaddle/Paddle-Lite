@@ -81,11 +81,14 @@ NNADAPTER_EXPORT void ConvertModelFromSymmToAsymmQuantization(Model* model) {
                       << " ...";
     auto& input_operands = operation->input_operands;
     auto& output_operands = operation->output_operands;
+    auto input_count = input_operands.size();
+    auto output_count = output_operands.size();
     switch (operation->type) {
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
+      case NNADAPTER_RESHAPE:
       case NNADAPTER_TANH:
       case NNADAPTER_TRANSPOSE:
       case NNADAPTER_HARD_SIGMOID:
@@ -113,6 +116,13 @@ NNADAPTER_EXPORT void ConvertModelFromSymmToAsymmQuantization(Model* model) {
         ConvertOperandFromSymmToAsymm(input_operands[0], 128);
         ConvertOperandFromSymmToAsymm(input_operands[1], 128);
         ConvertOperandFromSymmToAsymm(input_operands[2], 128);
+        ConvertOperandFromSymmToAsymm(output_operands[0], 128);
+      } break;
+      case NNADAPTER_CONCAT: {
+        NNADAPTER_CHECK_GE(input_count, 2);
+        for (int i = 0; i < input_count - 1; i++) {
+          ConvertOperandFromSymmToAsymm(input_operands[i], 128);
+        }
         ConvertOperandFromSymmToAsymm(output_operands[0], 128);
       } break;
       default:

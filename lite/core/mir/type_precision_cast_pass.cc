@@ -113,7 +113,6 @@ static const Type* InferKernelInputDeclType(Node* var_node, Node* op_node) {
   const auto* op_info = inst.op_info();
   const auto& op_type = op_info->Type();
   auto& kernel = inst.picked_kernel();
-  auto target = kernel.target();
   auto var_name = var_node->AsArg().name;
   std::string arg_name;
   CHECK(op_info->GetInputArgname(var_name, &arg_name));
@@ -121,31 +120,58 @@ static const Type* InferKernelInputDeclType(Node* var_node, Node* op_node) {
   auto input_decl_target = input_decl_type->target();
   auto input_decl_precision = input_decl_type->precision();
   auto input_decl_layout = input_decl_type->layout();
-  if (op_type == "fetch" && op_info->HasAttr("data_type")) {
-    // Original output precision is stored in attr 'data_type' of fetch op
-    auto data_type =
-        static_cast<PrecisionType>(op_info->GetAttr<int>("data_type"));
-    input_decl_type =
-        LiteType::GetTensorTy(input_decl_target, data_type, input_decl_layout);
-  } else if (op_type == "subgraph" && op_info->HasInputScale(var_name) &&
-             input_decl_precision == PRECISION(kAny)) {
-    // Only infer the precision of the input data variables of the NNAdapter
-    // subgraph kernel based on the quantization parameters
-    const std::vector<TargetType> valid_targets = {TARGET(kNNAdapter)};
-    if (std::find(valid_targets.begin(), valid_targets.end(), target) !=
-        valid_targets.end()) {
-      auto input_data_names =
-          op_info->GetAttr<std::vector<std::string>>("input_data_names");
-      if (std::find(input_data_names.begin(),
-                    input_data_names.end(),
-                    var_name) != input_data_names.end()) {
+  if (input_decl_precision == PRECISION(kAny) ||
+      input_decl_precision == PRECISION(kUnk)) {
+    if (op_type == "fetch") {
+      // Infer the input declare precision of fetch kernel according to the
+      // attribute 'data_type' which is stored during initializing a graph
+      if (op_info->HasAttr("data_type")) {
+        auto data_type =
+            static_cast<PrecisionType>(op_info->GetAttr<int>("data_type"));
+        input_decl_type = LiteType::GetTensorTy(
+            input_decl_target, data_type, input_decl_layout);
+      }
+    } else if (op_type == "subgraph") {
+      // Only infer the input declare precision of the NNAdapter subgraph kernel
+      // according to the quantization parameters
+      if (kernel.target() == TARGET(kNNAdapter)) {
+        auto input_data_names =
+            op_info->GetAttr<std::vector<std::string>>("input_data_names");
+        if (std::find(input_data_names.begin(),
+                      input_data_names.end(),
+                      var_name) != input_data_names.end()) {
+          if (op_info->HasInputScale(var_name)) {
+            if (input_decl_type->IsTensor()) {
+              input_decl_type = LiteType::GetTensorTy(
+                  input_decl_target, PRECISION(kInt8), input_decl_layout);
+            } else if (input_decl_type->IsTensorList()) {
+              input_decl_type = LiteType::GetTensorListTy(
+                  input_decl_target, PRECISION(kInt8), input_decl_layout);
+            }
+          }
+        }
+      }
+    } else if (op_type == "concat") {
+      // Infer the input declare precision of the concat kernel according to the
+      // quantization parameters
+      for (auto* in_var_node : op_node->inlinks) {
+        CHECK(in_var_node->IsArg());
+        CHECK(in_var_node->AsArg().type);
+        auto in_var_name = in_var_node->AsArg().name;
+        auto in_var_type = in_var_node->AsArg().type;
+        if (!op_info->HasInputScale(in_var_name)) continue;
+        if (in_var_type->precision() != PRECISION(kInt8)) continue;
+        // If the precision of any input variable is PRECISION(kInt8) with
+        // quantization parameters, then force to set the input declare
+        // precision to PRECISION(kFloat)
         if (input_decl_type->IsTensor()) {
           input_decl_type = LiteType::GetTensorTy(
-              input_decl_target, PRECISION(kInt8), input_decl_layout);
+              input_decl_target, PRECISION(kFloat), input_decl_layout);
         } else if (input_decl_type->IsTensorList()) {
           input_decl_type = LiteType::GetTensorListTy(
-              input_decl_target, PRECISION(kInt8), input_decl_layout);
+              input_decl_target, PRECISION(kFloat), input_decl_layout);
         }
+        break;
       }
     }
   }
