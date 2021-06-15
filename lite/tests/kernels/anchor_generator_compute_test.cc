@@ -142,35 +142,37 @@ class AnchorGeneratorComputeTester : public arena::TestCase {
 };
 
 TEST(AnchorGenerator, precision) {
-  LOG(INFO) << "test anchor_generator op";
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
+#endif
+
   for (int n : {1, 3}) {
     for (int c : {3, 6}) {
       for (int h : {9, 18}) {
         for (int w : {9, 18}) {
-          for (std::string str : {"NCHW", "NHWC"}) {
-            std::unique_ptr<arena::TestCase> tester(
-                new AnchorGeneratorComputeTester(place,
-                                                 "def",
-                                                 n,
-                                                 c,
-                                                 h,
-                                                 w,
-                                                 {64, 128, 256, 512},
-                                                 {0.5, 1.0, 2.0},
-                                                 {16.0, 16.0},
-                                                 {0.1, 0.1, 0.2, 0.2},
-                                                 0.5));
-            arena::Arena arena(std::move(tester), place, 2e-5);
-            arena.TestPrecision();
-          }
+          std::unique_ptr<arena::TestCase> tester(
+              new AnchorGeneratorComputeTester(place,
+                                               "def",
+                                               n,
+                                               c,
+                                               h,
+                                               w,
+                                               {64, 128, 256, 512},
+                                               {0.5, 1.0, 2.0},
+                                               {16.0, 16.0},
+                                               {0.1, 0.1, 0.2, 0.2},
+                                               0.5));
+          arena::Arena arena(std::move(tester), place, 2e-5);
+          arena.TestPrecision();
         }
       }
     }
   }
-
-#endif
 }
 
 }  // namespace lite
