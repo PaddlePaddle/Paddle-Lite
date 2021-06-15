@@ -13,17 +13,16 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/operators/anchor_generator_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 class AnchorGeneratorCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::AnchorGeneratorParam;
 
@@ -32,7 +31,7 @@ class AnchorGeneratorCompute
   virtual ~AnchorGeneratorCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
