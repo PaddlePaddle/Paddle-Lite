@@ -255,6 +255,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kX86",
                                       "kCUDA",
                                       "kARM",
+                                      "kMetal",
                                       "kOpenCL",
                                       "kFPGA",
                                       "kNPU",
@@ -333,7 +334,8 @@ void PrintHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "`--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_"
       "ascend_npu|"
       "imagination_nna|intel_fpga)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
@@ -346,13 +348,15 @@ void PrintHelpInfo() {
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_"
       "ascend_npu|"
       "imagination_nna|intel_fpga)"
       "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_"
       "ascend_npu|"
       "imagination_nna|intel_fpga)"
       "`"
