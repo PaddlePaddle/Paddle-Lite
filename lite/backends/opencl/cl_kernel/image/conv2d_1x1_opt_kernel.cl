@@ -1802,10 +1802,11 @@ __kernel void conv2d_1x1_h2w2c2(
     }
     if (out_nh + 1 < output_height) {
 #ifdef ELE_TREE_FUSE
-      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                         second_input_image,
-                         SAMPLER,
-                         (int2)(out_c * old_w + out_w, out_nh + 1);
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)(out_c * old_w + out_w, out_nh + 1));
       out_w0_h1_c0 += second_val;
 #endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
@@ -1815,10 +1816,11 @@ __kernel void conv2d_1x1_h2w2c2(
     }
     if (out_w + 1 < output_width && out_nh + 1 < output_height) {
 #ifdef ELE_TREE_FUSE
-      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                         second_input_image,
-                         SAMPLER,
-                         (int2)(out_c * old_w + out_w + 1, out_nh + 1);
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)(out_c * old_w + out_w + 1, out_nh + 1));
       out_w1_h1_c0 += second_val;
 #endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
@@ -1843,10 +1845,11 @@ __kernel void conv2d_1x1_h2w2c2(
                    out_w0_h0_c1);
     if (out_w + 1 < output_width) {
 #ifdef ELE_TREE_FUSE
-      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                         second_input_image,
-                         SAMPLER,
-                         (int2)((out_c + 1) * old_w + out_w + 1, out_nh);
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)((out_c + 1) * old_w + out_w + 1, out_nh));
       out_w1_h0_c1 += second_val;
 #endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
@@ -1856,10 +1859,11 @@ __kernel void conv2d_1x1_h2w2c2(
     }
     if (out_nh + 1 < output_height) {
 #ifdef ELE_TREE_FUSE
-      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                         second_input_image,
-                         SAMPLER,
-                         (int2)((out_c + 1) * old_w + out_w, out_nh + 1);
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)((out_c + 1) * old_w + out_w, out_nh + 1));
       out_w0_h1_c1 += second_val;
 #endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
@@ -1869,10 +1873,11 @@ __kernel void conv2d_1x1_h2w2c2(
     }
     if (out_w + 1 < output_width && out_nh + 1 < output_height) {
 #ifdef ELE_TREE_FUSE
-      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                         second_input_image,
-                         SAMPLER,
-                         (int2)((out_c + 1) * old_w + out_w + 1, out_nh + 1);
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)((out_c + 1) * old_w + out_w + 1, out_nh + 1));
       out_w1_h1_c1 += second_val;
 #endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
