@@ -81,12 +81,12 @@ void Profiler::StartTiming(Type type, const int index, KernelContext* ctx) {
 void Profiler::StopTiming(Type type, const int index, KernelContext* ctx) {
   CHECK_LT(index, units_.size())
       << "The timer index in the profiler is out of range.";
-  units_[index].Timer(type)->Stop(ctx);
 #ifdef LITE_WITH_OPENCL
   units_[index].Timer(type)->CLStop(units_[index].character.op_type,
                                     units_[index].character.io_duration,
                                     units_[index].character.cl_event);
 #endif
+  units_[index].Timer(type)->Stop(ctx);
 }
 
 int Profiler::GetKernelFuncCalledTimes(const std::string& op_type,

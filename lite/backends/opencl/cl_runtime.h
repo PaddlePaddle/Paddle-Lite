@@ -197,6 +197,10 @@ class CLRuntime {
     return device_->getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
   }
 
+  // Query the maximum work-group size that can be used to execute a kernel on a
+  // specific device
+  uint64_t GetMaxWorkGroupSize(const cl::Kernel& kernel);
+
   double GetCommandTime(const cl::Event& event);
 
   double GetQueuedTime(const cl::Event& event);
