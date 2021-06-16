@@ -42,6 +42,26 @@ if(WIN32)
   if (NOT MSVC)
     message(FATAL "Windows build only support msvc. Which was binded by the nvcc compiler of NVIDIA.")
   endif(NOT MSVC)
+
+  # set the generator platform for ninja
+  if(${CMAKE_GENERATOR} MATCHES "Ninja")
+      if (NOT ARCH)
+          set(ARCH i386)
+      endif()
+
+      if (NOT DEFINED CMAKE_GENERATOR_PLATFORM)
+          if(ARCH STREQUAL "amd64")
+              set(CMAKE_GENERATOR_PLATFORM "x64")
+          elseif(ARCH STREQUAL "arm")
+              set(CMAKE_GENERATOR_PLATFORM "ARM")
+          elseif(ARCH STREQUAL "arm64")
+              set(CMAKE_GENERATOR_PLATFORM "ARM64")
+          else()
+              set(CMAKE_GENERATOR_PLATFORM "Win32")
+          endif()
+      endif()
+  endif()
+  
 endif(WIN32)
 
 if(LITE_WITH_CUDA)

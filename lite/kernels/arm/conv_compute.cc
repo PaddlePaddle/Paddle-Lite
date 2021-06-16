@@ -97,7 +97,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
-             pads_equal) {
+             pads_equal && !ctx.has_dot()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run WinogradConv Int8";
   } else {
@@ -122,7 +122,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
-             pads_equal) {
+             pads_equal && !ctx.has_dot()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run WinogradConv Int8";
   } else {
@@ -145,8 +145,9 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   bool has_active = act_param.has_active;
   bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
   bool conv_3x3_wino = (ic < 8) || (oc < 8);
-  if (param.groups == ic && ic == oc && kps_equal && pads_less && no_dilation &&
-      flag_dw_3x3) {
+  bool stride_less = (sw == 1) || (sw == 2);
+  if (param.groups == ic && ic == oc && no_dilation && stride_less &&
+      ((flag_dw_5x5 && ks_equal) || (flag_dw_3x3 && kps_equal && pads_less))) {
     impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
              ks_equal) {
@@ -206,6 +207,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFP16, kNCHW, ConvFp16, def)
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
+
 #endif  // ENABLE_ARM_FP16
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, ConvFp32, def)

@@ -14,8 +14,10 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void sigmoid(__global const CL_DTYPE* x_data, const int count, __global CL_DTYPE* out_data) {
-  const int index = get_global_id(0); 
+__kernel void sigmoid(__global const CL_DTYPE* x_data,
+                      const int count,
+                      __global CL_DTYPE* out_data) {
+  const int index = get_global_id(0);
   if (index < count) {
     out_data[index] = 1 / (1 + exp(-x_data[index]));
   }

@@ -24,7 +24,7 @@ namespace xpu {
 template <class T>
 void CorrelationCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto* input1 = param.input1;
   auto* input2 = param.input2;
   auto* output = param.output;

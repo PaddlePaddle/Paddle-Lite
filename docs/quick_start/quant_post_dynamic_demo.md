@@ -10,7 +10,10 @@
 
 参考[opt文档](../user_guides/model_optimize_tool)，下载或者编译opt工具，其中可执行文件opt和python版本opt都提供了动态图离线量化功能。
 
-此处使用可执行文件opt工具。我们可以从[release界面](https://github.com/PaddlePaddle/Paddle-Lite/releases)下载PaddleLite 2.8版本及其以后版本的opt工具。如果本机是linux操作系统，下载opt_linux文件，如果本机是mac操作系统，下载opt_mac。
+此处安装 2.9 版本Paddle-Lite: 
+```
+pip install paddlelite==2.9 
+```
 
 ### 1.2 产出优化后的量化模型
 
@@ -23,7 +26,7 @@ tar zxf mobilenet_v1.tar.gz
 使用opt工具，产出优化后的非量化mobilenetv1模型。
 
 ```shell
-./opt \
+paddle_lite_opt \
     --model_dir=mobilenet_v1 \
     --optimize_out_type=naive_buffer \
     --optimize_out=mobilenet_v1_opt \
@@ -33,7 +36,7 @@ tar zxf mobilenet_v1.tar.gz
 使用opt工具，开启动态离线量化，设置量化为16比特，产出优化后的mobilenetv1量化模型。
 
 ```shell
-./opt \
+paddle_lite_opt \
     --model_dir=mobilenet_v1 \
     --optimize_out_type=naive_buffer \
     --optimize_out=mobilenet_v1_int16_opt \
@@ -45,7 +48,7 @@ tar zxf mobilenet_v1.tar.gz
 使用opt工具，开启动态离线量化，设置量化为8比特，产出优化后的mobilenetv1量化模型。
 
 ```shell
-./opt \
+paddle_lite_opt \
     --model_dir=mobilenet_v1 \
     --optimize_out_type=naive_buffer \
     --optimize_out=mobilenet_v1_int8_opt \

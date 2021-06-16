@@ -21,7 +21,7 @@ __kernel void slice(__global const DTYPE* in,
                     __global const int* real_starts,
                     const int dim_size,
                     const int out_num) {
-  const int dst_id = get_global_id(0); // [0, out_num)
+  const int dst_id = get_global_id(0);  // [0, out_num)
 
   if (dst_id >= out_num) {
     return;

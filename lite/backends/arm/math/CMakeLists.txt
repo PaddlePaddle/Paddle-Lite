@@ -108,7 +108,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       concat.cc
       type_trans.cc
       box_coder.cc
-      shuffle_channel.cc
       activation.cc
       dropout.cc
       power.cc
@@ -119,7 +118,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       col_im_transform.cc
       conv_transpose_depthwise.cc
       im2sequence.cc
-      prior_box.cc
       norm.cc
       pad2d.cc
       negative.cc
@@ -132,7 +130,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       slice.cc
       reduce_mean.cc
       affine_channel.cc
-      anchor_generator.cc
       split_merge_lod_tenosr.cc
       reduce_prod.cc
       reduce_sum.cc

@@ -258,7 +258,7 @@ void prior_box_compute_ref(const lite::Tensor* input,
         float* com_buf = reinterpret_cast<float*>(
             fast_malloc(sizeof(float) * aspect_ratio_.size() * 4));
 
-        for (int s = 0; s < min_size_.size(); ++s) {
+        for (size_t s = 0; s < min_size_.size(); ++s) {
           int min_idx = 0;
           int max_idx = 0;
           int com_idx = 0;
@@ -289,7 +289,7 @@ void prior_box_compute_ref(const lite::Tensor* input,
           }
 
           //! rest of priors
-          for (int r = 0; r < aspect_ratio_.size(); ++r) {
+          for (size_t r = 0; r < aspect_ratio_.size(); ++r) {
             float ar = aspect_ratio_[r];
             if (fabs(ar - 1.) < 1e-6) {
               continue;
@@ -728,24 +728,21 @@ void test_prior_box(Place place) {
 }
 
 TEST(PriorBox, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place(TARGET(kHost));
   test_prior_box(place);
-#endif
 }
 
 TEST(DensityPriorBox, precision) {
-#if defined(LITE_WITH_X86) && !defined(LITE_WITH_XPU)
-  Place place(TARGET(kX86));
-  test_density_prior_box(place);
+  Place place;
+#if defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+
   test_density_prior_box(place);
-#endif
 }
 
 }  // namespace lite

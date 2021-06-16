@@ -11,7 +11,6 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
 
 readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
-
 # global variables
 CMAKE_EXTRA_OPTIONS=""
 BUILD_EXTRA=OFF
@@ -607,7 +606,7 @@ function main {
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
-		;;
+                ;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 OPTMODEL_DIR=$(readlinkf $OPTMODEL_DIR)

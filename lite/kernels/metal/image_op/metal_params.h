@@ -18,197 +18,228 @@
 #include <cstdint>
 
 struct ElementwiseAddMetalParam {
-  int fast;
-  int addByChannel;
-  int axis;
-  int ylen;
-  int xdim[4];
-  int xtrans[4];
-  int ydim[4];
-  int ytrans[4];
+    int fast;
+    int addByChannel;
+    int axis;
+    int ylen;
+    int xdim[4];
+    int xtrans[4];
+    int ydim[4];
+    int ytrans[4];
+};
+
+struct ActivationMetalParam {
+    uint16_t activationType;
+    float threshold;  // RELU6
+    float alpha;      // LEAKY_RELU
+    float offset;     // HARD_SIGMOID
+    float slope;
 };
 
 struct MetalConvParam {
-  int16_t offsetX;
-  int16_t offsetY;
-  int16_t offsetZ;
-  uint16_t strideX;
-  uint16_t strideY;
-  uint16_t dilationX;
-  uint16_t dilationY;
-  uint16_t groups;
-  uint16_t iC;
-  uint16_t fC;
-  uint16_t oC;
-  uint16_t hasAddOp;
-  uint16_t hasReluOp;
-  ElementwiseAddMetalParam addParam;
+    int16_t offsetX;
+    int16_t offsetY;
+    int16_t offsetZ;
+    uint16_t strideX;
+    uint16_t strideY;
+    uint16_t dilationX;
+    uint16_t dilationY;
+    uint16_t groups;
+    uint16_t iC;
+    uint16_t fC;
+    uint16_t oC;
+    uint16_t hasAddOp;
+    uint16_t hasReluOp;
+    ElementwiseAddMetalParam addParam;
+    ActivationMetalParam activationParam;
 };
 
 struct SoftmaxMetalParam {
-  int N;
-  int K;
+    int N;
+    int K;
 };
 
 struct SoftmaxMetalParam2 {
-  int N;
-  int C;
-  int H;
-  int W;
+    int N;
+    int C;
+    int H;
+    int W;
 };
 
 struct ScaleMetalParam {
-  float scale;
-  float abias;
+    float scale;
+    float abias;
 };
 
 struct ReshapeMetalParam {
-  int idim[4];
-  int itrans[4];
-  int odim[4];
-  int otrans[4];
+    int idim[4];
+    int itrans[4];
+    int odim[4];
+    int otrans[4];
 };
 
 struct Relu6MetalParam {
-  float threshold;
+    float threshold;
+};
+
+struct LeakyReluMetalParam {
+    float alpha;
 };
 
 struct PoolMetalParam {
-  int ksizeX;
-  int ksizeY;
-  int strideX;
-  int strideY;
-  int paddingX;
-  int paddingY;
-  int poolType;
-  int exclusive;
+    int ksizeX;
+    int ksizeY;
+    int strideX;
+    int strideY;
+    int paddingX;
+    int paddingY;
+    int poolType;
+    int exclusive;
 };
 
 struct MulMetalParam {};
 
 struct FCMetalParam {
-  int N;
-  int K;
+    int N;
+    int K;
 };
 
 struct DropoutMetalParam {
-  float scale;
+    float scale;
 };
 
 struct DepthwiseConv2dMetalParam {
-  int16_t offsetX;
-  int16_t offsetY;
-  int16_t offsetZ;
-  uint16_t strideX;
-  uint16_t strideY;
-  uint16_t dilationX;
-  uint16_t dilationY;
-  uint16_t groups;
-  uint16_t iC;
-  uint16_t fC;
-  uint16_t oC;
-  uint16_t hasAddOp;
-  uint16_t hasReluOp;
-  ElementwiseAddMetalParam addParam;
+    int16_t offsetX;
+    int16_t offsetY;
+    int16_t offsetZ;
+    uint16_t strideX;
+    uint16_t strideY;
+    uint16_t dilationX;
+    uint16_t dilationY;
+    uint16_t groups;
+    uint16_t iC;
+    uint16_t fC;
+    uint16_t oC;
+    uint16_t hasAddOp;
+    uint16_t hasReluOp;
+    ElementwiseAddMetalParam addParam;
 };
 
 struct ConcatMetalParam {
-  int odim[4];
-  int axis;
-  int offset;
-  int trans[4];
-  int vdim[6];
+    int odim[4];
+    int axis;
+    int offset;
+    int trans[4];
+    int vdim[6];
 };
 
 struct BilinearInterPMetalParam {
-  float ratio_h;
-  float ratio_w;
-  float align_delta;
+    float ratio_h;
+    float ratio_w;
+    float align_delta;
 };
 
 struct NearestInterpMetalParam {
-  float ratioH;
-  float ratioW;
-  float alignDelta;
+    float ratioH;
+    float ratioW;
+    float alignDelta;
 };
 
 struct PixelShuffleMetalParam {
-  int upscale_factor;
+    int upscale_factor;
 };
 
 struct LrnMetalParam {
-  int n;
-  int channelN;
-  float k;
-  float alpha;
-  float beta;
+    int n;
+    int channelN;
+    float k;
+    float alpha;
+    float beta;
 };
 
 struct InstanceNormReluMetalParam {
-  uint16_t hasReluOp;
+    uint16_t hasReluOp;
 };
 
 struct HardSwishMetalParam {
-  float offset;
-  float threshold;
-  float scale;
+    float offset;
+    float threshold;
+    float scale;
 };
 
 struct ExpandMetalParam {
-  uint16_t fast;
-  uint16_t c;
-  uint16_t h;
-  uint16_t w;
+    uint16_t fast;
+    uint16_t c;
+    uint16_t h;
+    uint16_t w;
 };
 
 struct ElementwiseMetalParam {
-  int byChannel;
+    int byChannel;
 };
 
 struct TransposeMetalParam {
-  int iC;
-  int oC;
-  int axis[4];
+    int iC;
+    int oC;
+    int axis[4];
 };
 
 struct PriorBoxMetalParam {
-  float offset;
-  float stepWidth;
-  float stepHeight;
-  float minSize;
-  float maxSize;
-  float imageWidth;
-  float imageHeight;
-  bool clip;
-  uint32_t numPriors;
-  uint32_t aspecRatiosSize;
-  uint32_t minSizeSize;
-  uint32_t maxSizeSize;
+    float offset;
+    float stepWidth;
+    float stepHeight;
+    float minSize;
+    float maxSize;
+    float imageWidth;
+    float imageHeight;
+    bool clip;
+    uint32_t numPriors;
+    uint32_t aspecRatiosSize;
+    uint32_t minSizeSize;
+    uint32_t maxSizeSize;
 };
 
 struct SplitMetalParam {
-  int idim[4];
-  int axis;
-  int offset;
-  int trans[4];
-  int vdim[4];
+    int idim[4];
+    int axis;
+    int offset;
+    int trans[4];
+    int vdim[4];
 };
 
 struct ConvTransposeAddMetalParam {
-  uint16_t kernelW;
-  uint16_t kernelH;
-  uint16_t strideX;
-  uint16_t strideY;
-  uint16_t paddingX;
-  uint16_t paddingY;
-  uint16_t dilationX;
-  uint16_t dilationY;
-  uint16_t groups;
-  uint16_t iC;
-  uint16_t fC;
-  uint16_t oC;
-  uint16_t hasAddOp;
-  ElementwiseAddMetalParam addParam;
+    uint16_t kernelW;
+    uint16_t kernelH;
+    uint16_t strideX;
+    uint16_t strideY;
+    uint16_t paddingX;
+    uint16_t paddingY;
+    uint16_t dilationX;
+    uint16_t dilationY;
+    uint16_t groups;
+    uint16_t iC;
+    uint16_t fC;
+    uint16_t oC;
+    uint16_t hasAddOp;
+    ElementwiseAddMetalParam addParam;
+};
+
+struct SliceMetalParam {
+    uint16_t start0;
+    uint16_t start1;
+    uint16_t start2;
+    uint16_t start3;
+    uint16_t end0;
+    uint16_t end1;
+    uint16_t end2;
+    uint16_t end3;
+    int iC;
+    int oC;
+};
+
+struct FetchMetalParam {
+    int isize;
+    int idim[4];
 };
 
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_

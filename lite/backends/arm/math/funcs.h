@@ -21,7 +21,6 @@
 
 #include "lite/backends/arm/math/activation.h"
 #include "lite/backends/arm/math/affine_channel.h"
-#include "lite/backends/arm/math/anchor_generator.h"
 #include "lite/backends/arm/math/argmax.h"
 #include "lite/backends/arm/math/axpy.h"
 #include "lite/backends/arm/math/box_coder.h"
@@ -49,7 +48,6 @@
 #include "lite/backends/arm/math/pad2d.h"
 #include "lite/backends/arm/math/pooling.h"
 #include "lite/backends/arm/math/power.h"
-#include "lite/backends/arm/math/prior_box.h"
 #include "lite/backends/arm/math/quantize.h"
 #include "lite/backends/arm/math/reduce_max.h"
 #include "lite/backends/arm/math/reduce_max_min.h"
@@ -64,7 +62,6 @@
 #include "lite/backends/arm/math/sequence_pool_grad.h"
 #include "lite/backends/arm/math/sgemm.h"
 #include "lite/backends/arm/math/sgemv.h"
-#include "lite/backends/arm/math/shuffle_channel.h"
 #include "lite/backends/arm/math/slice.h"
 #include "lite/backends/arm/math/softmax.h"
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"

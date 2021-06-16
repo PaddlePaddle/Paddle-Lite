@@ -28,7 +28,8 @@ __kernel void elementwise_mul(__global image2d_t input,
   CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords);
 
 #ifdef FUSE_SCALE
-  CL_DTYPE4 output = fuse_scale(in * biase, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
+  CL_DTYPE4 output =
+      fuse_scale(in * biase, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
 #else
   CL_DTYPE4 output = in * biase;
 #endif
@@ -55,7 +56,8 @@ __kernel void channel_mul(__global image2d_t input,
   CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords_bias);
 
 #ifdef FUSE_SCALE
-  CL_DTYPE4 output = fuse_scale(in * biase, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
+  CL_DTYPE4 output =
+      fuse_scale(in * biase, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
 #else
   CL_DTYPE4 output = in * biase;
 #endif
@@ -63,26 +65,27 @@ __kernel void channel_mul(__global image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
-__kernel void channel_mul_d1(__read_only image2d_t input,    
-                             __read_only image2d_t bias,    
-                             __write_only image2d_t outputImage,    
-                             int x_w, int opt) { 
-  int x = get_global_id(0);    
-  int y = get_global_id(1);    
+__kernel void channel_mul_d1(__read_only image2d_t input,
+                             __read_only image2d_t bias,
+                             __write_only image2d_t outputImage,
+                             int x_w,
+                             int opt) {
+  int x = get_global_id(0);
+  int y = get_global_id(1);
 
-  int2 coords;    
-  coords.x = x;    
-  coords.y = y;    
+  int2 coords;
+  coords.x = x;
+  coords.y = y;
 
-  int2 coords_bias;    
+  int2 coords_bias;
   coords_bias.x = (opt == 1) ? 0 : (x % x_w);
   coords_bias.y = 0;
 
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);    
-  CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords_bias);    
-  CL_DTYPE4 output = in * (CL_DTYPE4)(biase.x);    
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);
+  CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords_bias);
+  CL_DTYPE4 output = in * (CL_DTYPE4)(biase.x);
 
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);    
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
 // etc : 1 1 1 72
@@ -105,7 +108,7 @@ __kernel void channel_mul_d2(__global image2d_t input,
   /*  if (x == 0 && y == 0) {
       CL_DTYPE4 b = (CL_DTYPE4){0, 0, 0, 0};
   #define PPI(j, k)                                                          \
-    b = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2){j, k});                            \
+    b = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2){j, k}); \
     printf("bias(%d,%d)={ %f , %f , %f , %f }\n ", j, k, convert_float(b.x), \
            convert_float(b.y), convert_float(b.z), convert_float(b.w));
       for (int i = 0; i < 73; ++i) {
@@ -143,7 +146,8 @@ __kernel void channel_mul_d2(__global image2d_t input,
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);
 
 #ifdef FUSE_SCALE
-  CL_DTYPE4 output = fuse_scale(mad(in, biase, 0), SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
+  CL_DTYPE4 output =
+      fuse_scale(mad(in, biase, 0), SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
 #else
   CL_DTYPE4 output = mad(in, biase, 0);
 #endif
@@ -171,7 +175,8 @@ __kernel void channel_mul_d3(__global image2d_t input,
   CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords_bias);
 
 #ifdef FUSE_SCALE
-  CL_DTYPE4 output = fuse_scale(in * biase, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
+  CL_DTYPE4 output =
+      fuse_scale(in * biase, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
 #else
   CL_DTYPE4 output = in * biase;
 #endif
@@ -180,8 +185,9 @@ __kernel void channel_mul_d3(__global image2d_t input,
 }
 
 __kernel void channel_mul_d4(__global image2d_t input,
-__global image2d_t bias,
-                          __write_only image2d_t outputImage, int w) {
+                             __global image2d_t bias,
+                             __write_only image2d_t outputImage,
+                             int w) {
   int x = get_global_id(0);
   int y = get_global_id(1);
 
@@ -197,7 +203,8 @@ __global image2d_t bias,
   CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords_bias);
 
 #ifdef FUSE_SCALE
-  CL_DTYPE4 output = fuse_scale(in * biase, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
+  CL_DTYPE4 output =
+      fuse_scale(in * biase, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
 #else
   CL_DTYPE4 output = in * biase;
 #endif

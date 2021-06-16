@@ -260,7 +260,7 @@ function(lite_cc_binary TARGET)
     if(NOT WIN32)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     endif()
-    if (NOT APPLE)
+    if (NOT APPLE AND NOT WIN32)
         # strip binary target to reduce size
         if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             add_custom_command(TARGET ${TARGET} POST_BUILD
@@ -384,8 +384,12 @@ function(add_kernel TARGET device level)
 
     if(LITE_BUILD_TAILOR)
       foreach(src ${args_SRCS})
-        list (FIND tailored_kernels_list ${src} _index)
-        if (${_index} EQUAL -1)
+        string(TOLOWER "${device}" device_name) # ARM => arm, Host => host
+        get_filename_component(filename ${src} NAME_WE) # conv_compute.cc => conv_compute
+        set(kernel_tailor_src_dir "${CMAKE_BINARY_DIR}/kernel_tailor_src_dir")
+        set(suffix "for_strip")
+        set(dst_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
+        if(NOT EXISTS ${dst_file})
           return()
         endif()
       endforeach()
@@ -566,7 +570,29 @@ function(add_kernel TARGET device level)
         file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
     endforeach()
 
-    lite_cc_library(${TARGET} SRCS ${args_SRCS}
+    if (NOT LITE_BUILD_TAILOR)
+      lite_cc_library(${TARGET} SRCS ${args_SRCS}
+              DEPS ${args_DEPS}
+              X86_DEPS ${args_X86_DEPS}
+              CUDA_DEPS ${args_CUDA_DEPS}
+              CL_DEPS ${args_CL_DEPS}
+              METAL_DEPS ${args_METAL_DEPS}
+              ARM_DEPS ${args_ARM_DEPS}
+              FPGA_DEPS ${args_FPGA_DEPS}
+              INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
+              NPU_DEPS ${args_NPU_DEPS}
+              APU_DEPS ${args_APU_DEPS}
+              XPU_DEPS ${args_XPU_DEPS}
+              RKNPU_DEPS ${args_RKNPU_DEPS}
+              BM_DEPS ${args_BM_DEPS}
+              MLU_DEPS ${args_MLU_DEPS}
+              IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+              HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
+              PROFILE_DEPS ${args_PROFILE_DEPS}
+              LIGHT_DEPS ${args_LIGHT_DEPS}
+              HVY_DEPS ${args_HVY_DEPS})
+    else()
+      lite_cc_library(${TARGET} SRCS ${dst_file}
               DEPS ${args_DEPS}
               X86_DEPS ${args_X86_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
@@ -588,6 +614,7 @@ function(add_kernel TARGET device level)
               LIGHT_DEPS ${args_LIGHT_DEPS}
               HVY_DEPS ${args_HVY_DEPS}
       )
+    endif()
 endfunction()
 
 set(ops CACHE INTERNAL "ops")

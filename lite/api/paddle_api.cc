@@ -360,18 +360,9 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
-void ConfigBase::set_metal_dir(const std::string &path) {
+void ConfigBase::set_metal_lib_path(const std::string &path) {
 #ifdef LITE_WITH_METAL
   metal_path_ = path;
-  lite::TargetWrapperMetal::set_metal_path(metal_path_);
-#endif
-  return;
-}
-
-void ConfigBase::set_metal_use_aggressive_optimization(bool flag) {
-#ifdef LITE_WITH_METAL
-  metal_use_agressive_ = flag;
-  lite::TargetWrapperMetal::set_metal_use_aggressive_optimization(flag);
 #endif
   return;
 }
@@ -379,7 +370,13 @@ void ConfigBase::set_metal_use_aggressive_optimization(bool flag) {
 void ConfigBase::set_metal_use_mps(bool flag) {
 #ifdef LITE_WITH_METAL
   metal_use_mps_ = flag;
-  lite::TargetWrapperMetal::set_metal_use_mps(flag);
+#endif
+  return;
+}
+
+void ConfigBase::set_metal_use_aggressive(bool flag) {
+#ifdef LITE_WITH_METAL
+  metal_use_aggressive_ = flag;
 #endif
   return;
 }

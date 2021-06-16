@@ -336,14 +336,18 @@ void test_reduce_sum(Place place) {
 }
 
 TEST(ReduceSum, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-  test_reduce_sum(place);
+  Place place;
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+
   test_reduce_sum(place);
-#endif
 }
 
 }  // namespace lite

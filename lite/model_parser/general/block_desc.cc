@@ -21,37 +21,58 @@ namespace general {
 template <>
 VarDesc* BlockDesc::GetVar<VarDesc>(int32_t idx) {
   CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
-  return &vars_[idx];
+  return vars_[idx].get();
 }
 
 template <>
 VarDesc const* BlockDesc::GetVar<VarDesc>(int32_t idx) const {
   CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
-  return &vars_[idx];
+  return vars_[idx].get();
 }
 
 template <>
 VarDesc* BlockDesc::AddVar<VarDesc>() {
-  vars_.emplace_back();
-  return &vars_.back();
+  vars_.emplace_back(new VarDesc);
+  return vars_.back().get();
 }
 
 template <>
 OpDesc* BlockDesc::GetOp<OpDesc>(int32_t idx) {
   CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
-  return &ops_[idx];
+  return ops_[idx].get();
 }
 
 template <>
 OpDesc const* BlockDesc::GetOp<OpDesc>(int32_t idx) const {
   CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
-  return &ops_[idx];
+  return ops_[idx].get();
 }
 
 template <>
 OpDesc* BlockDesc::AddOp<OpDesc>() {
-  ops_.emplace_back();
-  return &ops_.back();
+  ops_.emplace_back(new OpDesc);
+  return ops_.back().get();
+}
+
+void BlockDesc::CopyFrom(const BlockDesc& desc) {
+  ops_.clear();
+  vars_.clear();
+  SetIdx(desc.Idx());
+  SetParentIdx(desc.ParentIdx());
+  SetForwardBlockIdx(desc.ForwardBlockIdx());
+  for (size_t i = 0; i < desc.OpsSize(); ++i) {
+    ops_.emplace_back(new OpDesc(*desc.GetOp<OpDesc>(i)));
+  }
+  for (size_t i = 0; i < desc.VarsSize(); ++i) {
+    vars_.emplace_back(new VarDesc(*desc.GetVar<VarDesc>(i)));
+  }
+}
+
+BlockDesc::BlockDesc(const BlockDesc& desc) { CopyFrom(desc); }
+
+BlockDesc& BlockDesc::operator=(const BlockDesc& desc) {
+  CopyFrom(desc);
+  return *this;
 }
 
 }  // namespace general

@@ -23,9 +23,17 @@ namespace operators {
 bool ReduceOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
+  auto dims = param_.dim;
   auto x_dims = param_.X->dims();
-  auto x_rank = x_dims.size();
-  CHECK_LE(x_rank, 6UL) << "Tensors with rank at most 6 are supported.";
+  int x_rank = x_dims.size();
+  if (dims.size() != 0) {
+    for (int i = 0; i < dims.size(); i++) {
+      if (dims[i] < 0) {
+        dims[i] = x_rank + dims[i];
+      }
+      CHECK_OR_FALSE(dims[i] <= x_rank && dims[i] >= -x_rank);
+    }
+  }
   return true;
 }
 
@@ -85,14 +93,16 @@ bool ReduceOp::InferShapeImpl() const {
 }
 
 bool ReduceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
-  param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+  param_.X = scope->FindTensor(opdesc.Input("X").front());
+  param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
 
   param_.dim = opdesc.GetAttr<std::vector<int>>("dim");
-  param_.reduce_all = opdesc.GetAttr<bool>("reduce_all");
-  param_.keep_dim = opdesc.GetAttr<bool>("keep_dim");
+  if (opdesc.HasAttr("reduce_all")) {
+    param_.reduce_all = opdesc.GetAttr<bool>("reduce_all");
+  }
+  if (opdesc.HasAttr("keep_dim")) {
+    param_.keep_dim = opdesc.GetAttr<bool>("keep_dim");
+  }
   return true;
 }
 
@@ -100,4 +110,4 @@ bool ReduceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(reduce_sum, paddle::lite::operators::ReduceOp);
+REGISTER_LITE_OP(reduce_mean, paddle::lite::operators::ReduceOp);

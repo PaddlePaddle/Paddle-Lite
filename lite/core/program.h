@@ -143,13 +143,11 @@ struct Instruction {
 #endif
 
 #ifdef LITE_WITH_OPENCL
-  bool need_flush(const int inst_idx) const {
-    if (kernel_->target() == TargetType::kOpenCL && inst_idx % 10 == 0) {
-      return true;
+  void Flush(const int inst_idx) const {
+    if (TargetType::kOpenCL == kernel_->target()) {
+      CLRuntime::Global()->Flush(inst_idx);
     }
-    return false;
   }
-  void Flush() const { CLRuntime::Global()->command_queue().flush(); }
 #endif
 
 #ifdef LITE_WITH_PROFILE
@@ -259,10 +257,20 @@ class LITE_API RuntimeProgram {
   void SaveToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
 #endif
 
+#ifdef LITE_WITH_METAL
+  void ConfigMetalContext(std::string lib_path,
+                          bool use_mps = false,
+                          bool use_aggressive = false);
+#endif
+
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<std::vector<Instruction>> instructions_;
   Scope* exec_scope_{};
+
+#ifdef LITE_WITH_METAL
+  std::unique_ptr<KernelContext> metal_ctx_{nullptr};
+#endif
 
 #ifdef LITE_WITH_PROFILE
   profile::Profiler profiler_;

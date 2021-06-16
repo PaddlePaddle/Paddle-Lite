@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/softmax_image_compute.h"
+#include "lite/backends/metal/metal_context_imp.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
@@ -22,128 +24,155 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void SoftmaxImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto device = metal_context_->GetDefaultDevice();
+void SoftmaxImageCompute::PrepareForRun() {
+    auto& context = ctx_->As<MTLContext>();
+    metal_context_ = (MetalContext*)context.context();
 
-  const auto& param = this->template Param<param_t>();
-  auto output_dims = param.output->dims();
-  auto input_dims = param.x->dims();
+    const auto& param = this->Param<param_t>();
+    auto output_dims = param.output->dims();
 
-  auto axis = param.axis;
-  if (axis < 0) {
-    axis += input_dims.size();
-  }
+#ifdef LITE_WITH_METAL_FULL
+#else
+    input_buffer_ = param.x->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+#endif
 
-  input_buffer_ = param.x->template data<P, MetalImage>();
-
-  //  SoftmaxMetalParam metal_param{(int)input_dims[0], (int)input_dims[1]};
-  SoftmaxMetalParam2 metal_param{
-      (int)input_buffer_->pad_to_four_dim_[0],
-      (int)input_buffer_->pad_to_four_dim_[1],
-      (int)input_buffer_->pad_to_four_dim_[2],
-      (int)input_buffer_->pad_to_four_dim_[3],
-  };
-
-  param_buffer_ = metal_context_->CreateBuffer(*device,
-                                               &metal_param,
-                                               sizeof(metal_param),
-                                               METAL_ACCESS_FLAG::CPUWriteOnly);
-
-  output_buffer_ =
-      param.output->template mutable_data<P, MetalImage>(output_dims);
-
-  std::string function_name = GetFunctionName(input_dims, axis);
-  assert(!function_name.empty());
-
-  queue_ = metal_context_->GetDefaultQueue(*device);
-  kernel_ = metal_context_->GetKernel(*device, function_name);
+    //是否使用mps
+    bool should_use_mps = false;
+    if (@available(iOS 10.0, *)) {
+        if (metal_context_->use_mps()) {
+            int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+            int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+            if (input_c >= 3 && output_c >= 3) {
+                should_use_mps = true;
+            }
+        }
+    }
+    use_mps_ = should_use_mps;
+    if (use_mps_) {
+        setup_with_mps();
+    } else {
+        setup_without_mps();
+    }
 }
 
-template <typename P, PrecisionType PTYPE>
-std::string SoftmaxImageCompute<P, PTYPE>::GetFunctionName(
-    const DDimLite& input_dims, int axis) const {
-  std::string function_name = "";
-  if (std::is_same<P, float>::value) {
-    if (input_dims.size() == 4) {
-      if (axis == 1) {
-        function_name = "softmax_c_d3_common_float";
-      } else if (axis == 2) {
-        function_name = "softmax_h_d3_common_float";
-      } else if (axis == 3) {
-        function_name = "softmax_w_d3_common_float";
-      }
-    }
-    if (input_dims.size() == 3) {
-      if (axis == 0) {
-        function_name = "softmax_c_d3_common_float";
-      } else if (axis == 1) {
-        function_name = "softmax_h_d3_common_float";
-      } else if (axis == 2) {
-        function_name = "softmax_w_d3_common_float";
-      }
-    } else if (input_dims.size() == 2 || input_dims.size() == 1) {
-      if (axis == 0) {
-        function_name = "softmax_h_2d_common_float";
-      } else if (axis == 1) {
-        function_name = "softmax_w_2d_common_float";
-      }
+void SoftmaxImageCompute::Run() {
+    if (use_mps_) {
+        run_with_mps();
     } else {
-      throw std::logic_error("ERROR: softmax still not support the axis");
+        run_without_mps();
     }
-  } else if (std::is_same<MetalHalf, P>::value) {
-    if (input_dims.size() == 4) {
-      if (axis == 1) {
-        function_name = "softmax_c_d3_common_half";
-      } else if (axis == 2) {
-        function_name = "softmax_h_d3_common_half";
-      } else if (axis == 3) {
-        function_name = "softmax_w_d3_common_half";
-      }
-    }
-    if (input_dims.size() == 3) {
-      if (axis == 0) {
-        function_name = "softmax_c_d3_common_half";
-      } else if (axis == 1) {
-        function_name = "softmax_h_d3_common_half";
-      } else if (axis == 2) {
-        function_name = "softmax_w_d3_common_half";
-      }
-    } else if (input_dims.size() == 2 || input_dims.size() == 1) {
-      if (axis == 0) {
-        function_name = "softmax_h_2d_common_half";
-      } else if (axis == 1) {
-        function_name = "softmax_w_2d_common_half";
-      }
-    } else {
-      throw std::logic_error("ERROR: softmax still not support the axis");
-    }
-  }
-  return function_name;
 }
 
-template <typename P, PrecisionType PTYPE>
-void SoftmaxImageCompute<P, PTYPE>::Run() {
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
+#pragma mark - SELF
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
-                                                &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
+void SoftmaxImageCompute::run_without_mps() {
+    auto outTexture = output_buffer_->image();
+    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image())
-                                      atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                      atIndex:(1)];
-  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer())
-                                      offset:(0)atIndex:(0)];
+    auto encoder = [backend commandEncoder];
+    [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
-  kernel_->Execute(*encoder, global_work_size, false);
+    [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    [backend commit];
+}
+
+void SoftmaxImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
+    auto input_dims = param.x->dims();
+
+    auto axis = param.axis;
+    if (axis < 0) {
+        axis += input_dims.size();
+    }
+
+    std::string function_name = "softmax";
+    if (input_dims.size() == 4) {
+        if (axis == 1) {
+            function_name = "softmax_c_d3_common";
+        } else if (axis == 2) {
+            function_name = "softmax_h_d3_common";
+        } else if (axis == 3) {
+            function_name = "softmax_w_d3_common";
+        }
+    } else if (input_dims.size() == 3) {
+        if (axis == 0) {
+            function_name = "softmax_c_d3_common";
+        } else if (axis == 1) {
+            function_name = "softmax_h_d3_common";
+        } else if (axis == 2) {
+            function_name = "softmax_w_d3_common";
+        }
+    } else if (input_dims.size() == 2 || input_dims.size() == 1) {
+        if (axis == 0) {
+            function_name = "softmax_h_2d_common";
+        } else if (axis == 1) {
+            function_name = "softmax_w_2d_common";
+        }
+    }
+    function_name_ = function_name;
+
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+
+    SoftmaxMetalParam2 metal_param{
+        (int)input_buffer_->pad_to_four_dim_[0],
+        (int)input_buffer_->pad_to_four_dim_[1],
+        (int)input_buffer_->pad_to_four_dim_[2],
+        (int)input_buffer_->pad_to_four_dim_[3],
+    };
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
+}
+
+#pragma mark - MPS
+
+void SoftmaxImageCompute::run_with_mps() {
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    auto cmdbuf = [backend commandBuffer];
+    if (mps_softmax_op_) {
+        [((__bridge MPSCNNSoftMax*)mps_softmax_op_)
+            encodeToCommandBuffer:cmdbuf
+                      sourceImage:(__bridge MPSImage*)mps_input_image_
+                 destinationImage:(__bridge MPSImage*)mps_output_image_];
+    }
+    [backend commit:cmdbuf];
+}
+
+void SoftmaxImageCompute::setup_with_mps() {
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    //
+    mps_softmax_op_ =
+        (__bridge_retained void*)[[MPSCNNSoftMax alloc] initWithDevice:backend.device];
+    ((__bridge MPSCNNSoftMax*)mps_softmax_op_).edgeMode = MPSImageEdgeModeZero;
+    // MPS算子输入输出
+    auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+    auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+    mps_input_image_ =
+        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
+                                                   featureChannels:input_c];
+    mps_output_image_ =
+        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
+                                                   featureChannels:output_c];
+}
+
+SoftmaxImageCompute::~SoftmaxImageCompute() {
+    if (mps_softmax_op_) {
+        CFRelease(mps_softmax_op_);
+        mps_softmax_op_ = nullptr;
+    }
+    if (mps_input_image_) {
+        CFRelease(mps_input_image_);
+        mps_input_image_ = nullptr;
+    }
+    if (mps_output_image_) {
+        CFRelease(mps_output_image_);
+        mps_output_image_ = nullptr;
+    }
 }
 
 }  // namespace metal
@@ -151,37 +180,32 @@ void SoftmaxImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::
-    SoftmaxImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::
-    SoftmaxImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::SoftmaxImageCompute<float,
-                                                          PRECISION(kFloat)>
-    MetalSoftmaxFp32;
-typedef paddle::lite::kernels::metal::SoftmaxImageCompute<MetalHalf,
-                                                          PRECISION(kFP16)>
-    MetalSoftmaxFp16;
+#pragma mark -
 
-REGISTER_LITE_KERNEL(
-    softmax, kMetal, kFloat, kMetalTexture2DArray, MetalSoftmaxFp32, def)
+REGISTER_LITE_KERNEL(softmax,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::SoftmaxImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    softmax, kMetal, kFP16, kMetalTexture2DArray, MetalSoftmaxFp16, def)
+REGISTER_LITE_KERNEL(softmax,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::SoftmaxImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

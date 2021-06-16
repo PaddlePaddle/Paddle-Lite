@@ -806,6 +806,42 @@ void act_abs<float>(const float* din, float* dout, int size, int threads) {
   }
 }
 
+template <typename T>
+void erf(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = std::erf(din[0]);
+    din++;
+    dout++;
+  }
+}
+
+template void erf<float>(const float* din, float* dout, int size, int threads);
+
+template <typename T>
+void sign(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = (dout[0] >= (T)0) - ((T)0 >= dout[0]);
+    din++;
+    dout++;
+  }
+}
+
+template void sign<float>(const float* din, float* dout, int size, int threads);
+
+template <typename T>
+void softplus(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = log((T)1. + exp(din[i]));
+    din++;
+    dout++;
+  }
+}
+
+template void softplus<float>(const float* din,
+                              float* dout,
+                              int size,
+                              int threads);
+
 template <>
 void act_thresholded_relu<float>(
     const float* din, float* dout, int size, float threshold, int threads) {

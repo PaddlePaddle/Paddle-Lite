@@ -122,6 +122,17 @@ void SqrtCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void RsqrtCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::rsqrt(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
 void PowCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -273,6 +284,12 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     sqrt, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SqrtCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    rsqrt, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::RsqrtCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

@@ -30,6 +30,7 @@ bool CastOp::InferShapeImpl() const {
   // TODO(Superjomn) Enable data sharing.
   auto out_dims = param_.X->dims();
   param_.Out->Resize(out_dims);
+  param_.Out->set_lod(param_.X->lod());
   return true;
 }
 

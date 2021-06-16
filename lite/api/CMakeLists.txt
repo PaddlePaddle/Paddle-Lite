@@ -139,7 +139,7 @@ else()
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
         if (LITE_WITH_JAVA)
           add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
-          set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS ${TARGET_COMIPILE_FLAGS})
+          set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
           set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lite/api/android/jni/native)
           if (LITE_WITH_NPU)
               # Need to add HIAI runtime libs (libhiai.so) dependency
