@@ -202,7 +202,6 @@ void FpgaConcatFuser::ExtractInputsOutputs(std::vector<NodeInfo>& pattern,
     Node* node = subgraph_nodeinfo.node_;
     if (node->IsStmt()) {
       bool wd_enable = subgraph_nodeinfo.wd_enable_;
-      // if branch for conv
       if (wd_enable) {
         for (auto* var_node : node->inlinks) {
           if (var_node->AsArg().is_weight) {
