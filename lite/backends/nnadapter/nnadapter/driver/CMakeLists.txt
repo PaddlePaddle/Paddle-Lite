@@ -12,8 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_subdirectory(utility)
-add_subdirectory(optimizer)
-set(nnadapter_driver ${nnadapter_driver_utility} ${nnadapter_driver_optimizer} CACHE INTERNAL "")
+set(nnadapter_driver CACHE INTERNAL "")
 
-add_subdirectory(device)
+if(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  add_subdirectory(huawei_kirin_npu)
+endif()
+
+if(NNADAPTER_WITH_MEDIATEK_APU)
+  add_subdirectory(mediatek_apu)
+endif()
+
+if(NNADAPTER_WITH_ROCKCHIP_NPU)
+  add_subdirectory(rockchip_npu)
+endif()
+
+if(NNADAPTER_WITH_IMAGINATION_NNA)
+  add_subdirectory(imagination_nna)
+endif()

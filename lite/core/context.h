@@ -262,7 +262,8 @@ class Context<TargetType::kImaginationNNA> {
 };
 #endif
 
-#ifdef LITE_WITH_NNADAPTER
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
 template <>
 class Context<TargetType::kNNAdapter> {
  public:
@@ -270,7 +271,6 @@ class Context<TargetType::kNNAdapter> {
   void InitOnce() {}
   void CopySharedTo(NNAdapterContext* ctx) {}
 
-  NNAdapterContext& operator=(const NNAdapterContext& ctx) {}
   std::string name() const { return "NNAdapterContext"; }
 
   static void SetNNAdapterModelCacheDir(
@@ -317,6 +317,7 @@ class Context<TargetType::kNNAdapter> {
     return true;
   }
 
+#ifdef LITE_WITH_NNADAPTER
   static bool CheckNNAdapterDevice(const std::string& nnadapter_device_name) {
     NNAdapterDevice* device = nullptr;
     int result =
@@ -327,6 +328,7 @@ class Context<TargetType::kNNAdapter> {
     }
     return found;
   }
+#endif
 
   static void SetNNAdapterDevices(
       Scope* scope, const std::vector<std::string>& nnadapter_device_names) {
@@ -690,7 +692,8 @@ class ContextScheduler {
         LOG(INFO) << "New Context for MLU";
       } break;
 #endif
-#ifdef LITE_WITH_NNADAPTER
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
       case TARGET(kNNAdapter):
         kernel_contexts_[TargetType::kNNAdapter]
             .As<NNAdapterContext>()
@@ -758,6 +761,10 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_IMAGINATION_NNA
     InitContext<TargetType::kImaginationNNA, ImaginationNNAContext>();
+#endif
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+    InitContext<TargetType::kNNAdapter, NNAdapterContext>();
 #endif
   }
 

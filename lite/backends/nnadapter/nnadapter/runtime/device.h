@@ -18,7 +18,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "driver/driver.h"
+#include "core/hal/types.h"
 
 namespace nnadapter {
 namespace runtime {
@@ -38,18 +38,18 @@ class Device {
   int CreateContext(void** context);
   void DestroyContext(void* context);
   int CreateProgram(void* context,
-                    driver::Model* model,
-                    driver::Cache* cache,
+                    hal::Model* model,
+                    hal::Cache* cache,
                     void** program);
   void DestroyProgram(void* program);
   int ExecuteProgram(void* program,
                      uint32_t input_count,
-                     driver::Argument* input_arguments,
+                     hal::Argument* input_arguments,
                      uint32_t output_count,
-                     driver::Argument* output_arguments);
+                     hal::Argument* output_arguments);
 
  private:
-  driver::Device* device_{nullptr};
+  hal::Device* device_{nullptr};
   Device(const Device&) = delete;
   Device& operator=(const Device&) = delete;
 };
@@ -60,12 +60,12 @@ class DeviceManager {
   DeviceManager();
   ~DeviceManager();
   size_t Count();
-  driver::Device* At(int index);
-  driver::Device* Find(const char* name);
+  hal::Device* At(int index);
+  hal::Device* Find(const char* name);
 
  private:
   std::mutex mutex_;
-  std::vector<std::pair<void*, driver::Device*>> devices_;
+  std::vector<std::pair<void*, hal::Device*>> devices_;
   DeviceManager(const DeviceManager&) = delete;
   DeviceManager& operator=(const DeviceManager&) = delete;
 };

@@ -23,7 +23,7 @@ int Execution::SetInput(int32_t index,
                         uint32_t dimension_count,
                         void* buffer,
                         uint32_t length) {
-  driver::Argument* argument = nullptr;
+  hal::Argument* argument = nullptr;
   for (auto& input_argument : input_arguments_) {
     if (input_argument.index == index) {
       argument = &input_argument;
@@ -47,7 +47,7 @@ int Execution::SetOutput(int32_t index,
                          uint32_t dimension_count,
                          void* buffer,
                          uint32_t length) {
-  driver::Argument* argument = nullptr;
+  hal::Argument* argument = nullptr;
   for (auto& output_argument : output_arguments_) {
     if (output_argument.index == index) {
       argument = &output_argument;

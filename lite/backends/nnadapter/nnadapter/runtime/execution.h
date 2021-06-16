@@ -37,8 +37,8 @@ class Execution {
 
  private:
   Compilation* compilation_{nullptr};
-  std::vector<driver::Argument> input_arguments_;
-  std::vector<driver::Argument> output_arguments_;
+  std::vector<hal::Argument> input_arguments_;
+  std::vector<hal::Argument> output_arguments_;
 };
 
 }  // namespace runtime

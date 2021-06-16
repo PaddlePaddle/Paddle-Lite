@@ -172,7 +172,7 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperand(NNAdapterModel* model,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
-  nnadapter::driver::Operand* o = nullptr;
+  nnadapter::hal::Operand* o = nullptr;
   int result = m->AddOperand(*type, &o);
   if (result == NNADAPTER_NO_ERROR) {
     *operand = reinterpret_cast<NNAdapterOperand*>(o);
@@ -187,7 +187,7 @@ NNADAPTER_EXPORT int NNAdapterModel_setOperand(NNAdapterOperand* operand,
   if (!operand || !buffer || !length) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  auto o = reinterpret_cast<nnadapter::driver::Operand*>(operand);
+  auto o = reinterpret_cast<nnadapter::hal::Operand*>(operand);
   if (copy) {
     o->buffer = malloc(length);
     if (!o->buffer) return NNADAPTER_OUT_OF_MEMORY;
@@ -209,7 +209,7 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperation(
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
-  nnadapter::driver::Operation* o = nullptr;
+  nnadapter::hal::Operation* o = nullptr;
   int result = m->AddOperation(type, &o);
   if (result == NNADAPTER_NO_ERROR) {
     *operation = reinterpret_cast<NNAdapterOperation*>(o);
@@ -226,16 +226,16 @@ NNADAPTER_EXPORT int NNAdapterModel_setOperation(
   if (!operation) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  auto o = reinterpret_cast<nnadapter::driver::Operation*>(operation);
+  auto o = reinterpret_cast<nnadapter::hal::Operation*>(operation);
   o->input_operands.resize(input_count);
   for (uint32_t i = 0; i < input_count; i++) {
     o->input_operands[i] =
-        reinterpret_cast<nnadapter::driver::Operand*>(input_operands[i]);
+        reinterpret_cast<nnadapter::hal::Operand*>(input_operands[i]);
   }
   o->output_operands.resize(output_count);
   for (uint32_t i = 0; i < output_count; i++) {
     o->output_operands[i] =
-        reinterpret_cast<nnadapter::driver::Operand*>(output_operands[i]);
+        reinterpret_cast<nnadapter::hal::Operand*>(output_operands[i]);
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -250,8 +250,8 @@ NNADAPTER_EXPORT int NNAdapterModel_identifyInputsAndOutputs(
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
-  auto is = reinterpret_cast<nnadapter::driver::Operand**>(input_operands);
-  auto os = reinterpret_cast<nnadapter::driver::Operand**>(output_operands);
+  auto is = reinterpret_cast<nnadapter::hal::Operand**>(input_operands);
+  auto os = reinterpret_cast<nnadapter::hal::Operand**>(output_operands);
   return m->IdentifyInputsAndOutputs(input_count, is, output_count, os);
 }
 

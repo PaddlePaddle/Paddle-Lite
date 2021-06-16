@@ -35,12 +35,12 @@ class Compilation {
                             NNAdapterOperandType** input_types,
                             uint32_t* output_count,
                             NNAdapterOperandType** output_types);
-  int Execute(std::vector<driver::Argument>* input_arguments,
-              std::vector<driver::Argument>* output_arguments);
+  int Execute(std::vector<hal::Argument>* input_arguments,
+              std::vector<hal::Argument>* output_arguments);
 
  private:
   Model* model_{nullptr};
-  driver::Cache cache_;
+  hal::Cache cache_;
   Context* context_{nullptr};
   void* program_{nullptr};
   bool completed_{false};

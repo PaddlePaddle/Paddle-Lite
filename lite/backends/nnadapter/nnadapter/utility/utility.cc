@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "utility/utility.h"
+#include "utility/debug.h"
 #include "utility/micros.h"
-#include "utility/string.h"
 
 namespace nnadapter {
 

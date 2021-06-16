@@ -418,7 +418,8 @@ bool ConfigBase::check_nnadapter_device(
 
 void ConfigBase::set_nnadapter_model_cache_buffers(
     const std::string &key, const std::vector<char> &buffer) {
-#ifdef LITE_WITH_NNADAPTER
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
   CHECK(!key.empty());
   CHECK(!buffer.empty());
   CHECK_EQ(nnadapter_model_cache_buffers_.count(key), 0);

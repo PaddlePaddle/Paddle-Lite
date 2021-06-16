@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "runtime/model.h"
-#include "driver/utility/debug.h"
-#include "driver/utility/modeling.h"
+#include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace runtime {
@@ -36,8 +36,8 @@ Model::~Model() {
 }
 
 int Model::AddOperand(const NNAdapterOperandType& type,
-                      driver::Operand** operand) {
-  *operand = driver::AddOperand(&model_);
+                      hal::Operand** operand) {
+  *operand = nnadapter::AddOperand(&model_);
   memcpy(&(*operand)->type, &type, sizeof(NNAdapterOperandType));
   if (type.precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
       type.precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL) {
@@ -53,16 +53,16 @@ int Model::AddOperand(const NNAdapterOperandType& type,
 }
 
 int Model::AddOperation(NNAdapterOperationType type,
-                        driver::Operation** operation) {
-  *operation = driver::AddOperation(&model_);
+                        hal::Operation** operation) {
+  *operation = nnadapter::AddOperation(&model_);
   (*operation)->type = type;
   return NNADAPTER_NO_ERROR;
 }
 
 int Model::IdentifyInputsAndOutputs(uint32_t input_count,
-                                    driver::Operand** input_operands,
+                                    hal::Operand** input_operands,
                                     uint32_t output_count,
-                                    driver::Operand** output_operands) {
+                                    hal::Operand** output_operands) {
   model_.input_operands.resize(input_count);
   for (uint32_t i = 0; i < input_count; i++) {
     model_.input_operands[i] = input_operands[i];

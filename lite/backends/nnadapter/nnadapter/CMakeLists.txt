@@ -20,9 +20,11 @@ add_definitions(-DNNADAPTER_DRIVER_PREFIX=${NNADAPTER_DRIVER_PREFIX})
 
 include_directories(.)
 
+add_subdirectory(core)
 add_subdirectory(utility)
+add_subdirectory(optimizer)
 add_subdirectory(runtime)
 add_subdirectory(driver)
 
 add_library(nnadapter SHARED nnadapter.cc)
-target_link_libraries(nnadapter "-Wl,--start-group" ${nnadapter_utility} ${nnadapter_runtime} ${nnadapter_driver} "-Wl,--end-group")
+target_link_libraries(nnadapter "-Wl,--start-group" ${nnadapter_utility} ${nnadapter_optimizer} ${nnadapter_runtime} "-Wl,--end-group")

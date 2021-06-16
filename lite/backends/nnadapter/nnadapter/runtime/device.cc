@@ -41,8 +41,8 @@ void Device::DestroyContext(void* context) {
 }
 
 int Device::CreateProgram(void* context,
-                          driver::Model* model,
-                          driver::Cache* cache,
+                          hal::Model* model,
+                          hal::Cache* cache,
                           void** program) {
   if (device_ && context && model && program) {
     return device_->create_program(context, model, cache, program);
@@ -58,9 +58,9 @@ void Device::DestroyProgram(void* program) {
 
 int Device::ExecuteProgram(void* program,
                            uint32_t input_count,
-                           driver::Argument* input_arguments,
+                           hal::Argument* input_arguments,
                            uint32_t output_count,
-                           driver::Argument* output_arguments) {
+                           hal::Argument* output_arguments) {
   if (device_ && program && output_arguments && output_count) {
     return device_->execute_program(
         program, input_count, input_arguments, output_count, output_arguments);
@@ -91,7 +91,7 @@ size_t DeviceManager::Count() {
   return devices_.size();
 }
 
-driver::Device* DeviceManager::At(int index) {
+hal::Device* DeviceManager::At(int index) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (index >= 0 && index < devices_.size()) {
     return devices_[index].second;
@@ -99,7 +99,7 @@ driver::Device* DeviceManager::At(int index) {
   return nullptr;
 }
 
-driver::Device* DeviceManager::Find(const char* name) {
+hal::Device* DeviceManager::Find(const char* name) {
   std::lock_guard<std::mutex> lock(mutex_);
   for (size_t i = 0; i < devices_.size(); i++) {
     auto device = devices_[i].second;
@@ -117,8 +117,7 @@ driver::Device* DeviceManager::Find(const char* name) {
                          << "' from " << path << ", " << dlerror();
     return nullptr;
   }
-  auto device =
-      reinterpret_cast<driver::Device*>(dlsym(library, symbol.c_str()));
+  auto device = reinterpret_cast<hal::Device*>(dlsym(library, symbol.c_str()));
   if (!device) {
     dlclose(library);
     NNADAPTER_LOG(ERROR) << "Failed to find the symbol '" << symbol << "' from "

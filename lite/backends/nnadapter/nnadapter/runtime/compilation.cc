@@ -39,8 +39,8 @@ Compilation::~Compilation() {
   }
 }
 
-int Compilation::Execute(std::vector<driver::Argument>* input_arguments,
-                         std::vector<driver::Argument>* output_arguments) {
+int Compilation::Execute(std::vector<hal::Argument>* input_arguments,
+                         std::vector<hal::Argument>* output_arguments) {
   // Execute generated program on target device asynchronously or synchronously
   auto first_device = context_->GetFirstDevice();
   // TODO(hong19860320) support asynchronously execution

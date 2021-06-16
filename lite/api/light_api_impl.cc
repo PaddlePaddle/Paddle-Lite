@@ -69,9 +69,9 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
       raw_predictor_->scope(), config.subgraph_model_cache_buffers());
 #endif
 
-#ifdef LITE_WITH_NNADAPTER
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+  // Use scope to store the model-level configuration for the subgraph kernel
   Context<TargetType::kNNAdapter>::SetNNAdapterDevices(
       raw_predictor_->scope(), config.nnadapter_devices());
   Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(

@@ -14,6 +14,8 @@
 
 add_library(nnadapter_utility_logging STATIC logging.cc)
 add_library(nnadapter_utility_string STATIC string.cc)
+add_library(nnadapter_utility_debug STATIC debug.cc)
 add_library(nnadapter_utility_utility STATIC utility.cc)
+add_library(nnadapter_utility_modeling STATIC modeling.cc)
 
-set(nnadapter_utility nnadapter_utility_logging nnadapter_utility_string nnadapter_utility_utility CACHE INTERNAL "")
+set(nnadapter_utility nnadapter_utility_logging nnadapter_utility_string nnadapter_utility_debug nnadapter_utility_utility nnadapter_utility_modeling CACHE INTERNAL "")

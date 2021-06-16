@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "driver/driver.h"
+#include "core/hal/types.h"
 
 namespace nnadapter {
 namespace runtime {
@@ -23,15 +23,15 @@ class Model {
  public:
   Model() : completed_{false} {}
   ~Model();
-  int AddOperand(const NNAdapterOperandType& type, driver::Operand** operand);
-  int AddOperation(NNAdapterOperationType type, driver::Operation** operation);
+  int AddOperand(const NNAdapterOperandType& type, hal::Operand** operand);
+  int AddOperation(NNAdapterOperationType type, hal::Operation** operation);
   int IdentifyInputsAndOutputs(uint32_t input_count,
-                               driver::Operand** input_operands,
+                               hal::Operand** input_operands,
                                uint32_t output_count,
-                               driver::Operand** output_operands);
+                               hal::Operand** output_operands);
   int Finish();
 
-  driver::Model model_;
+  hal::Model model_;
   bool completed_;
 };
 

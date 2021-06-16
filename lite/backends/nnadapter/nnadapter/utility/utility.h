@@ -22,7 +22,7 @@
 
 namespace nnadapter {
 
-// Quantization type
+// Check quantization type
 bool IsPerLayerQuantization(NNAdapterOperandPrecisionCode type);
 bool IsPerChannelQuantization(NNAdapterOperandPrecisionCode type);
 bool IsAsymmetricQuantization(NNAdapterOperandPrecisionCode type);
@@ -37,13 +37,15 @@ bool IsUInt32AsymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerChannelQuantization(NNAdapterOperandPrecisionCode type);
 
-// Transform dimensions
+// Caculate the production of the given dimensions
 int64_t ProductionOfDimensions(const int32_t* input_dimensions,
                                uint32_t input_dimension_count);
 int64_t ProductionOfDimensions(const std::vector<int32_t>& input_dimensions);
+// Transpose the given dimensions, similar to numpy.transpose
 void TransposeDimensions(int32_t* input_dimensions,
                          const std::vector<int32_t>& permutation,
                          int32_t* output_dimensions_ptr = nullptr);
+// Reshape the given dimensions, similar to numpy.reshape
 void ReshapeDimensions(int32_t* input_dimensions,
                        uint32_t* input_dimension_count,
                        const std::vector<int32_t>& dimensions,
