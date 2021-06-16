@@ -27,13 +27,12 @@ void ConvElementwiseTreeFusePass::Apply(
   // initialze fuser params
   std::vector<bool> conv_has_prelu_alpha_cases{true, false};
   std::vector<bool> conv_has_bias_cases{true, false};
-  std::vector<std::string> conv_type_cases{"conv2d"};  // TODO(zhaoyang34):
-                                                       // Support
-                                                       // "depthwise_conv2d",
-                                                       // "conv2d_transpose"
-  std::vector<std::string> elementwise_type_cases{
-      "elementwise_add"};  // TODO(zhaoyang34): Support "elementwise_sub",
-                           // "elementwise_mul", "elementwise_div"
+  // TODO(zhaoyang34): Support "depthwise_conv2d", "conv2d_transpose"
+  std::vector<std::string> conv_type_cases{"conv2d"};
+  // TODO(zhaoyang34): Support "elementwise_sub", "elementwise_mul",
+  // "elementwise_div"
+  std::vector<std::string> elementwise_type_cases{"elementwise_add"};
+
   // start fuse using params
   for (auto conv_has_prelu_alpha : conv_has_prelu_alpha_cases) {
     for (auto conv_has_bias : conv_has_bias_cases) {
