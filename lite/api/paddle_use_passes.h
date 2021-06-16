@@ -49,6 +49,7 @@ USE_MIR_PASS(lite_conv_activation_fuse_pass);
 USE_MIR_PASS(lite_var_conv_2d_activation_fuse_pass);
 USE_MIR_PASS(lite_match_matrix_activation_fuse_pass);
 USE_MIR_PASS(lite_scales_fuse_pass);
+USE_MIR_PASS(lite_scaleacts_fuse_pass);
 USE_MIR_PASS(lite_sequence_reverse_embedding_fuse_pass);
 USE_MIR_PASS(lite_elementwise_activation_fuse_pass);
 USE_MIR_PASS(lite_elementwise_scale_fuse_pass);

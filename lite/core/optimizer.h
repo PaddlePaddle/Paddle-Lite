@@ -111,6 +111,7 @@ class Optimizer {
          "elementwise_mul_constant_eliminate_pass",     //
          "lite_sequence_pool_concat_fuse_pass",         //
          "lite_scale_activation_fuse_pass",             //
+         "lite_scaleacts_fuse_pass",                    //
          "lite_elementwise_scale_fuse_pass",            //
          "lite_instance_norm_activation_fuse_pass",     //
          "lite_flatten_fc_fuse_pass",                   //
