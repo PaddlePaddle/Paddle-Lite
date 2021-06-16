@@ -14,7 +14,6 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-
 __kernel void pool(__read_only image2d_t input,
                    __write_only image2d_t output,
                    __private const int in_height,
