@@ -73,6 +73,7 @@ lite_cc_library(mir_passes
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       fpga_kernel_place_correct_pass.cc
+      opencl_kernel_place_correct_pass.cc
       type_target_cast_pass.cc
       type_layout_cast_pass.cc
       type_precision_cast_pass.cc
