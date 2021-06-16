@@ -85,6 +85,7 @@ void ConvImageCompute::PrepareForRun() {
   stride_w_ = conv_param_->strides[1];
 
   groups_ = conv_param_->groups;
+  elementwise_tree_fused_ = conv_param_->fuse_elementwise_tree;
   relu_fused_ = conv_param_->fuse_relu;
   has_bias_ = (conv_param_->bias) != nullptr;
   offset_ = filter_tensor_h_ / 2 - pad_up_;
@@ -96,6 +97,8 @@ void ConvImageCompute::PrepareForRun() {
   bool dilation_equal = dilation_h_ == dilation_w_;
 
 #ifdef LITE_WITH_LOG
+  VLOG(3) << "Is elementwise_tree fused? / "
+          << (elementwise_tree_fused_ ? "Yes" : "No");
   VLOG(3) << "Is relu fused? / " << (relu_fused_ ? "Yes" : "No");
   VLOG(3) << "groups:" << groups_ << " stride_h_:" << stride_h_
           << " stride_w_:" << stride_w_ << " pad_left_:" << pad_left_
@@ -670,6 +673,11 @@ void ConvImageCompute::PrepareForRun() {
                << conv_param_->scale_activation_type;
   }
 
+  // elementwise_tree fuse options
+  if (elementwise_tree_fused_) {
+    build_options_single += " -DELE_TREE_FUSE";
+  }
+
   // define buffer/image pointer for filter & bias
   // if (is_mali && filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
   //   fp16_support
@@ -717,7 +725,13 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     double final_lws_time = DBL_MAX;
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
-    for (size_t i = 0; i < 6; i++) {
+    int kernel_num;
+    if (CLRuntime::Global()->auto_tune() <= 0) {
+      kernel_num = 1;
+    } else {
+      kernel_num = 6;
+    }
+    for (size_t i = 0; i < kernel_num; i++) {
       if (i == 1) {
         kernel_func_names_[0] = "conv2d_1x1_h1w5c1";
         global_work_size_ =
@@ -784,8 +798,10 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       std::set<cl::NDRange, CLContext::CompareByRange> lwss =
           context.cl_context()->GenerateLocalWorkSizes(global_work_size_,
                                                        max_work_group_size);
-      CHECK(lwss.size() > 0)
-          << "Possible local work sizes should bigger than zero";
+      if (lwss.size() < 1) {
+        local_work_size_ = cl::NullRange;
+        return;
+      }
       local_work_size_ = *lwss.begin();
       if (max_work_group_size <= 0 || !use_lws_ ||
           CLRuntime::Global()->auto_tune() <= 0) {
@@ -967,6 +983,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       local_work_size_ = cl::NullRange;
       return;
     }
+    local_work_size_ = *lwss.begin();
     if (max_work_group_size <= 0 || !use_lws_ ||
         CLRuntime::Global()->auto_tune() <= 0) {
       if (!use_lws_) {
@@ -1355,6 +1372,10 @@ void ConvImageCompute::Conv2d1x1opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(17, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
+  if (elementwise_tree_fused_) {
+    status_ = kernel_.setArg(18, *second_input_image_p_);
+    CL_CHECK_FATAL(status_);
+  }
 }
 
 void ConvImageCompute::Conv2d3x3() {
@@ -1844,6 +1865,9 @@ void ConvImageCompute::Run() {
   } else {
     // define image pointer for input, output
     input_image_p_ = DATA_GPU(conv_param_->x);
+    if (elementwise_tree_fused_) {
+      second_input_image_p_ = DATA_GPU(conv_param_->second_x);
+    }
     output_image_p_ = MUTABLE_DATA_GPU(
         conv_param_->output, output_image_w_, output_image_h_, nullptr);
 
@@ -1914,6 +1938,7 @@ void ConvImageCompute::PrintConvInfo() {
   LOG(INFO) << "groups_:" << groups_;
   LOG(INFO) << "relu_fused_:" << relu_fused_;
   LOG(INFO) << "has_bias_:" << has_bias_;
+  LOG(INFO) << "elementwise_tree_fused_:" << elementwise_tree_fused_;
 
   LOG(INFO) << "input_tensor_n_:" << input_tensor_n_;
   LOG(INFO) << "input_tensor_c_:" << input_tensor_c_;
