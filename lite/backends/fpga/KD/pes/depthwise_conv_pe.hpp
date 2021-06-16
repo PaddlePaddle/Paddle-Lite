@@ -251,8 +251,6 @@ class DepthwiseConvPE : public PE {
     }
     padded_input_.flush();
     padded_input_.copyMaxFrom(param_.input);
-    // param_.input->saveToFile("input", true);
-    // padded_input_.saveToFile("padded_input", true);
   }
 
   void unpad_output() {
@@ -272,8 +270,6 @@ class DepthwiseConvPE : public PE {
     }
     param_.output->flush();
     param_.output->copyMaxFrom(&padded_output_);
-    // padded_output_.saveToFile("padded_output", true);
-    // param_.output->saveToFile("output", true);
   }
 
   bool dispatch() {

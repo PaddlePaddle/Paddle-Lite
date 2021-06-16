@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/fpga_concat_fuser.h"
+#include <map>
 #include <memory>
+#include <set>
 #include <vector>
 #include "lite/core/mir/pattern_matcher.h"
 #include "lite/operators/subgraph_op.h"
@@ -113,9 +115,7 @@ std::vector<std::vector<NodeInfo>> FpgaConcatFuser::select_candidate(
       if (last_idx + 1 != subgraph[j].fuse_idx_) {
         i = j;
         break;
-      }
-
-      else {
+      } else {
         cur_group.push_back(subgraph[j]);
         last_idx = subgraph[j].fuse_idx_;
         ++i;
@@ -124,8 +124,7 @@ std::vector<std::vector<NodeInfo>> FpgaConcatFuser::select_candidate(
     groups.push_back(cur_group);
   }
   // if there is only one conv in a group, it means no other conv can be fused
-  // with
-  // just remove it
+  // with just remove it
   auto iter = std::remove_if(
       groups.begin(), groups.end(), [](std::vector<NodeInfo> item) {
         return item.size() == 1;
@@ -152,7 +151,8 @@ std::vector<std::vector<NodeInfo>> FpgaConcatFuser::PatternMatch(
           subgraph.push_back(NodeInfo(upstream_op_node, true, jump_info, idx));
           ++idx;
         } else {
-          // TODO(chengruichang) Currently only the patterns that all upstream ops of concat
+          // TODO(chengruichang) Currently only the patterns that all upstream
+          // ops of concat
           // support jump write are considered
           subgraph.clear();
           break;
@@ -160,7 +160,8 @@ std::vector<std::vector<NodeInfo>> FpgaConcatFuser::PatternMatch(
       }
       std::vector<std::vector<NodeInfo>> grouped_candidate =
           select_candidate(subgraph);
-      // TODO(chengruichang) if concat op has multiple grouped upstream op that can be
+      // TODO(chengruichang) if concat op has multiple grouped upstream op that
+      // can be
       // fused, try to support it later
       //            std::vector<NodeInfo> select_subgraph;
       if (grouped_candidate.size() == 1) {
@@ -208,8 +209,9 @@ void FpgaConcatFuser::ExtractInputsOutputs(std::vector<NodeInfo>& pattern,
         for (auto* var_node : node->inlinks) {
           if (var_node->AsArg().is_weight) {
             weight_var_nodes->insert(var_node);
-          } else
+          } else {
             input_var_nodes->insert(var_node);
+          }
         }
       }
     }
@@ -250,12 +252,12 @@ void FpgaConcatFuser::InsertNewNode(
         sub_opdesc->SetAttr<int>("start_idx", nodeinfo.start_idx_);
         sub_opdesc->SetAttr<int>("end_idx", nodeinfo.end_idx_);
         // set the output of each conv to the output of concat
-        // TODO(chengruichang)"Output" is a common attr name?
+        // TODO(chengruichang) "Output" is a common attr name?
         sub_opdesc->SetOutput("Output", out_arg_name);
         auto sub_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
         // set this attr in order to pick the right kernel
         std::stringstream kerneltype;
-        // TODO(chengruichang)is this the best way to support other kernel
+        // TODO(chengruichang) is this the best way to support other kernel
         kerneltype << op_type << "/"
                    << "def"
                    << "/"

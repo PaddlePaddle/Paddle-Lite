@@ -148,12 +148,15 @@ class ConvPE : public PE {
     if ((pack_channel || split_cpu_concat) && ret == 0 && !param_.deconv) {
       concatPE_.dispatch();
     }
-    if (!split_channel && param_.deconv == false) {
+    if (!split_channel && !param_.deconv) {
       float16 max_val = 0.0;
 
-      // The final max value is counted by a conv dispatch
-      // If output tensor is written by multiple kernels, the max value should be
-      // counted across kernels
+      /*
+        The final result(multiple tensors concated by channel axis) is merged
+        into a Tensor,
+        but each channel's max value is calculated separately, we need to find a
+        global max for this Tensor.
+      */
       if (param_.wd_enable) {
         int cur_idx = param_.fuse_idx;
         if (cur_idx == param_.start_idx)

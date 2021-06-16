@@ -219,8 +219,6 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
   int sub_pad = calc_sub_pad(width, param->paddings[0], param->strides[0]);
   int omit_size = deconv_get_omit(param->strides[0], width, param->paddings[0]);
   int channel = filter->shape().channel();
-  // if(channel % 16)
-  //     ENFORCE(false, "channel should be divided by 16 currently");
   int sub_output_w = get_sub_out_axis(input->shape().width(), sub_pad, sub_w);
   int sub_output_h = get_sub_out_axis(input->shape().height(), sub_pad, sub_h);
   int before_omit_out_w = sub_output_w * sub_conv_number;
@@ -243,11 +241,10 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
     sub_param.strides = std::vector<int>({1, 1});
     sub_param.paddings = std::vector<int>({sub_pad, sub_pad});
     sub_param.dilations = param->dilations;
-    // Filter data loaded from params is NCHW.
-    // Format transform is made in split_filter_num.
+
     // TODO(chengruichang) There is an assumption that channel < 2047
     const Shape sub_filter_shape(NCHW, {sub_num, channel, sub_h, sub_w});
-    // copy filter data separately into every sub filter
+    // copy filter data into sub filters separately
     Tensor sub_filter;
     sub_param.filter = &sub_filter;
     float* sub_filter_data =
@@ -259,12 +256,12 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
       for (int c = 0; c < channel; ++c) {
         for (int h = 0; h < sub_h; ++h) {
           for (int w = 0; w < sub_w; ++w) {
-            // Sub filters along h dim are arranged in a reversed order
+            // Sub filters along h axis are arranged in reversed order
             int idx_in_stride_w = sub_conv_number - 1 - n / kernel_num;
             int original_n = n % kernel_num;
             int original_h = h * sub_conv_number + idx_in_stride_h;
             int original_w = w * sub_conv_number + idx_in_stride_w;
-            //                    int original_c = c;
+
             dst = sub_filter_data + w + h * sub_w + c * sub_w * sub_h +
                   n * sub_w * sub_h * channel;
             src = filter_data + original_w + original_h * width +
@@ -290,13 +287,12 @@ DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
     sub_scale->flush();
     sub_bias->flush();
 
-    // split num start position of the output
-
     int start_offset = (sub_conv_number - 1 - i) *
                        align_to_x(after_omit_out_w * kernel_num, 16);
-
     const ConvParam& sb_param = sub_param;
 
+    // Filter data loaded from params is NCHW.
+    // Format transform is made in split_filter_num.
     deconv_concat_type = split_filter_num(
         sb_param, start_offset, true, kernel_num, omit_size, sub_conv_number);
 

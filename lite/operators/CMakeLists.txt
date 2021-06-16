@@ -4,7 +4,6 @@ lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
 
 # 1.baisc ops used in basic models
 add_operator(conv_op basic SRCS conv_op.cc DEPS ${op_DEPS})
-add_operator(fpga_conv_op basic SRCS fpga_conv_op.cc DEPS conv_op ${op_DEPS})
 add_operator(pool_op basic SRCS pool_op.cc DEPS ${op_DEPS})
 add_operator(fc_op basic SRCS fc_op.cc DEPS ${op_DEPS})
 add_operator(mul_op basic SRCS mul_op.cc DEPS ${op_DEPS})
@@ -222,6 +221,9 @@ add_operator(__xpu__generate_sequence_op extra SRCS __xpu__generate_sequence_op.
 add_operator(__xpu__logit_op extra SRCS __xpu__logit_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc DEPS ${op_DEPS})
+
+# Only for FPGA
+add_operator(fpga_conv_op extra SRCS fpga_conv_op.cc DEPS conv_op ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)

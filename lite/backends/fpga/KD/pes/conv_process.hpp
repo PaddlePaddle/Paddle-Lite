@@ -432,8 +432,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
   param.cpu_concat =
       out_channel % 16 != 0 && split_num > 1 && out->shape().width() != 1;
 
-  bool deconv_out_reshape = false;
-  if (deconv && split_num > 1) deconv_out_reshape = true;
+  bool deconv_out_reshape = deconv && split_num > 1;
 
   int dynamic_range = 127;  // int8 max value
   float16 dynamic_range_fp16 = float_to_half(dynamic_range * 1.0);
@@ -444,7 +443,7 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
   int out_w = out_shape.width();
   int out_h = out_shape.height();
   if (deconv_out_reshape) {
-    // stride is forced be one in this branch
+    // stride is 1 in this case.
     Shape in_shape = input->shape();
     out_w = input->shape().width() + 2 * param.paddings[1] -
             filter->shape().width() + 1;
@@ -456,8 +455,11 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
   int jump_out_start_offset = param.original_out_channel;
   int fuse_idx = param.fuse_idx;
   bool enable_jump = param.wd_enable;
-  // TODO(chengruichang) currently not support for deconv mode, reset it for protection
-  if (deconv) enable_jump = false;
+
+  if (deconv) {
+    // TODO(chengruichang) jump write is not support in deconv mode
+    enable_jump = false;
+  }
 
   float16* out_base_address = nullptr;
   for (int i = 0; i < split_num; i++) {
@@ -474,10 +476,8 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
     } else {
       filter_num = filter_num_per_div;
     }
-
     int offset = i * filter_num_per_div;
 
-    // Case One: cpu_concat no matter deconv or not, take care of the residual
     // jump write between op is disabled in this branch
     if (param.cpu_concat) {
       if (i == 0) {
@@ -490,30 +490,24 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
         out_address =
             conv_param->output.mutableData<float16>(FP16, extra_shape);
       } else {
-        // base_address is allocated in first iteration;
+        // base_address is allocated in first iteration(i = 0);
         out_address = out_base_address + offset;
       }
-    }
-
-    // Case Two: deconv mode with split num > 1 and no residual
-    // deconv mode is not support jump write between op yet
-    else if (deconv_out_reshape) {
+    } else if (deconv_out_reshape) {
+      // deconv mode with split num > 1 and no residual channels
+      // deconv mode does not support cross ops jump write
       if (i == 0) {
         Shape shape(NHWC, {1, out_h, out_w, filter_num_per_div * split_num});
         out_base_address = conv_param->output.mutableData<float16>(FP16, shape);
       }
       out_address = out_base_address + offset;
-    }
-
-    // Case Three: deconv mode with split num is 1 or normal conv without
-    // residual and with jump write disabled
-    else if (!enable_jump) {
+    } else if (!enable_jump) {
+      // deconv mode,jump write disabled,split num is 1 or normal conv without
+      // residual channels
       // for single conv op
       out_address = out->data<float16>() + offset;
-    }
-
-    // Case Four: normal conv with jump write enabled across op
-    else {
+    } else {
+      // normal conv with jump write enabled across ops
       out_address = out->data<float16>() + offset + jump_out_start_offset;
     }
 
@@ -597,10 +591,8 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
                                  param.paddings[1]);
 
     config_basic_conv_deconv_info(conv_param, false);
-    // support jump write
     if (enable_jump) {
       config_basic_conv_stride_info(conv_param, true, false, param.wd_offset);
-
     } else {
       bool wr_enable =
           (split_num != 1 && (param.cpu_concat == false || i != split_num - 1));
@@ -620,8 +612,6 @@ inline DCpuConcatType split_filter_num(const ConvParam& c_param,
       config_basic_conv_deconv_info(
           conv_param, true, sub_conv_number, omit_size);
     }
-
-
 
     param.splitParams().push_back(conv_param);
   }
@@ -794,7 +784,7 @@ inline void split_channel(const ConvParam& c_param) {
     conv_param->input.mutableData<float16>(FP16, in_shape);
     conv_param->output.mutableData<float16>(FP16, output->shape());
 
-    // filter transformation;
+    // filter transformation;split filters by channel;
     Shape f_shape(NCHW,
                   {filter->shape().num(),
                    channel,

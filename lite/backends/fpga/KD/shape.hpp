@@ -120,17 +120,17 @@ class Shape {
     }
   }
 
-  void LayoutTransform(LayoutType layout_type) {
+  void layoutTransform(LayoutType layout_type) {
     LayoutType original_layout_type = this->layoutType_;
     Layout* original_layout = this->layout_;
     if (original_layout_type != layout_type) {
-      bool is_compatible = original_layout->isCompatibleTransform(layout_type);
+      bool is_compatible = original_layout->isCompatibleWith(layout_type);
       if (!is_compatible) ENFORCE(false, "layout transform is not compatible");
       setLayoutType(layout_type);
       dimTransformFrom(original_layout);
     }
   }
-  // TODO only tensor with 4 dims can be transformed
+  // TODO(chengruichang) only tensor with 4 dims can be transformed
   void dimTransformFrom(Layout* original_layout) {
     int channel = dims_[original_layout->channelIndex()];
     int num = dims_[original_layout->numIndex()];
