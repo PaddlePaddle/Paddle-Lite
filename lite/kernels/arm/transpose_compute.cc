@@ -314,9 +314,9 @@ void transpose_mat(const lite_api::float16_t* din,
 #endif
         ptr_din_row += 8;
       }
-      lite_api::float16_t* data_out_ptr = ptr_out + size_wh;
+      lite_api::float16_t* data_out_ptr0 = ptr_out + size_wh;
       for (int w = 0; w < remain_ww; w++) {
-        INIT_PTR_4(lite_api::float16_t, data_out_ptr, (4 * height))
+        INIT_PTR_4(lite_api::float16_t, data_out_ptr0, (4 * height))
         INIT_PTR_A4(lite_api::float16_t)
 #ifdef __aarch64__
         asm volatile(
@@ -443,10 +443,10 @@ void transpose_mat(const lite_api::float16_t* din,
 #endif
         ptr_din_row += 4;
       }
-      lite_api::float16_t* data_out_ptr0 =
-          data_out_ptr + remain_ww * 4 * height + tmp_h;
+      lite_api::float16_t* data_out_ptr1 =
+          data_out_ptr0 + remain_ww * 4 * height + tmp_h;
       for (int w = 0; w < remain_ww_rem; w++) {
-        *data_out_ptr0 = *ptr_din_row++;
+        *data_out_ptr1 = *ptr_din_row++;
         data_out_ptr0 += height;
       }
     }
