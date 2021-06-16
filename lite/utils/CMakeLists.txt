@@ -15,9 +15,9 @@ lite_cc_test(test_varient SRCS varient_test.cc DEPS utils)
 lite_cc_test(test_utils_string SRCS string_test.cc)
 lite_cc_library(any SRCS any.cc)
 
-if(LITE_ON_TINY_PUBLISH OR LITE_ON_MODEL_OPTIMIZE_TOOL)
+#if(LITE_ON_TINY_PUBLISH OR LITE_ON_MODEL_OPTIMIZE_TOOL)
   lite_cc_library(stream SRCS replace_stl/stream.cc)
-endif()
+#endif()
 #lite_cc_library(utils SRCS cp_logging.cc string.cc DEPS ${utils_DEPS} any)
 
 if(LITE_ON_TINY_PUBLISH OR LITE_ON_MODEL_OPTIMIZE_TOOL)

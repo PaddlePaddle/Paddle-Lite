@@ -472,7 +472,7 @@ function make_x86 {
 
   prepare_workspace $root_dir $build_directory
 
-  cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
+  cmake $root_dir  -DWITH_MKL=ON  \
             -DWITH_STATIC_MKL=${WITH_STATIC_MKL}  \
             -DWITH_TESTING=OFF \
             -DWITH_AVX=${WITH_AVX} \
@@ -487,8 +487,10 @@ function make_x86 {
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
             -DLITE_OPTMODEL_DIR=${OPTMODEL_DIR} \
-            -DLITE_WITH_LOG=${WITH_LOG} \
+            -DLITE_WITH_LOG=OFF \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
+            -DLITE_ON_TINY_PUBLISH=ON \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
             -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_LTO=${WITH_LTO} \
@@ -506,8 +508,7 @@ function make_x86 {
   if [ ${WITH_OPENCL} == "ON" ]; then
     make opencl_clhpp -j$NUM_PROC
   fi
-  make publish_inference -j$NUM_PROC
-  cd -
+  make publish_inference -j
 }
 
 function print_usage {

@@ -30,6 +30,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(system)
 include(cross_compiling/preproject)
 
+
+
 project(paddle CXX C)
 message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: "
         "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
@@ -130,18 +132,18 @@ lite_option(LITE_WITH_ARM82_INT8_SDOT  "when compile with arm v8.2 int8, it's ON
 lite_option(LITE_WITH_CODE_META_INFO  "include git version in the header file." ON)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
-if(ANDROID OR IOS OR ARMLINUX)
-    set(WITH_GPU OFF CACHE STRING
-            "Disable GPU when cross-compiling for Android and iOS" FORCE)
-    set(WITH_DSO OFF CACHE STRING
-            "Disable DSO when cross-compiling for Android and iOS" FORCE)
-    set(WITH_AVX OFF CACHE STRING
-            "Disable AVX when cross-compiling for Android and iOS" FORCE)
-    set(WITH_RDMA OFF CACHE STRING
-            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
-    set(WITH_MKL OFF CACHE STRING
-            "Disable MKL when cross-compiling for Android and iOS" FORCE)
-endif()
+#if(ANDROID OR IOS OR ARMLINUX)
+#    set(WITH_GPU OFF CACHE STRING
+#            "Disable GPU when cross-compiling for Android and iOS" FORCE)
+#    set(WITH_DSO OFF CACHE STRING
+#            "Disable DSO when cross-compiling for Android and iOS" FORCE)
+#    set(WITH_AVX OFF CACHE STRING
+#            "Disable AVX when cross-compiling for Android and iOS" FORCE)
+#    set(WITH_RDMA OFF CACHE STRING
+#            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
+#    set(WITH_MKL OFF CACHE STRING
+#            "Disable MKL when cross-compiling for Android and iOS" FORCE)
+#endif()
 
 if(ANDROID OR IOS)
     set(LITE_WITH_PYTHON OFF CACHE STRING
@@ -167,17 +169,23 @@ endif()
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # check options
-if (LITE_ON_TINY_PUBLISH)
-    if (NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
-        message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
-        return()
-    endif()
-endif()
+#if (LITE_ON_TINY_PUBLISH AND NOT LITE_WITH_X86)
+#    if (NOT ( LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
+#        message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
+#        return()
+#    endif()
+#endif()
 
 include_directories("${PADDLE_SOURCE_DIR}")
 # the generated header files.
 set(LITE_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}")
 include_directories("${LITE_GENERATED_INCLUDE_DIR}")
+
+
+include(external/gflags)    # download, build, install gflags
+include(external/glog)      # download, build, install glog
+
+
 
 if (LITE_WITH_PYTHON)
     include(external/python)    # download, build, install python
@@ -216,31 +224,31 @@ if (LITE_WITH_OPENCL)
 endif()
 
 # for mobile
-if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-    message(STATUS "Building the mobile framework")
-    include(cross_compiling/postproject)
-    include(device/npu) # check and prepare NPU DDK
-    include(device/xpu) # check and prepare XPU SDK
-    include(device/apu) # check and prepare APU SDK
-
-    # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
-    # So the following third party dependencies are not needed.
-    if (NOT LITE_ON_TINY_PUBLISH)
-        # include the necessary thirdparty dependencies
-        include(external/gflags)    # download, build, install gflags
-        # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
-        # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-        include(external/gtest)     # download, build, install gtest
-        include(ccache)             # set ccache for compilation
-        include(external/protobuf)  # download, build, install protobuf
-    endif()
-
-    include(generic)            # simplify cmake module
-    include(configure)          # add paddle env configuration
-
-    add_subdirectory(lite)
-    return()
-endif()
+#if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+#    message(STATUS "Building the mobile framework")
+#    include(cross_compiling/postproject)
+#    include(device/npu) # check and prepare NPU DDK
+#    include(device/xpu) # check and prepare XPU SDK
+#    include(device/apu) # check and prepare APU SDK
+#
+#    # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
+#    # So the following third party dependencies are not needed.
+#    if (NOT LITE_ON_TINY_PUBLISH)
+#        # include the necessary thirdparty dependencies
+#        include(external/gflags)    # download, build, install gflags
+#        # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
+#        # TODO(sangoly): refine LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#        include(external/gtest)     # download, build, install gtest
+#        include(ccache)             # set ccache for compilation
+#        include(external/protobuf)  # download, build, install protobuf
+#    endif()
+#
+#    include(generic)            # simplify cmake module
+#    include(configure)          # add paddle env configuration
+#
+#    add_subdirectory(lite)
+#    return()
+#endif()
 #################################  End of mobile compile ##############################
 
 set(WITH_MKLML ${WITH_MKL})
@@ -273,8 +281,7 @@ include(external/mklml)     # download mklml package
 include(external/xbyak)     # download xbyak package
 
 include(external/libxsmm)   # download, build, install libxsmm
-include(external/gflags)    # download, build, install gflags
-include(external/glog)      # download, build, install glog
+
 include(external/gtest)     # download, build, install gtest
 include(external/protobuf)  # download, build, install protobuf
 include(external/openblas)  # download, build, install openblas

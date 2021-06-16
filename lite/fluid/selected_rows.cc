@@ -108,7 +108,7 @@ void SerializeToStream(std::ostream& os,
     os.write(reinterpret_cast<const char*>(&height), sizeof(height));
   }
   // the 4st field, Tensor data
-  TensorToStream(os, selected_rows.value());
+  //  TensorToStream(os, selected_rows.value());
 }
 
 void DeserializeFromStream(
@@ -138,7 +138,7 @@ void DeserializeFromStream(
     selected_rows->set_height(height);
   }
   // the 4st field, tensor which contains the data
-  TensorFromStream(is, selected_rows->mutable_value());
+  //  TensorFromStream(is, selected_rows->mutable_value());
 }
 
 bool SelectedRows::HasKey(int64_t key) const {

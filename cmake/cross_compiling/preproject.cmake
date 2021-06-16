@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR LITE_WITH_X86)
     return()
 endif()
 

@@ -13,6 +13,11 @@ set(light_lib_DEPS light_api paddle_api paddle_api_light)
 
 if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_BM OR LITE_WITH_HUAWEI_ASCEND_NPU OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
+    # Compiling steps in tiny_publish format:
+    # 1. compile all source files into .object `PADDLELITE_OBJS`
+
+
+
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
     add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto op_registry fbs_headers)
@@ -96,64 +101,82 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         add_dependencies(lite_compile_deps check_symbol)
     endif()
 else()
-    # Compiling steps in tiny_publish format:
-    # 1. compile all source files into .object `PADDLELITE_OBJS`
+
+
     add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
-    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers)
-    if (IOS)
-        # only sttaic lib is produced for IOS platform.
-        add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
-    else()
-        # 1. enable -flto compiling flag if toochain==gcc
-        # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
-        if (NOT (ARM_TARGET_LANG STREQUAL "clang"))
-            if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
-                set(TARGET_COMIPILE_FLAGS "")
-            else()
-                set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
-            endif()
-        else()
-            set(TARGET_COMIPILE_FLAGS "-fdata-sections")
-        endif()
-        #   1.1 enable -flto on PADDLELITE_OBJS
-        set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-
-        # 2. produce dynamic lib from PADDLELITE_OBJS
-        add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
-        set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-        #   2.1 link `paddle_light_api_shared` to third-party libs
-        if (LITE_WITH_NPU)
-            # Need to add HIAI runtime libs (libhiai.so) dependency
-            target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
-        endif()
-        if (LITE_WITH_RKNPU)
-            # Need to add RKNPU runtime libs dependency
-            target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
-        endif()
-        if (LITE_WITH_IMAGINATION_NNA)
-            # Need to add IMG IMAGINATION_NNA runtime libs (libimgdnn.so, libnnasession.so) dependency
-            #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
-        endif()
-
-        # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
-        if (LITE_WITH_JAVA)
-          add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
-          set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-          set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lite/api/android/jni/native)
-          if (LITE_WITH_NPU)
-              # Need to add HIAI runtime libs (libhiai.so) dependency
-              target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
-          endif()
-        endif()
-
-        # 4. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
-        # '-flto' is only supported by dynamic lib
-        if(TARGET_COMIPILE_FLAGS MATCHES ".*-flto.*")
-            add_library(paddle_api_light_bundled STATIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
-        else()
-            add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
-        endif()
+    set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "-fPIC  -Wno-ignored-qualifiers")
+    if(WITH_AVX AND AVX_FOUND)
+       if(WIN32)
+          set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "/arch:AVX2 /DAVX2 /fp:strict")
+       else()
+          set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "-mfma -mf16c -mavx2")
+       endif()
     endif()
+    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers)
+    add_dependencies(PADDLELITE_OBJS xxhash dynload_mklml xbyak glog eigen3 framework_proto)
+#    if(WITH_MKL)
+#      add_dependencies(PADDLELITE_OBJS dynload_mklml)
+#    endif
+    add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+    target_link_libraries(paddle_light_api_shared xxhash xbyak eigen3 gflags)
+#    # Compiling steps in tiny_publish format:
+#    # 1. compile all source files into .object `PADDLELITE_OBJS`
+#    add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+#    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers)
+#    if (IOS)
+#        # only sttaic lib is produced for IOS platform.
+#        add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+#    else()
+#        # 1. enable -flto compiling flag if toochain==gcc
+#        # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
+#        if (NOT (ARM_TARGET_LANG STREQUAL "clang"))
+#            if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
+#                set(TARGET_COMIPILE_FLAGS "")
+#            else()
+#                set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
+#            endif()
+#        else()
+#            set(TARGET_COMIPILE_FLAGS "-fdata-sections")
+#        endif()
+#        #   1.1 enable -flto on PADDLELITE_OBJS
+#        set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
+#
+#        # 2. produce dynamic lib from PADDLELITE_OBJS
+#        add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+#        set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
+#        #   2.1 link `paddle_light_api_shared` to third-party libs
+#        if (LITE_WITH_NPU)
+#            # Need to add HIAI runtime libs (libhiai.so) dependency
+#            target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
+#        endif()
+#        if (LITE_WITH_RKNPU)
+#            # Need to add RKNPU runtime libs dependency
+#            target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
+#        endif()
+#        if (LITE_WITH_IMAGINATION_NNA)
+#            # Need to add IMG IMAGINATION_NNA runtime libs (libimgdnn.so, libnnasession.so) dependency
+#            #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
+#        endif()
+#
+#        # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
+#        if (LITE_WITH_JAVA)
+#          add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
+#          set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
+#          set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lite/api/android/jni/native)
+#          if (LITE_WITH_NPU)
+#              # Need to add HIAI runtime libs (libhiai.so) dependency
+#              target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
+#          endif()
+#        endif()
+#
+#        # 4. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
+#        # '-flto' is only supported by dynamic lib
+#        if(TARGET_COMIPILE_FLAGS MATCHES ".*-flto.*")
+#            add_library(paddle_api_light_bundled STATIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+#        else()
+#            add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+#        endif()
+#    endif()
 endif()
 
 if (WITH_TESTING)

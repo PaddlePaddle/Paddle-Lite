@@ -22,9 +22,9 @@ if (LITE_WITH_FPGA)
 endif ()
 lite_cc_library (tensor SRCS tensor.cc dim.cc DEPS memory ${tensor_extra_deps})
 
-if (NOT LITE_ON_TINY_PUBLISH)
+#if (NOT LITE_ON_TINY_PUBLISH AND NOT LITE_WITH_X86)
   proto_library (framework_proto SRCS framework.proto)
-endif ()
+#endif ()
 
 lite_cc_library (variable SRCS variable.cc DEPS tensor)
 lite_cc_library (types SRCS types.cc)
