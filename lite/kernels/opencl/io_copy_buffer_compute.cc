@@ -48,13 +48,35 @@ float CopyFromHostSync(void* target, const void* source, size_t size) {
 #endif
 }
 
+float CopyFromHostAsync(void* target, const void* source, size_t size) {
+#ifdef LITE_WITH_PROFILE
+  auto h2d_copy_start = GetCurrentUS();
+#endif
+  TargetWrapperCL::MemcpyAsync(target,
+                               source,
+                               size,
+                               IoDirection::HtoD,
+                               CLRuntime::Global()->command_queue());
+#ifdef LITE_WITH_PROFILE
+  CLRuntime::Global()->command_queue().finish();
+  auto h2d_duration = (GetCurrentUS() - h2d_copy_start) / 1000.0;
+  return h2d_duration;
+#else
+  return 0.0;
+#endif
+}
+
 // Device to Host memory.
 float CopyToHostSync(void* target, const void* source, size_t size) {
 #ifdef LITE_WITH_PROFILE
   auto d2h_copy_start = GetCurrentUS();
 #endif
+  TargetWrapperCL::MemcpyAsync(target,
+                               source,
+                               size,
+                               IoDirection::DtoH,
+                               CLRuntime::Global()->command_queue());
   CLRuntime::Global()->command_queue().finish();
-  TargetWrapperCL::MemcpySync(target, source, size, IoDirection::DtoH);
 #ifdef LITE_WITH_PROFILE
   auto d2h_duration = (GetCurrentUS() - d2h_copy_start) / 1000.0;
   return d2h_duration;
@@ -109,7 +131,7 @@ class IoCopyHostToOpenCLCompute
     auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
     CHECK(data);
     CHECK(param.x->raw_data());
-    h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
+    h2d_duration_ = CopyFromHostAsync(data, param.x->raw_data(), mem_size);
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
