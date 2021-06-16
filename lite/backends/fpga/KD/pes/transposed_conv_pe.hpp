@@ -214,12 +214,12 @@ class TransposedConvPE : public PE {
           float16* dst_cur_hwc =
               dst_start_hwc + sub_conv_number_ * h * dst_stride_wc;
 
-          // Branch One: copy one each_C * each_W at a time
+          // Branch One: copy one wc at a time
           if (output_num_per_sub == 1) {
             float16* src_cur = src_hwc + omit_size_ * oc;
             memcpy(dst_cur_hwc, src_cur, oc * ow * sizeof(float16));
           } else if (output_num_per_sub == 2) {
-            // Branch Two: copy one each_C at a time
+            // Branch Two: copy one c at a timec
             // Step One: when w = 0
             // check the remain fill length of the first oc
             int dst_w_start_without_omit = accum_c / oc;

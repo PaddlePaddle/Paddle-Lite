@@ -40,7 +40,7 @@ class SubgraphCompute
   std::unique_ptr<RuntimeProgram> program_;
 };
 
-}  // namespace xpu
+}  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

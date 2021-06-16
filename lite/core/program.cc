@@ -390,9 +390,7 @@ void RuntimeProgram::Run() {
 #endif
 
 #ifdef LITE_WITH_FPGA
-
     monitor.postRun(inst);
-
 #endif
 
 #ifdef LITE_WITH_PRECISION_PROFILE

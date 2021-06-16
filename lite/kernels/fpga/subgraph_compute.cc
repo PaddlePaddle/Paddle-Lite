@@ -35,7 +35,7 @@ void SubgraphCompute::Run() {
   program_->Run();
 }
 
-}  // namespace xpu
+}  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

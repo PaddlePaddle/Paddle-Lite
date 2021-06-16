@@ -161,9 +161,7 @@ std::vector<std::vector<NodeInfo>> FpgaConcatFuser::PatternMatch(
       std::vector<std::vector<NodeInfo>> grouped_candidate =
           select_candidate(subgraph);
       // TODO(chengruichang) if concat op has multiple grouped upstream op that
-      // can be
-      // fused, try to support it later
-      //            std::vector<NodeInfo> select_subgraph;
+      // can be fused, try to support it later
       if (grouped_candidate.size() == 1) {
         auto select_subgraph = grouped_candidate[0];
         int fuse_op_num = select_subgraph.size();
@@ -222,7 +220,6 @@ void FpgaConcatFuser::ExtractInputsOutputs(std::vector<NodeInfo>& pattern,
 // wrapped into sub graph
 void FpgaConcatFuser::InsertNewNode(
     SSAGraph* graph, std::vector<std::vector<NodeInfo>>& patterns) {
-  // each pattern with a subgraph_op
   for (auto& subgraph_nodeinfos : patterns) {
     cpp::OpDesc subgraph_op_desc;
     subgraph_op_desc.SetType("subgraph");
