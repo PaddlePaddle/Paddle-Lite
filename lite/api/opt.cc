@@ -20,8 +20,7 @@
 // are created automatically during opt's compiling period
 #include <algorithm>
 #include <iomanip>
-#include "all_kernel_faked.cc"  // NOLINT
-#include "kernel_src_map.h"     // NOLINT
+#include "kernel_src_map.h"  // NOLINT
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
