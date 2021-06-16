@@ -74,16 +74,6 @@ void transpose_mat(const float* din,
       int tmp_h = h * 4;
       for (int w = 0; w < nw; w++) {
         INIT_PTR_4(float, ptr_out, size_h)
-//     float* data_out_ptr = ptr_out + w * size_h + tmp_h;
-//     const float* din0 = ptr_din_row;
-//     const float* din1 = din0 + width;
-//     const float* din2 = din1 + width;
-//     const float* din3 = din2 + width;
-
-//     float* dout0 = data_out_ptr;
-//     float* dout1 = dout0 + height;
-//     float* dout2 = dout1 + height;
-//     float* dout3 = dout2 + height;
 #ifdef __aarch64__
         float32x4_t vr0 = vld1q_f32(din0);
         float32x4_t vr1 = vld1q_f32(din1);
@@ -263,7 +253,7 @@ void transpose_mat(const lite_api::float16_t* din,
               "v11",
               "v12",
               "v13",
-              "V14",
+              "v14",
               "v15");
 #else
         asm volatile(
@@ -326,8 +316,6 @@ void transpose_mat(const lite_api::float16_t* din,
       }
       lite_api::float16_t* data_out_ptr = ptr_out + size_wh;
       for (int w = 0; w < remain_ww; w++) {
-        // lite_api::float16_t* outptr =  data_out_ptr + w * height+ tmp_h;
-        // const lite_api::float16_t* din0 = ptr_din_row;
         INIT_PTR_4(lite_api::float16_t, data_out_ptr, (4 * height))
         INIT_PTR_A4(lite_api::float16_t)
 #ifdef __aarch64__
@@ -404,7 +392,7 @@ void transpose_mat(const lite_api::float16_t* din,
               "v11",
               "v12",
               "v13",
-              "V14",
+              "v14",
               "v15");
 #else
         asm volatile(
@@ -465,8 +453,8 @@ void transpose_mat(const lite_api::float16_t* din,
     // remian
     for (int h = nh * 8; h < height; h++) {
       for (int w = 0; w < width; w++) {
-        const float* data_in_ptr = ptr_in + h * width + w;
-        float* data_out_ptr = ptr_out + w * height + h;
+        const float16_t* data_in_ptr = ptr_in + h * width + w;
+        float16_t* data_out_ptr = ptr_out + w * height + h;
         *data_out_ptr = *data_in_ptr;
       }
     }
@@ -614,7 +602,7 @@ void TransposeCompute::Run() {
   if (input->precision() == PRECISION(kFP16) && trans_mat) {
     const lite_api::float16_t* din = input->data<lite_api::float16_t>();
     lite_api::float16_t* dout = output->mutable_data<lite_api::float16_t>();
-    transpose_mat_fp16(din, dout, _trans_num, _trans_w, _trans_h);
+    transpose_mat(din, dout, _trans_num, _trans_w, _trans_h);
     return;
   }
 #endif
