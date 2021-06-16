@@ -26,6 +26,10 @@
 #include "lite/core/profile/precision_profiler.h"
 #endif
 
+#ifdef LITE_WITH_FPGA
+#include "lite/backends/fpga/monitor.hpp"
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -346,6 +350,11 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
+#ifdef LITE_WITH_FPGA
+  Monitor& monitor = Monitor::get_instance();
+  monitor.inferStart();
+#endif
+
 #ifdef LITE_WITH_NVTX
   const NVTXAnnotator& annotator = NVTXAnnotator::Global();
   NVTXRangeAnnotation annotation_one_loop = annotator.AnnotateBlock();
@@ -361,10 +370,12 @@ void RuntimeProgram::Run() {
 #endif
 
   int idx = -1;
+
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
 #if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+
     if (inst.is_feed_fetch_op()) continue;
 #endif
 #ifdef LITE_WITH_NVTX
@@ -380,6 +391,10 @@ void RuntimeProgram::Run() {
     }
 #endif
 
+#ifdef LITE_WITH_FPGA
+    monitor.preRun(inst);
+#endif
+
     inst.Run();
 
 #ifdef LITE_WITH_OPENCL
@@ -387,6 +402,11 @@ void RuntimeProgram::Run() {
     inst.Flush(idx);
 #endif
 
+#ifdef LITE_WITH_FPGA
+
+    monitor.postRun(inst);
+
+#endif
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
     if (inst.op()->Type() != "while") {
@@ -400,6 +420,10 @@ void RuntimeProgram::Run() {
 #ifdef LITE_WITH_METAL
   MetalContext* wait_ctx = (*metal_ctx_).As<MTLContext>().context();
   wait_ctx->WaitAllCompleted();
+#endif
+
+#ifdef LITE_WITH_FPGA
+  monitor.inferEnd();
 #endif
 
 #ifdef LITE_WITH_PROFILE

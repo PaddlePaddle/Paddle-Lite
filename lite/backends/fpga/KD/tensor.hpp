@@ -421,8 +421,10 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
+      std::cout << "open file error for " << path << std::endl;
       return;
     }
+
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;
@@ -441,8 +443,10 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
+      std::cout << "open file error for " << path << std::endl;
       return;
     }
+
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;
@@ -461,8 +465,10 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
+      std::cout << "open file error for " << path << std::endl;
       return;
     }
+
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;

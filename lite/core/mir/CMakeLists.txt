@@ -29,6 +29,7 @@ lite_cc_library(mir_passes
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc
       fusion/scale_activation_fuse_pass.cc
+      fusion/fpga_concat_fuse_pass.cc
       fusion/inplace_fuse_pass.cc
       fusion/__xpu__resblock_reduction_fuse_pass.cc
       fusion/__xpu__concat_conv2d_fuse_pass.cc

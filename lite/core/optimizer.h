@@ -59,6 +59,7 @@ class Optimizer {
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
   }
 
+
   // Append a pass to the optimizer.
   void AddPass(const std::string& pass_name);
   // Optimize a program to generate a runtime program.
