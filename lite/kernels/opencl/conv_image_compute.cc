@@ -1957,6 +1957,10 @@ REGISTER_LITE_KERNEL(conv2d,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
+    .BindInput("SecondInput",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -1995,6 +1999,10 @@ REGISTER_LITE_KERNEL(conv2d,
                      paddle::lite::kernels::opencl::ConvImageCompute,
                      image2d_pc)
     .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("SecondInput",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})

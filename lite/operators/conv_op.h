@@ -59,6 +59,12 @@ class ConvOpLite : public OpLite {
     // GMACPS = 1e-6f * MACs / predict_ms
     ch->macs = 2.f * filter_dims[2] * filter_dims[3] *
                output_dims.production() * input_dims[1] / param_.groups;
+
+    if (param_.fuse_elementwise_tree) {
+      ch->remark +=
+          "ElementwiseAxis" + std::to_string(param_.elementwise_param.axis);
+      ch->macs += 1.0f * output_dims.numel();
+    }
   }
 #endif
 
@@ -153,6 +159,15 @@ class ConvOpLite : public OpLite {
     if (op_desc.HasAttr("scale_activation_type")) {
       param_.scale_activation_type =
           op_desc.GetAttr<std::string>("scale_activation_type");
+    }
+
+    if (op_desc.HasAttr("fuse_elementwise_tree")) {
+      VLOG(4) << "has attr fuse_elementwise_tree";
+      param_.fuse_elementwise_tree =
+          op_desc.GetAttr<bool>("fuse_elementwise_tree");
+      auto X = op_desc.Input("SecondInput").front();
+      param_.second_x =
+          const_cast<lite::Tensor*>(&(scope->FindVar(X)->Get<lite::Tensor>()));
     }
 
     if (op_desc.HasAttr("padding_algorithm")) {
