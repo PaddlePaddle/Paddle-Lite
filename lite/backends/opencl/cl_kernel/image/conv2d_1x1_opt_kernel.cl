@@ -223,7 +223,12 @@ __kernel void conv2d_1x1_opt(
     __private const int output_width,
     __private const int output_height,
     __private const int old_w,
-    __read_only image2d_t prelu_alpha) {
+    __read_only image2d_t prelu_alpha
+#ifdef ELE_TREE_FUSE
+    ,
+    __read_only image2d_t second_input_image
+#endif
+    ) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -472,18 +477,38 @@ __kernel void conv2d_1x1_opt(
 #endif
 
   if (out_w0 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos0);
+    output0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);
   }
 
   if (out_w1 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos1);
+    output1 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos1, output1);
   }
 
   if (out_w2 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos2);
+    output2 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos2, output2);
   }
 
   if (out_w3 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos3);
+    output3 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos3, output3);
   }
 }
@@ -705,7 +730,12 @@ __kernel void conv2d_1x1_h1w2c1(
     __private const int output_width,
     __private const int output_height,
     __private const int old_w,
-    __read_only image2d_t prelu_alpha) {
+    __read_only image2d_t prelu_alpha
+#ifdef ELE_TREE_FUSE
+    ,
+    __read_only image2d_t second_input_image
+#endif
+    ) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -792,10 +822,20 @@ __kernel void conv2d_1x1_h1w2c1(
 #endif
 
   if (out_w0 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos0);
+    output0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);
   }
 
   if (out_w1 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos1);
+    output1 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos1, output1);
   }
 }
@@ -818,7 +858,12 @@ __kernel void conv2d_1x1_h1w5c1(
     __private const int output_width,
     __private const int output_height,
     __private const int old_w,
-    __read_only image2d_t prelu_alpha) {
+    __read_only image2d_t prelu_alpha
+#ifdef ELE_TREE_FUSE
+    ,
+    __read_only image2d_t second_input_image
+#endif
+    ) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -971,22 +1016,47 @@ __kernel void conv2d_1x1_h1w5c1(
 #endif
 
   if (out_w0 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos0);
+    output0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);
   }
 
   if (out_w1 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos1);
+    output1 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos1, output1);
   }
 
   if (out_w2 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos2);
+    output2 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos2, output2);
   }
 
   if (out_w3 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos3);
+    output3 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos3, output3);
   }
 
   if (out_w4 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos4);
+    output4 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos4, output4);
   }
 }
@@ -1009,7 +1079,12 @@ __kernel void conv2d_1x1_h1w7c1(
     __private const int output_width,
     __private const int output_height,
     __private const int old_w,
-    __read_only image2d_t prelu_alpha) {
+    __read_only image2d_t prelu_alpha
+#ifdef ELE_TREE_FUSE
+    ,
+    __read_only image2d_t second_input_image
+#endif
+    ) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -1206,30 +1281,65 @@ __kernel void conv2d_1x1_h1w7c1(
 #endif
 
   if (out_w0 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos0);
+    output0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);
   }
 
   if (out_w1 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos1);
+    output1 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos1, output1);
   }
 
   if (out_w2 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos2);
+    output2 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos2, output2);
   }
 
   if (out_w3 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos3);
+    output3 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos3, output3);
   }
 
   if (out_w4 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos4);
+    output4 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos4, output4);
   }
 
   if (out_w5 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos5);
+    output5 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos5, output5);
   }
 
   if (out_w6 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, second_input_image, SAMPLER, output_pos6);
+    output6 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos6, output6);
   }
 }
@@ -1252,7 +1362,12 @@ __kernel void conv2d_1x1_h2w2c1(
     __private const int output_width,
     __private const int output_height,
     __private const int old_w,
-    __read_only image2d_t prelu_alpha) {
+    __read_only image2d_t prelu_alpha
+#ifdef ELE_TREE_FUSE
+    ,
+    __read_only image2d_t second_input_image
+#endif
+    ) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1) * 2;
   const int out_nh = get_global_id(2) * 2;
@@ -1380,23 +1495,54 @@ __kernel void conv2d_1x1_h2w2c1(
   out_w1_h1_c0 = fuse_scale(out_w1_h1_c0, 1.f, 0.f, 0.f);
 #endif
 
+#ifdef ELE_TREE_FUSE
+  CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                       second_input_image,
+                                       SAMPLER,
+                                       (int2)(out_c * old_w + out_w, out_nh));
+  out_w0_h0_c0 += second_val;
+#endif
   WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                  output_image,
                  (int2)(out_c * old_w + out_w, out_nh),
                  out_w0_h0_c0);
   if (out_w + 1 < output_width) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      second_input_image,
+                      SAMPLER,
+                      (int2)(out_c * old_w + out_w + 1, out_nh));
+    out_w1_h0_c0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)(out_c * old_w + out_w + 1, out_nh),
                    out_w1_h0_c0);
   }
   if (out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      second_input_image,
+                      SAMPLER,
+                      (int2)(out_c * old_w + out_w, out_nh + 1));
+    out_w0_h1_c0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)(out_c * old_w + out_w, out_nh + 1),
                    out_w0_h1_c0);
   }
   if (out_w + 1 < output_width && out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      second_input_image,
+                      SAMPLER,
+                      (int2)(out_c * old_w + out_w + 1, out_nh + 1));
+    out_w1_h1_c0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)(out_c * old_w + out_w + 1, out_nh + 1),
@@ -1422,7 +1568,12 @@ __kernel void conv2d_1x1_h2w2c2(
     __private const int output_width,
     __private const int output_height,
     __private const int old_w,
-    __read_only image2d_t prelu_alpha) {
+    __read_only image2d_t prelu_alpha
+#ifdef ELE_TREE_FUSE
+    ,
+    __read_only image2d_t second_input_image
+#endif
+    ) {
   const int out_c = get_global_id(0) * 2;
   const int out_w = get_global_id(1) * 2;
   const int out_nh = get_global_id(2) * 2;
@@ -1624,23 +1775,52 @@ __kernel void conv2d_1x1_h2w2c2(
 
   if (out_c >= global_size_dim0) return;
   {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                         second_input_image,
+                                         SAMPLER,
+                                         (int2)(out_c * old_w + out_w, out_nh));
+    out_w0_h0_c0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)(out_c * old_w + out_w, out_nh),
                    out_w0_h0_c0);
     if (out_w + 1 < output_width) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)(out_c * old_w + out_w + 1, out_nh));
+      out_w1_h0_c0 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)(out_c * old_w + out_w + 1, out_nh),
                      out_w1_h0_c0);
     }
     if (out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                         second_input_image,
+                         SAMPLER,
+                         (int2)(out_c * old_w + out_w, out_nh + 1);
+      out_w0_h1_c0 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)(out_c * old_w + out_w, out_nh + 1),
                      out_w0_h1_c0);
     }
     if (out_w + 1 < output_width && out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                         second_input_image,
+                         SAMPLER,
+                         (int2)(out_c * old_w + out_w + 1, out_nh + 1);
+      out_w1_h1_c0 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)(out_c * old_w + out_w + 1, out_nh + 1),
@@ -1649,23 +1829,52 @@ __kernel void conv2d_1x1_h2w2c2(
   }
   if (out_c + 1 >= global_size_dim0) return;
   {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      second_input_image,
+                      SAMPLER,
+                      (int2)((out_c + 1) * old_w + out_w, out_nh));
+    out_w0_h0_c1 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)((out_c + 1) * old_w + out_w, out_nh),
                    out_w0_h0_c1);
     if (out_w + 1 < output_width) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                         second_input_image,
+                         SAMPLER,
+                         (int2)((out_c + 1) * old_w + out_w + 1, out_nh);
+      out_w1_h0_c1 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)((out_c + 1) * old_w + out_w + 1, out_nh),
                      out_w1_h0_c1);
     }
     if (out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                         second_input_image,
+                         SAMPLER,
+                         (int2)((out_c + 1) * old_w + out_w, out_nh + 1);
+      out_w0_h1_c1 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)((out_c + 1) * old_w + out_w, out_nh + 1),
                      out_w0_h1_c1);
     }
     if (out_w + 1 < output_width && out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                         second_input_image,
+                         SAMPLER,
+                         (int2)((out_c + 1) * old_w + out_w + 1, out_nh + 1);
+      out_w1_h1_c1 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)((out_c + 1) * old_w + out_w + 1, out_nh + 1),
@@ -1692,7 +1901,12 @@ __kernel void conv2d_1x1_mali_h1w2c1(
     __private const int output_width,
     __private const int output_height,
     __private const int old_w,
-    __read_only image2d_t prelu_alpha) {
+    __read_only image2d_t prelu_alpha
+#ifdef ELE_TREE_FUSE
+    ,
+    __read_only image2d_t second_input_image
+#endif
+    ) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -1771,6 +1985,13 @@ __kernel void conv2d_1x1_mali_h1w2c1(
 #endif
 
   if (out_w0 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                         second_input_image,
+                                         SAMPLER,
+                                         (int2)(out_pos_w0_x, out_pos_y));
+    output_w0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)(out_pos_w0_x, out_pos_y),
@@ -1778,6 +1999,13 @@ __kernel void conv2d_1x1_mali_h1w2c1(
   }
 
   if (out_w1 < old_w) {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                         second_input_image,
+                                         SAMPLER,
+                                         (int2)(out_pos_w1_x, out_pos_y));
+    output_w1 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)(out_pos_w1_x, out_pos_y),
@@ -1803,7 +2031,12 @@ __kernel void conv2d_1x1_mali_h1w2c2(
     __private const int output_width,
     __private const int output_height,
     __private const int old_w,
-    __read_only image2d_t prelu_alpha) {
+    __read_only image2d_t prelu_alpha
+#ifdef ELE_TREE_FUSE
+    ,
+    __read_only image2d_t second_input_image
+#endif
+    ) {
   const int out_c = 2 * get_global_id(0);
   const int out_w = 2 * get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -1912,11 +2145,26 @@ __kernel void conv2d_1x1_mali_h1w2c2(
 #endif
   if (out_c >= global_size_dim0) return;
   {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                         second_input_image,
+                                         SAMPLER,
+                                         (int2)(out_c * old_w + out_w, out_nh));
+    output_w0_c0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)(out_c * old_w + out_w, out_nh),
                    output_w0_c0);
     if (out_w + 1 < old_w) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)(out_c * old_w + out_w + 1, out_nh));
+      output_w1_c0 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)(out_c * old_w + out_w + 1, out_nh),
@@ -1925,11 +2173,27 @@ __kernel void conv2d_1x1_mali_h1w2c2(
   }
   if (out_c + 1 >= global_size_dim0) return;
   {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      second_input_image,
+                      SAMPLER,
+                      (int2)((out_c + 1) * old_w + out_w, out_nh));
+    output_w0_c1 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)((out_c + 1) * old_w + out_w, out_nh),
                    output_w0_c1);
     if (out_w + 1 < old_w) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)((out_c + 1) * old_w + out_w + 1, out_nh));
+      output_w1_c1 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)((out_c + 1) * old_w + out_w + 1, out_nh),
@@ -1956,7 +2220,12 @@ __kernel void conv2d_1x1_mali_h2w2c2(
     __private const int output_width,
     __private const int output_height,
     __private const int old_w,
-    __read_only image2d_t prelu_alpha) {
+    __read_only image2d_t prelu_alpha
+#ifdef ELE_TREE_FUSE
+    ,
+    __read_only image2d_t second_input_image
+#endif
+    ) {
   const int out_c = 2 * get_global_id(0);
   const int out_w = 2 * get_global_id(1);
   const int out_nh = 2 * get_global_id(2);
@@ -2140,23 +2409,54 @@ __kernel void conv2d_1x1_mali_h2w2c2(
 
   if (out_c >= global_size_dim0) return;
   {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                         second_input_image,
+                                         SAMPLER,
+                                         (int2)(out_c * old_w + out_w, out_nh));
+    out_w0_h0_c0 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)(out_c * old_w + out_w, out_nh),
                    out_w0_h0_c0);
     if (out_w + 1 < output_width) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)(out_c * old_w + out_w + 1, out_nh));
+      out_w1_h0_c0 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)(out_c * old_w + out_w + 1, out_nh),
                      out_w1_h0_c0);
     }
     if (out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)(out_c * old_w + out_w, out_nh + 1));
+      out_w0_h1_c0 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)(out_c * old_w + out_w, out_nh + 1),
                      out_w0_h1_c0);
     }
     if (out_w + 1 < output_width && out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)(out_c * old_w + out_w + 1, out_nh + 1));
+      out_w1_h1_c0 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)(out_c * old_w + out_w + 1, out_nh + 1),
@@ -2165,23 +2465,55 @@ __kernel void conv2d_1x1_mali_h2w2c2(
   }
   if (out_c + 1 >= global_size_dim0) return;
   {
+#ifdef ELE_TREE_FUSE
+    CL_DTYPE4 second_val =
+        READ_IMG_TYPE(CL_DTYPE_CHAR,
+                      second_input_image,
+                      SAMPLER,
+                      (int2)((out_c + 1) * old_w + out_w, out_nh));
+    out_w0_h0_c1 += second_val;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                    output_image,
                    (int2)((out_c + 1) * old_w + out_w, out_nh),
                    out_w0_h0_c1);
     if (out_w + 1 < output_width) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)((out_c + 1) * old_w + out_w + 1, out_nh));
+      out_w1_h0_c1 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)((out_c + 1) * old_w + out_w + 1, out_nh),
                      out_w1_h0_c1);
     }
     if (out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)((out_c + 1) * old_w + out_w, out_nh + 1));
+      out_w0_h1_c1 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)((out_c + 1) * old_w + out_w, out_nh + 1),
                      out_w0_h1_c1);
     }
     if (out_w + 1 < output_width && out_nh + 1 < output_height) {
+#ifdef ELE_TREE_FUSE
+      CL_DTYPE4 second_val =
+          READ_IMG_TYPE(CL_DTYPE_CHAR,
+                        second_input_image,
+                        SAMPLER,
+                        (int2)((out_c + 1) * old_w + out_w + 1, out_nh + 1));
+      out_w1_h1_c1 += second_val;
+#endif
       WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                      output_image,
                      (int2)((out_c + 1) * old_w + out_w + 1, out_nh + 1),
