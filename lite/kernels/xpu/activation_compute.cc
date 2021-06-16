@@ -390,7 +390,6 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     prelu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("mode", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
