@@ -22,6 +22,41 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+// This pass fuse conv2d_1x1 and elementwise_add.
+// As elementwise_add is low ratio of computation / memory_access. This fuse
+// will reduce the access to output of conv2d_1x1 and then increase the whole
+// low ratio of computation / memory_access.
+//
+// For example:
+//
+//       |                          |
+//       |                          |
+//       A                     conv2d_1x1
+//       |                          |
+//       |                          |
+//       ----- elementwise_add -----
+//                  |
+//                  |
+//                  V
+//
+// After the pass is applied:
+//
+//       |                          |
+//       |                          |
+//       A                          |
+//       |                          |
+//       |                          |
+//       -------- conv2d_1x1 -------
+//                    |
+//                    |
+//                    V
+//
+// Limitations:
+// * Only support fuse of conv2d_1x1 and elementwise_add.
+// * This output tensor dims of elementwise_add must be equal to that of
+// elementwise_add.
+// * Only support opencl target.
+
 class ConvElementwiseTreeFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
