@@ -73,18 +73,9 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else if (op_info->HasAttr("shape")) {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
     auto out_shape = lite::operators::ValidateShape(shape, x_dims);
-    // out_shape = CvtShape(out_shape);
     actual_shape_node = graph->Add<int64_t>(
         out_name + "/shape",
         std::vector<int64_t>(out_shape.begin(), out_shape.end()));
-    VLOG(3) << "shape = ";
-    for (int i = 0; i < shape.size(); i++) {
-      VLOG(3) << "shape[i]" << shape[i];
-    }
-    VLOG(3) << "out_shape = ";
-    for (int i = 0; i < out_shape.size(); i++) {
-      VLOG(3) << "out_shape[i]" << out_shape[i];
-    }
   }
   // actual_shape_node should not be nullptr
   CHECK(actual_shape_node);
@@ -97,9 +88,6 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   INPUT_UPDATE(reshape_op, x, x_node);
   INPUT_UPDATE(reshape_op, shape, actual_shape_node);
   OUTPUT_UPDATE(reshape_op, y, reshape_node);
-  VLOG(3) << "input_name: " << x_name;
-  VLOG(3) << "x_dims= " << x_dims.repr();
-  VLOG(3) << "output_name: " << out_name;
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

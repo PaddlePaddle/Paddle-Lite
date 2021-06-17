@@ -41,10 +41,14 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
 
-  /*
+  bool exclusive = true;
+  if (op_info->HasAttr("exclusive")) {
+    exclusive = op_info->GetAttr<bool>("exclusive");
+  }
+
   CHECK_EQ(op_info->GetAttr<bool>("exclusive"), true)
       << "[HUAWEI_ASCEND_NPU] Only exclusive=true is supported for Huawei "
-         "Ascend NPU DDK.";*/
+         "Ascend NPU DDK.";
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
