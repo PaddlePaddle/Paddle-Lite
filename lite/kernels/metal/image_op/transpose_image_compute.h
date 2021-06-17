@@ -32,25 +32,27 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class TransposeImageCompute
-    : public KernelLite<TARGET(kMetal), PTYPE, DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::TransposeParam;
 
    public:
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("transpose", output_buffer_);
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+    virtual ~TransposeImageCompute();
 
    private:
+    void setup_without_mps();
+
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
-    std::shared_ptr<MetalBuffer> param_buffer_;
-    std::shared_ptr<MetalKernel> kernel_;
-    std::shared_ptr<MetalQueue> queue_;
-    std::shared_ptr<MetalEncoder> encoder_;
+    MetalImage* output_buffer_{nullptr};
+    std::shared_ptr<MetalBuffer> params_buffer_;
+
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
     MetalContext* metal_context_;
 };
 

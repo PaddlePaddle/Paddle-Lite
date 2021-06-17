@@ -35,9 +35,8 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class SplitImageCompute
-    : public KernelLite<TARGET(kMetal), PTYPE, DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::SplitParam;
 
    public:
@@ -45,20 +44,21 @@ class SplitImageCompute
     void Run() override;
     void SaveOutput() override {
         for (auto item : output_buffers_) {
-            MetalDebug::SaveOutput("split", item);
+            MetalDebug::SaveOutput(function_name_, item);
         }
     };
+    virtual ~SplitImageCompute();
 
    private:
-    std::vector<MetalImage*> output_buffers_{};
-    const MetalImage* input_buffer_{};
-    std::shared_ptr<MetalBuffer> param_buffer_;
-    std::shared_ptr<MetalKernel> kernel_;
-    std::shared_ptr<MetalQueue> queue_;
-    std::shared_ptr<MetalEncoder> encoder_;
-    MetalContext* metal_context_;
+    void setup_without_mps();
 
-    std::string v_ = "normal";
+    const MetalImage* input_buffer_;
+    std::vector<MetalImage*> output_buffers_{};
+    std::shared_ptr<MetalBuffer> params_buffer_;
+
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
 };
 
 }  // namespace metal
