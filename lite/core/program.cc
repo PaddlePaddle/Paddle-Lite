@@ -22,6 +22,9 @@
 #include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
 #include "lite/operators/while_op.h"
+#ifdef LITE_WITH_FPGA
+#include "lite/backends/fpga/monitor.hpp"
+#endif
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
@@ -360,6 +363,11 @@ void RuntimeProgram::Run() {
   cmd_ctx->CreateCommandBuffer(this);
 #endif
 
+#ifdef LITE_WITH_FPGA
+  Monitor& monitor = Monitor::get_instance();
+  monitor.inferStart();
+#endif
+
   int idx = -1;
 
   auto& insts = instructions_[kRootBlockIdx];
@@ -381,7 +389,9 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
-
+#ifdef LITE_WITH_FPGA
+    monitor.preRun(inst);
+#endif
     inst.Run();
 
 #ifdef LITE_WITH_OPENCL
