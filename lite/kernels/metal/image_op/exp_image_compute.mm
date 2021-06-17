@@ -54,6 +54,10 @@ void ExpImageCompute::Run() {
     [backend commit];
 }
 
+ExpImageCompute::~ExpImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
 }  // namespace metal
 }  // namespace kernels
 }  // namespace lite

@@ -126,7 +126,8 @@ void ConcatImageCompute::setup_without_mps() {
             odm[4 - orank + i] = (int)(output_buffer_->tensor_dim_[i]);
         }
     }
-    ConcatMetalParam concat_params{{odm[0], odm[1], odm[2], odm[3]},
+    ConcatMetalParam concat_params{
+        {odm[0], odm[1], odm[2], odm[3]},
         static_cast<int>(axis),
         0,
         {transpose[0], transpose[1], transpose[2], transpose[3]},
@@ -140,6 +141,10 @@ void ConcatImageCompute::setup_without_mps() {
 #endif
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
+}
+
+ConcatImageCompute::~ConcatImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

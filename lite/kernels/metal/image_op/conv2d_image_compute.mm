@@ -524,6 +524,8 @@ Conv2dImageCompute::~Conv2dImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
+    TargetWrapperMetal::FreeImage(output_buffer_);
+    TargetWrapperMetal::FreeImage(blank_buffer_);
 }
 
 }  // namespace metal
