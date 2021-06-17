@@ -61,8 +61,7 @@ class ConvOpLite : public OpLite {
                output_dims.production() * input_dims[1] / param_.groups;
 
     if (param_.fuse_elementwise_tree) {
-      ch->remark +=
-          "ElementwiseAxis" + std::to_string(param_.elementwise_param.axis);
+      ch->remark += "FuseElementwise";
       ch->macs += 1.0f * output_dims.numel();
     }
   }
@@ -162,7 +161,6 @@ class ConvOpLite : public OpLite {
     }
 
     if (op_desc.HasAttr("fuse_elementwise_tree")) {
-      VLOG(4) << "has attr fuse_elementwise_tree";
       param_.fuse_elementwise_tree =
           op_desc.GetAttr<bool>("fuse_elementwise_tree");
       auto X = op_desc.Input("SecondInput").front();

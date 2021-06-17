@@ -79,7 +79,7 @@ void ConvElementwiseTreeFuser::BuildPattern() {
 
 void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
                                              const key2nodes_t& matched) {
-  auto GetTensorDims = [](
+  auto GetOutputTensorDims = [](
       const key2nodes_t& matched, const std::string key, DDimLite& dims) {
     auto* inst = matched.at(key)->stmt();
     const auto op = inst->op();
@@ -96,16 +96,20 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
     dims = tensor.dims();
   };
 
+  // Check output dims.
   DDimLite conv_out_dims, elementwise_out_dims;
-  GetTensorDims(matched, "conv", conv_out_dims);
-  GetTensorDims(matched, "elementwise", elementwise_out_dims);
+  GetOutputTensorDims(matched, "conv", conv_out_dims);
+  GetOutputTensorDims(matched, "elementwise", elementwise_out_dims);
   if (conv_out_dims != elementwise_out_dims) {
-    VLOG(4) << "Output dims is not the same between elementwise and conv. Skip "
-               "this pass! Output tensor dims of elementwise is "
-            << conv_out_dims << ", while output tensor dims of conv is "
+    VLOG(4) << "Output dims is not the same between " << elementwise_type_
+            << " and " << conv_type_
+            << ". Skip this pass! Output tensor dims of elementwise is "
+            << elementwise_out_dims << ", while output tensor dims of conv is "
             << conv_out_dims;
     return;
   }
+
+  // Check filter dims as this pass only support conv1x1 by now.
 
   auto op_desc = GenOpDesc(matched);
   auto conv_op_new = LiteOpRegistry::Global().Create(conv_type_);
