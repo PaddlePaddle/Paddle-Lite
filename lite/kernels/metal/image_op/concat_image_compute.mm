@@ -44,8 +44,8 @@ void ConcatImageCompute::PrepareForRun() {
 }
 
 void ConcatImageCompute::Run() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     int idx = 0;
@@ -139,7 +139,7 @@ void ConcatImageCompute::setup_without_mps() {
     function_name_ = "concat_" + std::to_string(orank) + "_" + std::to_string(num) + "_" + v_;
 #endif
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 }  // namespace metal

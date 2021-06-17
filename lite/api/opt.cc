@@ -20,8 +20,7 @@
 // are created automatically during opt's compiling period
 #include <algorithm>
 #include <iomanip>
-#include "all_kernel_faked.cc"  // NOLINT
-#include "kernel_src_map.h"     // NOLINT
+#include "kernel_src_map.h"  // NOLINT
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
@@ -277,6 +276,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kX86",
                                       "kCUDA",
                                       "kARM",
+                                      "kMetal",
                                       "kOpenCL",
                                       "kFPGA",
                                       "kNPU",
@@ -356,9 +356,9 @@ void PrintHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
-      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu)`\n"
+      "`--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "mediatek_apu|huawei_kirin_npu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
@@ -369,15 +369,15 @@ void PrintHelpInfo() {
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
-      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu)"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "mediatek_apu|huawei_kirin_npu)"
       "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
-      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu)"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "mediatek_apu|huawei_kirin_npu)"
       "`"
       "  Display operators in the input model\n"
       "  How to print detailed information: export GLOG_v=1 \n";

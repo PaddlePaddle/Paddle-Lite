@@ -63,7 +63,7 @@ class SoftmaxImageCompute
     MetalImage* output_buffer_;
     std::shared_ptr<MetalBuffer> params_buffer_;
 
-    void* pipline_;
+    id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
 };

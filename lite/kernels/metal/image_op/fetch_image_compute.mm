@@ -56,8 +56,8 @@ void FetchImageCompute::PrepareForRun() {
 }
 
 void FetchImageCompute::Run() {
+    auto pipline = pipline_;
     auto inTexture = input_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -99,7 +99,7 @@ void FetchImageCompute::setup_without_mps() {
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 }  // namespace metal

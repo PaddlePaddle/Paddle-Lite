@@ -50,7 +50,7 @@ class FeedImageCompute
     std::shared_ptr<MetalBuffer> param_buffer_;
     MetalImage* output_buffer_;
 
-    void* pipline_;
+    id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
 };

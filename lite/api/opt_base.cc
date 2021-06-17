@@ -273,8 +273,9 @@ void OptBase::PrintHelpInfo() {
       "default\n"
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
-      "`set_valid_places(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
-      "imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_kirin_npu)`"
+      "`set_valid_places(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|rknpu|apu|"
+      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
+      "huawei_kirin_npu)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
@@ -316,8 +317,9 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
-      "nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_kirin_npu)`\n"
+      "`--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
+      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
+      "kirin_npu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
@@ -328,12 +330,14 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
-      "nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_kirin_npu)`"
+      "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
+      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
+      "kirin_npu)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
-      "nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_kirin_npu)`"
+      "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
+      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
+      "kirin_npu)`"
       "  Display operators in the input model\n";
   OPT_LOG << "paddlelite opt version:" << opt_version;
   OPT_LOG << help_info;
@@ -345,6 +349,7 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
                                                      "kX86",
                                                      "kCUDA",
                                                      "kARM",
+                                                     "kMetal",
                                                      "kOpenCL",
                                                      "kFPGA",
                                                      "kNPU",

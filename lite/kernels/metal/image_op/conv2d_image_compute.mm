@@ -125,10 +125,6 @@ void Conv2dImageCompute::PrepareForRun() {
     }
 }
 
-void Conv2dImageCompute::SaveOutput() {
-    MetalDebug::SaveOutput(function_name_, output_buffer_);
-};
-
 void Conv2dImageCompute::Run() {
     if (use_mps_) {
         run_with_mps();
@@ -141,8 +137,8 @@ void Conv2dImageCompute::Run() {
 
 void Conv2dImageCompute::run_without_mps() {
     const auto& param = this->Param<param_t>();
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -359,7 +355,7 @@ void Conv2dImageCompute::setup_without_mps() {
             filter_buffer_->convert_to_nhwc_ = false;
             filter_buffer_->pad_when_one_channel_ = false;
         } else {
-            filter_buffer_->convert_to_nhwc_ = false;
+            filter_buffer_->convert_to_nhwc_ = true;
             bool pad_when_one_ch =
                 !(param.filter->dims()[1] == 1 && param.filter->dims()[0] == param.x->dims()[1]);
             filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
@@ -376,7 +372,7 @@ void Conv2dImageCompute::setup_without_mps() {
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 #pragma mark - MPS
@@ -527,10 +523,6 @@ Conv2dImageCompute::~Conv2dImageCompute() {
     if (mps_output_image_) {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
-    }
-    if (pipline_) {
-        CFRelease(pipline_);
-        pipline_ = nullptr;
     }
 }
 
