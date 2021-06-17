@@ -307,9 +307,14 @@ RuntimeProgram::RuntimeProgram(
           ContextScheduler::Global().NewContext(kernel->target()));
     }
 #elif LITE_WITH_METAL
-    std::unique_ptr<KernelContext> ctx(new KernelContext());
-    (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
-    kernel->SetContext(std::move(ctx));
+    if (kernel->target() == TARGET(kMetal)) {
+      std::unique_ptr<KernelContext> ctx(new KernelContext());
+      (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
+      kernel->SetContext(std::move(ctx));
+    } else {
+      kernel->SetContext(
+          ContextScheduler::Global().NewContext(kernel->target()));
+    }
 #else
     if (kernel != nullptr) {
       kernel->SetContext(
