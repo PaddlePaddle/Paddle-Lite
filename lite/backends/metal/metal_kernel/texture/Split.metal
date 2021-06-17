@@ -38,10 +38,7 @@ struct SplitParam {
 #define V VY
 #define R 3
 #define N 2
-#define P float
-#include "Split.inc.metal"
-#undef P
-#define P half
+#define P ftype
 #include "Split.inc.metal"
 #undef P
 #undef N
@@ -52,10 +49,7 @@ struct SplitParam {
 #define V VY
 #define R 2
 #define N 2
-#define P float
-#include "Split.inc.metal"
-#undef P
-#define P half
+#define P ftype
 #include "Split.inc.metal"
 #undef P
 #undef N
@@ -65,10 +59,7 @@ struct SplitParam {
 #define V VZZ
 #define R 4
 #define N 2
-#define P float
-#include "Split.inc.metal"
-#undef P
-#define P half
+#define P ftype
 #include "Split.inc.metal"
 #undef P
 #undef N
@@ -78,10 +69,7 @@ struct SplitParam {
 #define V VZ
 #define R 4
 #define N 2
-#define P float
-#include "Split.inc.metal"
-#undef P
-#define P half
+#define P ftype
 #include "Split.inc.metal"
 #undef P
 #undef N
