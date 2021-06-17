@@ -112,18 +112,18 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else if (target_repr == "rockchip_npu") {
-      valid_places.emplace_back(TARGET(kNNAdapter));
-      valid_places.emplace_back(
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
       nnadapter_devices.push_back(target_repr);
     } else if (target_repr == "mediatek_apu") {
-      valid_places.emplace_back(TARGET(kNNAdapter));
-      valid_places.emplace_back(
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
       nnadapter_devices.push_back(target_repr);
     } else if (target_repr == "huawei_kirin_npu") {
-      valid_places.emplace_back(TARGET(kNNAdapter));
-      valid_places.emplace_back(
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_devices.push_back(target_repr);
     } else {
