@@ -63,6 +63,7 @@ ExternalProject_Add(
                      -DCMAKE_INSTALL_LIBDIR:PATH=${GLOG_INSTALL_DIR}/lib
                      -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
                      -DCMAKE_BUILD_TYPE:STRING=${THIRD_PARTY_BUILD_TYPE}
+    BUILD_COMMAND    make install
 )
 IF(WIN32)
   IF(NOT EXISTS "${GLOG_INSTALL_DIR}/lib/libglog.lib")
