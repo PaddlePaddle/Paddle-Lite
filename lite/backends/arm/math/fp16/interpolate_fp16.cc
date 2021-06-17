@@ -45,6 +45,52 @@ inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
   return vec_new_data;
 }
 
+#define ALPHA_COMPUTE                     \
+  float16x4_t va = vld1_f16(alphap);      \
+  float16x4_t vs0 = vld1_f16(s0p);        \
+  float16x4_t vs1 = vld1_f16(s1p);        \
+  float16x4_t vs0n = vld1_f16(s0np);      \
+  float16x4_t vs1n = vld1_f16(s1np);      \
+  vs0[2] = vs0n[0];                       \
+  vs0[3] = vs0n[1];                       \
+  vs1[2] = vs1n[0];                       \
+  vs1[3] = vs1n[1];                       \
+  float16x4_t vms0 = vmul_f16(vs0, va);   \
+  float16x4_t vms1 = vmul_f16(vs1, va);   \
+  float16_t vmres0_0 = vms0[0] + vms0[1]; \
+  float16_t vmres0_1 = vms0[2] + vms0[3]; \
+  float16_t vmres1_0 = vms1[0] + vms1[1]; \
+  float16_t vmres1_1 = vms1[2] + vms1[3]; \
+  rows0p[dx] = vmres0_0;                  \
+  rows0p[dx + 1] = vmres0_1;              \
+  rows1p[dx] = vmres1_0;                  \
+  rows1p[dx + 1] = vmres1_1;
+
+#define BRTA_COMPUTE                           \
+  float16x8_t vrows0 = vld1q_f16(rows0p);      \
+  float16x8_t vrows2 = vld1q_f16(rows0p + 8);  \
+  float16x8_t vrows4 = vld1q_f16(rows0p + 16); \
+  float16x8_t vrows6 = vld1q_f16(rows0p + 24); \
+  float16x8_t vrows1 = vld1q_f16(rows1p);      \
+  float16x8_t vsum0 = vmulq_f16(vrows0, vb0);  \
+  float16x8_t vrows3 = vld1q_f16(rows1p + 8);  \
+  float16x8_t vsum1 = vmulq_f16(vrows2, vb0);  \
+  float16x8_t vrows5 = vld1q_f16(rows1p + 16); \
+  float16x8_t vsum2 = vmulq_f16(vrows4, vb0);  \
+  float16x8_t vrows7 = vld1q_f16(rows1p + 24); \
+  float16x8_t vsum3 = vmulq_f16(vrows6, vb0);  \
+  vsum0 = vfmaq_f16(vsum0, vrows1, vb1);       \
+  vsum1 = vfmaq_f16(vsum1, vrows3, vb1);       \
+  vsum2 = vfmaq_f16(vsum2, vrows5, vb1);       \
+  vsum3 = vfmaq_f16(vsum3, vrows7, vb1);       \
+  rows0p += 32;                                \
+  vst1q_f16(dp, vsum0);                        \
+  vst1q_f16(dp + 8, vsum1);                    \
+  rows1p += 32;                                \
+  vst1q_f16(dp + 16, vsum2);                   \
+  vst1q_f16(dp + 24, vsum3);                   \
+  dp += 32;
+
 void bilinear_interp(const float16_t* src,
                      int w_in,
                      int h_in,
@@ -153,26 +199,7 @@ void bilinear_interp(const float16_t* src,
       const float16_t* s0np = s0 + sxn;
       const float16_t* s1np = s1 + sxn;
 
-      float16x4_t va = vld1_f16(alphap);
-      float16x4_t vs0 = vld1_f16(s0p);
-      float16x4_t vs1 = vld1_f16(s1p);
-      float16x4_t vs0n = vld1_f16(s0np);
-      float16x4_t vs1n = vld1_f16(s1np);
-      vs0[2] = vs0n[0];
-      vs0[3] = vs0n[1];
-      vs1[2] = vs1n[0];
-      vs1[3] = vs1n[1];
-
-      float16x4_t vms0 = vmulq_f32(vs0, va);
-      float16x4_t vms1 = vmulq_f32(vs1, va);
-      float16_t vmres0_0 = vms0[0] + vms0[1];
-      float16_t vmres0_1 = vms0[2] + vms0[3];
-      float16_t vmres1_0 = vms1[0] + vms1[1];
-      float16_t vmres1_1 = vms1[2] + vms1[3];
-      rows0p[dx] = vmres0_0;
-      rows0p[dx + 1] = vmres0_1;
-      rows1p[dx] = vmres1_0;
-      rows1p[dx + 1] = vmres1_1;
+      ALPHA_COMPUTE
 
       alphap += 4;
     }
@@ -200,27 +227,7 @@ void bilinear_interp(const float16_t* src,
       const float16_t* s1p = buffer2;
       const float16_t* s0np = buffer1;
       const float16_t* s1np = buffer2;
-
-      float16x4_t va = vld1_f16(alphap);
-      float16x4_t vs0 = vld1_f16(s0p);
-      float16x4_t vs1 = vld1_f16(s1p);
-      float16x4_t vs0n = vld1_f16(s0np);
-      float16x4_t vs1n = vld1_f16(s1np);
-      vs0[2] = vs0n[0];
-      vs0[3] = vs0n[1];
-      vs1[2] = vs1n[0];
-      vs1[3] = vs1n[1];
-
-      float16x4_t vms0 = vmulq_f32(vs0, va);
-      float16x4_t vms1 = vmulq_f32(vs1, va);
-      float16_t vmres0_0 = vms0[0] + vms0[1];
-      float16_t vmres0_1 = vms0[2] + vms0[3];
-      float16_t vmres1_0 = vms1[0] + vms1[1];
-      float16_t vmres1_1 = vms1[2] + vms1[3];
-      rows0p[dx] = vmres0_0;
-      rows0p[dx + 1] = vmres0_1;
-      rows1p[dx] = vmres1_0;
-      rows1p[dx + 1] = vmres1_1;
+      ALPHA_COMPUTE
 
       alphap += 4;
     }
@@ -246,39 +253,16 @@ void bilinear_interp(const float16_t* src,
     float16x8_t vb1 = vdupq_n_f16(b1);
     // calculate and store results
     for (int i = 0; i < cnt; i++) {
-      float16x8_t vrows0 = vld1q_f16(rows0p);
-      float16x8_t vrows2 = vld1q_f16(rows0p + 8);
-      float16x8_t vrows4 = vld1q_f16(rows0p + 16);
-      float16x8_t vrows6 = vld1q_f16(rows0p + 24);
-      float16x8_t vrows1 = vld1q_f16(rows1p);
-      float16x8_t vsum0 = vmulq_f16(vrows0, vb0);
-      float16x8_t vrows3 = vld1q_f16(rows1p + 8);
-      float16x8_t vsum1 = vmulq_f16(vrows2, vb0);
-      float16x8_t vrows5 = vld1q_f16(rows1p + 16);
-      float16x8_t vsum2 = vmulq_f16(vrows4, vb0);
-      float16x8_t vrows7 = vld1q_f16(rows1p + 24);
-      float16x8_t vsum3 = vmulq_f16(vrows6, vb0);
-      vsum0 = vmlaq_f16(vsum0, vrows1, vb1);
-      vsum1 = vmlaq_f16(vsum1, vrows3, vb1);
-      vsum2 = vmlaq_f16(vsum2, vrows5, vb1);
-      vsum3 = vmlaq_f16(vsum3, vrows7, vb1);
-
-      rows0p += 32;
-      vst1q_f32(dp, vsum0);
-      vst1q_f32(dp + 8, vsum1);
-      rows1p += 32;
-      vst1q_f32(dp + 16, vsum2);
-      vst1q_f32(dp + 24, vsum3);
-      dp += 32;
+      BRTA_COMPUTE
     }
     for (int i = 0; i < remain_cnt; i++) {
       float16x8_t vrows0 = vld1q_f16(rows0p);
       float16x8_t vrows1 = vld1q_f16(rows1p);
       float16x8_t vsum0 = vmulq_f16(vrows0, vb0);
-      vsum0 = vmlaq_f16(vsum0, vrows1, vb1);
+      vsum0 = vfmaq_f16(vsum0, vrows1, vb1);
 
       rows0p += 8;
-      vst1q_f32(dp, vsum0);
+      vst1q_f16(dp, vsum0);
       rows1p += 8;
       dp += 8;
     }
@@ -308,26 +292,7 @@ void bilinear_interp(const float16_t* src,
       const float16_t* s0np = s0 + sxn;
       const float16_t* s1np = s1 + sxn;
 
-      float16x4_t va = vld1_f16(alphap);
-      float16x4_t vs0 = vld1_f16(s0p);
-      float16x4_t vs1 = vld1_f16(s1p);
-      float16x4_t vs0n = vld1_f16(s0np);
-      float16x4_t vs1n = vld1_f16(s1np);
-      vs0[2] = vs0n[0];
-      vs0[3] = vs0n[1];
-      vs1[2] = vs1n[0];
-      vs1[3] = vs1n[1];
-
-      float16x4_t vms0 = vmulq_f32(vs0, va);
-      float16x4_t vms1 = vmulq_f32(vs1, va);
-      float16_t vmres0_0 = vms0[0] + vms0[1];
-      float16_t vmres0_1 = vms0[2] + vms0[3];
-      float16_t vmres1_0 = vms1[0] + vms1[1];
-      float16_t vmres1_1 = vms1[2] + vms1[3];
-      rows0p[dx] = vmres0_0;
-      rows0p[dx + 1] = vmres0_1;
-      rows1p[dx] = vmres1_0;
-      rows1p[dx + 1] = vmres1_1;
+      ALPHA_COMPUTE
 
       alphap += 4;
     }
@@ -351,27 +316,7 @@ void bilinear_interp(const float16_t* src,
       const float16_t* s1p = buffer1;
       const float16_t* s0np = buffer1;
       const float16_t* s1np = buffer1;
-
-      float16x4_t va = vld1_f16(alphap);
-      float16x4_t vs0 = vld1_f16(s0p);
-      float16x4_t vs1 = vld1_f16(s1p);
-      float16x4_t vs0n = vld1_f16(s0np);
-      float16x4_t vs1n = vld1_f16(s1np);
-      vs0[2] = vs0n[0];
-      vs0[3] = vs0n[1];
-      vs1[2] = vs1n[0];
-      vs1[3] = vs1n[1];
-
-      float16x4_t vms0 = vmulq_f32(vs0, va);
-      float16x4_t vms1 = vmulq_f32(vs1, va);
-      float16_t vmres0_0 = vms0[0] + vms0[1];
-      float16_t vmres0_1 = vms0[2] + vms0[3];
-      float16_t vmres1_0 = vms1[0] + vms1[1];
-      float16_t vmres1_1 = vms1[2] + vms1[3];
-      rows0p[dx] = vmres0_0;
-      rows0p[dx + 1] = vmres0_1;
-      rows1p[dx] = vmres1_0;
-      rows1p[dx + 1] = vmres1_1;
+      ALPHA_COMPUTE
 
       alphap += 4;
     }
@@ -393,47 +338,23 @@ void bilinear_interp(const float16_t* src,
     float16x8_t vb0 = vdupq_n_f16(b0);
     float16x8_t vb1 = vdupq_n_f16(b1);
     // calculate and store results
-    // calculate and store results
     for (int i = 0; i < cnt; i++) {
-      float16x8_t vrows0 = vld1q_f16(rows0p);
-      float16x8_t vrows2 = vld1q_f16(rows0p + 8);
-      float16x8_t vrows4 = vld1q_f16(rows0p + 16);
-      float16x8_t vrows6 = vld1q_f16(rows0p + 24);
-      float16x8_t vrows1 = vld1q_f16(rows1p);
-      float16x8_t vsum0 = vmulq_f16(vrows0, vb0);
-      float16x8_t vrows3 = vld1q_f16(rows1p + 8);
-      float16x8_t vsum1 = vmulq_f16(vrows2, vb0);
-      float16x8_t vrows5 = vld1q_f16(rows1p + 16);
-      float16x8_t vsum2 = vmulq_f16(vrows4, vb0);
-      float16x8_t vrows7 = vld1q_f16(rows1p + 24);
-      float16x8_t vsum3 = vmulq_f16(vrows6, vb0);
-      vsum0 = vmlaq_f16(vsum0, vrows1, vb1);
-      vsum1 = vmlaq_f16(vsum1, vrows3, vb1);
-      vsum2 = vmlaq_f16(vsum2, vrows5, vb1);
-      vsum3 = vmlaq_f16(vsum3, vrows7, vb1);
-
-      rows0p += 32;
-      vst1q_f32(dp, vsum0);
-      vst1q_f32(dp + 8, vsum1);
-      rows1p += 32;
-      vst1q_f32(dp + 16, vsum2);
-      vst1q_f32(dp + 24, vsum3);
-      dp += 32;
+      BRTA_COMPUTE
     }
     for (int i = 0; i < remain_cnt; i++) {
       float16x8_t vrows0 = vld1q_f16(rows0p);
       float16x8_t vrows1 = vld1q_f16(rows1p);
       float16x8_t vsum0 = vmulq_f16(vrows0, vb0);
-      vsum0 = vmlaq_f16(vsum0, vrows1, vb1);
+      vsum0 = vfmaq_f16(vsum0, vrows1, vb1);
 
       rows0p += 8;
-      vst1q_f32(dp, vsum0);
+      vst1q_f16(dp, vsum0);
       rows1p += 8;
       dp += 8;
     }
 
     // calculate and store remain results
-    for (; remain; --remain) {
+    for (int i = 0; i < remain_rem; i++) {
       *dp++ = *rows0p++ * b0 + *rows1p++ * b1;
     }
 

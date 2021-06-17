@@ -199,6 +199,7 @@ class NearestInterpComputeTester : public arena::TestCase {
   bool use_sizetensor_ = false;
   bool use_input_scale_ = false;
   bool use_outsize_ = false;
+  std::string dtype_ = "fp32";
 
  public:
   NearestInterpComputeTester(const Place& place,
@@ -212,7 +213,8 @@ class NearestInterpComputeTester : public arena::TestCase {
                              int align_mode = 1,
                              bool use_sizetensor = false,
                              bool use_input_scale = false,
-                             bool use_outsize = false)
+                             bool use_outsize = false,
+                             std::string dtype = "fp32")
       : TestCase(place, alias),
         dims_(dims),
         interp_method_(interp_method),
@@ -223,7 +225,8 @@ class NearestInterpComputeTester : public arena::TestCase {
         align_mode_(align_mode),
         use_sizetensor_(use_sizetensor),
         use_input_scale_(use_input_scale),
-        use_outsize_(use_outsize) {}
+        use_outsize_(use_outsize),
+        dtype_(dtype) {}
 
   void RunBaseline(Scope* scope) override {
     int out_h = out_h_;
@@ -237,10 +240,21 @@ class NearestInterpComputeTester : public arena::TestCase {
     auto output = scope->NewTensor(out_);
     std::vector<int64_t> out_shape{dims_[0], dims_[1], out_h, out_w};
     output->Resize(out_shape);
-    if (interp_method_ == "nearest") {
-      ResizeNearestAlign<float>(input, output, align_corners_);
-    } else if (interp_method_ == "bilinear") {
-      BilinearInterpRef<float>(input, output, align_corners_, align_mode_);
+    if (dtype_ == "fp32") {
+      if (interp_method_ == "nearest") {
+        ResizeNearestAlign<float>(input, output, align_corners_);
+      } else if (interp_method_ == "bilinear") {
+        BilinearInterpRef<float>(input, output, align_corners_, align_mode_);
+      }
+    } else if (dtype_ == "fp16") {
+      if (interp_method_ == "nearest") {
+        ResizeNearestAlign<lite_api::float16_t>(input, output, align_corners_);
+      } else if (interp_method_ == "bilinear") {
+        BilinearInterpRef<lite_api::float16_t>(
+            input, output, align_corners_, align_mode_);
+      }
+    } else {
+      LOG(FATAL) << "this dtype: " << dtype_ << " doesn't support";
     }
   }
 
@@ -274,7 +288,17 @@ class NearestInterpComputeTester : public arena::TestCase {
   void PrepareData() override {
     std::vector<float> din(dims_.production());
     fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
-    SetCommonTensor(x_, dims_, din.data());
+    if (dtype_ == "fp16") {
+      std::vector<lite_api::float16_t> din_fp16(dims_.production());
+      for (int i = 0; i < dims_.production(); i++) {
+        din_fp16[i] = din[i];
+      }
+      SetCommonTensor(x_, dims_, din_fp16.data());
+    } else if (dtype_ == "fp32") {
+      SetCommonTensor(x_, dims_, din.data());
+    } else {
+      LOG(FATAL) << "this dtype: " << dtype_ << " doesn't support";
+    }
 
     if (use_sizetensor_) {
       DDim sizetensor_dims(std::vector<int64_t>{1});
@@ -442,6 +466,35 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
   }
 }
 
+#ifdef ENABLE_ARM_FP16
+void TestInterpOuthw_fp16(Place place, float abs_error = 2e-5) {
+  for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
+    for (auto interp_method : std::vector<std::string>{"nearest", "bilinear"}) {
+      for (int out_h : {6, 8, 12}) {
+        for (int out_w : {6, 9, 12}) {
+          std::unique_ptr<arena::TestCase> tester(
+              new NearestInterpComputeTester(place,
+                                             "def",
+                                             DDim(x_dims),
+                                             interp_method,
+                                             -1.f,
+                                             out_h,
+                                             out_w,
+                                             true,
+                                             1,
+                                             false,
+                                             false,
+                                             false,
+                                             "fp16"));
+          arena::Arena arena(std::move(tester), place, abs_error);
+          arena.TestPrecision();
+        }
+      }
+    }
+  }
+}
+#endif
+
 TEST(Interp, precision) {
   Place place;
   float abs_error = 2e-5;
@@ -453,6 +506,11 @@ TEST(Interp, precision) {
   abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#ifdef ENABLE_ARM_FP16
+  Place place_fp16{TARGET(kARM), PRECISION(kFP16)};
+  abs_error = 1e-2;
+  TestInterpOuthw_fp16(place_fp16, abs_error);
+#endif
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #else
