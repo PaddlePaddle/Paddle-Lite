@@ -34,9 +34,9 @@ void ResizeNearestAlign(const lite::Tensor* x,
   int win = x_dims[3];
   int hout = out->dims()[2];
   int wout = out->dims()[3];
-  dtype scale_w = (with_align) ? (static_cast<float>(win - 1) / (wout - 1))
+  float scale_w = (with_align) ? (static_cast<float>(win - 1) / (wout - 1))
                                : (static_cast<float>(win) / (wout));
-  dtype scale_h = (with_align) ? (static_cast<float>(hin - 1) / (hout - 1))
+  float scale_h = (with_align) ? (static_cast<float>(hin - 1) / (hout - 1))
                                : (static_cast<float>(hin) / (hout));
   const dtype* src = x->data<dtype>();
   dtype* dst = out->mutable_data<dtype>();
