@@ -94,13 +94,13 @@ echo "|  WITH_AVX=%WITH_AVX%                                                    
 echo "------------------------------------------------------------------------------------------------------|"
 
 
-set vcvarsall_dir=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
+set vcvarsall_dir=C:\Program Files ^(x86^)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
 if "%CMAKE_GENERATOR%"=="Visual Studio 14 2015" (
-  set vcvarsall_dir=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
+  set vcvarsall_dir=C:\Program Files ^(x86^)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
 ) else if "%CMAKE_GENERATOR%"=="Visual Studio 15 2017" (
-  set vcvarsall_dir=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
+  set vcvarsall_dir=C:\Program Files ^(x86^)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
 ) else if "%CMAKE_GENERATOR%"=="Visual Studio 16 2019" (
-  set vcvarsall_dir=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat
+  set vcvarsall_dir=C:\Program Files ^(x86^)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat
 )
 IF NOT EXIST "%vcvarsall_dir%" (
   goto set_vcvarsall_dir
