@@ -223,7 +223,7 @@ add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_o
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc DEPS ${op_DEPS})
 
 # Only for FPGA
-add_operator(fpga_conv_op extra SRCS __fpga_conv_op.cc DEPS conv_op ${op_DEPS})
+add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc DEPS conv_op ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)
