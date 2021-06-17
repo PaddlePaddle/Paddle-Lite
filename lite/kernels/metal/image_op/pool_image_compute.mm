@@ -37,7 +37,7 @@ void PoolImageCompute::PrepareForRun() {
 #else
     input_buffer_ = param.x->data<MetalHalf, MetalImage>();
     output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(
-        metal_context_, output_dims, input_buffer_->transpose_);
+        metal_context_, output_dims);
 #endif
 
     // use mps or not
@@ -221,6 +221,7 @@ PoolImageCompute::~PoolImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

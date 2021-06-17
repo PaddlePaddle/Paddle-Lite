@@ -43,10 +43,11 @@ class SigmoidImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+    virtual ~SigmoidImageCompute();
 
    private:
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> param_buffer_;
 
     id<MTLComputePipelineState> pipline_;

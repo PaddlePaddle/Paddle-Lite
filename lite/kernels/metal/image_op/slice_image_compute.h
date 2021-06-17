@@ -44,12 +44,13 @@ class SliceImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput("slice", output_buffer_);
     };
+    virtual ~SliceImageCompute();
 
    private:
     void setup_without_mps();
 
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
     id<MTLComputePipelineState> pipline_;

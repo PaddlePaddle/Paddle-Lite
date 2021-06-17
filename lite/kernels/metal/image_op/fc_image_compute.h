@@ -44,6 +44,7 @@ class FCImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+    virtual ~FCImageCompute();
 
    private:
     void setup_without_mps();
@@ -51,7 +52,7 @@ class FCImageCompute
     const MetalImage* input_buffer_;
     const MetalImage* weight_buffer_;
     const MetalImage* bias_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
     id<MTLComputePipelineState> pipline_;
