@@ -79,17 +79,27 @@ void ConvElementwiseTreeFuser::BuildPattern() {
 
 void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
                                              const key2nodes_t& matched) {
-  auto GetOutputTensorDims = [](
-      const key2nodes_t& matched, const std::string key, DDimLite& dims) {
+  auto GetTensorDims = [](const key2nodes_t& matched,
+                          const std::string key,
+                          const std::string out_or_filter,
+                          DDimLite& dims) {
+    std::string var_name;
     auto* inst = matched.at(key)->stmt();
     const auto op = inst->op();
     const auto* op_info = inst->op_info();
-    auto var_names = op_info->output_names();
-    CHECK_EQ(var_names.size(), 1);
+    if (out_or_filter == "out") {
+      auto var_names = op_info->output_names();
+      CHECK_EQ(var_names.size(), 1);
+      var_name = var_names[0];
+    } else if (out_or_filter == "filter") {
+      var_name = op_info->Input("Filter").front();
+    } else {
+      LOG(FATAL) << "Illegal request!";
+    }
     auto* scope = op->scope();
-    auto* var = scope->FindVar(var_names[0]);
+    auto* var = scope->FindVar(var_name);
     if (var == nullptr) {
-      LOG(WARNING) << "var is nullptr! var_name: " << var_names[0];
+      LOG(WARNING) << "var is nullptr! var_name: " << var_name;
       return;
     }
     const auto& tensor = var->Get<Tensor>();
@@ -98,8 +108,8 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
 
   // Check output dims.
   DDimLite conv_out_dims, elementwise_out_dims;
-  GetOutputTensorDims(matched, "conv", conv_out_dims);
-  GetOutputTensorDims(matched, "elementwise", elementwise_out_dims);
+  GetTensorDims(matched, "conv", "out", conv_out_dims);
+  GetTensorDims(matched, "elementwise", "out", elementwise_out_dims);
   if (conv_out_dims != elementwise_out_dims) {
     VLOG(4) << "Output dims is not the same between " << elementwise_type_
             << " and " << conv_type_
@@ -110,6 +120,13 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
   }
 
   // Check filter dims as this pass only support conv1x1 by now.
+  DDimLite conv_filter_dims;
+  GetTensorDims(matched, "conv", "filter", conv_filter_dims);
+  if (!(conv_filter_dims[2] == 1 && conv_filter_dims[3] == 1)) {
+    VLOG(4) << "This pass only support conv1x1, while the conv filter dims is "
+            << conv_filter_dims << ". Skip this pass!";
+    return;
+  }
 
   auto op_desc = GenOpDesc(matched);
   auto conv_op_new = LiteOpRegistry::Global().Create(conv_type_);
