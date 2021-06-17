@@ -15,7 +15,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
-    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto op_registry fbs_headers)
+    add_dependencies(paddle_full_api_shared framework_proto op_registry fbs_headers)
     target_link_libraries(paddle_full_api_shared framework_proto op_registry)
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
@@ -51,7 +51,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
                   )
 
-    add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
     if(WIN32)
         target_link_libraries(paddle_light_api_shared shlwapi.lib)
     endif()
@@ -99,7 +98,7 @@ else()
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
     add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
-    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers)
+    add_dependencies(PADDLELITE_OBJS fbs_headers)
     if (IOS)
         # only sttaic lib is produced for IOS platform.
         add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
@@ -527,8 +526,9 @@ endif()
 if (LITE_WITH_PYTHON)
     add_subdirectory(python)
     # add library for opt_base
-    lite_cc_library(opt_base SRCS opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc DEPS kernel op optimizer mir_passes utils)
-    add_dependencies(opt_base supported_kernel_op_info_h framework_proto all_kernel_faked_cc kernel_list_h)
+    lite_cc_library(opt_base SRCS opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
+        DEPS kernel op optimizer mir_passes utils)
+    add_dependencies(opt_base framework_proto)
 endif()
 
 if (LITE_ON_TINY_PUBLISH)
@@ -539,9 +539,9 @@ endif()
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
-    lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
+    lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
         DEPS gflags kernel op optimizer mir_passes utils ${host_kernels})
-    add_dependencies(opt op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
+    add_dependencies(opt all_kernel_faked)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
 if(NOT WITH_COVERAGE)
