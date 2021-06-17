@@ -247,12 +247,14 @@ class NearestInterpComputeTester : public arena::TestCase {
         BilinearInterpRef<float>(input, output, align_corners_, align_mode_);
       }
     } else if (dtype_ == "fp16") {
+#ifdef ENABLE_ARM_FP16
       if (interp_method_ == "nearest") {
         ResizeNearestAlign<lite_api::float16_t>(input, output, align_corners_);
       } else if (interp_method_ == "bilinear") {
         BilinearInterpRef<lite_api::float16_t>(
             input, output, align_corners_, align_mode_);
       }
+#endif
     } else {
       LOG(FATAL) << "this dtype: " << dtype_ << " doesn't support";
     }
@@ -289,11 +291,13 @@ class NearestInterpComputeTester : public arena::TestCase {
     std::vector<float> din(dims_.production());
     fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
     if (dtype_ == "fp16") {
+#ifdef ENABLE_ARM_FP16
       std::vector<lite_api::float16_t> din_fp16(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
         din_fp16[i] = din[i];
       }
       SetCommonTensor(x_, dims_, din_fp16.data());
+#endif
     } else if (dtype_ == "fp32") {
       SetCommonTensor(x_, dims_, din.data());
     } else {
