@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
-int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -31,43 +31,55 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Converting " + op_type + "...";
 
   // Get input, output and op attributes
+  // 1. prepare input1: X node
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-
-  auto out_name = op_info->Output("Out").front();
-
-  auto dropout_implementation =
-      op_info->GetAttr<std::string>("dropout_implementation");
-  auto scale = 1 - op_info->GetAttr<float>("dropout_prob");
-  if (dropout_implementation == "upscale_in_train") {
-    scale = 1.f;
-  }
-
-  // X node
+  
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    x_node = graph->Add(x_name, *x);
+    x_node = graph->Add(x_name, *x, CvtShape(x_dims));
   }
 
-  auto input_scale_node =
-      graph->Add<float>(x_name + "/scale", scale, x_dims.Vectorize());
+  // 2. prepare input2: dimension node
+  auto dim = op_info->GetAttr<std::vector<int>>("dim");
+  auto axes_node = graph->Add(x_name + "/axes", dim);
 
-  auto dropout_node = graph->Add<ge::op::Scale>(out_name);
-  auto dropout_op = dropout_node->data<ge::op::Scale>();
-  dropout_op->set_input_x(*x_node->data());
-  dropout_op->set_input_scale(*input_scale_node->data());
-  dropout_op->set_attr_axis(0);
-  dropout_op->set_attr_num_axes(-1);
-  dropout_op->set_attr_scale_from_blob(true);
-  INPUT_UPDATE(dropout_op, x, x_node);
-  INPUT_UPDATE(dropout_op, scale, input_scale_node);
-  OUTPUT_UPDATE(dropout_op, y, dropout_node);
+  // 3. prepare output: 
+  auto out_name = op_info->Output("Out").front();
+  auto reduce_mean_node = graph->Add<ge::op::ReduceMean>(out_name);
+
+  // 4. deal ascend unsupport attributes
+  bool reduce_all = false;
+  if (op_info->HasAttr("reduce_all")) {
+      reduce_all = op_info->GetAttr<bool>("reduce_all");
+  }
+  if (reduce_all) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Attr[reduce_all]=true doesn't support!";
+    return FAILED;
+  }
+  // 5. deal ascend need attributes
+  // 5.1 keep_dim
+  bool keep_dim = false;
+  if (op_info->HasAttr("keep_dim")) {
+      keep_dim = op_info->GetAttr<bool>("keep_dim");
+  }
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] keep_dim:" << keep_dim;
+
+  // 6. pack op
+  auto reduce_mean_op = reduce_mean_node->data<ge::op::ReduceMean>();
+  reduce_mean_op->set_input_x(*x_node->data());
+  reduce_mean_op->set_input_axes(*axes_node->data());
+  reduce_mean_op->set_attr_keep_dims(keep_dim);
+  INPUT_UPDATE(reduce_mean_op, x, x_node);
+  INPUT_UPDATE(reduce_mean_op, axes, axes_node);
+  OUTPUT_UPDATE(reduce_mean_op, y, reduce_mean_node);
 
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
+
 
 }  // namespace huawei_ascend_npu
 }  // namespace subgraph
@@ -75,6 +87,6 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(
-    dropout,
+    reduce_mean,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::DropoutConverter);
+    paddle::lite::subgraph::huawei_ascend_npu::ReduceMeanConverter);

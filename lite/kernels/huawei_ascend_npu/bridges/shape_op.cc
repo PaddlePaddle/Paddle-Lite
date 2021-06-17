@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
-int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ShapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -30,35 +30,33 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Converting " + op_type + "...";
 
-  // Get input and output vars and op attributes
-  auto x_name = op_info->Input("X").front();
+  // Get input, output and op attributes
+  // 1. prepare input1: X node
+  auto x_name = op_info->Input("Input").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
 
-  auto out_name = op_info->Output("Out").front();
-
-  auto axis = op_info->GetAttr<std::vector<int>>("axis");
-
-  // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    x_node = graph->Add(x_name, *x);
+    x_node = graph->Add(x_name, *x, CvtShape(x_dims));
   }
 
-  auto input_perm_node = graph->Add<int>(x_name + "/perm", axis);
-  // Transpose node
-  auto transpose_node = graph->Add<ge::op::Transpose>(out_name);
-  auto transpose_op = transpose_node->data<ge::op::Transpose>();
-  transpose_op->set_input_x(*x_node->data());
-  transpose_op->set_input_perm(*input_perm_node->data());
-  INPUT_UPDATE(transpose_op, x, x_node);
-  INPUT_UPDATE(transpose_op, perm, input_perm_node);
-  OUTPUT_UPDATE(transpose_op, y, transpose_node);
+  // 2. prepare output: 
+  auto out_name = op_info->Output("Out").front();
+  auto shape_node = graph->Add<ge::op::Shape>(out_name);
 
-  return SUCCESS;
+  // 3. pack op
+  auto shape_op = shape_node->data<ge::op::Shape>();
+  shape_op->set_input_x(*x_node->data());
+
+  INPUT_UPDATE(shape_op, x, x_node);
+  OUTPUT_UPDATE(shape_op, y, shape_node);
+
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
+
 
 }  // namespace huawei_ascend_npu
 }  // namespace subgraph
@@ -66,10 +64,6 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(
-    transpose,
+    shape,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::TransposeConverter);
-REGISTER_SUBGRAPH_BRIDGE(
-    transpose2,
-    kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::TransposeConverter);
+    paddle::lite::subgraph::huawei_ascend_npu::ShapeConverter);
