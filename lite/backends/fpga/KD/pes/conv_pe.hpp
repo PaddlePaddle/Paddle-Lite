@@ -14,7 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#include <arm_neon.h>
 #include <algorithm>
 #include <vector>
 
