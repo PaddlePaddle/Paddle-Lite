@@ -46,7 +46,9 @@ extern NSString* cString2NSString(std::string cStr);
 
 - (void)commit;
 - (void)waitAllCompleted;
-- (void)waitUntilCompleted;
+
+- (void)fetch_data_from_gpu;
+- (void)add_fetch_kernel_ptr:(void*)ptr;
 
 - (void)dispatchEncoder:(id<MTLComputeCommandEncoder>)encoder
                 pipline:(id<MTLComputePipelineState>)pipline
