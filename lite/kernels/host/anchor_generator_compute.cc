@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/anchor_generator.h"
-#include <algorithm>
-#include <limits>
-#include <memory>
-#include "lite/backends/arm/math/funcs.h"
-#include "lite/backends/arm/math/saturate.h"
+#include "lite/kernels/host/anchor_generator_compute.h"
+#include <cmath>
+#include <vector>
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
 void anchor_generator_func(int feature_height,
                            int feature_width,
@@ -76,7 +74,41 @@ void anchor_generator_func(int feature_height,
   }
 }
 
-}  // namespace math
-}  // namespace arm
+void AnchorGeneratorCompute::Run() {
+  auto& param = Param<param_t>();
+  auto* anchors = param.Anchors;
+  auto* variances = param.Variances;
+  auto* input = param.Input;
+
+  float* anchors_data = anchors->mutable_data<float>();
+  float* variances_data = variances->mutable_data<float>();
+  auto input_dims = input->dims();
+  int feature_height = input_dims[2];
+  int feature_width = input_dims[3];
+
+  anchor_generator_func(feature_height,
+                        feature_width,
+                        param.anchor_sizes,
+                        param.aspect_ratios,
+                        param.stride,
+                        param.variances,
+                        param.offset,
+                        anchors_data,
+                        variances_data);
+}
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(anchor_generator,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::AnchorGeneratorCompute,
+                     def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Anchors", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();

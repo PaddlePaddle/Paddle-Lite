@@ -67,6 +67,13 @@ class LITE_API LightPredictor {
     program_->Run();
   }
 
+  /// \brief Release all tmp tensor to compress the size of the memory pool.
+  /// The memory pool is considered to be composed of a list of chunks, if
+  /// the chunk is not occupied, it can be released.
+  ///
+  /// \return a boolean variable.
+  bool TryShrinkMemory();
+
   // Get offset-th col of feed inputs.
   Tensor* GetInput(size_t offset);
   // get input by name.
@@ -153,6 +160,13 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
       const std::string& name) override;
 
   void Init(const lite_api::MobileConfig& config);
+
+  /// \brief Release all tmp tensor to compress the size of the memory pool.
+  /// The memory pool is considered to be composed of a list of chunks, if
+  /// the chunk is not occupied, it can be released.
+  ///
+  /// \return a boolean variable.
+  bool TryShrinkMemory() override;
 
  private:
   std::unique_ptr<lite::LightPredictor> raw_predictor_;

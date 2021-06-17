@@ -216,10 +216,10 @@ function make_publish_so {
 
     build_dir=$workspace/build.lite.linux.$ARCH.$TOOLCHAIN
     if [ "${WITH_OPENCL}" = "ON" ]; then
-       build_dir=${build_dir}.opencl
+        build_dir=${build_dir}.opencl
     fi
     if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
-       build_dir=${build_dir}.baidu_xpu
+        build_dir=${build_dir}.baidu_xpu
     fi
 
     if [ -d $build_dir ]; then
@@ -231,15 +231,15 @@ function make_publish_so {
     prepare_workspace $workspace $build_dir
 
     if [ "${WITH_OPENCL}" = "ON" ]; then
-       prepare_opencl_source_code $workspace $build_dir
+        prepare_opencl_source_code $workspace $build_dir
     fi
 
     cmake $workspace \
-       ${CMAKE_COMMON_OPTIONS} \
-       ${cmake_mutable_options}
+        ${CMAKE_COMMON_OPTIONS} \
+        ${cmake_mutable_options}
 
     if [ "${WITH_OPENCL}" = "ON" ]; then
-       make opencl_clhpp -j$NUM_PROC 
+        make opencl_clhpp -j$NUM_PROC 
     fi
 
     make publish_inference -j$NUM_PROC
@@ -402,6 +402,9 @@ function main {
                 ;;
             --baidu_xpu_sdk_root=*)
                 BAIDU_XPU_SDK_ROOT="${i#*=}"
+                if [ -n "${BAIDU_XPU_SDK_ROOT}" ]; then
+                    BAIDU_XPU_SDK_ROOT=$(readlink -f ${BAIDU_XPU_SDK_ROOT})
+                fi
                 shift
                 ;;
             --baidu_xpu_sdk_url=*)
