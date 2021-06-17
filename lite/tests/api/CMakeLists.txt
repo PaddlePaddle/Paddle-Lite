@@ -77,6 +77,10 @@ if(LITE_WITH_NPU)
     lite_cc_test_with_model_and_data(test_squeezenet_fp32_huawei_kirin_npu MODEL squeezenet DATA ILSVRC2012_500)
 endif()
 
+if(LITE_WITH_HUAWEI_ASCEND_NPU)
+    lite_cc_test_with_model_and_data(test_inception_v4_fp32_huawei_ascend_npu MODEL inception_v4 DATA ILSVRC2012_500)
+endif()
+
 if(LITE_WITH_XPU AND NOT LITE_WITH_XTCL)
     lite_cc_test_with_model_and_data(test_bert_base_chinese_fp32_baidu_xpu MODEL bert_base_chinese DATA bert_base_chinese_data)
     lite_cc_test_with_model_and_data(test_bert_fp32_baidu_xpu MODEL bert DATA bert_data)

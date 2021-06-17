@@ -53,6 +53,7 @@ function prepare_thirdparty() {
     else
         git submodule update --init --recursive
     fi
+    cd -
 }
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
@@ -557,6 +558,64 @@ function huawei_kirin_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./hiai_ddk_lib_330)"
 }
 
+
+# Huawei Ascend NPU
+function huawei_ascend_npu_test_target() {
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    export GLOG_v=$UNIT_TEST_LOG_LEVEL
+    local unit_test_check_items=(${unit_test_check_list//,/ })
+    for test_name in $(cat $TESTS_FILE); do
+        local is_matched=0
+        for unit_test_check_item in ${unit_test_check_items[@]}; do
+            if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                echo "$test_name on the checklist."
+                is_matched=1
+                break
+            fi
+        done
+        # black list
+        if [[ $is_matched -eq 1 && $unit_test_filter_type -eq 0 ]]; then
+            continue
+        fi
+        # white list
+        if [[ $is_matched -eq 0 && $unit_test_filter_type -eq 1 ]]; then
+            continue
+        fi
+        ctest -V -R ^$test_name$
+    done
+    cd - >/dev/null
+}
+
+function huawei_ascend_npu_build_target() {
+    cur_dir=$(pwd)
+    build_dir=$cur_dir/build.lite.huawei_ascend_npu.test
+    rm -rf build_dir
+    mkdir -p $build_dir
+    cd $build_dir
+    prepare_workspace
+
+    cmake .. \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+        -DWITH_PYTHON=OFF \
+        -DWITH_TESTING=ON \
+        -DLITE_WITH_ARM=OFF \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
+        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux" \
+        -DCMAKE_BUILD_TYPE=Release
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function huawei_ascend_npu_build_and_test() {
+    huawei_ascend_npu_build_target
+    huawei_ascend_npu_test_target
+}
+
 # Rockchip NPU
 function rockchip_npu_prepare_device() {
     local os=$1
@@ -899,6 +958,10 @@ function main() {
             ;;
         huawei_kirin_npu_build_and_test)
             huawei_kirin_npu_build_and_test
+            shift
+            ;;
+        huawei_ascend_npu_build_and_test)
+            huawei_ascend_npu_build_and_test
             shift
             ;;
         rockchip_npu_build_and_test)

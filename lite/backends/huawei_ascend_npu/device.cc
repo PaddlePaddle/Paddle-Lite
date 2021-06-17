@@ -81,7 +81,7 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
 
   // Build IR model
   ge::ModelBufferData om_buffer;
-  std::map<std::string, std::string> options;
+  std::map<ge::AscendString, ge::AscendString> options;
   options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
 
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
@@ -104,7 +104,7 @@ void Device::InitOnce() {
   ACL_CALL(aclInit(NULL));
 
   // ATC builder init => can only be called once in one process
-  std::map<std::string, std::string> global_options;
+  std::map<ge::AscendString, ge::AscendString> global_options;
   global_options.insert(
       std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
   ATC_CALL(ge::aclgrphBuildInitialize(global_options));
