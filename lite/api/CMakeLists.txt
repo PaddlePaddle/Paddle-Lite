@@ -11,7 +11,7 @@ endif()
 
 set(light_lib_DEPS light_api paddle_api paddle_api_light)
 
-if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_BM OR LITE_WITH_HUAWEI_ASCEND_NPU OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
+if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_SW OR LITE_WITH_BM OR LITE_WITH_HUAWEI_ASCEND_NPU OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
@@ -58,7 +58,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
    if(${HOST_SYSTEM} MATCHES "macosx" AND NOT (ARM_TARGET_LANG STREQUAL "clang"))
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/exported_symbols.lds")
         set(LINK_FLAGS "-Wl,-exported_symbols_list ${LINK_MAP_FILE}")
-        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
+        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND :)
         add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
         set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_full_api_shared custom_linker_map)
@@ -67,7 +67,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
    elseif(NOT WIN32)
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
         set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
-        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
+        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND :)
         add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
         set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_full_api_shared custom_linker_map)

@@ -4,6 +4,7 @@ message(STATUS "LIGHT_FRAMEWORK:\t${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK}")
 message(STATUS "LITE_WITH_CUDA:\t${LITE_WITH_CUDA}")
 message(STATUS "LITE_WITH_X86:\t${LITE_WITH_X86}")
 message(STATUS "LITE_WITH_ARM:\t${LITE_WITH_ARM}")
+message(STATUS "LITE_WITH_SW:\t${LITE_WITH_SW}")
 message(STATUS "LITE_WITH_OPENCL:\t${LITE_WITH_OPENCL}")
 message(STATUS "LITE_WITH_METAL:\t${LITE_WITH_METAL}")
 message(STATUS "LITE_WITH_NPU:\t${LITE_WITH_NPU}")
@@ -362,11 +363,6 @@ if(LITE_WITH_CUDA)
     add_dependencies(publish_inference publish_inference_cuda_cxx_demos)
 endif(LITE_WITH_CUDA)
 
-if(LITE_WITH_XPU AND NOT XPU_SDK_ROOT)
-    add_custom_command(TARGET publish_inference POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${THIRD_PARTY_PATH}/install/xpu" "${INFER_LITE_PUBLISH_ROOT}/third_party/xpu")
-endif()
-
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)
         # add cxx lib
@@ -566,6 +562,29 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             add_dependencies(tiny_publish_lib metal_lib_publish)
         endif ()
     endif ()
+endif()
+
+if(LITE_WITH_SW)
+    add_custom_target(publish_inference_cxx_lib ${TARGET}
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+        COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+        COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+    )
+    add_dependencies(publish_inference_cxx_lib bundle_full_api)
+    add_dependencies(publish_inference_cxx_lib bundle_light_api)
+    add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
+    add_dependencies(publish_inference_cxx_lib paddle_light_api_shared)
+    add_dependencies(publish_inference publish_inference_cxx_lib)
+    add_dependencies(publish_inference test_model_bin)
+endif()
+
+if(LITE_WITH_XPU AND NOT XPU_SDK_ROOT)
+    add_custom_command(TARGET publish_inference POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${THIRD_PARTY_PATH}/install/xpu" "${INFER_LITE_PUBLISH_ROOT}/third_party/xpu")
 endif()
 
 if (ARM_TARGET_OS STREQUAL "armlinux")
