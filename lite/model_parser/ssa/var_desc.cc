@@ -97,7 +97,7 @@ RootVarScope::RootVarScope(const general::BlockDesc& current,
     parent->SetKidScope(*this);
   }
   for (size_t i = 0; i < current.VarsSize(); ++i) {
-    const auto* raw_var{current.GetVar<general::VarDesc>(i)};
+    const general::VarDesc* raw_var{current.GetVar<general::VarDesc>(i)};
     root_vars_[raw_var->Name()] =
         std::make_shared<VarDesc>(current.Idx(), raw_var);
   }

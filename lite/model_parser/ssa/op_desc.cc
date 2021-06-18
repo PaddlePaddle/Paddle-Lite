@@ -42,14 +42,14 @@ OpDesc::OpDesc(const general::OpDesc& raw_desc,
     : OpDescBase{raw_desc} {
   for (const auto& param : raw_desc.InputArgumentNames()) {
     for (const auto& var : raw_desc.inputs().at(param)) {
-      auto root_var{scope.GetRootVarDesc(var).lock()};
+      auto root_var = scope.GetRootVarDesc(var).lock();
       const auto& var_desc = AddInput(param, root_var->latest());
       UpdateVarBlockIdx(var_desc, block_idx);
     }
   }
   for (const auto& param : raw_desc.OutputArgumentNames()) {
     for (const auto& var : raw_desc.outputs().at(param)) {
-      auto root_var{scope.GetRootVarDesc(var).lock()};
+      auto root_var = scope.GetRootVarDesc(var).lock();
       const auto& var_desc = AddOutput(param, root_var->latest());
       UpdateVarBlockIdx(var_desc, block_idx);
     }
@@ -58,14 +58,14 @@ OpDesc::OpDesc(const general::OpDesc& raw_desc,
 
 std::weak_ptr<VarDesc> OpDesc::AddInput(const std::string& param,
                                         const std::weak_ptr<VarDesc>& desc) {
-  auto var_desc{desc.lock()->Read(*this)};
+  auto var_desc = desc.lock()->Read(*this);
   inputs_[param].emplace_back(var_desc);
   return var_desc;
 }
 
 std::weak_ptr<VarDesc> OpDesc::AddOutput(const std::string& param,
                                          const std::weak_ptr<VarDesc>& desc) {
-  auto var_desc{desc.lock()->Written(*this)};
+  auto var_desc = desc.lock()->Written(*this);
   outputs_[param].emplace_back(var_desc);
   return var_desc;
 }

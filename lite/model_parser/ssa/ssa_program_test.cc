@@ -90,8 +90,8 @@ class ProgramDescGenerator {
       op_desc->SetType(op.type());
       *(op_desc->mutable_inputs()) = op.inputs();
       *(op_desc->mutable_outputs()) = op.outputs();
-      auto in_set{VarSet(op.inputs())};
-      auto out_set{VarSet(op.outputs())};
+      auto in_set = VarSet(op.inputs());
+      auto out_set = VarSet(op.outputs());
       for (const auto& var : in_set) {
         scope_vars.emplace(var);
       }

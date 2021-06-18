@@ -43,7 +43,7 @@ void PlainProgramDesc::InitBlock(const general::BlockDesc& current,
     blocks_[current.Idx()].reset(new BlockDesc{current});
   }
   for (size_t i = 0; i < current.OpsSize(); ++i) {
-    const auto* op_desc{current.GetOp<general::OpDesc>(i)};
+    const auto* op_desc = current.GetOp<general::OpDesc>(i);
     if (BlockParamInfo::instance().IsBlockOp(op_desc->Type())) {
       int sub_block_idx{op_desc->GetAttr<int>(
           BlockParamInfo::instance().Attr(op_desc->Type()))};
@@ -64,12 +64,12 @@ void PlainProgramDesc::InsertOpOfBlock(const general::BlockDesc& block_desc) {
   CHECK(!block_visited_[block_idx]);
   block_visited_[block_idx] = true;
   for (size_t i = 0; i < block_desc.OpsSize(); ++i) {
-    const auto* raw_op{block_desc.GetOp<general::OpDesc>(i)};
-    auto& dst_block{blocks_[block_idx]};
+    const auto* raw_op = block_desc.GetOp<general::OpDesc>(i);
+    auto& dst_block = blocks_[block_idx];
     if (BlockParamInfo::instance().IsBlockOp(raw_op->Type())) {
       int sub_id{raw_op->GetAttr<int>(
           BlockParamInfo::instance().Attr(raw_op->Type()))};
-      const auto& raw_sub{*(src_desc_->GetBlock<general::BlockDesc>(sub_id))};
+      const auto& raw_sub = *(src_desc_->GetBlock<general::BlockDesc>(sub_id));
       InsertOpOfBlock(raw_sub);
       std::unique_ptr<BlockOpDesc> op{
           new BlockOpDesc{*raw_op, *(dst_block->scope()), block_idx}};
@@ -78,8 +78,8 @@ void PlainProgramDesc::InsertOpOfBlock(const general::BlockDesc& block_desc) {
     } else {
       std::unique_ptr<OpDescBase> op{
           new OpDesc{*raw_op, *(dst_block->scope()), block_idx}};
-      const auto& inputs{ConvertToSet(op->inputs())};
-      const auto& outputs{ConvertToSet(op->outputs())};
+      const auto& inputs = ConvertToSet(op->inputs());
+      const auto& outputs = ConvertToSet(op->outputs());
       dst_block->AddOp(std::move(op));
       dst_block->AddBlockInputs(inputs.cbegin(), inputs.cend());
       dst_block->AddBlockOutputs(outputs.cbegin(), outputs.cend());
@@ -94,7 +94,7 @@ void PlainProgramDesc::InsertWriteBackOp(
            VarDescLT>
       clusters;
   for (auto& input : block->block_inputs()) {
-    auto root{block->scope()->GetRootVarDesc(input.lock()->root_name())};
+    auto root = block->scope()->GetRootVarDesc(input.lock()->root_name());
     if (clusters.find(root) == clusters.end() ||
         *input.lock() < *clusters[root].first.lock()) {
       if (input.lock()->block_idx() != block->idx()) {
@@ -103,7 +103,7 @@ void PlainProgramDesc::InsertWriteBackOp(
     }
   }
   for (auto& output : block->block_outputs()) {
-    auto root{block->scope()->GetRootVarDesc(output.lock()->root_name())};
+    auto root = block->scope()->GetRootVarDesc(output.lock()->root_name());
     if (clusters.find(root) != clusters.end() &&
         output.lock() != clusters[root].first.lock()) {
       if (clusters[root].second.expired() ||
@@ -113,7 +113,7 @@ void PlainProgramDesc::InsertWriteBackOp(
     }
   }
   for (auto& elem : clusters) {
-    auto& pair{elem.second};
+    auto& pair = elem.second;
     if (!pair.first.expired() && !pair.second.expired()) {
       std::unique_ptr<OpDescBase> op{
           new WriteBackOp{pair.second, pair.first, block->idx()}};
@@ -124,7 +124,7 @@ void PlainProgramDesc::InsertWriteBackOp(
 }
 
 void PlainProgramDesc::UpdateBlockOp(const std::unique_ptr<BlockDesc>& block) {
-  auto* block_op{block->mutable_block_op()};
+  auto* block_op = block->mutable_block_op();
   if (block_op) {
     for (auto& input : block->block_inputs()) {
       if (input.lock()->block_idx() != block->idx()) {
@@ -158,7 +158,7 @@ ProgramDescConverter::ProgramDescConverter(const PlainProgramDesc& program_desc)
 
 void ProgramDescConverter::InitBlocks() {
   for (auto& block : src_desc_->blocks()) {
-    auto* dst_block{desc_.AddBlock<general::BlockDesc>()};
+    auto* dst_block = desc_.AddBlock<general::BlockDesc>();
     dst_block->SetIdx(block->idx());
     dst_block->SetParentIdx(0);
     dst_block->SetForwardBlockIdx(0);
@@ -178,8 +178,8 @@ void ProgramDescConverter::InitBlocks() {
 void ProgramDescConverter::SetVar(const VarDesc& var) {
   CHECK_GE(var.block_idx(), 0);
   CHECK_LT(var.block_idx(), static_cast<int32_t>(src_desc_->blocks().size()));
-  auto* block{desc_.GetBlock<general::BlockDesc>(var.block_idx())};
-  auto* dst_var{block->AddVar<general::VarDesc>()};
+  auto* block = desc_.GetBlock<general::BlockDesc>(var.block_idx());
+  auto* dst_var = block->AddVar<general::VarDesc>();
   *dst_var = *var.root_var_desc();
   dst_var->SetName(var.mangled_name());
 }
@@ -194,9 +194,9 @@ void ProgramDescConverter::InitVars(const BlockDesc& src_block) {
 }
 
 void ProgramDescConverter::InitBlockOps(const BlockDesc& src_block) {
-  auto* dst_block{desc_.GetBlock<general::BlockDesc>(src_block.idx())};
+  auto* dst_block = desc_.GetBlock<general::BlockDesc>(src_block.idx());
   for (auto& src_op : src_block.ops()) {
-    auto* dst_op{dst_block->AddOp<general::OpDesc>()};
+    auto* dst_op = dst_block->AddOp<general::OpDesc>();
     *dst_op = src_op->src_raw_desc();
     for (auto& input : src_op->inputs()) {
       std::vector<std::string> args;
