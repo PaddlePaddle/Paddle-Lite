@@ -159,7 +159,7 @@ cpp::OpDesc ConvElementwiseTreeFuser::GenOpDesc(const key2nodes_t& matched) {
   if (conv_has_prelu_alpha_) {
     op_desc.SetInput("Prelu_alpha", {matched.at("conv_alpha")->arg()->name});
   }
-  op_desc.SetAttr("fuse_elementwise_tree", true);
+  op_desc.SetAttr("fuse_elementwise_op_type", elementwise_type_);
   op_desc.SetInput("SecondInput",
                    {matched.at("elementwise_input")->arg()->name});
   op_desc.SetOutput("Output", {matched.at("elementwise_output")->arg()->name});

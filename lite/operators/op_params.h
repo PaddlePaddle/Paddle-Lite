@@ -487,7 +487,7 @@ struct ConvParam : ParamBase {
   // for activation
   ActivationParam activation_param;
   // for elementwise tree fuse
-  bool fuse_elementwise_tree{false};
+  std::string fuse_elementwise_op_type{""};
   // support var_length or not
   bool var_length{false};
   // only used in conv_transpose.

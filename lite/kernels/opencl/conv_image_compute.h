@@ -138,7 +138,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int offset_w_{-1};
   int offset_h_{-1};
   int groups_{-1};
-  bool elementwise_tree_fused_{false};
+  std::string fuse_eltwise_op_type_;
   bool relu_fused_{false};
   bool has_bias_{false};
   bool is_mali_{false};
