@@ -138,10 +138,11 @@ void sgemv_trans(const int M,
   int block_cnt = valid_block / 4;
   float *y_buf = new float[valid_ths * M];
   float *zero_buf = new float[M];
-  float *x_buf = new float[M + 4];
+  float *x_buf = new float[valid_block * valid_ths];
+  memset(x_buf, 0, valid_block * valid_ths * sizeof(float));
+  memcpy(x_buf, x, N * sizeof(float));
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   memset(zero_buf, 0, M * sizeof(float));
-  memcpy(x_buf, x, M * sizeof(float));
   if (flag_bias) {
     memcpy(y_buf, bias, M * sizeof(float));
     memset(y_buf + M, 0, (valid_ths - 1) * M * sizeof(float));
