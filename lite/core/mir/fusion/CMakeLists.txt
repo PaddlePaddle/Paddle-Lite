@@ -52,6 +52,9 @@ lite_cc_library(fuse_scale_activation
 lite_cc_library(fuse_conv_scale
         SRCS conv_scale_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_conv_elementwise_tree
+        SRCS conv_elementwise_tree_fuser.cc
+        DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_inplace
         SRCS inplace_fuser.cc
         DEPS pattern_matcher_high_api)
@@ -108,6 +111,7 @@ set(mir_fusers
     fuse_flatten_fc
     fuse_fc_prelu
     fuse_conv_scale
+    fuse_conv_elementwise_tree
     CACHE INTERNAL "fusers")
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)

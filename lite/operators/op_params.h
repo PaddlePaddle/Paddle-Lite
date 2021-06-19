@@ -456,6 +456,7 @@ struct ConvParam : ParamBase {
   lite::Tensor* filter{};
   lite::Tensor* bias{nullptr};
   lite::Tensor* residualData{nullptr};
+  lite::Tensor* second_x{nullptr};
   lite::Tensor* output{};
   std::vector<int> strides{1, 1};
   /* paddings type change
@@ -485,6 +486,8 @@ struct ConvParam : ParamBase {
   std::string data_format{"Anylayout"};
   // for activation
   ActivationParam activation_param;
+  // for elementwise tree fuse
+  std::string fuse_elementwise_op_type{""};
   // support var_length or not
   bool var_length{false};
   // only used in conv_transpose.

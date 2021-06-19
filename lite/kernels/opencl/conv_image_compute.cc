@@ -84,6 +84,7 @@ void ConvImageCompute::PrepareForRun() {
   stride_w_ = conv_param_->strides[1];
 
   groups_ = conv_param_->groups;
+  fuse_eltwise_op_type_ = conv_param_->fuse_elementwise_op_type;
   relu_fused_ = conv_param_->fuse_relu;
   has_bias_ = (conv_param_->bias) != nullptr;
   offset_ = filter_tensor_h_ / 2 - pad_up_;
@@ -704,6 +705,17 @@ void ConvImageCompute::PrepareForRun() {
   } else {
     LOG(FATAL) << "Unsupported scale_activation_type:"
                << conv_param_->scale_activation_type;
+  }
+
+  // elementwise_tree fuse options
+  if (fuse_eltwise_op_type_.empty()) {
+    // do nothing
+  } else if (fuse_eltwise_op_type_ == "elementwise_add") {
+    build_options_single += " -DELT_FUSE";
+  } else if (fuse_eltwise_op_type_ == "fusion_elementwise_add_activation") {
+    build_options_single += " -DELT_FUSE -DELT_ACT_FUSE";
+  } else {
+    LOG(FATAL) << "Unsupported fuse type: " << fuse_eltwise_op_type_;
   }
 
   // define buffer/image pointer for filter & bias
@@ -1401,6 +1413,10 @@ void ConvImageCompute::Conv2d1x1opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(17, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
+  if (!fuse_eltwise_op_type_.empty()) {
+    status_ = kernel_.setArg(18, *second_input_image_p_);
+    CL_CHECK_FATAL(status_);
+  }
 }
 
 void ConvImageCompute::Conv2d3x3() {
@@ -1936,6 +1952,9 @@ void ConvImageCompute::Run() {
   } else {
     // define image pointer for input, output
     input_image_p_ = DATA_GPU(conv_param_->x);
+    if (!fuse_eltwise_op_type_.empty()) {
+      second_input_image_p_ = DATA_GPU(conv_param_->second_x);
+    }
     output_image_p_ = MUTABLE_DATA_GPU(
         conv_param_->output, output_image_w_, output_image_h_, nullptr);
 
@@ -2006,6 +2025,7 @@ void ConvImageCompute::PrintConvInfo() {
   LOG(INFO) << "groups_:" << groups_;
   LOG(INFO) << "relu_fused_:" << relu_fused_;
   LOG(INFO) << "has_bias_:" << has_bias_;
+  LOG(INFO) << "fuse_eltwise_op_type_:" << fuse_eltwise_op_type_;
 
   LOG(INFO) << "input_tensor_n_:" << input_tensor_n_;
   LOG(INFO) << "input_tensor_c_:" << input_tensor_c_;
@@ -2049,6 +2069,10 @@ REGISTER_LITE_KERNEL(conv2d,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
+    .BindInput("SecondInput",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -2087,6 +2111,10 @@ REGISTER_LITE_KERNEL(conv2d,
                      paddle::lite::kernels::opencl::ConvImageCompute,
                      image2d_pc)
     .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("SecondInput",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
