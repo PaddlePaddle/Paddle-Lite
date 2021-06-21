@@ -721,7 +721,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     double final_lws_time = DBL_MAX;
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
-    for (size_t i = 0; i < 4; i++) {
+    for (size_t i = 0; i < 6; i++) {
       if (i == 1) {
         kernel_func_names_[0] = "conv2d_1x1_h1w5c1";
         global_work_size_ =
@@ -748,6 +748,28 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
         kernel_func_names_[0] = "conv2d_1x1_h2w2c2";
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(UP_DIV(default_c_blk_, 2)),
+                        static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
+                        static_cast<size_t>(UP_DIV(default_nh_blk_, 2))};
+        context.cl_context()->AddKernel(kernel_func_names_[0],
+                                        kernel_func_paths_[0],
+                                        build_options_[0],
+                                        time_stamp_);
+      }
+      if (i == 4) {
+        kernel_func_names_[0] = "conv2d_1x1_h1w2c1";
+        global_work_size_ =
+            cl::NDRange{static_cast<size_t>(default_c_blk_),
+                        static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
+                        static_cast<size_t>(default_nh_blk_)};
+        context.cl_context()->AddKernel(kernel_func_names_[0],
+                                        kernel_func_paths_[0],
+                                        build_options_[0],
+                                        time_stamp_);
+      }
+      if (i == 5) {
+        kernel_func_names_[0] = "conv2d_1x1_h2w2c1";
+        global_work_size_ =
+            cl::NDRange{static_cast<size_t>(default_c_blk_),
                         static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
                         static_cast<size_t>(UP_DIV(default_nh_blk_, 2))};
         context.cl_context()->AddKernel(kernel_func_names_[0],
@@ -809,6 +831,9 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     }
     if (kernel_func_names_[0] == "conv2d_1x1_h1w7c1") {
       w_blk_ = UP_DIV(default_w_blk_, 7);
+    }
+    if (kernel_func_names_[0] == "conv2d_1x1_h1w2c1") {
+      w_blk_ = UP_DIV(default_w_blk_, 2);
     }
     // CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,local_work_size_);
   } else if (is_wino_) {
