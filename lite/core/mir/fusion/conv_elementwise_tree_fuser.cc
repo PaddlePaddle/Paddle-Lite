@@ -150,7 +150,6 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
 
 cpp::OpDesc ConvElementwiseTreeFuser::GenOpDesc(const key2nodes_t& matched) {
   auto op_desc = *matched.at("conv")->stmt()->op_info();
-  auto *scope = matched.at("conv")->stmt()->op()->scope();
   auto conv_with_act = op_desc.HasAttr("with_act");
   // Todo(int8 conv): Get the input scale from conv
 
@@ -176,15 +175,6 @@ cpp::OpDesc ConvElementwiseTreeFuser::GenOpDesc(const key2nodes_t& matched) {
     } else if (conv_act_type == "leaky_relu") {
       op_desc.SetAttr("conv_leaky_relu",
                       op_desc.GetAttr<float>("leaky_relu_alpha"));  // 6.f
-    // } else if (conv_act_type == "prelu") {
-    //   op_desc.SetAttr("conv_prelu_mode",
-    //                   op_desc.GetAttr<std::string>("prelu_mode"));
-    //   auto prelu_alpha_name = op_desc.Input("Prelu_alpha").front();
-    //   auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
-    //   op_desc.SetAttr(
-    //       "conv_prelu_alpha",
-    //       const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>())));
-    // } else {
     } else {
       LOG(FATAL) << "The fused conv only supports fuse with relu, relu6, "
                     "leakyrelu, prelu, while the given activation type is "
