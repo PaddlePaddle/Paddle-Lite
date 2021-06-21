@@ -124,15 +124,16 @@ class ConvElementwiseTreeOpLite : public OpLite {
             lite_api::ActivationType::kLeakyRelu;
         param_.conv_param.activation_param.Leaky_relu_alpha =
             op_desc.GetAttr<float>("conv_leaky_relu");
-      } else if (act_type == "prelu") {
-        param_.conv_param.activation_param.active_type =
-            lite_api::ActivationType::kPRelu;
-        param_.conv_param.activation_param.Prelu_mode =
-            op_desc.GetAttr<std::string>("conv_prelu_mode");
-        auto prelu_alpha_name = op_desc.Input("conv_prelu_alpha").front();
-        auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
-        param_.activation_param.Prelu_alpha =
-            const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>()));
+      // } else if (act_type == "prelu") {
+      //   param_.conv_param.activation_param.active_type =
+      //       lite_api::ActivationType::kPRelu;
+      //   param_.conv_param.activation_param.Prelu_mode =
+      //       op_desc.GetAttr<std::string>("conv_prelu_mode");
+      //   auto prelu_alpha_name = op_desc.Input("conv_prelu_alpha").front();
+      //   auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
+      //   param_.activation_param.Prelu_alpha =
+      //       const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>()));
+      // } else {
       } else {
         LOG(FATAL) << "The fused conv only supports fuse with relu, leaky "
                       "relu, hard_swish, while the given activation type is "

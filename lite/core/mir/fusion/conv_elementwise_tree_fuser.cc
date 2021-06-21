@@ -150,6 +150,7 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
 
 cpp::OpDesc ConvElementwiseTreeFuser::GenOpDesc(const key2nodes_t& matched) {
   auto op_desc = *matched.at("conv")->stmt()->op_info();
+  auto *scope = matched.at("conv")->stmt()->op()->scope();
   auto conv_with_act = op_desc.HasAttr("with_act");
   // Todo(int8 conv): Get the input scale from conv
 
@@ -167,29 +168,30 @@ cpp::OpDesc ConvElementwiseTreeFuser::GenOpDesc(const key2nodes_t& matched) {
   }
   if (conv_with_act && op_desc.GetAttr<bool>("with_act")) {
     auto conv_act_type = op_desc.GetAttr<std::string>("act_type");
-    op_desc.setAttr("has_conv_act", true);
-    op_desc.setAttr("conv_act_type", conv_act_type);
+    op_desc.SetAttr("has_conv_act", true);
+    op_desc.SetAttr("conv_act_type", conv_act_type);
     if (conv_act_type == "relu6") {
-      op_desc.setAttr("conv_relu6",
+      op_desc.SetAttr("conv_relu6",
                       op_desc.GetAttr<float>("fuse_brelu_threshold"));  // 6.f
     } else if (conv_act_type == "leaky_relu") {
-      op_desc.setAttr("conv_leaky_relu",
+      op_desc.SetAttr("conv_leaky_relu",
                       op_desc.GetAttr<float>("leaky_relu_alpha"));  // 6.f
-    } else if (conv_act_type == "prelu") {
-      op_desc.setAttr("conv_prelu_mode",
-                      op_desc.GetAttr<std::string>("prelu_mode"));
-      auto prelu_alpha_name = op_desc.Input("Prelu_alpha").front();
-      auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
-      op_desc.setAttr(
-          "conv_prelu_alpha",
-          const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>())));
+    // } else if (conv_act_type == "prelu") {
+    //   op_desc.SetAttr("conv_prelu_mode",
+    //                   op_desc.GetAttr<std::string>("prelu_mode"));
+    //   auto prelu_alpha_name = op_desc.Input("Prelu_alpha").front();
+    //   auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
+    //   op_desc.SetAttr(
+    //       "conv_prelu_alpha",
+    //       const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>())));
+    // } else {
     } else {
       LOG(FATAL) << "The fused conv only supports fuse with relu, relu6, "
                     "leakyrelu, prelu, while the given activation type is "
                  << conv_act_type;
     }
   } else {
-    op_desc.setAttr("has_conv_act", false);
+    op_desc.SetAttr("has_conv_act", false);
   }
   auto elementwise_op_desc = *matched.at("elementwise")->stmt()->op_info();
   bool fuse_scale = elementwise_op_desc.HasAttr("fuse_scale");

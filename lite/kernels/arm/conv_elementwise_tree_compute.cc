@@ -17,6 +17,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #include "lite/kernels/arm/conv_compute.h"
+#include "lite/kernels/arm/elementwise_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -29,8 +30,8 @@ void ConvElementwiseTreeCompute<PRECISION(kFloat),
   auto& ctx = this->ctx_->template As<ARMContext>();
   conv_impl_ = new ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>;
   elt_impl_ = new ElementwiseAddCompute<float, PRECISION(kFloat)>;
-  tensor* tmp_output;
-  out_dims = param.output->dims();
+  Tensor* tmp_output;
+  auto out_dims = param.output->dims();
   tmp_output->Resize(out_dims);
   param.conv_param.output = tmp_output;
   param.elt_param.X = tmp_output;

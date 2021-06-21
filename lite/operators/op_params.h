@@ -768,7 +768,7 @@ struct FusionConvElementParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
-}
+};
 
 struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
   std::string act_type;
