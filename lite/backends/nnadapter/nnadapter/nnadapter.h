@@ -460,7 +460,7 @@ typedef enum {
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 2: shape, An 1-D NNADAPTER_TENSOR_INT32 shape tensor which specifies the
+   * * 1: shape, An 1-D NNADAPTER_TENSOR_INT32 shape tensor which specifies the
    * new shape, At most one dimension of the new shape can be -1. In this case,
    * the value is inferred from the size of the tensor and the remaining
    * dimensions. A dimension could also be 0, in which case the actual dimension

@@ -98,7 +98,9 @@ class Program {
   int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
   int ConvertActivation(hal::Operation* operation);
+  int ConvertReshape(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);
+  int ConvertConcat(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};

@@ -68,8 +68,8 @@ USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation,
 USE_SUBGRAPH_BRIDGE(scale,
                     kNNAdapter,
                     "rockchip_npu,mediatek_apu,huawei_kirin_npu");
-USE_SUBGRAPH_BRIDGE(reshape, kNNAdapter, "rockchip_npu");
-USE_SUBGRAPH_BRIDGE(reshape2, kNNAdapter, "rockchip_npu");
+USE_SUBGRAPH_BRIDGE(reshape, kNNAdapter, "rockchip_npu,mediatek_apu");
+USE_SUBGRAPH_BRIDGE(reshape2, kNNAdapter, "rockchip_npu,mediatek_apu");
 USE_SUBGRAPH_BRIDGE(transpose, kNNAdapter, "rockchip_npu,mediatek_apu");
 USE_SUBGRAPH_BRIDGE(transpose2, kNNAdapter, "rockchip_npu,mediatek_apu");
-USE_SUBGRAPH_BRIDGE(concat, kNNAdapter, "rockchip_npu");
+USE_SUBGRAPH_BRIDGE(concat, kNNAdapter, "rockchip_npu,mediatek_apu");

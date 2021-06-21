@@ -127,6 +127,44 @@ NNADAPTER_EXPORT void TransposeDimensions(
   }
 }
 
+NNADAPTER_EXPORT std::vector<int32_t> IdentityPermutation(size_t rank) {
+  std::vector<int32_t> permutation(rank);
+  for (size_t i = 0; i < rank; i++) {
+    permutation[i] = i;
+  }
+  return permutation;
+}
+
+NNADAPTER_EXPORT std::vector<int32_t> InversePermutation(
+    const std::vector<int32_t>& permutation) {
+  auto rank = permutation.size();
+  std::vector<int32_t> inverse_permutation(rank);
+  for (size_t i = 0; i < rank; i++) {
+    inverse_permutation[permutation[i]] = i;
+  }
+  return inverse_permutation;
+}
+
+NNADAPTER_EXPORT std::vector<int32_t> MutiplyPermutation(
+    const std::vector<int32_t>& permutation,
+    const std::vector<int32_t>& multiplier) {
+  auto rank = permutation.size();
+  std::vector<int32_t> multiply_permutation(rank);
+  for (size_t i = 0; i < multiplier.size(); i++) {
+    multiply_permutation[i] = permutation[multiplier[i]];
+  }
+  return multiply_permutation;
+}
+
+NNADAPTER_EXPORT bool IsIdentityPermutation(
+    const std::vector<int32_t>& permutation) {
+  auto rank = permutation.size();
+  for (size_t i = 0; i < rank; i++) {
+    if (permutation[i] != i) return false;
+  }
+  return true;
+}
+
 NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions,
                                         uint32_t* input_dimension_count,
                                         const std::vector<int32_t>& dimensions,
@@ -206,6 +244,20 @@ NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions,
   memcpy(output_dimensions_ptr,
          &output_dimensions[0],
          output_dimensions.size() * sizeof(int32_t));
+}
+
+NNADAPTER_EXPORT void TransposeAxis(int32_t axis,
+                                    const std::vector<int32_t>& permutation) {
+  NNADAPTER_CHECK_GE(axis, 0);
+  int32_t new_axis = -1;
+  for (size_t i = 0; i < permutation.size(); i++) {
+    if (permutation[i] == axis) {
+      new_axis = i;
+      break;
+    }
+  }
+  NNADAPTER_CHECK_GE(new_axis, 0);
+  return new_axis;
 }
 
 }  // namespace nnadapter

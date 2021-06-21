@@ -35,7 +35,9 @@ std::string DimensionsToString(const int32_t* dimensions,
 int OperandPrecisionLength(NNAdapterOperandPrecisionCode type);
 std::string OperandPrecisionName(NNAdapterOperandPrecisionCode type);
 std::string OperandToString(hal::Operand* operand);
+std::string OperandIdToString(hal::Operand* operand);
 std::string OperandTypeToString(NNAdapterOperandType* type);
 std::string OperandValueToString(hal::Operand* operand);
+std::string OperationIdToString(hal::Operation* operation);
 
 }  // namespace nnadapter

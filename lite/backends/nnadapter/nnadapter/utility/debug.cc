@@ -156,19 +156,16 @@ class Dot {
 };
 
 NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
-#define APPEND_OPERAND_NODE(mode)                                             \
-  auto operand_id =                                                           \
-      string_format("@0x%X", reinterpret_cast<int64_t>(operand));             \
-  auto operand_label = OperandValueToString(operand);                         \
-  if (!visited_operands.count(operand)) {                                     \
-    dot.AddNode(operand_id, {}, operand_label);                               \
-    visited_operands.insert(operand);                                         \
-  }                                                                           \
-  std::vector<Dot::Attr> attrs;                                               \
-  auto& attr_args = mode ? output_args : input_args;                          \
-  std::string attr_label =                                                    \
-      i < attr_args.size() ? attr_args[i]                                     \
-                           : string_format(mode ? "output%d" : "input%d", i); \
+#define APPEND_OPERAND_NODE(mode)                                           \
+  auto operand_id = OperandIdToString(operand);                             \
+  auto operand_label = OperandValueToString(operand);                       \
+  if (!visited_operands.count(operand)) {                                   \
+    dot.AddNode(operand_id, {}, operand_label);                             \
+    visited_operands.insert(operand);                                       \
+  }                                                                         \
+  std::vector<Dot::Attr> attrs;                                             \
+  auto& attr_args = mode ? output_args : input_args;                        \
+  std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown"; \
   attrs.emplace_back("label", string_format("%d:%s", i, attr_label.c_str()));
 
   Dot dot;
@@ -176,8 +173,11 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
   auto operations = SortOperationsInTopologicalOrder(model);
   std::set<hal::Operand*> visited_operands;
   for (auto* operation : operations) {
-    std::string operation_id =
-        string_format("@0x%X", reinterpret_cast<int64_t>(operation));
+    auto& input_operands = operation->input_operands;
+    auto& output_operands = operation->output_operands;
+    auto input_count = input_operands.size();
+    auto output_count = output_operands.size();
+    std::string operation_id = OperationIdToString(operation);
     std::string operation_label = OperationTypeToString(operation->type);
     dot.AddNode(operation_id,
                 {Dot::Attr("shape", "box"),
@@ -187,6 +187,14 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                 operation_label);
     std::vector<std::string> input_args, output_args;
     switch (operation->type) {
+      case NNADAPTER_CONCAT: {
+        input_args.resize(input_count);
+        for (int i = 0; i < input_count - 1; i++) {
+          input_args[i] = string_format("input%d", i);
+        }
+        input_args[input_count - 1] = "axis";
+        output_args = {"output"};
+      } break;
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_RELU:
@@ -254,15 +262,13 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       default:
         break;
     }
-    size_t input_count = operation->input_operands.size();
     for (size_t i = 0; i < input_count; i++) {
-      auto* operand = operation->input_operands[i];
+      auto* operand = input_operands[i];
       APPEND_OPERAND_NODE(0)
       dot.AddEdge(operand_id, operation_id, attrs);
     }
-    size_t output_count = operation->output_operands.size();
     for (size_t i = 0; i < output_count; i++) {
-      auto* operand = operation->output_operands[i];
+      auto* operand = output_operands[i];
       APPEND_OPERAND_NODE(1)
       dot.AddEdge(operation_id, operand_id, attrs);
     }
@@ -522,12 +528,16 @@ NNADAPTER_EXPORT std::string OperandPrecisionName(
 }
 
 NNADAPTER_EXPORT std::string OperandToString(hal::Operand* operand) {
-  return string_format("@0x%X\n", reinterpret_cast<int64_t>(operand)) +
-         OperandTypeToString(&operand->type).c_str();
+  return OperandIdToString(operand) + "\n" +
+         OperandTypeToString(&operand->type);
+}
+
+NNADAPTER_EXPORT std::string OperandIdToString(hal::Operand* operand) {
+  return string_format("@0x%X", reinterpret_cast<int64_t>(operand));
 }
 
 std::string OperandValueToString(hal::Operand* operand) {
-  auto label = string_format("@0x%X", reinterpret_cast<int64_t>(operand));
+  auto label = OperandIdToString(operand);
   auto& type = operand->type;
   auto buffer = operand->buffer;
   auto length = operand->length;
@@ -660,6 +670,10 @@ NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
       break;
   }
   return os.str();
+}
+
+NNADAPTER_EXPORT std::string OperationIdToString(hal::Operation* operation) {
+  return string_format("@0x%X", reinterpret_cast<int64_t>(operation));
 }
 
 }  // namespace nnadapter

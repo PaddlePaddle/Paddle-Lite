@@ -19,36 +19,40 @@
 namespace nnadapter {
 namespace mediatek_apu {
 
-int Program::ConvertTranspose(hal::Operation* operation) {
+int Program::ConvertConcat(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_GE(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Perm
-  auto perm_operand = input_operands[1];
-  auto perm_count = perm_operand->length / sizeof(int32_t);
-  auto perm_data = reinterpret_cast<int32_t*>(perm_operand->buffer);
-  for (uint32_t i = 0; i < perm_count; i++) {
-    NNADAPTER_VLOG(5) << "perm[" << i << "]=" << perm_data[i];
+  // Inputs
+  for (int i = 0; i < input_count - 1; i++) {
+    NNADAPTER_VLOG(5) << "input" << i << ": "
+                      << OperandToString(input_operands[i]);
   }
+  // Axis
+  auto axis =
+      *reinterpret_cast<int32_t*>(input_operands[input_count - 1]->buffer);
+  if (axis < 0) {
+    axis += input_operands[0]->type.dimension_count;
+  }
+  NNADAPTER_VLOG(5) << "axis=" << axis;
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to Neuron operands and operations
-  auto input_index = ConvertOperand(input_operand);
-  auto perm_index = AddInt32ConstantOperand(perm_data, perm_count);
+  std::vector<uint32_t> input_indexes;
+  for (int i = 0; i < input_count - 1; i++) {
+    input_indexes.push_back(ConvertOperand(input_operands[i]));
+  }
+  auto axis_index = AddInt32ConstantOperand(axis);
+  input_indexes.push_back(axis_index);
   auto output_index = ConvertOperand(output_operand);
-  NNADAPTER_LOG(INFO) << "yrans output_idx:" << output_index;
-  std::vector<uint32_t> input_indexes = {input_index, perm_index};
   std::vector<uint32_t> output_indexes = {output_index};
   NNADAPTER_CHECK_EQ(
-      AddOperation(NEURON_TRANSPOSE, &input_indexes, &output_indexes),
+      AddOperation(NEURON_CONCATENATION, &input_indexes, &output_indexes),
       NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
