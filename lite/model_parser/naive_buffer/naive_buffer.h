@@ -78,7 +78,7 @@ class FieldBuilder {
 
  public:
   explicit FieldBuilder(BinaryTable* table) : table_(table) {}
-
+  FieldBuilder(){}
   // Write data to table and update the overall cursor.
   virtual void Save() = 0;
   // Load data from table and update the overall cursor.
@@ -237,6 +237,7 @@ class StructBuilder : public FieldBuilder {
   OrderedMap<std::unique_ptr<FieldBuilder>> field_builders_;
 
  public:
+  StructBuilder(const StructBuilder&){}
   explicit StructBuilder(BinaryTable* table) : FieldBuilder(table) {}
 
 #define NEW_PRIMARY_BUILDER_DECLARE(T, name__, dft_val__) \
