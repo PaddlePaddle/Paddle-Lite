@@ -99,9 +99,9 @@ void prepackA_fp16(TensorLite *tout,
     lda = m;
   }
   for (int g = 0; g < group; ++g) {
-    const float *weights_group = tin.data<float>() + g * m * k;
-    float *weights_trans_ptr =
-        tout->mutable_data<float>() + g * group_size_round_up;
+    const float16_t *weights_group = tin.data<float16_t>() + g * m * k;
+    float16_t *weights_trans_ptr =
+        tout->mutable_data<float16_t>() + g * group_size_round_up;
     prepackA_fp16(weights_trans_ptr,
                   weights_group,
                   alpha,
@@ -1182,7 +1182,7 @@ void gemm_prepack_8x16(bool is_transB,
                 act_param.Leaky_relu_alpha);
   }
 
-  float16x8_t valpha = vdupq_n_f16(local_alpha);
+  float16x8_t valpha = vdupq_n_f16(static_cast<float16_t>(local_alpha));
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
   X_BLOCK_COMPUTE(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
   float16x8_t vbeta = vdupq_n_f16(beta);

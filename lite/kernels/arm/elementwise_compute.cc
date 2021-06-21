@@ -846,6 +846,47 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
+
+using elementwise_sub_int32_f =
+    paddle::lite::kernels::arm::ElementwiseSubCompute<int32_t,
+                                                      PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int32_f, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using elementwise_sub_int64_f =
+    paddle::lite::kernels::arm::ElementwiseSubCompute<int64_t,
+                                                      PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int64_f, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+
+// float kernel has higher priority
+using elementwise_mul_int32_f =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<int32_t,
+                                                      PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_int32_f, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using elementwise_mul_int64_f =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<int64_t,
+                                                      PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_int64_f, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
 #endif  // LITE_BUILD_EXTRA
 
 using elementwise_add_float_t_act = paddle::lite::kernels::arm::
@@ -879,47 +920,6 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
-
-#ifdef LITE_BUILD_EXTRA
-// float kernel has higher priority
-using elementwise_sub_int32_f =
-    paddle::lite::kernels::arm::ElementwiseSubCompute<int32_t,
-                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int32_f, int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();
-
-using elementwise_sub_int64_f =
-    paddle::lite::kernels::arm::ElementwiseSubCompute<int64_t,
-                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int64_f, int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .Finalize();
-#endif  // LITE_BUILD_EXTRA
-
-REGISTER_LITE_KERNEL(
-    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int32_f, int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();
-
-using elementwise_sub_int64_f =
-    paddle::lite::kernels::arm::ElementwiseSubCompute<int64_t,
-                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int64_f, int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .Finalize();
-#endif  // LITE_BUILD_EXTRA
 
 using elementwise_sub_act_fp32 = paddle::lite::kernels::arm::
     ElementwiseSubActivationCompute<float, PRECISION(kFloat)>;
@@ -962,29 +962,6 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
-
-#ifdef LITE_BUILD_EXTRA
-// float kernel has higher priority
-using elementwise_mul_int32_f =
-    paddle::lite::kernels::arm::ElementwiseMulCompute<int32_t,
-                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_int32_f, int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();
-
-using elementwise_mul_int64_f =
-    paddle::lite::kernels::arm::ElementwiseMulCompute<int64_t,
-                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_int64_f, int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .Finalize();
-#endif  // LITE_BUILD_EXTRA
 
 using fusion_elementwise_mul_activation_float_t = paddle::lite::kernels::arm::
     ElementwiseMulActivationCompute<float, PRECISION(kFloat)>;

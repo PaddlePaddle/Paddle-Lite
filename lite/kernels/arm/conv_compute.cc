@@ -143,6 +143,7 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   bool has_active = act_param.has_active;
+  bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
   bool conv_3x3_wino = (ic < 8) || (oc < 8);
   bool stride_less = (sw == 1) || (sw == 2);
   if (param.groups == ic && ic == oc && no_dilation && stride_less &&
