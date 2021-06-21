@@ -36,12 +36,14 @@ if (LITE_WITH_ARM)
   lite_cc_library (context SRCS context.cc
     DEPS tensor any device_info target_wrapper
     CL_DEPS cl_context
+    NNADAPTER_DEPS nnadapter_wrapper
   )
 else ()
   lite_cc_library (context SRCS context.cc
     DEPS tensor any device_info target_wrapper eigen3
     CL_DEPS cl_context
     CUDA_DEPS cuda_context
+    NNADAPTER_DEPS nnadapter_wrapper
   )
 endif ()
 
@@ -158,7 +160,7 @@ if (LITE_WITH_XCODE)
   add_subdirectory (profile)
 endif ()
 
-if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU OR LITE_WITH_IMAGINATION_NNA)
+if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU OR LITE_WITH_IMAGINATION_NNA OR LITE_WITH_NNADAPTER)
   lite_cc_library(subgraph_bridge_registry
     SRCS subgraph_bridge_registry.cc
     DEPS op

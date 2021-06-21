@@ -35,6 +35,12 @@ ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://gith
 # options of compiling imagination NNA lib
 WITH_IMAGINATION_NNA=OFF
 IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk" 
+# options of compiling NNAdapter lib
+WITH_NNADAPTER=OFF
+NNADAPTER_WITH_ROCKCHIP_NPU=OFF
+NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
+NNADAPTER_WITH_IMAGINATION_NNA=OFF
+NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 WITH_BAIDU_XPU_XTCL=OFF
@@ -134,7 +140,12 @@ function init_cmake_mutable_options {
                         -DXPU_SDK_ENV=$BAIDU_XPU_SDK_ENV \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_IMAGINATION_NNA=$WITH_IMAGINATION_NNA \
-                        -DIMAGINATION_NNA_SDK_ROOT=${IMAGINATION_NNA_SDK_ROOT} \
+                        -DIMAGINATION_NNA_SDK_ROOT=$IMAGINATION_NNA_SDK_ROOT \
+                        -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
+                        -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
+                        -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT
+                        -DNNADAPTER_WITH_IMAGINATION_NNA=$NNADAPTER_WITH_IMAGINATION_NNA \
+                        -DNNADAPTER_IMAGINATION_NNA_SDK_ROOT=$NNADAPTER_IMAGINATION_NNA_SDK_ROOT \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -396,6 +407,27 @@ function main {
                 ;;
             --imagination_nna_sdk_root=*)
                 IMAGINATION_NNA_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on nnadapter.
+            --with_nnadapter=*)
+                WITH_NNADAPTER="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_rockchip_npu=*)
+                NNADAPTER_WITH_ROCKCHIP_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_rockchip_npu_sdk_root=*)
+                NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+             --nnadapter_with_imagination_nna=*)
+                NNADAPTER_WITH_IMAGINATION_NNA="${i#*=}"
+                shift
+                ;;
+            --nnadapter_imagination_nna_sdk_root=*)
+                NNADAPTER_IMAGINATION_NNA_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.
