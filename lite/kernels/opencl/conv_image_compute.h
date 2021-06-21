@@ -109,6 +109,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int nh_blk_ = 1;
 
   const cl::Image2D* input_image_p_{nullptr};
+  const cl::Image2D* second_input_image_p_{nullptr};
   const cl::Image2D* filter_image_p_{nullptr};
   const cl::Image2D* bias_image_p_{nullptr};
   const cl::Image2D* alpha_image_p_{nullptr};
@@ -137,6 +138,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int offset_w_{-1};
   int offset_h_{-1};
   int groups_{-1};
+  std::string fuse_eltwise_op_type_;
   bool relu_fused_{false};
   bool has_bias_{false};
   bool is_mali_{false};

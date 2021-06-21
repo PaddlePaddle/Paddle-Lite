@@ -52,10 +52,11 @@ namespace mir {
 //                    V
 //
 // Limitations:
-// * Only support fuse of conv2d_1x1 and elementwise_add.
-// * This output tensor dims of elementwise_add must be equal to that of
-// elementwise_add.
-// * Only support opencl/arm target.
+// * Only support fuse of conv2d_1x1 and elementwise_add and
+//   fusion_elementwise_add_activation.
+// * The input tensor dims of elementwise_add/fusion_elementwise_add_activation
+//   must be equal to that of conv2d_1x1.
+// * Only support arm / opencl target by now.
 
 class ConvElementwiseTreeFusePass : public ProgramPass {
  public:
