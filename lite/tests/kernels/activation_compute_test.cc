@@ -467,6 +467,8 @@ TEST(Activation_prelu, precision) {
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #else
   return;
 #endif
@@ -526,10 +528,10 @@ TEST(Activation_tanh, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
