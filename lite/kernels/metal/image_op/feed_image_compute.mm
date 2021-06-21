@@ -13,82 +13,65 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/feed_image_compute.h"
+#include "lite/backends/metal/metal_context_imp.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/program.h"
+#include "lite/core/tensor.h"
+
+using namespace std;
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void FeedImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  device_ = metal_context_->GetDefaultDevice();
+void FeedImageCompute::PrepareForRun() {
+    auto& context = ctx_->As<MTLContext>();
+    metal_context_ = (MetalContext*)context.context();
 
-  const auto& param = this->template Param<param_t>();
-  auto output_dims = param.out->dims();
+    const auto& param = this->Param<param_t>();
+    auto output_dims = param.out->dims();
 
-  Tensor& input_tensor = param.feed_list->at(param.col);
-  auto input_dims = input_tensor.dims();
-  int input_channel = input_dims[1];
-  param.out->Resize(input_dims);
-  output_buffer_ = param.out->template mutable_data<P, MetalImage>(output_dims);
-
-  std::string function_name = "";
-  if (std::is_same<float, P>::value) {
-    if (input_channel == 1) {
-      function_name = "buffer_to_texture_array_kernel";
-    } else if (input_channel == 3) {
-      function_name = "buffer_to_texture_array_kernel_channel_3";
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
+    param.out->Resize(input_dims);
+#ifdef LITE_WITH_METAL_FULL
+#else
+    output_buffer_ = param.out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+#endif
+    auto input_c = input_dims[1];
+    if (input_c == 1) {
+        function_name_ = "buf_to_tex";
+    } else if (input_c == 3) {
+        function_name_ = "buf_to_tex_c_3";
     } else {
-      function_name = "buffer_to_texture_array_n_channel_kernel";
+        function_name_ = "buf_to_tex_c_n";
     }
-  } else if (std::is_same<MetalHalf, P>::value) {
-    if (input_channel == 1) {
-      function_name = "buffer_to_texture_array_kernel_half";
-    } else if (input_channel == 3) {
-      function_name = "buffer_to_texture_array_kernel_half_channel_3";
-    } else {
-      function_name = "buffer_to_texture_array_n_channel_kernel_half";
-    }
-  }
-  assert(!function_name.empty());
-
-  kernel_ = metal_context_->GetKernel(*device_, function_name);
-  queue_ = metal_context_->GetDefaultQueue(*device_);
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
 }
 
-template <typename P, PrecisionType PTYPE>
-void FeedImageCompute<P, PTYPE>::Run() {
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto mtl_dev = metal_context_->GetDefaultDevice();
-  const auto& param = this->template Param<param_t>();
-  Tensor& input_tensor = param.feed_list->at(param.col);
-  auto input_buffer = input_tensor.mutable_data<float>();
-  auto input_dims = input_tensor.dims();
-  auto mem_size = input_dims.production() * sizeof(float);
+void FeedImageCompute::Run() {
+    auto pipline = pipline_;
+    auto outTexture = output_buffer_->image();
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-  input_buffer_ = metal_context_->CreateBuffer(
-      *mtl_dev, input_buffer, mem_size, METAL_ACCESS_FLAG::CPUWriteOnly);
+    const auto& param = this->Param<param_t>();
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_buffer = input_tensor.data<float>();
+    auto input_dims = input_tensor.dims();
+    int mem_size = (int)input_dims.production() * sizeof(float);
+    input_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, mem_size, const_cast<float*>(input_buffer));
 
-  auto output_width = output_buffer_->texture_width_;
-  auto output_height = output_buffer_->texture_height_;
-  auto output_array_length = output_buffer_->array_length_;
+    auto encoder = [backend commandEncoder];
+    [encoder setBuffer:input_buffer_->buffer() offset:(0) atIndex:(0)];
+    [encoder setTexture:(output_buffer_->image()) atIndex:(0)];
 
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(),
-                                                &kernel_->program_);
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
-
-  [encoder->metal_command_encoder_ setBuffer:(input_buffer_->buffer())
-                                      offset:(0)atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image())
-                                      atIndex:(0)];
-
-  kernel_->Execute(*encoder, global_work_size, false);
+    [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    [backend commit];
 }
 
 }  // namespace metal
@@ -96,37 +79,26 @@ void FeedImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::
-    FeedImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::FeedImageCompute<MetalHalf,
-                                                              PRECISION(kFP16)>;
-
-typedef paddle::lite::kernels::metal::FeedImageCompute<float, PRECISION(kFloat)>
-    MetalFeedFp32;
-typedef paddle::lite::kernels::metal::FeedImageCompute<MetalHalf,
-                                                       PRECISION(kFP16)>
-    MetalFeedFp16;
-
-REGISTER_LITE_KERNEL(
-    feed, kMetal, kFloat, kMetalTexture2DArray, MetalFeedFp32, def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+REGISTER_LITE_KERNEL(feed,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::FeedImageCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    feed, kMetal, kFP16, kMetalTexture2DArray, MetalFeedFp16, def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+REGISTER_LITE_KERNEL(feed,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::FeedImageCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kMetal),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

@@ -44,6 +44,10 @@ if /I "%1"=="with_extra" (
     set BUILD_PLATFORM=Win32
 ) else if /I  "%1"=="use_ninja" (
     set CMAKE_GENERATOR=Ninja
+) else if /I  "%1"=="use_vs2017" (
+    set CMAKE_GENERATOR=Visual Studio 15 2017
+) else if /I  "%1"=="use_vs2019" (
+    set CMAKE_GENERATOR=Visual Studio 16 2019
 ) else if /I  "%1"=="with_dynamic_crt" (
     set MSVC_STATIC_CRT=OFF
 ) else if /I  "%1"=="with_static_mkl" (
@@ -86,11 +90,18 @@ echo "|  BUILD_PLATFORM=%BUILD_PLATFORM%                                        
 echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                                                  |"
 echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
 echo "|  WITH_OPENCL=%WITH_OPENCL%                                                                          |"
-echo "|  WITH_AVX=%WITH_AVX%                                                                              |"
+echo "|  WITH_AVX=%WITH_AVX%                                                                                |"
 echo "------------------------------------------------------------------------------------------------------|"
 
 
-set vcvarsall_dir=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
+set vcvarsall_dir=C:\Program Files ^(x86^)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
+if "%CMAKE_GENERATOR%"=="Visual Studio 14 2015" (
+  set vcvarsall_dir=C:\Program Files ^(x86^)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
+) else if "%CMAKE_GENERATOR%"=="Visual Studio 15 2017" (
+  set vcvarsall_dir=C:\Program Files ^(x86^)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
+) else if "%CMAKE_GENERATOR%"=="Visual Studio 16 2019" (
+  set vcvarsall_dir=C:\Program Files ^(x86^)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat
+)
 IF NOT EXIST "%vcvarsall_dir%" (
   goto set_vcvarsall_dir
 )
@@ -140,7 +151,7 @@ if "%CMAKE_GENERATOR%"=="Ninja" (
     goto ninja_build
 )
 
-    cmake %root_dir%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
+    cmake %root_dir%  -G "%CMAKE_GENERATOR%" -A %BUILD_PLATFORM% ^
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
@@ -165,7 +176,7 @@ if "%BUILD_FOR_CI%"=="ON" (
     call "%vcvarsall_dir%" amd64
     msbuild /m:%cores% /p:Configuration=Release lite\lite_compile_deps.vcxproj
     call:test_server
-    cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
+    cmake ..   -G "%CMAKE_GENERATOR% Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     msbuild /m:%cores% /p:Configuration=Release lite\api\opt.vcxproj
 ) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
@@ -336,6 +347,9 @@ echo "|      with_dynamic_crt: Enable building for MSVC Dynamic Runtime. Default
 echo "|      with_static_mkl: Enable Static linking Intel(R) MKL. Default is Dynamic.                       |"
 echo "|      with_opencl: Enable OpenCL for GPU accelerator. Default OFF.                                   |"
 echo "|      without_avx: Enable AVX or SSE for X86 kernels. Default is ON.                                 |"
+echo "|      use_ninja: Enable ninja build. Default is OFF.                                                 |"
+echo "|      use_vs2017: Enable visual studio 2017 build. Default is OFF.                                   |"
+echo "|      use_vs2019: Enable visual studio 2019 build. Default is OFF.                                   |"
 echo "|  for example:                                                                                       |"
 echo "|      build_windows.bat with_log with_profile with_python with_extra                                 |"
 echo "|      build_windows.bat build_x86 with_strip D:\Paddle-Lite\opt_model_dir                            |"

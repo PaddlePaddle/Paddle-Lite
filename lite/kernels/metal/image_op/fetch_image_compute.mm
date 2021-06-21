@@ -13,138 +13,93 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/fetch_image_compute.h"
+#include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
+
+using namespace std;
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void FetchImageCompute<P, PTYPE>::PrepareForRun() {
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  device_ = metal_context_->GetDefaultDevice();
+void FetchImageCompute::PrepareForRun() {
+    auto& context = ctx_->As<MTLContext>();
+    metal_context_ = (MetalContext*)context.context();
 
-  const auto& param = this->template Param<param_t>();
-  auto input_dims = param.input->dims();
-  input_buffer_ = param.input->template data<P, MetalImage>();
+    const auto& param = this->Param<param_t>();
 
-  auto* fetch_list = param.fetch_list;
-  if (fetch_list->size() <= static_cast<size_t>(param.col)) {
-    fetch_list->resize(static_cast<unsigned long>(param.col + 1));
-  }
+#ifdef LITE_WITH_METAL_FULL
+#else
+    input_buffer_ = param.input->data<MetalHalf, MetalImage>();
+#endif
 
-  auto& dst = fetch_list->at(param.col);
-  dst.Resize(param.input->dims());
-
-  std::string function_name = "";
-  if (std::is_same<P, MetalHalf>::value) {
-    if (input_buffer_->transpose_ == std::vector<int>{0, 2, 3, 1}) {
-      function_name = "fetch_half";
-    } else if (input_buffer_->transpose_ == std::vector<int>{0, 1, 2, 3}) {
-      switch (input_buffer_->tensor_dim_.size()) {
-        case 1:
-        case 2:
-          function_name = "fetch_1or2_half";
-          break;
-        case 4:
-          expected_transpose_ = {0, 2, 3, 1};
-          function_name = "fetch_half";
-          break;
-        default:
-          throw std::logic_error(
-              "ERROR: half compute unsupported tensor dim count");
-      }
+    // output
+    auto* fetch_list = param.fetch_list;
+    if (param.col >= fetch_list->size()) {
+        fetch_list->resize(param.col + 1);
     }
-  } else if (std::is_same<P, float>::value) {
-    if (input_buffer_->transpose_ == std::vector<int>{0, 2, 3, 1}) {
-      function_name = "fetch_float";
-    } else if (input_buffer_->transpose_ == std::vector<int>{0, 1, 2, 3}) {
-      switch (input_buffer_->tensor_dim_.size()) {
-        case 1:
-        case 2:
-          function_name = "fetch_1or2_float";
-          break;
-        case 4:
-          expected_transpose_ = {0, 2, 3, 1};
-          function_name = "fetch_float";
-          break;
-        default:
-          throw std::logic_error(
-              "ERROR: float compute unsupported tensor dim count");
-      }
-    }
-  } else {
-    throw std::logic_error("ERROR: unsupported compute precision");
-  }
+    Tensor* output_tensor = &fetch_list->at(param.col);
+    auto count = param.input->dims().production();
+    auto size = count * sizeof(float);
+    auto output_dims = DDimLite({count});
+    output_tensor->Resize(output_dims);
+    auto data = output_tensor->template mutable_data<float>(TARGET(kHost), size);
+    TargetWrapperMetal::MemsetSync(data, 0, size);
+    // output: MTLBuffer（ps：output layout is NCHW）
+    output_buffer_ = make_shared<MetalBuffer>(metal_context_, output_dims, size);
 
-  if (input_buffer_->transpose_ != expected_transpose_) {
-    insert_shape = true;
-    std::unique_ptr<KernelContext> reshape_ctx(new KernelContext);
-    reshape_ctx->template As<ContextMetal>().InitOnce();
-    operators::ReshapeParam reshape_param;
-    reshape_param.x = param.input;
-    reshape_param.excepted_transpose_ = expected_transpose_;
-    shape_out_dev.Resize(input_buffer_->tensor_dim_);
-    reshape_param.output = &shape_out_dev;
-    reshape_.SetContext(std::move(reshape_ctx));
-    reshape_.SetParam(reshape_param);
-    reshape_.PrepareForRun();
-  }
-
-  assert(!function_name.empty());
-  kernel_ = metal_context_->GetKernel(*device_, function_name);
-  queue_ = metal_context_->GetDefaultQueue(*device_);
+    setup_without_mps();
 }
 
-template <typename P, PrecisionType PTYPE>
-void FetchImageCompute<P, PTYPE>::Run() {
-  auto& context = this->ctx_->template As<ContextMetal>();
-  metal_context_ = (MetalContext*)context.context();
-  auto mtl_dev = metal_context_->GetDefaultDevice();
-  const auto& param = this->template Param<param_t>();
-  Tensor& output_tensor = param.fetch_list->at(param.col);
-  auto output_buffer = output_tensor.mutable_data<float>();
-  auto output_dims = output_tensor.dims();
-  auto mem_size = output_dims.production() * sizeof(float);
-  output_buffer_ = metal_context_->CreateBuffer(*mtl_dev, mem_size);
+void FetchImageCompute::Run() {
+    auto pipline = pipline_;
+    auto inTexture = input_buffer_->image();
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-  auto output_width = input_buffer_->texture_width_;
-  auto output_height = input_buffer_->texture_height_;
-  auto output_array_length = input_buffer_->array_length_;
+    auto encoder = [backend commandEncoder];
+    [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder setBuffer:(output_buffer_->buffer()) offset:(0) atIndex:(0)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(1)];
 
-  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                 static_cast<MetalUint>(output_height),
-                                 static_cast<MetalUint>(output_array_length)};
+    [backend dispatchEncoder:encoder pipline:pipline outTexture:inTexture];
+    [backend waitUntilCompleted];
+    // fetch wait completed
+    const auto& param = this->Param<param_t>();
+    auto* fetch_list = param.fetch_list;
+    Tensor* output_tensor = &fetch_list->at(param.col);
+    auto data = output_tensor->data<float>();
+    auto size = param.input->dims().production();
+    float* buf = (float*)[output_buffer_->buffer() contents];
+    TargetWrapperMetal::MemcpySync((void*)data, (void*)buf, size * sizeof(float));
+}
 
-  if (insert_shape) {
-    reshape_.Run();
-    auto encoder = std::make_shared<MetalEncoder>(
-        metal_context_->cmd_buf_.get(), &kernel_->program_);
-    auto shape_buffer = shape_out_dev.data<P, MetalImage>();
-    [encoder->metal_command_encoder_ setTexture:shape_buffer->image()
-                                        atIndex:(0)];
-    [encoder->metal_command_encoder_ setBuffer:output_buffer_->buffer()
-                                        offset:(0)atIndex:(0)];
-    kernel_->Execute(*encoder, global_work_size, false);
-  } else {
-    auto encoder = std::make_shared<MetalEncoder>(
-        metal_context_->cmd_buf_.get(), &kernel_->program_);
-    [encoder->metal_command_encoder_ setTexture:input_buffer_->image()
-                                        atIndex:(0)];
-    [encoder->metal_command_encoder_ setBuffer:output_buffer_->buffer()
-                                        offset:(0)atIndex:(0)];
-    kernel_->Execute(*encoder, global_work_size, false);
-  }
+void FetchImageCompute::setup_without_mps() {
+    auto irank = input_buffer_->tensor_dim_.size();
+    std::vector<int> idm = {1, 1, 1, 1};
+    for (int i = 0; i < irank; i++) {
+        idm[4 - irank + i] = (int)(input_buffer_->tensor_dim_[i]);
+    }
+    FetchMetalParam fetch_params{(int)irank, {idm[0], idm[1], idm[2], idm[3]}};
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(fetch_params), &fetch_params);
 
-  [metal_context_->cmd_buf_->metal_command_buffer_ commit];
-  [metal_context_->cmd_buf_->metal_command_buffer_ waitUntilCompleted];
-  metal_context_->cmd_buf_->have_command_ = false;
+    std::vector<int> transpose_nhwc = {0, 2, 3, 1};
+    std::vector<int> transpose_nchw = {0, 1, 2, 3};
+    if (input_buffer_->transpose_ == transpose_nhwc) {
+        function_name_ = "fetch";
+    } else if (input_buffer_->transpose_ == transpose_nchw) {
+        LOG(FATAL) << "fetch: all transpose should be {0, 2, 3, 1}";
+    } else {
+        LOG(FATAL) << "fetch: unsupported tensor transpose";
+    }
 
-  memcpy(output_buffer, output_buffer_->buffer().contents, mem_size);
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
 }
 
 }  // namespace metal
@@ -152,37 +107,15 @@ void FetchImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::
-    FetchImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::
-    FetchImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::FetchImageCompute<float,
-                                                        PRECISION(kFloat)>
-    MetalFetchFp32;
-typedef paddle::lite::kernels::metal::FetchImageCompute<MetalHalf,
-                                                        PRECISION(kFP16)>
-    MetalFetchFp16;
-
-REGISTER_LITE_KERNEL(
-    fetch, kMetal, kFloat, kMetalTexture2DArray, MetalFetchFp32, def)
+REGISTER_LITE_KERNEL(fetch,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::FetchImageCompute,
+    def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    fetch, kMetal, kFP16, kMetalTexture2DArray, MetalFetchFp16, def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .Finalize();

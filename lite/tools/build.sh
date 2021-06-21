@@ -606,7 +606,7 @@ function main {
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
-		;;
+                ;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 OPTMODEL_DIR=$(readlinkf $OPTMODEL_DIR)

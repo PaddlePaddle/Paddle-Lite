@@ -26,7 +26,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace host {
+namespace arm {
 
 static const double kBBoxClipDefault = std::log(1000.0 / 16.0);
 
@@ -487,7 +487,7 @@ void GenerateProposalsV2Compute::Run() {
   rpn_roi_probs->Resize({num_proposals, 1});
 }
 
-}  // namespace host
+}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
@@ -496,7 +496,7 @@ REGISTER_LITE_KERNEL(generate_proposals_v2,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::GenerateProposalsV2Compute,
+                     paddle::lite::kernels::arm::GenerateProposalsV2Compute,
                      def)
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("BboxDeltas", {LiteType::GetTensorTy(TARGET(kHost))})

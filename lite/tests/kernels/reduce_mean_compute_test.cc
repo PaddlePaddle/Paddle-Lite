@@ -383,6 +383,9 @@ TEST(ReduceMean, precision) {
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_err = 2e-2;  // opencl fp16 torlerance
 #endif
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = Place(TARGET(kXPU));
+#endif
   test_reduce_mean(place, abs_err);
 }
 

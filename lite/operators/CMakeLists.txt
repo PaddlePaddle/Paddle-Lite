@@ -70,6 +70,7 @@ add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
 
 # 3.extra ops
 add_operator(activation_extra_ops extra SRCS activation_extra_ops.cc DEPS ${op_DEPS})
+add_operator(reduce_extra_ops extra SRCS reduce_extra_ops.cc DEPS ${op_DEPS})
 add_operator(search_group_padding extra SRCS search_group_padding_op.cc DEPS ${op_DEPS})
 add_operator(lrn_op_lite extra SRCS lrn_op.cc DEPS ${op_DEPS})
 add_operator(decode_bboxes_op_lite extra SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
@@ -148,6 +149,7 @@ add_operator(meshgrid_op_lite extra SRCS meshgrid_op.cc DEPS ${op_DEPS})
 add_operator(linspace_op extra SRCS linspace_op.cc DEPS ${op_DEPS})
 add_operator(roi_perspective_transform_op extra SRCS roi_perspective_transform_op.cc DEPS ${op_DEPS})
 add_operator(argsort_op extra SRCS argsort_op.cc DEPS ${op_DEPS})
+add_operator(flip_op extra SRCS flip_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})

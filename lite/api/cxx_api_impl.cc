@@ -262,6 +262,10 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
   raw_predictor_->SaveModel(model_dir, model_type, record_info);
 }
 
+bool CxxPaddleApiImpl::TryShrinkMemory() {
+  return raw_predictor_->TryShrinkMemory();
+}
+
 }  // namespace lite
 
 namespace lite_api {

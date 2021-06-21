@@ -33,49 +33,66 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-class ReluImageCompute : public KernelLite<TARGET(kMetal),
-                                           PTYPE,
-                                           DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ActivationParam;
+class ReluImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::ActivationParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("relu", output_buffer_);
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput("relu", output_buffer_);
+    };
 
- private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
+   private:
+    const MetalImage* input_buffer_;
+    MetalImage* output_buffer_;
+
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
 };
 
-template <typename P, PrecisionType PTYPE>
-class Relu6ImageCompute : public KernelLite<TARGET(kMetal),
-                                            PTYPE,
-                                            DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ActivationParam;
+class Relu6ImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::ActivationParam;
 
- public:
-  void PrepareForRun() override;
-  void Run() override;
-  void SaveOutput() override {
-    MetalDebug::SaveOutput("relu6", output_buffer_);
-  };
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput("relu6", output_buffer_);
+    };
 
- private:
-  const MetalImage* input_buffer_;
-  MetalImage* output_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
-  std::shared_ptr<MetalBuffer> param_buffer_;
-  std::shared_ptr<MetalQueue> queue_;
-  std::shared_ptr<MetalEncoder> encoder_;
-  MetalContext* metal_context_;
+   private:
+    const MetalImage* input_buffer_;
+    MetalImage* output_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
+
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
+};
+
+class LeakyReluImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::ActivationParam;
+
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput("leaky_relu", output_buffer_);
+    };
+
+   private:
+    const MetalImage* input_buffer_;
+    MetalImage* output_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
+
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
 };
 
 }  // namespace metal

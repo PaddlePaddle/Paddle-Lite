@@ -37,6 +37,7 @@ WITH_IMAGINATION_NNA=OFF
 IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk" 
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
+WITH_BAIDU_XPU_XTCL=OFF
 BAIDU_XPU_SDK_ROOT=""
 BAIDU_XPU_SDK_URL=""
 BAIDU_XPU_SDK_ENV=""
@@ -127,6 +128,7 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
+                        -DLITE_WITH_XTCL=$WITH_BAIDU_XPU_XTCL \
                         -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
                         -DXPU_SDK_URL=$BAIDU_XPU_SDK_URL \
                         -DXPU_SDK_ENV=$BAIDU_XPU_SDK_ENV \
@@ -216,10 +218,10 @@ function make_publish_so {
 
     build_dir=$workspace/build.lite.linux.$ARCH.$TOOLCHAIN
     if [ "${WITH_OPENCL}" = "ON" ]; then
-       build_dir=${build_dir}.opencl
+        build_dir=${build_dir}.opencl
     fi
     if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
-       build_dir=${build_dir}.baidu_xpu
+        build_dir=${build_dir}.baidu_xpu
     fi
 
     if [ -d $build_dir ]; then
@@ -231,15 +233,15 @@ function make_publish_so {
     prepare_workspace $workspace $build_dir
 
     if [ "${WITH_OPENCL}" = "ON" ]; then
-       prepare_opencl_source_code $workspace $build_dir
+        prepare_opencl_source_code $workspace $build_dir
     fi
 
     cmake $workspace \
-       ${CMAKE_COMMON_OPTIONS} \
-       ${cmake_mutable_options}
+        ${CMAKE_COMMON_OPTIONS} \
+        ${cmake_mutable_options}
 
     if [ "${WITH_OPENCL}" = "ON" ]; then
-       make opencl_clhpp -j$NUM_PROC 
+        make opencl_clhpp -j$NUM_PROC 
     fi
 
     make publish_inference -j$NUM_PROC
@@ -297,6 +299,7 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_baidu_xpu=ON                                                                                       |"
     echo -e "|     ./lite/tools/build_linux.sh --arch=armv8 --with_baidu_xpu=ON                                                                                     |"
     echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF.                                                       |"
+    echo -e "|     --with_baidu_xpu_xtcl: (OFF|ON); controls whether to enable xtcl for baidu_xpu, default is OFF.                                                  |"
     echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) optional, default is None                                                                     |"
     echo -e "|     --baidu_xpu_sdk_url: (baidu_xpu sdk download url) optional, default is 'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'     |"
     echo -e "|     --baidu_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                      |"
@@ -400,8 +403,15 @@ function main {
                 WITH_BAIDU_XPU="${i#*=}"
                 shift
                 ;;
+            --with_baidu_xpu_xtcl=*)
+                WITH_BAIDU_XPU_XTCL="${i#*=}"
+                shift
+                ;;
             --baidu_xpu_sdk_root=*)
                 BAIDU_XPU_SDK_ROOT="${i#*=}"
+                if [ -n "${BAIDU_XPU_SDK_ROOT}" ]; then
+                    BAIDU_XPU_SDK_ROOT=$(readlink -f ${BAIDU_XPU_SDK_ROOT})
+                fi
                 shift
                 ;;
             --baidu_xpu_sdk_url=*)

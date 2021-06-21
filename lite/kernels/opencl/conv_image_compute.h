@@ -95,19 +95,27 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::unique_ptr<Tensor> tensor_hold_bias_image_{nullptr};
   std::unique_ptr<Tensor> filter_gpu_buffer_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_buffer_{nullptr};
+  std::unique_ptr<Tensor> wino_m_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> wino_v_gpu_image_{nullptr};
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-
+  cl::NDRange global_work_size_wino1_ =
+      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange global_work_size_wino2_ =
+      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
   // opencl kernel args
   int c_blk_ = 1;
   int w_blk_ = 1;
   int nh_blk_ = 1;
 
   const cl::Image2D* input_image_p_{nullptr};
+  const cl::Image2D* second_input_image_p_{nullptr};
   const cl::Image2D* filter_image_p_{nullptr};
   const cl::Image2D* bias_image_p_{nullptr};
   const cl::Image2D* alpha_image_p_{nullptr};
   const cl::Image2D* output_image_p_{nullptr};
+  const cl::Image2D* wino_v_image_p_{nullptr};
+  const cl::Image2D* wino_m_image_p_{nullptr};
 
   std::unique_ptr<Tensor> w_gpu_t_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_t_{nullptr};
@@ -130,9 +138,11 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int offset_w_{-1};
   int offset_h_{-1};
   int groups_{-1};
+  std::string fuse_eltwise_op_type_;
   bool relu_fused_{false};
   bool has_bias_{false};
   bool is_mali_{false};
+  bool is_wino_{false};
 
   int input_tensor_n_{-1};
   int input_tensor_c_{-1};
@@ -168,8 +178,14 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   bool is_first_epoch_for_run_{true};
 
   cl::Kernel kernel_;
+  cl::Kernel kernel_inner_product_;
+  cl::Kernel kernel_output_trans_;
   cl_int status_;
   cl::NDRange local_work_size_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_wino1_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_wino2_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
 };

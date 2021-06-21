@@ -25,7 +25,6 @@ namespace lite {
 namespace mir {
 
 void ConvScaleFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  LOG(INFO) << Visualize(graph.get());
   // initialze fuser params
   std::vector<bool> conv_has_bias_cases{true, /*unsuppoted: false*/};
   std::vector<std::string> conv_type_cases{"conv2d", "depthwise_conv2d"};
@@ -65,7 +64,6 @@ void ConvScaleFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       fuser(graph.get());
     }
   }
-  LOG(INFO) << Visualize(graph.get());
 }
 
 }  // namespace mir

@@ -13,9 +13,11 @@ cc_library(math_arm_fp16 SRCS
     gemm_fp16.cc
     gemm_c8_fp16.cc
     gemv_fp16.cc
+    interpolate_fp16.cc
     pad2d_fp16.cc
     pooling_fp16.cc
     sgemm_fp16.cc
     softmax_fp16.cc
     type_trans_fp16.cc
+    shuffle_channel_fp16.cc
     DEPS ${lite_kernel_deps} context tensor)

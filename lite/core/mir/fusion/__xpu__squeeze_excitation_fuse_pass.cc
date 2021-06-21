@@ -316,7 +316,23 @@ class XPUSqueezeExcitationFuser : public FuseBase {
                          ->assert_is_op_output("pool2d", "Out")
                          ->assert_is_op_input(op_type_, "Input")
                          ->AsIntermediate();
-    auto* mul_1 = OpNode("mul_1", op_type_)->AsIntermediate();
+
+    auto mul_teller = [](const Node* x) -> bool {
+      if (x && x->IsStmt()) {
+        auto* op_info = x->stmt()->op_info();
+        auto in_c = op_info->GetAttr<std::vector<int>>("filter_dims")[0];
+        auto out_c = op_info->GetAttr<std::vector<int>>("filter_dims")[1];
+        auto bigger = std::max(in_c, out_c);
+        auto smaller = std::min(in_c, out_c);
+        if (bigger % smaller != 0) {
+          return false;
+        }
+      }
+      return true;
+    };
+    auto* mul_1 = OpNode("mul_1", op_type_)
+                      ->assert_node_satisfied(mul_teller)
+                      ->AsIntermediate();
     auto* mul_1_w = VarNode("mul_1_w")
                         ->assert_is_op_input(op_type_, "Filter")
                         ->AsIntermediate();
@@ -327,7 +343,9 @@ class XPUSqueezeExcitationFuser : public FuseBase {
     auto* mul_1_out_max = VarNode("mul_1_out_max")
                               ->assert_is_op_output(op_type_, "OutputMax")
                               ->AsIntermediate();
-    auto* mul_2 = OpNode("mul_2", op_type_)->AsIntermediate();
+    auto* mul_2 = OpNode("mul_2", op_type_)
+                      ->assert_node_satisfied(mul_teller)
+                      ->AsIntermediate();
     auto* mul_2_w = VarNode("mul_2_w")
                         ->assert_is_op_input(op_type_, "Filter")
                         ->AsIntermediate();
@@ -425,10 +443,10 @@ class XPUSqueezeExcitationFuser : public FuseBase {
     std::unique_ptr<float[]> encode_filter_float(
         new float[mul_1_w_len + mul_2_w_len]);
     if (op_type_ == "__xpu__fc") {
-      CHECK(mul_1_w_dims[0] % mul_2_w_dims[1] == 0)
+      CHECK(mul_1_w_dims[0] % mul_1_w_dims[1] == 0)
           << "Error: Reduction ratio of excitation is not an integer."
           << "Received mul_1_w_dims[0]: " << mul_1_w_dims[0]
-          << ", mul_2_w_dims[1]: " << mul_2_w_dims[1];
+          << ", mul_1_w_dims[1]: " << mul_1_w_dims[1];
       op_desc.SetAttr<std::vector<int>>(
           "filter_dims",
           {static_cast<int>(mul_1_w_dims[0] / mul_1_w_dims[1]),
@@ -440,10 +458,10 @@ class XPUSqueezeExcitationFuser : public FuseBase {
              mul_2_w_on_host,
              mul_2_w_len * sizeof(float));
     } else if (op_type_ == "__xpu__conv2d") {
-      CHECK(mul_1_w_dims[1] % mul_2_w_dims[0] == 0)
+      CHECK(mul_1_w_dims[1] % mul_1_w_dims[0] == 0)
           << "Error: Reduction ratio of excitation is not an integer."
           << "Received mul_1_w_dims[1]: " << mul_1_w_dims[1]
-          << ", mul_2_w_dims[0]: " << mul_2_w_dims[0];
+          << ", mul_1_w_dims[0]: " << mul_1_w_dims[0];
       op_desc.SetAttr<std::vector<int>>(
           "filter_dims",
           {static_cast<int>(mul_1_w_dims[1] / mul_1_w_dims[0]),

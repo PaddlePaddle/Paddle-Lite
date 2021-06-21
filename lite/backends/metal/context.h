@@ -14,26 +14,9 @@
 
 #pragma once
 
+#include "lite/backends/metal/metal_context.h"
 #include "lite/core/device_info.h"
 
 namespace paddle {
-namespace lite {
-
-template <TargetType Type>
-class Context;
-using ContextMetal = Context<TargetType::kMetal>;
-
-template <>
-class Context<TargetType::kMetal> {
- public:
-  void InitOnce();
-  void CopySharedTo(ContextMetal* ctx);
-
-  void* context() { return context_; }
-
- private:
-  void* context_;
-};
-
-}  // namespace lite
+namespace lite {}  // namespace lite
 }  // namespace paddle

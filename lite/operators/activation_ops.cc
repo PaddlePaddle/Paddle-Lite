@@ -88,6 +88,12 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     if (opdesc.HasAttr("approximate")) {
       param_.gelu_approximate = opdesc.GetAttr<bool>("approximate");
     }
+  } else if (opdesc.Type() == "erf") {
+    param_.active_type = lite_api::ActivationType::kErf;
+  } else if (opdesc.Type() == "sign") {
+    param_.active_type = lite_api::ActivationType::kSign;
+  } else if (opdesc.Type() == "softplus") {
+    param_.active_type = lite_api::ActivationType::kSoftPlus;
   }
 
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
@@ -109,3 +115,5 @@ REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(thresholded_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(elu, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(erf, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(softplus, paddle::lite::operators::ActivationOp);

@@ -36,7 +36,7 @@ repos:
         entry: bash ./tools/codestyle/cpplint_pre_commit.hook
         language: system
         files: \.(c|cc|cxx|cpp|cu|cl|h|hpp|hxx)$
-        exclude: ^(third-party/) | ^(metal/) | ^(web/)
+        exclude: ^(third-party/) | ^(metal/) | ^(web/) | ^(lite/kernels/metal/|lite/backends/metal/)
 #-   repo: local
     #hooks:
     #-   id: pylint-doc-string
