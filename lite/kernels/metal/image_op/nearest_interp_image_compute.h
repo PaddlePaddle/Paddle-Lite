@@ -40,14 +40,15 @@ class NearestInterpImageCompute
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("nearest_interp", output_buffer_);
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+    virtual ~NearestInterpImageCompute();
 
    private:
     void setup_without_mps();
 
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
     id<MTLComputePipelineState> pipline_;

@@ -173,6 +173,7 @@ SoftmaxImageCompute::~SoftmaxImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

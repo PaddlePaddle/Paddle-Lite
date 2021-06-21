@@ -43,11 +43,12 @@ class ElementwiseMulImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+    virtual ~ElementwiseMulImageCompute();
 
    private:
     void setup_without_mps();
 
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_x_;
     const MetalImage* input_buffer_y_;
     std::shared_ptr<MetalBuffer> params_buffer_;

@@ -87,6 +87,10 @@ void Pad2dImageCompute::setup_without_mps() {
     pipline_ = [backend pipline:function_name_];
 }
 
+Pad2dImageCompute::~Pad2dImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
 }  // namespace metal
 }  // namespace kernels
 }  // namespace lite

@@ -60,7 +60,7 @@ class SoftmaxImageCompute
     void run_without_mps();
 
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
     id<MTLComputePipelineState> pipline_;

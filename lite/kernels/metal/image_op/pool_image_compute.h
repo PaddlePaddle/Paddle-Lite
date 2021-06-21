@@ -42,7 +42,7 @@ class PoolImageCompute
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("pool", output_buffer_);
+        MetalDebug::SaveOutput((use_mps_ ? ("MPS_pool") : function_name_), output_buffer_);
     };
     virtual ~PoolImageCompute();
 
@@ -59,7 +59,7 @@ class PoolImageCompute
     void run_without_mps();
 
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
     id<MTLComputePipelineState> pipline_;

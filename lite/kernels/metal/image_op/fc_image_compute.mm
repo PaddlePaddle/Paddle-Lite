@@ -86,6 +86,11 @@ void FCImageCompute::setup_without_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
 }
+
+FCImageCompute::~FCImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
 }
 }
 }

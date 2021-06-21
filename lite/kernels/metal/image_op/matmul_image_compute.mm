@@ -81,6 +81,10 @@ void MatMulImageCompute::setup_without_mps() {
     pipline_ = [backend pipline:function_name_];
 }
 
+MatMulImageCompute::~MatMulImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
 }  // namespace metal
 }  // namespace kernels
 }  // namespace lite
