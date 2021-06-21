@@ -47,6 +47,9 @@ WITH_BAIDU_XPU_XTCL=OFF
 BAIDU_XPU_SDK_ROOT=""
 BAIDU_XPU_SDK_URL=""
 BAIDU_XPU_SDK_ENV=""
+# options of compiling huawei ascend npu
+WITH_HUAWEI_ASCEND_NPU=OFF
+HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
 # options of compiling intel fpga.
 WITH_INTEL_FPGA=OFF
 INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk" 
@@ -113,6 +116,10 @@ function init_cmake_mutable_options {
         WITH_EXTRA=ON
     fi
 
+    if [ "${WITH_HUAWEI_ASCEND_NPU}" == "ON" ]; then
+        WITH_EXTRA=ON
+    fi
+
     cmake_mutable_options="-DLITE_WITH_ARM=$with_arm \
                         -DLITE_WITH_X86=$with_x86 \
                         -DARM_TARGET_ARCH_ABI=$arm_arch \
@@ -138,6 +145,8 @@ function init_cmake_mutable_options {
                         -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
                         -DXPU_SDK_URL=$BAIDU_XPU_SDK_URL \
                         -DXPU_SDK_ENV=$BAIDU_XPU_SDK_ENV \
+                        -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
+                        -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_IMAGINATION_NNA=$WITH_IMAGINATION_NNA \
                         -DIMAGINATION_NNA_SDK_ROOT=$IMAGINATION_NNA_SDK_ROOT \
@@ -234,6 +243,9 @@ function make_publish_so {
     if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
         build_dir=${build_dir}.baidu_xpu
     fi
+    if [ "${WITH_HUAWEI_ASCEND_NPU}" = "ON" ]; then
+        build_dir=${build_dir}.huawei_ascend_npu
+    fi
 
     if [ -d $build_dir ]; then
         rm -rf $build_dir
@@ -315,6 +327,11 @@ function print_usage {
     echo -e "|     --baidu_xpu_sdk_url: (baidu_xpu sdk download url) optional, default is 'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'     |"
     echo -e "|     --baidu_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                      |"
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|   arguments of huawei ascend npu library compiling:                                                                                                  |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_huawei_ascend_npu=ON                                                                                |"
+    echo -e "|     --with_huawei_ascend_npu: (OFF|ON); controls whether to compile lib for huawei ascend npu, default is OFF.                                       |"
+    echo -e "|     --huawei_ascend_npu_ddk_root: (path to huawei ascend npu ddk path). optional, default is '/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux'  |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -398,6 +415,15 @@ function main {
                 ;;
             --rockchip_npu_sdk_root=*)
                 ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on huawei ascend npu.
+            --with_huawei_ascend_npu=*)
+                HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --huawei_ascend_npu_ddk_root=*)
+                HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on imagination nna.
