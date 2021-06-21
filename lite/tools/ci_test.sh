@@ -53,7 +53,6 @@ function prepare_thirdparty() {
     else
         git submodule update --init --recursive
     fi
-    cd -
 }
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
