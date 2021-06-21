@@ -246,11 +246,11 @@ class RegisterLiteKernelParser(SyntaxParser):
                     self.cur_pos = start + 1
                     continue
                 # if with_extra == "OFF", extra kernels will not be parsed
-                if with_extra != "ON" and start in extra_command:
+                if with_extra.upper() != "ON"  and start in extra_command:
                     self.cur_pos = start + len(self.KEYWORD) -1
                     continue
                 # if enable_arm_fp16 == "OFF", arm_fp16 kernels will not be parsed
-                if enable_arm_fp16 != "ON" and start in arm_fp16_command:
+                if enable_arm_fp16.upper() != "ON" and start in arm_fp16_command:
                     self.cur_pos = start + len(self.KEYWORD) -1
                     continue
                 self.cur_pos = start
