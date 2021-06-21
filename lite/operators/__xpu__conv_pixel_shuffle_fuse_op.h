@@ -14,24 +14,34 @@
 
 #pragma once
 
-#include "lite/core/kernel.h"
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace operators {
 
-template <class T>
-class PixelShuffleCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class XPUConvPixelShuffleOp : public OpLite {
  public:
-  using param_t = operators::PixelShuffleParam;
+  XPUConvPixelShuffleOp() {}
 
-  virtual void Run();
+  explicit XPUConvPixelShuffleOp(const std::string &op_type)
+      : OpLite(op_type) {}
 
-  virtual ~PixelShuffleCompute() = default;
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "XPUConvPixelShuffle Op"; }
+
+ private:
+  mutable XPUConvPixelShuffleFuseParam param_;
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

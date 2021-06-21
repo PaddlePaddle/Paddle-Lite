@@ -110,3 +110,4 @@ USE_MIR_PASS(__xpu__link_previous_out_max_pass);
 USE_MIR_PASS(__xpu__squeeze_excitation_fuse_pass);
 USE_MIR_PASS(__xpu__concat_conv2d_fuse_pass);
 USE_MIR_PASS(__xpu__bigru_fuse_pass);
+USE_MIR_PASS(__xpu__conv_pixel_shuffle_fuse_pass);

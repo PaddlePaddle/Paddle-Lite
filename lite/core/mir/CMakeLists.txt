@@ -57,6 +57,7 @@ lite_cc_library(mir_passes
       fusion/__xpu__squeeze_excitation_fuse_pass.cc
       fusion/__xpu__graph_dedup_pass.cc
       fusion/__xpu__bigru_fuse_pass.cc
+      fusion/__xpu__conv_pixel_shuffle_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/scaleacts_fuse_pass.cc
