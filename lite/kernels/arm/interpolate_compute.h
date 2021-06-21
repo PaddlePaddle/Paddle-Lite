@@ -21,17 +21,16 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-class BilinearInterpCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype>
+class BilinearInterpCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   void Run() override;
 
   virtual ~BilinearInterpCompute() = default;
 };
 
-class NearestInterpCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype>
+class NearestInterpCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   void Run() override;
 
