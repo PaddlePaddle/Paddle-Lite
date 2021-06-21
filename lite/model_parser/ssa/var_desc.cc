@@ -29,7 +29,7 @@ std::weak_ptr<VarDesc> VarDesc::latest() {
   return desc;
 }
 
-std::weak_ptr<VarDesc> VarDesc::Read(const OpDesc& op_desc) {
+std::weak_ptr<VarDesc> VarDesc::Read(const OpDescBase& op_desc) {
   targets_.push_back(&op_desc);
   std::shared_ptr<VarDesc> desc;
   return latest();
@@ -44,7 +44,7 @@ std::weak_ptr<VarDesc> VarDesc::NewDescendant() {
   return desc;
 }
 
-std::weak_ptr<VarDesc> VarDesc::Written(const OpDesc& op_desc) {
+std::weak_ptr<VarDesc> VarDesc::Written(const OpDescBase& op_desc) {
   std::weak_ptr<VarDesc> desc;
   if (GetType() == VarDataType::LOD_TENSOR) {
     if (mutable_) {
@@ -84,6 +84,10 @@ bool operator<(const VarDesc& x, const VarDesc& y) {
 
 bool VarDescLT::operator()(const std::weak_ptr<VarDesc>& lhs,
                            const std::weak_ptr<VarDesc>& rhs) const {
+  std::cout << "here 1 !" << std::endl;
+  CHECK(!lhs.expired());
+  CHECK(!rhs.expired());
+  std::cout << "here 2 !" << std::endl;
   auto lptr = lhs.lock(), rptr = rhs.lock();
   if (!rptr) return false;
   if (!lptr) return true;

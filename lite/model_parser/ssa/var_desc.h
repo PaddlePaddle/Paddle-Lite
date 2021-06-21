@@ -27,7 +27,7 @@ namespace lite {
 namespace general {
 namespace ssa {
 
-class OpDesc;
+class OpDescBase;
 
 class VarDesc : public std::enable_shared_from_this<VarDesc> {
  public:
@@ -60,15 +60,15 @@ class VarDesc : public std::enable_shared_from_this<VarDesc> {
 
   std::weak_ptr<VarDesc> latest();
 
-  std::weak_ptr<VarDesc> Read(const OpDesc& op_desc);
+  std::weak_ptr<VarDesc> Read(const OpDescBase& op_desc);
 
   std::weak_ptr<VarDesc> NewDescendant();
 
-  std::weak_ptr<VarDesc> Written(const OpDesc& op_desc);
+  std::weak_ptr<VarDesc> Written(const OpDescBase& op_desc);
 
   std::vector<std::weak_ptr<VarDesc>> series() const;
 
-  const std::vector<OpDesc const*>& target_ops() const { return targets_; }
+  const std::vector<OpDescBase const*>& target_ops() const { return targets_; }
 
  protected:
   void SetCount(size_t count) { count_ = count; }
@@ -83,7 +83,7 @@ class VarDesc : public std::enable_shared_from_this<VarDesc> {
   int32_t block_idx_{kInvalidIdx};
   std::shared_ptr<MetaInfo> meta_;
   bool mutable_{true};
-  std::vector<OpDesc const*> targets_;
+  std::vector<OpDescBase const*> targets_;
   size_t count_{0};
 };
 

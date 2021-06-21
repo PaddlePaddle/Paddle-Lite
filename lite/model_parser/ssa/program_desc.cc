@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 
@@ -44,9 +45,10 @@ void PlainProgramDesc::InitBlock(const general::BlockDesc& current,
   }
   for (size_t i = 0; i < current.OpsSize(); ++i) {
     const auto* op_desc = current.GetOp<general::OpDesc>(i);
-    if (BlockParamInfo::instance().IsBlockOp(op_desc->Type())) {
-      int sub_block_idx{op_desc->GetAttr<int>(
-          BlockParamInfo::instance().Attr(op_desc->Type()))};
+    if (BlockOpGen::instance().IsBlockOp(op_desc->Type())) {
+      int sub_block_idx{op_desc->GetAttr<int>(BlockOpProtoRegistry::instance()
+                                                  .GetProto(op_desc->Type())
+                                                  ->AttrKey())};
       InitBlock(*(src_desc_->GetBlock<general::BlockDesc>(sub_block_idx)),
                 &current);
     }
@@ -66,14 +68,15 @@ void PlainProgramDesc::InsertOpOfBlock(const general::BlockDesc& block_desc) {
   for (size_t i = 0; i < block_desc.OpsSize(); ++i) {
     const auto* raw_op = block_desc.GetOp<general::OpDesc>(i);
     auto& dst_block = blocks_[block_idx];
-    if (BlockParamInfo::instance().IsBlockOp(raw_op->Type())) {
-      int sub_id{raw_op->GetAttr<int>(
-          BlockParamInfo::instance().Attr(raw_op->Type()))};
+    if (BlockOpGen::instance().IsBlockOp(raw_op->Type())) {
+      std::unique_ptr<BlockOpDesc> op{BlockOpGen::instance().NewOp(
+          *raw_op, *(dst_block->scope()), block_idx)};
+      auto sub_id = raw_op->GetAttr<int>(op->proto().lock()->AttrKey());
       const auto& raw_sub = *(src_desc_->GetBlock<general::BlockDesc>(sub_id));
       InsertOpOfBlock(raw_sub);
-      std::unique_ptr<BlockOpDesc> op{
-          new BlockOpDesc{*raw_op, *(dst_block->scope()), block_idx}};
       blocks_[sub_id]->SetBlockOpDesc(op.get());
+      blocks_[sub_id]->AddBlockInputs(
+          op->extra_inputs().cbegin(), op->extra_inputs().cend(), true);
       dst_block->AddOp(std::move(op));
     } else {
       std::unique_ptr<OpDescBase> op{
@@ -93,7 +96,15 @@ void PlainProgramDesc::InsertWriteBackOp(
            std::pair<std::weak_ptr<VarDesc>, std::weak_ptr<VarDesc>>,
            VarDescLT>
       clusters;
-  for (auto& input : block->block_inputs()) {
+  std::set<std::weak_ptr<VarDesc>, VarDescLT> block_all_inputs;
+
+  std::merge(block->block_inputs().cbegin(),
+             block->block_inputs().cend(),
+             block->block_extra_inputs().cbegin(),
+             block->block_extra_inputs().cend(),
+             std::inserter(block_all_inputs, block_all_inputs.begin()),
+             VarDescLT());
+  for (auto& input : block_all_inputs) {
     auto root = block->scope()->GetRootVarDesc(input.lock()->root_name());
     if (clusters.find(root) == clusters.end() ||
         *input.lock() < *clusters[root].first.lock()) {
@@ -115,10 +126,11 @@ void PlainProgramDesc::InsertWriteBackOp(
   for (auto& elem : clusters) {
     auto& pair = elem.second;
     if (!pair.first.expired() && !pair.second.expired()) {
+      pair.second.lock()->ResetBlockIdx(pair.first.lock()->block_idx());
       std::unique_ptr<OpDescBase> op{
           new WriteBackOp{pair.second, pair.first, block->idx()}};
       block->AddOp(std::move(op));
-      block->AddBlockInputs(&pair.first, &pair.first);
+      block->AddBlockInputs(&pair.first, &pair.first + 1);
     }
   }
 }

@@ -70,52 +70,10 @@ std::weak_ptr<VarDesc> OpDesc::AddOutput(const std::string& param,
   return var_desc;
 }
 
-BlockParamInfo::BlockParamInfo() {
-  op_block_param_ = {
-      {"while", {"block_idx", "kX", "kOutput"}},
-  };
-}
-
-BlockParamInfo& BlockParamInfo::instance() {
-  static BlockParamInfo instance_;
-  return instance_;
-}
-
-bool BlockParamInfo::IsBlockOp(const std::string& op_type) {
-  return op_block_param_.find(op_type) != op_block_param_.end();
-}
-const std::string& BlockParamInfo::Attr(const std::string& op_type) {
-  return op_block_param_.at(op_type).attr;
-}
-const std::string& BlockParamInfo::In(const std::string& op_type) {
-  return op_block_param_.at(op_type).input;
-}
-const std::string& BlockParamInfo::Out(const std::string& op_type) {
-  return op_block_param_.at(op_type).output;
-}
-
-BlockOpDesc::BlockOpDesc(const general::OpDesc& raw_desc,
-                         const RootVarScope& scope,
-                         int32_t block_idx)
-    : OpDescBase{raw_desc} {
-  block_in_param_ = BlockParamInfo::instance().In(raw_desc_->Type());
-  block_out_param_ = BlockParamInfo::instance().Out(raw_desc_->Type());
-  CHECK(BlockParamInfo::instance().IsBlockOp(raw_desc.Type()));
-  for (const auto& param : raw_desc.InputArgumentNames()) {
-    for (const auto& var : raw_desc.inputs().at(param)) {
-      if (param != block_in_param_) {
-        inputs_[param].emplace_back(scope.GetRootVarDesc(var));
-      }
-    }
-  }
-  for (const auto& param : raw_desc.OutputArgumentNames()) {
-    for (const auto& var : raw_desc.outputs().at(param)) {
-      if (param != block_out_param_) {
-        outputs_[param].emplace_back(scope.GetRootVarDesc(var));
-      }
-    }
-  }
-}
+constexpr char WriteBackOp::type_[];
+constexpr char WriteBackOp::input_deps_[];
+constexpr char WriteBackOp::input_src_[];
+constexpr char WriteBackOp::input_dst_[];
 
 WriteBackOp::WriteBackOp(const std::weak_ptr<VarDesc>& src,
                          const std::weak_ptr<VarDesc>& dst,

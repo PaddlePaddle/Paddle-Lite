@@ -64,8 +64,14 @@ class BlockDesc {
   BlockOpDesc* mutable_block_op() { return block_op_; }
 
   template <typename InputIt>
-  void AddBlockInputs(InputIt first, InputIt last) {
-    block_inputs_.insert(first, last);
+  void AddBlockInputs(InputIt first, InputIt last, bool extra = false) {
+    if (extra) {
+      std::cout << "size of block_extra_inputs_: " << block_extra_inputs_.size()
+                << std::endl;
+      block_extra_inputs_.insert(first, last);
+    } else {
+      block_inputs_.insert(first, last);
+    }
   }
 
   template <typename InputIt>
@@ -81,6 +87,10 @@ class BlockDesc {
     return block_outputs_;
   }
 
+  const std::set<std::weak_ptr<VarDesc>, VarDescLT>& block_extra_inputs() {
+    return block_extra_inputs_;
+  }
+
  private:
   BlockDesc* kid_{nullptr};
   BlockDesc* parent_{nullptr};
@@ -90,6 +100,7 @@ class BlockDesc {
   BlockOpDesc* block_op_{nullptr};
   std::set<std::weak_ptr<VarDesc>, VarDescLT> block_inputs_;
   std::set<std::weak_ptr<VarDesc>, VarDescLT> block_outputs_;
+  std::set<std::weak_ptr<VarDesc>, VarDescLT> block_extra_inputs_;
 };
 
 }  // namespace ssa

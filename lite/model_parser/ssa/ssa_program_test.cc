@@ -22,6 +22,8 @@
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/ssa/program_desc.h"
 
+#include "lite/model_parser/model_parser.h"
+
 namespace paddle {
 namespace lite {
 namespace general {
@@ -99,7 +101,7 @@ class ProgramDescGenerator {
         scope_vars.emplace(var);
       }
       if (!op.sub_block().empty()) {
-        op_desc->SetAttr("block_idx",
+        op_desc->SetAttr("sub_block",
                          InitBlock(op.sub_block(), in_set, out_set));
       }
     }
@@ -132,8 +134,8 @@ std::vector<Op> BlockOps_1() {
   std::vector<Op> ops;
   ops.emplace_back(Op{"Reshape_0", {{"X", {"tmp_0"}}}, {{"Y", {"tmp_0"}}}});
   ops.emplace_back(Op{"Operator_1", {{"X", {"tmp_0"}}}, {{"Y", {"tmp_1"}}}});
-  ops.emplace_back(
-      Op{"while", {{"kX", {"tmp_0"}}}, {{"kOutput", {"tmp_0"}}}, BlockOps_2()});
+  ops.emplace_back(Op{
+      "fake_block_op", {{"X", {"tmp_0"}}}, {{"Out", {"tmp_0"}}}, BlockOps_2()});
   ops.emplace_back(Op{"Operator_3", {{"X", {"tmp_0"}}}, {{"Y", {"tmp_2"}}}});
   ops.emplace_back(Op{"Operator_4", {{"X", {"tmp_2"}}}, {{"Y", {"tmp_2"}}}});
   ops.emplace_back(Op{"Operator_5",
@@ -145,9 +147,9 @@ std::vector<Op> BlockOps_1() {
 std::vector<Op> BlockOps_0() {
   std::vector<Op> ops;
   ops.emplace_back(Op{"Feed_0", {{"X", {"feed"}}}, {{"Y", {"tmp_0"}}}});
-  ops.emplace_back(Op{"while",
-                      {{"kX", {"tmp_0"}}},
-                      {{"kOutput", {"var_out", "tmp_0"}}},
+  ops.emplace_back(Op{"fake_block_op",
+                      {{"X", {"tmp_0"}}},
+                      {{"Out", {"var_out", "tmp_0"}}},
                       BlockOps_1()});
   ops.emplace_back(Op{"Fetch_2", {{"X", {"var_out"}}}, {{"Y", {"fetch"}}}});
   return ops;
@@ -173,6 +175,29 @@ TEST(SSAProgramTest, test) {
   ssa::PlainProgramDesc plain_program(cpp_desc);
   ssa::ProgramDescConverter converter(plain_program);
   PrintGeneralProgram(converter.general_program());
+}
+
+TEST(SSAProgramTest, test1) {
+  cpp::ProgramDesc cpp_desc;
+  lite::Scope scope;
+  lite::LoadModelPb(
+      "/shixiaowei02/Paddle-Lite-SSAGraph/while-model/inference_model",
+      "/shixiaowei02/Paddle-Lite-SSAGraph/while-model/inference_model/"
+      "lenet.pdmodel",
+      "/shixiaowei02/Paddle-Lite-SSAGraph/while-model/inference_model/"
+      "lenet.pdiparams",
+      &scope,
+      &cpp_desc,
+      true);
+  ssa::PlainProgramDesc plain_program(cpp_desc);
+  ssa::ProgramDescConverter converter(plain_program);
+  PrintGeneralProgram(converter.general_program());
+
+  lite::SaveModelPb(
+      "/shixiaowei02/Paddle-Lite-SSAGraph/while-model/inference_model/pb",
+      scope,
+      converter.general_program(),
+      true);
 }
 
 }  // namespace general

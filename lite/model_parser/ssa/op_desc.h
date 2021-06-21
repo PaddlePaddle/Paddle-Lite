@@ -18,9 +18,11 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "lite/model_parser/general/op_desc.h"
+#include "lite/model_parser/ssa/op_proto.h"
 #include "lite/model_parser/ssa/var_desc.h"
 
 namespace paddle {
@@ -83,40 +85,101 @@ class OpDesc : public OpDescBase {
                                    const std::weak_ptr<VarDesc>& desc);
 };
 
-class BlockParamInfo {
- public:
-  static BlockParamInfo& instance();
-  bool IsBlockOp(const std::string& op_type);
-  const std::string& Attr(const std::string& op_type);
-  const std::string& In(const std::string& op_type);
-  const std::string& Out(const std::string& op_type);
-
- private:
-  BlockParamInfo();
-  struct Param {
-    std::string attr;
-    std::string input;
-    std::string output;
-  };
-  std::map<std::string, Param> op_block_param_;
-};
-
 class BlockOpDesc : public OpDescBase {
  public:
   BlockOpDesc(const general::OpDesc& raw_desc,
-              const RootVarScope& scope,
-              int32_t block_idx);
+              const std::shared_ptr<BlockOpProto> proto)
+      : OpDescBase{raw_desc}, proto_{proto} {}
 
   void AddBlockInput(const std::weak_ptr<VarDesc>& var) {
-    inputs_[block_in_param_].push_back(var);
+    inputs_[proto_->InKey()].push_back(var);
   }
   void AddBlockOutput(const std::weak_ptr<VarDesc>& var) {
-    outputs_[block_out_param_].push_back(var);
+    outputs_[proto_->OutKey()].push_back(var);
+  }
+  const std::vector<std::weak_ptr<VarDesc>>& extra_inputs() const {
+    return extra_inputs_;
+  }
+  std::weak_ptr<BlockOpProto> proto() const { return proto_; }
+
+ protected:
+  std::shared_ptr<BlockOpProto> proto_;
+  std::vector<std::weak_ptr<VarDesc>> extra_inputs_;
+};
+
+class WhileOp : public BlockOpDesc {
+ public:
+  WhileOp(const general::OpDesc& raw_desc,
+          const RootVarScope& scope,
+          int32_t block_idx)
+      : BlockOpDesc{
+            raw_desc,
+            BlockOpProtoRegistry::instance().GetProto(raw_desc.Type())} {
+    for (const auto& var : raw_desc.Input(cond_key_)) {
+      auto var_desc = scope.GetRootVarDesc(var).lock()->Read(*this);
+      inputs_[cond_key_].emplace_back(var_desc);
+      extra_inputs_.emplace_back(var_desc);
+    }
   }
 
  private:
-  std::string block_in_param_;
-  std::string block_out_param_;
+  const std::string cond_key_{"Condition"};
+};
+
+class FakeBlockOp : public BlockOpDesc {
+ public:
+  FakeBlockOp(const general::OpDesc& raw_desc,
+              const RootVarScope& scope,
+              int32_t block_idx)
+      : BlockOpDesc{
+            raw_desc,
+            BlockOpProtoRegistry::instance().GetProto(raw_desc.Type())} {}
+};
+
+class BlockOpGen {
+ public:
+  BlockOpGen() {
+    Register("while",
+             [](const general::OpDesc& raw_desc,
+                const RootVarScope& scope,
+                int32_t block_idx) {
+               return std::unique_ptr<BlockOpDesc>(
+                   new WhileOp(raw_desc, scope, block_idx));
+             });
+    Register("fake_block_op",
+             [](const general::OpDesc& raw_desc,
+                const RootVarScope& scope,
+                int32_t block_idx) {
+               return std::unique_ptr<BlockOpDesc>(
+                   new FakeBlockOp(raw_desc, scope, block_idx));
+             });
+  }
+
+  bool IsBlockOp(const std::string& op_type) {
+    return ctors_.find(op_type) != ctors_.end();
+  }
+
+  static BlockOpGen& instance() {
+    static BlockOpGen instance_;
+    return instance_;
+  }
+
+  std::unique_ptr<BlockOpDesc> NewOp(const general::OpDesc& raw_desc,
+                                     const RootVarScope& scope,
+                                     int32_t block_idx) {
+    return ctors_.at(raw_desc.Type())(raw_desc, scope, block_idx);
+  }
+
+ private:
+  using func_t = std::function<std::unique_ptr<BlockOpDesc>(
+      const general::OpDesc&, const RootVarScope&, int32_t)>;
+
+ private:
+  BlockOpGen& Register(const std::string& op_type, func_t&& ctor) {
+    ctors_[op_type] = std::move(ctor);
+    return *this;
+  }
+  std::map<std::string, func_t> ctors_;
 };
 
 class WriteBackOp : public OpDescBase {
@@ -134,10 +197,10 @@ class WriteBackOp : public OpDescBase {
                 const std::weak_ptr<VarDesc>& desc,
                 int32_t block_idx);
 
-  static constexpr const char* type_{"__WriteBack__"};
-  static constexpr const char* input_deps_{"Dependencies"};
-  static constexpr const char* input_src_{"X"};
-  static constexpr const char* input_dst_{"Y"};
+  static constexpr char type_[]{"__WriteBack__"};
+  static constexpr char input_deps_[]{"Dependencies"};
+  static constexpr char input_src_[]{"X"};
+  static constexpr char input_dst_[]{"Y"};
   general::OpDesc fake_desc_;
 };
 
