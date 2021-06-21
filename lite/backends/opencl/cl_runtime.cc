@@ -843,6 +843,10 @@ void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
                               const std::string& name,
                               size_t lws_repeats) {
   auto_tune_ = tune_mode;
+  auto device_name = CLRuntime::Global()->device().getInfo<CL_DEVICE_NAME>();
+  if (device_name.find("Mali-T860") != std::string::npos) {
+    auto_tune_ = lite_api::CL_TUNE_NONE;
+  }
   lws_repeats_ = lws_repeats;
   if (tuned_path_name_.empty()) {
     tuned_path_name_.push_back(path);
