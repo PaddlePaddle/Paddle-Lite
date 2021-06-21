@@ -167,7 +167,7 @@ cpp::OpDesc ConvElementwiseTreeFuser::GenOpDesc(const key2nodes_t& matched) {
   }
   if (conv_with_act && op_desc.GetAttr<bool>("with_act")) {
     auto conv_act_type = op_desc.GetAttr<std::string>("act_type");
-    op_desc.setAttr("conv_has_act", true);
+    op_desc.setAttr("has_conv_act", true);
     op_desc.setAttr("conv_act_type", conv_act_type);
     if (conv_act_type == "relu6") {
       op_desc.setAttr("conv_relu6",
@@ -189,11 +189,11 @@ cpp::OpDesc ConvElementwiseTreeFuser::GenOpDesc(const key2nodes_t& matched) {
                  << conv_act_type;
     }
   } else {
-    op_desc.setAttr("conv_has_act", false);
+    op_desc.setAttr("has_conv_act", false);
   }
   auto elementwise_op_desc = *matched.at("elementwise")->stmt()->op_info();
   bool fuse_scale = elementwise_op_desc.HasAttr("fuse_scale");
-  bool ele_act_type = elementwise_op_desc.HasAttr("act_type");
+  bool elt_act_type = elementwise_op_desc.HasAttr("act_type");
   // alpha * ((input1 * w + b) + input2) + beta
   if (fuse_scale) {
     op_desc.SetAttr("alpha", elementwise_op_desc.GetAttr<float>("scale"));
@@ -202,12 +202,12 @@ cpp::OpDesc ConvElementwiseTreeFuser::GenOpDesc(const key2nodes_t& matched) {
     op_desc.SetAttr("alpha", 1.f);
     op_desc.SetAttr("beta", 0.f);
   }
-  if (ele_act_type) {
-    op_desc.SetAttr("elt_has_act", true);
+  if (elt_act_type) {
+    op_desc.SetAttr("has_elt_act", true);
     op_desc.SetAttr("elt_act_type",
                     elementwise_op_desc.GetAttr<std::string>("act_type"));
   } else {
-    op_desc.SetAttr("elt_has_act", false);
+    op_desc.SetAttr("has_elt_act", false);
   }
   op_desc.SetOutput("Output", {matched.at("elementwise_output")->arg()->name});
   return op_desc;

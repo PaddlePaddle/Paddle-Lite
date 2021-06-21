@@ -743,6 +743,33 @@ struct FusionElementwiseActivationParam : public ElementwiseParam {
   std::string act_type;
 };
 
+struct FusionConvElementParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* filter{};
+  lite::Tensor* bias{nullptr};
+  const lite::Tensor* y{};
+  lite::Tensor* output{};
+  bool has_conv_act{false};
+  bool has_elt_act{false};
+  ConvParam conv_param;
+  FusionElementwiseActivationParam elt_param;
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+}
+
 struct FusionElementwiseActivationGradParam : public ElementwiseGradParam {
   std::string act_type;
 };

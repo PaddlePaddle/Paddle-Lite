@@ -85,4 +85,4 @@ void ConvElementwiseTreeFusePass::Apply(
 
 REGISTER_MIR_PASS(lite_conv_elementwise_tree_fuse_pass,
                   paddle::lite::mir::ConvElementwiseTreeFusePass)
-    .BindTargets({TARGET(kOpenCL), TARGET(kARM)});
+    .BindTargets({TARGET(kARM)});  // TARGET(kOpenCL)
