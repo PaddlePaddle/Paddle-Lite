@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#ifdef LITE_WITH_FPGA
 #pragma once
 #include <memory>
 #include <string>
@@ -89,3 +89,4 @@ class FpgaConvOpLite : public ConvOpLite {
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+#endif

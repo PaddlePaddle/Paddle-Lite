@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifdef LITE_WITH_FPGA
 #include "lite/operators/__fpga__conv_op.h"
 #include <algorithm>
 #include <vector>
@@ -42,3 +43,4 @@ bool FpgaConvOpLite::InferShapeImpl() const {
 }  // namespace paddle
 
 REGISTER_LITE_OP(fpga_conv2d, paddle::lite::operators::FpgaConvOpLite);
+#endif
