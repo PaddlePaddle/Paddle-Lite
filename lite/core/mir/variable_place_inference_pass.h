@@ -243,7 +243,7 @@ class VariablePlaceInferencePass : public DebugPass {
       // Preprocessing for some special kernels
       if (InferQuantizedConcatOutputPrecision(node)) continue;
       if (InferQuantizedSubgraphOutputPrecision(node)) continue;
-      if (InferXpuIoCopyOutputPrecision(node)) continue;
+      if (InferXPUIoCopyOutputPrecision(node)) continue;
       if (std::find(skiped_ops.begin(), skiped_ops.end(), op_type) ==
               skiped_ops.end() &&
           op_info->HasInput("X") && op_info->HasOutput("Out") &&
@@ -394,7 +394,7 @@ class VariablePlaceInferencePass : public DebugPass {
   // Only for the io_copy kernel whose output argument precision is defined as
   // PRECISION(kAny), infer the precision of the output data variables based on
   // the input argument precision.
-  bool InferXpuIoCopyOutputPrecision(Node* op_node) {
+  bool InferXPUIoCopyOutputPrecision(Node* op_node) {
     const auto* inst = op_node->stmt();
     if (inst->op_info()->Type() != "io_copy") return false;
     if (inst->place().target != TARGET(kXPU)) return false;
