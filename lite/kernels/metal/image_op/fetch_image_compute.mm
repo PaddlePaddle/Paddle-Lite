@@ -31,7 +31,6 @@ void FetchImageCompute::PrepareForRun() {
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
-
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.input->data<MetalHalf, MetalImage>();
@@ -51,13 +50,16 @@ void FetchImageCompute::PrepareForRun() {
     TargetWrapperMetal::MemsetSync(data, 0, size);
     // output: MTLBuffer（ps：output layout is NCHW）
     output_buffer_ = make_shared<MetalBuffer>(metal_context_, output_dims, size);
-
+    //
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    [backend add_fetch_kernel_ptr:this];
+    
     setup_without_mps();
 }
 
 void FetchImageCompute::Run() {
+    auto pipline = pipline_;
     auto inTexture = input_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -66,7 +68,10 @@ void FetchImageCompute::Run() {
     [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(1)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:inTexture];
-    [backend waitUntilCompleted];
+    [backend commit];
+}
+
+void FetchImageCompute::fetch_data_from_gpu() {
     // fetch wait completed
     const auto& param = this->Param<param_t>();
     auto* fetch_list = param.fetch_list;
@@ -99,7 +104,7 @@ void FetchImageCompute::setup_without_mps() {
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 }  // namespace metal

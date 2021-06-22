@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,26 +13,38 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
+
+#include <vector>
 #include "lite/core/kernel.h"
-#include "lite/operators/generate_proposals_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class GenerateProposalsCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename TM, typename TW, PrecisionType PType>
+class XPUConvPixelShuffleCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::GenerateProposalsParam;
+  using param_t = operators::XPUConvPixelShuffleFuseParam;
+
+  void PrepareForRun() override;
 
   void Run() override;
 
-  virtual ~GenerateProposalsCompute() = default;
+ private:
+  XPUScratchPadGuard quant_filter_guard_0_;
+  XPUScratchPadGuard quant_filter_guard_1_;
+  TW* quant_filter_0_;
+  TW* quant_filter_1_;
+  XPUScratchPadGuard filter_max_guard_0_;
+  XPUScratchPadGuard filter_max_guard_1_;
+  XPUScratchPadGuard mid_max;
+  float* filter_max_0_;
+  float* filter_max_1_;
+  float* mid_max_addr;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

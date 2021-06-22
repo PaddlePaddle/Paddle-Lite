@@ -95,27 +95,27 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
   return true;
 }
 
-int Device::device_create_count_ = 0;
+int Device::device_reference_count_ = 0;
 void Device::RegisterDeviceResource() {
   std::lock_guard<std::mutex> lock(device_mutex_);
-  if (device_create_count_ == 0) {
-      // ACL runtime init => can only be called once in one process
-      ACL_CALL(aclInit(NULL));
+  if (device_reference_count_ == 0) {
+    // ACL runtime init => can only be called once in one process
+    ACL_CALL(aclInit(NULL));
 
-      // ATC builder init => can only be called once in one process
-      std::map<ge::AscendString, ge::AscendString> global_options;
-      global_options.insert(
-          std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
-      ATC_CALL(ge::aclgrphBuildInitialize(global_options));
+    // ATC builder init => can only be called once in one process
+    std::map<ge::AscendString, ge::AscendString> global_options;
+    global_options.insert(
+        std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
+    ATC_CALL(ge::aclgrphBuildInitialize(global_options));
   }
-  device_create_count_++;
+  device_reference_count_++;
 }
 
 void Device::UnRegisterDeviceResource() {
   // TODO(shentanyue)
   // std::lock_guard<std::mutex> lock(device_mutex_);
-  // device_create_count_--;
-  // if (device_create_count_ == 0) {
+  // device_reference_count_--;
+  // if (device_reference_count_ == 0) {
   //   // ATC builder finalize => can only be called once in one process
   //   ge::aclgrphBuildFinalize();
   //   // ACL runtime finalize => can only be called once in one process

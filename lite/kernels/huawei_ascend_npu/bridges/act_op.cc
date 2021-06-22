@@ -93,7 +93,9 @@ int ActConverter<ge::op::LeakyRelu>(void* ctx, OpLite* op, KernelBase* kernel) {
 }
 
 template <>
-int ActConverter<ge::op::HardSigmoid>(void* ctx, OpLite* op, KernelBase* kernel) {
+int ActConverter<ge::op::HardSigmoid>(void* ctx,
+                                      OpLite* op,
+                                      KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -166,4 +168,5 @@ REGISTER_SUBGRAPH_BRIDGE(
 REGISTER_SUBGRAPH_BRIDGE(
     hard_sigmoid,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::HardSigmoid>);
+    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<
+        ge::op::HardSigmoid>);

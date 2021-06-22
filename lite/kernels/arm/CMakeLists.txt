@@ -66,7 +66,6 @@ add_kernel(reduce_prod_compute_arm ARM extra SRCS reduce_prod_compute.cc DEPS ${
 add_kernel(reduce_sum_compute_arm ARM extra SRCS reduce_sum_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(split_lod_tensor_compute_arm ARM extra SRCS split_lod_tensor_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(merge_lod_tensor_compute_arm ARM extra SRCS merge_lod_tensor_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(generate_proposals_compute_arm ARM extra SRCS generate_proposals_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(generate_proposals_v2_compute_arm ARM extra SRCS generate_proposals_v2_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(roi_align_compute_arm ARM extra SRCS roi_align_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(box_clip_compute_arm ARM extra SRCS box_clip_compute.cc DEPS ${lite_kernel_deps} math_arm)

@@ -67,8 +67,8 @@ void SoftmaxImageCompute::Run() {
 #pragma mark - SELF
 
 void SoftmaxImageCompute::run_without_mps() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -117,7 +117,7 @@ void SoftmaxImageCompute::setup_without_mps() {
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 
     SoftmaxMetalParam2 metal_param{
         (int)input_buffer_->pad_to_four_dim_[0],
@@ -173,6 +173,7 @@ SoftmaxImageCompute::~SoftmaxImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

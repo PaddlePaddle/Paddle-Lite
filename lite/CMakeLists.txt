@@ -17,6 +17,7 @@ message(STATUS "LITE_WITH_MLU:\t${LITE_WITH_MLU}")
 message(STATUS "LITE_WITH_HUAWEI_ASCEND_NPU:\t${LITE_WITH_HUAWEI_ASCEND_NPU}")
 message(STATUS "LITE_WITH_BM:\t${LITE_WITH_BM}")
 message(STATUS "LITE_WITH_IMAGINATION_NNA:\t${LITE_WITH_IMAGINATION_NNA}")
+message(STATUS "LITE_WITH_NNADAPTER:\t${LITE_WITH_NNADAPTER}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 message(STATUS "LITE_WITH_CV:\t${LITE_WITH_CV}")
 
@@ -141,6 +142,9 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (LITE_WITH_INTEL_FPGA)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.intel_fpga")
     endif(LITE_WITH_INTEL_FPGA)
+    if (LITE_WITH_NNADAPTER)
+        set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.nnadapter")
+    endif(LITE_WITH_NNADAPTER)
 else()
     set(INFER_LITE_PUBLISH_ROOT "${CMAKE_BINARY_DIR}/inference_lite_lib")
 endif()
@@ -613,4 +617,23 @@ if (LITE_WITH_MLU)
     )
     add_dependencies(publish_inference_mlu_cxx_demos paddle_full_api_shared)
     add_dependencies(publish_inference publish_inference_mlu_cxx_demos)
+endif()
+
+if(LITE_WITH_NNADAPTER)
+  # Build the NNAdapter library and copy it to the publish directory
+  add_custom_target(publish_inference_nnadapter_library
+      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/libnnadapter.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      DEPENDS nnadapter
+      )
+  add_dependencies(publish_inference publish_inference_nnadapter_library)
+  # Build the NNAdapter drivers for all of the specified devices and copy it to the publish directory
+  foreach(driver_name ${nnadapter_driver})
+    add_custom_target(publish_inference_nnadapter_driver_${driver_name}
+      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/driver/*/lib${driver_name}.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      DEPENDS ${driver_name}
+      )
+    add_dependencies(publish_inference publish_inference_nnadapter_driver_${driver_name})
+  endforeach()
 endif()

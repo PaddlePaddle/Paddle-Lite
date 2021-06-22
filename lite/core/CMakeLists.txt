@@ -36,12 +36,14 @@ if (LITE_WITH_ARM)
   lite_cc_library (context SRCS context.cc
     DEPS tensor any device_info target_wrapper
     CL_DEPS cl_context
+    NNADAPTER_DEPS nnadapter_wrapper
   )
 else ()
   lite_cc_library (context SRCS context.cc
     DEPS tensor any device_info target_wrapper eigen3
     CL_DEPS cl_context
     CUDA_DEPS cuda_context
+    NNADAPTER_DEPS nnadapter_wrapper
   )
 endif ()
 
@@ -82,51 +84,52 @@ configure_file (version.h.in version.h)
 #  OUTPUT opencl_kernels_source.cc # not a real path to the output to force it execute every time.
 #  )
 # A trick to generate the paddle_use_kernels.h
-add_custom_command (
-  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
-  ${kernels_src_list}
-  ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
-  "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
-  ${LITE_BUILD_TAILOR}
-  ${LITE_BUILD_EXTRA}
-  ${LITE_WITH_ARM82_FP16}
-  OUTPUT kernels.h # not a real path to the output to force it execute every time.
-)
+execute_process(
+    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
+    ${kernels_src_list}
+    ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
+    "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
+    ${LITE_BUILD_TAILOR}
+    ${LITE_BUILD_EXTRA}
+    ${LITE_WITH_ARM82_FP16}
+    RESULT_VARIABLE result)
 # A trick to generate the paddle_use_ops.h
-add_custom_command (
-  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
-  ${ops_src_list}
-  ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
-  "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
-  ${LITE_BUILD_TAILOR}
-  OUTPUT ops.h # not a real path to the output to force it execute every time.
-  )
-# generate fake kernels for memory_optimize_tool
+execute_process(
+    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
+    ${ops_src_list}
+    ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
+    "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
+    ${LITE_BUILD_TAILOR}
+    RESULT_VARIABLE result
+    )
 
 #-------------------------------opt----------------------------------------------------------------
 # tricks to create headfiles for opt
-add_custom_command (
-  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
-  ${kernels_src_list}
-  ${fake_kernels_src_list}
-  ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
-  ${CMAKE_BINARY_DIR}/kernel_src_map.h
-  OUTPUT all_kernel_faked.cc # not a real path to the output to force it execute every time.
-)
-add_custom_target (op_list_h DEPENDS ops.h)
-add_custom_target (kernel_list_h DEPENDS kernels.h)
-add_custom_target (all_kernel_faked_cc DEPENDS all_kernel_faked.cc)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/all_kernel_faked_dir)
+execute_process(
+    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
+    ${kernels_src_list}
+    ${fake_kernels_src_list}
+    ${CMAKE_BINARY_DIR}/all_kernel_faked_dir
+    ${CMAKE_BINARY_DIR}/all_kernel_faked.h
+    ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
+    ${CMAKE_BINARY_DIR}/kernel_src_map.h
+    RESULT_VARIABLE result)
+
+file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
+if (LITE_ON_MODEL_OPTIMIZE_TOOL)
+  add_library(all_kernel_faked OBJECT ${all_kernel_faked_src})
+  add_dependencies(all_kernel_faked op kernel type_system)
+endif()
 
 # create headfile to restore ops info sorted by suppported platforms
-add_custom_command (
-  COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
-  ${kernels_src_list}
-  ${fake_kernels_src_list}
-  ${ops_src_list}
-  ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
-  OUTPUT supported_kernel_op_info.h # not a real path to the output to force it execute every time.
-)
-add_custom_target (supported_kernel_op_info_h DEPENDS supported_kernel_op_info.h)
+execute_process(
+    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
+    ${kernels_src_list}
+    ${fake_kernels_src_list}
+    ${ops_src_list}
+    ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
+    RESULT_VARIABLE result)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 lite_cc_library (kernel SRCS kernel.cc
   DEPS context type_system target_wrapper any op_params tensor
@@ -136,8 +139,6 @@ lite_cc_library (op SRCS op_lite.cc
   DEPS scope op_registry target_wrapper kernel cpp_op_desc tensor utils
 )
 
-add_dependencies (kernel kernel_list_h)
-add_dependencies (op op_list_h)
 
 
 lite_cc_library (type_system SRCS type_system.cc DEPS tensor target_wrapper)
@@ -159,7 +160,7 @@ if (LITE_WITH_XCODE)
   add_subdirectory (profile)
 endif ()
 
-if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU OR LITE_WITH_IMAGINATION_NNA)
+if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU OR LITE_WITH_IMAGINATION_NNA OR LITE_WITH_NNADAPTER)
   lite_cc_library(subgraph_bridge_registry
     SRCS subgraph_bridge_registry.cc
     DEPS op

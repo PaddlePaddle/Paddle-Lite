@@ -59,7 +59,7 @@ Paddle Lite提供了C++、Java、Python三种API，并且提供了相应API的�
 	- 各个硬件平台的 Kernel 在代码层和执行层互不干扰，用户不仅可以自由插拔任何硬件，还支持任意系统可见硬件之间的[混合调度](https://paddle-lite.readthedocs.io/zh/latest/introduction/tech_highlights.html#id7)。
 - **轻量级部署**：
 	- Paddle Lite在设计上对图优化模块和执行引擎实现了良好的解耦拆分，移动端可以直接部署执行阶段，无任何第三方依赖。
-	- 包含完整的80个 op+85个 Kernel 的动态库，对于ARMV7只有800K，ARMV8下为1.3M，并可以通过[裁剪预测](https://paddle-lite.readthedocs.io/zh/latest/user_guides/library_tailoring.html)库进一步减小预测库文件大小。
+	- 包含完整的80个 op+85个 Kernel 的动态库，对于ARMV7只有800K，ARMV8下为1.3M，并可以通过[裁剪预测](https://paddle-lite.readthedocs.io/zh/latest/source_compile/library_tailoring.html)库进一步减小预测库文件大小。
 - **高性能：**
 	- 极致的 ARM CPU 性能优化：针对不同微架构特点实现kernel的定制，最大发挥计算性能，在主流模型上展现出领先的速度优势。
 	- 支持 [PaddleSlim模型压缩工具](https://github.com/PaddlePaddle/PaddleSlim)：支持量化训练、离线量化等多种量化方式，最优可在不损失精度的前提下进一步提升模型推理性能。性能数据请参考 [benchmark](https://paddlepaddle.github.io/Paddle-Lite/develop/benchmark/)。

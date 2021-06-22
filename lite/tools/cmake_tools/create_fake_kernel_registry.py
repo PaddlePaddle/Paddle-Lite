@@ -21,17 +21,28 @@ Usage: to generate `all_kernel_faked.cc`, `all_kernel_faked.cc` is used for
 
 from __future__ import print_function
 import sys
+import os
 import logging
 from ast import RegisterLiteKernelParser
 from utils import *
 
-if len(sys.argv) != 5:
-    print("Error: create_fake_kernel_registry.py requires three inputs!")
+if len(sys.argv) != 7:
+    print("Error: create_fake_kernel_registry.py requires 6 inputs!")
     exit(1)
 kernels_list_path = sys.argv[1]
 faked_kernels_list_path = sys.argv[2]
-dest_path = sys.argv[3]
-kernelmap_path = sys.argv[4]
+src_dest_path = sys.argv[3]
+hdr_dest_path = sys.argv[4]
+dest_path = sys.argv[5]
+kernelmap_path = sys.argv[6]
+
+out_hdr_lines = [
+    '#pragma once',
+    '#include "lite/core/op_registry.h"',
+    '#include "lite/core/kernel.h"',
+    '#include "lite/core/type_system.h"',
+    '',
+]
 
 out_lines = [
     '#pragma once',
@@ -89,13 +100,15 @@ def parse_fake_kernels_from_path(list_path):
     with open(list_path) as f:
         paths = set([path for path in f])
         for path in paths:
-            print('path', path)
             with open(path.strip()) as g:
                 c = g.read()
                 kernel_parser = RegisterLiteKernelParser(c)
                 kernel_parser.parse("ON", "ON")
-
                 for k in kernel_parser.kernels:
+                    out_src_lines = [
+                        '#include "all_kernel_faked.h"',
+                    ]
+                    out_src_lines.append("")
                     kernel_name = "{op_type}_{target}_{precision}_{data_layout}_{alias}_class".format(
                         op_type=k.op_type,
                         target=k.target,
@@ -114,6 +127,8 @@ def parse_fake_kernels_from_path(list_path):
 
                     out_lines.append(kernel_define)
                     out_lines.append("")
+                    out_hdr_lines.append(kernel_define)
+                    out_hdr_lines.append("")
 
 
                     key = "REGISTER_LITE_KERNEL(%s, %s, %s, %s, %s, %s)" % (
@@ -125,25 +140,33 @@ def parse_fake_kernels_from_path(list_path):
                         k.alias
                     )
                     out_lines.append(key)
+                    out_src_lines.append(key)
 
                     for input in k.inputs:
                         io = '    .BindInput("%s", {%s})' % (input.name, input.type)
                         out_lines.append(io)
+                        out_src_lines.append(io)
                     for output in k.outputs:
                         io = '    .BindOutput("%s", {%s})' % (output.name, output.type)
                         out_lines.append(io)
+                        out_src_lines.append(io)
                     for op_versions in k.op_versions:
                         io = '    .BindPaddleOpVersion("%s", %s)' % (op_versions.name, op_versions.version)
                         out_lines.append(io)
+                        out_src_lines.append(io)
                     out_lines.append("    .Finalize();")
                     out_lines.append("")
                     out_lines.append(gen_use_kernel_statement(k.op_type, k.target, k.precision, k.data_layout, k.alias))
+                    out_src_lines.append("    .Finalize();")
+                    out_src_lines.append("")
+                    out_src_lines.append(gen_use_kernel_statement(k.op_type, k.target, k.precision, k.data_layout, k.alias))
+                    with open(os.path.join(src_dest_path, '%s.cc' %(kernel_name)), 'w') as file:
+                        file.write('\n'.join(out_src_lines))
 
 def parse_sppported_kernels_from_path(list_path):
     with open(list_path) as f:
         paths = set([path for path in f])
         for path in paths:
-            print('path', path)
             with open(path.strip()) as g:
                 c = g.read()
                 kernel_parser = RegisterLiteKernelParser(c)
@@ -167,12 +190,16 @@ parse_fake_kernels_from_path(faked_kernels_list_path)
 parse_sppported_kernels_from_path(faked_kernels_list_path)
 parse_sppported_kernels_from_path(kernels_list_path)
 
-with open(dest_path, 'w') as f:
+with open(hdr_dest_path, 'w') as f1:
+    logging.info("write kernel list to %s" % hdr_dest_path)
+    f1.write('\n'.join(out_hdr_lines))
+
+with open(dest_path, 'w') as f2:
     logging.info("write kernel list to %s" % dest_path)
-    f.write('\n'.join(out_lines))
+    f2.write('\n'.join(out_lines))
 
 with open(kernelmap_path, 'w') as fd:
-    logging.info("write kernel map to %s" % dest_path)
+    logging.info("write kernel map to %s" % kernelmap_path)
     kernel_src_map_lines.append('  {"  ", "  "}')
     kernel_src_map_lines.append('};')
     fd.write('\n'.join(kernel_src_map_lines))

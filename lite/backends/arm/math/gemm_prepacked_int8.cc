@@ -4907,7 +4907,7 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
       Dtype cout4[NBLOCK_INT8_DOT];
       Dtype cout5[NBLOCK_INT8_DOT];
       Dtype cout6[NBLOCK_INT8_DOT];
-      Dtype cout7[NBLOCK_INT8_DOT];
+      Dtype cout7[NBLOCK_INT8_DOT + 16];
 
       Dtype* c_ptr0 = C + y * N + x0;
       Dtype* c_ptr1 = c_ptr0 + N;

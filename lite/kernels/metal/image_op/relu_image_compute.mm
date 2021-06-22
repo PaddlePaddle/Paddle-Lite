@@ -40,12 +40,12 @@ void ReluImageCompute::PrepareForRun() {
     function_name_ = "relu";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 void ReluImageCompute::Run() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -54,6 +54,10 @@ void ReluImageCompute::Run() {
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+ReluImageCompute::~ReluImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 void Relu6ImageCompute::PrepareForRun() {
@@ -73,12 +77,12 @@ void Relu6ImageCompute::PrepareForRun() {
     function_name_ = "relu6";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 void Relu6ImageCompute::Run() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -88,6 +92,10 @@ void Relu6ImageCompute::Run() {
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+Relu6ImageCompute::~Relu6ImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 void LeakyReluImageCompute::PrepareForRun() {
@@ -107,12 +115,12 @@ void LeakyReluImageCompute::PrepareForRun() {
     function_name_ = "leaky_relu";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 void LeakyReluImageCompute::Run() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -122,6 +130,10 @@ void LeakyReluImageCompute::Run() {
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+LeakyReluImageCompute::~LeakyReluImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

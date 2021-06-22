@@ -46,7 +46,8 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Shape Const node
-  if (op_info->HasInput("ShapeTensor") && !op_info->Input("ShapeTensor").empty()) {
+  if (op_info->HasInput("ShapeTensor") &&
+      !op_info->Input("ShapeTensor").empty()) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] not support \"Shape\" from more than "
                     "one Tensor.";
     return FAILED;
@@ -72,7 +73,6 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else if (op_info->HasAttr("shape")) {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
     auto out_shape = lite::operators::ValidateShape(shape, x_dims);
-    //out_shape = CvtShape(out_shape);
     actual_shape_node = graph->Add<int64_t>(
         out_name + "/shape",
         std::vector<int64_t>(out_shape.begin(), out_shape.end()));
@@ -88,9 +88,6 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   INPUT_UPDATE(reshape_op, x, x_node);
   INPUT_UPDATE(reshape_op, shape, actual_shape_node);
   OUTPUT_UPDATE(reshape_op, y, reshape_node);
-  VLOG(3) << "input_name: " << x_name;
-  VLOG(3) << "x_dims= " << x_dims.repr();
-  VLOG(3) << "output_name: " << out_name;
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

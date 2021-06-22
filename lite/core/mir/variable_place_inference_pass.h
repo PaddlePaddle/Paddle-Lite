@@ -240,6 +240,9 @@ class VariablePlaceInferencePass : public DebugPass {
       const auto* op_info = inst.op_info();
       const auto& op_type = op_info->Type();
       auto& kernel = inst.picked_kernel();
+      // Preprocessing for some special kernels
+      if (InferQuantizedConcatOutputPrecision(node)) continue;
+      if (InferQuantizedSubgraphOutputPrecision(node)) continue;
       if (std::find(skiped_ops.begin(), skiped_ops.end(), op_type) ==
               skiped_ops.end() &&
           op_info->HasInput("X") && op_info->HasOutput("Out") &&
@@ -296,6 +299,95 @@ class VariablePlaceInferencePass : public DebugPass {
         }
       }
     }
+  }
+
+  // Only for the concat kernel whose output argument precision is defined as
+  // PRECISION(kAny), force to set the output precision to PRECISION(kFloat) if
+  // the precision of any input variable is PRECISION(kInt8) with the
+  // quantizaiton parameters
+  bool InferQuantizedConcatOutputPrecision(Node* op_node) {
+    bool skip = false;
+    auto& inst = op_node->AsStmt();
+    const auto* op_info = inst.op_info();
+    const auto& op_type = op_info->Type();
+    auto& kernel = inst.picked_kernel();
+    if (op_type != "concat") return false;
+    const auto* decl_output_type = kernel.GetOutputDeclType("Out");
+    if (decl_output_type->precision() != PRECISION(kAny)) return skip;
+    for (auto* in_var_node : op_node->inlinks) {
+      CHECK(in_var_node->IsArg());
+      CHECK(in_var_node->AsArg().type);
+      auto in_var_name = in_var_node->AsArg().name;
+      auto in_var_type = in_var_node->AsArg().type;
+      if (!op_info->HasInputScale(in_var_name)) continue;
+      if (in_var_type->precision() != PRECISION(kInt8)) continue;
+      // If the precision of any input variable is PRECISION(kInt8) with
+      // quantization parameters, then force to set the output precision to
+      // PRECISION(kFloat)
+      CHECK_EQ(op_node->outlinks.size(), 1);
+      auto out_var_node = op_node->outlinks.front();
+      CHECK(out_var_node->IsArg());
+      CHECK(out_var_node->AsArg().type);
+      auto out_var_name = out_var_node->AsArg().name;
+      auto& out_var_type = out_var_node->AsArg().type;
+      if (in_var_type->IsTensor()) {
+        out_var_type = LiteType::GetTensorTy(
+            out_var_type->target(), PRECISION(kFloat), out_var_type->layout());
+      } else if (in_var_type->IsTensorList()) {
+        out_var_type = LiteType::GetTensorListTy(
+            out_var_type->target(), PRECISION(kFloat), out_var_type->layout());
+      }
+      VLOG(4) << "Update " << out_var_name << " to " << *out_var_type;
+      skip = true;
+      break;
+    }
+    return skip;
+  }
+
+  // Only for the subgraph kernel whose output argument precision is defined as
+  // PRECISION(kAny), infer the precision of the output data variables based on
+  // the quantizaiton parameters
+  bool InferQuantizedSubgraphOutputPrecision(Node* op_node) {
+    bool skip = false;
+    auto& inst = op_node->AsStmt();
+    const auto* op_info = inst.op_info();
+    const auto& op_type = op_info->Type();
+    auto& kernel = inst.picked_kernel();
+    if (op_type != "subgraph") return skip;
+    if (kernel.target() != TARGET(kNNAdapter)) return skip;
+    const auto* decl_output_type = kernel.GetOutputDeclType("Outputs");
+    if (decl_output_type->precision() != PRECISION(kAny)) return skip;
+    auto output_data_names =
+        op_info->GetAttr<std::vector<std::string>>("output_data_names");
+    for (auto* out_var_node : op_node->outlinks) {
+      CHECK(out_var_node->IsArg());
+      auto out_var_name = out_var_node->AsArg().name;
+      // Only infer the precision of the output data variables which have the
+      // quantization parameters
+      if (!op_info->HasOutputScale(out_var_name)) continue;
+      if (std::find(output_data_names.begin(),
+                    output_data_names.end(),
+                    out_var_name) == output_data_names.end())
+        continue;
+      CHECK(out_var_node->AsArg().type);
+      auto& out_var_type = out_var_node->AsArg().type;
+      auto out_var_target = out_var_type->target();
+      auto out_var_precision = out_var_type->precision();
+      // Skip if its precision is already set
+      if (out_var_precision == PRECISION(kInt8)) continue;
+      auto out_var_layout = out_var_type->layout();
+      // Set the precision of the output variable to PRECISION(kInt8)
+      if (out_var_type->IsTensor()) {
+        out_var_type = LiteType::GetTensorTy(
+            out_var_target, PRECISION(kInt8), out_var_layout);
+      } else if (out_var_type->IsTensorList()) {
+        out_var_type = LiteType::GetTensorListTy(
+            out_var_target, PRECISION(kInt8), out_var_layout);
+      }
+      VLOG(4) << "Update " << out_var_name << " to " << *out_var_type;
+      skip = true;
+    }
+    return skip;
   }
 
  private:

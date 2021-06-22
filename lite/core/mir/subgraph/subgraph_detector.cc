@@ -30,6 +30,10 @@ namespace lite {
 namespace mir {
 
 std::string SubgraphVisualizer::operator()() {
+  // Print all of operators for the custom configuration for partitioning a
+  // graph into some subgraphs
+  std::ostringstream os;
+  // Visualize the subgraphs with different colors
   Dot dot;
   const std::vector<std::string> subgraph_colors{
       "red",          "green",          "cyan",           "bisque3",
@@ -58,6 +62,7 @@ std::string SubgraphVisualizer::operator()() {
       continue;
     }
     auto op_type = node->AsStmt().op_type();
+    os << op_type << ":";
     if (!exists_ops.count(op_type)) {
       exists_ops[op_type] = 0;
     } else {
@@ -82,7 +87,12 @@ std::string SubgraphVisualizer::operator()() {
         exists_args.insert(arg_name);
       }
       dot.AddEdge(arg_name, op_name, {});
+      os << arg_name;
+      if (in_node != node->inlinks.back()) {
+        os << ",";
+      }
     }
+    os << ":";
     for (auto &out_node : node->outlinks) {
       auto arg_name = out_node->AsArg().name;
       if (!exists_args.count(arg_name)) {
@@ -90,11 +100,18 @@ std::string SubgraphVisualizer::operator()() {
         exists_args.insert(arg_name);
       }
       dot.AddEdge(op_name, arg_name, {});
+      os << arg_name;
+      if (out_node != node->outlinks.back()) {
+        os << ",";
+      }
     }
+    os << std::endl;
   }
 
   auto res = dot.Build();
-  std::cout << "subgraphs: " << subgraphs_.size() << "\n" << res << std::endl;
+  std::cout << "subgraph clusters: " << subgraphs_.size() << std::endl
+            << res << std::endl;
+  std::cout << "subgraph operators: " << std::endl << os.str() << std::endl;
   return res;
 }
 
@@ -484,23 +501,33 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   // Export the scale values of the input/output var nodes of the inner op nodes
   // only for type_precision_cast_pass.
   for (auto &var_node : input_var_nodes) {
-    auto var_node_name = var_node->arg()->name;
-    auto any_op_node = var_node->outlinks.front();
-    CHECK(any_op_node->IsStmt());
-    auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasInputScale(var_node_name)) {
-      subgraph_op->mutable_op_info()->SetInputScale(
-          var_node_name, any_inst.op_info()->GetInputScale(var_node_name));
+    auto var_name = var_node->arg()->name;
+    for (auto &op_node : var_node->outlinks) {
+      CHECK(op_node->IsStmt());
+      if (std::find(subgraph_nodes.begin(), subgraph_nodes.end(), op_node) ==
+          subgraph_nodes.end())
+        continue;
+      auto &inst = op_node->AsStmt();
+      if (inst.op_info()->HasInputScale(var_name)) {
+        subgraph_op->mutable_op_info()->SetInputScale(
+            var_name, inst.op_info()->GetInputScale(var_name));
+        break;
+      }
     }
   }
   for (auto &var_node : output_var_nodes) {
-    auto var_node_name = var_node->arg()->name;
-    auto any_op_node = var_node->inlinks.front();
-    CHECK(any_op_node->IsStmt());
-    auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasOutputScale(var_node_name)) {
-      subgraph_op->mutable_op_info()->SetOutputScale(
-          var_node_name, any_inst.op_info()->GetOutputScale(var_node_name));
+    auto var_name = var_node->arg()->name;
+    for (auto &op_node : var_node->inlinks) {
+      CHECK(op_node->IsStmt());
+      if (std::find(subgraph_nodes.begin(), subgraph_nodes.end(), op_node) ==
+          subgraph_nodes.end())
+        continue;
+      auto &inst = op_node->AsStmt();
+      if (inst.op_info()->HasOutputScale(var_name)) {
+        subgraph_op->mutable_op_info()->SetOutputScale(
+            var_name, inst.op_info()->GetOutputScale(var_name));
+        break;
+      }
     }
   }
 

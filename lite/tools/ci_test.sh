@@ -572,7 +572,11 @@ function huawei_kirin_npu_build_and_test() {
 function huawei_ascend_npu_test_target() {
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     export GLOG_v=$UNIT_TEST_LOG_LEVEL
+<<<<<<< HEAD
     local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+=======
+    local unit_test_check_items=(${unit_test_check_list//,/ })
+>>>>>>> 91f5496817531d8535e3b71d1f6feef8846a920e
     for test_name in $(cat $TESTS_FILE); do
         local is_matched=0
         for unit_test_check_item in ${unit_test_check_items[@]}; do
@@ -592,16 +596,28 @@ function huawei_ascend_npu_test_target() {
         fi
         ctest -V -R ^$test_name$
     done
+<<<<<<< HEAD
+=======
+    cd - >/dev/null
+>>>>>>> 91f5496817531d8535e3b71d1f6feef8846a920e
 }
 
 function huawei_ascend_npu_build_target() {
     cur_dir=$(pwd)
+<<<<<<< HEAD
     BUILD_DIRECTORY=$cur_dir/build.lite.huawei_ascend_npu.test
 
     rm -rf $BUILD_DIRECTORY
     mkdir -p $BUILD_DIRECTORY
     cd $BUILD_DIRECTORY
     prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
+=======
+    build_dir=$cur_dir/build.lite.huawei_ascend_npu.test
+    rm -rf build_dir
+    mkdir -p $build_dir
+    cd $build_dir
+    prepare_workspace
+>>>>>>> 91f5496817531d8535e3b71d1f6feef8846a920e
 
     cmake .. \
         -DWITH_LITE=ON \
@@ -984,10 +1000,13 @@ function main() {
             huawei_ascend_npu_build_and_test
             shift
             ;;
+<<<<<<< HEAD
         123)
             huawei_ascend_npu_test_target
             shift
             ;;
+=======
+>>>>>>> 91f5496817531d8535e3b71d1f6feef8846a920e
         rockchip_npu_build_and_test)
             rockchip_npu_build_and_test
             shift

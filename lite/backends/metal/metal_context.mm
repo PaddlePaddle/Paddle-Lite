@@ -51,6 +51,7 @@ void MetalContext::CreateCommandBuffer(RuntimeProgram* program) {
 
 void MetalContext::WaitAllCompleted() {
     [(__bridge MetalContextImp*)mContext waitAllCompleted];
+    [(__bridge MetalContextImp*)mContext fetch_data_from_gpu];
 }
 
 const void* MetalContext::GetDefaultDevice() {

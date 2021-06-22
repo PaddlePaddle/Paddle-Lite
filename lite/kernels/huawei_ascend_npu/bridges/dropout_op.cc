@@ -51,15 +51,29 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    x_node = graph->Add(x_name, *x, CvtShape(x_dims));
+    x_node = graph->Add(x_name, *x);
   }
 
+<<<<<<< HEAD
   // Dropout node
   auto dropout_node = graph->Add<ge::op::Dropout>(out_name);
   auto dropout_op = dropout_node->data<ge::op::Dropout>();
   dropout_op->set_input_x(*x_node->data());
   dropout_op->set_attr_dropout_ratio(scale);
+=======
+  auto input_scale_node =
+      graph->Add<float>(x_name + "/scale", scale, x_dims.Vectorize());
+
+  auto dropout_node = graph->Add<ge::op::Scale>(out_name);
+  auto dropout_op = dropout_node->data<ge::op::Scale>();
+  dropout_op->set_input_x(*x_node->data());
+  dropout_op->set_input_scale(*input_scale_node->data());
+  dropout_op->set_attr_axis(0);
+  dropout_op->set_attr_num_axes(-1);
+  dropout_op->set_attr_scale_from_blob(true);
+>>>>>>> 91f5496817531d8535e3b71d1f6feef8846a920e
   INPUT_UPDATE(dropout_op, x, x_node);
+  INPUT_UPDATE(dropout_op, scale, input_scale_node);
   OUTPUT_UPDATE(dropout_op, y, dropout_node);
 
   return REBUILD_WHEN_SHAPE_CHANGED;

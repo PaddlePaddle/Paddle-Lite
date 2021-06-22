@@ -38,23 +38,23 @@ namespace huawei_ascend_npu {
 #define TENSOR_INPUT_UPDATE(op, attr, node, format)              \
   ge::TensorDesc _##op##_input_desc_##attr(                      \
       ge::Shape(), format, CvtPrecisionType(node->precision())); \
-  _##op##_input_desc_##attr.SetName(node->name().c_str());               \
+  _##op##_input_desc_##attr.SetName(node->name().c_str());       \
   op->update_input_desc_##attr(_##op##_input_desc_##attr);
 #define TENSOR_OUTPUT_UPDATE(op, attr, node, format)             \
   ge::TensorDesc _##op##_output_desc_##attr(                     \
       ge::Shape(), format, CvtPrecisionType(node->precision())); \
-  _##op##_output_desc_##attr.SetName(node->name().c_str());              \
+  _##op##_output_desc_##attr.SetName(node->name().c_str());      \
   op->update_output_desc_##attr(_##op##_output_desc_##attr);
-#define TENSOR_DYNAMIC_INPUT_UPDATE(op, attr, idx, node, format) \
-  ge::TensorDesc _##op##_input_desc_##attr##_##idx(              \
-      ge::Shape(), format, CvtPrecisionType(node->precision())); \
-  _##op##_input_desc_##attr##_##idx.SetName(node->name().c_str());       \
+#define TENSOR_DYNAMIC_INPUT_UPDATE(op, attr, idx, node, format)   \
+  ge::TensorDesc _##op##_input_desc_##attr##_##idx(                \
+      ge::Shape(), format, CvtPrecisionType(node->precision()));   \
+  _##op##_input_desc_##attr##_##idx.SetName(node->name().c_str()); \
   op->update_dynamic_input_desc_##attr(idx, _##op##_input_desc_##attr##_##idx);
-#define TENSOR_DYNAMIC_OUTPUT_UPDATE(op, attr, idx, node, format) \
-  ge::TensorDesc _##op##_output_desc_##attr##_##idx(              \
-      ge::Shape(), format, CvtPrecisionType(node->precision()));  \
-  _##op##_output_desc_##attr##_##idx.SetName(node->name().c_str());       \
-  op->update_dynamic_output_desc_##attr(idx,                      \
+#define TENSOR_DYNAMIC_OUTPUT_UPDATE(op, attr, idx, node, format)   \
+  ge::TensorDesc _##op##_output_desc_##attr##_##idx(                \
+      ge::Shape(), format, CvtPrecisionType(node->precision()));    \
+  _##op##_output_desc_##attr##_##idx.SetName(node->name().c_str()); \
+  op->update_dynamic_output_desc_##attr(idx,                        \
                                         _##op##_output_desc_##attr##_##idx);
 
 // Type/tensor converters for converting Paddle type/tensor to HiAI type/tensor

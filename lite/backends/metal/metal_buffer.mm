@@ -158,6 +158,7 @@ void MetalBuffer::CopyFromNCHW(const float* src) {
                 int padNCount =
                     static_cast<int>((((dim_[0] + 3) / 4) * 4 * paddedC) * dim_[2] * dim_[3]);
                 void* convertedPointer = TargetWrapperMetal::Malloc(padNCount * precision_size_);
+                TargetWrapperMetal::MemsetSync(convertedPointer, 0, padNCount * precision_size_);
                 // pad 0.0f
                 if (precision_ == METAL_PRECISION_TYPE::FLOAT) {
                     auto data_src = (float*)rawdata_;
@@ -211,6 +212,7 @@ void MetalBuffer::CopyFromNCHW(const float* src) {
                 int padNCount =
                     static_cast<int>((((dim_[0] + 3) / 4) * 4 * paddedC) * dim_[1] * dim_[2]);
                 void* convertedPointer = TargetWrapperMetal::Malloc(padNCount * precision_size_);
+                TargetWrapperMetal::MemsetSync(convertedPointer, 0, padNCount * precision_size_);
                 // pad 0.0f
                 if (precision_ == METAL_PRECISION_TYPE::FLOAT) {
                     auto data_src = (float*)rawdata_;

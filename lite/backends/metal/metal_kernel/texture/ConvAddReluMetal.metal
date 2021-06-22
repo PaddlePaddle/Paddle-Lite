@@ -927,7 +927,7 @@ kernel void conv_3x3_winograd(texture2d_array<half, access::sample> inTexture
 }
 
 kernel void depthwise_conv_3x3_winograd(
-    texture2d_array<half, access::read> inTexture [[texture(0)]],
+    texture2d_array<half, access::sample> inTexture [[texture(0)]],
     texture2d_array<half, access::sample> biasTexture [[texture(1)]],
     texture2d_array<half, access::write> outTexture [[texture(2)]],
     constant MetalConvParam &param [[buffer(0)]],
@@ -946,26 +946,27 @@ kernel void depthwise_conv_3x3_winograd(
 
   int hasComputedC = 4 * tc;
 
+  constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
   half4 inputs[16];
-  inputs[0] = inTexture.read(uint2(tx - 1, ty - 1), tc);
-  inputs[1] = inTexture.read(uint2(tx, ty - 1), tc);
-  inputs[2] = inTexture.read(uint2(tx + 1, ty - 1), tc);
-  inputs[3] = inTexture.read(uint2(tx + 2, ty - 1), tc);
+  inputs[0] = inTexture.sample(sample, float2(tx - 1, ty - 1), tc);
+  inputs[1] = inTexture.sample(sample, float2(tx, ty - 1), tc);
+  inputs[2] = inTexture.sample(sample, float2(tx + 1, ty - 1), tc);
+  inputs[3] = inTexture.sample(sample, float2(tx + 2, ty - 1), tc);
 
-  inputs[4] = inTexture.read(uint2(tx - 1, ty), tc);
-  inputs[5] = inTexture.read(uint2(tx, ty), tc);
-  inputs[6] = inTexture.read(uint2(tx + 1, ty), tc);
-  inputs[7] = inTexture.read(uint2(tx + 2, ty), tc);
+  inputs[4] = inTexture.sample(sample, float2(tx - 1, ty), tc);
+  inputs[5] = inTexture.sample(sample, float2(tx, ty), tc);
+  inputs[6] = inTexture.sample(sample, float2(tx + 1, ty), tc);
+  inputs[7] = inTexture.sample(sample, float2(tx + 2, ty), tc);
 
-  inputs[8] = inTexture.read(uint2(tx - 1, ty + 1), tc);
-  inputs[9] = inTexture.read(uint2(tx, ty + 1), tc);
-  inputs[10] = inTexture.read(uint2(tx + 1, ty + 1), tc);
-  inputs[11] = inTexture.read(uint2(tx + 2, ty + 1), tc);
+  inputs[8] = inTexture.sample(sample, float2(tx - 1, ty + 1), tc);
+  inputs[9] = inTexture.sample(sample, float2(tx, ty + 1), tc);
+  inputs[10] = inTexture.sample(sample, float2(tx + 1, ty + 1), tc);
+  inputs[11] = inTexture.sample(sample, float2(tx + 2, ty + 1), tc);
 
-  inputs[12] = inTexture.read(uint2(tx - 1, ty + 2), tc);
-  inputs[13] = inTexture.read(uint2(tx, ty + 2), tc);
-  inputs[14] = inTexture.read(uint2(tx + 1, ty + 2), tc);
-  inputs[15] = inTexture.read(uint2(tx + 2, ty + 2), tc);
+  inputs[12] = inTexture.sample(sample, float2(tx - 1, ty + 2), tc);
+  inputs[13] = inTexture.sample(sample, float2(tx, ty + 2), tc);
+  inputs[14] = inTexture.sample(sample, float2(tx + 1, ty + 2), tc);
+  inputs[15] = inTexture.sample(sample, float2(tx + 2, ty + 2), tc);
 
   int weightTo = 4 * tc;
   half4 res[4];

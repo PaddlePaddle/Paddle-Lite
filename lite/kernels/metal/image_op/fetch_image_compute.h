@@ -42,8 +42,10 @@ class FetchImageCompute
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("fetch", output_buffer_.get());
+        MetalDebug::SaveOutput(function_name_, output_buffer_.get());
     };
+
+    void fetch_data_from_gpu();
 
    private:
     void setup_without_mps();
@@ -52,7 +54,7 @@ class FetchImageCompute
     std::shared_ptr<MetalBuffer> output_buffer_;
     std::shared_ptr<MetalBuffer> params_buffer_;
 
-    void* pipline_;
+    id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
 };

@@ -39,8 +39,8 @@ void ReshapeImageCompute::PrepareForRun() {
 }
 
 void ReshapeImageCompute::Run() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -78,7 +78,8 @@ void ReshapeImageCompute::setup_without_mps() {
         ot = {0, 1, 2, 3};
     }
 
-    ReshapeMetalParam reshape_params{{idm[0], idm[1], idm[2], idm[3]},
+    ReshapeMetalParam reshape_params{
+        {idm[0], idm[1], idm[2], idm[3]},
         {it[0], it[1], it[2], it[3]},
         {odm[0], odm[1], odm[2], odm[3]},
         {ot[0], ot[1], ot[2], ot[3]}};
@@ -91,14 +92,11 @@ void ReshapeImageCompute::setup_without_mps() {
 #endif
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 ReshapeImageCompute::~ReshapeImageCompute() {
-    if (pipline_) {
-        CFRelease(pipline_);
-        pipline_ = nullptr;
-    }
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal
