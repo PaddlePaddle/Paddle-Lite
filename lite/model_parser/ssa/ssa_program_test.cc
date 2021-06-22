@@ -177,29 +177,6 @@ TEST(SSAProgramTest, test) {
   PrintGeneralProgram(converter.general_program());
 }
 
-TEST(SSAProgramTest, test1) {
-  cpp::ProgramDesc cpp_desc;
-  lite::Scope scope;
-  lite::LoadModelPb(
-      "/shixiaowei02/Paddle-Lite-SSAGraph/while-model/inference_model",
-      "/shixiaowei02/Paddle-Lite-SSAGraph/while-model/inference_model/"
-      "lenet.pdmodel",
-      "/shixiaowei02/Paddle-Lite-SSAGraph/while-model/inference_model/"
-      "lenet.pdiparams",
-      &scope,
-      &cpp_desc,
-      true);
-  ssa::PlainProgramDesc plain_program(cpp_desc);
-  ssa::ProgramDescConverter converter(plain_program);
-  PrintGeneralProgram(converter.general_program());
-
-  lite::SaveModelPb(
-      "/shixiaowei02/Paddle-Lite-SSAGraph/while-model/inference_model/pb",
-      scope,
-      converter.general_program(),
-      true);
-}
-
 }  // namespace general
 }  // namespace lite
 }  // namespace paddle
