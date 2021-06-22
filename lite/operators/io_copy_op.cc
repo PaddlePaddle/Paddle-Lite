@@ -60,6 +60,9 @@ bool IoCopyOp::AttachImpl(const cpp::OpDesc &opdesc,
   if (opdesc.HasInput("InputArray")) {
     param_.x_array = scope->FindTensorList(opdesc.Input("InputArray").front());
   }
+  if (opdesc.HasInput("WriteBack")) {
+    param_.y = scope->FindMutableTensor(opdesc.Input("WriteBack").front());
+  }
   if (opdesc.HasOutput("Out")) {
     param_.y = scope->FindMutableTensor(opdesc.Output("Out").front());
   }
