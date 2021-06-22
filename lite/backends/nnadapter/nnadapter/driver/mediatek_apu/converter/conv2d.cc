@@ -112,8 +112,11 @@ int Program::ConvertConv2D(hal::Operation* operation) {
                                          stride_height_index};
   std::vector<uint32_t> output_indexes = {output_index};
   if (is_depthwise_mode) {
-    int32_t multiplier =
-        filter_operand->type.dimensions[3] / input_channel_size;
+    int32_t multiplier = filter_operand->type.dimensions[3] / group;
+    NNADAPTER_CHECK_EQ(multiplier, 1)
+        << "MediaTek APU only supports multiplier=1, but recieved multiplier="
+        << multiplier << " which C_out=" << filter_operand->type.dimensions[3]
+        << " and group=" << group;
     auto multiplier_index = AddInt32ConstantOperand(multiplier);
     input_indexes.push_back(multiplier_index);
     input_indexes.push_back(fuse_code_index);

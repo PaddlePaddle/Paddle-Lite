@@ -17,7 +17,9 @@
 #include "core/hal/types.h"
 
 namespace nnadapter {
+namespace mediatek_apu {
 
-void ConvertDataLayoutNCHWToNHWC(hal::Model *model);
+void ResolveOpLiminations(hal::Model* model);
 
+}  // namespace mediatek_apu
 }  // namespace nnadapter

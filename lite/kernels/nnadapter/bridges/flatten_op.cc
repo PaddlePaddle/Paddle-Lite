@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/reshape_op.h"
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
+#include "lite/operators/reshape_op.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -39,6 +39,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+  auto x_rank = x_dims.size();
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -46,6 +47,10 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
+  auto axis = op_info->GetAttr<int>("axis");
+  if (axis < 0) {
+    axis += x_rank;
+  }
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -61,29 +66,16 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Shape operand
-  // Read shape from "ShapeTensor"(input), or "Shape"(input), or "shape"(attr)
-  NNAdapterOperand* shape_operand = nullptr;
-  if (HasInput(op_info, scope, "ShapeTensor")) {
-    LOG(WARNING) << "Not support ShapeTensor!";
-    return FAILED;
-  } else if (HasInput(op_info, scope, "Shape")) {
-    auto shape_name = op_info->Input("Shape").front();
-    if (converter->HasOperand(shape_name)) {
-      shape_operand = converter->GetOperand(shape_name);
+  std::vector<int32_t> shape_data(2, 1);
+  for (size_t i = 0; i < x_dims.size(); i++) {
+    if (i < axis) {
+      shape_data[0] *= x_dims[i];
     } else {
-      auto shape = scope->FindMutableTensor(shape_name);
-      CHECK(shape->persistable());
-      auto shape_dims = shape->dims();
-      auto shape_data = shape->mutable_data<int>();
-      shape_operand = converter->AddInt32ConstantOperand(
-          shape_data, DDim({shape_dims.production()}));
+      shape_data[1] *= x_dims[i];
     }
-  } else {
-    std::vector<int> shape_data = op_info->GetAttr<std::vector<int>>("shape");
-    shape_operand = converter->AddInt32ConstantOperand(
-        &shape_data[0], DDim({shape_data.size()}));
   }
-  CHECK(shape_operand);
+  NNAdapterOperand* shape_operand = converter->AddInt32ConstantOperand(
+      &shape_data[0], DDim({static_cast<int64_t>(shape_data.size())}));
 
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
@@ -108,9 +100,9 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(reshape,
+REGISTER_SUBGRAPH_BRIDGE(flatten,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ReshapeConverter);
-REGISTER_SUBGRAPH_BRIDGE(reshape2,
+                         paddle::lite::subgraph::nnadapter::FlattenConverter);
+REGISTER_SUBGRAPH_BRIDGE(flatten2,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ReshapeConverter);
+                         paddle::lite::subgraph::nnadapter::FlattenConverter);

@@ -18,6 +18,6 @@
 
 namespace nnadapter {
 
-void ConvertModelFromSymmToAsymmQuantization(hal::Model *model);
+void ConvertQuantizationSymmToAsymm(hal::Model *model);
 
 }  // namespace nnadapter
