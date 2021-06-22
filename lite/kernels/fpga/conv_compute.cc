@@ -97,6 +97,7 @@ void ConvCompute::PrepareForRun() {
   } else {
     zynqmp::ConvParam& conv_param = conv_pe_.param();
     // pass jump write info to pe params
+    auto stride_info_ = param.stride_info_;
     if (stride_info_.wd_enable_) {
       conv_param.fuse_idx = stride_info_.fuse_idx_;
       conv_param.wd_enable = stride_info_.wd_enable_;
