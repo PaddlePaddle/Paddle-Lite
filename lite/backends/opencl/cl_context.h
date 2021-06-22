@@ -60,18 +60,28 @@ class CLContext {
                    const cl::NDRange &global,
                    const cl::NDRange &local,
                    cl::Event *event = nullptr);
-
+  struct CompareByRange {
+    bool operator()(const cl::NDRange p1, cl::NDRange p2) const {
+      std::vector<int> a = {static_cast<int>(p1[0]),
+                            static_cast<int>(p1[1]),
+                            static_cast<int>(p1[2])};
+      std::vector<int> b = {static_cast<int>(p2[0]),
+                            static_cast<int>(p2[1]),
+                            static_cast<int>(p2[2])};
+      return (a > b);
+    }
+  };
   cl::NDRange DefaultGlobalWorkSize(const CLImage &image);
 
-  cl::NDRange DefaultLocalWorkSize(
+  std::set<cl::NDRange, CompareByRange> DefaultLocalWorkSize(
       const cl::NDRange &global_work_size,
       register size_t max_work_size,
       const int &divitor = 2,
       const bool &tune_reverse = false,
       const size_t &user_defined_max_work_size = 0);
 
-  std::set<cl::NDRange> GenerateLocalWorkSizes(cl::NDRange global_work_size,
-                                               size_t max_work_size);
+  std::set<cl::NDRange, CompareByRange> GenerateLocalWorkSizes(
+      cl::NDRange global_work_size, size_t max_work_size);
   bool IsArmMali();
 
  private:
