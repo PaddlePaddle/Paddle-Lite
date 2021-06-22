@@ -35,7 +35,7 @@ void ConvElementwiseTreeCompute<PRECISION(kFloat),
   } else {
     elt_impl_ = new ElementwiseAddCompute<float, PRECISION(kFloat)>;
   }
-  
+  // malloc space
   tmp_output_.set_precision(PRECISION(kFloat));
   auto out_dims = param.output->dims();
   tmp_output_.Resize(out_dims);

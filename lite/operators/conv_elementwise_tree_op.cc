@@ -78,6 +78,7 @@ bool ConvElementwiseTreeOpLite::InferShapeImpl() const {
       return false;
     }
   }
+
   // Set output dims
   param_.output->Resize(lite::DDim(output_shape));
   // share LoD

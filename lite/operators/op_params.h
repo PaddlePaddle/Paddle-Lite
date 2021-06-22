@@ -761,6 +761,7 @@ struct FusionConvElementParam : ParamBase {
     }
     return input_tensor_ptrs_cache_.get();
   }
+
   // get a vector of output tensors
   std::vector<Tensor*>* output_tensor_ptrs() override {
     if (!output_tensor_ptrs_cache_) {

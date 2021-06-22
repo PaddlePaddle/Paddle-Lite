@@ -132,6 +132,7 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
   auto conv_op_old = matched.at("conv")->stmt()->op();
   auto* scope = conv_op_old->scope();
   auto& valid_places = conv_op_old->valid_places();
+
   conv_op_new->Attach(op_desc, scope);
 
   auto* new_op_node = graph->GraphCreateInstructNode(conv_op_new, valid_places);

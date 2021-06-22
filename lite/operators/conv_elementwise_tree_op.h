@@ -148,7 +148,6 @@ class ConvElementwiseTreeOpLite : public OpLite {
     param_.conv_param.paddings = std::make_shared<std::vector<int>>(paddings);
 
     // elementwise param
-    // param_.elt_param.X = param_.x;
     param_.elt_param.Y = param_.y;
     param_.elt_param.Out = param_.output;
     param_.elt_param.axis = op_desc.GetAttr<int>("axis");
