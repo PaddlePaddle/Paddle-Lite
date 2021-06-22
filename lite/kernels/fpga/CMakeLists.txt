@@ -42,7 +42,6 @@ add_kernel(yolo_box_compute_fpga FPGA basic SRCS yolo_box_compute.cc DEPS ${fpga
 add_kernel(batch_norm_compute_fpga FPGA basic SRCS batch_norm_compute.cc DEPS ${fpga_deps})
 add_kernel(shape_compute_fpga FPGA basic SRCS shape_compute.cc DEPS ${fpga_deps})
 add_kernel(slice_compute_fpga FPGA basic SRCS slice_compute.cc DEPS ${fpga_deps})
-add_kernel(density_prior_box_compute_fpga FPGA basic SRCS density_prior_box_compute.cc DEPS ${fpga_deps} math_arm)
 
 
 add_kernel(unsqueeze_compute_fpga FPGA basic SRCS unsqueeze_compute.cc DEPS ${fpga_deps})
