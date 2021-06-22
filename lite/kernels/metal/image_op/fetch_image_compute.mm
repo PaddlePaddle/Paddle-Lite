@@ -48,9 +48,8 @@ void FetchImageCompute::PrepareForRun() {
     output_tensor->Resize(output_dims);
     auto data = output_tensor->template mutable_data<float>(TARGET(kHost), size);
     TargetWrapperMetal::MemsetSync(data, 0, size);
-    // output: MTLBuffer（ps：output layout is NCHW）
+    // output: MTLBuffer(ps: output layout is NCHW)
     output_buffer_ = make_shared<MetalBuffer>(metal_context_, output_dims, size);
-    //
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     [backend add_fetch_kernel_ptr:this];
     
