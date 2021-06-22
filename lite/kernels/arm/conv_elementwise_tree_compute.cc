@@ -16,7 +16,7 @@
 #include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/kernels/arm/conv_compute.h"
+#include "lite/kernels/arm/conv_gemmlike.h"
 #include "lite/kernels/arm/elementwise_compute.h"
 
 namespace paddle {
@@ -28,21 +28,38 @@ void ConvElementwiseTreeCompute<PRECISION(kFloat),
                                 PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  conv_impl_ = new ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>;
-  elt_impl_ = new ElementwiseAddCompute<float, PRECISION(kFloat)>;
-  Tensor* tmp_output;
+  auto has_elt_act = param.has_elt_act;
+  conv_impl_ = new GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>;
+  if (has_elt_act) {
+    elt_impl_ = new ElementwiseAddActivationCompute<float, PRECISION(kFloat)>;
+  } else {
+    elt_impl_ = new ElementwiseAddCompute<float, PRECISION(kFloat)>;
+  }
+  
+  tmp_output_.set_precision(PRECISION(kFloat));
   auto out_dims = param.output->dims();
-  tmp_output->Resize(out_dims);
-  param.conv_param.output = tmp_output;
-  param.elt_param.X = tmp_output;
-  auto& conv_param = param.conv_param;
+  tmp_output_.Resize(out_dims);
+  param.conv_param.output = &tmp_output_;
+  param.elt_param.X = &tmp_output_;
+  operators::ConvParam& conv_param = param.conv_param;
   auto& elt_param = param.elt_param;
 
   conv_impl_->SetContext(std::move(this->ctx_));
   conv_impl_->SetParam(conv_param);
   conv_impl_->PrepareForRun();
-  elt_impl_->SetContext(std::move(this->ctx_));
-  elt_impl_->SetParam(elt_param);
+  if (has_elt_act) {
+    elt_impl_->SetParam(elt_param);
+  } else {
+    operators::ElementwiseParam elt_param1;
+    elt_param1.X = elt_param.X;
+    elt_param1.Y = elt_param.Y;
+    elt_param1.Out = elt_param.Out;
+    elt_param1.axis = elt_param.axis;
+    elt_param1.fuse_scale = elt_param.fuse_scale;
+    elt_param1.alpha = elt_param.alpha;
+    elt_param1.bias = elt_param.bias;
+    elt_impl_->SetParam(elt_param1);
+  }
   elt_impl_->PrepareForRun();
   is_first_epoch_ = false;
 }

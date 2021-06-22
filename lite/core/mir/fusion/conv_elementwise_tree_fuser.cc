@@ -186,6 +186,7 @@ cpp::OpDesc ConvElementwiseTreeFuser::GenOpDesc(const key2nodes_t& matched) {
   auto elementwise_op_desc = *matched.at("elementwise")->stmt()->op_info();
   bool fuse_scale = elementwise_op_desc.HasAttr("fuse_scale");
   bool elt_act_type = elementwise_op_desc.HasAttr("act_type");
+  op_desc.SetAttr("axis", -1);
   // alpha * ((input1 * w + b) + input2) + beta
   if (fuse_scale) {
     op_desc.SetAttr("alpha", elementwise_op_desc.GetAttr<float>("scale"));

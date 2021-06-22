@@ -34,7 +34,7 @@ bool ConvElementwiseTreeOpLite::CheckShape() const {
 
   CHECK_EQ_OR_FALSE(x_dims.size(), y_dims.size());
   CHECK_EQ_OR_FALSE(x_dims.size(), filter_dims.size());
-  CHECK_OR_FALSE(x_dims.size() - param_.strides.size() == 2U);
+  CHECK_OR_FALSE(x_dims.size() - param_.conv_param.strides.size() == 2U);
   CHECK_EQ_OR_FALSE(filter_dims.size(), 4UL);
 
   return true;
@@ -67,7 +67,7 @@ bool ConvElementwiseTreeOpLite::InferShapeImpl() const {
                                           dilations[i],
                                           paddings[i * 2],
                                           paddings[i * 2 + 1],
-                                          param_.strides[i]));
+                                          param_.conv_param.strides[i]));
   }
 
   // check output_shape equal input_shape

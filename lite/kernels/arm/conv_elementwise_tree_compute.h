@@ -63,6 +63,7 @@ class ConvElementwiseTreeCompute : public KernelLite<TARGET(kARM), Ptype> {
   using param_t = operators::FusionConvElementParam;
   KernelLite<TARGET(kARM), Ptype>* conv_impl_{nullptr};
   KernelLite<TARGET(kARM), Ptype>* elt_impl_{nullptr};
+  Tensor tmp_output_;
 };
 
 }  // namespace arm

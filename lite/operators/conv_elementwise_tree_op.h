@@ -135,7 +135,7 @@ class ConvElementwiseTreeOpLite : public OpLite {
 
     // 2-pad to 4-pad
     if (paddings.size() == 2L) {
-      for (size_t i = 0; i < param_.strides.size(); ++i) {
+      for (size_t i = 0; i < param_.conv_param.strides.size(); ++i) {
         int copy_pad = *(paddings.begin() + 2 * i);
         paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
       }
@@ -151,16 +151,16 @@ class ConvElementwiseTreeOpLite : public OpLite {
     // param_.elt_param.X = param_.x;
     param_.elt_param.Y = param_.y;
     param_.elt_param.Out = param_.output;
-    param_.elt_param.axis = opdesc.GetAttr<int>("axis");
-    if (opdesc.HasAttr("fuse_scale")) {
-      param_.elt_param.fuse_scale = opdesc.GetAttr<bool>("fuse_scale");
-      param_.elt_param.alpha = opdesc.GetAttr<float>("alpha");
-      param_.elt_param.beta = opdesc.GetAttr<float>("bias");
+    param_.elt_param.axis = op_desc.GetAttr<int>("axis");
+    if (op_desc.HasAttr("fuse_scale")) {
+      param_.elt_param.fuse_scale = op_desc.GetAttr<bool>("fuse_scale");
+      param_.elt_param.alpha = op_desc.GetAttr<float>("alpha");
+      param_.elt_param.bias = op_desc.GetAttr<float>("bias");
     }
     if (op_desc.HasAttr("has_elt_act") &&
         op_desc.GetAttr<bool>("has_elt_act")) {
       param_.has_elt_act = true;
-      param_.elt_param.act_type = opdesc.GetAttr<std::string>("elt_act_type");
+      param_.elt_param.act_type = op_desc.GetAttr<std::string>("elt_act_type");
     } else {
       param_.has_elt_act = false;
     }
@@ -172,7 +172,7 @@ class ConvElementwiseTreeOpLite : public OpLite {
   std::string DebugString() const override { return "conv2d"; }
 
  private:
-  mutable ConvParam param_;
+  mutable FusionConvElementParam param_;
   std::string padding_algorithm_{""};
 };
 }  // namespace operators

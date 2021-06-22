@@ -744,7 +744,7 @@ struct FusionElementwiseActivationParam : public ElementwiseParam {
 };
 
 struct FusionConvElementParam : ParamBase {
-  const lite::Tensor* x{};
+  lite::Tensor* x{};
   lite::Tensor* filter{};
   lite::Tensor* bias{nullptr};
   const lite::Tensor* y{};
