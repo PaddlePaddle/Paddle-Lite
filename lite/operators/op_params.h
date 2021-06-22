@@ -2390,6 +2390,7 @@ struct ArgsortParam : ParamBase {
 struct WriteBackParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* y{};
+};
 
 struct FlipParam : ParamBase {
   const lite::Tensor* X{};
