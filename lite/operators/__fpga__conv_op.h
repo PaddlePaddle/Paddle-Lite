@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifdef LITE_WITH_FPGA
 #pragma once
 #include <memory>
 #include <string>
@@ -63,7 +62,7 @@ class FpgaConvOpLite : public ConvOpLite {
 
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
     ConvOpLite::AttachImpl(op_desc, scope);
-
+#ifdef LITE_WITH_FPGA
     // additional config for fpga conv op
     auto wd_enable = op_desc.GetAttr<bool>("wd_enable");
     auto wd_offset = op_desc.GetAttr<int>("wd_offset");
@@ -78,6 +77,7 @@ class FpgaConvOpLite : public ConvOpLite {
     stride_info_.original_out_channel_ = original_out_channel;
     stride_info_.start_idx_ = start_idx;
     stride_info_.end_idx_ = end_idx;
+#endif
   }
 
 
@@ -89,4 +89,3 @@ class FpgaConvOpLite : public ConvOpLite {
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
-#endif

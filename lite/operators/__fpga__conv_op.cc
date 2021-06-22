@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifdef LITE_WITH_FPGA
 #include "lite/operators/__fpga__conv_op.h"
 #include <algorithm>
 #include <vector>
@@ -22,6 +21,7 @@ namespace lite {
 namespace operators {
 
 bool FpgaConvOpLite::InferShapeImpl() const {
+#ifdef LITE_WITH_FPGA
   auto stride_info_ = param_.stride_info_;
   int fuse_idx = stride_info_.fuse_idx_;
   if (fuse_idx == 0) {
@@ -35,6 +35,7 @@ bool FpgaConvOpLite::InferShapeImpl() const {
   }
 
   // TODO how to guarantee the same input lod
+#endif
   return true;
 }
 
@@ -43,4 +44,3 @@ bool FpgaConvOpLite::InferShapeImpl() const {
 }  // namespace paddle
 
 REGISTER_LITE_OP(fpga_conv2d, paddle::lite::operators::FpgaConvOpLite);
-#endif
