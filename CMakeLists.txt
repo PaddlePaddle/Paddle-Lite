@@ -222,7 +222,8 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(cross_compiling/postproject)
     include(device/npu) # check and prepare NPU DDK
     include(device/xpu) # check and prepare XPU SDK
-    include(device/apu) # check and prepare APU SDK
+    include(device/apu) # check and prepare APU SDK 
+    include(device/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
 
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.
