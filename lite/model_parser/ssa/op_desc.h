@@ -88,7 +88,7 @@ class OpDesc : public OpDescBase {
 class BlockOpDesc : public OpDescBase {
  public:
   BlockOpDesc(const general::OpDesc& raw_desc,
-              const std::shared_ptr<BlockOpProto> proto)
+              const std::shared_ptr<BlockOpProto>& proto)
       : OpDescBase{raw_desc}, proto_{proto} {}
 
   void AddBlockInput(const std::weak_ptr<VarDesc>& var) {

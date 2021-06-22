@@ -84,10 +84,6 @@ bool operator<(const VarDesc& x, const VarDesc& y) {
 
 bool VarDescLT::operator()(const std::weak_ptr<VarDesc>& lhs,
                            const std::weak_ptr<VarDesc>& rhs) const {
-  std::cout << "here 1 !" << std::endl;
-  CHECK(!lhs.expired());
-  CHECK(!rhs.expired());
-  std::cout << "here 2 !" << std::endl;
   auto lptr = lhs.lock(), rptr = rhs.lock();
   if (!rptr) return false;
   if (!lptr) return true;
