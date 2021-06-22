@@ -38,13 +38,19 @@ if (LITE_WITH_ARM)
     CL_DEPS cl_context
     NNADAPTER_DEPS nnadapter_wrapper
   )
-else ()
+elseif (LITE_WITH_X86)
   lite_cc_library (context SRCS context.cc
     DEPS tensor any device_info target_wrapper eigen3
     CL_DEPS cl_context
     CUDA_DEPS cuda_context
     NNADAPTER_DEPS nnadapter_wrapper
   )
+elseif (LITE_WITH_SW)
+  lite_cc_library (context SRCS context.cc
+    DEPS tensor any device_info target_wrapper
+  )
+else ()
+  meaasge (FATAL_ERROR "unsupported host device")
 endif ()
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
