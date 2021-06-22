@@ -80,10 +80,10 @@ class Conv2dImageCompute
     std::string function_name_;
     MetalContext* metal_context_;
 
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_;
     const MetalImage* bias_buffer_;
-    MetalImage* blank_buffer_;
+    MetalImage* blank_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> filter_buffer_;
     std::shared_ptr<MetalBuffer> params_buffer_;
 };

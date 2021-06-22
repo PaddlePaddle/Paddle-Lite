@@ -78,7 +78,8 @@ void ReshapeImageCompute::setup_without_mps() {
         ot = {0, 1, 2, 3};
     }
 
-    ReshapeMetalParam reshape_params{{idm[0], idm[1], idm[2], idm[3]},
+    ReshapeMetalParam reshape_params{
+        {idm[0], idm[1], idm[2], idm[3]},
         {it[0], it[1], it[2], it[3]},
         {odm[0], odm[1], odm[2], odm[3]},
         {ot[0], ot[1], ot[2], ot[3]}};
@@ -95,7 +96,7 @@ void ReshapeImageCompute::setup_without_mps() {
 }
 
 ReshapeImageCompute::~ReshapeImageCompute() {
-
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

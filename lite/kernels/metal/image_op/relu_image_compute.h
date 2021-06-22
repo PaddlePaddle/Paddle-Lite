@@ -43,10 +43,11 @@ class ReluImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput("relu", output_buffer_);
     };
+    virtual ~ReluImageCompute();
 
    private:
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
 
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
@@ -63,10 +64,11 @@ class Relu6ImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput("relu6", output_buffer_);
     };
+    virtual ~Relu6ImageCompute();
 
    private:
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
     id<MTLComputePipelineState> pipline_;
@@ -84,10 +86,11 @@ class LeakyReluImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput("leaky_relu", output_buffer_);
     };
+    virtual ~LeakyReluImageCompute();
 
    private:
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
     id<MTLComputePipelineState> pipline_;

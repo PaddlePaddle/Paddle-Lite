@@ -57,6 +57,10 @@ void SigmoidImageCompute::Run() {
     [backend commit];
 }
 
+SigmoidImageCompute::~SigmoidImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
 }  // namespace metal
 }  // namespace kernels
 }  // namespace lite

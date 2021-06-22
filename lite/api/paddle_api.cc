@@ -400,6 +400,34 @@ void ConfigBase::set_subgraph_model_cache_buffers(
       std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
 }
 
+bool ConfigBase::check_nnadapter_device(
+    const std::string &nnadapter_device_name) {
+  bool found = false;
+#ifdef LITE_WITH_NNADAPTER
+  found = lite::Context<TargetType::kNNAdapter>::CheckNNAdapterDevice(
+      nnadapter_device_name);
+#else
+  LOG(WARNING) << "The invoking of the function 'check_nnadapter_device' is "
+                  "ignored, please rebuild it with LITE_WITH_NNADAPTER=ON.";
+#endif
+  return found;
+}
+
+void ConfigBase::set_nnadapter_model_cache_buffers(
+    const std::string &key, const std::vector<char> &buffer) {
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+  CHECK(!key.empty());
+  CHECK(!buffer.empty());
+  CHECK_EQ(nnadapter_model_cache_buffers_.count(key), 0);
+  nnadapter_model_cache_buffers_[key] = buffer;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_nnadapter_model_cache_buffers' is ignored, please "
+                  "rebuild it with LITE_WITH_NNADAPTER=ON.";
+#endif
+}
+
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
                                size_t program_buffer_size,
                                const char *params_buffer,

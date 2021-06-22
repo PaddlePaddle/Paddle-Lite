@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/scale_image_compute.h"
+#include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -23,62 +24,55 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void ScaleImageCompute<P, PTYPE>::PrepareForRun() {
-    auto& context = this->ctx_->template As<ContextMetal>();
+void ScaleImageCompute::PrepareForRun() {
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
-    auto device = metal_context_->GetDefaultDevice();
 
-    const auto& param = this->template Param<param_t>();
+    const auto& param = this->Param<param_t>();
     auto output_dims = param.output->dims();
+#ifdef LITE_WITH_METAL_FULL
+#else
+    input_buffer_ = param.x->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(
+        metal_context_, output_dims);
+#endif
 
-    input_buffer_ = param.x->template data<P, MetalImage>();
-
-    ScaleMetalParam metal_param{param.scale, param.bias};
-
-    param_buffer_ = metal_context_->CreateBuffer(
-        *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
-    output_buffer_ = param.output->template mutable_data<P, MetalImage>(output_dims);
-
-    std::string function_name = "";
-
-    if (std::is_same<float, P>::value) {
-        if (param.bias_after_scale) {
-            function_name = "scale_after_bias_float";
-        } else {
-            function_name = "scale_before_bias_float";
-        }
-    } else if (std::is_same<MetalHalf, P>::value) {
-        if (param.bias_after_scale) {
-            function_name = "scale_after_bias_half";
-        } else {
-            function_name = "scale_before_bias_half";
-        }
-    }
-
-    assert(!function_name.empty());
-
-    queue_ = metal_context_->GetDefaultQueue(*device);
-    kernel_ = metal_context_->GetKernel(*device, function_name);
+    setup_without_mps();
 }
 
-template <typename P, PrecisionType PTYPE>
-void ScaleImageCompute<P, PTYPE>::Run() {
-    auto output_width = output_buffer_->texture_width_;
-    auto output_height = output_buffer_->texture_height_;
-    auto output_array_length = output_buffer_->array_length_;
+void ScaleImageCompute::Run() {
+    auto pipline = pipline_;
+    auto outTexture = output_buffer_->image();
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-    auto encoder =
-        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-        static_cast<MetalUint>(output_height),
-        static_cast<MetalUint>(output_array_length)};
+    auto encoder = [backend commandEncoder];
+    [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
-    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
-    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(0)];
+    [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    [backend commit];
+}
 
-    kernel_->Execute(*encoder, global_work_size, false);
+void ScaleImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
+
+    ScaleMetalParam metal_param{param.scale, param.bias};
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
+
+    if (param.bias_after_scale) {
+        function_name_ = "scale_after_bias";
+    } else {
+        function_name_ = "scale_before_bias";
+    }
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
+}
+
+ScaleImageCompute::~ScaleImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal
@@ -86,12 +80,12 @@ void ScaleImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ScaleImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ScaleImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::ScaleImageCompute<float, PRECISION(kFloat)> MetalScaleFp32;
-typedef paddle::lite::kernels::metal::ScaleImageCompute<MetalHalf, PRECISION(kFP16)> MetalScaleFp16;
-
-REGISTER_LITE_KERNEL(scale, kMetal, kFloat, kMetalTexture2DArray, MetalScaleFp32, def)
+REGISTER_LITE_KERNEL(scale,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ScaleImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -102,7 +96,12 @@ REGISTER_LITE_KERNEL(scale, kMetal, kFloat, kMetalTexture2DArray, MetalScaleFp32
             DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(scale, kMetal, kFP16, kMetalTexture2DArray, MetalScaleFp16, def)
+REGISTER_LITE_KERNEL(scale,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ScaleImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",

@@ -608,6 +608,9 @@ void TransposeCompute::Run() {
 #endif
 
   switch (input->precision()) {
+    case PRECISION(kInt8):
+      TransposeCompute_<int8_t>(axis, input, output);
+      break;
     case PRECISION(kInt32):
       TransposeCompute_<int32_t>(axis, input, output);
       break;

@@ -128,8 +128,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
-    op->CheckShape();
-    op->InferShape();
+    CHECK(op->CheckShape());
+    CHECK(op->InferShape());
     std::string op_type = op->op_info()->Type();
     if (!bridges.Exists(op_type, TARGET(kHuaweiAscendNPU))) {
       return false;
