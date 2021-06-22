@@ -584,3 +584,188 @@ __kernel void matrix_inner_product_mali(__read_only image2d_t matrix_v,
                    m3);
   }
 }
+
+__kernel void transform_to_output_mali(__read_only image2d_t matrix_m,
+                                       __global CL_DTYPE4 *bias,
+                                       __write_only image2d_t output,
+                                       __private const int round_w,
+                                       __private const int round_h,
+                                       __private const int out_width,
+                                       __private const int out_height,
+                                       __private const int global_size_dim0,
+                                       __private const int global_size_dim1,
+                                       __read_only image2d_t prelu_alpha) {
+  const int output_cw_idx = get_global_id(0);  // c/4 w/2
+  const int output_bh_idx = get_global_id(1);  // b h/2
+  if (output_cw_idx >= global_size_dim0 || output_bh_idx >= global_size_dim1) {
+    return;
+  }
+  const int c_block_idx = output_cw_idx / round_w;
+  const int w_block_idx = output_cw_idx - mul24(c_block_idx, round_w);
+  const int batch = output_bh_idx / round_h;
+  const int h_block_idx = output_bh_idx - mul24(batch, round_h);
+
+#ifdef BIASE_CH
+  CL_DTYPE4 output0 = (bias + c_block_idx)[0];
+  CL_DTYPE4 output1 = output0;
+  CL_DTYPE4 output2 = output0;
+  CL_DTYPE4 output3 = output0;
+#else
+  CL_DTYPE4 output0 = 0.0f;
+  CL_DTYPE4 output1 = 0.0f;
+  CL_DTYPE4 output2 = 0.0f;
+  CL_DTYPE4 output3 = 0.0f;
+#endif
+
+  CL_DTYPE4 m00 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR, matrix_m, SAMPLER, (int2)(output_cw_idx, output_bh_idx));
+  CL_DTYPE4 m10 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(1, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m20 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(2, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m30 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(3, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m01 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(4, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m11 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(5, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m21 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(6, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m31 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(7, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m02 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(8, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m12 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(9, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m22 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(10, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m32 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(11, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m03 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(12, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m13 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(13, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m23 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(14, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 m33 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR,
+      matrix_m,
+      SAMPLER,
+      (int2)(output_cw_idx, mad24(15, global_size_dim1, output_bh_idx)));
+  CL_DTYPE4 out00 = m00 + m01 + m02;
+  CL_DTYPE4 out10 = m10 + m11 + m12;
+  CL_DTYPE4 out20 = m20 + m21 + m22;
+  CL_DTYPE4 out30 = m30 + m31 + m32;
+  CL_DTYPE4 out01 = m01 - m02 + m03;
+  CL_DTYPE4 out11 = m11 - m12 + m13;
+  CL_DTYPE4 out21 = m21 - m22 + m23;
+  CL_DTYPE4 out31 = m31 - m32 + m33;
+  int2 ow = (int2)(w_block_idx << 1) + (int2)(0, 1);
+  int2 oh = (int2)(h_block_idx << 1) + (int2)(0, 1);
+  int2 ox = mad24((int2)(c_block_idx), (int2)(out_width), ow);
+  int2 oy = mad24((int2)(batch), (int2)(out_height), oh);
+
+  output0 = output0 + out00 + out10 + out20;
+  output1 = output1 + out10 - out20 + out30;
+  output2 = output2 + out01 + out11 + out21;
+  output3 = output3 + out11 - out21 + out31;
+
+  CL_DTYPE4 alpha0, alpha1, alpha2, alpha3;
+#ifdef PRELU_CH  //{
+  alpha0 = READ_IMG_TYPE(
+      CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(c_block_idx, 0));
+  alpha1 = alpha0;
+  alpha2 = alpha0;
+  alpha3 = alpha0;
+//}
+#elif defined(PRELU_ELE)  //{
+  alpha0 =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s0));
+  if (ow.s1 < out_width && oh.s0 < out_height) {
+    alpha1 = READ_IMG_TYPE(
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s0));
+  }
+  if (ow.s0 < out_width && oh.s1 < out_height) {
+    alpha2 = READ_IMG_TYPE(
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s0, oy.s1));
+  }
+  if (ow.s1 < out_width && oh.s1 < out_height) {
+    alpha3 = READ_IMG_TYPE(
+        CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ox.s1, oy.s1));
+  }
+//}
+#elif defined(PRELU_ALL)  //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0.y = alpha0.x;
+  alpha0.z = alpha0.x;
+  alpha0.w = alpha0.x;
+  alpha1 = alpha0;
+  alpha2 = alpha0;
+  alpha3 = alpha0;
+//}
+#endif
+  output0 = activation_type4(output0, alpha0);
+  output1 = activation_type4(output1, alpha1);
+  output2 = activation_type4(output2, alpha2);
+  output3 = activation_type4(output3, alpha3);
+
+#ifdef SCALE_ACTIVATION
+  output0 = fuse_scale(output0, 1.f, 0.f, 0.f);
+  output1 = fuse_scale(output1, 1.f, 0.f, 0.f);
+  output2 = fuse_scale(output2, 1.f, 0.f, 0.f);
+  output3 = fuse_scale(output3, 1.f, 0.f, 0.f);
+#endif
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(ox.s0, oy.s0), output0);
+  if (ow.s1 < out_width && oh.s0 < out_height) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(ox.s1, oy.s0), output1);
+  }
+  if (ow.s0 < out_width && oh.s1 < out_height) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(ox.s0, oy.s1), output2);
+  }
+  if (ow.s1 < out_width && oh.s1 < out_height) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(ox.s1, oy.s1), output3);
+  }
+}
