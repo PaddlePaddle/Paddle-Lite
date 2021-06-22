@@ -58,11 +58,7 @@ class VarDesc : public std::enable_shared_from_this<VarDesc> {
 
   bool Persistable() const { return meta_->raw_desc->Persistable(); }
 
-  std::weak_ptr<VarDesc> latest();
-
   std::weak_ptr<VarDesc> Read(const OpDescBase& op_desc);
-
-  std::weak_ptr<VarDesc> NewDescendant();
 
   std::weak_ptr<VarDesc> Written(const OpDescBase& op_desc);
 
@@ -70,7 +66,11 @@ class VarDesc : public std::enable_shared_from_this<VarDesc> {
 
   const std::vector<OpDescBase const*>& target_ops() const { return targets_; }
 
- protected:
+  std::weak_ptr<VarDesc> latest();
+
+ private:
+  std::weak_ptr<VarDesc> NewDescendant();
+
   void SetCount(size_t count) { count_ = count; }
 
   void ClearTargetOps() { targets_.clear(); }
