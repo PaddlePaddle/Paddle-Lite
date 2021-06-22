@@ -60,6 +60,8 @@ bool IoCopyOp::AttachImpl(const cpp::OpDesc &opdesc,
   if (opdesc.HasInput("InputArray")) {
     param_.x_array = scope->FindTensorList(opdesc.Input("InputArray").front());
   }
+  // In order to support static single assignment, the output variable needs to
+  // be passed in as input.
   if (opdesc.HasInput("WriteBack")) {
     param_.y = scope->FindMutableTensor(opdesc.Input("WriteBack").front());
   }
