@@ -76,6 +76,7 @@ USE_MIR_PASS(post_quant_dynamic_pass);
 USE_MIR_PASS(fp16_attribute_pass);
 USE_MIR_PASS(apu_subgraph_pass);
 USE_MIR_PASS(quantized_op_attributes_inference_pass);
+USE_MIR_PASS(quantization_parameters_propagation_pass);
 USE_MIR_PASS(restrict_quantized_op_with_same_input_output_scale_pass);
 USE_MIR_PASS(control_flow_op_unused_inputs_and_outputs_eliminate_pass);
 USE_MIR_PASS(control_flow_op_shared_inputs_and_outputs_place_sync_pass);
