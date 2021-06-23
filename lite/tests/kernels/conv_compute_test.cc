@@ -42,6 +42,8 @@ class ConvComputeTester : public arena::TestCase {
   bool with_act_ = false;
   std::string act_type_;
   float leaky_relu_alpha_ = 0.1;
+  bool with_depthwise_ = false;
+  bool with_fuse_relu_ = false;
 
  public:
   ConvComputeTester(const Place& place,
@@ -194,7 +196,7 @@ class ConvComputeTester : public arena::TestCase {
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType(op_type_);
+    op_desc->SetType(with_depthwise_ ? "depthwise_conv2d" : "conv2d");
     op_desc->SetInput("Input", {input_});
     op_desc->SetInput("Filter", {filter_});
     if (with_bias_) {
@@ -205,6 +207,7 @@ class ConvComputeTester : public arena::TestCase {
     op_desc->SetAttr("paddings", paddings_);
     op_desc->SetAttr("groups", groups_);
     op_desc->SetAttr("dilations", dilations_);
+    op_desc->SetAttr("fuse_relu", with_fuse_relu_);
     if (!padding_algorithm_.empty()) {
       op_desc->SetAttr("padding_algorithm", padding_algorithm_);
     }
@@ -416,6 +419,11 @@ TEST(Conv2d, precision) {
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+  abs_error = 1e-2;
+  // TODO(shentanyue): enable later
+  return;
 #else
   return;
 #endif

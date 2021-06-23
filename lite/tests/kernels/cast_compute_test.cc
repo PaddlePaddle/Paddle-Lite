@@ -132,13 +132,13 @@ void TestCast(Place place, float abs_error, int in_dtype, int out_dtype) {
 TEST(Cast, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #else
   return;
 #endif
