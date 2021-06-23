@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "driver/mediatek_apu/converter.h"
+#include <algorithm>
 #include "driver/mediatek_apu/optimizer/propagate_quant_params.h"
 #include "driver/mediatek_apu/optimizer/resolve_op_liminations.h"
 #include "driver/mediatek_apu/optimizer/update_bias_quant_params_and_values.h"
@@ -205,8 +206,12 @@ int Program::Execute(uint32_t input_count,
     auto buffer = reinterpret_cast<uint8_t*>(argument.buffer);
     auto zero_point = input_zero_points_[argument.index];
     for (int j = 0; j < argument.length; j++) {
-      buffer[j] =
-          static_cast<uint8_t>(static_cast<int16_t>(buffer[j]) + zero_point);
+      buffer[j] = static_cast<uint8_t>(
+          std::min(std::max(static_cast<int16_t>(
+                                reinterpret_cast<int8_t*>(argument.buffer)[j]) +
+                                zero_point,
+                            0),
+                   256));
     }
     NNADAPTER_CHECK_EQ(
         NeuronExecution_setInput_invoke(
@@ -224,11 +229,15 @@ int Program::Execute(uint32_t input_count,
                      NEURON_NO_ERROR);
   for (uint32_t i = 0; i < output_count; i++) {
     auto& argument = output_arguments[i];
-    auto buffer = reinterpret_cast<uint8_t*>(argument.buffer);
+    auto buffer = reinterpret_cast<int8_t*>(argument.buffer);
     auto zero_point = output_zero_points_[argument.index];
     for (int j = 0; j < argument.length; j++) {
-      buffer[j] =
-          static_cast<int8_t>(static_cast<int16_t>(buffer[j]) - zero_point);
+      buffer[j] = static_cast<int8_t>(std::min(
+          std::max(static_cast<int16_t>(
+                       reinterpret_cast<uint8_t*>(argument.buffer)[j]) -
+                       zero_point,
+                   -128),
+          127));
     }
   }
   return NNADAPTER_NO_ERROR;

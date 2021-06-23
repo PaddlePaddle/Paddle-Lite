@@ -42,6 +42,9 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scale = 1 - op_info->GetAttr<float>("dropout_prob");
   if (dropout_implementation == "upscale_in_train") {
     scale = 1.f;
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU not support "
+                    "upscale_in_train implementation!";
+    return FAILED;
   }
 
   // X node

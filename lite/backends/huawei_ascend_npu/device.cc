@@ -112,14 +112,15 @@ void Device::RegisterDeviceResource() {
 }
 
 void Device::UnRegisterDeviceResource() {
-  std::lock_guard<std::mutex> lock(device_mutex_);
-  device_reference_count_--;
-  if (device_reference_count_ == 0) {
-    // ATC builder finalize => can only be called once in one process
-    ge::aclgrphBuildFinalize();
-    // ACL runtime finalize => can only be called once in one process
-    ACL_CALL(aclFinalize());
-  }
+  // TODO(shentanyue)
+  // std::lock_guard<std::mutex> lock(device_mutex_);
+  // device_reference_count_--;
+  // if (device_reference_count_ == 0) {
+  //   // ATC builder finalize => can only be called once in one process
+  //   ge::aclgrphBuildFinalize();
+  //   // ACL runtime finalize => can only be called once in one process
+  //   ACL_CALL(aclFinalize());
+  // }
 }
 
 }  // namespace huawei_ascend_npu
