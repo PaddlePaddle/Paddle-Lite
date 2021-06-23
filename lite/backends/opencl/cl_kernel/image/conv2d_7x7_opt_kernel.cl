@@ -513,7 +513,7 @@ __kernel void conv2d_7x7_opt_mali(__private const int item_ch,
                                   __private const int item_h,
                                   __read_only image2d_t input_image,
                                   __global CL_DTYPE4 *filter_buf,
-                                  __read_only image2d_t bias,
+                                  __global CL_DTYPE4 *bias,
                                   __write_only image2d_t output_image,
                                   __private const int stride,
                                   __private const int pad,
@@ -552,8 +552,7 @@ __kernel void conv2d_7x7_opt_mali(__private const int item_ch,
 
 #ifdef BIASE_CH
   CL_DTYPE4 output[5];
-  output[0] =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(item_ch_id, 0));
+  output[0] = (bias + item_ch_id)[0];
   output[1] = output[0];
   output[2] = output[0];
   output[3] = output[0];

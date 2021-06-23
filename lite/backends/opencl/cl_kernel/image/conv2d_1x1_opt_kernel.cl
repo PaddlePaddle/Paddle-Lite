@@ -1826,7 +1826,7 @@ __kernel void conv2d_1x1_mali_h1w2c1(
     __private const int global_size_dim2,
     __read_only image2d_t input_image,
     __global CL_DTYPE4 *filter,
-    __read_only image2d_t bias,
+    __global CL_DTYPE4 *bias,
     __write_only image2d_t output_image,
     __private const int stride,
     __private const int offset,
@@ -1860,8 +1860,7 @@ __kernel void conv2d_1x1_mali_h1w2c1(
   int pos_in_y = out_nh * stride + offset;
 
 #ifdef BIASE_CH
-  CL_DTYPE4 output_w0 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
+  CL_DTYPE4 output_w0 = (bias + out_c)[0];
   CL_DTYPE4 output_w1 = output_w0;
 #else
   CL_DTYPE4 output_w0 = 0.0f;
@@ -1950,7 +1949,7 @@ __kernel void conv2d_1x1_mali_h1w2c2(
     __private const int global_size_dim2,
     __read_only image2d_t input_image,
     __global CL_DTYPE4 *filter,
-    __read_only image2d_t bias,
+    __global CL_DTYPE4 *bias,
     __write_only image2d_t output_image,
     __private const int stride,
     __private const int offset,
@@ -1977,11 +1976,9 @@ __kernel void conv2d_1x1_mali_h1w2c2(
   int pos_in_y = out_nh * stride + offset;
 
 #ifdef BIASE_CH
-  CL_DTYPE4 output_w0_c0 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
+  CL_DTYPE4 output_w0_c0 = (bias + out_c)[0];
   CL_DTYPE4 output_w1_c0 = output_w0_c0;
-  CL_DTYPE4 output_w0_c1 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c + 1, 0));
+  CL_DTYPE4 output_w0_c1 = (bias + out_c + 1)[0];
   CL_DTYPE4 output_w1_c1 = output_w0_c1;
 #else
   CL_DTYPE4 output_w0_c0 = 0.0f;
@@ -2128,7 +2125,7 @@ __kernel void conv2d_1x1_mali_h2w2c2(
     __private const int global_size_dim2,
     __read_only image2d_t input_image,
     __global CL_DTYPE4 *filter,
-    __read_only image2d_t bias,
+    __global CL_DTYPE4 *bias,
     __write_only image2d_t output_image,
     __private const int stride,
     __private const int offset,
@@ -2156,13 +2153,11 @@ __kernel void conv2d_1x1_mali_h2w2c2(
   int pos_in_h1_y = (out_nh + 1) * stride + offset;
 
 #ifdef BIASE_CH
-  CL_DTYPE4 out_w0_h0_c0 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
+  CL_DTYPE4 out_w0_h0_c0 = (bias + out_c)[0];
   CL_DTYPE4 out_w1_h0_c0 = out_w0_h0_c0;
   CL_DTYPE4 out_w0_h1_c0 = out_w0_h0_c0;
   CL_DTYPE4 out_w1_h1_c0 = out_w0_h0_c0;
-  CL_DTYPE4 out_w0_h0_c1 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c + 1, 0));
+  CL_DTYPE4 out_w0_h0_c1 = (bias + out_c + 1)[0];
   CL_DTYPE4 out_w1_h0_c1 = out_w0_h0_c1;
   CL_DTYPE4 out_w0_h1_c1 = out_w0_h0_c1;
   CL_DTYPE4 out_w1_h1_c1 = out_w0_h0_c1;

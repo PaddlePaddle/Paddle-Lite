@@ -14,6 +14,7 @@
 
 #include "driver/rockchip_npu/converter.h"
 #include <vector>
+#include "driver/rockchip_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -41,7 +42,8 @@ Program::~Program() {
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  ConvertModelFromSymmToAsymmQuantization(model);
+  ConvertQuantizationSymmToAsymm(model);
+  UnpackOpFusion(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a rknpu graph
   tensors_.clear();

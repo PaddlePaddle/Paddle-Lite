@@ -21,7 +21,8 @@ add_definitions(-DNNADAPTER_DRIVER_NAME=${NNADAPTER_DRIVER_NAME})
 include(dependencies.cmake)
 
 aux_source_directory(./converter converter)
-set(NNADAPTER_DRIVER_SRCS utility.cc converter.cc ${converter} driver.cc)
+aux_source_directory(./optimizer optimizer)
+set(NNADAPTER_DRIVER_SRCS utility.cc ${optimizer} converter.cc ${converter} driver.cc)
 set(NNADAPTER_DRIVER_DEPS ${nnadapter_utility} nnadapter_optimizer_symm2asymm ${${NNADAPTER_DEVICE_NAME}_deps})
 
 add_library(${NNADAPTER_DRIVER_NAME} SHARED ${NNADAPTER_DRIVER_SRCS})

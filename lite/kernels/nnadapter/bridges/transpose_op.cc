@@ -45,7 +45,7 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
-  auto axis = op_info->GetAttr<std::vector<int>>("axis");
+  std::vector<int> axis = op_info->GetAttr<std::vector<int>>("axis");
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -79,6 +79,7 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto transpose_operation = converter->AddOperation(NNADAPTER_TRANSPOSE);
   converter->SetOperation(
       transpose_operation, &input_operands, &output_operands);
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
 }  // namespace nnadapter
