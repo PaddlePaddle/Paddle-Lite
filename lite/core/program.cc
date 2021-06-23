@@ -137,8 +137,8 @@ void RuntimeProgram::SaveToProgram(
             v->SetType(cpp::VarDesc::Type::STEP_SCOPES);
             v->SetPersistable(false);
           } else {
-            LOG(WARNING) << "Unsupported decl type " << *decl_type
-                         << " for var " << var_name << " in op " << op_type;
+            LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
+                       << var_name << " in op " << op_type;
           }
         }
         already_added_vars.insert(var_name);
@@ -550,7 +550,9 @@ void Program::PrepareWorkspace(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
         } else if (var_type == lite::VarDescAPI::Type::STEP_SCOPES) {
           var->GetMutable<std::vector<lite::Scope*>>();
-          LOG(WARNING) << " var_name :  lite::VarDescAPI::Type::STEP_SCOPES";
+        } else {
+          LOG(FATAL) << "Error: Unsupported data type for variable "
+                     << var_name;
         }
 
       } else {
