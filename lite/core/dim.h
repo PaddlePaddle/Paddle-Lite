@@ -15,7 +15,6 @@
 #ifndef LITE_CORE_DIM_H_
 #define LITE_CORE_DIM_H_
 
-
 #include <algorithm>
 #include <functional>  // for multiplies
 #include <memory>

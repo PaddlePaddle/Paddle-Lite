@@ -20,8 +20,8 @@
 #include <numeric>
 #include <string>
 #include <vector>
-#include "lite/core/dim.h"
 #include "lite/backends/fpga/KD/tensor.hpp"
+#include "lite/core/dim.h"
 #include "lite/core/memory.h"
 
 namespace paddle {

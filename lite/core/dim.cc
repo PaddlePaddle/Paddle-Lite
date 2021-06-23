@@ -66,4 +66,3 @@ std::string DDimLite::repr() const {
 }
 }  // namespace lite
 }  // namespace paddle
-

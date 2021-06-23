@@ -34,7 +34,7 @@ bool FpgaConvOpLite::InferShapeImpl() const {
     static_cast<ConvParam*>(op_param_)->output->Resize(new_dim);
   }
 
-  // TODO how to guarantee the same input lod
+// TODO how to guarantee the same input lod
 #endif
   return true;
 }
