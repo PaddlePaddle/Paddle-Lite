@@ -324,6 +324,7 @@ function(cc_library TARGET_NAME)
     set(full_path_src "")
     # cpplint code style
     foreach(source_file ${cc_library_SRCS})
+      message(STATUS "cc_library: ${source_file}")
       string(REGEX REPLACE "\\.[^.]*$" "" source ${source_file})
       if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${source}.h)
         list(APPEND cc_library_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/${source}.h)

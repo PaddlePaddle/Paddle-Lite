@@ -379,6 +379,9 @@ function(add_kernel TARGET device level)
         set(kernel_tailor_src_dir "${CMAKE_BINARY_DIR}/kernel_tailor_src_dir")
         set(suffix "for_strip")
         set(dst_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
+        if("${device}" STREQUAL "METAL")
+          set(dst_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.mm") # conv_compute_apple_metal_for_strip.mm
+        endif()
         if(NOT EXISTS ${dst_file})
           return()
         endif()
@@ -391,7 +394,6 @@ function(add_kernel TARGET device level)
     if ("${level}" STREQUAL "train" AND (NOT LITE_WITH_TRAIN))
         return()
     endif()
-
 
     if ("${device}" STREQUAL "Host")
        if (LITE_ON_MODEL_OPTIMIZE_TOOL)
@@ -521,7 +523,7 @@ function(add_kernel TARGET device level)
         set(opencl_kernels "${opencl_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
 
-    if ("${device}" STREQUAL "APPLE_METAL")
+    if ("${device}" STREQUAL "METAL")
         if (NOT LITE_WITH_METAL)
             foreach(src ${args_SRCS})
                 file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")

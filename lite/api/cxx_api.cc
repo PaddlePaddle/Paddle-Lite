@@ -144,6 +144,9 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
     if (op_path == "calib_once_op.cc") {
       fputs("calib_op.cc\n", opf_source);
     }
+    if (op_path == "io_copy_once_op.cc") {
+      fputs("io_copy_op.cc\n", opf_source);
+    }
   }
   std::fclose(opf_source);
   std::fclose(opf);
