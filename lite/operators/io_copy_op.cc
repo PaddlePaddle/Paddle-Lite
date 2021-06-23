@@ -62,8 +62,8 @@ bool IoCopyOp::AttachImpl(const cpp::OpDesc &opdesc,
   }
   // In order to support static single assignment, the output variable needs to
   // be passed in as input.
-  if (opdesc.HasInput("WriteBack")) {
-    param_.y = scope->FindMutableTensor(opdesc.Input("WriteBack").front());
+  if (opdesc.HasInput("WriteBack_Out")) {
+    param_.y = scope->FindMutableTensor(opdesc.Input("WriteBack_Out").front());
   }
   if (opdesc.HasOutput("Out")) {
     param_.y = scope->FindMutableTensor(opdesc.Output("Out").front());
