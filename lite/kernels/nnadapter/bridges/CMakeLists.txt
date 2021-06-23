@@ -17,6 +17,7 @@ lite_cc_library(subgraph_bridge_scale_op_nnadapter SRCS scale_op.cc DEPS ${nnada
 lite_cc_library(subgraph_bridge_reshape_op_nnadapter SRCS reshape_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_transpose_op_nnadapter SRCS transpose_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_concat_op_nnadapter SRCS concat_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_flatten_op_nnadapter SRCS flatten_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
         subgraph_bridge_registry
@@ -32,6 +33,7 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_reshape_op_nnadapter
         subgraph_bridge_transpose_op_nnadapter
         subgraph_bridge_concat_op_nnadapter
+        subgraph_bridge_flatten_op_nnadapter
         CACHE INTERNAL "nnadapter_subgraph_bridges")
 
 message(STATUS "+++++ nnadapter_subgraph_bridges: ${nnadapter_subgraph_bridges}")

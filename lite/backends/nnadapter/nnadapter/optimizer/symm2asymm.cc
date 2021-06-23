@@ -22,8 +22,8 @@
 
 namespace nnadapter {
 
-static void ConvertOperandFromSymmToAsymm(hal::Operand* operand,
-                                          int32_t zero_point) {
+static void ConvertOperandSymmToAsymm(hal::Operand* operand,
+                                      int32_t zero_point) {
   switch (operand->type.precision) {
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER: {
       operand->type.precision = NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER;
@@ -73,8 +73,7 @@ static void PropagateAsymmZeroPoint(hal::Operand* reference_operand,
   }
 }
 
-NNADAPTER_EXPORT void ConvertModelFromSymmToAsymmQuantization(
-    hal::Model* model) {
+NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -94,37 +93,37 @@ NNADAPTER_EXPORT void ConvertModelFromSymmToAsymmQuantization(
       case NNADAPTER_TRANSPOSE:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH: {
-        ConvertOperandFromSymmToAsymm(input_operands[0], 128);
-        ConvertOperandFromSymmToAsymm(output_operands[0], 128);
+        ConvertOperandSymmToAsymm(input_operands[0], 128);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);
       } break;
       case NNADAPTER_SIGMOID:
       case NNADAPTER_SOFTMAX: {
-        ConvertOperandFromSymmToAsymm(input_operands[0], 128);
+        ConvertOperandSymmToAsymm(input_operands[0], 128);
         // The zeroPoint of the output of softmax and sigmoid must be 0.
-        ConvertOperandFromSymmToAsymm(output_operands[0], 0);
+        ConvertOperandSymmToAsymm(output_operands[0], 0);
       } break;
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
       case NNADAPTER_MUL:
       case NNADAPTER_SUB: {
-        ConvertOperandFromSymmToAsymm(input_operands[0], 128);
-        ConvertOperandFromSymmToAsymm(input_operands[1], 128);
-        ConvertOperandFromSymmToAsymm(output_operands[0], 128);
+        ConvertOperandSymmToAsymm(input_operands[0], 128);
+        ConvertOperandSymmToAsymm(input_operands[1], 128);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       case NNADAPTER_CONV_2D: {
-        ConvertOperandFromSymmToAsymm(input_operands[0], 128);
-        ConvertOperandFromSymmToAsymm(input_operands[1], 128);
-        ConvertOperandFromSymmToAsymm(input_operands[2], 128);
-        ConvertOperandFromSymmToAsymm(output_operands[0], 128);
+        ConvertOperandSymmToAsymm(input_operands[0], 128);
+        ConvertOperandSymmToAsymm(input_operands[1], 128);
+        ConvertOperandSymmToAsymm(input_operands[2], 128);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       case NNADAPTER_CONCAT: {
         NNADAPTER_CHECK_GE(input_count, 2);
         for (int i = 0; i < input_count - 1; i++) {
-          ConvertOperandFromSymmToAsymm(input_operands[i], 128);
+          ConvertOperandSymmToAsymm(input_operands[i], 128);
         }
-        ConvertOperandFromSymmToAsymm(output_operands[0], 128);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       default:
         NNADAPTER_LOG(FATAL)

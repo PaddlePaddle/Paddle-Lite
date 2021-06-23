@@ -107,17 +107,29 @@ hal::Operand* AddFloat32VariableOperand(hal::Model* model,
 void TransposeOperand(hal::Operand* operand, std::vector<int32_t> permutation);
 // Reshapes the dimensions of a operand, similar to numpy.reshape
 void ReshapeOperand(hal::Operand* operand, std::vector<int32_t> dimensions);
-// Replace a operand with a new one, similar to numpy.transpose
-bool ReplaceOperand(hal::Model* model,
-                    hal::Operand* pattern,
-                    hal::Operand* replace,
-                    bool remove = true);
-// Add a transpose operation which set input_operand as its input operand,
-// create a output operand with the permutated dimensions, and update all of
-// operations
+// Insert a operand at the back or front of a operand
+// For 'after' = true, 'target_operand' is added at back of 'reference_operand',
+// so only update the inputs of the operations and the outputs of the model
+// For 'after' = false, 'target_operand' is added at front of
+// 'reference_operand', so only update the outputs of the operations and the
+// input of the model
+bool InsertOperand(hal::Model* model,
+                   hal::Operand* reference_operand,
+                   hal::Operand* target_operand,
+                   bool after);
+// Add a transpose operation, set 'input_operand' as its input operand, create a
+// output operand with the permutated dimensions, and update all of operations
 hal::Operand* AddTransposeOperation(hal::Model* model,
                                     hal::Operand* input_operand,
                                     std::vector<int32_t> permutation);
+// Add a reshape operation, set 'input_operand' as its input operand, create a
+// output operand with the shape dimensions, and update all of operations
+hal::Operand* AddReshapeOperation(hal::Model* model,
+                                  hal::Operand* input_operand,
+                                  std::vector<int32_t> shape);
+
+// Check if it is a constant operand
+bool IsConstantOperand(hal::Operand* operand);
 
 // Sort the operations of the specified model in topological order
 std::vector<hal::Operation*> SortOperationsInTopologicalOrder(

@@ -61,8 +61,9 @@ std::vector<int32_t> InversePermutation(
     const std::vector<int32_t>& permutation);
 // Multipy a dimorder vector, such as we can get (0, 1, 2, 3) when the origin
 // one is (0, 2, 3, 1) and multiplier is (0, 3, 1, 2)
-std::vector<int32_t> MutiplyPermutation(const std::vector<int32_t>& permutation,
-                                        const std::vector<int32_t>& multiplier);
+std::vector<int32_t> MultiplyPermutation(
+    const std::vector<int32_t>& permutation,
+    const std::vector<int32_t>& multiplier);
 // Is a identity dimorder vector, such as (0, 1), (0, 1, 2), and (0, 1, 2, 3)
 bool IsIdentityPermutation(const std::vector<int32_t>& permutation);
 
@@ -77,10 +78,10 @@ void TransposeData(const T* input,
   NNADAPTER_CHECK_GE(permutation_count, 2);
   std::vector<int32_t> output_dimensions(permutation_count);
   for (size_t i = 0; i < permutation_count; i++) {
+    output_dimensions[i] = input_dimensions[i];
+  }
+  for (size_t i = 0; i < permutation_count; i++) {
     output_dimensions[i] = input_dimensions[permutation[i]];
-    if (output_dimensions_ptr) {
-      output_dimensions_ptr[i] = output_dimensions[i];
-    }
   }
   if (!IsIdentityPermutation(permutation)) {
     std::vector<int64_t> input_strides(permutation_count, 1);
@@ -109,6 +110,14 @@ void TransposeData(const T* input,
         output_offset += output_strides[j] * output_index[j];
       }
       output[output_offset] = input[i];
+    }
+  } else {
+    memcpy(
+        output, input, sizeof(T) * ProductionOfDimensions(output_dimensions));
+  }
+  if (output_dimensions_ptr) {
+    for (size_t i = 0; i < permutation_count; i++) {
+      output_dimensions_ptr[i] = output_dimensions[i];
     }
   }
 }
@@ -157,6 +166,6 @@ void DequantizeData(const T* input_data,
 }
 
 // Calculate a new axis according to the given permutation
-void TransposeAxis(int32_t axis, const std::vector<int32_t>& permutation);
+int32_t TransposeAxis(int32_t axis, const std::vector<int32_t>& permutation);
 
 }  // namespace nnadapter

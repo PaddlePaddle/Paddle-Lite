@@ -145,7 +145,7 @@ NNADAPTER_EXPORT std::vector<int32_t> InversePermutation(
   return inverse_permutation;
 }
 
-NNADAPTER_EXPORT std::vector<int32_t> MutiplyPermutation(
+NNADAPTER_EXPORT std::vector<int32_t> MultiplyPermutation(
     const std::vector<int32_t>& permutation,
     const std::vector<int32_t>& multiplier) {
   auto rank = permutation.size();
@@ -246,8 +246,8 @@ NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions,
          output_dimensions.size() * sizeof(int32_t));
 }
 
-NNADAPTER_EXPORT void TransposeAxis(int32_t axis,
-                                    const std::vector<int32_t>& permutation) {
+NNADAPTER_EXPORT int32_t
+TransposeAxis(int32_t axis, const std::vector<int32_t>& permutation) {
   NNADAPTER_CHECK_GE(axis, 0);
   int32_t new_axis = -1;
   for (size_t i = 0; i < permutation.size(); i++) {

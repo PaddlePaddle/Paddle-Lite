@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "driver/mediatek_apu/converter.h"
-#include "driver/mediatek_apu/optimizer/quantization_parameter_consistency_constraint.h"
+#include "driver/mediatek_apu/optimizer/propagate_quant_params.h"
+#include "driver/mediatek_apu/optimizer/resolve_op_liminations.h"
+#include "driver/mediatek_apu/optimizer/update_bias_quant_params_and_values.h"
 #include "optimizer/nchw2nhwc.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
@@ -46,9 +48,11 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   // Convert the data layout and quantization parameters of the operands in the
   // NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  ConvertModelFromSymmToAsymmQuantization(model);
-  ApplyQuantizationParametersConsistencyConstraint(model);
-  ConvertModelFromNCHWToNHWCDataLayout(model);
+  ConvertQuantizationSymmToAsymm(model);
+  PropagateQuantParams(model);
+  UpdateBiasQuantParamsAndValues(model);
+  ConvertDataLayoutNCHWToNHWC(model);
+  ResolveOpLiminations(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert the NNAdapter model to Neuron model
   operand_indexes_.clear();
