@@ -550,11 +550,7 @@ void Program::PrepareWorkspace(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
         } else if (var_type == lite::VarDescAPI::Type::STEP_SCOPES) {
           var->GetMutable<std::vector<lite::Scope*>>();
-        } else {
-          LOG(FATAL) << "Error: Unsupported data type for variable "
-                     << var_name;
         }
-
       } else {
         if (var_name == "feed" || var_name == "fetch") continue;
         weights_.push_back(var_name);
