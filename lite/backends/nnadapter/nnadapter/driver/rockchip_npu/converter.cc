@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "driver/rockchip_npu/converter.h"
+#include <algorithm>
 #include <vector>
 #include "driver/rockchip_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/symm2asymm.h"
@@ -151,8 +152,12 @@ int Program::Execute(uint32_t input_count,
     auto buffer = reinterpret_cast<uint8_t*>(argument.buffer);
     auto zero_point = input_zero_points_[argument.index];
     for (int j = 0; j < argument.length; j++) {
-      buffer[j] =
-          static_cast<uint8_t>(static_cast<int16_t>(buffer[j]) + zero_point);
+      buffer[j] = static_cast<uint8_t>(
+          std::min(std::max(static_cast<int16_t>(
+                                reinterpret_cast<int8_t*>(argument.buffer)[j]) +
+                                zero_point,
+                            0),
+                   256));
     }
     input_info_[argument.index].buf = argument.buffer;
     input_info_[argument.index].size = argument.length;
@@ -167,11 +172,15 @@ int Program::Execute(uint32_t input_count,
   NNADAPTER_CHECK_EQ(execution_->GetOutputs(output_info_), rk::nn::RK_SUCCESS);
   for (uint32_t i = 0; i < output_count; i++) {
     auto& argument = output_arguments[i];
-    auto buffer = reinterpret_cast<uint8_t*>(argument.buffer);
+    auto buffer = reinterpret_cast<int8_t*>(argument.buffer);
     auto zero_point = output_zero_points_[argument.index];
     for (int j = 0; j < argument.length; j++) {
-      buffer[j] =
-          static_cast<int8_t>(static_cast<int16_t>(buffer[j]) - zero_point);
+      buffer[j] = static_cast<int8_t>(std::min(
+          std::max(static_cast<int16_t>(
+                       reinterpret_cast<uint8_t*>(argument.buffer)[j]) -
+                       zero_point,
+                   -128),
+          127));
     }
   }
   return NNADAPTER_NO_ERROR;
