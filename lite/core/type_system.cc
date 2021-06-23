@@ -103,6 +103,20 @@ const Type *Type::GetTensorListTy(TargetType target,
   return type_repo[v];
 }
 
+const Type *Type::GetStepScopeTy() {
+  static std::map<size_t, const Type *> type_repo;
+  std::hash<int> hasher;
+  size_t v = hasher(static_cast<int>(DataType::ID::StepScope));
+  if (!type_repo[v])
+    type_repo[v] = new Type(DataType::ID::StepScope,
+                            "StepScope",
+                            TARGET(kUnk),
+                            PRECISION(kUnk),
+                            DATALAYOUT(kUnk),
+                            -1);
+  return type_repo[v];
+}
+
 const Type *Type::GetUnsupportedTy() {
   static std::map<size_t, const Type *> type_repo;
   std::hash<int> hasher;
