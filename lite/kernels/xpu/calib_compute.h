@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,11 +13,26 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/core/kernel.h"
+#include "lite/operators/calib_op.h"
 
-#include "core/hal/types.h"
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace xpu {
 
-namespace nnadapter {
+template <typename InType, typename OutType>
+class CalibCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+ public:
+  using param_t = operators::CalibParam;
 
-void ConvertDataLayoutNCHWToNHWC(hal::Model *model);
+  void Run() override;
 
-}  // namespace nnadapter
+  ~CalibCompute() override{};
+};
+
+}  // namespace xpu
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

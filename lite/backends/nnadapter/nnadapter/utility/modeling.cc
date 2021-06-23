@@ -385,51 +385,48 @@ NNADAPTER_EXPORT void TransposeOperand(hal::Operand* operand,
   }
 }
 
-NNADAPTER_EXPORT bool ReplaceOperand(hal::Model* model,
-                                     hal::Operand* pattern,
-                                     hal::Operand* replace,
-                                     bool remove) {
+NNADAPTER_EXPORT bool InsertOperand(hal::Model* model,
+                                    hal::Operand* reference_operand,
+                                    hal::Operand* target_operand,
+                                    bool after) {
   bool found = false;
-  // Replace if any operation use the 'pattern' as input or output.
-  for (auto& operation : model->operations) {
-    for (auto& operand : operation.input_operands) {
-      if (operand == pattern) {
-        operand = replace;
+  if (after) {
+    // Update if any operation use the 'reference_operand' as input
+    for (auto& operation : model->operations) {
+      for (auto& operand : operation.input_operands) {
+        if (operand == reference_operand) {
+          operand = target_operand;
+          found = true;
+        }
       }
     }
-    for (auto& operand : operation.output_operands) {
-      if (operand == pattern) {
-        operand = replace;
+    if (reference_operand->type.lifetime == NNADAPTER_MODEL_OUTPUT) {
+      for (auto& operand : model->output_operands) {
+        if (operand == reference_operand) {
+          operand = target_operand;
+        }
       }
+      reference_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+      target_operand->type.lifetime = NNADAPTER_MODEL_OUTPUT;
     }
-  }
-  // Replace if the 'pattern' is a model input or output operand
-  if (pattern->type.lifetime == NNADAPTER_MODEL_INPUT) {
-    replace->type.lifetime = NNADAPTER_MODEL_INPUT;
-    for (auto& operand : model->input_operands) {
-      if (operand == pattern) {
-        operand = replace;
-      }
-    }
-  } else if (pattern->type.lifetime == NNADAPTER_MODEL_OUTPUT) {
-    replace->type.lifetime = NNADAPTER_MODEL_OUTPUT;
-    for (auto& operand : model->output_operands) {
-      if (operand == pattern) {
-        operand = replace;
-      }
-    }
-  }
-  if (remove) {
-    auto pos =
-        std::find_if(model->operands.begin(),
-                     model->operands.end(),
-                     [&pattern](hal::Operand& o) { return &o == pattern; });
-    NNADAPTER_CHECK(pos != model->operands.end());
-    model->operands.erase(pos);
   } else {
-    if (pattern->type.lifetime == NNADAPTER_MODEL_INPUT ||
-        pattern->type.lifetime == NNADAPTER_MODEL_OUTPUT) {
-      pattern->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+    // Replace if any operation use the 'reference_operand' as output
+    for (auto& operation : model->operations) {
+      for (auto& operand : operation.output_operands) {
+        if (operand == reference_operand) {
+          operand = target_operand;
+          found = true;
+        }
+      }
+    }
+    if (reference_operand->type.lifetime == NNADAPTER_MODEL_INPUT) {
+      for (auto& operand : model->input_operands) {
+        if (operand == reference_operand) {
+          operand = target_operand;
+        }
+      }
+      reference_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+      target_operand->type.lifetime = NNADAPTER_MODEL_INPUT;
     }
   }
   return found;
@@ -444,29 +441,39 @@ NNADAPTER_EXPORT hal::Operand* AddTransposeOperation(
          &input_operand->type,
          sizeof(NNAdapterOperandType));
   TransposeDimensions(output_operand->type.dimensions, permutation);
-  // Update if input_operand is a model input operand
-  for (auto& operation : model->operations) {
-    for (auto& operand : operation.input_operands) {
-      if (operand == input_operand) {
-        operand = output_operand;
-      }
-    }
-  }
-  if (input_operand->type.lifetime == NNADAPTER_MODEL_OUTPUT) {
-    for (auto& operand : model->output_operands) {
-      if (operand == input_operand) {
-        operand = output_operand;
-      }
-    }
-    output_operand->type.lifetime = NNADAPTER_MODEL_OUTPUT;
-    input_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
-  }
+  // Update the inputs of the operations and the output of the model
+  InsertOperand(model, input_operand, output_operand, true);
   auto perm_operand = AddInt32ConstantOperand(model, permutation);
   auto transpose_operation = AddOperation(model);
   transpose_operation->type = NNADAPTER_TRANSPOSE;
   transpose_operation->input_operands = {input_operand, perm_operand};
   transpose_operation->output_operands = {output_operand};
   return output_operand;
+}
+
+NNADAPTER_EXPORT hal::Operand* AddReshapeOperation(hal::Model* model,
+                                                   hal::Operand* input_operand,
+                                                   std::vector<int32_t> shape) {
+  auto output_operand = AddOperand(model);
+  memcpy(&output_operand->type,
+         &input_operand->type,
+         sizeof(NNAdapterOperandType));
+  ReshapeDimensions(output_operand->type.dimensions,
+                    &output_operand->type.dimension_count,
+                    shape);
+  // Update the inputs of the operations and the output of the model
+  InsertOperand(model, input_operand, output_operand, true);
+  auto shape_operand = AddInt32ConstantOperand(model, shape);
+  auto reshape_operation = AddOperation(model);
+  reshape_operation->type = NNADAPTER_RESHAPE;
+  reshape_operation->input_operands = {input_operand, shape_operand};
+  reshape_operation->output_operands = {output_operand};
+  return output_operand;
+}
+
+NNADAPTER_EXPORT bool IsConstantOperand(hal::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||
+         operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
 }
 
 NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(

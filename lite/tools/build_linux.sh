@@ -329,9 +329,11 @@ function print_usage {
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|   arguments of huawei ascend npu library compiling:                                                                                                  |"
-    echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_huawei_ascend_npu=ON                                                                                |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_huawei_ascend_npu=ON                                                                               |"
     echo -e "|     --with_huawei_ascend_npu: (OFF|ON); controls whether to compile lib for huawei ascend npu, default is OFF.                                       |"
-    echo -e "|     --huawei_ascend_npu_ddk_root: (path to huawei ascend npu ddk path). optional, default is '/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux'  |"
+    echo -e "|     --huawei_ascend_npu_ddk_root: (path to huawei ascend npu ddk path).                                                                              |"
+    echo -e "|       x86 default path is '/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux'                                                                     |"
+    echo -e "|       arm default path is '/usr/local/Ascend/ascend-toolkit/latest/arm64-linux'                                                                      |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -419,7 +421,7 @@ function main {
                 ;;
             # compiling lib which can operate on huawei ascend npu.
             --with_huawei_ascend_npu=*)
-                HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
+                WITH_HUAWEI_ASCEND_NPU="${i#*=}"
                 shift
                 ;;
             --huawei_ascend_npu_ddk_root=*)

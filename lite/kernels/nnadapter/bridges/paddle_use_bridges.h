@@ -73,3 +73,5 @@ USE_SUBGRAPH_BRIDGE(reshape2, kNNAdapter, "rockchip_npu,mediatek_apu");
 USE_SUBGRAPH_BRIDGE(transpose, kNNAdapter, "rockchip_npu,mediatek_apu");
 USE_SUBGRAPH_BRIDGE(transpose2, kNNAdapter, "rockchip_npu,mediatek_apu");
 USE_SUBGRAPH_BRIDGE(concat, kNNAdapter, "rockchip_npu,mediatek_apu");
+USE_SUBGRAPH_BRIDGE(flatten, kNNAdapter, "rockchip_npu,mediatek_apu");
+USE_SUBGRAPH_BRIDGE(flatten2, kNNAdapter, "rockchip_npu,mediatek_apu");

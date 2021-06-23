@@ -17,9 +17,9 @@
 #include "core/hal/types.h"
 
 namespace nnadapter {
-namespace mediatek_apu {
+namespace rockchip_npu {
 
-void ApplyQuantizationParametersConsistencyConstraint(hal::Model* model);
+void UnpackOpFusion(hal::Model* model);
 
-}  // namespace mediatek_apu
+}  // namespace rockchip_npu
 }  // namespace nnadapter
