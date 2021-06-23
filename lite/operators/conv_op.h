@@ -62,7 +62,7 @@ class ConvOpLite : public OpLite {
 
     if (!param_.fuse_elementwise_op_type.empty()) {
       ch->remark += param_.fuse_elementwise_op_type;
-      ch->macs += 1.0f * output_dims.numel();
+      ch->macs += 1.0f * output_dims.production();
     }
   }
 #endif
