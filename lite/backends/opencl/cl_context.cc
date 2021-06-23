@@ -129,7 +129,7 @@ cl::NDRange CLContext::DefaultGlobalWorkSize(const CLImage &image) {
 std::set<cl::NDRange, CLContext::CompareByRange>
 CLContext::GenerateLocalWorkSizes(cl::NDRange gws, size_t max_ws) {
   size_t tune_type = CLRuntime::Global()->auto_tune();
-  auto first_lws = DefaultLocalWorkSize(gws, max_ws, 2, false);
+  auto first_lws = DefaultLocalWorkSize(gws, max_ws, 3, false);
   std::set<cl::NDRange, CompareByRange> lwss;
   for (auto one_lws : first_lws) {
     lwss.insert(one_lws);
