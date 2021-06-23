@@ -92,6 +92,11 @@ const char *opencl_error_to_str(cl_int error);
       ? static_cast<void *>((tensor_ins_p)->mutable_data<half_t>())     \
       : static_cast<void *>((tensor_ins_p)->mutable_data<float>())
 
+#define GET_BUFFER_GPU(tensor_ins_p)                                    \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) \
+      ? (tensor_ins_p)->data<half_t, cl::Buffer>()                      \
+      : (tensor_ins_p)->data<float, cl::Buffer>()
+
 template <typename T, typename Dim>
 inline void IOHW2OIHW(const T *src, T *dst, Dim O, Dim I, Dim H, Dim W) {
   for (Dim i = 0; i < I; i++) {

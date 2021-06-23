@@ -129,8 +129,11 @@ cl::NDRange CLContext::DefaultGlobalWorkSize(const CLImage &image) {
 std::set<cl::NDRange, CLContext::CompareByRange>
 CLContext::GenerateLocalWorkSizes(cl::NDRange gws, size_t max_ws) {
   size_t tune_type = CLRuntime::Global()->auto_tune();
+  auto first_lws = DefaultLocalWorkSize(gws, max_ws, 2, false);
   std::set<cl::NDRange, CompareByRange> lwss;
-  // lwss.insert(cl::NullRange);
+  for (auto one_lws : first_lws) {
+    lwss.insert(one_lws);
+  }
   auto gen_lws = [&](const std::set<bool> &tune_reverses,
                      const std::set<size_t> &divisors) {
     for (bool tune_reverse : tune_reverses) {
@@ -146,7 +149,7 @@ CLContext::GenerateLocalWorkSizes(cl::NDRange gws, size_t max_ws) {
   std::set<bool> tune_reverses{true, false};
   std::set<size_t> divisors;
   if (tune_type == lite_api::CL_TUNE_NONE) {
-    // do nothing
+    return lwss;
   } else if (tune_type == lite_api::CL_TUNE_RAPID) {
     divisors = {1, 2, 4, 8};
   } else if (tune_type == lite_api::CL_TUNE_NORMAL) {
@@ -175,7 +178,6 @@ CLContext::GenerateLocalWorkSizes(cl::NDRange gws, size_t max_ws) {
       }
     }
   }
-  return lwss;
 #endif  // GEN_DIV_LWS
 
 #define GEN_DIV_LWS
