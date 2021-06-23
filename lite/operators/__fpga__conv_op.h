@@ -78,6 +78,7 @@ class FpgaConvOpLite : public ConvOpLite {
     stride_info_.start_idx_ = start_idx;
     stride_info_.end_idx_ = end_idx;
 #endif
+    return true;
   }
 
 
