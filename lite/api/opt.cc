@@ -20,8 +20,7 @@
 // are created automatically during opt's compiling period
 #include <algorithm>
 #include <iomanip>
-#include "all_kernel_faked.cc"  // NOLINT
-#include "kernel_src_map.h"     // NOLINT
+#include "kernel_src_map.h"  // NOLINT
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
@@ -92,8 +91,10 @@ void DisplayKernels() {
   LOG(INFO) << ::paddle::lite::KernelRegistry::Global().DebugString();
 }
 
-std::vector<Place> ParserValidPlaces(bool enable_fp16) {
+std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
+    bool enable_fp16) {
   std::vector<Place> valid_places;
+  std::vector<std::string> nnadapter_devices;
   auto target_reprs = lite::Split(FLAGS_valid_targets, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
@@ -173,6 +174,21 @@ std::vector<Place> ParserValidPlaces(bool enable_fp16) {
       valid_places.emplace_back(TARGET(kIntelFPGA));
       valid_places.emplace_back(
           Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+    } else if (target_repr == "rockchip_npu") {
+      valid_places.emplace_back(TARGET(kNNAdapter));
+      valid_places.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
+      nnadapter_devices.emplace_back(target_repr);
+    } else if (target_repr == "mediatek_apu") {
+      valid_places.emplace_back(TARGET(kNNAdapter));
+      valid_places.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
+      nnadapter_devices.emplace_back(target_repr);
+    } else if (target_repr == "huawei_kirin_npu") {
+      valid_places.emplace_back(TARGET(kNNAdapter));
+      valid_places.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_devices.emplace_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -185,7 +201,8 @@ std::vector<Place> ParserValidPlaces(bool enable_fp16) {
       << "At least one target should be set, should set the "
          "command argument 'valid_targets'";
 
-  return valid_places;
+  return std::pair<std::vector<Place>, std::vector<std::string>>(
+      valid_places, nnadapter_devices);
 }
 
 void RunOptimize(const std::string& model_dir,
@@ -194,6 +211,7 @@ void RunOptimize(const std::string& model_dir,
                  const std::string& optimize_out,
                  const std::string& optimize_out_type,
                  const std::vector<Place>& valid_places,
+                 const std::vector<std::string>& nnadapter_devices,
                  bool record_tailoring_info,
                  bool quant_model,
                  const std::string& quant_type) {
@@ -207,6 +225,9 @@ void RunOptimize(const std::string& model_dir,
   config.set_model_file(model_file);
   config.set_param_file(param_file);
   config.set_valid_places(valid_places);
+  if (!nnadapter_devices.empty()) {
+    config.set_nnadapter_devices(nnadapter_devices);
+  }
   config.set_quant_model(quant_model);
   if (quant_type == "QUANT_INT8") {
     config.set_quant_type(QuantType::QUANT_INT8);
@@ -255,6 +276,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kX86",
                                       "kCUDA",
                                       "kARM",
+                                      "kMetal",
                                       "kOpenCL",
                                       "kFPGA",
                                       "kNPU",
@@ -264,6 +286,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kHuaweiAscendNPU",
                                       "kImaginationNNA",
                                       "kIntelFPGA",
+                                      "kNNAdapter",
                                       "kAny",
                                       "kUnk"};
   size_t maximum_optype_length = 0;
@@ -333,9 +356,9 @@ void PrintHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
-      "ascend_npu|"
-      "imagination_nna|intel_fpga)`\n"
+      "`--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "mediatek_apu|huawei_kirin_npu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
@@ -346,15 +369,15 @@ void PrintHelpInfo() {
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
-      "ascend_npu|"
-      "imagination_nna|intel_fpga)"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "mediatek_apu|huawei_kirin_npu)"
       "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
-      "ascend_npu|"
-      "imagination_nna|intel_fpga)"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "mediatek_apu|huawei_kirin_npu)"
       "`"
       "  Display operators in the input model\n"
       "  How to print detailed information: export GLOG_v=1 \n";
@@ -381,8 +404,8 @@ void ParseInputCommand() {
     auto valid_places = paddle::lite_api::ParserValidPlaces(FLAGS_enable_fp16);
     // get valid_targets string
     std::vector<TargetType> target_types = {};
-    for (size_t i = 0; i < valid_places.size(); i++) {
-      target_types.push_back(valid_places[i].target);
+    for (size_t i = 0; i < valid_places.first.size(); i++) {
+      target_types.push_back(valid_places.first[i].target);
     }
     std::string targets_str = TargetToStr(target_types[0]);
     for (size_t i = 1; i < target_types.size(); i++) {
@@ -411,8 +434,8 @@ void CheckIfModelSupported() {
   auto valid_unktype_ops = supported_ops_target[static_cast<int>(TARGET(kUnk))];
   valid_ops.insert(
       valid_ops.end(), valid_unktype_ops.begin(), valid_unktype_ops.end());
-  for (size_t i = 0; i < valid_places.size(); i++) {
-    auto target = valid_places[i].target;
+  for (size_t i = 0; i < valid_places.first.size(); i++) {
+    auto target = valid_places.first[i].target;
     auto ops = supported_ops_target[static_cast<int>(target)];
     valid_ops.insert(valid_ops.end(), ops.begin(), ops.end());
   }
@@ -459,8 +482,8 @@ void CheckIfModelSupported() {
       unsupported_ops_str = unsupported_ops_str + ", " + *op_str;
     }
     std::vector<TargetType> targets = {};
-    for (size_t i = 0; i < valid_places.size(); i++) {
-      targets.push_back(valid_places[i].target);
+    for (size_t i = 0; i < valid_places.first.size(); i++) {
+      targets.push_back(valid_places.first[i].target);
     }
     std::stable_sort(targets.begin(), targets.end());
     targets.erase(unique(targets.begin(), targets.end()), targets.end());
@@ -494,7 +517,8 @@ void Main() {
                 FLAGS_param_file,
                 FLAGS_optimize_out,
                 FLAGS_optimize_out_type,
-                valid_places,
+                valid_places.first,
+                valid_places.second,
                 FLAGS_record_tailoring_info,
                 FLAGS_quant_model,
                 FLAGS_quant_type);
@@ -536,7 +560,8 @@ void Main() {
                 param_file,
                 output_model_dir,
                 FLAGS_optimize_out_type,
-                valid_places,
+                valid_places.first,
+                valid_places.second,
                 FLAGS_record_tailoring_info,
                 FLAGS_quant_model,
                 FLAGS_quant_type);

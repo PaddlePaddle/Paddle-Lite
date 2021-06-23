@@ -55,7 +55,7 @@ USE_MIR_PASS(lite_sequence_reverse_embedding_fuse_pass);
 USE_MIR_PASS(lite_elementwise_activation_fuse_pass);
 USE_MIR_PASS(lite_elementwise_scale_fuse_pass);
 USE_MIR_PASS(lite_conv_scale_fuse_pass);
-
+USE_MIR_PASS(lite_conv_elementwise_tree_fuse_pass);
 USE_MIR_PASS(lite_quant_dequant_fuse_pass);
 USE_MIR_PASS(type_precision_cast_pass);
 USE_MIR_PASS(type_layout_cast_pass);
@@ -67,6 +67,7 @@ USE_MIR_PASS(elementwise_mul_constant_eliminate_pass)
 USE_MIR_PASS(npu_subgraph_pass);
 USE_MIR_PASS(huawei_ascend_npu_subgraph_pass);
 USE_MIR_PASS(imagination_nna_subgraph_pass);
+USE_MIR_PASS(nnadapter_subgraph_pass);
 USE_MIR_PASS(xpu_subgraph_pass);
 USE_MIR_PASS(mlu_subgraph_pass);
 USE_MIR_PASS(mlu_postprocess_pass);
@@ -109,3 +110,4 @@ USE_MIR_PASS(__xpu__link_previous_out_max_pass);
 USE_MIR_PASS(__xpu__squeeze_excitation_fuse_pass);
 USE_MIR_PASS(__xpu__concat_conv2d_fuse_pass);
 USE_MIR_PASS(__xpu__bigru_fuse_pass);
+USE_MIR_PASS(__xpu__conv_pixel_shuffle_fuse_pass);

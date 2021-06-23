@@ -42,13 +42,14 @@ class ExpImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput("exp", output_buffer_);
     };
+    virtual ~ExpImageCompute();
 
    private:
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> param_buffer_;
 
-    void* pipline_;
+    id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
 };

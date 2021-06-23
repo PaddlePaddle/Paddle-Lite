@@ -18,75 +18,122 @@
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-void BilinearInterpCompute::Run() {
-  auto& param = Param<operators::InterpolateParam>();
-  lite::Tensor* X = param.X;
-  lite::Tensor* OutSize = param.OutSize;
-  auto SizeTensor = param.SizeTensor;
-  auto Scale = param.Scale;
-  lite::Tensor* Out = param.Out;
-  float scale = param.scale;
-  int out_w = param.out_w;
-  int out_h = param.out_h;
-  bool align_corners = param.align_corners;
-  int align_mode = param.align_mode;
-  std::string interp_method = "Bilinear";
-  lite::arm::math::interpolate(X,
-                               OutSize,
-                               SizeTensor,
-                               Scale,
-                               Out,
-                               out_h,
-                               out_w,
-                               scale,
-                               align_corners,
-                               align_mode,
-                               interp_method);
+#define INIT_PARAM(method_name)                       \
+  auto& param = Param<operators::InterpolateParam>(); \
+  lite::Tensor* X = param.X;                          \
+  lite::Tensor* OutSize = param.OutSize;              \
+  auto SizeTensor = param.SizeTensor;                 \
+  auto Scale = param.Scale;                           \
+  lite::Tensor* Out = param.Out;                      \
+  float scale = param.scale;                          \
+  int out_w = param.out_w;                            \
+  int out_h = param.out_h;                            \
+  bool align_corners = param.align_corners;           \
+  int align_mode = param.align_mode;                  \
+  std::string interp_method = method_name;
+
+#define INTERP_PARAM                                                      \
+  X, OutSize, SizeTensor, Scale, Out, out_h, out_w, scale, align_corners, \
+      align_mode, interp_method
+
+template <>
+void BilinearInterpCompute<PRECISION(kFloat)>::Run() {
+  INIT_PARAM("Bilinear")
+  lite::arm::math::interpolate(INTERP_PARAM);
 }
 
-void NearestInterpCompute::Run() {
-  auto& param = Param<operators::InterpolateParam>();
-  lite::Tensor* X = param.X;
-  lite::Tensor* OutSize = param.OutSize;
-  auto SizeTensor = param.SizeTensor;
-  auto Scale = param.Scale;
-  lite::Tensor* Out = param.Out;
-  float scale = param.scale;
-  int out_w = param.out_w;
-  int out_h = param.out_h;
-  bool align_corners = param.align_corners;
-  int align_mode = param.align_mode;
-  std::string interp_method = "Nearest";
-  lite::arm::math::interpolate(X,
-                               OutSize,
-                               SizeTensor,
-                               Scale,
-                               Out,
-                               out_h,
-                               out_w,
-                               scale,
-                               align_corners,
-                               align_mode,
-                               interp_method);
+template <>
+void NearestInterpCompute<PRECISION(kFloat)>::Run() {
+  INIT_PARAM("Nearest")
+  lite::arm::math::interpolate(INTERP_PARAM);
 }
+
+#ifdef ENABLE_ARM_FP16
+template <>
+void BilinearInterpCompute<PRECISION(kFP16)>::Run() {
+  INIT_PARAM("Bilinear")
+  lite::arm::math::fp16::interpolate(INTERP_PARAM);
+}
+
+template <>
+void NearestInterpCompute<PRECISION(kFP16)>::Run() {
+  INIT_PARAM("Nearest")
+  lite::arm::math::fp16::interpolate(INTERP_PARAM);
+}
+#endif
 
 } /* namespace arm */
 } /* namespace kernels */
 } /* namespace lite */
 } /* namespace paddle */
 
-REGISTER_LITE_KERNEL(bilinear_interp,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::BilinearInterpCompute,
-                     def)
+#ifdef ENABLE_ARM_FP16
+typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFP16)>
+    bilinear_interp_fp16;
+typedef paddle::lite::kernels::arm::NearestInterpCompute<PRECISION(kFP16)>
+    nearest_interp_fp16;
+
+REGISTER_LITE_KERNEL(
+    bilinear_interp, kARM, kFP16, kNCHW, bilinear_interp_fp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    nearest_interp, kARM, kFP16, kNCHW, nearest_interp_fp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    bilinear_interp_v2, kARM, kFP16, kNCHW, bilinear_interp_fp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    nearest_interp_v2, kARM, kFP16, kNCHW, nearest_interp_fp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
+
+typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFloat)>
+    bilinear_interp_fp32;
+typedef paddle::lite::kernels::arm::NearestInterpCompute<PRECISION(kFloat)>
+    nearest_interp_fp32;
+
+REGISTER_LITE_KERNEL(
+    bilinear_interp, kARM, kFloat, kNCHW, bilinear_interp_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
@@ -96,12 +143,8 @@ REGISTER_LITE_KERNEL(bilinear_interp,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(nearest_interp,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NearestInterpCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    nearest_interp, kARM, kFloat, kNCHW, nearest_interp_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
@@ -111,12 +154,8 @@ REGISTER_LITE_KERNEL(nearest_interp,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(bilinear_interp_v2,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::BilinearInterpCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    bilinear_interp_v2, kARM, kFloat, kNCHW, bilinear_interp_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
@@ -126,12 +165,8 @@ REGISTER_LITE_KERNEL(bilinear_interp_v2,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(nearest_interp_v2,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::NearestInterpCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    nearest_interp_v2, kARM, kFloat, kNCHW, nearest_interp_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})

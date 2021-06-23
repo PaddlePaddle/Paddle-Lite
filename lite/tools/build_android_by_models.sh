@@ -8,7 +8,10 @@ readonly workspace=${workspace%%lite/tools*}
 WITH_LOG=OFF
 WITH_CV=ON
 WITH_EXCEPTION=ON
+# ToolChain options: clang gcc
 TOOL_CHAIN=clang
+# AndroidStl options: c++_static c++_shared
+ANDROID_STL=c++_static
 
 ## step 1: compile opt tool
 cd $workspace
@@ -50,8 +53,9 @@ rm -rf $(ls ./models_opt | grep -v .nb)
 
 # step 4. compiling iOS lib
 cd $workspace
-./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION
-./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION
+./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL
+
+./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL
 
 # step 5. pack compiling results and optimized models
 result_name=android_lib

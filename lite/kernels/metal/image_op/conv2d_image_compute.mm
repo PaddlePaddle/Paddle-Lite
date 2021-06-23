@@ -125,10 +125,6 @@ void Conv2dImageCompute::PrepareForRun() {
     }
 }
 
-void Conv2dImageCompute::SaveOutput() {
-    MetalDebug::SaveOutput(function_name_, output_buffer_);
-};
-
 void Conv2dImageCompute::Run() {
     if (use_mps_) {
         run_with_mps();
@@ -141,8 +137,8 @@ void Conv2dImageCompute::Run() {
 
 void Conv2dImageCompute::run_without_mps() {
     const auto& param = this->Param<param_t>();
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -315,7 +311,7 @@ void Conv2dImageCompute::setup_without_mps() {
         } break;
         case lite_api::ActivationType::kLeakyRelu: {
             activation_params.alpha = param.activation_param.Leaky_relu_alpha;
-        }
+        } break;
         default:
             break;
     }
@@ -359,7 +355,7 @@ void Conv2dImageCompute::setup_without_mps() {
             filter_buffer_->convert_to_nhwc_ = false;
             filter_buffer_->pad_when_one_channel_ = false;
         } else {
-            filter_buffer_->convert_to_nhwc_ = false;
+            filter_buffer_->convert_to_nhwc_ = true;
             bool pad_when_one_ch =
                 !(param.filter->dims()[1] == 1 && param.filter->dims()[0] == param.x->dims()[1]);
             filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
@@ -376,7 +372,7 @@ void Conv2dImageCompute::setup_without_mps() {
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 #pragma mark - MPS
@@ -442,14 +438,24 @@ void Conv2dImageCompute::setup_with_mps() {
         // MPS算子
         MPSConvDataSource* scoure = [[MPSConvDataSource alloc] init];
         scoure.descriptor = description;
-        // weights(filter) NHWC
+        // mps weights(filter) NHWC
+        // weight: [ outputChannels ][ kernelHeight ][ kernelWidth ][ inputChannels / groups ]
         auto filter = param.filter->data<float>();
-        bool pad_when_one_ch =
-            !(param.filter->dims()[1] == 1 && param.filter->dims()[0] == param.x->dims()[1]);
+        DataConverter<float>* converter = new MPSPointerConverter<float>();
+        auto from_dim = param.filter->dims();
+        auto count = from_dim.production();
+        auto to_filter = (float*)TargetWrapperMetal::Malloc(sizeof(float) * count);
+        try {
+            converter->Convert(const_cast<float*>(filter), to_filter, from_dim);
+        } catch (std::exception& error) {
+            TargetWrapperMetal::Free(to_filter);
+            LOG(FATAL) << "metal_conv2d: still not finish mps";
+        }
         filter_buffer_ = std::make_shared<MetalBuffer>(
             metal_context_, param.filter->dims(), METAL_PRECISION_TYPE::HALF);
-        filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
-        filter_buffer_->CopyFromNCHW<float>(filter);
+        filter_buffer_->convert_to_nhwc_ = false;
+        filter_buffer_->CopyFromNCHW<float>(to_filter);
+        TargetWrapperMetal::Free(to_filter);
         scoure.weights = filter_buffer_->rawdata();
         // bias
         if (param.bias && canMPSAddByChannel()) {
@@ -473,6 +479,8 @@ void Conv2dImageCompute::setup_with_mps() {
                                                        featureChannels:output_c];
     }
 }
+
+#pragma mark - internal
 
 bool Conv2dImageCompute::IsWinoGrad(const std::string& function_name) {
     std::string suffix = "winograd";
@@ -528,10 +536,8 @@ Conv2dImageCompute::~Conv2dImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
-    if (pipline_) {
-        CFRelease(pipline_);
-        pipline_ = nullptr;
-    }
+    TargetWrapperMetal::FreeImage(output_buffer_);
+    TargetWrapperMetal::FreeImage(blank_buffer_);
 }
 
 }  // namespace metal

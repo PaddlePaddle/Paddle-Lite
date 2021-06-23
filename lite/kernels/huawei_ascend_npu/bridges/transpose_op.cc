@@ -47,13 +47,14 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     x_node = graph->Add(x_name, *x);
   }
 
+  auto input_perm_node = graph->Add<int>(x_name + "/perm", axis);
   // Transpose node
-  auto transpose_node = graph->Add<ge::op::TransposeD>(out_name);
-  auto transpose_op = transpose_node->data<ge::op::TransposeD>();
+  auto transpose_node = graph->Add<ge::op::Transpose>(out_name);
+  auto transpose_op = transpose_node->data<ge::op::Transpose>();
   transpose_op->set_input_x(*x_node->data());
-  transpose_op->set_attr_perm(
-      ge::Operator::OpListInt(axis.begin(), axis.end()));
+  transpose_op->set_input_perm(*input_perm_node->data());
   INPUT_UPDATE(transpose_op, x, x_node);
+  INPUT_UPDATE(transpose_op, perm, input_perm_node);
   OUTPUT_UPDATE(transpose_op, y, transpose_node);
 
   return SUCCESS;

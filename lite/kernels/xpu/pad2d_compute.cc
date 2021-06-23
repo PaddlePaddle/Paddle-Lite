@@ -24,7 +24,7 @@ namespace xpu {
 template <class T>
 void Pad2dCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto pads = param.paddings;
   auto mode = param.mode;
   auto data_format = param.data_format;

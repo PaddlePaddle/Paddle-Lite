@@ -70,6 +70,7 @@ add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
 
 # 3.extra ops
 add_operator(activation_extra_ops extra SRCS activation_extra_ops.cc DEPS ${op_DEPS})
+add_operator(reduce_extra_ops extra SRCS reduce_extra_ops.cc DEPS ${op_DEPS})
 add_operator(search_group_padding extra SRCS search_group_padding_op.cc DEPS ${op_DEPS})
 add_operator(lrn_op_lite extra SRCS lrn_op.cc DEPS ${op_DEPS})
 add_operator(decode_bboxes_op_lite extra SRCS decode_bboxes_op.cc DEPS ${op_DEPS})
@@ -220,6 +221,7 @@ add_operator(__xpu__generate_sequence_op extra SRCS __xpu__generate_sequence_op.
 add_operator(__xpu__logit_op extra SRCS __xpu__logit_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__conv_pixel_shuffle_fuse_op extra SRCS __xpu__conv_pixel_shuffle_fuse_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)

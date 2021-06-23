@@ -42,10 +42,10 @@ class Conv2dImageCompute
    public:
     void PrepareForRun() override;
     void Run() override;
-    void SaveOutput() override;
-    //  void SaveOutput() override {
-    //    MetalDebug::SaveOutput("conv2d", output_buffer_);
-    //  };
+    void SaveOutput() override {
+        MetalDebug::SaveOutput(
+            (use_mps_ ? ("MPS_" + function_name_) : function_name_), output_buffer_);
+    };
     virtual ~Conv2dImageCompute();
 
    private:
@@ -76,14 +76,14 @@ class Conv2dImageCompute
     uint16_t activate_type_ = 0;
     std::string name_param_out_;
 
-    void* pipline_;
+    id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
 
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_;
     const MetalImage* bias_buffer_;
-    MetalImage* blank_buffer_;
+    MetalImage* blank_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> filter_buffer_;
     std::shared_ptr<MetalBuffer> params_buffer_;
 };

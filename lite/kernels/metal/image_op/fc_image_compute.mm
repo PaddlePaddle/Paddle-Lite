@@ -45,8 +45,8 @@ void FCImageCompute::PrepareForRun() {
 }
 
 void FCImageCompute::Run() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -84,8 +84,13 @@ void FCImageCompute::setup_without_mps() {
     function_name_ = "mul_add";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
+
+FCImageCompute::~FCImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
 }
 }
 }

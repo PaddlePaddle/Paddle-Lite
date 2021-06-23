@@ -16,6 +16,13 @@
 
 namespace x86 = paddle::lite::kernels::x86;
 
+using ReduceMeanFloat32 = x86::ReduceCompute<float, x86::MeanFunctor>;
+REGISTER_LITE_KERNEL(reduce_mean, kX86, kFloat, kNCHW, ReduceMeanFloat32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+
+#ifdef LITE_BUILD_EXTRA
 using ReduceSumFloat32 = x86::ReduceCompute<float, x86::SumFunctor>;
 REGISTER_LITE_KERNEL(reduce_sum, kX86, kFloat, kNCHW, ReduceSumFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -52,12 +59,6 @@ REGISTER_LITE_KERNEL(reduce_prod, kX86, kFloat, kNCHW, ReduceProdInt64, int64)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
 
-using ReduceMeanFloat32 = x86::ReduceCompute<float, x86::MeanFunctor>;
-REGISTER_LITE_KERNEL(reduce_mean, kX86, kFloat, kNCHW, ReduceMeanFloat32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
-
 using ReduceMaxFloat32 = x86::ReduceCompute<float, x86::MaxFunctor>;
 REGISTER_LITE_KERNEL(reduce_max, kX86, kFloat, kNCHW, ReduceMaxFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -75,3 +76,4 @@ REGISTER_LITE_KERNEL(reduce_max, kX86, kFloat, kNCHW, ReduceMaxInt64, int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+#endif  // LITE_BUILD_EXTRA

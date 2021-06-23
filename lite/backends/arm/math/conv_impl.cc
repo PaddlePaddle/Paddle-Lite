@@ -1221,7 +1221,7 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
       alpha[3] = local_alpha;
     }
   }
-  bool support_act_type = flag_act <= 1;
+  bool support_act_type = flag_act <= 2;
   bool support_pad_type =
       (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
       (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
@@ -1332,7 +1332,7 @@ void conv_depthwise_3x3_int8_int8(const void* din,
       alpha[3] = local_alpha;
     }
   }
-  bool support_act_type = flag_act <= 1;
+  bool support_act_type = flag_act <= 2;
   bool support_pad_type =
       (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
       (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);

@@ -34,16 +34,15 @@ void NearestInterpImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(
-        metal_context_, output_dims, input_buffer_->transpose_);
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     setup_without_mps();
 }
 
 void NearestInterpImageCompute::Run() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -83,7 +82,11 @@ void NearestInterpImageCompute::setup_without_mps() {
     function_name_ = "nearest_interp";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
+}
+
+NearestInterpImageCompute::~NearestInterpImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

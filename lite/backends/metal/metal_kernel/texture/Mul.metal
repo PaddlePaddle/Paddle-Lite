@@ -82,3 +82,31 @@ kernel void mul_add(texture2d_array<ftype, access::sample> inputX
   r = activation(r, param);
   outTexture.write(r, gid.xy, gid.z);
 }
+
+
+kernel void mat_mul(texture2d_array<ftype, access::sample> inputX [[texture(0)]],
+                    texture2d_array<ftype, access::sample> inputY [[texture(1)]],
+                    texture2d_array<ftype, access::write> outTexture [[texture(2)]],
+                    uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size())
+    return;
+  constexpr sampler sample(
+      coord::pixel, filter::nearest, address::clamp_to_zero);
+  int xLen = inputX.get_array_size();
+  ftype4 r = ftype4(0, 0, 0, 0);
+  for (int i = 0; i < xLen; i++) {
+    ftype4 iX = inputX.sample(sample, float2(gid.x, gid.y), i);
+
+    ftype4 iY1 = inputY.sample(sample, float2(gid.x, gid.y), i);
+    ftype4 iY2 = inputY.sample(sample, float2(gid.x + 1, gid.y), i);
+    ftype4 iY3 = inputY.sample(sample, float2(gid.x + 2, gid.y), i);
+    ftype4 iY4 = inputY.sample(sample, float2(gid.x + 3, gid.y), i);
+
+    r.x += dot(iX, iY1);
+    r.y += dot(iX, iY2);
+    r.z += dot(iX, iY3);
+    r.w += dot(iX, iY4);
+  }
+  outTexture.write(r, gid.xy, gid.z);    
+}

@@ -456,6 +456,7 @@ struct ConvParam : ParamBase {
   lite::Tensor* filter{};
   lite::Tensor* bias{nullptr};
   lite::Tensor* residualData{nullptr};
+  lite::Tensor* second_x{nullptr};
   lite::Tensor* output{};
   std::vector<int> strides{1, 1};
   /* paddings type change
@@ -485,6 +486,8 @@ struct ConvParam : ParamBase {
   std::string data_format{"Anylayout"};
   // for activation
   ActivationParam activation_param;
+  // for elementwise tree fuse
+  std::string fuse_elementwise_op_type{""};
   // support var_length or not
   bool var_length{false};
   // only used in conv_transpose.
@@ -2132,6 +2135,32 @@ struct XPULogitParam : ParamBase {
   const lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
   float eps{1e-7f};
+};
+
+struct XPUConvPixelShuffleFuseParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* filter_0{nullptr};
+  const lite::Tensor* filter_1{nullptr};
+  const lite::Tensor* bias_0{nullptr};
+  const lite::Tensor* bias_1{nullptr};
+  const lite::Tensor* input_max{nullptr};
+  lite::Tensor* output{nullptr};
+  lite::Tensor* output_max{nullptr};
+  std::vector<int> strides_0;
+  std::vector<int> strides_1;
+  std::shared_ptr<std::vector<int>> paddings_0;
+  std::shared_ptr<std::vector<int>> paddings_1;
+  std::shared_ptr<std::vector<int>> dilations_0;
+  std::shared_ptr<std::vector<int>> dilations_1;
+  std::vector<int> groups_0;
+  std::vector<int> groups_1;
+  std::vector<int> act_type_0;
+  std::vector<int> act_type_1;
+  std::vector<float> act_param_0;
+  std::vector<float> act_param_1;
+  int upscale_factor{1};
+  bool has_bias_0{false};
+  bool has_bias_1{false};
 };
 
 // For DeformableConvolution op

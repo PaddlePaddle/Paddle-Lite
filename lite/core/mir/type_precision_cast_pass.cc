@@ -104,6 +104,80 @@ static bool InferScale(Node* var_node, Node* op_node, float* scale) {
   return found;
 }
 
+// For the kernel whose input argument precision is defined as PRECISION(kAny),
+// infer its real precision type from the op's extra information
+static const Type* InferKernelInputDeclType(Node* var_node, Node* op_node) {
+  CHECK(var_node->IsArg());
+  CHECK(op_node->IsStmt());
+  auto& inst = op_node->AsStmt();
+  const auto* op_info = inst.op_info();
+  const auto& op_type = op_info->Type();
+  auto& kernel = inst.picked_kernel();
+  auto var_name = var_node->AsArg().name;
+  std::string arg_name;
+  CHECK(op_info->GetInputArgname(var_name, &arg_name));
+  auto input_decl_type = kernel.GetInputDeclType(arg_name);
+  auto input_decl_target = input_decl_type->target();
+  auto input_decl_precision = input_decl_type->precision();
+  auto input_decl_layout = input_decl_type->layout();
+  if (input_decl_precision == PRECISION(kAny) ||
+      input_decl_precision == PRECISION(kUnk)) {
+    if (op_type == "fetch") {
+      // Infer the input declare precision of fetch kernel according to the
+      // attribute 'data_type' which is stored during initializing a graph
+      if (op_info->HasAttr("data_type")) {
+        auto data_type =
+            static_cast<PrecisionType>(op_info->GetAttr<int>("data_type"));
+        input_decl_type = LiteType::GetTensorTy(
+            input_decl_target, data_type, input_decl_layout);
+      }
+    } else if (op_type == "subgraph") {
+      // Only infer the input declare precision of the NNAdapter subgraph kernel
+      // according to the quantization parameters
+      if (kernel.target() == TARGET(kNNAdapter)) {
+        auto input_data_names =
+            op_info->GetAttr<std::vector<std::string>>("input_data_names");
+        if (std::find(input_data_names.begin(),
+                      input_data_names.end(),
+                      var_name) != input_data_names.end()) {
+          if (op_info->HasInputScale(var_name)) {
+            if (input_decl_type->IsTensor()) {
+              input_decl_type = LiteType::GetTensorTy(
+                  input_decl_target, PRECISION(kInt8), input_decl_layout);
+            } else if (input_decl_type->IsTensorList()) {
+              input_decl_type = LiteType::GetTensorListTy(
+                  input_decl_target, PRECISION(kInt8), input_decl_layout);
+            }
+          }
+        }
+      }
+    } else if (op_type == "concat") {
+      // Infer the input declare precision of the concat kernel according to the
+      // quantization parameters
+      for (auto* in_var_node : op_node->inlinks) {
+        CHECK(in_var_node->IsArg());
+        CHECK(in_var_node->AsArg().type);
+        auto in_var_name = in_var_node->AsArg().name;
+        auto in_var_type = in_var_node->AsArg().type;
+        if (!op_info->HasInputScale(in_var_name)) continue;
+        if (in_var_type->precision() != PRECISION(kInt8)) continue;
+        // If the precision of any input variable is PRECISION(kInt8) with
+        // quantization parameters, then force to set the input declare
+        // precision to PRECISION(kFloat)
+        if (input_decl_type->IsTensor()) {
+          input_decl_type = LiteType::GetTensorTy(
+              input_decl_target, PRECISION(kFloat), input_decl_layout);
+        } else if (input_decl_type->IsTensorList()) {
+          input_decl_type = LiteType::GetTensorListTy(
+              input_decl_target, PRECISION(kFloat), input_decl_layout);
+        }
+        break;
+      }
+    }
+  }
+  return input_decl_type;
+}
+
 void PrecisionCastPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
   std::list<Node*> nodes;
@@ -137,23 +211,14 @@ void PrecisionCastPass::ComplementInputs(
     return;
 
   CHECK(inst_node->IsStmt());
-  auto& inst = inst_node->AsStmt();
   CHECK(in->IsRoleSet());
   CHECK(in->IsArg());
-  auto in_arg_name = in->AsArg().name;
-  std::string tmp;
-  CHECK(inst.op_info()->GetInputArgname(in_arg_name, &tmp));
-  auto decl_arg_type = inst.picked_kernel().GetInputDeclType(tmp);
   CHECK(in->AsArg().type);
-  VLOG(4) << inst.picked_kernel().name();
-  if (inst.op_info()->Type() == "fetch") {
-    if (inst.op_info()->HasAttr("data_type")) {
-      auto data_type =
-          static_cast<PrecisionType>(inst.op_info()->GetAttr<int>("data_type"));
-      decl_arg_type = LiteType::GetTensorTy(
-          decl_arg_type->target(), data_type, decl_arg_type->layout());
-    }
-  }
+  auto& inst = inst_node->AsStmt();
+  // Infer the input declare type of the kernel whose input argument precision
+  // is defined as PRECISION(kAny)
+  auto input_decl_type = InferKernelInputDeclType(in, inst_node);
+  // Check if fp16 is enabled
   bool has_fp16 = false;
   for (auto place : graph->valid_places()) {
     if (place.target == TARGET(kARM)) {
@@ -166,13 +231,13 @@ void PrecisionCastPass::ComplementInputs(
   has_fp16 = has_fp16 && (in->AsArg().is_weight);
   VLOG(4) << "has_fp16: " << has_fp16 << ", arg_name: " << in->AsArg().name;
   if ((!has_fp16) &&
-      !PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
+      !PrecisionCompatibleTo(*in->AsArg().type, *input_decl_type)) {
     VLOG(4) << "found Target unmatched tensor: " << in->AsArg().name
             << " for kernel " << inst.op()->DebugString() << " "
-            << *in->AsArg().type << " -> " << *decl_arg_type;
+            << *in->AsArg().type << " -> " << *input_decl_type;
     // Add an Cast instruction to make the input compatible with other dist.
     AddCastInst(*in->AsArg().type,
-                *decl_arg_type,
+                *input_decl_type,
                 in,
                 graph,
                 inst_node,

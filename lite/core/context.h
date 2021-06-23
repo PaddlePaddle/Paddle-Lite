@@ -35,6 +35,9 @@
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #endif
+#ifdef LITE_WITH_NNADAPTER
+#include "lite/backends/nnadapter/nnadapter_wrapper.h"
+#endif
 
 #include <map>
 #include <memory>
@@ -70,6 +73,7 @@ using RKNPUContext = Context<TargetType::kRKNPU>;
 using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
 using ImaginationNNAContext = Context<TargetType::kImaginationNNA>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
+using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
 
 template <>
@@ -256,6 +260,91 @@ class Context<TargetType::kImaginationNNA> {
   void CopySharedTo(ImaginationNNAContext* ctx) {}
 
   std::string name() const { return "ImaginationNNAContext"; }
+};
+#endif
+
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+template <>
+class Context<TargetType::kNNAdapter> {
+ public:
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(NNAdapterContext* ctx) {}
+
+  std::string name() const { return "NNAdapterContext"; }
+
+  static void SetNNAdapterModelCacheDir(
+      Scope* scope, const std::string& nnadapter_model_cache_dir) {
+    auto var = scope->Var("NNADAPTER_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = nnadapter_model_cache_dir;
+  }
+
+  static std::string NNAdapterModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterModelCacheBuffers(
+      Scope* scope,
+      const std::map<std::string, std::vector<char>>&
+          nnadapter_model_cache_buffers) {
+    for (const auto& nnadapter_model_cache_buffer :
+         nnadapter_model_cache_buffers) {
+      auto& key = nnadapter_model_cache_buffer.first;
+      auto var = scope->Var("NNADAPTER_MODEL_CACHE_BUFFERS_" + key);
+      CHECK(var);
+      auto data = var->GetMutable<std::vector<char>>();
+      CHECK(data);
+      *data = nnadapter_model_cache_buffer.second;
+    }
+  }
+
+  static bool NNAdapterModelCacheBuffers(Scope* scope,
+                                         const std::string& key,
+                                         std::vector<char>* buffer) {
+    CHECK(buffer);
+    buffer->clear();
+    auto var = scope->FindVar("NNADAPTER_MODEL_CACHE_BUFFERS_" + key);
+    if (!var) return false;
+    auto data = var->GetMutable<std::vector<char>>();
+    *buffer = *data;
+    // Reset to reduce memory consumption
+    std::vector<char>().swap(*data);
+    return true;
+  }
+
+#ifdef LITE_WITH_NNADAPTER
+  static bool CheckNNAdapterDevice(const std::string& nnadapter_device_name) {
+    NNAdapterDevice* device = nullptr;
+    int result =
+        NNAdapterDevice_acquire_invoke(nnadapter_device_name.c_str(), &device);
+    bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
+    if (found) {
+      NNAdapterDevice_release_invoke(device);
+    }
+    return found;
+  }
+#endif
+
+  static void SetNNAdapterDevices(
+      Scope* scope, const std::vector<std::string>& nnadapter_device_names) {
+    auto var = scope->Var("NNADAPTER_DEVICES");
+    CHECK(var);
+    auto data = var->GetMutable<std::vector<std::string>>();
+    CHECK(data);
+    *data = nnadapter_device_names;
+  }
+
+  static std::vector<std::string> NNAdapterDevices(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_DEVICES");
+    if (!var) return std::vector<std::string>();
+    return var->Get<std::vector<std::string>>();
+  }
 };
 #endif
 
@@ -623,6 +712,14 @@ class ContextScheduler {
         LOG(INFO) << "New Context for MLU";
       } break;
 #endif
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+      case TARGET(kNNAdapter):
+        kernel_contexts_[TargetType::kNNAdapter]
+            .As<NNAdapterContext>()
+            .CopySharedTo(&ctx->As<NNAdapterContext>());
+        break;
+#endif
       default:
 #if (!defined LITE_ON_MODEL_OPTIMIZE_TOOL) && (!defined LITE_WITH_PYTHON)
         LOG(FATAL) << "unsupported target " << TargetToStr(target);
@@ -684,6 +781,10 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_IMAGINATION_NNA
     InitContext<TargetType::kImaginationNNA, ImaginationNNAContext>();
+#endif
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+    InitContext<TargetType::kNNAdapter, NNAdapterContext>();
 #endif
   }
 
