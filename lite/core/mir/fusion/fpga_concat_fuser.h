@@ -31,8 +31,8 @@ struct NodeInfo {
            int fuse_idx = -1,
            int original_out_channel = 0)
       : node_(node),
-        wd_offset_(wd_offset),
         wd_enable_(wd_enable),
+        wd_offset_(wd_offset),
         fuse_idx_(fuse_idx),
         original_out_channel_(original_out_channel) {}
   Node* node_;
