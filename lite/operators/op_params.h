@@ -528,7 +528,6 @@ struct ConvParam : ParamBase {
   }
 };
 
-
 // For BatchNorm op
 struct BatchNormParam : ParamBase {
   lite::Tensor* x{};
