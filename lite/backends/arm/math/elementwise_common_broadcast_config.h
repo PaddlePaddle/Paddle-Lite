@@ -199,6 +199,28 @@ struct AddConfig<float16_t> : public BasicConfig<float16_t> {
   constexpr static auto naive_op = naive_add<float16_t>;
   constexpr static auto neon_op = vaddq_f16;
 };
+
+template <class T>
+struct MulConfig {};
+
+template <>
+struct MulConfig<float16_t> : public BasicConfig<float16_t> {
+  constexpr static auto naive_op = naive_mul<float16_t>;
+  constexpr static auto neon_op = vmulq_f16;
+};
+template <>
+struct SubConfig<float16_t> : public BasicConfig<float16_t> {
+  constexpr static auto naive_op = naive_sub<float16_t>;
+  constexpr static auto neon_op = vsubq_f16;
+};
+template <class T>
+struct DivConfig {};
+
+template <>
+struct DivConfig<float16_t> : public BasicConfig<float16_t> {
+  constexpr static auto naive_op = naive_div<float16_t>;
+  constexpr static auto neon_op = vdivq_f16;
+};
 #endif
 
 }  // namespace math
