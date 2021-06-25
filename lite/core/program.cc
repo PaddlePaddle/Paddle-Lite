@@ -135,9 +135,13 @@ void RuntimeProgram::SaveToProgram(
             // Set persistable=false for tensor array
             v->SetType(cpp::VarDesc::Type::LOD_TENSOR_ARRAY);
             v->SetPersistable(false);
+          } else if (decl_type->IsStepScope() &&
+                     var->IsType<std::vector<lite::Scope*>>()) {
+            v->SetType(cpp::VarDesc::Type::STEP_SCOPES);
+            v->SetPersistable(false);
           } else {
-            LOG(WARNING) << "Unsupported decl type " << *decl_type
-                         << " for var " << var_name << " in op " << op_type;
+            LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
+                       << var_name << " in op " << op_type;
           }
         }
         already_added_vars.insert(var_name);
@@ -561,6 +565,8 @@ void Program::PrepareWorkspace(
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+        } else if (var_type == lite::VarDescAPI::Type::STEP_SCOPES) {
+          var->GetMutable<std::vector<lite::Scope*>>();
         }
       } else {
         if (var_name == "feed" || var_name == "fetch") continue;
