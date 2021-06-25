@@ -49,7 +49,8 @@ void ConvElementwiseTreeFuser::BuildPattern() {
     std::string act_type{""};
     if (has_act_type) {
       act_type =
-          const_cast<Node*>(node)->AsStmt().op_info()->GetAttr<int>("act_type");
+          const_cast<Node*>(node)->AsStmt().op_info()->GetAttr<std::string>(
+              "act_type");
     }
     return (axis == -1) && (!fuse_scale) &&
            ((!has_act_type) || (has_act_type && act_type == "relu"));
