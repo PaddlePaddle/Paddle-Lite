@@ -59,6 +59,7 @@ add_operator(pow_op extra SRCS pow_op.cc DEPS ${op_DEPS})
 add_operator(sign_op extra SRCS sign_op.cc DEPS ${op_DEPS})
 add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc DEPS ${op_DEPS})
 add_operator(rnn_op extra SRCS rnn_op.cc DEPS ${op_DEPS})
+add_operator(write_back_op extra SRCS write_back_op.cc DEPS ${op_DEPS})
 
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
