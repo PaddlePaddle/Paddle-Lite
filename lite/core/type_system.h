@@ -90,6 +90,9 @@ class DataType {
     Tensor,
     // A tensor list, but all the elements should have the same type.
     TensorList,
+    // A vector of local scope, which size equals the step number of While Op.
+    // The i'th scope storages temporary variables generated in the i'th step.
+    StepScope,
     // ---------
     NumTypes,  // Must remains as last defined ID.
   };
@@ -101,6 +104,7 @@ class DataType {
   bool IsUnsupported() const { return id_ == ID::Unsupported; }
   bool IsTensor() const { return id_ == ID::Tensor; }
   bool IsTensorList() const { return id_ == ID::TensorList; }
+  bool IsStepScope() const { return id_ == ID::StepScope; }
   // Get number of types.
   int num_types() const { return static_cast<int>(ID::NumTypes); }
 
@@ -132,6 +136,8 @@ class Type : public DataType {
       PrecisionType precision = PRECISION(kFloat),
       DataLayoutType layout = DATALAYOUT(kNCHW),
       int device = 0);
+  /// Get a StepScope type.
+  static const Type* GetStepScopeTy();
   /// Get an Unsupported type.
   static const Type* GetUnsupportedTy();
   /// Get an Void type.

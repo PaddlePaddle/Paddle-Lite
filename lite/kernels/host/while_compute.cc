@@ -54,8 +54,5 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
-    .BindOutput("StepScopes",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny),
-                                       DATALAYOUT(kAny))})
+    .BindOutput("StepScopes", {LiteType::GetStepScopeTy()})
     .Finalize();
