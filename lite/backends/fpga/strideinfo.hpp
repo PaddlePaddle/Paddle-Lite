@@ -13,27 +13,27 @@
 // limitations under the License.
 
 #pragma once
+
+#include <cstddef>
+#include <fstream>
+#include <iostream>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace paddle {
-namespace lite {
-namespace arm {
-namespace math {
-namespace fp16 {
+namespace zynqmp {
 
-template <typename T>
-void act_relu(const T* din, T* dout, int size, int threads);
+struct StrideInfo {
+  StrideInfo() {}
 
-template <typename T>
-void act_hard_sigmoid(const T* din,
-                      T* dout,
-                      const int size,
-                      const float slope,
-                      const float offset,
-                      int threads);
+  bool wd_enable_ = false;
+  int wd_offset_ = -1;
+  int fuse_idx_ = -1;
+  int original_out_channel_ = -1;
+  int start_idx_ = 0;
+  int end_idx_ = 0;
+};
 
-}  // namespace fp16
-}  // namespace math
-}  // namespace arm
 }  // namespace lite
 }  // namespace paddle

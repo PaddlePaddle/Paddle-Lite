@@ -194,8 +194,6 @@ TEST(Gather, precision) {
         axis_dims = {{0}};
         TestGather<float, int32_t, int32_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "def");
-// FIXME: error: unused variable 'abs_error' [-Werror=unused-variable]
-// abs_error = 1e-5;
 #else
         TestGather<float, int64_t, int64_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "int64int64");
