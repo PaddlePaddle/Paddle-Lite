@@ -232,7 +232,7 @@ class ConvOpLite : public OpLite {
 
   std::string DebugString() const override { return "conv2d"; }
 
- private:
+ protected:
   mutable ConvParam param_;
   std::string padding_algorithm_{""};
 };

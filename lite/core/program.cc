@@ -25,6 +25,9 @@
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
+#ifdef LITE_WITH_FPGA
+#include "lite/backends/fpga/monitor.hpp"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -365,7 +368,13 @@ void RuntimeProgram::Run() {
   cmd_ctx->CreateCommandBuffer(this);
 #endif
 
+#ifdef LITE_WITH_FPGA
+  Monitor& monitor = Monitor::get_instance();
+  monitor.inferStart();
+#endif
+
   int idx = -1;
+
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
@@ -385,7 +394,15 @@ void RuntimeProgram::Run() {
     }
 #endif
 
+#ifdef LITE_WITH_FPGA
+    monitor.preRun(inst);
+#endif
+
     inst.Run();
+
+#ifdef LITE_WITH_FPGA
+    monitor.postRun(inst);
+#endif
 
 #ifdef LITE_WITH_OPENCL
     // delegate flush judgement to specify target , it is too heavy for Inst
