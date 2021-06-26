@@ -70,76 +70,9 @@ void FixOps(hal::Model* model) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
     switch (operation->type) {
-      case NNADAPTER_RELU: {
+      case NNADAPTER_RELU:
         FixRELUDepthwiseConv2D(model, operation);
-        /*auto& input_operands = operation->input_operands;
-        auto& output_operands = operation->output_operands;
-        auto input_count = input_operands.size();
-        auto output_count = output_operands.size();
-        NNADAPTER_CHECK_EQ(input_count, 1);
-        NNADAPTER_CHECK_EQ(output_count, 1);
-        auto output_operand = output_operands[0];
-        auto add_operand = AddOperand(model);
-        memcpy(&add_operand->type, &output_operand->type,
-        sizeof(NNAdapterOperandType));
-        InsertOperand(model, output_operand, add_operand, true);
-        int8_t values = 0;
-        auto y_operand = AddQuant8ConstantOperand(model, &values,
-        std::vector<int32_t>({1}), 0.0f, true);
-        auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
-        auto add_operation = AddOperation(model);
-        add_operation->type = NNADAPTER_ADD;
-        add_operation->input_operands = {output_operand, y_operand,
-        fuse_code_operand};
-        add_operation->output_operands = {add_operand};
-        */
-      }
-
-      break;
-      /*case NNADAPTER_ADD: {
-        auto& input_operands = operation->input_operands;
-        auto& output_operands = operation->output_operands;
-        auto input_count = input_operands.size();
-        auto output_count = output_operands.size();
-        NNADAPTER_CHECK_EQ(input_count, 3);
-        NNADAPTER_CHECK_EQ(output_count, 1);
-        auto output_operand = output_operands[0];
-        auto add_operand = AddOperand(model);
-        memcpy(&add_operand->type, &output_operand->type,
-      sizeof(NNAdapterOperandType));
-        InsertOperand(model, output_operand, add_operand, true);
-        int8_t values = 0;
-        auto y_operand = AddQuant8ConstantOperand(model, &values,
-      std::vector<int32_t>({1}), 0.0f, true);
-        auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
-        auto add_operation = AddOperation(model);
-        add_operation->type = NNADAPTER_ADD;
-        add_operation->input_operands = {output_operand, y_operand,
-      fuse_code_operand};
-        add_operation->output_operands = {add_operand};
-      } break;
-      case NNADAPTER_MUL: {
-        auto& input_operands = operation->input_operands;
-        auto& output_operands = operation->output_operands;
-        auto input_count = input_operands.size();
-        auto output_count = output_operands.size();
-        NNADAPTER_CHECK_EQ(input_count, 3);
-        NNADAPTER_CHECK_EQ(output_count, 1);
-        auto output_operand = output_operands[0];
-        auto add_operand = AddOperand(model);
-        memcpy(&add_operand->type, &output_operand->type,
-      sizeof(NNAdapterOperandType));
-        InsertOperand(model, output_operand, add_operand, true);
-        int8_t values = 0;
-        auto y_operand = AddQuant8ConstantOperand(model, &values,
-      std::vector<int32_t>({1}), 0.0f, true);
-        auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
-        auto add_operation = AddOperation(model);
-        add_operation->type = NNADAPTER_ADD;
-        add_operation->input_operands = {output_operand, y_operand,
-      fuse_code_operand};
-        add_operation->output_operands = {add_operand};
-      } break;*/
+        break;
       default:
         break;
     }
