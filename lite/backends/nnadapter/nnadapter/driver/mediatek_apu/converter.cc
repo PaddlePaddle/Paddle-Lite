@@ -211,7 +211,7 @@ int Program::Execute(uint32_t input_count,
                                 reinterpret_cast<int8_t*>(argument.buffer)[j]) +
                                 zero_point,
                             0),
-                   256));
+                   255));
     }
     NNADAPTER_CHECK_EQ(
         NeuronExecution_setInput_invoke(
