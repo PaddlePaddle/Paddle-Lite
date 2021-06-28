@@ -234,8 +234,6 @@ void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
 
   for (size_t block_idx = 0; block_idx < program_desc->BlocksSize();
        ++block_idx) {
-    auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
-
     std::set<std::string> already_added_vars;
     for (auto& inst : instructions_[block_idx]) {
       AddVariableDescFromOpInfo(
