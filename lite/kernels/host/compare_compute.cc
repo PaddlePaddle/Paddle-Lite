@@ -129,18 +129,8 @@ void CommonElementwiseBroadcastForward(const T *x,
                                        const DDim &x_dims,
                                        const DDim &y_dims,
                                        const DDim &out_dims,
-                                       Functor func,
-                                       int axis) {
+                                       Functor func) {
   int max_dim = std::max(x_dims.size(), y_dims.size());
-  axis = (axis == -1 ? abs(static_cast<int>(x_dims.size()) -
-                           static_cast<int>(y_dims.size()))
-                     : axis);
-  CHECK_GE(axis, 0)
-      << "Axis should be great than or equal to 0, but received axis is "
-      << axis << ".";
-
-  CHECK_LT(axis, max_dim)
-      << "Axis should be less than %d, but received axis is " << axis << ".";
 
   std::vector<int64_t> x_dims_array = x_dims.Vectorize();
   std::vector<int64_t> y_dims_array = y_dims.Vectorize();
@@ -220,7 +210,7 @@ void CompareCompute<PType, CompareFunctor>::Run() {
                  &is_run_common_broadcast);
     if (is_run_common_broadcast == 1) {
       CommonElementwiseBroadcastForward<CompareFunctor, DType, bool>(
-          x, y, z, x_dims, y_dims, param.Out->dims(), CompareFunctor(), axis);
+          x, y, z, x_dims, y_dims, param.Out->dims(), CompareFunctor());
       return;
     }
 
