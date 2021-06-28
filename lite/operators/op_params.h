@@ -496,6 +496,15 @@ struct ConvParam : ParamBase {
 
 #ifdef LITE_WITH_FPGA
   lite::Tensor* scale{nullptr};
+  struct StrideInfo {
+    bool wd_enable_ = false;
+    int wd_offset_ = -1;
+    int fuse_idx_ = -1;
+    int original_out_channel_ = -1;
+    int start_idx_ = 0;
+    int end_idx_ = 0;
+  };
+  StrideInfo stride_info_;
 #endif
 
   // for int8

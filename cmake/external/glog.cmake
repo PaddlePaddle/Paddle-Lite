@@ -48,11 +48,11 @@ ExternalProject_Add(
     GIT_TAG         ${GLOG_TAG}
     PREFIX          ${GLOG_SOURCES_DIR}
     SOURCE_DIR      ${GLOG_SOURCES_DIR}
+    STAMP_DIR       ${THIRD_PARTY_PATH}/install/glog/glog-stamp
     UPDATE_COMMAND  ""
     CMAKE_ARGS      ${CROSS_COMPILE_CMAKE_ARGS}
                     ${OPTIONAL_ARGS}
                     -DCMAKE_INSTALL_PREFIX=${GLOG_INSTALL_DIR}
-                    -DCMAKE_INSTALL_LIBDIR=${GLOG_INSTALL_DIR}/lib
                     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
                     -DWITH_GFLAGS=ON
                     -Dgflags_DIR=${GFLAGS_INSTALL_DIR}/lib/cmake/gflags
@@ -60,7 +60,6 @@ ExternalProject_Add(
                     -DCMAKE_BUILD_TYPE=${THIRD_PARTY_BUILD_TYPE}
                     ${EXTERNAL_OPTIONAL_ARGS}
     CMAKE_CACHE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${GLOG_INSTALL_DIR}
-                     -DCMAKE_INSTALL_LIBDIR:PATH=${GLOG_INSTALL_DIR}/lib
                      -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
                      -DCMAKE_BUILD_TYPE:STRING=${THIRD_PARTY_BUILD_TYPE}
 )
@@ -74,5 +73,6 @@ ENDIF(WIN32)
 
 ADD_LIBRARY(glog STATIC IMPORTED GLOBAL)
 SET_PROPERTY(TARGET glog PROPERTY IMPORTED_LOCATION ${GLOG_LIBRARIES})
-ADD_DEPENDENCIES(glog extern_glog gflags)
+ADD_DEPENDENCIES(glog extern_glog)
+ADD_DEPENDENCIES(extern_glog extern_gflags)
 LINK_LIBRARIES(glog gflags)

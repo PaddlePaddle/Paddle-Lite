@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_WITH_FPGA
 #include "lite/core/dim.h"
 #include <string>
 
@@ -67,5 +66,3 @@ std::string DDimLite::repr() const {
 }
 }  // namespace lite
 }  // namespace paddle
-
-#endif

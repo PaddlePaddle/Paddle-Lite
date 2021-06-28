@@ -213,6 +213,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "apu_subgraph_pass",
        "rknpu_subgraph_pass",
        "mlu_subgraph_pass",
+       "fpga_concat_fuse_pass",
        "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
        "static_kernel_pick_pass",  // pick original kernel from graph
 

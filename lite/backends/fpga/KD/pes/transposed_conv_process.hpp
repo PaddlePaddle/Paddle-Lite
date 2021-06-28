@@ -72,9 +72,13 @@ this function convert it into NCHW format.
 */
 void inline convert_cnhw_to_nchw(Tensor* cnhw, Tensor* nchw) {
   Shape& cnhw_shape = cnhw->shape();
+  // For all param tensors loaded from the param file, the shapes are all
+  // treated as N, C, H, W
+  // So here cnhw_shape.channel() is actually filter num.
+  // Is this a good way?
   Shape shape(NCHW,
-              {cnhw_shape.channel(),
-               cnhw_shape.num(),
+              {cnhw_shape.num(),
+               cnhw_shape.channel(),
                cnhw_shape.height(),
                cnhw_shape.width()});
   float* nchw_data = nchw->mutableData<float>(FP32, shape);
@@ -197,7 +201,8 @@ void inline inverse_filter(Tensor* tensor) {
   }
 }
 
-void fill_sub_filters(ConvParam* param, Tensor* filter) {
+DCpuConcatType fill_sub_filters(ConvParam* param, Tensor* filter) {
+  DCpuConcatType deconv_concat_type = DCpuConcatType::DISABLED;
   int dynamic_range = 127;  // int8 max value
   float16 dynamic_range_fp16 = float_to_half(dynamic_range * 1.0);
   float inv_dynamic_range = 1.0 / dynamic_range;
@@ -226,105 +231,78 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
   output->setMemScale(mem_factor);
   output->mutableData<float16>();
   float* filter_data = filter->data<float>();
+
   for (int i = 0; i < sub_conv_number; i++) {
-    float16* out_address = nullptr;
-    float16* out_scale_address = nullptr;
+    //  init a ConvParam for a sub filter conv
+    ConvParam sub_param;
+    sub_param.input = input;
+    sub_param.output = output;
+    sub_param.groups = param->groups;
+    sub_param.strides = std::vector<int>({1, 1});
+    sub_param.paddings = std::vector<int>({sub_pad, sub_pad});
+    sub_param.dilations = param->dilations;
 
-    Shape shape_nchw(NCHW, {sub_num, channel, sub_h, sub_w});
-    Shape shape_nhwc(NHWC, {sub_num, sub_h, sub_w, channel});
+    // TODO(chengruichang) There is an assumption that channel < 2047
+    const Shape sub_filter_shape(NCHW, {sub_num, channel, sub_h, sub_w});
+    // copy filter data into sub filters separately
+    Tensor sub_filter;
+    sub_param.filter = &sub_filter;
+    float* sub_filter_data =
+        sub_filter.mutableData<float>(FP32, sub_filter_shape);
+    int idx_in_stride_h = i % sub_conv_number;
+    float* dst = sub_filter_data;
+    float* src = filter_data;
+    for (int n = 0; n < sub_num; ++n) {
+      for (int c = 0; c < channel; ++c) {
+        for (int h = 0; h < sub_h; ++h) {
+          for (int w = 0; w < sub_w; ++w) {
+            // Sub filters along h axis are arranged in reversed order
+            int idx_in_stride_w = sub_conv_number - 1 - n / kernel_num;
+            int original_n = n % kernel_num;
+            int original_h = h * sub_conv_number + idx_in_stride_h;
+            int original_w = w * sub_conv_number + idx_in_stride_w;
 
-    BasicConvParam* basic_conv_param = new BasicConvParam();
-    basic_conv_param->output.setDataLocation(Device);
-    Shape tmp_shape(NHWC, {1, 1, 1, 1});
-    basic_conv_param->output.mutableData<float16>(FP16, tmp_shape);
-
-    basic_conv_param->filter.mutableData<int8_t>(INT8, shape_nchw);
-    Tensor float_tensor;
-    float* sub_filter_data = float_tensor.mutableData<float>(FP32, shape_nchw);
-
-    for (int nn = 0; nn < sub_num; ++nn) {
-      int ni = nn % kernel_num;
-      int woff = sub_conv_number - 1 - (nn / kernel_num);
-      for (int cc = 0; cc < channel; ++cc) {
-        for (int hh = 0; hh < sub_h; ++hh) {
-          int hi = hh * sub_conv_number + i;
-          for (int ww = 0; ww < sub_w; ++ww) {
-            int wi = ww * sub_conv_number + woff;
-            int sidx = ((nn * channel * sub_h + cc * sub_h + hh) * sub_w + ww);
-            int kidx =
-                ((ni * channel * height + cc * height + hi) * width + wi);
-            memcpy(sub_filter_data + sidx, filter_data + kidx, sizeof(float));
+            dst = sub_filter_data + w + h * sub_w + c * sub_w * sub_h +
+                  n * sub_w * sub_h * channel;
+            src = filter_data + original_w + original_h * width +
+                  c * width * height + original_n * width * height * channel;
+            memcpy(dst, src, sizeof(float));
           }
         }
       }
     }
+    sub_param.filter->flush();
 
-    float_tensor.flush();
-    std::vector<float> quant_scale;
-    format_filter(&float_tensor,
-                  &(basic_conv_param->filter),
-                  param->groups,
-                  quant_scale,
-                  max);
-
-    Tensor scale;
-    Tensor bias;
+    Tensor* sub_scale = sub_param.scale();
+    Tensor* sub_bias = sub_param.bias();
     Shape s_shape(NC, {1, sub_num});
-    float* scale_data = scale.mutableData<float>(FP32, s_shape);
-    float* bias_data = bias.mutableData<float>(FP32, s_shape);
-
+    float* scale_data = sub_scale->mutableData<float>(FP32, s_shape);
+    float* bias_data = sub_bias->mutableData<float>(FP32, s_shape);
     for (int n = 0; n < sub_num; n++) {
-      int q_idx = (n + omit_size * kernel_num) % sub_num;
-      scale_data[n] =
-          param->scale()->data<float>()[n % kernel_num] * quant_scale[q_idx];
+      scale_data[n] = param->scale()->data<float>()[n % kernel_num];
     }
-
     for (int n = 0; n < sub_num; n++) {
       bias_data[n] = param->bias()->data<float>()[n % kernel_num];
     }
+    sub_scale->flush();
+    sub_bias->flush();
 
-    format_bias_scale_new(&bias, &scale, &basic_conv_param->scaleBias);
-    basic_conv_param->scaleBias.flush();
-    ConvArgs& args = basic_conv_param->args;
-    int offset = (sub_conv_number - 1 - i) *
-                 align_to_x(after_omit_out_w * kernel_num, 16);
-    out_address = output->data<float16>() + offset;
-    out_scale_address = basic_conv_param->output.max();
+    int start_offset = (sub_conv_number - 1 - i) *
+                       align_to_x(after_omit_out_w * kernel_num, 16);
+    const ConvParam& sb_param = sub_param;
 
-    args.group_num = param->groups;
-    args.sb_address = basic_conv_param->scaleBias.data<float16>();
-    args.kernel.stride_h = 1;
-    args.kernel.stride_w = 1;
-    args.kernel.height = sub_h;
-    args.kernel.width = sub_w;
+    // Filter data loaded from params is NCHW.
+    // Format transform is made in split_filter_num.
+    deconv_concat_type = split_filter_num(
+        sb_param, start_offset, true, kernel_num, omit_size, sub_conv_number);
 
-    args.filter_address = basic_conv_param->filter.data<int8_t>();
-    args.filter_num = sub_num;
-    args.filter_scale_address = basic_conv_param->filter.scale();
-    args.image.address = input->data<void>();
-    args.image.scale_address = input->max();
-    args.image.channels = channel;
-    args.image.width = input->shape().width();
-    args.image.height = input->shape().height();
-    args.image.pad_width = sub_pad;
-    args.image.pad_height = sub_pad;
-    args.dilation = param->dilations[0];
-    args.output.address = out_address;
-    args.output.scale_address = out_scale_address;
-    args.stride.rd_enabled = false;
-    args.stride.wr_enabled = false;
-    args.deconv.enabled = 1;
-    args.deconv.sub_kernel_num = sub_conv_number;
-    args.deconv.invalid_col_num = omit_size;
-
-    // how to change data type gracefully
-    args.quant.dynamic_range =
-        *(reinterpret_cast<uint16_t*>(&dynamic_range_fp16));
-    args.quant.inv_dynamic_range =
-        *(reinterpret_cast<uint32_t*>(&inv_dynamic_range));
-
-    param->splitParams().push_back(basic_conv_param);
+    for (auto basic_conv_param :
+         const_cast<ConvParam&>(sb_param).splitParams()) {
+      param->splitParams().push_back(basic_conv_param);
+    }
+    const_cast<ConvParam&>(sb_param).splitParams().clear();
   }
+  return deconv_concat_type;
 }
 
 }  // namespace zynqmp

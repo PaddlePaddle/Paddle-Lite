@@ -13,27 +13,20 @@
 // limitations under the License.
 
 #pragma once
+
+#include <memory>
 #include <string>
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-namespace fp16 {
+namespace mir {
 
-template <typename T>
-void act_relu(const T* din, T* dout, int size, int threads);
+class FpgaConcatFusePass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+};
 
-template <typename T>
-void act_hard_sigmoid(const T* din,
-                      T* dout,
-                      const int size,
-                      const float slope,
-                      const float offset,
-                      int threads);
-
-}  // namespace fp16
-}  // namespace math
-}  // namespace arm
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

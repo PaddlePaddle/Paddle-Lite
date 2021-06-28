@@ -223,6 +223,9 @@ add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_o
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__conv_pixel_shuffle_fuse_op extra SRCS __xpu__conv_pixel_shuffle_fuse_op.cc DEPS ${op_DEPS})
 
+# Only for FPGA
+add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc DEPS conv_op ${op_DEPS})
+
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)
         lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS one_hot_op memory scope ${op_deps} one_hot_compute_host)

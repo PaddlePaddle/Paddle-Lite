@@ -14,39 +14,33 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
+#include <vector>
 #include "lite/core/kernel.h"
-#include "lite/operators/conv_op.h"
-
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/conv_pe.hpp"
-#include "lite/backends/fpga/KD/pes/depthwise_conv_pe.hpp"
-#include "lite/backends/fpga/strideinfo.hpp"
+#include "lite/core/program.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
-using float16 = zynqmp::float16;
-using StrideInfo = zynqmp::StrideInfo;
-class ConvCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+
+class SubgraphCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kAny), DATALAYOUT(kNHWC)> {
  public:
-  using param_t = operators::ConvParam;
-  //    using param_t = operators::FpgaConvParam;
+  using param_t = operators::SubgraphParam;
+
   void PrepareForRun() override;
 
   void Run() override;
 
-  void SetStrideInfo(StrideInfo strideinfo) { stride_info_ = strideinfo; };
+  virtual ~SubgraphCompute() = default;
 
  private:
-  StrideInfo stride_info_ = StrideInfo();
-  zynqmp::ConvPE conv_pe_;
-  zynqmp::DepthwiseConvPE dw_conv_pe_;
-  float16 input_max_ = 0;
+  std::unique_ptr<RuntimeProgram> program_;
 };
 
-}  // namespace fpga
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

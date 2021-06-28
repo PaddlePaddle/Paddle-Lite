@@ -13,27 +13,13 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
 
-namespace paddle {
-namespace lite {
-namespace arm {
-namespace math {
-namespace fp16 {
+#include "core/hal/types.h"
 
-template <typename T>
-void act_relu(const T* din, T* dout, int size, int threads);
+namespace nnadapter {
+namespace rockchip_npu {
 
-template <typename T>
-void act_hard_sigmoid(const T* din,
-                      T* dout,
-                      const int size,
-                      const float slope,
-                      const float offset,
-                      int threads);
+void FixOps(hal::Model* model);
 
-}  // namespace fp16
-}  // namespace math
-}  // namespace arm
-}  // namespace lite
-}  // namespace paddle
+}  // namespace rockchip_npu
+}  // namespace nnadapter

@@ -12,28 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <string>
+#include "lite/core/mir/fusion/fpga_concat_fuse_pass.h"
+#include <memory>
+#include <vector>
+#include "lite/core/mir/fusion/fpga_concat_fuser.h"
+#include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-namespace fp16 {
+namespace mir {
 
-template <typename T>
-void act_relu(const T* din, T* dout, int size, int threads);
+void FpgaConcatFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  fusion::FpgaConcatFuser fuser;
+  fuser(graph.get());
+}
 
-template <typename T>
-void act_hard_sigmoid(const T* din,
-                      T* dout,
-                      const int size,
-                      const float slope,
-                      const float offset,
-                      int threads);
-
-}  // namespace fp16
-}  // namespace math
-}  // namespace arm
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_MIR_PASS(fpga_concat_fuse_pass, paddle::lite::mir::FpgaConcatFusePass)
+    .BindTargets({TARGET(kFPGA)});
