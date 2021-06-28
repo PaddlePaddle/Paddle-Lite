@@ -133,7 +133,6 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     for (int i = 0; i < input_num; ++i) {
       if (flag_in) {
         fscanf(fp_r, "%f\n", &input_data[i]);
-        if (j == 1) VLOG(4) << "data: " << input_data[i];
       } else {
         input_data[i] = 1.f;
       }
