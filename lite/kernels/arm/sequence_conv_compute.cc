@@ -192,6 +192,7 @@ void SequenceConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   // [sequence_len, kernel_size * hidden_dim] * [kernel_size * hidden_dim,
   // kernel_num]
   // = [sequence_len, kernel_num]
+  paddle::lite::operators::ActivationParam act_param;
   paddle::lite::arm::math::fp16::sgemm_fp16(false,
                                             false,         // is_transB,
                                             sequence_len,  // M
