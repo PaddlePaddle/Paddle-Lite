@@ -123,9 +123,10 @@ class CtcAlignComputeTester : public arena::TestCase {
     }
   }
 };
+
 TEST(CtcAlign1, precision) {
   LOG(INFO) << "test ctc_align op";
-#ifdef LITE_WITH_ARM
+
   // Define variable
   const std::vector<int>& input_data = {
       0, 1, 2, 2, 0, 4, 0, 4, 5, 0, 6, 6, 0, 0, 7, 7, 7, 0};
@@ -142,11 +143,19 @@ TEST(CtcAlign1, precision) {
   const std::vector<int> output_length_data = {};
   const std::vector<int64_t> output_length_shape = {};
 
-  // Test
+// Test
+#if defined LITE_WITH_ARM
   Place place(TARGET(kHost), PRECISION(kInt32));
+  std::string alias = "def";
+#elif defined LITE_WITH_X86
+  Place place(TARGET(kX86), PRECISION(kFloat));
+  std::string alias = "int32";
+#else
+  return;
+#endif
   std::unique_ptr<arena::TestCase> tester(
       new CtcAlignComputeTester(place,
-                                "def",
+                                alias,
                                 input_data,
                                 input_shape,
                                 input_lod,
@@ -162,12 +171,10 @@ TEST(CtcAlign1, precision) {
                                 output_length_shape));
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPrecision();
-#endif
 }
 
 TEST(CtcAlign2, precision) {
   LOG(INFO) << "test ctc_align op";
-#ifdef LITE_WITH_ARM
   // Define variable
   const std::vector<int>& input_data = {
       0, 1, 2, 2, 0, 4, 0, 4, 5, 0, 6, 0, 0, 7, 7, 7, 0, 0};
@@ -185,11 +192,19 @@ TEST(CtcAlign2, precision) {
   const std::vector<int> output_length_data = {3, 3, 1};
   const std::vector<int64_t> output_length_shape = {3, 1};
 
-  // Test
+// Test
+#if defined LITE_WITH_ARM
   Place place(TARGET(kHost), PRECISION(kInt32));
+  std::string alias = "def";
+#elif defined LITE_WITH_X86
+  Place place(TARGET(kX86), PRECISION(kFloat));
+  std::string alias = "int32";
+#else
+  return;
+#endif
   std::unique_ptr<arena::TestCase> tester(
       new CtcAlignComputeTester(place,
-                                "def",
+                                alias,
                                 input_data,
                                 input_shape,
                                 input_lod,
@@ -205,12 +220,10 @@ TEST(CtcAlign2, precision) {
                                 output_length_shape));
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPrecision();
-#endif
 }
 
 TEST(CtcAlign3, precision) {
   LOG(INFO) << "test ctc_align op";
-#ifdef LITE_WITH_ARM
   // Define variable
   const std::vector<int>& input_data = {
       0, 1, 2, 2, 0, 4, 0, 4, 5, 0, 6, 0, 0, 7, 7, 7, 0, 0};
@@ -228,11 +241,19 @@ TEST(CtcAlign3, precision) {
   const std::vector<int> output_length_data = {4, 3, 3};
   const std::vector<int64_t> output_length_shape = {3, 1};
 
-  // Test
+// Test
+#if defined LITE_WITH_ARM
   Place place(TARGET(kHost), PRECISION(kInt32));
+  std::string alias = "def";
+#elif defined LITE_WITH_X86
+  Place place(TARGET(kX86), PRECISION(kFloat));
+  std::string alias = "int32";
+#else
+  return;
+#endif
   std::unique_ptr<arena::TestCase> tester(
       new CtcAlignComputeTester(place,
-                                "def",
+                                alias,
                                 input_data,
                                 input_shape,
                                 input_lod,
@@ -248,7 +269,6 @@ TEST(CtcAlign3, precision) {
                                 output_length_shape));
   arena::Arena arena(std::move(tester), place, 2e-5);
   arena.TestPrecision();
-#endif
 }
 }  // namespace lite
 }  // namespace paddle
