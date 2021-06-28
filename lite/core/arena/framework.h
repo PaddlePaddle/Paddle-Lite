@@ -230,7 +230,6 @@ class Arena {
         success = success && CompareTensor(out, var);
       }
     }
-    LOG(INFO) << "done";
     return success;
   }
 
