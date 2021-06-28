@@ -25,9 +25,11 @@
 #include "lite/utils/cp_logging.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 100, "iteration times to run");
-DEFINE_int32(batch, 1, "batch of image");
-DEFINE_int32(channel, 3, "image channel");
+DEFINE_int32(images_num,
+             480,
+             "images_num should be an integral multiple of batch");
+DEFINE_int32(batch, 16, "batch of image");
+DEFINE_int32(warmup_num, 1, "warmup rounds");
 
 namespace paddle {
 namespace lite {
@@ -42,35 +44,21 @@ TEST(GoogLeNet, test_googlenet_fp32_baidu_xpu) {
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
-  std::vector<int> input_shape{
-      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
-  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
+  std::vector<int> input_shape{FLAGS_batch, 3, 224, 224};
+  auto raw_data =
+      ReadRawData(raw_data_dir, input_shape, FLAGS_images_num / FLAGS_batch);
 
-  int input_size = 1;
-  for (auto i : input_shape) {
-    input_size *= i;
-  }
-
-  for (int i = 0; i < FLAGS_warmup; ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(
-        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-    auto* data = input_tensor->mutable_data<float>();
-    for (int j = 0; j < input_size; j++) {
-      data[j] = 0.f;
-    }
+  std::vector<int64_t> shape(input_shape.begin(), input_shape.end());
+  for (int i = 0; i < FLAGS_warmup_num; ++i) {
+    FillTensor(predictor, 0, shape, raw_data[i]);
     predictor->Run();
   }
 
   std::vector<std::vector<float>> out_rets;
-  out_rets.resize(FLAGS_iteration);
+  out_rets.resize(FLAGS_images_num);
   double cost_time = 0;
   for (size_t i = 0; i < raw_data.size(); ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(
-        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-    auto* data = input_tensor->mutable_data<float>();
-    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
+    FillTensor(predictor, 0, shape, raw_data[i]);
 
     double start = GetCurrentUS();
     predictor->Run();
@@ -80,23 +68,29 @@ TEST(GoogLeNet, test_googlenet_fp32_baidu_xpu) {
     auto output_shape = output_tensor->shape();
     auto output_data = output_tensor->data<float>();
     ASSERT_EQ(output_shape.size(), 2UL);
-    ASSERT_EQ(output_shape[0], 1);
+    ASSERT_EQ(output_shape[0], FLAGS_batch);
     ASSERT_EQ(output_shape[1], 1000);
 
-    int output_size = output_shape[0] * output_shape[1];
-    out_rets[i].resize(output_size);
-    memcpy(&(out_rets[i].at(0)), output_data, sizeof(float) * output_size);
+    for (int j = 0; j < FLAGS_batch; j++) {
+      out_rets[i * FLAGS_batch + j].resize(output_shape[1]);
+      memcpy(&(out_rets[i * FLAGS_batch + j].at(0)),
+             output_data,
+             sizeof(float) * output_shape[1]);
+      output_data += output_shape[1];
+    }
   }
-
-  LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
-            << ", iteration: " << FLAGS_iteration << ", spend "
-            << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GT(out_accuracy, 0.57f);
+  ASSERT_GT(out_accuracy, 0.72f);
+  float latency = cost_time / (FLAGS_images_num / FLAGS_batch) / 1000.0;
+  ASSERT_LT(latency, 43.f);
+
+  LOG(INFO) << "================== Speed Report ===================";
+  LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
+            << ", warmup: " << FLAGS_warmup_num << ", batch: " << FLAGS_batch
+            << ", images_num: " << FLAGS_images_num << ", latency: " << latency
+            << " ms in average, top_1 acc: " << out_accuracy;
 }
 
 }  // namespace lite
