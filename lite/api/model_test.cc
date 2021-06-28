@@ -102,7 +102,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int repeat,
          const int warmup_times = 0) {
   lite_api::MobileConfig config;
-  config.set_model_from_file(model_dir + ".nb");
+  config.set_model_from_file(model_dir);
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
@@ -127,11 +127,13 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     }
     FILE* fp_r = nullptr;
     if (flag_in) {
-      fp_r = fopen(FLAGS_in_txt.c_str(), "r");
+      std::string in_txt = FLAGS_in_txt + std::to_string(j + 1) + ".txt";
+      fp_r = fopen(in_txt.c_str(), "r");
     }
     for (int i = 0; i < input_num; ++i) {
       if (flag_in) {
         fscanf(fp_r, "%f\n", &input_data[i]);
+        if (j == 1) VLOG(4) << "data: " << input_data[i];
       } else {
         input_data[i] = 1.f;
       }
@@ -184,7 +186,8 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
         out_data, output_tensor_numel, true, out_mean);
     FILE* fp1 = nullptr;
     if (flag_out) {
-      fp1 = fopen(FLAGS_out_txt.c_str(), "w");
+      std::string out_txt = FLAGS_out_txt + std::to_string(tidx + 1) + ".txt";
+      fp1 = fopen(out_txt.c_str(), "w");
     }
     double sum1 = 0.f;
     for (int i = 0; i < output_tensor_numel; ++i) {
