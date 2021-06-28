@@ -44,7 +44,16 @@ void ConvElementwiseTreeFuser::BuildPattern() {
         const_cast<Node*>(node)->AsStmt().op_info()->GetAttr<int>("axis");
     bool fuse_scale =
         const_cast<Node*>(node)->AsStmt().op_info()->HasAttr("fuse_scale");
-    return (axis == -1) && (!fuse_scale);
+    bool has_act_type =
+        const_cast<Node*>(node)->AsStmt().op_info()->HasAttr("act_type");
+    std::string act_type{""};
+    if (has_act_type) {
+      act_type =
+          const_cast<Node*>(node)->AsStmt().op_info()->GetAttr<std::string>(
+              "act_type");
+    }
+    return (axis == -1) && (!fuse_scale) &&
+           ((!has_act_type) || (has_act_type && act_type == "relu"));
   };
   auto* conv =
       OpNode("conv", conv_type_)->assert_is_op(conv_type_)->AsIntermediate();
