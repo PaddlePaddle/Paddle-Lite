@@ -214,7 +214,7 @@ void AddVariableDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
         var->SetPersistable(false);
       } else {
         LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
-                     << var_name << " in op " << op_type;
+                   << var_name << " in op " << op_type;
       }
     }
     already_added_vars->insert(var_name);
