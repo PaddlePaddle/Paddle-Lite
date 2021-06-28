@@ -208,8 +208,12 @@ void AddVariableDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
       } else if (decl_type->IsTensorList() ||
                  var->IsType<std::vector<lite::Tensor>>()) {
         UpdateVarDescFromTensorListInfo(v, var_name, op_type, scope);
+      } else if (decl_type->IsStepScope() &&
+                 var->IsType<std::vector<lite::Scope*>>()) {
+        var->SetType(cpp::VarDesc::Type::STEP_SCOPES);
+        var->SetPersistable(false);
       } else {
-        LOG(WARNING) << "Unsupported decl type " << *decl_type << " for var "
+        LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
                      << var_name << " in op " << op_type;
       }
     }
