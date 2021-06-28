@@ -791,6 +791,7 @@ TEST(Activation_gelu, precision) {
   float abs_error = 2e-5;
 #if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+  abs_error = 1e-4;
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #elif defined(LITE_WITH_ARM)
