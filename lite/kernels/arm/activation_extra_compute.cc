@@ -14,6 +14,9 @@
 
 #include "lite/kernels/arm/activation_extra_compute.h"
 #include "lite/backends/arm/math/funcs.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -72,7 +75,8 @@ void FloorCompute::Run() {
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
-void HardSigmoidCompute::Run() {
+template <>
+void HardSigmoidCompute<PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
@@ -83,6 +87,21 @@ void HardSigmoidCompute::Run() {
   lite::arm::math::act_hard_sigmoid<float>(
       x_data, output_data, x_dims.production(), slope, offset, ctx.threads());
 }
+
+#ifdef ENABLE_ARM_FP16
+template <>
+void HardSigmoidCompute<PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float16_t>();
+  float slope = param.hard_sigmoid_slope;
+  float offset = param.hard_sigmoid_offset;
+  auto output_data = param.Out->mutable_data<float16_t>();
+  lite::arm::math::fp16::act_hard_sigmoid<float16_t>(
+      x_data, output_data, x_dims.production(), slope, offset, ctx.threads());
+}
+#endif
 
 void SqrtCompute::Run() {
   auto& param = this->Param<param_t>();
@@ -163,10 +182,62 @@ void GeluCompute::Run() {
       x_data, output_data, x_dims.production(), approximate, ctx.threads());
 }
 
+template <typename T>
+void ErfCompute<T>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->template data<T>();
+  auto output_data = param.Out->template mutable_data<T>();
+  float alpha = param.Elu_alpha;
+  lite::arm::math::erf<T>(
+      x_data, output_data, x_dims.production(), ctx.threads());
+}
+template class ErfCompute<float>;
+
+template <typename T>
+void SignCompute<T>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->template data<T>();
+  auto output_data = param.Out->template mutable_data<T>();
+  float alpha = param.Elu_alpha;
+  lite::arm::math::sign<T>(
+      x_data, output_data, x_dims.production(), ctx.threads());
+}
+template class SignCompute<float>;
+
+template <typename T>
+void SoftPlusCompute<T>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->template data<T>();
+  auto output_data = param.Out->template mutable_data<T>();
+  float alpha = param.Elu_alpha;
+  lite::arm::math::softplus<T>(
+      x_data, output_data, x_dims.production(), ctx.threads());
+}
+template class SoftPlusCompute<float>;
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+#ifdef ENABLE_ARM_FP16
+REGISTER_LITE_KERNEL(
+    hard_sigmoid,
+    kARM,
+    kFP16,
+    kNCHW,
+    paddle::lite::kernels::arm::HardSigmoidCompute<PRECISION(kFP16)>,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
 
 REGISTER_LITE_KERNEL(relu_clipped,
                      kARM,
@@ -200,14 +271,12 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-REGISTER_LITE_KERNEL(hard_sigmoid,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::HardSigmoidCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+
+using fp32_hardsigmoid =
+    paddle::lite::kernels::arm::HardSigmoidCompute<PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(hard_sigmoid, kARM, kFloat, kNCHW, fp32_hardsigmoid, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     sqrt, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SqrtCompute, def)
@@ -252,4 +321,22 @@ REGISTER_LITE_KERNEL(
     gelu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::GeluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using float_erf = paddle::lite::kernels::arm::ErfCompute<float>;
+REGISTER_LITE_KERNEL(erf, kARM, kAny, kNCHW, float_erf, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .Finalize();
+
+using float_sign = paddle::lite::kernels::arm::SignCompute<float>;
+REGISTER_LITE_KERNEL(sign, kARM, kAny, kNCHW, float_sign, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .Finalize();
+
+using float_softplus = paddle::lite::kernels::arm::SoftPlusCompute<float>;
+REGISTER_LITE_KERNEL(softplus, kARM, kAny, kNCHW, float_softplus, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

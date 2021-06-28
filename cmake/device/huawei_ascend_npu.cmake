@@ -77,8 +77,8 @@ else()
   set_property(TARGET atc_register PROPERTY IMPORTED_LOCATION ${ATC_REGISTER_FILE})
 endif()
 
-# 4.1.1 dependency of register - libprotobuf.so.19,
-find_library(ATC_PROTOBUF_FILE NAMES libprotobuf.so.19
+# 4.1.1 dependency of register - libascend_protobuf.so,
+find_library(ATC_PROTOBUF_FILE NAMES libascend_protobuf.so
   PATHS ${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/lib64
   NO_DEFAULT_PATH)
 

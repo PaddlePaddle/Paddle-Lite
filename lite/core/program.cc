@@ -25,6 +25,9 @@
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
+#ifdef LITE_WITH_FPGA
+#include "lite/backends/fpga/monitor.hpp"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -373,9 +376,14 @@ RuntimeProgram::RuntimeProgram(
           ContextScheduler::Global().NewContext(kernel->target()));
     }
 #elif LITE_WITH_METAL
-    std::unique_ptr<KernelContext> ctx(new KernelContext());
-    (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
-    kernel->SetContext(std::move(ctx));
+    if (kernel->target() == TARGET(kMetal)) {
+      std::unique_ptr<KernelContext> ctx(new KernelContext());
+      (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
+      kernel->SetContext(std::move(ctx));
+    } else {
+      kernel->SetContext(
+          ContextScheduler::Global().NewContext(kernel->target()));
+    }
 #else
     if (kernel != nullptr) {
       kernel->SetContext(
@@ -426,7 +434,13 @@ void RuntimeProgram::Run() {
   cmd_ctx->CreateCommandBuffer(this);
 #endif
 
+#ifdef LITE_WITH_FPGA
+  Monitor& monitor = Monitor::get_instance();
+  monitor.inferStart();
+#endif
+
   int idx = -1;
+
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
@@ -446,7 +460,15 @@ void RuntimeProgram::Run() {
     }
 #endif
 
+#ifdef LITE_WITH_FPGA
+    monitor.preRun(inst);
+#endif
+
     inst.Run();
+
+#ifdef LITE_WITH_FPGA
+    monitor.postRun(inst);
+#endif
 
 #ifdef LITE_WITH_OPENCL
     // delegate flush judgement to specify target , it is too heavy for Inst
@@ -605,6 +627,8 @@ void Program::PrepareWorkspace(
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+        } else if (var_type == lite::VarDescAPI::Type::STEP_SCOPES) {
+          var->GetMutable<std::vector<lite::Scope*>>();
         }
       } else {
         if (var_name == "feed" || var_name == "fetch") continue;

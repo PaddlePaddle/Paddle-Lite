@@ -32,7 +32,6 @@ void ConvImageCompute::PrepareForRun() {
 
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-  const bool is_mali = context.cl_context()->IsArmMali();
   is_mali_ = context.cl_context()->IsArmMali();
   int compute_units =
       CLRuntime::Global()->GetDeviceInfo()["CL_DEVICE_MAX_COMPUTE_UNITS"];
@@ -53,6 +52,12 @@ void ConvImageCompute::PrepareForRun() {
   output_tensor_c_ = output_dims[1];
   output_tensor_h_ = output_dims[2];
   output_tensor_w_ = output_dims[3];
+  auto x_dims = conv_param_->x->dims();
+  input_tensor_n_ = x_dims[0];
+  input_tensor_c_ = x_dims[1];
+  input_tensor_h_ = x_dims[2];
+  input_tensor_w_ = x_dims[3];
+
   auto task_size = static_cast<float>(output_tensor_h_ * output_tensor_w_ *
                                       output_tensor_c_);
   task_size = task_size / compute_units;
@@ -79,6 +84,7 @@ void ConvImageCompute::PrepareForRun() {
   stride_w_ = conv_param_->strides[1];
 
   groups_ = conv_param_->groups;
+  fuse_eltwise_op_type_ = conv_param_->fuse_elementwise_op_type;
   relu_fused_ = conv_param_->fuse_relu;
   has_bias_ = (conv_param_->bias) != nullptr;
   offset_ = filter_tensor_h_ / 2 - pad_up_;
@@ -314,9 +320,52 @@ void ConvImageCompute::PrepareForRun() {
       // conv2d_3x3
       pad_equal = (pad_left_ == pad_up_);
       CHECK(pad_equal && stride_equal && dilation_equal);
-      if (groups_ == 1) {
-        kernel_func_names_.push_back(
-            input_tensor_n_ > 1 ? "conv2d_3x3_multi_batch" : "conv2d_3x3_opt");
+      if (stride_h_ == 1 && input_tensor_c_ >= 32 && output_tensor_c_ >= 32 &&
+          groups_ == 1) {
+        wino_v_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+        wino_m_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+        kernel_func_names_.push_back("transform_from_input");
+        if (is_mali_) {
+          kernel_func_names_.push_back("matrix_inner_product_mali");
+          kernel_func_names_.push_back("transform_to_output_mali");
+        } else {
+          kernel_func_names_.push_back("matrix_inner_product");
+          kernel_func_names_.push_back("transform_to_output");
+        }
+        kernel_func_paths_.push_back("image/conv2d_winograd_3x3s1_kernel.cl");
+        is_wino_ = true;
+
+        CLImageConverterWinoTransWeight converter;
+        const DDim& filter_image_dims =
+            converter.InitImageDimInfoWith(filter_dims);
+        filter_image_h_ = filter_image_dims[1];
+        filter_image_w_ = filter_image_dims[0];
+        tensor_hold_filter_image_->Resize(
+            {1, filter_image_w_, filter_image_h_, 4});
+        auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+        converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+
+        // for mali
+        w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+        auto* w_gpu_data = w_gpu_t_->mutable_data(
+            TARGET(kOpenCL), tensor_hold_filter_image_->memory_size());
+        TargetWrapperCL::MemcpySync(w_gpu_data,
+                                    tensor_hold_filter_image_->raw_data(),
+                                    tensor_hold_filter_image_->memory_size(),
+                                    IoDirection::HtoD);
+
+        MUTABLE_DATA_GPU(filter_gpu_image_,
+                         filter_image_w_,
+                         filter_image_h_,
+                         filter_image_data);
+      } else if (groups_ == 1) {
+        if (is_mali_ && input_tensor_n_ == 1) {
+          kernel_func_names_.push_back("conv2d_3x3_opt_mali");
+        } else {
+          kernel_func_names_.push_back(input_tensor_n_ > 1
+                                           ? "conv2d_3x3_multi_batch"
+                                           : "conv2d_3x3_opt");
+        }
         kernel_func_paths_.push_back("image/conv2d_3x3_opt_kernel.cl");
         impl_ = &ConvImageCompute::Conv2d3x3opt;
 
@@ -328,8 +377,15 @@ void ConvImageCompute::PrepareForRun() {
         tensor_hold_filter_image_->Resize(
             {1, filter_image_w_, filter_image_h_, 4});
         auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
-
         converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+
+        w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+        auto* w_gpu_data = w_gpu_t_->mutable_data(
+            TARGET(kOpenCL), tensor_hold_filter_image_->memory_size());
+        TargetWrapperCL::MemcpySync(w_gpu_data,
+                                    tensor_hold_filter_image_->raw_data(),
+                                    tensor_hold_filter_image_->memory_size(),
+                                    IoDirection::HtoD);
         MUTABLE_DATA_GPU(filter_gpu_image_,
                          filter_image_w_,
                          filter_image_h_,
@@ -430,11 +486,15 @@ void ConvImageCompute::PrepareForRun() {
 
 #else
       // conv2d_7x7
-      kernel_func_names_.push_back(
-          input_tensor_n_ > 1 ? "conv2d_7x7_multi_batch" : "conv2d_7x7_opt");
+      if (is_mali_ && input_tensor_n_ == 1) {
+        kernel_func_names_.push_back("conv2d_7x7_opt_mali");
+      } else {
+        kernel_func_names_.push_back(
+            input_tensor_n_ > 1 ? "conv2d_7x7_multi_batch" : "conv2d_7x7_opt");
+      }
       kernel_func_paths_.push_back("image/conv2d_7x7_opt_kernel.cl");
 
-      CLImageConverterFolder converter;
+      CLImageConverterNBlock converter;
       const DDim& filter_image_dims =
           converter.InitImageDimInfoWith(filter_dims);
       filter_image_h_ = filter_image_dims[1];
@@ -444,6 +504,13 @@ void ConvImageCompute::PrepareForRun() {
 
       auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
       converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+      w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+      auto* w_gpu_data = w_gpu_t_->mutable_data(
+          TARGET(kOpenCL), tensor_hold_filter_image_->memory_size());
+      TargetWrapperCL::MemcpySync(w_gpu_data,
+                                  tensor_hold_filter_image_->raw_data(),
+                                  tensor_hold_filter_image_->memory_size(),
+                                  IoDirection::HtoD);
       MUTABLE_DATA_GPU(filter_gpu_image_,
                        filter_image_w_,
                        filter_image_h_,
@@ -619,6 +686,13 @@ void ConvImageCompute::PrepareForRun() {
     bias_converter.NCHWToImage(
         bias_cpu_data, bias_image_data, conv_param_->bias->dims());
 
+    bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+    auto* f_gpu_data = bias_gpu_t_->mutable_data(
+        TARGET(kOpenCL), tensor_hold_bias_image_->memory_size());
+    TargetWrapperCL::MemcpySync(f_gpu_data,
+                                tensor_hold_bias_image_->raw_data(),
+                                tensor_hold_bias_image_->memory_size(),
+                                IoDirection::HtoD);
     MUTABLE_DATA_GPU(bias_gpu_image_,
                      bias_image_dims[0],
                      bias_image_dims[1],
@@ -628,6 +702,14 @@ void ConvImageCompute::PrepareForRun() {
     CLImageConverterFolder bias_converter;
     tensor_hold_bias_image_->Resize({1, 1, 1, 4});
     auto* bias_image_data = DATA_GPU(tensor_hold_bias_image_);
+
+    bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+    auto* f_gpu_data = bias_gpu_t_->mutable_data(
+        TARGET(kOpenCL), tensor_hold_bias_image_->memory_size());
+    TargetWrapperCL::MemcpySync(f_gpu_data,
+                                tensor_hold_bias_image_->raw_data(),
+                                tensor_hold_bias_image_->memory_size(),
+                                IoDirection::HtoD);
     MUTABLE_DATA_GPU(bias_gpu_image_, 1, 1, bias_image_data);
   }
 
@@ -639,6 +721,17 @@ void ConvImageCompute::PrepareForRun() {
   } else {
     LOG(FATAL) << "Unsupported scale_activation_type:"
                << conv_param_->scale_activation_type;
+  }
+
+  // elementwise_tree fuse options
+  if (fuse_eltwise_op_type_.empty()) {
+    // do nothing
+  } else if (fuse_eltwise_op_type_ == "elementwise_add") {
+    build_options_single += " -DELT_FUSE";
+  } else if (fuse_eltwise_op_type_ == "fusion_elementwise_add_activation") {
+    build_options_single += " -DELT_FUSE -DELT_ACT_FUSE";
+  } else {
+    LOG(FATAL) << "Unsupported fuse type: " << fuse_eltwise_op_type_;
   }
 
   // define buffer/image pointer for filter & bias
@@ -662,8 +755,8 @@ void ConvImageCompute::PrepareForRun() {
   build_options_.push_back(build_options_single);
   for (size_t i = 0; i < kernel_func_names_.size(); i++) {
     context.cl_context()->AddKernel(kernel_func_names_[i],
-                                    kernel_func_paths_[i],
-                                    build_options_[i],
+                                    kernel_func_paths_[0],
+                                    build_options_[0],
                                     time_stamp_);
   }
   SetLocalWorkSize(CLRuntime::Global()->lws_repeats());
@@ -688,7 +781,13 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     double final_lws_time = DBL_MAX;
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
-    for (size_t i = 0; i < 6; i++) {
+    int kernel_num;
+    if (CLRuntime::Global()->auto_tune() <= 0) {
+      kernel_num = 1;
+    } else {
+      kernel_num = 6;
+    }
+    for (size_t i = 0; i < kernel_num; i++) {
       if (i == 1) {
         kernel_func_names_[0] = "conv2d_1x1_h1w5c1";
         global_work_size_ =
@@ -752,10 +851,13 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                        CL_KERNEL_WORK_GROUP_SIZE,
                                        &max_work_group_size);
-      std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
-          global_work_size_, max_work_group_size);
-      CHECK(lwss.size() > 0)
-          << "Possible local work sizes should bigger than zero";
+      std::set<cl::NDRange, CLContext::CompareByRange> lwss =
+          context.cl_context()->GenerateLocalWorkSizes(global_work_size_,
+                                                       max_work_group_size);
+      if (lwss.size() < 1) {
+        local_work_size_ = cl::NullRange;
+        return;
+      }
       local_work_size_ = *lwss.begin();
       if (max_work_group_size <= 0 || !use_lws_ ||
           CLRuntime::Global()->auto_tune() <= 0) {
@@ -803,6 +905,114 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       w_blk_ = UP_DIV(default_w_blk_, 2);
     }
     // CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,local_work_size_);
+  } else if (is_wino_) {
+    auto& context = ctx_->As<OpenCLContext>();
+    std::stringstream kernel_key;
+    kernel_key.str("");
+    kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+    kernel_key.str("");
+    kernel_key << kernel_func_names_[1] << build_options_[0] << time_stamp_;
+    kernel_inner_product_ = context.cl_context()->GetKernel(kernel_key.str());
+    kernel_key.str("");
+    kernel_key << kernel_func_names_[2] << build_options_[0] << time_stamp_;
+    kernel_output_trans_ = context.cl_context()->GetKernel(kernel_key.str());
+
+    auto tuned_map_key = GenerateTunedKey();
+    cl::NDRange lws_in_map = cl::NullRange;
+    // if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
+    //                                                   &lws_in_map)) {
+    //   local_work_size_ = lws_in_map;
+    //   return;
+    // }
+
+    size_t max_work_group_size = 0;
+    kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                     CL_KERNEL_WORK_GROUP_SIZE,
+                                     &max_work_group_size);
+    std::set<cl::NDRange, CLContext::CompareByRange> lwss =
+        context.cl_context()->GenerateLocalWorkSizes(global_work_size_,
+                                                     max_work_group_size);
+    std::set<cl::NDRange, CLContext::CompareByRange> lwss1 =
+        context.cl_context()->GenerateLocalWorkSizes(global_work_size_wino1_,
+                                                     max_work_group_size);
+    std::set<cl::NDRange, CLContext::CompareByRange> lwss2 =
+        context.cl_context()->GenerateLocalWorkSizes(global_work_size_wino2_,
+                                                     max_work_group_size);
+    local_work_size_ = *lwss.begin();
+    local_work_size_wino1_ = *lwss1.begin();
+    local_work_size_wino2_ = *lwss2.begin();
+    if (max_work_group_size <= 0 || !use_lws_ ||
+        CLRuntime::Global()->auto_tune() <= 0) {
+      return;
+    }
+
+    // first
+    if (lwss.size() < 1) {
+      return;
+    }
+    double min_lws_time = DBL_MAX;
+
+    cl::NDRange min_lws = *lwss.begin();
+    for (cl::NDRange cur_lws : lwss) {
+      local_work_size_ = cur_lws;
+      double cur_lws_time = 0.0f;
+      for (size_t i = 0; i < repeats; ++i) {
+        Run();
+        cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
+      }
+      cur_lws_time /= repeats;
+      if (min_lws_time > cur_lws_time) {
+        min_lws = cur_lws;
+        min_lws_time = cur_lws_time;
+      }
+    }
+    local_work_size_ = min_lws;
+
+    // second
+    if (lwss1.size() < 1) {
+      return;
+    }
+    min_lws_time = DBL_MAX;
+    min_lws = *lwss1.begin();
+    for (cl::NDRange cur_lws : lwss1) {
+      local_work_size_wino1_ = cur_lws;
+      double cur_lws_time = 0.0f;
+      for (size_t i = 0; i < repeats; ++i) {
+        Run();
+        cur_lws_time += CLRuntime::Global()->GetCommandTime(event_1);
+      }
+      cur_lws_time /= repeats;
+      if (min_lws_time > cur_lws_time) {
+        min_lws = cur_lws;
+        min_lws_time = cur_lws_time;
+      }
+    }
+    local_work_size_wino1_ = min_lws;
+
+    // third
+    if (lwss2.size() < 1) {
+      return;
+    }
+    min_lws_time = DBL_MAX;
+    min_lws = *lwss2.begin();
+    for (cl::NDRange cur_lws : lwss2) {
+      local_work_size_wino2_ = cur_lws;
+      double cur_lws_time = 0.0f;
+      for (size_t i = 0; i < repeats; ++i) {
+        Run();
+        cur_lws_time += CLRuntime::Global()->GetCommandTime(event_2);
+      }
+      cur_lws_time /= repeats;
+      if (min_lws_time > cur_lws_time) {
+        min_lws = cur_lws;
+        min_lws_time = cur_lws_time;
+      }
+    }
+    local_work_size_wino2_ = min_lws;
+
+    // CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,
+    // local_work_size_);
   } else {
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
@@ -821,10 +1031,13 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                      CL_KERNEL_WORK_GROUP_SIZE,
                                      &max_work_group_size);
-    std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
-        global_work_size_, max_work_group_size);
-    CHECK(lwss.size() > 0)
-        << "Possible local work sizes should bigger than zero";
+    std::set<cl::NDRange, CLContext::CompareByRange> lwss =
+        context.cl_context()->GenerateLocalWorkSizes(global_work_size_,
+                                                     max_work_group_size);
+    if (lwss.size() < 1) {
+      local_work_size_ = cl::NullRange;
+      return;
+    }
     local_work_size_ = *lwss.begin();
     if (max_work_group_size <= 0 || !use_lws_ ||
         CLRuntime::Global()->auto_tune() <= 0) {
@@ -1018,9 +1231,28 @@ void ConvImageCompute::SetGlobalWorkSize() {
     global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
-
+  } else if (kernel_func_names_[0] == "transform_from_input") {
+    const int round_up_ouptut_width = UP_DIV(output_tensor_w_, 2);
+    const int round_up_output_height = UP_DIV(output_tensor_h_, 2);
+    const int output_channel_blocks = UP_DIV(output_tensor_c_, 4);
+    const int input_channel_blocks = UP_DIV(input_tensor_c_, 4);
+    const int round_up_4x4_ouptut_width = UP_DIV(round_up_ouptut_width, 4);
+    const int batch_round_h = input_tensor_n_ * round_up_output_height;
+    global_work_size_ = cl::NDRange{
+        static_cast<size_t>(input_channel_blocks * round_up_ouptut_width),
+        static_cast<size_t>(batch_round_h),
+        1};
+    global_work_size_wino1_ = cl::NDRange{
+        static_cast<size_t>(output_channel_blocks * round_up_4x4_ouptut_width),
+        static_cast<size_t>(16 * batch_round_h),
+        1};
+    global_work_size_wino2_ = cl::NDRange{
+        static_cast<size_t>(output_channel_blocks * round_up_ouptut_width),
+        static_cast<size_t>(batch_round_h),
+        1};
   } else if (kernel_func_names_[0] == "conv2d_3x3_multi_batch" ||
-             kernel_func_names_[0] == "conv2d_3x3_opt") {
+             kernel_func_names_[0] == "conv2d_3x3_opt" ||
+             kernel_func_names_[0] == "conv2d_3x3_opt_mali") {
     int w_blk_size = 5;
     int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
 
@@ -1049,7 +1281,8 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
   } else if (kernel_func_names_[0] == "conv2d_7x7_multi_batch" ||
-             kernel_func_names_[0] == "conv2d_7x7_opt") {
+             kernel_func_names_[0] == "conv2d_7x7_opt" ||
+             kernel_func_names_[0] == "conv2d_7x7_opt_mali") {
     int w_blk_size = 5;
     int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
 
@@ -1163,15 +1396,19 @@ void ConvImageCompute::Conv2d1x1opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(3, *input_image_p_);
   CL_CHECK_FATAL(status_);
-  if (is_mali_) {
-    auto* filter_buffer_p_ = w_gpu_t_->data<half_t, cl::Buffer>();
+  if (is_mali_ && input_tensor_n_ == 1) {
+    auto* filter_buffer_p_ = GET_BUFFER_GPU(w_gpu_t_);
+    auto* bias_buffer_p_ = GET_BUFFER_GPU(bias_gpu_t_);
     status_ = kernel_.setArg(4, *filter_buffer_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(5, *bias_buffer_p_);
+    CL_CHECK_FATAL(status_);
   } else {
     status_ = kernel_.setArg(4, *filter_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(5, *bias_image_p_);
+    CL_CHECK_FATAL(status_);
   }
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(5, *bias_image_p_);
-  CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(6, *output_image_p_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
@@ -1196,6 +1433,10 @@ void ConvImageCompute::Conv2d1x1opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(17, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
+  if (!fuse_eltwise_op_type_.empty()) {
+    status_ = kernel_.setArg(18, *second_input_image_p_);
+    CL_CHECK_FATAL(status_);
+  }
 }
 
 void ConvImageCompute::Conv2d3x3() {
@@ -1255,10 +1496,19 @@ void ConvImageCompute::Conv2d3x3opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(3, *input_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(4, *filter_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(5, *bias_image_p_);
-  CL_CHECK_FATAL(status_);
+  if (is_mali_ && input_tensor_n_ == 1) {
+    auto* filter_buffer_p_ = GET_BUFFER_GPU(w_gpu_t_);
+    auto* bias_buffer_p_ = GET_BUFFER_GPU(bias_gpu_t_);
+    status_ = kernel_.setArg(4, *filter_buffer_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(5, *bias_buffer_p_);
+    CL_CHECK_FATAL(status_);
+  } else {
+    status_ = kernel_.setArg(4, *filter_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(5, *bias_image_p_);
+    CL_CHECK_FATAL(status_);
+  }
   status_ = kernel_.setArg(6, *output_image_p_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
@@ -1401,10 +1651,19 @@ void ConvImageCompute::Conv2d7x7opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(3, *input_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(4, *filter_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(5, *bias_image_p_);
-  CL_CHECK_FATAL(status_);
+  if (is_mali_ && input_tensor_n_ == 1) {
+    auto* filter_buffer_p_ = GET_BUFFER_GPU(w_gpu_t_);
+    auto* bias_buffer_p_ = GET_BUFFER_GPU(bias_gpu_t_);
+    status_ = kernel_.setArg(4, *filter_buffer_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(5, *bias_buffer_p_);
+    CL_CHECK_FATAL(status_);
+  } else {
+    status_ = kernel_.setArg(4, *filter_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(5, *bias_image_p_);
+    CL_CHECK_FATAL(status_);
+  }
   status_ = kernel_.setArg(6, *output_image_p_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
@@ -1596,28 +1855,160 @@ void ConvImageCompute::Run() {
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
 #endif
+  if (is_wino_) {
+    auto& context = ctx_->As<OpenCLContext>();
+    const int round_up_ouptut_width = UP_DIV(output_tensor_w_, 2);
+    const int round_up_output_height = UP_DIV(output_tensor_h_, 2);
+    const int output_channel_blocks = UP_DIV(output_tensor_c_, 4);
+    const int input_channel_blocks = UP_DIV(input_tensor_c_, 4);
+    const int round_up_4x4_ouptut_width = UP_DIV(round_up_ouptut_width, 4);
+    const int batch_round_h = input_tensor_n_ * round_up_output_height;
 
-  // define image pointer for input, output
-  input_image_p_ = DATA_GPU(conv_param_->x);
-  output_image_p_ = MUTABLE_DATA_GPU(
-      conv_param_->output, output_image_w_, output_image_h_, nullptr);
-  // setArg
-  (this->*impl_)();
+    // kernel transform_from_input
+    input_image_p_ = DATA_GPU(conv_param_->x);
+    wino_v_image_p_ =
+        MUTABLE_DATA_GPU(wino_v_gpu_image_,
+                         input_channel_blocks * round_up_ouptut_width,
+                         16 * input_tensor_n_ * round_up_output_height,
+                         nullptr);
+    wino_m_image_p_ =
+        MUTABLE_DATA_GPU(wino_m_gpu_image_,
+                         output_channel_blocks * round_up_ouptut_width,
+                         16 * input_tensor_n_ * round_up_output_height,
+                         nullptr);
+    output_image_p_ = MUTABLE_DATA_GPU(
+        conv_param_->output, output_image_w_, output_image_h_, nullptr);
+    int idx = 0;
+    status_ = kernel_.setArg(idx++, *input_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(idx++, *wino_v_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(idx++, input_tensor_h_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(idx++, input_tensor_w_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(idx++, input_tensor_c_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(idx++, round_up_output_height);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(idx++, round_up_ouptut_width);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(idx++, pad_left_);
+    CL_CHECK_FATAL(status_);
+    status_ =
+        kernel_.setArg(idx++, input_channel_blocks * round_up_ouptut_width);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(idx++, batch_round_h);
+    CL_CHECK_FATAL(status_);
+    status_ = EnqueueNDRangeKernel(context,
+                                   kernel_,
+                                   cl::NullRange,
+                                   global_work_size_,
+                                   local_work_size_,
+                                   nullptr,
+                                   event_);
+    CL_CHECK_FATAL(status_);
 
-  auto& context = ctx_->As<OpenCLContext>();
-  /*
-  status_ = context.cl_context()->RunKernel(
-      kernel_, global_work_size_, local_work_size_, &event_);
-  */
+    // kernel matrix_inner_product
+    idx = 0;
+    kernel_inner_product_.setArg(idx++, *wino_v_image_p_);
+    CL_CHECK_FATAL(status_);
+    if (is_mali_) {
+      auto* filter_buffer_p_ = GET_BUFFER_GPU(w_gpu_t_);
+      status_ = kernel_inner_product_.setArg(idx++, *filter_buffer_p_);
+    } else {
+      status_ = kernel_inner_product_.setArg(idx++, *filter_image_p_);
+    }
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_inner_product_.setArg(idx++, *wino_m_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_inner_product_.setArg(idx++, round_up_ouptut_width);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_inner_product_.setArg(idx++, round_up_4x4_ouptut_width);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_inner_product_.setArg(idx++, batch_round_h);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_inner_product_.setArg(idx++, output_channel_blocks);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_inner_product_.setArg(idx++, input_channel_blocks);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_inner_product_.setArg(
+        idx++, output_channel_blocks * round_up_4x4_ouptut_width);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_inner_product_.setArg(idx++, 16 * batch_round_h);
+    CL_CHECK_FATAL(status_);
+    status_ = EnqueueNDRangeKernel(context,
+                                   kernel_inner_product_,
+                                   cl::NullRange,
+                                   global_work_size_wino1_,
+                                   local_work_size_wino1_,
+                                   nullptr,
+                                   event_1);
+    CL_CHECK_FATAL(status_);
 
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 local_work_size_,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
+    // kernel transform_to_output
+    idx = 0;
+    status_ = kernel_output_trans_.setArg(idx++, *wino_m_image_p_);
+    CL_CHECK_FATAL(status_);
+    if (is_mali_) {
+      auto* bias_buffer_p_ = GET_BUFFER_GPU(bias_gpu_t_);
+      status_ = kernel_output_trans_.setArg(idx++, *bias_buffer_p_);
+    } else {
+      status_ = kernel_output_trans_.setArg(idx++, *bias_image_p_);
+    }
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_output_trans_.setArg(idx++, *output_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_output_trans_.setArg(idx++, round_up_ouptut_width);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_output_trans_.setArg(idx++, round_up_output_height);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_output_trans_.setArg(idx++, output_tensor_w_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_output_trans_.setArg(idx++, output_tensor_h_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_output_trans_.setArg(
+        idx++, output_channel_blocks * round_up_ouptut_width);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_output_trans_.setArg(idx++, batch_round_h);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_output_trans_.setArg(idx++, *alpha_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = EnqueueNDRangeKernel(context,
+                                   kernel_output_trans_,
+                                   cl::NullRange,
+                                   global_work_size_wino2_,
+                                   local_work_size_wino2_,
+                                   nullptr,
+                                   event_2);
+    CL_CHECK_FATAL(status_);
+  } else {
+    // define image pointer for input, output
+    input_image_p_ = DATA_GPU(conv_param_->x);
+    if (!fuse_eltwise_op_type_.empty()) {
+      second_input_image_p_ = DATA_GPU(conv_param_->second_x);
+    }
+    output_image_p_ = MUTABLE_DATA_GPU(
+        conv_param_->output, output_image_w_, output_image_h_, nullptr);
+
+    // setArg
+    (this->*impl_)();
+
+    auto& context = ctx_->As<OpenCLContext>();
+    /*
+    status_ = context.cl_context()->RunKernel(
+        kernel_, global_work_size_, local_work_size_, &event_);
+    */
+
+    status_ = EnqueueNDRangeKernel(context,
+                                   kernel_,
+                                   cl::NullRange,
+                                   global_work_size_,
+                                   local_work_size_,
+                                   nullptr,
+                                   event_);
+    CL_CHECK_FATAL(status_);
+  }
 }
 
 void ConvImageCompute::PrintConvInfo() {
@@ -1667,6 +2058,7 @@ void ConvImageCompute::PrintConvInfo() {
   LOG(INFO) << "groups_:" << groups_;
   LOG(INFO) << "relu_fused_:" << relu_fused_;
   LOG(INFO) << "has_bias_:" << has_bias_;
+  LOG(INFO) << "fuse_eltwise_op_type_:" << fuse_eltwise_op_type_;
 
   LOG(INFO) << "input_tensor_n_:" << input_tensor_n_;
   LOG(INFO) << "input_tensor_c_:" << input_tensor_c_;
@@ -1710,6 +2102,10 @@ REGISTER_LITE_KERNEL(conv2d,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
+    .BindInput("SecondInput",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -1748,6 +2144,10 @@ REGISTER_LITE_KERNEL(conv2d,
                      paddle::lite::kernels::opencl::ConvImageCompute,
                      image2d_pc)
     .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("SecondInput",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})

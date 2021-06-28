@@ -43,7 +43,8 @@ enum activation_type_test {
   RECIPROCAL,
   THRESHOLDED_RELU,
   ELU,
-  SOFTSIGN
+  SOFTSIGN,
+  HARD_SIGMOID
 };
 
 template <class T = float>
@@ -63,6 +64,9 @@ class ActivationComputeTester : public arena::TestCase {
   float relu_threshold_ = 1.0;
   float elu_alpha_ = 1.0;
   float threshold_ = 6.0;
+
+  float hard_sigmoid_slope_ = 0.2f;
+  float hard_sigmoid_offset_ = 0.5f;
   DDim dims_{{1}};
   std::string type_ = "";
   activation_type_test act_type_ = RELU;
@@ -257,6 +261,19 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case HARD_SIGMOID: {
+        for (int i = 0; i < dims_.production(); ++i) {
+          T tmp = x_data[i] * hard_sigmoid_slope_ + hard_sigmoid_slope_;
+          if (tmp < 1.f && tmp > 0.f) {
+            output_data[i] = tmp;
+          } else if (tmp <= 0.f) {
+            output_data[i] = 0.f;
+          } else if (tmp >= 1.f) {
+            output_data[i] = 1.f;
+          }
+        }
+        break;
+      }
       default:
         LOG(FATAL) << "the type of activation " << act_type_ << " is unknow.";
     }
@@ -295,6 +312,10 @@ class ActivationComputeTester : public arena::TestCase {
     }
     if (act_type_ == GELU) {
       op_desc->SetAttr("approximate", false);
+    }
+    if (act_type_ == HARD_SIGMOID) {
+      op_desc->SetAttr("slope", hard_sigmoid_slope_);
+      op_desc->SetAttr("offset", hard_sigmoid_slope_);
     }
   }
 
@@ -358,19 +379,46 @@ void TestAct(const Place& place,
   arena.TestPrecision();
 }
 
+template <class T = float>
+void TestActPerformance(const Place& place,
+                        const std::string& alias,
+                        float leaky_relu_alpha,
+                        float relu_clipped_coef,
+                        std::string prelu_mode,
+                        float swish_beta,
+                        float elu_alpha,
+                        DDim dims,
+                        std::string type,
+                        activation_type_test act_type,
+                        float abs_error = 2e-5) {
+  std::unique_ptr<arena::TestCase> tester(
+      new ActivationComputeTester<T>(place,
+                                     "def",
+                                     leaky_relu_alpha,
+                                     relu_clipped_coef,
+                                     prelu_mode,
+                                     swish_beta,
+                                     elu_alpha,
+                                     dims,
+                                     type,
+                                     act_type));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPerformance();
+}
+
 TEST(Activation_relu, precision) {
   Place place;
   float abs_error = 2e-5;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #else
@@ -465,6 +513,8 @@ TEST(Activation_prelu, precision) {
 #if defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -526,10 +576,10 @@ TEST(Activation_tanh, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
@@ -741,6 +791,7 @@ TEST(Activation_gelu, precision) {
   float abs_error = 2e-5;
 #if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+  abs_error = 1e-4;
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #elif defined(LITE_WITH_ARM)
@@ -902,6 +953,100 @@ TEST(Activation_relu_fp16, precision) {
                        "relu",
                        RELU,
                        abs_error);
+  }
+}
+#endif
+
+#if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
+TEST(Activation_hard_sigmoid_fp16, precision) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-3;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 32, 32},
+                                                     {1, 2, 3, 4},
+                                                     {1, 3, 2, 4},
+                                                     {2, 3, 4},
+                                                     {5, 4},
+                                                     {8}}) {
+    TestAct<float16_t>(place,
+                       "def",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "hard_sigmoid",
+                       HARD_SIGMOID,
+                       abs_error);
+  }
+}
+#endif
+
+#if defined(LITE_WITH_ARM)
+TEST(Activation_hard_sigmoid_fp32, precision) {
+  Place place(TARGET(kARM));
+  float abs_error = 2e-5;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 32, 32},
+                                                     {1, 2, 3, 4},
+                                                     {1, 3, 2, 4},
+                                                     {2, 3, 4},
+                                                     {5, 4},
+                                                     {8}}) {
+    TestAct<float>(place,
+                   "def",
+                   0.01,
+                   6.,
+                   "all",
+                   0.,
+                   1.0,
+                   DDim(dims),
+                   "hard_sigmoid",
+                   HARD_SIGMOID,
+                   abs_error);
+  }
+}
+#endif
+
+#if defined(LITE_WITH_ARM)
+TEST(Activation_hard_sigmoid_fp32, performance) {
+  Place place(TARGET(kARM));
+  float abs_error = 2e-5;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 32, 544, 544}}) {
+    TestActPerformance<float>(place,
+                              "def",
+                              0.01,
+                              6.,
+                              "all",
+                              0.,
+                              1.0,
+                              DDim(dims),
+                              "hard_sigmoid",
+                              HARD_SIGMOID,
+                              abs_error);
+  }
+}
+#endif
+
+#if defined(LITE_WITH_ARM) & defined(ENABLE_ARM_FP16)
+TEST(Activation_hard_sigmoid_fp16, performance) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-3;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 32, 544, 544}}) {
+    TestActPerformance<float16_t>(place,
+                                  "def",
+                                  0.01,
+                                  6.,
+                                  "all",
+                                  0.,
+                                  1.0,
+                                  DDim(dims),
+                                  "hard_sigmoid",
+                                  HARD_SIGMOID,
+                                  abs_error);
   }
 }
 #endif

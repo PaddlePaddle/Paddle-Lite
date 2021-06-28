@@ -196,9 +196,7 @@ void TestCropOffsets(Place place, float abs_error = 1e-5) {
 
 TEST(crop, precision) {
   Place place;
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_X86)
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;
@@ -206,7 +204,6 @@ TEST(crop, precision) {
 
   TestCrop<float>(place);
 #if defined(LITE_WITH_ARM)
-  place = TARGET(kHost);
   TestCrop<int>(place);
 #endif
 #ifndef LITE_WITH_ARM

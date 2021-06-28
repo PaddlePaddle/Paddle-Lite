@@ -231,6 +231,24 @@ void SwishCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void PReluCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+  auto x_dims = param.X->dims();
+  int outer_size = x_dims[0];
+  int channel_size = param.Prelu_alpha->numel();
+  int inner_size = x_dims.count(1, x_dims.size()) / channel_size;
+
+  int r = xdnn::prelu(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Prelu_alpha->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      outer_size,
+                      channel_size,
+                      inner_size);
+  CHECK_EQ(r, 0);
+}
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
@@ -366,5 +384,12 @@ REGISTER_LITE_KERNEL(
     swish, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SwishCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("beta", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    prelu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PReluCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

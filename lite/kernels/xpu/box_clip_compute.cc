@@ -27,7 +27,7 @@ void BoxClipCompute::Run() {
   const auto* input = param.Input;
   const auto* im_info = param.ImInfo;
   float h = im_info->data<float>()[0] / im_info->data<float>()[2];
-  float w = im_info->data<float>()[0] / im_info->data<float>()[2];
+  float w = im_info->data<float>()[1] / im_info->data<float>()[2];
   int r = xdnn::clip_box_to_image<float>(
       ctx.GetRawContext(),
       input->data<float>(),

@@ -179,8 +179,10 @@ struct ElementwiseMetalParam {
 };
 
 struct TransposeMetalParam {
-    int iC;
-    int oC;
+    int idim[4];
+    int itrans[4];
+    int odim[4];
+    int otrans[4];
     int axis[4];
 };
 
@@ -240,6 +242,15 @@ struct SliceMetalParam {
 struct FetchMetalParam {
     int isize;
     int idim[4];
+};
+
+struct Pad2dParam {
+    uint16_t paddingTop;
+    uint16_t paddingBottom;
+    uint16_t paddingLeft;
+    uint16_t paddingRight;
+    float padValue;
+    uint16_t mode;
 };
 
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_

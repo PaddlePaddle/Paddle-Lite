@@ -88,6 +88,13 @@ struct ConvParam : PEParam {
   bool deconv = false;
   bool cpu_concat = false;
 
+  // support concat fuse for jump write
+  bool wd_enable = false;
+  int fuse_idx = -1;
+  int wd_offset = -1;
+  int original_out_channel = 0;
+  int start_idx = 0;
+  int end_idx = 0;
   std::vector<int> strides;
   std::vector<int> paddings;
   std::vector<int> kernelSize;

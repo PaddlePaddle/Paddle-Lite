@@ -333,6 +333,7 @@ function(cc_library TARGET_NAME)
       elseif(${source_file} MATCHES "arm_for_strip.cc" OR
              ${source_file} MATCHES "host_for_strip.cc" OR
              ${source_file} MATCHES "opencl_for_strip.cc" OR
+             ${source_file} MATCHES "metal_for_strip.mm" OR
              ${source_file} MATCHES "x86_for_strip.cc")
         list(APPEND full_path_src ${source_file})
       else()

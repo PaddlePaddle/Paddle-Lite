@@ -234,6 +234,7 @@ void MetalImage::CopyFromNCHW(const SP* src) {
     } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<SP, float>::value) {
         // attenion：ruler same with InitTexture
         auto nvalue = (MetalHalf*)TargetWrapperMetal::Malloc(sizeof(MetalHalf) * rcount);
+        TargetWrapperMetal::MemsetSync(nvalue, 0, sizeof(MetalHalf) * rcount);
         if (tensor_dim_.size() == 4) {
             size_t n = dim_[0];
             size_t h = dim_[1];
@@ -320,7 +321,7 @@ __unused void MetalImage::Zero() const {
         size_p = 2;
     auto rcount = texture_width_ * texture_height_ * 1 * channels_per_pixel_;
     char* nvalue = (char*)TargetWrapperMetal::Malloc(size_p * rcount);
-    memset(nvalue, 0, size_p * rcount);
+    TargetWrapperMetal::MemsetSync(nvalue, 0, size_p * rcount);
 
     auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * size_p;
     auto bytes_per_image = image_.height * bytes_per_row;
@@ -429,7 +430,8 @@ void MetalImage::CopyToNCHW(P* dst) const {
         TargetWrapperMetal::Free(pointer);
     } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<P, float>::value) {
         auto pointer = (MetalHalf*)TargetWrapperMetal::Malloc(sizeof(MetalHalf) * dstCounts);
-
+        TargetWrapperMetal::MemsetSync(pointer, 0, sizeof(MetalHalf) * dstCounts);
+        
         auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
         auto bytes_per_image = image_.height * bytes_per_row;
 

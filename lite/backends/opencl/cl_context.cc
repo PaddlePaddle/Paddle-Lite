@@ -10,6 +10,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_context.h"
+#include <math.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -125,118 +126,148 @@ cl::NDRange CLContext::DefaultGlobalWorkSize(const CLImage &image) {
   }
 }
 
-std::set<cl::NDRange> CLContext::GenerateLocalWorkSizes(cl::NDRange gws,
-                                                        size_t max_ws) {
+std::set<cl::NDRange, CLContext::CompareByRange>
+CLContext::GenerateLocalWorkSizes(cl::NDRange gws, size_t max_ws) {
   size_t tune_type = CLRuntime::Global()->auto_tune();
-
-  cl::NDRange tmp_lws =
-      DefaultLocalWorkSize(gws, max_ws, /*divisor=*/2, /*tune_reverse=*/false);
-  cl::NDRange last_lws = cl::NDRange{
-      static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
-  std::set<cl::NDRange> lwss{tmp_lws};
-
+  auto first_lws = DefaultLocalWorkSize(gws, max_ws, 3, false);
+  std::set<cl::NDRange, CompareByRange> lwss;
+  for (auto one_lws : first_lws) {
+    lwss.insert(one_lws);
+  }
   auto gen_lws = [&](const std::set<bool> &tune_reverses,
                      const std::set<size_t> &divisors) {
     for (bool tune_reverse : tune_reverses) {
       for (size_t divisor : divisors) {
-        tmp_lws = DefaultLocalWorkSize(gws, max_ws, divisor, tune_reverse);
-        lwss.emplace(tmp_lws);
+        std::set<cl::NDRange, CompareByRange> tmp_lws =
+            DefaultLocalWorkSize(gws, max_ws, divisor, tune_reverse);
+        for (cl::NDRange one_lws : tmp_lws) {
+          lwss.insert(one_lws);
+        }
       }
     }
   };
-
   std::set<bool> tune_reverses{true, false};
   std::set<size_t> divisors;
   if (tune_type == lite_api::CL_TUNE_NONE) {
-    // do nothing
+    return lwss;
   } else if (tune_type == lite_api::CL_TUNE_RAPID) {
     divisors = {1, 2, 4, 8};
   } else if (tune_type == lite_api::CL_TUNE_NORMAL) {
     divisors = {1, 3, 5, 7, 9, 11, 13};
   } else if (tune_type == lite_api::CL_TUNE_EXHAUSTIVE) {
     divisors = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
-#undef GEN_MORE_LWS
-#ifdef GEN_MORE_LWS
-    auto genByGlobal = [&](size_t global_i) -> std::set<size_t> {
-      std::set<size_t> locals;
-      int idx = 1;
-      while (idx <= global_i) {
-        if (global_i % idx == 0) {
-          locals.insert(idx);
+  } else {
+    LOG(FATAL) << "Unsupported opencl tune type:" << tune_type;
+  }
+
+#undef GEN_LOCAL_LWS
+#ifdef GEN_LOCAL_LWS
+  gen_lws(tune_reverses, divisors);
+#endif
+
+#undef GEN_MUL_LWS
+#ifdef GEN_MUL_LWS
+  std::vector<uint32_t> lws = {1, 1, 1};
+  for (lws[0] = 1; lws[0] < gws[0] * 2; lws[0] *= 2) {
+    for (lws[1] = 1; lws[1] < gws[1] * 2; lws[1] *= 2) {
+      for (lws[2] = 1; lws[2] < gws[2] * 2; lws[2] *= 2) {
+        if (lws[0] * lws[1] * lws[2] <= max_ws &&
+            lws[0] * lws[1] * lws[2] >= 32) {
+          lwss.insert(cl::NDRange{lws[0], lws[1], lws[2]});
         }
-        idx = idx << 2;
       }
-      for (size_t i = 1; i <= 16; i++) {
-        if (global_i % i == 0) {
-          locals.insert(i);
+    }
+  }
+#endif  // GEN_DIV_LWS
+
+#define GEN_DIV_LWS
+#ifdef GEN_DIV_LWS
+  auto GetDivisors = [&](int number) {
+    const int max_divisor = static_cast<int>(sqrt(number));
+    std::vector<int> divisors;
+    divisors.reserve(max_divisor / 3 + 1);
+    for (int i = 1; i <= max_divisor; ++i) {
+      const int d = number / i;
+      if (i * d == number) {
+        divisors.push_back(i);
+        if (d != i) {
+          divisors.push_back(d);
         }
       }
-      return locals;
-    };
-    std::set<size_t> locals_x = genByGlobal(static_cast<size_t>(gws[0]));
-    std::set<size_t> locals_y = gws.dimensions() > 1
-                                    ? genByGlobal(static_cast<size_t>(gws[1]))
-                                    : std::set<size_t>{1};
-    std::set<size_t> locals_z = gws.dimensions() > 2
-                                    ? genByGlobal(static_cast<size_t>(gws[2]))
-                                    : std::set<size_t>{1};
-    std::map<std::string, size_t> device_info_map =
-        CLRuntime::Global()->GetDeviceInfo();
-    std::vector<size_t> max_work_item_sizes{
-        device_info_map["CL_DEVICE_MAX_WORK_ITEM_SIZES_0"],
-        device_info_map["CL_DEVICE_MAX_WORK_ITEM_SIZES_1"],
-        device_info_map["CL_DEVICE_MAX_WORK_ITEM_SIZES_2"]};
-    for (auto x : locals_x) {
-      if (x <= max_work_item_sizes[0]) {
-        for (auto y : locals_y) {
-          if (y <= max_work_item_sizes[1]) {
-            for (auto z : locals_z) {
-              auto group_size = x * y * z;
-              if (z <= max_work_item_sizes[2] && group_size <= max_ws &&
-                  group_size >= /*min_workgrop_size=*/8) {
-                lwss.insert(cl::NDRange{x, y, z});
-              }
+    }
+    return divisors;
+  };
+  std::vector<int> locals_x = GetDivisors(static_cast<int>(gws[0]));
+  std::vector<int> locals_y = GetDivisors(static_cast<int>(gws[1]));
+  std::vector<int> locals_z = GetDivisors(static_cast<int>(gws[2]));
+
+  std::map<std::string, size_t> device_info_map =
+      CLRuntime::Global()->GetDeviceInfo();
+  std::vector<size_t> max_work_item_sizes{
+      device_info_map["CL_DEVICE_MAX_WORK_ITEM_SIZES_0"],
+      device_info_map["CL_DEVICE_MAX_WORK_ITEM_SIZES_1"],
+      device_info_map["CL_DEVICE_MAX_WORK_ITEM_SIZES_2"]};
+  for (auto x : locals_x) {
+    if (x <= max_work_item_sizes[0]) {
+      for (auto y : locals_y) {
+        if (y <= max_work_item_sizes[1]) {
+          for (auto z : locals_z) {
+            auto group_size = x * y * z;
+            if (z <= max_work_item_sizes[2] && group_size <= max_ws &&
+                group_size >= 32) {
+              lwss.insert(cl::NDRange{static_cast<size_t>(x),
+                                      static_cast<size_t>(y),
+                                      static_cast<size_t>(z)});
             }
           }
         }
       }
     }
-#endif  // GEN_MORE_LWS
-  } else {
-    LOG(FATAL) << "Unsupported opencl tune type:" << tune_type;
   }
-  gen_lws(tune_reverses, divisors);
+#endif  // GEN_DIV_LWS
   return lwss;
 }
-
-cl::NDRange CLContext::DefaultLocalWorkSize(
-    const cl::NDRange &gws,
-    register size_t max_ws,
-    const int &divisor /*=2*/,
-    const bool &reverse /*=false*/,
-    const size_t &user_def_max_ws /*=0*/) {
+std::set<cl::NDRange, CLContext::CompareByRange>
+CLContext::DefaultLocalWorkSize(const cl::NDRange &gws,
+                                register size_t max_ws,
+                                const int &divisor /*=2*/,
+                                const bool &reverse /*=false*/,
+                                const size_t &user_def_max_ws /*=0*/) {
   register size_t lx = reverse ? gws[2] : gws[0];
   register size_t ly = gws[1];
   register size_t lz = reverse ? gws[0] : gws[2];
 
   max_ws = (user_def_max_ws > 0 && user_def_max_ws <= max_ws) ? user_def_max_ws
                                                               : max_ws;
+  std::set<cl::NDRange, CompareByRange> lws_set;
+  int ly_src = ly;
+  int lx_src = lx;
+  int lz_src = lz;
   max_ws = divisor > 1 ? max_ws / divisor : max_ws;
+  do {
+    ly = ly_src;
+    lx = lx_src;
+    lz = lz_src;
+    if (max_ws > 0) {
+      while (ly > max_ws) {
+        // replace mod with bit operate
+        ly = (ly & 0x01) ? 1 : ly >> 1;
+      }
+      while (ly * lz > max_ws) {
+        lz = (lz & 0x01) ? 1 : lz >> 1;
+      }
+      while (ly * lz * lx > max_ws) {
+        lx = (lx & 0x01) ? 1 : lx >> 1;
+      }
+    }
+    if (lx * ly * lz >= 32) {
+      lws_set.insert(
+          (reverse ? cl::NDRange{lz, ly, lx} : cl::NDRange{lx, ly, lz}));
+    }
+    ly_src = (ly_src & 0x01) ? 1 : ly_src >> 1;
+  } while (ly_src > 1);
 
-  if (max_ws > 0) {
-    while (ly > max_ws) {
-      // replace mod with bit operate
-      ly = (ly & 0x01) ? 1 : ly >> 1;
-    }
-    while (ly * lz > max_ws) {
-      lz = (lz & 0x01) ? 1 : lz >> 1;
-    }
-    while (ly * lz * lx > max_ws) {
-      lx = (lx & 0x01) ? 1 : lx >> 1;
-    }
-  }
-
-  return reverse ? cl::NDRange{lz, ly, lx} : cl::NDRange{lx, ly, lz};
+  return lws_set;
 }
 
 bool CLContext::IsArmMali() {

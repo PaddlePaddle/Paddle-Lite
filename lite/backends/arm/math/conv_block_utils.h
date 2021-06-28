@@ -38,6 +38,14 @@ inline void trans_gemm_weights(const Tensor& tin,
                                int group,
                                ARMContext* ctx);
 
+#ifdef ENABLE_ARM_FP16
+template <>
+inline void trans_gemm_weights<PRECISION(kFP16)>(const Tensor& tin,
+                                                 Tensor& tout,  // NOLINT
+                                                 int group,
+                                                 ARMContext* ctx) {}
+#endif
+
 template <>
 inline void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
                                                   Tensor& tout,  // NOLINT

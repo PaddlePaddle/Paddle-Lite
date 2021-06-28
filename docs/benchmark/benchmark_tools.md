@@ -39,17 +39,10 @@ List of devices attached
 执行以下命令，完成Benchmark：
 
 ```shell
-# Test v2.8 branch
-wget -c https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/benchmark_2.8/run_benchmark.sh
+# Test v2.9 branch
+wget -c https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/benchmark_2.9/run_benchmark.sh
 sh run_benchmark.sh
 
-# Test v2.6 branch
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_2.6/run_benchmark.sh
-sh run_benchmark.sh
-
-# Test v2.3 branch
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_2.3/run_benchmark.sh
-sh run_benchmark.sh
 ```
 
 该`run_benchmark.sh`脚本会：
@@ -73,8 +66,8 @@ sh run_benchmark.sh
 # 拉取Paddle-Lite代码
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
 
-# 默认是develop分支，请拉取并切换到特定分支，比如切换到2.8分支
-git checkout -b release/v2.8 origin/release/v2.8
+# 默认是develop分支，请拉取并切换到特定分支，比如切换到2.9分支
+git checkout -b release/v2.9 origin/release/v2.9
 
 ###########################################
 # Build benchmark_bin for android-armv7   #

@@ -90,8 +90,8 @@ void ElementwiseAddImageCompute::Run() {
 #pragma mark - SELF
 
 void ElementwiseAddImageCompute::run_without_mps() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -132,7 +132,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
     if (input_buffer_y_->tensor_dim_.size() == 1 &&
         (axis == 1 ||
             (axis == -1 &&
-                input_buffer_y_->tensor_dim_[0] == input_buffer_x_->pad_to_four_dim_[1]))) {
+                input_buffer_y_->tensor_dim_[0] == input_buffer_x_->dim_[3]))) {
         add_by_channel = 1;
     }
     if (add_by_channel == 1 || params_fast == 1) {
@@ -162,7 +162,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
 }
 
 #pragma mark - MPS
@@ -216,6 +216,7 @@ ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

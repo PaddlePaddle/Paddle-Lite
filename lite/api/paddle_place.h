@@ -61,7 +61,8 @@ enum class TargetType : int {
   kImaginationNNA = 15,
   kIntelFPGA = 16,
   kMetal = 17,
-  NUM = 18,  // number of fields.
+  kNNAdapter = 18,
+  NUM = 19,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -134,7 +135,10 @@ enum class ActivationType : int {
   kSigmoid_v2 = 16,
   kTanh_v2 = 17,
   kGelu = 18,
-  NUM = 19,
+  kErf = 19,
+  kSign = 20,
+  kSoftPlus = 21,
+  NUM = 22,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {

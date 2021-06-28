@@ -90,6 +90,8 @@ class DeviceInfo {
     workspace_.mutable_data<int8_t>();
   }
 
+  void ClearArmL3Cache() { workspace_.clear(); }
+
   int llc_size() const {
     auto size = absolute_l3cache_size_;
     switch (l3_cache_method_) {

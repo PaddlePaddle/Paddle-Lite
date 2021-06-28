@@ -50,17 +50,53 @@ class DepthwiseConvPE : public PE {
     Tensor* output = param.output;
     int channel = output->shape().channel();
 
+    pad_input_ = channel % 8 != 0;
+    int padded_channel = align_to_x(channel, 8);
+    Tensor* filter = param.filter;
+    Tensor padded_filter;
+    if (pad_input_) {
+      Shape padded_filter_shape(NCHW,
+                                {padded_channel,
+                                 1,
+                                 param.filter->shape().height(),
+                                 param.filter->shape().width()});
+      float* padded_filter_data =
+          padded_filter.mutableData<float>(FP32, padded_filter_shape);
+      memcpy(padded_filter_data,
+             param.filter->data<float>(),
+             param.filter->memorySize());
+      param_.filter->releaseData();
+      param_.filter->shareDataWith(&padded_filter);
+      Shape& in_shape = param.input->shape();
+      Shape input_shape(NHWC,
+                        {in_shape.num(),
+                         in_shape.height(),
+                         in_shape.width(),
+                         padded_channel});
+      padded_input_.mutableData<float16>(FP16, input_shape);
+      Shape& out_shape = param.output->shape();
+      Shape output_shape(NHWC,
+                         {out_shape.num(),
+                          out_shape.height(),
+                          out_shape.width(),
+                          padded_channel});
+      padded_output_.mutableData<float16>(FP16, output_shape);
+      filter = &padded_filter;
+      input = &padded_input_;
+      output = &padded_output_;
+    }
+
     int image_dynamic_range = (1 << 11) - 1;  // int12 max value, pow(2,11)-1
     float16 dynamic_range_fp16 = float_to_half(image_dynamic_range * 1.0);
     float inv_dynamic_range = 1.0 / image_dynamic_range;
 
     int alignment = 16;
 
-    if (channel % alignment != 0 || channel < alignment) {
-      int c_lcm = lcm_(channel, alignment);
-      align_repeat_ = c_lcm / (channel);
+    if (padded_channel % alignment != 0 || padded_channel < alignment) {
+      int c_lcm = lcm_(padded_channel, alignment);
+      align_repeat_ = c_lcm / (padded_channel);
     }
-    Shape shape(N, {2 * channel * align_repeat_});
+    Shape shape(N, {2 * padded_channel * align_repeat_});
 
     float16* b_data = scale_bias_.mutableData<float16>(FP16, shape);
     memset(b_data, 0, scale_bias_.memorySize());
@@ -70,14 +106,14 @@ class DepthwiseConvPE : public PE {
       for (int i = 0; i < align_repeat_; i++) {
         for (int j = 0; j < channel; j++) {
           float16 value = float_to_half(new_bias_data[j]);
-          b_data[i * channel + j] = value;
+          b_data[i * padded_channel + j] = value;
         }
       }
     } else {
       float16* new_bias_data = param_.bias()->data<float16>();
       for (int i = 0; i < align_repeat_; i++) {
         for (int j = 0; j < channel; j++) {
-          b_data[i * channel + j] = new_bias_data[j];
+          b_data[i * padded_channel + j] = new_bias_data[j];
         }
       }
     }
@@ -85,8 +121,8 @@ class DepthwiseConvPE : public PE {
     if (param_.scale() == nullptr) {
       float16 one = float_to_half(1.0f);
       for (int i = 0; i < align_repeat_; i++) {
-        for (int j = 0; j < channel; j++) {
-          b_data[channel * align_repeat_ + i * channel + j] = one;
+        for (int j = 0; j < padded_channel; j++) {
+          b_data[padded_channel * align_repeat_ + i * padded_channel + j] = one;
         }
       }
     } else {
@@ -95,14 +131,15 @@ class DepthwiseConvPE : public PE {
         for (int i = 0; i < align_repeat_; i++) {
           for (int j = 0; j < channel; j++) {
             float16 value = float_to_half(new_scale_data[j]);
-            b_data[channel * align_repeat_ + i * channel + j] = value;
+            b_data[padded_channel * align_repeat_ + i * padded_channel + j] =
+                value;
           }
         }
       } else {
         float16* new_scale_data = param_.scale()->data<float16>();
         for (int i = 0; i < align_repeat_; i++) {
           for (int j = 0; j < channel; j++) {
-            b_data[channel * align_repeat_ + i * channel + j] =
+            b_data[padded_channel * align_repeat_ + i * padded_channel + j] =
                 new_scale_data[j];
           }
         }
@@ -193,15 +230,56 @@ class DepthwiseConvPE : public PE {
       args.image.pad_height = 0;
       args.dilation = 1;
     }
-
     param_.args = args;
   }
 
+  void pad_input() {
+    param_.input->syncToCPU();
+    int num = padded_input_.shape().num();
+    int hw = padded_input_.shape().height() * padded_input_.shape().width();
+    int nhw = num * hw;
+    for (int n = 0; n < num; n++) {
+      float16* dst_base = padded_input_.data<float16>() +
+                          n * hw * padded_input_.shape().channel();
+      float16* src_base = param_.input->data<float16>() +
+                          n * hw * param_.input->shape().channel();
+      for (int i = 0; i < hw; i++) {
+        float16* dst = dst_base + i * padded_input_.shape().channel();
+        float16* src = src_base + i * param_.input->shape().channel();
+        memcpy(dst, src, param_.input->shape().channel() * sizeof(float16));
+      }
+    }
+    padded_input_.flush();
+    padded_input_.copyMaxFrom(param_.input);
+  }
+
+  void unpad_output() {
+    padded_output_.invalidate();
+    int num = padded_output_.shape().num();
+    int hw = padded_output_.shape().height() * padded_output_.shape().width();
+    for (int n = 0; n < num; n++) {
+      float16* src_base = padded_output_.data<float16>() +
+                          n * hw * padded_output_.shape().channel();
+      float16* dst_base = param_.output->data<float16>() +
+                          n * hw * param_.output->shape().channel();
+      for (int i = 0; i < hw; i++) {
+        float16* dst = dst_base + i * param_.output->shape().channel();
+        float16* src = src_base + i * padded_output_.shape().channel();
+        memcpy(dst, src, param_.output->shape().channel() * sizeof(float16));
+      }
+    }
+    param_.output->flush();
+    param_.output->copyMaxFrom(&padded_output_);
+  }
+
   bool dispatch() {
-    param_.input->syncToDevice();
+    if (pad_input_) {
+      pad_input();
+    } else {
+      param_.input->syncToDevice();
+    }
 
     DWconvArgs& args = param_.args;
-
     if (image_reorder_) {
       int in_w = param_.input->shape().width();
       int in_h = param_.input->shape().height();
@@ -252,7 +330,11 @@ class DepthwiseConvPE : public PE {
       }
       scale_bias_.flush();
     }
-    return compute_fpga_dwconv(param_.args) == 0;
+    bool res = compute_fpga_dwconv(param_.args) == 0;
+    if (pad_input_) {
+      unpad_output();
+    }
+    return res;
   }
 
   DepthwiseConvParam& param() { return param_; }
@@ -260,9 +342,13 @@ class DepthwiseConvPE : public PE {
  private:
   DepthwiseConvParam param_;
   Tensor scale_bias_;
+  Tensor reoder_input_;
+
+  Tensor padded_input_;
+  Tensor padded_output_;
   int align_repeat_ = 1;
   bool image_reorder_ = false;
-  Tensor reoder_input_;
+  bool pad_input_ = false;
 };
 
 }  // namespace zynqmp

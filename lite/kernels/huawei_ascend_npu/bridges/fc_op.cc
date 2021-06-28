@@ -60,7 +60,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(input_name)) {
     input_node = graph->Get(input_name);
   } else {
-    input_node = graph->Add(input_name, *input);
+    input_node = graph->Add(input_name, *input, {m, k});
   }
 
   // w_node, the ascend ddk will transpose the tensor of w
@@ -72,6 +72,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto fc_op = fc_node->data<ge::op::FullyConnection>();
   fc_op->set_input_x(*input_node->data());
   fc_op->set_input_w(*w_node->data());
+  fc_op->set_attr_axis(1);
   fc_op->set_attr_num_output(n);
   fc_op->set_attr_transpose(true);
 

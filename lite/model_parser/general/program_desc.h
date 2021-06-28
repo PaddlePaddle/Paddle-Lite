@@ -14,6 +14,7 @@
 
 #pragma once
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/model_parser/base/apis.h"
@@ -33,12 +34,11 @@ class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
 
-  void CopyFrom(const ProgramDesc& other) {
-    version_ = other.Version();
-    blocks_ = other.blocks();
-  }
+  void CopyFrom(const ProgramDesc& other);
 
-  const std::vector<BlockDesc>& blocks() const { return blocks_; }
+  const std::vector<std::unique_ptr<BlockDesc>>& blocks() const {
+    return blocks_;
+  }
 
   size_t BlocksSize() const override { return blocks_.size(); }
 
@@ -50,7 +50,7 @@ class ProgramDesc : public ProgramDescAPI {
   template <typename T>
   T const* GetBlock(int32_t idx) const;
 
-  std::vector<BlockDesc>& GetBlocks() { return blocks_; }
+  std::vector<std::unique_ptr<BlockDesc>>& GetBlocks() { return blocks_; }
 
   template <typename T>
   T* AddBlock();
@@ -79,7 +79,7 @@ class ProgramDesc : public ProgramDescAPI {
  private:
   int64_t version_;
   OpVersionMap op_version_map_;
-  std::vector<BlockDesc> blocks_;
+  std::vector<std::unique_ptr<BlockDesc>> blocks_;
 };
 
 }  // namespace general
