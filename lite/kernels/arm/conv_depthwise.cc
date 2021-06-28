@@ -58,9 +58,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
       flag_trans_weights_ = true;
     }
     impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_depthwise_3x3_fp32";
-#endif
+    KERNEL_FUNC_NAME("conv_depthwise_3x3_fp32")
   } else if (kw == 5) {
     auto strides = param.strides;
     if ((strides[0] == 1 && strides[1] == 1) ||
@@ -77,9 +75,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
           w_data_in, w_data, oc, 1, cblock, kh * kw);
       flag_trans_weights_ = true;
       impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_depthwise_5x5_fp32";
-#endif
+      KERNEL_FUNC_NAME("conv_depthwise_5x5_fp32")
     } else {
       LOG(FATAL)
           << "5x5 depthwise conv only support stride == 1 or stride == 2";
@@ -168,16 +164,12 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   if (kw == 3) {
     ReInitWhenNeeded();
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_fp32;
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_depthwise_3x3_int8_fp32";
-#endif
+    KERNEL_FUNC_NAME("conv_depthwise_3x3_int8_fp32")
 
   } else if (kw == 5) {
     // trans weights
     impl_ = lite::arm::math::conv_depthwise_5x5_int8_fp32;
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_depthwise_5x5_int8_fp32";
-#endif
+    KERNEL_FUNC_NAME("conv_depthwise_5x5_int8_fp32")
     int cround = ROUNDUP(w_dims[0], 8);
     weights_.Resize({cround / 8, 1, kh * kw, 8});
     auto wptr = param.filter->data<int8_t>();
@@ -288,15 +280,12 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     ReInitWhenNeeded();
 
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_int8;
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_depthwise_3x3_int8_int8";
-#endif
+    KERNEL_FUNC_NAME("conv_depthwise_3x3_int8_int8")
+
   } else if (kw == 5) {
     // trans weights
     impl_ = lite::arm::math::conv_depthwise_5x5_int8_int8;
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_depthwise_5x5_int8_int8";
-#endif
+    KERNEL_FUNC_NAME("conv_depthwise_5x5_int8_int8")
     int cround = ROUNDUP(w_dims[0], 8);
     weights_.Resize({cround / 8, 1, kh * kw, 8});
     auto wptr = param.filter->data<int8_t>();
@@ -342,13 +331,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kInt8, kFloat)
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
@@ -379,13 +362,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kInt8, kInt8)
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
