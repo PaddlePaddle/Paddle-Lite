@@ -301,6 +301,7 @@ int main(int argc, char** argv) {
     // Output optimized model
     paddle::lite_api::OutputOptModel(
         FLAGS_model_dir, save_optimized_model_dir, input_shapes);
+    save_optimized_model_dir += ".nb";
   }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
