@@ -205,14 +205,10 @@ int Program::Execute(uint32_t input_count,
     auto& argument = input_arguments[i];
     auto buffer = reinterpret_cast<uint8_t*>(argument.buffer);
     auto zero_point = input_zero_points_[argument.index];
-    for (int j = 0; j < argument.length; j++) {
-      buffer[j] = static_cast<uint8_t>(
-          std::min(std::max(static_cast<int16_t>(
-                                reinterpret_cast<int8_t*>(argument.buffer)[j]) +
-                                zero_point,
-                            0),
-                   256));
-    }
+    Symm2AsymmData(reinterpret_cast<const int8_t*>(argument.buffer),
+                   argument.length,
+                   zero_point,
+                   buffer);
     NNADAPTER_CHECK_EQ(
         NeuronExecution_setInput_invoke(
             execution_, argument.index, NULL, argument.buffer, argument.length),
@@ -231,14 +227,10 @@ int Program::Execute(uint32_t input_count,
     auto& argument = output_arguments[i];
     auto buffer = reinterpret_cast<int8_t*>(argument.buffer);
     auto zero_point = output_zero_points_[argument.index];
-    for (int j = 0; j < argument.length; j++) {
-      buffer[j] = static_cast<int8_t>(std::min(
-          std::max(static_cast<int16_t>(
-                       reinterpret_cast<uint8_t*>(argument.buffer)[j]) -
-                       zero_point,
-                   -128),
-          127));
-    }
+    Asymm2SymmData(reinterpret_cast<const uint8_t*>(argument.buffer),
+                   argument.length,
+                   zero_point,
+                   buffer);
   }
   return NNADAPTER_NO_ERROR;
 }

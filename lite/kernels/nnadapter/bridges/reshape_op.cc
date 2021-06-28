@@ -81,7 +81,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     std::vector<int> shape_data = op_info->GetAttr<std::vector<int>>("shape");
     shape_operand = converter->AddInt32ConstantOperand(
-        &shape_data[0], DDim({shape_data.size()}));
+        &shape_data[0], DDim({static_cast<int64_t>(shape_data.size())}));
   }
   CHECK(shape_operand);
 
