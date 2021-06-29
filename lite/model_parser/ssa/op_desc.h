@@ -136,6 +136,16 @@ class FakeBlockOp : public BlockOpDesc {
             BlockOpProtoRegistry::instance().GetProto(raw_desc.Type())} {}
 };
 
+class ConditionalBlockOp : public BlockOpDesc {
+ public:
+  ConditionalBlockOp(const general::OpDesc& raw_desc,
+                     const RootVarScope& scope,
+                     int32_t block_idx)
+      : BlockOpDesc{
+            raw_desc,
+            BlockOpProtoRegistry::instance().GetProto(raw_desc.Type())} {}
+};
+
 class BlockOpGen {
  public:
   BlockOpGen() {
@@ -152,6 +162,13 @@ class BlockOpGen {
                 int32_t block_idx) {
                return std::unique_ptr<BlockOpDesc>(
                    new FakeBlockOp(raw_desc, scope, block_idx));
+             });
+    Register("conditional_block",
+             [](const general::OpDesc& raw_desc,
+                const RootVarScope& scope,
+                int32_t block_idx) {
+               return std::unique_ptr<BlockOpDesc>(
+                   new ConditionalBlockOp(raw_desc, scope, block_idx));
              });
   }
 
@@ -197,10 +214,11 @@ class WriteBackOp : public OpDescBase {
                 const std::weak_ptr<VarDesc>& desc,
                 int32_t block_idx);
 
-  static constexpr char type_[]{"__WriteBack__"};
-  static constexpr char input_deps_[]{"Dependencies"};
-  static constexpr char input_src_[]{"X"};
-  static constexpr char input_dst_[]{"Y"};
+  static constexpr char type_[]{"write_back"};
+  static constexpr char input_lod_deps_[]{"Dep_LoDTensor"};
+  static constexpr char input_lod_array_deps_[]{"Dep_LoDTensorArray"};
+  static constexpr char input_src_[]{"Src_LoDTensor"};
+  static constexpr char input_dst_[]{"Dst_LoDTensor"};
   general::OpDesc fake_desc_;
 };
 

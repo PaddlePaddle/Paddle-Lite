@@ -71,18 +71,28 @@ std::weak_ptr<VarDesc> OpDesc::AddOutput(const std::string& param,
 }
 
 constexpr char WriteBackOp::type_[];
-constexpr char WriteBackOp::input_deps_[];
+constexpr char WriteBackOp::input_lod_deps_[];
+constexpr char WriteBackOp::input_lod_array_deps_[];
 constexpr char WriteBackOp::input_src_[];
 constexpr char WriteBackOp::input_dst_[];
 
 WriteBackOp::WriteBackOp(const std::weak_ptr<VarDesc>& src,
                          const std::weak_ptr<VarDesc>& dst,
                          int32_t block_idx) {
+  CHECK(src.lock()->GetType() == VarDataType::LOD_TENSOR);
+  CHECK(dst.lock()->GetType() == VarDataType::LOD_TENSOR);
   AddInput(input_src_, src, block_idx);
   AddInput(input_dst_, dst, block_idx);
   for (auto& op : dst.lock()->target_ops()) {
     for (auto& dep_var : ConvertToSet(op->outputs())) {
-      AddInput(input_deps_, dep_var, block_idx);
+      if (dep_var.lock()->GetType() == VarDataType::LOD_TENSOR) {
+        AddInput(input_lod_deps_, dep_var, block_idx);
+      } else if (dep_var.lock()->GetType() == VarDataType::LOD_TENSOR_ARRAY) {
+        AddInput(input_lod_array_deps_, dep_var, block_idx);
+      } else {
+        LOG(FATAL) << "unsupported dependency var: "
+                   << dep_var.lock()->mangled_name();
+      }
     }
   }
   fake_desc_.SetType(type_);

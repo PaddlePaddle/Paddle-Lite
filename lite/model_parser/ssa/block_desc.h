@@ -66,8 +66,6 @@ class BlockDesc {
   template <typename InputIt>
   void AddBlockInputs(InputIt first, InputIt last, bool extra = false) {
     if (extra) {
-      std::cout << "size of block_extra_inputs_: " << block_extra_inputs_.size()
-                << std::endl;
       block_extra_inputs_.insert(first, last);
     } else {
       block_inputs_.insert(first, last);

@@ -50,6 +50,11 @@ class FakeBlockOpProto : public BlockOpProto {
   FakeBlockOpProto() : BlockOpProto("sub_block", "X", "Out") {}
 };
 
+class ConditionalBlockOpProto : public BlockOpProto {
+ public:
+  ConditionalBlockOpProto() : BlockOpProto("sub_block", "Input", "Out") {}
+};
+
 class BlockOpProtoRegistry {
  public:
   static BlockOpProtoRegistry& instance() {
@@ -59,6 +64,7 @@ class BlockOpProtoRegistry {
   BlockOpProtoRegistry() {
     protos_["while"].reset(new WhileOpProto);
     protos_["fake_block_op"].reset(new FakeBlockOpProto);
+    protos_["conditional_block"].reset(new ConditionalBlockOpProto);
   }
   const std::shared_ptr<BlockOpProto>& GetProto(const std::string& op_type) {
     return protos_.at(op_type);

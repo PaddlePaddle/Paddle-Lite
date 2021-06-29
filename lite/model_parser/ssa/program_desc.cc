@@ -154,7 +154,13 @@ void PlainProgramDesc::UpdateBlockOp(const std::unique_ptr<BlockDesc>& block) {
 void PlainProgramDesc::InsertOpOfBlocks() {
   std::fill(block_visited_.begin(), block_visited_.end(), false);
   InsertOpOfBlock(*(src_desc_->GetBlock<general::BlockDesc>(0)));
+  for (size_t i = 0; i < block_visited_.size(); ++i) {
+    if (!block_visited_[i]) {
+      LOG(WARNING) << "The block " << i << " fill error.";
+    }
+  }
   for (const auto& block : blocks_) {
+    CHECK(block);
     if (block->parent()) {
       InsertWriteBackOp(block);
     }
