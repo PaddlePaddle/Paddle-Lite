@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/xpu/target_wrapper.h"
+#include <string>
 #include "lite/utils/macros.h"
 
 namespace paddle {
@@ -40,7 +41,10 @@ void* TargetWrapperXPU::Malloc(size_t size) {
   return ptr;
 }
 
-void TargetWrapperXPU::Free(void* ptr) { XPU_CALL(xpu_free(ptr)); }
+void TargetWrapperXPU::Free(void* ptr) {
+  XPU_CALL(xpu_wait());
+  XPU_CALL(xpu_free(ptr));
+}
 
 void TargetWrapperXPU::MemcpySync(void* dst,
                                   const void* src,
@@ -48,6 +52,7 @@ void TargetWrapperXPU::MemcpySync(void* dst,
                                   IoDirection dir) {
   switch (dir) {
     case IoDirection::HtoD:
+      XPU_CALL(xpu_wait());
       XPU_CALL(xpu_memcpy(dst, src, size, XPU_HOST_TO_DEVICE));
       break;
     case IoDirection::DtoH:
@@ -118,7 +123,8 @@ LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
 LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{0xfffc00};
 LITE_THREAD_LOCAL bool TargetWrapperXPU::conv_autotune{false};
-LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;  // NOLINT
+LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file{
+    "/opt/xpu_conv_autotune_file"};  // NOLINT
 LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
 LITE_THREAD_LOCAL bool TargetWrapperXPU::multi_encoder_adaptive_seqlen{false};
 size_t TargetWrapperXPU::shared_l3_size{0};
