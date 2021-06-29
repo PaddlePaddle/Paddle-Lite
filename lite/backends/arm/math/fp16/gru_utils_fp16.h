@@ -16,8 +16,7 @@
 
 #include <memory>
 #include <vector>
-
-#include "lite/backends/arm/math/funcs_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 
 namespace paddle {
 namespace lite {
@@ -119,10 +118,10 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
     float16x8_t vpre2 = vdupq_n_f16(0.f);
     float16x8_t vpre3 = vdupq_n_f16(0.f);
     float16_t prev = 0.f;
-    float16_t updata_gate_ptr = updata_gate;
-    float16_t reset_gate_ptr = reset_gate;
-    const float16_t reset_hidden_prev_ptr = reset_hidden_prev;
-    float16_t reset_gate_ptr = reset_gate;
+    float16_t* updata_gate_ptr = updata_gate;
+    float16_t* reset_gate_ptr = reset_gate;
+    const float16_t* hidden_prev_ptr = hidden_prev;
+    float16_t* reset_hidden_prev_ptr = reset_hidden_prev;
     for (int i = 0; i < cnt_32; i++) {
       float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
       float16x8_t vu1 = vld1q_f16(updata_gate_ptr + 8);
@@ -130,13 +129,13 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
       float16x8_t vu3 = vld1q_f16(updata_gate_ptr + 24);
 
       float16x8_t vr0 = vld1q_f16(reset_gate_ptr);
-      float16x8_t vau0 = lite::arm::math::fp16::vactive_f16<Act>(vu0);
+      float16x8_t vau0 = vactive_f16<Act>(vu0);
       float16x8_t vr1 = vld1q_f16(reset_gate_ptr + 8);
-      float16x8_t vau1 = lite::arm::math::fp16::vactive_f16<Act>(vu1);
+      float16x8_t vau1 = vactive_f16<Act>(vu1);
       float16x8_t vr2 = vld1q_f16(reset_gate_ptr + 16);
-      float16x8_t vau2 = lite::arm::math::fp16::vactive_f16<Act>(vu2);
+      float16x8_t vau2 = vactive_f16<Act>(vu2);
       float16x8_t vr3 = vld1q_f16(reset_gate_ptr + 24);
-      float16x8_t vau3 = lite::arm::math::fp16::vactive_f16<Act>(vu3);
+      float16x8_t vau3 = vactive_f16<Act>(vu3);
 
       if (hidden_prev) {
         vpre0 = vld1q_f16(hidden_prev_ptr);
@@ -145,13 +144,13 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
         vpre3 = vld1q_f16(hidden_prev_ptr + 24);
         hidden_prev_ptr += 32;
       }
-      float16x8_t var0 = lite::arm::math::fp16::vactive_f16<Act>(vr0);
+      float16x8_t var0 = vactive_f16<Act>(vr0);
       vst1q_f16(updata_gate_ptr, vau0);
-      float16x8_t var1 = lite::arm::math::fp16::vactive_f16<Act>(vr1);
+      float16x8_t var1 = vactive_f16<Act>(vr1);
       vst1q_f16(updata_gate_ptr + 8, vau1);
-      float16x8_t var2 = lite::arm::math::fp16::vactive_f16<Act>(vr2);
+      float16x8_t var2 = vactive_f16<Act>(vr2);
       vst1q_f16(updata_gate_ptr + 16, vau2);
-      float16x8_t var3 = lite::arm::math::fp16::vactive_f16<Act>(vr3);
+      float16x8_t var3 = vactive_f16<Act>(vr3);
       vst1q_f16(updata_gate_ptr + 24, vau3);
 
       float16x8_t vres0 = vmulq_f16(vpre0, var0);
@@ -180,8 +179,8 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
         vpre0 = vld1q_f16(hidden_prev_ptr);
         hidden_prev_ptr += 8;
       }
-      float16x8_t vau0 = lite::arm::math::fp16::vactive_f16<Act>(vu0);
-      float16x8_t var0 = lite::arm::math::fp16::vactive_f16<Act>(vr0);
+      float16x8_t vau0 = vactive_f16<Act>(vu0);
+      float16x8_t var0 = vactive_f16<Act>(vr0);
 
       float16x8_t vres0 = vmulq_f16(vpre0, var0);
       vst1q_f16(updata_gate_ptr, vau0);
@@ -194,10 +193,8 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
     }
 
     for (int i = 0; i < rem_8; i++) {
-      updata_gate_ptr[0] =
-          lite::arm::math::fp16::vactive_f16<Act>(*updata_gate_ptr);
-      reset_gate_ptr[0] =
-          lite::arm::math::fp16::vactive_f16<Act>(*reset_gate_ptr);
+      updata_gate_ptr[0] = active_f16<Act>(*updata_gate_ptr);
+      reset_gate_ptr[0] = active_f16<Act>(*reset_gate_ptr);
       if (hidden_prev) {
         prev = *hidden_prev_ptr++;
       }
@@ -251,13 +248,13 @@ static void gru_unit_out_act_impl(bool origin_mode,
         float16x8_t vc3 = vld1q_f16(cell_state_ptr + 24);
         float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
 
-        float16x8_t vac0 = lite::arm::math::fp16::vactive_f16<Act>(vc0);
+        float16x8_t vac0 = vactive_f16<Act>(vc0);
         float16x8_t vu1 = vld1q_f16(updata_gate_ptr + 8);
-        float16x8_t vac1 = lite::arm::math::fp16::vactive_f16<Act>(vc1);
+        float16x8_t vac1 = vactive_f16<Act>(vc1);
         float16x8_t vu2 = vld1q_f16(updata_gate_ptr + 16);
-        float16x8_t vac2 = lite::arm::math::fp16::vactive_f16<Act>(vc2);
+        float16x8_t vac2 = vactive_f16<Act>(vc2);
         float16x8_t vu3 = vld1q_f16(updata_gate_ptr + 24);
-        float16x8_t vac3 = lite::arm::math::fp16::vactive_f16<Act>(vc3);
+        float16x8_t vac3 = vactive_f16<Act>(vc3);
         if (hidden_prev) {
           vpre0 = vld1q_f16(hidden_prev_ptr);
           vpre1 = vld1q_f16(hidden_prev_ptr + 8);
@@ -266,20 +263,20 @@ static void gru_unit_out_act_impl(bool origin_mode,
           hidden_prev_ptr += 32;
         }
 
-        float16x8_t vh0 = vmlsq_f16(vac0, vu0, vac0);
-        float16x8_t vh1 = vmlsq_f16(vac1, vu1, vac1);
-        float16x8_t vh2 = vmlsq_f16(vac1, vu2, vac2);
-        float16x8_t vh3 = vmlsq_f16(vac1, vu3, vac3);
+        float16x8_t vh0 = vfmsq_f16(vac0, vu0, vac0);
+        float16x8_t vh1 = vfmsq_f16(vac1, vu1, vac1);
+        float16x8_t vh2 = vfmsq_f16(vac1, vu2, vac2);
+        float16x8_t vh3 = vfmsq_f16(vac1, vu3, vac3);
 
         vst1q_f16(cell_state_ptr, vac0);
 
-        vh0 = vmlaq_f16(vh0, vu0, vpre0);
+        vh0 = vfmaq_f16(vh0, vu0, vpre0);
         vst1q_f16(cell_state_ptr + 8, vac1);
-        vh1 = vmlaq_f16(vh1, vu1, vpre1);
+        vh1 = vfmaq_f16(vh1, vu1, vpre1);
         vst1q_f16(cell_state_ptr + 16, vac2);
-        vh2 = vmlaq_f16(vh2, vu2, vpre2);
+        vh2 = vfmaq_f16(vh2, vu2, vpre2);
         vst1q_f16(cell_state_ptr + 24, vac3);
-        vh3 = vmlaq_f16(vh3, vu3, vpre3);
+        vh3 = vfmaq_f16(vh3, vu3, vpre3);
         updata_gate_ptr += 32;
         cell_state_ptr += 32;
 
@@ -293,15 +290,15 @@ static void gru_unit_out_act_impl(bool origin_mode,
         float16x8_t vc0 = vld1q_f16(cell_state_ptr);
         float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
 
-        float16x8_t vac0 = lite::arm::math::fp16::vactive_f16<Act>(vc0);
+        float16x8_t vac0 = vactive_f16<Act>(vc0);
         if (hidden_prev) {
           vpre0 = vld1q_f16(hidden_prev_ptr);
           hidden_prev_ptr += 8;
         }
 
-        float16x8_t vh0 = vmlsq_f16(vac0, vu0, vac0);
+        float16x8_t vh0 = vfmsq_f16(vac0, vu0, vac0);
         vst1q_f16(cell_state_ptr, vac0);
-        vh0 = vmlaq_f16(vh0, vu0, vpre0);
+        vh0 = vfmaq_f16(vh0, vu0, vpre0);
         updata_gate_ptr += 8;
         cell_state_ptr += 8;
 
@@ -312,7 +309,7 @@ static void gru_unit_out_act_impl(bool origin_mode,
         if (hidden_prev) {
           prev = *hidden_prev_ptr++;
         }
-        cell_state_ptr[0] = lite::arm::math::active_f32<Act>(*cell_state_ptr);
+        cell_state_ptr[0] = active_f16<Act>(*cell_state_ptr);
         hidden_ptr[0] = cell_state_ptr[0] * (1.f - updata_gate_ptr[0]) +
                         updata_gate_ptr[0] * prev;
       }
@@ -343,13 +340,13 @@ static void gru_unit_out_act_impl(bool origin_mode,
         float16x8_t vc3 = vld1q_f16(cell_state_ptr + 24);
         float16x8_t vu0 = vld1q_f16(updata_gate_ptr);
 
-        float16x8_t vac0 = lite::arm::math::fp16::vactive_f16<Act>(vc0);
+        float16x8_t vac0 = vactive_f16<Act>(vc0);
         float16x8_t vu1 = vld1q_f16(updata_gate_ptr + 8);
-        float16x8_t vac1 = lite::arm::math::fp16::vactive_f16<Act>(vc1);
+        float16x8_t vac1 = vactive_f16<Act>(vc1);
         float16x8_t vu2 = vld1q_f16(updata_gate_ptr + 16);
-        float16x8_t vac2 = lite::arm::math::fp16::vactive_f16<Act>(vc2);
+        float16x8_t vac2 = vactive_f16<Act>(vc2);
         float16x8_t vu3 = vld1q_f16(updata_gate_ptr + 24);
-        float16x8_t vac3 = lite::arm::math::fp16::vactive_f16<Act>(vc3);
+        float16x8_t vac3 = vactive_f16<Act>(vc3);
         if (hidden_prev) {
           vpre0 = vld1q_f16(hidden_prev_ptr);
           vpre1 = vld1q_f16(hidden_prev_ptr + 8);
@@ -357,19 +354,19 @@ static void gru_unit_out_act_impl(bool origin_mode,
           vpre3 = vld1q_f16(hidden_prev_ptr + 24);
           hidden_prev_ptr += 32;
         }
-        float16x8_t vh0 = vmlsq_f16(vpre0, vpre0, vu0);
-        float16x8_t vh1 = vmlsq_f16(vpre1, vpre1, vu1);
-        float16x8_t vh2 = vmlsq_f16(vpre2, vpre2, vu2);
-        float16x8_t vh3 = vmlsq_f16(vpre3, vpre3, vu3);
+        float16x8_t vh0 = vfmsq_f16(vpre0, vpre0, vu0);
+        float16x8_t vh1 = vfmsq_f16(vpre1, vpre1, vu1);
+        float16x8_t vh2 = vfmsq_f16(vpre2, vpre2, vu2);
+        float16x8_t vh3 = vfmsq_f16(vpre3, vpre3, vu3);
 
         vst1q_f16(cell_state_ptr, vac0);
-        vh0 = vmlaq_f16(vh0, vu0, vac0);
+        vh0 = vfmaq_f16(vh0, vu0, vac0);
         vst1q_f16(cell_state_ptr + 8, vac1);
-        vh1 = vmlaq_f16(vh1, vu1, vac1);
+        vh1 = vfmaq_f16(vh1, vu1, vac1);
         vst1q_f16(cell_state_ptr + 16, vac2);
-        vh2 = vmlaq_f16(vh2, vu2, vac2);
+        vh2 = vfmaq_f16(vh2, vu2, vac2);
         vst1q_f16(cell_state_ptr + 24, vac3);
-        vh3 = vmlaq_f16(vh3, vu3, vac3);
+        vh3 = vfmaq_f16(vh3, vu3, vac3);
         updata_gate_ptr += 32;
         cell_state_ptr += 32;
 
@@ -387,20 +384,19 @@ static void gru_unit_out_act_impl(bool origin_mode,
           vpre0 = vld1q_f16(hidden_prev_ptr);
           hidden_prev_ptr += 8;
         }
-        float16x8_t vac0 = lite::arm::math::fp16::vactive_f16<Act>(vc0);
-        float16x8_t vh0 = vmlsq_f16(vpre0, vpre0, vu0);
+        float16x8_t vac0 = vactive_f16<Act>(vc0);
+        float16x8_t vh0 = vfmsq_f16(vpre0, vpre0, vu0);
 
         updata_gate_ptr += 8;
         vst1q_f16(cell_state_ptr, vac0);
-        vh0 = vmlaq_f16(vh0, vu0, vac0);
+        vh0 = vfmaq_f16(vh0, vu0, vac0);
         cell_state_ptr += 8;
 
         vst1q_f16(hidden_ptr, vh0);
         hidden_ptr += 8;
       }
       for (int i = 0; i < rem_8; i++) {
-        cell_state_ptr[0] =
-            lite::arm::math::fp16::active_f16<Act>(*cell_state_ptr);
+        cell_state_ptr[0] = active_f16<Act>(*cell_state_ptr);
         if (hidden_prev) {
           prev = *hidden_prev_ptr++;
         }

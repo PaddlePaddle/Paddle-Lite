@@ -26,7 +26,6 @@
 #include "lite/backends/arm/math/fp16/gemm_c8_fp16.h"
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
-#include "lite/backends/arm/math/fp16/gru_utils_fp16.h"
 #include "lite/backends/arm/math/fp16/interpolate_fp16.h"
 #include "lite/backends/arm/math/fp16/pad2d_fp16.h"
 #include "lite/backends/arm/math/fp16/pooling_fp16.h"
@@ -108,7 +107,7 @@ inline float16x8_t vactive_f16<lite_api::ActivationType::kSigmoid>(
     const float16x8_t& x) {
   float16x8_t __one = vdupq_n_f16(1.f);
   float16x8_t __x = vnegq_f16(x);
-  __x = exp_ps_f16(__x);
+  __x = expq_ps_f16(__x);
   __x = vaddq_f16(__x, __one);
   float16x8_t __out = vrecpeq_f16(__x);
   return vmulq_f16(vrecpsq_f16(__x, __out), __out);
@@ -119,7 +118,7 @@ inline float16x8_t vactive_f16<lite_api::ActivationType::kTanh>(
     const float16x8_t& x) {
   float16x8_t __one = vdupq_n_f16(1.f);
   float16x8_t __x = vmulq_n_f16(x, -2.f);
-  __x = exp_ps_f16(__x);
+  __x = expq_ps_f16(__x);
   __x = vaddq_f16(__x, __one);
   float16x8_t __out = vrecpeq_f16(__x);
   __out = vmulq_f16(vrecpsq_f16(__x, __out), __out);
@@ -135,13 +134,14 @@ inline float16_t active_f16(const float16_t& x) {
 template <>
 inline float16_t active_f16<lite_api::ActivationType::kRelu>(
     const float16_t& x) {
-  return std::max(x, 0.f);
+  return (x > 0.f ? x : 0.f);
 }
 
 template <>
 inline float16_t active_f16<lite_api::ActivationType::kRelu6>(
     const float16_t& x) {
-  return std::min(std::max(x, 0.f), 6.f);
+  float16_t max_val = (x > 0.f ? x : 0.f);
+  return max_val > 6.f ? 6.f : max_val;
 }
 
 template <>

@@ -24,7 +24,7 @@
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
 #ifdef ENABLE_ARM_FP16
-#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#include "lite/backends/arm/math/fp16/gru_utils_fp16.h"
 #endif
 
 namespace paddle {
@@ -209,7 +209,7 @@ void GRUCompute<PRECISION(kFP16)>::Run() {
                                              frame_size * 3);
   }
 
-  lite::arm::math::GRUMetaValue<float16_t> gru_value;
+  lite::arm::math::fp16::GRUMetaValue<float16_t> gru_value;
   const float16_t* weight_data = weight->data<float16_t>();
   gru_value.gate_weight = const_cast<float16_t*>(weight_data);
   gru_value.state_weight =
@@ -250,7 +250,7 @@ void GRUCompute<PRECISION(kFP16)>::Run() {
                                                               active_node,
                                                               active_gate,
                                                               param.origin_mode,
-                                                              ctx);
+                                                              &ctx);
 
     gru_value.prev_out_value = gru_value.output_value;
   }
@@ -273,8 +273,7 @@ REGISTER_LITE_KERNEL(gru,
                      kNCHW,
                      paddle::lite::kernels::arm::GRUCompute<PRECISION(kFP16)>,
                      def)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM), , PRECISION(kFP16))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Weight",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
