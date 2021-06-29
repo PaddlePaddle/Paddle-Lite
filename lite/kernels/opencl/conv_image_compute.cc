@@ -166,7 +166,7 @@ void ConvImageCompute::PrepareForRun() {
         MUTABLE_DATA_CPU(tensor_hold_filter_buffer.get());
     size_t buf_size = tensor_hold_filter_buffer->memory_size();
 
-    std::memset(filter_buffer_data, 0, buf_size);
+    std::memset(filter_buffer_data, 0, buf_size);  // can be remove later
     OI2IOO4I4(filter_cpu, filter_buffer_data, filter_dims[0], filter_dims[1]);
 
     filter_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
