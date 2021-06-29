@@ -26,6 +26,9 @@ lite_cc_library (subgraph_bridge_dropout_op_xpu SRCS dropout_op.cc DEPS ${xpu_su
 lite_cc_library (subgraph_bridge_matmul_op_xpu SRCS matmul_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library (subgraph_bridge_cast_op_xpu SRCS cast_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library (subgraph_bridge_yolo_box_op_xpu SRCS yolo_box_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library (subgraph_bridge_roi_align_op_xpu SRCS roi_align_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library (subgraph_bridge_box_clip_op_xpu SRCS box_clip_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library (subgraph_bridge_conv2d_transpose_op_xpu SRCS conv2d_transpose_op.cc DEPS ${xpu_subgraph_bridge_deps})
 
 set (xpu_subgraph_bridges
   subgraph_bridge_registry
@@ -50,6 +53,9 @@ set (xpu_subgraph_bridges
   subgraph_bridge_matmul_op_xpu
   subgraph_bridge_cast_op_xpu
   subgraph_bridge_yolo_box_op_xpu
+  subgraph_bridge_roi_align_op_xpu
+  subgraph_bridge_box_clip_op_xpu
+  subgraph_bridge_conv2d_transpose_op_xpu
   CACHE INTERNAL "xpu_subgraph_bridges"
 )
 

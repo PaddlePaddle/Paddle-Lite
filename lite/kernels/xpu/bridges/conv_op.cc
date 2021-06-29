@@ -90,7 +90,12 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   DDim output_dims(output_shape);
 
   // Filter node
-  auto filter_node = graph->Add(filter_name, *filter);
+  std::shared_ptr<Node> filter_node = nullptr;
+  if (graph->Has(filter_name)) {
+    filter_node = graph->Get(filter_name);
+  } else {
+    filter_node = graph->Add(filter_name, *filter);
+  }
 
   // Conv node
   auto conv_attrs = xtcl::make_object<xtcl::network::Conv2DAttrs>();
@@ -98,8 +103,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   conv_attrs->padding = std::move(CvtShape<xtcl::xIndexExpr>(paddings));
   conv_attrs->dilation = std::move(CvtShape<xtcl::xIndexExpr>(dilations));
   conv_attrs->groups = groups;
-  // conv_attrs->channels = nullptr;
-  conv_attrs->kernel_size = std::move(xtcl::Array<xtcl::xIndexExpr>(nullptr));
+  conv_attrs->channels = filter_dims[0];
+  xtcl::Array<xtcl::xIndexExpr> kernel_size;
+  kernel_size.push_back(filter_dims[2]);
+  kernel_size.push_back(filter_dims[3]);
+  conv_attrs->kernel_size = std::move(kernel_size);
   conv_attrs->data_layout = "NCHW";
   conv_attrs->kernel_layout = "OIHW";
   conv_attrs->out_layout = "";

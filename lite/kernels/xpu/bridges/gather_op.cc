@@ -70,7 +70,7 @@ int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Reshape the gather node with the inferred shape as the output node
   auto gather_node =
       graph->Add(out_name,
-                 graph->builder_.CreateGather(
+                 graph->builder_.CreateTake(
                      *x_node->data(), *index_node->data(), /* axis= */ 0),
                  x_node->precision(),
                  x_node->layout());
