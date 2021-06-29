@@ -92,6 +92,7 @@ class BlockDesc {
  private:
   BlockDesc* kid_{nullptr};
   BlockDesc* parent_{nullptr};
+  // The root variable scope serves as a symbol table here.
   std::unique_ptr<RootVarScope> scope_;
   int32_t idx_{kInvalidIdx};
   std::list<std::unique_ptr<OpDescBase>> ops_;

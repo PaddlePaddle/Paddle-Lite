@@ -85,6 +85,9 @@ class OpDesc : public OpDescBase {
                                    const std::weak_ptr<VarDesc>& desc);
 };
 
+// In order to modify the block operator, we need to know the specific
+// input name. Because its format is not uniform, so register here.
+
 class BlockOpDesc : public OpDescBase {
  public:
   BlockOpDesc(const general::OpDesc& raw_desc,
@@ -123,6 +126,8 @@ class WhileOp : public BlockOpDesc {
   }
 
  private:
+  // The condition variable is the key implicit input reference
+  // of the while operator.
   const std::string cond_key_{"Condition"};
 };
 
@@ -215,9 +220,12 @@ class WriteBackOp : public OpDescBase {
                 int32_t block_idx);
 
   static constexpr char type_[]{"write_back"};
+  // In order to adapt to the operator registration system,
+  // the dependent parameters are classified by variable types here.
   static constexpr char input_lod_deps_[]{"Dep_LoDTensor"};
   static constexpr char input_lod_array_deps_[]{"Dep_LoDTensorArray"};
   static constexpr char input_src_[]{"Src_LoDTensor"};
+  // For directed acyclic, input is used as output here.
   static constexpr char input_dst_[]{"Dst_LoDTensor"};
   general::OpDesc fake_desc_;
 };

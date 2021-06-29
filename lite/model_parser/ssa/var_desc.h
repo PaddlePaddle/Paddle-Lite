@@ -29,6 +29,9 @@ namespace ssa {
 
 class OpDescBase;
 
+// Strengthen the original var desc to perform static single assignment
+// processing.
+
 class VarDesc : public std::enable_shared_from_this<VarDesc> {
  public:
   static constexpr int32_t kInvalidIdx{-1};
@@ -88,6 +91,9 @@ class VarDesc : public std::enable_shared_from_this<VarDesc> {
 };
 
 bool operator<(const VarDesc& x, const VarDesc& y);
+
+// In order to avoid the randomness brought by the raw pointer value
+// as a key, an ordered function is used here.
 
 struct VarDescLT {
   bool operator()(const std::weak_ptr<VarDesc>& lhs,

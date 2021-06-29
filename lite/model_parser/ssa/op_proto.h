@@ -55,6 +55,9 @@ class ConditionalBlockOpProto : public BlockOpProto {
   ConditionalBlockOpProto() : BlockOpProto("sub_block", "Input", "Out") {}
 };
 
+// In order to modify the block operator, we need to know the specific
+// input name. Because its format is not uniform, so register here.
+
 class BlockOpProtoRegistry {
  public:
   static BlockOpProtoRegistry& instance() {

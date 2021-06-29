@@ -25,9 +25,19 @@ namespace lite {
 namespace general {
 namespace ssa {
 
+// The original program desc used the Operator to recursively include
+// the block desc data structure, which is not conducive to the algorithm
+// to sort out the dependencies between variables, especially inconvenient
+// to express the block reference relationship, so the plain program desc
+// is used here.
+
 class PlainProgramDesc {
  public:
+  // The plain program desc is constructed by the general program desc,
+  // and we take the plain program desc as the intermediate representation
+  // for directed loop processing.
   explicit PlainProgramDesc(const general::ProgramDesc& program_desc);
+
   const std::vector<std::unique_ptr<BlockDesc>>& blocks() const {
     return blocks_;
   }
@@ -47,6 +57,7 @@ class PlainProgramDesc {
   std::vector<bool> block_visited_;
 };
 
+// Convert plain program desc back to normal form.
 class ProgramDescConverter {
  public:
   explicit ProgramDescConverter(const PlainProgramDesc& program_desc);
