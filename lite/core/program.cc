@@ -25,6 +25,9 @@
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
+#ifdef LITE_WITH_FPGA
+#include "lite/backends/fpga/monitor.hpp"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -132,9 +135,13 @@ void RuntimeProgram::SaveToProgram(
             // Set persistable=false for tensor array
             v->SetType(cpp::VarDesc::Type::LOD_TENSOR_ARRAY);
             v->SetPersistable(false);
+          } else if (decl_type->IsStepScope() &&
+                     var->IsType<std::vector<lite::Scope*>>()) {
+            v->SetType(cpp::VarDesc::Type::STEP_SCOPES);
+            v->SetPersistable(false);
           } else {
-            LOG(WARNING) << "Unsupported decl type " << *decl_type
-                         << " for var " << var_name << " in op " << op_type;
+            LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
+                       << var_name << " in op " << op_type;
           }
         }
         already_added_vars.insert(var_name);
@@ -365,7 +372,13 @@ void RuntimeProgram::Run() {
   cmd_ctx->CreateCommandBuffer(this);
 #endif
 
+#ifdef LITE_WITH_FPGA
+  Monitor& monitor = Monitor::get_instance();
+  monitor.inferStart();
+#endif
+
   int idx = -1;
+
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
@@ -385,7 +398,15 @@ void RuntimeProgram::Run() {
     }
 #endif
 
+#ifdef LITE_WITH_FPGA
+    monitor.preRun(inst);
+#endif
+
     inst.Run();
+
+#ifdef LITE_WITH_FPGA
+    monitor.postRun(inst);
+#endif
 
 #ifdef LITE_WITH_OPENCL
     // delegate flush judgement to specify target , it is too heavy for Inst
@@ -544,6 +565,8 @@ void Program::PrepareWorkspace(
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+        } else if (var_type == lite::VarDescAPI::Type::STEP_SCOPES) {
+          var->GetMutable<std::vector<lite::Scope*>>();
         }
       } else {
         if (var_name == "feed" || var_name == "fetch") continue;

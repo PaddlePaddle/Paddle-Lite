@@ -20,22 +20,27 @@
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/pes/conv_pe.hpp"
 #include "lite/backends/fpga/KD/pes/depthwise_conv_pe.hpp"
+#include "lite/backends/fpga/strideinfo.hpp"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 using float16 = zynqmp::float16;
+using StrideInfo = zynqmp::StrideInfo;
 class ConvCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
   using param_t = operators::ConvParam;
-
+  //    using param_t = operators::FpgaConvParam;
   void PrepareForRun() override;
 
   void Run() override;
 
+  void SetStrideInfo(StrideInfo strideinfo) { stride_info_ = strideinfo; };
+
  private:
+  StrideInfo stride_info_ = StrideInfo();
   zynqmp::ConvPE conv_pe_;
   zynqmp::DepthwiseConvPE dw_conv_pe_;
   float16 input_max_ = 0;

@@ -577,10 +577,15 @@ class XPUMultiEncoderFuser {
     for (auto* node : graph->StmtTopologicalOrder()) {
       CHECK(node->IsStmt());
       if (node->stmt()->op_info()->Type() == "single_encoder") {
-        all_encoders.push_back(node);
+        if (all_encoders.empty() ||
+            IsDirectPredecessorOf(all_encoders.back(), node)) {
+          all_encoders.push_back(node);
+        } else {
+          break;
+        }
       }
     }
-    VLOG(3) << "Found " << all_encoders.size() << " single_encoder";
+    VLOG(3) << "Found continuous " << all_encoders.size() << " single_encoder";
     if (all_encoders.size() == 0) {
       return;
     }
@@ -624,7 +629,12 @@ class XPUMultiEncoderFuser {
 
       auto* cur_out =
           graph->RetrieveArgument(op_info->Output("Outputs").front());
-      if (i == 0) {
+      if (all_encoders.size() == 1) {
+        // take care of only one encoder
+        in_name = op_info->Input("Inputs").front();
+        mask_name = op_info->Input("Mask").front();
+        out_name = op_info->Output("Outputs").front();
+      } else if (i == 0) {
         // first encoder
         to_remove.insert(cur_out);
         in_name = op_info->Input("Inputs").front();

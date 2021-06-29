@@ -62,7 +62,7 @@ class ConvOpLite : public OpLite {
 
     if (!param_.fuse_elementwise_op_type.empty()) {
       ch->remark += param_.fuse_elementwise_op_type;
-      ch->macs += 1.0f * output_dims.numel();
+      ch->macs += 1.0f * output_dims.production();
     }
   }
 #endif
@@ -232,7 +232,7 @@ class ConvOpLite : public OpLite {
 
   std::string DebugString() const override { return "conv2d"; }
 
- private:
+ protected:
   mutable ConvParam param_;
   std::string padding_algorithm_{""};
 };

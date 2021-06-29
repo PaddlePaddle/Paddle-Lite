@@ -19,6 +19,7 @@ limitations under the License. */
 
 #include "lite/backends/fpga/KD/alignment.h"
 #include "lite/backends/fpga/KD/layout.hpp"
+#include "lite/backends/fpga/KD/util.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -29,6 +30,7 @@ static struct NHWC nhwc_;
 static struct NC nc_;
 static struct NHW nhw_;
 static struct N n_;
+static struct CNHW cnhw_;
 
 class Shape {
  public:
@@ -88,13 +90,14 @@ class Shape {
 
   LayoutType getLayoutType() { return layoutType_; }
 
-  void setLayoutType(LayoutType layout) {
-    this->layoutType_ = layout;
-    switch (layout) {
+  void setLayoutType(LayoutType layout_type) {
+    this->layoutType_ = layout_type;
+    switch (layout_type) {
       case None:
         layout_ = &none_;
         break;
       case NCHW:
+
         layout_ = &nchw_;
         break;
       case NHWC:
@@ -109,12 +112,42 @@ class Shape {
       case N:
         layout_ = &n_;
         break;
+      case CNHW:
+        layout_ = &cnhw_;
+        break;
       default:
         break;
     }
   }
 
-  void print() {}
+  void layoutTransform(LayoutType layout_type) {
+    LayoutType original_layout_type = this->layoutType_;
+    Layout* original_layout = this->layout_;
+    if (original_layout_type != layout_type) {
+      bool is_compatible = original_layout->isCompatibleWith(layout_type);
+      if (!is_compatible) ENFORCE(false, "layout transform is not compatible");
+      setLayoutType(layout_type);
+      dimTransformFrom(original_layout);
+    }
+  }
+  // TODO(chengruichang) only tensor with 4 dims can be transformed
+  void dimTransformFrom(Layout* original_layout) {
+    int channel = dims_[original_layout->channelIndex()];
+    int num = dims_[original_layout->numIndex()];
+    int width = dims_[original_layout->widthIndex()];
+    int height = dims_[original_layout->heightIndex()];
+    dims_[layout_->channelIndex()] = channel;
+    dims_[layout_->numIndex()] = num;
+    dims_[layout_->widthIndex()] = width;
+    dims_[layout_->heightIndex()] = height;
+  }
+
+  void print() {
+    for (int i = 0; i < dims_.size(); ++i) {
+      std::cout << dims_[i] << " ";
+    }
+    std::cout << std::endl;
+  }
 
   int operator[](int index) { return dims_[index]; }
 

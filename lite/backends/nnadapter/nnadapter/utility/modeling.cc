@@ -432,6 +432,38 @@ NNADAPTER_EXPORT bool InsertOperand(hal::Model* model,
   return found;
 }
 
+NNADAPTER_EXPORT bool IsConstantOperand(hal::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||
+         operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
+}
+
+std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
+                                                 hal::Operand* operand) {
+  std::vector<hal::Operation*> consumers;
+  for (auto& operation : model->operations) {
+    auto& input_operands = operation.input_operands;
+    if (std::find(input_operands.begin(), input_operands.end(), operand) ==
+        input_operands.end())
+      continue;
+    consumers.push_back(&operation);
+  }
+  return consumers;
+}
+
+hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand) {
+  hal::Operation* producer = nullptr;
+  for (auto& operation : model->operations) {
+    auto& output_operands = operation.output_operands;
+    if (std::find(output_operands.begin(), output_operands.end(), operand) ==
+        output_operands.end())
+      continue;
+    // a operand has only one producer
+    NNADAPTER_CHECK(producer == nullptr);
+    producer = &operation;
+  }
+  return producer;
+}
+
 NNADAPTER_EXPORT hal::Operand* AddTransposeOperation(
     hal::Model* model,
     hal::Operand* input_operand,
@@ -469,11 +501,6 @@ NNADAPTER_EXPORT hal::Operand* AddReshapeOperation(hal::Model* model,
   reshape_operation->input_operands = {input_operand, shape_operand};
   reshape_operation->output_operands = {output_operand};
   return output_operand;
-}
-
-NNADAPTER_EXPORT bool IsConstantOperand(hal::Operand* operand) {
-  return operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||
-         operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
 }
 
 NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(

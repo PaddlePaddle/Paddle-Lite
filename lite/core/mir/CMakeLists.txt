@@ -30,6 +30,7 @@ lite_cc_library(mir_passes
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc
       fusion/scale_activation_fuse_pass.cc
+      fusion/fpga_concat_fuse_pass.cc
       fusion/inplace_fuse_pass.cc
       fusion/__xpu__resblock_reduction_fuse_pass.cc
       fusion/__xpu__concat_conv2d_fuse_pass.cc
@@ -93,6 +94,7 @@ lite_cc_library(mir_passes
       mlu_postprocess_pass.cc
       weight_quantization_preprocess_pass.cc
       quantized_op_attributes_inference_pass.cc
+      quantization_parameters_propagation_pass.cc
       restrict_quantized_op_with_same_input_output_scale_pass.cc
       post_quant_dynamic_pass.cc
       fp16_attribute_pass.cc

@@ -165,6 +165,16 @@ void DequantizeData(const T* input_data,
   }
 }
 
+// Convert the symmetric quantization data to the asymmetric quantization data
+void Symm2AsymmData(const int8_t* input_data,
+                    size_t input_data_count,
+                    int32_t zero_point,
+                    uint8_t* output_data);
+void Asymm2SymmData(const uint8_t* input_data,
+                    size_t input_data_count,
+                    int32_t zero_point,
+                    int8_t* output_data);
+
 // Calculate a new axis according to the given permutation
 int32_t TransposeAxis(int32_t axis, const std::vector<int32_t>& permutation);
 
