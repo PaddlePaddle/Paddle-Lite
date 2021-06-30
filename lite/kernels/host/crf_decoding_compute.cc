@@ -109,8 +109,10 @@ REGISTER_LITE_KERNEL(crf_decoding,
                      def)
     .BindInput("Emission", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Transition", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("Label", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("Length", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Label",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("Length",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("ViterbiPath",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();
