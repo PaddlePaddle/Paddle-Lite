@@ -24,6 +24,7 @@ lite_cc_library(mir_passes
       fusion/conv_bn_fuse_pass.cc
       fusion/conv_conv_fuse_pass.cc
       fusion/conv_scale_fuse_pass.cc
+      fusion/conv_elementwise_tree_fuse_pass.cc
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc

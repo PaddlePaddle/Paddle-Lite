@@ -54,7 +54,7 @@ USE_MIR_PASS(lite_sequence_reverse_embedding_fuse_pass);
 USE_MIR_PASS(lite_elementwise_activation_fuse_pass);
 USE_MIR_PASS(lite_elementwise_scale_fuse_pass);
 USE_MIR_PASS(lite_conv_scale_fuse_pass);
-
+USE_MIR_PASS(lite_conv_elementwise_tree_fuse_pass);
 USE_MIR_PASS(lite_quant_dequant_fuse_pass);
 USE_MIR_PASS(type_precision_cast_pass);
 USE_MIR_PASS(type_layout_cast_pass);
