@@ -71,6 +71,7 @@ add_operator(group_norm_op extra SRCS group_norm_op.cc DEPS ${op_DEPS})
 add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
 
 # 3.extra ops
+add_operator(sparse_conv_op extra SRCS sparse_conv_op.cc DEPS ${op_DEPS})
 add_operator(activation_extra_ops extra SRCS activation_extra_ops.cc DEPS ${op_DEPS})
 add_operator(reduce_extra_ops extra SRCS reduce_extra_ops.cc DEPS ${op_DEPS})
 add_operator(search_group_padding extra SRCS search_group_padding_op.cc DEPS ${op_DEPS})
