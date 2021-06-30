@@ -57,6 +57,21 @@ void pooling3x3s2p1_avg_fp16(POOLING_PARAM,
                              bool exclusive,
                              int pad_bottom,
                              int pad_right);
+
+void pooling3x3s1p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right);
+
+void pooling3x3s1p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right);
+
+void pooling3x3s1p0_avg_fp16(POOLING_PARAM,
+                             bool exclusive,
+                             int pad_bottom,
+                             int pad_right);
+
+void pooling3x3s1p1_avg_fp16(POOLING_PARAM,
+                             bool exclusive,
+                             int pad_bottom,
+                             int pad_right);
+
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm
