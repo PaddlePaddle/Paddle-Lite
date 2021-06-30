@@ -171,7 +171,7 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 ```shell
 # 1. Install basic software
 apt update
-apt-get install -y --no-install-recomends \
+apt-get install -y --no-install-recommends \
   gcc g++ make wget python unzip patchelf python-dev
 
 # 2. install cmake 3.10 or above

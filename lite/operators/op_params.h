@@ -2384,6 +2384,11 @@ struct ArgsortParam : ParamBase {
   bool descending{false};
 };
 
+struct WriteBackParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* y{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

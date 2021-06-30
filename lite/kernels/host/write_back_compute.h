@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,25 +19,15 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-template <typename T, PrecisionType PType>
-class BatchNormCompute : public KernelLite<TARGET(kARM), PType> {
+class WriteBackCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::BatchNormParam;
-
-  void PrepareForRun() override;
-
   void Run() override;
-
-  virtual ~BatchNormCompute() = default;
-
- private:
-  Tensor new_scale;
-  Tensor new_bias;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

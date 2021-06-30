@@ -26,6 +26,7 @@
 #include "lite/backends/arm/math/fp16/gemm_c8_fp16.h"
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
+#include "lite/backends/arm/math/fp16/interpolate_fp16.h"
 #include "lite/backends/arm/math/fp16/pad2d_fp16.h"
 #include "lite/backends/arm/math/fp16/pooling_fp16.h"
 #include "lite/backends/arm/math/fp16/sgemm_fp16.h"
