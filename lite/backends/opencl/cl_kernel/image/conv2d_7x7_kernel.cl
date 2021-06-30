@@ -24,6 +24,10 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
+      out_nh >= global_size_dim2) {
+    return;
+  }
 
   int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
 
