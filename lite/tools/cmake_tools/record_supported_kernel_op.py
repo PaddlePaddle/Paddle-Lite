@@ -18,14 +18,16 @@ import sys
 import logging
 from ast import RegisterLiteKernelParser
 from ast import RegisterLiteOpParser
+from ast import RegisterSubgraphBridgeParser
 
-if len(sys.argv) != 5:
+if len(sys.argv) != 6:
     print("Error: record_supported_kernel_op.py requires four inputs!")
     sys.exit(1)
 kernels_list_path = sys.argv[1]
 faked_kernels_list_path = sys.argv[2]
 ops_list_path = sys.argv[3]
-kernel_op_map_dest_path = sys.argv[4]
+subgraph_bridge_list_path = sys.argv[4]
+kernel_op_map_dest_path = sys.argv[5]
 
 
 out_lines = [
@@ -104,7 +106,18 @@ with open(faked_kernels_list_path) as f:
                 if hasattr(TargetType, k.target):
                     index = getattr(TargetType, k.target)
                     valid_ops[index].append(k.op_type)
-
+# record op_info of subgraph bridge into `valid_ops` according to different target type
+with open(subgraph_bridge_list_path) as f:
+    paths = set([path for path in f])
+    for path in paths:
+        with open(path.strip()) as g:
+            c = g.read()
+            kernel_parser = RegisterSubgraphBridgeParser(c)
+            kernel_parser.parse()
+            for k in kernel_parser.subgraph_bridge:
+                if hasattr(TargetType, k.target):
+                    index = getattr(TargetType, k.target)
+                    valid_ops[index].append(k.op_type)
 
 # clear the repeated ops
 for target in valid_targets:

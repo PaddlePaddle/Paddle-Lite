@@ -1,3 +1,17 @@
+add_subgraph_bridge(SRCS act_op.cc
+                    concat_op.cc
+                    conv_op.cc
+                    converter.cc
+                    elementwise_ops.cc
+                    fc_op.cc
+                    flatten_op.cc
+                    pool_op.cc
+                    reshape_op.cc
+                    scale_op.cc
+                    softmax_op.cc
+                    transpose_op.cc
+                    utility.cc)
+
 if(NOT LITE_WITH_NNADAPTER)
   return()
 endif()
