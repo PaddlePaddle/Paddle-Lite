@@ -86,6 +86,11 @@ void GatherCompute<IndexType, AxisType>::Run() {
       case PRECISION(kFloat):
         GatherV2Func<IndexType, AxisType, float>(param);
         break;
+#ifdef ENABLE_ARM_FP16
+      case PRECISION(kFP16):
+        GatherV2Func<IndexType, AxisType, lite_api::float16_t>(param);
+        break;
+#endif
       case PRECISION(kInt8):
         GatherV2Func<IndexType, AxisType, int8_t>(param);
         break;
@@ -108,6 +113,11 @@ void GatherCompute<IndexType, AxisType>::Run() {
       case PRECISION(kFloat):
         GatherFunc<IndexType, float>(param);
         break;
+#ifdef ENABLE_ARM_FP16
+      case PRECISION(kFP16):
+        GatherFunc<IndexType, lite_api::float16_t>(param);
+        break;
+#endif
       case PRECISION(kInt8):
         GatherFunc<IndexType, int8_t>(param);
         break;
