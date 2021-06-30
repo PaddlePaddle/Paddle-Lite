@@ -1294,9 +1294,21 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
   } else if (kernel_func_names_[0] == "conv2d_7x7_multi_batch" ||
-             kernel_func_names_[0] == "conv2d_7x7_opt" ||
-             kernel_func_names_[0] == "conv2d_7x7_opt_mali") {
+             kernel_func_names_[0] == "conv2d_7x7_opt") {
     int w_blk_size = 5;
+    int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
+
+    int h_blk_size = 1;
+    int h_blk = (default_nh_blk_ + h_blk_size - 1) / h_blk_size;
+
+    c_blk_ = default_c_blk_;
+    w_blk_ = w_blk;
+    nh_blk_ = h_blk;
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(nh_blk_)};
+  } else if (kernel_func_names_[0] == "conv2d_7x7_opt_mali") {
+    int w_blk_size = 2;
     int w_blk = (default_w_blk_ + w_blk_size - 1) / w_blk_size;
 
     int h_blk_size = 1;
