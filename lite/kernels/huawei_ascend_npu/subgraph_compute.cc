@@ -131,6 +131,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     CHECK(op->CheckShape());
     CHECK(op->InferShape());
     std::string op_type = op->op_info()->Type();
+    VLOG(3) << "[HUAWEI_ASCEND_NPU OPTYPE]:" << op_type;
     if (!bridges.Exists(op_type, TARGET(kHuaweiAscendNPU))) {
       return false;
     }
