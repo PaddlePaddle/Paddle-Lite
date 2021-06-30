@@ -32,6 +32,7 @@
 namespace paddle {
 namespace lite {
 #ifndef LITE_ON_TINY_PUBLISH
+namespace {
 // Verify the validity of ProgramDesc
 void CheckProgramDescValidity(std::shared_ptr<cpp::ProgramDesc> program_desc,
                               int inst_block_size) {
@@ -95,17 +96,19 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
     var->SetDataType(data_type);             \
     break
       SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
-      SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
-      SET_DATATYPE(kUnk, VarDescAPI::VarDataType::FP32);
       SET_DATATYPE(kFP16, VarDescAPI::VarDataType::FP16);
+      SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
+      SET_DATATYPE(kFP64, VarDescAPI::VarDataType::FP64);
+      SET_DATATYPE(kUInt8, VarDescAPI::VarDataType::UINT8);
       SET_DATATYPE(kInt8, VarDescAPI::VarDataType::INT8);
       SET_DATATYPE(kInt16, VarDescAPI::VarDataType::INT16);
       SET_DATATYPE(kInt32, VarDescAPI::VarDataType::INT32);
       SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
+      SET_DATATYPE(kUnk, VarDescAPI::VarDataType::FP32);
 #undef SET_DATATYPE
       default:
-        LOG(WARNING) << "Unknown precision type " << PrecisionToStr(precision)
-                     << " for var " << var_name << " in op " << op_type;
+        LOG(FATAL) << "Unknown precision type " << PrecisionToStr(precision)
+                   << " for var " << var_name << " in op " << op_type;
     }
   }
 }
@@ -147,10 +150,10 @@ void AddOpDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
   auto op_desc = block_desc->AddOp<cpp::OpDesc>();
   auto* op = const_cast<OpLite*>(inst->op());
   auto* kernel = inst->mutable_kernel();
-  op_desc->SetAttr(kKernelTypeAttr, kernel->SerializedKernelType());
 
   auto* op_info = op->op_info();
   *op_desc = *op_info;
+  op_desc->SetAttr(kKernelTypeAttr, kernel->SerializedKernelType());
   auto* scope = op->scope();
   auto op_type = op_info->Type();
   // Update subgraph op
@@ -227,6 +230,8 @@ void AddVariableDescFromOpInfo(
     already_added_vars->insert(var_name);
   }
 }
+
+}  // namespace
 
 void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
     std::shared_ptr<cpp::ProgramDesc> program_desc) {

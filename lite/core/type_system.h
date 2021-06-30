@@ -184,11 +184,7 @@ static bool TargetCompatibleTo(const Type& a, const Type& b) {
   };
   if (a.IsVoid() || b.IsVoid()) return true;
   if (a.IsTensor() || b.IsTensor() || a.IsTensorList() || b.IsTensorList()) {
-    if ((a.IsTensor() && b.IsTensor()) ||
-        (a.IsTensorList() && b.IsTensorList())) {
-      return is_host(a.target()) ? is_host(b.target())
-                                 : a.target() == b.target();
-    }
+    return is_host(a.target()) ? is_host(b.target()) : a.target() == b.target();
     return false;
   }
   return true;
