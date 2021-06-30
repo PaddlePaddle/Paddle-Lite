@@ -174,10 +174,12 @@ void AddOpDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
   }
 }
 
-void AddVariableDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
-                               size_t block_idx,
-                               Instruction* inst,
-                               std::set<std::string>* already_added_vars) {
+void AddVariableDescFromOpInfo(
+    std::shared_ptr<cpp::ProgramDesc> program_desc,
+    size_t block_idx,
+    Instruction* inst,
+    std::set<std::string>* already_added_vars,
+    const std::map<std::string, cpp::VarDesc>& origin_var_maps) {
   auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
 
   auto* op = const_cast<OpLite*>(inst->op());
@@ -185,8 +187,6 @@ void AddVariableDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
   auto* op_info = op->op_info();
   auto* scope = op->scope();
   auto op_type = op_info->Type();
-
-  auto origin_var_maps = ClearBlockDescInfo(block_desc);
 
   // Update the origin vars which are referred by the instructions
   // Add the new vars which are created in the passes and referred by the
@@ -235,9 +235,11 @@ void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
   for (size_t block_idx = 0; block_idx < program_desc->BlocksSize();
        ++block_idx) {
     std::set<std::string> already_added_vars;
+    const std::map<std::string, cpp::VarDesc> origin_var_maps =
+        ClearBlockDescInfo(program_desc->GetBlock<cpp::BlockDesc>(block_idx));
     for (auto& inst : instructions_[block_idx]) {
       AddVariableDescFromOpInfo(
-          program_desc, block_idx, &inst, &already_added_vars);
+          program_desc, block_idx, &inst, &already_added_vars, origin_var_maps);
       // Replace all of origin ops with the instructions
       AddOpDescFromOpInfo(program_desc, block_idx, &inst);
     }
