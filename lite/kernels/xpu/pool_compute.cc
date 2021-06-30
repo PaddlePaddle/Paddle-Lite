@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/pool_compute.h"
+#include <algorithm>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
@@ -26,15 +27,8 @@ void Pool2DCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  auto& x_dims = param.x->dims();
-  CHECK_EQ(x_dims.size(), 4);
-  CHECK_EQ(param.ksize.size(), 2);
-  if (param.global_pooling) {
-    param.ksize[0] = x_dims[2];
-    param.ksize[1] = x_dims[3];
-  }
-  CHECK_EQ(param.strides.size(), 2);
-  CHECK_EQ(param.paddings->size(), 4);
+  CHECK_EQ(param.strides.size(), 2UL);
+  CHECK_EQ(param.paddings->size(), 4UL);
   std::vector<int> paddings{(*param.paddings)[0],
                             (*param.paddings)[1],
                             (*param.paddings)[2],
@@ -42,6 +36,19 @@ void Pool2DCompute::Run() {
   if (param.ceil_mode) {
     paddings[1] += param.strides[0] - 1;
     paddings[3] += param.strides[1] - 1;
+  }
+
+  auto ksize = param.ksize;
+  CHECK_EQ(ksize.size(), 2UL);
+  auto& x_dims = param.x->dims();
+  CHECK_EQ(x_dims.size(), 4);
+  ksize[0] = (std::min)(
+      ksize[0], static_cast<int>(x_dims[2]) + paddings[0] + paddings[1]);
+  ksize[1] = (std::min)(
+      ksize[1], static_cast<int>(x_dims[3]) + paddings[2] + paddings[3]);
+  if (param.global_pooling) {
+    ksize[0] = x_dims[2];
+    ksize[1] = x_dims[3];
   }
 
   if (param.adaptive) {
@@ -54,8 +61,8 @@ void Pool2DCompute::Run() {
           x_dims[1],
           x_dims[2],
           x_dims[3],
-          param.ksize[0],
-          param.ksize[1],
+          ksize[0],
+          ksize[1],
           true);
       CHECK_EQ(r, 0);
     } else {
@@ -68,8 +75,8 @@ void Pool2DCompute::Run() {
           x_dims[1],
           x_dims[2],
           x_dims[3],
-          param.ksize[0],
-          param.ksize[1],
+          ksize[0],
+          ksize[1],
           true);
       CHECK_EQ(r, 0);
     }
@@ -83,7 +90,7 @@ void Pool2DCompute::Run() {
           x_dims[1],
           x_dims[2],
           x_dims[3],
-          param.ksize,
+          ksize,
           param.strides,
           paddings,
           !param.exclusive,
@@ -129,7 +136,7 @@ void Pool2DCompute::Run() {
           xpu_x_padded_dims[1],
           xpu_x_padded_dims[2],
           xpu_x_padded_dims[3],
-          param.ksize,
+          ksize,
           param.strides,
           {0, 0, 0, 0},
           true);
