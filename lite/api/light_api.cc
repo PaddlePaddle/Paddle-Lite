@@ -298,7 +298,12 @@ void LightPredictor::DequantizeWeight() {
 typedef __fp16 float16_t;
 void LightPredictor::WeightFP32ToFP16() {
   std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
-  std::vector<std::string> fp16_ops{"conv2d", "depthwise_conv2d", "fc"};
+  std::vector<std::string> fp16_ops{"conv2d",
+                                    "depthwise_conv2d",
+                                    "fc",
+                                    "sequence_conv",
+                                    "elementwise_add",
+                                    "elementwise_mul"};
   for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
     auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
     for (size_t k = 0; k < block->OpsSize(); ++k) {

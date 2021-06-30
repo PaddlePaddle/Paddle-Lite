@@ -26,7 +26,7 @@ namespace arm {
 
 using param_t = operators::SequencePoolParam;
 using grad_param_t = operators::SequencePoolGradParam;
-using kernel_t = SequencePoolCompute;
+using kernel_t = SequencePoolCompute<PRECISION(kFloat), float>;
 using grad_kernel_t = SequencePoolGradCompute;
 
 void sequence_pool_grad_common(grad_param_t* param,
