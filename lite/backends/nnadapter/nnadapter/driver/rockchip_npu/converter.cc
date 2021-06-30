@@ -15,12 +15,14 @@
 #include "driver/rockchip_npu/converter.h"
 #include <algorithm>
 #include <vector>
+#include "driver/rockchip_npu/optimizer/fix_ops.h"
 #include "driver/rockchip_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/string.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace rockchip_npu {
@@ -43,8 +45,9 @@ Program::~Program() {
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  ConvertQuantizationSymmToAsymm(model);
   UnpackOpFusion(model);
+  FixOps(model);
+  ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a rknpu graph
   tensors_.clear();
@@ -151,14 +154,10 @@ int Program::Execute(uint32_t input_count,
     auto& argument = input_arguments[i];
     auto buffer = reinterpret_cast<uint8_t*>(argument.buffer);
     auto zero_point = input_zero_points_[argument.index];
-    for (int j = 0; j < argument.length; j++) {
-      buffer[j] = static_cast<uint8_t>(
-          std::min(std::max(static_cast<int16_t>(
-                                reinterpret_cast<int8_t*>(argument.buffer)[j]) +
-                                zero_point,
-                            0),
-                   256));
-    }
+    Symm2AsymmData(reinterpret_cast<const int8_t*>(argument.buffer),
+                   argument.length,
+                   zero_point,
+                   buffer);
     input_info_[argument.index].buf = argument.buffer;
     input_info_[argument.index].size = argument.length;
   }
@@ -174,14 +173,10 @@ int Program::Execute(uint32_t input_count,
     auto& argument = output_arguments[i];
     auto buffer = reinterpret_cast<int8_t*>(argument.buffer);
     auto zero_point = output_zero_points_[argument.index];
-    for (int j = 0; j < argument.length; j++) {
-      buffer[j] = static_cast<int8_t>(std::min(
-          std::max(static_cast<int16_t>(
-                       reinterpret_cast<uint8_t*>(argument.buffer)[j]) -
-                       zero_point,
-                   -128),
-          127));
-    }
+    Asymm2SymmData(reinterpret_cast<const uint8_t*>(argument.buffer),
+                   argument.length,
+                   zero_point,
+                   buffer);
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -211,10 +206,12 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(hal::Operand* operand) {
       break;
     case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
       attr->qntBits = 32;
-      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
-      attr->qntParamSymmetric.scale.resize(1);
-      attr->qntParamSymmetric.scale[0] =
+      attr->qntType = rk::nn::QuantizationType::AFFINE_ASYMMETRIC;
+      attr->qntParamAffineAsymmetric.scale.resize(1);
+      attr->qntParamAffineAsymmetric.scale[0] =
           operand->type.symm_per_layer_params.scale;
+      attr->qntParamAffineAsymmetric.zero_point.resize(1);
+      attr->qntParamAffineAsymmetric.zero_point[0] = 0;
       break;
     default:
       NNADAPTER_LOG(FATAL) << "Can not convert an operand@0x" << std::hex

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "optimizer/symm2asymm.h"
+#include <algorithm>
 #include <vector>
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -39,9 +40,12 @@ static void ConvertOperandSymmToAsymm(hal::Operand* operand,
           transform_buffer = static_cast<uint8_t*>(malloc(operand->length));
         }
         for (uint32_t i = 0; i < operand->length; i++) {
-          transform_buffer[i] = static_cast<uint8_t>(
-              static_cast<int16_t>(static_cast<int8_t*>(operand->buffer)[i]) +
-              zero_point);
+          transform_buffer[i] = static_cast<uint8_t>(std::min(
+              std::max(static_cast<int16_t>(
+                           reinterpret_cast<int8_t*>(operand->buffer)[i]) +
+                           zero_point,
+                       0),
+              255));
         }
         if (is_constant_reference) {
           operand->buffer = transform_buffer;

@@ -14,18 +14,12 @@
 
 #pragma once
 
-#pragma GCC system_header
-#include <xpu/runtime.h>
-#include <xpu/xdnn.h>
+#include "core/hal/types.h"
 
-#if defined(LITE_WITH_XTCL)
-#include <xtcl/xtcl.h>
-#endif
+namespace nnadapter {
+namespace rockchip_npu {
 
-namespace paddle {
-namespace lite {
+void FixOps(hal::Model* model);
 
-namespace xdnn = baidu::xpu::api;
-
-}  // namespace lite
-}  // namespace paddle
+}  // namespace rockchip_npu
+}  // namespace nnadapter

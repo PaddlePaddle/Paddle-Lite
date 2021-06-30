@@ -39,7 +39,7 @@ static void UnpackConv2D(hal::Model* model, hal::Operation* operation) {
     memcpy(&act_operand->type,
            &output_operand->type,
            sizeof(NNAdapterOperandType));
-    InsertOperand(model, output_operand, act_operand, 0);
+    InsertOperand(model, output_operand, act_operand, true);
     auto act_operation = AddOperation(model);
     act_operation->type = NNADAPTER_RELU6;
     act_operation->input_operands = {output_operand};

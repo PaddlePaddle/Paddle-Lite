@@ -246,6 +246,26 @@ NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions,
          output_dimensions.size() * sizeof(int32_t));
 }
 
+NNADAPTER_EXPORT void Symm2AsymmData(const int8_t* input_data,
+                                     size_t input_data_count,
+                                     int32_t zero_point,
+                                     uint8_t* output_data) {
+  for (size_t i = 0; i < input_data_count; i++) {
+    output_data[i] = static_cast<uint8_t>(std::min(
+        std::max(static_cast<int16_t>(input_data[i]) + zero_point, 0), 255));
+  }
+}
+
+NNADAPTER_EXPORT void Asymm2SymmData(const uint8_t* input_data,
+                                     size_t input_data_count,
+                                     int32_t zero_point,
+                                     int8_t* output_data) {
+  for (size_t i = 0; i < input_data_count; i++) {
+    output_data[i] = static_cast<int8_t>(std::min(
+        std::max(static_cast<int16_t>(input_data[i]) - zero_point, -128), 127));
+  }
+}
+
 NNADAPTER_EXPORT int32_t
 TransposeAxis(int32_t axis, const std::vector<int32_t>& permutation) {
   NNADAPTER_CHECK_GE(axis, 0);
