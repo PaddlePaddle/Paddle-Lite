@@ -138,10 +138,11 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "op_transformation_pass",                   //
        "remove_scale1_pass",                       //
        "adaptive_1x1_pool2d_convert_global_pass",  //
-       "lite_conv_elementwise_fuse_pass",          // conv-elemwise-bn
-       "lite_conv_bn_fuse_pass",                   //
-       "lite_conv_elementwise_fuse_pass",          // conv-bn-elemwise
-       "lite_conv_conv_fuse_pass",                 //
+
+       "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
+       "lite_conv_bn_fuse_pass",           //
+       "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
+       "lite_conv_conv_fuse_pass",         //
        // TODO(Superjomn) Refine the fusion related design to select fusion
        // kernels for devices automatically.
        "lite_conv_activation_fuse_pass",              //
@@ -170,6 +171,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_conv_scale_fuse_pass",
        "lite_conv_elementwise_tree_fuse_pass",
        "identity_dropout_eliminate_pass",
+       "sparse_conv_detect_pass",
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
        "__xpu__resnet_cbam_fuse_pass",
