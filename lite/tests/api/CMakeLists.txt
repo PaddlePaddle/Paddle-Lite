@@ -79,6 +79,12 @@ endif()
 
 if(LITE_WITH_HUAWEI_ASCEND_NPU)
     lite_cc_test_with_model_and_data(test_inception_v4_fp32_huawei_ascend_npu MODEL inception_v4 DATA ILSVRC2012_500)
+    lite_cc_test_with_model_and_data(test_mobilenet_v1_fp32_huawei_ascend_npu MODEL mobilenet_v1 DATA ILSVRC2012_500)
+    lite_cc_test_with_model_and_data(test_mobilenet_v2_fp32_huawei_ascend_npu MODEL mobilenet_v2_relu DATA ILSVRC2012_500)
+    lite_cc_test_with_model_and_data(test_mobilenet_v3_small_x1_0_fp32_huawei_ascend_npu MODEL mobilenet_v3_small_x1_0 DATA ILSVRC2012_500)
+    lite_cc_test_with_model_and_data(test_mobilenet_v3_large_x1_0_fp32_huawei_ascend_npu MODEL mobilenet_v3_large_x1_0 DATA ILSVRC2012_500)
+    lite_cc_test_with_model_and_data(test_resnet50_fp32_huawei_ascend_npu MODEL resnet50 DATA ILSVRC2012_500)
+    lite_cc_test_with_model_and_data(test_squeezenet_fp32_huawei_ascend_npu MODEL squeezenet DATA ILSVRC2012_500)
 endif()
 
 if(LITE_WITH_XPU AND NOT LITE_WITH_XTCL)
