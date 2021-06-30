@@ -55,8 +55,19 @@ class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
       paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
   }
+#define PROFILE_INFO(dtype1, dtype2)                                        \
+  template <>                                                               \
+  void DepthwiseConv<PRECISION(dtype1), PRECISION(dtype2)>::                \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
+  }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
 
   std::string kernel_func_name_{"NotImplForConvDw"};
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
 
  private:

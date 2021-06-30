@@ -55,32 +55,6 @@ void ReadRawData(const std::string& input_data_dir,
   }
 }
 
-void ReadMmdnnRawData(const std::string& input_data_dir,
-                      std::vector<std::vector<int64_t>>* data,
-                      std::vector<std::vector<uint64_t>>* lod) {
-  auto lines = ReadLines(input_data_dir);
-  for (auto line : lines) {
-    std::vector<std::string> data_str = Split(line, ";");
-    if (data->empty()) {
-      for (size_t i = 1; i < data_str.size(); i++) {
-        data->push_back(std::vector<int64_t>());
-        lod->push_back({0});
-      }
-    }
-
-    for (size_t i = 1; i < data_str.size(); i++) {
-      std::vector<std::string> data_es = Split(data_str[i], " ");
-      if (data_es.empty()) {
-        data_es.push_back("128000");
-      }
-      for (auto e : data_es) {
-        data->at(i - 1).push_back(std::stoll(e));
-      }
-      lod->at(i - 1).push_back(lod->at(i - 1).back() + data_es.size());
-    }
-  }
-}
-
 float CalBertOutAccuracy(const std::vector<std::vector<float>>& out,
                          const std::string& out_file) {
   auto lines = ReadLines(out_file);
@@ -119,21 +93,6 @@ float CalErnieOutAccuracy(const std::vector<std::vector<float>>& out,
   int right_num = 0;
   for (size_t i = 0; i < out.size(); i++) {
     right_num += (std::fabs(out[i][0] - ref_out[i][0]) < 0.01f);
-  }
-
-  return static_cast<float>(right_num) / static_cast<float>(out.size());
-}
-
-float CalMmdnnOutAccuracy(const std::vector<float>& out,
-                          const std::string& out_file) {
-  std::string ref_out_str = ReadFile(out_file);
-  std::vector<float> ref_out = Split<float>(ref_out_str, "\n");
-
-  int right_num = 0;
-  for (size_t i = 0; i < out.size(); i++) {
-    if (std::fabs(out[i] - ref_out[i]) < 1e-3) {
-      right_num++;
-    }
   }
 
   return static_cast<float>(right_num) / static_cast<float>(out.size());

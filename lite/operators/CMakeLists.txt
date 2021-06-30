@@ -2,7 +2,7 @@ set(op_DEPS tensor op op_params scope memory)
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
 
-# 1.baisc ops used in basic models
+# 1.basic ops used in basic models
 add_operator(conv_op basic SRCS conv_op.cc DEPS ${op_DEPS})
 add_operator(pool_op basic SRCS pool_op.cc DEPS ${op_DEPS})
 add_operator(fc_op basic SRCS fc_op.cc DEPS ${op_DEPS})
@@ -55,9 +55,11 @@ add_operator(instance_norm_op basic SRCS instance_norm_op.cc DEPS ${op_DEPS})
 add_operator(subgraph_op basic SRCS subgraph_op.cc DEPS ${op_DEPS})
 add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
 add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
+add_operator(write_back_op basic SRCS write_back_op.cc DEPS ${op_DEPS})
+add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc DEPS ${op_DEPS})
+
 add_operator(pow_op extra SRCS pow_op.cc DEPS ${op_DEPS})
 add_operator(sign_op extra SRCS sign_op.cc DEPS ${op_DEPS})
-add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc DEPS ${op_DEPS})
 add_operator(rnn_op extra SRCS rnn_op.cc DEPS ${op_DEPS})
 
 # 2.basic ops not used in basic models

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,31 +13,31 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace operators {
 
-template <typename T, PrecisionType PType>
-class BatchNormCompute : public KernelLite<TARGET(kARM), PType> {
+class WriteBackOp : public OpLite {
  public:
-  using param_t = operators::BatchNormParam;
+  using OpLite::OpLite;
 
-  void PrepareForRun() override;
+  bool CheckShape() const override;
 
-  void Run() override;
+  bool InferShapeImpl() const override;
 
-  virtual ~BatchNormCompute() = default;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "write_back"; }
 
  private:
-  Tensor new_scale;
-  Tensor new_bias;
+  mutable WriteBackParam param_;
 };
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
