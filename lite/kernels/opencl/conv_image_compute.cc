@@ -1369,12 +1369,9 @@ void ConvImageCompute::OI2IOO4I4(void* src, void* dst, size_t O, size_t I) {
           if (x < I && y < O) {
             fp16_support ? dst_fp16[dst_index] = Float2Half(p_src[I * y + x])
                          : dst_fp32[dst_index] = p_src[I * y + x];
-            // VLOG(4) << "weight fp32[" << dst_index << "]: " << p_src[I * y +
-            // x];
           } else {
             fp16_support ? dst_fp16[dst_index] = Float2Half(0.f)
                          : dst_fp32[dst_index] = 0.f;
-            // VLOG(4) << "weight fp32[" << dst_index << "]: " << 0.f;
           }
         }
       }
