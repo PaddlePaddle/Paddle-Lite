@@ -73,6 +73,7 @@ add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
 # 3.extra ops
 add_operator(reverse_op extra SRCS reverse_op.cc DEPS ${op_DEPS})
 add_operator(inverse_op extra SRCS inverse_op.cc DEPS ${op_DEPS})
+add_operator(sparse_conv_op extra SRCS sparse_conv_op.cc DEPS ${op_DEPS})
 add_operator(search_group_padding extra SRCS search_group_padding_op.cc DEPS ${op_DEPS})
 add_operator(lrn_op_lite extra SRCS lrn_op.cc DEPS ${op_DEPS})
 add_operator(decode_bboxes_op_lite extra SRCS decode_bboxes_op.cc DEPS ${op_DEPS})

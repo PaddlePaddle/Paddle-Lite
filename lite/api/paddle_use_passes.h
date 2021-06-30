@@ -29,6 +29,7 @@ USE_MIR_PASS(argument_type_display_pass);
 USE_MIR_PASS(runtime_context_assign_pass);
 USE_MIR_PASS(graph_visualize_pass);
 
+USE_MIR_PASS(sparse_conv_detect_pass)
 USE_MIR_PASS(adaptive_1x1_pool2d_convert_global_pass);
 USE_MIR_PASS(remove_scale1_pass);
 USE_MIR_PASS(remove_tf_redundant_ops_pass);
