@@ -35,6 +35,10 @@ __kernel void depth_conv2d_3x3(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
+      out_nh >= global_size_dim2) {
+    return;
+  }
 
   int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
   const int batch_index = out_nh / output_height;
@@ -275,8 +279,12 @@ __kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
   const int ou_ch_blk_id = get_global_id(0);
   const int ou_w_blk_id = get_global_id(1);
   const int ou_nh_id = get_global_id(2);
-  const int w_blk_size = 2;
+  if (ou_ch_blk_id >= ou_ch_blk || ou_w_blk_id >= ou_w_blk ||
+      ou_nh_id >= ou_nh) {
+    return;
+  }
 
+  const int w_blk_size = 2;
   const int batch_id = ou_nh_id / ou_h;
   int ou_col_id = ou_w_blk_id * w_blk_size;
   int ou_row_id = ou_nh_id % ou_h;

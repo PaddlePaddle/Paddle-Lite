@@ -40,6 +40,9 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
   const int item_ch_id = get_global_id(0);
   const int item_w_id = get_global_id(1);
   const int item_h_id = get_global_id(2);
+  if (item_ch_id >= item_ch || item_w_id >= item_w || item_h_id >= item_h) {
+    return;
+  }
 
   // out_width_id_per_blk and out_batch_id
   int out_w_base_id = item_ch_id * out_w;
@@ -283,6 +286,9 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
   const int item_ch_id = get_global_id(0);
   const int item_w_id = get_global_id(1);
   const int item_h_id = get_global_id(2);
+  if (item_ch_id >= item_ch || item_w_id >= item_w || item_h_id >= item_h) {
+    return;
+  }
 
   // out_width_id_per_blk and out_batch_id
   int out_batch_id = item_h_id / in_h;
@@ -533,6 +539,9 @@ __kernel void conv2d_7x7_opt_mali(__private const int item_ch,
   const int item_ch_id = get_global_id(0);
   const int item_w_id = get_global_id(1);
   const int item_h_id = get_global_id(2);
+  if (item_ch_id >= item_ch || item_w_id >= item_w || item_h_id >= item_h) {
+    return;
+  }
 
   // out_width_id_per_blk and out_batch_id
   int out_w_base_id = item_ch_id * out_w;
