@@ -2417,15 +2417,17 @@ __kernel void conv2d_1x1_mali_h2w2c2(
 __kernel void conv2d_1x1_fc(__read_only image2d_t input,
                             __write_only image2d_t output,
                             __global CL_DTYPE16 *weights,
+#ifdef BIASE_CH
                             __read_only image2d_t biases,
-                            int in_c_blks,
-                            int out_c_blks,
-                            __read_only image2d_t prelu_alpha
+#endif  // BIASE_CH
+#ifdef PRELU
+                            __read_only image2d_t prelu_alpha,
+#endif  // PRELU
 #ifdef ELT_FUSE
-                            ,
-                            __read_only image2d_t second_input_image
-#endif
-                            ) {
+                            __read_only image2d_t second_input_image,
+#endif  // ELT_FUSE
+                            int in_c_blks,
+                            int out_c_blks) {
   int out_c = get_global_id(0);
   int2 tid = (int2)(get_local_id(0), get_local_id(1));
   CL_DTYPE4 s = (CL_DTYPE4)(0.0f);
@@ -2453,8 +2455,13 @@ __kernel void conv2d_1x1_fc(__read_only image2d_t input,
     s += temp[tid.x][2];
     s += temp[tid.x][3];
     int2 output_pos0 = (int2)(out_c, 0);
+
+#ifdef BIASE_CH
     CL_DTYPE4 output0 =
         s + READ_IMG_TYPE(CL_DTYPE_CHAR, biases, SAMPLER, output_pos0);
+#else
+    CL_DTYPE4 output0 = s;
+#endif
 
     CL_DTYPE4 alpha0;
 #ifdef PRELU_CH

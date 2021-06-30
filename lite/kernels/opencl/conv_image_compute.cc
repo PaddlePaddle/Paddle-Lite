@@ -1464,18 +1464,22 @@ void ConvImageCompute::Conv2d1x1FC() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(cnt++, *filter_buffer_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(cnt++, *bias_image_p_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(cnt++, UP_DIV(input_tensor_c_, 4));
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(cnt++, UP_DIV(output_tensor_c_, 4));
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(cnt++, *alpha_image_p_);
-  CL_CHECK_FATAL(status_);
+  if (has_bias_) {
+    status_ = kernel_.setArg(cnt++, *bias_image_p_);
+    CL_CHECK_FATAL(status_);
+  }
+  if (build_options_[0].find("-DPRELU") != std::string::npos) {
+    status_ = kernel_.setArg(cnt++, *alpha_image_p_);
+    CL_CHECK_FATAL(status_);
+  }
   if (!fuse_eltwise_op_type_.empty()) {
     status_ = kernel_.setArg(cnt++, *second_input_image_p_);
     CL_CHECK_FATAL(status_);
   }
+  status_ = kernel_.setArg(cnt++, UP_DIV(input_tensor_c_, 4));
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(cnt++, UP_DIV(output_tensor_c_, 4));
+  CL_CHECK_FATAL(status_);
 }
 
 void ConvImageCompute::Conv2d1x1opt() {
