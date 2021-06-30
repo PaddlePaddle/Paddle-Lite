@@ -369,30 +369,31 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
                                 ? it->first.size()
                                 : maximum_optype_length;
   }
-  std::cout << std::setiosflags(std::ios::internal);
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << std::setw(maximum_optype_length) << "OP_name";
   for (size_t i = 0; i < lite_supported_targets.size(); i++) {
-    std::cout << std::setw(10) << lite_supported_targets[i].substr(1);
+    std::string i_th_substr = lite_supported_targets[i].substr(1);
+    std::cout << std::setw(i_th_substr.size() + 5) << i_th_substr;
   }
   std::cout << std::endl;
   // Print the name of supported ops and mark if it's supported by each target
   // print the support info of inputed ops: valid_ops
   for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
-    std::cout << std::setw(maximum_optype_length) << *op;
     // Check: If this kernel doesn't match any operator, we will skip it.
     if (supported_ops.find(*op) == supported_ops.end()) {
       continue;
     }
+    std::cout << std::setw(maximum_optype_length) << *op;
     // Print OP info.
     auto ops_valid_places = supported_ops.at(*op);
     for (size_t i = 0; i < lite_supported_targets.size(); i++) {
+      std::string i_th_substr = lite_supported_targets[i].substr(1);
       if (std::find(ops_valid_places.begin(),
                     ops_valid_places.end(),
                     lite_supported_targets[i]) != ops_valid_places.end()) {
-        std::cout << std::setw(10) << "Y";
+        std::cout << std::setw(i_th_substr.size() + 5) << "Y";
       } else {
-        std::cout << std::setw(10) << " ";
+        std::cout << std::setw(i_th_substr.size() + 5) << " ";
       }
     }
     std::cout << std::endl;

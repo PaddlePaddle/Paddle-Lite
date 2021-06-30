@@ -263,6 +263,7 @@ function make_publish_so {
         ${CMAKE_COMMON_OPTIONS} \
         ${cmake_mutable_options}
 
+    exit 0
     if [ "${WITH_OPENCL}" = "ON" ]; then
         make opencl_clhpp -j$NUM_PROC 
     fi
