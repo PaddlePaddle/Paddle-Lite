@@ -35,7 +35,13 @@ class FP16AttributePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
-  std::vector<std::string> fp16_ops_{"conv2d", "depthwise_conv2d", "fc", "gru"};
+  std::vector<std::string> fp16_ops_{"conv2d",
+                                     "depthwise_conv2d",
+                                     "fc",
+                                     "gru",
+                                     "sequence_conv",
+                                     "elementwise_add",
+                                     "elementwise_mul"};
 };
 
 }  // namespace mir

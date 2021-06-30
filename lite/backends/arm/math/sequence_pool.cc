@@ -27,14 +27,14 @@ namespace lite {
 namespace arm {
 namespace math {
 
-template <>
-void seq_pool_sum<float>(const float* din,
-                         float* dout,
-                         const std::vector<uint64_t> lod,
-                         int64_t width) {
+template <typename T>
+void seq_pool_sum(const T* din,
+                  T* dout,
+                  const std::vector<uint64_t> lod,
+                  int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
-    const float* din_ptr = din + lod[i] * width;
-    float* dout_ptr = dout + i * width;
+    const T* din_ptr = din + lod[i] * width;
+    T* dout_ptr = dout + i * width;
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     if (height > 0) {
       if (width == 1) {
@@ -44,7 +44,7 @@ void seq_pool_sum<float>(const float* din,
         }
         *dout_ptr = sum;
       } else {
-        memcpy(dout_ptr, din_ptr, width * sizeof(float));
+        memcpy(dout_ptr, din_ptr, width * sizeof(T));
         din_ptr += width;
         height = height - 1;
         for (int h = 0; h < height; h++) {
@@ -58,24 +58,24 @@ void seq_pool_sum<float>(const float* din,
   }
 }
 
-template <>
-void seq_pool_average<float>(const float* din,
-                             float* dout,
-                             const std::vector<uint64_t> lod,
-                             int64_t width) {
+template <typename T>
+void seq_pool_average(const T* din,
+                      T* dout,
+                      const std::vector<uint64_t> lod,
+                      int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
-    const float* din_ptr = din + lod[i] * width;
-    float* dout_ptr = dout + i * width;
+    const T* din_ptr = din + lod[i] * width;
+    T* dout_ptr = dout + i * width;
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     if (height > 0) {
       if (width == 1) {
-        float sum = 0.f;
+        T sum = 0.f;
         for (int h = 0; h < height; ++h) {
           sum += din_ptr[h];
         }
         *dout_ptr = sum / height;
       } else {
-        memcpy(dout_ptr, din_ptr, width * sizeof(float));
+        memcpy(dout_ptr, din_ptr, width * sizeof(T));
         din_ptr += width;
         int remain_h = height - 1;
         for (int h = 0; h < remain_h; h++) {
@@ -92,25 +92,25 @@ void seq_pool_average<float>(const float* din,
   }
 }
 
-template <>
-void seq_pool_sqrt<float>(const float* din,
-                          float* dout,
-                          const std::vector<uint64_t> lod,
-                          int64_t width) {
+template <typename T>
+void seq_pool_sqrt(const T* din,
+                   T* dout,
+                   const std::vector<uint64_t> lod,
+                   int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
-    const float* din_ptr = din + lod[i] * width;
-    float* dout_ptr = dout + i * width;
+    const T* din_ptr = din + lod[i] * width;
+    T* dout_ptr = dout + i * width;
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     if (height > 0) {
-      float sqrt_len = sqrtf(height);
+      T sqrt_len = sqrtf(height);
       if (width == 1) {
-        float sum = 0.f;
+        T sum = 0.f;
         for (int h = 0; h < height; ++h) {
           sum += din_ptr[h];
         }
         *dout_ptr = sum / sqrt_len;
       } else {
-        memcpy(dout_ptr, din_ptr, width * sizeof(float));
+        memcpy(dout_ptr, din_ptr, width * sizeof(T));
         din_ptr += width;
         int remain_h = height - 1;
         for (int h = 0; h < remain_h; h++) {
@@ -127,20 +127,20 @@ void seq_pool_sqrt<float>(const float* din,
   }
 }
 
-template <>
-void seq_pool_max<float>(const float* din,
-                         float* dout,
-                         int64_t* index,
-                         const std::vector<uint64_t> lod,
-                         int64_t width) {
+template <typename T>
+void seq_pool_max(const T* din,
+                  T* dout,
+                  int64_t* index,
+                  const std::vector<uint64_t> lod,
+                  int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
-    const float* din_ptr = din + lod[i] * width;
-    float* dout_ptr = dout + i * width;
+    const T* din_ptr = din + lod[i] * width;
+    T* dout_ptr = dout + i * width;
     int64_t* index_ptr = index + i * width;
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     if (height > 0) {
       if (width == 1) {
-        float max = -std::numeric_limits<float>::max();
+        T max = -std::numeric_limits<T>::max();
         int64_t max_index = -1;
         for (int h = 0; h < height; ++h) {
           max = std::max(max, din_ptr[h]);
@@ -149,7 +149,7 @@ void seq_pool_max<float>(const float* din,
         *dout_ptr = max;
         *index_ptr = max_index;
       } else {
-        memcpy(dout_ptr, din_ptr, width * sizeof(float));
+        memcpy(dout_ptr, din_ptr, width * sizeof(T));
         memset(index_ptr, 0, width * sizeof(int64_t));
         din_ptr += width;
         int remain_h = height - 1;
@@ -165,20 +165,20 @@ void seq_pool_max<float>(const float* din,
   }
 }
 
-template <>
-void seq_pool_min<float>(const float* din,
-                         float* dout,
-                         int64_t* index,
-                         const std::vector<uint64_t> lod,
-                         int64_t width) {
+template <typename T>
+void seq_pool_min(const T* din,
+                  T* dout,
+                  int64_t* index,
+                  const std::vector<uint64_t> lod,
+                  int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
-    const float* din_ptr = din + lod[i] * width;
-    float* dout_ptr = dout + i * width;
+    const T* din_ptr = din + lod[i] * width;
+    T* dout_ptr = dout + i * width;
     int64_t* index_ptr = index + i * width;
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     if (height > 0) {
       if (width == 1) {
-        float min = std::numeric_limits<float>::max();
+        T min = std::numeric_limits<T>::max();
         int64_t min_index = -1;
         for (int h = 0; h < height; ++h) {
           min = std::min(min, din_ptr[h]);
@@ -187,7 +187,7 @@ void seq_pool_min<float>(const float* din,
         *dout_ptr = min;
         *index_ptr = min_index;
       } else {
-        memcpy(dout_ptr, din_ptr, width * sizeof(float));
+        memcpy(dout_ptr, din_ptr, width * sizeof(T));
         memset(index_ptr, 0, width * sizeof(int64_t));
         din_ptr += width;
         int remain_h = height - 1;
@@ -203,37 +203,99 @@ void seq_pool_min<float>(const float* din,
   }
 }
 
-template <>
-void seq_pool_first<float>(const float* din,
-                           float* dout,
-                           const std::vector<uint64_t> lod,
-                           int64_t width) {
+template <typename T>
+void seq_pool_first(const T* din,
+                    T* dout,
+                    const std::vector<uint64_t> lod,
+                    int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = lod[i + 1] - lod[i];
-    const float* din_ptr = din + width * lod[i];
-    float* dout_ptr = dout + i * width;
+    const T* din_ptr = din + width * lod[i];
+    T* dout_ptr = dout + i * width;
     if (height > 0) {
-      memcpy(dout_ptr, din_ptr, width * sizeof(float));
+      memcpy(dout_ptr, din_ptr, width * sizeof(T));
     }
   }
 }
 
-template <>
-void seq_pool_last<float>(const float* din,
-                          float* dout,
-                          const std::vector<uint64_t> lod,
-                          int64_t width) {
+template <typename T>
+void seq_pool_last(const T* din,
+                   T* dout,
+                   const std::vector<uint64_t> lod,
+                   int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = lod[i + 1] - lod[i];
     int64_t seq_len = static_cast<int64_t>(lod[i + 1] - lod[0]);
-    const float* din_ptr = din + width * seq_len;
-    float* dout_ptr = dout + i * width;
+    const T* din_ptr = din + width * seq_len;
+    T* dout_ptr = dout + i * width;
     if (height > 0) {
-      memcpy(dout_ptr, din_ptr - width, width * sizeof(float));
+      memcpy(dout_ptr, din_ptr - width, width * sizeof(T));
     }
   }
 }
 
+template void seq_pool_sum<float>(const float* din,
+                                  float* dout,
+                                  const std::vector<uint64_t> lod,
+                                  int64_t width);
+template void seq_pool_average<float>(const float* din,
+                                      float* dout,
+                                      const std::vector<uint64_t> lod,
+                                      int64_t width);
+template void seq_pool_sqrt<float>(const float* din,
+                                   float* dout,
+                                   const std::vector<uint64_t> lod,
+                                   int64_t width);
+template void seq_pool_max<float>(const float* din,
+                                  float* dout,
+                                  int64_t* index,
+                                  const std::vector<uint64_t> lod,
+                                  int64_t width);
+template void seq_pool_min<float>(const float* din,
+                                  float* dout,
+                                  int64_t* index,
+                                  const std::vector<uint64_t> lod,
+                                  int64_t width);
+template void seq_pool_first<float>(const float* din,
+                                    float* dout,
+                                    const std::vector<uint64_t> lod,
+                                    int64_t width);
+template void seq_pool_last<float>(const float* din,
+                                   float* dout,
+                                   const std::vector<uint64_t> lod,
+                                   int64_t width);
+#ifdef ENABLE_ARM_FP16
+template void seq_pool_sum<float16_t>(const float16_t* din,
+                                      float16_t* dout,
+                                      const std::vector<uint64_t> lod,
+                                      int64_t width);
+template void seq_pool_average<float16_t>(const float16_t* din,
+                                          float16_t* dout,
+                                          const std::vector<uint64_t> lod,
+                                          int64_t width);
+template void seq_pool_sqrt<float16_t>(const float16_t* din,
+                                       float16_t* dout,
+                                       const std::vector<uint64_t> lod,
+                                       int64_t width);
+template void seq_pool_max<float16_t>(const float16_t* din,
+                                      float16_t* dout,
+                                      int64_t* index,
+                                      const std::vector<uint64_t> lod,
+                                      int64_t width);
+template void seq_pool_min<float16_t>(const float16_t* din,
+                                      float16_t* dout,
+                                      int64_t* index,
+                                      const std::vector<uint64_t> lod,
+                                      int64_t width);
+template void seq_pool_first<float16_t>(const float16_t* din,
+                                        float16_t* dout,
+                                        const std::vector<uint64_t> lod,
+                                        int64_t width);
+template void seq_pool_last<float16_t>(const float16_t* din,
+                                       float16_t* dout,
+                                       const std::vector<uint64_t> lod,
+                                       int64_t width);
+#endif
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
