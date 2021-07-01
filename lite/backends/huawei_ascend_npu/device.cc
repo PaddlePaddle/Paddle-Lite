@@ -81,7 +81,7 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
 
   // Build IR model
   ge::ModelBufferData om_buffer;
-  std::map<std::string, std::string> options;
+  std::map<ge::AscendString, ge::AscendString> options;
   options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
 
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
@@ -95,34 +95,35 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
   return true;
 }
 
-void Device::InitOnce() {
-  if (runtime_inited_) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] runtime already inited!";
-    return;
+int Device::device_reference_count_ = 0;
+void Device::RegisterDeviceResource() {
+  std::lock_guard<std::mutex> lock(device_mutex_);
+  if (device_reference_count_ == 0) {
+    // ACL runtime init => can only be called once in one process
+    ACL_CALL(aclInit(NULL));
+
+    // ATC builder init => can only be called once in one process
+    std::map<ge::AscendString, ge::AscendString> global_options;
+    global_options.insert(
+        std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
+    ATC_CALL(ge::aclgrphBuildInitialize(global_options));
   }
-  // ACL runtime init => can only be called once in one process
-  ACL_CALL(aclInit(NULL));
-
-  // ATC builder init => can only be called once in one process
-  std::map<std::string, std::string> global_options;
-  global_options.insert(
-      std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
-  ATC_CALL(ge::aclgrphBuildInitialize(global_options));
-
-  runtime_inited_ = true;
+  device_reference_count_++;
 }
 
-void Device::DestroyOnce() {
-  if (!runtime_inited_) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] no need to destroy runtime!";
-    return;
+void Device::UnRegisterDeviceResource() {
+#ifndef PADDLE_WITH_TESTING
+  std::lock_guard<std::mutex> lock(device_mutex_);
+  device_reference_count_--;
+  if (device_reference_count_ == 0) {
+    // ATC builder finalize => can only be called once in one process
+    ge::aclgrphBuildFinalize();
+    // ACL runtime finalize => can only be called once in one process
+    ACL_CALL(aclFinalize());
   }
-  // ATC builder finalize => can only be called once in one process
-  ge::aclgrphBuildFinalize();
-  // ACL runtime finalize => can only be called once in one process
-  ACL_CALL(aclFinalize());
-
-  runtime_inited_ = false;
+#else
+// TODO(shentanyue)
+#endif
 }
 
 }  // namespace huawei_ascend_npu

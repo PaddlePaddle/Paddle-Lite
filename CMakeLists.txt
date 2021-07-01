@@ -92,11 +92,13 @@ lite_option(LITE_WITH_PYTHON    "Enable Python api lib in lite mode" OFF)
 lite_option(LITE_WITH_CUDA      "Enable CUDA in lite mode" OFF)
 lite_option(LITE_WITH_X86       "Enable X86 in lite mode"  ON)
 lite_option(LITE_WITH_ARM       "Enable ARM in lite mode"  OFF)
+lite_option(LITE_WITH_SW        "Enable SW in lite mode"  OFF)
 lite_option(LITE_WITH_NPU       "Enable NPU in lite mode"  OFF)
 lite_option(LITE_WITH_RKNPU     "Enable RKNPU in lite mode"  OFF)
 lite_option(LITE_WITH_MLU       "Enable MLU in lite mode"  OFF)
 lite_option(LITE_WITH_HUAWEI_ASCEND_NPU  "Enable HUAWEI_ASCEND_NPU in lite mode"  OFF)
 lite_option(LITE_WITH_IMAGINATION_NNA    "Enable IMAGINATION_NNA in lite mode"  OFF)
+lite_option(LITE_WITH_NNADAPTER    "Enable NNAdapter in lite mode"  OFF)
 lite_option(LITE_WITH_XPU       "Enable XPU in lite mode"  OFF)
 lite_option(LITE_WITH_XTCL      "Enable XPU via XTCL"  OFF IF LITE_WITH_XPU)
 lite_option(LITE_WITH_BM        "Enable BM in lite mode"   OFF)
@@ -221,7 +223,8 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(cross_compiling/postproject)
     include(device/npu) # check and prepare NPU DDK
     include(device/xpu) # check and prepare XPU SDK
-    include(device/apu) # check and prepare APU SDK
+    include(device/apu) # check and prepare APU SDK 
+    include(device/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
 
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.

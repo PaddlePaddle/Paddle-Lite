@@ -109,8 +109,8 @@ struct ReduceAnyFunctor {
 
 template <class T, class Functor>
 void ReduceCompute<T, Functor>::Run() {
-  auto& param = Param<operators::ReduceParam>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto x_dims = param.X->dims();
   size_t x_rank = x_dims.size();
   bool reduce_all = param.reduce_all;

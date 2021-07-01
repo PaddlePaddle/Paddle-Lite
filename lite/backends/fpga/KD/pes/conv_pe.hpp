@@ -14,7 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#include <arm_neon.h>
 #include <algorithm>
 #include <vector>
 
@@ -45,12 +44,12 @@ class ConvPE : public PE {
       pack_channel = split_axis == 2 && param_.splitParams().size() > 1;
       split_cpu_concat = split_axis == 0 && param_.cpu_concat;
       split_channel = split_axis == 1;
-
       for (auto conv_param : param_.splitParams()) {
         conv_param->args.inplace.active_param.type = param_.activeParam.type;
         conv_param->args.inplace.active_param.leaky_relu_factor =
             float_to_half(param_.activeParam.leaky_relu_factor);
       }
+
       if (pack_channel) {
         ConcatParam& concat_param = concatPE_.param();
         for (auto conv_param : param_.splitParams()) {
@@ -140,6 +139,7 @@ class ConvPE : public PE {
     }
 
     int ret = 0;
+
     for (auto conv_param : params) {
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
@@ -147,8 +147,23 @@ class ConvPE : public PE {
     if ((pack_channel || split_cpu_concat) && ret == 0 && !param_.deconv) {
       concatPE_.dispatch();
     }
-    if (!param_.deconv & !split_channel) {
+    if (!split_channel && !param_.deconv) {
       float16 max_val = 0.0;
+
+      /*
+        The final result(multiple tensors concated by channel axis) is merged
+        into a Tensor,
+        but each channel's max value is calculated separately, we need to find a
+        global max for this Tensor.
+      */
+      if (param_.wd_enable) {
+        int cur_idx = param_.fuse_idx;
+        if (cur_idx == param_.start_idx)
+          max_val = 0;
+        else if (cur_idx <= param_.end_idx)
+          max_val = param_.output->max()[0];
+      }
+
       for (auto conv_param : param_.splitParams()) {
         max_val = std::max(max_val, conv_param->output_max);
       }

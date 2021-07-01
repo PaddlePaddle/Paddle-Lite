@@ -170,14 +170,14 @@ TEST(Scale, precision) {
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 5e-2;  // Using fp16 in OPENCL
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 3e-4;  // Some operations use fp16 in XPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
+  abs_error = 1e-1;  // precision_mode default is force_fp16
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #else

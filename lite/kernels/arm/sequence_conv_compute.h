@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class SequenceConvCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class SequenceConvCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   void PrepareForRun() override;
 

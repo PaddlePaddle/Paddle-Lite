@@ -58,7 +58,7 @@ class ElementwiseAddImageCompute
     void run_with_mps();
     void run_without_mps();
 
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_x_;
     const MetalImage* input_buffer_y_;
     std::shared_ptr<MetalBuffer> params_buffer_;

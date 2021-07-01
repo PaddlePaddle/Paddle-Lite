@@ -20,19 +20,36 @@ namespace arm {
 namespace math {
 namespace fp16 {
 typedef __fp16 float16_t;
-template <typename T>
-void elementwise_add(const T* dinx, const T* diny, T* dout, int num);
 
-template <typename T>
-void elementwise_add_relu(const T* dinx, const T* diny, T* dout, int num);
+#define elementwise_simple_compute_declare(op)                           \
+  template <typename T>                                                  \
+  void elementwise_##op(const T* dinx, const T* diny, T* dout, int num); \
+                                                                         \
+  template <typename T>                                                  \
+  void elementwise_##op##_relu(                                          \
+      const T* dinx, const T* diny, T* dout, int num);                   \
+                                                                         \
+  template <typename T>                                                  \
+  void elementwise_##op##_broadcast(const T* dinx,                       \
+                                    const T* diny,                       \
+                                    T* dout,                             \
+                                    int batch,                           \
+                                    int channels,                        \
+                                    int num);                            \
+                                                                         \
+  template <typename T>                                                  \
+  void elementwise_##op##_relu_broadcast(const T* dinx,                  \
+                                         const T* diny,                  \
+                                         T* dout,                        \
+                                         int batch,                      \
+                                         int channels,                   \
+                                         int num);
 
-template <typename T>
-void elementwise_add_broadcast(
-    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+elementwise_simple_compute_declare(add);
+elementwise_simple_compute_declare(mul);
+elementwise_simple_compute_declare(sub);
+elementwise_simple_compute_declare(div);
 
-template <typename T>
-void elementwise_add_relu_broadcast(
-    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

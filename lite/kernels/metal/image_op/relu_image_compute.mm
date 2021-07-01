@@ -56,6 +56,10 @@ void ReluImageCompute::Run() {
     [backend commit];
 }
 
+ReluImageCompute::~ReluImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
 void Relu6ImageCompute::PrepareForRun() {
     auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
@@ -90,6 +94,10 @@ void Relu6ImageCompute::Run() {
     [backend commit];
 }
 
+Relu6ImageCompute::~Relu6ImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
 void LeakyReluImageCompute::PrepareForRun() {
     auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
@@ -122,6 +130,10 @@ void LeakyReluImageCompute::Run() {
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+LeakyReluImageCompute::~LeakyReluImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

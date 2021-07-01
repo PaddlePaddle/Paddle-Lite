@@ -64,7 +64,7 @@ void MatMulImageCompute::setup_without_mps() {
     } else if (input_buffer_y_->tensor_dim_.size() == 3) {
         
     } else {
-        //tensor.size = 1, 2
+        // tensor.size = 1, 2
         if(input_buffer_x_->dim_[0] == 1 &&
            input_buffer_x_->dim_[1] == 1 && input_buffer_x_->dim_[2] == 1) {
             valid = true;
@@ -74,11 +74,15 @@ void MatMulImageCompute::setup_without_mps() {
         LOG(FATAL) << "mat_mul: only supports : 1.same shapes 2.by channel.";
     }
 
-    // input y：4-dims come from last output; 3-dims come from tensor input;
+    // input y: 4-dims come from last output; 3-dims come from tensor input;
     function_name_ = "mat_mul";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
+}
+
+MatMulImageCompute::~MatMulImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

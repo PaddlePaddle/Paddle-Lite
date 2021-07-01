@@ -179,8 +179,10 @@ struct ElementwiseMetalParam {
 };
 
 struct TransposeMetalParam {
-    int iC;
-    int oC;
+    int idim[4];
+    int itrans[4];
+    int odim[4];
+    int otrans[4];
     int axis[4];
 };
 

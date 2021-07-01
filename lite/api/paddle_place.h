@@ -61,7 +61,8 @@ enum class TargetType : int {
   kImaginationNNA = 15,
   kIntelFPGA = 16,
   kMetal = 17,
-  NUM = 18,  // number of fields.
+  kNNAdapter = 18,
+  NUM = 19,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,

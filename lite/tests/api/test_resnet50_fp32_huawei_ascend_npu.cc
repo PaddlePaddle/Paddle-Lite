@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,6 @@
 #include <vector>
 #include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/tests/api/ILSVRC2012_utility.h"
 #include "lite/utils/cp_logging.h"
@@ -28,42 +25,40 @@ DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 100, "iteration times to run");
 DEFINE_int32(batch, 1, "batch of image");
 DEFINE_int32(channel, 3, "image channel");
-DEFINE_int32(height, 480, "image height");
-DEFINE_int32(width, 480, "image width");
 
 namespace paddle {
 namespace lite {
 
-float CalSfaOutAccuracy(const std::vector<std::vector<float>>& out,
-                        const std::string& ref_out_dir,
-                        float abs_error = 1e-2) {
-  int right_num = 0;
-  auto lines = ReadLines(ref_out_dir);
-  for (size_t i = 0; i < out.size(); i++) {
-    auto ref_out = Split<float>(lines[i], ", ");
-    for (size_t j = 0; j < out[i].size(); j++) {
-      if (std::fabs(ref_out[j] - out[i][j]) < abs_error) {
-        right_num++;
-      }
-    }
-  }
-  return static_cast<float>(right_num) /
-         static_cast<float>(out.size() * out[0].size());
-}
-
-TEST(Sfa, test_sfa_fp32_baidu_xpu) {
-  lite_api::CxxConfig config;
-  config.set_model_file(FLAGS_model_dir + "/__model__");
-  config.set_param_file(FLAGS_model_dir + "/params");
-  config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
-  config.set_xpu_l3_cache_method(16773120, false);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+TEST(ResNet50, test_resnet50_fp32_huawei_ascend_npu) {
+  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
+  // Use the full api with CxxConfig to generate the optimized model
+  lite_api::CxxConfig cxx_config;
+  cxx_config.set_model_dir(FLAGS_model_dir);
+#if defined(LITE_WITH_ARM)
+  cxx_config.set_valid_places(
+      {lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+#else
+  cxx_config.set_valid_places(
+      {lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+#endif
+  predictor = lite_api::CreatePaddlePredictor(cxx_config);
+  predictor->SaveOptimizedModel(FLAGS_model_dir,
+                                paddle::lite_api::LiteModelType::kNaiveBuffer);
+  // Use the light api with MobileConfig to load and run the optimized model
+  paddle::lite_api::MobileConfig mobile_config;
+  mobile_config.set_model_from_file(FLAGS_model_dir + ".nb");
+  mobile_config.set_threads(FLAGS_threads);
+  mobile_config.set_power_mode(
+      static_cast<lite_api::PowerMode>(FLAGS_power_mode));
+  predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
   std::vector<int> input_shape{
-      FLAGS_batch, FLAGS_channel, FLAGS_height, FLAGS_width};
+      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
   auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
 
   int input_size = 1;
@@ -100,8 +95,8 @@ TEST(Sfa, test_sfa_fp32_baidu_xpu) {
     auto output_shape = output_tensor->shape();
     auto output_data = output_tensor->data<float>();
     ASSERT_EQ(output_shape.size(), 2UL);
-    ASSERT_EQ(output_shape[0], static_cast<int64_t>(FLAGS_batch));
-    ASSERT_EQ(output_shape[1], 5);
+    ASSERT_EQ(output_shape[0], 1);
+    ASSERT_EQ(output_shape[1], 1000);
 
     int output_size = output_shape[0] * output_shape[1];
     out_rets[i].resize(output_size);
@@ -114,9 +109,9 @@ TEST(Sfa, test_sfa_fp32_baidu_xpu) {
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 
-  // std::string ref_out_dir = FLAGS_data_dir + std::string("/ref_out.txt");
-  // float out_accuracy = CalSfaOutAccuracy(out_rets, ref_out_dir);
-  // ASSERT_GT(out_accuracy, 0.980f);
+  std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
+  float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
+  ASSERT_GE(out_accuracy, 0.64f);
 }
 
 }  // namespace lite

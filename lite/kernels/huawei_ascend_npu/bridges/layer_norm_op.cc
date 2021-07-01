@@ -126,21 +126,21 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get output of Y
   auto out_y_node = graph->Add<ge::op::Identity>(y_name);
   auto out_y_op = out_y_node->data<ge::op::Identity>();
-  out_y_op->set_input_x(*layer_norm_node->data(), "y");
+  out_y_op->set_input_x_by_name(*layer_norm_node->data(), "y");
   INPUT_UPDATE(out_y_op, x, layer_norm_node);
   OUTPUT_UPDATE(out_y_op, y, out_y_node);
 
   // Get output of Mean
   auto out_mean_node = graph->Add<ge::op::Identity>(mean_name);
   auto out_mean_op = out_mean_node->data<ge::op::Identity>();
-  out_mean_op->set_input_x(*layer_norm_node->data(), "mean");
+  out_mean_op->set_input_x_by_name(*layer_norm_node->data(), "mean");
   INPUT_UPDATE(out_mean_op, x, layer_norm_node);
   OUTPUT_UPDATE(out_mean_op, y, out_mean_node);
 
   // Get output of Variance
   auto out_var_node = graph->Add<ge::op::Identity>(var_name);
   auto out_var_op = out_var_node->data<ge::op::Identity>();
-  out_var_op->set_input_x(*layer_norm_node->data(), "variance");
+  out_var_op->set_input_x_by_name(*layer_norm_node->data(), "variance");
   INPUT_UPDATE(out_var_op, x, layer_norm_node);
   OUTPUT_UPDATE(out_var_op, y, out_var_node);
 

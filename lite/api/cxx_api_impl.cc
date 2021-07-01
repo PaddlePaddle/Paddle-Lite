@@ -72,6 +72,17 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     TargetWrapper<TARGET(kBM)>::SetDevice(device_id);
 #endif  // LITE_WITH_BM
 
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+    // Use scope to store the model-level configuration for the subgraph kernel
+    Context<TargetType::kNNAdapter>::SetNNAdapterDevices(
+        raw_predictor_->scope(), config.nnadapter_devices());
+    Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(
+        raw_predictor_->scope(), config.nnadapter_model_cache_dir());
+    Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
+        raw_predictor_->scope(), config.nnadapter_model_cache_buffers());
+#endif
+
     auto use_layout_preprocess_pass =
         config.model_dir().find("OPENCL_PRE_PRECESS");
     VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;

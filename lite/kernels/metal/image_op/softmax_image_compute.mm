@@ -37,7 +37,7 @@ void SoftmaxImageCompute::PrepareForRun() {
     output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
-    //是否使用mps
+    // whether to use mps
     bool should_use_mps = false;
     if (@available(iOS 10.0, *)) {
         if (metal_context_->use_mps()) {
@@ -149,7 +149,7 @@ void SoftmaxImageCompute::setup_with_mps() {
     mps_softmax_op_ =
         (__bridge_retained void*)[[MPSCNNSoftMax alloc] initWithDevice:backend.device];
     ((__bridge MPSCNNSoftMax*)mps_softmax_op_).edgeMode = MPSImageEdgeModeZero;
-    // MPS算子输入输出
+    // MPS in and out
     auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
     auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
     mps_input_image_ =
@@ -173,6 +173,7 @@ SoftmaxImageCompute::~SoftmaxImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

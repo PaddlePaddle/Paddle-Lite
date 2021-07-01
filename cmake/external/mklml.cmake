@@ -138,7 +138,7 @@ ExternalProject_Add(
         ${CMAKE_COMMAND} -E copy_directory ${MKLML_DOWNLOAD_DIR}/lib ${MKLML_LIB_DIR}
 )
 
-IF(NOT WIN32)
+IF(NOT WIN32 AND NOT LITE_WITH_SW)
     add_compile_options(-m64)
 ENDIF()
 INCLUDE_DIRECTORIES(${MKLML_INC_DIR})

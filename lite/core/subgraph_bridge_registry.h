@@ -74,7 +74,7 @@ class SubgraphBridgeRegistry {
     return 0;                                                             \
   }
 
-#define USE_SUBGRAPH_BRIDGE(op_type__, target__)                            \
+#define USE_SUBGRAPH_BRIDGE(op_type__, target__, ...)                       \
   extern int __reg_subgraph_bridge_##op_type__##_##target__##_Insert();     \
   static int __reg_subgraph_bridge_##op_type__##_##target__##_Insert_return \
       UNUSED = __reg_subgraph_bridge_##op_type__##_##target__##_Insert();

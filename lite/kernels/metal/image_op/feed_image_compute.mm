@@ -74,6 +74,10 @@ void FeedImageCompute::Run() {
     [backend commit];
 }
 
+FeedImageCompute::~FeedImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
 }  // namespace metal
 }  // namespace kernels
 }  // namespace lite

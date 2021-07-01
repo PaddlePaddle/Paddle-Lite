@@ -39,7 +39,8 @@ void TypeTargetTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
   // record the copied node.
   std::map<std::string, Node*> copied_nodes;
-  std::vector<std::string> skip_ops = {"while", "conditional_block"};
+  std::vector<std::string> skip_ops = {
+      "while", "conditional_block", "write_back"};
 
   for (auto& node : nodes) {
     auto op_type = node->AsStmt().op_type();

@@ -80,11 +80,15 @@ void Pad2dImageCompute::setup_without_mps() {
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(pad_params), &pad_params);
 
-    // input y：4-dims come from last output; 3-dims come from tensor input;
+    // input y: 4-dims come from last output; 3-dims come from tensor input;
     function_name_ = "pad2d";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
+}
+
+Pad2dImageCompute::~Pad2dImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

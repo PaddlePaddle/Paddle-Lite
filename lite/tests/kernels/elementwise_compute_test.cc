@@ -246,6 +246,11 @@ void TestElt(Place place,
     return;
   }
 #endif
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  if (elt_type == std::string("div")) {
+    return;
+  }
+#endif
   std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester<T>(
       place, "def", elt_type, x_shape, y_shape, axis, act_type));
   arena::Arena arena(std::move(tester), place, abs_error);
@@ -293,36 +298,48 @@ void TestEltFuseAct(Place place, float abs_error) {
 }
 
 #ifdef ENABLE_ARM_FP16
-void TestFp16EltDims(Place place, float abs_error) {
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {2, 3, 4}, 0);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {2, 3}, 0);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3}, {2}, 0);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {3, 4}, 1);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {3, 4}, 1);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3}, {3}, 1);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {4, 5}, 2);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {4}, 2);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {5}, 3);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {3, 4, 5}, -1);
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {3, 4}, -1);
+void TestFp16EltDims(Place place, float abs_error, std::string test_operator) {
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4}, {2, 3, 4}, 0);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4}, {2, 3}, 0);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3}, {2}, 0);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4, 5}, {3, 4}, 1);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4}, {3, 4}, 1);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3}, {3}, 1);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4, 5}, {4, 5}, 2);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4}, {4}, 2);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4, 5}, {5}, 3);
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4, 5}, {3, 4, 5}, -1);
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4}, {3, 4}, -1);
 }
 
-void TestFp16EltFuseAct(Place place, float abs_error) {
+void TestFp16EltFuseAct(Place place,
+                        float abs_error,
+                        std::string test_operator) {
   TestElt<float16_t>(
-      place, abs_error, "add", {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {2, 3, 4}, 0, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {2, 3}, 0, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3}, {2}, 0, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {3, 4}, 1, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {3, 4}, 1, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3}, {3}, 1, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {4, 5}, 2, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {4}, 2, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4, 5}, {5}, 3, "relu");
+      place, abs_error, test_operator, {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "relu");
   TestElt<float16_t>(
-      place, abs_error, "add", {2, 3, 4, 5}, {3, 4, 5}, -1, "relu");
-  TestElt<float16_t>(place, abs_error, "add", {2, 3, 4}, {3, 4}, -1, "relu");
+      place, abs_error, test_operator, {2, 3, 4}, {2, 3, 4}, 0, "relu");
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4}, {2, 3}, 0, "relu");
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3}, {2}, 0, "relu");
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4, 5}, {3, 4}, 1, "relu");
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4}, {3, 4}, 1, "relu");
+  TestElt<float16_t>(place, abs_error, test_operator, {2, 3}, {3}, 1, "relu");
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4, 5}, {4, 5}, 2, "relu");
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4}, {4}, 2, "relu");
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4, 5}, {5}, 3, "relu");
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4, 5}, {3, 4, 5}, -1, "relu");
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {2, 3, 4}, {3, 4}, -1, "relu");
 }
 #endif
 
@@ -345,8 +362,14 @@ TEST(Elementwise, precision) {
 #endif
 #ifdef ENABLE_ARM_FP16
   Place place1(TARGET(kARM), PRECISION(kFP16));
-  TestFp16EltDims(place1, abs_error);
-  TestFp16EltFuseAct(place1, abs_error);
+  TestFp16EltDims(place1, abs_error, "add");
+  TestFp16EltFuseAct(place1, abs_error, "add");
+  TestFp16EltDims(place1, abs_error, "mul");
+  TestFp16EltFuseAct(place1, abs_error, "mul");
+  TestFp16EltDims(place1, abs_error, "sub");
+  TestFp16EltFuseAct(place1, abs_error, "sub");
+  TestFp16EltDims(place1, abs_error, "div");
+  TestFp16EltFuseAct(place1, abs_error, "div");
 #endif
   TestEltDims(place, abs_error);
   TestEltTypes(place, abs_error);
