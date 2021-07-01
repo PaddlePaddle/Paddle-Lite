@@ -41,6 +41,28 @@ __kernel void elementwise_add(__read_only image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
+__kernel void elementwise_add_n1h1w1(__read_only image2d_t input,
+                                     __read_only image2d_t bias,
+                                     __write_only image2d_t outputImage,
+                                     int h,
+                                     int w) {
+  int x = get_global_id(0);
+  int y = get_global_id(1);
+
+  int2 coords;
+  coords.x = x;
+  coords.y = y;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);
+
+  CL_DTYPE4 cur_bias =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(x / w, 0));
+  CL_DTYPE4 alpha;
+  CL_DTYPE4 output = activation_type4(in + cur_bias, alpha);
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
+}
+
 __kernel void channel_add(__read_only image2d_t input,
                           __read_only image2d_t bias,
                           __write_only image2d_t outputImage,
