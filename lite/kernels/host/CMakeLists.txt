@@ -19,6 +19,7 @@ add_kernel(lod_array_length_compute_host Host basic SRCS lod_array_length_comput
 add_kernel(unbind_compute_host Host basic SRCS unbind_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(argmax_compute_host Host basic SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(assign_value_compute_host Host basic SRCS assign_value_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(write_back_compute_host Host basic SRCS write_back_compute.cc DEPS ${lite_kernel_deps})
 
 # extra kernels
 add_kernel(reduce_all_compute_host Host extra SRCS reduce_all_compute.cc DEPS ${lite_kernel_deps} math_host)

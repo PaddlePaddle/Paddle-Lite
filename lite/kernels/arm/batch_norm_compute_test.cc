@@ -86,7 +86,7 @@ TEST(batch_norm_arm, retrive_op) {
 }
 
 TEST(batch_norm_arm, init) {
-  BatchNormCompute batch_norm;
+  BatchNormCompute<float, PRECISION(kFloat)> batch_norm;
   ASSERT_EQ(batch_norm.precision(), PRECISION(kFloat));
   ASSERT_EQ(batch_norm.target(), TARGET(kARM));
 }
@@ -170,7 +170,7 @@ TEST(batch_norm_arm, compute) {
                       variance_data[i] = static_cast<float>(i) * 2.08f + 1.5f;
                     }
                     // prepare kernel params and run
-                    BatchNormCompute batch_norm;
+                    BatchNormCompute<float, PRECISION(kFloat)> batch_norm;
                     std::unique_ptr<KernelContext> ctx(new KernelContext);
                     ctx->As<ARMContext>();
                     batch_norm.SetContext(std::move(ctx));
