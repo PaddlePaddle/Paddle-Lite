@@ -684,7 +684,60 @@ void act_hard_sigmoid<float>(const float* din,
                              const float slope,
                              const float offset,
                              int threads) {
-  for (int64_t i = 0; i < size; ++i) {
+  int cnt_4 = size >> 4;
+  int remain_4 = size & 15;
+
+  float32x4_t vzero_4 = vdupq_n_f32(0.f);
+  float32x4_t vone_4 = vdupq_n_f32(1.f);
+
+  float32x4_t vslope_4 = vdupq_n_f32(slope);
+  float32x4_t voffset_4 = vdupq_n_f32(offset);
+  for (int64_t i = 0; i < cnt_4; ++i) {
+    float32x4_t vr0 = vld1q_f32(din);
+    float32x4_t vr1 = vld1q_f32(din + 4);
+    float32x4_t vr2 = vld1q_f32(din + 8);
+    float32x4_t vr3 = vld1q_f32(din + 12);
+
+    float32x4_t vres0 = vmulq_f32(vr0, vslope_4);  // vr0 * vslope
+    float32x4_t vres1 = vmulq_f32(vr1, vslope_4);  // vr1 * vslope
+    float32x4_t vres2 = vmulq_f32(vr2, vslope_4);  // vr2 * vslope
+    float32x4_t vres3 = vmulq_f32(vr3, vslope_4);  // vr3 * vslope
+
+    vres0 = vaddq_f32(vres0, voffset_4);  // vres0 += offset
+    vres1 = vaddq_f32(vres1, voffset_4);  // vres1 += offset
+    vres2 = vaddq_f32(vres2, voffset_4);  // vres2 += offset
+    vres3 = vaddq_f32(vres3, voffset_4);  // vres3 += offset
+
+    uint32x4_t vm_gt0_0 = vcgtq_f32(vres0, vzero_4);  // vres0 > zero
+    uint32x4_t vm_gt0_1 = vcgtq_f32(vres1, vzero_4);  // vres1 > zero
+    uint32x4_t vm_gt0_2 = vcgtq_f32(vres2, vzero_4);  // vres2 > zero
+    uint32x4_t vm_gt0_3 = vcgtq_f32(vres3, vzero_4);  // vres3 > zero
+
+    uint32x4_t vm_lt1_0 = vcltq_f32(vres0, vone_4);  // vres0 < 1
+    uint32x4_t vm_lt1_1 = vcltq_f32(vres1, vone_4);  // vres1 < 1
+    uint32x4_t vm_lt1_2 = vcltq_f32(vres2, vone_4);  // vres2 < 1
+    uint32x4_t vm_lt1_3 = vcltq_f32(vres3, vone_4);  // vres3 < 1
+
+    float32x4_t vos0 =
+        vbslq_f32(vm_gt0_0, vres0, vzero_4);  // vos0 = vres0 > 0? vres0: 0
+    float32x4_t vos1 = vbslq_f32(vm_gt0_1, vres1, vzero_4);
+    float32x4_t vos2 = vbslq_f32(vm_gt0_2, vres2, vzero_4);
+    float32x4_t vos3 = vbslq_f32(vm_gt0_3, vres3, vzero_4);
+
+    vos0 = vbslq_f32(vm_lt1_0, vos0, vone_4);  // vos0 = vos0 < 1? vres0: 1
+    vos1 = vbslq_f32(vm_lt1_1, vos1, vone_4);
+    vos2 = vbslq_f32(vm_lt1_2, vos2, vone_4);
+    vos3 = vbslq_f32(vm_lt1_3, vos3, vone_4);
+
+    vst1q_f32(dout, vos0);
+    vst1q_f32(dout + 4, vos1);
+    vst1q_f32(dout + 8, vos2);
+    vst1q_f32(dout + 12, vos3);
+
+    dout += 16;
+    din += 16;
+  }
+  for (int64_t i = 0; i < remain_4; ++i) {
     dout[0] = din[0] * slope + offset;
     dout[0] = dout[0] < 1.0f ? dout[0] : 1.0f;
     dout[0] = dout[0] > 0.0f ? dout[0] : 0.0f;

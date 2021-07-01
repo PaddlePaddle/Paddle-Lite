@@ -67,7 +67,8 @@ class FloorCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~FloorCompute() = default;
 };
 
-class HardSigmoidCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType PType>
+class HardSigmoidCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::ActivationParam;
 

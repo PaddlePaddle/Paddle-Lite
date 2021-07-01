@@ -359,6 +359,132 @@ void ElementwiseAddActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
     LOG(FATAL) << "fp16 unsupported Activation type: " << param.act_type;
   }
 }
+
+template <>
+void ElementwiseMulCompute<float16_t, PRECISION(kFP16)>::Run() {
+  using NeonConfig = arm_math::MergeConfig<
+      arm_math::MulConfig<float16_t>,
+      arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, float16_t>>;
+
+  elementwise_compute_template<operators::ElementwiseParam,
+                               float16_t,
+                               OprandSwapable::YES,
+                               NeonConfig>(
+      this,
+
+      lite::arm::math::fp16::elementwise_mul_broadcast<float16_t>,
+      lite::arm::math::fp16::elementwise_mul<float16_t>,
+      paddle::lite::kernels::host::naive_mul<float16_t>);
+}
+
+template <>
+void ElementwiseSubActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
+  // auto& param = Param<operators::FusionElementwiseActivationParam>();
+  auto& param =
+      this->template Param<operators::FusionElementwiseActivationParam>();
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float16_t,
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
+        this,
+        lite::arm::math::fp16::elementwise_sub_relu_broadcast<float16_t>,
+        lite::arm::math::fp16::elementwise_sub_relu<float16_t>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float16_t,
+            paddle::lite::kernels::host::naive_sub<float16_t>,
+            paddle::lite::kernels::host::naive_relu<float16_t>>);
+  }
+  if (!act_supported) {
+    LOG(FATAL) << "fp16 unsupported Activation type: " << param.act_type;
+  }
+}
+
+template <>
+void ElementwiseSubCompute<float16_t, PRECISION(kFP16)>::Run() {
+  using NeonConfig = arm_math::MergeConfig<
+      arm_math::SubConfig<float16_t>,
+      arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, float16_t>>;
+
+  elementwise_compute_template<operators::ElementwiseParam,
+                               float16_t,
+                               OprandSwapable::YES,
+                               NeonConfig>(
+      this,
+
+      lite::arm::math::fp16::elementwise_sub_broadcast<float16_t>,
+      lite::arm::math::fp16::elementwise_sub<float16_t>,
+      paddle::lite::kernels::host::naive_sub<float16_t>);
+}
+
+template <>
+void ElementwiseDivActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
+  // auto& param = Param<operators::FusionElementwiseActivationParam>();
+  auto& param =
+      this->template Param<operators::FusionElementwiseActivationParam>();
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float16_t,
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
+        this,
+        lite::arm::math::fp16::elementwise_div_relu_broadcast<float16_t>,
+        lite::arm::math::fp16::elementwise_div_relu<float16_t>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float16_t,
+            paddle::lite::kernels::host::naive_div<float16_t>,
+            paddle::lite::kernels::host::naive_relu<float16_t>>);
+  }
+  if (!act_supported) {
+    LOG(FATAL) << "fp16 unsupported Activation type: " << param.act_type;
+  }
+}
+
+template <>
+void ElementwiseDivCompute<float16_t, PRECISION(kFP16)>::Run() {
+  using NeonConfig = arm_math::MergeConfig<
+      arm_math::DivConfig<float16_t>,
+      arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, float16_t>>;
+
+  elementwise_compute_template<operators::ElementwiseParam,
+                               float16_t,
+                               OprandSwapable::YES,
+                               NeonConfig>(
+      this,
+
+      lite::arm::math::fp16::elementwise_div_broadcast<float16_t>,
+      lite::arm::math::fp16::elementwise_div<float16_t>,
+      paddle::lite::kernels::host::naive_div<float16_t>);
+}
+
+template <>
+void ElementwiseMulActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
+  // auto& param = Param<operators::FusionElementwiseActivationParam>();
+  auto& param =
+      this->template Param<operators::FusionElementwiseActivationParam>();
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float16_t,
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
+        this,
+        lite::arm::math::fp16::elementwise_mul_relu_broadcast<float16_t>,
+        lite::arm::math::fp16::elementwise_mul_relu<float16_t>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float16_t,
+            paddle::lite::kernels::host::naive_mul<float16_t>,
+            paddle::lite::kernels::host::naive_relu<float16_t>>);
+  }
+  if (!act_supported) {
+    LOG(FATAL) << "fp16 unsupported Activation type: " << param.act_type;
+  }
+}
 #endif
 
 template <typename T, PrecisionType PType>
@@ -373,8 +499,10 @@ void ElementwiseSubCompute<T, PType>::Run() {
       paddle::lite::kernels::host::naive_sub<T>);
 }
 
-void ElementwiseSubActivationCompute::Run() {
-  auto& param = Param<operators::FusionElementwiseActivationParam>();
+template <typename T, PrecisionType PType>
+void ElementwiseSubActivationCompute<T, PType>::Run() {
+  auto& param =
+      this->template Param<operators::FusionElementwiseActivationParam>();
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
@@ -521,8 +649,10 @@ void ElementwiseFloorDivCompute<T, PType>::Run() {
       paddle::lite::kernels::host::naive_floor_div<T>);
 }
 
-void ElementwiseDivActivationCompute::Run() {
-  auto& param = Param<operators::FusionElementwiseActivationParam>();
+template <typename T, PrecisionType PType>
+void ElementwiseDivActivationCompute<T, PType>::Run() {
+  auto& param =
+      this->template Param<operators::FusionElementwiseActivationParam>();
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
@@ -595,6 +725,75 @@ REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
+
+using elementwise_mul_fp16_t =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<float16_t,
+                                                      PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kFP16, kNCHW, elementwise_mul_fp16_t, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+using elementwise_mul_fp16_t_act = paddle::lite::kernels::arm::
+    ElementwiseMulActivationCompute<float16_t, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(fusion_elementwise_mul_activation,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     elementwise_mul_fp16_t_act,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+using elementwise_sub_fp16_t =
+    paddle::lite::kernels::arm::ElementwiseSubCompute<float16_t,
+                                                      PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(
+    elementwise_sub, kARM, kFP16, kNCHW, elementwise_sub_fp16_t, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+using elementwise_sub_fp16_t_act = paddle::lite::kernels::arm::
+    ElementwiseSubActivationCompute<float16_t, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(fusion_elementwise_sub_activation,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     elementwise_sub_fp16_t_act,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+using elementwise_div_fp16_t =
+    paddle::lite::kernels::arm::ElementwiseDivCompute<float16_t,
+                                                      PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(
+    elementwise_div, kARM, kFP16, kNCHW, elementwise_div_fp16_t, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+using elementwise_div_fp16_t_act = paddle::lite::kernels::arm::
+    ElementwiseDivActivationCompute<float16_t, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(fusion_elementwise_div_activation,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     elementwise_div_fp16_t_act,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
 #endif  // ENABLE_ARM_FP16
 
 using elementwise_add_float_t =
@@ -647,6 +846,47 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
+
+using elementwise_sub_int32_f =
+    paddle::lite::kernels::arm::ElementwiseSubCompute<int32_t,
+                                                      PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int32_f, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using elementwise_sub_int64_f =
+    paddle::lite::kernels::arm::ElementwiseSubCompute<int64_t,
+                                                      PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int64_f, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+
+// float kernel has higher priority
+using elementwise_mul_int32_f =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<int32_t,
+                                                      PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_int32_f, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using elementwise_mul_int64_f =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<int64_t,
+                                                      PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_int64_f, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
 #endif  // LITE_BUILD_EXTRA
 
 using elementwise_add_float_t_act = paddle::lite::kernels::arm::
@@ -681,36 +921,14 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
-#ifdef LITE_BUILD_EXTRA
-// float kernel has higher priority
-using elementwise_sub_int32_f =
-    paddle::lite::kernels::arm::ElementwiseSubCompute<int32_t,
-                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int32_f, int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();
-
-using elementwise_sub_int64_f =
-    paddle::lite::kernels::arm::ElementwiseSubCompute<int64_t,
-                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    elementwise_sub, kARM, kFloat, kNCHW, elementwise_sub_int64_f, int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .Finalize();
-#endif  // LITE_BUILD_EXTRA
-
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_sub_activation,
-    kARM,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::arm::ElementwiseSubActivationCompute,
-    def)
+using elementwise_sub_act_fp32 = paddle::lite::kernels::arm::
+    ElementwiseSubActivationCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(fusion_elementwise_sub_activation,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     elementwise_sub_act_fp32,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -744,29 +962,6 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
-
-#ifdef LITE_BUILD_EXTRA
-// float kernel has higher priority
-using elementwise_mul_int32_f =
-    paddle::lite::kernels::arm::ElementwiseMulCompute<int32_t,
-                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_int32_f, int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();
-
-using elementwise_mul_int64_f =
-    paddle::lite::kernels::arm::ElementwiseMulCompute<int64_t,
-                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    elementwise_mul, kARM, kFloat, kNCHW, elementwise_mul_int64_f, int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .Finalize();
-#endif  // LITE_BUILD_EXTRA
 
 using fusion_elementwise_mul_activation_float_t = paddle::lite::kernels::arm::
     ElementwiseMulActivationCompute<float, PRECISION(kFloat)>;
@@ -871,13 +1066,14 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_div_activation,
-    kARM,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::arm::ElementwiseDivActivationCompute,
-    def)
+using elementwise_div_act_fp32 = paddle::lite::kernels::arm::
+    ElementwiseDivActivationCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(fusion_elementwise_div_activation,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     elementwise_div_act_fp32,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})

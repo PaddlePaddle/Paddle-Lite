@@ -230,26 +230,34 @@ class Arena {
         success = success && CompareTensor(out, var);
       }
     }
-    LOG(INFO) << "done";
     return success;
   }
 
   void TestPerformance(int times = 100) {
+    // warmup
+    for (int i = 0; i < 10; i++) {
+      tester_->RunInstruction();
+    }
+    // warmup end
     auto timer = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < times; i++) {
       tester_->RunInstruction();
     }
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::high_resolution_clock::now() - timer);
 
     timer = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < times; i++) {
       tester_->RunBaseline(tester_->baseline_scope());
     }
-    auto duration_basic = std::chrono::duration_cast<std::chrono::milliseconds>(
+    auto duration_basic = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::high_resolution_clock::now() - timer);
-    LOG(INFO) << "average lite duration: " << duration.count() << " ms";
-    LOG(INFO) << "average basic duration: " << duration_basic.count() << " ms";
+    LOG(INFO) << "average lite duration: "
+              << duration.count() / ((double)times * 1000000)  // NOLINT
+              << " ms";
+    LOG(INFO) << "average basic duration: "
+              << duration_basic.count() / ((double)times * 1000000)  // NOLINT
+              << " ms";
     LOG(INFO) << "speed up ratio: lite_speed / basic_speed: "
               << static_cast<float>(duration_basic.count()) / duration.count();
   }
