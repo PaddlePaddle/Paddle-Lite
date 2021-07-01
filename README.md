@@ -117,9 +117,9 @@ Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并�
 
 
 ##  交流与反馈
-* 欢迎您通过[Github Issues](https://github.com/PaddlePaddle/Paddle-Lite/issues)来提交问题、报告与建议
-* 技术交流QQ群: 一群696965088（已满） ；二群，959308808
 * AIStuio实训平台端测部署系列课程：https://aistudio.baidu.com/aistudio/course/introduce/22690
+* 欢迎您通过[Github Issues](https://github.com/PaddlePaddle/Paddle-Lite/issues)来提交问题、报告与建议
+* 技术交流微信群：添加wechat id:baidupaddle，通过后回复关键词「端侧部署」，系统自动邀请加入；技术群QQ群: 一群696965088（已满） ；二群，959308808
 
 <p align="center"><img width="200" height="200"  src="https://user-images.githubusercontent.com/45189361/64117959-1969de80-cdc9-11e9-84f7-e1c2849a004c.jpeg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="200" height="200" margin="500" src="https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/images/qq-group-chat.png"/></p>
 <p align="center">  &#8194;&#8194;&#8194;微信公众号&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;官方技术交流QQ群</p>
