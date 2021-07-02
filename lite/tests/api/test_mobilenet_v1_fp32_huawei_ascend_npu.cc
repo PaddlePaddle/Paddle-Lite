@@ -29,7 +29,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(InceptionV4, test_inception_v4_fp32_huawei_ascend_npu) {
+TEST(MobileNetV1, test_mobilenet_v1_fp32_huawei_ascend_npu) {
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
   // Use the full api with CxxConfig to generate the optimized model
   lite_api::CxxConfig cxx_config;
@@ -111,7 +111,7 @@ TEST(InceptionV4, test_inception_v4_fp32_huawei_ascend_npu) {
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GE(out_accuracy, 0.65f);
+  ASSERT_GE(out_accuracy, 0.57f);
 }
 
 }  // namespace lite
