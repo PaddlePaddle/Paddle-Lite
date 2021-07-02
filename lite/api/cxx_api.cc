@@ -468,16 +468,37 @@ void Predictor::CheckPaddleOpVersions(
     }
   }
 }
-// #ifdef LITE_WITH_TRAIN
-// void Predictor::FeedVars(const std::vector<framework::Tensor> &tensors) {
-//   auto var = scope_->FindVar("feed");
-//   auto &feed_list = *(var->GetMutable<std::vector<lite::Tensor>>());
-//   feed_list.resize(tensors.size());
 
-//   for (size_t i = 0; i < tensors.size(); ++i)
-//     feed_list[i].ShareDataWith(tensors[i]);
-// }
-// #endif
+bool Predictor::TryShrinkMemory() {
+#ifdef LITE_WITH_ARM
+  // Clear ArmL3Cache
+  lite::DeviceInfo::Global().ClearArmL3Cache();
+#endif
+  const std::vector<std::string> &local_var_names =
+      program_->exec_scope()->LocalVarNames();
+  for (auto &var_name : local_var_names) {
+    Variable *var = program_->exec_scope()->FindLocalVar(var_name);
+    if (var->IsType<lite::Tensor>()) {
+      // Clear unpersistable tensors
+      auto *tensor = program_->exec_scope()->FindMutableTensor(var_name);
+      if (!tensor->persistable()) {
+        tensor->clear();
+      }
+    } else if (var->IsType<std::vector<Tensor>>()) {
+      // Clear unpersistable tensor vector
+      auto *tensor_array =
+          program_->exec_scope()->FindMutableTensorList(var_name);
+      for (auto &tensor : *tensor_array) {
+        if (!tensor.persistable()) {
+          tensor.clear();
+        }
+      }
+    } else {
+      continue;
+    }
+  }
+  return true;
+}
 
 void Predictor::CheckInputValid() {
   for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
