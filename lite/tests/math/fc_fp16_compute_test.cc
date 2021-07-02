@@ -136,8 +136,8 @@ void test_fc_fp16(const DDim in_dim,
       x_fp32.set_precision(PRECISION(kFloat));
       auto a_ptr = x_fp32.mutable_data<float>();
       auto b_ptr = param.input->mutable_data<float16_t>();
-      fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.x->numel());
-      // fill_data_const<float16_t>(b_ptr, -1.f, param.input->numel());
+      // fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.x->numel());
+      fill_data_const<float16_t>(b_ptr, -1.f, param.input->numel());
       fp16_to_float(
           param.input->data<float16_t>(), a_ptr, param.input->numel());
       auto din = param.input->data<float16_t>();
