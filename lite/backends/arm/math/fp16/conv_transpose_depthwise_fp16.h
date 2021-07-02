@@ -14,13 +14,14 @@
 
 #pragma once
 #include "lite/core/context.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
-
+typedef __fp16 float16_t;
 template <typename Dtype>
 void conv_transpose_depthwise_s1_fp16(const Dtype* dst,
                                       const Dtype* weights,

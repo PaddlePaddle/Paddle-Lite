@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/arm/math/fp16/fill_bias_act_fp16.h"
+#include <arm_neon.h>
 #include <algorithm>
 
 namespace paddle {
@@ -83,7 +84,7 @@ namespace fp16 {
   "ldr q0, [%[din_ptr]], #16        \n"                  \
   "bne  3b                          \n"                  \
   "2:                               \n"                  \
-  "sub %[din_ptr], %[din_ptr], #16  \n"                  \
+  "sub %[din_ptr], %[din_ptr], #16  \n"
 #else
 #endif
 // clang-format on
@@ -236,6 +237,17 @@ void fill_bias_act_fp16<float16_t>(
     }
   }
 }
+#ifdef __aarch64__
+#undef FILL_BIAS_CNT0
+#undef FILL_RELU_CNT0
+#undef FILL_RELU6_CNT0
+#undef FILL_LEAKY_RELU_CNT0
+#undef FILL_STORE_CNT0
+#undef FILL_RELU_CNT1
+#undef FILL_RELU6_CNT1
+#undef FILL_LEAKY_RELU_CNT1
+#undef FILL_STORE_CNT1
+#endif
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

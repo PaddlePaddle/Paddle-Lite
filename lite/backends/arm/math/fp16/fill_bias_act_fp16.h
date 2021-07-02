@@ -22,6 +22,7 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
+typedef __fp16 float16_t;
 /**
  *  * \brief neon implementation to add bias and activation(relu, relu6,
  * leakyrelu)

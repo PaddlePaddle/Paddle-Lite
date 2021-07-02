@@ -19,48 +19,56 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #ifdef ENABLE_ARM_FP16
-#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+#define INIT_PARAM                                   \
+  auto& param = this->Param<param_t>();              \
+  auto x_dims = param.x->dims();                     \
+  auto w_dims = param.filter->dims();                \
+  auto o_dims = param.output->dims();                \
+  int win = x_dims[3];                               \
+  int hin = x_dims[2];                               \
+  int chin = x_dims[1];                              \
+  int num = x_dims[0];                               \
+  int wout = o_dims[3];                              \
+  int hout = o_dims[2];                              \
+  int chout = o_dims[1];                             \
+  int kw = w_dims[3];                                \
+  int kh = w_dims[2];                                \
+  int group = param.groups;                          \
+  /* deconv weights layout: chin * chout * kh * kw*/ \
+  int m = chout * kw * kh / group;                   \
+  int n = hin * win;                                 \
+  int k = chin / group;
+
+#define DEPTHWISE_PARAM                                                   \
+  auto dilations = *param.dilations;                                      \
+  bool ks_equal = (param.strides[0] == param.strides[1]) && (kw == kh);   \
+  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);          \
+  depthwise_ =                                                            \
+      (param.groups == chin && chin == chout && ks_equal && no_dilation); \
+  bool depth_wise_s1 =                                                    \
+      depthwise_ && (param.strides[0] == 1 && param.strides[1] == 1);     \
+  bool depth_wise_s2 =                                                    \
+      depthwise_ && (param.strides[0] == 2 && param.strides[1] == 2);
+
+#define DEPTHWISE_FUNCS                                                    \
+  din_batch, weights, chout, hout, wout, kh, kw, paddings[0], paddings[1], \
+      paddings[2], paddings[3], dilations[0], dilations[1], dout_batch, &ctx
+
 template <>
 void Conv2DTransposeCompute<PRECISION(kFloat),
                             PRECISION(kFloat)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-  int win = x_dims[3];  // nchw
-  int hin = x_dims[2];
-  int chin = x_dims[1];
-  int num = x_dims[0];
-  int wout = o_dims[3];
-  int hout = o_dims[2];
-  int chout = o_dims[1];
-  int kw = w_dims[3];  // oihw
-  int kh = w_dims[2];
-  int group = param.groups;
-
-  // deconv weights layout: chin * chout * kh * kw
-  int m = chout * kw * kh / group;
-  int n = hin * win;
-  int k = chin / group;
-
+  INIT_PARAM
   workspace_size_ = group * m * n * sizeof(float);
 
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto dilations = *param.dilations;
-  bool ks_equal = (param.strides[0] == param.strides[1]) && (kw == kh);
-  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
-  depthwise_ =
-      (param.groups == chin && chin == chout && ks_equal && no_dilation);
-  bool depth_wise_s1 =
-      depthwise_ && (param.strides[0] == 1 && param.strides[1] == 1);
-  bool depth_wise_s2 =
-      depthwise_ && (param.strides[0] == 2 && param.strides[1] == 2);
+  DEPTHWISE_PARAM
   if (!depth_wise_s1 && !depth_wise_s2) {
     lite::Tensor tmp_weights;
     lite::arm::math::prepackA(
@@ -74,25 +82,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat),
 template <>
 void Conv2DTransposeCompute<PRECISION(kInt8),
                             PRECISION(kFloat)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-  int win = x_dims[3];  // nchw
-  int hin = x_dims[2];
-  int chin = x_dims[1];
-  int num = x_dims[0];
-  int wout = o_dims[3];
-  int hout = o_dims[2];
-  int chout = o_dims[1];
-  int kw = w_dims[3];  // oihw
-  int kh = w_dims[2];
-  int group = param.groups;
-
-  // deconv weights layout: chin * chout * kh * kw
-  int m = chout * kw * kh / group;
-  int n = hin * win;
-  int k = chin / group;
+  INIT_PARAM
 
   workspace_size_ = 2 * group * m * n * sizeof(int32_t);
 
@@ -123,25 +113,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
 template <>
 void Conv2DTransposeCompute<PRECISION(kInt8),
                             PRECISION(kInt8)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-  int win = x_dims[3];  // nchw
-  int hin = x_dims[2];
-  int chin = x_dims[1];
-  int num = x_dims[0];
-  int wout = o_dims[3];
-  int hout = o_dims[2];
-  int chout = o_dims[1];
-  int kw = w_dims[3];  // oihw
-  int kh = w_dims[2];
-  int group = param.groups;
-
-  // deconv weights layout: chin * chout * kh * kw
-  int m = chout * kw * kh / group;
-  int n = hin * win;
-  int k = chin / group;
+  INIT_PARAM
 
   // col_out(m*n*group) + gemm_out(m*n*group)
   workspace_size_ = 2 * group * m * n * sizeof(int32_t);
@@ -193,28 +165,10 @@ template <>
 void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
-  auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
-  auto o_dims = param.output->dims();
-  auto w_dims = param.filter->dims();
-  int num = x_dims[0];
-  int chin = x_dims[1];
-  int hin = x_dims[2];
-  int win = x_dims[3];
-  int chout = o_dims[1];
-  int hout = o_dims[2];
-  int wout = o_dims[3];
-  int kw = w_dims[3];  // oihw
-  int kh = w_dims[2];
-  int group = param.groups;
+  INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
-
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
-
-  int m = chout * kw * kh / group;
-  int n = hin * win;
-  int k = chin / group;
 
   bool pads_equal =
       (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
@@ -249,41 +203,13 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     const float* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
     if (depthwise_s1) {
-      lite::arm::math::conv_transpose_depthwise_s1<float>(din_batch,
-                                                          weights,
-                                                          chout,
-                                                          hout,
-                                                          wout,
-                                                          kh,
-                                                          kw,
-                                                          paddings[0],
-                                                          paddings[1],
-                                                          paddings[2],
-                                                          paddings[3],
-                                                          dilations[0],
-                                                          dilations[1],
-                                                          dout_batch,
-                                                          &ctx);
+      lite::arm::math::conv_transpose_depthwise_s1<float>(DEPTHWISE_FUNCS);
       if (bias_act) {
         lite::arm::math::fill_bias_act<float>(
             dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
       }
     } else if (depthwise_s2) {
-      lite::arm::math::conv_transpose_depthwise_s2<float>(din_batch,
-                                                          weights,
-                                                          chout,
-                                                          hout,
-                                                          wout,
-                                                          kh,
-                                                          kw,
-                                                          paddings[0],
-                                                          paddings[1],
-                                                          paddings[2],
-                                                          paddings[3],
-                                                          dilations[0],
-                                                          dilations[1],
-                                                          dout_batch,
-                                                          &ctx);
+      lite::arm::math::conv_transpose_depthwise_s2<float>(DEPTHWISE_FUNCS);
       if (bias_act) {
         lite::arm::math::fill_bias_act<float>(
             dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
@@ -352,28 +278,10 @@ template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
-  auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
-  auto o_dims = param.output->dims();
-  auto w_dims = param.filter->dims();
-  int num = x_dims[0];
-  int chin = x_dims[1];
-  int hin = x_dims[2];
-  int win = x_dims[3];
-  int chout = o_dims[1];
-  int hout = o_dims[2];
-  int wout = o_dims[3];
-  int kw = w_dims[3];  // oihw
-  int kh = w_dims[2];
-  int group = param.groups;
+  INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
-
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
-
-  int m = chout * kw * kh / group;
-  int n = hin * win;
-  int k = chin / group;
 
   bool pads_equal =
       (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
@@ -469,28 +377,10 @@ template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
-  auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
-  auto o_dims = param.output->dims();
-  auto w_dims = param.filter->dims();
-  int num = x_dims[0];
-  int chin = x_dims[1];
-  int hin = x_dims[2];
-  int win = x_dims[3];
-  int chout = o_dims[1];
-  int hout = o_dims[2];
-  int wout = o_dims[3];
-  int kw = w_dims[3];  // oihw
-  int kh = w_dims[2];
-  int group = param.groups;
+  INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
-
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
-
-  int m = chout * kw * kh / group;
-  int n = hin * win;
-  int k = chin / group;
 
   bool pads_equal =
       (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
@@ -584,38 +474,11 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 template <>
 void Conv2DTransposeCompute<PRECISION(kFP16),
                             PRECISION(kFP16)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-  int win = x_dims[3];  // nchw
-  int hin = x_dims[2];
-  int chin = x_dims[1];
-  int num = x_dims[0];
-  int wout = o_dims[3];
-  int hout = o_dims[2];
-  int chout = o_dims[1];
-  int kw = w_dims[3];  // oihw
-  int kh = w_dims[2];
-  int group = param.groups;
-
-  // deconv weights layout: chin * chout * kh * kw
-  int m = chout * kw * kh / group;
-  int n = hin * win;
-  int k = chin / group;
+  INIT_PARAM
 
   workspace_size_ = group * m * n * sizeof(float16_t);
-
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto dilations = *param.dilations;
-  bool ks_equal = (param.strides[0] == param.strides[1]) && (kw == kh);
-  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
-  depthwise_ =
-      (param.groups == chin && chin == chout && ks_equal && no_dilation);
-  bool depth_wise_s1 =
-      depthwise_ && (param.strides[0] == 1 && param.strides[1] == 1);
-  bool depth_wise_s2 =
-      depthwise_ && (param.strides[0] == 2 && param.strides[1] == 2);
+  DEPTHWISE_PARAM
   if (!depth_wise_s1 && !depth_wise_s2) {
     lite::Tensor tmp_weights;
     lite::arm::math::prepackA(
@@ -632,28 +495,10 @@ template <>
 void Conv2DTransposeCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
-  auto& param = this->Param<param_t>();
-  auto x_dims = param.x->dims();
-  auto o_dims = param.output->dims();
-  auto w_dims = param.filter->dims();
-  int num = x_dims[0];
-  int chin = x_dims[1];
-  int hin = x_dims[2];
-  int win = x_dims[3];
-  int chout = o_dims[1];
-  int hout = o_dims[2];
-  int wout = o_dims[3];
-  int kw = w_dims[3];  // oihw
-  int kh = w_dims[2];
-  int group = param.groups;
+  INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
-
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
-
-  int m = chout * kw * kh / group;
-  int n = hin * win;
-  int k = chin / group;
 
   bool pads_equal =
       (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
@@ -685,46 +530,18 @@ void Conv2DTransposeCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
       flag_bias ? static_cast<const float16_t*>(param.bias->data<float16_t>())
                 : nullptr;
   for (int i = 0; i < num; i++) {
-    const float* din_batch = din + i * chin * hin * win;
-    float* dout_batch = dout + i * chout * hout * wout;
+    const float16_t* din_batch = din + i * chin * hin * win;
+    float16_t* dout_batch = dout + i * chout * hout * wout;
     if (depthwise_s1) {
       lite::arm::math::fp16::conv_transpose_depthwise_s1_fp16<float16_t>(
-          din_batch,
-          weights,
-          chout,
-          hout,
-          wout,
-          kh,
-          kw,
-          paddings[0],
-          paddings[1],
-          paddings[2],
-          paddings[3],
-          dilations[0],
-          dilations[1],
-          dout_batch,
-          &ctx);
+          DEPTHWISE_FUNCS);
       if (bias_act) {
         lite::arm::math::fp16::fill_bias_act_fp16<float16_t>(
             dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
       }
     } else if (depthwise_s2) {
       lite::arm::math::fp16::conv_transpose_depthwise_s2_fp16<float16_t>(
-          din_batch,
-          weights,
-          chout,
-          hout,
-          wout,
-          kh,
-          kw,
-          paddings[0],
-          paddings[1],
-          paddings[2],
-          paddings[3],
-          dilations[0],
-          dilations[1],
-          dout_batch,
-          &ctx);
+          DEPTHWISE_FUNCS);
       if (bias_act) {
         lite::arm::math::fp16::fill_bias_act_fp16<float16_t>(
             dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
@@ -759,21 +576,21 @@ void Conv2DTransposeCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                                  &ctx);
       }
       if (!flag_1x1s1p1) {
-        lite::arm::math::col2im<float16_t>(col_data,
-                                           chout,
-                                           hout,
-                                           wout,
-                                           kh,
-                                           kw,
-                                           paddings[0],
-                                           paddings[1],
-                                           paddings[2],
-                                           paddings[3],
-                                           param.strides[0],
-                                           param.strides[1],
-                                           dilations[0],
-                                           dilations[1],
-                                           dout_batch);
+        lite::arm::math::fp16::col2im<float16_t>(col_data,
+                                                 chout,
+                                                 hout,
+                                                 wout,
+                                                 kh,
+                                                 kw,
+                                                 paddings[0],
+                                                 paddings[1],
+                                                 paddings[2],
+                                                 paddings[3],
+                                                 param.strides[0],
+                                                 param.strides[1],
+                                                 dilations[0],
+                                                 dilations[1],
+                                                 dout_batch);
       }
       if (flag_bias) {
         act_param.has_active = has_act;
@@ -789,6 +606,9 @@ void Conv2DTransposeCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   }
 }
 #endif
+#undef DEPTHWISE_FUNCS
+#undef DEPTHWISE_PARAM
+#undef INIT_PARAM
 
 }  // namespace arm
 }  // namespace kernels
@@ -810,7 +630,7 @@ typedef paddle::lite::kernels::arm::Conv2DTransposeCompute<PRECISION(kFP16),
                                                            PRECISION(kFP16)>
     ConvTranFp16;
 
-REGISTER_LITE_KERNEL(conv2d_transpose, kARM, kFloat, kNCHW, ConvTranFp16, def)
+REGISTER_LITE_KERNEL(conv2d_transpose, kARM, kFP16, kNCHW, ConvTranFp16, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Filter",
@@ -821,6 +641,7 @@ REGISTER_LITE_KERNEL(conv2d_transpose, kARM, kFloat, kNCHW, ConvTranFp16, def)
     .Finalize();
 
 #endif  // ENABLE_ARM_FP16
+
 REGISTER_LITE_KERNEL(conv2d_transpose, kARM, kFloat, kNCHW, ConvTransFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})

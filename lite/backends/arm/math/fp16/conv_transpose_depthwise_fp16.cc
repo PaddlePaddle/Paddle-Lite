@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/backends/arm/math/fp16/conv_transpose_depthwise_fp16.h"
+#include <arm_neon.h>
+
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -78,11 +80,16 @@ void conv_transpose_depthwise_s1_fp16<float16_t>(const float16_t* dst,
           for (; i + 7 < output_w; i += 8, iw += 8) {
             int dst_offset = dst_z + dst_y + i;
             const float16_t* dst_addr = dst + dst_offset;
-            const int16_t iw_data[8] = {
+            int iw_data_s32[8] = {
                 iw, iw + 1, iw + 2, iw + 3, iw + 4, iw + 5, iw + 6, iw + 7};
+
+            int16_t iw_data_s16[8] = {};
+            for (int k = 0; k < 8; k++) {
+              iw_data_s16[k] = static_cast<int16_t>(iw_data_s32[k]);
+            }
             uint16x8_t boundray_x = vandq_u16(
-                vcgeq_s16(vld1q_s16(iw_data), vdupq_n_s16(0)),
-                vcltq_s16(vld1q_s16(iw_data), vdupq_n_s16(width_s16)));
+                vcgeq_s16(vld1q_s16(iw_data_s16), vdupq_n_s16(0)),
+                vcltq_s16(vld1q_s16(iw_data_s16), vdupq_n_s16(width_s16)));
 
             float16x8_t src_v0 = vfmaq_f16(
                 vld1q_f16(src_addr_h0 + iw),
@@ -112,11 +119,15 @@ void conv_transpose_depthwise_s1_fp16<float16_t>(const float16_t* dst,
           }
           for (; i + 3 < output_w; i += 4, iw += 4) {
             int dst_offset = dst_z + dst_y + i;
-            const float* dst_addr = dst + dst_offset;
-            const int16_t iw_data[4] = {iw, iw + 1, iw + 2, iw + 3};
-            uint16x4_t boundray_x =
-                vand_u16(vcge_s16(vld1_s16(iw_data), vdup_n_s16(0)),
-                         vclt_s16(vld1_s16(iw_data), vdup_n_s16(width_s16)));
+            const float16_t* dst_addr = dst + dst_offset;
+            int iw_data_s32[4] = {iw, iw + 1, iw + 2, iw + 3};
+            int16_t iw_data_s16[4] = {};
+            for (int k = 0; k < 4; k++) {
+              iw_data_s16[k] = static_cast<int16_t>(iw_data_s32[k]);
+            }
+            uint16x4_t boundray_x = vand_u16(
+                vcge_s16(vld1_s16(iw_data_s16), vdup_n_s16(0)),
+                vclt_s16(vld1_s16(iw_data_s16), vdup_n_s16(width_s16)));
             float16x4_t src_v0 = vfma_f16(
                 vld1_f16(src_addr_h0 + iw),
                 vld1_f16(dst_addr),
@@ -128,13 +139,11 @@ void conv_transpose_depthwise_s1_fp16<float16_t>(const float16_t* dst,
             float16x4_t src_v2 = vfma_f16(
                 vld1_f16(src_addr_h2 + iw),
                 vld1_f16(dst_addr + output_w * 2),
-                vbsl_f16(
-                    boundray_x0, vld1_dup_f16(weight_addr), vdup_n_f16(0)));
+                vbsl_f16(boundray_x, vld1_dup_f16(weight_addr), vdup_n_f16(0)));
             float16x4_t src_v3 = vfma_f16(
                 vld1_f16(src_addr_h3 + iw),
                 vld1_f16(dst_addr + output_w * 3),
-                vbsl_f16(
-                    boundray_x0, vld1_dup_f16(weight_addr), vdup_n_f16(0)));
+                vbsl_f16(boundray_x, vld1_dup_f16(weight_addr), vdup_n_f16(0)));
             vst1_f16(src_addr_h0 + iw, src_v0);
             vst1_f16(src_addr_h1 + iw, src_v1);
             vst1_f16(src_addr_h2 + iw, src_v2);
@@ -222,11 +231,16 @@ void conv_transpose_depthwise_s2_fp16<float16_t>(const float16_t* dst,
           for (; i + 7 < output_w; i += 8, iw += 16) {
             int dst_offset = dst_z + dst_y + i;
             const float16_t* dst_addr = dst + dst_offset;
-            const int16_t iw_data[8] = {
+            int iw_data_s32[8] = {
                 iw, iw + 2, iw + 4, iw + 6, iw + 8, iw + 10, iw + 12, iw + 14};
+
+            int16_t iw_data_s16[8] = {};
+            for (int k = 0; k < 8; k++) {
+              iw_data_s16[k] = static_cast<int16_t>(iw_data_s32[k]);
+            }
             uint16x8_t boundray_x = vandq_u16(
-                vcgeq_s16(vld1q_s16(iw_data), vdupq_n_s16(0)),
-                vcltq_s16(vld1q_s16(iw_data), vdupq_n_s16(width_s16)));
+                vcgeq_s16(vld1q_s16(iw_data_s16), vdupq_n_s16(0)),
+                vcltq_s16(vld1q_s16(iw_data_s16), vdupq_n_s16(width_s16)));
             float16x8x2_t src_vv0 = vld2q_f16(src_addr_h0 + iw);
             src_vv0.val[0] = vfmaq_f16(
                 src_vv0.val[0],
@@ -251,7 +265,6 @@ void conv_transpose_depthwise_s2_fp16<float16_t>(const float16_t* dst,
                 vld1q_f16(dst_addr + output_w * 3),
                 vbslq_f16(
                     boundray_x, vld1q_dup_f16(weight_addr), vdupq_n_f16(0)));
-            float32x4x2_t src_vv7 = vld2q_f32(src_addr_h3 + iw + 8);
             vst2q_f16(src_addr_h0 + iw, src_vv0);
             vst2q_f16(src_addr_h1 + iw, src_vv2);
             vst2q_f16(src_addr_h2 + iw, src_vv4);
@@ -259,11 +272,15 @@ void conv_transpose_depthwise_s2_fp16<float16_t>(const float16_t* dst,
           }
           for (; i + 3 < output_w; i += 4, iw += 8) {
             int dst_offset = dst_z + dst_y + i;
-            const float* dst_addr = dst + dst_offset;
-            const int16_t iw_data[4] = {iw, iw + 2, iw + 4, iw + 6};
-            uint16x4_t boundray_x0 =
-                vand_u16(vcge_s16(vld1_s16(iw_data), vdup_n_s16(0)),
-                         vclt_s16(vld1_s16(iw_data), vdup_n_s16(width_s16)));
+            const float16_t* dst_addr = dst + dst_offset;
+            int iw_data_s32[4] = {iw, iw + 2, iw + 4, iw + 6};
+            int16_t iw_data_s16[4] = {};
+            for (int k = 0; k < 4; k++) {
+              iw_data_s16[k] = static_cast<int16_t>(iw_data_s32[k]);
+            }
+            uint16x4_t boundray_x0 = vand_u16(
+                vcge_s16(vld1_s16(iw_data_s16), vdup_n_s16(0)),
+                vclt_s16(vld1_s16(iw_data_s16), vdup_n_s16(width_s16)));
             float16x4x2_t src_vv0 = vld2_f16(src_addr_h0 + iw);
             src_vv0.val[0] = vfma_f16(
                 src_vv0.val[0],
@@ -288,10 +305,10 @@ void conv_transpose_depthwise_s2_fp16<float16_t>(const float16_t* dst,
                 vld1_f16(dst_addr + output_w * 3),
                 vbsl_f16(
                     boundray_x0, vld1_dup_f16(weight_addr), vdup_n_f16(0)));
-            vst2q_f16(src_addr_h0 + iw, src_vv0);
-            vst2q_f16(src_addr_h1 + iw, src_vv1);
-            vst2q_f16(src_addr_h2 + iw, src_vv2);
-            vst2q_f16(src_addr_h3 + iw, src_vv3);
+            vst2_f16(src_addr_h0 + iw, src_vv0);
+            vst2_f16(src_addr_h1 + iw, src_vv1);
+            vst2_f16(src_addr_h2 + iw, src_vv2);
+            vst2_f16(src_addr_h3 + iw, src_vv3);
           }
           for (; i < output_w; i++, iw += 2) {
             bool boundary_x = ((iw >= 0) && (iw < width));
