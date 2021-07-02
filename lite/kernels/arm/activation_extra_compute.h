@@ -140,6 +140,35 @@ class GeluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~GeluCompute() = default;
 };
 
+template <typename T>
+class ErfCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~ErfCompute() = default;
+};
+
+template <typename T>
+class SignCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SignCompute() = default;
+};
+
+template <typename T>
+class SoftPlusCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SoftPlusCompute() = default;
+};
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

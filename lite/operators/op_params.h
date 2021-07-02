@@ -2392,6 +2392,13 @@ struct WriteBackParam : ParamBase {
   lite::Tensor* y{};
 };
 
+struct FlipParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  std::vector<int> axis;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
