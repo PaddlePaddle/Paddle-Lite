@@ -1095,11 +1095,6 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
 #endif
     double min_lws_time = DBL_MAX;
     cl::NDRange min_lws = *lwss.begin();
-    printf("%s, ggx=%d, ggy=%d, ggz=%d\n",
-           kernel_func_names_[0].c_str(),
-           static_cast<int>(global_work_size_[0]),
-           static_cast<int>(global_work_size_[1]),
-           static_cast<int>(global_work_size_[2]));
     for (cl::NDRange cur_lws : lwss) {
       local_work_size_ = cur_lws;
       double cur_lws_time = 0.0f;
@@ -1109,12 +1104,6 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
         cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
       }
       cur_lws_time /= repeats;
-      printf("%s, time=%f, x=%d, y=%d, z=%d\n",
-             kernel_func_names_[0].c_str(),
-             cur_lws_time,
-             static_cast<int>(cur_lws[0]),
-             static_cast<int>(cur_lws[1]),
-             static_cast<int>(cur_lws[2]));
 #ifdef SHOW_EACH_LWS_TIME
       LOG(INFO) << GenerateTunedKey() << " "
                 << "{" << std::to_string(local_work_size_[0]) << ","
