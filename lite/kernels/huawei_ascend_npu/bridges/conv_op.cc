@@ -52,10 +52,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(filter_dims.size(), 4L);
   CHECK_EQ(output_dims[0], bs);
   CHECK_EQ(output_dims[1], oc);
-  auto strides = op_info->GetAttr<std::vector<int>>("strides");
-  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
+  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
-  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
   bool with_act =
       op_info->HasAttr("with_act") && op_info->GetAttr<bool>("with_act");
   std::string act_type =

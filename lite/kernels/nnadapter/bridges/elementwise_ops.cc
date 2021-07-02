@@ -72,7 +72,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                    << y_dims[i - axis] << ".";
         return FAILED;
       } else {
-        y_shape[i] = x_dims[i];
+        y_shape[i] = y_dims[i];
       }
     }
   }

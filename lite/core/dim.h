@@ -15,8 +15,6 @@
 #ifndef LITE_CORE_DIM_H_
 #define LITE_CORE_DIM_H_
 
-#ifndef LITE_WITH_FPGA
-
 #include <algorithm>
 #include <functional>  // for multiplies
 #include <memory>
@@ -91,5 +89,4 @@ using DDim = paddle::lite::DDimLite;
 }  // namespace lite
 }  // namespace paddle
 
-#endif
 #endif  // LITE_CORE_DIM_H_

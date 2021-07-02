@@ -10,6 +10,8 @@ readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/t
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
+ROOT_DIR=$(pwd)
+BUILD_DIRECTORY=$(pwd)/build
 
 # Global variables
 # The list of os for building unit tests(android,armlinux), such as "android"
@@ -21,8 +23,9 @@ ARCH_LIST="armv8,armv7"
 # for android, "gcc" for armlinx
 TOOLCHAIN_LIST="gcc,clang"
 # The list of unit tests to be checked, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
-UNIT_TEST_CHECK_LIST="test_cxx_api,test_mobilenetv1_int8"
-UNIT_TEST_FILTER_TYPE=0 # 0: black list 1: white list
+UNIT_TEST_CHECK_LIST="test_light_api,test_apis,test_paddle_api,test_cxx_api,test_vector_view"
+# 0: black list 1: white list
+UNIT_TEST_FILTER_TYPE=0
 # The Logging level of GLOG for unit tests
 UNIT_TEST_LOG_LEVEL=5
 # Remote device type(0: adb, 1: ssh) for real android and armlinux devices
@@ -35,6 +38,7 @@ REMOTE_DEVICE_WORK_DIR="/data/local/tmp"
 # Xpu sdk option
 XPU_SDK_URL=""
 XPU_SDK_ENV=""
+XPU_SDK_ROOT=""
 
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
@@ -43,6 +47,7 @@ if [ ${os_name} == "Darwin" ]; then
 fi
 
 function prepare_thirdparty() {
+    cd $workspace
     if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
 
@@ -53,24 +58,26 @@ function prepare_thirdparty() {
     else
         git submodule update --init --recursive
     fi
+    cd -
 }
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
 function prepare_workspace() {
+    local root_dir_=$1
+    local build_dir_=$2
+
     # in build directory
     # 1. Prepare gen_code file
-    GEN_CODE_PATH_PREFIX=lite/gen_code
-    mkdir -p ./${GEN_CODE_PATH_PREFIX}
-    touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
+    GEN_CODE_PATH_PREFIX=$build_dir_/lite/gen_code
+    mkdir -p ${GEN_CODE_PATH_PREFIX}
+    touch ${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
 
     # 2.Prepare debug tool
-    DEBUG_TOOL_PATH_PREFIX=lite/tools/debug
-    mkdir -p ./${DEBUG_TOOL_PATH_PREFIX}
-    cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
+    DEBUG_TOOL_PATH_PREFIX=$build_dir_/lite/tools/debug
+    mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
+    cp $root_dir_/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
 
-    # clone submodule
-    # git submodule update --init --recursive
     prepare_thirdparty
 }
 
@@ -389,10 +396,11 @@ function android_cpu_build_target() {
     local toolchain=$3
 
     # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
+    rm -rf $BUILD_DIRECTORY
+    mkdir -p $BUILD_DIRECTORY
+    cd $BUILD_DIRECTORY
+    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
+    
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
@@ -449,10 +457,11 @@ function armlinux_cpu_build_target() {
     local toolchain=$3
 
     # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
+    rm -rf $BUILD_DIRECTORY
+    mkdir -p $BUILD_DIRECTORY
+    cd $BUILD_DIRECTORY
+    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
+
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
@@ -530,10 +539,11 @@ function huawei_kirin_npu_build_target() {
     local sdk_root_dir=$4
 
     # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
+    rm -rf $BUILD_DIRECTORY
+    mkdir -p $BUILD_DIRECTORY
+    cd $BUILD_DIRECTORY
+    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
+
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
@@ -562,7 +572,7 @@ function huawei_kirin_npu_build_and_test() {
 function huawei_ascend_npu_test_target() {
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     export GLOG_v=$UNIT_TEST_LOG_LEVEL
-    local unit_test_check_items=(${unit_test_check_list//,/ })
+    local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
     for test_name in $(cat $TESTS_FILE); do
         local is_matched=0
         for unit_test_check_item in ${unit_test_check_items[@]}; do
@@ -587,27 +597,51 @@ function huawei_ascend_npu_test_target() {
 
 function huawei_ascend_npu_build_target() {
     cur_dir=$(pwd)
-    build_dir=$cur_dir/build.lite.huawei_ascend_npu.test
-    rm -rf build_dir
-    mkdir -p $build_dir
-    cd $build_dir
-    prepare_workspace
+    BUILD_DIRECTORY=$cur_dir/build.lite.huawei_ascend_npu.test
 
-    cmake .. \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
-        -DWITH_PYTHON=OFF \
-        -DWITH_TESTING=ON \
-        -DLITE_WITH_ARM=OFF \
-        -DWITH_GPU=OFF \
-        -DWITH_MKLDNN=OFF \
-        -DLITE_WITH_X86=ON \
-        -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
-        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux" \
-        -DCMAKE_BUILD_TYPE=Release
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+    rm -rf $BUILD_DIRECTORY
+    mkdir -p $BUILD_DIRECTORY
+    cd $BUILD_DIRECTORY
+    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
+    local archs=(${ARCH_LIST//,/ })
+    for arch in $archs; do 
+        if [ "${arch}" == "x86_64" ]; then
+            with_x86=ON
+            with_arm=OFF
+            with_light_weight_framework=OFF
+            huawei_ascend_npu_ddk_root="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
+        elif [ "${arch}" == "armv8" ]; then
+            with_arm=ON
+            with_x86=OFF
+            arm_arch=armv8
+            arm_target_os=armlinux
+            toolchain=gcc
+            with_light_weight_framework=ON
+            huawei_ascend_npu_ddk_root="/usr/local/Ascend/ascend-toolkit/latest/arm64-linux"
+        else
+            echo "$arch isn't supported by Ascend NPU DDK!"
+            exit 1
+        fi
+
+        cmake .. \
+            -DLITE_WITH_ARM=$with_arm \
+            -DLITE_WITH_X86=$with_x86 \
+            -DARM_TARGET_ARCH_ABI=$arm_arch \
+            -DARM_TARGET_OS=$arm_target_os \
+            -DARM_TARGET_LANG=$toolchain \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$with_light_weight_framework \
+            -DWITH_LITE=ON \
+            -DWITH_PYTHON=OFF \
+            -DWITH_TESTING=ON \
+            -DWITH_GPU=OFF \
+            -DWITH_MKLDNN=OFF \
+            -DWITH_MKL=ON \
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
+            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$huawei_ascend_npu_ddk_root \
+            -DCMAKE_BUILD_TYPE=Release
+        make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+    done
 }
 
 function huawei_ascend_npu_build_and_test() {
@@ -665,10 +699,10 @@ function rockchip_npu_build_target() {
     local sdk_root_dir=$4
 
     # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
+    rm -rf $BUILD_DIRECTORY
+    mkdir -p $BUILD_DIRECTORY
+    cd $BUILD_DIRECTORY
+    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
@@ -746,10 +780,10 @@ function mediatek_apu_build_target() {
     local sdk_root_dir=$4
 
     # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
+    rm -rf $BUILD_DIRECTORY
+    mkdir -p $BUILD_DIRECTORY
+    cd $BUILD_DIRECTORY
+    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
@@ -815,10 +849,10 @@ function imagination_nna_build_target() {
     local sdk_root_dir=$4
 
     # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
+    rm -rf $BUILD_DIRECTORY
+    mkdir -p $BUILD_DIRECTORY
+    cd $BUILD_DIRECTORY
+    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
@@ -852,9 +886,14 @@ function baidu_xpu_build_and_test() {
     local sdk_env=$5
 
     # Build all of unittests and model tests
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
+    cur_dir=$(pwd)
+    BUILD_DIRECTORY=$cur_dir/build.lite.xpu.test
+
+    rm -rf $BUILD_DIRECTORY
+    mkdir -p $BUILD_DIRECTORY
+    cd $BUILD_DIRECTORY
+    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
+
     cmake .. \
         -DWITH_LITE=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
@@ -867,9 +906,12 @@ function baidu_xpu_build_and_test() {
         -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
+        -DLITE_WITH_LTO=OFF \
         -DXPU_SDK_URL=$sdk_url \
         -DXPU_SDK_ENV=$sdk_env \
+        -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
         -DLITE_WITH_XTCL=$with_xtcl
+
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
     # Run all of unittests and model tests
@@ -896,7 +938,6 @@ function baidu_xpu_build_and_test() {
         fi
         ctest -V -R ^$test_name$
     done
-    cd - >/dev/null
 }
 
 function main() {
@@ -923,7 +964,7 @@ function main() {
             UNIT_TEST_FILTER_TYPE="${i#*=}"
             shift
             ;;
-       --unit_test_log_level=*)
+        --unit_test_log_level=*)
             UNIT_TEST_LOG_LEVEL="${i#*=}"
             shift
             ;;
@@ -945,6 +986,10 @@ function main() {
             ;;
         --xpu_sdk_env=*)
             XPU_SDK_ENV="${i#*=}"
+            shift
+            ;;
+        --xpu_sdk_root=*)
+            XPU_SDK_ROOT="${i#*=}"
             shift
             ;;
         android_cpu_build_and_test)

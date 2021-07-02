@@ -200,6 +200,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        // Only for fully quantized model, infer the output scale and fix the
        // attribute 'enable_int8' for all of the quantized ops.
        "quantized_op_attributes_inference_pass",
+       "quantization_parameters_propagation_pass",
        // Apply the constraints for the quantized ops(such as concat) that the
        // inputs and outputs must have the same scale.
        "restrict_quantized_op_with_same_input_output_scale_pass",
@@ -212,6 +213,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "apu_subgraph_pass",
        "rknpu_subgraph_pass",
        "mlu_subgraph_pass",
+       "fpga_concat_fuse_pass",
        "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
        "static_kernel_pick_pass",  // pick original kernel from graph
 

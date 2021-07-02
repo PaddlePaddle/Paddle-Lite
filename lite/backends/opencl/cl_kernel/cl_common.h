@@ -53,6 +53,7 @@ limitations under the License. */
 #define GET_VEC_TYPE(type__, size__) type__##size__
 #define VECTORIZED_TYPE(type__, size__) GET_VEC_TYPE(type__, size__)
 #define CL_DTYPE4 VECTORIZED_TYPE(CL_DTYPE, 4)
+#define CL_DTYPE16 VECTORIZED_TYPE(CL_DTYPE, 16)
 #define CL_COMPUTE_DTYPE4 VECTORIZED_TYPE(CL_COMPUTE_DTYPE, 4)
 
 /////////////////////////////////

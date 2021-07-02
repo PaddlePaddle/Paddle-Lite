@@ -41,7 +41,7 @@ int Program::ConvertSoftmax(hal::Operation* operation) {
 
   // Convert to Neuron operands and operations
   auto input_index = ConvertOperand(input_operand);
-  auto beta_index = AddFloat32ConstantOperand(0.5f);
+  auto beta_index = AddFloat32ConstantOperand(1.0f);
   auto axis_index = AddInt32ConstantOperand(axis);
   auto output_index = ConvertOperand(output_operand);
   std::vector<uint32_t> input_indexes = {input_index, beta_index, axis_index};

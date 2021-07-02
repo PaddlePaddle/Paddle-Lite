@@ -20,6 +20,7 @@ add_kernel(unbind_compute_host Host basic SRCS unbind_compute.cc DEPS ${lite_ker
 add_kernel(argmax_compute_host Host basic SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(assign_value_compute_host Host basic SRCS assign_value_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(yolo_box_compute_host Host basic SRCS yolo_box_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(write_back_compute_host Host basic SRCS write_back_compute.cc DEPS ${lite_kernel_deps})
 
 # extra kernels
 add_kernel(deformable_conv_compute_host Host extra SRCS deformable_conv_compute.cc DEPS ${lite_kernel_deps})

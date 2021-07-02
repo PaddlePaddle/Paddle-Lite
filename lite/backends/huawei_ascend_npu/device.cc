@@ -112,6 +112,7 @@ void Device::RegisterDeviceResource() {
 }
 
 void Device::UnRegisterDeviceResource() {
+#ifndef PADDLE_WITH_TESTING
   std::lock_guard<std::mutex> lock(device_mutex_);
   device_reference_count_--;
   if (device_reference_count_ == 0) {
@@ -120,6 +121,9 @@ void Device::UnRegisterDeviceResource() {
     // ACL runtime finalize => can only be called once in one process
     ACL_CALL(aclFinalize());
   }
+#else
+// TODO(shentanyue)
+#endif
 }
 
 }  // namespace huawei_ascend_npu

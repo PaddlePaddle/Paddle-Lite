@@ -61,8 +61,8 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Perm operand
-  auto perm_operand =
-      converter->AddInt32ConstantOperand(&axis[0], DDim({axis.size()}));
+  auto perm_operand = converter->AddInt32ConstantOperand(
+      &axis[0], DDim({static_cast<int64_t>(axis.size())}));
 
   // Output operand
   NNAdapterOperand* output_operand = nullptr;

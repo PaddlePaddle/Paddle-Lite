@@ -132,7 +132,7 @@ lite_option(LITE_WITH_ARM82_INT8_SDOT  "when compile with arm v8.2 int8, it's ON
 lite_option(LITE_WITH_CODE_META_INFO  "include git version in the header file." ON)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
-if(ANDROID OR IOS OR ARMLINUX)
+if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
     set(WITH_GPU OFF CACHE STRING
             "Disable GPU when cross-compiling for Android and iOS" FORCE)
     set(WITH_DSO OFF CACHE STRING
@@ -223,7 +223,8 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(cross_compiling/postproject)
     include(device/npu) # check and prepare NPU DDK
     include(device/xpu) # check and prepare XPU SDK
-    include(device/apu) # check and prepare APU SDK
+    include(device/apu) # check and prepare APU SDK 
+    include(device/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
 
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.

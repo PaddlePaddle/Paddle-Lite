@@ -209,7 +209,7 @@ PrecisionType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
       break;
     default:
       LOG(FATAL) << "Failed to convert the NNAdapter operand precision code("
-                 << input_precision << ") to PrecisionType !";
+                 << static_cast<int>(input_precision) << ") to PrecisionType !";
       break;
   }
   return output_precision;
@@ -252,7 +252,8 @@ int PrecisionLength(NNAdapterOperandPrecisionCode precision) {
     case NNADAPTER_TENSOR_FLOAT64:
       return 8;
     default:
-      LOG(ERROR) << "Failed to get the length of type(" << precision << ").";
+      LOG(ERROR) << "Failed to get the length of type("
+                 << static_cast<int>(precision) << ").";
       break;
   }
   return 0;

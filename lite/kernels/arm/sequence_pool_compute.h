@@ -22,8 +22,8 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-class SequencePoolCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype, typename Dtype>
+class SequencePoolCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   void PrepareForRun() override;
 
