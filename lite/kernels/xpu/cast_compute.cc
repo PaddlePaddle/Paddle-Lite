@@ -31,6 +31,9 @@ void CastCompute<InType>::Run() {
   int out_dtype = param.out_dtype;
   auto* in_data = x->template data<InType>();
   int numel = x->numel();
+  if (numel <= 0) {
+    return;
+  }
 
   int r = -1;
   // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
