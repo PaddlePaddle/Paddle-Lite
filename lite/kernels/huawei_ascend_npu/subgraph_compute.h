@@ -54,6 +54,7 @@ class DeviceProgram {
       const std::string& model_cache_dir,
       const int device_id);
   bool ShareBufferWithOriginTensors(
+      Scope* exec_scope,
       const std::vector<std::string>& input_names,
       const std::vector<std::string>& output_names,
       std::vector<Tensor*>* origin_itensors,
@@ -61,6 +62,7 @@ class DeviceProgram {
       std::vector<std::shared_ptr<ge::Tensor>>* device_itensors,
       std::vector<std::shared_ptr<ge::Tensor>>* device_otensors);
   bool SharedBufferWithOutputTensors(
+      Scope* exec_scope,
       const std::vector<std::string>& output_names,
       std::vector<Tensor*>* origin_otensors,
       std::vector<std::shared_ptr<ge::Tensor>>* device_otensors);
