@@ -24,7 +24,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -78,7 +78,7 @@ class ReluCompute
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -143,7 +143,7 @@ class SigmoidCompute
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -166,7 +166,7 @@ REGISTER_LITE_KERNEL(relu,
                      kOpenCL,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::opencl::ReluCompute,
+                     paddle::lite_metal::kernels::opencl::ReluCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
@@ -177,7 +177,7 @@ REGISTER_LITE_KERNEL(sigmoid,
                      kOpenCL,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::opencl::SigmoidCompute,
+                     paddle::lite_metal::kernels::opencl::SigmoidCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})

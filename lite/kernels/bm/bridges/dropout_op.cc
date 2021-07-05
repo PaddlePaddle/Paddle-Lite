@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -32,7 +32,7 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   // input
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   std::vector<int32_t> i_x_shape_data(x_dims.size());
@@ -41,7 +41,7 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   // output
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   const int64_t* output_shape_data =
       const_cast<const int64_t*>(&output_dims.data()[0]);
@@ -80,4 +80,4 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 REGISTER_SUBGRAPH_BRIDGE(dropout,
                          kBM,
-                         paddle::lite::subgraph::bm::DropoutConverter);
+                         paddle::lite_metal::subgraph::bm::DropoutConverter);

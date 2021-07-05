@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SplitLodTensorOpLite::CheckShape() const {
@@ -41,16 +41,16 @@ bool SplitLodTensorOpLite::InferShapeImpl() const {
 }
 
 bool SplitLodTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                      lite::Scope *scope) {
+                                      lite_metal::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto mask = op_desc.Input("Mask").front();
-  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.mask = scope->FindVar(mask)->GetMutable<lite::Tensor>();
+  param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+  param_.mask = scope->FindVar(mask)->GetMutable<lite_metal::Tensor>();
 
   auto out_true = op_desc.Output("OutTrue").front();
   auto out_false = op_desc.Output("OutFalse").front();
-  param_.out_true = scope->FindVar(out_true)->GetMutable<lite::Tensor>();
-  param_.out_false = scope->FindVar(out_false)->GetMutable<lite::Tensor>();
+  param_.out_true = scope->FindVar(out_true)->GetMutable<lite_metal::Tensor>();
+  param_.out_false = scope->FindVar(out_false)->GetMutable<lite_metal::Tensor>();
 
   param_.level = op_desc.GetAttr<int>("level");
   return true;
@@ -61,4 +61,4 @@ bool SplitLodTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(split_lod_tensor,
-                 paddle::lite::operators::SplitLodTensorOpLite);
+                 paddle::lite_metal::operators::SplitLodTensorOpLite);

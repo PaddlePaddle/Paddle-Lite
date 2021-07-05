@@ -21,7 +21,7 @@ limitations under the License. */
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 CLRuntime* CLRuntime::Global() {
   static CLRuntime cl_runtime_;
@@ -67,7 +67,7 @@ bool CLRuntime::Init() {
     return true;
   }
 
-  bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
+  bool opencl_lib_found = paddle::lite_metal::CLWrapper::Global()->OpenclLibFound();
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
 #endif
@@ -75,7 +75,7 @@ bool CLRuntime::Init() {
     return false;
   }
 
-  bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
+  bool dlsym_success = paddle::lite_metal::CLWrapper::Global()->DlsymSuccess();
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "dlsym_success:" << dlsym_success;
 #endif
@@ -505,7 +505,7 @@ std::string CLRuntime::GetSN(const std::string options) {
 #endif
 
   const std::string aarch_info = aarch + "; ";
-  const std::string lite_version = lite::version() + "; ";
+  const std::string lite_version = lite_metal::version() + "; ";
   const std::string platform_info =
       platform_->getInfo<CL_PLATFORM_NAME>() + ", " +
       platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";

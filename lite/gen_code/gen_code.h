@@ -27,7 +27,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace gencode {
 
 struct TensorRepr {
@@ -39,7 +39,7 @@ struct TensorRepr {
       : dtype(dtype), ddim(ddim), raw_data(raw_data), num_bytes(num_bytes) {}
 
   PrecisionType dtype;
-  lite::DDim ddim;
+  lite_metal::DDim ddim;
   const void *raw_data;
   size_t num_bytes{};
 };
@@ -89,10 +89,10 @@ class Module {
   }
 
   void AddScopeDecl() {
-    Line("lite::Scope* scope = static_cast<lite::Scope*>(raw_scope_);");
+    Line("lite_metal::Scope* scope = static_cast<lite_metal::Scope*>(raw_scope_);");
 
     // clang-format off
-    Line("lite::Scope* exec_scope = static_cast<lite::Scope*>(raw_exe_scope_);");  // NOLINT
+    Line("lite_metal::Scope* exec_scope = static_cast<lite_metal::Scope*>(raw_exe_scope_);");  // NOLINT
     // clang-format on
 
     // Create feed and fetch in exec_scope.
@@ -102,15 +102,15 @@ class Module {
 
   void AddValidPlaceDecl() {
     // clang-format off
-    Line("std::vector<lite::Place> valid_places({lite::Place({TARGET(kX86), PRECISION(kFloat), DATALAYOUT(kNCHW)})});");  // NOLINT
+    Line("std::vector<lite_metal::Place> valid_places({lite_metal::Place({TARGET(kX86), PRECISION(kFloat), DATALAYOUT(kNCHW)})});");  // NOLINT
     // clang-format on
   }
 
   void AddMemberCast() {
     Line("// Cast the raw members");
     // clang-format off
-    Line(string_format("auto& ops = *static_cast<std::vector<std::shared_ptr<lite::OpLite>>*>(raw_ops_);"));  // NOLINT
-    Line(string_format("auto& kernels = *static_cast<std::vector<std::unique_ptr<lite::KernelBase>>*>(raw_kernels_);"));  // NOLINT
+    Line(string_format("auto& ops = *static_cast<std::vector<std::shared_ptr<lite_metal::OpLite>>*>(raw_ops_);"));  // NOLINT
+    Line(string_format("auto& kernels = *static_cast<std::vector<std::unique_ptr<lite_metal::KernelBase>>*>(raw_kernels_);"));  // NOLINT
     // clang-format on
     Line("");
   }
@@ -153,16 +153,16 @@ class Module {
 
  private:
   std::string WeightUniqueName() const {
-    return "w_" + paddle::lite::to_string(weight_counter_++);
+    return "w_" + paddle::lite_metal::to_string(weight_counter_++);
   }
   std::string TmpVarUniqueName() const {
-    return "tmp_" + paddle::lite::to_string(tmp_var_counter_++);
+    return "tmp_" + paddle::lite_metal::to_string(tmp_var_counter_++);
   }
   std::string OpUniqueName() const {
-    return "op_" + paddle::lite::to_string(op_counter_++);
+    return "op_" + paddle::lite_metal::to_string(op_counter_++);
   }
   std::string KernelUniqueName() const {
-    return "kernel_" + paddle::lite::to_string(kernel_counter_++);
+    return "kernel_" + paddle::lite_metal::to_string(kernel_counter_++);
   }
 
   std::string DataRepr(const std::string &raw_data, PrecisionType dtype);
@@ -185,7 +185,7 @@ class Module {
 class ProgramCodeGenerator {
  public:
   ProgramCodeGenerator(const framework::proto::ProgramDesc &program,
-                       const lite::Scope &exec_scope)
+                       const lite_metal::Scope &exec_scope)
       : program_(program), exec_scope_(exec_scope) {}
 
   std::string GenCode() {
@@ -215,7 +215,7 @@ class ProgramCodeGenerator {
       if (var.persistable()) {
         auto name = var.name();
         if (name == "feed" || name == "fetch") continue;
-        const auto &tensor = exec_scope_.FindVar(name)->Get<lite::Tensor>();
+        const auto &tensor = exec_scope_.FindVar(name)->Get<lite_metal::Tensor>();
         TensorRepr repr;
         TensorToRepr(tensor, &repr);
         m->AddWeight(name, repr);
@@ -232,15 +232,15 @@ class ProgramCodeGenerator {
   void AddOps(Module *m) {
     for (auto &pb_op : program_.blocks(0).ops()) {
       auto op = pb_op;
-      lite::pb::OpDesc pb_desc(&op);
-      lite::cpp::OpDesc cpp_desc;
+      lite_metal::pb::OpDesc pb_desc(&op);
+      lite_metal::cpp::OpDesc cpp_desc;
       TransformOpDescAnyToCpp(pb_desc, &cpp_desc);
       m->AddOp(cpp_desc);
     }
   }
 
  private:
-  void TensorToRepr(const lite::Tensor &tensor, TensorRepr *repr) {
+  void TensorToRepr(const lite_metal::Tensor &tensor, TensorRepr *repr) {
     repr->ddim = tensor.dims();
     // TODO(Superjomn) support other types.
     repr->dtype = PRECISION(kFloat);
@@ -250,7 +250,7 @@ class ProgramCodeGenerator {
 
  private:
   const framework::proto::ProgramDesc &program_;
-  const lite::Scope &exec_scope_;
+  const lite_metal::Scope &exec_scope_;
 };
 
 }  // namespace gencode

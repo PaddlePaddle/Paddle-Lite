@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -47,10 +47,10 @@ struct LstmMetaGrad {
   T *check_og_grad;
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class LstmUnitFunctor {
  public:
-  static void compute(const lite::Context<Target> &context,
+  static void compute(const lite_metal::Context<Target> &context,
                       LstmMetaValue<T> value,
                       int frame_size,
                       int batch_size,
@@ -60,10 +60,10 @@ class LstmUnitFunctor {
                       const detail::ActivationType &cand_act);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class LstmUnitGradFunctor {
  public:
-  static void compute(const lite::Context<Target> &context,
+  static void compute(const lite_metal::Context<Target> &context,
                       LstmMetaValue<T> value,
                       LstmMetaGrad<T> grad,
                       int frame_size,

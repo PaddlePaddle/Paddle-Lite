@@ -19,7 +19,7 @@
 #include "lite/backends/host/math/pad2d.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -60,7 +60,7 @@ void Pad2dCompute<T>::Run() {
     const int out_height = out_dims[2];
     const int out_width = out_dims[3];
     if (mode == "reflect") {
-      lite::host::math::Pad2DReflectNCHW(in_data,
+      lite_metal::host::math::Pad2DReflectNCHW(in_data,
                                          num,
                                          channels,
                                          in_height,
@@ -71,7 +71,7 @@ void Pad2dCompute<T>::Run() {
                                          pad_left,
                                          out_data);
     } else if (mode == "edge") {
-      lite::host::math::Pad2DEdgeNCHW(in_data,
+      lite_metal::host::math::Pad2DEdgeNCHW(in_data,
                                       num,
                                       channels,
                                       in_height,
@@ -82,7 +82,7 @@ void Pad2dCompute<T>::Run() {
                                       pad_left,
                                       out_data);
     } else {
-      lite::host::math::Pad2DConstNCHW(in_data,
+      lite_metal::host::math::Pad2DConstNCHW(in_data,
                                        num,
                                        channels,
                                        in_height,
@@ -101,7 +101,7 @@ void Pad2dCompute<T>::Run() {
     const int out_height = out_dims[1];
     const int out_width = out_dims[2];
     if (mode == "reflect") {
-      lite::host::math::Pad2DReflectNHWC(in_data,
+      lite_metal::host::math::Pad2DReflectNHWC(in_data,
                                          num,
                                          channels,
                                          in_height,
@@ -112,7 +112,7 @@ void Pad2dCompute<T>::Run() {
                                          pad_left,
                                          out_data);
     } else if (mode == "edge") {
-      lite::host::math::Pad2DEdgeNHWC(in_data,
+      lite_metal::host::math::Pad2DEdgeNHWC(in_data,
                                       num,
                                       channels,
                                       in_height,
@@ -123,7 +123,7 @@ void Pad2dCompute<T>::Run() {
                                       pad_left,
                                       out_data);
     } else {
-      lite::host::math::Pad2DConstNHWC(in_data,
+      lite_metal::host::math::Pad2DConstNHWC(in_data,
                                        num,
                                        channels,
                                        in_height,
@@ -147,7 +147,7 @@ REGISTER_LITE_KERNEL(pad2d,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::Pad2dCompute<float>,
+                     paddle::lite_metal::kernels::host::Pad2dCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})

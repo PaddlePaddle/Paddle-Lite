@@ -17,7 +17,7 @@
 // #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -41,7 +41,7 @@ void CastCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    cast, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::CastCompute, def)
+    cast, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::CastCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFloat),

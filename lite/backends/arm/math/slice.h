@@ -19,7 +19,7 @@
 #include "lite/core/context.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 

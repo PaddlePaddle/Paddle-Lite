@@ -20,7 +20,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 template <>
@@ -59,8 +59,8 @@ void Conv2DTransposeCompute<PRECISION(kFloat),
   bool depth_wise_s2 =
       depthwise_ && (param.strides[0] == 2 && param.strides[1] == 2);
   if (!depth_wise_s1 && !depth_wise_s2) {
-    lite::Tensor tmp_weights;
-    lite::arm::math::prepackA(
+    lite_metal::Tensor tmp_weights;
+    lite_metal::arm::math::prepackA(
         &tmp_weights, *(param.filter), 1.f, m, k, group, true, &ctx);
     param.filter->Resize(tmp_weights.dims());
     param.filter->CopyDataFrom(tmp_weights);
@@ -94,8 +94,8 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
   workspace_size_ = 2 * group * m * n * sizeof(int32_t);
 
   auto& ctx = this->ctx_->template As<ARMContext>();
-  lite::Tensor tmp_weights;
-  lite::arm::math::prepackA_int8(
+  lite_metal::Tensor tmp_weights;
+  lite_metal::arm::math::prepackA_int8(
       &tmp_weights, *(param.filter), m, k, group, true, &ctx);
   param.filter->Resize(tmp_weights.dims());
   param.filter->CopyDataFrom(tmp_weights);
@@ -144,8 +144,8 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
   workspace_size_ = 2 * group * m * n * sizeof(int32_t);
 
   auto& ctx = this->ctx_->template As<ARMContext>();
-  lite::Tensor tmp_weights;
-  lite::arm::math::prepackA_int8(
+  lite_metal::Tensor tmp_weights;
+  lite_metal::arm::math::prepackA_int8(
       &tmp_weights, *(param.filter), m, k, group, true, &ctx);
   param.filter->Resize(tmp_weights.dims());
   param.filter->CopyDataFrom(tmp_weights);
@@ -220,7 +220,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int group_size_coldata = m * n;
 
   bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
-  int hblock = lite::arm::math::get_hblock(&ctx);
+  int hblock = lite_metal::arm::math::get_hblock(&ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
@@ -245,7 +245,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     const float* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
     if (depthwise_s1) {
-      lite::arm::math::conv_transpose_depthwise_s1<float>(din_batch,
+      lite_metal::arm::math::conv_transpose_depthwise_s1<float>(din_batch,
                                                           weights,
                                                           chout,
                                                           hout,
@@ -261,11 +261,11 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                           dout_batch,
                                                           &ctx);
       if (bias_act) {
-        lite::arm::math::fill_bias_act<float>(
+        lite_metal::arm::math::fill_bias_act<float>(
             dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
       }
     } else if (depthwise_s2) {
-      lite::arm::math::conv_transpose_depthwise_s2<float>(din_batch,
+      lite_metal::arm::math::conv_transpose_depthwise_s2<float>(din_batch,
                                                           weights,
                                                           chout,
                                                           hout,
@@ -281,7 +281,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                           dout_batch,
                                                           &ctx);
       if (bias_act) {
-        lite::arm::math::fill_bias_act<float>(
+        lite_metal::arm::math::fill_bias_act<float>(
             dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
       }
     } else {
@@ -297,7 +297,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
         if (flag_bias) {
           act_param.has_active = false;
         }
-        lite::arm::math::sgemm_prepack(false,
+        lite_metal::arm::math::sgemm_prepack(false,
                                        m,
                                        n,
                                        k,
@@ -313,7 +313,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                        &ctx);
       }
       if (!flag_1x1s1p1) {
-        lite::arm::math::col2im<float>(col_data,
+        lite_metal::arm::math::col2im<float>(col_data,
                                        chout,
                                        hout,
                                        wout,
@@ -331,7 +331,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       }
       if (flag_bias) {
         act_param.has_active = has_act;
-        lite::arm::math::fill_bias_act<float>(
+        lite_metal::arm::math::fill_bias_act<float>(
             dout_batch,
             static_cast<const float*>(param.bias->data<float>()),
             chout,
@@ -377,7 +377,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int group_size_coldata = m * n;
 
   bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
-  int hblock = lite::arm::math::get_hblock(&ctx);
+  int hblock = lite_metal::arm::math::get_hblock(&ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
@@ -415,7 +415,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       if (flag_bias) {
         act_param.has_active = false;
       }
-      lite::arm::math::gemm_prepack_int8<int32_t>(weights_group,
+      lite_metal::arm::math::gemm_prepack_int8<int32_t>(weights_group,
                                                   din_group,
                                                   nullptr,
                                                   coldata_group,
@@ -429,7 +429,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                                   &ctx);
     }
     if (!flag_1x1s1p1) {
-      lite::arm::math::col2im<int>(col_data,
+      lite_metal::arm::math::col2im<int>(col_data,
                                    chout,
                                    hout,
                                    wout,
@@ -447,7 +447,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     }
     act_param.has_active = has_act;
     // int32 -> fp32 int32*scale + bias
-    lite::arm::math::fill_bias_act_calib<float>(dout_batch,
+    lite_metal::arm::math::fill_bias_act_calib<float>(dout_batch,
                                                 dout_batch_int32,
                                                 bias,
                                                 w_scale_.data(),
@@ -492,7 +492,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int group_size_coldata = m * n;
 
   bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
-  int hblock = lite::arm::math::get_hblock(&ctx);
+  int hblock = lite_metal::arm::math::get_hblock(&ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
@@ -529,7 +529,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
       if (flag_bias) {
         act_param.has_active = false;
       }
-      lite::arm::math::gemm_prepack_int8<int32_t>(weights_group,
+      lite_metal::arm::math::gemm_prepack_int8<int32_t>(weights_group,
                                                   din_group,
                                                   nullptr,
                                                   coldata_group,
@@ -543,7 +543,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                                   &ctx);
     }
     if (!flag_1x1s1p1) {
-      lite::arm::math::col2im<int>(col_data,
+      lite_metal::arm::math::col2im<int>(col_data,
                                    chout,
                                    hout,
                                    wout,
@@ -561,7 +561,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
     }
     // int32 -> int8 int32*scale + bias
     act_param.has_active = has_act;
-    lite::arm::math::fill_bias_act_calib<int8_t>(dout_batch,
+    lite_metal::arm::math::fill_bias_act_calib<int8_t>(dout_batch,
                                                  dout_batch_int32,
                                                  bias,
                                                  w_scale_.data(),
@@ -577,13 +577,13 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::arm::Conv2DTransposeCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::Conv2DTransposeCompute<PRECISION(kFloat),
                                                            PRECISION(kFloat)>
     ConvTransFp32;
-typedef paddle::lite::kernels::arm::Conv2DTransposeCompute<PRECISION(kInt8),
+typedef paddle::lite_metal::kernels::arm::Conv2DTransposeCompute<PRECISION(kInt8),
                                                            PRECISION(kFloat)>
     ConvTranInt8_Fp32;
-typedef paddle::lite::kernels::arm::Conv2DTransposeCompute<PRECISION(kInt8),
+typedef paddle::lite_metal::kernels::arm::Conv2DTransposeCompute<PRECISION(kInt8),
                                                            PRECISION(kInt8)>
     ConvTranInt8_Int8;
 REGISTER_LITE_KERNEL(conv2d_transpose, kARM, kFloat, kNCHW, ConvTransFp32, def)

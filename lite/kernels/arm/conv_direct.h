@@ -26,7 +26,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -55,11 +55,11 @@ inline bool direct_conv_trans_weights(
   auto transed_w_data = wout->mutable_data<float>();
   if (ic == 3 && stride == 2 && (oc % 4 == 0)) {
     // [chout, 3, kh, kw] -> [chout / cblock, kh, kw, 3, cblock]
-    lite::arm::math::conv_trans_weights_c4toc12(
+    lite_metal::arm::math::conv_trans_weights_c4toc12(
         w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
   } else {
     // [chout, chin, kh, kw] -> [chout / n, chin, kh, kw, n]
-    lite::arm::math::conv_trans_weights_numc(
+    lite_metal::arm::math::conv_trans_weights_numc(
         w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
   }
   return false;
@@ -91,7 +91,7 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kFloat)>(
   wout->Resize({cround, ic, kh, kw});
   auto w_in_data = win->data<int8_t>();
   auto transed_w_data = wout->mutable_data<int8_t>();
-  lite::arm::math::conv_trans_weights_numc(
+  lite_metal::arm::math::conv_trans_weights_numc(
       w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
   /// update scale
   CHECK(w_scale.size() == 1 || w_scale.size() == oc)
@@ -133,7 +133,7 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
   wout->Resize({cround, ic, kh, kw});
   auto w_in_data = win->data<int8_t>();
   auto transed_w_data = wout->mutable_data<int8_t>();
-  lite::arm::math::conv_trans_weights_numc(
+  lite_metal::arm::math::conv_trans_weights_numc(
       w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
   /// update scale
   CHECK(w_scale.size() == 1 || w_scale.size() == oc)
@@ -184,7 +184,7 @@ inline bool direct_conv_trans_weights<PRECISION(kFP16), PRECISION(kFP16)>(
   wout->Resize({cround, ic, kh, kw});
   auto w_in_data = win->data<float16_t>();
   auto transed_w_data = wout->mutable_data<float16_t>();
-  lite::arm::math::conv_trans_weights_numc(
+  lite_metal::arm::math::conv_trans_weights_numc(
       w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
   return false;
 }
@@ -232,14 +232,14 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
 
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
+      paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
   }
   std::string kernel_func_name_{"NotImplForConvDirect"};
 #define PROFILE_INFO(dtype1, dtype2)                                        \
   template <>                                                               \
   void DirectConv<PRECISION(dtype1), PRECISION(dtype2)>::                   \
-      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+      SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) { \
     ch->kernel_func_name = kernel_func_name_;                               \
   }
 

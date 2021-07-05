@@ -24,7 +24,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace bm {
 
@@ -61,7 +61,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
     }
   }
   std::string net_name = "bmnet_f32bmodel";
-  auto unique_net_name = lite::subgraph::bm::UniqueName(net_name);
+  auto unique_net_name = lite_metal::subgraph::bm::UniqueName(net_name);
 #if (defined BM_SAVE_UMODEL)
   unique_net_name = unique_net_name + "_bmnetx_f32umodel";
   _bmcompiler_save_umodel(graph.GetCompilerHandle(),
@@ -241,7 +241,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      kBM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::bm::SubgraphCompute,
+                     paddle::lite_metal::kernels::bm::SubgraphCompute,
                      def)
     .BindInput("Inputs", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Outputs", {LiteType::GetTensorTy(TARGET(kHost))})

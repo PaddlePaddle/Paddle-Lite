@@ -24,7 +24,7 @@ inline __m256 operator+=(__m256 a, __m256 b) { return _mm256_add_ps(a, b); }
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 namespace detail {

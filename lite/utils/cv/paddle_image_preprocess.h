@@ -21,7 +21,7 @@
 #include "lite/api/paddle_place.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 typedef paddle::lite_api::Tensor Tensor;

@@ -21,11 +21,11 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename dtype>
-void ResizeNearestAlign(const lite::Tensor* x,
-                        lite::Tensor* out,
+void ResizeNearestAlign(const lite_metal::Tensor* x,
+                        lite_metal::Tensor* out,
                         bool with_align) {
   auto x_dims = x->dims();
   int num = x_dims[0];
@@ -72,8 +72,8 @@ void ResizeNearestAlign(const lite::Tensor* x,
 }
 
 template <typename DType>
-void BilinearInterpRef(const lite::Tensor* x,
-                       lite::Tensor* out,
+void BilinearInterpRef(const lite_metal::Tensor* x,
+                       lite_metal::Tensor* out,
                        bool align_corners,
                        int align_mode) {
   auto x_dims = x->dims();

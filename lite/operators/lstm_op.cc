@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 inline lite_api::ActivationType GetActivationType(const std::string &type) {
   if (type == "sigmoid") {
@@ -80,32 +80,32 @@ bool LstmOp::InferShapeImpl() const {
   return true;
 }
 
-bool LstmOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool LstmOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.Input =
-      scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite_metal::Tensor>();
   param_.Weight = scope->FindVar(opdesc.Input("Weight").front())
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
   param_.Bias =
-      scope->FindVar(opdesc.Input("Bias").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("Bias").front())->GetMutable<lite_metal::Tensor>();
   param_.Hidden = scope->FindVar(opdesc.Output("Hidden").front())
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
   param_.Cell =
-      scope->FindVar(opdesc.Output("Cell").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Cell").front())->GetMutable<lite_metal::Tensor>();
   param_.BatchGate = scope->FindVar(opdesc.Output("BatchGate").front())
-                         ->GetMutable<lite::Tensor>();
+                         ->GetMutable<lite_metal::Tensor>();
   param_.BatchCellPreAct =
       scope->FindVar(opdesc.Output("BatchCellPreAct").front())
-          ->GetMutable<lite::Tensor>();
+          ->GetMutable<lite_metal::Tensor>();
   CHECK(param_.Input);
   CHECK(param_.Weight);
   CHECK(param_.Bias);
   if (opdesc.Input("C0").size()) {
     param_.C0 =
-        scope->FindVar(opdesc.Input("C0").front())->GetMutable<lite::Tensor>();
+        scope->FindVar(opdesc.Input("C0").front())->GetMutable<lite_metal::Tensor>();
   }
   if (opdesc.Input("H0").size()) {
     param_.H0 =
-        scope->FindVar(opdesc.Input("H0").front())->GetMutable<lite::Tensor>();
+        scope->FindVar(opdesc.Input("H0").front())->GetMutable<lite_metal::Tensor>();
   }
   param_.use_peepholes = opdesc.GetAttr<bool>("use_peepholes");
   param_.is_reverse = opdesc.GetAttr<bool>("is_reverse");
@@ -135,4 +135,4 @@ bool LstmOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(lstm, paddle::lite::operators::LstmOp);
+REGISTER_LITE_OP(lstm, paddle::lite_metal::operators::LstmOp);

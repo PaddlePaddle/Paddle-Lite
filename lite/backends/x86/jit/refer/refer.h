@@ -24,7 +24,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace refer {
 
@@ -525,7 +525,7 @@ void Sgd(const T* lr,
          const T* grad,
          const int64_t* rows,
          T* out,
-         const lite::jit::sgd_attr_t* attr) {
+         const lite_metal::jit::sgd_attr_t* attr) {
   CHECK_EQ(attr->param_width, attr->grad_width);
   CHECK_LE(attr->selected_rows_size, attr->grad_height);
   for (int64_t i = 0; i < attr->selected_rows_size; ++i) {
@@ -542,7 +542,7 @@ void Sgd(const T* lr,
 
 #define DECLARE_REFER_KERNEL(name)                                     \
   template <typename T>                                                \
-  class name##Kernel : public lite::jit::ReferKernel<name##Tuple<T>> { \
+  class name##Kernel : public lite_metal::jit::ReferKernel<name##Tuple<T>> { \
    public:                                                             \
     name##Kernel() { this->func = name<T>; }                           \
   }

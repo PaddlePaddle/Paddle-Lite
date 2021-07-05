@@ -23,7 +23,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -105,7 +105,7 @@ void ConvCompute::PrepareForRun() {
       build_options_.push_back("-DCL_DTYPE_float");
     }
     impl_ = &ConvCompute::GemmlikeConv2d;
-    col_buffer_.reset(new lite::Tensor);
+    col_buffer_.reset(new lite_metal::Tensor);
     col_buffer_->Resize({bs, c_in, kernel_h * kernel_w, h_out * w_out});
     col_buffer_->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
   } else {
@@ -322,7 +322,7 @@ REGISTER_LITE_KERNEL(conv2d,
                      kOpenCL,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::opencl::ConvCompute,
+                     paddle::lite_metal::kernels::opencl::ConvCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kOpenCL))})

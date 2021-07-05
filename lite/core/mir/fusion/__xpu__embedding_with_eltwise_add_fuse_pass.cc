@@ -19,7 +19,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 namespace fusion {
@@ -65,11 +65,11 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
 
     auto* last_ewadd_out = ewadd01_out;
     for (int i = 2; i < n_embedding_; ++i) {
-      auto ids_name = paddle::lite::string_format("ids%d", i);
-      auto table_name = paddle::lite::string_format("table%d", i);
-      auto embedding_name = paddle::lite::string_format("embedding%d", i);
+      auto ids_name = paddle::lite_metal::string_format("ids%d", i);
+      auto table_name = paddle::lite_metal::string_format("table%d", i);
+      auto embedding_name = paddle::lite_metal::string_format("embedding%d", i);
       auto embedding_out_name =
-          paddle::lite::string_format("embedding_out%d", i);
+          paddle::lite_metal::string_format("embedding_out%d", i);
 
       auto* new_ids =
           VarNode(ids_name)->assert_is_op_input(op_type_, "Ids")->AsInput();
@@ -84,7 +84,7 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
       new_embedding->LinksFrom({new_ids, new_table});
       new_embedding->LinksTo({new_embedding_out});
 
-      auto ewadd_name = paddle::lite::string_format("ewadd%d%d", i - 1, i);
+      auto ewadd_name = paddle::lite_metal::string_format("ewadd%d%d", i - 1, i);
       auto ewadd_out_name = ewadd_name + "_out";
 
       auto* new_ewadd = OpNode(ewadd_name, "elementwise_add")->AsIntermediate();
@@ -105,14 +105,14 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
     std::vector<std::string> ids_names;
     std::vector<std::string> table_names;
     for (int i = 0; i < n_embedding_; ++i) {
-      auto ids_name = paddle::lite::string_format("ids%d", i);
+      auto ids_name = paddle::lite_metal::string_format("ids%d", i);
       ids_names.push_back(matched.at(ids_name)->arg()->name);
-      auto table_name = paddle::lite::string_format("table%d", i);
+      auto table_name = paddle::lite_metal::string_format("table%d", i);
       table_names.push_back(matched.at(table_name)->arg()->name);
     }
     op_desc.SetInput("Ids", ids_names);
     op_desc.SetInput("Tables", table_names);
-    auto output_name = paddle::lite::string_format(
+    auto output_name = paddle::lite_metal::string_format(
         "ewadd%d%d_out", n_embedding_ - 2, n_embedding_ - 1);
     op_desc.SetOutput("Output", {matched.at(output_name)->arg()->name});
     op_desc.SetAttr<int>("n_embedding", n_embedding_);
@@ -129,8 +129,8 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
     new_stmt->SetKernels(std::move(kernels));
 
     for (int i = 0; i < n_embedding_; ++i) {
-      auto ids_name = paddle::lite::string_format("ids%d", i);
-      auto table_name = paddle::lite::string_format("table%d", i);
+      auto ids_name = paddle::lite_metal::string_format("ids%d", i);
+      auto table_name = paddle::lite_metal::string_format("table%d", i);
       DirectedLink(matched.at(ids_name), matched.at("embedding0"));
       DirectedLink(matched.at(table_name), matched.at("embedding0"));
     }
@@ -163,6 +163,6 @@ class XPUEmbeddingWithEltwiseAddFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass,
-                  paddle::lite::mir::XPUEmbeddingWithEltwiseAddFusePass)
+                  paddle::lite_metal::mir::XPUEmbeddingWithEltwiseAddFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__embedding_with_eltwise_add");

@@ -23,7 +23,7 @@
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -78,7 +78,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
   CHECK_EQ(output_names_.size(), origin_otensors_.size());
 
   // Build the XPU IR graph to the XPU runtime for inference
-  device_program_ = lite::xpu::Device::Global().Build(
+  device_program_ = lite_metal::xpu::Device::Global().Build(
       &graph.builder_, &graph.params_, &device_onodes);
   if (device_program_ == nullptr) {
     LOG(WARNING) << "[XPU] Build model failed!";
@@ -204,7 +204,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SubgraphCompute,
+                     paddle::lite_metal::kernels::xpu::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})

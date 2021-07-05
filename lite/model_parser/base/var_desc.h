@@ -20,7 +20,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class VarDescReadAPI {
  public:
@@ -54,8 +54,8 @@ class VarDescWriteAPI {
 
 class VarDescAPI : public VarDescReadAPI, public VarDescWriteAPI {
  public:
-  using VarDataType = lite::VarDataType;
-  using Type = lite::VarDataType;
+  using VarDataType = lite_metal::VarDataType;
+  using Type = lite_metal::VarDataType;
   virtual ~VarDescAPI() = default;
 };
 

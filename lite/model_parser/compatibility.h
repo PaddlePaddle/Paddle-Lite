@@ -20,7 +20,7 @@
 #include "lite/model_parser/base/apis.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename T>
 class CompatibleChecker {

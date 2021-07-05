@@ -20,7 +20,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -74,7 +74,7 @@ void Im2SequenceCompute::Run() {
 
     int out_offset = 0;
     for (int im_id = 0; im_id < im_num; im_id++) {
-      lite::arm::math::im2sequence(x_data + im_id * im_size,
+      lite_metal::arm::math::im2sequence(x_data + im_id * im_size,
                                    input_dims[1],
                                    input_dims[2],
                                    input_dims[3],
@@ -100,7 +100,7 @@ void Im2SequenceCompute::Run() {
         1;
     for (int im_id = 0; im_id < im_num; im_id++) {
       int out_size_per_im = out_h * out_w * out_cols;
-      lite::arm::math::im2sequence(x_data + im_id * im_size,
+      lite_metal::arm::math::im2sequence(x_data + im_id * im_size,
                                    input_dims[1],
                                    input_dims[2],
                                    input_dims[3],
@@ -133,7 +133,7 @@ REGISTER_LITE_KERNEL(im2sequence,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::Im2SequenceCompute,
+                     paddle::lite_metal::kernels::arm::Im2SequenceCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})

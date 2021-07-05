@@ -24,7 +24,7 @@
 #include "lite/kernels/opencl/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 // #define SHADOW_LOG LOG(INFO)
 #define SHADOW_LOG VLOG(4)
 #define FP16_MAX_DIFF (1e0)
@@ -202,7 +202,7 @@ TEST(conv2d, compute_image2d_1x1) {
 
               SHADOW_LOG << "prepare kernel ------";
 
-              lite::Tensor input, filter, bias, output;
+              lite_metal::Tensor input, filter, bias, output;
               operators::ConvParam param;
               param.x = &input;
               param.filter = &filter;
@@ -248,14 +248,14 @@ TEST(conv2d, compute_image2d_1x1) {
               kernel->SetContext(std::move(conv_1x1_context));
 
               const DDim& input_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
               const DDim& filter_dim =
-                  lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
+                  lite_metal::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
               const DDim& out_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, oc, ih, iw})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, oc, ih, iw})};
               // element wise bias
-              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
+              const DDim& bias_dim = lite_metal::DDim{std::vector<int64_t>({oc})};
 
               param.x->Resize(input_dim);
               param.filter->Resize(filter_dim);
@@ -327,7 +327,7 @@ TEST(conv2d, compute_image2d_1x1) {
               CHECK_LE(filter_dim.production(),
                        4 * filter_image_width * filter_image_height);
 
-              paddle::lite::CLImageConverterDefault default_convertor;
+              paddle::lite_metal::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
               std::vector<half_t> x_image_v(
                   input_image_width * input_image_height * 4);  // 4 : RGBA
@@ -342,14 +342,14 @@ TEST(conv2d, compute_image2d_1x1) {
                   input_v.data(), x_image_v.data(), input_dim);
 
               SHADOW_LOG << "set mapped filter  ...";
-              paddle::lite::CLImageConverterNWBlock nw_convertor;
+              paddle::lite_metal::CLImageConverterNWBlock nw_convertor;
               nw_convertor.NCHWToImage(
                   filter_v.data(), filter_image_v.data(), filter_dim);
 
               auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
               // assign filter as target arm
-              filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+              filter.Assign<float, lite_metal::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
               SHADOW_LOG << " lite输入 input_v ..... ";
               for (int i = 0; i < input_v.size(); i++) {
@@ -385,7 +385,7 @@ TEST(conv2d, compute_image2d_1x1) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
-                bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
+                bias.Assign<float, lite_metal::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
               }
 
@@ -393,7 +393,7 @@ TEST(conv2d, compute_image2d_1x1) {
               output.Resize(out_dim);
 
               // cpu conv basic calc
-              lite::Tensor out_ref;
+              lite_metal::Tensor out_ref;
               out_ref.Resize(out_dim);
 
               SHADOW_LOG << "prepare kernel ready";
@@ -461,7 +461,7 @@ TEST(conv2d, compute_image2d_1x1) {
               SHADOW_LOG << " conv_basic end ..... ";
 
               SHADOW_LOG << " out_dim: " << out_dim;
-              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+              const DDim& out_image_dims = lite_metal::DDim{std::vector<int64_t>(
                   {static_cast<int64_t>(out_image_width),
                    static_cast<int64_t>(out_image_height)})};
 
@@ -560,7 +560,7 @@ const int stride = 2;
 
               SHADOW_LOG << "prepare kernel ------";
 
-              lite::Tensor input, filter, bias, output;
+              lite_metal::Tensor input, filter, bias, output;
               operators::ConvParam param;
               param.x = &input;
               param.filter = &filter;
@@ -607,14 +607,14 @@ const int stride = 2;
               kernel->SetContext(std::move(conv_1x1_context));
 
               const DDim& input_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
-              const DDim& filter_dim = lite::DDim{
+              const DDim& filter_dim = lite_metal::DDim{
                   std::vector<int64_t>({oc, filter_channel, ksize, ksize})};
               const DDim& out_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
-              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
+              const DDim& bias_dim = lite_metal::DDim{std::vector<int64_t>({oc})};
 
               VLOG(2) << "input_dim:" << input_dim
                       << " filter_dim:" << filter_dim << " out_dim:" << out_dim
@@ -689,7 +689,7 @@ const int stride = 2;
               CHECK_LE(filter_dim.production(),
                        4 * filter_image_width * filter_image_height);
 
-              paddle::lite::CLImageConverterDefault default_convertor;
+              paddle::lite_metal::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
               std::vector<half_t> x_image_v(input_image_width *
                                             input_image_height * 4);  // 4 :RGBA
@@ -726,13 +726,13 @@ const int stride = 2;
               auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
               // assign filter as target arm
-              filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+              filter.Assign<float, lite_metal::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
-                bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
+                bias.Assign<float, lite_metal::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
               }
 
@@ -740,7 +740,7 @@ const int stride = 2;
               output.Resize(out_dim);
 
               // cpu conv basic calc
-              lite::Tensor out_ref;
+              lite_metal::Tensor out_ref;
               out_ref.Resize(out_dim);
 
               SHADOW_LOG << "prepare kernel ready";
@@ -809,7 +809,7 @@ const int stride = 2;
               SHADOW_LOG << " conv_basic end ..... ";
 
               SHADOW_LOG << " out_dim: " << out_dim;
-              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+              const DDim& out_image_dims = lite_metal::DDim{std::vector<int64_t>(
                   {static_cast<int64_t>(out_image_width),
                    static_cast<int64_t>(out_image_height)})};
 
@@ -903,7 +903,7 @@ TEST(conv2d, compute_image2d_5x5) {
 
               SHADOW_LOG << "prepare kernel ------";
 
-              lite::Tensor input, filter, bias, output;
+              lite_metal::Tensor input, filter, bias, output;
               operators::ConvParam param;
               param.x = &input;
               param.filter = &filter;
@@ -948,14 +948,14 @@ TEST(conv2d, compute_image2d_5x5) {
               kernel->SetContext(std::move(conv_1x1_context));
 
               const DDim& input_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
               const DDim& filter_dim =
-                  lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
+                  lite_metal::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
               const DDim& out_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
-              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
+              const DDim& bias_dim = lite_metal::DDim{std::vector<int64_t>({oc})};
 
               VLOG(2) << "input_dim:" << input_dim
                       << " filter_dim:" << filter_dim << " out_dim:" << out_dim
@@ -1026,7 +1026,7 @@ TEST(conv2d, compute_image2d_5x5) {
               CHECK_LE(filter_dim.production(),
                        4 * filter_image_width * filter_image_height);
 
-              paddle::lite::CLImageConverterDefault default_convertor;
+              paddle::lite_metal::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
               std::vector<half_t> x_image_v(input_image_width *
                                             input_image_height * 4);  // 4 :RGBA
@@ -1063,13 +1063,13 @@ TEST(conv2d, compute_image2d_5x5) {
               auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
               // assign filter as target arm
-              filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+              filter.Assign<float, lite_metal::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
-                bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
+                bias.Assign<float, lite_metal::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
               }
 
@@ -1077,7 +1077,7 @@ TEST(conv2d, compute_image2d_5x5) {
               output.Resize(out_dim);
 
               // cpu conv basic calc
-              lite::Tensor out_ref;
+              lite_metal::Tensor out_ref;
               out_ref.Resize(out_dim);
 
               SHADOW_LOG << "prepare kernel ready";
@@ -1147,7 +1147,7 @@ TEST(conv2d, compute_image2d_5x5) {
               SHADOW_LOG << " conv_basic end ..... ";
 
               SHADOW_LOG << " out_dim: " << out_dim;
-              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+              const DDim& out_image_dims = lite_metal::DDim{std::vector<int64_t>(
                   {static_cast<int64_t>(out_image_width),
                    static_cast<int64_t>(out_image_height)})};
 
@@ -1229,7 +1229,7 @@ TEST(conv2d, compute_image2d_7x7) {
 
               SHADOW_LOG << "prepare kernel ------";
 
-              lite::Tensor input, filter, bias, output;
+              lite_metal::Tensor input, filter, bias, output;
               operators::ConvParam param;
               param.x = &input;
               param.filter = &filter;
@@ -1275,14 +1275,14 @@ TEST(conv2d, compute_image2d_7x7) {
               kernel->SetContext(std::move(conv_1x1_context));
 
               const DDim& input_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
               const DDim& filter_dim =
-                  lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
+                  lite_metal::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
               const DDim& out_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
-              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
+              const DDim& bias_dim = lite_metal::DDim{std::vector<int64_t>({oc})};
 
               param.x->Resize(input_dim);
               param.filter->Resize(filter_dim);
@@ -1360,7 +1360,7 @@ TEST(conv2d, compute_image2d_7x7) {
               CHECK_LE(filter_dim.production(),
                        4 * filter_image_width * filter_image_height);
 
-              paddle::lite::CLImageConverterDefault default_convertor;
+              paddle::lite_metal::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
               std::vector<half_t> x_image_v(
                   input_image_width * input_image_height * 4);  // 4 : RGBA
@@ -1398,13 +1398,13 @@ TEST(conv2d, compute_image2d_7x7) {
                   input_image_width, input_image_height, x_image_v.data());
 
               // assign filter as target arm
-              filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+              filter.Assign<float, lite_metal::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
-                bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
+                bias.Assign<float, lite_metal::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
               }
 
@@ -1412,7 +1412,7 @@ TEST(conv2d, compute_image2d_7x7) {
               output.Resize(out_dim);
 
               // cpu conv basic calc
-              lite::Tensor out_ref;
+              lite_metal::Tensor out_ref;
               out_ref.Resize(out_dim);
 
               SHADOW_LOG << "prepare kernel ready";
@@ -1482,7 +1482,7 @@ TEST(conv2d, compute_image2d_7x7) {
               SHADOW_LOG << " conv_basic end ..... ";
 
               SHADOW_LOG << " out_dim: " << out_dim;
-              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+              const DDim& out_image_dims = lite_metal::DDim{std::vector<int64_t>(
                   {static_cast<int64_t>(out_image_width),
                    static_cast<int64_t>(out_image_height)})};
 
@@ -1584,7 +1584,7 @@ const int stride = 2;
 
               SHADOW_LOG << "prepare kernel ------";
 
-              lite::Tensor input, filter, bias, output;
+              lite_metal::Tensor input, filter, bias, output;
               operators::ConvParam param;
               param.x = &input;
               param.filter = &filter;
@@ -1631,14 +1631,14 @@ const int stride = 2;
               kernel->SetContext(std::move(conv_1x1_context));
 
               const DDim& input_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
 
-              const DDim& filter_dim = lite::DDim{
+              const DDim& filter_dim = lite_metal::DDim{
                   std::vector<int64_t>({oc, filter_channel, ksize_y, ksize_x})};
               const DDim& out_dim =
-                  lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
+                  lite_metal::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
               // element wise bias
-              const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
+              const DDim& bias_dim = lite_metal::DDim{std::vector<int64_t>({oc})};
 
               VLOG(2) << "input_dim:" << input_dim
                       << " filter_dim:" << filter_dim << " out_dim:" << out_dim
@@ -1714,7 +1714,7 @@ const int stride = 2;
               CHECK_LE(filter_dim.production(),
                        4 * filter_image_width * filter_image_height);
 
-              paddle::lite::CLImageConverterDefault default_convertor;
+              paddle::lite_metal::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
               std::vector<half_t> x_image_v(input_image_width *
                                             input_image_height * 4);  // 4 :RGBA
@@ -1751,13 +1751,13 @@ const int stride = 2;
               auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
                   input_image_width, input_image_height, x_image_v.data());
               // assign filter as target arm
-              filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+              filter.Assign<float, lite_metal::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
                   bias_v[i] = static_cast<int>(gen(engine));
                 }
-                bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
+                bias.Assign<float, lite_metal::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
               }
 
@@ -1765,7 +1765,7 @@ const int stride = 2;
               output.Resize(out_dim);
 
               // cpu conv basic calc
-              lite::Tensor out_ref;
+              lite_metal::Tensor out_ref;
               out_ref.Resize(out_dim);
 
               SHADOW_LOG << "prepare kernel ready";
@@ -1834,7 +1834,7 @@ const int stride = 2;
               SHADOW_LOG << " conv_basic end ..... ";
 
               SHADOW_LOG << " out_dim: " << out_dim;
-              const DDim& out_image_dims = lite::DDim{std::vector<int64_t>(
+              const DDim& out_image_dims = lite_metal::DDim{std::vector<int64_t>(
                   {static_cast<int64_t>(out_image_width),
                    static_cast<int64_t>(out_image_height)})};
 

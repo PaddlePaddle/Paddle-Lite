@@ -16,7 +16,7 @@
 #include <stdio.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 void BinaryTable::Require(size_t size) {

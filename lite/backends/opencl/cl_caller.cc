@@ -22,7 +22,7 @@ limitations under the License. */
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static void CopyImageData(CLContext* context,
                           const CLImage& cl_image,

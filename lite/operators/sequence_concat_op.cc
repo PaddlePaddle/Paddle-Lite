@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SequenceConcatOp::CheckShape() const {
@@ -29,14 +29,14 @@ bool SequenceConcatOp::CheckShape() const {
 bool SequenceConcatOp::InferShapeImpl() const { return true; }
 
 bool SequenceConcatOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                  lite::Scope *scope) {
+                                  lite_metal::Scope *scope) {
   auto input_list = opdesc.Input("X");
   param_.X.clear();
   for (auto var : input_list) {
-    param_.X.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.X.push_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   CHECK(param_.Out) << "Output(Out) of Sequence Concat Op should not be null.";
   return true;
 }
@@ -45,4 +45,4 @@ bool SequenceConcatOp::AttachImpl(const cpp::OpDesc &opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_concat, paddle::lite::operators::SequenceConcatOp);
+REGISTER_LITE_OP(sequence_concat, paddle::lite_metal::operators::SequenceConcatOp);

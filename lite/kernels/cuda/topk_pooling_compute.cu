@@ -21,7 +21,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -93,7 +93,7 @@ __global__ void top_k_pooling_batch_kernel_reduction(Dtype *output_data,
 
 template <typename T>
 void TopkPoolingCompute<T>::PrepareForRun() {
-  int device_id = lite::TargetWrapperCuda::GetCurDevice();
+  int device_id = lite_metal::TargetWrapperCuda::GetCurDevice();
   cudaDeviceProp deviceProp;
   CUDA_CALL(cudaGetDeviceProperties(&deviceProp, device_id));
   _shared_mem_size = deviceProp.sharedMemPerBlock;
@@ -111,31 +111,31 @@ void TopkPoolingCompute<T>::Run() {
       << "Y sequence offset is not valid";
 
   int width_offset_len = param.X->lod()[0].size();
-  lite::DDim width_offset_shape(std::vector<int64_t>{width_offset_len});
+  lite_metal::DDim width_offset_shape(std::vector<int64_t>{width_offset_len});
   _width_offset.Resize(width_offset_shape);
   std::vector<int> width_lod_0(width_offset_len, 0);
   for (size_t i = 0; i < param.X->lod()[0].size(); ++i) {
     width_lod_0[i] = static_cast<int>(param.X->lod()[0][i]);
   }
-  lite::TargetWrapperCuda::MemcpyAsync(
+  lite_metal::TargetWrapperCuda::MemcpyAsync(
       _width_offset.mutable_data<int>(TARGET(kCUDA)),
       width_lod_0.data(),
       sizeof(int) * width_offset_len,
-      lite::IoDirection::HtoD,
+      lite_metal::IoDirection::HtoD,
       cuda_stream);
 
   int height_offset_len = param.Y->lod()[0].size();
-  lite::DDim height_offset_shape(std::vector<int64_t>{height_offset_len});
+  lite_metal::DDim height_offset_shape(std::vector<int64_t>{height_offset_len});
   _height_offset.Resize(height_offset_shape);
   std::vector<int> height_lod_0(height_offset_len, 0);
   for (size_t i = 0; i < param.Y->lod()[0].size(); ++i) {
     height_lod_0[i] = static_cast<int>(param.Y->lod()[0][i]);
   }
-  lite::TargetWrapperCuda::MemcpyAsync(
+  lite_metal::TargetWrapperCuda::MemcpyAsync(
       _height_offset.mutable_data<int>(TARGET(kCUDA)),
       height_lod_0.data(),
       sizeof(int) * height_offset_len,
-      lite::IoDirection::HtoD,
+      lite_metal::IoDirection::HtoD,
       cuda_stream);
 
   const Tensor *x_tensor = param.X;
@@ -183,7 +183,7 @@ REGISTER_LITE_KERNEL(topk_pooling,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::TopkPoolingCompute<float>,
+                     paddle::lite_metal::kernels::cuda::TopkPoolingCompute<float>,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),

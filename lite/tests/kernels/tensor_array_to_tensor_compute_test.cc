@@ -20,7 +20,7 @@
 #include "lite/core/arena/framework.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 DDim infer_shape(const std::vector<const Tensor*>& inputs,
                  int axis,

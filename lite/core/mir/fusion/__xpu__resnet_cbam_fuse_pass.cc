@@ -20,7 +20,7 @@
 #include "lite/operators/subgraph_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -1147,7 +1147,7 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
 
   void handle_placeholder_sa_conv(SSAGraph* graph,
                                   const key2nodes_t& matched,
-                                  paddle::lite::Scope* scope,
+                                  paddle::lite_metal::Scope* scope,
                                   const std::string& filter_name,
                                   std::vector<std::string>* max_filter_name) {
     auto* filter_t = scope->FindMutableTensor(filter_name);
@@ -1155,9 +1155,9 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
     float* filter_on_host = filter_t->mutable_data<float>();
 
     float max_f =
-        paddle::lite::xpu::math::FindMaxAbs(filter_on_host, filter_len);
+        paddle::lite_metal::xpu::math::FindMaxAbs(filter_on_host, filter_len);
     std::unique_ptr<int16_t[]> filter_int16(new int16_t[filter_len]);
-    paddle::lite::xpu::math::ConvertFP32ToInt16(
+    paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
         filter_on_host, filter_int16.get(), max_f, filter_len);
     memcpy(filter_on_host, filter_int16.get(), filter_len * sizeof(int16_t));
 
@@ -1180,7 +1180,7 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
 
   void handle_placeholder_last_fc(SSAGraph* graph,
                                   const key2nodes_t& matched,
-                                  paddle::lite::Scope* scope,
+                                  paddle::lite_metal::Scope* scope,
                                   const std::string& filter_name,
                                   std::vector<std::string>* max_filter_name) {
     auto* filter_t = scope->FindMutableTensor(filter_name);
@@ -1190,9 +1190,9 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
 
     // XXX(miaotianxiang): Y has already been transposed in model...
     float max_f =
-        paddle::lite::xpu::math::FindMaxAbs(filter_on_host, filter_len);
+        paddle::lite_metal::xpu::math::FindMaxAbs(filter_on_host, filter_len);
     std::unique_ptr<int16_t[]> filter_int16(new int16_t[filter_len]);
-    paddle::lite::xpu::math::ConvertFP32ToInt16(
+    paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
         filter_on_host, filter_int16.get(), max_f, filter_len);
     memcpy(filter_on_host, filter_int16.get(), filter_len * sizeof(int16_t));
 
@@ -1316,9 +1316,9 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
       }
 
       float max_f =
-          paddle::lite::xpu::math::FindMaxAbs(filter_on_host, filter_len);
+          paddle::lite_metal::xpu::math::FindMaxAbs(filter_on_host, filter_len);
       std::unique_ptr<int16_t[]> filter_int16(new int16_t[filter_len]);
-      paddle::lite::xpu::math::ConvertFP32ToInt16(
+      paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
           filter_on_host, filter_int16.get(), max_f, filter_len);
       memcpy(filter_on_host, filter_int16.get(), filter_len * sizeof(int16_t));
 
@@ -1394,6 +1394,6 @@ class XPUResNetCbamFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__resnet_cbam_fuse_pass,
-                  paddle::lite::mir::XPUResNetCbamFusePass)
+                  paddle::lite_metal::mir::XPUResNetCbamFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__resnet_cbam");

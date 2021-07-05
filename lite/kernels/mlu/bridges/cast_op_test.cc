@@ -21,7 +21,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -34,11 +34,11 @@ void test_cast_FP16_to_FP32(std::vector<int64_t> shape) {
   auto* x = scope.Var(x_var_name)->GetMutable<Tensor>();
   auto* out = scope.Var(out_var_name)->GetMutable<Tensor>();
   x->Resize(DDim(shape));
-  auto* x_data = x->mutable_data<paddle::lite::fluid::float16>();
+  auto* x_data = x->mutable_data<paddle::lite_metal::fluid::float16>();
 
   // initialize input&output data
   for (int i = 0; i < x->dims().production(); i++) {
-    x_data[i] = static_cast<paddle::lite::fluid::float16>(i);
+    x_data[i] = static_cast<paddle::lite_metal::fluid::float16>(i);
   }
   // initialize op desc
   int in_dtype = 4, out_dtype = 5;
@@ -53,7 +53,7 @@ void test_cast_FP16_to_FP32(std::vector<int64_t> shape) {
 
   Tensor data;
   data.Resize(DDim(shape));
-  auto* copy_data = data.mutable_data<paddle::lite::fluid::float16>();
+  auto* copy_data = data.mutable_data<paddle::lite_metal::fluid::float16>();
   data.CopyDataFrom(*x);
   x->set_precision(paddle::lite_api::PrecisionType::kFP16);
   LaunchOp(op, {x_var_name}, {out_var_name});
@@ -100,7 +100,7 @@ void test_cast_FP32_to_FP16(std::vector<int64_t> shape) {
   LaunchOp(op, {x_var_name}, {out_var_name});
 
   // compare results
-  auto* out_data = out->mutable_data<paddle::lite::fluid::float16>();
+  auto* out_data = out->mutable_data<paddle::lite_metal::fluid::float16>();
   for (int i = 0; i < out->dims().production(); i++) {
     VLOG(5) << i;
     EXPECT_NEAR(static_cast<double>(out_data[i]), copy_data[i], 5e-4);

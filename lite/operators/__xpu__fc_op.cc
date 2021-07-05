@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUFcOp::CheckShape() const {
@@ -70,7 +70,7 @@ bool XPUFcOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter").front()));
@@ -99,7 +99,7 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     if (bias_arguments.size() > 0) {
       auto bias_var = scope->FindVar(bias_arguments.front());
       if (bias_var != nullptr) {
-        param_.bias = bias_var->GetMutable<lite::Tensor>();
+        param_.bias = bias_var->GetMutable<lite_metal::Tensor>();
       }
     }
   }
@@ -119,4 +119,4 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__fc, paddle::lite::operators::XPUFcOp);
+REGISTER_LITE_OP(__xpu__fc, paddle::lite_metal::operators::XPUFcOp);

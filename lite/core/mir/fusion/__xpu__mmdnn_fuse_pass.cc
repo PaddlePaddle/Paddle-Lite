@@ -19,7 +19,7 @@
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -42,9 +42,9 @@ class XPUMmdnnFloat2Fix {
         auto weight_len = weight_t->numel();
         float* weight_on_host = weight_t->mutable_data<float>();
         float max_f =
-            paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
+            paddle::lite_metal::xpu::math::FindMaxAbs(weight_on_host, weight_len);
         std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
-        paddle::lite::xpu::math::ConvertFP32ToInt16(
+        paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
             weight_on_host, weight_int16.get(), max_f, weight_len);
         memcpy(
             weight_on_host, weight_int16.get(), weight_len * sizeof(int16_t));
@@ -63,12 +63,12 @@ class XPUMmdnnFloat2Fix {
         auto weight_len = weight_t->numel();
         float* weight_on_host = weight_t->mutable_data<float>();
         float max_f =
-            paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
+            paddle::lite_metal::xpu::math::FindMaxAbs(weight_on_host, weight_len);
         std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
         std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
-        paddle::lite::xpu::math::ConvertFP32ToInt16(
+        paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
             weight_on_host, weight_int16.get(), max_f, weight_len);
-        paddle::lite::xpu::math::Transpose(weight_int16.get(),
+        paddle::lite_metal::xpu::math::Transpose(weight_int16.get(),
                                            weight_trans_int16.get(),
                                            weight_dims[0],
                                            weight_dims[1] * weight_dims[2]);
@@ -94,9 +94,9 @@ class XPUMmdnnFloat2Fix {
         std::unique_ptr<int16_t[]> wi_int16(new int16_t[wi_len]);
         std::vector<float> wi_max(3);
         for (int i = 0; i < 3; ++i) {
-          float max_f = paddle::lite::xpu::math::FindMaxAbs(
+          float max_f = paddle::lite_metal::xpu::math::FindMaxAbs(
               wi_on_host + i * wi_stride_len, wi_stride_len);
-          paddle::lite::xpu::math::ConvertFP32ToInt16(
+          paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
               wi_on_host + i * wi_stride_len,
               wi_int16.get() + i * wi_stride_len,
               max_f,
@@ -114,9 +114,9 @@ class XPUMmdnnFloat2Fix {
         std::unique_ptr<int16_t[]> wh_int16(new int16_t[wh_len]);
         std::vector<float> wh_max(3);
         for (int i = 0; i < 3; ++i) {
-          float max_f = paddle::lite::xpu::math::FindMaxAbs(
+          float max_f = paddle::lite_metal::xpu::math::FindMaxAbs(
               wh_on_host + i * wh_stride_len, wh_stride_len);
-          paddle::lite::xpu::math::ConvertFP32ToInt16(
+          paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
               wh_on_host + i * wh_stride_len,
               wh_int16.get() + i * wh_stride_len,
               max_f,
@@ -303,9 +303,9 @@ class XPUMmdnnSearchAttentionFuser : public FuseBase {
     int w_len = w_t->numel();
     float* w_on_host = w_t->mutable_data<float>();
 
-    float max_f = paddle::lite::xpu::math::FindMaxAbs(w_on_host, w_len);
+    float max_f = paddle::lite_metal::xpu::math::FindMaxAbs(w_on_host, w_len);
     std::unique_ptr<int16_t[]> w_int16(new int16_t[w_len]);
-    paddle::lite::xpu::math::ConvertFP32ToInt16(
+    paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
         w_on_host, w_int16.get(), max_f, w_len);
     memcpy(w_on_host, w_int16.get(), w_len * sizeof(int16_t));
     op_desc.SetAttr<float>("W_max", max_f);
@@ -1362,7 +1362,7 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
                                 ->AsIntermediate();
     for (int i = 2; i < n_concat_topk_; ++i) {
       auto concat_topk_input_name =
-          paddle::lite::string_format("concat_topk_input%d", i);
+          paddle::lite_metal::string_format("concat_topk_input%d", i);
       auto* concat_topk_inputx = VarNode(concat_topk_input_name)
                                      ->assert_is_op_nth_input("concat", "X", i)
                                      ->AsInput();
@@ -1588,7 +1588,7 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
     };
     for (int i = 2; i < n_concat_topk_; ++i) {
       auto concat_topk_input_name =
-          paddle::lite::string_format("concat_topk_input%d", i);
+          paddle::lite_metal::string_format("concat_topk_input%d", i);
       arg_names.push_back(concat_topk_input_name);
     }
     for (auto name : arg_names) {
@@ -1645,7 +1645,7 @@ class XPUMmdnnFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__mmdnn_fuse_pass, paddle::lite::mir::XPUMmdnnFusePass)
+REGISTER_MIR_PASS(__xpu__mmdnn_fuse_pass, paddle::lite_metal::mir::XPUMmdnnFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__mmdnn_search_attention")
     .BindKernel("__xpu__mmdnn_bid_emb_grnn_att")

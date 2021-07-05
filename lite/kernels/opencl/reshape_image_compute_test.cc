@@ -24,15 +24,15 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 static DDim ValidateShape(const std::vector<int>& shape,
                           const DDim& input_dims) {
-  const lite::DDim::value_type input_size = input_dims.production();
+  const lite_metal::DDim::value_type input_size = input_dims.production();
   auto input_shape = input_dims.Vectorize();
   bool all_positive = std::all_of(
-      input_shape.cbegin(), input_shape.cend(), [](lite::DDim::value_type i) {
+      input_shape.cbegin(), input_shape.cend(), [](lite_metal::DDim::value_type i) {
         return i > 0;
       });
   // only one dimension can be set to -1, whose size will be automatically
@@ -40,8 +40,8 @@ static DDim ValidateShape(const std::vector<int>& shape,
   const int unk_dim_val = -1;
   const int copy_dim_val = 0;
 
-  std::vector<lite::DDim::value_type> output_shape(shape.size(), 0);
-  lite::DDim::value_type capacity = 1;
+  std::vector<lite_metal::DDim::value_type> output_shape(shape.size(), 0);
+  lite_metal::DDim::value_type capacity = 1;
   int unk_dim_idx = -1;
   for (size_t i = 0; i < shape.size(); ++i) {
     if (shape[i] == unk_dim_val) {
@@ -57,9 +57,9 @@ static DDim ValidateShape(const std::vector<int>& shape,
                                "be negtive except one unknown dimension.";
     }
 
-    capacity *= (shape[i] ? static_cast<lite::DDim::value_type>(shape[i])
+    capacity *= (shape[i] ? static_cast<lite_metal::DDim::value_type>(shape[i])
                           : input_shape[i]);
-    output_shape[i] = (shape[i] ? static_cast<lite::DDim::value_type>(shape[i])
+    output_shape[i] = (shape[i] ? static_cast<lite_metal::DDim::value_type>(shape[i])
                                 : input_shape[i]);
   }
 
@@ -78,7 +78,7 @@ static DDim ValidateShape(const std::vector<int>& shape,
   } else {
     CHECK_EQ(capacity, input_size) << "Invalid shape is given.";
   }
-  return lite::DDim(output_shape);
+  return lite_metal::DDim(output_shape);
 }
 
 TEST(reshape_opencl, compute) {
@@ -97,7 +97,7 @@ TEST(reshape_opencl, compute) {
   int64_t ih = 4;
   int64_t iw = 6;
 
-  lite::Tensor input, output;
+  lite_metal::Tensor input, output;
 
   operators::ReshapeParam param;
 
@@ -113,7 +113,7 @@ TEST(reshape_opencl, compute) {
   param.output = &output;
 
   const DDim input_dim =
-      lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
+      lite_metal::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
   input.Resize(input_dim);
 
   std::vector<int> final_shape = std::vector<int>(
@@ -150,7 +150,7 @@ TEST(reshape_opencl, compute) {
   for (auto& i : input_v) {
     i = gen(engine);
   }
-  paddle::lite::CLImageConverterDefault default_convertor;
+  paddle::lite_metal::CLImageConverterDefault default_convertor;
 
   std::vector<half_t> x_image_data(input_image_width * input_image_height *
                                    4);  // 4 : RGBA

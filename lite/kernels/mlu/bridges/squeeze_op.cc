@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -94,7 +94,7 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(squeeze,
                          kMLU,
-                         paddle::lite::subgraph::mlu::SqueezeConverter);
+                         paddle::lite_metal::subgraph::mlu::SqueezeConverter);
 REGISTER_SUBGRAPH_BRIDGE(squeeze2,
                          kMLU,
-                         paddle::lite::subgraph::mlu::SqueezeConverter);
+                         paddle::lite_metal::subgraph::mlu::SqueezeConverter);

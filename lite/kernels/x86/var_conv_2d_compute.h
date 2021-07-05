@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -29,7 +29,7 @@ class VarConv2DCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::VarConv2DParam;
 
-  void Im2Col(const lite::Tensor& input, lite::Tensor* col) const {
+  void Im2Col(const lite_metal::Tensor& input, lite_metal::Tensor* col) const {
     auto& param = *param_.get_mutable<param_t>();
     int input_channel = param.input_channel;
     int kernel_h = param.kernel_h;
@@ -182,7 +182,7 @@ class VarConv2DCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     const auto* w_data = w->template data<T>();
     const auto* col_data = col->template data<T>();
 
-    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
+    auto blas = lite_metal::x86::math::GetBlas<lite_metal::TargetType::kX86, T>(context);
     for (int b = 0; b < batch; ++b) {
       int top_im_size = (top_offset[b + 1] - top_offset[b]) / output_channel;
       if (top_im_size == 0) {

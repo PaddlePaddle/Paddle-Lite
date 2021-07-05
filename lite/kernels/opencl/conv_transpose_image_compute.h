@@ -28,7 +28,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -46,7 +46,7 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
   void Run() override;
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_names_[0];
     ch->global_work_size = ch->NDRangeToStr(global_work_size_);
     ch->local_work_size = ch->NDRangeToStr(local_work_size_);

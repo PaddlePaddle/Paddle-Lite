@@ -18,7 +18,7 @@
 #include <vector>
 #include "lite/utils/cv/paddle_image_preprocess.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 class ImageFlip {

@@ -29,10 +29,10 @@
 #define CNML_CALL(msg)                                          \
   CHECK_EQ(static_cast<cnmlStatus_t>(msg), CNML_STATUS_SUCCESS) \
       << (msg) << " MLU CNML: "                                 \
-      << ::paddle::lite::mlu::CnmlErrorInfo(static_cast<int>(msg))
+      << ::paddle::lite_metal::mlu::CnmlErrorInfo(static_cast<int>(msg))
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mlu {
 
 static const char* CnmlErrorInfo(int error) {

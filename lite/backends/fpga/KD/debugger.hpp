@@ -23,7 +23,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // uncomment line below to print tensors;
 // #define FPGA_PRINT_TENSOR
@@ -102,7 +102,7 @@ inline void chw_to_hwc(Tensor* t, float* dst) {
   }
 }
 
-inline void read_from_file(lite::Tensor* t, const std::string& path) {
+inline void read_from_file(lite_metal::Tensor* t, const std::string& path) {
   std::ifstream file_stream;
   file_stream.open(path);
   if (!file_stream) {
@@ -119,7 +119,7 @@ inline void read_from_file(lite::Tensor* t, const std::string& path) {
 
 inline void save_float(float* data, const std::string& name, int len) {
   static int counter = 0;
-  std::string old_string = paddle::lite::to_string(counter);
+  std::string old_string = paddle::lite_metal::to_string(counter);
   std::string new_string =
       std::string(3 - old_string.length(), '0') + old_string;
 
@@ -135,7 +135,7 @@ inline void save_float(float* data, const std::string& name, int len) {
   ofs.close();
 }
 
-inline void save_tensor(lite::Tensor* t,
+inline void save_tensor(lite_metal::Tensor* t,
                         const std::string& name,
                         bool convert = true) {
   float* data = const_cast<float*>(t->data<float>());
@@ -149,13 +149,13 @@ inline void save_tensor(lite::Tensor* t,
   delete[] dst;
 }
 
-inline void save_tensor(const lite::Tensor* t,
+inline void save_tensor(const lite_metal::Tensor* t,
                         const std::string& name,
                         bool convert = true) {
   float* data = const_cast<float*>(t->data<float>());
   float* dst = new float[t->numel()];
   if (convert) {
-    chw_to_hwc(const_cast<lite::Tensor*>(t), dst);
+    chw_to_hwc(const_cast<lite_metal::Tensor*>(t), dst);
     data = dst;
   }
   save_float(data, name, t->numel());

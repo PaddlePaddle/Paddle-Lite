@@ -18,7 +18,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace {
 
@@ -68,7 +68,7 @@ TEST(from_chars, test) {
 
 TEST(StringView, Split) {
   const std::string str("conv2d/def/4/1/1");
-  const std::vector<StringView> result = lite::SplitView(str, '/');
+  const std::vector<StringView> result = lite_metal::SplitView(str, '/');
   CHECK_EQ(static_cast<std::string>(result[0]), "conv2d");
   CHECK_EQ(static_cast<std::string>(result[1]), "def");
   CHECK_EQ(static_cast<std::string>(result[2]), "4");

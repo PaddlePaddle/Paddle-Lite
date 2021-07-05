@@ -18,11 +18,11 @@
 #include "lite/operators/subgraph_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arena {
 
 void TestCase::CreateInstruction() {
-  std::shared_ptr<lite::OpLite> op = nullptr;
+  std::shared_ptr<lite_metal::OpLite> op = nullptr;
   static const std::set<TargetType> subgraph_op_supported_targets(
       {TARGET(kNPU), TARGET(kXPU), TARGET(kHuaweiAscendNPU)});
   bool enable_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
@@ -96,7 +96,7 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
 #ifdef LITE_WITH_OPENCL
       switch (type->layout()) {
         case DATALAYOUT(kImageDefault): {
-          lite::Tensor input_image_cpu_tensor;
+          lite_metal::Tensor input_image_cpu_tensor;
           const DDim& input_image_dims =
               converter_.InitImageDimInfoWith(base_tensor->dims());
           input_image_cpu_tensor.Resize(

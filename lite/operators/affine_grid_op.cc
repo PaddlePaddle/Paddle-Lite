@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool AffineGridOpLite::CheckShape() const {
@@ -54,17 +54,17 @@ bool AffineGridOpLite::InferShapeImpl() const {
 }
 
 bool AffineGridOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                  lite::Scope *scope) {
+                                  lite_metal::Scope *scope) {
   auto x = op_desc.Input("Theta").front();
   auto output = op_desc.Output("Output").front();
 
-  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
   param_.output_shape = op_desc.GetAttr<std::vector<int>>("output_shape");
   if (param_.output_shape.size() == 0) {
     if (op_desc.HasInput("OutputShape")) {
       auto out_shape = op_desc.Input("OutputShape").front();
       param_.OutputShape =
-          scope->FindVar(out_shape)->GetMutable<lite::Tensor>();
+          scope->FindVar(out_shape)->GetMutable<lite_metal::Tensor>();
     } else {
       LOG(FATAL) << "The input 'OutputShape' of affine_grid Op should not be "
                     "null if 'output_shape' is not configured.";
@@ -74,7 +74,7 @@ bool AffineGridOpLite::AttachImpl(const cpp::OpDesc &op_desc,
     param_.align_corners = op_desc.GetAttr<bool>("align_corners");
   }
 
-  param_.Out = scope->FindVar(output)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(output)->GetMutable<lite_metal::Tensor>();
   return true;
 }
 
@@ -82,4 +82,4 @@ bool AffineGridOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(affine_grid, paddle::lite::operators::AffineGridOpLite);
+REGISTER_LITE_OP(affine_grid, paddle::lite_metal::operators::AffineGridOpLite);

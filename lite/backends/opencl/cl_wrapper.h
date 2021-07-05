@@ -32,7 +32,7 @@ limitations under the License. */
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class CLWrapper final {
  public:

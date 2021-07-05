@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -28,13 +28,13 @@ void AssignValueCompute::Run() {
   std::vector<float> fp32_values = param.fp32_values;
   std::vector<int> int32_values = param.int32_values;
   CHECK_GT(param.shape.size(), 0UL);
-  if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
+  if (dtype == static_cast<int>(lite_metal::core::FluidType::INT32)) {
     auto* out = param.Out->mutable_data<int>(TARGET(kXPU));
     XPU_CALL(xpu_memcpy(out,
                         int32_values.data(),
                         sizeof(int) * int32_values.size(),
                         XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
+  } else if (dtype == static_cast<int>(lite_metal::core::FluidType::FP32)) {
     auto* out = param.Out->mutable_data<float>(TARGET(kXPU));
     XPU_CALL(xpu_memcpy(out,
                         fp32_values.data(),
@@ -55,7 +55,7 @@ REGISTER_LITE_KERNEL(assign_value,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::AssignValueCompute,
+                     paddle::lite_metal::kernels::xpu::AssignValueCompute,
                      def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();

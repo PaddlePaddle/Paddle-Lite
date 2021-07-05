@@ -15,7 +15,7 @@
 #include "lite/kernels/host/read_from_array_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -40,7 +40,7 @@ REGISTER_LITE_KERNEL(read_from_array,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::ReadFromArrayCompute,
+                     paddle::lite_metal::kernels::host::ReadFromArrayCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorListTy(TARGET(kHost),

@@ -17,7 +17,7 @@
 #include "lite/operators/reshape_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -43,7 +43,7 @@ REGISTER_LITE_KERNEL(reshape,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::ReshapeCompute,
+                     paddle::lite_metal::kernels::host::ReshapeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -67,7 +67,7 @@ REGISTER_LITE_KERNEL(reshape2,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::ReshapeCompute,
+                     paddle::lite_metal::kernels::host::ReshapeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -95,7 +95,7 @@ REGISTER_LITE_KERNEL(flatten,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::ReshapeCompute,
+                     paddle::lite_metal::kernels::host::ReshapeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -115,7 +115,7 @@ REGISTER_LITE_KERNEL(flatten2,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::ReshapeCompute,
+                     paddle::lite_metal::kernels::host::ReshapeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

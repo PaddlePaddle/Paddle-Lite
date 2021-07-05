@@ -21,7 +21,7 @@
 #include "lite/operators/subgraph_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -60,7 +60,7 @@ int FpgaConcatFuser::enable_jump(Node* opnode) {
   const std::string& type = opdesc->Type();
   if (type == "conv2d") {
     auto filter = opdesc->Input("Filter").front();
-    auto filter_tensor = scope->FindVar(filter)->GetMutable<lite::Tensor>();
+    auto filter_tensor = scope->FindVar(filter)->GetMutable<lite_metal::Tensor>();
     auto filter_dims = filter_tensor->dims();
     auto cout = filter_dims[0];
     auto cin = filter_dims[3];

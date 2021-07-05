@@ -25,7 +25,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -71,20 +71,20 @@ void GRUComputeRun(const operators::GRUParam& param,
     bit_length = param.bit_length;
   }
 
-  lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
+  lite_metal::arm::math::LoDTensor2BatchFunctor<float> to_batch;
   to_batch(*input, batch_gate, true, param.is_reverse);
 
   float* batch_gate_data = batch_gate->mutable_data<float>();
   if (bias) {
     auto bias_data = bias->data<float>();
-    lite::arm::math::gru_add_with_bias(batch_gate_data,
+    lite_metal::arm::math::gru_add_with_bias(batch_gate_data,
                                        bias_data,
                                        batch_gate_data,
                                        batch_size,
                                        frame_size * 3);
   }
 
-  lite::arm::math::GRUMetaValue<float> gru_value;
+  lite_metal::arm::math::GRUMetaValue<float> gru_value;
   if (enable_quant) {
     if (weight->precision() != PRECISION(kInt8)) {
       LOG(FATAL) << "Precision Error: The precision of quantized gru's "
@@ -107,7 +107,7 @@ void GRUComputeRun(const operators::GRUParam& param,
     // to reorder.
     Tensor ordered_h0;
     std::vector<uint64_t> order(batch_gate->lod()[2]);
-    lite::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true);
+    lite_metal::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true);
     gru_value.prev_out_value = ordered_h0.mutable_data<float>();
   } else {
     gru_value.prev_out_value = nullptr;
@@ -132,7 +132,7 @@ void GRUComputeRun(const operators::GRUParam& param,
         bstart * batch_reset_hidden_prev->dims()[1];
 
     if (enable_quant) {
-      lite::arm::math::GRUUnitFunctor<float>::quant_compute(gru_value,
+      lite_metal::arm::math::GRUUnitFunctor<float>::quant_compute(gru_value,
                                                             frame_size,
                                                             cur_batch_size,
                                                             active_node,
@@ -142,7 +142,7 @@ void GRUComputeRun(const operators::GRUParam& param,
                                                             bit_length,
                                                             ctx);
     } else {
-      lite::arm::math::GRUUnitFunctor<float>::compute(gru_value,
+      lite_metal::arm::math::GRUUnitFunctor<float>::compute(gru_value,
                                                       frame_size,
                                                       cur_batch_size,
                                                       active_node,
@@ -153,7 +153,7 @@ void GRUComputeRun(const operators::GRUParam& param,
 
     gru_value.prev_out_value = gru_value.output_value;
   }
-  lite::arm::math::Batch2LoDTensorFunctor<float> to_seq;
+  lite_metal::arm::math::Batch2LoDTensorFunctor<float> to_seq;
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
   batch_hidden->mutable_data<float>();
   to_seq(*batch_hidden, hidden);
@@ -182,7 +182,7 @@ REGISTER_LITE_KERNEL(gru,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::GRUCompute<PRECISION(kFloat)>,
+                     paddle::lite_metal::kernels::arm::GRUCompute<PRECISION(kFloat)>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -198,7 +198,7 @@ REGISTER_LITE_KERNEL(gru,
                      kARM,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::arm::GRUCompute<PRECISION(kInt8)>,
+                     paddle::lite_metal::kernels::arm::GRUCompute<PRECISION(kInt8)>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kARM))})

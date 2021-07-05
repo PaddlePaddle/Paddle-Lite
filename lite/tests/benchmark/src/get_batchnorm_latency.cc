@@ -20,10 +20,10 @@
 #include "lite/kernels/arm/batch_norm_compute.h"
 #include "lite/operators/op_params.h"
 
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::kernels::arm::BatchNormCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::kernels::arm::BatchNormCompute<float, PRECISION(kFloat)>
     BatchNormCompute;
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 
 int main(int argc, char** argv) {
   if (argc != 11) {
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
 
   int batch_size = atoi(argv[1]);
@@ -104,14 +104,14 @@ int main(int argc, char** argv) {
 
   // prepare kernel params and run
   BatchNormCompute batch_norm;
-  std::unique_ptr<paddle::lite::KernelContext> ctx1(
-      new paddle::lite::KernelContext);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+      new paddle::lite_metal::KernelContext);
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
                  thread_num);
   batch_norm.SetContext(std::move(ctx1));
 
-  paddle::lite::operators::BatchNormParam param;
+  paddle::lite_metal::operators::BatchNormParam param;
   param.x = &x;
   param.scale = &scale;
   param.bias = &bias;

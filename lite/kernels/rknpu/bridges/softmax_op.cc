@@ -17,7 +17,7 @@
 #include "lite/kernels/rknpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace rknpu {
 
@@ -116,4 +116,4 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(softmax,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::SoftmaxConverter);
+                         paddle::lite_metal::subgraph::rknpu::SoftmaxConverter);

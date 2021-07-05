@@ -15,7 +15,7 @@
 #include "lite/operators/topk_v2_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool TopkV2Op::CheckShape() const {
@@ -57,7 +57,7 @@ bool TopkV2Op::InferShapeImpl() const {
   return true;
 }
 
-bool TopkV2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool TopkV2Op::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto x = op_desc.Input("X").front();
   param_.X = scope->FindTensor(x);
 
@@ -80,4 +80,4 @@ bool TopkV2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(top_k_v2, paddle::lite::operators::TopkV2Op);
+REGISTER_LITE_OP(top_k_v2, paddle::lite_metal::operators::TopkV2Op);

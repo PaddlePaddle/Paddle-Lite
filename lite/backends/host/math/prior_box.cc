@@ -18,7 +18,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
@@ -46,10 +46,10 @@ void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
   }
 }
 
-void DensityPriorBox(const lite::Tensor* input,
-                     const lite::Tensor* image,
-                     lite::Tensor* boxes,
-                     lite::Tensor* variances,
+void DensityPriorBox(const lite_metal::Tensor* input,
+                     const lite_metal::Tensor* image,
+                     lite_metal::Tensor* boxes,
+                     lite_metal::Tensor* variances,
                      const std::vector<float>& min_size_,
                      const std::vector<float>& fixed_size_,
                      const std::vector<float>& fixed_ratio_,

@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool GRUUnitOpLite::CheckShape() const {
@@ -59,16 +59,16 @@ bool GRUUnitOpLite::InferShapeImpl() const {
   int batch_size = input_dims[0];
   int frame_size = hidden_prev_dims[1];
 
-  param_.gate->Resize(lite::DDim({batch_size, frame_size * 3}));
-  param_.reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
-  param_.hidden->Resize(lite::DDim({batch_size, frame_size}));
+  param_.gate->Resize(lite_metal::DDim({batch_size, frame_size * 3}));
+  param_.reset_hidden_prev->Resize(lite_metal::DDim({batch_size, frame_size}));
+  param_.hidden->Resize(lite_metal::DDim({batch_size, frame_size}));
 
   auto out_lod = param_.hidden->mutable_lod();
   *out_lod = param_.input->lod();
   return true;
 }
 
-bool GRUUnitOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool GRUUnitOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto input = op_desc.Input("Input").front();
   auto hidden_prev = op_desc.Input("HiddenPrev").front();
   auto weight = op_desc.Input("Weight").front();
@@ -76,18 +76,18 @@ bool GRUUnitOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto reset_hidden_prev = op_desc.Output("ResetHiddenPrev").front();
   auto hidden = op_desc.Output("Hidden").front();
 
-  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.hidden_prev = scope->FindVar(hidden_prev)->GetMutable<lite::Tensor>();
-  param_.weight = scope->FindVar(weight)->GetMutable<lite::Tensor>();
+  param_.input = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
+  param_.hidden_prev = scope->FindVar(hidden_prev)->GetMutable<lite_metal::Tensor>();
+  param_.weight = scope->FindVar(weight)->GetMutable<lite_metal::Tensor>();
 
-  param_.gate = scope->FindVar(gate)->GetMutable<lite::Tensor>();
+  param_.gate = scope->FindVar(gate)->GetMutable<lite_metal::Tensor>();
   param_.reset_hidden_prev =
-      scope->FindVar(reset_hidden_prev)->GetMutable<lite::Tensor>();
-  param_.hidden = scope->FindVar(hidden)->GetMutable<lite::Tensor>();
+      scope->FindVar(reset_hidden_prev)->GetMutable<lite_metal::Tensor>();
+  param_.hidden = scope->FindVar(hidden)->GetMutable<lite_metal::Tensor>();
 
   if (op_desc.HasInput("Bias")) {
     auto bias = op_desc.Input("Bias").front();
-    param_.bias = scope->FindVar(bias)->GetMutable<lite::Tensor>();
+    param_.bias = scope->FindVar(bias)->GetMutable<lite_metal::Tensor>();
   }
 
   param_.gate_activation = op_desc.GetAttr<int>("gate_activation");
@@ -101,4 +101,4 @@ bool GRUUnitOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(gru_unit, paddle::lite::operators::GRUUnitOpLite)
+REGISTER_LITE_OP(gru_unit, paddle::lite_metal::operators::GRUUnitOpLite)

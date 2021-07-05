@@ -18,7 +18,7 @@
 #include "lite/backends/x86/math/prior_box.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -72,7 +72,7 @@ void DensityPriorBoxCompute::Run() {
   const float* input_data = input->data<float>();
   const float* image_data = image->data<float>();
 
-  lite::x86::math::density_prior_box(img_width,
+  lite_metal::x86::math::density_prior_box(img_width,
                                      img_height,
                                      feature_width,
                                      feature_height,
@@ -100,7 +100,7 @@ REGISTER_LITE_KERNEL(density_prior_box,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::DensityPriorBoxCompute,
+                     paddle::lite_metal::kernels::x86::DensityPriorBoxCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Image", {LiteType::GetTensorTy(TARGET(kX86))})

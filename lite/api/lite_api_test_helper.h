@@ -23,9 +23,9 @@ DECLARE_string(model_dir);
 DECLARE_string(optimized_model);
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
-const lite::Tensor* RunHvyModel();
+const lite_metal::Tensor* RunHvyModel();
 
 }  // namespace lite
 }  // namespace paddle

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool LinspaceOpLite::CheckShape() const {
@@ -54,15 +54,15 @@ bool LinspaceOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool LinspaceOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool LinspaceOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto start_name = opdesc.Input("Start").front();
   auto stop_name = opdesc.Input("Stop").front();
   auto num_name = opdesc.Input("Num").front();
   auto Out_name = opdesc.Output("Out").front();
-  param_.Start = GetVar<lite::Tensor>(scope, start_name);
-  param_.Stop = GetVar<lite::Tensor>(scope, stop_name);
-  param_.Num = GetVar<lite::Tensor>(scope, num_name);
-  param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
+  param_.Start = GetVar<lite_metal::Tensor>(scope, start_name);
+  param_.Stop = GetVar<lite_metal::Tensor>(scope, stop_name);
+  param_.Num = GetVar<lite_metal::Tensor>(scope, num_name);
+  param_.Out = GetMutableVar<lite_metal::Tensor>(scope, Out_name);
 
   if (opdesc.HasAttr("dtype")) {
     param_.dtype = opdesc.GetAttr<int>("dtype");
@@ -74,4 +74,4 @@ bool LinspaceOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(linspace, paddle::lite::operators::LinspaceOpLite);
+REGISTER_LITE_OP(linspace, paddle::lite_metal::operators::LinspaceOpLite);

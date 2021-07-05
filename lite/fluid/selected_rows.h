@@ -26,7 +26,7 @@ limitations under the License. */
 #include "lite/fluid/rw_lock.h"
 #include "lite/model_parser/model_parser.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
 class SelectedRows {
@@ -103,8 +103,8 @@ class SelectedRows {
    * @return a list of pair which contains the non-exists key and the index in
    * the value
    */
-  void Get(const lite::Tensor& ids,
-           lite::Tensor* value,
+  void Get(const lite_metal::Tensor& ids,
+           lite_metal::Tensor* value,
            bool auto_grown = false,
            bool is_test = false);
 
@@ -162,11 +162,11 @@ class SelectedRows {
  */
 void SerializeToStream(std::ostream& os,
                        const SelectedRows& selected_rows,
-                       const lite::Context<lite::TargetType::kX86>& dev_ctx);
+                       const lite_metal::Context<lite_metal::TargetType::kX86>& dev_ctx);
 void DeserializeFromStream(
     std::istream& is,
     SelectedRows* selected_rows,
-    const lite::Context<lite::TargetType::kX86>& dev_ctx);
+    const lite_metal::Context<lite_metal::TargetType::kX86>& dev_ctx);
 
 }  // namespace fluid
 }  // namespace lite

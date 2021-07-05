@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUEmbeddingWithEltwiseAddOp::CheckShape() const {
@@ -45,7 +45,7 @@ bool XPUEmbeddingWithEltwiseAddOp::InferShapeImpl() const {
 
   std::vector<int64_t> out_shape{id_dims[0], id_dims[1], table_dims[1]};
 
-  param_.Out->Resize(lite::DDim(out_shape));
+  param_.Out->Resize(lite_metal::DDim(out_shape));
   param_.Out->set_lod(param_.Ids[0]->lod());
   if (param_.Mask != nullptr) {
     param_.PadSeqLen->Resize({1});
@@ -54,20 +54,20 @@ bool XPUEmbeddingWithEltwiseAddOp::InferShapeImpl() const {
 }
 
 bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                              lite::Scope* scope) {
+                                              lite_metal::Scope* scope) {
   param_.Out = scope->FindVar(op_desc.Output("Output").front())
-                   ->GetMutable<lite::Tensor>();
+                   ->GetMutable<lite_metal::Tensor>();
 
   param_.Ids.clear();
   for (auto& name : op_desc.Input("Ids")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.Ids.push_back(t);
   }
   param_.Tables.clear();
   for (auto& name : op_desc.Input("Tables")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.Tables.push_back(t);
   }
 
@@ -79,7 +79,7 @@ bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.Mask = &(arg_var->Get<lite::Tensor>());
+        param_.Mask = &(arg_var->Get<lite_metal::Tensor>());
       }
     }
   }
@@ -87,13 +87,13 @@ bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
   if (std::find(output_arg_names.begin(), output_arg_names.end(), "SeqLod") !=
       output_arg_names.end()) {
     auto seqlod_name = op_desc.Output("SeqLod").front();
-    param_.SeqLod = GetMutableVar<lite::Tensor>(scope, seqlod_name);
+    param_.SeqLod = GetMutableVar<lite_metal::Tensor>(scope, seqlod_name);
   }
   if (std::find(output_arg_names.begin(),
                 output_arg_names.end(),
                 "PadSeqLen") != output_arg_names.end()) {
     auto padseqlen_name = op_desc.Output("PadSeqLen").front();
-    param_.PadSeqLen = GetMutableVar<lite::Tensor>(scope, padseqlen_name);
+    param_.PadSeqLen = GetMutableVar<lite_metal::Tensor>(scope, padseqlen_name);
   }
 
   param_.padding_idx = op_desc.GetAttr<int64_t>("padding_idx");
@@ -106,4 +106,4 @@ bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__embedding_with_eltwise_add,
-                 paddle::lite::operators::XPUEmbeddingWithEltwiseAddOp);
+                 paddle::lite_metal::operators::XPUEmbeddingWithEltwiseAddOp);

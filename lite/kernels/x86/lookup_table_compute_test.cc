@@ -20,14 +20,14 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
 TEST(lookup_table_x86, compute) {
   LookupTableCompute<float> lookup_table;
   operators::LookupTableParam param;
-  lite::Tensor w, ids, out, out_ref;
+  lite_metal::Tensor w, ids, out, out_ref;
   int64_t padding_idx = -1;
 
   int vocab_size = 40;

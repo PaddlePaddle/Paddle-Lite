@@ -16,7 +16,7 @@
 #include "lite/kernels/cuda/search_seq_fc_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -33,7 +33,7 @@ __global__ void add_bias(int n,
 }
 
 void SearchSeqFcCompute::PrepareForRun() {
-  gemm_impl_.reset(new lite::cuda::math::Gemm<float, float>);
+  gemm_impl_.reset(new lite_metal::cuda::math::Gemm<float, float>);
 }
 
 void SearchSeqFcCompute::Run() {
@@ -89,7 +89,7 @@ REGISTER_LITE_KERNEL(search_seq_fc,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::SearchSeqFcCompute,
+                     paddle::lite_metal::kernels::cuda::SearchSeqFcCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA))})

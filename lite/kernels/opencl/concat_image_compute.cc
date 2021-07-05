@@ -25,7 +25,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -351,7 +351,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       }
       // create and set param, context to kernel img_to_buf
       std::vector<operators::LayoutParam> img_to_buf_params(inputs_num);
-      std::vector<lite::Tensor> outputs_vec(inputs_num);
+      std::vector<lite_metal::Tensor> outputs_vec(inputs_num);
       std::vector<cl::Buffer*> outputs_buffer_pointers(inputs_num);
       for (size_t i = 0; i < inputs_num; ++i) {
         img_to_buf_params[i].x = inputs[i];
@@ -367,7 +367,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         img_to_buf_kernel_->Launch();
       }
       // create and set param, context to kernel buf_to_img
-      std::shared_ptr<lite::Tensor> concat_mul_buf_output_t(new lite::Tensor);
+      std::shared_ptr<lite_metal::Tensor> concat_mul_buf_output_t(new lite_metal::Tensor);
       concat_mul_buf_output_t->Resize(concat_param_->output->dims());
       auto conat_mul_buf_output_data =
           concat_mul_buf_output_t->mutable_data<float, cl::Buffer>(
@@ -429,7 +429,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   std::string doc() { return "Concat using cl::Image, kFP16"; }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -456,7 +456,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::opencl::ConcatComputeImage Concat_image;
+typedef paddle::lite_metal::kernels::opencl::ConcatComputeImage Concat_image;
 
 REGISTER_LITE_KERNEL(
     concat, kOpenCL, kFP16, kImageDefault, Concat_image, ImageDefault)

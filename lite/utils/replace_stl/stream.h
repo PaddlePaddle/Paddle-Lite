@@ -25,7 +25,7 @@
 
 #if defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_XCODE)
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 namespace replace_stl {
 
@@ -81,7 +81,7 @@ class stringstream : public ostream {
 }  // namespace paddle
 
 // replace namespace
-namespace STL = paddle::lite::replace_stl;
+namespace STL = paddle::lite_metal::replace_stl;
 #else
 namespace STL = std;
 #endif

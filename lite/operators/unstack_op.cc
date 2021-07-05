@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool UnstackOp::CheckShape() const {
@@ -52,7 +52,7 @@ bool UnstackOp::InferShapeImpl() const {
   return true;
 }
 
-bool UnstackOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool UnstackOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   param_.X = scope->FindTensor(op_desc.Input("X").front());
   auto out_names = op_desc.Output("Y");
   param_.Out.clear();
@@ -69,4 +69,4 @@ bool UnstackOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(unstack, paddle::lite::operators::UnstackOp);
+REGISTER_LITE_OP(unstack, paddle::lite_metal::operators::UnstackOp);

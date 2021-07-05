@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -52,7 +52,7 @@ REGISTER_LITE_KERNEL(transpose,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::TransposeCompute,
+                     paddle::lite_metal::kernels::xpu::TransposeCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -61,7 +61,7 @@ REGISTER_LITE_KERNEL(transpose2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::TransposeCompute,
+                     paddle::lite_metal::kernels::xpu::TransposeCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

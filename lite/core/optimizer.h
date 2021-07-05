@@ -34,14 +34,14 @@
 #include "lite/model_parser/model_parser.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // TODO(hong1986032) Support the following passes for the subblocks
 const std::set<std::string> kSubblockUnsupportedPasses(
     {"memory_optimize_pass"});
 
 /*
- * lite::Optimizer optimize a program. It utilize the mir passes to analysis the
+ * lite_metal::Optimizer optimize a program. It utilize the mir passes to analysis the
  * program and export an optimized program.
  * Example :
  *       // (1) Create an optimizer

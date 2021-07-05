@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(sequence_conv,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SequenceConvCompute<float>,
+                     paddle::lite_metal::kernels::x86::SequenceConvCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kX86))})

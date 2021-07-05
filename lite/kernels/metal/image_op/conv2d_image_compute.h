@@ -31,7 +31,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 

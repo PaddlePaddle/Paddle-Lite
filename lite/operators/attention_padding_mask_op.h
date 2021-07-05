@@ -17,7 +17,7 @@
 #include "lite/core/op_lite.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class AttentionPaddingMaskOp : public OpLite {
@@ -31,7 +31,7 @@ class AttentionPaddingMaskOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 

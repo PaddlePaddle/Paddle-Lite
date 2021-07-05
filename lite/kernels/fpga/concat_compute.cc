@@ -22,7 +22,7 @@
 #include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -60,7 +60,7 @@ REGISTER_LITE_KERNEL(concat,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ConcatCompute,
+                     paddle::lite_metal::kernels::fpga::ConcatCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

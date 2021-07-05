@@ -21,7 +21,7 @@
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 class ProgramDesc : public ProgramDescAPI {

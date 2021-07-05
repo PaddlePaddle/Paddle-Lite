@@ -18,7 +18,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -47,11 +47,11 @@ void nearest_interp(const float* input_data,
                     const int out_w,
                     const bool align_corners);
 
-void interpolate(lite::Tensor* input,
-                 lite::Tensor* out_size,
-                 std::vector<const lite::Tensor*> list_new_size_tensor,
-                 lite::Tensor* scale_tensor,
-                 lite::Tensor* output,
+void interpolate(lite_metal::Tensor* input,
+                 lite_metal::Tensor* out_size,
+                 std::vector<const lite_metal::Tensor*> list_new_size_tensor,
+                 lite_metal::Tensor* scale_tensor,
+                 lite_metal::Tensor* output,
                  float scale,
                  int out_h,
                  int out_w,

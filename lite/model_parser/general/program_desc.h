@@ -22,7 +22,7 @@
 #include "lite/model_parser/general/op_version_map.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace general {
 
 /*

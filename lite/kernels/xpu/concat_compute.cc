@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -70,7 +70,7 @@ REGISTER_LITE_KERNEL(concat,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ConcatCompute<float>,
+                     paddle::lite_metal::kernels::xpu::ConcatCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindInput("AxisTensor",
@@ -82,7 +82,7 @@ REGISTER_LITE_KERNEL(concat,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ConcatCompute<int>,
+                     paddle::lite_metal::kernels::xpu::ConcatCompute<int>,
                      concat_i32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("AxisTensor",
@@ -94,7 +94,7 @@ REGISTER_LITE_KERNEL(concat,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ConcatCompute<int64_t>,
+                     paddle::lite_metal::kernels::xpu::ConcatCompute<int64_t>,
                      concat_i64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("AxisTensor",

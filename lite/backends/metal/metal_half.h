@@ -16,7 +16,7 @@ limitations under the License. */
 #include "lite/backends/metal/metal_common.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 MetalHalf MetalFloat2Half(float f);
 float MetalHalf2Float(MetalHalf h);

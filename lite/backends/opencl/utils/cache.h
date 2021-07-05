@@ -21,7 +21,7 @@
 #include "lite/backends/opencl/utils/tune_cache_generated.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 namespace opencl {
 
@@ -38,7 +38,7 @@ class Cache {
   }
 
  private:
-  void SyncFromFbs(const paddle::lite::fbs::opencl::proto::Cache* desc);
+  void SyncFromFbs(const paddle::lite_metal::fbs::opencl::proto::Cache* desc);
   flatbuffers::DetachedBuffer SyncToFbs() const;
   std::map<std::string, std::vector<std::vector<uint8_t>>> binary_map_;
 };
@@ -54,7 +54,7 @@ class TuneCache {
   }
 
  private:
-  void SyncFromFbs(const paddle::lite::fbs::opencl::proto::TuneCache* desc);
+  void SyncFromFbs(const paddle::lite_metal::fbs::opencl::proto::TuneCache* desc);
   flatbuffers::DetachedBuffer SyncToFbs() const;
   std::map<std::string, std::vector<int>> tune_map_;
 };

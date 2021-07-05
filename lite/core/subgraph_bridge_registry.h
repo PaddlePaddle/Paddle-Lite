@@ -21,7 +21,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 
 const int FAILED = 1;
@@ -69,7 +69,7 @@ class SubgraphBridgeRegistry {
       "REGISTER_SUBGRAPH_BRIDGE must be called in global namespace only " \
       "once!");                                                           \
   int __reg_subgraph_bridge_##op_type__##_##target__##_Insert() {         \
-    paddle::lite::subgraph::SubgraphBridgeRegistry::Instance().Insert(    \
+    paddle::lite_metal::subgraph::SubgraphBridgeRegistry::Instance().Insert(    \
         #op_type__, TARGET(target__), cvt_func_name);                     \
     return 0;                                                             \
   }

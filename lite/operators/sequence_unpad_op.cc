@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SequenceUnpadOp::CheckShape() const {
@@ -35,13 +35,13 @@ bool SequenceUnpadOp::CheckShape() const {
 bool SequenceUnpadOp::InferShapeImpl() const { return true; }
 
 bool SequenceUnpadOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                 lite::Scope *scope) {
-  param_.X = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
-  param_.Length = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("Length").front())->Get<lite::Tensor>());
+                                 lite_metal::Scope *scope) {
+  param_.X = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("X").front())->Get<lite_metal::Tensor>());
+  param_.Length = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("Length").front())->Get<lite_metal::Tensor>());
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   return true;
 }
 
@@ -49,4 +49,4 @@ bool SequenceUnpadOp::AttachImpl(const cpp::OpDesc &opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_unpad, paddle::lite::operators::SequenceUnpadOp);
+REGISTER_LITE_OP(sequence_unpad, paddle::lite_metal::operators::SequenceUnpadOp);

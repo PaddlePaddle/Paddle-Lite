@@ -16,7 +16,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,7 +30,7 @@ class SequenceReverseEmbeddingCompute
   virtual ~SequenceReverseEmbeddingCompute() = default;
 
  private:
-  lite::Tensor lod_info_;
+  lite_metal::Tensor lod_info_;
 };
 
 }  // namespace cuda

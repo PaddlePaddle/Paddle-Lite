@@ -32,7 +32,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 namespace fp16 {
@@ -58,11 +58,11 @@ void nearest_interp(const float16_t* src,
                     float scale_y,
                     bool with_align);
 
-void interpolate(lite::Tensor* X,
-                 lite::Tensor* OutSize,
-                 std::vector<const lite::Tensor*> SizeTensor,
-                 lite::Tensor* Scale,
-                 lite::Tensor* Out,
+void interpolate(lite_metal::Tensor* X,
+                 lite_metal::Tensor* OutSize,
+                 std::vector<const lite_metal::Tensor*> SizeTensor,
+                 lite_metal::Tensor* Scale,
+                 lite_metal::Tensor* Out,
                  int out_height,
                  int out_width,
                  float scale,

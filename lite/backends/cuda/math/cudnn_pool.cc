@@ -18,7 +18,7 @@
 #include "lite/backends/cuda/math/type_trans.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 

@@ -15,7 +15,7 @@
 #include "lite/kernels/x86/fc_compute.h"
 
 REGISTER_LITE_KERNEL(
-    fc, kX86, kFloat, kNCHW, paddle::lite::kernels::x86::FcCompute<float>, def)
+    fc, kX86, kFloat, kNCHW, paddle::lite_metal::kernels::x86::FcCompute<float>, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})

@@ -19,7 +19,7 @@
 #include "lite/kernels/fpga/prior_box_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -119,7 +119,7 @@ REGISTER_LITE_KERNEL(prior_box,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::PriorBoxCompute,
+                     paddle::lite_metal::kernels::fpga::PriorBoxCompute,
                      def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),

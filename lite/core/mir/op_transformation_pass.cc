@@ -20,7 +20,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void OpTransformationPass::CopyAttrFromOpInfo(cpp::OpDesc* op_desc,
@@ -144,5 +144,5 @@ void OpTransformationPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(op_transformation_pass,
-                  paddle::lite::mir::OpTransformationPass)
+                  paddle::lite_metal::mir::OpTransformationPass)
     .BindTargets({TARGET(kARM)});

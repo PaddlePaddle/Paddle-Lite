@@ -18,7 +18,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -33,7 +33,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_names = op_info->Input("X");
   // output
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   const int64_t* output_shape_data =
       const_cast<const int64_t*>(&output_dims.data()[0]);
@@ -82,4 +82,4 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 REGISTER_SUBGRAPH_BRIDGE(concat,
                          kBM,
-                         paddle::lite::subgraph::bm::ConcatConverter);
+                         paddle::lite_metal::subgraph::bm::ConcatConverter);

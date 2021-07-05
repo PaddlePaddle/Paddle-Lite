@@ -21,7 +21,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
@@ -158,8 +158,8 @@ void pad_ndhwc_circular(const float* din,
                         const int pad_front,
                         const int pad_back);
 
-void pad3d_ncdhw_func(const lite::Tensor* input,
-                      lite::Tensor* output,
+void pad3d_ncdhw_func(const lite_metal::Tensor* input,
+                      lite_metal::Tensor* output,
                       int n,
                       int c,
                       int in_d,
@@ -174,8 +174,8 @@ void pad3d_ncdhw_func(const lite::Tensor* input,
                       std::vector<int> pad_d,
                       float pad_value);
 
-void pad3d_ndhwc_func(const lite::Tensor* input,
-                      lite::Tensor* output,
+void pad3d_ndhwc_func(const lite_metal::Tensor* input,
+                      lite_metal::Tensor* output,
                       int n,
                       int c,
                       int in_d,

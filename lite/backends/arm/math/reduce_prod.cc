@@ -15,7 +15,7 @@ limitations under the License. */
 #include "lite/backends/arm/math/reduce_prod.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {}  // namespace math
 }  // namespace arm

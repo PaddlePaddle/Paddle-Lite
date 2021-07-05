@@ -18,7 +18,7 @@
 #include "lite/operators/generate_proposals_v2_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 

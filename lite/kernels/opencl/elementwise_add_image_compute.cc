@@ -22,7 +22,7 @@
 #undef LITE_WITH_LOG
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -143,7 +143,7 @@ void ElementwiseAddImageCompute::ReInitWhenNeeded() {
     last_x_dims_ = x_dims;
     first_epoch_for_reinit_ = false;
     // compute image shape
-    paddle::lite::CLImageConverterDefault default_convertor;
+    paddle::lite_metal::CLImageConverterDefault default_convertor;
     out_img_shape_ =
         default_convertor.InitImageDimInfoWith(out->dims());  // w, h
 
@@ -251,7 +251,7 @@ void ElementwiseAddImageCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
+namespace ocl = paddle::lite_metal::kernels::opencl;
 
 // TODO(ysh329): May need fix.
 // "Y" may from constant value like conv bias (kARM, need do cl_image_converter

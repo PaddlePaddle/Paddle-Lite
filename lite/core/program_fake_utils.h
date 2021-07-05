@@ -23,19 +23,19 @@
 #include "paddle/fluid/framework/program_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 Program FakeProgram() {
-  Program program(std::make_shared<lite::Scope>());
+  Program program(std::make_shared<lite_metal::Scope>());
 
   auto add_fc = [&](int id, std::string x) {
     // create variables
-    std::string w1 = "w" + paddle::lite::to_string(id);
-    std::string b1 = "b" + paddle::lite::to_string(id);
-    std::string out1 = "out" + paddle::lite::to_string(id);
-    auto w1v = program.scope()->Var(w1)->GetMutable<lite::Tensor>();
-    auto b1v = program.scope()->Var(b1)->GetMutable<lite::Tensor>();
-    auto out1v = program.scope()->Var(out1)->GetMutable<lite::Tensor>();
+    std::string w1 = "w" + paddle::lite_metal::to_string(id);
+    std::string b1 = "b" + paddle::lite_metal::to_string(id);
+    std::string out1 = "out" + paddle::lite_metal::to_string(id);
+    auto w1v = program.scope()->Var(w1)->GetMutable<lite_metal::Tensor>();
+    auto b1v = program.scope()->Var(b1)->GetMutable<lite_metal::Tensor>();
+    auto out1v = program.scope()->Var(out1)->GetMutable<lite_metal::Tensor>();
 
     cpp::OpDesc desc;
     desc.SetInput("Input", {x});
@@ -65,7 +65,7 @@ Program FakeProgram() {
 
   std::string x = "x";
   program.mutable_tmp_vars()->push_back(x);
-  auto* xv = program.scope()->Var(x)->GetMutable<lite::Tensor>();
+  auto* xv = program.scope()->Var(x)->GetMutable<lite_metal::Tensor>();
   xv->Resize(DDimHvy(std::vector<int64_t>({100, 100})));
 
   for (int i = 0; i < 3; i++) {
@@ -83,10 +83,10 @@ class ProgramFaker {
     return &desc_;
   }
 
-  void CreateVars(lite::Scope* scope) {
+  void CreateVars(lite_metal::Scope* scope) {
     for (auto& var : tmp_vars_) {
       auto* x = scope->Var(var);
-      x->GetMutable<lite::Tensor>();
+      x->GetMutable<lite_metal::Tensor>();
     }
 
     for (auto& x : tmp_vars_) {

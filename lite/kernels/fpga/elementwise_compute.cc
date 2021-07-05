@@ -19,7 +19,7 @@
 #include "lite/kernels/fpga/activation_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -139,7 +139,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ElementwiseAddCompute,
+                     paddle::lite_metal::kernels::fpga::ElementwiseAddCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -160,7 +160,7 @@ REGISTER_LITE_KERNEL(
     kFPGA,
     kFP16,
     kNHWC,
-    paddle::lite::kernels::fpga::ElementwiseAddActivationCompute,
+    paddle::lite_metal::kernels::fpga::ElementwiseAddActivationCompute,
     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -180,7 +180,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ElementwiseMulCompute,
+                     paddle::lite_metal::kernels::fpga::ElementwiseMulCompute,
                      ew_mul_fpga)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -200,7 +200,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ElementwiseMulCompute,
+                     paddle::lite_metal::kernels::fpga::ElementwiseMulCompute,
                      ew_mul_y_arm)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

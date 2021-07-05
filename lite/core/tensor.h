@@ -35,11 +35,11 @@
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class TensorLite;
 
-using Tensor = lite::TensorLite;
+using Tensor = lite_metal::TensorLite;
 
 using LoD = std::vector<std::vector<uint64_t>>;
 

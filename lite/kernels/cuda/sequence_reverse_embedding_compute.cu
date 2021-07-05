@@ -18,7 +18,7 @@
 #include "lite/kernels/cuda/sequence_reverse_embedding_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -113,7 +113,7 @@ void SequenceReverseEmbeddingCompute<T, Ptype>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using SeqReverseEmbFp32 = paddle::lite::kernels::cuda::
+using SeqReverseEmbFp32 = paddle::lite_metal::kernels::cuda::
     SequenceReverseEmbeddingCompute<float, PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(

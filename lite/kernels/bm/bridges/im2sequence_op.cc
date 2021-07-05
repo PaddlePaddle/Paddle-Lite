@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/graph.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -33,7 +33,7 @@ int Im2SequenceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // input
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   std::vector<int> i_x_shape_data(x_dims.size());
@@ -42,7 +42,7 @@ int Im2SequenceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   // output
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   std::vector<int32_t> i_output_shape_data(output_dims.size());
   for (size_t i = 0; i < output_dims.size(); i++) {
@@ -74,4 +74,4 @@ int Im2SequenceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(im2sequence,
                          kBM,
-                         paddle::lite::subgraph::bm::Im2SequenceConverter);
+                         paddle::lite_metal::subgraph::bm::Im2SequenceConverter);

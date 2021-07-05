@@ -19,7 +19,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -176,7 +176,7 @@ void PrintCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    print, kHost, kAny, kAny, paddle::lite::kernels::host::PrintCompute, def)
+    print, kHost, kAny, kAny, paddle::lite_metal::kernels::host::PrintCompute, def)
     .BindInput("In",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),

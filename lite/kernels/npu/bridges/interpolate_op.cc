@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -128,7 +128,7 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(bilinear_interp,
                          kNPU,
-                         paddle::lite::subgraph::npu::InterpolateConverter);
+                         paddle::lite_metal::subgraph::npu::InterpolateConverter);
 REGISTER_SUBGRAPH_BRIDGE(nearest_interp,
                          kNPU,
-                         paddle::lite::subgraph::npu::InterpolateConverter);
+                         paddle::lite_metal::subgraph::npu::InterpolateConverter);

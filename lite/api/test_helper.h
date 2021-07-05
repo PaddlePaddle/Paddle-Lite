@@ -49,7 +49,7 @@ DEFINE_int32(im_height, 224, "image height");
 DEFINE_bool(int8, false, "is run int8");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 inline double GetCurrentUS() {
   struct timeval time;

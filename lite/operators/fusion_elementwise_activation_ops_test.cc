@@ -19,18 +19,18 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 TEST(fusion_elementwise_activation_op_lite, test) {
   // prepare variables
-  lite::Scope scope;
-  auto* x = scope.Var("x")->GetMutable<lite::Tensor>();
-  auto* y = scope.Var("y")->GetMutable<lite::Tensor>();
-  auto* out = scope.Var("out")->GetMutable<lite::Tensor>();
-  x->Resize(lite::DDim(std::vector<int64_t>({10, 20})));
-  y->Resize(lite::DDim(std::vector<int64_t>({10, 20})));
-  out->Resize(lite::DDim(std::vector<int64_t>{10, 20}));
+  lite_metal::Scope scope;
+  auto* x = scope.Var("x")->GetMutable<lite_metal::Tensor>();
+  auto* y = scope.Var("y")->GetMutable<lite_metal::Tensor>();
+  auto* out = scope.Var("out")->GetMutable<lite_metal::Tensor>();
+  x->Resize(lite_metal::DDim(std::vector<int64_t>({10, 20})));
+  y->Resize(lite_metal::DDim(std::vector<int64_t>({10, 20})));
+  out->Resize(lite_metal::DDim(std::vector<int64_t>{10, 20}));
 
   // set data
   for (int i = 0; i < 10 * 20; i++) {

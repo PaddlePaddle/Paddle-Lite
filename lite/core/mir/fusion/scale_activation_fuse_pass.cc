@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void ScaleActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -34,7 +34,7 @@ void ScaleActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_scale_activation_fuse_pass,
-                  paddle::lite::mir::ScaleActivationFusePass)
+                  paddle::lite_metal::mir::ScaleActivationFusePass)
     .BindTargets({TARGET(kARM)})
     .ExcludeTargets({TARGET(kNPU),
                      TARGET(kXPU),

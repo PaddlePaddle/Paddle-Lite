@@ -18,7 +18,7 @@
 #include "lite/backends/xpu/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -119,7 +119,7 @@ REGISTER_LITE_KERNEL(increment,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::IncrementCompute,
+                     paddle::lite_metal::kernels::xpu::IncrementCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})

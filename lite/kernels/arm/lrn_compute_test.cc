@@ -22,7 +22,7 @@
 #include "lite/kernels/arm/lrn_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -149,7 +149,7 @@ TEST(lrn_arm, init) {
 TEST(lrn_arm, compute) {
   LrnCompute lrn;
   operators::LrnParam param;
-  lite::Tensor x, output, output_ref;
+  lite_metal::Tensor x, output, output_ref;
 
   int local_size = 5;
   float alpha = 1.0f;

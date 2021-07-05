@@ -17,7 +17,7 @@
 #include "lite/kernels/apu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace apu {
 

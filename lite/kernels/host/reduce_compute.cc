@@ -19,7 +19,7 @@
 #include "lite/backends/host/math/reduce.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -53,7 +53,7 @@ void ReduceCompute<T, Functor>::Run() {
   reduce_all = (reduce_all || full_dim);
 
   if (reduce_all) {
-    lite::host::math::reduce_all<T, Functor>(
+    lite_metal::host::math::reduce_all<T, Functor>(
         input, output, x_dims.production());
   } else {
     // TODO(zhiqiang, juncai): update according to Paddle
@@ -68,19 +68,19 @@ void ReduceCompute<T, Functor>::Run() {
     if (dim.size() == 1) {
       switch (dim[0]) {
         case 0:
-          lite::host::math::reduce_n<T, Functor>(
+          lite_metal::host::math::reduce_n<T, Functor>(
               input, output, n_in, c_in, h_in, w_in);
           break;
         case 1:
-          lite::host::math::reduce_c<T, Functor>(
+          lite_metal::host::math::reduce_c<T, Functor>(
               input, output, n_in, c_in, h_in, w_in);
           break;
         case 2:
-          lite::host::math::reduce_h<T, Functor>(
+          lite_metal::host::math::reduce_h<T, Functor>(
               input, output, n_in, c_in, h_in, w_in);
           break;
         case 3:
-          lite::host::math::reduce_w<T, Functor>(
+          lite_metal::host::math::reduce_w<T, Functor>(
               input, output, n_in, c_in, h_in, w_in);
           break;
         default:
@@ -88,13 +88,13 @@ void ReduceCompute<T, Functor>::Run() {
       }
     } else if (dim.size() == 2) {
       if (dim[0] == 0 && dim[1] == 1) {
-        lite::host::math::reduce_nc<T, Functor>(
+        lite_metal::host::math::reduce_nc<T, Functor>(
             input, output, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 1 && dim[1] == 2) {
-        lite::host::math::reduce_ch<T, Functor>(
+        lite_metal::host::math::reduce_ch<T, Functor>(
             input, output, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 2 && dim[1] == 3) {
-        lite::host::math::reduce_hw<T, Functor>(
+        lite_metal::host::math::reduce_hw<T, Functor>(
             input, output, n_in, c_in, h_in, w_in);
       } else {
         LOG(FATAL) << "invalid dim!!";
@@ -110,15 +110,15 @@ void ReduceCompute<T, Functor>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using ReduceAll = paddle::lite::kernels::host::
-    ReduceCompute<bool, paddle::lite::host::math::LogicalAnd>;
+using ReduceAll = paddle::lite_metal::kernels::host::
+    ReduceCompute<bool, paddle::lite_metal::host::math::LogicalAnd>;
 REGISTER_LITE_KERNEL(reduce_all, kHost, kFloat, kNCHW, ReduceAll, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .Finalize();
 
-using ReduceAny = paddle::lite::kernels::host::
-    ReduceCompute<bool, paddle::lite::host::math::LogicalOr>;
+using ReduceAny = paddle::lite_metal::kernels::host::
+    ReduceCompute<bool, paddle::lite_metal::host::math::LogicalOr>;
 REGISTER_LITE_KERNEL(reduce_any, kHost, kFloat, kNCHW, ReduceAny, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})

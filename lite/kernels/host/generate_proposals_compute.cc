@@ -23,7 +23,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -64,40 +64,40 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
   bbox_sel.Resize(std::vector<int64_t>({index_t.numel(), 4}));
   anchor_sel.Resize(std::vector<int64_t>({index_t.numel(), 4}));
   var_sel.Resize(std::vector<int64_t>({index_t.numel(), 4}));
-  lite::host::math::Gather<float>(scores_slice, index_t, &scores_sel);
-  lite::host::math::Gather<float>(bbox_deltas_slice, index_t, &bbox_sel);
-  lite::host::math::Gather<float>(anchors, index_t, &anchor_sel);
-  lite::host::math::Gather<float>(variances, index_t, &var_sel);
+  lite_metal::host::math::Gather<float>(scores_slice, index_t, &scores_sel);
+  lite_metal::host::math::Gather<float>(bbox_deltas_slice, index_t, &bbox_sel);
+  lite_metal::host::math::Gather<float>(anchors, index_t, &anchor_sel);
+  lite_metal::host::math::Gather<float>(variances, index_t, &var_sel);
 
   Tensor proposals;
   proposals.Resize(std::vector<int64_t>({index_t.numel(), 4}));
-  lite::host::math::BoxCoder<float>(
+  lite_metal::host::math::BoxCoder<float>(
       &anchor_sel, &bbox_sel, &var_sel, &proposals);
 
-  lite::host::math::ClipTiledBoxes<float>(
+  lite_metal::host::math::ClipTiledBoxes<float>(
       im_info_slice, proposals, &proposals, false);
 
   Tensor keep;
-  lite::host::math::FilterBoxes<float>(
+  lite_metal::host::math::FilterBoxes<float>(
       &proposals, min_size, im_info_slice, true, &keep);
   Tensor scores_filter;
   scores_filter.Resize(std::vector<int64_t>({keep.numel(), 1}));
   bbox_sel.Resize(std::vector<int64_t>({keep.numel(), 4}));
-  lite::host::math::Gather<float>(scores_sel, keep, &scores_filter);
-  lite::host::math::Gather<float>(proposals, keep, &bbox_sel);
+  lite_metal::host::math::Gather<float>(scores_sel, keep, &scores_filter);
+  lite_metal::host::math::Gather<float>(proposals, keep, &bbox_sel);
   if (nms_thresh <= 0) {
     return std::make_pair(bbox_sel, scores_filter);
   }
 
   Tensor keep_nms =
-      lite::host::math::NMS<float>(&bbox_sel, &scores_filter, nms_thresh, eta);
+      lite_metal::host::math::NMS<float>(&bbox_sel, &scores_filter, nms_thresh, eta);
   if (post_nms_top_n > 0 && post_nms_top_n < keep_nms.numel()) {
     keep_nms.Resize(std::vector<int64_t>({post_nms_top_n}));
   }
   proposals.Resize(std::vector<int64_t>({keep_nms.numel(), 4}));
   scores_sel.Resize(std::vector<int64_t>({keep_nms.numel(), 1}));
-  lite::host::math::Gather<float>(bbox_sel, keep_nms, &proposals);
-  lite::host::math::Gather<float>(scores_filter, keep_nms, &scores_sel);
+  lite_metal::host::math::Gather<float>(bbox_sel, keep_nms, &proposals);
+  lite_metal::host::math::Gather<float>(scores_filter, keep_nms, &scores_sel);
   return std::make_pair(proposals, scores_sel);
 }
 
@@ -133,8 +133,8 @@ void GenerateProposalsCompute::Run() {
   scores_swap.Resize(std::vector<int64_t>({num, h_score, w_score, c_score}));
   bbox_deltas_swap.Resize(std::vector<int64_t>({num, h_bbox, w_bbox, c_bbox}));
   std::vector<int> orders({0, 2, 3, 1});
-  lite::host::math::Transpose<float>(*scores, &scores_swap, orders);
-  lite::host::math::Transpose<float>(*bbox_deltas, &bbox_deltas_swap, orders);
+  lite_metal::host::math::Transpose<float>(*scores, &scores_swap, orders);
+  lite_metal::host::math::Transpose<float>(*bbox_deltas, &bbox_deltas_swap, orders);
 
   LoD lod;
   lod.resize(1);
@@ -169,9 +169,9 @@ void GenerateProposalsCompute::Run() {
     Tensor &proposals = tensor_pair.first;
     Tensor &scores = tensor_pair.second;
 
-    lite::host::math::AppendTensor<float>(
+    lite_metal::host::math::AppendTensor<float>(
         rpn_rois, 4 * num_proposals, proposals);
-    lite::host::math::AppendTensor<float>(rpn_roi_probs, num_proposals, scores);
+    lite_metal::host::math::AppendTensor<float>(rpn_roi_probs, num_proposals, scores);
 
     num_proposals += proposals.dims()[0];
     lod0.push_back(num_proposals);
@@ -210,7 +210,7 @@ REGISTER_LITE_KERNEL(generate_proposals,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::GenerateProposalsCompute,
+                     paddle::lite_metal::kernels::host::GenerateProposalsCompute,
                      def)
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("BboxDeltas", {LiteType::GetTensorTy(TARGET(kHost))})

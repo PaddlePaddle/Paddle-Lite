@@ -25,7 +25,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -123,7 +123,7 @@ class NearestInterpComputeImageDefault
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -146,7 +146,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::NearestInterpComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::NearestInterpComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -168,7 +168,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::NearestInterpComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::NearestInterpComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

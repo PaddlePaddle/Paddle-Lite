@@ -33,7 +33,7 @@ DEFINE_string(time_profile_unit,
               "Unit of time in profile infomation, ms or us");
 #endif
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace profile {
 
 static std::string GetTimeUnit() {

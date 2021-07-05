@@ -22,7 +22,7 @@
 #include "lite/kernels/mlu/bridges/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 

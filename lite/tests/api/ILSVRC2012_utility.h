@@ -22,7 +22,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <class T = float>
 std::vector<std::vector<T>> ReadRawData(

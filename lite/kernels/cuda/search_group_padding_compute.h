@@ -16,7 +16,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -29,7 +29,7 @@ class SearchGroupPaddingCompute
   virtual ~SearchGroupPaddingCompute() = default;
 
  private:
-  lite::Tensor _in_seq_offset;
+  lite_metal::Tensor _in_seq_offset;
 };
 
 }  // namespace cuda

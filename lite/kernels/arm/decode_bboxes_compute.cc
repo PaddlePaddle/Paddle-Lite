@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -39,7 +39,7 @@ void DecodeBboxesCompute::Run() {
   bool variance_encoded_in_target = param.variance_encoded_in_target;
   std::string code_type = param.code_type;
 
-  lite::arm::math::decode_bboxes(batch_num,
+  lite_metal::arm::math::decode_bboxes(batch_num,
                                  loc_data,
                                  prior_data,
                                  code_type,
@@ -60,7 +60,7 @@ REGISTER_LITE_KERNEL(decode_bboxes,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::DecodeBboxesCompute,
+                     paddle::lite_metal::kernels::arm::DecodeBboxesCompute,
                      def)
     .BindInput("Loc", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Prior", {LiteType::GetTensorTy(TARGET(kARM))})

@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 /* fuse xpu_conv2d and xpu_block as xpu_block*/
@@ -416,6 +416,6 @@ class XPUConsecutiveBlockFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__consecutive_block_fuse_pass,
-                  paddle::lite::mir::XPUConsecutiveBlockFusePass)
+                  paddle::lite_metal::mir::XPUConsecutiveBlockFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__block_fuse_op");

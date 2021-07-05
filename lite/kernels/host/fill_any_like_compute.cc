@@ -15,7 +15,7 @@
 #include "lite/kernels/host/fill_any_like_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -35,16 +35,16 @@ void FillAnyLikeCompute::Run() {
   if (dtype == -1) {
     switch (param.X->precision()) {
       case PRECISION(kFloat):
-        dtype = static_cast<int32_t>(lite::core::FluidType::FP32);
+        dtype = static_cast<int32_t>(lite_metal::core::FluidType::FP32);
         break;
       case PRECISION(kInt32):
-        dtype = static_cast<int32_t>(lite::core::FluidType::INT32);
+        dtype = static_cast<int32_t>(lite_metal::core::FluidType::INT32);
         break;
       case PRECISION(kInt8):
-        dtype = static_cast<int32_t>(lite::core::FluidType::INT8);
+        dtype = static_cast<int32_t>(lite_metal::core::FluidType::INT8);
         break;
       case PRECISION(kInt64):
-        dtype = static_cast<int32_t>(lite::core::FluidType::INT64);
+        dtype = static_cast<int32_t>(lite_metal::core::FluidType::INT64);
         break;
       default:
         LOG(FATAL) << "not supported x dtype: "
@@ -54,16 +54,16 @@ void FillAnyLikeCompute::Run() {
   }
 
   switch (dtype) {
-    case static_cast<int32_t>(lite::core::FluidType::FP32):
+    case static_cast<int32_t>(lite_metal::core::FluidType::FP32):
       FillAnyData<float>();
       break;
-    case static_cast<int32_t>(lite::core::FluidType::INT32):
+    case static_cast<int32_t>(lite_metal::core::FluidType::INT32):
       FillAnyData<int32_t>();
       break;
-    case static_cast<int32_t>(lite::core::FluidType::INT8):
+    case static_cast<int32_t>(lite_metal::core::FluidType::INT8):
       FillAnyData<int8_t>();
       break;
-    case static_cast<int32_t>(lite::core::FluidType::INT64):
+    case static_cast<int32_t>(lite_metal::core::FluidType::INT64):
       FillAnyData<int64_t>();
       break;
     default:
@@ -84,7 +84,7 @@ REGISTER_LITE_KERNEL(fill_any_like,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::FillAnyLikeCompute,
+                     paddle::lite_metal::kernels::host::FillAnyLikeCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
@@ -103,7 +103,7 @@ REGISTER_LITE_KERNEL(fill_zeros_like,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::FillAnyLikeCompute,
+                     paddle::lite_metal::kernels::host::FillAnyLikeCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})

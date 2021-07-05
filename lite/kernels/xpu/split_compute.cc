@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -56,7 +56,7 @@ void SplitCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    split, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SplitCompute, def)
+    split, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::SplitCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("AxisTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})

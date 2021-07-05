@@ -25,12 +25,12 @@
 #include "lite/core/subgraph_engine_base.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace huawei_ascend_npu {
 
-using TensorDesc = paddle::lite::huawei_ascend_npu::TensorDesc;
-using AclModelClient = paddle::lite::huawei_ascend_npu::AclModelClient;
+using TensorDesc = paddle::lite_metal::huawei_ascend_npu::TensorDesc;
+using AclModelClient = paddle::lite_metal::huawei_ascend_npu::AclModelClient;
 
 class DeviceProgram {
  public:
@@ -90,11 +90,11 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
                                      exec_scope,
                                      input_names,
                                      output_names) {
-    lite::huawei_ascend_npu::Device::Global().RegisterDeviceResource();
+    lite_metal::huawei_ascend_npu::Device::Global().RegisterDeviceResource();
   }
 
   virtual ~SubgraphEngine() {
-    lite::huawei_ascend_npu::Device::Global().UnRegisterDeviceResource();
+    lite_metal::huawei_ascend_npu::Device::Global().UnRegisterDeviceResource();
   }
 
  protected:

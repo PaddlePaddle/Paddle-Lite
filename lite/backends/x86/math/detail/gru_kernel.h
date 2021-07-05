@@ -19,7 +19,7 @@ limitations under the License. */
 
 // TODO(guosheng): refine code style in gru_kernel
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 namespace detail {

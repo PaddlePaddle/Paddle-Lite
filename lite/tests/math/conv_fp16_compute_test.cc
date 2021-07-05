@@ -27,7 +27,7 @@ void test_conv_fp16(const DDim dim_in,
                     const std::vector<int>& power_mode,
                     const float leakey_relu_scale) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   ConvParam param;
   param.x = new Tensor;
@@ -71,12 +71,12 @@ void test_conv_fp16(const DDim dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::ConvCompute<PRECISION(kFP16),
+      paddle::lite_metal::kernels::arm::ConvCompute<PRECISION(kFP16),
                                               PRECISION(kFP16)>
           conv;
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
       CHECK_EQ(weight_dim[1] * group, dim_in[1])

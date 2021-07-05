@@ -26,7 +26,7 @@
 #include "rknpu/rknpu_pub.h"  // NOLINT
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace rknpu {
 
@@ -142,7 +142,7 @@ bool DeviceProgram::LoadCacheFromBufferAndFile(
                                                        origin_otypes_[i]));
   }
   // Create the RK execution for inference, and set the input and output nodes
-  execution_ = lite::rknpu::Device::Global().Build(
+  execution_ = lite_metal::rknpu::Device::Global().Build(
       model_name_, graph_.get(), device_inodes, device_onodes);
   if (execution_ == nullptr) {
     LOG(WARNING) << "[Rockchip NPU] Build model failed!";
@@ -214,7 +214,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     device_onodes.push_back(graph.Get(output_names[i])->data());
   }
   // Create the RK execution for inference, and set the input and output nodes
-  execution_ = lite::rknpu::Device::Global().Build(
+  execution_ = lite_metal::rknpu::Device::Global().Build(
       model_name_, graph_.get(), device_inodes, device_onodes);
   if (execution_ == nullptr) {
     LOG(WARNING) << "[Rockchip NPU] Build model failed!";
@@ -443,7 +443,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      kRKNPU,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::rknpu::SubgraphCompute,
+                     paddle::lite_metal::kernels::rknpu::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kHost),

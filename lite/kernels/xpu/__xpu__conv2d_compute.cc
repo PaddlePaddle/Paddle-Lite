@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -35,7 +35,7 @@ bool QuantFilter<int16_t>(const float* filter_on_host,
                           int16_t* quant_res,
                           float max,
                           int64_t len) {
-  paddle::lite::xpu::math::ConvertFP32ToInt16(
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
       filter_on_host, quant_res, max, len);
   return true;
 }
@@ -45,7 +45,7 @@ bool QuantFilter<int8_t>(const float* filter_on_host,
                          int8_t* quant_res,
                          float max,
                          int64_t len) {
-  paddle::lite::xpu::math::ConvertFP32ToInt8(
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt8(
       filter_on_host, quant_res, max, len);
   return true;
 }
@@ -56,7 +56,7 @@ void XPUConv2dCompute<T, PType>::PrepareForRun() {
   auto filter_ptr = param.filter->template data<float>();
   auto filter_len = param.filter->numel();
   // max
-  float max_f = paddle::lite::xpu::math::FindMaxAbs(filter_ptr, filter_len);
+  float max_f = paddle::lite_metal::xpu::math::FindMaxAbs(filter_ptr, filter_len);
   std::vector<float> max_f_v(4, max_f);
   filter_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   filter_max_ = reinterpret_cast<float*>(filter_max_guard_->addr_);
@@ -142,7 +142,7 @@ void XPUConv2dCompute<T, PType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace xpu = paddle::lite::kernels::xpu;
+namespace xpu = paddle::lite_metal::kernels::xpu;
 using XPUConv2dFp32 = xpu::XPUConv2dCompute<int16_t, PRECISION(kFloat)>;
 
 using XPUConv2dInt8 = xpu::XPUConv2dCompute<int8_t, PRECISION(kInt8)>;

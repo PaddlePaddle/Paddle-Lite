@@ -17,7 +17,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -41,7 +41,7 @@ void WhileCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    while, kHost, kAny, kAny, paddle::lite::kernels::host::WhileCompute, def)
+    while, kHost, kAny, kAny, paddle::lite_metal::kernels::host::WhileCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),

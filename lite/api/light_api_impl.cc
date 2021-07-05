@@ -28,7 +28,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // LightPredictor Only support NaiveBuffer backend in publish lib
@@ -118,7 +118,7 @@ std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutput(
 
 void LightPredictorImpl::Run() {
 #ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
+  lite_metal::DeviceInfo::Global().SetRunMode(mode_, threads_);
 #endif
   raw_predictor_->Run();
 }
@@ -134,7 +134,7 @@ std::shared_ptr<lite_api::PaddlePredictor> LightPredictorImpl::Clone(
   return nullptr;
 }
 
-std::string LightPredictorImpl::GetVersion() const { return lite::version(); }
+std::string LightPredictorImpl::GetVersion() const { return lite_metal::version(); }
 
 std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetTensor(
     const std::string& name) const {
@@ -166,7 +166,7 @@ namespace lite_api {
 template <>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
     const MobileConfig& config) {
-  auto x = std::make_shared<lite::LightPredictorImpl>();
+  auto x = std::make_shared<lite_metal::LightPredictorImpl>();
   x->Init(config);
   return x;
 }

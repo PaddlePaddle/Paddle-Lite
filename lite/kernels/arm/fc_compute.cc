@@ -25,7 +25,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -187,7 +187,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   if (flag_gemm_) {
     operators::ActivationParam act_param;
     act_param.has_active = false;
-    lite::arm::math::sgemm(false,
+    lite_metal::arm::math::sgemm(false,
                            false,
                            m_,
                            n_,
@@ -206,13 +206,13 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                            &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, flag_act);
+      lite_metal::arm::math::fill_bias_fc(o_data, b_data, m_, n_, flag_act);
     }
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
       auto* o_data_batch = o_data + i * n_;
-      lite::arm::math::sgemv(w_data,
+      lite_metal::arm::math::sgemv(w_data,
                              i_data_batch,
                              o_data_batch,
                              false,
@@ -250,7 +250,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     flag_relu = true;
   }
   if (flag_gemm_) {
-    lite::arm::math::gemm_s8(false,
+    lite_metal::arm::math::gemm_s8(false,
                              false,
                              m_,
                              n_,
@@ -265,13 +265,13 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, flag_relu);
+      lite_metal::arm::math::fill_bias_fc(o_data, b_data, m_, n_, flag_relu);
     }
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
       auto* o_data_batch = o_data + i * n_;
-      lite::arm::math::gemv_int8(w_data,
+      lite_metal::arm::math::gemv_int8(w_data,
                                  i_data_batch,
                                  o_data_batch,
                                  false,
@@ -312,7 +312,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   if (flag_gemm_) {
     CHECK(!param.bias) << "fc int8 kernel with int8 output using gemm kernel "
                           "must not have bias";
-    lite::arm::math::gemm_s8(false,
+    lite_metal::arm::math::gemm_s8(false,
                              false,
                              m_,
                              n_,
@@ -329,7 +329,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
       auto* o_data_batch = o_data + i * n_;
-      lite::arm::math::gemv_int8(w_data,
+      lite_metal::arm::math::gemv_int8(w_data,
                                  i_data_batch,
                                  o_data_batch,
                                  false,
@@ -384,7 +384,7 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   if (flag_gemm_) {
     operators::ActivationParam act_param;
     act_param.has_active = false;
-    lite::arm::math::fp16::sgemm_fp16(false,
+    lite_metal::arm::math::fp16::sgemm_fp16(false,
                                       false,
                                       m_,
                                       n_,
@@ -403,13 +403,13 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                       &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fp16::fill_bias_fc(o_data, b_data, m_, n_, flag_act);
+      lite_metal::arm::math::fp16::fill_bias_fc(o_data, b_data, m_, n_, flag_act);
     }
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
       auto* o_data_batch = o_data + i * n_;
-      lite::arm::math::fp16::gemv_fp16(w_data,
+      lite_metal::arm::math::fp16::gemv_fp16(w_data,
                                        i_data_batch,
                                        o_data_batch,
                                        false,
@@ -431,18 +431,18 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::arm::FcCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::FcCompute<PRECISION(kFloat),
                                               PRECISION(kFloat)>
     FcCompute_FP32;
-typedef paddle::lite::kernels::arm::FcCompute<PRECISION(kInt8),
+typedef paddle::lite_metal::kernels::arm::FcCompute<PRECISION(kInt8),
                                               PRECISION(kFloat)>
     FcCompute_int8_fp32;
-typedef paddle::lite::kernels::arm::FcCompute<PRECISION(kInt8),
+typedef paddle::lite_metal::kernels::arm::FcCompute<PRECISION(kInt8),
                                               PRECISION(kInt8)>
     FcCompute_int8_int8;
 
 #ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::FcCompute<PRECISION(kFP16),
+typedef paddle::lite_metal::kernels::arm::FcCompute<PRECISION(kFP16),
                                               PRECISION(kFP16)>
     FcCompute_FP16;
 REGISTER_LITE_KERNEL(fc, kARM, kFP16, kNCHW, FcCompute_FP16, def)

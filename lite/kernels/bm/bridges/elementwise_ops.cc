@@ -21,7 +21,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -32,14 +32,14 @@ float* compute_elementwise_both_const(OpLite* op) {
 
   // input
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   auto y_var_name = op_info->Input("Y").front();
-  auto y = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
+  auto y = scope->FindVar(y_var_name)->GetMutable<lite_metal::Tensor>();
   auto y_dims = y->dims();
   // output
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   float* cpu_data =
       static_cast<float*>(malloc(sizeof(float) * output->data_size()));
@@ -80,7 +80,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int* dim = new int[input_num];
   const char** name = new const char*[input_num];
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   name[0] = static_cast<const char*>(x_var_name.c_str());
   dim[0] = x_dims.size();
@@ -91,7 +91,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   shape[0] = &i_x_shape_data[0];
   bool x_is_const = !graph->HasNode(x_var_name);
   auto y_var_name = op_info->Input("Y").front();
-  auto y = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
+  auto y = scope->FindVar(y_var_name)->GetMutable<lite_metal::Tensor>();
   auto y_dims = y->dims();
   name[1] = static_cast<const char*>(y_var_name.c_str());
   dim[1] = y_dims.size();
@@ -103,7 +103,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   bool y_is_const = !graph->HasNode(y_var_name);
   // output
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   const int64_t* output_shape_data =
       const_cast<const int64_t*>(&output_dims.data()[0]);
@@ -126,7 +126,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   const float* y_data = const_cast<const float*>(y->mutable_data<float>());
   const float* x_data = const_cast<const float*>(x->mutable_data<float>());
-  auto unique_op_name = lite::subgraph::bm::UniqueName("expand_ndims");
+  auto unique_op_name = lite_metal::subgraph::bm::UniqueName("expand_ndims");
   std::vector<int32_t> i_expand_shape_data;
   if (x_is_const && y_is_const) {
     float* cpu_data = compute_elementwise_both_const(op);
@@ -211,13 +211,13 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(elementwise_add,
                          kBM,
-                         paddle::lite::subgraph::bm::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::bm::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_mul,
                          kBM,
-                         paddle::lite::subgraph::bm::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::bm::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_sub,
                          kBM,
-                         paddle::lite::subgraph::bm::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::bm::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_div,
                          kBM,
-                         paddle::lite::subgraph::bm::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::bm::ElementwiseConverter);

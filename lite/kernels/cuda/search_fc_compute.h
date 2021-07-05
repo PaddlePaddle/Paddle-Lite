@@ -20,7 +20,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -41,7 +41,7 @@ class SearchFcCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   virtual ~SearchFcCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_{nullptr};
+  std::unique_ptr<lite_metal::cuda::math::Gemm<float, float>> gemm_impl_{nullptr};
   int _M;
   int _K;
   int _N;

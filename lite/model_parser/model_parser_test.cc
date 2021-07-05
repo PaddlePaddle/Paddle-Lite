@@ -20,7 +20,7 @@
 DEFINE_string(model_dir, "", "");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 TEST(ModelParser, LoadProgram) {
   CHECK(!FLAGS_model_dir.empty());
   auto program = LoadProgram(FLAGS_model_dir + "/__model__");
@@ -73,7 +73,7 @@ TEST(ModelParser, LoadModelCombinedPb) {
 
 TEST(ModelParser, SaveParamNaive) {
   Scope scope;
-  auto* tensor = scope.Var("xxx")->GetMutable<lite::Tensor>();
+  auto* tensor = scope.Var("xxx")->GetMutable<lite_metal::Tensor>();
   tensor->set_precision(PRECISION(kFloat));
   tensor->set_persistable(true);
   auto& lod = *tensor->mutable_lod();
@@ -81,7 +81,7 @@ TEST(ModelParser, SaveParamNaive) {
   lod[0] = {1, 2, 3};
   lod[1] = {4, 5};
   std::vector<int64_t> dim({1, 2, 5});
-  tensor->Resize(lite::DDim(dim));
+  tensor->Resize(lite_metal::DDim(dim));
   auto* data = tensor->mutable_data<float>();
   size_t size = tensor->data_size();
   for (size_t i = 0; i < size; ++i) {
@@ -93,7 +93,7 @@ TEST(ModelParser, SaveParamNaive) {
 TEST(ModelParser, LoadParamNaive) {
   Scope scope;
   LoadParamNaive("./fc_0.w", &scope, "xxx");
-  auto& tensor = scope.Var("xxx")->Get<lite::Tensor>();
+  auto& tensor = scope.Var("xxx")->Get<lite_metal::Tensor>();
   std::vector<int64_t> bg_dim({1, 2, 5});
   size_t size = 10;
   std::vector<std::vector<uint64_t>> bg_lod({{1, 2, 3}, {4, 5}});
@@ -135,7 +135,7 @@ TEST(ModelParser, LoadModelNaiveFromMemory) {
   Scope scope;
 
   auto model_path = std::string(FLAGS_model_dir) + ".saved.nb";
-  std::string model_buffer = lite::ReadFile(model_path);
+  std::string model_buffer = lite_metal::ReadFile(model_path);
   LoadModelNaiveFromMemory(model_buffer, &scope, &prog);
 }
 

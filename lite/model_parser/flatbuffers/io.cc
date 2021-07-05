@@ -22,26 +22,26 @@
 #include "lite/model_parser/flatbuffers/traits.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 namespace deprecated {
-void SetCombinedParamsWithScope(const lite::Scope& scope,
+void SetCombinedParamsWithScope(const lite_metal::Scope& scope,
                                 const std::set<std::string>& param_names,
                                 CombinedParamsDescWriteAPI* params) {
   for (const auto& name : param_names) {
     auto* param = params->AddParamDesc();
-    auto& tensor = scope.FindVar(name)->Get<lite::Tensor>();
+    auto& tensor = scope.FindVar(name)->Get<lite_metal::Tensor>();
     FillParam(name, tensor, param);
   }
 }
 
-void SetScopeWithCombinedParams(lite::Scope* scope,
+void SetScopeWithCombinedParams(lite_metal::Scope* scope,
                                 const CombinedParamsDescReadAPI& params) {
   CHECK(scope);
   for (size_t i = 0; i < params.GetParamsSize(); ++i) {
     const auto* param = params.GetParamDesc(i);
     CHECK(param);
-    auto* tensor = scope->Var(param->Name())->GetMutable<lite::Tensor>();
+    auto* tensor = scope->Var(param->Name())->GetMutable<lite_metal::Tensor>();
     CHECK(tensor);
     FillTensor(tensor, *param);
   }
@@ -49,19 +49,19 @@ void SetScopeWithCombinedParams(lite::Scope* scope,
 }  // namespace deprecated
 
 void FillParam(const std::string& name,
-               const lite::Tensor& tensor,
+               const lite_metal::Tensor& tensor,
                ParamDescWriteAPI* prog) {
   CHECK(prog);
   prog->SetName(name);
   prog->SetDim(tensor.dims().Vectorize());
-  prog->SetDataType(lite::ConvertPrecisionType(tensor.precision()));
+  prog->SetDataType(lite_metal::ConvertPrecisionType(tensor.precision()));
   prog->SetData(tensor.raw_data(), tensor.memory_size());
 }
 
-void FillTensor(lite::Tensor* tensor, const ParamDescReadAPI& param) {
+void FillTensor(lite_metal::Tensor* tensor, const ParamDescReadAPI& param) {
   CHECK(tensor);
   tensor->Resize(param.Dim());
-  tensor->set_precision(lite::ConvertPrecisionType(param.GetDataType()));
+  tensor->set_precision(lite_metal::ConvertPrecisionType(param.GetDataType()));
   auto* dst = tensor->mutable_data(param.byte_size());
   CHECK(dst);
   CHECK(param.GetData());
@@ -69,13 +69,13 @@ void FillTensor(lite::Tensor* tensor, const ParamDescReadAPI& param) {
   tensor->set_persistable(true);
 }
 #ifdef LITE_WITH_FLATBUFFERS_DESC
-void ParamSerializer::ForwardWrite(const lite::Scope& scope,
+void ParamSerializer::ForwardWrite(const lite_metal::Scope& scope,
                                    const std::set<std::string>& param_names) {
   const uint16_t params_size = param_names.size();
   // meta_information
   uint32_t max_tensor_size = 0;
   for (const auto& name : param_names) {
-    auto& tensor = scope.FindVar(name)->Get<lite::Tensor>();
+    auto& tensor = scope.FindVar(name)->Get<lite_metal::Tensor>();
     size_t tensor_size =
         tensor.numel() * lite_api::PrecisionTypeLength(tensor.precision());
     if (tensor_size > max_tensor_size) {
@@ -93,7 +93,7 @@ void ParamSerializer::ForwardWrite(const lite::Scope& scope,
 
   for (const auto& name : param_names) {
     fbs::ParamDesc param;
-    auto& tensor = scope.FindVar(name)->Get<lite::Tensor>();
+    auto& tensor = scope.FindVar(name)->Get<lite_metal::Tensor>();
     FillParam(name, tensor, &param);
     param.CopyDataToBuffer(buf_.get());
 
@@ -115,7 +115,7 @@ void ParamSerializer::WriteHeader() {
 }
 #endif
 
-void ParamDeserializer::ForwardRead(lite::Scope* scope) {
+void ParamDeserializer::ForwardRead(lite_metal::Scope* scope) {
   CHECK(scope) << "The pointer of scope is nullptr";
   uint16_t header_size = reader_->Read<uint16_t>();
   ReadBytesToBuffer(header_size);
@@ -132,7 +132,7 @@ void ParamDeserializer::ForwardRead(lite::Scope* scope) {
     ReadBytesToBuffer(offset - sizeof(offset));
     ReadBytesToBuffer(param_bytes);
     fbs::ParamDescView param(buf_.get());
-    FillTensor(scope->Var(param.Name())->GetMutable<lite::Tensor>(), param);
+    FillTensor(scope->Var(param.Name())->GetMutable<lite_metal::Tensor>(), param);
   }
 }
 

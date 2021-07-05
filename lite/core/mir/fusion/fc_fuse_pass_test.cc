@@ -24,11 +24,11 @@ DEFINE_string(model_dir, "", "");
 DEFINE_string(optimized_model, "", "");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 TEST(fc_fuse_pass, fuse_test) {
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
 #ifndef LITE_WITH_CUDA
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
 #else
@@ -67,7 +67,7 @@ TEST(fc_fuse_pass, fuse_test) {
 
 #ifndef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 TEST(fc_fuse_pass, save_model_test) {
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
   predictor.Build(FLAGS_model_dir,
                   "",

@@ -19,7 +19,7 @@
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -134,12 +134,12 @@ void CastCompute::Run() {
              param.out_dtype == 5) {  // float16 -> float32
     const float16_t* in_data = param.X->data<float16_t>();
     float* out_data = param.Out->mutable_data<float>();
-    lite::arm::math::fp16::fp16_to_fp32(in_data, out_data, param.X->numel());
+    lite_metal::arm::math::fp16::fp16_to_fp32(in_data, out_data, param.X->numel());
   } else if (param.in_dtype == 5 &&
              param.out_dtype == 4) {  // float32 -> float16
     const float* in_data = param.X->data<float>();
     float16_t* out_data = param.Out->mutable_data<float16_t>();
-    lite::arm::math::fp16::fp32_to_fp16(in_data, out_data, param.X->numel());
+    lite_metal::arm::math::fp16::fp32_to_fp16(in_data, out_data, param.X->numel());
 #endif
   } else {
     LOG(FATAL) << "other has not been implemented transform with dtype"
@@ -153,14 +153,14 @@ void CastCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    cast, kARM, kAny, kNCHW, paddle::lite::kernels::arm::CastCompute, def)
+    cast, kARM, kAny, kNCHW, paddle::lite_metal::kernels::arm::CastCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
 
 #ifdef LITE_BUILD_EXTRA
 REGISTER_LITE_KERNEL(
-    cast, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::CastCompute, def)
+    cast, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::CastCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();

@@ -17,7 +17,7 @@
 #include <set>
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ReduceOp::CheckShape() const {
@@ -92,7 +92,7 @@ bool ReduceOp::InferShapeImpl() const {
   return true;
 }
 
-bool ReduceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool ReduceOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
 
@@ -110,4 +110,4 @@ bool ReduceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(reduce_mean, paddle::lite::operators::ReduceOp);
+REGISTER_LITE_OP(reduce_mean, paddle::lite_metal::operators::ReduceOp);

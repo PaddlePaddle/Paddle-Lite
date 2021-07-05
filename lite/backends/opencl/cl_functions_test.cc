@@ -26,7 +26,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(cl_test, runtime_test) {
   auto *runtime = CLRuntime::Global();

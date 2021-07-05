@@ -20,42 +20,42 @@
 #include "lite/kernels/x86/reduce_op_function.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
 struct SumFunctor {
   template <typename X, typename Y, typename Dim>
   void operator()(X* x, Y* y, const Dim& dim) {
-    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->sum(dim);
+    y->device(lite_metal::fluid::EigenDeviceType<TARGET(kX86)>()) = x->sum(dim);
   }
 };
 
 struct ProdFunctor {
   template <typename X, typename Y, typename Dim>
   void operator()(X* x, Y* y, const Dim& dim) {
-    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->prod(dim);
+    y->device(lite_metal::fluid::EigenDeviceType<TARGET(kX86)>()) = x->prod(dim);
   }
 };
 
 struct MeanFunctor {
   template <typename X, typename Y, typename Dim>
   void operator()(X* x, Y* y, const Dim& dim) {
-    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->mean(dim);
+    y->device(lite_metal::fluid::EigenDeviceType<TARGET(kX86)>()) = x->mean(dim);
   }
 };
 
 struct MaxFunctor {
   template <typename X, typename Y, typename Dim>
   void operator()(X* x, Y* y, const Dim& dim) {
-    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->maximum(dim);
+    y->device(lite_metal::fluid::EigenDeviceType<TARGET(kX86)>()) = x->maximum(dim);
   }
 };
 
 #define HANDLE_DIM(NDIM, RDIM, FUNCTOR)                                \
   if (ndim == NDIM && rdim == RDIM) {                                  \
-    paddle::lite::kernels::x86::                                       \
-        ReduceFunctor<lite::TargetType::kX86, T, NDIM, RDIM, FUNCTOR>( \
+    paddle::lite_metal::kernels::x86::                                       \
+        ReduceFunctor<lite_metal::TargetType::kX86, T, NDIM, RDIM, FUNCTOR>( \
             *x, out, dims, keep_dim);                                  \
   }
 
@@ -77,8 +77,8 @@ class ReduceCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     if (reduce_all || dims.empty() || x_dims.size() == 1 ||
         x_dims.size() == dims.size()) {
       // Flatten and reduce 1-D tensor
-      auto x_e = lite::fluid::EigenVector<T>::Flatten(*x);
-      auto out_e = lite::fluid::EigenScalar<T>::From(out);
+      auto x_e = lite_metal::fluid::EigenVector<T>::Flatten(*x);
+      auto out_e = lite_metal::fluid::EigenScalar<T>::From(out);
       auto reduce_dim = Eigen::array<int, 1>({{0}});
       Functor functor;
       functor(&x_e, &out_e, reduce_dim);

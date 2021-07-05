@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ActivationOp::CheckShape() const {
@@ -32,10 +32,10 @@ bool ActivationOp::InferShapeImpl() const {
   return true;
 }
 
-bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto x_name = opdesc.Input("X").front();
   auto out_name = opdesc.Output("Out").front();
-  param_.X = scope->FindVar(x_name)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(x_name)->GetMutable<lite_metal::Tensor>();
 
   if (opdesc.Type() == "relu") {
     param_.active_type = lite_api::ActivationType::kRelu;
@@ -48,7 +48,7 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.Prelu_mode = opdesc.GetAttr<std::string>("mode");
     auto prelu_alpha_name = opdesc.Input("Alpha").front();
     param_.Prelu_alpha =
-        scope->FindVar(prelu_alpha_name)->GetMutable<lite::Tensor>();
+        scope->FindVar(prelu_alpha_name)->GetMutable<lite_metal::Tensor>();
     param_.active_type = lite_api::ActivationType::kPRelu;
   } else if (opdesc.Type() == "swish") {
     param_.Swish_beta = opdesc.GetAttr<float>("beta");
@@ -98,7 +98,7 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
 
-  param_.Out = scope->FindVar(out_name)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(out_name)->GetMutable<lite_metal::Tensor>();
   return true;
 }
 
@@ -107,13 +107,13 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace paddle
 
 // Baisc activation ops
-REGISTER_LITE_OP(sigmoid, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(tanh, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(relu, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(leaky_relu, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(thresholded_relu, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(elu, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(erf, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(softplus, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(sigmoid, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(tanh, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(relu, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(leaky_relu, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(relu6, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(prelu, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(thresholded_relu, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(elu, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(erf, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(softplus, paddle::lite_metal::operators::ActivationOp);

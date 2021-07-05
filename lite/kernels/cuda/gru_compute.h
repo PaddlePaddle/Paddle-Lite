@@ -21,7 +21,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -37,9 +37,9 @@ class GRUCompute : public KernelLite<TARGET(kCUDA), PType> {
   virtual ~GRUCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
-  lite::Tensor ordered_h0_;
-  lite::cuda::math::SeqSortedseqTranseUtil seq_utils_;
+  std::unique_ptr<lite_metal::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
+  lite_metal::Tensor ordered_h0_;
+  lite_metal::cuda::math::SeqSortedseqTranseUtil seq_utils_;
 };
 
 }  // namespace cuda

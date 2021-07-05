@@ -15,13 +15,13 @@ limitations under the License. */
 #include "lite/backends/x86/math/detail/gru_kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 template <typename T>
-struct GRUUnitFunctor<lite::TargetType::kX86, T> {
-  static void compute(const lite::X86Context &context,
+struct GRUUnitFunctor<lite_metal::TargetType::kX86, T> {
+  static void compute(const lite_metal::X86Context &context,
                       GRUMetaValue<T> value,
                       int frame_size,
                       int batch_size,
@@ -29,7 +29,7 @@ struct GRUUnitFunctor<lite::TargetType::kX86, T> {
                       const detail::ActivationType active_gate,
                       bool origin_mode) {
 #ifndef __NVCC__
-    auto blas = math::GetBlas<lite::TargetType::kX86, T>(context);
+    auto blas = math::GetBlas<lite_metal::TargetType::kX86, T>(context);
     if (value.prev_out_value) {
       blas.GEMM(false,
                 false,
@@ -79,8 +79,8 @@ struct GRUUnitFunctor<lite::TargetType::kX86, T> {
 };
 
 template <typename T>
-struct GRUUnitGradFunctor<lite::TargetType::kX86, T> {
-  static void compute(const lite::X86Context &context,
+struct GRUUnitGradFunctor<lite_metal::TargetType::kX86, T> {
+  static void compute(const lite_metal::X86Context &context,
                       GRUMetaValue<T> value,
                       GRUMetaGrad<T> grad,
                       int frame_size,
@@ -96,7 +96,7 @@ struct GRUUnitGradFunctor<lite::TargetType::kX86, T> {
                                 batch_size,
                                 active_node,
                                 origin_mode);
-    auto blas = math::GetBlas<lite::TargetType::kX86, T>(context);
+    auto blas = math::GetBlas<lite_metal::TargetType::kX86, T>(context);
     if (value.prev_out_value && grad.prev_out_grad) {
       blas.GEMM(false,
                 true,
@@ -170,10 +170,10 @@ struct GRUUnitGradFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template struct GRUUnitFunctor<lite::TargetType::kX86, float>;
-template struct GRUUnitFunctor<lite::TargetType::kX86, double>;
-template struct GRUUnitGradFunctor<lite::TargetType::kX86, float>;
-template struct GRUUnitGradFunctor<lite::TargetType::kX86, double>;
+template struct GRUUnitFunctor<lite_metal::TargetType::kX86, float>;
+template struct GRUUnitFunctor<lite_metal::TargetType::kX86, double>;
+template struct GRUUnitGradFunctor<lite_metal::TargetType::kX86, float>;
+template struct GRUUnitGradFunctor<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

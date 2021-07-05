@@ -20,7 +20,7 @@
 #include "lite/operators/sum_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -31,7 +31,7 @@ class SumCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   void Run() {
     operators::SumParam& param = this->template Param<operators::SumParam>();
     auto& out = param.Out;
-    std::vector<lite::Tensor*>& inputs = param.X;
+    std::vector<lite_metal::Tensor*>& inputs = param.X;
     auto num = inputs.front()->dims().production();
     auto* out_data = param.Out->mutable_data<T>();
     if (inputs.size() == 1) {
@@ -45,13 +45,13 @@ class SumCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
     if (param.inplace) {  // inplace add
       start_index = 1;
     } else {
-      lite::arm::math::elementwise_add<T>(
+      lite_metal::arm::math::elementwise_add<T>(
           inputs[0]->data<T>(), inputs[1]->data<T>(), out_data, num);
       start_index = 2;
     }
     for (auto it = inputs.begin() + start_index; it != inputs.end(); ++it) {
       const auto& x_data = (*it)->data<T>();
-      lite::arm::math::elementwise_add<T>(x_data, out_data, out_data, num);
+      lite_metal::arm::math::elementwise_add<T>(x_data, out_data, out_data, num);
     }
   }
 

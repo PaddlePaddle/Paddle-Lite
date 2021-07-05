@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -32,5 +32,5 @@ class StridedSliceCompute
 
 } /* namespace host */
 } /* namespace kernels */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */

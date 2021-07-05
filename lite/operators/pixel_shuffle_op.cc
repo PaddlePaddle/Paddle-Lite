@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool PixelShuffleOpLite::CheckShape() const {
@@ -43,12 +43,12 @@ bool PixelShuffleOpLite::InferShapeImpl() const {
 }
 
 bool PixelShuffleOpLite::AttachImpl(const cpp::OpDesc& opdesc,
-                                    lite::Scope* scope) {
+                                    lite_metal::Scope* scope) {
   auto input = opdesc.Input("X").front();
   auto out = opdesc.Output("Out").front();
 
-  param_.x = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.x = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
+  param_.output = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
   if (opdesc.HasAttr("upscale_factor")) {
     param_.upscale_factor = opdesc.GetAttr<int>("upscale_factor");
@@ -61,4 +61,4 @@ bool PixelShuffleOpLite::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(pixel_shuffle, paddle::lite::operators::PixelShuffleOpLite);
+REGISTER_LITE_OP(pixel_shuffle, paddle::lite_metal::operators::PixelShuffleOpLite);

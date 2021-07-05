@@ -18,7 +18,7 @@
 #include "lite/kernels/cuda/sequence_pad_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -76,7 +76,7 @@ void SequencePadCompute<T, Ptype>::Run() {
   T* pad_data = out->template mutable_data<T>(TARGET(kCUDA));
   const T* pad_value_data = pad_value->template data<T>();
 
-  lite::cuda::math::SequencePadding(pad_data,
+  lite_metal::cuda::math::SequencePadding(pad_data,
                                     seq_data,
                                     pad_value_data,
                                     pad_value->numel() == 1,
@@ -93,10 +93,10 @@ void SequencePadCompute<T, Ptype>::Run() {
 }  // namespace paddle
 
 using SeqPadFp32 =
-    paddle::lite::kernels::cuda::SequencePadCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::SequencePadCompute<float, PRECISION(kFloat)>;
 
 using SeqPadFp16 =
-    paddle::lite::kernels::cuda::SequencePadCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::SequencePadCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(sequence_pad, kCUDA, kFloat, kNCHW, SeqPadFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})

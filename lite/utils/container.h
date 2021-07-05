@@ -19,7 +19,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename Elem>
 class OrderedMap {

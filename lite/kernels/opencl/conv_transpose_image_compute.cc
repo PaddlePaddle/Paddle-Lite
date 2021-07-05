@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -358,7 +358,7 @@ REGISTER_LITE_KERNEL(conv2d_transpose,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::ConvTransposeImageCompute,
+                     paddle::lite_metal::kernels::opencl::ConvTransposeImageCompute,
                      image2d)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

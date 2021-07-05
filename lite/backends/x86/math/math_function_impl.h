@@ -19,53 +19,53 @@ limitations under the License. */
 #include "lite/fluid/eigen.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template <lite::TargetType Target, typename T>
-void SetConstant<Target, T>::operator()(const lite::Context<Target>& context,
-                                        lite::Tensor* tensor,
+template <lite_metal::TargetType Target, typename T>
+void SetConstant<Target, T>::operator()(const lite_metal::Context<Target>& context,
+                                        lite_metal::Tensor* tensor,
                                         T num) {
-  auto t = lite::fluid::EigenVector<T>::Flatten(*tensor);
+  auto t = lite_metal::fluid::EigenVector<T>::Flatten(*tensor);
 
   // t.device(*Eigen::DefaultDevice()) = t.constant(static_cast<T>(num));
   // t.device(*context.eigen_device()) = t.constant(static_cast<T>(num));
-  t.device(typename lite::fluid::EigenDevice<Target>::Type()) =
+  t.device(typename lite_metal::fluid::EigenDevice<Target>::Type()) =
       t.constant(static_cast<T>(num));
 }
 
-template <lite::TargetType Target, typename T, int Rank>
+template <lite_metal::TargetType Target, typename T, int Rank>
 void Transpose<Target, T, Rank>::operator()(
-    const lite::Context<Target>& context,
-    const lite::TensorLite& in,
-    lite::TensorLite* out,
+    const lite_metal::Context<Target>& context,
+    const lite_metal::TensorLite& in,
+    lite_metal::TensorLite* out,
     const std::vector<int>& axis) {
   Eigen::array<int, Rank> permute;
   for (int i = 0; i < Rank; i++) {
     permute[i] = axis[i];
   }
-  auto eigen_in = lite::fluid::EigenTensor<T, Rank>::From(in);
-  auto eigen_out = lite::fluid::EigenTensor<T, Rank>::From(*out);
+  auto eigen_in = lite_metal::fluid::EigenTensor<T, Rank>::From(in);
+  auto eigen_out = lite_metal::fluid::EigenTensor<T, Rank>::From(*out);
   // auto* dev = context.eigen_device();
   // eigen_out.device(*dev) = eigen_in.shuffle(permute);
-  eigen_out.device(typename lite::fluid::EigenDevice<Target>::Type()) =
+  eigen_out.device(typename lite_metal::fluid::EigenDevice<Target>::Type()) =
       eigen_in.shuffle(permute);
 }
 
-template <lite::TargetType Target, typename T>
-void ColwiseSum<Target, T>::operator()(const lite::Context<Target>& context,
-                                       const lite::TensorLite& input,
-                                       lite::TensorLite* out) {
+template <lite_metal::TargetType Target, typename T>
+void ColwiseSum<Target, T>::operator()(const lite_metal::Context<Target>& context,
+                                       const lite_metal::TensorLite& input,
+                                       lite_metal::TensorLite* out) {
   auto in_dims = input.dims();
   auto size = input.numel() / in_dims[0];
   CHECK_EQ(out->numel(), size);
 
-  auto in = lite::fluid::EigenMatrix<T>::From(input);
-  auto vec = lite::fluid::EigenVector<T>::Flatten(*out);
+  auto in = lite_metal::fluid::EigenMatrix<T>::From(input);
+  auto vec = lite_metal::fluid::EigenVector<T>::Flatten(*out);
 
   // vec.device(*context.eigen_device()) = in.sum(Eigen::array<int, 1>({{0}}));
-  vec.device(typename lite::fluid::EigenDevice<Target>::Type()) =
+  vec.device(typename lite_metal::fluid::EigenDevice<Target>::Type()) =
       in.sum(Eigen::array<int, 1>({{0}}));
 }
 
@@ -73,11 +73,11 @@ void ColwiseSum<Target, T>::operator()(const lite::Context<Target>& context,
 // colwise-sum can be easily implemented. General reduce has a huge overhead in
 // CPU
 template <typename T>
-class ColwiseSum<lite::TargetType::kX86, T> {
+class ColwiseSum<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::TensorLite& input,
-                  lite::TensorLite* out) {
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::TensorLite& input,
+                  lite_metal::TensorLite* out) {
     auto& in_dims = input.dims();
     auto height = in_dims[0];
     auto size = in_dims[1];
@@ -98,19 +98,19 @@ class ColwiseSum<lite::TargetType::kX86, T> {
   }
 };
 
-template <lite::TargetType Target, typename T>
-void RowwiseMean<Target, T>::operator()(const lite::Context<Target>& context,
-                                        const lite::TensorLite& input,
-                                        lite::TensorLite* out) {
+template <lite_metal::TargetType Target, typename T>
+void RowwiseMean<Target, T>::operator()(const lite_metal::Context<Target>& context,
+                                        const lite_metal::TensorLite& input,
+                                        lite_metal::TensorLite* out) {
   auto in_dims = input.dims();
   CHECK_EQ(in_dims.size(), 2U);
   CHECK_EQ(out->numel(), in_dims[0]);
 
-  auto in = lite::fluid::EigenMatrix<T>::From(input);
-  auto vec = lite::fluid::EigenVector<T>::Flatten(*out);
+  auto in = lite_metal::fluid::EigenMatrix<T>::From(input);
+  auto vec = lite_metal::fluid::EigenVector<T>::Flatten(*out);
 
   // vec.device(*context.eigen_device()) = in.mean(Eigen::array<int, 1>({{1}}));
-  vec.device(typename lite::fluid::EigenDevice<Target>::Type()) =
+  vec.device(typename lite_metal::fluid::EigenDevice<Target>::Type()) =
       in.mean(Eigen::array<int, 1>({{1}}));
 }
 // TODO(zcd): Following ColwiseSum format, need to confirm.
@@ -118,11 +118,11 @@ void RowwiseMean<Target, T>::operator()(const lite::Context<Target>& context,
 // rowwise-sum can be easily implemented. General reduce has a huge overhead in
 // CPU
 template <typename T>
-class RowwiseMean<lite::TargetType::kX86, T> {
+class RowwiseMean<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::TensorLite& input,
-                  lite::TensorLite* out) {
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::TensorLite& input,
+                  lite_metal::TensorLite* out) {
     auto& in_dims = input.dims();
     CHECK_EQ(in_dims.size(), 2U);
     auto height = in_dims[0];
@@ -142,19 +142,19 @@ class RowwiseMean<lite::TargetType::kX86, T> {
   }
 };
 
-template <lite::TargetType Target, typename T>
-void RowwiseSum<Target, T>::operator()(const lite::Context<Target>& context,
-                                       const lite::TensorLite& input,
-                                       lite::TensorLite* out) {
+template <lite_metal::TargetType Target, typename T>
+void RowwiseSum<Target, T>::operator()(const lite_metal::Context<Target>& context,
+                                       const lite_metal::TensorLite& input,
+                                       lite_metal::TensorLite* out) {
   auto in_dims = input.dims();
   CHECK_EQ(in_dims.size(), 2U);
   CHECK_EQ(out->numel(), in_dims[0]);
 
-  auto in = lite::fluid::EigenMatrix<T>::From(input);
-  auto vec = lite::fluid::EigenVector<T>::Flatten(*out);
+  auto in = lite_metal::fluid::EigenMatrix<T>::From(input);
+  auto vec = lite_metal::fluid::EigenVector<T>::Flatten(*out);
 
   // vec.device(*context.eigen_device()) = in.sum(Eigen::array<int, 1>({{1}}));
-  vec.device(typename lite::fluid::EigenDevice<Target>::Type()) =
+  vec.device(typename lite_metal::fluid::EigenDevice<Target>::Type()) =
       in.sum(Eigen::array<int, 1>({{1}}));
 }
 // TODO(zcd): Following ColwiseSum format, need to confirm.
@@ -162,11 +162,11 @@ void RowwiseSum<Target, T>::operator()(const lite::Context<Target>& context,
 // rowwise-sum can be easily implemented. General reduce has a huge overhead in
 // CPU
 template <typename T>
-class RowwiseSum<lite::TargetType::kX86, T> {
+class RowwiseSum<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::TensorLite& input,
-                  lite::TensorLite* out) {
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::TensorLite& input,
+                  lite_metal::TensorLite* out) {
     auto& in_dims = input.dims();
     CHECK_EQ(in_dims.size(), 2U);
     auto height = in_dims[0];

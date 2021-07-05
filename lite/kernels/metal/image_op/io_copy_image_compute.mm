@@ -22,7 +22,7 @@
 #undef LITE_WITH_LOG
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -159,7 +159,7 @@ REGISTER_LITE_KERNEL(io_copy,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::IoCopyHostToMetalTexture,
+    paddle::lite_metal::kernels::metal::IoCopyHostToMetalTexture,
     host_to_device_image)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
@@ -173,7 +173,7 @@ REGISTER_LITE_KERNEL(io_copy,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::IoCopykMetalTextureToHost,
+    paddle::lite_metal::kernels::metal::IoCopykMetalTextureToHost,
     device_image_to_host)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -186,7 +186,7 @@ REGISTER_LITE_KERNEL(io_copy_once,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::IoCopyHostToMetalTexture,
+    paddle::lite_metal::kernels::metal::IoCopyHostToMetalTexture,
     host_to_device_image)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
@@ -200,7 +200,7 @@ REGISTER_LITE_KERNEL(io_copy_once,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::IoCopykMetalTextureToHost,
+    paddle::lite_metal::kernels::metal::IoCopykMetalTextureToHost,
     device_image_to_host)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal),

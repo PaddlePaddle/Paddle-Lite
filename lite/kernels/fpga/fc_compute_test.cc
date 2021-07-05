@@ -23,7 +23,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -97,7 +97,7 @@ TEST(fc_fpga, compare_test) {
         for (bool with_bias : {true, false}) {
           VLOG(3) << "m: " << m << ", n: " << n << ", k: " << k
                   << (with_bias ? ", with bias" : "");
-          lite::Tensor x, w, b, out, ref;
+          lite_metal::Tensor x, w, b, out, ref;
 
           x.Resize({m, k});
           w.Resize({k, n});
@@ -154,7 +154,7 @@ TEST(fc_fpga, num_col_dims) {
   using T = float;
 
   for (bool with_bias : {true, false}) {
-    lite::Tensor x, w, b, out, ref;
+    lite_metal::Tensor x, w, b, out, ref;
 
     x.Resize({1, 2, 3});
     w.Resize({3, 4});

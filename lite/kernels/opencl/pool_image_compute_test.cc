@@ -23,7 +23,7 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void pool_avg(const int padding_height,
               const int padding_width,
@@ -86,7 +86,7 @@ TEST(pool2d_image2d, compute) {
 
   LOG(INFO) << "get kernel:" << kernel->doc();
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   operators::PoolParam param;
   param.x = &x;
   param.output = &out;

@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool GenerateProposalsV2OpLite::CheckShape() const {
@@ -49,18 +49,18 @@ bool GenerateProposalsV2OpLite::InferShapeImpl() const {
 }
 
 bool GenerateProposalsV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                           lite::Scope *scope) {
+                                           lite_metal::Scope *scope) {
   // inputs
   param_.Scores = scope->FindVar(op_desc.Input("Scores").front())
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
   param_.BboxDeltas = scope->FindVar(op_desc.Input("BboxDeltas").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.ImShape = scope->FindVar(op_desc.Input("ImShape").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.Anchors = scope->FindVar(op_desc.Input("Anchors").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.Variances = scope->FindVar(op_desc.Input("Variances").front())
-                         ->GetMutable<lite::Tensor>();
+                         ->GetMutable<lite_metal::Tensor>();
 
   // attrs
   param_.pre_nms_topN = op_desc.GetAttr<int>("pre_nms_topN");
@@ -71,19 +71,19 @@ bool GenerateProposalsV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
 
   // outs
   param_.RpnRois = scope->FindVar(op_desc.Output("RpnRois").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.RpnRoiProbs = scope->FindVar(op_desc.Output("RpnRoiProbs").front())
-                           ->GetMutable<lite::Tensor>();
+                           ->GetMutable<lite_metal::Tensor>();
   if (op_desc.HasOutput("RpnRoisLod") &&
       !op_desc.Output("RpnRoisLod").empty()) {
     param_.RpnRoisLod = scope->FindVar(op_desc.Output("RpnRoisLod").front())
-                            ->GetMutable<lite::Tensor>();
+                            ->GetMutable<lite_metal::Tensor>();
   }
 
   if (op_desc.HasOutput("RpnRoisNum") &&
       !op_desc.Output("RpnRoisNum").empty()) {
     param_.RpnRoisNum = scope->FindVar(op_desc.Output("RpnRoisNum").front())
-                            ->GetMutable<lite::Tensor>();
+                            ->GetMutable<lite_metal::Tensor>();
   }
   return true;
 }
@@ -93,4 +93,4 @@ bool GenerateProposalsV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(generate_proposals_v2,
-                 paddle::lite::operators::GenerateProposalsV2OpLite);
+                 paddle::lite_metal::operators::GenerateProposalsV2OpLite);

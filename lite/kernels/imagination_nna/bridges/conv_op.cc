@@ -18,7 +18,7 @@
 #include "lite/kernels/imagination_nna/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace imagination_nna {
 
@@ -274,9 +274,9 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     conv2d,
     kImaginationNNA,
-    paddle::lite::subgraph::imagination_nna::ConvConverter);
+    paddle::lite_metal::subgraph::imagination_nna::ConvConverter);
 
 REGISTER_SUBGRAPH_BRIDGE(
     depthwise_conv2d,
     kImaginationNNA,
-    paddle::lite::subgraph::imagination_nna::ConvConverter);
+    paddle::lite_metal::subgraph::imagination_nna::ConvConverter);

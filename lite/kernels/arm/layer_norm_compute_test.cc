@@ -22,7 +22,7 @@
 #include "lite/kernels/arm/layer_norm_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -86,17 +86,17 @@ TEST(layer_norm_arm, compute) {
   LayerNormCompute layer_norm;
   operators::LayerNormParam param;
 
-  lite::Tensor x;
-  lite::Tensor output;
-  lite::Tensor output_mean;
-  lite::Tensor output_var;
-  lite::Tensor output_ref;
-  lite::Tensor output_mean_ref;
-  lite::Tensor output_var_ref;
-  lite::Tensor bias;
-  lite::Tensor scale;
-  lite::Tensor* bias_ptr;
-  lite::Tensor* scale_ptr;
+  lite_metal::Tensor x;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_mean;
+  lite_metal::Tensor output_var;
+  lite_metal::Tensor output_ref;
+  lite_metal::Tensor output_mean_ref;
+  lite_metal::Tensor output_var_ref;
+  lite_metal::Tensor bias;
+  lite_metal::Tensor scale;
+  lite_metal::Tensor* bias_ptr;
+  lite_metal::Tensor* scale_ptr;
 
   for (auto n : {1, 3}) {
     for (auto c : {1, 3, 5}) {

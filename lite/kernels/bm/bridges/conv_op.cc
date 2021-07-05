@@ -18,7 +18,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -29,15 +29,15 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
+  auto unique_op_name = lite_metal::subgraph::bm::UniqueName(op_type);
   auto input_var_name = op_info->Input("Input").front();
-  auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+  auto input = scope->FindVar(input_var_name)->GetMutable<lite_metal::Tensor>();
   auto input_dims = input->dims();
   auto output_var_name = op_info->Output("Output").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   auto filter_var_name = op_info->Input("Filter").front();
-  auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
+  auto filter = scope->FindVar(filter_var_name)->GetMutable<lite_metal::Tensor>();
   auto filter_dims = filter->dims();
   bool filter_is_const = !graph->HasNode(filter_var_name);
   const int64_t* filter_shape_data =
@@ -49,11 +49,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(input_dims.size(), 4);
   CHECK_EQ(output_dims.size(), 4);
   CHECK_EQ(filter_dims.size(), 4);
-  bool has_bias = lite::subgraph::bm::HasInputArg(op_info, scope, "Bias");
+  bool has_bias = lite_metal::subgraph::bm::HasInputArg(op_info, scope, "Bias");
   float* bias_data = nullptr;
   if (has_bias) {
     auto bias_var_name = op_info->Input("Bias").front();
-    auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+    auto* bias = scope->FindVar(bias_var_name)->GetMutable<lite_metal::Tensor>();
     bias_data = static_cast<float*>(bias->mutable_data<float>());
   }
   const int64_t* input_shape_data =
@@ -132,7 +132,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(conv2d,
                          kBM,
-                         paddle::lite::subgraph::bm::ConvConverter);
+                         paddle::lite_metal::subgraph::bm::ConvConverter);
 REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
                          kBM,
-                         paddle::lite::subgraph::bm::ConvConverter);
+                         paddle::lite_metal::subgraph::bm::ConvConverter);

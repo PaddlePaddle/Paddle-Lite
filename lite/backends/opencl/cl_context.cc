@@ -21,7 +21,7 @@ limitations under the License. */
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 cl::CommandQueue &CLContext::GetCommandQueue() {
   return CLRuntime::Global()->command_queue();

@@ -15,7 +15,7 @@
 #include "lite/model_parser/pb/param_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pb {
 
 TensorInfoReader::TensorInfoReader(model_parser::ByteReader* reader,

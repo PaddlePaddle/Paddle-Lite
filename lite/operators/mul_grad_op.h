@@ -22,7 +22,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class MulGradOpLite : public OpLite {
@@ -37,7 +37,7 @@ class MulGradOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) override;
 
   std::string DebugString() const override { return "mul_grad"; }
 

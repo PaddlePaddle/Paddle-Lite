@@ -21,7 +21,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -80,7 +80,7 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                .op()
                                ->scope()
                                ->Var(in_arg_name)
-                               ->GetMutable<lite::Tensor>();
+                               ->GetMutable<lite_metal::Tensor>();
         if ((tmp_tensor->precision() != in->AsArg().type->precision())) {
           tmp_tensor->set_precision(in->AsArg().type->precision());
         }
@@ -92,5 +92,5 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(generate_program_pass, paddle::lite::mir::GenerateProgramPass)
+REGISTER_MIR_PASS(generate_program_pass, paddle::lite_metal::mir::GenerateProgramPass)
     .BindTargets({TARGET(kAny)});

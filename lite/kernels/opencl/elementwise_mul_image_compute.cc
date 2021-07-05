@@ -29,7 +29,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -101,7 +101,7 @@ class ElementwiseMulImageCompute
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     std::string fuse_scale_str = ele_param_->fuse_scale ? "/fuse_scale" : "";
     ch->kernel_func_name = kernel_func_name_ + fuse_scale_str;
     ch->cl_event =
@@ -126,7 +126,7 @@ class ElementwiseMulImageCompute
     VLOG(4) << "out->dims():" << out->dims();
 #endif
 
-    paddle::lite::CLImageConverterDefault default_convertor;
+    paddle::lite_metal::CLImageConverterDefault default_convertor;
     auto x_img_shape =
         default_convertor.InitImageDimInfoWith(x->dims());  // w, h
     auto x_img_width = x_img_shape[0];
@@ -252,7 +252,7 @@ class ElementwiseMulImageCompute
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
+namespace ocl = paddle::lite_metal::kernels::opencl;
 REGISTER_LITE_KERNEL(elementwise_mul,
                      kOpenCL,
                      kFP16,

@@ -17,7 +17,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(PaddlePredictor, Init) {
   gencode::PaddlePredictor predictor;

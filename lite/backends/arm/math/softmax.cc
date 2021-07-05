@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 

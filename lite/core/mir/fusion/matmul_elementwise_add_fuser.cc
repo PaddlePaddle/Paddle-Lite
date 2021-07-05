@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -98,11 +98,11 @@ cpp::OpDesc MatmulElementwiseAddFuser::GenOpDesc(const key2nodes_t& matched) {
     y_scale_vct = op_desc.GetInputScale(op_desc.Input("Y").front());
   }
   auto* scope = matched.at("matmul")->stmt()->op()->scope();
-  auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
+  auto x_shape = scope->FindVar(input_x_name)->Get<lite_metal::Tensor>().dims();
   int x_num_col_dims = x_shape.size() - 1;
   VLOG(4) << "x_shape: " << x_shape;
   VLOG(4) << "y_shape: "
-          << scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
+          << scope->FindVar(input_y_name)->Get<lite_metal::Tensor>().dims();
   VLOG(4) << "x_num_col_dims: " << x_num_col_dims;
 
   op_desc.mutable_inputs()->clear();

@@ -15,7 +15,7 @@
 #include "lite/kernels/host/sequence_unpad_compute.h"
 
 using SequenceUnpadFloat32 =
-    paddle::lite::kernels::host::SequenceUnpadCompute<float>;
+    paddle::lite_metal::kernels::host::SequenceUnpadCompute<float>;
 REGISTER_LITE_KERNEL(
     sequence_unpad, kHost, kFloat, kAny, SequenceUnpadFloat32, float32)
     .BindInput("X",
@@ -33,7 +33,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using SequenceUnpadInt64 =
-    paddle::lite::kernels::host::SequenceUnpadCompute<int64_t>;
+    paddle::lite_metal::kernels::host::SequenceUnpadCompute<int64_t>;
 REGISTER_LITE_KERNEL(
     sequence_unpad, kHost, kFloat, kAny, SequenceUnpadInt64, int64)
     .BindInput("X",

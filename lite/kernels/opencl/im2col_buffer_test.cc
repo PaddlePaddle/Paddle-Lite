@@ -26,7 +26,7 @@ limitations under the License. */
 DEFINE_string(cl_path, "/data/local/tmp/opencl", "The OpenCL kernels path.");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename Dtype>
 void PrintData(std::string name, Dtype *a, const int rows, const int cols) {

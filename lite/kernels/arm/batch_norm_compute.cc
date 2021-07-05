@@ -18,7 +18,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -73,7 +73,7 @@ void BatchNormCompute<T, PType>::Run() {
         outer_size = x_dims[0];
         channel_size = x_dims[1];
         inner_size = x_dims.Slice(2, x_dims.size()).production();
-        lite::arm::math::scale(x_data,
+        lite_metal::arm::math::scale(x_data,
                                y_data,
                                outer_size,
                                channel_size,
@@ -95,7 +95,7 @@ void BatchNormCompute<T, PType>::Run() {
 }  // namespace paddle
 
 #ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::BatchNormCompute<float16_t,
+typedef paddle::lite_metal::kernels::arm::BatchNormCompute<float16_t,
                                                      PRECISION(kFP16)>
     BnFp16;
 REGISTER_LITE_KERNEL(batch_norm, kARM, kFP16, kNCHW, BnFp16, def)
@@ -113,7 +113,7 @@ REGISTER_LITE_KERNEL(batch_norm, kARM, kFP16, kNCHW, BnFp16, def)
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 
-typedef paddle::lite::kernels::arm::BatchNormCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::arm::BatchNormCompute<float, PRECISION(kFloat)>
     BnFp32;
 REGISTER_LITE_KERNEL(batch_norm, kARM, kFloat, kNCHW, BnFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})

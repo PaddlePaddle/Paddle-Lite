@@ -22,7 +22,7 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -82,19 +82,19 @@ namespace math {
  *
  */
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class ContextProjectFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& in,
-                  const lite::Tensor* padding_data,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& in,
+                  const lite_metal::Tensor* padding_data,
                   bool padding_trainable,
                   const int context_start,
                   const int context_length,
                   const int context_stride,
                   const int up_pad,
                   const int down_pad,
-                  lite::Tensor* col) {
+                  lite_metal::Tensor* col) {
     auto lod_level_0 = in.lod()[0];
 
     math::Im2ColFunctor<math::ColFormat::kOCF, Target, float> im2col_ocf;
@@ -115,17 +115,17 @@ class ContextProjectFunctor {
                             : static_cast<int>(lod_level_0[i]);
       input_row_end = static_cast<int>(lod_level_0[i + 1]);
 
-      // lite::Tensor out_t =
+      // lite_metal::Tensor out_t =
       // col->Slice<float>(static_cast<int>(lod_level_0[i]),
       //                          static_cast<int>(lod_level_0[i + 1]));
-      lite::Tensor out_t =
+      lite_metal::Tensor out_t =
           col->Slice<float>(static_cast<int64_t>(lod_level_0[i]),
                             static_cast<int>(lod_level_0[i + 1]));
 
       sequence_height = static_cast<int>(out_t.dims()[0]);
 
       if (input_row_begin < input_row_end) {
-        lite::Tensor in_t = in.Slice<float>(input_row_begin, input_row_end);
+        lite_metal::Tensor in_t = in.Slice<float>(input_row_begin, input_row_end);
 
         std::vector<int64_t> output_shape(
             {sequence_height,
@@ -150,7 +150,7 @@ class ContextProjectFunctor {
       for (int i = 0; i < static_cast<int>(lod_level_0.size()) - 1; ++i) {
         if (lod_level_0[i] == lod_level_0[i + 1]) continue;
 
-        lite::Tensor out_t =
+        lite_metal::Tensor out_t =
             col->Slice<float>(static_cast<int>(lod_level_0[i]),
                               static_cast<int>(lod_level_0[i + 1]));
 
@@ -167,9 +167,9 @@ class ContextProjectFunctor {
           for (int k = 0; k < padding_rows; ++k) {
             int padding_size =
                 k + context_length < up_pad ? context_length : up_pad - k;
-            lite::Tensor out_t_sub = out_t.Slice<float>(
+            lite_metal::Tensor out_t_sub = out_t.Slice<float>(
                 k * context_length, k * context_length + padding_size);
-            lite::Tensor w_sub =
+            lite_metal::Tensor w_sub =
                 padding_data->Slice<float>(k, k + padding_size);
 
             out_t_sub.CopyDataFrom(w_sub);
@@ -200,10 +200,10 @@ class ContextProjectFunctor {
             if (padding_begin > 0 || sequence_height == context_start)
               padding_idx = padding_begin + t;
 
-            lite::Tensor out_t_sub = out_t.Slice<float>(
+            lite_metal::Tensor out_t_sub = out_t.Slice<float>(
                 (down_pad_begin_row + t) * context_length - padding_size,
                 (down_pad_begin_row + t) * context_length);
-            lite::Tensor w_sub = padding_data->Slice<float>(
+            lite_metal::Tensor w_sub = padding_data->Slice<float>(
                 up_pad + padding_idx, up_pad + padding_idx + padding_size);
             out_t_sub.CopyDataFrom(w_sub);
             // framework::TensorCopy(w_sub, context.GetPlace(), context,
@@ -217,11 +217,11 @@ class ContextProjectFunctor {
   }
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class ContextProjectGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& in,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& in,
                   bool padding_trainable,
                   const int context_start,
                   const int context_length,
@@ -230,8 +230,8 @@ class ContextProjectGradFunctor {
                   const int down_pad,
                   bool pad_grad,
                   bool input_grad,
-                  lite::Tensor* padding_data,
-                  lite::Tensor* col) {
+                  lite_metal::Tensor* padding_data,
+                  lite_metal::Tensor* col) {
     auto lod_level_0 = in.lod()[0];
 
     math::Col2ImFunctor<math::ColFormat::kOCF, Target, float> col2im_ocf;
@@ -243,7 +243,7 @@ class ContextProjectGradFunctor {
     int input_row_begin, input_row_end;
     int sequence_height, sequence_width;
     sequence_width = in.dims()[1];
-    auto blas = math::GetBlas<lite::Context<Target>, T>(context);
+    auto blas = math::GetBlas<lite_metal::Context<Target>, T>(context);
 
     if (input_grad) {
       for (int i = 0; i < static_cast<int>(lod_level_0.size()) - 1; ++i) {
@@ -254,14 +254,14 @@ class ContextProjectGradFunctor {
                               : static_cast<int>(lod_level_0[i]);
         input_row_end = static_cast<int>(lod_level_0[i + 1]);
 
-        lite::Tensor out_t =
+        lite_metal::Tensor out_t =
             col->Slice<float>(static_cast<int>(lod_level_0[i]),
                               static_cast<int>(lod_level_0[i + 1]));
 
         sequence_height = static_cast<int>(out_t.dims()[0]);
 
         if (input_row_begin < input_row_end) {
-          lite::Tensor in_t = in.Slice<float>(input_row_begin, input_row_end);
+          lite_metal::Tensor in_t = in.Slice<float>(input_row_begin, input_row_end);
 
           std::vector<int64_t> output_shape(
               {sequence_height,
@@ -288,7 +288,7 @@ class ContextProjectGradFunctor {
         for (int i = 0; i < static_cast<int>(lod_level_0.size()) - 1; ++i) {
           if (lod_level_0[i] == lod_level_0[i + 1]) continue;
 
-          lite::Tensor out_t =
+          lite_metal::Tensor out_t =
               col->Slice<float>(static_cast<int>(lod_level_0[i]),
                                 static_cast<int>(lod_level_0[i + 1]));
 
@@ -303,9 +303,9 @@ class ContextProjectGradFunctor {
             for (int k = 0; k < padding_rows; ++k) {
               int padding_size =
                   k + context_length < up_pad ? context_length : up_pad - k;
-              lite::Tensor out_t_sub = out_t.Slice<float>(
+              lite_metal::Tensor out_t_sub = out_t.Slice<float>(
                   k * context_length, k * context_length + padding_size);
-              lite::Tensor w_sub =
+              lite_metal::Tensor w_sub =
                   padding_data->Slice<float>(k, k + padding_size);
               blas.AXPY(w_sub.numel(),
                         static_cast<T>(1),
@@ -336,10 +336,10 @@ class ContextProjectGradFunctor {
               if (padding_begin > 0 || sequence_height == context_start)
                 padding_idx = padding_begin + t;
 
-              lite::Tensor out_t_sub = out_t.Slice<float>(
+              lite_metal::Tensor out_t_sub = out_t.Slice<float>(
                   (down_pad_begin_row + t) * context_length - padding_size,
                   (down_pad_begin_row + t) * context_length);
-              lite::Tensor w_sub = padding_data->Slice<float>(
+              lite_metal::Tensor w_sub = padding_data->Slice<float>(
                   up_pad + padding_idx, up_pad + padding_idx + padding_size);
               blas.AXPY(w_sub.numel(),
                         static_cast<T>(1),

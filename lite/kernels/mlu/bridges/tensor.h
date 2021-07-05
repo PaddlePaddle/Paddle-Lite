@@ -20,7 +20,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 

@@ -31,7 +31,7 @@
 #include "lite/core/dim.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 

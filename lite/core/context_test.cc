@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // #ifdef LITE_WITH_X86
 // TEST(ContextScheduler, NewContext) {

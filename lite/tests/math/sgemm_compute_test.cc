@@ -25,9 +25,9 @@
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::operators::ActivationParam ActivationParam;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::operators::ActivationParam ActivationParam;
+using paddle::lite_metal::profile::Timer;
 
 DEFINE_int32(power_mode,
              3,
@@ -155,19 +155,19 @@ bool test_sgemm(bool tra,
 #ifdef LITE_WITH_ARM
   //! compute
   double ops = 2.0 * m * n * k;
-  std::unique_ptr<paddle::lite::KernelContext> ctx1(
-      new paddle::lite::KernelContext);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+      new paddle::lite_metal::KernelContext);
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
   //! prepack
   Tensor tpackedA;
-  int hblock = paddle::lite::arm::math::get_hblock(&ctx);
+  int hblock = paddle::lite_metal::arm::math::get_hblock(&ctx);
   int round_up_a = ((hblock + m - 1) / hblock) * hblock;
   tpackedA.Resize({round_up_a * k});
-  paddle::lite::arm::math::prepackA(
+  paddle::lite_metal::arm::math::prepackA(
       tpackedA.mutable_data<float>(), da, alpha, lda, 0, m, 0, k, tra, &ctx);
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::sgemm_prepack(trb,
+    paddle::lite_metal::arm::math::sgemm_prepack(trb,
                                            m,
                                            n,
                                            k,
@@ -188,7 +188,7 @@ bool test_sgemm(bool tra,
       memcpy(dc, dc_backup, sizeof(float) * m * ldc);
     }
     t0.Start();
-    paddle::lite::arm::math::sgemm_prepack(trb,
+    paddle::lite_metal::arm::math::sgemm_prepack(trb,
                                            m,
                                            n,
                                            k,
@@ -246,7 +246,7 @@ bool test_sgemm(bool tra,
 TEST(TestSgemm, test_func_sgemm_prepacked) {
   if (FLAGS_basic_test) {
 #ifdef LITE_WITH_ARM
-    paddle::lite::DeviceInfo::Init();
+    paddle::lite_metal::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemm test";
     for (auto& m : {1, 3, 8, 32, 397}) {
@@ -318,7 +318,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
 
 TEST(TestSgemmCustom, test_func_sgemm_prepacked_custom) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   int lda = FLAGS_K + FLAGS_offset_a;
   if (FLAGS_traA) {

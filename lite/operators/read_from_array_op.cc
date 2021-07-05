@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ReadFromArrayOp::CheckShape() const {
@@ -29,9 +29,9 @@ bool ReadFromArrayOp::CheckShape() const {
 bool ReadFromArrayOp::InferShapeImpl() const { return true; }
 
 bool ReadFromArrayOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                 lite::Scope *scope) {
+                                 lite_metal::Scope *scope) {
   auto in = opdesc.Input("X").front();
-  param_.X = scope->FindVar(in)->GetMutable<std::vector<lite::Tensor>>();
+  param_.X = scope->FindVar(in)->GetMutable<std::vector<lite_metal::Tensor>>();
 
   param_.I = scope->FindTensor(opdesc.Input("I").front());
 
@@ -43,4 +43,4 @@ bool ReadFromArrayOp::AttachImpl(const cpp::OpDesc &opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(read_from_array, paddle::lite::operators::ReadFromArrayOp);
+REGISTER_LITE_OP(read_from_array, paddle::lite_metal::operators::ReadFromArrayOp);

@@ -23,7 +23,7 @@
 #include "lite/core/program_fake_utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(Optimizer, test) {
   Optimizer optimizer;
@@ -36,7 +36,7 @@ TEST(Optimizer, test) {
   core::KernelPickFactor factor;
   factor.ConsiderTarget();
 
-  auto scope = std::make_shared<lite::Scope>();
+  auto scope = std::make_shared<lite_metal::Scope>();
   auto program_proto = *program_faker.program()->Proto();
   Program program(program_proto, scope, places);
   optimizer.Run(std::move(program), places, factor);

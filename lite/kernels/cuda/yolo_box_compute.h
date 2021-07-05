@@ -16,7 +16,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -28,7 +28,7 @@ class YoloBoxCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   virtual ~YoloBoxCompute() = default;
 
  private:
-  lite::Tensor anchors_;
+  lite_metal::Tensor anchors_;
 };
 
 }  // namespace cuda

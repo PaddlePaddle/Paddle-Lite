@@ -17,7 +17,7 @@
 #include <stack>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 std::vector<TreeNode> Tree2ColUtil::construct_patch(
@@ -51,7 +51,7 @@ std::vector<TreeNode> Tree2ColUtil::construct_patch(
   return patch;
 }
 
-void Tree2ColUtil::construct_tree(const lite::Tensor &EdgeSet,
+void Tree2ColUtil::construct_tree(const lite_metal::Tensor &EdgeSet,
                                   std::vector<std::vector<int>> *tr,
                                   size_t *node_count) {
   auto edge_set_dims = EdgeSet.dims();
@@ -79,16 +79,16 @@ void Tree2ColUtil::construct_tree(const lite::Tensor &EdgeSet,
 }
 
 template <typename T>
-class Tree2ColFunctor<lite::TargetType::kX86, T> {
+class Tree2ColFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context &context,
-                  const lite::Tensor &EdgeSet,
-                  const lite::Tensor &node_features,
-                  lite::Tensor *patch,
+  void operator()(const lite_metal::X86Context &context,
+                  const lite_metal::Tensor &EdgeSet,
+                  const lite_metal::Tensor &node_features,
+                  lite_metal::Tensor *patch,
                   int max_depth) {
     std::vector<std::vector<int>> tr;
     auto feature_dims = node_features.dims();
-    math::SetConstant<lite::TargetType::kX86, T> constant;
+    math::SetConstant<lite_metal::TargetType::kX86, T> constant;
     int64_t feature_size = feature_dims[1];
     size_t patch_elem_size = 3 * static_cast<size_t>(feature_size);
     size_t node_count = 0, patch_count = 0, patch_size;
@@ -109,7 +109,7 @@ class Tree2ColFunctor<lite::TargetType::kX86, T> {
     //                           cpu_place);
     patch->Resize({static_cast<int64_t>(patch_size),
                    static_cast<int64_t>(patch_elem_size)});
-    auto *patch_data = patch->template mutable_data<T>(lite::TargetType::kX86);
+    auto *patch_data = patch->template mutable_data<T>(lite_metal::TargetType::kX86);
     constant(context, patch, 0);
     const T *features = node_features.data<T>();
 
@@ -135,17 +135,17 @@ class Tree2ColFunctor<lite::TargetType::kX86, T> {
   }
 };
 template <typename T>
-class Col2TreeFunctor<lite::TargetType::kX86, T> {
+class Col2TreeFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context &context,
-                  const lite::Tensor &EdgeSet,
-                  const lite::Tensor &out_grad,
-                  lite::Tensor *in_grad,
+  void operator()(const lite_metal::X86Context &context,
+                  const lite_metal::Tensor &EdgeSet,
+                  const lite_metal::Tensor &out_grad,
+                  lite_metal::Tensor *in_grad,
                   int max_depth) {
     std::vector<std::vector<int>> tr;
     auto output_dims = out_grad.dims();
     // auto cpu_place = boost::get<platform::CPUPlace>(context.GetPlace());
-    math::SetConstant<lite::TargetType::kX86, T> constant;
+    math::SetConstant<lite_metal::TargetType::kX86, T> constant;
     int64_t output_size = output_dims[1];
     size_t grad_elem_size = 3 * static_cast<size_t>(output_size);
     size_t node_count = 0, grad_count = 0;
@@ -171,7 +171,7 @@ class Col2TreeFunctor<lite::TargetType::kX86, T> {
     //                             cpu_place);
     in_grad->Resize({static_cast<int64_t>(node_count),
                      static_cast<int64_t>(grad_elem_size)});
-    auto *grad_data = in_grad->template mutable_data<T>(lite::TargetType::kX86);
+    auto *grad_data = in_grad->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     constant(context, in_grad, 0);
     const T *out_g = out_grad.data<T>();
@@ -195,10 +195,10 @@ class Col2TreeFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class Tree2ColFunctor<lite::TargetType::kX86, float>;
-template class Tree2ColFunctor<lite::TargetType::kX86, double>;
-template class Col2TreeFunctor<lite::TargetType::kX86, float>;
-template class Col2TreeFunctor<lite::TargetType::kX86, double>;
+template class Tree2ColFunctor<lite_metal::TargetType::kX86, float>;
+template class Tree2ColFunctor<lite_metal::TargetType::kX86, double>;
+template class Col2TreeFunctor<lite_metal::TargetType::kX86, float>;
+template class Col2TreeFunctor<lite_metal::TargetType::kX86, double>;
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

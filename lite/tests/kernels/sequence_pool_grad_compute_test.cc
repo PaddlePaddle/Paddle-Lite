@@ -20,7 +20,7 @@
 #include "lite/kernels/arm/sequence_pool_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 

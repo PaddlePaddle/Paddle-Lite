@@ -19,7 +19,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -57,9 +57,9 @@ inline std::vector<uint64_t> GetLodFromRoisNum(const Tensor* rois_num) {
 
 void DistributeFpnProposalsCompute::Run() {
   auto& param = Param<operators::DistributeFpnProposalsParam>();
-  const lite::Tensor* fpn_rois = param.fpn_rois;
-  std::vector<lite::Tensor*> multi_fpn_rois = param.multi_fpn_rois;
-  lite::Tensor* restore_index = param.restore_index;
+  const lite_metal::Tensor* fpn_rois = param.fpn_rois;
+  std::vector<lite_metal::Tensor*> multi_fpn_rois = param.multi_fpn_rois;
+  lite_metal::Tensor* restore_index = param.restore_index;
   int min_level = param.min_level;
   int max_level = param.max_level;
   int refer_level = param.refer_level;
@@ -153,7 +153,7 @@ void DistributeFpnProposalsCompute::Run() {
   }
   // merge lod information into LoDTensor
   for (int i = 0; i < num_level; ++i) {
-    lite::LoD lod;
+    lite_metal::LoD lod;
     lod.emplace_back(multi_fpn_rois_lod0[i]);
     multi_fpn_rois[i]->set_lod(lod);
   }
@@ -169,7 +169,7 @@ REGISTER_LITE_KERNEL(distribute_fpn_proposals,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::DistributeFpnProposalsCompute,
+                     paddle::lite_metal::kernels::host::DistributeFpnProposalsCompute,
                      def)
     .BindInput("FpnRois", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("RoisNum",

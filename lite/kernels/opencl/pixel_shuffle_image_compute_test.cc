@@ -22,7 +22,7 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(pixel_shuffle_image2d, compute) {
   LOG(INFO) << "create kernel ...";
@@ -42,7 +42,7 @@ TEST(pixel_shuffle_image2d, compute) {
 
   LOG(INFO) << "prepare to test kernel ====> " << kernel->doc();
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   operators::PixelShuffleParam param;
   param.x = &x;
   param.output = &out;

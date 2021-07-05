@@ -18,7 +18,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -68,11 +68,11 @@ void RsqrtImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::RsqrtImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::RsqrtImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite_metal::kernels::metal::RsqrtImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::RsqrtImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::RsqrtImageCompute<float, PRECISION(kFloat)> MetalRsqrtFp32;
-typedef paddle::lite::kernels::metal::RsqrtImageCompute<MetalHalf, PRECISION(kFP16)> MetalRsqrtFp16;
+typedef paddle::lite_metal::kernels::metal::RsqrtImageCompute<float, PRECISION(kFloat)> MetalRsqrtFp32;
+typedef paddle::lite_metal::kernels::metal::RsqrtImageCompute<MetalHalf, PRECISION(kFP16)> MetalRsqrtFp16;
 
 REGISTER_LITE_KERNEL(rsqrt, kMetal, kFloat, kMetalTexture2DArray, MetalRsqrtFp32, def)
     .BindInput("X",

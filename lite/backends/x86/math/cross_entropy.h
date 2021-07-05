@@ -20,7 +20,7 @@ limitations under the License. */
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -45,25 +45,25 @@ struct TolerableValue {
 // Also. In standard implementation of cross entropy, other
 // framework not has the ValueClipping.
 template <>
-struct TolerableValue<lite::fluid::float16> {
-  HOSTDEVICE lite::fluid::float16 operator()(
-      const lite::fluid::float16& x) const {
-    if (lite::fluid::isfinite(x))
+struct TolerableValue<lite_metal::fluid::float16> {
+  HOSTDEVICE lite_metal::fluid::float16 operator()(
+      const lite_metal::fluid::float16& x) const {
+    if (lite_metal::fluid::isfinite(x))
       return x;
-    else if (x > static_cast<lite::fluid::float16>(0))
-      return std::numeric_limits<lite::fluid::float16>::max();
+    else if (x > static_cast<lite_metal::fluid::float16>(0))
+      return std::numeric_limits<lite_metal::fluid::float16>::max();
     else
-      return std::numeric_limits<lite::fluid::float16>::min();
+      return std::numeric_limits<lite_metal::fluid::float16>::min();
   }
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class CrossEntropyFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  lite::Tensor* out,
-                  const lite::Tensor* prob,
-                  const lite::Tensor* labels,
+  void operator()(const lite_metal::Context<Target>& context,
+                  lite_metal::Tensor* out,
+                  const lite_metal::Tensor* prob,
+                  const lite_metal::Tensor* labels,
                   const bool softLabel,
                   const int ignore_index,
                   const int axis_dim);

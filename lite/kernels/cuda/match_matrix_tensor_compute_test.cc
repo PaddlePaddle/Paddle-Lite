@@ -20,11 +20,11 @@
 #include "lite/api/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 TEST(match_matrix_tensor, normal) {
   std::unique_ptr<KernelContext> ctx(new KernelContext);
@@ -70,9 +70,9 @@ TEST(match_matrix_tensor, normal) {
   }
 
   // cpu tensor data assigin to gpu tensor
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  w.Assign<float, lite::DDim, TARGET(kCUDA)>(w_cpu_data, w_cpu.dims());
-  y.Assign<float, lite::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  w.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(w_cpu_data, w_cpu.dims());
+  y.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
 
   param.x = &x;
   param.w = &w;

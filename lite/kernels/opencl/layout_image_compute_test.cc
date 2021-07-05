@@ -23,7 +23,7 @@
 #define FP16_MAX_DIFF (1e0)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // #define LOOP_TEST
 // #define PRINT_RESULT
@@ -63,7 +63,7 @@ TEST(layout_ImageDefault, compute) {
 
           // set tensors about op param
           LOG(INFO) << "set tensors about op param";
-          lite::Tensor x, y_image, y;
+          lite_metal::Tensor x, y_image, y;
           operators::LayoutParam BufferToImageParam;
           operators::LayoutParam ImageToBufferParam;
           BufferToImageParam.x = &x;
@@ -81,7 +81,7 @@ TEST(layout_ImageDefault, compute) {
           auto* x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
           auto* y_data = y.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
           auto image_shape =
-              paddle::lite::kernels::opencl::InitImageDimInfoWith(x_dim);
+              paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(x_dim);
           auto* y_image_data = y_image.mutable_data<half_t, cl::Image2D>(
               image_shape["width"], image_shape["height"]);
           auto* mapped_x = static_cast<float*>(TargetWrapperCL::Map(
@@ -192,7 +192,7 @@ TEST(layout_ImageDefault_With_Pre_Post, compute) {
 
           // set tensors about op param
           LOG(INFO) << "set tensors about op param";
-          lite::Tensor x, y_image, y;
+          lite_metal::Tensor x, y_image, y;
           operators::LayoutParam BufferToImageParam;
           operators::LayoutParam ImageToBufferParam;
           BufferToImageParam.x = &x;
@@ -212,7 +212,7 @@ TEST(layout_ImageDefault_With_Pre_Post, compute) {
           auto* x_data = x.mutable_data<uint8_t, cl::Buffer>(TARGET(kOpenCL));
           auto* y_data = y.mutable_data<uint8_t, cl::Buffer>(TARGET(kOpenCL));
           auto image_shape =
-              paddle::lite::kernels::opencl::InitImageDimInfoWith(x_dim);
+              paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(x_dim);
           auto* y_image_data = y_image.mutable_data<half_t, cl::Image2D>(
               image_shape["width"], image_shape["height"]);
           auto* mapped_x = static_cast<uint8_t*>(TargetWrapperCL::Map(
@@ -312,7 +312,7 @@ TEST(layout_ImageNW, compute) {
 
           // set tensors about op param
           operators::LayoutParam bufferToImageParam;
-          lite::Tensor x, y, cpu_y;
+          lite_metal::Tensor x, y, cpu_y;
           bufferToImageParam.x = &x;
           bufferToImageParam.y = &y;
 

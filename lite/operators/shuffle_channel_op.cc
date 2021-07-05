@@ -18,7 +18,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ShuffleChannelOpLite::CheckShape() const {
@@ -33,11 +33,11 @@ bool ShuffleChannelOpLite::InferShapeImpl() const {
 }
 
 bool ShuffleChannelOpLite::AttachImpl(const cpp::OpDesc& op_desc,
-                                      lite::Scope* scope) {
+                                      lite_metal::Scope* scope) {
   auto X = op_desc.Input("X").front();
   auto Out = op_desc.Output("Out").front();
-  param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(X)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(Out)->GetMutable<lite_metal::Tensor>();
   param_.group = op_desc.GetAttr<int>("group");
   CHECK(param_.X);
   CHECK(param_.Out);
@@ -49,4 +49,4 @@ bool ShuffleChannelOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(shuffle_channel,
-                 paddle::lite::operators::ShuffleChannelOpLite);
+                 paddle::lite_metal::operators::ShuffleChannelOpLite);

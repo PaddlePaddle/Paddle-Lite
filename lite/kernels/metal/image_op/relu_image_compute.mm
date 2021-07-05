@@ -20,7 +20,7 @@
 using namespace std;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -145,7 +145,7 @@ REGISTER_LITE_KERNEL(relu,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ReluImageCompute,
+    paddle::lite_metal::kernels::metal::ReluImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -161,7 +161,7 @@ REGISTER_LITE_KERNEL(relu6,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::Relu6ImageCompute,
+    paddle::lite_metal::kernels::metal::Relu6ImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -177,7 +177,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::LeakyReluImageCompute,
+    paddle::lite_metal::kernels::metal::LeakyReluImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -193,7 +193,7 @@ REGISTER_LITE_KERNEL(relu,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ReluImageCompute,
+    paddle::lite_metal::kernels::metal::ReluImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
@@ -205,7 +205,7 @@ REGISTER_LITE_KERNEL(relu6,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::Relu6ImageCompute,
+    paddle::lite_metal::kernels::metal::Relu6ImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
@@ -217,7 +217,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::LeakyReluImageCompute,
+    paddle::lite_metal::kernels::metal::LeakyReluImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

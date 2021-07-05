@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool FillAnyLikeOp::CheckShape() const {
@@ -29,10 +29,10 @@ bool FillAnyLikeOp::InferShapeImpl() const {
   return true;
 }
 
-bool FillAnyLikeOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool FillAnyLikeOp::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   param_.X = scope->FindVar(opdesc.Input("X").front())->GetMutable<Tensor>();
   auto out_name = opdesc.Output("Out").front();
-  param_.Out = GetMutableVar<lite::Tensor>(scope, out_name);
+  param_.Out = GetMutableVar<lite_metal::Tensor>(scope, out_name);
   param_.value = opdesc.GetAttr<float>("value");
   param_.dtype = opdesc.HasAttr("dtype") ? opdesc.GetAttr<int>("dtype") : -1;
   return true;
@@ -42,4 +42,4 @@ bool FillAnyLikeOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(fill_any_like, paddle::lite::operators::FillAnyLikeOp);
+REGISTER_LITE_OP(fill_any_like, paddle::lite_metal::operators::FillAnyLikeOp);

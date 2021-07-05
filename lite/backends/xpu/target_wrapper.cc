@@ -16,7 +16,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void XPUScratchPad::Reserve(size_t new_size) {
   if (new_size <= size_) {

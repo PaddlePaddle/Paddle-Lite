@@ -16,7 +16,7 @@
 #include "lite/backends/host/math/sequence_padding.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -32,7 +32,7 @@ void SequencePadCompute<T>::Run() {
   CHECK(!x->lod().empty()) << "Input X should have lod data.";
   int padded_length = param.padded_length;
 
-  lite::host::math::PaddingLoDTensorFunctor<lite::TargetType::kHost, T>()(
+  lite_metal::host::math::PaddingLoDTensorFunctor<lite_metal::TargetType::kHost, T>()(
       ctx,
       *x,
       out,
@@ -40,7 +40,7 @@ void SequencePadCompute<T>::Run() {
       padded_length,
       0,
       false,
-      lite::host::math::kBatchLengthWidth);
+      lite_metal::host::math::kBatchLengthWidth);
 
   auto* len_data = len_t->template mutable_data<int64_t>();
   auto x_lod = x->lod();
@@ -58,7 +58,7 @@ REGISTER_LITE_KERNEL(sequence_pad,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SequencePadCompute<float>,
+                     paddle::lite_metal::kernels::host::SequencePadCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("PadValue",
@@ -73,7 +73,7 @@ REGISTER_LITE_KERNEL(sequence_pad,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SequencePadCompute<int>,
+                     paddle::lite_metal::kernels::host::SequencePadCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("PadValue",
@@ -88,7 +88,7 @@ REGISTER_LITE_KERNEL(sequence_pad,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SequencePadCompute<int64_t>,
+                     paddle::lite_metal::kernels::host::SequencePadCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("PadValue",

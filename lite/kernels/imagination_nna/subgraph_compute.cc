@@ -23,7 +23,7 @@
 #include "lite/kernels/imagination_nna/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace imagination_nna {
 
@@ -238,7 +238,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      kImaginationNNA,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::imagination_nna::SubgraphCompute,
+                     paddle::lite_metal::kernels::imagination_nna::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})

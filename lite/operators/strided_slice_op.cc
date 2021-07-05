@@ -21,7 +21,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool StridedSliceOp::CheckShape() const {
@@ -175,7 +175,7 @@ bool StridedSliceOp::InferShapeImpl() const {
 }
 
 bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
-                                lite::Scope *scope) {
+                                lite_metal::Scope *scope) {
   param_.Input =
       scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
   param_.Out =
@@ -212,7 +212,7 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
     auto inputs = op_desc.Input("StartsTensorList");
     for (auto var : inputs) {
       param_.StartsTensorList.push_back(
-          scope->FindVar(var)->GetMutable<lite::Tensor>());
+          scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
     }
   }
   if (op_desc.HasInput("EndsTensorList") &&
@@ -221,7 +221,7 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
     auto inputs = op_desc.Input("EndsTensorList");
     for (auto var : inputs) {
       param_.EndsTensorList.push_back(
-          scope->FindVar(var)->GetMutable<lite::Tensor>());
+          scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
     }
   }
   if (op_desc.HasInput("StridesTensorList") &&
@@ -230,7 +230,7 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
     auto inputs = op_desc.Input("StridesTensorList");
     for (auto var : inputs) {
       param_.StridesTensorList.push_back(
-          scope->FindVar(var)->GetMutable<lite::Tensor>());
+          scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
     }
   }
   auto tensor_input = false;
@@ -273,7 +273,7 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
 }
 
 } /* namespace operators */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
-REGISTER_LITE_OP(strided_slice, paddle::lite::operators::StridedSliceOp);
+REGISTER_LITE_OP(strided_slice, paddle::lite_metal::operators::StridedSliceOp);

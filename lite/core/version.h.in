@@ -19,7 +19,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static constexpr int MAJOR_COEFF = 1000000;
 static constexpr int MINOR_COEFF = 1000;

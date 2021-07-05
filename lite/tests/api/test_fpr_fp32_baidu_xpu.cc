@@ -24,7 +24,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(ResnetCbam, test_resnet_cbam_fp32_baidu_xpu) {
   lite_api::CxxConfig config;

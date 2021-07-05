@@ -19,7 +19,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -187,7 +187,7 @@ class ActivationComputeImageDefault
       first_epoch_for_reinit_ = false;
 
       // compute image shape
-      paddle::lite::CLImageConverterDefault default_convertor;
+      paddle::lite_metal::CLImageConverterDefault default_convertor;
       x_img_shape_ = default_convertor.InitImageDimInfoWith(
           act_param_->X->dims());  // w, h
       out_img_shape_ = default_convertor.InitImageDimInfoWith(
@@ -267,7 +267,7 @@ class ActivationComputeImageDefault
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -420,7 +420,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -438,7 +438,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -456,7 +456,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -474,7 +474,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -492,7 +492,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -510,7 +510,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -528,7 +528,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -546,7 +546,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -564,7 +564,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -582,7 +582,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kFP16,
     kImageDefault,
-    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    paddle::lite_metal::kernels::opencl::ActivationComputeImageDefault,
     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -601,7 +601,7 @@ REGISTER_LITE_KERNEL(sqrt,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::SqrtComputeImageDefault,
+                     paddle::lite_metal::kernels::opencl::SqrtComputeImageDefault,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -618,7 +618,7 @@ REGISTER_LITE_KERNEL(rsqrt,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::RsqrtComputeImageDefault,
+                     paddle::lite_metal::kernels::opencl::RsqrtComputeImageDefault,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -635,7 +635,7 @@ REGISTER_LITE_KERNEL(square,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::SquareComputeImageDefault,
+                     paddle::lite_metal::kernels::opencl::SquareComputeImageDefault,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

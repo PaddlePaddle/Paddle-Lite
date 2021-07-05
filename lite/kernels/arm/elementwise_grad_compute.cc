@@ -18,7 +18,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -90,29 +90,29 @@ void ElementwiseAddGradCompute::Run() {
   int pre, n, post;
   if (!param.XGrad) {
     CHECK(param.YGrad);
-    lite::arm::math::elementwise_add_grad(
+    lite_metal::arm::math::elementwise_add_grad(
         out_grad_data, y_grad_data, y_dims.production());
     return;
   }
 
   if (!param.YGrad) {
     CHECK(param.XGrad);
-    lite::arm::math::elementwise_add_grad(
+    lite_metal::arm::math::elementwise_add_grad(
         out_grad_data, x_grad_data, x_dims.production());
     return;
   }
 
   if (x_dims.size() < y_dims.size() &&
       is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_add_grad_broadcast(
+    lite_metal::arm::math::elementwise_add_grad_broadcast(
         out_grad_data, y_grad_data, x_grad_data, pre, n, post);
   } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_add_grad_broadcast(
+    lite_metal::arm::math::elementwise_add_grad_broadcast(
         out_grad_data, x_grad_data, y_grad_data, pre, n, post);
   } else {
-    lite::arm::math::elementwise_add_grad(
+    lite_metal::arm::math::elementwise_add_grad(
         out_grad_data, x_grad_data, x_dims.production());
-    lite::arm::math::elementwise_add_grad(
+    lite_metal::arm::math::elementwise_add_grad(
         out_grad_data, y_grad_data, y_dims.production());
   }
 }
@@ -138,11 +138,11 @@ void ElementwiseSubGradCompute::Run() {
   if (!param.XGrad || !param.YGrad) {
     CHECK(param.XGrad || param.YGrad);
     if (param.XGrad) {
-      lite::arm::math::elementwise_sub_grad(
+      lite_metal::arm::math::elementwise_sub_grad(
           out_data, x_grad_data, y_grad_data, x_dims.production());
       return;
     } else {
-      lite::arm::math::elementwise_sub_grad(
+      lite_metal::arm::math::elementwise_sub_grad(
           out_data, x_grad_data, y_grad_data, y_dims.production());
       return;
     }
@@ -152,10 +152,10 @@ void ElementwiseSubGradCompute::Run() {
     LOG(FATAL) << "elewise sub grad don't support x_dims size < y_dims size";
   }
   if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_sub_grad_broadcast(
+    lite_metal::arm::math::elementwise_sub_grad_broadcast(
         out_data, x_grad_data, y_grad_data, pre, n, post);
   } else {
-    lite::arm::math::elementwise_sub_grad(
+    lite_metal::arm::math::elementwise_sub_grad(
         out_data, x_grad_data, y_grad_data, x_dims.production());
   }
 }
@@ -179,14 +179,14 @@ void ElementwiseDivGradCompute::Run() {
 }  // namespace paddle
 
 using elementwise_mul_grad_float =
-    paddle::lite::kernels::arm::ElementwiseMulGradCompute<float,
+    paddle::lite_metal::kernels::arm::ElementwiseMulGradCompute<float,
                                                           PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(elementwise_add_grad,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ElementwiseAddGradCompute,
+                     paddle::lite_metal::kernels::arm::ElementwiseAddGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -199,7 +199,7 @@ REGISTER_LITE_KERNEL(elementwise_sub_grad,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ElementwiseSubGradCompute,
+                     paddle::lite_metal::kernels::arm::ElementwiseSubGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -212,7 +212,7 @@ REGISTER_LITE_KERNEL(elementwise_div_grad,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ElementwiseDivGradCompute,
+                     paddle::lite_metal::kernels::arm::ElementwiseDivGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -234,7 +234,7 @@ REGISTER_LITE_KERNEL(elementwise_max_grad,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ElementwiseMaxGradCompute,
+                     paddle::lite_metal::kernels::arm::ElementwiseMaxGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})

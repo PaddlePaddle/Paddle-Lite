@@ -17,26 +17,26 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class Unpool2dMaxFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& indices,
-                  lite::Tensor* output);
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& indices,
+                  lite_metal::Tensor* output);
 };
-template <lite::TargetType Target, class T>
+template <lite_metal::TargetType Target, class T>
 class Unpool2dMaxGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& indices,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
-                  lite::Tensor* input_grad);
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& indices,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
+                  lite_metal::Tensor* input_grad);
 };
 }  // namespace math
 }  // namespace x86

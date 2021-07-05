@@ -19,13 +19,13 @@
 //              1,
 //              "Number of threads for each paddle instance.");
 int32_t paddle_num_threads =
-    paddle::lite::GetIntFromEnv("paddle_num_threads", 1);
+    paddle::lite_metal::GetIntFromEnv("paddle_num_threads", 1);
 
 REGISTER_LITE_KERNEL(gru,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::GRUCompute<float>,
+                     paddle::lite_metal::kernels::x86::GRUCompute<float>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kX86))})

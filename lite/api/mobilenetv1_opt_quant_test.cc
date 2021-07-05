@@ -25,7 +25,7 @@ DEFINE_int32(H, 224, "input_height");
 DEFINE_int32(W, 224, "input_width");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void TestModel(const std::string& model_dir,
                const std::vector<float>& ref,

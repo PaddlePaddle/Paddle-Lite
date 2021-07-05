@@ -22,7 +22,7 @@
 #include "lite/kernels/mlu/bridges/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -91,8 +91,8 @@ static void test_case(std::vector<int64_t> x_shape,
   std::string out_var_name = "out";
   auto* x = scope.NewTensor(x_var_name);
   auto* out = scope.NewTensor(out_var_name);
-  x->Resize(lite::DDim(x_shape));
-  out->Resize(lite::DDim(out_shape));
+  x->Resize(lite_metal::DDim(x_shape));
+  out->Resize(lite_metal::DDim(out_shape));
 
   auto x_data = x->mutable_data<float>();
   FillTensor<float, float>(x, 0.f, 2.f);

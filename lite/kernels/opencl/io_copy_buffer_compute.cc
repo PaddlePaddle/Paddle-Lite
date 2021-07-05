@@ -24,7 +24,7 @@
 #undef LITE_WITH_LOG
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -86,7 +86,7 @@ class IoCopyHostToOpenCLCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = "HostToOpenCL";
     ch->io_duration = h2d_duration_;
   }
@@ -144,7 +144,7 @@ class IoCopykOpenCLToHostCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = "OpenCLToHost";
     ch->io_duration = d2h_duration_;
   }
@@ -191,7 +191,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kOpenCL,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::opencl::IoCopyHostToOpenCLCompute,
+                     paddle::lite_metal::kernels::opencl::IoCopyHostToOpenCLCompute,
                      host_to_device)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
@@ -202,7 +202,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kOpenCL,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::opencl::IoCopykOpenCLToHostCompute,
+                     paddle::lite_metal::kernels::opencl::IoCopykOpenCLToHostCompute,
                      device_to_host)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kAny))})
@@ -213,7 +213,7 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kOpenCL,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::opencl::IoCopyHostToOpenCLCompute,
+                     paddle::lite_metal::kernels::opencl::IoCopyHostToOpenCLCompute,
                      host_to_device)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
@@ -224,7 +224,7 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kOpenCL,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::opencl::IoCopykOpenCLToHostCompute,
+                     paddle::lite_metal::kernels::opencl::IoCopykOpenCLToHostCompute,
                      device_to_host)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kAny))})

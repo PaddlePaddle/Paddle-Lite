@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -218,7 +218,7 @@ REGISTER_LITE_KERNEL(box_coder,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::BoxCoderCompute,
+                     paddle::lite_metal::kernels::host::BoxCoderCompute,
                      def)
     .BindInput("PriorBox", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("PriorBoxVar", {LiteType::GetTensorTy(TARGET(kHost))})

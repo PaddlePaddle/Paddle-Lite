@@ -18,7 +18,7 @@
 #include "lite/kernels/cuda/sequence_arithmetic_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -231,7 +231,7 @@ REGISTER_LITE_KERNEL(sequence_arithmetic,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::SequenceArithmeticCompute,
+                     paddle::lite_metal::kernels::cuda::SequenceArithmeticCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
@@ -241,7 +241,7 @@ REGISTER_LITE_KERNEL(search_seq_arithmetic,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::SequenceArithmeticCompute,
+                     paddle::lite_metal::kernels::cuda::SequenceArithmeticCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})

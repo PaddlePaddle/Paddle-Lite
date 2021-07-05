@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -33,8 +33,8 @@ void SequenceConcatCompute::PrepareForRun() {
 }
 
 template <typename T>
-inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs,
-                     std::vector<lite::Tensor>* xs_in_order) {
+inline LoD ConcatLoD(const std::vector<lite_metal::Tensor*>& xs,
+                     std::vector<lite_metal::Tensor>* xs_in_order) {
   std::vector<uint64_t> result;
   result.resize(xs[0]->lod()[0].size());
 
@@ -91,7 +91,7 @@ void SequenceConcatCompute::Run() {
   }
   out_dims[0] = dim0;
   out->Resize(out_dims);
-  std::vector<lite::Tensor> x_in_order;
+  std::vector<lite_metal::Tensor> x_in_order;
   out->set_lod(ConcatLoD<float>(xs, &x_in_order));
 
   CHECK(xs.size() == 2) << "XPU only support sequence_pool for 2 tensors";
@@ -136,7 +136,7 @@ REGISTER_LITE_KERNEL(sequence_concat,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SequenceConcatCompute,
+                     paddle::lite_metal::kernels::xpu::SequenceConcatCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

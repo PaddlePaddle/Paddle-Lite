@@ -25,7 +25,7 @@
 #include "paddle/fluid/framework/program_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -47,13 +47,13 @@ std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
   main_block->Var("add_out_2");
   main_block->Var("out");
 
-  scope->Var("x_1")->GetMutable<lite::Tensor>();
-  scope->Var("y_1")->GetMutable<lite::Tensor>();
-  scope->Var("add_out_1")->GetMutable<lite::Tensor>();
-  scope->Var("relu_out_1")->GetMutable<lite::Tensor>();
-  scope->Var("y_2")->GetMutable<lite::Tensor>();
-  scope->Var("add_out_2")->GetMutable<lite::Tensor>();
-  scope->Var("out")->GetMutable<lite::Tensor>();
+  scope->Var("x_1")->GetMutable<lite_metal::Tensor>();
+  scope->Var("y_1")->GetMutable<lite_metal::Tensor>();
+  scope->Var("add_out_1")->GetMutable<lite_metal::Tensor>();
+  scope->Var("relu_out_1")->GetMutable<lite_metal::Tensor>();
+  scope->Var("y_2")->GetMutable<lite_metal::Tensor>();
+  scope->Var("add_out_2")->GetMutable<lite_metal::Tensor>();
+  scope->Var("out")->GetMutable<lite_metal::Tensor>();
 
   add_1->SetType("elementwise_add");
   add_1->SetInput("X", {"x_1"});
@@ -77,7 +77,7 @@ std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
 
   program_desc->Flush();
 
-  lite::Program program(*program_desc->Proto(), scope, valid_places);
+  lite_metal::Program program(*program_desc->Proto(), scope, valid_places);
   auto graph = std::unique_ptr<SSAGraph>(new SSAGraph());
   graph->Build(program, valid_places);
 

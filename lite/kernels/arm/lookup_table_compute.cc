@@ -22,7 +22,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -67,7 +67,7 @@ REGISTER_LITE_KERNEL(lookup_table,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::LookupTableCompute,
+                     paddle::lite_metal::kernels::arm::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
@@ -78,7 +78,7 @@ REGISTER_LITE_KERNEL(lookup_table_v2,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::LookupTableCompute,
+                     paddle::lite_metal::kernels::arm::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})

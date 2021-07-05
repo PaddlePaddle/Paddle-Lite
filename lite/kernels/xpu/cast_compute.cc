@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -68,7 +68,7 @@ REGISTER_LITE_KERNEL(cast,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<float>,
+                     paddle::lite_metal::kernels::xpu::CastCompute<float>,
                      cast_fp32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
@@ -78,7 +78,7 @@ REGISTER_LITE_KERNEL(cast,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<int>,
+                     paddle::lite_metal::kernels::xpu::CastCompute<int>,
                      cast_i32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
@@ -88,7 +88,7 @@ REGISTER_LITE_KERNEL(cast,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<int64_t>,
+                     paddle::lite_metal::kernels::xpu::CastCompute<int64_t>,
                      cast_i64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})

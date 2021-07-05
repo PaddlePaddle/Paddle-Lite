@@ -16,7 +16,7 @@
 #include <type_traits>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 
 #define SIGMOID_THRESHOLD_MIN -40.0

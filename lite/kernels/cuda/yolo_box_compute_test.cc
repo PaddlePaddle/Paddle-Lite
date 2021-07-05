@@ -18,7 +18,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -166,9 +166,9 @@ TEST(yolo_box, normal) {
 
   operators::YoloBoxParam param;
 
-  lite::Tensor x, sz, x_cpu, sz_cpu;
-  lite::Tensor boxes, scores, boxes_cpu, scores_cpu;
-  lite::Tensor x_ref, sz_ref, boxes_ref, scores_ref;
+  lite_metal::Tensor x, sz, x_cpu, sz_cpu;
+  lite_metal::Tensor boxes, scores, boxes_cpu, scores_cpu;
+  lite_metal::Tensor x_ref, sz_ref, boxes_ref, scores_ref;
   int s = 3, cls = 4;
   int n = 1, c = s * (5 + cls), h = 16, w = 16;
   param.anchors = {2, 3, 4, 5, 8, 10};
@@ -217,8 +217,8 @@ TEST(yolo_box, normal) {
   sz_ref_data[0] = 16;
   sz_ref_data[1] = 32;
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  sz.Assign<int, lite::DDim, TARGET(kCUDA)>(sz_cpu_data, sz_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  sz.Assign<int, lite_metal::DDim, TARGET(kCUDA)>(sz_cpu_data, sz_cpu.dims());
 
   param.X = &x;
   param.ImgSize = &sz;

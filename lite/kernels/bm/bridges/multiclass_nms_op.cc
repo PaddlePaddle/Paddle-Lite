@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -31,14 +31,14 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto boxes_var_name = op_info->Input("BBoxes").front();
-  auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
+  auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite_metal::Tensor>();
   auto boxes_dims = boxes->dims();
   std::vector<int32_t> i_boxes_shape_data(boxes_dims.size());
   for (size_t i = 0; i < boxes_dims.size(); i++) {
     i_boxes_shape_data[i] = static_cast<int32_t>(boxes_dims[i]);
   }
   auto score_var_name = op_info->Input("Scores").front();
-  auto score = scope->FindVar(score_var_name)->GetMutable<lite::Tensor>();
+  auto score = scope->FindVar(score_var_name)->GetMutable<lite_metal::Tensor>();
   auto score_dims = score->dims();
   std::vector<int32_t> i_score_shape_data(score_dims.size());
   for (size_t i = 0; i < score_dims.size(); i++) {
@@ -57,7 +57,7 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   auto out_var_name = op_info->Output("Out").front();
-  auto out = scope->FindVar(out_var_name)->GetMutable<lite::Tensor>();
+  auto out = scope->FindVar(out_var_name)->GetMutable<lite_metal::Tensor>();
   std::vector<int64_t> vec_out_dim(score_dims.size());
   if (3 == score_dims.size()) {
     vec_out_dim[0] = score_dims[0];  // batch_size
@@ -110,7 +110,7 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_type == "multiclass_nms2") {
     output_num = 2;
     out_index_name = op_info->Output("Index").front();
-    auto out_index = scope->FindVar(out_index_name)->GetMutable<lite::Tensor>();
+    auto out_index = scope->FindVar(out_index_name)->GetMutable<lite_metal::Tensor>();
     if (3 == score_dims.size()) {
       vec_index_dim[0] = score_dims[0];
       vec_index_dim[1] = keep_top_k;
@@ -152,7 +152,7 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(multiclass_nms,
                          kBM,
-                         paddle::lite::subgraph::bm::MultiClassNMSConverter);
+                         paddle::lite_metal::subgraph::bm::MultiClassNMSConverter);
 REGISTER_SUBGRAPH_BRIDGE(multiclass_nms2,
                          kBM,
-                         paddle::lite::subgraph::bm::MultiClassNMSConverter);
+                         paddle::lite_metal::subgraph::bm::MultiClassNMSConverter);

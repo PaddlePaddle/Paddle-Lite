@@ -21,7 +21,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -34,11 +34,11 @@ class MulTest : public ::testing::Test {
         x_shape_({m_, k_}),
         y_shape_({k_, n_}),
         out_shape_({m_, n_}) {
-    x_gpu_.Resize(lite::DDim(x_shape_));
-    x_ref_.Resize(lite::DDim(x_shape_));
+    x_gpu_.Resize(lite_metal::DDim(x_shape_));
+    x_ref_.Resize(lite_metal::DDim(x_shape_));
 
-    y_gpu_.Resize(lite::DDim(y_shape_));
-    y_ref_.Resize(lite::DDim(y_shape_));
+    y_gpu_.Resize(lite_metal::DDim(y_shape_));
+    y_ref_.Resize(lite_metal::DDim(y_shape_));
 
     auto x_ref_data = x_ref_.mutable_data<float>();
     auto y_ref_data = y_ref_.mutable_data<float>();
@@ -51,9 +51,9 @@ class MulTest : public ::testing::Test {
       y_ref_data[i] = static_cast<float>(i % 10 * 0.2);
     }
 
-    out_ref_.Resize(lite::DDim(out_shape_));
-    out_cpu_.Resize(lite::DDim(out_shape_));
-    out_gpu_.Resize(lite::DDim(out_shape_));
+    out_ref_.Resize(lite_metal::DDim(out_shape_));
+    out_cpu_.Resize(lite_metal::DDim(out_shape_));
+    out_gpu_.Resize(lite_metal::DDim(out_shape_));
     RunBaseLine(&x_ref_, &y_ref_, &out_ref_);
 
     InitParamAndContext();
@@ -70,30 +70,30 @@ class MulTest : public ::testing::Test {
   }
 
   void InitFloatInput() {
-    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+    x_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
                                                     x_gpu_.dims());
-    y_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(y_ref_.data<float>(),
+    y_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(y_ref_.data<float>(),
                                                     y_gpu_.dims());
   }
 
   void InitHalfInput() {
-    x_half_.Resize(lite::DDim(x_ref_.dims()));
+    x_half_.Resize(lite_metal::DDim(x_ref_.dims()));
     auto x_half_data = x_half_.mutable_data<half>();
     for (int64_t i = 0; i < x_half_.numel(); i++) {
-      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+      x_half_data[i] = half(lite_metal::float16(x_ref_.data<float>()[i]));
     }
-    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    x_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
     y_half_.Resize(y_ref_.dims());
     auto y_half_data = y_half_.mutable_data<half>();
     for (int64_t i = 0; i < y_half_.numel(); i++) {
-      y_half_data[i] = half(lite::float16(y_ref_.data<float>()[i]));
+      y_half_data[i] = half(lite_metal::float16(y_ref_.data<float>()[i]));
     }
-    y_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(y_half_data, y_gpu_.dims());
+    y_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(y_half_data, y_gpu_.dims());
   }
 
-  void RunBaseLine(const lite::Tensor* x,
-                   const lite::Tensor* w,
-                   lite::Tensor* out) {
+  void RunBaseLine(const lite_metal::Tensor* x,
+                   const lite_metal::Tensor* w,
+                   lite_metal::Tensor* out) {
     const float* data_in = x->data<float>();
     const float* weights = w->data<float>();
     float* data_out = out->mutable_data<float>();
@@ -115,10 +115,10 @@ class MulTest : public ::testing::Test {
 
   int m_, k_, n_;
   std::vector<int64_t> x_shape_, y_shape_, out_shape_;
-  lite::Tensor x_ref_, y_ref_, out_ref_;
-  lite::Tensor x_gpu_, y_gpu_;
-  lite::Tensor x_half_, y_half_;
-  lite::Tensor out_cpu_, out_gpu_;
+  lite_metal::Tensor x_ref_, y_ref_, out_ref_;
+  lite_metal::Tensor x_gpu_, y_gpu_;
+  lite_metal::Tensor x_half_, y_half_;
+  lite_metal::Tensor out_cpu_, out_gpu_;
 
   operators::MulParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -189,7 +189,7 @@ TEST_F(MulTest, TestFP16) {
                           IoDirection::DtoH);
 
   for (int i = 0; i < out_cpu_.numel(); ++i) {
-    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float res = static_cast<float>(lite_metal::float16(out_cpu_data[i]));
     float ref = out_ref_.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }

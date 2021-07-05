@@ -21,14 +21,14 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
 template <typename T>
-void concat_func(const std::vector<lite::Tensor*>& input,
+void concat_func(const std::vector<lite_metal::Tensor*>& input,
                  const int axis,
-                 lite::Tensor* output) {
+                 lite_metal::Tensor* output) {
   size_t num = input.size();
   auto dim_0 = input[0]->dims();
   int64_t concat_input_size = 1;

@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(slice,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SliceCompute<float>,
+                     paddle::lite_metal::kernels::x86::SliceCompute<float>,
                      def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
@@ -37,7 +37,7 @@ REGISTER_LITE_KERNEL(slice,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SliceCompute<int>,
+                     paddle::lite_metal::kernels::x86::SliceCompute<int>,
                      int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -56,7 +56,7 @@ REGISTER_LITE_KERNEL(slice,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SliceCompute<int64_t>,
+                     paddle::lite_metal::kernels::x86::SliceCompute<int64_t>,
                      int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})

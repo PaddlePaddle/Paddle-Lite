@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -255,19 +255,19 @@ void PReluCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    relu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::ReluCompute, def)
+    relu, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::ReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    relu6, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::Relu6Compute, def)
+    relu6, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::Relu6Compute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    tanh, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::TanhCompute, def)
+    tanh, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::TanhCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
@@ -276,56 +276,56 @@ REGISTER_LITE_KERNEL(sigmoid,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SigmoidCompute,
+                     paddle::lite_metal::kernels::xpu::SigmoidCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    abs, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::AbsCompute, def)
+    abs, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::AbsCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    exp, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::ExpCompute, def)
+    exp, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::ExpCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    square, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SquareCompute, def)
+    square, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::SquareCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    sqrt, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SqrtCompute, def)
+    sqrt, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::SqrtCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    rsqrt, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::RsqrtCompute, def)
+    rsqrt, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::RsqrtCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    pow, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PowCompute, def)
+    pow, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::PowCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    log, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::LogCompute, def)
+    log, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::LogCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    sign, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SignCompute, def)
+    sign, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::SignCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
@@ -334,7 +334,7 @@ REGISTER_LITE_KERNEL(reciprocal,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ReciprocalCompute,
+                     paddle::lite_metal::kernels::xpu::ReciprocalCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -344,7 +344,7 @@ REGISTER_LITE_KERNEL(hard_sigmoid,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::HardSigmoidCompute,
+                     paddle::lite_metal::kernels::xpu::HardSigmoidCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -354,7 +354,7 @@ REGISTER_LITE_KERNEL(hard_swish,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::HardSwishCompute,
+                     paddle::lite_metal::kernels::xpu::HardSwishCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -364,7 +364,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::LeakyReluCompute,
+                     paddle::lite_metal::kernels::xpu::LeakyReluCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -374,21 +374,21 @@ REGISTER_LITE_KERNEL(softsign,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SoftsignCompute,
+                     paddle::lite_metal::kernels::xpu::SoftsignCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    swish, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SwishCompute, def)
+    swish, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::SwishCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("beta", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    prelu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PReluCompute, def)
+    prelu, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::PReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

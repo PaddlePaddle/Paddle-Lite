@@ -17,7 +17,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename Dtype, TargetType Target>
 void test_shared_memory_tensor() {

@@ -17,7 +17,7 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 

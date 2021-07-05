@@ -56,14 +56,14 @@ DEFINE_int32(dila_w, 1, "dilation width");
 DEFINE_bool(flag_relu, false, "do relu");
 DEFINE_bool(flag_bias, false, "with bias");
 
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::operators::ConvParam ConvParam;
-typedef paddle::lite::operators::ActivationParam ActivationParam;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::operators::ConvParam ConvParam;
+typedef paddle::lite_metal::operators::ActivationParam ActivationParam;
+using paddle::lite_metal::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
-                     const paddle::lite::operators::ConvParam& param) {
+                     const paddle::lite_metal::operators::ConvParam& param) {
   auto filter_dims = param.filter->dims();
   DDim output_shape = dim_in;
   output_shape[1] = filter_dims[1] * param.groups;
@@ -90,7 +90,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
                               const std::vector<int>& thread_num,
                               const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   ConvParam param;
   param.x = new Tensor;
@@ -112,11 +112,11 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFloat));
 
-  paddle::lite::fill_tensor_rand(*param.filter, -1.f, 1.f);
-  // paddle::lite::fill_tensor_const(*param.filter, 1.f);
+  paddle::lite_metal::fill_tensor_rand(*param.filter, -1.f, 1.f);
+  // paddle::lite_metal::fill_tensor_const(*param.filter, 1.f);
   if (flag_bias) {
-    paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
-    // paddle::lite::fill_tensor_const(*param.bias, 1.f);
+    paddle::lite_metal::fill_tensor_rand(*param.bias, -1.f, 1.f);
+    // paddle::lite_metal::fill_tensor_const(*param.bias, 1.f);
   }
   if (flag_relu) {
     ActivationParam act_param;
@@ -133,12 +133,12 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::Conv2DTransposeCompute<PRECISION(kFloat),
+      paddle::lite_metal::kernels::arm::Conv2DTransposeCompute<PRECISION(kFloat),
                                                          PRECISION(kFloat)>
           conv_t;
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       conv_t.SetParam(param);
       conv_t.SetContext(std::move(ctx1));
@@ -154,8 +154,8 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
         param.filter->CopyDataFrom(tmp_weights);
         // prepare for run
         conv_t.PrepareForRun();
-        paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
-        // paddle::lite::fill_tensor_const(*param.x, 1.f);
+        paddle::lite_metal::fill_tensor_rand(*param.x, -1.f, 1.f);
+        // paddle::lite_metal::fill_tensor_const(*param.x, 1.f);
         auto din = param.x->data<float>();
 
         Tensor tout_basic;

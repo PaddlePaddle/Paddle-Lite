@@ -18,7 +18,7 @@
 #include "lite/core/op_lite.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class ElementwiseOp : public OpLite {
@@ -29,14 +29,14 @@ class ElementwiseOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
+  bool AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) override;
 
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "elementwise_op"; }
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     auto output_dims = param_.Out->dims();
     ch->input_shape = "X" + ch->DimToStr(param_.X->dims()) + "Y" +
                       ch->DimToStr(param_.Y->dims());
@@ -60,7 +60,7 @@ class ElementwiseOp : public OpLite {
 
 //   bool InferShapeImpl() const override;
 
-//   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
+//   bool AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) override;
 
 //   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_);
 //   }

@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool AssignValueOpLite::CheckShape() const {
@@ -47,7 +47,7 @@ bool AssignValueOpLite::InferShapeImpl() const {
 }
 
 bool AssignValueOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                   lite::Scope *scope) {
+                                   lite_metal::Scope *scope) {
   param_.shape = op_desc.GetAttr<std::vector<int>>("shape");
   param_.dtype = op_desc.GetAttr<int>("dtype");
   if (op_desc.HasAttr("fp32_values")) {
@@ -63,7 +63,7 @@ bool AssignValueOpLite::AttachImpl(const cpp::OpDesc &op_desc,
     param_.bool_values = op_desc.GetAttr<std::vector<int>>("bool_values");
   }
   auto out = op_desc.Output("Out").front();
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
   return true;
 }
 
@@ -71,4 +71,4 @@ bool AssignValueOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(assign_value, paddle::lite::operators::AssignValueOpLite);
+REGISTER_LITE_OP(assign_value, paddle::lite_metal::operators::AssignValueOpLite);

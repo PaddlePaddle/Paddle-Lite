@@ -20,11 +20,11 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
-inline int count(int start_axis, int end_axis, const lite::DDim& dim) {
+inline int count(int start_axis, int end_axis, const lite_metal::DDim& dim) {
   int count = 1;
   for (int i = start_axis; i < end_axis; ++i) {
     count *= dim[i];

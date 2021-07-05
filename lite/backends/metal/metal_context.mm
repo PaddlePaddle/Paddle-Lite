@@ -16,7 +16,7 @@
 #include "lite/backends/metal/metal_context_imp.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 MetalContext::MetalContext() {
     mContext = (__bridge_retained void*)[[MetalContextImp alloc] init];

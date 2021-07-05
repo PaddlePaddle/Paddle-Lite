@@ -49,7 +49,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace profile {
 
 static const std::string get_date_str() {
@@ -316,12 +316,12 @@ class PrecisionProfiler {
       }
 #ifdef LITE_WITH_OPENCL
     } else if (target_type == TARGET(kOpenCL)) {
-      bool use_fp16 = paddle::lite::CLRuntime::Global()->get_precision() ==
+      bool use_fp16 = paddle::lite_metal::CLRuntime::Global()->get_precision() ==
                       lite_api::CL_PRECISION_FP16;
       CLRuntime::Global()->command_queue().finish();
       switch (layout_type) {
         case DATALAYOUT(kImageDefault): {
-          paddle::lite::CLImageConverterDefault default_convertor;
+          paddle::lite_metal::CLImageConverterDefault default_convertor;
           auto image_shape = default_convertor.InitImageDimInfoWith(in->dims());
           size_t im_w = image_shape[0];
           size_t im_h = image_shape[1];
@@ -353,7 +353,7 @@ class PrecisionProfiler {
               real_out_v.data(), in->numel(), true, *mean);
           *ave_grow_rate = compute_average_grow_rate<float>(real_out_v.data(),
                                                             real_out_v.size());
-          std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
+          std::shared_ptr<lite_metal::Tensor> real_out_t(new lite_metal::Tensor);
           real_out_t->Resize(in->dims());
           float* real_out_data = real_out_t->mutable_data<float>();
           memcpy(real_out_data,
@@ -375,7 +375,7 @@ class PrecisionProfiler {
               in_data_v.data(), in->numel(), true, *mean);
           *ave_grow_rate =
               compute_average_grow_rate<float>(in_data_v.data(), in->numel());
-          std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
+          std::shared_ptr<lite_metal::Tensor> real_out_t(new lite_metal::Tensor);
           real_out_t->Resize(in->dims());
           float* real_out_data = real_out_t->mutable_data<float>();
           memcpy(real_out_data,
@@ -444,9 +444,9 @@ class PrecisionProfiler {
         }
         case PRECISION(kFP16): {
           std::vector<float> in_data_v(in->numel(), 0);
-          lite::Tensor fp32_tensor;
+          lite_metal::Tensor fp32_tensor;
           fp32_tensor.Resize(in->dims());
-          lite::cuda::math::fp16_to_fp32(
+          lite_metal::cuda::math::fp16_to_fp32(
               in->numel(),
               in->data<half>(),
               fp32_tensor.mutable_data<float>(TARGET(kCUDA)));
@@ -499,7 +499,7 @@ class PrecisionProfiler {
     std::string op_name = inst->op()->op_info()->Type();
 
     if (inst->op()->op_info()->Type() != "fetch") {
-      auto op = const_cast<lite::OpLite*>(inst->op());
+      auto op = const_cast<lite_metal::OpLite*>(inst->op());
       auto kernel = inst->kernel();
       auto op_scope = op->scope();
       auto out_names = op->op_info()->output_names();
@@ -611,4 +611,4 @@ class PrecisionProfiler {
 // TODO(ysh329): need to remove.
 // keep this method only for arm/math/conditional_block_compute
 #define LITE_PRECISION_PROFILE(inst) \
-  { auto a = paddle::lite::profile::PrecisionProfiler(&inst); }
+  { auto a = paddle::lite_metal::profile::PrecisionProfiler(&inst); }

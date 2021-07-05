@@ -46,10 +46,10 @@ DEFINE_int32(in_width, 112, "input width");
 
 DEFINE_int32(axis, 1, "input width");
 
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::operators::SoftmaxParam SoftmaxParam;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::operators::SoftmaxParam SoftmaxParam;
+using paddle::lite_metal::profile::Timer;
 
 template <typename dtype>
 void softmax_compute_ref(const dtype* x_data,
@@ -99,7 +99,7 @@ void test_softmax_fp16(const DDim in_dim,
                        const std::vector<int>& thread_num,
                        const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   SoftmaxParam param;
   param.x = new Tensor;
@@ -111,12 +111,12 @@ void test_softmax_fp16(const DDim in_dim,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::SoftmaxCompute<PRECISION(kFP16),
+      paddle::lite_metal::kernels::arm::SoftmaxCompute<PRECISION(kFP16),
                                                  PRECISION(kFP16)>
           softmax;
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
       softmax.SetParam(param);

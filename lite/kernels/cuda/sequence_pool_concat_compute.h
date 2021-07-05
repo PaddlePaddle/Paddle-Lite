@@ -16,7 +16,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,11 +30,11 @@ class SequencePoolConcatCompute
   virtual ~SequencePoolConcatCompute() = default;
 
  private:
-  lite::Tensor _in_offset_tensor;
-  lite::Tensor _in_ptr_tensor;
-  lite::Tensor _in_pool_type_tensor;
-  lite::Tensor _out_offset_tensor;
-  lite::Tensor _out_id_seq_map_tensor;
+  lite_metal::Tensor _in_offset_tensor;
+  lite_metal::Tensor _in_ptr_tensor;
+  lite_metal::Tensor _in_pool_type_tensor;
+  lite_metal::Tensor _out_offset_tensor;
+  lite_metal::Tensor _out_id_seq_map_tensor;
   bool _is_in_same_len;
 };
 

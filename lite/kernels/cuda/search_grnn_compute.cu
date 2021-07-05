@@ -17,11 +17,11 @@ limitations under the License. */
 #include "lite/kernels/cuda/search_grnn_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 template <typename Dtype>
 __global__ void trans_map2out(
@@ -212,7 +212,7 @@ void SearchGrnnCompute::WeightsPreprocess() {
   DDim hdims = param.wh->dims();
   _wi.Resize({idims[2], idims[0], idims[1]});
   _wh.Resize({hdims[2], hdims[0], hdims[1]});
-  lite::cuda::math::Transpose<float> trans;
+  lite_metal::cuda::math::Transpose<float> trans;
   trans.transpose(_wi.mutable_data<float>(TARGET(kCUDA)),
                   param.wi->data<float>(),
                   idims.Vectorize(),
@@ -242,7 +242,7 @@ void SearchGrnnCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   auto& context = this->ctx_->template As<CUDAContext>();
   auto stream = context.exec_stream();
-  gemm_impl_.reset(new lite::cuda::math::Gemm<float, float>);
+  gemm_impl_.reset(new lite_metal::cuda::math::Gemm<float, float>);
   _seq_util = SeqSortedseqTranseUtil();
 
   WeightsPreprocess();
@@ -252,8 +252,8 @@ void SearchGrnnCompute::PrepareForRun() {
   int weights_h2h_size = hidden_size * hidden_size * 3;
   int weights_i2h_size = hidden_size * word_size * 3;
 
-  lite::Tensor temp_weights_h2h_ori;
-  lite::Tensor temp_weights_h2h_swarp;
+  lite_metal::Tensor temp_weights_h2h_ori;
+  lite_metal::Tensor temp_weights_h2h_swarp;
   temp_weights_h2h_ori.Resize({weights_h2h_size});
   temp_weights_h2h_swarp.Resize({weights_h2h_size});
 
@@ -494,7 +494,7 @@ REGISTER_LITE_KERNEL(search_grnn,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::SearchGrnnCompute,
+                     paddle::lite_metal::kernels::cuda::SearchGrnnCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),

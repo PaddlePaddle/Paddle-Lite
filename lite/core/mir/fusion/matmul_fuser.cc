@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -30,8 +30,8 @@ void MatmulFuser::BuildPattern() {
     auto input_x_name = op_desc.Input("X").front();
     auto input_y_name = op_desc.Input("Y").front();
     auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
-    auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
-    auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
+    auto x_shape = scope->FindVar(input_x_name)->Get<lite_metal::Tensor>().dims();
+    auto y_shape = scope->FindVar(input_y_name)->Get<lite_metal::Tensor>().dims();
     size_t x_rank = x_shape.size();
     size_t y_rank = y_shape.size();
 

@@ -22,7 +22,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 /*
  * Use fp16_attribute_pass method to set fp16_ops attirbute in model.

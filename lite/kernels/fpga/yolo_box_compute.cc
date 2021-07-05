@@ -18,16 +18,16 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
 void YoloBoxCompute::PrepareForRun() {
   auto& param = Param<operators::YoloBoxParam>();
-  lite::Tensor* X = param.X;
-  lite::Tensor* ImgSize = param.ImgSize;
-  lite::Tensor* Boxes = param.Boxes;
-  lite::Tensor* Scores = param.Scores;
+  lite_metal::Tensor* X = param.X;
+  lite_metal::Tensor* ImgSize = param.ImgSize;
+  lite_metal::Tensor* Boxes = param.Boxes;
+  lite_metal::Tensor* Scores = param.Scores;
 
   Boxes->mutable_data<float>();
   Scores->mutable_data<float>();
@@ -57,7 +57,7 @@ REGISTER_LITE_KERNEL(yolo_box,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::YoloBoxCompute,
+                     paddle::lite_metal::kernels::fpga::YoloBoxCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -73,7 +73,7 @@ REGISTER_LITE_KERNEL(yolo_box,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::YoloBoxCompute,
+                     paddle::lite_metal::kernels::fpga::YoloBoxCompute,
                      def_float_size)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

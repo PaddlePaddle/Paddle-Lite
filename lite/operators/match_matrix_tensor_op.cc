@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MatchMatrixTensorOpLite::CheckShape() const {
@@ -79,18 +79,18 @@ bool MatchMatrixTensorOpLite::InferShapeImpl() const {
 }
 
 bool MatchMatrixTensorOpLite::AttachImpl(const cpp::OpDesc& op_desc,
-                                         lite::Scope* scope) {
+                                         lite_metal::Scope* scope) {
   auto x = op_desc.Input("X").front();
   auto w = op_desc.Input("W").front();
   auto y = op_desc.Input("Y").front();
   auto out = op_desc.Output("Out").front();
   auto tmp = op_desc.Output("Tmp").front();
 
-  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.w = scope->FindVar(w)->GetMutable<lite::Tensor>();
-  param_.y = scope->FindVar(y)->GetMutable<lite::Tensor>();
-  param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
-  param_.tmp = scope->FindVar(tmp)->GetMutable<lite::Tensor>();
+  param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+  param_.w = scope->FindVar(w)->GetMutable<lite_metal::Tensor>();
+  param_.y = scope->FindVar(y)->GetMutable<lite_metal::Tensor>();
+  param_.out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
+  param_.tmp = scope->FindVar(tmp)->GetMutable<lite_metal::Tensor>();
 
   param_.dim_t = op_desc.GetAttr<int32_t>("dim_t");
 
@@ -114,4 +114,4 @@ bool MatchMatrixTensorOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(match_matrix_tensor,
-                 paddle::lite::operators::MatchMatrixTensorOpLite);
+                 paddle::lite_metal::operators::MatchMatrixTensorOpLite);

@@ -17,7 +17,7 @@
 #include "lite/backends/host/math/split.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -38,7 +38,7 @@ void SplitCompute<T, PType>::Run() {
     axis += static_cast<int>(param.x->dims().size());
   }
 
-  lite::host::math::split(din, dout, axis, in_strides);
+  lite_metal::host::math::split(din, dout, axis, in_strides);
 }
 
 }  // namespace host

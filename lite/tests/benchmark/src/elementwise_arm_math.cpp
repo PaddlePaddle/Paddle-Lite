@@ -97,7 +97,7 @@ void do_broadcast_perf(const benchmark::State& state_in,
 #define BENCHMARK_ELEMENTWISE(elementwise_op, data_t, complexity_factor)  \
   static constexpr auto elementwise_op##_##data_t =                       \
       do_element_perf<data_t,                                             \
-                      paddle::lite::arm::math::elementwise_op<data_t>>;   \
+                      paddle::lite_metal::arm::math::elementwise_op<data_t>>;   \
   BENCHMARK_CAPTURE(elementwise_op##_##data_t, nomral, complexity_factor) \
       ->Apply(elementwise_args)                                           \
       ->UseRealTime();
@@ -106,7 +106,7 @@ void do_broadcast_perf(const benchmark::State& state_in,
     elementwise_op, data_t, complexity_factor)                            \
   static constexpr auto elementwise_op##_##data_t =                       \
       do_broadcast_perf<data_t,                                           \
-                        paddle::lite::arm::math::elementwise_op<data_t>>; \
+                        paddle::lite_metal::arm::math::elementwise_op<data_t>>; \
   BENCHMARK_CAPTURE(                                                      \
       elementwise_op##_##data_t, fast_broadcast, complexity_factor)       \
       ->Apply(fast_bcast_args)                                            \

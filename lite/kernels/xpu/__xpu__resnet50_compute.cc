@@ -15,7 +15,7 @@
 #include "lite/kernels/xpu/__xpu__resnet50_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -71,7 +71,7 @@ REGISTER_LITE_KERNEL(__xpu__resnet50,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUResNet50Compute,
+                     paddle::lite_metal::kernels::xpu::XPUResNet50Compute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})

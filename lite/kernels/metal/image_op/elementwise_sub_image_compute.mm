@@ -21,7 +21,7 @@
 using namespace std;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -105,12 +105,12 @@ void ElementwiseSubImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ElementwiseSubImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ElementwiseSubImageCompute<MetalHalf,
+template class paddle::lite_metal::kernels::metal::ElementwiseSubImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::ElementwiseSubImageCompute<MetalHalf,
     PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::ElementwiseSubImageCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::metal::ElementwiseSubImageCompute<float, PRECISION(kFloat)>
     MetalElementwiseSubFp32;
-typedef paddle::lite::kernels::metal::ElementwiseSubImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::ElementwiseSubImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalElementwiseSubFp16;
 
 REGISTER_LITE_KERNEL(elementwise_sub,

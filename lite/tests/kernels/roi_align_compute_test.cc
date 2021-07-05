@@ -20,7 +20,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static int randint(int beg, int end) {
   int res = 0;
@@ -157,7 +157,7 @@ class RoiAlignComputeTester : public arena::TestCase {
     auto out_stride = stride(out->dims());
 
     const T* input_data = in->data<T>();
-    lite::Tensor roi_batch_id_list;
+    lite_metal::Tensor roi_batch_id_list;
     roi_batch_id_list.Resize({rois_num});
     int* roi_batch_id_data = roi_batch_id_list.mutable_data<int>();
     int rois_batch_size;

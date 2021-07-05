@@ -20,7 +20,7 @@
 #include "lite/kernels/arm/scale_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -52,9 +52,9 @@ TEST(scale_arm, compute) {
   ScaleCompute<float, PRECISION(kFloat)> scale;
   operators::ScaleParam param;
 
-  lite::Tensor x;
-  lite::Tensor output;
-  lite::Tensor output_ref;
+  lite_metal::Tensor x;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
 
 #if 1  // for ci speedup
   for (auto n : {1, 3}) {

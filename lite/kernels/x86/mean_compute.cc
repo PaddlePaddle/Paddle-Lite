@@ -19,7 +19,7 @@
 #include "paddle/fluid/operators/activation_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -64,7 +64,7 @@ REGISTER_LITE_KERNEL(mean,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::MeanCompute<float>,
+                     paddle::lite_metal::kernels::x86::MeanCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})

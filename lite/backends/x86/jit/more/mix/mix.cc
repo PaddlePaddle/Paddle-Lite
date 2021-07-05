@@ -17,12 +17,12 @@
 #include "lite/backends/x86/jit/registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace more {
 namespace mix {
 
-using CPUPlace = lite::fluid::CPUPlace;
+using CPUPlace = lite_metal::fluid::CPUPlace;
 
 void VSigmoid(const T* x, T* y, int n) {
   const float min = SIGMOID_THRESHOLD_MIN;
@@ -242,7 +242,7 @@ bool GRUHtPart2Kernel::CanBeUsed(const gru_attr_t& attr) const { return true; }
 }  // namespace lite
 }  // namespace paddle
 
-namespace mix = paddle::lite::jit::more::mix;
+namespace mix = paddle::lite_metal::jit::more::mix;
 
 #define REGISTER_MORE_KERNEL(func) \
   REGISTER_JITKERNEL_MORE(k##func, mix, mix::func##Kernel)

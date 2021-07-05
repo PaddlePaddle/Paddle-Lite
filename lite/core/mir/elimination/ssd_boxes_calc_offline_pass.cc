@@ -24,7 +24,7 @@
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void SSDBoxesCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -46,16 +46,16 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
 
     // Get priorbox's input tensor
     auto image_var = scope->FindVar(op_desc->Input("Image").front());
-    auto image_t = &(image_var->Get<lite::Tensor>());
+    auto image_t = &(image_var->Get<lite_metal::Tensor>());
     auto input_var = scope->FindVar(op_desc->Input("Input").front());
-    auto input_t = &(input_var->Get<lite::Tensor>());
+    auto input_t = &(input_var->Get<lite_metal::Tensor>());
     auto img_h = image_t->dims()[2];
     auto img_w = image_t->dims()[3];
     // Get priorbox's output tensor
     auto boxes_var = scope->FindVar(op_desc->Output("Boxes").front());
-    auto boxes_t = boxes_var->GetMutable<lite::Tensor>();
+    auto boxes_t = boxes_var->GetMutable<lite_metal::Tensor>();
     auto variances_var = scope->FindVar(op_desc->Output("Variances").front());
-    auto variances_t = variances_var->GetMutable<lite::Tensor>();
+    auto variances_t = variances_var->GetMutable<lite_metal::Tensor>();
     // Get priorbox's other attr
     auto is_flip = true;
     if (op_desc->HasAttr("flip")) {
@@ -146,9 +146,9 @@ void SSDBoxesCalcOfflinePass::RemoveFlattenPattern(
     auto op_desc = flatten_instruct.mutable_op_info();
 
     auto input_var = scope->FindVar(op_desc->Input("X").front());
-    auto input_t = &(input_var->Get<lite::Tensor>());
+    auto input_t = &(input_var->Get<lite_metal::Tensor>());
     auto output_var = scope->FindVar(op_desc->Output("Out").front());
-    auto output_t = output_var->GetMutable<lite::Tensor>();
+    auto output_t = output_var->GetMutable<lite_metal::Tensor>();
     // Calc flatten offline
     ComputeFlatten(input_t, output_t);
     // Offline calc reshape, only retain output tensor as persistable tensor
@@ -191,9 +191,9 @@ void SSDBoxesCalcOfflinePass::RemoveReshapePattern(
     auto op_desc = reshape_instruct.mutable_op_info();
 
     auto input_var = scope->FindVar(op_desc->Input("X").front());
-    auto input_t = &(input_var->Get<lite::Tensor>());
+    auto input_t = &(input_var->Get<lite_metal::Tensor>());
     auto output_var = scope->FindVar(op_desc->Output("Out").front());
-    auto output_t = output_var->GetMutable<lite::Tensor>();
+    auto output_t = output_var->GetMutable<lite_metal::Tensor>();
     // Calc reshape offline
     ComputeReshape(input_t, output_t);
     // Offline calc reshape, only retain output tensor as persistable tensor
@@ -233,17 +233,17 @@ void SSDBoxesCalcOfflinePass::RemoveConcatPattern(
     auto* scope = concat_instruct.op()->scope();
     auto op_desc = concat_instruct.mutable_op_info();
 
-    std::vector<lite::Tensor*> inputs_tensors;
+    std::vector<lite_metal::Tensor*> inputs_tensors;
 
     for (auto* in_var_node : node->inlinks) {
       auto concat_in_tensor =
-          scope->FindVar(in_var_node->AsArg().name)->GetMutable<lite::Tensor>();
+          scope->FindVar(in_var_node->AsArg().name)->GetMutable<lite_metal::Tensor>();
       inputs_tensors.push_back(concat_in_tensor);
     }
 
     // Get concat's output tensor
     auto output_var = scope->FindVar(op_desc->Output("Out").front());
-    auto output_t = output_var->GetMutable<lite::Tensor>();
+    auto output_t = output_var->GetMutable<lite_metal::Tensor>();
 
     // get concat's other attr
     auto axis = op_desc->GetAttr<int>("axis");
@@ -295,10 +295,10 @@ void SSDBoxesCalcOfflinePass::ExpandAspectRatios(
 }
 
 void SSDBoxesCalcOfflinePass::ComputePriorbox(
-    const lite::Tensor* input,
-    const lite::Tensor* image,
-    lite::Tensor** boxes,
-    lite::Tensor** variances,
+    const lite_metal::Tensor* input,
+    const lite_metal::Tensor* image,
+    lite_metal::Tensor** boxes,
+    lite_metal::Tensor** variances,
     const std::vector<float>& min_size_,
     const std::vector<float>& max_size_,
     const std::vector<float>& aspect_ratio_,
@@ -441,8 +441,8 @@ void SSDBoxesCalcOfflinePass::ComputePriorbox(
   }
 }
 
-void SSDBoxesCalcOfflinePass::ComputeFlatten(const lite::Tensor* in,
-                                             lite::Tensor* out) {
+void SSDBoxesCalcOfflinePass::ComputeFlatten(const lite_metal::Tensor* in,
+                                             lite_metal::Tensor* out) {
   // In CopyDataFrom, the target tensor's dims will be set to the source
   // tensor's dims.
   auto out_dims = out->dims();
@@ -452,8 +452,8 @@ void SSDBoxesCalcOfflinePass::ComputeFlatten(const lite::Tensor* in,
   out->set_lod(out_lod);
 }
 
-void SSDBoxesCalcOfflinePass::ComputeReshape(const lite::Tensor* in,
-                                             lite::Tensor* out) {
+void SSDBoxesCalcOfflinePass::ComputeReshape(const lite_metal::Tensor* in,
+                                             lite_metal::Tensor* out) {
   // In CopyDataFrom, the target tensor's dims will be set to the source
   // tensor's dims.
   auto out_dims = out->dims();
@@ -471,7 +471,7 @@ std::vector<size_t> SSDBoxesCalcOfflinePass::StrideNumel(const DDim& ddim) {
 }
 
 void SSDBoxesCalcOfflinePass::ComputeConcat(
-    const std::vector<lite::Tensor*> inputs, lite::Tensor* output) {
+    const std::vector<lite_metal::Tensor*> inputs, lite_metal::Tensor* output) {
   size_t output_offset = 0;
   for (auto* in : inputs) {
     auto in_stride = StrideNumel(in->dims());
@@ -490,6 +490,6 @@ void SSDBoxesCalcOfflinePass::ComputeConcat(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(ssd_boxes_calc_offline_pass,
-                  paddle::lite::mir::SSDBoxesCalcOfflinePass)
+                  paddle::lite_metal::mir::SSDBoxesCalcOfflinePass)
     .BindTargets(
         {TARGET(kRKNPU), TARGET(kNPU), TARGET(kOpenCL), TARGET(kNNAdapter)});

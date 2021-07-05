@@ -21,7 +21,7 @@
 #include "lite/backends/cuda/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 

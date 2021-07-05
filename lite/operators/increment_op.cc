@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool IncrementOp::CheckShape() const {
@@ -33,7 +33,7 @@ bool IncrementOp::InferShapeImpl() const {
   return true;
 }
 
-bool IncrementOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool IncrementOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.X = scope->FindMutableTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   CHECK(param_.X);
@@ -46,4 +46,4 @@ bool IncrementOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(increment, paddle::lite::operators::IncrementOp);
+REGISTER_LITE_OP(increment, paddle::lite_metal::operators::IncrementOp);

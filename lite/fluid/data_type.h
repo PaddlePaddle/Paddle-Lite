@@ -20,7 +20,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
 template <typename T>
@@ -37,7 +37,7 @@ struct DataTypeTrait<void> {
 
 #define _ForEachDataType_(callback)                                        \
   _ForEachDataTypeHelper_(callback, float, FP32);                          \
-  _ForEachDataTypeHelper_(callback, ::paddle::lite::fluid::float16, FP16); \
+  _ForEachDataTypeHelper_(callback, ::paddle::lite_metal::fluid::float16, FP16); \
   _ForEachDataTypeHelper_(callback, double, FP64);                         \
   _ForEachDataTypeHelper_(callback, int, INT32);                           \
   _ForEachDataTypeHelper_(callback, int64_t, INT64);                       \

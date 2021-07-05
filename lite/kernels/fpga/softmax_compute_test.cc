@@ -20,7 +20,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -78,9 +78,9 @@ TEST(softmax_arm, compute) {
   SoftmaxCompute softmax;
   operators::SoftmaxParam param;
 
-  lite::Tensor x;
-  lite::Tensor output;
-  lite::Tensor output_ref;
+  lite_metal::Tensor x;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
 #if 1
   for (auto n : {1, 3}) {
     for (auto c : {1, 4}) {

@@ -16,7 +16,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -32,7 +32,7 @@ void ScatterCompute::Run() {
   for (int i = 1; i < in_dims.size(); i++) {
     num *= in_dims[i];
   }
-  lite::arm::math::scatter(indexs_data,
+  lite_metal::arm::math::scatter(indexs_data,
                            updates_data,
                            output_data,
                            index_size,
@@ -53,7 +53,7 @@ REGISTER_LITE_KERNEL(scatter,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ScatterCompute,
+                     paddle::lite_metal::kernels::arm::ScatterCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})

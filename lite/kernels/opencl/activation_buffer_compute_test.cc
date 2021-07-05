@@ -20,7 +20,7 @@
 #include "lite/kernels/opencl/image_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename dtype>
 void relu_compute_ref(const dtype *x_data,
@@ -53,7 +53,7 @@ void sigmoid_compute_ref(const dtype *x_data,
 TEST(opencl_relu_buffer, compute) {
   // prepare data
   const DDim x_dim = DDim(std::vector<DDim::value_type>{3, 6, 10, 10});
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   x.Resize(x_dim);
   out.Resize(x_dim);
 
@@ -106,7 +106,7 @@ TEST(opencl_relu_buffer, compute) {
 TEST(opencl_sigmoid_buffer, compute) {
   // prepare data
   const DDim x_dim = DDim(std::vector<DDim::value_type>{3, 6, 10, 10});
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   x.Resize(x_dim);
   out.Resize(x_dim);
 

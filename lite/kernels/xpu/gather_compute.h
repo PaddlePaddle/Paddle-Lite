@@ -17,7 +17,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -36,11 +36,11 @@ class GatherCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::xpu::GatherCompute<int32_t, int32_t>
+typedef paddle::lite_metal::kernels::xpu::GatherCompute<int32_t, int32_t>
     GatherXPUInt32Int32;
-typedef paddle::lite::kernels::xpu::GatherCompute<int32_t, int64_t>
+typedef paddle::lite_metal::kernels::xpu::GatherCompute<int32_t, int64_t>
     GatherXPUInt32Int64;
-typedef paddle::lite::kernels::xpu::GatherCompute<float, int32_t>
+typedef paddle::lite_metal::kernels::xpu::GatherCompute<float, int32_t>
     GatherXPUFloatInt32;
-typedef paddle::lite::kernels::xpu::GatherCompute<float, int64_t>
+typedef paddle::lite_metal::kernels::xpu::GatherCompute<float, int64_t>
     GatherXPUFloatInt64;

@@ -16,7 +16,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -29,17 +29,17 @@ void PowCompute::Run() {
   float shift = 0.0;
   float power = param.factor;
 
-  lite::arm::math::power(
+  lite_metal::arm::math::power(
       x_data, output_data, x_dims.production(), scale, shift, power);
 }
 
 } /* namespace arm */
 } /* namespace kernels */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
 REGISTER_LITE_KERNEL(
-    pow, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PowCompute, def)
+    pow, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::PowCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

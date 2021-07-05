@@ -17,7 +17,7 @@
 #include "lite/kernels/imagination_nna/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace imagination_nna {
 
@@ -75,4 +75,4 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     batch_norm,
     kImaginationNNA,
-    paddle::lite::subgraph::imagination_nna::BatchNormConverter);
+    paddle::lite_metal::subgraph::imagination_nna::BatchNormConverter);

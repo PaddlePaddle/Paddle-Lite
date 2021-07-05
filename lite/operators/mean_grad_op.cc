@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MeanGradOp::CheckShape() const {
@@ -33,14 +33,14 @@ bool MeanGradOp::InferShapeImpl() const {
   return true;
 }
 
-bool MeanGradOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool MeanGradOp::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   CHECK_EQ(opdesc.InputArgumentNames().size(), 2UL);
   auto X_name = opdesc.Input("X").front();
   auto Out_grad_name = opdesc.Input("Out@GRAD").front();
   auto X_grad_name = opdesc.Output("X@GRAD").front();
 
-  param_.X = GetVar<lite::Tensor>(scope, X_name);
-  param_.Out_grad = GetVar<lite::Tensor>(scope, Out_grad_name);
+  param_.X = GetVar<lite_metal::Tensor>(scope, X_name);
+  param_.Out_grad = GetVar<lite_metal::Tensor>(scope, Out_grad_name);
   param_.X_grad = GetMutableVar<Tensor>(scope, X_grad_name);
   return true;
 }
@@ -49,4 +49,4 @@ bool MeanGradOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(mean_grad, paddle::lite::operators::MeanGradOp);
+REGISTER_LITE_OP(mean_grad, paddle::lite_metal::operators::MeanGradOp);

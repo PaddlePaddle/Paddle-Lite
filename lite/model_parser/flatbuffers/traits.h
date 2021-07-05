@@ -23,13 +23,13 @@
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 
-inline lite::VarDataType ConvertVarType(proto::VarType_::Type type) {
+inline lite_metal::VarDataType ConvertVarType(proto::VarType_::Type type) {
 #define CASE(type)                   \
   case proto::VarType_::Type_##type: \
-    return lite::VarDataType::type;  \
+    return lite_metal::VarDataType::type;  \
     break
   switch (type) {
     CASE(BOOL);
@@ -55,14 +55,14 @@ inline lite::VarDataType ConvertVarType(proto::VarType_::Type type) {
     CASE(INT8);
     default:
       LOG(FATAL) << "Illegal flatbuffer VarType.";
-      return lite::VarDataType();
+      return lite_metal::VarDataType();
   }
 #undef CASE
 }
 
-inline proto::VarType_::Type ConvertVarType(lite::VarDataType type) {
+inline proto::VarType_::Type ConvertVarType(lite_metal::VarDataType type) {
 #define CASE(type)                       \
-  case lite::VarDataType::type:          \
+  case lite_metal::VarDataType::type:          \
     return proto::VarType_::Type_##type; \
     break
   switch (type) {
@@ -94,10 +94,10 @@ inline proto::VarType_::Type ConvertVarType(lite::VarDataType type) {
 #undef CASE
 }
 
-inline lite::OpAttrType ConvertAttrType(proto::AttrType type) {
+inline lite_metal::OpAttrType ConvertAttrType(proto::AttrType type) {
 #define CASE(type)                 \
   case proto::AttrType_##type:     \
-    return lite::OpAttrType::type; \
+    return lite_metal::OpAttrType::type; \
     break
   switch (type) {
     CASE(INT);
@@ -114,14 +114,14 @@ inline lite::OpAttrType ConvertAttrType(proto::AttrType type) {
     CASE(LONGS);
     default:
       LOG(FATAL) << "Illegal flatbuffer AttrType.";
-      return lite::OpAttrType();
+      return lite_metal::OpAttrType();
   }
 #undef CASE
 }
 
-inline proto::AttrType ConvertAttrType(lite::OpAttrType type) {
+inline proto::AttrType ConvertAttrType(lite_metal::OpAttrType type) {
 #define CASE(type)                 \
-  case lite::OpAttrType::type:     \
+  case lite_metal::OpAttrType::type:     \
     return proto::AttrType_##type; \
     break
   switch (type) {

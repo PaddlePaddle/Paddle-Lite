@@ -23,7 +23,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void AddBias(float* out, const float* bias, int num, int channel) {
   int remain = channel;

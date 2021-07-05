@@ -20,7 +20,7 @@
 #include "lite/model_parser/base/vector_view.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace vector_view {
 
 template <typename T>

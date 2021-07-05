@@ -19,7 +19,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -29,7 +29,7 @@ class MulCompute : public KernelLite<TARGET(kCUDA), PType> {
   using param_t = operators::MulParam;
 
   void PrepareForRun() override {
-    gemm_impl_.reset(new lite::cuda::math::Gemm<T, T>);
+    gemm_impl_.reset(new lite_metal::cuda::math::Gemm<T, T>);
   }
 
   void Run() override {
@@ -60,7 +60,7 @@ class MulCompute : public KernelLite<TARGET(kCUDA), PType> {
   virtual ~MulCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
+  std::unique_ptr<lite_metal::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
 };
 
 }  // namespace cuda

@@ -20,7 +20,7 @@
 #include "lite/model_parser/flatbuffers/program_desc.h"
 #include "lite/model_parser/flatbuffers/var_desc.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cpp {
 using ProgramDesc = fbs::ProgramDescView;
 using BlockDesc = fbs::BlockDescView;
@@ -35,7 +35,7 @@ using VarDesc = fbs::VarDescView;
 #include "lite/model_parser/general/program_desc.h"
 #include "lite/model_parser/general/var_desc.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cpp = general;
 }
 }

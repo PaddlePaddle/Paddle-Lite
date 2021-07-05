@@ -20,7 +20,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -61,8 +61,8 @@ void SequenceMaskCompute<T>::Run() {
   y->set_lod(x->lod());
 
   int out_type = param.out_dtype;
-  switch (lite::core::FluidType(out_type)) {
-    case lite::core::FluidType::FP32: {
+  switch (lite_metal::core::FluidType(out_type)) {
+    case lite_metal::core::FluidType::FP32: {
       int ret = xdnn::sequence_mask<int64_t, float>(
           ctx.GetRawContext(),
           x_xpu_ptr,
@@ -72,11 +72,11 @@ void SequenceMaskCompute<T>::Run() {
       CHECK_EQ(ret, 0) << "call xdnn::sequence_mask failed!";
       break;
     }
-    case lite::core::FluidType::INT32: {
+    case lite_metal::core::FluidType::INT32: {
       LOG(FATAL) << "XPU unsupported out data type: " << out_type;
       break;
     }
-    case lite::core::FluidType::INT64: {
+    case lite_metal::core::FluidType::INT64: {
       LOG(FATAL) << "XPU unsupported out data type: " << out_type;
       break;
     }
@@ -95,7 +95,7 @@ REGISTER_LITE_KERNEL(sequence_mask,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SequenceMaskCompute<int64_t>,
+                     paddle::lite_metal::kernels::xpu::SequenceMaskCompute<int64_t>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("MaxLenTensor",

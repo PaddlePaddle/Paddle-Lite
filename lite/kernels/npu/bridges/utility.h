@@ -122,7 +122,7 @@ REG_OP(Pad)
 }  // namespace ge
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 

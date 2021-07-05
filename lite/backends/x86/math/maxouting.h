@@ -18,27 +18,27 @@ limitations under the License. */
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class MaxOutFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  lite::Tensor* output,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  lite_metal::Tensor* output,
                   int groups);
 };
 
-template <lite::TargetType Target, class T>
+template <lite_metal::TargetType Target, class T>
 class MaxOutGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  lite::Tensor* input_grad,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  lite_metal::Tensor* input_grad,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   int groups);
 };
 }  // namespace math

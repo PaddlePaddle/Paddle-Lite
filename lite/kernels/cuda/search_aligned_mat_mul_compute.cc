@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {}  // namespace cuda
 }  // namespace kernels
@@ -27,7 +27,7 @@ REGISTER_LITE_KERNEL(search_aligned_mat_mul,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::SearchAlignedMatMulCompute,
+                     paddle::lite_metal::kernels::cuda::SearchAlignedMatMulCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})

@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/conv_impl.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace intel_fpga {
 
@@ -50,11 +50,11 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
       weights_.Resize({cround, 1, kh, kw});
       auto w_data = weights_.mutable_data<float>();
       auto w_data_in = param.filter->data<float>();
-      lite::arm::math::conv_trans_weights_numc(
+      lite_metal::arm::math::conv_trans_weights_numc(
           w_data_in, w_data, oc, 1, cblock, kh * kw);
       flag_trans_weights_ = true;
     }
-    impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
+    impl_ = lite_metal::arm::math::conv_depthwise_3x3_fp32;
   } else if (kw == 5) {
     auto strides = param.strides;
     if ((strides[0] == 1 && strides[1] == 1) ||
@@ -67,10 +67,10 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
       weights_.Resize({cround, 1, kh, kw});
       auto w_data = weights_.mutable_data<float>();
       auto w_data_in = param.filter->data<float>();
-      lite::arm::math::conv_trans_weights_numc(
+      lite_metal::arm::math::conv_trans_weights_numc(
           w_data_in, w_data, oc, 1, cblock, kh * kw);
       flag_trans_weights_ = true;
-      impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
+      impl_ = lite_metal::arm::math::conv_depthwise_5x5_fp32;
     } else {
       LOG(FATAL)
           << "5x5 depthwise conv only support stride == 1 or stride == 2";

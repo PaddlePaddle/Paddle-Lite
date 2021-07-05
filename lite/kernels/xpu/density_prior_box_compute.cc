@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -95,7 +95,7 @@ REGISTER_LITE_KERNEL(density_prior_box,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::DensityPriorBoxCompute,
+                     paddle::lite_metal::kernels::xpu::DensityPriorBoxCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Image", {LiteType::GetTensorTy(TARGET(kXPU))})

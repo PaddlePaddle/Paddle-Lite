@@ -22,27 +22,27 @@ limitations under the License. */
 #include "lite/fluid/eigen.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 template <typename T,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenVector = lite::fluid::EigenVector<T, MajorType, IndexType>;
+using EigenVector = lite_metal::fluid::EigenVector<T, MajorType, IndexType>;
 template <typename T,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenMatrix = lite::fluid::EigenMatrix<T, MajorType, IndexType>;
+using EigenMatrix = lite_metal::fluid::EigenMatrix<T, MajorType, IndexType>;
 
 template <typename T, bool is_test>
 class MaxSeqPoolFunctor {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
                   T pad_value,
-                  lite::Tensor* output,
-                  lite::Tensor* index) {
+                  lite_metal::Tensor* output,
+                  lite_metal::Tensor* index) {
     auto in_dims = input.dims();
     auto out_dims = output->dims();
     auto idx_dims = index->dims();
@@ -88,11 +88,11 @@ class MaxSeqPoolFunctor {
 template <typename T>
 class MaxSeqPoolFunctor<T, true> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
                   T pad_value,
-                  lite::Tensor* output,
-                  lite::Tensor* index) {
+                  lite_metal::Tensor* output,
+                  lite_metal::Tensor* index) {
     auto in_dims = input.dims();
     auto out_dims = output->dims();
     CHECK_GT(in_dims.size(), 1u);
@@ -129,10 +129,10 @@ class MaxSeqPoolFunctor<T, true> {
 template <typename T>
 class MaxSeqPoolGradFunctor {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& out_grad,
-                  const lite::Tensor& index,
-                  lite::Tensor* in_grad) {
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& out_grad,
+                  const lite_metal::Tensor& index,
+                  lite_metal::Tensor* in_grad) {
     auto og_dims = out_grad.dims();
     auto ig_dims = in_grad->dims();
     auto idx_dims = index.dims();
@@ -164,10 +164,10 @@ class MaxSeqPoolGradFunctor {
 template <typename T>
 class LastSeqPoolFunctor {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
                   T pad_value,
-                  lite::Tensor* output) {
+                  lite_metal::Tensor* output) {
     // Create pointers to input and output data
     auto* in_data = input.data<T>();
     auto* out_data = output->template mutable_data<T>();
@@ -197,10 +197,10 @@ class LastSeqPoolFunctor {
 template <typename T>
 class FirstSeqPoolFunctor {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
                   T pad_value,
-                  lite::Tensor* output) {
+                  lite_metal::Tensor* output) {
     // Create pointers to input and output data
     auto* in_data = input.data<T>();
     auto* out_data = output->template mutable_data<T>();
@@ -230,9 +230,9 @@ class FirstSeqPoolFunctor {
 template <typename T>
 class SumSeqPoolGradFunctor {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& out_grad,
-                  lite::Tensor* in_grad) {
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& out_grad,
+                  lite_metal::Tensor* in_grad) {
     auto lod = in_grad->lod()[0];
     int64_t out_w = out_grad.numel() / out_grad.dims()[0];
     int64_t in_w = in_grad->numel() / in_grad->dims()[0];
@@ -257,13 +257,13 @@ template <typename T>
 class SequencePoolFunctor<TARGET(kX86), T> {
  public:
   /* max pool has index output */
-  void operator()(const lite::X86Context& context,
+  void operator()(const lite_metal::X86Context& context,
                   const std::string pooltype,
                   T pad_value,
-                  const lite::Tensor& input,
-                  lite::Tensor* output,
+                  const lite_metal::Tensor& input,
+                  lite_metal::Tensor* output,
                   bool is_test,
-                  lite::Tensor* index = nullptr) {
+                  lite_metal::Tensor* index = nullptr) {
     if (pooltype == "MAX") {
       if (is_test) {
         math::MaxSeqPoolFunctor<T, true> max_pool;
@@ -293,7 +293,7 @@ class SequencePoolFunctor<TARGET(kX86), T> {
           static_cast<int>(input.numel() / input.dims()[0]),
           jit::SeqPoolType::kSum);
       auto seqpool =
-          jit::KernelFuncs<jit::SeqPoolTuple<T>, lite::fluid::CPUPlace>::Cache()
+          jit::KernelFuncs<jit::SeqPoolTuple<T>, lite_metal::fluid::CPUPlace>::Cache()
               .At(attr);
       for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
         attr.h = static_cast<int>(lod[i + 1] - lod[i]);
@@ -309,7 +309,7 @@ class SequencePoolFunctor<TARGET(kX86), T> {
       }
       return;
     }
-    auto eigen_device = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+    auto eigen_device = lite_metal::fluid::EigenDeviceType<TARGET(kX86)>();
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
       Tensor out_t = output->Slice<float>(i, i + 1);
       int64_t w = input.numel() / input.dims()[0];
@@ -322,7 +322,7 @@ class SequencePoolFunctor<TARGET(kX86), T> {
       Tensor in_t = input.Slice<float>(static_cast<int>(lod[i]),
                                        static_cast<int>(lod[i + 1]));
       int64_t h = static_cast<int64_t>(lod[i + 1] - lod[i]);
-      auto in_e = EigenMatrix<T>::From(in_t, lite::DDim({h, w}));
+      auto in_e = EigenMatrix<T>::From(in_t, lite_metal::DDim({h, w}));
       auto out_e = EigenVector<T>::Flatten(out_t);
       if (pooltype == "AVERAGE") {
         out_e.device(eigen_device) = in_e.mean(Eigen::array<int, 1>({{0}}));
@@ -339,12 +339,12 @@ class SequencePoolFunctor<TARGET(kX86), T> {
 template <typename T>
 class SequencePoolGradFunctor<TARGET(kX86), T> {
  public:
-  void operator()(const lite::X86Context& context,
+  void operator()(const lite_metal::X86Context& context,
                   const std::string pooltype,
-                  const lite::Tensor& out_grad,
-                  lite::Tensor* in_grad,
+                  const lite_metal::Tensor& out_grad,
+                  lite_metal::Tensor* in_grad,
                   /* max pool has index */
-                  const lite::Tensor* index = nullptr) {
+                  const lite_metal::Tensor* index = nullptr) {
     if (pooltype == "MAX") {
       math::MaxSeqPoolGradFunctor<T> max_pool_grad;
       max_pool_grad(context, out_grad, *index, in_grad);
@@ -365,7 +365,7 @@ class SequencePoolGradFunctor<TARGET(kX86), T> {
 
     auto lod = in_grad->lod()[0];
 
-    auto eigen_device = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+    auto eigen_device = lite_metal::fluid::EigenDeviceType<TARGET(kX86)>();
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
       if (lod[i] == lod[i + 1]) continue;
       auto in_g_t = in_grad->Slice<float>(static_cast<int>(lod[i]),

@@ -24,7 +24,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -36,8 +36,8 @@ namespace {
 #define OUT(n, c, h, w)                                    \
   output_data[w + h * output_w + c * output_h * output_w + \
               n * output_c * output_h * output_w]
-void Nchw2nhwcBaseLine(lite::Tensor* input,
-                       lite::Tensor* output,
+void Nchw2nhwcBaseLine(lite_metal::Tensor* input,
+                       lite_metal::Tensor* output,
                        const std::vector<int> axies) {
   auto* input_data = input->data<float>();
   auto* output_data = output->mutable_data<float>();
@@ -69,8 +69,8 @@ void Nchw2nhwcBaseLine(lite::Tensor* input,
 #define OUT(n, h, w, c)                                    \
   output_data[c + w * output_c + h * output_w * output_c + \
               n * output_h * output_w * output_c]
-void Nhwc2nchwBaseLine(lite::Tensor* input,
-                       lite::Tensor* output,
+void Nhwc2nchwBaseLine(lite_metal::Tensor* input,
+                       lite_metal::Tensor* output,
                        const std::vector<int>& axies) {
   auto* input_data = input->data<float>();
   auto* output_data = output->mutable_data<float>();
@@ -94,8 +94,8 @@ void Nhwc2nchwBaseLine(lite::Tensor* input,
   }
 }
 
-void TransBaseLine(const lite::Tensor* input,
-                   lite::Tensor* output,
+void TransBaseLine(const lite_metal::Tensor* input,
+                   lite_metal::Tensor* output,
                    const std::vector<int> axes) {
   auto* input_data = input->data<float>();
   auto* output_data = output->mutable_data<float>();
@@ -134,8 +134,8 @@ TEST(transpose_nchw, normal) {
 
   operators::TransposeParam param;
 
-  lite::Tensor x, x_cpu, x_ref;
-  lite::Tensor out, out_cpu, out_ref;
+  lite_metal::Tensor x, x_cpu, x_ref;
+  lite_metal::Tensor out, out_cpu, out_ref;
 
   int N = 5, C = 6, H = 7, W = 8;
   std::vector<int> axes({0, 2, 3, 1});
@@ -157,7 +157,7 @@ TEST(transpose_nchw, normal) {
     x_ref_data[i] = i + 1;
   }
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
 
   param.x = &x;
   param.output = &out;
@@ -187,8 +187,8 @@ TEST(transpose_nhwc, normal) {
 
   operators::TransposeParam param;
 
-  lite::Tensor x, x_cpu, x_ref;
-  lite::Tensor out, out_cpu, out_ref;
+  lite_metal::Tensor x, x_cpu, x_ref;
+  lite_metal::Tensor out, out_cpu, out_ref;
 
   int N = 5, C = 6, H = 7, W = 8;
   std::vector<int> axes({0, 3, 1, 2});
@@ -210,7 +210,7 @@ TEST(transpose_nhwc, normal) {
     x_ref_data[i] = i + 1;
   }
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
   param.x = &x;
   param.output = &out;
   param.axis = axes;
@@ -240,7 +240,7 @@ class TransposeTest : public ::testing::Test {
         axes_({1, 2, 0}),
         x_shape_({C_, H_, W_}),
         out_shape_({H_, W_, C_}) {
-    x_ref_.Resize(lite::DDim(x_shape_));
+    x_ref_.Resize(lite_metal::DDim(x_shape_));
     x_gpu_.Resize(x_ref_.dims());
 
     auto X_ref__data = x_ref_.mutable_data<float>();
@@ -250,7 +250,7 @@ class TransposeTest : public ::testing::Test {
       X_ref__data[i] = static_cast<float>(i);
     }
 
-    out_ref_.Resize(lite::DDim(out_shape_));
+    out_ref_.Resize(lite_metal::DDim(out_shape_));
     out_gpu_.Resize(out_ref_.dims());
     out_cpu_.Resize(out_ref_.dims());
     RunBaseLine(&x_ref_, &out_ref_);
@@ -269,20 +269,20 @@ class TransposeTest : public ::testing::Test {
   }
 
   void InitFloatInput() {
-    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+    x_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
                                                     x_gpu_.dims());
   }
 
   void InitHalfInput() {
-    x_half_.Resize(lite::DDim(x_ref_.dims()));
+    x_half_.Resize(lite_metal::DDim(x_ref_.dims()));
     auto x_half_data = x_half_.mutable_data<half>();
     for (int64_t i = 0; i < x_half_.numel(); i++) {
-      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+      x_half_data[i] = half(lite_metal::float16(x_ref_.data<float>()[i]));
     }
-    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    x_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
   }
 
-  void RunBaseLine(const lite::Tensor* x, lite::Tensor* out) {
+  void RunBaseLine(const lite_metal::Tensor* x, lite_metal::Tensor* out) {
     TransBaseLine(x, out, axes_);
   }
 
@@ -290,10 +290,10 @@ class TransposeTest : public ::testing::Test {
   std::vector<int> axes_;
   std::vector<int64_t> x_shape_, out_shape_;
 
-  lite::Tensor x_ref_, out_ref_;
-  lite::Tensor x_gpu_, out_gpu_;
-  lite::Tensor x_half_;
-  lite::Tensor out_cpu_;
+  lite_metal::Tensor x_ref_, out_ref_;
+  lite_metal::Tensor x_gpu_, out_gpu_;
+  lite_metal::Tensor x_half_;
+  lite_metal::Tensor out_cpu_;
 
   operators::TransposeParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -361,7 +361,7 @@ TEST_F(TransposeTest, TestFP16) {
                           IoDirection::DtoH);
 
   for (int i = 0; i < out_cpu_.numel(); ++i) {
-    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float res = static_cast<float>(lite_metal::float16(out_cpu_data[i]));
     float ref = out_ref_.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }

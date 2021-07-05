@@ -23,7 +23,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
 #if !defined(_WIN32)

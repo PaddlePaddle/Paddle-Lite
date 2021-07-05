@@ -22,7 +22,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 class TreeNode {
@@ -66,27 +66,27 @@ class Tree2ColUtil {
   static std::vector<TreeNode> construct_patch(
       size_t root, int max_depth, const std::vector<std::vector<int>> &tr);
 
-  static void construct_tree(const lite::Tensor &EdgeSet,
+  static void construct_tree(const lite_metal::Tensor &EdgeSet,
                              std::vector<std::vector<int>> *tr,
                              size_t *node_count);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class Tree2ColFunctor {
  public:
-  void operator()(const lite::Context<Target> &context,
-                  const lite::Tensor &EdgeSet,
-                  const lite::Tensor &node_features,
-                  lite::Tensor *patch,
+  void operator()(const lite_metal::Context<Target> &context,
+                  const lite_metal::Tensor &EdgeSet,
+                  const lite_metal::Tensor &node_features,
+                  lite_metal::Tensor *patch,
                   int max_depth);
 };
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class Col2TreeFunctor {
  public:
-  void operator()(const lite::Context<Target> &context,
-                  const lite::Tensor &EdgeSet,
-                  const lite::Tensor &out_grad,
-                  lite::Tensor *in_grad,
+  void operator()(const lite_metal::Context<Target> &context,
+                  const lite_metal::Tensor &EdgeSet,
+                  const lite_metal::Tensor &out_grad,
+                  lite_metal::Tensor *in_grad,
                   int max_depth);
 };
 }  // namespace math

@@ -21,7 +21,7 @@
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void Adaptive1x1Pool2dConvertGlobalPass::Apply(
@@ -73,5 +73,5 @@ void Adaptive1x1Pool2dConvertGlobalPass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(adaptive_1x1_pool2d_convert_global_pass,
-                  paddle::lite::mir::Adaptive1x1Pool2dConvertGlobalPass)
+                  paddle::lite_metal::mir::Adaptive1x1Pool2dConvertGlobalPass)
     .BindTargets({TARGET(kOpenCL), TARGET(kARM)});

@@ -17,7 +17,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -89,7 +89,7 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(transpose,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::TransposeConverter);
+                         paddle::lite_metal::subgraph::nnadapter::TransposeConverter);
 REGISTER_SUBGRAPH_BRIDGE(transpose2,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::TransposeConverter);
+                         paddle::lite_metal::subgraph::nnadapter::TransposeConverter);

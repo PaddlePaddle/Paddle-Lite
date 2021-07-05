@@ -24,8 +24,8 @@
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"
 
-typedef paddle::lite::Tensor Tensor;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::Tensor Tensor;
+using paddle::lite_metal::profile::Timer;
 
 DEFINE_int32(power_mode,
              3,
@@ -124,19 +124,19 @@ bool test_sgemm_c4(
 #ifdef LITE_WITH_ARM
   //! compute
   double ops = 2.0 * m_round * n * k_round;
-  std::unique_ptr<paddle::lite::KernelContext> ctx1(
-      new paddle::lite::KernelContext);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+      new paddle::lite_metal::KernelContext);
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
   auto dc = tc.mutable_data<float>();
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::sgemm_prepack_c4(
+    paddle::lite_metal::arm::math::sgemm_prepack_c4(
         m, n, k, da_c4, db_c4, dc, dbias, has_bias, has_relu, &ctx);
   }
 
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::sgemm_prepack_c4(
+    paddle::lite_metal::arm::math::sgemm_prepack_c4(
         m, n, k, da_c4, db_c4, dc, dbias, has_bias, has_relu, &ctx);
     t0.Stop();
   }
@@ -257,20 +257,20 @@ bool test_sgemm_c8(
 #ifdef LITE_WITH_ARM
   //! compute
   double ops = 2.0 * m_round * n * k_round;
-  std::unique_ptr<paddle::lite::KernelContext> ctx1(
-      new paddle::lite::KernelContext);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+      new paddle::lite_metal::KernelContext);
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
   auto dc = tc.mutable_data<int32_t>();
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::sgemm_prepack_c8_int16_small(
+    paddle::lite_metal::arm::math::sgemm_prepack_c8_int16_small(
         m, n, k, da_c4, db_c8, dc, &ctx);
   }
   LOG(INFO) << "basic test end";
 
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::sgemm_prepack_c8_int16_small(
+    paddle::lite_metal::arm::math::sgemm_prepack_c8_int16_small(
         m, n, k, da_c4, db_c8, dc, &ctx);
     t0.Stop();
   }
@@ -319,7 +319,7 @@ bool test_sgemm_c8(
 TEST(TestSgemmC4, test_func_sgemm_c4_prepacked) {
   if (FLAGS_basic_test) {
 #ifdef LITE_WITH_ARM
-    paddle::lite::DeviceInfo::Init();
+    paddle::lite_metal::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemm_c4 test";
     for (auto& m : {1, 3, 8, 32, 397, 32, 64, 77}) {
@@ -352,7 +352,7 @@ TEST(TestSgemmC4, test_func_sgemm_c4_prepacked) {
 TEST(TestSgemmC8, test_func_sgemm_c8_prepacked) {
   if (FLAGS_basic_test) {
 #ifdef LITE_WITH_ARM
-    paddle::lite::DeviceInfo::Init();
+    paddle::lite_metal::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemm_c4 test";
     for (auto& m : {1, 3, 8, 32, 397, 32, 64, 77}) {
@@ -385,7 +385,7 @@ TEST(TestSgemmC8, test_func_sgemm_c8_prepacked) {
 
 TEST(TestSgemmCnCustom, test_func_sgemm_cn_prepacked_custom) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   auto flag = test_sgemm_c4(FLAGS_M,
                             FLAGS_N,

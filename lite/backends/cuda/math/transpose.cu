@@ -17,7 +17,7 @@
 #include "lite/backends/cuda/math/utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 
@@ -108,8 +108,8 @@ void TransposeCUDAImpl(const std::vector<int64_t>& X_dims,
                        const std::vector<int>& axes,
                        const T* X,
                        T* Y,
-                       lite::Tensor* Y_dims_,
-                       lite::Tensor* strides_,
+                       lite_metal::Tensor* Y_dims_,
+                       lite_metal::Tensor* strides_,
                        cudaStream_t* stream) {
   CHECK_EQ(X_dims.size(), axes.size()) << "dimension size should be equal";
   int ndim = X_dims.size();

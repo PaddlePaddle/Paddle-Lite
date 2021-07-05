@@ -19,7 +19,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 MetalImage::MetalImage(MetalContext* context,
     const DDim& in_dim,

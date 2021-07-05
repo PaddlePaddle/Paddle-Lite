@@ -17,7 +17,7 @@
 #include "lite/kernels/imagination_nna/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace imagination_nna {
 

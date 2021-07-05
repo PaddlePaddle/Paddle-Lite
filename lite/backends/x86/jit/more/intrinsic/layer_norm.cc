@@ -17,7 +17,7 @@
 #include "lite/backends/x86/jit/registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace more {
 namespace intrinsic {
@@ -176,6 +176,6 @@ bool LayerNormKernel::CanBeUsed(const int& d) const {
 }  // namespace lite
 }  // namespace paddle
 
-namespace intrinsic = paddle::lite::jit::more::intrinsic;
+namespace intrinsic = paddle::lite_metal::jit::more::intrinsic;
 
 REGISTER_JITKERNEL_MORE(kLayerNorm, intrinsic, intrinsic::LayerNormKernel);

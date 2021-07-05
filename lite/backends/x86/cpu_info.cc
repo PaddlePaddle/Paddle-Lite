@@ -40,20 +40,20 @@
 //               "Default use 100% of CPU memory for PaddlePaddle,"
 //               "reserve the rest for page tables, etc");
 double fraction_of_cpu_memory_to_use =
-    paddle::lite::GetDoubleFromEnv("fraction_of_cpu_memory_to_use", 1);
+    paddle::lite_metal::GetDoubleFromEnv("fraction_of_cpu_memory_to_use", 1);
 
 // DEFINE_uint64(initial_cpu_memory_in_mb,
 //               500ul,
 //               "Initial CPU memory for PaddlePaddle, in MD unit.");
 uint64_t initial_cpu_memory_in_mb =
-    paddle::lite::GetUInt64FromEnv("initial_cpu_memory_in_mb", 500ul);
+    paddle::lite_metal::GetUInt64FromEnv("initial_cpu_memory_in_mb", 500ul);
 
 // DEFINE_double(
 //     fraction_of_cuda_pinned_memory_to_use,
 //     0.5,
 //     "Default use 50% of CPU memory as the pinned_memory for PaddlePaddle,"
 //     "reserve the rest for page tables, etc");
-double fraction_of_cuda_pinned_memory_to_use = paddle::lite::GetDoubleFromEnv(
+double fraction_of_cuda_pinned_memory_to_use = paddle::lite_metal::GetDoubleFromEnv(
     "fraction_of_cuda_pinned_memory_to_use", 0.5);
 
 // If use_pinned_memory is true, CPUAllocator calls mlock, which
@@ -63,10 +63,10 @@ double fraction_of_cuda_pinned_memory_to_use = paddle::lite::GetDoubleFromEnv(
 // should set false to use_pinned_memory.
 // DEFINE_bool(use_pinned_memory, true, "If set, allocate cpu pinned memory.");
 bool use_pinned_memory =
-    paddle::lite::GetBoolFromEnv("use_pinned_memory", true);
+    paddle::lite_metal::GetBoolFromEnv("use_pinned_memory", true);
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 
 size_t CpuTotalPhysicalMemory() {

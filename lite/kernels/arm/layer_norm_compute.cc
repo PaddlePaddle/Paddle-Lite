@@ -16,7 +16,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -39,7 +39,7 @@ void LayerNormCompute::Run() {
   int left = matrix_dim[0];
   int right = matrix_dim[1];
 
-  lite::arm::math::matrix_norm_row(
+  lite_metal::arm::math::matrix_norm_row(
       x_data, scale, bias, o_data, mean, var, param.epsilon, left, right);
 }
 
@@ -52,7 +52,7 @@ REGISTER_LITE_KERNEL(layer_norm,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::LayerNormCompute,
+                     paddle::lite_metal::kernels::arm::LayerNormCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})

@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -50,7 +50,7 @@ void MulCompute::Run() {
   k_ = x_w;
   auto& ctx = this->ctx_->template As<ARMContext>();
   if (n_ == 1) {
-    lite::arm::math::sgemv(x_data,
+    lite_metal::arm::math::sgemv(x_data,
                            y_data,
                            o_data,
                            false,
@@ -65,13 +65,13 @@ void MulCompute::Run() {
 
   } else {
     constexpr bool is_tranposed_y = false;
-    int hblock = lite::arm::math::get_hblock(&ctx);
+    int hblock = lite_metal::arm::math::get_hblock(&ctx);
     int m_round = hblock * ((m_ + hblock - 1) / hblock);
     ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
 
     float* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
                       ctx.llc_size() / sizeof(float);
-    lite::arm::math::prepackA(
+    lite_metal::arm::math::prepackA(
         packed_x, x_data, 1.f, k_, 0, m_, 0, k_, false, &ctx);
     int ldb = n_;
     if (is_tranposed_y) {
@@ -79,7 +79,7 @@ void MulCompute::Run() {
     }
     operators::ActivationParam act_param;
     act_param.has_active = false;
-    lite::arm::math::sgemm_prepack(is_tranposed_y,
+    lite_metal::arm::math::sgemm_prepack(is_tranposed_y,
                                    m_,
                                    n_,
                                    k_,
@@ -102,7 +102,7 @@ void MulCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    mul, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::MulCompute, def)
+    mul, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::MulCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})

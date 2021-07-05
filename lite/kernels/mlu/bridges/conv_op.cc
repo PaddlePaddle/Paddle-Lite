@@ -21,7 +21,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -164,7 +164,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const auto input_scale = op_info->GetInputScale(input_var_name)[0];
 
   bool use_first_conv = false;
-  if (lite::TargetWrapperMlu::UseFirstConv() && input_dims[1] == 3) {
+  if (lite_metal::TargetWrapperMlu::UseFirstConv() && input_dims[1] == 3) {
     use_first_conv = true;
   }
 
@@ -192,11 +192,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                            graph->FPType());
 
     graph->BindConstRawData("first_conv_mean_tensor",
-                            lite::TargetWrapperMlu::MeanVec().data(),
+                            lite_metal::TargetWrapperMlu::MeanVec().data(),
                             3,
                             false);
     graph->BindConstRawData("first_conv_std_tensor",
-                            lite::TargetWrapperMlu::StdVec().data(),
+                            lite_metal::TargetWrapperMlu::StdVec().data(),
                             3,
                             false);
 
@@ -293,7 +293,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(conv2d,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ConvConverter);
+                         paddle::lite_metal::subgraph::mlu::ConvConverter);
 REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ConvConverter);
+                         paddle::lite_metal::subgraph::mlu::ConvConverter);

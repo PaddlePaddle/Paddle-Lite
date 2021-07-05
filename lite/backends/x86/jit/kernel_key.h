@@ -19,7 +19,7 @@
 #include "lite/backends/x86/legacy_place.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 
 struct KernelKey {
@@ -33,9 +33,9 @@ struct KernelKey {
   };
 
   KernelType type_;
-  lite::fluid::Place place_;
+  lite_metal::fluid::Place place_;
 
-  KernelKey(KernelType type, lite::fluid::Place place)
+  KernelKey(KernelType type, lite_metal::fluid::Place place)
       : type_(type), place_(place) {}
   size_t hash_key() const { return Hash()(*this); }
 

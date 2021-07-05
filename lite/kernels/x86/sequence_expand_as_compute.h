@@ -21,11 +21,11 @@
 #include "lite/fluid/eigen.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 template <typename T>
 struct SequenceExpandFunctor {

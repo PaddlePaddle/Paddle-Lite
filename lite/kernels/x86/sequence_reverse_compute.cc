@@ -14,9 +14,9 @@
 
 #include "lite/kernels/x86/sequence_reverse_compute.h"
 
-typedef paddle::lite::kernels::x86::SequenceReverseCompute<float> ReverseFp32;
-typedef paddle::lite::kernels::x86::SequenceReverseCompute<int> ReverseInt32;
-typedef paddle::lite::kernels::x86::SequenceReverseCompute<int64_t>
+typedef paddle::lite_metal::kernels::x86::SequenceReverseCompute<float> ReverseFp32;
+typedef paddle::lite_metal::kernels::x86::SequenceReverseCompute<int> ReverseInt32;
+typedef paddle::lite_metal::kernels::x86::SequenceReverseCompute<int64_t>
     ReverseInt64;
 
 REGISTER_LITE_KERNEL(sequence_reverse, kX86, kFloat, kNCHW, ReverseFp32, def)

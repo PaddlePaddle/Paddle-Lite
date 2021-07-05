@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -98,7 +98,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
-                  paddle::lite::mir::ConvActivationFusePass)
+                  paddle::lite_metal::mir::ConvActivationFusePass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
     .ExcludeTargets({TARGET(kMLU)})

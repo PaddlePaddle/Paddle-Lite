@@ -26,7 +26,7 @@
 #endif
 #include "lite/backends/opencl/cl_utility.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -88,7 +88,7 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
       // compute image shape
-      paddle::lite::CLImageConverterDefault default_convertor;
+      paddle::lite_metal::CLImageConverterDefault default_convertor;
       out_img_shape_ = default_convertor.InitImageDimInfoWith(out_dims);
       VLOG(1) << "out_img_shape_:  " << out_img_shape_[0] << "  "
               << out_img_shape_[1];
@@ -181,7 +181,7 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -211,7 +211,7 @@ REGISTER_LITE_KERNEL(expand,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::ExpandComputeImage2D,
+                     paddle::lite_metal::kernels::opencl::ExpandComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

@@ -26,7 +26,7 @@
 #endif             // LITE_WITH_PROFILE
 #include <thread>  // NOLINT
 
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 
 DEFINE_string(input_shape,
               "1,3,224,224",
@@ -68,7 +68,7 @@ void OutputOptModel(const std::string& load_model_dir,
 
   // delete old optimized model
   int ret = system(
-      paddle::lite::string_format("rm -rf %s", save_optimized_model_dir.c_str())
+      paddle::lite_metal::string_format("rm -rf %s", save_optimized_model_dir.c_str())
           .c_str());
   if (ret == 0) {
     LOG(INFO) << "delete old optimized model " << save_optimized_model_dir;

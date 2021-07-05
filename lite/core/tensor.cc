@@ -19,7 +19,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void TensorLite::ShareDataWith(const TensorLite &other) {
   buffer_ = other.buffer_;

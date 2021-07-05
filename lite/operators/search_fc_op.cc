@@ -31,7 +31,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SearchFcOpLite::CheckShape() const {
@@ -52,22 +52,22 @@ bool SearchFcOpLite::CheckShape() const {
 
 bool SearchFcOpLite::InferShapeImpl() const {
   auto out_size = param_.out_size;
-  lite::DDim dims(std::vector<int64_t>({-1, out_size}));
+  lite_metal::DDim dims(std::vector<int64_t>({-1, out_size}));
   param_.Out->Resize(dims);
   return true;
 }
 
 bool SearchFcOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                lite::Scope *scope) {
+                                lite_metal::Scope *scope) {
   auto X = op_desc.Input("X").front();
   auto W = op_desc.Input("W").front();
   auto b = op_desc.Input("b").front();
   auto Out = op_desc.Output("Out").front();
 
-  param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
-  param_.W = scope->FindVar(W)->GetMutable<lite::Tensor>();
-  param_.b = scope->FindVar(b)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(X)->GetMutable<lite_metal::Tensor>();
+  param_.W = scope->FindVar(W)->GetMutable<lite_metal::Tensor>();
+  param_.b = scope->FindVar(b)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(Out)->GetMutable<lite_metal::Tensor>();
   param_.out_size = op_desc.GetAttr<int>("out_size");
 
   if (op_desc.HasAttr("fuse_relu")) {
@@ -89,4 +89,4 @@ bool SearchFcOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(search_fc, paddle::lite::operators::SearchFcOpLite);
+REGISTER_LITE_OP(search_fc, paddle::lite_metal::operators::SearchFcOpLite);

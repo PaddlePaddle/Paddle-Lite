@@ -22,7 +22,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pb {
 
 class ProgramDesc : public ProgramDescAPI {

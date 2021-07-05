@@ -30,7 +30,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -64,13 +64,13 @@ struct BaseActivationFunctor {
 };
 
 template <typename Functor>
-bool Activate(const lite::Tensor* X, lite::Tensor* Out) {
+bool Activate(const lite_metal::Tensor* X, lite_metal::Tensor* Out) {
   using T = typename Functor::ELEMENT_TYPE;
-  auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+  auto place = lite_metal::fluid::EigenDeviceType<TARGET(kX86)>();
   CHECK_OR_FALSE(X)
   CHECK_OR_FALSE(Out)
-  auto x = lite::fluid::EigenVector<T>::Flatten(*X);
-  auto out = lite::fluid::EigenVector<T>::Flatten(*Out);
+  auto x = lite_metal::fluid::EigenVector<T>::Flatten(*X);
+  auto out = lite_metal::fluid::EigenVector<T>::Flatten(*Out);
   Functor()(place, x, out);
   return true;
 }
@@ -145,11 +145,11 @@ class LeakyReluCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     param.Out->template mutable_data<T>();
     auto X = param.X;
     auto Out = param.Out;
-    auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+    auto place = lite_metal::fluid::EigenDeviceType<TARGET(kX86)>();
     CHECK(X);
     CHECK(Out);
-    auto x = lite::fluid::EigenVector<T>::Flatten(*X);
-    auto out = lite::fluid::EigenVector<T>::Flatten(*Out);
+    auto x = lite_metal::fluid::EigenVector<T>::Flatten(*X);
+    auto out = lite_metal::fluid::EigenVector<T>::Flatten(*Out);
     LeakyReluFunctor<T> functor(param.Leaky_relu_alpha);
     functor(place, x, out);
   }
@@ -195,13 +195,13 @@ struct GeluFunctor : public BaseActivationFunctor<T> {
     int n = std::min(x.size(), out.size());
 
     std::memset(out_data, 0, n * sizeof(T));
-    paddle::lite::x86::math::CBlas<T>::AXPY(
+    paddle::lite_metal::x86::math::CBlas<T>::AXPY(
         n, static_cast<T>(M_SQRT1_2), x_data, 1, out_data, 1);
-    paddle::lite::x86::math::CBlas<T>::VMERF(n, out_data, out_data, VML_LA);
+    paddle::lite_metal::x86::math::CBlas<T>::VMERF(n, out_data, out_data, VML_LA);
     for (int i = 0; i < n; i++) {
       out_data[i] += static_cast<T>(1);
     }
-    paddle::lite::x86::math::CBlas<T>::VMUL(n, x_data, out_data, out_data);
+    paddle::lite_metal::x86::math::CBlas<T>::VMUL(n, x_data, out_data, out_data);
     for (int i = 0; i < n; i++) {
       out_data[i] *= static_cast<T>(0.5);
     }
@@ -295,11 +295,11 @@ class Relu6Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     param.Out->template mutable_data<T>();
     auto X = param.X;
     auto Out = param.Out;
-    auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+    auto place = lite_metal::fluid::EigenDeviceType<TARGET(kX86)>();
     CHECK(X);
     CHECK(Out);
-    auto x = lite::fluid::EigenVector<T>::Flatten(*X);
-    auto out = lite::fluid::EigenVector<T>::Flatten(*Out);
+    auto x = lite_metal::fluid::EigenVector<T>::Flatten(*X);
+    auto out = lite_metal::fluid::EigenVector<T>::Flatten(*Out);
     Relu6Functor<T> functor(param.threshold);
     functor(place, x, out);
   }

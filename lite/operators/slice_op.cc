@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SliceOp::CheckShape() const {
@@ -87,12 +87,12 @@ bool SliceOp::InferShapeImpl() const {
   return true;
 }
 
-bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.X =
-      scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite_metal::Tensor>();
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
   param_.axes = opdesc.GetAttr<std::vector<int>>("axes");
@@ -127,7 +127,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     auto StartsTensorList = opdesc.Input("StartsTensorList");
     for (auto var : StartsTensorList) {
       param_.StartsTensorList.push_back(
-          scope->FindVar(var)->GetMutable<lite::Tensor>());
+          scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
     }
     CHECK_GT(param_.StartsTensorList.size(), 0u)
         << "StartsTensorList size can't be zero";
@@ -140,7 +140,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     auto EndsTensorList = opdesc.Input("EndsTensorList");
     for (auto var : EndsTensorList) {
       param_.EndsTensorList.push_back(
-          scope->FindVar(var)->GetMutable<lite::Tensor>());
+          scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
     }
     CHECK_GT(param_.EndsTensorList.size(), 0u)
         << "EndsTensorList size can't be zero";
@@ -150,14 +150,14 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasInput("StartsTensor") &&
       !opdesc.Input("StartsTensor").empty()) {
     param_.StartsTensor = scope->FindVar(opdesc.Input("StartsTensor").front())
-                              ->GetMutable<lite::Tensor>();
+                              ->GetMutable<lite_metal::Tensor>();
   } else {
     CHECK_EQ(starts_size, param_.axes.size())
         << "The size of starts must be equal to the size of axes.";
   }
   if (opdesc.HasInput("EndsTensor") && !opdesc.Input("EndsTensor").empty()) {
     param_.EndsTensor = scope->FindVar(opdesc.Input("EndsTensor").front())
-                            ->GetMutable<lite::Tensor>();
+                            ->GetMutable<lite_metal::Tensor>();
   } else {
     CHECK_EQ(ends_size, param_.axes.size())
         << "The size of ends must be equal to the size of axes.";
@@ -169,4 +169,4 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(slice, paddle::lite::operators::SliceOp);
+REGISTER_LITE_OP(slice, paddle::lite_metal::operators::SliceOp);

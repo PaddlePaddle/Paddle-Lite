@@ -18,7 +18,7 @@
 #include "lite/backends/x86/jit/kernel_base.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace more {
 namespace mix {

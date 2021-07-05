@@ -22,7 +22,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -42,7 +42,7 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
       return;
     }
     if (n > 1) {
-      lite::arm::math::trans_gemm_weights<Ptype>(
+      lite_metal::arm::math::trans_gemm_weights<Ptype>(
           *(param.conv_param.filter), weights_, param.conv_param.groups, &ctx);
       flag_trans_weights_ = true;
     } else if (n == 1) {
@@ -56,7 +56,7 @@ class DeformableConvCompute : public KernelLite<TARGET(kARM), Ptype> {
 
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
+      paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
   }
   std::string kernel_func_name_{"NotImplForDeformableConv"};

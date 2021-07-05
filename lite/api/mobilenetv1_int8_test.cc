@@ -28,12 +28,12 @@ DEFINE_string(input_img_txt_path,
               "if set input_img_txt_path, read the img filename as input.");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void TestModel(const std::vector<Place>& valid_places) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
 
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
 

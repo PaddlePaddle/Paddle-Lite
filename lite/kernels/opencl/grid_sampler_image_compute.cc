@@ -29,7 +29,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
@@ -74,7 +74,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
       first_epoch_for_reinit_ = false;
 
       // compute image shape
-      paddle::lite::CLImageConverterDefault default_convertor;
+      paddle::lite_metal::CLImageConverterDefault default_convertor;
       out_img_shape_ =
           default_convertor.InitImageDimInfoWith(grid_param_->out->dims());
 
@@ -155,7 +155,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -181,7 +181,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
+namespace ocl = paddle::lite_metal::kernels::opencl;
 REGISTER_LITE_KERNEL(grid_sampler,
                      kOpenCL,
                      kFP16,

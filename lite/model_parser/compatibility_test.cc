@@ -22,7 +22,7 @@
 USE_LITE_KERNEL(leaky_relu, kCUDA, kFloat, kNCHW, def);
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static constexpr int64_t version = 1005000;
 

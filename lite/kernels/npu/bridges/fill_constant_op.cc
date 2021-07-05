@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -65,4 +65,4 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(fill_constant,
                          kNPU,
-                         paddle::lite::subgraph::npu::FillConstantConverter);
+                         paddle::lite_metal::subgraph::npu::FillConstantConverter);

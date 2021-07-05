@@ -24,7 +24,7 @@ DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(test_img_num, 10000, "0 < test_img_num <= 10000");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 float run_test(bool is_quant_model, int quant_bit = 16) {
   std::shared_ptr<lite_api::PaddlePredictor> predictor = nullptr;

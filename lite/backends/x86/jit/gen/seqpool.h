@@ -20,7 +20,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace gen {
 
@@ -47,7 +47,7 @@ class SeqPoolJitCode : public JitCode {
     } else if (type_ == SeqPoolType::kSqrt) {
       base += "_Sqrt";
     }
-    base += ("_W" + paddle::lite::to_string(w_));
+    base += ("_W" + paddle::lite_metal::to_string(w_));
     return base;
   }
   void genCode() override;

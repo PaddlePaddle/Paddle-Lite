@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -31,10 +31,10 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
+  auto unique_op_name = lite_metal::subgraph::bm::UniqueName(op_type);
   // input
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   std::vector<int32_t> i_x_shape_data(x_dims.size());
@@ -49,7 +49,7 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (!bias_after_scale) {
     bias *= scale;
   }
-  auto unique_op_scale_name = lite::subgraph::bm::UniqueName(op_type);
+  auto unique_op_scale_name = lite_metal::subgraph::bm::UniqueName(op_type);
   add_const_binary_layer(graph->GetCompilerHandle(),
                          static_cast<const char*>(x_var_name.c_str()),
                          const_cast<const int*>(&i_x_shape_data[0]),
@@ -77,4 +77,4 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(scale,
                          kBM,
-                         paddle::lite::subgraph::bm::ScaleConverter);
+                         paddle::lite_metal::subgraph::bm::ScaleConverter);

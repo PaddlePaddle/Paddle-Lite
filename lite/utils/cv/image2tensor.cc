@@ -15,7 +15,7 @@
 #include "lite/utils/cv/image2tensor.h"
 #include <arm_neon.h>
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 void gray_to_tensor(const uint8_t* src,

@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -84,6 +84,6 @@ class XPUSoftmaxTopkFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__softmax_topk_fuse_pass,
-                  paddle::lite::mir::XPUSoftmaxTopkFusePass)
+                  paddle::lite_metal::mir::XPUSoftmaxTopkFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__softmax_topk");

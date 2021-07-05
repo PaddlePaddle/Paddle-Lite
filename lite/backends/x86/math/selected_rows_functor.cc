@@ -20,13 +20,13 @@ limitations under the License. */
 #include "lite/backends/x86/math/selected_rows_functor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 template <typename T>
-struct SelectedRowsAdd<lite::TargetType::kX86, T> {
-  void operator()(const lite::X86Context& context,
+struct SelectedRowsAdd<lite_metal::TargetType::kX86, T> {
+  void operator()(const lite_metal::X86Context& context,
                   const fluid::SelectedRows& input1,
                   const fluid::SelectedRows& input2,
                   fluid::SelectedRows* output) {
@@ -61,15 +61,15 @@ struct SelectedRowsAdd<lite::TargetType::kX86, T> {
   }
 };
 
-template struct SelectedRowsAdd<lite::TargetType::kX86, float>;
-template struct SelectedRowsAdd<lite::TargetType::kX86, double>;
+template struct SelectedRowsAdd<lite_metal::TargetType::kX86, float>;
+template struct SelectedRowsAdd<lite_metal::TargetType::kX86, double>;
 
 template <typename T>
-struct SelectedRowsAddTensor<lite::TargetType::kX86, T> {
-  void operator()(const lite::X86Context& context,
+struct SelectedRowsAddTensor<lite_metal::TargetType::kX86, T> {
+  void operator()(const lite_metal::X86Context& context,
                   const fluid::SelectedRows& input1,
-                  const lite::Tensor& input2,
-                  lite::Tensor* output) {
+                  const lite_metal::Tensor& input2,
+                  lite_metal::Tensor* output) {
     auto in1_height = input1.height();
     auto in2_dims = input2.dims();
     auto out_dims = output->dims();
@@ -83,7 +83,7 @@ struct SelectedRowsAddTensor<lite::TargetType::kX86, T> {
     CHECK_EQ(in1_row_numel, input2.numel() / in1_height);
     CHECK_EQ(in1_row_numel, output->numel() / in1_height);
 
-    SetConstant<lite::TargetType::kX86, T> functor;
+    SetConstant<lite_metal::TargetType::kX86, T> functor;
     functor(context, output, 0.0);
 
     auto* in1_data = in1_value.data<T>();
@@ -98,17 +98,17 @@ struct SelectedRowsAddTensor<lite::TargetType::kX86, T> {
 
     auto out_eigen = fluid::EigenVector<T>::Flatten(*output);
     auto in2_eigen = fluid::EigenVector<T>::Flatten(input2);
-    out_eigen.device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) =
+    out_eigen.device(lite_metal::fluid::EigenDeviceType<TARGET(kX86)>()) =
         out_eigen + in2_eigen;
   }
 };
 
-template struct SelectedRowsAddTensor<lite::TargetType::kX86, float>;
-template struct SelectedRowsAddTensor<lite::TargetType::kX86, double>;
+template struct SelectedRowsAddTensor<lite_metal::TargetType::kX86, float>;
+template struct SelectedRowsAddTensor<lite_metal::TargetType::kX86, double>;
 
 template <typename T>
-struct SelectedRowsAddTo<lite::TargetType::kX86, T> {
-  void operator()(const lite::X86Context& context,
+struct SelectedRowsAddTo<lite_metal::TargetType::kX86, T> {
+  void operator()(const lite_metal::X86Context& context,
                   const fluid::SelectedRows& input1,
                   const int64_t input2_offset,
                   fluid::SelectedRows* input2) {
@@ -132,14 +132,14 @@ struct SelectedRowsAddTo<lite::TargetType::kX86, T> {
   }
 };
 
-template struct SelectedRowsAddTo<lite::TargetType::kX86, float>;
-template struct SelectedRowsAddTo<lite::TargetType::kX86, double>;
-template struct SelectedRowsAddTo<lite::TargetType::kX86, int>;
-template struct SelectedRowsAddTo<lite::TargetType::kX86, int64_t>;
+template struct SelectedRowsAddTo<lite_metal::TargetType::kX86, float>;
+template struct SelectedRowsAddTo<lite_metal::TargetType::kX86, double>;
+template struct SelectedRowsAddTo<lite_metal::TargetType::kX86, int>;
+template struct SelectedRowsAddTo<lite_metal::TargetType::kX86, int64_t>;
 
 template <typename T>
-struct SelectedRowsSumTo<lite::TargetType::kX86, T> {
-  void operator()(const lite::X86Context& context,
+struct SelectedRowsSumTo<lite_metal::TargetType::kX86, T> {
+  void operator()(const lite_metal::X86Context& context,
                   const std::vector<fluid::SelectedRows*>& input1,
                   const std::vector<int64_t>& input2_offsets,
                   fluid::SelectedRows* input2) {
@@ -162,7 +162,7 @@ struct SelectedRowsSumTo<lite::TargetType::kX86, T> {
 
     auto* in2_value = input2->mutable_value();
     T* in2_data = in2_value->template mutable_data<T>();
-    auto blas = math::GetBlas<lite::TargetType::kX86, T>(context);
+    auto blas = math::GetBlas<lite_metal::TargetType::kX86, T>(context);
     size_t offset = 0u;
     for (size_t i = 0u; i != input1.size(); ++i) {
       auto& in_value = input1[i]->value();
@@ -173,14 +173,14 @@ struct SelectedRowsSumTo<lite::TargetType::kX86, T> {
   }
 };
 
-template struct SelectedRowsSumTo<lite::TargetType::kX86, float>;
-template struct SelectedRowsSumTo<lite::TargetType::kX86, double>;
+template struct SelectedRowsSumTo<lite_metal::TargetType::kX86, float>;
+template struct SelectedRowsSumTo<lite_metal::TargetType::kX86, double>;
 
 template <typename T>
-struct SelectedRowsAddToTensor<lite::TargetType::kX86, T> {
-  void operator()(const lite::X86Context& context,
+struct SelectedRowsAddToTensor<lite_metal::TargetType::kX86, T> {
+  void operator()(const lite_metal::X86Context& context,
                   const fluid::SelectedRows& input1,
-                  lite::Tensor* input2) {
+                  lite_metal::Tensor* input2) {
     CHECK(input1.rows().size() != 0) << "input selected rows is empty!";
 
     auto in1_height = input1.height();
@@ -205,10 +205,10 @@ struct SelectedRowsAddToTensor<lite::TargetType::kX86, T> {
   }
 };
 
-template struct SelectedRowsAddToTensor<lite::TargetType::kX86, float>;
-template struct SelectedRowsAddToTensor<lite::TargetType::kX86, double>;
-template struct SelectedRowsAddToTensor<lite::TargetType::kX86, int>;
-template struct SelectedRowsAddToTensor<lite::TargetType::kX86, int64_t>;
+template struct SelectedRowsAddToTensor<lite_metal::TargetType::kX86, float>;
+template struct SelectedRowsAddToTensor<lite_metal::TargetType::kX86, double>;
+template struct SelectedRowsAddToTensor<lite_metal::TargetType::kX86, int>;
+template struct SelectedRowsAddToTensor<lite_metal::TargetType::kX86, int64_t>;
 
 // This is a separated namespace for manipulate SelectedRows typed
 // data. Like merge duplicated rows, adding two SelectedRows etc.
@@ -221,9 +221,9 @@ namespace scatter {
 template <typename DeviceContext, typename T>
 typename std::enable_if<
     std::is_floating_point<T>::value &&
-    std::is_same<DeviceContext, lite::X86Context>::value>::type
+    std::is_same<DeviceContext, lite_metal::X86Context>::value>::type
 elementwise_add_to(const DeviceContext& ctx,
-                   BlasT<lite::TargetType::kX86, T>* blas,
+                   BlasT<lite_metal::TargetType::kX86, T>* blas,
                    size_t data_len,
                    const T* in,
                    T* out) {
@@ -233,9 +233,9 @@ elementwise_add_to(const DeviceContext& ctx,
 template <typename DeviceContext, typename T>
 typename std::enable_if<
     !std::is_floating_point<T>::value &&
-    std::is_same<DeviceContext, lite::X86Context>::value>::type
+    std::is_same<DeviceContext, lite_metal::X86Context>::value>::type
 elementwise_add_to(const DeviceContext& ctx,
-                   BlasT<lite::TargetType::kX86, T>* blas,
+                   BlasT<lite_metal::TargetType::kX86, T>* blas,
                    size_t data_len,
                    const T* in,
                    T* out) {
@@ -245,8 +245,8 @@ elementwise_add_to(const DeviceContext& ctx,
 }
 
 template <typename T>
-struct MergeAdd<lite::TargetType::kX86, T> {
-  fluid::SelectedRows operator()(const lite::X86Context& context,
+struct MergeAdd<lite_metal::TargetType::kX86, T> {
+  fluid::SelectedRows operator()(const lite_metal::X86Context& context,
                                  const fluid::SelectedRows& input,
                                  const bool sorted_result = false) {
     fluid::SelectedRows out;
@@ -254,7 +254,7 @@ struct MergeAdd<lite::TargetType::kX86, T> {
     return out;
   }
 
-  void operator()(const lite::X86Context& context,
+  void operator()(const lite_metal::X86Context& context,
                   const fluid::SelectedRows& input,
                   fluid::SelectedRows* output,
                   const bool sorted_result = false) {
@@ -263,7 +263,7 @@ struct MergeAdd<lite::TargetType::kX86, T> {
     (*this)(context, inputs, output, sorted_result);
   }
 
-  void operator()(const lite::X86Context& context,
+  void operator()(const lite_metal::X86Context& context,
                   const std::vector<const fluid::SelectedRows*>& inputs,
                   fluid::SelectedRows* output,
                   const bool sorted_result = false) {
@@ -301,7 +301,7 @@ struct MergeAdd<lite::TargetType::kX86, T> {
     }
 
     out.set_height(input_height);
-    lite::DDim dims(std::vector<int64_t>(
+    lite_metal::DDim dims(std::vector<int64_t>(
         {static_cast<int64_t>(merged_row_set.size()), input_width}));
     out.mutable_value()->Resize(dims);
     auto* out_data = out.mutable_value()->template mutable_data<T>();
@@ -332,7 +332,7 @@ struct MergeAdd<lite::TargetType::kX86, T> {
       }
 
       out.set_rows(merge_rows);
-      math::SetConstant<lite::TargetType::kX86, T> constant_functor;
+      math::SetConstant<lite_metal::TargetType::kX86, T> constant_functor;
       constant_functor(context, out.mutable_value(), 0.0);
 
       std::map<int64_t, size_t> rows_to_id;
@@ -340,7 +340,7 @@ struct MergeAdd<lite::TargetType::kX86, T> {
         rows_to_id[merge_rows[i]] = i;
       }
 
-      auto blas = math::GetBlas<lite::TargetType::kX86, T>(context);
+      auto blas = math::GetBlas<lite_metal::TargetType::kX86, T>(context);
       for (auto* input : inputs) {
         if (input->rows().size() == 0) {
           continue;
@@ -350,7 +350,7 @@ struct MergeAdd<lite::TargetType::kX86, T> {
 
         for (size_t i = 0; i < input_rows.size(); i++) {
           size_t out_i = rows_to_id[input_rows[i]];
-          elementwise_add_to<lite::X86Context, T>(
+          elementwise_add_to<lite_metal::X86Context, T>(
               context,
               &blas,
               static_cast<size_t>(input_width),
@@ -362,17 +362,17 @@ struct MergeAdd<lite::TargetType::kX86, T> {
   }
 };
 
-template struct MergeAdd<lite::TargetType::kX86, int>;
-template struct MergeAdd<lite::TargetType::kX86, int64_t>;
-template struct MergeAdd<lite::TargetType::kX86, float>;
-template struct MergeAdd<lite::TargetType::kX86, double>;
+template struct MergeAdd<lite_metal::TargetType::kX86, int>;
+template struct MergeAdd<lite_metal::TargetType::kX86, int64_t>;
+template struct MergeAdd<lite_metal::TargetType::kX86, float>;
+template struct MergeAdd<lite_metal::TargetType::kX86, double>;
 
 template <typename T>
-struct UpdateToTensor<lite::TargetType::kX86, T> {
-  void operator()(const lite::X86Context& context,
+struct UpdateToTensor<lite_metal::TargetType::kX86, T> {
+  void operator()(const lite_metal::X86Context& context,
                   const ScatterOps& op,
                   const fluid::SelectedRows& input1,
-                  lite::Tensor* input2) {
+                  lite_metal::Tensor* input2) {
     auto in1_height = input1.height();
     auto in2_dims = input2->dims();
     CHECK_EQ(in1_height, in2_dims[0]);

@@ -22,7 +22,7 @@
 #include "lite/fluid/transform.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -31,12 +31,12 @@ struct CastOpTransformFunctor {
   HOSTDEVICE OutT operator()(InT in) const { return static_cast<OutT>(in); }
 };
 
-template <lite::TargetType Target, typename InT>
+template <lite_metal::TargetType Target, typename InT>
 class CastOpFunctor {
  public:
-  CastOpFunctor(const lite::Tensor* in,
-                lite::Tensor* out,
-                const lite::Context<Target>& context)
+  CastOpFunctor(const lite_metal::Tensor* in,
+                lite_metal::Tensor* out,
+                const lite_metal::Context<Target>& context)
       : input(in), output(out), ctx(context) {}
 
   template <typename OutT>
@@ -45,15 +45,15 @@ class CastOpFunctor {
     auto numel = input->dims().production();
     auto* in_end = in_begin + numel;
     auto* out_begin = output->mutable_data<OutT>();
-    paddle::lite::fluid::Transform<lite::TargetType::kX86> trans;
+    paddle::lite_metal::fluid::Transform<lite_metal::TargetType::kX86> trans;
     trans(
         ctx, in_begin, in_end, out_begin, CastOpTransformFunctor<InT, OutT>());
   }
 
  private:
-  const lite::Tensor* input;
-  lite::Tensor* output;
-  const lite::Context<Target>& ctx;
+  const lite_metal::Tensor* input;
+  lite_metal::Tensor* output;
+  const lite_metal::Context<Target>& ctx;
 };
 
 template <typename InT>
@@ -67,9 +67,9 @@ class CastCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto x = param->X;
     auto out = param->Out;
     auto out_dtype = param->out_dtype;
-    paddle::lite::fluid::VisitDataType(
+    paddle::lite_metal::fluid::VisitDataType(
         static_cast<framework::proto::VarType::Type>(out_dtype),
-        CastOpFunctor<lite::TargetType::kX86, InT>(x, out, context));
+        CastOpFunctor<lite_metal::TargetType::kX86, InT>(x, out, context));
   }
   virtual ~CastCompute() = default;
 };

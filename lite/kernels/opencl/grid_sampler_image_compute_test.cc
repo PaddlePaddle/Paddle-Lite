@@ -24,7 +24,7 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void gird_sampler_ref(const float* din,
                       const DDim& in_dims,
@@ -132,7 +132,7 @@ TEST(grid_samler_image2d, compute) {
                 auto kernel = std::move(kernels.front());
                 LOG(INFO) << "get kernel:" << kernel->doc();
 
-                lite::Tensor x, grid, out;
+                lite_metal::Tensor x, grid, out;
                 operators::GridSamplerParam param;
                 param.x = &x;
                 param.grid = &grid;

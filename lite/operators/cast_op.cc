@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool CastOp::CheckShape() const {
@@ -34,11 +34,11 @@ bool CastOp::InferShapeImpl() const {
   return true;
 }
 
-bool CastOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool CastOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
   param_.in_dtype = opdesc.GetAttr<int>("in_dtype");
@@ -50,4 +50,4 @@ bool CastOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(cast, paddle::lite::operators::CastOp);
+REGISTER_LITE_OP(cast, paddle::lite_metal::operators::CastOp);

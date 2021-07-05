@@ -17,7 +17,7 @@
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace xpu {
 
@@ -90,4 +90,4 @@ int LookupTableConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(lookup_table,
                          kXPU,
-                         paddle::lite::subgraph::xpu::LookupTableConverter);
+                         paddle::lite_metal::subgraph::xpu::LookupTableConverter);

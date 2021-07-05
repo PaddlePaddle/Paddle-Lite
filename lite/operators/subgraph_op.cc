@@ -17,23 +17,23 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SubgraphOp::CheckShape() const { return true; }
 
 bool SubgraphOp::InferShapeImpl() const { return CheckShape(); /* enrich me */ }
 
-bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   param_.input_names = op_desc.Input("Inputs");
   param_.output_names = op_desc.Output("Outputs");
   for (auto& input_name : param_.input_names) {
     CHECK(scope->FindVar(input_name));
-    scope->FindVar(input_name)->GetMutable<lite::Tensor>();
+    scope->FindVar(input_name)->GetMutable<lite_metal::Tensor>();
   }
   for (auto& output_name : param_.output_names) {
     CHECK(scope->FindVar(output_name));
-    scope->FindVar(output_name)->GetMutable<lite::Tensor>();
+    scope->FindVar(output_name)->GetMutable<lite_metal::Tensor>();
   }
   param_.input_data_names =
       op_desc.GetAttr<std::vector<std::string>>("input_data_names");
@@ -51,4 +51,4 @@ bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(subgraph, paddle::lite::operators::SubgraphOp);
+REGISTER_LITE_OP(subgraph, paddle::lite_metal::operators::SubgraphOp);

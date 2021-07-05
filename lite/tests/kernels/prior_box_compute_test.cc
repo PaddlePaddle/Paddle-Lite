@@ -19,7 +19,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 const int MALLOC_ALIGN = 64;
 
@@ -68,10 +68,10 @@ inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
   }
 }
 
-void prior_box_compute_ref(const lite::Tensor* input,
-                           const lite::Tensor* image,
-                           lite::Tensor** boxes,
-                           lite::Tensor** variances,
+void prior_box_compute_ref(const lite_metal::Tensor* input,
+                           const lite_metal::Tensor* image,
+                           lite_metal::Tensor** boxes,
+                           lite_metal::Tensor** variances,
                            const std::vector<float>& min_size_,
                            const std::vector<float>& fixed_size_,
                            const std::vector<float>& fixed_ratio_,

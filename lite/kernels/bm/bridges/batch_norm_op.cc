@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -30,10 +30,10 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
+  auto unique_op_name = lite_metal::subgraph::bm::UniqueName(op_type);
   // input
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   std::vector<int32_t> i_x_shape_data(x_dims.size());
@@ -42,16 +42,16 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   int channel_size = x_dims[1];
   auto scale_var_name = op_info->Input("Scale").front();
-  auto scale = scope->FindVar(scale_var_name)->GetMutable<lite::Tensor>();
+  auto scale = scope->FindVar(scale_var_name)->GetMutable<lite_metal::Tensor>();
   auto bias_var_name = op_info->Input("Bias").front();
-  auto bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+  auto bias = scope->FindVar(bias_var_name)->GetMutable<lite_metal::Tensor>();
   auto mean_var_name = op_info->Input("Mean").front();
-  auto mean = scope->FindVar(mean_var_name)->GetMutable<lite::Tensor>();
+  auto mean = scope->FindVar(mean_var_name)->GetMutable<lite_metal::Tensor>();
   auto variance_var_name = op_info->Input("Variance").front();
-  auto variance = scope->FindVar(variance_var_name)->GetMutable<lite::Tensor>();
+  auto variance = scope->FindVar(variance_var_name)->GetMutable<lite_metal::Tensor>();
   // output
   auto output_var_name = op_info->Output("Y").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   const int64_t* output_shape_data =
       const_cast<const int64_t*>(&output_dims.data()[0]);
@@ -60,7 +60,7 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
   auto epsilon = op_info->GetAttr<float>("epsilon");
-  auto unique_bn_out_name = lite::subgraph::bm::UniqueName("batch_norm_out");
+  auto unique_bn_out_name = lite_metal::subgraph::bm::UniqueName("batch_norm_out");
   auto* scale_data = scale->mutable_data<float>();
   auto* bias_data = bias->mutable_data<float>();
   auto* mean_data = mean->mutable_data<float>();
@@ -115,4 +115,4 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(batch_norm,
                          kBM,
-                         paddle::lite::subgraph::bm::BatchNormConverter);
+                         paddle::lite_metal::subgraph::bm::BatchNormConverter);

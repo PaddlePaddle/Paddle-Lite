@@ -59,15 +59,15 @@ DEFINE_int32(flag_act,
 DEFINE_double(leakey_relu_alpha, 1.0, "leakey relu alpha");
 DEFINE_bool(flag_bias, true, "with bias");
 
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::operators::DeformableConvParam DeformableConvParam;
-typedef paddle::lite::operators::ActivationParam ActivationParam;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::operators::DeformableConvParam DeformableConvParam;
+typedef paddle::lite_metal::operators::ActivationParam ActivationParam;
 
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
-                     const paddle::lite::operators::ConvParam& param) {
+                     const paddle::lite_metal::operators::ConvParam& param) {
   DDim dim_out = dim_in;
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
@@ -399,7 +399,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
                                const std::vector<int>& power_mode,
                                const float leakey_relu_scale) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   DeformableConvParam param;
   param.x = new Tensor;
@@ -442,23 +442,23 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFloat));
 
-  paddle::lite::fill_tensor_rand(*param.conv_param.filter, -1.f, 1.f);
-  //  paddle::lite::fill_tensor_const(*param.filter, 1.f);
+  paddle::lite_metal::fill_tensor_rand(*param.conv_param.filter, -1.f, 1.f);
+  //  paddle::lite_metal::fill_tensor_const(*param.filter, 1.f);
   if (flag_bias) {
-    paddle::lite::fill_tensor_rand(*param.conv_param.bias, -1.f, 1.f);
-    //    paddle::lite::fill_tensor_const(*param.bias, 1.f);
+    paddle::lite_metal::fill_tensor_rand(*param.conv_param.bias, -1.f, 1.f);
+    //    paddle::lite_metal::fill_tensor_const(*param.bias, 1.f);
   }
   auto wptr = param.conv_param.filter->data<float>();
   auto bias_ptr = flag_bias ? param.conv_param.bias->data<float>() : nullptr;
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::DeformableConvCompute<PRECISION(kFloat),
+      paddle::lite_metal::kernels::arm::DeformableConvCompute<PRECISION(kFloat),
                                                         PRECISION(kFloat)>
           deformableConv;
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
       for (auto& dim_in : input_dims) {
@@ -485,8 +485,8 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
         param.offset->Resize(
             {num, 2 * group * kernel_size, dim_in[2], dim_in[3]});
         param.mask->Resize({num, group * kernel_size, dim_in[2], dim_in[3]});
-        paddle::lite::fill_tensor_rand(*param.offset, -1.f, 1.f);
-        paddle::lite::fill_tensor_rand(*param.mask, -1.f, 1.f);
+        paddle::lite_metal::fill_tensor_rand(*param.offset, -1.f, 1.f);
+        paddle::lite_metal::fill_tensor_rand(*param.mask, -1.f, 1.f);
         if (dim_out[2] < 1 || dim_out[3] < 1) {
           continue;
         }
@@ -496,8 +496,8 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
         param.x->Resize(dim_in);
         param.output->Resize(dim_out);
 
-        paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
-        // paddle::lite::fill_tensor_const(*param.x, 1.f);
+        paddle::lite_metal::fill_tensor_rand(*param.x, -1.f, 1.f);
+        // paddle::lite_metal::fill_tensor_const(*param.x, 1.f);
         auto din = param.x->data<float>();
 
         Tensor tout_basic;

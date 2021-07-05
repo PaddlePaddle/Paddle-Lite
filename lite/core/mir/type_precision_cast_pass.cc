@@ -23,7 +23,7 @@
 #include "lite/operators/subgraph_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // For the subgraph op, we also need to update the attr 'input_data_names' and
@@ -292,7 +292,7 @@ void PrecisionCastPass::AddCastInst(const Type& from,
                                       .op()
                                       ->scope()
                                       ->Var(cast_op_output_name)
-                                      ->GetMutable<lite::Tensor>();
+                                      ->GetMutable<lite_metal::Tensor>();
     cast_op_output_tensor->set_precision(to.precision());
 
     // Create Calib Instruction.
@@ -369,7 +369,7 @@ void PrecisionCastPass::SetValidPlaces(const std::vector<Place>& valid_places) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(type_precision_cast_pass,
-                  paddle::lite::mir::PrecisionCastPass)
+                  paddle::lite_metal::mir::PrecisionCastPass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kOpenCL)})
     .BindKernel("calib_once")

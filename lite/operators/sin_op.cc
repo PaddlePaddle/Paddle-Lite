@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SinOpLite::CheckShape() const {
@@ -26,18 +26,18 @@ bool SinOpLite::CheckShape() const {
 }
 
 bool SinOpLite::InferShape() {
-  lite::DDim x_dims = param_.X->dims();
+  lite_metal::DDim x_dims = param_.X->dims();
   param_.Out->Resize(x_dims);
 
   return true;
 }
 
-bool SinOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool SinOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
 
-  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
   return true;
 }
@@ -46,4 +46,4 @@ bool SinOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sin, paddle::lite::operators::SinOpLite);
+REGISTER_LITE_OP(sin, paddle::lite_metal::operators::SinOpLite);

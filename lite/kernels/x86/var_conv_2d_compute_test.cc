@@ -23,19 +23,19 @@
 #include "lite/kernels/x86/var_conv_2d_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
-static void im2col_ref(const lite::Tensor& input,
-                       const lite::Tensor* in_row,
-                       const lite::Tensor* in_col,
+static void im2col_ref(const lite_metal::Tensor& input,
+                       const lite_metal::Tensor* in_row,
+                       const lite_metal::Tensor* in_col,
                        const int kernel_h,
                        const int kernel_w,
                        const int stride_h,
                        const int stride_w,
                        const int input_channel,
-                       lite::Tensor* col) {
+                       lite_metal::Tensor* col) {
   int batch = input.lod()[0].size() - 1;
   const auto& bottom_offset = input.lod()[0];
   // 2-D lod info.
@@ -115,18 +115,18 @@ static void im2col_ref(const lite::Tensor& input,
   }
 }
 
-static void var_conv_2d_ref(const lite::Tensor* bottom,
-                            const lite::Tensor* w,
-                            const lite::Tensor* in_row,
-                            const lite::Tensor* in_col,
+static void var_conv_2d_ref(const lite_metal::Tensor* bottom,
+                            const lite_metal::Tensor* w,
+                            const lite_metal::Tensor* in_row,
+                            const lite_metal::Tensor* in_col,
                             const int kernel_h,
                             const int kernel_w,
                             const int stride_h,
                             const int stride_w,
                             const int input_channel,
                             const int output_channel,
-                            lite::Tensor* top,
-                            lite::Tensor* col) {
+                            lite_metal::Tensor* top,
+                            lite_metal::Tensor* col) {
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<X86Context>();
 
@@ -176,7 +176,7 @@ static void var_conv_2d_ref(const lite::Tensor* bottom,
   const auto* w_data = w->data<float>();
   const auto* col_data = col->data<float>();
 
-  auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, float>(context);
+  auto blas = lite_metal::x86::math::GetBlas<lite_metal::TargetType::kX86, float>(context);
   for (int b = 0; b < batch; ++b) {
     int top_im_size = (top_offset[b + 1] - top_offset[b]) / output_channel;
     if (top_im_size == 0) {
@@ -218,8 +218,8 @@ TEST(var_conv_2d_x86, run_test) {
 
   operators::VarConv2DParam param;
 
-  lite::Tensor X, W, ROW, COLUMN;
-  lite::Tensor Out, Col;
+  lite_metal::Tensor X, W, ROW, COLUMN;
+  lite_metal::Tensor Out, Col;
   int kernel_h, kernel_w;
   int stride_h, stride_w;
   int input_channel, output_channel;
@@ -286,7 +286,7 @@ TEST(var_conv_2d_x86, run_test) {
   var_conv_2d.SetContext(std::move(ctx));
   var_conv_2d.Run();
 
-  lite::Tensor top_ref, col_ref;
+  lite_metal::Tensor top_ref, col_ref;
   var_conv_2d_ref(&X,
                   &W,
                   &ROW,

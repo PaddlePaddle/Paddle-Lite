@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SearchSeqSoftmaxOp::CheckShape() const {
@@ -32,11 +32,11 @@ bool SearchSeqSoftmaxOp::InferShapeImpl() const {
 }
 
 bool SearchSeqSoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                    lite::Scope *scope) {
-  param_.x = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
+                                    lite_metal::Scope *scope) {
+  param_.x = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("X").front())->Get<lite_metal::Tensor>());
   param_.output =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   param_.axis = 1;
 
   CHECK(param_.x);
@@ -49,4 +49,4 @@ bool SearchSeqSoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(search_seq_softmax,
-                 paddle::lite::operators::SearchSeqSoftmaxOp);
+                 paddle::lite_metal::operators::SearchSeqSoftmaxOp);

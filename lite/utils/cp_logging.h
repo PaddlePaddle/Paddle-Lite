@@ -46,13 +46,13 @@
 
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON)
 // OPT_LOG SYSTEM
-#define OPT_LOG paddle::lite::OptPrinter()
-#define OPT_LOG_ERROR paddle::lite::OptErrorPrinter()
-#define OPT_LOG_FATAL paddle::lite::OptFatalPrinter()
+#define OPT_LOG paddle::lite_metal::OptPrinter()
+#define OPT_LOG_ERROR paddle::lite_metal::OptErrorPrinter()
+#define OPT_LOG_FATAL paddle::lite_metal::OptFatalPrinter()
 #define OPT_LOG_DEBUG VLOG(1)
 #include <iostream>
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class OptPrinter {
  public:

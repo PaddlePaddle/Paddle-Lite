@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -152,9 +152,9 @@ void nearest_interp(const float16* src,
 
 void NearestInterpCompute::PrepareForRun() {
   auto& param = Param<operators::InterpolateParam>();
-  lite::Tensor* X = param.X;
-  lite::Tensor* OutSize = param.OutSize;
-  lite::Tensor* Out = param.Out;
+  lite_metal::Tensor* X = param.X;
+  lite_metal::Tensor* OutSize = param.OutSize;
+  lite_metal::Tensor* Out = param.Out;
   Out->mutable_data<float16>();
 
   zynqmp::ResizeParam& norm_param = pe_.param();
@@ -166,7 +166,7 @@ void NearestInterpCompute::PrepareForRun() {
 }
 
 inline std::vector<int> get_new_shape(
-    std::vector<const lite::Tensor*> list_new_shape_tensor) {
+    std::vector<const lite_metal::Tensor*> list_new_shape_tensor) {
   // get tensor from
   std::vector<int> vec_new_shape;
   for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
@@ -180,17 +180,17 @@ template <typename T>
 inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
   std::vector<T> vec_new_data;
   auto* new_data = new_data_tensor->data<T>();
-  lite::Tensor cpu_starts_tensor;
+  lite_metal::Tensor cpu_starts_tensor;
   vec_new_data =
       std::vector<T>(new_data, new_data + new_data_tensor->dims().production());
   return vec_new_data;
 }
 
-void interpolate(lite::Tensor* X,
-                 lite::Tensor* OutSize,
-                 std::vector<const lite::Tensor*> SizeTensor,
-                 lite::Tensor* Scale,
-                 lite::Tensor* Out,
+void interpolate(lite_metal::Tensor* X,
+                 lite_metal::Tensor* OutSize,
+                 std::vector<const lite_metal::Tensor*> SizeTensor,
+                 lite_metal::Tensor* Scale,
+                 lite_metal::Tensor* Out,
                  int out_height,
                  int out_width,
                  float scale,
@@ -255,11 +255,11 @@ void interpolate(lite::Tensor* X,
 
 void NearestInterpCompute::Run() {
   auto& param = Param<operators::InterpolateParam>();
-  lite::Tensor* X = param.X;
-  lite::Tensor* OutSize = param.OutSize;
+  lite_metal::Tensor* X = param.X;
+  lite_metal::Tensor* OutSize = param.OutSize;
   auto SizeTensor = param.SizeTensor;
   auto Scale = param.Scale;
-  lite::Tensor* Out = param.Out;
+  lite_metal::Tensor* Out = param.Out;
   float scale = param.scale;
   int out_w = param.out_w;
   int out_h = param.out_h;
@@ -285,14 +285,14 @@ void NearestInterpCompute::Run() {
 
 } /* namespace fpga */
 } /* namespace kernels */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
 REGISTER_LITE_KERNEL(bilinear_interp,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::BilinearInterpCompute,
+                     paddle::lite_metal::kernels::fpga::BilinearInterpCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -313,7 +313,7 @@ REGISTER_LITE_KERNEL(nearest_interp,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::NearestInterpCompute,
+                     paddle::lite_metal::kernels::fpga::NearestInterpCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

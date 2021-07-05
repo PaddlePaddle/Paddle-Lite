@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 const OpInfo *mir::Node::Stmt::op_info() const {
   CHECK(op_);
@@ -40,9 +40,9 @@ OpInfo *mir::Node::Stmt::mutable_op_info() {
 
 void mir::Node::Stmt::ResetOp(const cpp::OpDesc &op_desc,
                               const std::vector<Place> &valid_places,
-                              lite::Scope *scope) {
+                              lite_metal::Scope *scope) {
   CHECK((op_ && op_->scope()) || scope) << "Either scope should be set";
-  lite::Scope *the_scope = scope ? scope : op_->scope();
+  lite_metal::Scope *the_scope = scope ? scope : op_->scope();
   op_->Attach(op_desc, the_scope);
   // Recreate the kernels with the latest OpInfo.
   valid_kernels_.clear();

@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -83,7 +83,7 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 REGISTER_SUBGRAPH_BRIDGE(transpose,
                          kMLU,
-                         paddle::lite::subgraph::mlu::TransposeConverter);
+                         paddle::lite_metal::subgraph::mlu::TransposeConverter);
 REGISTER_SUBGRAPH_BRIDGE(transpose2,
                          kMLU,
-                         paddle::lite::subgraph::mlu::TransposeConverter);
+                         paddle::lite_metal::subgraph::mlu::TransposeConverter);

@@ -26,27 +26,27 @@
 #endif  // LITE_ON_TINY_PUBLISH
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace model_parser {
 namespace tensor {
 
-void set_lod(lite::Tensor* tensor,
+void set_lod(lite_metal::Tensor* tensor,
              const std::vector<std::vector<uint64_t>>& lod);
 
-const std::vector<std::vector<uint64_t>>& get_lod(const lite::Tensor& tensor);
+const std::vector<std::vector<uint64_t>>& get_lod(const lite_metal::Tensor& tensor);
 
-void set_allocation(lite::Tensor* tensor,
+void set_allocation(lite_metal::Tensor* tensor,
                     const std::vector<int64_t>& shape,
                     paddle::lite_api::PrecisionType precision);
 
-void set_allocation(const lite::Tensor& tensor,
+void set_allocation(const lite_metal::Tensor& tensor,
                     TensorInfoWriteAPI* tensor_info);
 
-size_t get_bytes_size(const lite::Tensor& tensor);
+size_t get_bytes_size(const lite_metal::Tensor& tensor);
 
-void* get_allocation(lite::Tensor* tensor);
+void* get_allocation(lite_metal::Tensor* tensor);
 
-const void* get_allocation(const lite::Tensor& tensor);
+const void* get_allocation(const lite_metal::Tensor& tensor);
 }  // namespace tensor
 
 namespace pb {
@@ -54,7 +54,7 @@ class LoDTensorDeserializer {
  public:
   LoDTensorDeserializer() : buf_(new Buffer) {}
 
-  void ForwardRead(lite::Tensor* tensor, ByteReader* reader);
+  void ForwardRead(lite_metal::Tensor* tensor, ByteReader* reader);
 
  private:
   std::unique_ptr<Buffer> buf_;
@@ -64,7 +64,7 @@ class LoDTensorDeserializer {
 class LoDTensorSerializer {
  public:
   LoDTensorSerializer() : buf_(new Buffer) {}
-  void ForwardWrite(const lite::Tensor& tensor,
+  void ForwardWrite(const lite_metal::Tensor& tensor,
                     ByteWriter* writer,
                     uint32_t version = 0);
 

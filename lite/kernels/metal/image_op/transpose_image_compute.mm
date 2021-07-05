@@ -21,7 +21,7 @@
 #include <algorithm>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -116,7 +116,7 @@ REGISTER_LITE_KERNEL(transpose,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::TransposeImageCompute,
+                     paddle::lite_metal::kernels::metal::TransposeImageCompute,
                      def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -132,7 +132,7 @@ REGISTER_LITE_KERNEL(transpose,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::TransposeImageCompute,
+                     paddle::lite_metal::kernels::metal::TransposeImageCompute,
                      def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
@@ -144,7 +144,7 @@ REGISTER_LITE_KERNEL(transpose2,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::TransposeImageCompute,
+                     paddle::lite_metal::kernels::metal::TransposeImageCompute,
                      def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -164,7 +164,7 @@ REGISTER_LITE_KERNEL(transpose2,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::TransposeImageCompute,
+                     paddle::lite_metal::kernels::metal::TransposeImageCompute,
                      def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

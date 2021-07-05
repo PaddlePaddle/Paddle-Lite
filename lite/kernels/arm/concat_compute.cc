@@ -24,7 +24,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -38,9 +38,9 @@ std::vector<size_t> stride_numel(const DDim& ddim) {
 }
 
 template <typename T>
-void ConcatFunc(const std::vector<lite::Tensor*> inputs,
+void ConcatFunc(const std::vector<lite_metal::Tensor*> inputs,
                 int axis,
-                lite::Tensor* out) {
+                lite_metal::Tensor* out) {
   // Sometimes direct copies will be faster, this maybe need deeply analysis.
   if (axis == 0 && inputs.size() < 10) {
     size_t output_offset = 0;
@@ -55,13 +55,13 @@ void ConcatFunc(const std::vector<lite::Tensor*> inputs,
       output_offset += in_stride[0];
     }
   } else {
-    lite::arm::math::concat_func<T>(inputs, axis, out);
+    lite_metal::arm::math::concat_func<T>(inputs, axis, out);
   }
 }
 
 void ConcatCompute::Run() {
   auto& param = Param<operators::ConcatParam>();
-  std::vector<lite::Tensor*> inputs = param.x;
+  std::vector<lite_metal::Tensor*> inputs = param.x;
   CHECK_GE(inputs.size(), 1);
   auto* out = param.output;
   int axis = param.axis;
@@ -95,7 +95,7 @@ void ConcatCompute::Run() {
             auto dout = tmp.mutable_data<float>();
             auto din = tensor->data<float16_t>();
             auto size = tmp.numel();
-            lite::arm::math::fp16::fp16_to_fp32(din, dout, tensor->numel());
+            lite_metal::arm::math::fp16::fp16_to_fp32(din, dout, tensor->numel());
             tensor->CopyDataFrom(tmp);
             continue;
           } else if (tensor->precision() == PrecisionType::kFloat &&
@@ -109,7 +109,7 @@ void ConcatCompute::Run() {
             auto dout = tmp.mutable_data<float16_t>();
             auto din = tensor->data<float>();
             auto size = tmp.numel();
-            lite::arm::math::fp16::fp32_to_fp16(din, dout, tensor->numel());
+            lite_metal::arm::math::fp16::fp32_to_fp16(din, dout, tensor->numel());
             tensor->CopyDataFrom(tmp);
             continue;
           }
@@ -152,7 +152,7 @@ void ConcatCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    concat, kARM, kAny, kNCHW, paddle::lite::kernels::arm::ConcatCompute, def)
+    concat, kARM, kAny, kNCHW, paddle::lite_metal::kernels::arm::ConcatCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("AxisTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})

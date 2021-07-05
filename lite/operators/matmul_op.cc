@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MatMulOpLite::CheckShape() const {
@@ -131,7 +131,7 @@ bool MatMulOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   CHECK(!op_desc.Input("X").empty());
   CHECK(!op_desc.Input("Y").empty());
@@ -141,9 +141,9 @@ bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto Y = op_desc.Input("Y").front();
   auto Out = op_desc.Output("Out").front();
 
-  param_.X = GetVar<lite::Tensor>(scope, X);
-  param_.Y = GetVar<lite::Tensor>(scope, Y);
-  param_.Out = GetMutableVar<lite::Tensor>(scope, Out);
+  param_.X = GetVar<lite_metal::Tensor>(scope, X);
+  param_.Y = GetVar<lite_metal::Tensor>(scope, Y);
+  param_.Out = GetMutableVar<lite_metal::Tensor>(scope, Out);
   param_.transpose_X = op_desc.GetAttr<bool>("transpose_X");
   param_.transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
   param_.alpha = op_desc.GetAttr<float>("alpha");
@@ -168,4 +168,4 @@ bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(matmul, paddle::lite::operators::MatMulOpLite);
+REGISTER_LITE_OP(matmul, paddle::lite_metal::operators::MatMulOpLite);

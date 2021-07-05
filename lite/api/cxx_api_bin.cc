@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 using Time = decltype(std::chrono::high_resolution_clock::now());
 Time time() { return std::chrono::high_resolution_clock::now(); }
@@ -33,7 +33,7 @@ void Run(const char* model_dir, int repeat) {
 #ifdef LITE_WITH_ARM
   DeviceInfo::Init();
 #endif
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places({
       Place{TARGET(kARM), PRECISION(kInt8)},
       Place{TARGET(kARM), PRECISION(kFloat)},
@@ -67,7 +67,7 @@ void Run(const char* model_dir, int repeat) {
 
 int main(int argc, char** argv) {
   CHECK_EQ(argc, 3) << "usage: ./cmd <model_dir> <repeat>";
-  paddle::lite::Run(argv[1], atoi(argv[2]));
+  paddle::lite_metal::Run(argv[1], atoi(argv[2]));
 
   return 0;
 }

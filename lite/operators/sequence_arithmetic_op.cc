@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SequenceArithmeticOp::CheckShape() const {
@@ -35,7 +35,7 @@ bool SequenceArithmeticOp::InferShapeImpl() const {
 }
 
 bool SequenceArithmeticOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                      lite::Scope *scope) {
+                                      lite_metal::Scope *scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Y = scope->FindTensor(opdesc.Input("Y").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
@@ -53,6 +53,6 @@ bool SequenceArithmeticOp::AttachImpl(const cpp::OpDesc &opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(sequence_arithmetic,
-                 paddle::lite::operators::SequenceArithmeticOp);
+                 paddle::lite_metal::operators::SequenceArithmeticOp);
 REGISTER_LITE_OP(search_seq_arithmetic,
-                 paddle::lite::operators::SequenceArithmeticOp);
+                 paddle::lite_metal::operators::SequenceArithmeticOp);

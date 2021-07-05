@@ -23,7 +23,7 @@
 #include "lite/operators/activation_ops.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 

@@ -24,7 +24,7 @@
 #include "lite/kernels/imagination_nna/bridges/graph.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace imagination_nna {
 
@@ -53,7 +53,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
   std::vector<std::string> device_onames_;
   std::vector<imgdnn_input> device_itensors_;
   std::vector<imgdnn_output> device_otensors_;
-  lite::imagination_nna::ImgdnnManager imgdnn_mgr_;
+  lite_metal::imagination_nna::ImgdnnManager imgdnn_mgr_;
   bool device_program_ready{false};
 };
 

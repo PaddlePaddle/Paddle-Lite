@@ -21,7 +21,7 @@
 #include "lite/backends/apu/neuron_adapter.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace apu {
 
 class Device {

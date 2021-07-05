@@ -15,7 +15,7 @@
 #include "lite/operators/squeeze_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 static DDim GetOutputShape(const std::vector<int> &squeeze_dims,
@@ -83,7 +83,7 @@ bool SqueezeOp::InferShapeImpl() const {
   return true;
 }
 
-bool SqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool SqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
@@ -116,7 +116,7 @@ bool Squeeze2Op::InferShapeImpl() const {
   return true;
 }
 
-bool Squeeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool Squeeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   SqueezeOp::AttachImpl(opdesc, scope);
   param_.XShape = scope->FindMutableTensor(opdesc.Output("XShape").front());
   CHECK(param_.XShape) << "Output(XShape) of SqueezeOp should not be null.";
@@ -127,5 +127,5 @@ bool Squeeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(squeeze, paddle::lite::operators::SqueezeOp);
-REGISTER_LITE_OP(squeeze2, paddle::lite::operators::Squeeze2Op);
+REGISTER_LITE_OP(squeeze, paddle::lite_metal::operators::SqueezeOp);
+REGISTER_LITE_OP(squeeze2, paddle::lite_metal::operators::Squeeze2Op);

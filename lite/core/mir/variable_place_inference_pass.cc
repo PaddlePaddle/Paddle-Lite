@@ -17,7 +17,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void VariablePlaceInferencePass::Apply(const std::unique_ptr<SSAGraph> &graph) {
@@ -32,5 +32,5 @@ void VariablePlaceInferencePass::Apply(const std::unique_ptr<SSAGraph> &graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(variable_place_inference_pass,
-                  paddle::lite::mir::VariablePlaceInferencePass)
+                  paddle::lite_metal::mir::VariablePlaceInferencePass)
     .BindTargets({TARGET(kAny)});

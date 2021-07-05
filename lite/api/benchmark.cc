@@ -177,7 +177,7 @@ void OutputOptModel(const std::string& save_optimized_model_dir) {
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   int ret = system(
-      paddle::lite::string_format("rm -rf %s", save_optimized_model_dir.c_str())
+      paddle::lite_metal::string_format("rm -rf %s", save_optimized_model_dir.c_str())
           .c_str());
   if (ret == 0) {
     LOG(INFO) << "Delete old optimized model " << save_optimized_model_dir;

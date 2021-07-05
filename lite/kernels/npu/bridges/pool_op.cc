@@ -18,7 +18,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -90,7 +90,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     adaptive = op_info->GetAttr<bool>("adaptive");
   }
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
-  lite::operators::UpdatePadding(&paddings,
+  lite_metal::operators::UpdatePadding(&paddings,
                                  global_pooling,
                                  adaptive,
                                  padding_algorithm,
@@ -128,4 +128,4 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(pool2d,
                          kNPU,
-                         paddle::lite::subgraph::npu::PoolConverter);
+                         paddle::lite_metal::subgraph::npu::PoolConverter);

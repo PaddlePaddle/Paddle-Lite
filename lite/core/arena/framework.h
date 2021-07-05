@@ -31,7 +31,7 @@
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arena {
 
 /*

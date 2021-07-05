@@ -16,7 +16,7 @@
 #include "lite/kernels/imagination_nna/bridges/graph.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace imagination_nna {
 
@@ -74,4 +74,4 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     softmax,
     kImaginationNNA,
-    paddle::lite::subgraph::imagination_nna::SoftmaxConverter);
+    paddle::lite_metal::subgraph::imagination_nna::SoftmaxConverter);

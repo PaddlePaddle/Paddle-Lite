@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -115,4 +115,4 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(fc, kNPU, paddle::lite::subgraph::npu::FCConverter);
+REGISTER_SUBGRAPH_BRIDGE(fc, kNPU, paddle::lite_metal::subgraph::npu::FCConverter);

@@ -19,7 +19,7 @@
 #include "lite/core/scope.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class SequenceReverseOp : public OpLite {
@@ -28,7 +28,7 @@ class SequenceReverseOp : public OpLite {
   explicit SequenceReverseOp(const std::string &op_type) : OpLite(op_type) {}
   bool CheckShape() const override;
   bool InferShapeImpl() const override;
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "sequence_reverse"; }
 

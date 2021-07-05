@@ -20,20 +20,20 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
 void BilinearInterpCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  lite::Tensor* X = param.X;
+  lite_metal::Tensor* X = param.X;
   int n = X->dims()[0];
   int c = X->dims()[1];
   int in_h = X->dims()[2];
   int in_w = X->dims()[3];
 
-  lite::Tensor* Out = param.Out;
+  lite_metal::Tensor* Out = param.Out;
   int out_h = Out->dims()[2];
   int out_w = Out->dims()[3];
   int align_mode = param.align_mode;
@@ -65,13 +65,13 @@ void BilinearInterpCompute::Run() {
 void NearestInterpCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  lite::Tensor* X = param.X;
+  lite_metal::Tensor* X = param.X;
   int n = X->dims()[0];
   int c = X->dims()[1];
   int in_h = X->dims()[2];
   int in_w = X->dims()[3];
 
-  lite::Tensor* Out = param.Out;
+  lite_metal::Tensor* Out = param.Out;
   int out_h = Out->dims()[2];
   int out_w = Out->dims()[3];
   bool align_corners = param.align_corners;
@@ -102,7 +102,7 @@ REGISTER_LITE_KERNEL(bilinear_interp,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::BilinearInterpCompute,
+                     paddle::lite_metal::kernels::xpu::BilinearInterpCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("OutSize",
@@ -117,7 +117,7 @@ REGISTER_LITE_KERNEL(bilinear_interp_v2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::BilinearInterpCompute,
+                     paddle::lite_metal::kernels::xpu::BilinearInterpCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("OutSize",
@@ -132,7 +132,7 @@ REGISTER_LITE_KERNEL(nearest_interp,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::NearestInterpCompute,
+                     paddle::lite_metal::kernels::xpu::NearestInterpCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("OutSize",
@@ -147,7 +147,7 @@ REGISTER_LITE_KERNEL(nearest_interp_v2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::NearestInterpCompute,
+                     paddle::lite_metal::kernels::xpu::NearestInterpCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("OutSize",

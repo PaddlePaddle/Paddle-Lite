@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 class Squeeze2MatmulFusePass : public ProgramPass {

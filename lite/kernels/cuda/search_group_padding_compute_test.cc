@@ -20,7 +20,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -28,10 +28,10 @@ TEST(search_group_padding_cuda, run_test) {
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();
 
-  lite::Tensor x, x_cpu, x_ref;
-  lite::Tensor out_emb_padding, out_emb_padding_cpu, out_emb_padding_ref;
-  lite::Tensor out_new, out_new_cpu, out_new_ref;
-  lite::Tensor out_padding, out_padding_cpu, out_padding_ref;
+  lite_metal::Tensor x, x_cpu, x_ref;
+  lite_metal::Tensor out_emb_padding, out_emb_padding_cpu, out_emb_padding_ref;
+  lite_metal::Tensor out_new, out_new_cpu, out_new_ref;
+  lite_metal::Tensor out_padding, out_padding_cpu, out_padding_ref;
 
   int x_dims0 = 2;
   int x_dims1 = 3;
@@ -70,7 +70,7 @@ TEST(search_group_padding_cuda, run_test) {
     x_cpu_data[i] = static_cast<float>(i);
     x_ref_data[i] = static_cast<float>(i);
   }
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
   out_emb_padding_ref_data[0] = 0.f;
   out_emb_padding_ref_data[1] = 1.f;
   out_emb_padding_ref_data[2] = 2.f;

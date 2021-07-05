@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool IsEmptyOp::CheckShape() const {
@@ -30,7 +30,7 @@ bool IsEmptyOp::InferShapeImpl() const {
   return true;
 }
 
-bool IsEmptyOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool IsEmptyOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   CHECK(param_.X);
@@ -42,4 +42,4 @@ bool IsEmptyOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(is_empty, paddle::lite::operators::IsEmptyOp);
+REGISTER_LITE_OP(is_empty, paddle::lite_metal::operators::IsEmptyOp);

@@ -17,7 +17,7 @@
 #include "lite/backends/x86/jit/registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace gen {
 
@@ -179,7 +179,7 @@ DECLARE_BLAS_CREATOR(VAddBias);
 }  // namespace lite
 }  // namespace paddle
 
-namespace gen = paddle::lite::jit::gen;
+namespace gen = paddle::lite_metal::jit::gen;
 
 REGISTER_JITKERNEL_GEN_LITE(kVMul, gen::VMulCreator);
 REGISTER_JITKERNEL_GEN_LITE(kVAdd, gen::VAddCreator);

@@ -18,7 +18,7 @@
 #include "lite/backends/x86/jit/registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace gen {
 
@@ -154,7 +154,7 @@ size_t VTanhCreator::CodeSize(const int& d) const {
 }  // namespace lite
 }  // namespace paddle
 
-namespace gen = paddle::lite::jit::gen;
+namespace gen = paddle::lite_metal::jit::gen;
 
 REGISTER_JITKERNEL_GEN_LITE(kVRelu, gen::VReluCreator);
 REGISTER_JITKERNEL_GEN_LITE(kVSquare, gen::VSquareCreator);

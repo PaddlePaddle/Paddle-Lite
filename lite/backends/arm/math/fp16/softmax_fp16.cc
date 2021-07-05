@@ -16,7 +16,7 @@
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 namespace fp16 {

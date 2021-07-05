@@ -24,7 +24,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -186,7 +186,7 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
   std::string doc() { return "Concat using cl::Buffer, kFloat"; }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -208,7 +208,7 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::opencl::ConcatCompute Concat_buffer;
+typedef paddle::lite_metal::kernels::opencl::ConcatCompute Concat_buffer;
 
 REGISTER_LITE_KERNEL(concat, kOpenCL, kFloat, kNCHW, Concat_buffer, def)
     .BindInput("X",

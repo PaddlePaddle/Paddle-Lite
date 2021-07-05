@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 const char *opencl_error_to_str(cl_int error);
 

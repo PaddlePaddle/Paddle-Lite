@@ -20,12 +20,12 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-using Tensor = lite::Tensor;
-using DDim = lite::DDim;
+using Tensor = lite_metal::Tensor;
+using DDim = lite_metal::DDim;
 
 #define IN(n, c, h, w)                                 \
   input_data[w + h * input_w + c * input_h * input_w + \
@@ -35,7 +35,7 @@ using DDim = lite::DDim;
               n * output_c * output_h * output_w]
 
 template <typename Dtype>
-void nchw2nhwc_ref(lite::Tensor* input, lite::Tensor* output) {
+void nchw2nhwc_ref(lite_metal::Tensor* input, lite_metal::Tensor* output) {
   auto* input_data = input->data<Dtype>();
   auto* output_data = output->mutable_data<Dtype>();
 
@@ -69,7 +69,7 @@ void nchw2nhwc_ref(lite::Tensor* input, lite::Tensor* output) {
               n * output_h * output_w * output_c]
 
 template <typename Dtype>
-void nhwc2nchw_ref(lite::Tensor* input, lite::Tensor* output) {
+void nhwc2nchw_ref(lite_metal::Tensor* input, lite_metal::Tensor* output) {
   auto* input_data = input->data<Dtype>();
   auto* output_data = output->mutable_data<Dtype>();
 
@@ -262,11 +262,11 @@ TEST(pool_cuda, compute) {
   operators::PoolParam param;
   pool.SetContext(std::move(ctx));
 
-  lite::Tensor x;
-  lite::Tensor x_cpu;
-  lite::Tensor output;
-  lite::Tensor output_cpu;
-  lite::Tensor output_ref;
+  lite_metal::Tensor x;
+  lite_metal::Tensor x_cpu;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_cpu;
+  lite_metal::Tensor output_ref;
   for (auto pooling_type : {"max", "avg"}) {
     for (auto ceil_mode : {true, false}) {
       for (auto global_pooling : {true, false}) {
@@ -372,11 +372,11 @@ TEST(pool_cuda, nhwc) {
   operators::PoolParam param;
   pool.SetContext(std::move(ctx));
 
-  lite::Tensor x, temp;
-  lite::Tensor x_cpu;
-  lite::Tensor output;
-  lite::Tensor output_cpu, output_temp;
-  lite::Tensor output_ref;
+  lite_metal::Tensor x, temp;
+  lite_metal::Tensor x_cpu;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_cpu, output_temp;
+  lite_metal::Tensor output_ref;
   for (auto pooling_type : {"max", "avg"}) {
     for (auto ceil_mode : {false}) {
       for (auto global_pooling : {true, false}) {

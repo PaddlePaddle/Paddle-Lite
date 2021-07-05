@@ -23,14 +23,14 @@ limitations under the License. */
 #include "lite/fluid/eigen.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 template <typename T,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenMatrix = lite::fluid::EigenMatrix<T, MajorType, IndexType>;
+using EigenMatrix = lite_metal::fluid::EigenMatrix<T, MajorType, IndexType>;
 
 template <typename T>
 struct ValueClip {
@@ -40,11 +40,11 @@ struct ValueClip {
   }
 };
 
-template <lite::TargetType Target, typename T, bool is_test>
-void SoftmaxEigen(const lite::Context<Target>& context,
+template <lite_metal::TargetType Target, typename T, bool is_test>
+void SoftmaxEigen(const lite_metal::Context<Target>& context,
                   const int axis_dim,
-                  const lite::Tensor* X,
-                  lite::Tensor* Y) {
+                  const lite_metal::Tensor* X,
+                  lite_metal::Tensor* Y) {
   constexpr int kBatchDim = 0;
   constexpr int kClassDim = 1;
 
@@ -68,9 +68,9 @@ void SoftmaxEigen(const lite::Context<Target>& context,
                              .broadcast(one_by_class))
                             .unaryExpr(ValueClip<T>());
 
-  softmax.device(typename lite::fluid::EigenDevice<Target>::Type()) =
+  softmax.device(typename lite_metal::fluid::EigenDevice<Target>::Type()) =
       shifted_logits.exp();
-  softmax.device(typename lite::fluid::EigenDevice<Target>::Type()) =
+  softmax.device(typename lite_metal::fluid::EigenDevice<Target>::Type()) =
       (softmax *
        softmax.reshape(batch_axis_remain)
            .sum(along_class)
@@ -79,26 +79,26 @@ void SoftmaxEigen(const lite::Context<Target>& context,
            .broadcast(one_axis));
 }
 
-template <lite::TargetType Target, typename T, bool is_test, typename Enable>
+template <lite_metal::TargetType Target, typename T, bool is_test, typename Enable>
 void SoftmaxFunctor<Target, T, is_test, Enable>::operator()(
-    const lite::Context<Target>& context,
+    const lite_metal::Context<Target>& context,
     const int axis_dim,
-    const lite::Tensor* X,
-    lite::Tensor* Y) {
-  SoftmaxEigen<lite::Context<Target>, T, is_test>(context, axis_dim, X, Y);
+    const lite_metal::Tensor* X,
+    lite_metal::Tensor* Y) {
+  SoftmaxEigen<lite_metal::Context<Target>, T, is_test>(context, axis_dim, X, Y);
 }
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 using enable_if_CPU = typename std::enable_if<
-    std::is_same<lite::Context<Target>, lite::X86Context>::value>::type;
+    std::is_same<lite_metal::Context<Target>, lite_metal::X86Context>::value>::type;
 
-template <lite::TargetType Target, typename T, bool is_test>
+template <lite_metal::TargetType Target, typename T, bool is_test>
 class SoftmaxFunctor<Target, T, is_test, enable_if_CPU<Target>> {
  public:
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const int axis_dim,
-                  const lite::Tensor* X,
-                  lite::Tensor* Y) {
+                  const lite_metal::Tensor* X,
+                  lite_metal::Tensor* Y) {
     const auto& in_dims = X->dims();
     constexpr int kBatchDim = 0;
     constexpr int kClassDim = 1;
@@ -107,22 +107,22 @@ class SoftmaxFunctor<Target, T, is_test, enable_if_CPU<Target>> {
     const int batch_size = in_dims[kBatchDim];
     const int num_remain = num_classes / axis_dim;
 
-    if (num_remain == 1 && lite::x86::MayIUse(lite::x86::avx)) {
+    if (num_remain == 1 && lite_metal::x86::MayIUse(lite_metal::x86::avx)) {
       const T* in_data = X->template data<T>();
       auto* out_data = Y->template mutable_data<T>();
       for (int bs = 0; bs < batch_size; ++bs) {
         T max_val = *std::max_element(in_data, in_data + num_classes);
         max_val *= static_cast<T>(-1);
-        vec_add_bias<T, lite::x86::avx>(
+        vec_add_bias<T, lite_metal::x86::avx>(
             num_classes, max_val, in_data, out_data);
-        vec_clip<T, lite::x86::avx>(
+        vec_clip<T, lite_metal::x86::avx>(
             num_classes, static_cast<T>(-64), out_data, out_data);
         vec_exp<T>(num_classes, out_data, out_data);
 
         T sum = 0;
-        vec_sum<T, lite::x86::avx>(num_classes, out_data, &sum);
+        vec_sum<T, lite_metal::x86::avx>(num_classes, out_data, &sum);
         sum = static_cast<T>(1) / sum;
-        vec_scal<T, lite::x86::avx>(num_classes, sum, out_data, out_data);
+        vec_scal<T, lite_metal::x86::avx>(num_classes, sum, out_data, out_data);
 
         in_data += num_classes;
         out_data += num_classes;
@@ -133,13 +133,13 @@ class SoftmaxFunctor<Target, T, is_test, enable_if_CPU<Target>> {
   }
 };
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 class SoftmaxFunctor<Target, float, true, enable_if_CPU<Target>> {
  public:
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const int axis_dim,
-                  const lite::Tensor* X,
-                  lite::Tensor* Y) {
+                  const lite_metal::Tensor* X,
+                  lite_metal::Tensor* Y) {
     const auto& in_dims = X->dims();
     const float* in_data = X->data<float>();
     float* out_data = Y->mutable_data<float>();
@@ -148,7 +148,7 @@ class SoftmaxFunctor<Target, float, true, enable_if_CPU<Target>> {
 #ifdef PADDLE_WITH_MKLML
     // 2D data. Batch x C
     auto compute_softmax =
-        lite::jit::KernelFuncs<lite::jit::SoftmaxTuple<float>,
+        lite_metal::jit::KernelFuncs<lite_metal::jit::SoftmaxTuple<float>,
                                fluid::CPUPlace>::Cache()
             .At(in_dims[kClassDim]);
     compute_softmax(in_data,
@@ -187,12 +187,12 @@ class SoftmaxFunctor<Target, float, true, enable_if_CPU<Target>> {
   }
 };
 
-template <lite::TargetType Target, typename T>
-void SoftmaxGradEigen(const lite::Context<Target>& context,
+template <lite_metal::TargetType Target, typename T>
+void SoftmaxGradEigen(const lite_metal::Context<Target>& context,
                       const int axis_dim,
-                      const lite::Tensor* y,
-                      const lite::Tensor* y_grad,
-                      lite::Tensor* x_grad) {
+                      const lite_metal::Tensor* y,
+                      const lite_metal::Tensor* y_grad,
+                      lite_metal::Tensor* x_grad) {
   auto softmax = EigenMatrix<T>::From(*y);
   auto softmax_grad = EigenMatrix<T>::From(*y_grad);
   auto logits_grad = EigenMatrix<T>::From(*x_grad);
@@ -217,29 +217,29 @@ void SoftmaxGradEigen(const lite::Context<Target>& context,
                  .broadcast(one_axis);
   // logits_grad.device(*context.eigen_device()) = (softmax_grad - dot) *
   // softmax;
-  logits_grad.device(typename lite::fluid::EigenDevice<Target>::Type()) =
+  logits_grad.device(typename lite_metal::fluid::EigenDevice<Target>::Type()) =
       (softmax_grad - dot) * softmax;
 }
 
-template <lite::TargetType Target, typename T, typename Enable>
+template <lite_metal::TargetType Target, typename T, typename Enable>
 void SoftmaxGradFunctor<Target, T, Enable>::operator()(
-    const lite::Context<Target>& context,
+    const lite_metal::Context<Target>& context,
     const int axis_dim,
-    const lite::Tensor* y,
-    const lite::Tensor* y_grad,
-    lite::Tensor* x_grad) {
-  SoftmaxGradEigen<lite::Context<Target>, T>(
+    const lite_metal::Tensor* y,
+    const lite_metal::Tensor* y_grad,
+    lite_metal::Tensor* x_grad) {
+  SoftmaxGradEigen<lite_metal::Context<Target>, T>(
       context, axis_dim, y, y_grad, x_grad);
 }
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class SoftmaxGradFunctor<Target, T, enable_if_CPU<Target>> {
  public:
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const int axis_dim,
-                  const lite::Tensor* y,
-                  const lite::Tensor* y_grad,
-                  lite::Tensor* x_grad) {
+                  const lite_metal::Tensor* y,
+                  const lite_metal::Tensor* y_grad,
+                  lite_metal::Tensor* x_grad) {
     auto out_dims = y->dims();
     constexpr int kBatchDim = 0;
     constexpr int kClassDim = 1;
@@ -247,17 +247,17 @@ class SoftmaxGradFunctor<Target, T, enable_if_CPU<Target>> {
     const int batch_size = out_dims[kBatchDim];
     const int num_remain = num_classes / axis_dim;
 
-    if (num_remain == 1 && lite::x86::MayIUse(lite::x86::avx)) {
+    if (num_remain == 1 && lite_metal::x86::MayIUse(lite_metal::x86::avx)) {
       const T* out_data = y->template data<T>();
       const T* out_grad = y_grad->template data<T>();
       T* in_grad = x_grad->template mutable_data<T>();
       for (int bs = 0; bs < batch_size; ++bs) {
         T scalar;
-        vec_mul_reduce<T, lite::x86::avx>(
+        vec_mul_reduce<T, lite_metal::x86::avx>(
             num_classes, out_grad, out_data, &scalar);
         scalar *= static_cast<T>(-1);
-        vec_add_bias<T, lite::x86::avx>(num_classes, scalar, out_grad, in_grad);
-        vec_mul<T, lite::x86::avx>(num_classes, out_data, in_grad, in_grad);
+        vec_add_bias<T, lite_metal::x86::avx>(num_classes, scalar, out_grad, in_grad);
+        vec_mul<T, lite_metal::x86::avx>(num_classes, out_data, in_grad, in_grad);
         out_data += num_classes;
         out_grad += num_classes;
         in_grad += num_classes;

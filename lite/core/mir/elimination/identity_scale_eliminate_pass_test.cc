@@ -19,7 +19,7 @@
 #include "paddle/fluid/framework/program_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
@@ -38,10 +38,10 @@ std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
   main_block->Var("scale_out");
   main_block->Var("fetch_out");
 
-  scope->Var("x")->GetMutable<lite::Tensor>();
-  scope->Var("feed")->GetMutable<lite::Tensor>();
-  scope->Var("scale_out")->GetMutable<lite::Tensor>();
-  scope->Var("fetch_out")->GetMutable<lite::Tensor>();
+  scope->Var("x")->GetMutable<lite_metal::Tensor>();
+  scope->Var("feed")->GetMutable<lite_metal::Tensor>();
+  scope->Var("scale_out")->GetMutable<lite_metal::Tensor>();
+  scope->Var("fetch_out")->GetMutable<lite_metal::Tensor>();
 
   feed_op->SetType("feed");
   feed_op->SetInput("X", {"x"});
@@ -62,7 +62,7 @@ std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
 
   program_desc->Flush();
 
-  lite::Program program(*program_desc->Proto(), scope, valid_places);
+  lite_metal::Program program(*program_desc->Proto(), scope, valid_places);
   auto graph = std::unique_ptr<SSAGraph>(new SSAGraph());
   graph->Build(program, valid_places);
 

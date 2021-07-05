@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -59,7 +59,7 @@ void TopkCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    top_k, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::TopkCompute, def)
+    top_k, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::TopkCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Indices",

@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool UniformRandomOpLite::CheckShape() const { return true; }
@@ -63,7 +63,7 @@ bool UniformRandomOpLite::InferShapeImpl() const {
 }
 
 bool UniformRandomOpLite::AttachImpl(const cpp::OpDesc& opdesc,
-                                     lite::Scope* scope) {
+                                     lite_metal::Scope* scope) {
   param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
   param_.min = opdesc.GetAttr<float>("min");
   param_.max = opdesc.GetAttr<float>("max");
@@ -72,14 +72,14 @@ bool UniformRandomOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   param_.shape_tensor = nullptr;
   if (opdesc.HasInput("ShapeTensor") && !opdesc.Input("ShapeTensor").empty()) {
     auto shape_tensor_name = opdesc.Input("ShapeTensor").front();
-    param_.shape_tensor = GetMutableVar<lite::Tensor>(scope, shape_tensor_name);
+    param_.shape_tensor = GetMutableVar<lite_metal::Tensor>(scope, shape_tensor_name);
   }
   param_.shape_tensor_list.clear();  // Avoid errors caused by repeated calls
   if (opdesc.HasInput("ShapeTensorList") &&
       !opdesc.Input("ShapeTensorList").empty()) {
     for (auto shape_tensor_name : opdesc.Input("ShapeTensorList")) {
       param_.shape_tensor_list.push_back(
-          GetMutableVar<lite::Tensor>(scope, shape_tensor_name));
+          GetMutableVar<lite_metal::Tensor>(scope, shape_tensor_name));
     }
   }
   param_.Out = GetMutableVar<Tensor>(scope, opdesc.Output("Out").front());
@@ -90,4 +90,4 @@ bool UniformRandomOpLite::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(uniform_random, paddle::lite::operators::UniformRandomOpLite);
+REGISTER_LITE_OP(uniform_random, paddle::lite_metal::operators::UniformRandomOpLite);

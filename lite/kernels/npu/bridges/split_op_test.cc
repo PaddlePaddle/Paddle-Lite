@@ -19,7 +19,7 @@
 #include "lite/kernels/npu/bridges/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace npu {
 namespace bridges {
@@ -32,7 +32,7 @@ void split_ref(const std::shared_ptr<operators::SplitOp> op) {
   int num = op_info->GetAttr<int>("num");
   int axis = op_info->GetAttr<int>("axis");
   std::vector<int> sections = op_info->GetAttr<std::vector<int>>("sections");
-  std::vector<lite::Tensor*> output_vec;
+  std::vector<lite_metal::Tensor*> output_vec;
   auto output = op_info->Output("Out");
   for (auto out_var : output) {
     output_vec.push_back(scope->Var(out_var)->GetMutable<Tensor>());
@@ -40,7 +40,7 @@ void split_ref(const std::shared_ptr<operators::SplitOp> op) {
   auto in_dims = x->dims();
   auto rank = in_dims.size();
   int outs_number = output_vec.size();
-  std::vector<lite::DDimLite> outs_dims;
+  std::vector<lite_metal::DDimLite> outs_dims;
   outs_dims.reserve(outs_number);
   if (axis < 0) {
     axis += rank;
@@ -100,7 +100,7 @@ void test_split(int bs,
                 int axis,
                 int num,
                 std::vector<int> sections) {
-  const auto& bridges = lite::kernels::npu::bridges::Factory::Instance();
+  const auto& bridges = lite_metal::kernels::npu::bridges::Factory::Instance();
   const auto& supported_lists = bridges.AllFunctions();
   CHECK(bridges.HasType("split"));
   // prepare input&output variables

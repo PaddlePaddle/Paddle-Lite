@@ -18,7 +18,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -28,16 +28,16 @@ namespace math {
  *   [input_channels, filter_height, filter_width, output_height, output_width]
  */
 template <class T>
-class Im2ColFunctor<lite::x86::math::ColFormat::kCFO,
-                    lite::TargetType::kX86,
+class Im2ColFunctor<lite_metal::x86::math::ColFormat::kCFO,
+                    lite_metal::TargetType::kX86,
                     T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& im,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& im,
                   const std::vector<int>& dilation,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
-                  lite::Tensor* col) {
+                  lite_metal::Tensor* col) {
     CHECK_EQ(im.dims().size(), 3);
     CHECK_EQ(col->dims().size(), 5);
 
@@ -62,16 +62,16 @@ class Im2ColFunctor<lite::x86::math::ColFormat::kCFO,
  *   [input_channels, filter_height, filter_width, output_height, output_width]
  */
 template <class T>
-class Col2ImFunctor<lite::x86::math::ColFormat::kCFO,
-                    lite::TargetType::kX86,
+class Col2ImFunctor<lite_metal::x86::math::ColFormat::kCFO,
+                    lite_metal::TargetType::kX86,
                     T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& col,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& col,
                   const std::vector<int>& dilation,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
-                  lite::Tensor* im) {
+                  lite_metal::Tensor* im) {
     CHECK_EQ(im->dims().size(), 3);
     CHECK_EQ(col.dims().size(), 5);
     int im_channels = im->dims()[0];
@@ -121,17 +121,17 @@ class Col2ImFunctor<lite::x86::math::ColFormat::kCFO,
   }
 };
 
-template class Im2ColFunctor<lite::x86::math::ColFormat::kCFO,
-                             lite::TargetType::kX86,
+template class Im2ColFunctor<lite_metal::x86::math::ColFormat::kCFO,
+                             lite_metal::TargetType::kX86,
                              float>;
-template class Im2ColFunctor<lite::x86::math::ColFormat::kCFO,
-                             lite::TargetType::kX86,
+template class Im2ColFunctor<lite_metal::x86::math::ColFormat::kCFO,
+                             lite_metal::TargetType::kX86,
                              double>;
-template class Col2ImFunctor<lite::x86::math::ColFormat::kCFO,
-                             lite::TargetType::kX86,
+template class Col2ImFunctor<lite_metal::x86::math::ColFormat::kCFO,
+                             lite_metal::TargetType::kX86,
                              float>;
-template class Col2ImFunctor<lite::x86::math::ColFormat::kCFO,
-                             lite::TargetType::kX86,
+template class Col2ImFunctor<lite_metal::x86::math::ColFormat::kCFO,
+                             lite_metal::TargetType::kX86,
                              double>;
 
 /*
@@ -140,16 +140,16 @@ template class Col2ImFunctor<lite::x86::math::ColFormat::kCFO,
  *   [output_height, output_width, input_channels, filter_height, filter_width]
  */
 template <class T>
-class Im2ColFunctor<lite::x86::math::ColFormat::kOCF,
-                    lite::TargetType::kX86,
+class Im2ColFunctor<lite_metal::x86::math::ColFormat::kOCF,
+                    lite_metal::TargetType::kX86,
                     T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& im,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& im,
                   const std::vector<int>& dilation,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
-                  lite::Tensor* col) {
+                  lite_metal::Tensor* col) {
     CHECK_EQ(im.dims().size(), 3);
     CHECK_EQ(col->dims().size(), 5);
     int im_channels = im.dims()[0];
@@ -204,16 +204,16 @@ class Im2ColFunctor<lite::x86::math::ColFormat::kOCF,
  *   [output_height, output_width, input_channels, filter_height, filter_width]
  */
 template <class T>
-class Col2ImFunctor<lite::x86::math::ColFormat::kOCF,
-                    lite::TargetType::kX86,
+class Col2ImFunctor<lite_metal::x86::math::ColFormat::kOCF,
+                    lite_metal::TargetType::kX86,
                     T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& col,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& col,
                   const std::vector<int>& dilation,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
-                  lite::Tensor* im) {
+                  lite_metal::Tensor* im) {
     CHECK_EQ(im->dims().size(), 3);
     CHECK_EQ(col.dims().size(), 5);
     int im_channels = im->dims()[0];
@@ -273,17 +273,17 @@ class Col2ImFunctor<lite::x86::math::ColFormat::kOCF,
   }
 };
 
-template class Im2ColFunctor<lite::x86::math::ColFormat::kOCF,
-                             lite::TargetType::kX86,
+template class Im2ColFunctor<lite_metal::x86::math::ColFormat::kOCF,
+                             lite_metal::TargetType::kX86,
                              float>;
-template class Im2ColFunctor<lite::x86::math::ColFormat::kOCF,
-                             lite::TargetType::kX86,
+template class Im2ColFunctor<lite_metal::x86::math::ColFormat::kOCF,
+                             lite_metal::TargetType::kX86,
                              double>;
-template class Col2ImFunctor<lite::x86::math::ColFormat::kOCF,
-                             lite::TargetType::kX86,
+template class Col2ImFunctor<lite_metal::x86::math::ColFormat::kOCF,
+                             lite_metal::TargetType::kX86,
                              float>;
-template class Col2ImFunctor<lite::x86::math::ColFormat::kOCF,
-                             lite::TargetType::kX86,
+template class Col2ImFunctor<lite_metal::x86::math::ColFormat::kOCF,
+                             lite_metal::TargetType::kX86,
                              double>;
 
 }  // namespace math

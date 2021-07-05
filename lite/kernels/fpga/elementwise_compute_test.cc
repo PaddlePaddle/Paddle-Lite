@@ -19,7 +19,7 @@
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -152,7 +152,7 @@ void elementwise_compute_ref(const operators::ElementwiseParam& param,
 TEST(elementwise_add, compute) {
   ElementwiseAddCompute elementwise_add;
   operators::ElementwiseParam param;
-  lite::Tensor x, y, output, output_ref;
+  lite_metal::Tensor x, y, output, output_ref;
 
   for (auto n : {1}) {
     for (auto h : {72}) {
@@ -238,7 +238,7 @@ TEST(fusion_elementwise_add_activation_fpga, retrive_op) {
 // TEST(fusion_elementwise_add_activation_fpga, compute) {
 //   ElementwiseAddActivationCompute fusion_elementwise_add_activation;
 //   operators::FusionElementwiseActivationParam param;
-//   lite::Tensor x, y, output, output_ref;
+//   lite_metal::Tensor x, y, output, output_ref;
 
 //   for (auto act_type : {"relu"}) {
 //     for (auto n : {1}) {

@@ -29,7 +29,7 @@ DEFINE_string(model_dir, "", "");
 DEFINE_string(optimized_model, "", "");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -57,17 +57,17 @@ std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
   main_block->Var("relu_1_out");
   main_block->Var("out");
 
-  scope->Var("input_1")->GetMutable<lite::Tensor>();
-  scope->Var("input_2")->GetMutable<lite::Tensor>();
-  scope->Var("filter_1")->GetMutable<lite::Tensor>();
-  scope->Var("filter_2")->GetMutable<lite::Tensor>();
-  scope->Var("conv2d_1_out")->GetMutable<lite::Tensor>();
-  scope->Var("conv2d_2_out")->GetMutable<lite::Tensor>();
-  scope->Var("bias_1")->GetMutable<lite::Tensor>();
-  scope->Var("add_1_out")->GetMutable<lite::Tensor>();
-  scope->Var("add_2_out")->GetMutable<lite::Tensor>();
-  scope->Var("relu_1_out")->GetMutable<lite::Tensor>();
-  scope->Var("out")->GetMutable<lite::Tensor>();
+  scope->Var("input_1")->GetMutable<lite_metal::Tensor>();
+  scope->Var("input_2")->GetMutable<lite_metal::Tensor>();
+  scope->Var("filter_1")->GetMutable<lite_metal::Tensor>();
+  scope->Var("filter_2")->GetMutable<lite_metal::Tensor>();
+  scope->Var("conv2d_1_out")->GetMutable<lite_metal::Tensor>();
+  scope->Var("conv2d_2_out")->GetMutable<lite_metal::Tensor>();
+  scope->Var("bias_1")->GetMutable<lite_metal::Tensor>();
+  scope->Var("add_1_out")->GetMutable<lite_metal::Tensor>();
+  scope->Var("add_2_out")->GetMutable<lite_metal::Tensor>();
+  scope->Var("relu_1_out")->GetMutable<lite_metal::Tensor>();
+  scope->Var("out")->GetMutable<lite_metal::Tensor>();
 
   conv2d_1->SetType("conv2d");
   conv2d_1->SetInput("Input", {"input_1"});
@@ -111,7 +111,7 @@ std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
 
   program_desc->Flush();
 
-  lite::Program program(*program_desc->Proto(), scope, valid_places);
+  lite_metal::Program program(*program_desc->Proto(), scope, valid_places);
   auto graph = std::unique_ptr<SSAGraph>(new SSAGraph());
   graph->Build(program, valid_places);
 

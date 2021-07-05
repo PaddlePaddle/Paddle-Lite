@@ -26,7 +26,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class PoolOpLite : public OpLite {
@@ -40,15 +40,15 @@ class PoolOpLite : public OpLite {
   bool InferShapeImpl() const override;
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) override {
     AttachParam(&param_);
     auto x = op_desc.Input("X").front();
     auto out = op_desc.Output("Out").front();
 
     CHECK(scope->FindVar(x));
     CHECK(scope->FindVar(out));
-    param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-    param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
+    param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+    param_.output = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
     param_.pooling_type = op_desc.GetAttr<std::string>("pooling_type");
     param_.ksize = op_desc.GetAttr<std::vector<int>>("ksize");
@@ -93,7 +93,7 @@ class PoolOpLite : public OpLite {
   std::string DebugString() const override { return "pool2d"; }
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter *ch) {
     auto input_dims = param_.x->dims();
     auto output_dims = param_.output->dims();
     ch->input_shape = ch->DimToStr(input_dims);
@@ -120,7 +120,7 @@ inline void UpdatePadding(std::vector<int> *paddings,
                           const bool global_pooling,
                           const bool adaptive,
                           const std::string padding_algorithm,
-                          const lite::DDim data_dims,
+                          const lite_metal::DDim data_dims,
                           const std::vector<int> &strides,
                           const std::vector<int> &ksize) {
   // when padding_algorithm is "VALID" or "SAME"

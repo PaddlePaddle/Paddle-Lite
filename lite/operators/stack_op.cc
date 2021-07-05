@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool StackOp::CheckShape() const {
@@ -44,20 +44,20 @@ bool StackOp::InferShapeImpl() const {
   return true;
 }
 
-bool StackOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool StackOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto X = op_desc.Input("X");
   auto Out = op_desc.Output("Y").front();
   param_.X.clear();
   for (auto var : X) {
-    param_.X.emplace_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.X.emplace_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
-  param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(Out)->GetMutable<lite_metal::Tensor>();
   param_.axis = op_desc.GetAttr<int>("axis");
   return true;
 }
 
 } /* namespace operators */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
-REGISTER_LITE_OP(stack, paddle::lite::operators::StackOp);
+REGISTER_LITE_OP(stack, paddle::lite_metal::operators::StackOp);

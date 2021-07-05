@@ -18,11 +18,11 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
-namespace math = paddle::lite::xpu::math;
+namespace math = paddle::lite_metal::xpu::math;
 
 void MatMulCompute::Run() {
   auto& param = this->Param<param_t>();
@@ -108,7 +108,7 @@ void MatMulCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    matmul, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::MatMulCompute, def)
+    matmul, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::MatMulCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -117,7 +117,7 @@ REGISTER_LITE_KERNEL(matmul_v2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::MatMulCompute,
+                     paddle::lite_metal::kernels::xpu::MatMulCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})

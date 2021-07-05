@@ -24,7 +24,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void QuantizedOpAttributesInferencePass::Apply(
@@ -91,5 +91,5 @@ void QuantizedOpAttributesInferencePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(quantized_op_attributes_inference_pass,
-                  paddle::lite::mir::QuantizedOpAttributesInferencePass)
+                  paddle::lite_metal::mir::QuantizedOpAttributesInferencePass)
     .BindTargets({TARGET(kAPU), TARGET(kRKNPU), TARGET(kImaginationNNA)});

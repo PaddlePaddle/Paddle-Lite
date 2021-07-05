@@ -21,7 +21,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -77,5 +77,5 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_conv_conv_fuse_pass, paddle::lite::mir::ConvConvFusePass)
+REGISTER_MIR_PASS(lite_conv_conv_fuse_pass, paddle::lite_metal::mir::ConvConvFusePass)
     .BindTargets({TARGET(kARM), TARGET(kOpenCL)});

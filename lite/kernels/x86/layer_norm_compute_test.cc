@@ -25,16 +25,16 @@
 #include "lite/kernels/x86/layer_norm_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
-std::vector<float> ref(lite::Tensor* x,
-                       lite::Tensor* Scale,
-                       lite::Tensor* Bias,
-                       lite::Tensor* y,
-                       lite::Tensor* Mean,
-                       lite::Tensor* Var,
+std::vector<float> ref(lite_metal::Tensor* x,
+                       lite_metal::Tensor* Scale,
+                       lite_metal::Tensor* Bias,
+                       lite_metal::Tensor* y,
+                       lite_metal::Tensor* Mean,
+                       lite_metal::Tensor* Var,
                        int begin_norm_axis,
                        float epsilon) {
   auto x_dims = x->dims();
@@ -46,15 +46,15 @@ std::vector<float> ref(lite::Tensor* x,
   auto matrix_dim = x_dims.Flatten2D(begin_norm_axis);
   int left = static_cast<int>(matrix_dim[0]);
   int right = static_cast<int>(matrix_dim[1]);
-  lite::DDim matrix_shape({left, right});
+  lite_metal::DDim matrix_shape({left, right});
 
   x->Resize(matrix_shape);
   Tensor out;
   out.ShareDataWith(*y);
   out.Resize(matrix_shape);
 
-  auto ker = paddle::lite::jit::KernelFuncs<jit::LayerNormTuple<float>,
-                                            lite::fluid::CPUPlace>::Cache()
+  auto ker = paddle::lite_metal::jit::KernelFuncs<jit::LayerNormTuple<float>,
+                                            lite_metal::fluid::CPUPlace>::Cache()
                  .At(right);
   ker(x->mutable_data<float>(),
       out.mutable_data<float>(),
@@ -82,24 +82,24 @@ TEST(layer_norm_x86, retrive_op) {
 }
 
 TEST(layer_norm_x86, init) {
-  lite::kernels::x86::LayerNormCompute<float> layer_norm;
+  lite_metal::kernels::x86::LayerNormCompute<float> layer_norm;
   ASSERT_EQ(layer_norm.precision(), PRECISION(kFloat));
   ASSERT_EQ(layer_norm.target(), TARGET(kX86));
 }
 
 TEST(layer_norm_x86, run_test) {
-  lite::Tensor x;
-  lite::Tensor Scale;
-  lite::Tensor Bias;
+  lite_metal::Tensor x;
+  lite_metal::Tensor Scale;
+  lite_metal::Tensor Bias;
 
-  lite::Tensor out;
-  lite::Tensor Mean;
-  lite::Tensor Var;
+  lite_metal::Tensor out;
+  lite_metal::Tensor Mean;
+  lite_metal::Tensor Var;
 
   std::vector<int64_t> x_shape({1, 2, 3, 1});
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> out_shape({1, 2, 3, 1});
-  out.Resize(lite::DDim(out_shape));
+  out.Resize(lite_metal::DDim(out_shape));
 
   int begin_norm_axis = 0;
   float epsilon = 1e-5;

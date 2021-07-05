@@ -23,7 +23,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename T>
 bool CompatibleChecker<T>::CheckKernelVersion(const std::string& type,

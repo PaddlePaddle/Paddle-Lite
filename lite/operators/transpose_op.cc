@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 // Transpose
@@ -46,7 +46,7 @@ bool TransposeOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   std::vector<int> axis = param_.axis;
   size_t axis_size = axis.size();
-  lite::DDim out_dims(x_dims);
+  lite_metal::DDim out_dims(x_dims);
   for (size_t i = 0; i < axis_size; i++) {
     out_dims[i] = x_dims[axis[i]];
   }
@@ -54,15 +54,15 @@ bool TransposeOp::InferShapeImpl() const {
   return true;
 }
 
-bool TransposeOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool TransposeOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   auto x = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
 
   CHECK(scope->FindVar(x));
   CHECK(scope->FindVar(out));
-  param_.x = GetVar<lite::Tensor>(scope, x);
-  param_.output = GetMutableVar<lite::Tensor>(scope, out);
+  param_.x = GetVar<lite_metal::Tensor>(scope, x);
+  param_.output = GetMutableVar<lite_metal::Tensor>(scope, out);
 
   param_.axis = op_desc.GetAttr<std::vector<int>>("axis");
   if (op_desc.HasAttr("use_mkldnn")) {
@@ -101,7 +101,7 @@ bool Transpose2Op::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   std::vector<int> axis = param_.axis;
   size_t axis_size = axis.size();
-  lite::DDim out_dims(x_dims);
+  lite_metal::DDim out_dims(x_dims);
   for (size_t i = 0; i < axis_size; i++) {
     out_dims[i] = x_dims[axis[i]];
   }
@@ -118,14 +118,14 @@ bool Transpose2Op::InferShapeImpl() const {
   return true;
 }
 
-bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
 
   CHECK(scope->FindVar(x));
   CHECK(scope->FindVar(out));
-  param_.x = GetVar<lite::Tensor>(scope, x);
-  param_.output = GetMutableVar<lite::Tensor>(scope, out);
+  param_.x = GetVar<lite_metal::Tensor>(scope, x);
+  param_.output = GetMutableVar<lite_metal::Tensor>(scope, out);
 
   param_.axis = op_desc.GetAttr<std::vector<int>>("axis");
   if (op_desc.HasAttr("use_mkldnn")) {
@@ -136,7 +136,7 @@ bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   }
   if (op_desc.HasOutput("XShape")) {
     auto xshape_var = scope->FindVar(op_desc.Output("XShape").front());
-    param_.xshape = xshape_var->GetMutable<lite::Tensor>();
+    param_.xshape = xshape_var->GetMutable<lite_metal::Tensor>();
   }
   return true;
 }
@@ -145,5 +145,5 @@ bool Transpose2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(transpose, paddle::lite::operators::TransposeOp);
-REGISTER_LITE_OP(transpose2, paddle::lite::operators::Transpose2Op);
+REGISTER_LITE_OP(transpose, paddle::lite_metal::operators::TransposeOp);
+REGISTER_LITE_OP(transpose2, paddle::lite_metal::operators::Transpose2Op);

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUMmdnnSearchAttentionOp::CheckShape() const { return true; }
@@ -29,16 +29,16 @@ bool XPUMmdnnSearchAttentionOp::InferShapeImpl() const {
 }
 
 bool XPUMmdnnSearchAttentionOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                           lite::Scope* scope) {
+                                           lite_metal::Scope* scope) {
   auto x = op_desc.Input("X").front();
   auto w = op_desc.Input("W").front();
   auto b = op_desc.Input("b").front();
   auto out = op_desc.Output("Out").front();
 
-  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.W = scope->FindVar(w)->GetMutable<lite::Tensor>();
-  param_.b = scope->FindVar(b)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+  param_.W = scope->FindVar(w)->GetMutable<lite_metal::Tensor>();
+  param_.b = scope->FindVar(b)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
   param_.W_max = op_desc.GetAttr<float>("W_max");
   param_.pad_id = op_desc.GetAttr<int>("pad_id");
@@ -53,4 +53,4 @@ bool XPUMmdnnSearchAttentionOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__mmdnn_search_attention,
-                 paddle::lite::operators::XPUMmdnnSearchAttentionOp);
+                 paddle::lite_metal::operators::XPUMmdnnSearchAttentionOp);

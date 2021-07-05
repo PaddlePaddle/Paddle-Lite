@@ -21,13 +21,13 @@
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::operators::PoolParam PoolParam;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::operators::PoolParam PoolParam;
+using paddle::lite_metal::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
-                     const paddle::lite::operators::PoolParam& param) {
+                     const paddle::lite_metal::operators::PoolParam& param) {
   DDim dim_out = dim_in;
   auto kernel_h = param.ksize[0];
   auto kernel_w = param.ksize[1];
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
 
   int batch_size = atoi(argv[1]);
@@ -121,11 +121,11 @@ int main(int argc, char** argv) {
   param.output = &y;
   param.output->set_precision(PRECISION(kFloat));
 
-  paddle::lite::kernels::arm::PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>
+  paddle::lite_metal::kernels::arm::PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>
       pool;
-  std::unique_ptr<paddle::lite::KernelContext> ctx1(
-      new paddle::lite::KernelContext);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+      new paddle::lite_metal::KernelContext);
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
                  thread_num);
   // set param and context
@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
   param.x->Resize(dim_in);
   param.output->Resize(dim_out);
 
-  paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
+  paddle::lite_metal::fill_tensor_rand(*param.x, -1.f, 1.f);
   // warm up
   for (int i = 0; i < warmup; ++i) {
     pool.Launch();

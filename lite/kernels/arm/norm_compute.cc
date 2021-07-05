@@ -15,14 +15,14 @@
 #include "lite/kernels/host/norm_compute.h"
 
 REGISTER_LITE_KERNEL(
-    norm, kARM, kFloat, kNCHW, paddle::lite::kernels::host::NormCompute, def)
+    norm, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::host::NormCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    p_norm, kARM, kFloat, kNCHW, paddle::lite::kernels::host::PNormCompute, def)
+    p_norm, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::host::PNormCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();

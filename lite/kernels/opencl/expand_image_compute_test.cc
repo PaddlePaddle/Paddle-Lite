@@ -22,7 +22,7 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(expand_hw_image2d, compute) {
   LOG(INFO) << "create kernel ...";
@@ -44,7 +44,7 @@ TEST(expand_hw_image2d, compute) {
 
   LOG(INFO) << "prepare to test kernel ====> " << kernel->doc();
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   operators::ExpandParam param;
   param.X = &x;
   param.Out = &out;
@@ -169,7 +169,7 @@ TEST(expand_c2hw_image2d, compute) {
 
   LOG(INFO) << "prepare to test kernel ====> " << kernel->doc();
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   operators::ExpandParam param;
   param.X = &x;
   param.Out = &out;
@@ -293,7 +293,7 @@ TEST(expand_c3hw_image2d, compute) {
 
   LOG(INFO) << "prepare to test kernel ====> " << kernel->doc();
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   operators::ExpandParam param;
   param.X = &x;
   param.Out = &out;
@@ -418,7 +418,7 @@ TEST(expand_c4hw_image2d, compute) {
 
   LOG(INFO) << "prepare to test kernel ====> " << kernel->doc();
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   operators::ExpandParam param;
   param.X = &x;
   param.Out = &out;
@@ -541,7 +541,7 @@ TEST(expand_n_image2d, compute) {
 
   LOG(INFO) << "prepare to test kernel ====> " << kernel->doc();
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   operators::ExpandParam param;
   param.X = &x;
   param.Out = &out;

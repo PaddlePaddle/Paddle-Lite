@@ -18,7 +18,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 using TargetWrapperCL =
     TargetWrapper<TARGET(kOpenCL), cl::CommandQueue, cl::Event>;

@@ -22,12 +22,12 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
 template <typename T>
-std::shared_ptr<T> CreateOp(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+std::shared_ptr<T> CreateOp(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto op = std::make_shared<T>(opdesc.Type());
   op->SetValidPlaces(
       {Place{TARGET(kHost), PRECISION(kFloat)},
@@ -56,7 +56,7 @@ void FillTensor(Tensor* x,
   }
 }
 
-void LaunchOp(const std::shared_ptr<lite::OpLite> op,
+void LaunchOp(const std::shared_ptr<lite_metal::OpLite> op,
               const std::vector<std::string>& input_var_names,
               const std::vector<std::string>& output_var_names,
               cnmlDataOrder_t order = CNML_NHWC);

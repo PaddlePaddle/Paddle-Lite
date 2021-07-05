@@ -25,11 +25,11 @@
 #include "lite/utils/logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace imagination_nna {
 
 // Fix the compilation error 'undefined reference to
-// paddle::lite::replace_stl::ostream' in tiny_publish mode
+// paddle::lite_metal::replace_stl::ostream' in tiny_publish mode
 #define IMG_CHECK_SUCCESS(err_code_) \
   CHECK_EQ(static_cast<int>(err_code_), static_cast<int>(IMGDNN_SUCCESS))
 

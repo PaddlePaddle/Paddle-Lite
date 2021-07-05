@@ -26,7 +26,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -107,7 +107,7 @@ class MulCompute
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -127,7 +127,7 @@ class MulCompute
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    mul, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::MulCompute, def)
+    mul, kOpenCL, kFloat, kNCHW, paddle::lite_metal::kernels::opencl::MulCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})

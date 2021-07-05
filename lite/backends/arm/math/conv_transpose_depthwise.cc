@@ -15,7 +15,7 @@
 #include "lite/backends/arm/math/conv_transpose_depthwise.h"
 #include "lite/backends/arm/math/funcs.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 template <>

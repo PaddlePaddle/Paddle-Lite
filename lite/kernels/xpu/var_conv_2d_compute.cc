@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -132,7 +132,7 @@ REGISTER_LITE_KERNEL(var_conv_2d,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::VarConv2DCompute,
+                     paddle::lite_metal::kernels::xpu::VarConv2DCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("COLUMN", {LiteType::GetTensorTy(TARGET(kXPU))})

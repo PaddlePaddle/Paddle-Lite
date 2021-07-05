@@ -26,7 +26,7 @@
 #endif  // LITE_WITH_CUDA
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 using lite_api::TargetType;
 using lite_api::PrecisionType;
@@ -169,7 +169,7 @@ class TargetWrapper<TARGET(kHost)> {
   static void MemcpySync(void* dst,
                          const void* src,
                          size_t size,
-                         IoDirection dir = lite::IoDirection::HtoH);
+                         IoDirection dir = lite_metal::IoDirection::HtoH);
   static void MemcpyAsync(void* dst,
                           const void* src,
                           size_t size,

@@ -21,7 +21,7 @@
 #include "lite/kernels/mlu/subgraph_compute.h"
 #include "lite/utils/macros.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -50,12 +50,12 @@ void PrepareInput(Graph* graph,
                         CNRT_MEM_TRANS_DIR_HOST2DEV));
 }
 
-void LaunchOp(const std::shared_ptr<lite::OpLite> op,
+void LaunchOp(const std::shared_ptr<lite_metal::OpLite> op,
               const std::vector<std::string>& input_var_names,
               const std::vector<std::string>& output_var_names,
               cnmlDataOrder_t order) {
   CNRT_CALL(cnrtInit(0));
-  lite::SetMluDevice(0);
+  lite_metal::SetMluDevice(0);
   cnrtQueue_t queue_;
   CNRT_CALL(cnrtCreateQueue(&queue_));
   cnrtDev_t dev_handle;
@@ -63,7 +63,7 @@ void LaunchOp(const std::shared_ptr<lite::OpLite> op,
   CNRT_CALL(cnrtSetCurrentDevice(dev_handle));
   auto scope = op->scope();
   auto op_type = op->op_info()->Type();
-  paddle::lite::subgraph::mlu::Graph graph;
+  paddle::lite_metal::subgraph::mlu::Graph graph;
   // convert op to IR graph
   const auto& bridges = subgraph::Registry::Instance();
   CHECK(bridges.Exists(op_type, TARGET(kMLU)));

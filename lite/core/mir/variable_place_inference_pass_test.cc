@@ -20,11 +20,11 @@
 #include "lite/kernels/host/use_kernels.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 TEST(variable_place_inference_pass, test) {
-  std::shared_ptr<Scope> scope(new lite::Scope);
+  std::shared_ptr<Scope> scope(new lite_metal::Scope);
   ProgramFaker program_faker;
   program_faker.AddFeed("a", 0);
   program_faker.AddMul("a", "W", "a1");

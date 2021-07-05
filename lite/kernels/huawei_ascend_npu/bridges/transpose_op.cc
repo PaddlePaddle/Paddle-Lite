@@ -17,7 +17,7 @@
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
@@ -68,8 +68,8 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     transpose,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::TransposeConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::TransposeConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     transpose2,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::TransposeConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::TransposeConverter);

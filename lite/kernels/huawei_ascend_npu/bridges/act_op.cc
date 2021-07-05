@@ -17,7 +17,7 @@
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
@@ -140,33 +140,33 @@ int ActConverter<ge::op::HardSigmoid>(void* ctx,
 REGISTER_SUBGRAPH_BRIDGE(
     sigmoid,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::Sigmoid>);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ActConverter<ge::op::Sigmoid>);
 REGISTER_SUBGRAPH_BRIDGE(
     relu,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::Relu>);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ActConverter<ge::op::Relu>);
 REGISTER_SUBGRAPH_BRIDGE(
     tanh,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::Tanh>);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ActConverter<ge::op::Tanh>);
 REGISTER_SUBGRAPH_BRIDGE(
     relu6,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::Relu6>);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ActConverter<ge::op::Relu6>);
 REGISTER_SUBGRAPH_BRIDGE(
     leaky_relu,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::LeakyRelu>);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ActConverter<ge::op::LeakyRelu>);
 REGISTER_SUBGRAPH_BRIDGE(
     softsign,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::Softsign>);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ActConverter<ge::op::Softsign>);
 REGISTER_SUBGRAPH_BRIDGE(
     softplus,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::Softplus>);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ActConverter<ge::op::Softplus>);
 REGISTER_SUBGRAPH_BRIDGE(
     hard_sigmoid,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ActConverter<
         ge::op::HardSigmoid>);

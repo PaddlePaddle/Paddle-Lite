@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -94,7 +94,7 @@ void TileCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using tile_float =
-    paddle::lite::kernels::host::TileCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::TileCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_float, def_float)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("RepeatTimes",
@@ -105,7 +105,7 @@ REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_float, def_float)
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .Finalize();
 using tile_int32 =
-    paddle::lite::kernels::host::TileCompute<int, PRECISION(kInt32)>;
+    paddle::lite_metal::kernels::host::TileCompute<int, PRECISION(kInt32)>;
 REGISTER_LITE_KERNEL(tile, kHost, kInt32, kNCHW, tile_int32, def_int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("RepeatTimes",
@@ -116,7 +116,7 @@ REGISTER_LITE_KERNEL(tile, kHost, kInt32, kNCHW, tile_int32, def_int32)
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();
 using tile_int64 =
-    paddle::lite::kernels::host::TileCompute<int64_t, PRECISION(kInt64)>;
+    paddle::lite_metal::kernels::host::TileCompute<int64_t, PRECISION(kInt64)>;
 REGISTER_LITE_KERNEL(tile, kHost, kInt64, kNCHW, tile_int64, def_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("RepeatTimes",
@@ -128,7 +128,7 @@ REGISTER_LITE_KERNEL(tile, kHost, kInt64, kNCHW, tile_int64, def_int64)
     .Finalize();
 
 using tile_int8 =
-    paddle::lite::kernels::host::TileCompute<int8_t, PRECISION(kInt8)>;
+    paddle::lite_metal::kernels::host::TileCompute<int8_t, PRECISION(kInt8)>;
 REGISTER_LITE_KERNEL(tile, kHost, kInt8, kNCHW, tile_int8, def_int8)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})
     .BindInput("RepeatTimes",
@@ -139,7 +139,7 @@ REGISTER_LITE_KERNEL(tile, kHost, kInt8, kNCHW, tile_int8, def_int8)
     .Finalize();
 
 using tile_bool =
-    paddle::lite::kernels::host::TileCompute<bool, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::TileCompute<bool, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_bool, def_bool)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindInput("RepeatTimes",

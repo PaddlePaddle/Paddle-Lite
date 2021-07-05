@@ -17,7 +17,7 @@
 #include "lite/core/op_lite.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class XPUMmdnnBidEmbGrnnAttOp : public OpLite {
@@ -31,7 +31,7 @@ class XPUMmdnnBidEmbGrnnAttOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
@@ -52,7 +52,7 @@ class XPUMmdnnBidEmbGrnnAttOp2 : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
@@ -74,7 +74,7 @@ class XPUMmdnnBidEmbAttOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
@@ -95,7 +95,7 @@ class XPUMmdnnMatchConvTopkOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
@@ -115,7 +115,7 @@ class XPUMmdnnMergeAllOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 

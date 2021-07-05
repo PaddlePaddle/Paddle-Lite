@@ -20,7 +20,7 @@
 #include "lite/operators/pad2d_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 

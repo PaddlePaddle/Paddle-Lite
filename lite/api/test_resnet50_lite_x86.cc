@@ -24,7 +24,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(Resnet50, test_resnet50_lite_x86) {
   lite_api::CxxConfig config;

@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -101,7 +101,7 @@ REGISTER_LITE_KERNEL(sequence_arithmetic,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SequenceArithmeticCompute,
+                     paddle::lite_metal::kernels::xpu::SequenceArithmeticCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -112,7 +112,7 @@ REGISTER_LITE_KERNEL(search_seq_arithmetic,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SequenceArithmeticCompute,
+                     paddle::lite_metal::kernels::xpu::SequenceArithmeticCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})

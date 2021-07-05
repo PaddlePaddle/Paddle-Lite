@@ -17,7 +17,7 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 
@@ -224,7 +224,7 @@ void reduce_min_nc<float>(const float* src,
                           int width_in) {
   // reduce n first.
   DDimLite ddimA({1, channel_in, height_in, width_in});
-  lite::Tensor tensor_tmp;
+  lite_metal::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
   reduce_min_n(src, tmp_out, num_in, channel_in, height_in, width_in);
@@ -240,7 +240,7 @@ void reduce_min_ch<float>(const float* src,
                           int width_in) {
   // reduce c first
   DDimLite ddimA({num_in, 1, height_in, width_in});
-  lite::Tensor tensor_tmp;
+  lite_metal::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
   reduce_min_c(src, tmp_out, num_in, channel_in, height_in, width_in);
@@ -256,7 +256,7 @@ void reduce_min_hw<float>(const float* src,
                           int width_in) {
   // reduce h first
   DDimLite ddimA({num_in, channel_in, 1, width_in});
-  lite::Tensor tensor_tmp;
+  lite_metal::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
   reduce_min_h(src, tmp_out, num_in, channel_in, height_in, width_in);

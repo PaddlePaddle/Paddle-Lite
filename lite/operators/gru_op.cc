@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool GRUOpLite::CheckShape() const {
@@ -68,30 +68,30 @@ bool GRUOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool GRUOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool GRUOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   auto input = op_desc.Input("Input").front();
   auto weight = op_desc.Input("Weight").front();
   auto batch_gate = op_desc.Output("BatchGate").front();
   auto batch_reset_hidden_prev = op_desc.Output("BatchResetHiddenPrev").front();
   auto batch_hidden = op_desc.Output("BatchHidden").front();
   auto hidden = op_desc.Output("Hidden").front();
-  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
+  param_.input = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
   if (!op_desc.Input("H0").empty()) {
     auto h0 = op_desc.Input("H0").front();
-    param_.h0 = scope->FindVar(h0)->GetMutable<lite::Tensor>();
+    param_.h0 = scope->FindVar(h0)->GetMutable<lite_metal::Tensor>();
   }
-  param_.weight = scope->FindVar(weight)->GetMutable<lite::Tensor>();
+  param_.weight = scope->FindVar(weight)->GetMutable<lite_metal::Tensor>();
 
-  param_.batch_gate = scope->FindVar(batch_gate)->GetMutable<lite::Tensor>();
+  param_.batch_gate = scope->FindVar(batch_gate)->GetMutable<lite_metal::Tensor>();
   param_.batch_reset_hidden_prev =
-      scope->FindVar(batch_reset_hidden_prev)->GetMutable<lite::Tensor>();
+      scope->FindVar(batch_reset_hidden_prev)->GetMutable<lite_metal::Tensor>();
   param_.batch_hidden =
-      scope->FindVar(batch_hidden)->GetMutable<lite::Tensor>();
-  param_.hidden = scope->FindVar(hidden)->GetMutable<lite::Tensor>();
+      scope->FindVar(batch_hidden)->GetMutable<lite_metal::Tensor>();
+  param_.hidden = scope->FindVar(hidden)->GetMutable<lite_metal::Tensor>();
 
   if (!op_desc.Input("Bias").empty()) {
     auto bias = op_desc.Input("Bias").front();
-    param_.bias = scope->FindVar(bias)->GetMutable<lite::Tensor>();
+    param_.bias = scope->FindVar(bias)->GetMutable<lite_metal::Tensor>();
   }
 
   param_.gate_activation = op_desc.GetAttr<std::string>("gate_activation");
@@ -122,4 +122,4 @@ bool GRUOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(gru, paddle::lite::operators::GRUOpLite)
+REGISTER_LITE_OP(gru, paddle::lite_metal::operators::GRUOpLite)

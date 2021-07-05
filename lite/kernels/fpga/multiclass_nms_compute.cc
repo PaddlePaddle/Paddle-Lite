@@ -20,7 +20,7 @@
 #include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -444,7 +444,7 @@ REGISTER_LITE_KERNEL(multiclass_nms,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::MulticlassNmsCompute,
+                     paddle::lite_metal::kernels::fpga::MulticlassNmsCompute,
                      def)
     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -455,7 +455,7 @@ REGISTER_LITE_KERNEL(multiclass_nms2,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::MulticlassNmsCompute,
+                     paddle::lite_metal::kernels::fpga::MulticlassNmsCompute,
                      def2)
     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool IoCopyOnceOp::run_once() const { return true; }
@@ -27,4 +27,4 @@ std::string IoCopyOnceOp::DebugString() const { return "io_copy_once_op"; }
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(io_copy_once, paddle::lite::operators::IoCopyOnceOp);
+REGISTER_LITE_OP(io_copy_once, paddle::lite_metal::operators::IoCopyOnceOp);

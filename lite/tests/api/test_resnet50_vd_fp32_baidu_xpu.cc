@@ -31,7 +31,7 @@ DEFINE_int32(batch, 16, "batch of image");
 DEFINE_int32(channel, 3, "image channel");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 float CalOutAccuracy(
     const std::unordered_map<std::string, std::vector<float>>& out_rets,

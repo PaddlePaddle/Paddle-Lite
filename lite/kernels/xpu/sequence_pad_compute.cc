@@ -20,7 +20,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -90,7 +90,7 @@ REGISTER_LITE_KERNEL(sequence_pad,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SequencePadCompute,
+                     paddle::lite_metal::kernels::xpu::SequencePadCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindInput("PadValue",

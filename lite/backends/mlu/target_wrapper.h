@@ -20,7 +20,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 using TargetWrapperMlu = TargetWrapper<TARGET(kMLU)>;
 

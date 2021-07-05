@@ -24,7 +24,7 @@
 #include "lite/backends/host/math/split.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -94,7 +94,7 @@ void preprocess(ARMContext* ctx,
   int k = input_dims[2];
   int n = weight_input_dims[0];
 
-  lite::arm::math::sgemm(false,
+  lite_metal::arm::math::sgemm(false,
                          true,
                          m,
                          n,
@@ -111,8 +111,8 @@ void preprocess(ARMContext* ctx,
                          false,
                          act_param,
                          ctx);
-  lite::arm::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n, flag_act);
-  lite::arm::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n, flag_act);
+  lite_metal::arm::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n, flag_act);
+  lite_metal::arm::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n, flag_act);
 }
 
 void cell(ARMContext* ctx,
@@ -140,7 +140,7 @@ void cell(ARMContext* ctx,
   Tensor tmp_gate;
   tmp_gate.Resize(input->dims());
   auto tmp_data = tmp_gate.mutable_data<float>();
-  lite::arm::math::sgemm(false,
+  lite_metal::arm::math::sgemm(false,
                          true,
                          m,
                          n,
@@ -168,7 +168,7 @@ void cell(ARMContext* ctx,
     tmp_init_c_data[i] = init_c->data<float>()[i];
   }
 
-  lite::arm::math::LstmMetaValue<float> lstm_value;
+  lite_metal::arm::math::LstmMetaValue<float> lstm_value;
   lstm_value.check_ig = nullptr;
   lstm_value.check_fg = nullptr;
   lstm_value.check_og = nullptr;
@@ -191,7 +191,7 @@ void cell(ARMContext* ctx,
   lstm_value.state_value = last_c->mutable_data<float>();
   lstm_value.state_active_value = last_c_act->mutable_data<float>();
   float cell_clip = 0.0;
-  lite::arm::math::RnnLstmUnitFunctor<float>::compute(lstm_value,
+  lite_metal::arm::math::RnnLstmUnitFunctor<float>::compute(lstm_value,
                                                       frame_size,
                                                       batch_size,
                                                       cell_clip,
@@ -266,9 +266,9 @@ void runLSTMLayer(ARMContext* ctx,
     output_tensors[i].Resize(dims);
     output_tensors_t.push_back(&output_tensors[i]);
   }
-  lite::host::math::split(
+  lite_metal::host::math::split(
       gate_value->data<float>(), input_tensors_t, 0, stride1);
-  lite::host::math::split(output->data<float>(), output_tensors_t, 0, stride2);
+  lite_metal::host::math::split(output->data<float>(), output_tensors_t, 0, stride2);
   auto sd = output->mutable_data<float>();
 
   if (is_reverse) {
@@ -426,12 +426,12 @@ void RnnCompute::Run() {
     last_h_unbind_t.push_back(&last_h_unbind[i]);
     last_c_unbind_t.push_back(&last_c_unbind[i]);
   }
-  lite::host::math::split(
+  lite_metal::host::math::split(
       pre_state[0]->data<float>(), init_h_unbind_t, 0, stride);
-  lite::host::math::split(
+  lite_metal::host::math::split(
       pre_state[1]->data<float>(), init_c_unbind_t, 0, stride);
-  lite::host::math::split(state[0]->data<float>(), last_h_unbind_t, 0, stride);
-  lite::host::math::split(state[1]->data<float>(), last_c_unbind_t, 0, stride);
+  lite_metal::host::math::split(state[0]->data<float>(), last_h_unbind_t, 0, stride);
+  lite_metal::host::math::split(state[1]->data<float>(), last_c_unbind_t, 0, stride);
 
   for (int i = 0; i < num_layers; i++) {
     if (i > 0) {
@@ -463,7 +463,7 @@ void RnnCompute::Run() {
       RUN_LSTM_LAYER(i, &output_vec[1], true, 1);
 
       std::vector<Tensor*> output_vec_t = {&output_vec[0], &output_vec[1]};
-      lite::arm::math::concat_func<float>(output_vec_t, 2, output);
+      lite_metal::arm::math::concat_func<float>(output_vec_t, 2, output);
     } else {
       RUN_LSTM_LAYER(i, output_holder, false, 0);
     }
@@ -475,7 +475,7 @@ void RnnCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    rnn, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::RnnCompute, def)
+    rnn, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::RnnCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("WeightList", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("PreState", {LiteType::GetTensorTy(TARGET(kARM))})

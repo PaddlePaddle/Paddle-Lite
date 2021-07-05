@@ -26,27 +26,27 @@
 #include "lite/operators/layout_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace mlu {
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 inline void LayoutTransCompute(const int dim,
-                               const lite::Context<Target>& context,
-                               const lite::Tensor& in,
-                               lite::Tensor* out,
+                               const lite_metal::Context<Target>& context,
+                               const lite_metal::Tensor& in,
+                               lite_metal::Tensor* out,
                                const std::vector<int>& axis) {
   switch (dim) {
     case 2:
-      paddle::lite::x86::math::Transpose<lite::TargetType::kX86, T, 2> trans2;
+      paddle::lite_metal::x86::math::Transpose<lite_metal::TargetType::kX86, T, 2> trans2;
       trans2(context, in, out, axis);
       break;
     case 3:
-      paddle::lite::x86::math::Transpose<lite::TargetType::kX86, T, 3> trans3;
+      paddle::lite_metal::x86::math::Transpose<lite_metal::TargetType::kX86, T, 3> trans3;
       trans3(context, in, out, axis);
       break;
     case 4:
-      paddle::lite::x86::math::Transpose<lite::TargetType::kX86, T, 4> trans4;
+      paddle::lite_metal::x86::math::Transpose<lite_metal::TargetType::kX86, T, 4> trans4;
       trans4(context, in, out, axis);
       break;
     default:
@@ -90,7 +90,7 @@ class LayoutNchwToNhwcCompute
         CHECK(0) << "Unsupport dim in mlu layout nchw to nhwc";
     }
 
-    LayoutTransCompute<lite::TargetType::kX86,
+    LayoutTransCompute<lite_metal::TargetType::kX86,
                        typename subgraph::mlu::MLUTypeTraits<Precision>::type>(
         x_ndims, context, *x, out, axis);
 
@@ -141,7 +141,7 @@ class LayoutNhwcToNchwCompute
         CHECK(0) << "Unsupport dim in mlu layout nhwc to nchw";
     }
 
-    LayoutTransCompute<lite::TargetType::kX86,
+    LayoutTransCompute<lite_metal::TargetType::kX86,
                        typename subgraph::mlu::MLUTypeTraits<Precision>::type>(
         x_ndims, context, tmp_t, out, axis);
   }

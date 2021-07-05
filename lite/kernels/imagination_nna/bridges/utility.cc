@@ -16,7 +16,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace imagination_nna {
 

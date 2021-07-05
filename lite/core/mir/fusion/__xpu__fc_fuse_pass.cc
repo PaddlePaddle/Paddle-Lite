@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -85,11 +85,11 @@ class XPUFcFuser : public FuseBase {
     std::string precision = "int16";
 #ifdef LITE_WITH_XPU
     if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
+        lite_metal::TargetWrapperXPU::multi_encoder_precision == "int31") {
       precision = "int31";
       VLOG(3) << "Use int31 in XPUFcOp";
     } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
+               lite_metal::TargetWrapperXPU::multi_encoder_precision == "int8") {
       precision = "int8";
       VLOG(3) << "Use int8 in XPUFcOp";
     }
@@ -189,6 +189,6 @@ class XPUFcFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__fc_fuse_pass, paddle::lite::mir::XPUFcFusePass)
+REGISTER_MIR_PASS(__xpu__fc_fuse_pass, paddle::lite_metal::mir::XPUFcFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__fc");

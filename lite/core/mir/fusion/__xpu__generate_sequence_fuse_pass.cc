@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -99,6 +99,6 @@ class XPUGenerateSequenceFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__generate_sequence_fuse_pass,
-                  paddle::lite::mir::XPUGenerateSequenceFusePass)
+                  paddle::lite_metal::mir::XPUGenerateSequenceFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__generate_sequence");

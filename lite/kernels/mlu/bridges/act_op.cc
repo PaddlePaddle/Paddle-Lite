@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -71,12 +71,12 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(sigmoid,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu, kMLU, paddle::lite::subgraph::mlu::ActConverter);
+                         paddle::lite_metal::subgraph::mlu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu, kMLU, paddle::lite_metal::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(relu6,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh, kMLU, paddle::lite::subgraph::mlu::ActConverter);
+                         paddle::lite_metal::subgraph::mlu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(tanh, kMLU, paddle::lite_metal::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ActConverter);
+                         paddle::lite_metal::subgraph::mlu::ActConverter);

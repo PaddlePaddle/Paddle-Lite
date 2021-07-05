@@ -16,20 +16,20 @@ limitations under the License. */
 #include "lite/core/context.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 struct ForRange {
-  ForRange(const lite::Context<Target>& dev_ctx, size_t limit);
+  ForRange(const lite_metal::Context<Target>& dev_ctx, size_t limit);
 
   template <typename Function>
   void operator()(Function func) const;
 };
 
 template <>
-struct ForRange<lite::TargetType::kX86> {
-  ForRange(lite::X86Context& dev_ctx, size_t limit) : limit_(limit) {}
+struct ForRange<lite_metal::TargetType::kX86> {
+  ForRange(lite_metal::X86Context& dev_ctx, size_t limit) : limit_(limit) {}
 
   template <typename Function>
   void operator()(Function func) const {

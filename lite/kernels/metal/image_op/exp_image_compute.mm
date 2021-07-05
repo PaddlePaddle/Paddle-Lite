@@ -19,7 +19,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -67,7 +67,7 @@ REGISTER_LITE_KERNEL(exp,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ExpImageCompute,
+    paddle::lite_metal::kernels::metal::ExpImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -83,7 +83,7 @@ REGISTER_LITE_KERNEL(exp,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ExpImageCompute,
+    paddle::lite_metal::kernels::metal::ExpImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

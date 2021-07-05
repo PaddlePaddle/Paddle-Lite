@@ -15,8 +15,8 @@
 #include "lite/core/op_registry.h"
 #include "lite/operators/reduce_ops.h"
 
-REGISTER_LITE_OP(reduce_sum, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_prod, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_max, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_all, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_any, paddle::lite::operators::ReduceOp);
+REGISTER_LITE_OP(reduce_sum, paddle::lite_metal::operators::ReduceOp);
+REGISTER_LITE_OP(reduce_prod, paddle::lite_metal::operators::ReduceOp);
+REGISTER_LITE_OP(reduce_max, paddle::lite_metal::operators::ReduceOp);
+REGISTER_LITE_OP(reduce_all, paddle::lite_metal::operators::ReduceOp);
+REGISTER_LITE_OP(reduce_any, paddle::lite_metal::operators::ReduceOp);

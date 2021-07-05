@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -80,7 +80,7 @@ REGISTER_LITE_KERNEL(fill_constant,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::FillConstantCompute,
+                     paddle::lite_metal::kernels::xpu::FillConstantCompute,
                      def)
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})

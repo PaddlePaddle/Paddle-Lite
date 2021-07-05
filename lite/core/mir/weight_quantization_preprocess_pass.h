@@ -19,7 +19,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 /*
  * If the model is quantized by WeightQuantization in PostTrainingQuantization,

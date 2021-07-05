@@ -19,15 +19,15 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-void fc_cpu_base(const lite::Tensor* X,
-                 const lite::Tensor* W,
-                 const lite::Tensor* b,
+void fc_cpu_base(const lite_metal::Tensor* X,
+                 const lite_metal::Tensor* W,
+                 const lite_metal::Tensor* b,
                  int out_size,
-                 lite::Tensor* Out) {
+                 lite_metal::Tensor* Out) {
   const float* data_in = X->data<float>();
   const float* bias = b->data<float>();
   const float* weights = W->data<float>();
@@ -55,17 +55,17 @@ TEST(search_fc, normal) {
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();
   operators::SearchFcParam param;
-  lite::Tensor X, X_gpu, W, W_gpu, b, b_gpu;
-  lite::Tensor Out, Out_cpu, out_ref;
+  lite_metal::Tensor X, X_gpu, W, W_gpu, b, b_gpu;
+  lite_metal::Tensor Out, Out_cpu, out_ref;
   std::vector<int64_t> x_shape{1, 4};
-  X.Resize(lite::DDim(x_shape));
+  X.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> w_shape{3, 4};
-  W.Resize(lite::DDim(w_shape));
+  W.Resize(lite_metal::DDim(w_shape));
   std::vector<int64_t> b_shape{3};
-  b.Resize(lite::DDim(b_shape));
+  b.Resize(lite_metal::DDim(b_shape));
   std::vector<int64_t> out_shape{1, 4};
-  Out.Resize(lite::DDim(out_shape));
-  out_ref.Resize(lite::DDim(out_shape));
+  Out.Resize(lite_metal::DDim(out_shape));
+  out_ref.Resize(lite_metal::DDim(out_shape));
   auto x_data = X.mutable_data<float>();
   auto w_data = W.mutable_data<float>();
   auto b_data = b.mutable_data<float>();
@@ -79,9 +79,9 @@ TEST(search_fc, normal) {
   for (int64_t i = 0; i < b.dims().production(); i++) {
     b_data[i] = static_cast<float>(i);
   }
-  X_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(x_data, X.dims());
-  W_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(w_data, W.dims());
-  b_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(b_data, b.dims());
+  X_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_data, X.dims());
+  W_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(w_data, W.dims());
+  b_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(b_data, b.dims());
   param.X = &X_gpu;
   param.W = &W_gpu;
   param.b = &b_gpu;

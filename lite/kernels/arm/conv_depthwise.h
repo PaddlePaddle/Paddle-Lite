@@ -23,7 +23,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -52,7 +52,7 @@ class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
 
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
+      paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
   }
 
@@ -60,7 +60,7 @@ class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
 #define PROFILE_INFO(dtype1, dtype2)                                        \
   template <>                                                               \
   void DepthwiseConv<PRECISION(dtype1), PRECISION(dtype2)>::                \
-      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+      SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) { \
     ch->kernel_func_name = kernel_func_name_;                               \
   }
 

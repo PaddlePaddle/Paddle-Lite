@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SearchSeqDepaddingOpLite::CheckShape() const {
@@ -51,14 +51,14 @@ bool SearchSeqDepaddingOpLite::InferShapeImpl() const {
 }
 
 bool SearchSeqDepaddingOpLite::AttachImpl(const cpp::OpDesc& op_desc,
-                                          lite::Scope* scope) {
+                                          lite_metal::Scope* scope) {
   auto pad = op_desc.Input("Pad").front();
   auto src = op_desc.Input("Src").front();
   auto out = op_desc.Output("Out").front();
 
-  param_.pad = scope->FindVar(pad)->GetMutable<lite::Tensor>();
-  param_.src = scope->FindVar(src)->GetMutable<lite::Tensor>();
-  param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.pad = scope->FindVar(pad)->GetMutable<lite_metal::Tensor>();
+  param_.src = scope->FindVar(src)->GetMutable<lite_metal::Tensor>();
+  param_.out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
   return true;
 }
@@ -68,4 +68,4 @@ bool SearchSeqDepaddingOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(search_seq_depadding,
-                 paddle::lite::operators::SearchSeqDepaddingOpLite);
+                 paddle::lite_metal::operators::SearchSeqDepaddingOpLite);

@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool AxpyOpLite::CheckShape() const {
@@ -38,20 +38,20 @@ bool AxpyOpLite::InferShapeImpl() const {
   auto dims = param_.Bias->dims();
 
   // Set output dims
-  param_.Out->Resize(lite::DDim(dims));
+  param_.Out->Resize(lite_metal::DDim(dims));
   return true;
 }
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
-bool AxpyOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool AxpyOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto scale = op_desc.Input("Scale").front();
   auto x = op_desc.Input("X").front();
   auto bias = op_desc.Input("Bias").front();
   auto output = op_desc.Output("Out").front();
 
-  param_.Scale = scope->FindVar(scale)->GetMutable<lite::Tensor>();
-  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.Bias = scope->FindVar(bias)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(output)->GetMutable<lite::Tensor>();
+  param_.Scale = scope->FindVar(scale)->GetMutable<lite_metal::Tensor>();
+  param_.X = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+  param_.Bias = scope->FindVar(bias)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(output)->GetMutable<lite_metal::Tensor>();
 
   return true;
 }
@@ -60,4 +60,4 @@ bool AxpyOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(axpy, paddle::lite::operators::AxpyOpLite);
+REGISTER_LITE_OP(axpy, paddle::lite_metal::operators::AxpyOpLite);

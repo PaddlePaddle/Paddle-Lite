@@ -23,17 +23,17 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
 #define INIT_PARAM(method_name)                       \
   auto& param = Param<operators::InterpolateParam>(); \
-  lite::Tensor* X = param.X;                          \
-  lite::Tensor* OutSize = param.OutSize;              \
+  lite_metal::Tensor* X = param.X;                          \
+  lite_metal::Tensor* OutSize = param.OutSize;              \
   auto SizeTensor = param.SizeTensor;                 \
   auto Scale = param.Scale;                           \
-  lite::Tensor* Out = param.Out;                      \
+  lite_metal::Tensor* Out = param.Out;                      \
   float scale = param.scale;                          \
   int out_w = param.out_w;                            \
   int out_h = param.out_h;                            \
@@ -48,38 +48,38 @@ namespace arm {
 template <>
 void BilinearInterpCompute<PRECISION(kFloat)>::Run() {
   INIT_PARAM("Bilinear")
-  lite::arm::math::interpolate(INTERP_PARAM);
+  lite_metal::arm::math::interpolate(INTERP_PARAM);
 }
 
 template <>
 void NearestInterpCompute<PRECISION(kFloat)>::Run() {
   INIT_PARAM("Nearest")
-  lite::arm::math::interpolate(INTERP_PARAM);
+  lite_metal::arm::math::interpolate(INTERP_PARAM);
 }
 
 #ifdef ENABLE_ARM_FP16
 template <>
 void BilinearInterpCompute<PRECISION(kFP16)>::Run() {
   INIT_PARAM("Bilinear")
-  lite::arm::math::fp16::interpolate(INTERP_PARAM);
+  lite_metal::arm::math::fp16::interpolate(INTERP_PARAM);
 }
 
 template <>
 void NearestInterpCompute<PRECISION(kFP16)>::Run() {
   INIT_PARAM("Nearest")
-  lite::arm::math::fp16::interpolate(INTERP_PARAM);
+  lite_metal::arm::math::fp16::interpolate(INTERP_PARAM);
 }
 #endif
 
 } /* namespace arm */
 } /* namespace kernels */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
 #ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::arm::BilinearInterpCompute<PRECISION(kFP16)>
     bilinear_interp_fp16;
-typedef paddle::lite::kernels::arm::NearestInterpCompute<PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::arm::NearestInterpCompute<PRECISION(kFP16)>
     nearest_interp_fp16;
 
 REGISTER_LITE_KERNEL(
@@ -127,9 +127,9 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 
-typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::arm::BilinearInterpCompute<PRECISION(kFloat)>
     bilinear_interp_fp32;
-typedef paddle::lite::kernels::arm::NearestInterpCompute<PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::arm::NearestInterpCompute<PRECISION(kFloat)>
     nearest_interp_fp32;
 
 REGISTER_LITE_KERNEL(

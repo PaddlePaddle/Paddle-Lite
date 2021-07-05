@@ -17,7 +17,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -28,14 +28,14 @@ namespace math {
  *                    output_depth, output_height, output_width]
  */
 template <class T>
-class Vol2ColFunctor<lite::TargetType::kX86, T> {
+class Vol2ColFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& vol,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& vol,
                   const std::vector<int>& dilations,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
-                  lite::Tensor* col) const {
+                  lite_metal::Tensor* col) const {
     CHECK_EQ(vol.dims().size(), 4);
     CHECK_EQ(col->dims().size(), 7);
 
@@ -114,14 +114,14 @@ class Vol2ColFunctor<lite::TargetType::kX86, T> {
  *                    output_depth, output_height, output_width]
  */
 template <class T>
-class Col2VolFunctor<lite::TargetType::kX86, T> {
+class Col2VolFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& col,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& col,
                   const std::vector<int>& dilations,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
-                  lite::Tensor* vol) const {
+                  lite_metal::Tensor* vol) const {
     CHECK_EQ(vol->dims().size(), 4);
     CHECK_EQ(col.dims().size(), 7);
 
@@ -193,10 +193,10 @@ class Col2VolFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class Vol2ColFunctor<lite::TargetType::kX86, float>;
-template class Vol2ColFunctor<lite::TargetType::kX86, double>;
-template class Col2VolFunctor<lite::TargetType::kX86, float>;
-template class Col2VolFunctor<lite::TargetType::kX86, double>;
+template class Vol2ColFunctor<lite_metal::TargetType::kX86, float>;
+template class Vol2ColFunctor<lite_metal::TargetType::kX86, double>;
+template class Col2VolFunctor<lite_metal::TargetType::kX86, float>;
+template class Col2VolFunctor<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

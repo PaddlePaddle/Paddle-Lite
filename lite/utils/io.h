@@ -25,7 +25,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static bool IsFileExists(const std::string& path) {
   std::ifstream file(path);

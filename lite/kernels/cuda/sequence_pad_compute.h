@@ -17,7 +17,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,7 +30,7 @@ class SequencePadCompute : public KernelLite<TARGET(kCUDA), Ptype> {
   virtual ~SequencePadCompute() = default;
 
  private:
-  lite::Tensor seq_offsets_;
+  lite_metal::Tensor seq_offsets_;
   std::vector<int64_t> seq_len_;
   std::vector<size_t> seq_offsets_vec_;
 };

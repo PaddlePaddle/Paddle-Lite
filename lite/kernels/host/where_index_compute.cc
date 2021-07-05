@@ -19,7 +19,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -163,7 +163,7 @@ void WhereIndexCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using whereindex = paddle::lite::kernels::host::WhereIndexCompute;
+using whereindex = paddle::lite_metal::kernels::host::WhereIndexCompute;
 
 REGISTER_LITE_KERNEL(where_index, kHost, kAny, kAny, whereindex, def)
     .BindInput("Condition",

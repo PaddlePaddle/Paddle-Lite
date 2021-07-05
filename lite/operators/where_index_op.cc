@@ -15,7 +15,7 @@
 #include "lite/operators/where_index_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool WhereIndexdOp::CheckShape() const {
@@ -32,14 +32,14 @@ bool WhereIndexdOp::InferShapeImpl() const {
   return true;
 }
 
-bool WhereIndexdOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool WhereIndexdOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   auto input = opdesc.Input("Condition").front();
   auto output = opdesc.Output("Out").front();
   CHECK(scope->FindVar(input));
   CHECK(scope->FindVar(output));
-  param_.input = GetVar<lite::Tensor>(scope, input);
-  param_.output = GetMutableVar<lite::Tensor>(scope, output);
+  param_.input = GetVar<lite_metal::Tensor>(scope, input);
+  param_.output = GetMutableVar<lite_metal::Tensor>(scope, output);
 
   return true;
 }
@@ -48,4 +48,4 @@ bool WhereIndexdOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(where_index, paddle::lite::operators::WhereIndexdOp);
+REGISTER_LITE_OP(where_index, paddle::lite_metal::operators::WhereIndexdOp);

@@ -16,7 +16,7 @@
 #include <math.h>
 #include <string.h>
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 void ImageFlip::choose(const uint8_t* src,

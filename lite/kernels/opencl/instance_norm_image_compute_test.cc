@@ -26,10 +26,10 @@
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
 
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 void instance_norm_ref(Tensor* x,
                        Tensor* y,
                        Tensor* scale,
@@ -106,7 +106,7 @@ TEST(instance_norm_image2d, compute) {
           auto kernel = std::move(kernels.front());
           LOG(INFO) << "get kernel:" << kernel->doc();
 
-          lite::Tensor x, out, out_ref, scale, bias, saved_mean, saved_variance;
+          lite_metal::Tensor x, out, out_ref, scale, bias, saved_mean, saved_variance;
           operators::InstanceNormParam param;
           param.x = &x;
           param.out = &out;

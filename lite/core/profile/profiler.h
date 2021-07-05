@@ -26,7 +26,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace profile {
 
 enum class Type {
@@ -87,7 +87,7 @@ struct OpCharacter {
   void* cl_event{nullptr};
 #endif
 
-  std::string DimToStr(const paddle::lite::DDimLite& dim) {
+  std::string DimToStr(const paddle::lite_metal::DDimLite& dim) {
     if (!dim.size()) return "NotImpl";
     std::string dim_str{""};
     for (size_t i = 0; i < dim.size(); ++i) {
@@ -110,14 +110,14 @@ struct OpCharacter {
 class StatisUnit final {
  public:
   explicit StatisUnit(const OpCharacter& ch);
-  lite::profile::Timer* Timer(Type type);
+  lite_metal::profile::Timer* Timer(Type type);
   OpCharacter& Character() { return character; }
 
   OpCharacter character;
 
  protected:
-  std::unique_ptr<lite::profile::Timer> create_t;
-  std::unique_ptr<lite::profile::Timer> dispatch_t;
+  std::unique_ptr<lite_metal::profile::Timer> create_t;
+  std::unique_ptr<lite_metal::profile::Timer> dispatch_t;
 };
 
 class Profiler final {

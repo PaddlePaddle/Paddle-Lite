@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 

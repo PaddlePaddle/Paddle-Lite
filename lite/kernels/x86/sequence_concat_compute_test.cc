@@ -22,13 +22,13 @@
 #include "lite/kernels/x86/sequence_concat_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
 namespace {
-inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs,
-                     std::vector<lite::Tensor>* xs_in_order) {
+inline LoD ConcatLoD(const std::vector<lite_metal::Tensor*>& xs,
+                     std::vector<lite_metal::Tensor>* xs_in_order) {
   std::vector<uint64_t> result;
   result.resize(xs[0]->lod()[0].size());
 
@@ -48,8 +48,8 @@ inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs,
   return lod;
 }
 
-static void sequence_concat_ref(const std::vector<lite::Tensor*>& xs,
-                                lite::Tensor* out) {
+static void sequence_concat_ref(const std::vector<lite_metal::Tensor*>& xs,
+                                lite_metal::Tensor* out) {
   std::vector<int64_t> out_dims;
   int64_t batch_size = 0;
   int64_t feature_size = 0;
@@ -68,7 +68,7 @@ static void sequence_concat_ref(const std::vector<lite::Tensor*>& xs,
   }
   out_dims[0] = batch_size;
   out->Resize(out_dims);
-  std::vector<lite::Tensor> x_in_order;
+  std::vector<lite_metal::Tensor> x_in_order;
   out->set_lod(ConcatLoD(xs, &x_in_order));
 
   int num = x_in_order.size();
@@ -114,8 +114,8 @@ TEST(sequence_concat_x86, run_test) {
   ctx->As<X86Context>();
 
   operators::SequenceConcatParam param;
-  lite::Tensor x1, x2, x3;
-  lite::Tensor y, y_ref;
+  lite_metal::Tensor x1, x2, x3;
+  lite_metal::Tensor y, y_ref;
 
   int32_t x1_lod_len = 10, feature_len = 4;
   int32_t x2_lod_len = 4, x3_lod_len = 8;
@@ -138,7 +138,7 @@ TEST(sequence_concat_x86, run_test) {
   y_ref.set_lod(lod_info_y);
   y.set_lod(lod_info_y);
 
-  std::vector<lite::Tensor*> xs{&x1, &x2, &x3};
+  std::vector<lite_metal::Tensor*> xs{&x1, &x2, &x3};
 
   param.X = xs;
   param.Out = &y;

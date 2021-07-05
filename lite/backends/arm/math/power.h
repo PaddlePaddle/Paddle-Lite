@@ -15,7 +15,7 @@
 #pragma once
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 
@@ -29,5 +29,5 @@ void power(const T* din,
 
 } /* namespace math */
 } /* namespace arm */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */

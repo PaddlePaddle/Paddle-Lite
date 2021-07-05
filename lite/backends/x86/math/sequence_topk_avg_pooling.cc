@@ -17,7 +17,7 @@ limitations under the License. */
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -60,13 +60,13 @@ void get_topk_pos(const T* data, int length, int k, int* pos, bool debug) {
  * each dimension must be the same, except the axis dimension.
  */
 template <typename T>
-class SequenceTopkAvgPoolingFunctor<lite::TargetType::kX86, T> {
+class SequenceTopkAvgPoolingFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::Tensor& in,
-                  const lite::Tensor& row,
-                  const lite::Tensor& col,
-                  lite::Tensor* out,
-                  lite::Tensor* pos,
+  void operator()(const lite_metal::Tensor& in,
+                  const lite_metal::Tensor& row,
+                  const lite_metal::Tensor& col,
+                  lite_metal::Tensor* out,
+                  lite_metal::Tensor* pos,
                   int channel_num,
                   std::vector<int> topks) {
     auto k_num = topks.size();
@@ -78,9 +78,9 @@ class SequenceTopkAvgPoolingFunctor<lite::TargetType::kX86, T> {
     int batch_size = row_lod.size() - 1;
     int pos_total_size = row_lod[batch_size] * channel_num * max_k;
     vec_pos_shape.push_back(pos_total_size);
-    lite::DDim dims(vec_pos_shape);
+    lite_metal::DDim dims(vec_pos_shape);
     pos->Resize(dims);
-    auto pos_data = pos->mutable_data<int>(lite::TargetType::kX86);
+    auto pos_data = pos->mutable_data<int>(lite_metal::TargetType::kX86);
 
     int offset = 0;
     std::vector<uint64_t> vec_out_lod;
@@ -90,12 +90,12 @@ class SequenceTopkAvgPoolingFunctor<lite::TargetType::kX86, T> {
       vec_out_lod.push_back(offset);
     }
 
-    lite::LoD lod_temp;
+    lite_metal::LoD lod_temp;
     lod_temp.push_back(vec_out_lod);
     out->set_lod(lod_temp);
 
     auto in_data = in.data<T>();
-    auto out_data = out->template mutable_data<T>(lite::TargetType::kX86);
+    auto out_data = out->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     T* sum_data = new T[max_k];
     for (int i = 0; i < batch_size; ++i) {
@@ -141,7 +141,7 @@ class SequenceTopkAvgPoolingFunctor<lite::TargetType::kX86, T> {
 };
 
 #define DEFINE_FUNCTOR(type) \
-  template class SequenceTopkAvgPoolingFunctor<lite::TargetType::kX86, type>;
+  template class SequenceTopkAvgPoolingFunctor<lite_metal::TargetType::kX86, type>;
 
 FOR_ALL_TYPES(DEFINE_FUNCTOR);
 

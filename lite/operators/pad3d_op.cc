@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool Pad3dOpLite::CheckShape() const {
@@ -42,15 +42,15 @@ bool Pad3dOpLite::InferShapeImpl() const {
     out_d = x_dims[1] + param_.paddings[4] + param_.paddings[5];
     out_h = x_dims[2] + param_.paddings[2] + param_.paddings[3];
     out_w = x_dims[3] + param_.paddings[0] + param_.paddings[1];
-    param_.Out->Resize(lite::DDim({x_dims[0], out_d, out_h, out_w, x_dims[1]}));
+    param_.Out->Resize(lite_metal::DDim({x_dims[0], out_d, out_h, out_w, x_dims[1]}));
   } else {
-    param_.Out->Resize(lite::DDim({x_dims[0], x_dims[1], out_d, out_h, out_w}));
+    param_.Out->Resize(lite_metal::DDim({x_dims[0], x_dims[1], out_d, out_h, out_w}));
   }
   return true;
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
-bool Pad3dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool Pad3dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   param_.X = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.Out =
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
@@ -82,4 +82,4 @@ bool Pad3dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(pad3d, paddle::lite::operators::Pad3dOpLite);
+REGISTER_LITE_OP(pad3d, paddle::lite_metal::operators::Pad3dOpLite);

@@ -20,7 +20,7 @@ limitations under the License. */
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -105,7 +105,7 @@ REGISTER_LITE_KERNEL(conv2d_transpose,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::Conv2DTransposeCompute,
+                     paddle::lite_metal::kernels::fpga::Conv2DTransposeCompute,
                      def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),

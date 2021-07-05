@@ -18,7 +18,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -33,7 +33,7 @@ void ShuffleChannelCompute::Run() {
   int channel = param.X->dims()[1];
   int height = param.X->dims()[2];
   int width = param.X->dims()[3];
-  lite::arm::math::fp16::shuffle_channel(
+  lite_metal::arm::math::fp16::shuffle_channel(
       x_data, output_data, group, num, channel, height, width);
 }
 #endif
@@ -48,7 +48,7 @@ REGISTER_LITE_KERNEL(shuffle_channel,
                      kARM,
                      kFP16,
                      kNCHW,
-                     paddle::lite::kernels::arm::ShuffleChannelCompute,
+                     paddle::lite_metal::kernels::arm::ShuffleChannelCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})

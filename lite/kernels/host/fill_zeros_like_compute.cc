@@ -16,7 +16,7 @@
 #include <cstring>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -37,7 +37,7 @@ REGISTER_LITE_KERNEL(fill_zeros_like,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::FillZerosLikeCompute<float>,
+                     paddle::lite_metal::kernels::host::FillZerosLikeCompute<float>,
                      float32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindOutput("Out",
@@ -48,7 +48,7 @@ REGISTER_LITE_KERNEL(fill_zeros_like,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::FillZerosLikeCompute<int>,
+                     paddle::lite_metal::kernels::host::FillZerosLikeCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
@@ -59,7 +59,7 @@ REGISTER_LITE_KERNEL(fill_zeros_like,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::FillZerosLikeCompute<int64_t>,
+                     paddle::lite_metal::kernels::host::FillZerosLikeCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("Out",

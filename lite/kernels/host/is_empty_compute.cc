@@ -15,7 +15,7 @@
 #include "lite/kernels/host/is_empty_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -33,7 +33,7 @@ REGISTER_LITE_KERNEL(is_empty,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::IsEmptyCompute,
+                     paddle::lite_metal::kernels::host::IsEmptyCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

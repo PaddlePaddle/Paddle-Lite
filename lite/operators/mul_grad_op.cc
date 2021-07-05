@@ -17,7 +17,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MulGradOpLite::CheckShape() const {
@@ -59,7 +59,7 @@ bool MulGradOpLite::InferShapeImpl() const {
   }
 }
 
-bool MulGradOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool MulGradOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   CHECK(!op_desc.Input("X").empty());
   CHECK(!op_desc.Input("Y").empty());
   CHECK(!op_desc.Input("Out@GRAD").empty());
@@ -98,4 +98,4 @@ bool MulGradOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(mul_grad, paddle::lite::operators::MulGradOpLite);
+REGISTER_LITE_OP(mul_grad, paddle::lite_metal::operators::MulGradOpLite);

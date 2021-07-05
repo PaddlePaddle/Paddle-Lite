@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -75,4 +75,4 @@ int LrnConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(lrn, kMLU, paddle::lite::subgraph::mlu::LrnConverter);
+REGISTER_SUBGRAPH_BRIDGE(lrn, kMLU, paddle::lite_metal::subgraph::mlu::LrnConverter);

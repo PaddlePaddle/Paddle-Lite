@@ -24,7 +24,7 @@
 extern bool dump_jitcode;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 
 class GenBase : public Kernel {

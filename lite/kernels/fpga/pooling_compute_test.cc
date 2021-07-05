@@ -22,7 +22,7 @@
 #include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -181,9 +181,9 @@ TEST(pool_fpga, compute) {
   PoolCompute pool;
   operators::PoolParam param;
 
-  lite::Tensor x;
-  lite::Tensor output;
-  lite::Tensor output_ref;
+  lite_metal::Tensor x;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
 
   // speedup for ci
   for (auto pooling_type : {"max", "avg"}) {

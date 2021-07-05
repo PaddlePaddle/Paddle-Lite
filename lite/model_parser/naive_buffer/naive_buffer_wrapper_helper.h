@@ -18,7 +18,7 @@
 #include "lite/model_parser/naive_buffer/naive_buffer.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 /// BuilderType must have data method

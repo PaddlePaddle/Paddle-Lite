@@ -24,7 +24,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(InceptionV4, test_inceptionv4_lite_x86) {
   lite_api::CxxConfig config;

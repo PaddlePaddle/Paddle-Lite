@@ -17,7 +17,7 @@
 #include "lite/kernels/x86/conv_depthwise.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -66,7 +66,7 @@ REGISTER_LITE_KERNEL(conv2d,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::Conv2dCompute<float>,
+                     paddle::lite_metal::kernels::x86::Conv2dCompute<float>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -79,7 +79,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::Conv2dCompute<float>,
+                     paddle::lite_metal::kernels::x86::Conv2dCompute<float>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kX86))})

@@ -17,7 +17,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 namespace {
@@ -73,5 +73,5 @@ class IdentityScaleEliminatePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(identity_scale_eliminate_pass,
-                  paddle::lite::mir::IdentityScaleEliminatePass)
+                  paddle::lite_metal::mir::IdentityScaleEliminatePass)
     .BindTargets({TARGET(kAny)});

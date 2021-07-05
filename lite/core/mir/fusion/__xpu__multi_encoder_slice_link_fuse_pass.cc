@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -98,6 +98,6 @@ class XPUMultiEncoderSliceLinkFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__multi_encoder_slice_link_fuse_pass,
-                  paddle::lite::mir::XPUMultiEncoderSliceLinkFusePass)
+                  paddle::lite_metal::mir::XPUMultiEncoderSliceLinkFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__multi_encoder");

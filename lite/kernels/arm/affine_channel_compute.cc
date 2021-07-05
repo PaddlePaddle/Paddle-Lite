@@ -21,17 +21,17 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
 void AffineChannelCompute::Run() {
   auto& param = Param<operators::AffineChannelParam>();
-  const lite::Tensor* x = param.X;
-  const lite::Tensor* scale = param.Scale;
-  const lite::Tensor* bias = param.Bias;
+  const lite_metal::Tensor* x = param.X;
+  const lite_metal::Tensor* scale = param.Scale;
+  const lite_metal::Tensor* bias = param.Bias;
   const std::string data_layout = param.data_layout;
-  lite::Tensor* out = param.Out;
+  lite_metal::Tensor* out = param.Out;
 
   auto x_dims = x->dims();
   int num = x_dims[0];
@@ -47,7 +47,7 @@ void AffineChannelCompute::Run() {
     h = x_dims[1];
     w = x_dims[2];
   }
-  lite::arm::math::affine_channel_func(x->data<float>(),
+  lite_metal::arm::math::affine_channel_func(x->data<float>(),
                                        scale->data<float>(),
                                        bias->data<float>(),
                                        data_layout,
@@ -68,7 +68,7 @@ REGISTER_LITE_KERNEL(affine_channel,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::AffineChannelCompute,
+                     paddle::lite_metal::kernels::arm::AffineChannelCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})

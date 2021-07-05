@@ -22,7 +22,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 void conv_3x3s1_depthwise_fp32_bias(const float* i_data,

@@ -18,7 +18,7 @@
 #include "lite/core/op_lite.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class WhereIndexdOp : public OpLite {
@@ -27,7 +27,7 @@ class WhereIndexdOp : public OpLite {
   explicit WhereIndexdOp(const std::string &op_type) : OpLite(op_type) {}
   bool CheckShape() const override;
   bool InferShapeImpl() const override;
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "where_index_op"; }
 

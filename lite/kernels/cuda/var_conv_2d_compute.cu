@@ -20,7 +20,7 @@ limitations under the License. */
 #include "lite/kernels/cuda/var_conv_2d_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -68,7 +68,7 @@ void VarConv2DCompute<T, PType>::PrepareForRun() {
   auto& context = this->ctx_->template As<CUDAContext>();
   auto stream = context.exec_stream();
   auto& param = this->template Param<param_t>();
-  conv_param_.x = const_cast<lite::Tensor*>(param.X);
+  conv_param_.x = const_cast<lite_metal::Tensor*>(param.X);
   conv_param_.var_length = true;
 
   conv_param_.paddings.reset(new std::vector<int>);
@@ -81,7 +81,7 @@ void VarConv2DCompute<T, PType>::PrepareForRun() {
   conv_param_.dilations->push_back(1);
   conv_param_.strides[0] = param.stride_h;
   conv_param_.strides[1] = param.stride_w;
-  conv_param_.filter = const_cast<lite::Tensor*>(param.W);
+  conv_param_.filter = const_cast<lite_metal::Tensor*>(param.W);
   conv_param_.filter->Resize({param.output_channel,
                               param.input_channel,
                               param.kernel_h,
@@ -104,7 +104,7 @@ void VarConv2DCompute<T, PType>::PrepareForRun() {
     conv_param_.activation_param.active_type = lite_api::ActivationType::kRelu;
   }
   conv_param_.output->Resize({output_shape});
-  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<T, PType>);
+  conv_impl_.reset(new lite_metal::cuda::math::CudnnConv2D<T, PType>);
   conv_impl_->init(conv_param_, &context);
 }
 
@@ -177,9 +177,9 @@ void VarConv2DCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using VarConvFp32 =
-    paddle::lite::kernels::cuda::VarConv2DCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::VarConv2DCompute<float, PRECISION(kFloat)>;
 using VarConvFp16 =
-    paddle::lite::kernels::cuda::VarConv2DCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::VarConv2DCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(var_conv_2d, kCUDA, kFloat, kNCHW, VarConvFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})

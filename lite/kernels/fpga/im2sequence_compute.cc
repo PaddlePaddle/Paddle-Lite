@@ -22,7 +22,7 @@
 #include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -224,7 +224,7 @@ REGISTER_LITE_KERNEL(im2sequence,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::Im2SequenceCompute,
+                     paddle::lite_metal::kernels::fpga::Im2SequenceCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

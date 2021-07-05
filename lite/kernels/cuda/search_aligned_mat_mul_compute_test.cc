@@ -19,7 +19,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -170,9 +170,9 @@ TEST(search_aligned_mat_mul_compute, normal) {
                 for (int i = 0; i < y_host.dims().production(); i++) {
                   y_host_data[i] = i * 0.5f;
                 }
-                x_dev.Assign<float, lite::DDim, TARGET(kCUDA)>(x_host_data,
+                x_dev.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_host_data,
                                                                x_host.dims());
-                y_dev.Assign<float, lite::DDim, TARGET(kCUDA)>(y_host_data,
+                y_dev.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(y_host_data,
                                                                y_host.dims());
                 // prepare cuda context, initialize param, and run kernel
                 operators::MatMulParam param;

@@ -24,7 +24,7 @@
 #include "op_proto/built-in/inc/all_ops.h"  // opp/op_proto/built-in/inc
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
@@ -99,7 +99,7 @@ class Graph {
     CHECK_GE(idx, 1);
     // Generate a unique name for the created Huawei Ascend NPU IR
     node->set_data(
-        std::make_shared<T>(name + "__" + paddle::lite::to_string(idx)));
+        std::make_shared<T>(name + "__" + paddle::lite_metal::to_string(idx)));
     return node;
   }
 

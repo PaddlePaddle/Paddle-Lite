@@ -21,16 +21,16 @@
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 
-typedef paddle::lite::operators::ConvParam ConvParam;
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::operators::ActivationParam ActivationParam;
+typedef paddle::lite_metal::operators::ConvParam ConvParam;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::operators::ActivationParam ActivationParam;
 
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 using paddle::lite_api::PrecisionType;
 
 DDim compute_out_dim(const DDim& dim_in,
-                     const paddle::lite::operators::ConvParam& param) {
+                     const paddle::lite_metal::operators::ConvParam& param) {
   DDim dim_out = dim_in;
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
@@ -123,15 +123,15 @@ void test_conv(const DDim& input_dims,
   param.output = &y;
   param.output->set_precision(OutType);
 
-  paddle::lite::fill_tensor_rand(*param.filter, -1.f, 1.f);
+  paddle::lite_metal::fill_tensor_rand(*param.filter, -1.f, 1.f);
   if (flag_bias) {
-    paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
+    paddle::lite_metal::fill_tensor_rand(*param.bias, -1.f, 1.f);
   }
 
-  paddle::lite::kernels::arm::ConvCompute<Ptype, OutType> conv;
-  std::unique_ptr<paddle::lite::KernelContext> ctx1(
-      new paddle::lite::KernelContext);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  paddle::lite_metal::kernels::arm::ConvCompute<Ptype, OutType> conv;
+  std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+      new paddle::lite_metal::KernelContext);
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
                  thread_num);
 
@@ -141,7 +141,7 @@ void test_conv(const DDim& input_dims,
   conv.SetParam(param);
   conv.SetContext(std::move(ctx1));
   conv.PrepareForRun();
-  paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
+  paddle::lite_metal::fill_tensor_rand(*param.x, -1.f, 1.f);
 
   // warm up
   for (int i = 0; i < warmup; ++i) {
@@ -188,7 +188,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   int batch_size = atoi(argv[1]);
   int input_channel = atoi(argv[2]);

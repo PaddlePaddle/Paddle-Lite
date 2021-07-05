@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -51,7 +51,7 @@ void ElementwiseScaleFuser::BuildPattern() {
 void ElementwiseScaleFuser::InsertNewNode(SSAGraph* graph,
                                           const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
-  std::shared_ptr<lite::OpLite> op;
+  std::shared_ptr<lite_metal::OpLite> op;
   if (eltwise_type_ == "elementwise_mul") {
     op = LiteOpRegistry::Global().Create("elementwise_mul");
   } else {

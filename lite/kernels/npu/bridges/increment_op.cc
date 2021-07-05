@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -71,4 +71,4 @@ int IncrementConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(increment,
                          kNPU,
-                         paddle::lite::subgraph::npu::IncrementConverter);
+                         paddle::lite_metal::subgraph::npu::IncrementConverter);

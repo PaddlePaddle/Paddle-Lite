@@ -31,7 +31,7 @@
 namespace py = pybind11;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pybind {
 
 using lite_api::PrecisionType;

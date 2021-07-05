@@ -23,7 +23,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 
 class BlockDescView : public BlockDescAPI {

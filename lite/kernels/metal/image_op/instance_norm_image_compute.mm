@@ -18,7 +18,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -134,12 +134,12 @@ void InstanceNormImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::InstanceNormImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::InstanceNormImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite_metal::kernels::metal::InstanceNormImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::InstanceNormImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::InstanceNormImageCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::metal::InstanceNormImageCompute<float, PRECISION(kFloat)>
     MetalInstanceNormFp32;
-typedef paddle::lite::kernels::metal::InstanceNormImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::InstanceNormImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalInstanceNormFp16;
 
 REGISTER_LITE_KERNEL(instance_norm,

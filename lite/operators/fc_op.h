@@ -24,7 +24,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class FcOpLite : public OpLite {
@@ -37,14 +37,14 @@ class FcOpLite : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "fc"; }
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter *ch) {
     auto m = param_.input->dims().count(0, param_.in_num_col_dims);
     ch->input_shape = ch->DimToStr(param_.input->dims());
     ch->filter_shape = ch->DimToStr(param_.w->dims());

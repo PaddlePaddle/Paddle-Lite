@@ -17,7 +17,7 @@
 #include <string.h>
 #include "lite/utils/cv/bgr_rotate.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 void ImageRotate::choose(const uint8_t* src,

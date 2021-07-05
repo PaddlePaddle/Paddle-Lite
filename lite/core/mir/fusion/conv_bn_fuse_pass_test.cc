@@ -22,7 +22,7 @@
 #include "paddle/fluid/framework/program_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -46,35 +46,35 @@ std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
   main_block->Var("bn_saved_mean");
   main_block->Var("bn_saved_var");
 
-  scope->Var("conv_i")->GetMutable<lite::Tensor>();
-  auto conv_param_t = scope->Var("conv_param")->GetMutable<lite::Tensor>();
+  scope->Var("conv_i")->GetMutable<lite_metal::Tensor>();
+  auto conv_param_t = scope->Var("conv_param")->GetMutable<lite_metal::Tensor>();
   std::vector<int64_t> conv_param_shape = {3, 1, 2, 2};
-  conv_param_t->Resize(lite::DDim(conv_param_shape));
+  conv_param_t->Resize(lite_metal::DDim(conv_param_shape));
   conv_param_t->mutable_data<float>();
-  scope->Var("conv_out")->GetMutable<lite::Tensor>();
-  auto bn_scale_t = scope->Var("bn_scale")->GetMutable<lite::Tensor>();
+  scope->Var("conv_out")->GetMutable<lite_metal::Tensor>();
+  auto bn_scale_t = scope->Var("bn_scale")->GetMutable<lite_metal::Tensor>();
   std::vector<int64_t> bn_scale_shape = {3};
-  bn_scale_t->Resize(lite::DDim(bn_scale_shape));
+  bn_scale_t->Resize(lite_metal::DDim(bn_scale_shape));
   bn_scale_t->mutable_data<float>();
 
-  auto bn_bias_t = scope->Var("bn_bias")->GetMutable<lite::Tensor>();
+  auto bn_bias_t = scope->Var("bn_bias")->GetMutable<lite_metal::Tensor>();
   std::vector<int64_t> bn_bias_shape = {3};
-  bn_bias_t->Resize(lite::DDim(bn_bias_shape));
+  bn_bias_t->Resize(lite_metal::DDim(bn_bias_shape));
   bn_bias_t->mutable_data<float>();
 
-  auto bn_mean_t = scope->Var("bn_mean")->GetMutable<lite::Tensor>();
-  bn_mean_t->Resize(lite::DDim(bn_bias_shape));
+  auto bn_mean_t = scope->Var("bn_mean")->GetMutable<lite_metal::Tensor>();
+  bn_mean_t->Resize(lite_metal::DDim(bn_bias_shape));
   bn_mean_t->mutable_data<float>();
 
-  auto bn_var_t = scope->Var("bn_var")->GetMutable<lite::Tensor>();
-  bn_var_t->Resize(lite::DDim(bn_bias_shape));
+  auto bn_var_t = scope->Var("bn_var")->GetMutable<lite_metal::Tensor>();
+  bn_var_t->Resize(lite_metal::DDim(bn_bias_shape));
   bn_var_t->mutable_data<float>();
 
-  scope->Var("bn_out")->GetMutable<lite::Tensor>();
-  scope->Var("bn_mean_out")->GetMutable<lite::Tensor>();
-  scope->Var("bn_var_out")->GetMutable<lite::Tensor>();
-  scope->Var("bn_saved_mean")->GetMutable<lite::Tensor>();
-  scope->Var("bn_saved_var")->GetMutable<lite::Tensor>();
+  scope->Var("bn_out")->GetMutable<lite_metal::Tensor>();
+  scope->Var("bn_mean_out")->GetMutable<lite_metal::Tensor>();
+  scope->Var("bn_var_out")->GetMutable<lite_metal::Tensor>();
+  scope->Var("bn_saved_mean")->GetMutable<lite_metal::Tensor>();
+  scope->Var("bn_saved_var")->GetMutable<lite_metal::Tensor>();
 
   conv_op->SetType("conv2d");
   conv_op->SetInput("Input", {"conv_i"});
@@ -111,7 +111,7 @@ std::unique_ptr<SSAGraph> BuildGraph(framework::ProgramDesc* program_desc,
 
   program_desc->Flush();
 
-  lite::Program program(*program_desc->Proto(), scope, valid_places);
+  lite_metal::Program program(*program_desc->Proto(), scope, valid_places);
   auto graph = std::unique_ptr<SSAGraph>(new SSAGraph());
   graph->Build(program, valid_places);
 

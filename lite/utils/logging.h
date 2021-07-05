@@ -69,45 +69,45 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 // LOG SYSTEM
 #ifndef LITE_WITH_LOG
 #define LOG(status) LOG_##status
-#define LOG_INFO paddle::lite::Voidify()
+#define LOG_INFO paddle::lite_metal::Voidify()
 #define LOG_ERROR LOG_INFO
 #define LOG_WARNING LOG_INFO
-#define LOG_FATAL paddle::lite::VoidifyFatal()
+#define LOG_FATAL paddle::lite_metal::VoidifyFatal()
 #else
 #define LOG(status) LOG_##status.stream()
 
 #if defined LITE_ON_MODEL_OPTIMIZE_TOOL || defined LITE_WITH_PYTHON
 // In opt tool, all LOG(INFO) will be replaced by VLOG(1),
 // so that the message will not be printed by default.
-#define LOG_INFO paddle::lite::VLogMessage(__FILE__, __FUNCTION__, __LINE__, 1)
+#define LOG_INFO paddle::lite_metal::VLogMessage(__FILE__, __FUNCTION__, __LINE__, 1)
 #else
-#define LOG_INFO paddle::lite::LogMessage(__FILE__, __FUNCTION__, __LINE__, "I")
+#define LOG_INFO paddle::lite_metal::LogMessage(__FILE__, __FUNCTION__, __LINE__, "I")
 #endif
 
 #define LOG_ERROR LOG_INFO
 #define LOG_WARNING \
-  paddle::lite::LogMessage(__FILE__, __FUNCTION__, __LINE__, "W")
+  paddle::lite_metal::LogMessage(__FILE__, __FUNCTION__, __LINE__, "W")
 #define LOG_FATAL \
-  paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__)
+  paddle::lite_metal::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__)
 #endif
 
 #ifndef LITE_WITH_LOG
-#define VLOG(level) paddle::lite::Voidify()
+#define VLOG(level) paddle::lite_metal::Voidify()
 #else
 // VLOG SYSTEM
 #define VLOG(level) \
-  paddle::lite::VLogMessage(__FILE__, __FUNCTION__, __LINE__, level).stream()
+  paddle::lite_metal::VLogMessage(__FILE__, __FUNCTION__, __LINE__, level).stream()
 #endif
 
 // CHECK SYSTEM
 #ifndef LITE_WITH_LOG
 #define CHECK(x) \
-  if (!(x)) paddle::lite::VoidifyFatal()
+  if (!(x)) paddle::lite_metal::VoidifyFatal()
 #define _CHECK_BINARY(x, cmp, y) CHECK(x cmp y)
 #else
 #define CHECK(x)                                                           \
   if (!(x))                                                                \
-  paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() \
+  paddle::lite_metal::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() \
       << "Check failed: " #x << ": "  // NOLINT(*)
 #define _CHECK_BINARY(x, cmp, y) \
   CHECK((x cmp y)) << (x) << "!" #cmp << (y) << " "  // NOLINT(*)
@@ -122,7 +122,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #define CHECK_GE(x, y) _CHECK_BINARY(x, >=, y)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #ifdef LITE_WITH_EXCEPTION
 struct PaddleLiteException : public std::exception {
@@ -151,7 +151,7 @@ class LogMessage {
              int lineno,
              const char* level = "I") {
     level_ = level;
-    paddle::lite::gen_log(log_stream_, file, func, lineno, level);
+    paddle::lite_metal::gen_log(log_stream_, file, func, lineno, level);
   }
 
   ~LogMessage() {
@@ -228,8 +228,8 @@ class VLogMessage {
     if (GLOG_v_int < level_int) {
       return;
     }
-    const char* level = paddle::lite::to_string(level_int).c_str();
-    paddle::lite::gen_log(log_stream_, file, func, lineno, level);
+    const char* level = paddle::lite_metal::to_string(level_int).c_str();
+    paddle::lite_metal::gen_log(log_stream_, file, func, lineno, level);
   }
 
   ~VLogMessage() {

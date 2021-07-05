@@ -16,7 +16,7 @@
 #include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -63,7 +63,7 @@ void SigmoidCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    relu, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ReluCompute, def)
+    relu, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::ReluCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
@@ -78,7 +78,7 @@ REGISTER_LITE_KERNEL(sigmoid,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::SigmoidCompute,
+                     paddle::lite_metal::kernels::fpga::SigmoidCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

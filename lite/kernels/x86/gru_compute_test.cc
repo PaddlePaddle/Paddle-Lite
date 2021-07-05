@@ -23,7 +23,7 @@
 #include "lite/kernels/x86/gru_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -40,25 +40,25 @@ TEST(gru_x86, init) {
 }
 
 TEST(gru_x86, run_test) {
-  lite::Tensor input, h0, weight, bias;
-  lite::Tensor batch_gate, batch_reset_hidden_prev, batch_hidden, hidden;
+  lite_metal::Tensor input, h0, weight, bias;
+  lite_metal::Tensor batch_gate, batch_reset_hidden_prev, batch_hidden, hidden;
   constexpr int batch_size = 9;
   std::vector<int64_t> input_shape{batch_size, 15};
-  input.Resize(lite::DDim(input_shape));
+  input.Resize(lite_metal::DDim(input_shape));
   std::vector<int64_t> weight_shape{5, 15};
-  weight.Resize(lite::DDim(weight_shape));
+  weight.Resize(lite_metal::DDim(weight_shape));
   std::vector<int64_t> h0_shape{3, 5};
-  h0.Resize(lite::DDim(h0_shape));
+  h0.Resize(lite_metal::DDim(h0_shape));
   std::vector<int64_t> bias_shape{1, 15};
-  bias.Resize(lite::DDim(bias_shape));
+  bias.Resize(lite_metal::DDim(bias_shape));
   std::vector<int64_t> batch_gate_shape{batch_size, 15};
-  batch_gate.Resize(lite::DDim(batch_gate_shape));
+  batch_gate.Resize(lite_metal::DDim(batch_gate_shape));
   std::vector<int64_t> batch_reset_hidden_prev_shape{batch_size, 5};
-  batch_reset_hidden_prev.Resize(lite::DDim(batch_reset_hidden_prev_shape));
+  batch_reset_hidden_prev.Resize(lite_metal::DDim(batch_reset_hidden_prev_shape));
   std::vector<int64_t> batch_hidden_shape{batch_size, 5};
-  batch_hidden.Resize(lite::DDim(batch_hidden_shape));
+  batch_hidden.Resize(lite_metal::DDim(batch_hidden_shape));
   std::vector<int64_t> hidden_shape{batch_size, 5};
-  hidden.Resize(lite::DDim(hidden_shape));
+  hidden.Resize(lite_metal::DDim(hidden_shape));
 
   std::vector<std::vector<uint64_t>> lod{{0, 2, 6, 9}};
   input.set_lod(lod);

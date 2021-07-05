@@ -17,14 +17,14 @@ limitations under the License. */
 #include "lite/backends/x86/math/conv_utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-void conv_depthwise_m128(lite::Tensor* input,
-                         lite::Tensor* output,
-                         lite::Tensor* filter,
-                         lite::Tensor* bias,
+void conv_depthwise_m128(lite_metal::Tensor* input,
+                         lite_metal::Tensor* output,
+                         lite_metal::Tensor* filter,
+                         lite_metal::Tensor* bias,
                          const int stride_h,
                          const int stride_w,
                          const int dilation_h,

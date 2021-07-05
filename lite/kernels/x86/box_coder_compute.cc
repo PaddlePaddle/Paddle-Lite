@@ -18,7 +18,7 @@
 #include "lite/backends/x86/math/box_coder.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -54,7 +54,7 @@ void BoxCoderCompute::Run() {
       prior_box_var ? prior_box_var->data<float>() : nullptr;
 
   if (code_type == "encode_center_size") {
-    lite::x86::math::encode_center_size(row,
+    lite_metal::x86::math::encode_center_size(row,
                                         col,
                                         len,
                                         target_box_data,
@@ -70,7 +70,7 @@ void BoxCoderCompute::Run() {
     } else if (!(variance.empty())) {
       var_size = 1;
     }
-    lite::x86::math::decode_center_size(axis,
+    lite_metal::x86::math::decode_center_size(axis,
                                         var_size,
                                         row,
                                         col,
@@ -95,7 +95,7 @@ REGISTER_LITE_KERNEL(box_coder,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::BoxCoderCompute,
+                     paddle::lite_metal::kernels::x86::BoxCoderCompute,
                      def)
     .BindInput("PriorBox", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("PriorBoxVar", {LiteType::GetTensorTy(TARGET(kX86))})

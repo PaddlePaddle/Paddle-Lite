@@ -18,7 +18,7 @@
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
@@ -280,8 +280,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     conv2d,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ConvConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ConvConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     depthwise_conv2d,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ConvConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ConvConverter);

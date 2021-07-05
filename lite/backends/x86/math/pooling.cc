@@ -17,7 +17,7 @@ limitations under the License. */
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -27,17 +27,17 @@ namespace math {
  * height and width, respectively.
  */
 template <typename PoolProcess, typename T>
-class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
+class Pool2dFunctor<lite_metal::TargetType::kX86, PoolProcess, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor* input,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor* input,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   PoolProcess pool_process,
                   bool exclusive,
                   bool adaptive,
-                  lite::Tensor* output) {
+                  lite_metal::Tensor* output) {
     const int batch_size = input->dims()[0];
     const int input_height = input->dims()[2];
     const int input_width = input->dims()[3];
@@ -55,7 +55,7 @@ class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const int output_stride = output_height * output_width;
 
     const T* input_data = input->template data<T>();
-    T* output_data = output->template mutable_data<T>(lite::TargetType::kX86);
+    T* output_data = output->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     int hstart, hend;
     int wstart, wend;
@@ -106,19 +106,19 @@ class Pool2dFunctor<lite::TargetType::kX86, PoolProcess, T> {
 * and width, respectively.
 */
 template <typename PoolProcess, class T>
-class Pool2dGradFunctor<lite::TargetType::kX86, PoolProcess, T> {
+class Pool2dGradFunctor<lite_metal::TargetType::kX86, PoolProcess, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   PoolProcess pool_grad_process,
                   bool exclusive,
                   bool adaptive,
-                  lite::Tensor* input_grad) {
+                  lite_metal::Tensor* input_grad) {
     const int batch_size = input.dims()[0];
     const int input_height = input.dims()[2];
     const int input_width = input.dims()[3];
@@ -138,7 +138,7 @@ class Pool2dGradFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
     T* input_grad_data =
-        input_grad->template mutable_data<T>(lite::TargetType::kX86);
+        input_grad->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     int hstart, hend;
     int wstart, wend;
@@ -193,16 +193,16 @@ class Pool2dGradFunctor<lite::TargetType::kX86, PoolProcess, T> {
  * height and width, respectively.
  */
 template <class T>
-class MaxPool2dGradFunctor<lite::TargetType::kX86, T> {
+class MaxPool2dGradFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
-                  lite::Tensor* input_grad) {
+                  lite_metal::Tensor* input_grad) {
     const int batch_size = input.dims()[0];
     const int input_height = input.dims()[2];
     const int input_width = input.dims()[3];
@@ -222,7 +222,7 @@ class MaxPool2dGradFunctor<lite::TargetType::kX86, T> {
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
     T* input_grad_data =
-        input_grad->template mutable_data<T>(lite::TargetType::kX86);
+        input_grad->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     for (int i = 0; i < batch_size; i++) {
       for (int c = 0; c < output_channels; ++c) {
@@ -257,32 +257,32 @@ class MaxPool2dGradFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class MaxPool2dGradFunctor<lite::TargetType::kX86, float>;
-template class MaxPool2dGradFunctor<lite::TargetType::kX86, double>;
+template class MaxPool2dGradFunctor<lite_metal::TargetType::kX86, float>;
+template class MaxPool2dGradFunctor<lite_metal::TargetType::kX86, double>;
 
-template class Pool2dFunctor<lite::TargetType::kX86,
-                             lite::x86::math::MaxPool<float>,
+template class Pool2dFunctor<lite_metal::TargetType::kX86,
+                             lite_metal::x86::math::MaxPool<float>,
                              float>;
-template class Pool2dFunctor<lite::TargetType::kX86,
-                             lite::x86::math::AvgPool<float>,
+template class Pool2dFunctor<lite_metal::TargetType::kX86,
+                             lite_metal::x86::math::AvgPool<float>,
                              float>;
-template class Pool2dGradFunctor<lite::TargetType::kX86,
-                                 lite::x86::math::MaxPoolGrad<float>,
+template class Pool2dGradFunctor<lite_metal::TargetType::kX86,
+                                 lite_metal::x86::math::MaxPoolGrad<float>,
                                  float>;
-template class Pool2dGradFunctor<lite::TargetType::kX86,
-                                 lite::x86::math::AvgPoolGrad<float>,
+template class Pool2dGradFunctor<lite_metal::TargetType::kX86,
+                                 lite_metal::x86::math::AvgPoolGrad<float>,
                                  float>;
-template class Pool2dFunctor<lite::TargetType::kX86,
-                             lite::x86::math::MaxPool<double>,
+template class Pool2dFunctor<lite_metal::TargetType::kX86,
+                             lite_metal::x86::math::MaxPool<double>,
                              double>;
-template class Pool2dFunctor<lite::TargetType::kX86,
-                             lite::x86::math::AvgPool<double>,
+template class Pool2dFunctor<lite_metal::TargetType::kX86,
+                             lite_metal::x86::math::AvgPool<double>,
                              double>;
-template class Pool2dGradFunctor<lite::TargetType::kX86,
-                                 lite::x86::math::MaxPoolGrad<double>,
+template class Pool2dGradFunctor<lite_metal::TargetType::kX86,
+                                 lite_metal::x86::math::MaxPoolGrad<double>,
                                  double>;
-template class Pool2dGradFunctor<lite::TargetType::kX86,
-                                 lite::x86::math::AvgPoolGrad<double>,
+template class Pool2dGradFunctor<lite_metal::TargetType::kX86,
+                                 lite_metal::x86::math::AvgPoolGrad<double>,
                                  double>;
 
 /*
@@ -291,17 +291,17 @@ template class Pool2dGradFunctor<lite::TargetType::kX86,
  * depth, height and width, respectively.
  */
 template <typename PoolProcess, class T>
-class Pool3dFunctor<lite::TargetType::kX86, PoolProcess, T> {
+class Pool3dFunctor<lite_metal::TargetType::kX86, PoolProcess, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   PoolProcess pool_process,
                   bool exclusive,
                   bool adaptive,
-                  lite::Tensor* output) {
+                  lite_metal::Tensor* output) {
     const int batch_size = input.dims()[0];
     const int input_depth = input.dims()[2];
     const int input_height = input.dims()[3];
@@ -324,7 +324,7 @@ class Pool3dFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const int output_stride = output_depth * output_height * output_width;
 
     const T* input_data = input.data<T>();
-    T* output_data = output->template mutable_data<T>(lite::TargetType::kX86);
+    T* output_data = output->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     int dstart, dend;
     int hstart, hend;
@@ -391,19 +391,19 @@ class Pool3dFunctor<lite::TargetType::kX86, PoolProcess, T> {
  * depth, height and width, respectively.
  */
 template <typename PoolProcess, class T>
-class Pool3dGradFunctor<lite::TargetType::kX86, PoolProcess, T> {
+class Pool3dGradFunctor<lite_metal::TargetType::kX86, PoolProcess, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   PoolProcess pool_grad_process,
                   bool exclusive,
                   bool adaptive,
-                  lite::Tensor* input_grad) {
+                  lite_metal::Tensor* input_grad) {
     const int batch_size = input.dims()[0];
     const int input_depth = input.dims()[2];
     const int input_height = input.dims()[3];
@@ -428,7 +428,7 @@ class Pool3dGradFunctor<lite::TargetType::kX86, PoolProcess, T> {
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
     T* input_grad_data =
-        input_grad->template mutable_data<T>(lite::TargetType::kX86);
+        input_grad->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     int dstart, dend;
     int hstart, hend;
@@ -500,16 +500,16 @@ class Pool3dGradFunctor<lite::TargetType::kX86, PoolProcess, T> {
  * depth, height and width, respectively.
  */
 template <class T>
-class MaxPool3dGradFunctor<lite::TargetType::kX86, T> {
+class MaxPool3dGradFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
-                  lite::Tensor* input_grad) {
+                  lite_metal::Tensor* input_grad) {
     const int batch_size = input.dims()[0];
     const int input_depth = input.dims()[2];
     const int input_height = input.dims()[3];
@@ -534,7 +534,7 @@ class MaxPool3dGradFunctor<lite::TargetType::kX86, T> {
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
     T* input_grad_data =
-        input_grad->template mutable_data<T>(lite::TargetType::kX86);
+        input_grad->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     for (int i = 0; i < batch_size; i++) {
       for (int c = 0; c < output_channels; ++c) {
@@ -578,32 +578,32 @@ class MaxPool3dGradFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class MaxPool3dGradFunctor<lite::TargetType::kX86, float>;
-template class MaxPool3dGradFunctor<lite::TargetType::kX86, double>;
+template class MaxPool3dGradFunctor<lite_metal::TargetType::kX86, float>;
+template class MaxPool3dGradFunctor<lite_metal::TargetType::kX86, double>;
 
-template class Pool3dFunctor<lite::TargetType::kX86,
-                             lite::x86::math::MaxPool<float>,
+template class Pool3dFunctor<lite_metal::TargetType::kX86,
+                             lite_metal::x86::math::MaxPool<float>,
                              float>;
-template class Pool3dFunctor<lite::TargetType::kX86,
-                             lite::x86::math::AvgPool<float>,
+template class Pool3dFunctor<lite_metal::TargetType::kX86,
+                             lite_metal::x86::math::AvgPool<float>,
                              float>;
-template class Pool3dGradFunctor<lite::TargetType::kX86,
-                                 lite::x86::math::MaxPoolGrad<float>,
+template class Pool3dGradFunctor<lite_metal::TargetType::kX86,
+                                 lite_metal::x86::math::MaxPoolGrad<float>,
                                  float>;
-template class Pool3dGradFunctor<lite::TargetType::kX86,
-                                 lite::x86::math::AvgPoolGrad<float>,
+template class Pool3dGradFunctor<lite_metal::TargetType::kX86,
+                                 lite_metal::x86::math::AvgPoolGrad<float>,
                                  float>;
-template class Pool3dFunctor<lite::TargetType::kX86,
-                             lite::x86::math::MaxPool<double>,
+template class Pool3dFunctor<lite_metal::TargetType::kX86,
+                             lite_metal::x86::math::MaxPool<double>,
                              double>;
-template class Pool3dFunctor<lite::TargetType::kX86,
-                             lite::x86::math::AvgPool<double>,
+template class Pool3dFunctor<lite_metal::TargetType::kX86,
+                             lite_metal::x86::math::AvgPool<double>,
                              double>;
-template class Pool3dGradFunctor<lite::TargetType::kX86,
-                                 lite::x86::math::MaxPoolGrad<double>,
+template class Pool3dGradFunctor<lite_metal::TargetType::kX86,
+                                 lite_metal::x86::math::MaxPoolGrad<double>,
                                  double>;
-template class Pool3dGradFunctor<lite::TargetType::kX86,
-                                 lite::x86::math::AvgPoolGrad<double>,
+template class Pool3dGradFunctor<lite_metal::TargetType::kX86,
+                                 lite_metal::x86::math::AvgPoolGrad<double>,
                                  double>;
 
 /*
@@ -612,16 +612,16 @@ template class Pool3dGradFunctor<lite::TargetType::kX86,
  * height and width, respectively.
  */
 template <typename T1, typename T2>
-class MaxPool2dWithIndexFunctor<lite::TargetType::kX86, T1, T2> {
+class MaxPool2dWithIndexFunctor<lite_metal::TargetType::kX86, T1, T2> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   bool adaptive,
-                  lite::Tensor* output,
-                  lite::Tensor* mask) {
+                  lite_metal::Tensor* output,
+                  lite_metal::Tensor* mask) {
     const int batch_size = input.dims()[0];
     const int input_height = input.dims()[2];
     const int input_width = input.dims()[3];
@@ -638,8 +638,8 @@ class MaxPool2dWithIndexFunctor<lite::TargetType::kX86, T1, T2> {
     const int output_stride = output_height * output_width;
 
     const T1* input_data = input.data<T1>();
-    T1* output_data = output->mutable_data<T1>(lite::TargetType::kX86);
-    T2* mask_data = mask->mutable_data<T2>(lite::TargetType::kX86);
+    T1* output_data = output->mutable_data<T1>(lite_metal::TargetType::kX86);
+    T2* mask_data = mask->mutable_data<T2>(lite_metal::TargetType::kX86);
 
     int hstart, hend;
     int wstart, wend;
@@ -693,16 +693,16 @@ class MaxPool2dWithIndexFunctor<lite::TargetType::kX86, T1, T2> {
  * height and width, respectively.
  */
 template <typename T1, typename T2>
-class MaxPool2dWithIndexGradFunctor<lite::TargetType::kX86, T1, T2> {
+class MaxPool2dWithIndexGradFunctor<lite_metal::TargetType::kX86, T1, T2> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& output_grad,
-                  const lite::Tensor& mask,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& output_grad,
+                  const lite_metal::Tensor& mask,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   bool adaptive,
-                  lite::Tensor* input_grad) {
+                  lite_metal::Tensor* input_grad) {
     const int batch_size = input_grad->dims()[0];
     const int input_height = input_grad->dims()[2];
     const int input_width = input_grad->dims()[3];
@@ -714,7 +714,7 @@ class MaxPool2dWithIndexGradFunctor<lite::TargetType::kX86, T1, T2> {
 
     const T2* mask_data = mask.data<T2>();
     const T1* output_grad_data = output_grad.data<T1>();
-    T1* input_grad_data = input_grad->mutable_data<T1>(lite::TargetType::kX86);
+    T1* input_grad_data = input_grad->mutable_data<T1>(lite_metal::TargetType::kX86);
 
     for (int n = 0; n < batch_size; ++n) {
       for (int c = 0; c < output_channels; ++c) {
@@ -734,12 +734,12 @@ class MaxPool2dWithIndexGradFunctor<lite::TargetType::kX86, T1, T2> {
   }
 };
 
-template class MaxPool2dWithIndexFunctor<lite::TargetType::kX86, float, int>;
-template class MaxPool2dWithIndexGradFunctor<lite::TargetType::kX86,
+template class MaxPool2dWithIndexFunctor<lite_metal::TargetType::kX86, float, int>;
+template class MaxPool2dWithIndexGradFunctor<lite_metal::TargetType::kX86,
                                              float,
                                              int>;
-template class MaxPool2dWithIndexFunctor<lite::TargetType::kX86, double, int>;
-template class MaxPool2dWithIndexGradFunctor<lite::TargetType::kX86,
+template class MaxPool2dWithIndexFunctor<lite_metal::TargetType::kX86, double, int>;
+template class MaxPool2dWithIndexGradFunctor<lite_metal::TargetType::kX86,
                                              double,
                                              int>;
 
@@ -749,16 +749,16 @@ template class MaxPool2dWithIndexGradFunctor<lite::TargetType::kX86,
  * depth, height and width, respectively.
  */
 template <typename T1, typename T2>
-class MaxPool3dWithIndexFunctor<lite::TargetType::kX86, T1, T2> {
+class MaxPool3dWithIndexFunctor<lite_metal::TargetType::kX86, T1, T2> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   bool adaptive,
-                  lite::Tensor* output,
-                  lite::Tensor* mask) {
+                  lite_metal::Tensor* output,
+                  lite_metal::Tensor* mask) {
     const int batch_size = input.dims()[0];
     const int input_depth = input.dims()[2];
     const int input_height = input.dims()[3];
@@ -780,8 +780,8 @@ class MaxPool3dWithIndexFunctor<lite::TargetType::kX86, T1, T2> {
     const int output_stride = output_depth * output_height * output_width;
 
     const T1* input_data = input.data<T1>();
-    T1* output_data = output->mutable_data<T1>(lite::TargetType::kX86);
-    T2* mask_data = mask->mutable_data<T2>(lite::TargetType::kX86);
+    T1* output_data = output->mutable_data<T1>(lite_metal::TargetType::kX86);
+    T2* mask_data = mask->mutable_data<T2>(lite_metal::TargetType::kX86);
 
     int dstart, dend;
     int hstart, hend;
@@ -850,16 +850,16 @@ class MaxPool3dWithIndexFunctor<lite::TargetType::kX86, T1, T2> {
  * depth, height and width, respectively.
  */
 template <typename T1, typename T2>
-class MaxPool3dWithIndexGradFunctor<lite::TargetType::kX86, T1, T2> {
+class MaxPool3dWithIndexGradFunctor<lite_metal::TargetType::kX86, T1, T2> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& output_grad,
-                  const lite::Tensor& mask,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& output_grad,
+                  const lite_metal::Tensor& mask,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   bool adaptive,
-                  lite::Tensor* input_grad) {
+                  lite_metal::Tensor* input_grad) {
     const int batch_size = input_grad->dims()[0];
     const int input_depth = input_grad->dims()[2];
     const int input_height = input_grad->dims()[3];
@@ -873,7 +873,7 @@ class MaxPool3dWithIndexGradFunctor<lite::TargetType::kX86, T1, T2> {
 
     const T2* mask_data = mask.data<T2>();
     const T1* output_grad_data = output_grad.data<T1>();
-    T1* input_grad_data = input_grad->mutable_data<T1>(lite::TargetType::kX86);
+    T1* input_grad_data = input_grad->mutable_data<T1>(lite_metal::TargetType::kX86);
 
     for (int n = 0; n < batch_size; ++n) {
       for (int c = 0; c < output_channels; ++c) {
@@ -896,12 +896,12 @@ class MaxPool3dWithIndexGradFunctor<lite::TargetType::kX86, T1, T2> {
   }
 };
 
-template class MaxPool3dWithIndexFunctor<lite::TargetType::kX86, float, int>;
-template class MaxPool3dWithIndexGradFunctor<lite::TargetType::kX86,
+template class MaxPool3dWithIndexFunctor<lite_metal::TargetType::kX86, float, int>;
+template class MaxPool3dWithIndexGradFunctor<lite_metal::TargetType::kX86,
                                              float,
                                              int>;
-template class MaxPool3dWithIndexFunctor<lite::TargetType::kX86, double, int>;
-template class MaxPool3dWithIndexGradFunctor<lite::TargetType::kX86,
+template class MaxPool3dWithIndexFunctor<lite_metal::TargetType::kX86, double, int>;
+template class MaxPool3dWithIndexGradFunctor<lite_metal::TargetType::kX86,
                                              double,
                                              int>;
 }  // namespace math

@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -40,7 +40,7 @@ REGISTER_LITE_KERNEL(unsqueeze,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::UnsqueezeCompute,
+                     paddle::lite_metal::kernels::fpga::UnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(
@@ -60,7 +60,7 @@ REGISTER_LITE_KERNEL(unsqueeze2,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::UnsqueezeCompute,
+                     paddle::lite_metal::kernels::fpga::UnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(

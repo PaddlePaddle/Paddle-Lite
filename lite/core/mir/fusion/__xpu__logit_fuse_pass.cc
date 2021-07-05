@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -151,6 +151,6 @@ class XPULogitFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__logit_fuse_pass, paddle::lite::mir::XPULogitFusePass)
+REGISTER_MIR_PASS(__xpu__logit_fuse_pass, paddle::lite_metal::mir::XPULogitFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__logit");

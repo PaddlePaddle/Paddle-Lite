@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -47,7 +47,7 @@ void GridSamplerCompute::Run() {
   uint32_t* bound_p = reinterpret_cast<uint32_t*>(dis_p) + coor_size * 4;
 
   // nearest
-  lite::Tensor grid_new_x_t, grid_new_y_t;
+  lite_metal::Tensor grid_new_x_t, grid_new_y_t;
   grid_new_x_t.Resize(param.grid->dims());
   grid_new_y_t.Resize(param.grid->dims());
   float* grid_new_xp = grid_new_x_t.mutable_data<float>();
@@ -346,7 +346,7 @@ REGISTER_LITE_KERNEL(grid_sampler,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::GridSamplerCompute,
+                     paddle::lite_metal::kernels::arm::GridSamplerCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Grid", {LiteType::GetTensorTy(TARGET(kARM))})

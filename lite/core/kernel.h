@@ -36,7 +36,7 @@
 #endif  // LITE_WITH_PROFILE
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // An base with virtual functions to unify all the kernel implementation on
 // different targets.
@@ -69,7 +69,7 @@ class KernelBase {
   }
 
   virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
+      paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = std::string("NotImpl");
 #ifdef LITE_WITH_OPENCL
     ch->cl_event = event_;
@@ -218,7 +218,7 @@ class KernelBase {
   cl::Event event_;
   cl::Event event_1;
   cl::Event event_2;
-  bool fp16_support_{paddle::lite::CLRuntime::Global()->get_precision() ==
+  bool fp16_support_{paddle::lite_metal::CLRuntime::Global()->get_precision() ==
                      lite_api::CL_PRECISION_FP16};
 #endif
 };

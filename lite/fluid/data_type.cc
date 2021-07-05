@@ -18,10 +18,10 @@
 #include <map>
 #include <string>
 
-using float16 = paddle::lite::fluid::float16;
+using float16 = paddle::lite_metal::fluid::float16;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
 struct DataTypeMap {

@@ -17,7 +17,7 @@
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace xpu {
 
@@ -93,4 +93,4 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(mul, kXPU, paddle::lite::subgraph::xpu::MulConverter);
+REGISTER_SUBGRAPH_BRIDGE(mul, kXPU, paddle::lite_metal::subgraph::xpu::MulConverter);

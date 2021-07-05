@@ -18,7 +18,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -43,7 +43,7 @@ TEST(leaky_relu, normal) {
     x_cpu_data[i] = i - 5.0;
   }
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
 
   param.X = &x;
   param.Out = &y;

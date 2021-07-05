@@ -15,12 +15,12 @@ limitations under the License. */
 #include "lite/backends/x86/math/sample_prob.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template class SampleWithProb<lite::TargetType::kX86, float>;
-template class SampleWithProb<lite::TargetType::kX86, double>;
+template class SampleWithProb<lite_metal::TargetType::kX86, float>;
+template class SampleWithProb<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

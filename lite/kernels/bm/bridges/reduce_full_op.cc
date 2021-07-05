@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -33,7 +33,7 @@ int ReduceFullConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   // input
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   std::vector<int32_t> i_x_shape_data(x_dims.size());
@@ -73,10 +73,10 @@ int ReduceFullConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(reduce_sum,
                          kBM,
-                         paddle::lite::subgraph::bm::ReduceFullConverter);
+                         paddle::lite_metal::subgraph::bm::ReduceFullConverter);
 REGISTER_SUBGRAPH_BRIDGE(reduce_mean,
                          kBM,
-                         paddle::lite::subgraph::bm::ReduceFullConverter);
+                         paddle::lite_metal::subgraph::bm::ReduceFullConverter);
 REGISTER_SUBGRAPH_BRIDGE(reduce_max,
                          kBM,
-                         paddle::lite::subgraph::bm::ReduceFullConverter);
+                         paddle::lite_metal::subgraph::bm::ReduceFullConverter);

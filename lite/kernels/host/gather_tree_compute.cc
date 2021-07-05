@@ -15,7 +15,7 @@
 #include "lite/kernels/host/gather_tree_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -51,7 +51,7 @@ void GatherTreeCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using GatherTreeInt32 = paddle::lite::kernels::host::GatherTreeCompute<int32_t>;
+using GatherTreeInt32 = paddle::lite_metal::kernels::host::GatherTreeCompute<int32_t>;
 REGISTER_LITE_KERNEL(gather_tree, kHost, kFloat, kAny, GatherTreeInt32, int32)
     .BindInput("Ids",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -67,7 +67,7 @@ REGISTER_LITE_KERNEL(gather_tree, kHost, kFloat, kAny, GatherTreeInt32, int32)
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-using GatherTreeInt64 = paddle::lite::kernels::host::GatherTreeCompute<int64_t>;
+using GatherTreeInt64 = paddle::lite_metal::kernels::host::GatherTreeCompute<int64_t>;
 REGISTER_LITE_KERNEL(gather_tree, kHost, kFloat, kAny, GatherTreeInt64, int64)
     .BindInput("Ids",
                {LiteType::GetTensorTy(TARGET(kHost),

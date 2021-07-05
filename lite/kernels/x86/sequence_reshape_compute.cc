@@ -19,7 +19,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kInt64,
     kNCHW,
-    paddle::lite::kernels::x86::SequenceReshapeCompute<int64_t>,
+    paddle::lite_metal::kernels::x86::SequenceReshapeCompute<int64_t>,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
@@ -30,7 +30,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::x86::SequenceReshapeFloatCompute<float>,
+    paddle::lite_metal::kernels::x86::SequenceReshapeFloatCompute<float>,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})

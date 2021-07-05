@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void ElementwiseActivationFusePass::Apply(
@@ -69,7 +69,7 @@ void ElementwiseActivationFusePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_elementwise_activation_fuse_pass,
-                  paddle::lite::mir::ElementwiseActivationFusePass)
+                  paddle::lite_metal::mir::ElementwiseActivationFusePass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
     .ExcludeTargets({TARGET(kBM)})

@@ -70,7 +70,7 @@ __ai float16x8_t vdupq_n_f16_wrap(const float16_t p0) {
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 

@@ -22,7 +22,7 @@
 #include "lite/utils/varient.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace general {
 
 /*

@@ -16,7 +16,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -29,7 +29,7 @@ class SequencePoolCompute
   virtual ~SequencePoolCompute() = default;
 
  private:
-  lite::Tensor seq_offset_D;
+  lite_metal::Tensor seq_offset_D;
 };
 
 }  // namespace cuda

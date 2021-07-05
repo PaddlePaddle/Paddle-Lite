@@ -21,7 +21,7 @@
 #include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -62,7 +62,7 @@ void PoolCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    pool2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::PoolCompute, def)
+    pool2d, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::PoolCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),

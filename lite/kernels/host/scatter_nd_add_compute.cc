@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -84,7 +84,7 @@ void ScatterNdAddCompute<T, IndexType>::Run() {
 }  // namespace paddle
 
 using ScatterNdAddFloat32Int32 =
-    paddle::lite::kernels::host::ScatterNdAddCompute<float, int>;
+    paddle::lite_metal::kernels::host::ScatterNdAddCompute<float, int>;
 REGISTER_LITE_KERNEL(
     scatter_nd_add, kHost, kFloat, kNCHW, ScatterNdAddFloat32Int32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
@@ -97,7 +97,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using ScatterNdAddFloat32Int64 =
-    paddle::lite::kernels::host::ScatterNdAddCompute<float, int64_t>;
+    paddle::lite_metal::kernels::host::ScatterNdAddCompute<float, int64_t>;
 REGISTER_LITE_KERNEL(scatter_nd_add,
                      kHost,
                      kFloat,
@@ -114,7 +114,7 @@ REGISTER_LITE_KERNEL(scatter_nd_add,
     .Finalize();
 
 using ScatterNdAddInt32Int32 =
-    paddle::lite::kernels::host::ScatterNdAddCompute<int, int>;
+    paddle::lite_metal::kernels::host::ScatterNdAddCompute<int, int>;
 REGISTER_LITE_KERNEL(
     scatter_nd_add, kHost, kFloat, kNCHW, ScatterNdAddInt32Int32, int32_int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -127,7 +127,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using ScatterNdAddInt32Int64 =
-    paddle::lite::kernels::host::ScatterNdAddCompute<int, int64_t>;
+    paddle::lite_metal::kernels::host::ScatterNdAddCompute<int, int64_t>;
 REGISTER_LITE_KERNEL(
     scatter_nd_add, kHost, kFloat, kNCHW, ScatterNdAddInt32Int64, int32_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -140,7 +140,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using ScatterNdAddInt64Int32 =
-    paddle::lite::kernels::host::ScatterNdAddCompute<int64_t, int>;
+    paddle::lite_metal::kernels::host::ScatterNdAddCompute<int64_t, int>;
 REGISTER_LITE_KERNEL(
     scatter_nd_add, kHost, kFloat, kNCHW, ScatterNdAddInt64Int32, int64_int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
@@ -153,7 +153,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using ScatterNdAddInt64Int64 =
-    paddle::lite::kernels::host::ScatterNdAddCompute<int64_t, int64_t>;
+    paddle::lite_metal::kernels::host::ScatterNdAddCompute<int64_t, int64_t>;
 REGISTER_LITE_KERNEL(
     scatter_nd_add, kHost, kFloat, kNCHW, ScatterNdAddInt64Int64, int64_int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})

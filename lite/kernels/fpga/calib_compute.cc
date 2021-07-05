@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 using float16 = zynqmp::float16;
@@ -79,7 +79,7 @@ REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::CalibComputeFp32ToFP16,
+                     paddle::lite_metal::kernels::fpga::CalibComputeFp32ToFP16,
                      fp32_to_fp16_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -95,7 +95,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::CalibComputeFp32ToFP16,
+                     paddle::lite_metal::kernels::fpga::CalibComputeFp32ToFP16,
                      fp32_to_fp16_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -111,7 +111,7 @@ REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::CalibComputeFloat2Int,
+                     paddle::lite_metal::kernels::fpga::CalibComputeFloat2Int,
                      float_2_int_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM),
@@ -127,7 +127,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::CalibComputeFloat2Int,
+                     paddle::lite_metal::kernels::fpga::CalibComputeFloat2Int,
                      float_2_int_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM),
@@ -143,7 +143,7 @@ REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::CalibComputeFP16ToFp32,
+                     paddle::lite_metal::kernels::fpga::CalibComputeFP16ToFp32,
                      float_to_int_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -159,7 +159,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::CalibComputeFP16ToFp32,
+                     paddle::lite_metal::kernels::fpga::CalibComputeFP16ToFp32,
                      fp16_to_fp32_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -175,7 +175,7 @@ REGISTER_LITE_KERNEL(calib,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::CalibComputeInt64ToFloat,
+                     paddle::lite_metal::kernels::fpga::CalibComputeInt64ToFloat,
                      int64_2_float_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -191,7 +191,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::CalibComputeInt64ToFloat,
+                     paddle::lite_metal::kernels::fpga::CalibComputeInt64ToFloat,
                      int64_2_float_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),

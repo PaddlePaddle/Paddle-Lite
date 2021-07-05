@@ -17,7 +17,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -28,7 +28,7 @@ class NCHWToNHWCCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   virtual ~NCHWToNHWCCompute() = default;
 
  private:
-  lite::cuda::math::Transpose<float> trans;
+  lite_metal::cuda::math::Transpose<float> trans;
 };
 
 class NCHWToNHWCComputeInt8
@@ -39,7 +39,7 @@ class NCHWToNHWCComputeInt8
   virtual ~NCHWToNHWCComputeInt8() = default;
 
  private:
-  lite::cuda::math::Transpose<int8_t> trans;
+  lite_metal::cuda::math::Transpose<int8_t> trans;
 };
 
 class NHWCToNCHWCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
@@ -49,7 +49,7 @@ class NHWCToNCHWCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   virtual ~NHWCToNCHWCompute() = default;
 
  private:
-  lite::cuda::math::Transpose<float> trans;
+  lite_metal::cuda::math::Transpose<float> trans;
 };
 
 class NHWCToNCHWComputeInt8
@@ -60,7 +60,7 @@ class NHWCToNCHWComputeInt8
   virtual ~NHWCToNCHWComputeInt8() = default;
 
  private:
-  lite::cuda::math::Transpose<int8_t> trans;
+  lite_metal::cuda::math::Transpose<int8_t> trans;
 };
 
 }  // namespace cuda

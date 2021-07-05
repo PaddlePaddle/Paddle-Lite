@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -46,7 +46,7 @@ void SqueezeCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    squeeze, kXPU, kAny, kAny, paddle::lite::kernels::xpu::SqueezeCompute, def)
+    squeeze, kXPU, kAny, kAny, paddle::lite_metal::kernels::xpu::SqueezeCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),
@@ -58,7 +58,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    squeeze2, kXPU, kAny, kAny, paddle::lite::kernels::xpu::SqueezeCompute, def)
+    squeeze2, kXPU, kAny, kAny, paddle::lite_metal::kernels::xpu::SqueezeCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),

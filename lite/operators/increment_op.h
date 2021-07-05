@@ -20,7 +20,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class IncrementOp : public OpLite {
@@ -32,7 +32,7 @@ class IncrementOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
@@ -44,7 +44,7 @@ class IncrementOp : public OpLite {
   }
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter *ch) {
     ch->input_shape = ch->DimToStr(param_.X->dims());
     ch->output_shape = ch->DimToStr(param_.Out->dims());
     ch->remark = "step" + std::to_string(param_.step);

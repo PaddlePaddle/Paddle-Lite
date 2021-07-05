@@ -19,7 +19,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 
 TEST(varient, test) {

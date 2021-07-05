@@ -24,12 +24,12 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
 static inline void TestWithKernel(
-    const std::unique_ptr<paddle::lite::KernelBase>& kernel) {
+    const std::unique_ptr<paddle::lite_metal::KernelBase>& kernel) {
   int64_t batch_size = 1;
   int64_t ic = 2;
   int64_t ih = 3;
@@ -39,17 +39,17 @@ static inline void TestWithKernel(
   int64_t oh = 4;
   int64_t ow = 2;
 
-  lite::Tensor input, output;
+  lite_metal::Tensor input, output;
   operators::TransposeParam param;
 
   param.x = &input;
   param.output = &output;
   param.axis = std::vector<int>({0, 2, 3, 1});
   const DDim input_dim =
-      lite::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
+      lite_metal::DDim{std::vector<int64_t>({batch_size, ic, ih, iw})};
   input.Resize(input_dim);
   const DDim output_dim =
-      lite::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
+      lite_metal::DDim{std::vector<int64_t>({batch_size, oc, oh, ow})};
   param.output->Resize(output_dim);
 
   LOG(INFO) << "prepare kernel SetParam------";
@@ -74,7 +74,7 @@ static inline void TestWithKernel(
     i = index++;
   }
 
-  paddle::lite::CLImageConverterDefault default_convertor;
+  paddle::lite_metal::CLImageConverterDefault default_convertor;
 
   std::vector<half_t> x_image_data(input_image_width * input_image_height *
                                    4);  // 4 : RGBA

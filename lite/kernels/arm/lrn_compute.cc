@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -36,10 +36,10 @@ void LrnCompute::Run() {
   const float beta = param.beta;
   const float k = param.k;
   if (param.norm_region == "AcrossChannels") {
-    lite::arm::math::compute_across_channels(
+    lite_metal::arm::math::compute_across_channels(
         x_data, out_data, num, channel, h, w, n, alpha, beta, k);
   } else {
-    lite::arm::math::compute_within_channels(
+    lite_metal::arm::math::compute_within_channels(
         x_data, out_data, num, channel, h, w, n, alpha, beta, k);
   }
 }
@@ -50,7 +50,7 @@ void LrnCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    lrn, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::LrnCompute, def)
+    lrn, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::LrnCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("MidOut", {LiteType::GetTensorTy(TARGET(kARM))})

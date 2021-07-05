@@ -23,7 +23,7 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void slice_channel(const float* input_data,
                    const DDim& in_dim,
@@ -54,7 +54,7 @@ TEST(slice_image2d_fp16, compute) {
 
   LOG(INFO) << "get kernel:" << kernel->doc();
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   operators::SliceParam param;
   param.X = &x;
   param.Out = &out;

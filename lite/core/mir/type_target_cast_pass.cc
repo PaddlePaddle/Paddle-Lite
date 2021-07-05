@@ -25,7 +25,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void TypeTargetTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -287,5 +287,5 @@ void TypeTargetTransformPass::UpdateInstNode(Node* in,
 }  // namespace paddle
 
 REGISTER_MIR_PASS(type_target_cast_pass,
-                  paddle::lite::mir::TypeTargetTransformPass)
+                  paddle::lite_metal::mir::TypeTargetTransformPass)
     .BindTargets({TARGET(kAny)});

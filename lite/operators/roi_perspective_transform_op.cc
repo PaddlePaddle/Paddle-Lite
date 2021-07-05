@@ -15,7 +15,7 @@
 #include "lite/operators/roi_perspective_transform_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool RoiPerspectiveTransformOp::CheckShape() const {
@@ -63,7 +63,7 @@ bool RoiPerspectiveTransformOp::InferShapeImpl() const {
 }
 
 bool RoiPerspectiveTransformOp::AttachImpl(const cpp::OpDesc &op_desc,
-                                           lite::Scope *scope) {
+                                           lite_metal::Scope *scope) {
   param_.x = scope->FindTensor(op_desc.Input("X").front());
   param_.rois = scope->FindTensor(op_desc.Input("ROIs").front());
   param_.out = scope->FindMutableTensor(op_desc.Output("Out").front());
@@ -95,4 +95,4 @@ bool RoiPerspectiveTransformOp::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(roi_perspective_transform,
-                 paddle::lite::operators::RoiPerspectiveTransformOp);
+                 paddle::lite_metal::operators::RoiPerspectiveTransformOp);

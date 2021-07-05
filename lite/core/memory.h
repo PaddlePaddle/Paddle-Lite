@@ -50,7 +50,7 @@
 #endif  // LITE_WITH_METAL
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // Malloc memory for a specific Target. All the targets should be an element in
 // the `switch` here.

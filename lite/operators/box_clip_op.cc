@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool BoxClipOpLite::CheckShape() const {
@@ -43,13 +43,13 @@ bool BoxClipOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool BoxClipOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool BoxClipOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   auto input = op_desc.Input("Input").front();
   auto im_info = op_desc.Input("ImInfo").front();
   auto output = op_desc.Output("Output").front();
-  param_.Input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.ImInfo = scope->FindVar(im_info)->GetMutable<lite::Tensor>();
-  param_.Output = scope->FindVar(output)->GetMutable<lite::Tensor>();
+  param_.Input = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
+  param_.ImInfo = scope->FindVar(im_info)->GetMutable<lite_metal::Tensor>();
+  param_.Output = scope->FindVar(output)->GetMutable<lite_metal::Tensor>();
 
   return true;
 }
@@ -58,4 +58,4 @@ bool BoxClipOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(box_clip, paddle::lite::operators::BoxClipOpLite);
+REGISTER_LITE_OP(box_clip, paddle::lite_metal::operators::BoxClipOpLite);

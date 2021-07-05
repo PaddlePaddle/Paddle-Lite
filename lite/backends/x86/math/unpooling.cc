@@ -16,16 +16,16 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 template <typename T>
-class Unpool2dMaxFunctor<lite::TargetType::kX86, T> {
+class Unpool2dMaxFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& indices,
-                  lite::Tensor* output) {
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& indices,
+                  lite_metal::Tensor* output) {
     const int batch_size = input.dims()[0];
     const int input_height = input.dims()[2];
     const int input_width = input.dims()[3];
@@ -36,7 +36,7 @@ class Unpool2dMaxFunctor<lite::TargetType::kX86, T> {
     int output_feasize = output_height * output_width;
     const T* input_data = input.data<T>();
     const int* indices_data = indices.data<int>();
-    T* output_data = output->template mutable_data<T>(lite::TargetType::kX86);
+    T* output_data = output->template mutable_data<T>(lite_metal::TargetType::kX86);
     for (int b = 0; b < batch_size; ++b) {
       for (int c = 0; c < output_channels; ++c) {
         for (int i = 0; i < input_feasize; ++i) {
@@ -52,14 +52,14 @@ class Unpool2dMaxFunctor<lite::TargetType::kX86, T> {
   }
 };
 template <class T>
-class Unpool2dMaxGradFunctor<lite::TargetType::kX86, T> {
+class Unpool2dMaxGradFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& indices,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
-                  lite::Tensor* input_grad) {
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& indices,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
+                  lite_metal::Tensor* input_grad) {
     const int batch_size = input.dims()[0];
     const int input_height = input.dims()[2];
     const int input_width = input.dims()[3];
@@ -71,7 +71,7 @@ class Unpool2dMaxGradFunctor<lite::TargetType::kX86, T> {
     const int* indices_data = indices.data<int>();
     const T* output_grad_data = output_grad.data<T>();
     T* input_grad_data =
-        input_grad->template mutable_data<T>(lite::TargetType::kX86);
+        input_grad->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     for (int b = 0; b < batch_size; ++b) {
       for (int c = 0; c < output_channels; ++c) {
@@ -87,10 +87,10 @@ class Unpool2dMaxGradFunctor<lite::TargetType::kX86, T> {
     }
   }
 };
-template class Unpool2dMaxGradFunctor<lite::TargetType::kX86, float>;
-template class Unpool2dMaxGradFunctor<lite::TargetType::kX86, double>;
-template class Unpool2dMaxFunctor<lite::TargetType::kX86, float>;
-template class Unpool2dMaxFunctor<lite::TargetType::kX86, double>;
+template class Unpool2dMaxGradFunctor<lite_metal::TargetType::kX86, float>;
+template class Unpool2dMaxGradFunctor<lite_metal::TargetType::kX86, double>;
+template class Unpool2dMaxFunctor<lite_metal::TargetType::kX86, float>;
+template class Unpool2dMaxFunctor<lite_metal::TargetType::kX86, double>;
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

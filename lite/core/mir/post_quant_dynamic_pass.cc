@@ -22,7 +22,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 const std::vector<std::string> PostQuantDynamicPass::quant_axis1_ops = {
@@ -205,5 +205,5 @@ void PostQuantDynamicPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(post_quant_dynamic_pass,
-                  paddle::lite::mir::PostQuantDynamicPass)
+                  paddle::lite_metal::mir::PostQuantDynamicPass)
     .BindTargets({TARGET(kAny)});

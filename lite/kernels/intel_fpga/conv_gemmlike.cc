@@ -19,7 +19,7 @@
 #include "lite/utils/logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace intel_fpga {
 
@@ -114,7 +114,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     }
   } else {
     if (flag_1x1gemm_) {
-      lite::arm::math::conv1x1s1_gemm(i_data,
+      lite_metal::arm::math::conv1x1s1_gemm(i_data,
                                       o_data,
                                       bs,
                                       oc,
@@ -128,7 +128,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                       param,
                                       &ctx);
     } else {
-      lite::arm::math::conv_im2col_gemm(i_data,
+      lite_metal::arm::math::conv_im2col_gemm(i_data,
                                         o_data,
                                         bs,
                                         oc,

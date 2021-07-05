@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -65,11 +65,11 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int idx = 1;
   for (auto& out_name : out_names) {
     auto zero_node =
-        graph->Add(out_name + "/zero" + paddle::lite::to_string(idx), 0);
+        graph->Add(out_name + "/zero" + paddle::lite_metal::to_string(idx), 0);
     auto add_node = graph->Add<ge::op::Add>(out_name);
     auto add_op = add_node->data<ge::op::Add>();
     add_op->set_input_x1(*split_node->data(),
-                         "y" + paddle::lite::to_string(idx));
+                         "y" + paddle::lite_metal::to_string(idx));
     add_op->set_input_x2(*zero_node->data());
     idx++;
   }
@@ -83,4 +83,4 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(split,
                          kNPU,
-                         paddle::lite::subgraph::npu::SplitConverter);
+                         paddle::lite_metal::subgraph::npu::SplitConverter);

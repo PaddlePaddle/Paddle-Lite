@@ -24,7 +24,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void CheckAndSyncTypeOfVarNode(
@@ -95,5 +95,5 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
 
 REGISTER_MIR_PASS(
     control_flow_op_shared_inputs_and_outputs_place_sync_pass,
-    paddle::lite::mir::ControlFlowOpSharedInputsAndOutputsPlaceSyncPass)
+    paddle::lite_metal::mir::ControlFlowOpSharedInputsAndOutputsPlaceSyncPass)
     .BindTargets({TARGET(kXPU)});

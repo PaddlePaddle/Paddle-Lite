@@ -17,7 +17,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void OpenCLKernelPlaceCorrectPass::Apply(
@@ -30,5 +30,5 @@ void OpenCLKernelPlaceCorrectPass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(opencl_kernel_place_correct_pass,
-                  paddle::lite::mir::OpenCLKernelPlaceCorrectPass)
+                  paddle::lite_metal::mir::OpenCLKernelPlaceCorrectPass)
     .BindTargets({TARGET(kOpenCL)});

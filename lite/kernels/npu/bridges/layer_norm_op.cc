@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -152,4 +152,4 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(layer_norm,
                          kNPU,
-                         paddle::lite::subgraph::npu::LayerNormConverter);
+                         paddle::lite_metal::subgraph::npu::LayerNormConverter);

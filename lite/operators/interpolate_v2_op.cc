@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool InterpolateV2Op::CheckShape() const {
@@ -94,13 +94,13 @@ bool InterpolateV2Op::InferShapeImpl() const {
 }
 
 bool InterpolateV2Op::AttachImpl(const cpp::OpDesc& op_desc,
-                                 lite::Scope* scope) {
+                                 lite_metal::Scope* scope) {
   auto X = op_desc.Input("X").front();
   if (op_desc.HasInput("OutSize")) {
     auto out_size_var_names = op_desc.Input("OutSize");
     if (out_size_var_names.size() > 0) {
       param_.OutSize = scope->FindVar(out_size_var_names.front())
-                           ->GetMutable<lite::Tensor>();
+                           ->GetMutable<lite_metal::Tensor>();
     }
   } else {
     param_.OutSize = nullptr;
@@ -111,7 +111,7 @@ bool InterpolateV2Op::AttachImpl(const cpp::OpDesc& op_desc,
     auto size_tensor = op_desc.Input("SizeTensor");
     for (auto var : size_tensor) {
       param_.SizeTensor.push_back(
-          scope->FindVar(var)->GetMutable<lite::Tensor>());
+          scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
     }
   }
 
@@ -119,14 +119,14 @@ bool InterpolateV2Op::AttachImpl(const cpp::OpDesc& op_desc,
     auto scale_var_names = op_desc.Input("Scale");
     if (scale_var_names.size() > 0) {
       param_.Scale =
-          scope->FindVar(scale_var_names.front())->GetMutable<lite::Tensor>();
+          scope->FindVar(scale_var_names.front())->GetMutable<lite_metal::Tensor>();
     }
   } else {
     param_.Scale = nullptr;
   }
   auto Out = op_desc.Output("Out").front();
-  param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(X)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(Out)->GetMutable<lite_metal::Tensor>();
   if (op_desc.HasAttr("scale")) {
     auto vs = op_desc.GetAttr<std::vector<float>>("scale");
     if (vs.size() > 0) {
@@ -149,8 +149,8 @@ bool InterpolateV2Op::AttachImpl(const cpp::OpDesc& op_desc,
 }
 
 } /* namespace operators */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
-REGISTER_LITE_OP(bilinear_interp_v2, paddle::lite::operators::InterpolateV2Op);
-REGISTER_LITE_OP(nearest_interp_v2, paddle::lite::operators::InterpolateV2Op);
+REGISTER_LITE_OP(bilinear_interp_v2, paddle::lite_metal::operators::InterpolateV2Op);
+REGISTER_LITE_OP(nearest_interp_v2, paddle::lite_metal::operators::InterpolateV2Op);

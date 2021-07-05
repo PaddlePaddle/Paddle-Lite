@@ -17,5 +17,5 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {}  // namespace lite
+namespace lite_metal {}  // namespace lite
 }  // namespace paddle

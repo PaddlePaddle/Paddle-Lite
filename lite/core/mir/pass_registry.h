@@ -21,7 +21,7 @@
 #include "lite/core/mir/pass_manager.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 class PassRegistry {
@@ -63,10 +63,10 @@ class PassRegistry {
 #include "lite/utils/macros.h"
 
 #define REGISTER_MIR_PASS(name__, class__)                                \
-  paddle::lite::mir::PassRegistry mir_pass_registry##name__(#name__,      \
+  paddle::lite_metal::mir::PassRegistry mir_pass_registry##name__(#name__,      \
                                                             new class__); \
   bool mir_pass_registry##name__##_fake() {                               \
     return mir_pass_registry##name__.Touch();                             \
   }                                                                       \
-  static paddle::lite::mir::PassRegistry mir_pass_registry_func_##name__  \
+  static paddle::lite_metal::mir::PassRegistry mir_pass_registry_func_##name__  \
       UNUSED = mir_pass_registry##name__

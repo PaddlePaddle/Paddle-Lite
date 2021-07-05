@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -70,7 +70,7 @@ void ConvScaleFuser::InsertNewNode(SSAGraph* graph,
   // conv
   std::string conv_weight_name = matched.at("conv_weight")->arg()->name;
   auto conv_weight_t =
-      scope->FindVar(conv_weight_name)->GetMutable<lite::Tensor>();
+      scope->FindVar(conv_weight_name)->GetMutable<lite_metal::Tensor>();
   bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
   bool is_int8 =
       enable_int8 ? conv_op_desc->GetAttr<bool>("enable_int8") : false;
@@ -109,7 +109,7 @@ void ConvScaleFuser::InsertNewNode(SSAGraph* graph,
   if (conv_has_bias_ && conv_op_desc->HasInput("Bias") &&
       conv_op_desc->Input("Bias").size() > 0) {
     auto conv_bias_t =
-        scope->FindVar(conv_bias_var_name)->GetMutable<lite::Tensor>();
+        scope->FindVar(conv_bias_var_name)->GetMutable<lite_metal::Tensor>();
     auto* conv_bias_d = conv_bias_t->mutable_data<float>();
     for (size_t i = 0; i < conv_bias_t->data_size(); i++) {
       conv_bias_d[i] = conv_bias_d[i] * scale_val + bias_val;

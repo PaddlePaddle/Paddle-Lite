@@ -17,7 +17,7 @@ limitations under the License. */
 #include "lite/backends/x86/math/conv_utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -25,10 +25,10 @@ namespace math {
 // filter [1,  oc/8, kh, kw, 8]
 // bias   [    oc             ]
 // output [bs, oc/8, oh, ow, 8]
-void conv_depthwise_3x3s1_m256(lite::Tensor* input,
-                               lite::Tensor* output,
-                               lite::Tensor* filter,
-                               lite::Tensor* bias,
+void conv_depthwise_3x3s1_m256(lite_metal::Tensor* input,
+                               lite_metal::Tensor* output,
+                               lite_metal::Tensor* filter,
+                               lite_metal::Tensor* bias,
                                const bool has_act,
                                const lite_api::ActivationType act_type) {
   // input [bs, ic/8, ih, iw, 8]
@@ -447,10 +447,10 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
 // filter [1,  oc/8, kh, kw, 8]
 // bias   [    oc             ]
 // output [bs, oc/8, oh, ow, 8]
-void conv_depthwise_3x3s2_m256(lite::Tensor* input,
-                               lite::Tensor* output,
-                               lite::Tensor* filter,
-                               lite::Tensor* bias,
+void conv_depthwise_3x3s2_m256(lite_metal::Tensor* input,
+                               lite_metal::Tensor* output,
+                               lite_metal::Tensor* filter,
+                               lite_metal::Tensor* bias,
                                const bool has_act,
                                const lite_api::ActivationType act_type) {
   // input [bs, ic/8, ih, iw, 8]
@@ -708,10 +708,10 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
 // filter [1,  oc/8, kh, kw, 8]
 // bias   [    oc             ]
 // output [bs, oc/8, oh, ow, 8]
-void conv_depthwise_m256(lite::Tensor* input,
-                         lite::Tensor* output,
-                         lite::Tensor* filter,
-                         lite::Tensor* bias,
+void conv_depthwise_m256(lite_metal::Tensor* input,
+                         lite_metal::Tensor* output,
+                         lite_metal::Tensor* filter,
+                         lite_metal::Tensor* bias,
                          const int stride_h,
                          const int stride_w,
                          const int dilation_h,

@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(sequence_pool,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SequencePoolCompute<float>,
+                     paddle::lite_metal::kernels::x86::SequencePoolCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})

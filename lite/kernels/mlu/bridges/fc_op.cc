@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -81,7 +81,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Add bias node if bias tensor exists
   if (HasInputArg(op_info, scope, "Bias")) {
     bias_var_name = op_info->Input("Bias").front();
-    auto bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+    auto bias = scope->FindVar(bias_var_name)->GetMutable<lite_metal::Tensor>();
     auto bias_dims = bias->dims().Vectorize();
     CHECK(!graph->HasNode(bias_var_name));
     if (bias_dims.size() < 4u) {
@@ -169,4 +169,4 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(fc, kMLU, paddle::lite::subgraph::mlu::FCConverter);
+REGISTER_SUBGRAPH_BRIDGE(fc, kMLU, paddle::lite_metal::subgraph::mlu::FCConverter);

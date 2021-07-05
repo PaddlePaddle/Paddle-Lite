@@ -22,7 +22,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 void FP16AttributePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<mir::Node*> nodes;
@@ -62,5 +62,5 @@ void FP16AttributePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(fp16_attribute_pass, paddle::lite::mir::FP16AttributePass)
+REGISTER_MIR_PASS(fp16_attribute_pass, paddle::lite_metal::mir::FP16AttributePass)
     .BindTargets({TARGET(kARM), TARGET(kX86)});

@@ -18,7 +18,7 @@
 #include "lite/fluid/eigen.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -26,24 +26,24 @@ template <typename T,
           size_t D,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenTensor = lite::fluid::EigenTensor<T, D, MajorType, IndexType>;
+using EigenTensor = lite_metal::fluid::EigenTensor<T, D, MajorType, IndexType>;
 template <typename T,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenScalar = lite::fluid::EigenScalar<T, MajorType, IndexType>;
+using EigenScalar = lite_metal::fluid::EigenScalar<T, MajorType, IndexType>;
 template <typename T,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenVector = lite::fluid::EigenVector<T, MajorType, IndexType>;
+using EigenVector = lite_metal::fluid::EigenVector<T, MajorType, IndexType>;
 
-template <lite::TargetType Target,
+template <lite_metal::TargetType Target,
           typename T,
           size_t D,
           size_t R_D,
           typename Functor>
-// const lite::Context<Target>& context,
-void ReduceFunctor(const lite::Tensor& input,
-                   lite::Tensor* output,
+// const lite_metal::Context<Target>& context,
+void ReduceFunctor(const lite_metal::Tensor& input,
+                   lite_metal::Tensor* output,
                    const std::vector<int>& dims,
                    bool keep_dim) {
   auto x = EigenTensor<T, D>::From(input);

@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -123,11 +123,11 @@ void BatchNormImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::BatchNormImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::BatchNormImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::BatchNormImageCompute<float, PRECISION(kFloat)>
+template class paddle::lite_metal::kernels::metal::BatchNormImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::BatchNormImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite_metal::kernels::metal::BatchNormImageCompute<float, PRECISION(kFloat)>
     MetalBatchNormFp32;
-typedef paddle::lite::kernels::metal::BatchNormImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::BatchNormImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalBatchNormFp16;
 
 REGISTER_LITE_KERNEL(batch_norm, kMetal, kFloat, kMetalTexture2DArray, MetalBatchNormFp32, def)

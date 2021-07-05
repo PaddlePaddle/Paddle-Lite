@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SequencePadOp::CheckShape() const {
@@ -83,15 +83,15 @@ bool SequencePadOp::InferShapeImpl() const {
   return true;
 }
 
-bool SequencePadOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
-  param_.PadValue = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("PadValue").front())->Get<lite::Tensor>());
+bool SequencePadOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
+  param_.X = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("X").front())->Get<lite_metal::Tensor>());
+  param_.PadValue = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("PadValue").front())->Get<lite_metal::Tensor>());
   param_.Length = scope->FindVar(opdesc.Output("Length").front())
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   param_.padded_length = opdesc.GetAttr<int>("padded_length");
   return true;
 }
@@ -100,4 +100,4 @@ bool SequencePadOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_pad, paddle::lite::operators::SequencePadOp);
+REGISTER_LITE_OP(sequence_pad, paddle::lite_metal::operators::SequencePadOp);

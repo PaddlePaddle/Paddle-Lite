@@ -17,13 +17,13 @@ limitations under the License. */
 #include "lite/backends/x86/math/detail/lstm_kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 template <class T>
-struct LstmUnitFunctor<lite::TargetType::kX86, T> {
-  static void compute(const lite::X86Context& context,
+struct LstmUnitFunctor<lite_metal::TargetType::kX86, T> {
+  static void compute(const lite_metal::X86Context& context,
                       LstmMetaValue<T> value,
                       int frame_size,
                       int batch_size,
@@ -51,8 +51,8 @@ struct LstmUnitFunctor<lite::TargetType::kX86, T> {
 };
 
 template <class T>
-struct LstmUnitGradFunctor<lite::TargetType::kX86, T> {
-  static void compute(const lite::X86Context& context,
+struct LstmUnitGradFunctor<lite_metal::TargetType::kX86, T> {
+  static void compute(const lite_metal::X86Context& context,
                       LstmMetaValue<T> value,
                       LstmMetaGrad<T> grad,
                       int frame_size,
@@ -90,10 +90,10 @@ struct LstmUnitGradFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class LstmUnitFunctor<lite::TargetType::kX86, float>;
-template class LstmUnitFunctor<lite::TargetType::kX86, double>;
-template class LstmUnitGradFunctor<lite::TargetType::kX86, float>;
-template class LstmUnitGradFunctor<lite::TargetType::kX86, double>;
+template class LstmUnitFunctor<lite_metal::TargetType::kX86, float>;
+template class LstmUnitFunctor<lite_metal::TargetType::kX86, double>;
+template class LstmUnitGradFunctor<lite_metal::TargetType::kX86, float>;
+template class LstmUnitGradFunctor<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

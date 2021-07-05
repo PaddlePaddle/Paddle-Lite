@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 
@@ -93,5 +93,5 @@ void power<float>(const float* din,
 
 } /* namespace math */
 } /* namespace arm */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */

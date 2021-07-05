@@ -28,7 +28,7 @@
  */
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 using core::Type;

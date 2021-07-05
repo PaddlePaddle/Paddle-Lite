@@ -19,7 +19,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #define A(i, j) a[i * lda + j]
 #define B(i, j) b[i * ldb + j]
@@ -81,7 +81,7 @@ TEST(mul, compute) {
         ASSERT_FALSE(kernels.empty());
         auto kernel = std::move(kernels.front());
 
-        lite::Tensor x, y, out, out_ref;
+        lite_metal::Tensor x, y, out, out_ref;
         operators::MulParam param;
         param.x = &x;
         param.y = &y;

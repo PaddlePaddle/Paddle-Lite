@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -49,7 +49,7 @@ REGISTER_LITE_KERNEL(unsqueeze,
                      kXPU,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::xpu::UnsqueezeCompute,
+                     paddle::lite_metal::kernels::xpu::UnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(
@@ -69,7 +69,7 @@ REGISTER_LITE_KERNEL(unsqueeze2,
                      kXPU,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::xpu::UnsqueezeCompute,
+                     paddle::lite_metal::kernels::xpu::UnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(

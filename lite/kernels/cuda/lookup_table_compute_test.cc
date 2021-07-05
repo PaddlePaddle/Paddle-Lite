@@ -24,11 +24,11 @@
 #include "lite/kernels/cuda/lookup_table_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 void LookupTableComputeRef(const operators::LookupTableParam& param) {
   auto* ids_t = param.Ids;
@@ -123,8 +123,8 @@ TEST(lookup_table_cuda, compute) {
     ids_ref_data[i] = i % vocab_size;
   }
 
-  w.Assign<float, lite::DDim, TARGET(kCUDA)>(w_cpu_data, w_dim);
-  ids.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(ids_cpu_data, ids_dim);
+  w.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(w_cpu_data, w_dim);
+  ids.Assign<int64_t, lite_metal::DDim, TARGET(kCUDA)>(ids_cpu_data, ids_dim);
 
   param.W = &w;
   param.Ids = &ids;

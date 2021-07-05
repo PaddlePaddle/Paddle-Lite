@@ -35,10 +35,10 @@
 #endif
 
 // DEFINE_bool(dump_jitcode, false, "Whether to dump the jitcode to file");
-bool dump_jitcode = paddle::lite::GetBoolFromEnv("dump_jitcode");
+bool dump_jitcode = paddle::lite_metal::GetBoolFromEnv("dump_jitcode");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 
 // refer do not need CanBeUsed, it would be the last one.

@@ -37,10 +37,10 @@
 namespace py = pybind11;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pybind {
 
-using lite::LightPredictorImpl;
+using lite_metal::LightPredictorImpl;
 using lite_api::CxxConfig;
 using lite_api::DataLayoutType;
 using lite_api::MLUCoreVersion;
@@ -54,7 +54,7 @@ using lite_api::Tensor;
 using lite_api::CxxModelBuffer;
 
 #ifndef LITE_ON_TINY_PUBLISH
-using lite::CxxPaddleApiImpl;
+using lite_metal::CxxPaddleApiImpl;
 static void BindLiteCxxPredictor(py::module *m);
 void BindLiteOpt(py::module *m) {
   py::class_<OptBase> opt_base(*m, "Opt");

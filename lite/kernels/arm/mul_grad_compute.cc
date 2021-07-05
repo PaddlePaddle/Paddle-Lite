@@ -33,7 +33,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -68,14 +68,14 @@ void MulGradCompute::Run() {
     y_grad_data = param.y_grad->mutable_data<float>();
   }
 
-  paddle::lite::operators::ActivationParam act_param;
+  paddle::lite_metal::operators::ActivationParam act_param;
   act_param.has_active = false;
   // out_grad  * y^T = x_grad
   // (m, n), (n, k) -> (m, k)
   auto& ctx = this->ctx_->template As<ARMContext>();
   if (param.x_grad) {
     if (m_ == 1) {
-      lite::arm::math::sgemv(y_data,
+      lite_metal::arm::math::sgemv(y_data,
                              out_grad_data,
                              x_grad_data,
                              false,
@@ -88,7 +88,7 @@ void MulGradCompute::Run() {
                              lite_api::ActivationType::kIndentity,
                              &ctx);
     } else {
-      paddle::lite::arm::math::sgemm(false,
+      paddle::lite_metal::arm::math::sgemm(false,
                                      true,           // is_transB,
                                      m_,             // M
                                      k_,             // N
@@ -112,7 +112,7 @@ void MulGradCompute::Run() {
   // (k, m) (m, n) -> (k, n)
   if (param.y_grad) {
     if (n_ == 1) {
-      lite::arm::math::sgemv(x_data,
+      lite_metal::arm::math::sgemv(x_data,
                              out_grad_data,
                              y_grad_data,
                              true,
@@ -125,7 +125,7 @@ void MulGradCompute::Run() {
                              lite_api::ActivationType::kIndentity,
                              &ctx);
     } else {
-      paddle::lite::arm::math::sgemm(true,           // is_transA
+      paddle::lite_metal::arm::math::sgemm(true,           // is_transA
                                      false,          // is_transB,
                                      k_,             // M
                                      n_,             // N
@@ -155,7 +155,7 @@ REGISTER_LITE_KERNEL(mul_grad,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::MulGradCompute,
+                     paddle::lite_metal::kernels::arm::MulGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})

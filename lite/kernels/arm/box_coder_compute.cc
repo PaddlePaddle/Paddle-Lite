@@ -18,7 +18,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -53,7 +53,7 @@ void BoxCoderCompute::Run() {
     var_len4 = true;
   }
 
-  lite::arm::math::decode_bboxes(row,
+  lite_metal::arm::math::decode_bboxes(row,
                                  param.axis,
                                  loc_data,
                                  prior_data,
@@ -74,7 +74,7 @@ REGISTER_LITE_KERNEL(box_coder,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::BoxCoderCompute,
+                     paddle::lite_metal::kernels::arm::BoxCoderCompute,
                      def)
     .BindInput("PriorBox", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("PriorBoxVar", {LiteType::GetTensorTy(TARGET(kARM))})

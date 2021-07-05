@@ -17,7 +17,7 @@
 #include "lite/kernels/rknpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace rknpu {
 
@@ -117,4 +117,4 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(scale,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::ScaleConverter);
+                         paddle::lite_metal::subgraph::rknpu::ScaleConverter);

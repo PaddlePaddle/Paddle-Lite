@@ -19,7 +19,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace profile {
 
 namespace {
@@ -50,7 +50,7 @@ StatisUnit::StatisUnit(const OpCharacter& ch) : character(ch) {
   }
 }
 
-lite::profile::Timer* StatisUnit::Timer(Type type) {
+lite_metal::profile::Timer* StatisUnit::Timer(Type type) {
   if (type == Type::kCreate) {
     return create_t.get();
   } else if (type == Type::kDispatch) {

@@ -21,7 +21,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -80,8 +80,8 @@ int get_max_len(const LoD& lod) {
 }
 
 TEST(attention_padding_mask_cuda, run_test) {
-  lite::Tensor x, y, x_cpu, y_cpu;
-  lite::Tensor out, pad_begin, out_cpu, out_ref, pad_begin_ref;
+  lite_metal::Tensor x, y, x_cpu, y_cpu;
+  lite_metal::Tensor out, pad_begin, out_cpu, out_ref, pad_begin_ref;
 
   LoD x_lod{{0, 3, 6, 9, 12}}, y_lod{{0, 4, 6}};
   prepare_input(&x_cpu, x_lod, get_max_len(y_lod));
@@ -90,7 +90,7 @@ TEST(attention_padding_mask_cuda, run_test) {
   x.Resize(x_cpu.dims());
   x.set_lod(x_cpu.lod());
   auto x_cpu_data = x_cpu.mutable_data<float>();
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
 
   y.Resize(y_cpu.dims());
   y.set_lod(y_cpu.lod());

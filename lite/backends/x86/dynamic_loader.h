@@ -15,7 +15,7 @@ limitations under the License. */
 #pragma once
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 
 #ifndef _WIN32

@@ -27,7 +27,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 
 class ProgramDescView : public ProgramDescAPI {
@@ -49,7 +49,7 @@ class ProgramDescView : public ProgramDescAPI {
   void InitProgramDesc() {
     flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf_.data()),
                                    buf_.size());
-    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::ProgramDesc>(nullptr))
+    CHECK(verifier.VerifyBuffer<paddle::lite_metal::fbs::proto::ProgramDesc>(nullptr))
         << "Program verification failed.";
     desc_ = proto::GetProgramDesc(buf_.data());
     blocks_.resize(desc_->blocks()->size());

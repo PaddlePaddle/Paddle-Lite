@@ -14,7 +14,7 @@
 
 #include "lite/kernels/x86/reduce_compute.h"
 
-namespace x86 = paddle::lite::kernels::x86;
+namespace x86 = paddle::lite_metal::kernels::x86;
 
 using ReduceMeanFloat32 = x86::ReduceCompute<float, x86::MeanFunctor>;
 REGISTER_LITE_KERNEL(reduce_mean, kX86, kFloat, kNCHW, ReduceMeanFloat32, def)

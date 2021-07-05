@@ -19,7 +19,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -70,7 +70,7 @@ void WhereCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    where, kHost, kAny, kAny, paddle::lite::kernels::host::WhereCompute, def)
+    where, kHost, kAny, kAny, paddle::lite_metal::kernels::host::WhereCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),

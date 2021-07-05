@@ -22,7 +22,7 @@
 #include "hiai_ir_build.h"            // NOLINT
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace npu {
 
 class Device {

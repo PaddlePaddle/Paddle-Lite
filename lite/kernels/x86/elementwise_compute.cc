@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseAddCompute<float>,
+                     paddle::lite_metal::kernels::x86::ElementwiseAddCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
@@ -29,7 +29,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseAddCompute<int>,
+                     paddle::lite_metal::kernels::x86::ElementwiseAddCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -40,7 +40,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseAddCompute<int64_t>,
+                     paddle::lite_metal::kernels::x86::ElementwiseAddCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
@@ -51,7 +51,7 @@ REGISTER_LITE_KERNEL(elementwise_sub,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseSubCompute<float>,
+                     paddle::lite_metal::kernels::x86::ElementwiseSubCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
@@ -62,7 +62,7 @@ REGISTER_LITE_KERNEL(elementwise_sub,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseSubCompute<int>,
+                     paddle::lite_metal::kernels::x86::ElementwiseSubCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -73,7 +73,7 @@ REGISTER_LITE_KERNEL(elementwise_sub,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseSubCompute<int64_t>,
+                     paddle::lite_metal::kernels::x86::ElementwiseSubCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
@@ -84,7 +84,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseMulCompute<float>,
+                     paddle::lite_metal::kernels::x86::ElementwiseMulCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
@@ -95,7 +95,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseMulCompute<int>,
+                     paddle::lite_metal::kernels::x86::ElementwiseMulCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -106,7 +106,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseMulCompute<int64_t>,
+                     paddle::lite_metal::kernels::x86::ElementwiseMulCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
@@ -117,7 +117,7 @@ REGISTER_LITE_KERNEL(elementwise_div,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseDivCompute<float>,
+                     paddle::lite_metal::kernels::x86::ElementwiseDivCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
@@ -128,7 +128,7 @@ REGISTER_LITE_KERNEL(elementwise_div,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseDivCompute<int>,
+                     paddle::lite_metal::kernels::x86::ElementwiseDivCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -139,7 +139,7 @@ REGISTER_LITE_KERNEL(elementwise_div,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseDivCompute<int64_t>,
+                     paddle::lite_metal::kernels::x86::ElementwiseDivCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
@@ -151,7 +151,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::x86::ElementwiseFloorDivCompute<float>,
+    paddle::lite_metal::kernels::x86::ElementwiseFloorDivCompute<float>,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
@@ -163,7 +163,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::x86::ElementwiseFloorDivCompute<int>,
+    paddle::lite_metal::kernels::x86::ElementwiseFloorDivCompute<int>,
     int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -175,7 +175,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::x86::ElementwiseFloorDivCompute<int64_t>,
+    paddle::lite_metal::kernels::x86::ElementwiseFloorDivCompute<int64_t>,
     int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
@@ -186,7 +186,7 @@ REGISTER_LITE_KERNEL(elementwise_pow,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwisePowCompute<float>,
+                     paddle::lite_metal::kernels::x86::ElementwisePowCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
@@ -197,7 +197,7 @@ REGISTER_LITE_KERNEL(elementwise_mod,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseModCompute<int>,
+                     paddle::lite_metal::kernels::x86::ElementwiseModCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -208,7 +208,7 @@ REGISTER_LITE_KERNEL(elementwise_mod,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseModCompute<int64_t>,
+                     paddle::lite_metal::kernels::x86::ElementwiseModCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
@@ -219,7 +219,7 @@ REGISTER_LITE_KERNEL(elementwise_max,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseMaxCompute<float>,
+                     paddle::lite_metal::kernels::x86::ElementwiseMaxCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
@@ -230,7 +230,7 @@ REGISTER_LITE_KERNEL(elementwise_max,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseMaxCompute<int>,
+                     paddle::lite_metal::kernels::x86::ElementwiseMaxCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -241,7 +241,7 @@ REGISTER_LITE_KERNEL(elementwise_max,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseMaxCompute<int64_t>,
+                     paddle::lite_metal::kernels::x86::ElementwiseMaxCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
@@ -252,7 +252,7 @@ REGISTER_LITE_KERNEL(elementwise_min,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseMinCompute<float>,
+                     paddle::lite_metal::kernels::x86::ElementwiseMinCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
@@ -263,7 +263,7 @@ REGISTER_LITE_KERNEL(elementwise_min,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseMinCompute<int>,
+                     paddle::lite_metal::kernels::x86::ElementwiseMinCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -274,7 +274,7 @@ REGISTER_LITE_KERNEL(elementwise_min,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ElementwiseMinCompute<int64_t>,
+                     paddle::lite_metal::kernels::x86::ElementwiseMinCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})

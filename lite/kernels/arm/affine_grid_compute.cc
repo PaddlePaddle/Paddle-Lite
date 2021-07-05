@@ -22,7 +22,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -30,9 +30,9 @@ void AffineGridCompute::PrepareForRun() {
   auto& param = Param<operators::AffineGridParam>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
-  const lite::Tensor* x = param.X;
+  const lite_metal::Tensor* x = param.X;
   const float* din = x->data<float>();
-  lite::Tensor* out = param.Out;
+  lite_metal::Tensor* out = param.Out;
   float* dout = param.Out->mutable_data<float>();
   int H = out->dims()[1];
   int W = out->dims()[2];
@@ -89,8 +89,8 @@ void AffineGridCompute::Run() {
   auto& param = Param<operators::AffineGridParam>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
-  const lite::Tensor* x = param.X;
-  lite::Tensor* out = param.Out;
+  const lite_metal::Tensor* x = param.X;
+  lite_metal::Tensor* out = param.Out;
   int N = x->dims()[0];
   int H = out->dims()[1];
   int W = out->dims()[2];
@@ -99,7 +99,7 @@ void AffineGridCompute::Run() {
   operators::ActivationParam act_param;
   act_param.has_active = false;
   for (int i = 0; i < N; i++) {
-    lite::arm::math::sgemm(false,
+    lite_metal::arm::math::sgemm(false,
                            true,
                            H * W,
                            2,
@@ -133,7 +133,7 @@ REGISTER_LITE_KERNEL(affine_grid,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::AffineGridCompute,
+                     paddle::lite_metal::kernels::arm::AffineGridCompute,
                      def)
     .BindInput("Theta", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("OutputShape", {LiteType::GetTensorTy(TARGET(kARM))})

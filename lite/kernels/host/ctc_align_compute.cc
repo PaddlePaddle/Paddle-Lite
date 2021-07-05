@@ -20,7 +20,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -146,7 +146,7 @@ void CtcAlignCompute<T, PT>::Run() {
 }  // namespace lite
 }  // namespace paddle
 using ctc_align_int64 =
-    paddle::lite::kernels::host::CtcAlignCompute<int64_t, PRECISION(kInt64)>;
+    paddle::lite_metal::kernels::host::CtcAlignCompute<int64_t, PRECISION(kInt64)>;
 REGISTER_LITE_KERNEL(ctc_align, kHost, kInt64, kNCHW, ctc_align_int64, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
@@ -159,7 +159,7 @@ REGISTER_LITE_KERNEL(ctc_align, kHost, kInt64, kNCHW, ctc_align_int64, def)
     .Finalize();
 
 using ctc_align_int32 =
-    paddle::lite::kernels::host::CtcAlignCompute<int32_t, PRECISION(kInt32)>;
+    paddle::lite_metal::kernels::host::CtcAlignCompute<int32_t, PRECISION(kInt32)>;
 REGISTER_LITE_KERNEL(ctc_align, kHost, kInt32, kNCHW, ctc_align_int32, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})

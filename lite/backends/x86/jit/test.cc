@@ -64,8 +64,8 @@ std::vector<int> TestSizes() {
   return s;
 }
 
-namespace jit = paddle::lite::jit;
-using CPUPlace = paddle::lite::fluid::CPUPlace;
+namespace jit = paddle::lite_metal::jit;
+using CPUPlace = paddle::lite_metal::fluid::CPUPlace;
 
 template <typename KernelTuple,
           typename PlaceType,
@@ -439,7 +439,7 @@ void TestKernelNCHW16CMulNC() {
   EXPECT_TRUE(tgt != nullptr);
 
   if (std::is_same<T, float>::value &&
-      paddle::lite::x86::MayIUse(paddle::lite::x86::avx512f)) {
+      paddle::lite_metal::x86::MayIUse(paddle::lite_metal::x86::avx512f)) {
     EXPECT_TRUE(jitcode != nullptr);
   }
   for (int ni = 0; ni < n; ni++) {
@@ -1163,7 +1163,7 @@ TEST(JITKernel_helper, pack_weights) {
   }
   int block = 0;
   std::vector<int> groups;
-  if (paddle::lite::x86::MayIUse(paddle::lite::x86::avx512f)) {
+  if (paddle::lite_metal::x86::MayIUse(paddle::lite_metal::x86::avx512f)) {
     block = ZMM_FLOAT_BLOCK;
     groups.push_back(30);
   } else {

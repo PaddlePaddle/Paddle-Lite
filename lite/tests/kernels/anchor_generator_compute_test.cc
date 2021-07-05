@@ -18,7 +18,7 @@
 #include "lite/core/arena/framework.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class AnchorGeneratorComputeTester : public arena::TestCase {
  protected:

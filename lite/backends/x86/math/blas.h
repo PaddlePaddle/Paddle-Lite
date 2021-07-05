@@ -30,7 +30,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -75,14 +75,14 @@ struct MatDescriptor {
  *
  * @param trans: True if the matrix is transposed.
  */
-extern MatDescriptor CreateMatrixDescriptor(const lite::DDimLite& tensor_dim,
+extern MatDescriptor CreateMatrixDescriptor(const lite_metal::DDimLite& tensor_dim,
                                             int num_flatten_cols,
                                             bool trans);
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 class Blas {
  public:
-  explicit Blas(const lite::Context<Target>& context) : context_(context) {}
+  explicit Blas(const lite_metal::Context<Target>& context) : context_(context) {}
 
   template <typename T>
   void GEMM(CBLAS_TRANSPOSE transA,
@@ -171,20 +171,20 @@ class Blas {
               T* C) const;
 
   template <typename T>
-  void MatMul(const lite::TensorLite& mat_a,
+  void MatMul(const lite_metal::TensorLite& mat_a,
               bool trans_a,
-              const lite::TensorLite& mat_b,
+              const lite_metal::TensorLite& mat_b,
               bool trans_b,
               T alpha,
-              lite::TensorLite* mat_out,
+              lite_metal::TensorLite* mat_out,
               T beta) const;
 
   template <typename T>
-  void MatMul(const lite::TensorLite& mat_a,
+  void MatMul(const lite_metal::TensorLite& mat_a,
               bool trans_a,
-              const lite::TensorLite& mat_b,
+              const lite_metal::TensorLite& mat_b,
               bool trans_b,
-              lite::TensorLite* mat_out) const {
+              lite_metal::TensorLite* mat_out) const {
     MatMul(mat_a,
            trans_a,
            mat_b,
@@ -195,9 +195,9 @@ class Blas {
   }
 
   template <typename T>
-  void MatMul(const lite::TensorLite& mat_a,
-              const lite::TensorLite& mat_b,
-              lite::TensorLite* mat_out) const {
+  void MatMul(const lite_metal::TensorLite& mat_a,
+              const lite_metal::TensorLite& mat_b,
+              lite_metal::TensorLite* mat_out) const {
     this->template MatMul<T>(mat_a, false, mat_b, false, mat_out);
   }
 
@@ -257,12 +257,12 @@ class Blas {
                    int64_t strideB) const;
 
   template <typename T>
-  void MatMul(const lite::TensorLite& mat_a,
+  void MatMul(const lite_metal::TensorLite& mat_a,
               const MatDescriptor& dim_a,
-              const lite::TensorLite& mat_b,
+              const lite_metal::TensorLite& mat_b,
               const MatDescriptor& dim_b,
               T alpha,
-              lite::TensorLite* mat_out,
+              lite_metal::TensorLite* mat_out,
               T beta) const;
 
   template <typename T>
@@ -272,10 +272,10 @@ class Blas {
   void VMERF(int n, const T* a, T* y, int64_t mode) const;
 
  private:
-  const lite::Context<Target>& context_;
+  const lite_metal::Context<Target>& context_;
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class BlasT : private Blas<Target> {
  public:
   using Blas<Target>::Blas;
@@ -388,15 +388,15 @@ class BlasT : private Blas<Target> {
   }
 };
 
-// template <lite::TargetType Target, typename T>
+// template <lite_metal::TargetType Target, typename T>
 // inline BlasT<Target, T> GetBlas(
 //    const framework::ExecutionContext& exe_ctx) {
 //  return BlasT<DeviceContext, T>(
 //      exe_ctx.template device_context<DeviceContext>());
 //}
 
-template <lite::TargetType Target, typename T>
-inline BlasT<Target, T> GetBlas(const lite::Context<Target>& dev_ctx) {
+template <lite_metal::TargetType Target, typename T>
+inline BlasT<Target, T> GetBlas(const lite_metal::Context<Target>& dev_ctx) {
   return BlasT<Target, T>(dev_ctx);
 }
 

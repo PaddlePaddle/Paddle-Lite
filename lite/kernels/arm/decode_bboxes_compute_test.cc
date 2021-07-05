@@ -22,7 +22,7 @@
 #include "lite/kernels/arm/decode_bboxes_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -131,7 +131,7 @@ TEST(decode_bboxes_arm, init) {
 TEST(decode_bboxes_arm, compute) {
   DecodeBboxesCompute decode_bboxes;
   operators::DecodeBboxesParam param;
-  lite::Tensor loc, prior, bbox, bbox_ref;
+  lite_metal::Tensor loc, prior, bbox, bbox_ref;
 
   for (int batch_num : {1, 2, 3, 4}) {
     for (int num_priors : {1, 3, 4, 8, 10}) {

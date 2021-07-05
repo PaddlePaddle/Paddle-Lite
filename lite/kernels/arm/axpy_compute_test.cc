@@ -23,16 +23,16 @@
 #include "lite/kernels/arm/axpy_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
 template <typename dtype>
 void axpy_compute_ref(const operators::AxpyParam& param) {
-  lite::Tensor* scale = param.Scale;
-  lite::Tensor* x = param.X;
-  lite::Tensor* bias = param.Bias;
-  lite::Tensor* output = param.Out;
+  lite_metal::Tensor* scale = param.Scale;
+  lite_metal::Tensor* x = param.X;
+  lite_metal::Tensor* bias = param.Bias;
+  lite_metal::Tensor* output = param.Out;
 
   auto scale_data = scale->data<dtype>();
   auto x_data = x->data<dtype>();

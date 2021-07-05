@@ -27,10 +27,10 @@ extern NSString* cString2NSString(std::string cStr);
 
 - (void)setMetalPath:(std::string)path;
 
-- (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size access:(paddle::lite::METAL_ACCESS_FLAG)access;
+- (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size access:(paddle::lite_metal::METAL_ACCESS_FLAG)access;
 - (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size
                            bytes:(void*)bytes
-                          access:(paddle::lite::METAL_ACCESS_FLAG)access;
+                          access:(paddle::lite_metal::METAL_ACCESS_FLAG)access;
 - (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc;
 
 - (id<MTLHeap>)newHeapForTexDesc:(MTLTextureDescriptor*)desc;

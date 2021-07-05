@@ -20,10 +20,10 @@ limitations under the License. */
        i += blockDim.x * gridDim.x)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 template <typename Dtype>
 __global__ void ker_search_group_padding(Dtype* out_emb_padding_data,
@@ -141,7 +141,7 @@ REGISTER_LITE_KERNEL(search_group_padding,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::SearchGroupPaddingCompute,
+                     paddle::lite_metal::kernels::cuda::SearchGroupPaddingCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),

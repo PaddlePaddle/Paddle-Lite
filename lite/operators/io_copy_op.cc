@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool IoCopyOp::CheckShape() const {
@@ -53,7 +53,7 @@ bool IoCopyOp::InferShapeImpl() const {
 bool IoCopyOp::Run() { return OpLite::Run(); }
 
 bool IoCopyOp::AttachImpl(const cpp::OpDesc &opdesc,
-                          paddle::lite::Scope *scope) {
+                          paddle::lite_metal::Scope *scope) {
   if (opdesc.HasInput("Input")) {
     param_.x = scope->FindTensor(opdesc.Input("Input").front());
   }
@@ -79,4 +79,4 @@ std::string IoCopyOp::DebugString() const { return "io_copy_op"; }
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(io_copy, paddle::lite::operators::IoCopyOp);
+REGISTER_LITE_OP(io_copy, paddle::lite_metal::operators::IoCopyOp);

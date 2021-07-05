@@ -16,18 +16,18 @@ limitations under the License. */
 #include "lite/kernels/cuda/bilinear_interp_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 inline std::vector<int> get_new_shape(
-    std::vector<const lite::Tensor*> list_new_shape_tensor) {
+    std::vector<const lite_metal::Tensor*> list_new_shape_tensor) {
   // get tensor from
   std::vector<int> vec_new_shape;
   for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
     auto tensor = list_new_shape_tensor[i];
-    lite::Tensor temp;
+    lite_metal::Tensor temp;
     auto temp_data = temp.mutable_data<float>();
     auto tensor_data = tensor->data<float>();
     cudaMemcpy(temp_data,
@@ -45,7 +45,7 @@ template <typename T>
 inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
   std::vector<T> vec_new_data;
   auto* new_data = new_data_tensor->data<T>();
-  lite::Tensor cpu_starts_tensor;
+  lite_metal::Tensor cpu_starts_tensor;
   auto cpu_starts_tensor_data = cpu_starts_tensor.mutable_data<T>();
   cudaMemcpy(cpu_starts_tensor_data,
              new_data,
@@ -159,7 +159,7 @@ void BilinearInterpCompute::Run() {
       out_w = static_cast<int>(in_w * scale);
     }
     if (out_size != nullptr) {
-      lite::Tensor sizes;
+      lite_metal::Tensor sizes;
       float* size_data = sizes.mutable_data<float>();
       float* outsize_data = out_size->mutable_data<float>(TARGET(kCUDA));
       cudaMemcpy(
@@ -228,7 +228,7 @@ REGISTER_LITE_KERNEL(bilinear_interp,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::BilinearInterpCompute,
+                     paddle::lite_metal::kernels::cuda::BilinearInterpCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),

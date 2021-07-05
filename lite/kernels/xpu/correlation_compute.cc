@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -65,7 +65,7 @@ REGISTER_LITE_KERNEL(correlation,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CorrelationCompute<float>,
+                     paddle::lite_metal::kernels::xpu::CorrelationCompute<float>,
                      def)
     .BindInput("Input1", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Input2", {LiteType::GetTensorTy(TARGET(kXPU))})

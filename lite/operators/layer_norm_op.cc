@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool LayerNormOp::CheckShape() const {
@@ -39,26 +39,26 @@ bool LayerNormOp::InferShapeImpl() const {
   return true;
 }
 
-bool LayerNormOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool LayerNormOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   param_.Y =
-      scope->FindVar(opdesc.Output("Y").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Y").front())->GetMutable<lite_metal::Tensor>();
   param_.Mean =
-      scope->FindVar(opdesc.Output("Mean").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Mean").front())->GetMutable<lite_metal::Tensor>();
   param_.Variance = scope->FindVar(opdesc.Output("Variance").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Y);
   CHECK(param_.Mean);
   CHECK(param_.Variance);
   if (opdesc.HasInput("Scale")) {
     param_.Scale = scope->FindVar(opdesc.Input("Scale").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   }
   if (opdesc.HasInput("Bias")) {
     param_.Bias = scope->FindVar(opdesc.Input("Bias").front())
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
   }
   param_.begin_norm_axis = opdesc.GetAttr<int>("begin_norm_axis");
   param_.epsilon = opdesc.GetAttr<float>("epsilon");
@@ -69,4 +69,4 @@ bool LayerNormOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(layer_norm, paddle::lite::operators::LayerNormOp);
+REGISTER_LITE_OP(layer_norm, paddle::lite_metal::operators::LayerNormOp);

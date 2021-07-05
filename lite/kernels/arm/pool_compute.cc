@@ -22,7 +22,7 @@
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -72,10 +72,10 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       ksize[i] = static_cast<int>(in_dims[i + 2]);
     }
     if (pooling_type == "max") {
-      lite::arm::math::pooling_global_max(POOL_IN_PARAM);
+      lite_metal::arm::math::pooling_global_max(POOL_IN_PARAM);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::pooling_global_avg(POOL_IN_PARAM);
+      lite_metal::arm::math::pooling_global_avg(POOL_IN_PARAM);
       return;
     }
   } else {
@@ -83,80 +83,80 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
         kps_equal) {
       // auto& ctx = this->ctx_->template As<ARMContext>();
       if (pooling_type == "max") {
-        lite::arm::math::pooling1x1s2p0_max(
+        lite_metal::arm::math::pooling1x1s2p0_max(
             POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       }
     } else if (w_in > 8 && ksize[0] == 2 && strides[0] == 2 &&
                paddings[0] == 0 && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling2x2s2p0_max(
+        lite_metal::arm::math::pooling2x2s2p0_max(
             POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling2x2s2p0_avg(
+        lite_metal::arm::math::pooling2x2s2p0_avg(
             POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (w_in > 8 && ksize[0] == 2 && strides[0] == 2 &&
                paddings[0] == 1 && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling2x2s2p1_max(
+        lite_metal::arm::math::pooling2x2s2p1_max(
             POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling2x2s2p1_avg(
+        lite_metal::arm::math::pooling2x2s2p1_avg(
             POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 1 &&
                pads_equal && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling3x3s1p1_max(
+        lite_metal::arm::math::pooling3x3s1p1_max(
             POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling3x3s1p1_avg(
+        lite_metal::arm::math::pooling3x3s1p1_avg(
             POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 0 &&
                pads_equal && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling3x3s1p0_max(
+        lite_metal::arm::math::pooling3x3s1p0_max(
             POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling3x3s1p0_avg(
+        lite_metal::arm::math::pooling3x3s1p0_avg(
             POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 0 &&
                pads_equal && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling3x3s2p0_max(
+        lite_metal::arm::math::pooling3x3s2p0_max(
             POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling3x3s2p0_avg(
+        lite_metal::arm::math::pooling3x3s2p0_avg(
             POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 1 &&
                pads_equal && kps_equal) {
       if (pooling_type == "max") {
-        lite::arm::math::pooling3x3s2p1_max(
+        lite_metal::arm::math::pooling3x3s2p1_max(
             POOL_IN_PARAM, paddings[1], paddings[3]);
         return;
       } else if (pooling_type == "avg") {
-        lite::arm::math::pooling3x3s2p1_avg(
+        lite_metal::arm::math::pooling3x3s2p1_avg(
             POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
         return;
       }
     }
   }
 
-  lite::arm::math::pooling_basic(POOL_IN_PARAM,
+  lite_metal::arm::math::pooling_basic(POOL_IN_PARAM,
                                  ksize,
                                  strides,
                                  paddings,
@@ -211,58 +211,58 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
       ksize[i] = static_cast<int>(in_dims[i + 2]);
     }
     if (pooling_type == "max") {
-      lite::arm::math::fp16::pooling_global_max_fp16(POOL_IN_PARAM);
+      lite_metal::arm::math::fp16::pooling_global_max_fp16(POOL_IN_PARAM);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::fp16::pooling_global_avg_fp16(POOL_IN_PARAM);
+      lite_metal::arm::math::fp16::pooling_global_avg_fp16(POOL_IN_PARAM);
       return;
     }
   } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 0 &&
              pads_equal && kps_equal) {
     if (pooling_type == "max") {
-      lite::arm::math::fp16::pooling3x3s2p0_max_fp16(
+      lite_metal::arm::math::fp16::pooling3x3s2p0_max_fp16(
           POOL_IN_PARAM, paddings[1], paddings[3]);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::fp16::pooling3x3s2p0_avg_fp16(
+      lite_metal::arm::math::fp16::pooling3x3s2p0_avg_fp16(
           POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
       return;
     }
   } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 1 &&
              pads_equal && kps_equal) {
     if (pooling_type == "max") {
-      lite::arm::math::fp16::pooling3x3s2p1_max_fp16(
+      lite_metal::arm::math::fp16::pooling3x3s2p1_max_fp16(
           POOL_IN_PARAM, paddings[1], paddings[3]);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::fp16::pooling3x3s2p1_avg_fp16(
+      lite_metal::arm::math::fp16::pooling3x3s2p1_avg_fp16(
           POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
       return;
     }
   } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 0 &&
              pads_equal && kps_equal) {
     if (pooling_type == "max") {
-      lite::arm::math::fp16::pooling3x3s1p0_max_fp16(
+      lite_metal::arm::math::fp16::pooling3x3s1p0_max_fp16(
           POOL_IN_PARAM, paddings[1], paddings[3]);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::fp16::pooling3x3s1p0_avg_fp16(
+      lite_metal::arm::math::fp16::pooling3x3s1p0_avg_fp16(
           POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
       return;
     }
   } else if (ksize[0] == 3 && strides[0] == 1 && paddings[0] == 1 &&
              pads_equal && kps_equal) {
     if (pooling_type == "max") {
-      lite::arm::math::fp16::pooling3x3s1p1_max_fp16(
+      lite_metal::arm::math::fp16::pooling3x3s1p1_max_fp16(
           POOL_IN_PARAM, paddings[1], paddings[3]);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::fp16::pooling3x3s1p1_avg_fp16(
+      lite_metal::arm::math::fp16::pooling3x3s1p1_avg_fp16(
           POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
       return;
     }
   }
-  lite::arm::math::fp16::pooling_basic_fp16(POOL_IN_PARAM,
+  lite_metal::arm::math::fp16::pooling_basic_fp16(POOL_IN_PARAM,
                                             ksize,
                                             strides,
                                             paddings,
@@ -281,7 +281,7 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 #ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::PoolCompute<PRECISION(kFP16),
+typedef paddle::lite_metal::kernels::arm::PoolCompute<PRECISION(kFP16),
                                                 PRECISION(kFP16)>
     PoolFp16;
 REGISTER_LITE_KERNEL(pool2d, kARM, kFP16, kNCHW, PoolFp16, def)
@@ -291,7 +291,7 @@ REGISTER_LITE_KERNEL(pool2d, kARM, kFP16, kNCHW, PoolFp16, def)
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 
-typedef paddle::lite::kernels::arm::PoolCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::PoolCompute<PRECISION(kFloat),
                                                 PRECISION(kFloat)>
     PoolFp32;
 REGISTER_LITE_KERNEL(pool2d, kARM, kFloat, kNCHW, PoolFp32, def)

@@ -96,16 +96,16 @@ struct BenchFunc {
     for (int i = 0; i < FLAGS_burning; ++i) {
       tgt(args...);
     }
-    auto start = paddle::lite::PosixInNsec() * 1e-3;
+    auto start = paddle::lite_metal::PosixInNsec() * 1e-3;
     for (int i = 0; i < FLAGS_repeat; ++i) {
       tgt(args...);
     }
-    auto end = paddle::lite::PosixInNsec() * 1e-3;
+    auto end = paddle::lite_metal::PosixInNsec() * 1e-3;
     return static_cast<double>(end - start) / FLAGS_repeat;
   }
 };
 
-namespace jit = paddle::lite::jit;
+namespace jit = paddle::lite_metal::jit;
 
 template <typename KernelTuple, typename PlaceType, typename... Args>
 void BenchAllImpls(const typename KernelTuple::attr_type& attr, Args... args) {
@@ -510,7 +510,7 @@ void BenchKernelVBroadcast() {
 #define BenchKernelGRUHtPart1 BenchKernelGRU
 #define BenchKernelGRUHtPart2 BenchKernelGRU
 
-using CPUPlace = paddle::lite::fluid::CPUPlace;
+using CPUPlace = paddle::lite_metal::fluid::CPUPlace;
 
 #define BENCH_FP32_CPU(name)                                \
   BENCH_JITKERNEL(name, FP32, CPU) {                        \

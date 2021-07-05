@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -57,7 +57,7 @@ void UnstackCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using unstack_float =
-    paddle::lite::kernels::host::UnstackCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::UnstackCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(unstack, kHost, kFloat, kAny, unstack_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
@@ -68,7 +68,7 @@ REGISTER_LITE_KERNEL(unstack, kHost, kFloat, kAny, unstack_float, def)
     .Finalize();
 
 using unstack_int32 =
-    paddle::lite::kernels::host::UnstackCompute<int32_t, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::UnstackCompute<int32_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(unstack, kHost, kFloat, kAny, unstack_int32, unstack_int32)
     .BindInput("X",
                {LiteType::GetTensorTy(

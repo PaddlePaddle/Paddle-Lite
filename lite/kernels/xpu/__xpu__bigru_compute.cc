@@ -20,7 +20,7 @@
 #include "lite/kernels/xpu/mul_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -65,7 +65,7 @@ void XPUBiGRUCompute::PrepareMulWeightForRun(bool forward) {
   auto weight_dims = weight->dims();
   auto weight_len = weight->numel();
   // max
-  weight_abs_max = paddle::lite::xpu::math::FindMaxAbs(weight_ptr, weight_len);
+  weight_abs_max = paddle::lite_metal::xpu::math::FindMaxAbs(weight_ptr, weight_len);
   std::vector<float> weight_max_vector(4, weight_abs_max);
   weight_max_guard = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard->addr_),
@@ -74,11 +74,11 @@ void XPUBiGRUCompute::PrepareMulWeightForRun(bool forward) {
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   // transpose
   std::vector<float> transpose_weight(weight_len, 0);
-  paddle::lite::xpu::math::Transpose(
+  paddle::lite_metal::xpu::math::Transpose(
       weight_ptr, transpose_weight.data(), weight_dims[0], weight_dims[1]);
   // quant
   std::vector<int16_t> quant_weight_cpu(weight_len, 0);
-  paddle::lite::xpu::math::ConvertFP32ToInt16(transpose_weight.data(),
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(transpose_weight.data(),
                                               quant_weight_cpu.data(),
                                               weight_abs_max,
                                               weight_len);
@@ -114,9 +114,9 @@ void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
   CHECK_EQ(weight_len, weight_s1_len + weight_s2_len);
   // max
   weight_s1_abs_max_ =
-      paddle::lite::xpu::math::FindMaxAbs(weight_s1_ptr, weight_s1_len);
+      paddle::lite_metal::xpu::math::FindMaxAbs(weight_s1_ptr, weight_s1_len);
   weight_s2_abs_max_ =
-      paddle::lite::xpu::math::FindMaxAbs(weight_s2_ptr, weight_s2_len);
+      paddle::lite_metal::xpu::math::FindMaxAbs(weight_s2_ptr, weight_s2_len);
   std::vector<float> weight_max_vector(8);
   for (int i = 0; i < 4; i++) {
     weight_max_vector[i] = weight_s1_abs_max_;
@@ -133,11 +133,11 @@ void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
   std::vector<int16_t> quant_weight_cpu(weight_len);
   int16_t* quant_weight_s1_cpu_ptr = quant_weight_cpu.data();
   int16_t* quant_weight_s2_cpu_ptr = quant_weight_s1_cpu_ptr + weight_s1_len;
-  paddle::lite::xpu::math::ConvertFP32ToInt16(weight_s1_ptr,
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(weight_s1_ptr,
                                               quant_weight_s1_cpu_ptr,
                                               weight_s1_abs_max_,
                                               weight_s1_len);
-  paddle::lite::xpu::math::ConvertFP32ToInt16(weight_s2_ptr,
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(weight_s2_ptr,
                                               quant_weight_s2_cpu_ptr,
                                               weight_s2_abs_max_,
                                               weight_s2_len);
@@ -373,7 +373,7 @@ REGISTER_LITE_KERNEL(__xpu__bigru,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUBiGRUCompute,
+                     paddle::lite_metal::kernels::xpu::XPUBiGRUCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("ForwardMulWeight", {LiteType::GetTensorTy(TARGET(kHost))})

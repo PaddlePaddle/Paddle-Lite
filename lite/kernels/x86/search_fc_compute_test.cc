@@ -23,15 +23,15 @@
 #include "lite/kernels/x86/search_fc_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
-void fc_cpu_base(const lite::Tensor* X,
-                 const lite::Tensor* W,
-                 const lite::Tensor* b,
+void fc_cpu_base(const lite_metal::Tensor* X,
+                 const lite_metal::Tensor* W,
+                 const lite_metal::Tensor* b,
                  int out_size,
-                 lite::Tensor* Out) {
+                 lite_metal::Tensor* Out) {
   const float* data_in = X->data<float>();
   const float* bias = b->data<float>();
   const float* weights = W->data<float>();
@@ -67,19 +67,19 @@ TEST(search_fc_x86, init) {
 }
 
 TEST(search_fc_x86, run_test) {
-  lite::Tensor x, w, b, out;
-  lite::Tensor out_ref;
+  lite_metal::Tensor x, w, b, out;
+  lite_metal::Tensor out_ref;
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   ctx->As<X86Context>();
   std::vector<int64_t> x_shape{1, 4};
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> w_shape{3, 4};
-  w.Resize(lite::DDim(w_shape));
+  w.Resize(lite_metal::DDim(w_shape));
   std::vector<int64_t> b_shape{3};
-  b.Resize(lite::DDim(b_shape));
+  b.Resize(lite_metal::DDim(b_shape));
   std::vector<int64_t> out_shape{1, 3};
-  out.Resize(lite::DDim(out_shape));
-  out_ref.Resize(lite::DDim(out_shape));
+  out.Resize(lite_metal::DDim(out_shape));
+  out_ref.Resize(lite_metal::DDim(out_shape));
   auto x_data = x.mutable_data<float>();
   auto w_data = w.mutable_data<float>();
   auto b_data = b.mutable_data<float>();

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool BinaryLogicalOp::CheckShape() const {
@@ -35,13 +35,13 @@ bool BinaryLogicalOp::InferShapeImpl() const {
 }
 
 bool BinaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                 lite::Scope *scope) {
+                                 lite_metal::Scope *scope) {
   param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   param_.Y =
-      scope->FindVar(opdesc.Input("Y").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("Y").front())->GetMutable<lite_metal::Tensor>();
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Y);
   CHECK(param_.Out);
@@ -61,11 +61,11 @@ bool UnaryLogicalOp::InferShapeImpl() const {
   return true;
 }
 
-bool UnaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool UnaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
   return true;
@@ -74,7 +74,7 @@ bool UnaryLogicalOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(logical_xor, paddle::lite::operators::BinaryLogicalOp);
-REGISTER_LITE_OP(logical_and, paddle::lite::operators::BinaryLogicalOp);
-REGISTER_LITE_OP(logical_or, paddle::lite::operators::BinaryLogicalOp);
-REGISTER_LITE_OP(logical_not, paddle::lite::operators::UnaryLogicalOp);
+REGISTER_LITE_OP(logical_xor, paddle::lite_metal::operators::BinaryLogicalOp);
+REGISTER_LITE_OP(logical_and, paddle::lite_metal::operators::BinaryLogicalOp);
+REGISTER_LITE_OP(logical_or, paddle::lite_metal::operators::BinaryLogicalOp);
+REGISTER_LITE_OP(logical_not, paddle::lite_metal::operators::UnaryLogicalOp);

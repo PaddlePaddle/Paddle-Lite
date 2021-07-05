@@ -29,7 +29,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
@@ -171,7 +171,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
   std::string doc() { return "Boxcoder using cl::Image, kFP16"; }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -192,7 +192,7 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-typedef paddle::lite::kernels::opencl::BoxCoderComputeImage BoxCoder_image;
+typedef paddle::lite_metal::kernels::opencl::BoxCoderComputeImage BoxCoder_image;
 
 REGISTER_LITE_KERNEL(
     box_coder, kOpenCL, kFP16, kImageDefault, BoxCoder_image, ImageDefault)

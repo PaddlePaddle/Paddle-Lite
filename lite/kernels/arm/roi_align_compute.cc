@@ -21,7 +21,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 static constexpr int kROISize = 4;
@@ -246,7 +246,7 @@ REGISTER_LITE_KERNEL(roi_align,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::RoiAlignCompute,
+                     paddle::lite_metal::kernels::arm::RoiAlignCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("ROIs", {LiteType::GetTensorTy(TARGET(kARM))})

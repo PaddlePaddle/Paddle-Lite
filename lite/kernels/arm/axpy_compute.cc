@@ -21,16 +21,16 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
 void AxpyCompute::Run() {
   auto& param = Param<operators::AxpyParam>();
-  lite::Tensor* scale = param.Scale;
-  lite::Tensor* x = param.X;
-  lite::Tensor* bias = param.Bias;
-  lite::Tensor* out = param.Out;
+  lite_metal::Tensor* scale = param.Scale;
+  lite_metal::Tensor* x = param.X;
+  lite_metal::Tensor* bias = param.Bias;
+  lite_metal::Tensor* out = param.Out;
 
   const float* scale_ptr = scale->data<float>();
   const float* x_ptr = x->data<float>();
@@ -43,7 +43,7 @@ void AxpyCompute::Run() {
   int size = bias_dims[2] * bias_dims[3];
   int in_channel = channel * size;
 
-  lite::arm::math::axpy_kernel_fp32(
+  lite_metal::arm::math::axpy_kernel_fp32(
       scale_ptr, x_ptr, bias_ptr, out_ptr, num, channel, size, in_channel);
   return;
 }
@@ -54,7 +54,7 @@ void AxpyCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    axpy, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::AxpyCompute, def)
+    axpy, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::AxpyCompute, def)
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})

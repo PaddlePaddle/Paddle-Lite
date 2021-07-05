@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool CtcAlignOpLite::CheckShape() const {
@@ -43,7 +43,7 @@ bool CtcAlignOpLite::InferShapeImpl() const {
 }
 
 bool CtcAlignOpLite::AttachImpl(const cpp::OpDesc& op_desc,
-                                lite::Scope* scope) {
+                                lite_metal::Scope* scope) {
   AttachInput(op_desc, scope, "Input", false, &param_.input);
   AttachInput(op_desc, scope, "InputLength", true, &param_.input_length);
   AttachOutput(op_desc, scope, "Output", false, &param_.output);
@@ -58,4 +58,4 @@ bool CtcAlignOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(ctc_align, paddle::lite::operators::CtcAlignOpLite);
+REGISTER_LITE_OP(ctc_align, paddle::lite_metal::operators::CtcAlignOpLite);

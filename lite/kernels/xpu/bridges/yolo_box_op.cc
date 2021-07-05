@@ -17,7 +17,7 @@
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace xpu {
 
@@ -83,4 +83,4 @@ int YoloBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(yolo_box,
                          kXPU,
-                         paddle::lite::subgraph::xpu::YoloBoxConverter);
+                         paddle::lite_metal::subgraph::xpu::YoloBoxConverter);

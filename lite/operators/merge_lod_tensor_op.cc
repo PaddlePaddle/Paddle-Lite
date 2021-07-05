@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MergeLodTensorOpLite::CheckShape() const {
@@ -41,18 +41,18 @@ bool MergeLodTensorOpLite::InferShapeImpl() const {
 }
 
 bool MergeLodTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                      lite::Scope *scope) {
+                                      lite_metal::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto mask = op_desc.Input("Mask").front();
   auto in_true = op_desc.Input("InTrue").front();
   auto in_false = op_desc.Input("InFalse").front();
-  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.mask = scope->FindVar(mask)->GetMutable<lite::Tensor>();
-  param_.in_true = scope->FindVar(in_true)->GetMutable<lite::Tensor>();
-  param_.in_false = scope->FindVar(in_false)->GetMutable<lite::Tensor>();
+  param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+  param_.mask = scope->FindVar(mask)->GetMutable<lite_metal::Tensor>();
+  param_.in_true = scope->FindVar(in_true)->GetMutable<lite_metal::Tensor>();
+  param_.in_false = scope->FindVar(in_false)->GetMutable<lite_metal::Tensor>();
 
   auto out = op_desc.Output("Out").front();
-  param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
   param_.level = op_desc.GetAttr<int>("level");
   return true;
@@ -63,4 +63,4 @@ bool MergeLodTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(merge_lod_tensor,
-                 paddle::lite::operators::MergeLodTensorOpLite);
+                 paddle::lite_metal::operators::MergeLodTensorOpLite);

@@ -19,7 +19,7 @@
 #include "paddle/fluid/operators/jit/kernels.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -73,7 +73,7 @@ REGISTER_LITE_KERNEL(sgd,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SGDCompute<float>,
+                     paddle::lite_metal::kernels::x86::SGDCompute<float>,
                      def)
     .BindInput("Param", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("LearningRate", {LiteType::GetTensorTy(TARGET(kX86))})

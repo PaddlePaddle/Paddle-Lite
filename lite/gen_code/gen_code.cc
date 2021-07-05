@@ -18,18 +18,18 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace gencode {
 
 void Module::AddWeight(const std::string &name, const TensorRepr &tensor) {
   auto w_name = WeightUniqueName();
   Line(string_format("// Create weight: %s", name.c_str()));
-  // auto* w0 = scope.Var("w0")->GetMutable<lite::Tensor>();
-  Line(string_format("auto* %s = scope->Var(%s)->GetMutable<lite::Tensor>();",
+  // auto* w0 = scope.Var("w0")->GetMutable<lite_metal::Tensor>();
+  Line(string_format("auto* %s = scope->Var(%s)->GetMutable<lite_metal::Tensor>();",
                      w_name.c_str(),
                      Repr(name).c_str()));
-  // lite::DDim w_ddim({1, 2})
-  Line(string_format("lite::DDim %s_ddim(std::vector<int64_t>(%s));",
+  // lite_metal::DDim w_ddim({1, 2})
+  Line(string_format("lite_metal::DDim %s_ddim(std::vector<int64_t>(%s));",
                      w_name.c_str(),
                      tensor.ddim.repr().c_str()));
   // std::vector<float> w_data({});
@@ -40,9 +40,9 @@ void Module::AddWeight(const std::string &name, const TensorRepr &tensor) {
                      PrecisionToStr(tensor.dtype).c_str(),
                      w_name.c_str(),
                      w_data_repr.c_str()));
-  // w0->Assign<float, lite::DDim, TARGET(kX86)>(w0_data.data(), w0_ddim);
+  // w0->Assign<float, lite_metal::DDim, TARGET(kX86)>(w0_data.data(), w0_ddim);
   Line(string_format(
-      "%s->Assign<%s, lite::DDim, TARGET(kX86)>(%s_data.data(), %s_ddim);",
+      "%s->Assign<%s, lite_metal::DDim, TARGET(kX86)>(%s_data.data(), %s_ddim);",
       w_name.c_str(),
       PrecisionToStr(tensor.dtype).c_str(),
       w_name.c_str(),
@@ -87,7 +87,7 @@ std::string Module::DataRepr(const std::string &raw_data, PrecisionType dtype) {
 void Module::AddOpDescHelper(const std::string &op_id,
                              const cpp::OpDesc &desc) {
   std::string desc_var = op_id + "_desc";
-  Line(string_format("lite::cpp::OpDesc %s;", desc_var.c_str()));
+  Line(string_format("lite_metal::cpp::OpDesc %s;", desc_var.c_str()));
   auto vec_str_repr = [](const std::vector<std::string> &vec) {
     return Repr(vec);
   };
@@ -111,11 +111,11 @@ void Module::AddOpDescHelper(const std::string &op_id,
 
     switch (type) {
       case AttrType::INT:
-        return paddle::lite::to_string(desc.GetAttr<int>(name));
+        return paddle::lite_metal::to_string(desc.GetAttr<int>(name));
       case AttrType::FLOAT:
-        return paddle::lite::to_string(desc.GetAttr<float>(name));
+        return paddle::lite_metal::to_string(desc.GetAttr<float>(name));
       case AttrType::BOOLEAN:
-        return paddle::lite::to_string(desc.GetAttr<bool>(name));
+        return paddle::lite_metal::to_string(desc.GetAttr<bool>(name));
       case AttrType::STRING:
         return "\"" + desc.GetAttr<std::string>(name) + "\"";
       case AttrType::FLOATS: {
@@ -188,7 +188,7 @@ void Module::AddOp(const cpp::OpDesc &op) {
 
   Line(string_format("// Create Op: %s", op.Type().c_str()));
 
-  Line(string_format("auto %s = lite::LiteOpRegistry::Global().Create(\"%s\");",
+  Line(string_format("auto %s = lite_metal::LiteOpRegistry::Global().Create(\"%s\");",
                      op_name.c_str(),
                      op.Type().c_str()));
 
@@ -209,7 +209,7 @@ void Module::AddOp(const cpp::OpDesc &op) {
 
   // Set Context for kernel
   // clang-format off
-  Line(string_format("%s->SetContext(lite::ContextScheduler::Global().NewContext(%s->target()));", kernel_name.c_str(), kernel_name.c_str()));  // NOLINT
+  Line(string_format("%s->SetContext(lite_metal::ContextScheduler::Global().NewContext(%s->target()));", kernel_name.c_str(), kernel_name.c_str()));  // NOLINT
   // clang-format on
 
   Line(string_format("ops.push_back(%s);", op_name.c_str()));

@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -38,7 +38,7 @@ void PixelShuffleCompute::Run() {
   const int out_width = param.output->dims()[3];
 
   if (upscale_factor == 2) {
-    lite::arm::math::pixel_shuffle_scale2_fp32(x_data,
+    lite_metal::arm::math::pixel_shuffle_scale2_fp32(x_data,
                                                output_data,
                                                batch_size,
                                                height,
@@ -47,7 +47,7 @@ void PixelShuffleCompute::Run() {
                                                out_height,
                                                out_width);
   } else if (upscale_factor == 3) {
-    lite::arm::math::pixel_shuffle_scale3_fp32(x_data,
+    lite_metal::arm::math::pixel_shuffle_scale3_fp32(x_data,
                                                output_data,
                                                batch_size,
                                                height,
@@ -56,7 +56,7 @@ void PixelShuffleCompute::Run() {
                                                out_height,
                                                out_width);
   } else if (upscale_factor == 4) {
-    lite::arm::math::pixel_shuffle_scale4_fp32(x_data,
+    lite_metal::arm::math::pixel_shuffle_scale4_fp32(x_data,
                                                output_data,
                                                batch_size,
                                                height,
@@ -65,7 +65,7 @@ void PixelShuffleCompute::Run() {
                                                out_height,
                                                out_width);
   } else {
-    lite::arm::math::pixel_shuffle_native_fp32(x_data,
+    lite_metal::arm::math::pixel_shuffle_native_fp32(x_data,
                                                output_data,
                                                batch_size,
                                                height,
@@ -90,7 +90,7 @@ REGISTER_LITE_KERNEL(pixel_shuffle,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::PixelShuffleCompute,
+                     paddle::lite_metal::kernels::arm::PixelShuffleCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})

@@ -20,7 +20,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #define ELT(MATHOP)                                                          \
   for (int n = 0; n < xn; n++) {                                             \

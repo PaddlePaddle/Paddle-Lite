@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SequenceMaskOp::CheckShape() const {
@@ -28,18 +28,18 @@ bool SequenceMaskOp::CheckShape() const {
 
 bool SequenceMaskOp::InferShapeImpl() const { return true; }
 
-bool SequenceMaskOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
+bool SequenceMaskOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
+  param_.X = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("X").front())->Get<lite_metal::Tensor>());
   if (opdesc.HasInput("MaxLenTensor") &&
       !opdesc.Input("MaxLenTensor").empty()) {
     auto var = scope->FindVar(opdesc.Input("MaxLenTensor").front());
     if (var != nullptr) {
-      param_.MaxLenTensor = var->GetMutable<lite::Tensor>();
+      param_.MaxLenTensor = var->GetMutable<lite_metal::Tensor>();
     }
   }
   param_.Y =
-      scope->FindVar(opdesc.Output("Y").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Y").front())->GetMutable<lite_metal::Tensor>();
   param_.maxlen = opdesc.GetAttr<int>("maxlen");
   param_.out_dtype = opdesc.GetAttr<int>("out_dtype");
   return true;
@@ -49,4 +49,4 @@ bool SequenceMaskOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_mask, paddle::lite::operators::SequenceMaskOp);
+REGISTER_LITE_OP(sequence_mask, paddle::lite_metal::operators::SequenceMaskOp);

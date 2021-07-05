@@ -15,7 +15,7 @@
 #include "lite/operators/topk_pooling_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool TopkPoolingOp::CheckShape() const {
@@ -35,7 +35,7 @@ bool TopkPoolingOp::InferShapeImpl() const {
   return true;
 }
 
-bool TopkPoolingOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool TopkPoolingOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto y = op_desc.Input("Y").front();
   param_.X = scope->FindTensor(x);
@@ -52,4 +52,4 @@ bool TopkPoolingOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(topk_pooling, paddle::lite::operators::TopkPoolingOp);
+REGISTER_LITE_OP(topk_pooling, paddle::lite_metal::operators::TopkPoolingOp);

@@ -20,7 +20,7 @@
 #include "lite/backends/arm/math/dotprod/gemm_vsdot.h"
 #endif
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 

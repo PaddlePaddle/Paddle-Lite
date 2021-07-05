@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool DecodeBboxesOpLite::CheckShape() const {
@@ -35,13 +35,13 @@ bool DecodeBboxesOpLite::InferShapeImpl() const {
 }
 
 bool DecodeBboxesOpLite::AttachImpl(const cpp::OpDesc& opdesc,
-                                    lite::Scope* scope) {
+                                    lite_metal::Scope* scope) {
   auto Loc_name = opdesc.Input("Loc").front();
   auto Prior_name = opdesc.Input("Prior").front();
   auto Bbox_name = opdesc.Output("Bbox").front();
-  param_.loc_data = GetVar<lite::Tensor>(scope, Loc_name);
-  param_.prior_data = GetVar<lite::Tensor>(scope, Prior_name);
-  param_.bbox_data = GetMutableVar<lite::Tensor>(scope, Bbox_name);
+  param_.loc_data = GetVar<lite_metal::Tensor>(scope, Loc_name);
+  param_.prior_data = GetVar<lite_metal::Tensor>(scope, Prior_name);
+  param_.bbox_data = GetMutableVar<lite_metal::Tensor>(scope, Bbox_name);
 
   param_.batch_num = opdesc.GetAttr<int>("batch_num");
   param_.num_priors = opdesc.GetAttr<int>("num_priors");
@@ -57,4 +57,4 @@ bool DecodeBboxesOpLite::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(decode_bboxes, paddle::lite::operators::DecodeBboxesOpLite);
+REGISTER_LITE_OP(decode_bboxes, paddle::lite_metal::operators::DecodeBboxesOpLite);

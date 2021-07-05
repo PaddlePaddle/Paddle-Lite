@@ -19,7 +19,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 class ShapeComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.

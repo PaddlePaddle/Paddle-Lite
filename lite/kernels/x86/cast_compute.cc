@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(cast,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::CastCompute<float>,
+                     paddle::lite_metal::kernels::x86::CastCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -29,7 +29,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::x86::CastCompute<::paddle::lite::fluid::float16>,
+    paddle::lite_metal::kernels::x86::CastCompute<::paddle::lite_metal::fluid::float16>,
     fp16_to_any)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -39,7 +39,7 @@ REGISTER_LITE_KERNEL(cast,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::CastCompute<bool>,
+                     paddle::lite_metal::kernels::x86::CastCompute<bool>,
                      bool_to_any)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
@@ -49,7 +49,7 @@ REGISTER_LITE_KERNEL(cast,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::CastCompute<int>,
+                     paddle::lite_metal::kernels::x86::CastCompute<int>,
                      int32_to_any)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})

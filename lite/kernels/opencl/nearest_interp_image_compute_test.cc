@@ -20,7 +20,7 @@
 #include "lite/kernels/opencl/image_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename dtype>
 void nearest_interp_compute_ref(const dtype *src,
@@ -125,7 +125,7 @@ TEST(nearest_interp_image2d, compute) {
               // layout(buf->img): x -> nearest_interp_in
               // nearest_interp(img): nearest_interp_in -> nearest_interp_out
               // layout(img->buf): nearest_interp_out -> y
-              lite::Tensor x, y, nearest_interp_in, nearest_interp_out, y_ref;
+              lite_metal::Tensor x, y, nearest_interp_in, nearest_interp_out, y_ref;
               operators::LayoutParam BufferToImageParam;
               operators::LayoutParam ImageToBufferParam;
               BufferToImageParam.x = &x;
@@ -148,7 +148,7 @@ TEST(nearest_interp_image2d, compute) {
               nearest_interp_out.Resize(y_dim);
               y_ref.Resize(y_dim);
               auto nearest_interp_image2d_shape =
-                  paddle::lite::kernels::opencl::InitImageDimInfoWith(x_dim);
+                  paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(x_dim);
 
               // initialize tensors
               LOG(INFO) << "initialize tensors";

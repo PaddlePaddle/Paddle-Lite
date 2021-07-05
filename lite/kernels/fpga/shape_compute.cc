@@ -15,7 +15,7 @@
 #include "lite/kernels/fpga/shape_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -34,7 +34,7 @@ void ShapeCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    shape, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ShapeCompute, def)
+    shape, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::ShapeCompute, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),

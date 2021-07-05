@@ -18,7 +18,7 @@
 #include "lite/backends/x86/math/math_function.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 

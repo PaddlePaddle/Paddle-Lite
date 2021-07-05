@@ -16,7 +16,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void* TargetWrapper<TARGET(kIntelFPGA)>::Malloc(size_t size) {
   return intelfpga_malloc(size);

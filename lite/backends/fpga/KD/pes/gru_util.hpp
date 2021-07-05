@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/gru_utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fpga {}
 }
 }

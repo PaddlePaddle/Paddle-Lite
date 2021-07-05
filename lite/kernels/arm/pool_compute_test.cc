@@ -24,7 +24,7 @@
 #include "lite/kernels/arm/pool_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -231,9 +231,9 @@ TEST(pool_arm, compute) {
   PoolCompute<PRECISION(kFloat), PRECISION(kFloat)> pool;
   operators::PoolParam param;
 
-  lite::Tensor x;
-  lite::Tensor output;
-  lite::Tensor output_ref;
+  lite_metal::Tensor x;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
 #if 0
   // speedup for ci
   for (auto pooling_type : {"max", "avg"}) {

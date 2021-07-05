@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(memory, test) {
   auto* buf = TargetMalloc(TARGET(kX86), 10);

@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -43,7 +43,7 @@ REGISTER_LITE_KERNEL(unsqueeze,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::UnsqueezeCompute,
+                     paddle::lite_metal::kernels::host::UnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(
@@ -63,7 +63,7 @@ REGISTER_LITE_KERNEL(unsqueeze2,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::UnsqueezeCompute,
+                     paddle::lite_metal::kernels::host::UnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(

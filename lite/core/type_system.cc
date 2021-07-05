@@ -16,14 +16,14 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 size_t ParamTypeRegistry::KernelIdTy::hash() const {
   std::hash<std::string> h;
   size_t hash = h(kernel_type);
-  lite::CombineHash(place.hash(), &hash);
-  lite::CombineHash(std::hash<int>()(static_cast<int>(io)), &hash);
-  lite::CombineHash(std::hash<std::string>()(arg_name), &hash);
+  lite_metal::CombineHash(place.hash(), &hash);
+  lite_metal::CombineHash(std::hash<int>()(static_cast<int>(io)), &hash);
+  lite_metal::CombineHash(std::hash<std::string>()(arg_name), &hash);
   return hash;
 }
 

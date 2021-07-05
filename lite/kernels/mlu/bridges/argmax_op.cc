@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -104,4 +104,4 @@ int ArgmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(arg_max,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ArgmaxConverter);
+                         paddle::lite_metal::subgraph::mlu::ArgmaxConverter);

@@ -19,11 +19,11 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 void NearestInterpRef(Tensor* input, Tensor* output, bool with_align) {
   int hin = input->dims()[2];
@@ -120,8 +120,8 @@ TEST(nearest_interp, normal) {
   osz_ref_data[0] = out_h;
   osz_ref_data[1] = out_w;
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  osz.Assign<float, lite::DDim, TARGET(kCUDA)>(osz_cpu_data, osz_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  osz.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(osz_cpu_data, osz_cpu.dims());
 
   param.X = &x;
   param.OutSize = &osz;
@@ -219,14 +219,14 @@ TEST(nearest_interp, update) {
   size_tensor1_ref_data[0] = out_w;
   input_scale_ref_data[0] = scale;
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  size_tensor[0].Assign<float, lite::DDim, TARGET(kCUDA)>(
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  size_tensor[0].Assign<float, lite_metal::DDim, TARGET(kCUDA)>(
       size_tensor0_cpu_data, size_tensor[0].dims());
-  size_tensor[1].Assign<float, lite::DDim, TARGET(kCUDA)>(
+  size_tensor[1].Assign<float, lite_metal::DDim, TARGET(kCUDA)>(
       size_tensor1_cpu_data, size_tensor[1].dims());
-  input_scale.Assign<float, lite::DDim, TARGET(kCUDA)>(input_scale_cpu_data,
+  input_scale.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(input_scale_cpu_data,
                                                        input_scale.dims());
-  osz.Assign<float, lite::DDim, TARGET(kCUDA)>(osz_cpu_data, osz_cpu.dims());
+  osz.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(osz_cpu_data, osz_cpu.dims());
 
   param.X = &x;
   param.SizeTensor.emplace_back(

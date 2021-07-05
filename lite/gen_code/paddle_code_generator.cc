@@ -21,18 +21,18 @@ DEFINE_string(optimized_model, "", "");
 DEFINE_string(generated_code_file, "__generated_code__.cc", "");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace gencode {
 
 void GenCode(const std::string& model_dir, const std::string& out_file) {
-  lite::Scope scope;
+  lite_metal::Scope scope;
   cpp::ProgramDesc cpp_desc;
   std::string model_file = model_dir + "/model";
   std::string param_file = model_dir + "/params";
   LoadModelPb(model_dir, model_file, param_file, &scope, &cpp_desc);
 
   framework::proto::ProgramDesc pb_proto_desc;
-  lite::pb::ProgramDesc pb_desc(&pb_proto_desc);
+  lite_metal::pb::ProgramDesc pb_desc(&pb_proto_desc);
   TransformProgramDescCppToAny(cpp_desc, &pb_desc);
 
   ProgramCodeGenerator codegen(pb_proto_desc, scope);
@@ -50,7 +50,7 @@ void GenCode(const std::string& model_dir, const std::string& out_file) {
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
-  paddle::lite::gencode::GenCode(FLAGS_optimized_model,
+  paddle::lite_metal::gencode::GenCode(FLAGS_optimized_model,
                                  FLAGS_generated_code_file);
   return 0;
 }

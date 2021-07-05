@@ -19,7 +19,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -65,7 +65,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
       first_epoch_for_reinit_ = false;
 
       // compute image shape
-      paddle::lite::CLImageConverterDefault default_convertor;
+      paddle::lite_metal::CLImageConverterDefault default_convertor;
       out_img_shape_ =
           default_convertor.InitImageDimInfoWith(scale_param_->output->dims());
 
@@ -126,7 +126,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -157,7 +157,7 @@ REGISTER_LITE_KERNEL(scale,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::ScaleComputeImage2D,
+                     paddle::lite_metal::kernels::opencl::ScaleComputeImage2D,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

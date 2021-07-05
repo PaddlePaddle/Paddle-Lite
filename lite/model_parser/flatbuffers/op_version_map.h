@@ -20,7 +20,7 @@
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 
 /*

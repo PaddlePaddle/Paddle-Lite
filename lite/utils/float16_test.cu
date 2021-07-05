@@ -111,7 +111,7 @@ limitations under the License. */
 #ifdef LITE_CUDA_FP16
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #if CUDA_VERSION < 9000
 ARITHMETIC_KERNEL(Add, +)

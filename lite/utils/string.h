@@ -24,7 +24,7 @@
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static std::string string_format(const std::string fmt_str, ...) {
   /* Reserve two times as much as the length of the fmt_str */

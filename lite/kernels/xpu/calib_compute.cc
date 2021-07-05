@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -40,7 +40,7 @@ void CalibCompute<InType, OutType>::Run() {
 }  // namespace paddle
 
 using xpu_calib_int64_to_int32 =
-    paddle::lite::kernels::xpu::CalibCompute<int64_t, int>;
+    paddle::lite_metal::kernels::xpu::CalibCompute<int64_t, int>;
 
 REGISTER_LITE_KERNEL(
     calib, kXPU, kFloat, kNCHW, xpu_calib_int64_to_int32, int64_to_int32)

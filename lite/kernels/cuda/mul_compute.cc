@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {}  // namespace cuda
 }  // namespace kernels
@@ -25,8 +25,8 @@ namespace cuda {}  // namespace cuda
 }  // namespace paddle
 
 using MulFp32 =
-    paddle::lite::kernels::cuda::MulCompute<float, PRECISION(kFloat)>;
-using MulFp16 = paddle::lite::kernels::cuda::MulCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::MulCompute<float, PRECISION(kFloat)>;
+using MulFp16 = paddle::lite_metal::kernels::cuda::MulCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(mul, kCUDA, kFloat, kNCHW, MulFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})

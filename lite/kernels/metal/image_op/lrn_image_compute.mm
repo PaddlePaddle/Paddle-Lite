@@ -19,7 +19,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -76,10 +76,10 @@ void LrnImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::LrnImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::LrnImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::LrnImageCompute<float, PRECISION(kFloat)> MetalLrnFp32;
-typedef paddle::lite::kernels::metal::LrnImageCompute<MetalHalf, PRECISION(kFP16)> MetalLrnFp16;
+template class paddle::lite_metal::kernels::metal::LrnImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::LrnImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite_metal::kernels::metal::LrnImageCompute<float, PRECISION(kFloat)> MetalLrnFp32;
+typedef paddle::lite_metal::kernels::metal::LrnImageCompute<MetalHalf, PRECISION(kFP16)> MetalLrnFp16;
 
 // TODO: (lzy) no op
 REGISTER_LITE_KERNEL(lrn, kMetal, kFloat, kMetalTexture2DArray, MetalLrnFp32, def)

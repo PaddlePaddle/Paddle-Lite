@@ -24,7 +24,7 @@ limitations under the License. */
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 template <PrecisionType Ptype, typename Dtype>
@@ -43,19 +43,19 @@ void SequencePoolCompute<Ptype, Dtype>::Run() {
   int64_t width = param.X->numel() / param.X->dims()[0];
 
   if (pool_type == "SUM") {
-    lite::arm::math::seq_pool_sum<Dtype>(din, dout, lod, width);
+    lite_metal::arm::math::seq_pool_sum<Dtype>(din, dout, lod, width);
   } else if (pool_type == "AVERAGE") {
-    lite::arm::math::seq_pool_average<Dtype>(din, dout, lod, width);
+    lite_metal::arm::math::seq_pool_average<Dtype>(din, dout, lod, width);
   } else if (pool_type == "SQRT") {
-    lite::arm::math::seq_pool_sqrt<Dtype>(din, dout, lod, width);
+    lite_metal::arm::math::seq_pool_sqrt<Dtype>(din, dout, lod, width);
   } else if (pool_type == "MAX") {
-    lite::arm::math::seq_pool_max<Dtype>(din, dout, max_index, lod, width);
+    lite_metal::arm::math::seq_pool_max<Dtype>(din, dout, max_index, lod, width);
   } else if (pool_type == "MIN") {
-    lite::arm::math::seq_pool_min<Dtype>(din, dout, max_index, lod, width);
+    lite_metal::arm::math::seq_pool_min<Dtype>(din, dout, max_index, lod, width);
   } else if (pool_type == "FIRST") {
-    lite::arm::math::seq_pool_first<Dtype>(din, dout, lod, width);
+    lite_metal::arm::math::seq_pool_first<Dtype>(din, dout, lod, width);
   } else if (pool_type == "LAST") {
-    lite::arm::math::seq_pool_last<Dtype>(din, dout, lod, width);
+    lite_metal::arm::math::seq_pool_last<Dtype>(din, dout, lod, width);
   } else {
     LOG(ERROR) << " UNKNOWN sequence pool type" << pool_type;
   }
@@ -72,12 +72,12 @@ void SequencePoolCompute<Ptype, Dtype>::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-typedef paddle::lite::kernels::arm::SequencePoolCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::SequencePoolCompute<PRECISION(kFloat),
                                                         float>
     SeqPoolFp32;
 
 #ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::SequencePoolCompute<PRECISION(kFP16),
+typedef paddle::lite_metal::kernels::arm::SequencePoolCompute<PRECISION(kFP16),
                                                         float16_t>
     SeqPoolFp16;
 

@@ -55,7 +55,7 @@ limitations under the License. */
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // Use LITE_ALIGN(2) to ensure that each float16 will be allocated
 // and aligned at least on a 2-byte boundary, which leads to efficient
@@ -641,39 +641,39 @@ namespace std {
 // so that .cu files can be successfully compiled by nvcc.
 
 template <>
-struct is_pod<paddle::lite::float16> {
-  static const bool value = is_trivial<paddle::lite::float16>::value &&
-                            is_standard_layout<paddle::lite::float16>::value;
+struct is_pod<paddle::lite_metal::float16> {
+  static const bool value = is_trivial<paddle::lite_metal::float16>::value &&
+                            is_standard_layout<paddle::lite_metal::float16>::value;
 };
 
 template <>
-struct is_floating_point<paddle::lite::float16>
+struct is_floating_point<paddle::lite_metal::float16>
     : std::integral_constant<
           bool,
           std::is_same<
-              paddle::lite::float16,
-              typename std::remove_cv<paddle::lite::float16>::type>::value> {};
+              paddle::lite_metal::float16,
+              typename std::remove_cv<paddle::lite_metal::float16>::type>::value> {};
 
 template <>
-struct is_signed<paddle::lite::float16> {
+struct is_signed<paddle::lite_metal::float16> {
   static const bool value = true;
 };
 
 template <>
-struct is_unsigned<paddle::lite::float16> {
+struct is_unsigned<paddle::lite_metal::float16> {
   static const bool value = false;
 };
 
-inline bool isnan(const paddle::lite::float16& a) {
-  return paddle::lite::isnan(a);
+inline bool isnan(const paddle::lite_metal::float16& a) {
+  return paddle::lite_metal::isnan(a);
 }
 
-inline bool isinf(const paddle::lite::float16& a) {
-  return paddle::lite::isinf(a);
+inline bool isinf(const paddle::lite_metal::float16& a) {
+  return paddle::lite_metal::isinf(a);
 }
 
 template <>
-struct numeric_limits<paddle::lite::float16> {
+struct numeric_limits<paddle::lite_metal::float16> {
   static const bool is_specialized = true;
   static const bool is_signed = true;
   static const bool is_integer = false;
@@ -698,32 +698,32 @@ struct numeric_limits<paddle::lite::float16> {
   static const bool traps = true;
   static const bool tinyness_before = false;
 
-  static paddle::lite::float16(min)() {
-    return paddle::lite::raw_uint16_to_float16(0x400);
+  static paddle::lite_metal::float16(min)() {
+    return paddle::lite_metal::raw_uint16_to_float16(0x400);
   }
-  static paddle::lite::float16 lowest() {
-    return paddle::lite::raw_uint16_to_float16(0xfbff);
+  static paddle::lite_metal::float16 lowest() {
+    return paddle::lite_metal::raw_uint16_to_float16(0xfbff);
   }
-  static paddle::lite::float16(max)() {
-    return paddle::lite::raw_uint16_to_float16(0x7bff);
+  static paddle::lite_metal::float16(max)() {
+    return paddle::lite_metal::raw_uint16_to_float16(0x7bff);
   }
-  static paddle::lite::float16 epsilon() {
-    return paddle::lite::raw_uint16_to_float16(0x0800);
+  static paddle::lite_metal::float16 epsilon() {
+    return paddle::lite_metal::raw_uint16_to_float16(0x0800);
   }
-  static paddle::lite::float16 round_error() {
-    return paddle::lite::float16(0.5);
+  static paddle::lite_metal::float16 round_error() {
+    return paddle::lite_metal::float16(0.5);
   }
-  static paddle::lite::float16 infinity() {
-    return paddle::lite::raw_uint16_to_float16(0x7c00);
+  static paddle::lite_metal::float16 infinity() {
+    return paddle::lite_metal::raw_uint16_to_float16(0x7c00);
   }
-  static paddle::lite::float16 quiet_NaN() {
-    return paddle::lite::raw_uint16_to_float16(0x7e00);
+  static paddle::lite_metal::float16 quiet_NaN() {
+    return paddle::lite_metal::raw_uint16_to_float16(0x7e00);
   }
-  static paddle::lite::float16 signaling_NaN() {
-    return paddle::lite::raw_uint16_to_float16(0x7e00);
+  static paddle::lite_metal::float16 signaling_NaN() {
+    return paddle::lite_metal::raw_uint16_to_float16(0x7e00);
   }
-  static paddle::lite::float16 denorm_min() {
-    return paddle::lite::raw_uint16_to_float16(0x1);
+  static paddle::lite_metal::float16 denorm_min() {
+    return paddle::lite_metal::raw_uint16_to_float16(0x1);
   }
 };
 

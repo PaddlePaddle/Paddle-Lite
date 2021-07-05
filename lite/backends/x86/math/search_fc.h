@@ -21,12 +21,12 @@ limitations under the License. */
 #include "lite/fluid/data_type.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 template <typename DeviceContext, typename T>
-void call_gemm(const BlasT<lite::TargetType::kX86, T> blas,
+void call_gemm(const BlasT<lite_metal::TargetType::kX86, T> blas,
                const CBLAS_TRANSPOSE TransA,
                const CBLAS_TRANSPOSE TransB,
                const int M,
@@ -165,14 +165,14 @@ inline void sse_eltadd(const T* x, const T* y, T* z, size_t len) {
   }
 }
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class SearchFcFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& X,
-                  const lite::Tensor& W,
-                  const lite::Tensor& b,
-                  lite::Tensor* Out,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& X,
+                  const lite_metal::Tensor& W,
+                  const lite_metal::Tensor& b,
+                  lite_metal::Tensor* Out,
                   int out_size);
 };
 

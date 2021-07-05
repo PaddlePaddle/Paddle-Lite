@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool BoxCoderOpLite::CheckShape() const {
@@ -66,13 +66,13 @@ bool BoxCoderOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool BoxCoderOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool BoxCoderOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto Prior_box_name = opdesc.Input("PriorBox").front();
   auto Target_box_name = opdesc.Input("TargetBox").front();
   auto Output_box_name = opdesc.Output("OutputBox").front();
-  param_.prior_box = GetVar<lite::Tensor>(scope, Prior_box_name);
-  param_.target_box = GetVar<lite::Tensor>(scope, Target_box_name);
-  param_.proposals = GetMutableVar<lite::Tensor>(scope, Output_box_name);
+  param_.prior_box = GetVar<lite_metal::Tensor>(scope, Prior_box_name);
+  param_.target_box = GetVar<lite_metal::Tensor>(scope, Target_box_name);
+  param_.proposals = GetMutableVar<lite_metal::Tensor>(scope, Output_box_name);
   // optional params
   std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
   if (std::find(input_arg_names.begin(),
@@ -103,4 +103,4 @@ bool BoxCoderOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(box_coder, paddle::lite::operators::BoxCoderOpLite);
+REGISTER_LITE_OP(box_coder, paddle::lite_metal::operators::BoxCoderOpLite);

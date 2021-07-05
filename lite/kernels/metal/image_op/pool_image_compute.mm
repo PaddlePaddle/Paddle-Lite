@@ -22,7 +22,7 @@
 #include "lite/kernels/metal/image_op/pool_image_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -235,7 +235,7 @@ REGISTER_LITE_KERNEL(pool2d,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::PoolImageCompute,
+    paddle::lite_metal::kernels::metal::PoolImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -251,7 +251,7 @@ REGISTER_LITE_KERNEL(pool2d,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::PoolImageCompute,
+    paddle::lite_metal::kernels::metal::PoolImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

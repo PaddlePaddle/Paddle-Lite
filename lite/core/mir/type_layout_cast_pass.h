@@ -21,7 +21,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 class TypeLayoutTransformPass : public ProgramPass {

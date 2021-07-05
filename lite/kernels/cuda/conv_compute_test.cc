@@ -25,7 +25,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -57,14 +57,14 @@ class Conv2dTest : public ::testing::Test {
         b_shape({out_channels}) {
     calc_output_shape();
 
-    X_gpu.Resize(lite::DDim(x_shape));
-    X_ref.Resize(lite::DDim(x_shape));
+    X_gpu.Resize(lite_metal::DDim(x_shape));
+    X_ref.Resize(lite_metal::DDim(x_shape));
 
-    W_gpu.Resize(lite::DDim(w_shape));
-    W_ref.Resize(lite::DDim(w_shape));
+    W_gpu.Resize(lite_metal::DDim(w_shape));
+    W_ref.Resize(lite_metal::DDim(w_shape));
 
-    b_gpu.Resize(lite::DDim(b_shape));
-    b_ref.Resize(lite::DDim(b_shape));
+    b_gpu.Resize(lite_metal::DDim(b_shape));
+    b_ref.Resize(lite_metal::DDim(b_shape));
 
     auto x_ref_data = X_ref.mutable_data<float>();
     auto w_ref_data = W_ref.mutable_data<float>();
@@ -81,9 +81,9 @@ class Conv2dTest : public ::testing::Test {
       b_ref_data[i] = static_cast<float>(i % 10 * 0.2);
     }
 
-    Out_ref.Resize(lite::DDim(out_shape));
-    Out_gpu.Resize(lite::DDim(out_shape));
-    Out_cpu.Resize(lite::DDim(out_shape));
+    Out_ref.Resize(lite_metal::DDim(out_shape));
+    Out_gpu.Resize(lite_metal::DDim(out_shape));
+    Out_cpu.Resize(lite_metal::DDim(out_shape));
 
     device_init();
   }
@@ -125,43 +125,43 @@ class Conv2dTest : public ::testing::Test {
   }
 
   void float_data_init() {
-    X_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
+    X_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
                                                    X_gpu.dims());
     X_gpu.set_lod(X_ref.lod());
-    W_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(W_ref.data<float>(),
+    W_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(W_ref.data<float>(),
                                                    W_gpu.dims());
-    b_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(b_ref.data<float>(),
+    b_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(b_ref.data<float>(),
                                                    b_gpu.dims());
   }
 
   void half_data_init() {
-    X_half.Resize(lite::DDim(x_shape));
+    X_half.Resize(lite_metal::DDim(x_shape));
     auto x_half_data = X_half.mutable_data<half>();
     for (int64_t i = 0; i < X_half.numel(); i++) {
-      x_half_data[i] = half(lite::float16(X_ref.data<float>()[i]));
+      x_half_data[i] = half(lite_metal::float16(X_ref.data<float>()[i]));
     }
-    X_gpu.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, X_gpu.dims());
+    X_gpu.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(x_half_data, X_gpu.dims());
     X_gpu.set_lod(X_ref.lod());
 
     W_half.Resize(W_ref.dims());
     auto w_half_data = W_half.mutable_data<half>();
     for (int64_t i = 0; i < W_half.numel(); i++) {
-      w_half_data[i] = half(lite::float16(W_ref.data<float>()[i]));
+      w_half_data[i] = half(lite_metal::float16(W_ref.data<float>()[i]));
     }
-    W_gpu.Assign<half, lite::DDim, TARGET(kCUDA)>(w_half_data, W_gpu.dims());
+    W_gpu.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(w_half_data, W_gpu.dims());
 
     b_half.Resize(b_ref.dims());
     auto b_half_data = b_half.mutable_data<half>();
     for (int64_t i = 0; i < b_half.numel(); i++) {
-      b_half_data[i] = half(lite::float16(b_ref.data<float>()[i]));
+      b_half_data[i] = half(lite_metal::float16(b_ref.data<float>()[i]));
     }
-    b_gpu.Assign<half, lite::DDim, TARGET(kCUDA)>(b_half_data, b_gpu.dims());
+    b_gpu.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(b_half_data, b_gpu.dims());
   }
 
-  void conv_cpu_base(const lite::Tensor* X,
-                     const lite::Tensor* W,
-                     lite::Tensor* Out,
-                     lite::Tensor* Col) {}
+  void conv_cpu_base(const lite_metal::Tensor* X,
+                     const lite_metal::Tensor* W,
+                     lite_metal::Tensor* Out,
+                     lite_metal::Tensor* Col) {}
 
   int batch, in_channels, out_channels, height, width;
   int kernel_h, kernel_w;
@@ -169,10 +169,10 @@ class Conv2dTest : public ::testing::Test {
   int pad_h, pad_w;
   int dilation_h, dilation_w, groups;
   std::vector<int64_t> x_shape, w_shape, b_shape, out_shape;
-  lite::Tensor X_ref, W_ref, b_ref, Out_ref;
-  lite::Tensor X_gpu, W_gpu, b_gpu;
-  lite::Tensor X_half, W_half, b_half;
-  lite::Tensor Out_cpu, Out_gpu;
+  lite_metal::Tensor X_ref, W_ref, b_ref, Out_ref;
+  lite_metal::Tensor X_gpu, W_gpu, b_gpu;
+  lite_metal::Tensor X_half, W_half, b_half;
+  lite_metal::Tensor Out_cpu, Out_gpu;
 
   operators::ConvParam param;
   std::unique_ptr<KernelContext> ctx;
@@ -265,10 +265,10 @@ TEST(conv_compute, int8) {
     bias_cpu_data[i] = i + 1.0;
   }
 
-  x.Assign<int8_t, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  filter.Assign<int8_t, lite::DDim, TARGET(kCUDA)>(filter_cpu_data,
+  x.Assign<int8_t, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  filter.Assign<int8_t, lite_metal::DDim, TARGET(kCUDA)>(filter_cpu_data,
                                                    filter_cpu.dims());
-  bias.Assign<float, lite::DDim, TARGET(kCUDA)>(bias_cpu_data,
+  bias.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(bias_cpu_data,
                                                 filter_cpu.dims());
 
   std::vector<int> pads = {0, 0, 0, 0};
@@ -339,10 +339,10 @@ TEST(conv_compute, int8_int8_out) {
     //  bias_cpu_data[i] = 0;
   }
 
-  x.Assign<int8_t, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  filter.Assign<int8_t, lite::DDim, TARGET(kCUDA)>(filter_cpu_data,
+  x.Assign<int8_t, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  filter.Assign<int8_t, lite_metal::DDim, TARGET(kCUDA)>(filter_cpu_data,
                                                    filter_cpu.dims());
-  bias.Assign<float, lite::DDim, TARGET(kCUDA)>(bias_cpu_data,
+  bias.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(bias_cpu_data,
                                                 filter_cpu.dims());
 
   std::vector<int> pads = {0, 0, 0, 0};

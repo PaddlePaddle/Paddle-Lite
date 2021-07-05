@@ -15,7 +15,7 @@
 #include "lite/kernels/host/gather_nd_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -109,7 +109,7 @@ void GatherNdCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using GatherNdCompute_ = paddle::lite::kernels::host::GatherNdCompute;
+using GatherNdCompute_ = paddle::lite_metal::kernels::host::GatherNdCompute;
 REGISTER_LITE_KERNEL(gather_nd, kHost, kAny, kAny, GatherNdCompute_, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

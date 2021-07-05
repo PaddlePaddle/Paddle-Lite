@@ -28,11 +28,11 @@ DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 9, "iteration times to run");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename T>
-lite::Tensor GetTensorWithShape(std::vector<int64_t> shape) {
-  lite::Tensor ret;
+lite_metal::Tensor GetTensorWithShape(std::vector<int64_t> shape) {
+  lite_metal::Tensor ret;
   ret.Resize(shape);
   T* ptr = ret.mutable_data<T>();
   for (int i = 0; i < ret.numel(); ++i) {

@@ -18,7 +18,7 @@
 #include <algorithm>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 enum class DataLayout { kNCHW = 0, kNHWC };
 

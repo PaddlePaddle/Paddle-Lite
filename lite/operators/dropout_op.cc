@@ -20,7 +20,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool DropoutOp::CheckShape() const {
@@ -40,12 +40,12 @@ bool DropoutOp::InferShapeImpl() const {
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
-bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   auto input = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
 
-  param_.x = GetVar<lite::Tensor>(scope, input);
-  param_.output = GetMutableVar<lite::Tensor>(scope, out);
+  param_.x = GetVar<lite_metal::Tensor>(scope, input);
+  param_.output = GetMutableVar<lite_metal::Tensor>(scope, out);
 
   param_.dropout_prob = op_desc.GetAttr<float>("dropout_prob");
 
@@ -63,7 +63,7 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   }
   if (!param_.is_test) {
     auto Mask = op_desc.Output("Mask").front();
-    param_.mask = GetMutableVar<lite::Tensor>(scope, Mask);
+    param_.mask = GetMutableVar<lite_metal::Tensor>(scope, Mask);
   }
 
   param_.fix_seed = op_desc.GetAttr<bool>("fix_seed");
@@ -79,4 +79,4 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(dropout, paddle::lite::operators::DropoutOp);
+REGISTER_LITE_OP(dropout, paddle::lite_metal::operators::DropoutOp);

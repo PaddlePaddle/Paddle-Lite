@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -106,7 +106,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kCUDA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::cuda::IoCopyHostToCudaCompute,
+                     paddle::lite_metal::kernels::cuda::IoCopyHostToCudaCompute,
                      host_to_device)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -122,7 +122,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kCUDA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::cuda::IoCopyCudaToHostCompute,
+                     paddle::lite_metal::kernels::cuda::IoCopyCudaToHostCompute,
                      device_to_host)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -138,7 +138,7 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kCUDA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::cuda::IoCopyHostToCudaCompute,
+                     paddle::lite_metal::kernels::cuda::IoCopyHostToCudaCompute,
                      host_to_device)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -154,7 +154,7 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kCUDA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::cuda::IoCopyCudaToHostCompute,
+                     paddle::lite_metal::kernels::cuda::IoCopyCudaToHostCompute,
                      device_to_host)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),

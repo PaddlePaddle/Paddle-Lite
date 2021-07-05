@@ -20,7 +20,7 @@
 #include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -161,7 +161,7 @@ REGISTER_LITE_KERNEL(fpga_conv2d,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ConvCompute,
+                     paddle::lite_metal::kernels::fpga::ConvCompute,
                      def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -177,7 +177,7 @@ REGISTER_LITE_KERNEL(fpga_conv2d,
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ConvCompute, def)
+    conv2d, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::ConvCompute, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
@@ -195,7 +195,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ConvCompute,
+                     paddle::lite_metal::kernels::fpga::ConvCompute,
                      def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),

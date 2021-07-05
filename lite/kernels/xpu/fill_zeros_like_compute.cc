@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -43,7 +43,7 @@ REGISTER_LITE_KERNEL(fill_zeros_like,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::FillZerosLikeCompute<float>,
+                     paddle::lite_metal::kernels::xpu::FillZerosLikeCompute<float>,
                      float32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
@@ -53,7 +53,7 @@ REGISTER_LITE_KERNEL(fill_zeros_like,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::FillZerosLikeCompute<int>,
+                     paddle::lite_metal::kernels::xpu::FillZerosLikeCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
@@ -63,7 +63,7 @@ REGISTER_LITE_KERNEL(fill_zeros_like,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::FillZerosLikeCompute<int64_t>,
+                     paddle::lite_metal::kernels::xpu::FillZerosLikeCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})

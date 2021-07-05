@@ -17,7 +17,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 namespace {
@@ -29,10 +29,10 @@ class Eliminator : public FuseBase {
       auto* op_info = x->stmt()->op_info();
       if (op_info->HasAttr("is_test")) {
         auto attr_type = op_info->GetAttrType("is_test");
-        if (attr_type == paddle::lite::OpDescAPI::AttrType::INT &&
+        if (attr_type == paddle::lite_metal::OpDescAPI::AttrType::INT &&
             op_info->GetAttr<int>("is_test") == 1) {
           return true;
-        } else if (attr_type == paddle::lite::OpDescAPI::AttrType::BOOLEAN &&
+        } else if (attr_type == paddle::lite_metal::OpDescAPI::AttrType::BOOLEAN &&
                    op_info->GetAttr<bool>("is_test")) {
           return true;
         }
@@ -90,5 +90,5 @@ class IdentityDropoutEliminatePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(identity_dropout_eliminate_pass,
-                  paddle::lite::mir::IdentityDropoutEliminatePass)
+                  paddle::lite_metal::mir::IdentityDropoutEliminatePass)
     .BindTargets({TARGET(kXPU)});

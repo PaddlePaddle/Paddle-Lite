@@ -19,7 +19,7 @@
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -99,7 +99,7 @@ void ElementwiseAddCompute::UpdateParams() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
+namespace ocl = paddle::lite_metal::kernels::opencl;
 
 REGISTER_LITE_KERNEL(
     elementwise_add, kOpenCL, kFloat, kNCHW, ocl::ElementwiseAddCompute, def)

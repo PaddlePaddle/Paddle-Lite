@@ -15,7 +15,7 @@
 #include "lite/operators/where_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool WhereOp::CheckShape() const {
@@ -42,16 +42,16 @@ bool WhereOp::InferShapeImpl() const {
   return true;
 }
 
-bool WhereOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool WhereOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   auto x = opdesc.Input("X").front();
   auto y = opdesc.Input("Y").front();
   auto condition = opdesc.Input("Condition").front();
   auto out = opdesc.Output("Out").front();
-  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.y = scope->FindVar(y)->GetMutable<lite::Tensor>();
-  param_.condition = scope->FindVar(condition)->GetMutable<lite::Tensor>();
-  param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+  param_.y = scope->FindVar(y)->GetMutable<lite_metal::Tensor>();
+  param_.condition = scope->FindVar(condition)->GetMutable<lite_metal::Tensor>();
+  param_.out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
   return true;
 }
 
@@ -59,4 +59,4 @@ bool WhereOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(where, paddle::lite::operators::WhereOp);
+REGISTER_LITE_OP(where, paddle::lite_metal::operators::WhereOp);

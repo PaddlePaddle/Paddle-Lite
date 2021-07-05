@@ -18,7 +18,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -33,8 +33,8 @@ class VarConv2DCompute : public KernelLite<TARGET(kCUDA), PType> {
 
  private:
   mutable operators::ConvParam conv_param_;
-  std::unique_ptr<lite::cuda::math::CudnnConv2D<T, PType>> conv_impl_;
-  lite::Tensor offset_;
+  std::unique_ptr<lite_metal::cuda::math::CudnnConv2D<T, PType>> conv_impl_;
+  lite_metal::Tensor offset_;
 };
 
 }  // namespace cuda

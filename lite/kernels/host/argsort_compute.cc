@@ -14,7 +14,7 @@
 
 #include "lite/kernels/host/argsort_compute.h"
 
-using argsort_fp32_compute = paddle::lite::kernels::host::ArgsortCompute<float>;
+using argsort_fp32_compute = paddle::lite_metal::kernels::host::ArgsortCompute<float>;
 REGISTER_LITE_KERNEL(
     argsort, kHost, kFloat, kAny, argsort_fp32_compute, argsort_fp32)
     .BindInput("X",
@@ -32,7 +32,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using argsort_int32_compute =
-    paddle::lite::kernels::host::ArgsortCompute<int32_t>;
+    paddle::lite_metal::kernels::host::ArgsortCompute<int32_t>;
 REGISTER_LITE_KERNEL(
     argsort, kHost, kFloat, kAny, argsort_int32_compute, argsort_int32)
     .BindInput("X",
@@ -50,7 +50,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using argsort_int64_compute =
-    paddle::lite::kernels::host::ArgsortCompute<int64_t>;
+    paddle::lite_metal::kernels::host::ArgsortCompute<int64_t>;
 REGISTER_LITE_KERNEL(
     argsort, kHost, kFloat, kAny, argsort_int64_compute, argsort_int64)
     .BindInput("X",

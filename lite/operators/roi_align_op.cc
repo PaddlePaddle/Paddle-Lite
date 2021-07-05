@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool RoiAlignOpLite::CheckShape() const {
@@ -48,22 +48,22 @@ bool RoiAlignOpLite::InferShapeImpl() const {
 }
 
 bool RoiAlignOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                lite::Scope *scope) {
+                                lite_metal::Scope *scope) {
   param_.X =
-      scope->FindVar(op_desc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   param_.ROIs =
-      scope->FindVar(op_desc.Input("ROIs").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Input("ROIs").front())->GetMutable<lite_metal::Tensor>();
 
   if (op_desc.HasInput("RoisLod") && !op_desc.Input("RoisLod").empty()) {
     param_.RoisLod = scope->FindVar(op_desc.Input("RoisLod").front())
-                         ->GetMutable<lite::Tensor>();
+                         ->GetMutable<lite_metal::Tensor>();
   }
 
   if (op_desc.HasInput("RoisNum") && !op_desc.Input("RoisNum").empty()) {
     auto rois_num_var_vec = op_desc.Input("RoisNum");
     if (!rois_num_var_vec.empty()) {
       param_.RoisNum =
-          scope->FindVar(rois_num_var_vec.front())->GetMutable<lite::Tensor>();
+          scope->FindVar(rois_num_var_vec.front())->GetMutable<lite_metal::Tensor>();
     }
   }
 
@@ -73,7 +73,7 @@ bool RoiAlignOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.sampling_ratio = op_desc.GetAttr<int>("sampling_ratio");
 
   param_.Out =
-      scope->FindVar(op_desc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   return true;
 }
 
@@ -81,4 +81,4 @@ bool RoiAlignOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(roi_align, paddle::lite::operators::RoiAlignOpLite);
+REGISTER_LITE_OP(roi_align, paddle::lite_metal::operators::RoiAlignOpLite);

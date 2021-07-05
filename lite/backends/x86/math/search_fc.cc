@@ -17,7 +17,7 @@ limitations under the License. */
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -26,26 +26,26 @@ namespace math {
  * each dimension must be the same, except the axis dimension.
  */
 template <typename T>
-class SearchFcFunctor<lite::TargetType::kX86, T> {
+class SearchFcFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& bottom,
-                  const lite::Tensor& w,
-                  const lite::Tensor& b,
-                  lite::Tensor* top,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& bottom,
+                  const lite_metal::Tensor& w,
+                  const lite_metal::Tensor& b,
+                  lite_metal::Tensor* top,
                   int out_size) {
     int batch = bottom.dims()[0];
 
     int _out = w.dims()[0];  // 100
     int _in = w.dims()[1];   // 228
 
-    lite::DDim dims(std::vector<int64_t>({bottom.dims()[0], out_size}));
+    lite_metal::DDim dims(std::vector<int64_t>({bottom.dims()[0], out_size}));
 
     const auto bottom_data = bottom.data<T>();
-    auto top_data = top->template mutable_data<T>(lite::TargetType::kX86);
+    auto top_data = top->template mutable_data<T>(lite_metal::TargetType::kX86);
     const auto weights = w.data<T>();
-    auto blas = math::GetBlas<lite::TargetType::kX86, T>(context);
-    call_gemm<lite::X86Context, T>(blas,
+    auto blas = math::GetBlas<lite_metal::TargetType::kX86, T>(context);
+    call_gemm<lite_metal::X86Context, T>(blas,
                                    CblasNoTrans,
                                    CblasTrans,
                                    batch,
@@ -69,7 +69,7 @@ class SearchFcFunctor<lite::TargetType::kX86, T> {
 };
 
 #define DEFINE_FUNCTOR(type) \
-  template class SearchFcFunctor<lite::TargetType::kX86, type>;
+  template class SearchFcFunctor<lite_metal::TargetType::kX86, type>;
 
 FOR_ALL_TYPES(DEFINE_FUNCTOR);
 

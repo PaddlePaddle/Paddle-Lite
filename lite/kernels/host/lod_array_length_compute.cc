@@ -15,7 +15,7 @@
 #include "lite/kernels/host/lod_array_length_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -34,7 +34,7 @@ REGISTER_LITE_KERNEL(lod_array_length,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::LoDArrayLengthCompute,
+                     paddle::lite_metal::kernels::host::LoDArrayLengthCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",

@@ -57,7 +57,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
 LITE_THREAD_LOCAL lite_api::PowerMode DeviceInfo::mode_;

@@ -21,16 +21,16 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
 void ClipCompute::Run() {
   auto& param = Param<operators::ClipParam>();
-  lite::Tensor* x = param.x;
-  lite::Tensor* min_tensor = param.min_tensor;
-  lite::Tensor* max_tensor = param.max_tensor;
-  lite::Tensor* out = param.out;
+  lite_metal::Tensor* x = param.x;
+  lite_metal::Tensor* min_tensor = param.min_tensor;
+  lite_metal::Tensor* max_tensor = param.max_tensor;
+  lite_metal::Tensor* out = param.out;
   float min = param.min;
   float max = param.max;
 
@@ -44,7 +44,7 @@ void ClipCompute::Run() {
   const float* x_ptr = x->data<float>();
   float* out_ptr = out->mutable_data<float>();
   int64_t num = x->numel();
-  lite::arm::math::clip_kernel_fp32(x_ptr, num, min, max, out_ptr);
+  lite_metal::arm::math::clip_kernel_fp32(x_ptr, num, min, max, out_ptr);
   return;
 }
 
@@ -54,7 +54,7 @@ void ClipCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    clip, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::ClipCompute, def)
+    clip, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::ClipCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Min", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Max", {LiteType::GetTensorTy(TARGET(kARM))})

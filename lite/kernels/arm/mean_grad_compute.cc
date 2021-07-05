@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/mean_grad_compute.h"
 #include "lite/backends/arm/math/reduce_mean.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -31,7 +31,7 @@ void MeanGradCompute::Run() {
 
   int input_grad_size = input_grad->dims().production();
 
-  lite::arm::math::mean_grad(out_grad_data, input_grad_data, input_grad_size);
+  lite_metal::arm::math::mean_grad(out_grad_data, input_grad_data, input_grad_size);
 }
 
 }  // namespace arm
@@ -43,7 +43,7 @@ REGISTER_LITE_KERNEL(mean_grad,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::MeanGradCompute,
+                     paddle::lite_metal::kernels::arm::MeanGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})

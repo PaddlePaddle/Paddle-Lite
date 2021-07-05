@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/mean_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -41,7 +41,7 @@ void MeanCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    mean, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::MeanCompute, def)
+    mean, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::MeanCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

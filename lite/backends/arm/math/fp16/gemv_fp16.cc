@@ -15,7 +15,7 @@
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include <arm_neon.h>
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 namespace fp16 {
@@ -227,15 +227,15 @@ void gemv_fp16_trans(const float16_t *A,
   memset(ptr_zero, 0, Nup * sizeof(float16_t));
   auto bias_ptr = ptr_zero + Nup;
   if (is_bias) {
-    lite::TargetWrapperHost::MemcpySync(bias_ptr, bias, M * sizeof(float16_t));
+    lite_metal::TargetWrapperHost::MemcpySync(bias_ptr, bias, M * sizeof(float16_t));
   } else {
     memset(bias_ptr, 0, Mup * sizeof(float16_t));
   }
   float16_t *ptr_w = bias_ptr + Mup;
-  lite::TargetWrapperHost::MemcpySync(ptr_w, A, N * sizeof(float16_t));
+  lite_metal::TargetWrapperHost::MemcpySync(ptr_w, A, N * sizeof(float16_t));
   memset(ptr_w + N, 0, (Nup - N) * sizeof(float16_t));
   float16_t *data_in = ptr_w + Nup;
-  lite::TargetWrapperHost::MemcpySync(
+  lite_metal::TargetWrapperHost::MemcpySync(
       data_in, x + (M - 1) * N, N * sizeof(float16_t));
   int cnt = Nup >> 3;
   float local_alpha = 0.f;
@@ -330,17 +330,17 @@ void gemv_fp16(const float16_t *A,
   memset(ptr_zero, 0, Nup * sizeof(float16_t));
   auto bias_ptr = ptr_zero + Nup;
   if (is_bias) {
-    lite::TargetWrapperHost::MemcpySync(bias_ptr, bias, M * sizeof(float16_t));
+    lite_metal::TargetWrapperHost::MemcpySync(bias_ptr, bias, M * sizeof(float16_t));
     memset(bias_ptr + M, 0, (Mup - M) * sizeof(float16_t));
   } else {
     memset(bias_ptr, 0, Mup * sizeof(float16_t));
   }
 
   float16_t *data_in = bias_ptr + Mup;
-  lite::TargetWrapperHost::MemcpySync(data_in, x, N * sizeof(float16_t));
+  lite_metal::TargetWrapperHost::MemcpySync(data_in, x, N * sizeof(float16_t));
   memset(data_in + N, 0, (Nup - N) * sizeof(float16_t));
   float16_t *ptr_w = data_in + Nup;
-  lite::TargetWrapperHost::MemcpySync(
+  lite_metal::TargetWrapperHost::MemcpySync(
       ptr_w, A + (M - 1) * N, N * sizeof(float16_t));
   int cnt = Nup >> 4;
   float local_alpha = 0.f;

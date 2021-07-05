@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool WriteBackOp::CheckShape() const {
@@ -33,7 +33,7 @@ bool WriteBackOp::InferShapeImpl() const {
   return true;
 }
 
-bool WriteBackOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool WriteBackOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.x = scope->FindTensor(opdesc.Input("Src_LoDTensor").front());
   param_.y = scope->FindMutableTensor(opdesc.Input("Dst_LoDTensor").front());
   return true;
@@ -43,4 +43,4 @@ bool WriteBackOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(write_back, paddle::lite::operators::WriteBackOp);
+REGISTER_LITE_OP(write_back, paddle::lite_metal::operators::WriteBackOp);

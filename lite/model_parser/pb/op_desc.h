@@ -30,7 +30,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pb {
 
 using Attribute =
@@ -38,7 +38,7 @@ using Attribute =
 using VariableNameMap = std::map<std::string, std::vector<std::string>>;
 
 /*
- * The lite::OpDesc, an light-weight implementation of wrapper of proto::OpDesc.
+ * The lite_metal::OpDesc, an light-weight implementation of wrapper of proto::OpDesc.
  * Unlike the original one in framework::OpDesc, we remove the local members
  * except the desc_, to avoid the inconsistent state, which is normal in the
  * original interface and results in bugs.

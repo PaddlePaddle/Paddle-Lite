@@ -24,12 +24,12 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 template <typename T>
-void where_index_compute_ref(lite::Tensor* condition, lite::Tensor* out) {
+void where_index_compute_ref(lite_metal::Tensor* condition, lite_metal::Tensor* out) {
   auto dims = condition->dims();
   auto numel = condition->numel();
   const int64_t rank = static_cast<int64_t>(dims.size());
@@ -76,13 +76,13 @@ TEST(where_index, retrive_op) {
 }
 
 TEST(where_index, compute) {
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
   WhereIndexCompute where_index;
   operators::WhereIndexParam param;
 
-  lite::Tensor input;
-  lite::Tensor output;
-  lite::Tensor output_ref;
+  lite_metal::Tensor input;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
   param.input = &input;
   param.output = &output;
   where_index.SetParam(param);

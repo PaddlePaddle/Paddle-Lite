@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool DensityPriorBoxOpLite::CheckShape() const {
@@ -30,16 +30,16 @@ bool DensityPriorBoxOpLite::CheckShape() const {
 bool DensityPriorBoxOpLite::InferShapeImpl() const { return true; }
 
 bool DensityPriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc,
-                                       lite::Scope* scope) {
+                                       lite_metal::Scope* scope) {
   auto input = opdesc.Input("Input").front();
   auto image = opdesc.Input("Image").front();
   auto boxes = opdesc.Output("Boxes").front();
   auto variances = opdesc.Output("Variances").front();
 
-  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.image = scope->FindVar(image)->GetMutable<lite::Tensor>();
-  param_.boxes = scope->FindVar(boxes)->GetMutable<lite::Tensor>();
-  param_.variances = scope->FindVar(variances)->GetMutable<lite::Tensor>();
+  param_.input = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
+  param_.image = scope->FindVar(image)->GetMutable<lite_metal::Tensor>();
+  param_.boxes = scope->FindVar(boxes)->GetMutable<lite_metal::Tensor>();
+  param_.variances = scope->FindVar(variances)->GetMutable<lite_metal::Tensor>();
 
   param_.clip = opdesc.GetAttr<bool>("clip");
   param_.fixed_sizes = opdesc.GetAttr<std::vector<float>>("fixed_sizes");
@@ -91,4 +91,4 @@ bool DensityPriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(density_prior_box,
-                 paddle::lite::operators::DensityPriorBoxOpLite);
+                 paddle::lite_metal::operators::DensityPriorBoxOpLite);

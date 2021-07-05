@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 static std::vector<int64_t> GetOutputShape(const DDim in_dims,
@@ -69,13 +69,13 @@ bool FlattenOp::InferShapeImpl() const {
   return true;
 }
 
-bool FlattenOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool FlattenOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   auto x_var = scope->FindVar(opdesc.Input("X").front());
   auto output_var = scope->FindVar(opdesc.Output("Out").front());
   CHECK(x_var);
   CHECK(output_var);
-  param_.x = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
-  param_.output = output_var->GetMutable<lite::Tensor>();
+  param_.x = const_cast<lite_metal::Tensor *>(&(x_var->Get<lite_metal::Tensor>()));
+  param_.output = output_var->GetMutable<lite_metal::Tensor>();
   axis_ = opdesc.GetAttr<int>("axis");
 
   param_.inplace = false;
@@ -103,23 +103,23 @@ bool Flatten2Op::InferShapeImpl() const {
   return true;
 }
 
-bool Flatten2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool Flatten2Op::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   FlattenOp::AttachImpl(opdesc, scope);
   auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
   CHECK(xshape_var);
-  param_.xshape = xshape_var->GetMutable<lite::Tensor>();
+  param_.xshape = xshape_var->GetMutable<lite_metal::Tensor>();
   CHECK(param_.xshape) << "Output(XShape) of FlattenOp should not be null.";
   return true;
 }
 
 bool FlattenContiguousRangeOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                          lite::Scope *scope) {
+                                          lite_metal::Scope *scope) {
   auto x_var = scope->FindVar(opdesc.Input("X").front());
-  param_.x = x_var->GetMutable<lite::Tensor>();
+  param_.x = x_var->GetMutable<lite_metal::Tensor>();
   auto out_var = scope->FindVar(opdesc.Output("Out").front());
-  param_.out = out_var->GetMutable<lite::Tensor>();
+  param_.out = out_var->GetMutable<lite_metal::Tensor>();
   auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
-  param_.xshape = xshape_var->GetMutable<lite::Tensor>();
+  param_.xshape = xshape_var->GetMutable<lite_metal::Tensor>();
   param_.start_axis = opdesc.GetAttr<int>("start_axis");
   param_.stop_axis = opdesc.GetAttr<int>("stop_axis");
   return true;
@@ -163,7 +163,7 @@ bool FlattenContiguousRangeOp::InferShapeImpl() const {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(flatten, paddle::lite::operators::FlattenOp);
-REGISTER_LITE_OP(flatten2, paddle::lite::operators::Flatten2Op);
+REGISTER_LITE_OP(flatten, paddle::lite_metal::operators::FlattenOp);
+REGISTER_LITE_OP(flatten2, paddle::lite_metal::operators::Flatten2Op);
 REGISTER_LITE_OP(flatten_contiguous_range,
-                 paddle::lite::operators::FlattenContiguousRangeOp);
+                 paddle::lite_metal::operators::FlattenContiguousRangeOp);

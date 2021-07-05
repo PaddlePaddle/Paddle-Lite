@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 /* Refactor Backward GRU 1                      */
@@ -626,6 +626,6 @@ class XPUBiGRUFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__bigru_fuse_pass, paddle::lite::mir::XPUBiGRUFusePass)
+REGISTER_MIR_PASS(__xpu__bigru_fuse_pass, paddle::lite_metal::mir::XPUBiGRUFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__bigru");

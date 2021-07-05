@@ -17,7 +17,7 @@
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
@@ -284,48 +284,48 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_add,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_sub,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_mul,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_div,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_max,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_min,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_add_activation,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_sub_activation,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_mul_activation,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_div_activation,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_max_activation,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_min_activation,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ElementwiseConverter);

@@ -15,7 +15,7 @@
 #include "lite/operators/scale_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ScaleOp::CheckShape() const {
@@ -29,7 +29,7 @@ bool ScaleOp::InferShapeImpl() const {
   return true;
 }
 
-bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   auto x = op_desc.Input("X").front();
   auto output = op_desc.Output("Out").front();
@@ -68,4 +68,4 @@ bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(scale, paddle::lite::operators::ScaleOp);
+REGISTER_LITE_OP(scale, paddle::lite_metal::operators::ScaleOp);

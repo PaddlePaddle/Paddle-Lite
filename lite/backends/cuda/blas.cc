@@ -15,7 +15,7 @@
 #include "lite/backends/cuda/blas.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 
 template <>

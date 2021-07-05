@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 bool comp_func(std::pair<float, int> a, std::pair<float, int> b) {
@@ -71,7 +71,7 @@ REGISTER_LITE_KERNEL(top_k_v2,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::TopkV2Compute,
+                     paddle::lite_metal::kernels::host::TopkV2Compute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("K", {LiteType::GetTensorTy(TARGET(kHost))})

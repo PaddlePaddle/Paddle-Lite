@@ -25,7 +25,7 @@
 #include "lite/utils/io.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 std::vector<std::string> GetAllOps() {
   return OpLiteFactory::Global().GetAllOps();
@@ -170,20 +170,20 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
 }
 
 #if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
-lite::Tensor *Predictor::GetInput(size_t offset) {
+lite_metal::Tensor *Predictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
       << ", the offset should be less than this.";
   auto *in_var = exec_scope_->FindVar(input_names_[offset]);
   CHECK(in_var) << "no fatch variable " << input_names_[offset]
                 << " in exec_scope";
-  return in_var->GetMutable<lite::Tensor>();
+  return in_var->GetMutable<lite_metal::Tensor>();
 }
 #else
-lite::Tensor *Predictor::GetInput(size_t offset) {
+lite_metal::Tensor *Predictor::GetInput(size_t offset) {
   auto *_feed_list = exec_scope_->FindVar("feed");
   CHECK(_feed_list) << "no feed variable in exec_scope";
-  auto *feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
+  auto *feed_list = _feed_list->GetMutable<std::vector<lite_metal::Tensor>>();
   if (offset >= feed_list->size()) {
     feed_list->resize(offset + 1);
   }
@@ -242,18 +242,18 @@ void Predictor::PrepareFeedFetch() {
 }
 
 #if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
-const lite::Tensor *Predictor::GetOutput(size_t offset) const {
+const lite_metal::Tensor *Predictor::GetOutput(size_t offset) const {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"
       << ", the offset should be less than this.";
   const std::string name = output_names_.at(offset);
   auto *out_var = exec_scope_->FindVar(name);
   CHECK(out_var) << "no fatch variable " << name << " in exec_scope";
-  return out_var->GetMutable<lite::Tensor>();
+  return out_var->GetMutable<lite_metal::Tensor>();
 }
 
-std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
-  std::vector<const lite::Tensor *> outputs;
+std::vector<const lite_metal::Tensor *> Predictor::GetOutputs() const {
+  std::vector<const lite_metal::Tensor *> outputs;
   size_t out_size = output_names_.size();
   for (size_t i = 0; i < out_size; i++) {
     const std::string name = output_names_.at(i);
@@ -262,20 +262,20 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
   return outputs;
 }
 #else
-const lite::Tensor *Predictor::GetOutput(size_t offset) const {
+const lite_metal::Tensor *Predictor::GetOutput(size_t offset) const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
   CHECK(_fetch_list) << "no fatch variable in exec_scope";
-  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite_metal::Tensor>>();
   CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
   return &fetch_list.at(offset);
 }
 
-std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
+std::vector<const lite_metal::Tensor *> Predictor::GetOutputs() const {
   auto *_fetch_list = exec_scope_->FindVar("fetch");
   CHECK(_fetch_list) << "no fatch variable in exec_scope";
-  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite_metal::Tensor>>();
 
-  std::vector<const lite::Tensor *> outputs;
+  std::vector<const lite_metal::Tensor *> outputs;
   for (auto out : fetch_list) {
     outputs.push_back(&out);
   }
@@ -386,20 +386,20 @@ void Predictor::GenRuntimeProgram() {
   program_generated_ = true;
 }
 
-const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
+const lite_metal::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
   CHECK(var) << "no variable named with " << name << " in exec_scope";
-  return &var->Get<lite::Tensor>();
+  return &var->Get<lite_metal::Tensor>();
 }
 
-lite::Tensor *Predictor::GetMutableTensor(const std::string &name) {
+lite_metal::Tensor *Predictor::GetMutableTensor(const std::string &name) {
   auto *var = exec_scope_->FindVar(name);
   CHECK(var) << "no variable named with " << name << " in exec_scope";
-  return var->GetMutable<lite::Tensor>();
+  return var->GetMutable<lite_metal::Tensor>();
 }
 
 // get input by name
-lite::Tensor *Predictor::GetInputByName(const std::string &name) {
+lite_metal::Tensor *Predictor::GetInputByName(const std::string &name) {
   auto element = std::find(input_names_.begin(), input_names_.end(), name);
   if (element == input_names_.end()) {
     LOG(ERROR) << "Model do not have input named with: [" << name
@@ -469,13 +469,13 @@ void Predictor::CheckPaddleOpVersions(
 bool Predictor::TryShrinkMemory() {
 #ifdef LITE_WITH_ARM
   // Clear ArmL3Cache
-  lite::DeviceInfo::Global().ClearArmL3Cache();
+  lite_metal::DeviceInfo::Global().ClearArmL3Cache();
 #endif
   const std::vector<std::string> &local_var_names =
       program_->exec_scope()->LocalVarNames();
   for (auto &var_name : local_var_names) {
     Variable *var = program_->exec_scope()->FindLocalVar(var_name);
-    if (var->IsType<lite::Tensor>()) {
+    if (var->IsType<lite_metal::Tensor>()) {
       // Clear unpersistable tensors
       auto *tensor = program_->exec_scope()->FindMutableTensor(var_name);
       if (!tensor->persistable()) {

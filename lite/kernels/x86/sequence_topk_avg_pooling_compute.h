@@ -19,7 +19,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -31,7 +31,7 @@ class SequenceTopkAvgPoolingCompute
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    lite::x86::math::SequenceTopkAvgPoolingFunctor<lite::TargetType::kX86, T>
+    lite_metal::x86::math::SequenceTopkAvgPoolingFunctor<lite_metal::TargetType::kX86, T>
         sequence_topk_avg_pooling;
     sequence_topk_avg_pooling(*param.X,
                               *param.ROW,

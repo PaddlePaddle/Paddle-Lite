@@ -15,7 +15,7 @@
 #include "lite/kernels/x86/lookup_table_compute.h"
 
 // REGISTER_LITE_KERNEL(lookup_table, kX86, kFloat, kNCHW,
-//                     paddle::lite::kernels::x86::LookupTableCompute<float>,
+//                     paddle::lite_metal::kernels::x86::LookupTableCompute<float>,
 //                     def)
 //    .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
 //    .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -26,7 +26,7 @@ REGISTER_LITE_KERNEL(lookup_table,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::LookupTableCompute<float>,
+                     paddle::lite_metal::kernels::x86::LookupTableCompute<float>,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
@@ -36,7 +36,7 @@ REGISTER_LITE_KERNEL(lookup_table_v2,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::LookupTableCompute<float>,
+                     paddle::lite_metal::kernels::x86::LookupTableCompute<float>,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})

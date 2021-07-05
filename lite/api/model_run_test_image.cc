@@ -23,13 +23,13 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(model, test) {
 #ifdef LITE_WITH_ARM
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)},
                                    Place{TARGET(kARM), PRECISION(kInt8)}});
 

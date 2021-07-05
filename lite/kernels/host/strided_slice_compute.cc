@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -162,7 +162,7 @@ inline void StridedSliceFunctor(int* starts,
 }
 
 inline std::vector<int> get_new_data_from_tensorlist(
-    const std::vector<lite::Tensor*>& list_new_data_tensor) {
+    const std::vector<lite_metal::Tensor*>& list_new_data_tensor) {
   // get tensor
   std::vector<int> vec_new_data;
   for (size_t i = 0; i < list_new_data_tensor.size(); ++i) {
@@ -174,7 +174,7 @@ inline std::vector<int> get_new_data_from_tensorlist(
 }
 
 inline std::vector<int> get_new_data_from_tensor(
-    const lite::Tensor* new_data_tensor) {
+    const lite_metal::Tensor* new_data_tensor) {
   std::vector<int> vec_new_data;
   auto* new_data = new_data_tensor->data<int>();
   vec_new_data =
@@ -351,7 +351,7 @@ void StridedSliceCompute<T, PType>::Run() {
   auto* in_t = input->template data<T>();
   auto* out_t = param.Out->template mutable_data<T>();
   if (need_reverse) {
-    lite::Tensor* tmp = new lite::Tensor();
+    lite_metal::Tensor* tmp = new lite_metal::Tensor();
     tmp->Resize(out_dims);
     auto* tmp_t = tmp->mutable_data<T>();
     stride_slice(in_t,
@@ -379,11 +379,11 @@ void StridedSliceCompute<T, PType>::Run() {
 
 } /* namespace host */
 } /* namespace kernels */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
 using slice_float =
-    paddle::lite::kernels::host::StridedSliceCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::StridedSliceCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_float, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
@@ -400,7 +400,7 @@ REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_float, def)
     .Finalize();
 
 using slice_int32 =
-    paddle::lite::kernels::host::StridedSliceCompute<int, PRECISION(kInt32)>;
+    paddle::lite_metal::kernels::host::StridedSliceCompute<int, PRECISION(kInt32)>;
 REGISTER_LITE_KERNEL(strided_slice, kHost, kInt32, kNCHW, slice_int32, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -417,7 +417,7 @@ REGISTER_LITE_KERNEL(strided_slice, kHost, kInt32, kNCHW, slice_int32, def)
     .Finalize();
 
 using slice_int64 =
-    paddle::lite::kernels::host::StridedSliceCompute<int64_t,
+    paddle::lite_metal::kernels::host::StridedSliceCompute<int64_t,
                                                      PRECISION(kInt64)>;
 REGISTER_LITE_KERNEL(strided_slice, kHost, kInt64, kNCHW, slice_int64, def)
     .BindInput("Input",

@@ -15,7 +15,7 @@
 #include "lite/kernels/host/write_to_array_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -39,7 +39,7 @@ REGISTER_LITE_KERNEL(write_to_array,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::WriteToArrayCompute,
+                     paddle::lite_metal::kernels::host::WriteToArrayCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

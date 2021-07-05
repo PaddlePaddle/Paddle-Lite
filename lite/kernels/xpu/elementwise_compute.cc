@@ -23,7 +23,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -130,7 +130,7 @@ void ElementwiseCompute<T, Functor>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace xpu = paddle::lite::kernels::xpu;
+namespace xpu = paddle::lite_metal::kernels::xpu;
 using AddFloat32 = xpu::ElementwiseCompute<float, xpu::AddFunctor<float>>;
 using AddInt32 = xpu::ElementwiseCompute<int, xpu::AddFunctor<int>>;
 using SubFloat32 = xpu::ElementwiseCompute<float, xpu::SubFunctor<float>>;

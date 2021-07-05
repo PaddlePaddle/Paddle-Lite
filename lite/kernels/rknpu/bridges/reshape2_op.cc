@@ -18,7 +18,7 @@
 #include "lite/operators/reshape_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace rknpu {
 
@@ -97,7 +97,7 @@ int Reshape2Converter(void* ctx, OpLite* op, KernelBase* kernel) {
   // NOW ONLY SUPPORT "shape"(attr)
   rk::nn::ReshapeAttr attrs;  // NCHW is fit well with RKchip
   auto shape = op_info->GetAttr<std::vector<int>>("shape");
-  auto origin_out_shape = lite::operators::ValidateShape(shape, x_dims);
+  auto origin_out_shape = lite_metal::operators::ValidateShape(shape, x_dims);
   std::vector<int64_t> out_shape;
 
   for (int i = 0; i < origin_out_shape.size(); i++) {
@@ -128,4 +128,4 @@ int Reshape2Converter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(reshape2,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::Reshape2Converter);
+                         paddle::lite_metal::subgraph::rknpu::Reshape2Converter);

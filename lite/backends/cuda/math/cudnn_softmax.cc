@@ -17,7 +17,7 @@
 #include "lite/backends/cuda/math/cudnn_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 

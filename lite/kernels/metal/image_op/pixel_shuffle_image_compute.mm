@@ -17,7 +17,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -73,11 +73,11 @@ void PixelShuffleImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::PixelShuffleImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::PixelShuffleImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::PixelShuffleImageCompute<float, PRECISION(kFloat)>
+template class paddle::lite_metal::kernels::metal::PixelShuffleImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::PixelShuffleImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite_metal::kernels::metal::PixelShuffleImageCompute<float, PRECISION(kFloat)>
     MetalPixelShuffleFp32;
-typedef paddle::lite::kernels::metal::PixelShuffleImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::PixelShuffleImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalPixelShuffleFp16;
 
 REGISTER_LITE_KERNEL(pixel_shuffle,

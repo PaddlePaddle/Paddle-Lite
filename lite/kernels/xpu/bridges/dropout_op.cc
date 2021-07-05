@@ -17,7 +17,7 @@
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace xpu {
 
@@ -70,4 +70,4 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(dropout,
                          kXPU,
-                         paddle::lite::subgraph::xpu::DropoutConverter);
+                         paddle::lite_metal::subgraph::xpu::DropoutConverter);

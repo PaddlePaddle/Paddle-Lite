@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -57,13 +57,13 @@ class SearchGroupPaddingCompute
     }
 
     // for padding data
-    lite::LoD top0_lod;
+    lite_metal::LoD top0_lod;
     top0_lod.push_back(new_offset);
     top0->set_lod(top0_lod);
     top0->Resize({batch * max_seq, dim1});
     // for origin input id
     // already set by ShareLoD in InferShape
-    lite::LoD top1_lod;
+    lite_metal::LoD top1_lod;
     top1_lod.push_back(offset);
     top1->set_lod(top1_lod);
     top1->Resize({dim0, 1});
@@ -71,7 +71,7 @@ class SearchGroupPaddingCompute
            0,
            top1->dims()[0] * top1->dims()[1] * sizeof(T));
     // for padding input id
-    lite::LoD top2_lod;
+    lite_metal::LoD top2_lod;
     top2_lod.push_back(new_offset);
     top2->set_lod(top2_lod);
     top2->Resize({batch * max_seq, 1});

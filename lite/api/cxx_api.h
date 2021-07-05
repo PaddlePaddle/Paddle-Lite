@@ -27,7 +27,7 @@
 #include "lite/model_parser/model_parser.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static const char TAILORD_OPS_SOURCE_LIST_FILENAME[] =
     ".tailored_ops_source_list";
@@ -54,7 +54,7 @@ class LITE_API Predictor {
   // Usage: Constructor of Predictor. Create a predictor with the
   // weight variable scope set given.
   ///////////////////////////////////////////////////////////////////
-  explicit Predictor(const std::shared_ptr<lite::Scope>& root_scope)
+  explicit Predictor(const std::shared_ptr<lite_metal::Scope>& root_scope)
       : scope_(root_scope) {}
   ///////////////////////////////////////////////////////////////////
   // Function: Predictor
@@ -145,7 +145,7 @@ class LITE_API Predictor {
     for (auto var_name : var_names) {
       predictor->exec_scope_->LocalVar(var_name);
       auto* tensor =
-          predictor->scope_->Var(var_name)->GetMutable<lite::Tensor>();
+          predictor->scope_->Var(var_name)->GetMutable<lite_metal::Tensor>();
       auto* sub_tensor =
           predictor->exec_scope_->Var(var_name)->GetMutable<Tensor>();
       sub_tensor->CopyDataFrom(*tensor);
@@ -164,13 +164,13 @@ class LITE_API Predictor {
     CheckInputValid();
 
 #ifdef LITE_WITH_XPU
-    lite::TargetWrapperXPU::MallocL3Cache();
+    lite_metal::TargetWrapperXPU::MallocL3Cache();
 #endif
 
     program_->Run();
 
 #ifdef LITE_WITH_XPU
-    lite::TargetWrapperXPU::FreeL3Cache();
+    lite_metal::TargetWrapperXPU::FreeL3Cache();
 #endif
   }
 
@@ -182,9 +182,9 @@ class LITE_API Predictor {
   bool TryShrinkMemory();
 
   // Get offset-th col of feed inputs.
-  lite::Tensor* GetInput(size_t offset);
+  lite_metal::Tensor* GetInput(size_t offset);
   // get input by name.
-  lite::Tensor* GetInputByName(const std::string& name);
+  lite_metal::Tensor* GetInputByName(const std::string& name);
   // get inputnames and get outputnames.
   std::vector<std::string> GetInputNames();
   std::vector<std::string> GetOutputNames();
@@ -196,14 +196,14 @@ class LITE_API Predictor {
   void PrepareFeedFetch();
 
   // Get offset-th col of fetch results.
-  const lite::Tensor* GetOutput(size_t offset) const;
-  std::vector<const lite::Tensor*> GetOutputs() const;
+  const lite_metal::Tensor* GetOutput(size_t offset) const;
+  std::vector<const lite_metal::Tensor*> GetOutputs() const;
 
   const cpp::ProgramDesc& program_desc() const;
   // get a mutable tensor according to its name
-  lite::Tensor* GetMutableTensor(const std::string& name);
+  lite_metal::Tensor* GetMutableTensor(const std::string& name);
   // get a const tensor according to its name
-  const lite::Tensor* GetTensor(const std::string& name) const;
+  const lite_metal::Tensor* GetTensor(const std::string& name) const;
   const RuntimeProgram& runtime_program() const;
   Scope* scope() { return scope_.get(); }
 
@@ -327,7 +327,7 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 #ifdef LITE_WITH_X86
 class LITE_API CXXTrainer {
  public:
-  CXXTrainer(const std::shared_ptr<lite::Scope>& root_scope,
+  CXXTrainer(const std::shared_ptr<lite_metal::Scope>& root_scope,
              const std::vector<Place>& valid_places)
       : scope_(root_scope),
         valid_places_(valid_places),
@@ -361,7 +361,7 @@ class LITE_API CXXTrainer {
   }
 
  private:
-  std::shared_ptr<lite::Scope> scope_;
+  std::shared_ptr<lite_metal::Scope> scope_;
   std::vector<Place> valid_places_;
 
   // The training program.

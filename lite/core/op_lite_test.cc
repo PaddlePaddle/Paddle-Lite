@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(OpLite, test) {}
 

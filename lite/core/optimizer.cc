@@ -20,7 +20,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void Optimizer::AddPass(const std::string& pass_name) {
   mir::Pass* pass = mir::PassManager::Global().LookUp(pass_name);

@@ -15,20 +15,20 @@
 #include "lite/model_parser/pb/tensor_io.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace model_parser {
 namespace tensor {
 
-void set_lod(lite::Tensor* tensor,
+void set_lod(lite_metal::Tensor* tensor,
              const std::vector<std::vector<uint64_t>>& lod) {
   tensor->set_lod(lod);
 }
 
-const std::vector<std::vector<uint64_t>>& get_lod(const lite::Tensor& tensor) {
+const std::vector<std::vector<uint64_t>>& get_lod(const lite_metal::Tensor& tensor) {
   return tensor.lod();
 }
 
-void set_allocation(lite::Tensor* tensor,
+void set_allocation(lite_metal::Tensor* tensor,
                     const std::vector<int64_t>& shape,
                     paddle::lite_api::PrecisionType precision) {
   tensor->Resize(shape);
@@ -39,23 +39,23 @@ void set_allocation(lite::Tensor* tensor,
       tensor->numel() * lite_api::PrecisionTypeLength(precision));
 }
 
-void set_allocation(const lite::Tensor& tensor,
+void set_allocation(const lite_metal::Tensor& tensor,
                     TensorInfoWriteAPI* tensor_info) {
   tensor_info->SetDim(tensor.dims().Vectorize());
   tensor_info->SetDataType(ConvertPrecisionType(tensor.precision()));
   tensor_info->Sync();
 }
 
-size_t get_bytes_size(const lite::Tensor& tensor) {
+size_t get_bytes_size(const lite_metal::Tensor& tensor) {
   return tensor.memory_size();
 }
 
-void* get_allocation(lite::Tensor* tensor) {
+void* get_allocation(lite_metal::Tensor* tensor) {
   CHECK(tensor->IsInitialized()) << "The input tensor has not initialized";
   return tensor->raw_data();
 }
 
-const void* get_allocation(const lite::Tensor& tensor) {
+const void* get_allocation(const lite_metal::Tensor& tensor) {
   CHECK(tensor.IsInitialized()) << "The input tensor has not initialized.";
   return tensor.raw_data();
 }
@@ -64,7 +64,7 @@ const void* get_allocation(const lite::Tensor& tensor) {
 
 namespace pb {
 
-void LoDTensorDeserializer::ForwardRead(lite::Tensor* tensor,
+void LoDTensorDeserializer::ForwardRead(lite_metal::Tensor* tensor,
                                         ByteReader* reader) {
   CHECK(tensor) << "The input tensor is nullptr.";
   CHECK(reader) << "The input reader is nullptr.";
@@ -87,11 +87,11 @@ void LoDTensorDeserializer::ForwardRead(lite::Tensor* tensor,
       uint32_t inner_version = reader->Read<uint32_t>();
       CHECK_EQ(inner_version, 0L)
           << "Tensor inner version should be 0, but get " << inner_version;
-      lite::pb::TensorInfoReader tensor_reader(reader, buf_.get());
+      lite_metal::pb::TensorInfoReader tensor_reader(reader, buf_.get());
       tensor::set_allocation(
           tensor,
           tensor_reader.Dim(),
-          lite::ConvertPrecisionType(tensor_reader.GetDataType()));
+          lite_metal::ConvertPrecisionType(tensor_reader.GetDataType()));
       void* data = tensor::get_allocation(tensor);
       size_t size = tensor::get_bytes_size(*tensor);
       reader->Read(data, size);
@@ -107,7 +107,7 @@ void LoDTensorDeserializer::ForwardRead(lite::Tensor* tensor,
 }
 
 #ifndef LITE_ON_TINY_PUBLISH
-void LoDTensorSerializer::ForwardWrite(const lite::Tensor& tensor,
+void LoDTensorSerializer::ForwardWrite(const lite_metal::Tensor& tensor,
                                        ByteWriter* writer,
                                        uint32_t version) {
   CHECK(writer) << "The input writer is nullptr.";
@@ -126,7 +126,7 @@ void LoDTensorSerializer::ForwardWrite(const lite::Tensor& tensor,
       }
       // Save the raw tensor.
       writer->Write<uint32_t>(version);
-      lite::pb::TensorInfoWriter tensor_writer(writer, buf_.get());
+      lite_metal::pb::TensorInfoWriter tensor_writer(writer, buf_.get());
       tensor::set_allocation(tensor, &tensor_writer);
       writer->Write(tensor::get_allocation(tensor),
                     tensor::get_bytes_size(tensor));

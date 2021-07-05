@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -58,7 +58,7 @@ REGISTER_LITE_KERNEL(batch_norm,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::BatchNormCompute,
+                     paddle::lite_metal::kernels::xpu::BatchNormCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kXPU))})

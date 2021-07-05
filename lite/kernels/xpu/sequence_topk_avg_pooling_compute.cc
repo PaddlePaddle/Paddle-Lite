@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -122,7 +122,7 @@ REGISTER_LITE_KERNEL(sequence_topk_avg_pooling,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SequenceTopkAvgPoolingCompute,
+                     paddle::lite_metal::kernels::xpu::SequenceTopkAvgPoolingCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("ROW", {LiteType::GetTensorTy(TARGET(kXPU))})

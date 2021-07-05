@@ -16,15 +16,15 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 template <typename T, PrecisionType PType>
 void MeshgridCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::MeshgridParam>();
-  std::vector<lite::Tensor*>& ins = param.X;
-  std::vector<lite::Tensor*>& outs = param.Out;
+  std::vector<lite_metal::Tensor*>& ins = param.X;
+  std::vector<lite_metal::Tensor*>& outs = param.Out;
   int64_t size = ins.size();
   std::vector<int64_t> shape(size);
   for (int64_t i = 0; i < size; ++i) {
@@ -94,7 +94,7 @@ void MeshgridCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using meshgrid_float =
-    paddle::lite::kernels::host::MeshgridCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::MeshgridCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(meshgrid, kHost, kFloat, kAny, meshgrid_float, float32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -107,7 +107,7 @@ REGISTER_LITE_KERNEL(meshgrid, kHost, kFloat, kAny, meshgrid_float, float32)
     .Finalize();
 
 using meshgrid_int32 =
-    paddle::lite::kernels::host::MeshgridCompute<int, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::MeshgridCompute<int, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(meshgrid, kHost, kFloat, kAny, meshgrid_int32, int32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

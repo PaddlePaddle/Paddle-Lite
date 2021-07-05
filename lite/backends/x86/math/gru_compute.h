@@ -16,7 +16,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -40,9 +40,9 @@ struct GRUMetaGrad {
   T *prev_out_grad;
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct GRUUnitFunctor {
-  static void compute(const lite::Context<Target> &context,
+  static void compute(const lite_metal::Context<Target> &context,
                       GRUMetaValue<T> value,
                       int frame_size,
                       int batch_size,
@@ -51,9 +51,9 @@ struct GRUUnitFunctor {
                       bool origin_mode);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct GRUUnitGradFunctor {
-  static void compute(const lite::Context<Target> &context,
+  static void compute(const lite_metal::Context<Target> &context,
                       GRUMetaValue<T> value,
                       GRUMetaGrad<T> grad,
                       int frame_size,

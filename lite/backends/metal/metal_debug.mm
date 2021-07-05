@@ -20,7 +20,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void MetalDebug::print_log(const std::string& name, MetalImage* metalImg, int inCount) {
     auto size = metalImg->tensor_dim_.production();

@@ -15,7 +15,7 @@
 #include "lite/kernels/host/lod_reset_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -51,7 +51,7 @@ REGISTER_LITE_KERNEL(lod_reset,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::LodResetCompute,
+                     paddle::lite_metal::kernels::host::LodResetCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})

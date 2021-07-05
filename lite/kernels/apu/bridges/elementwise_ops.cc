@@ -17,7 +17,7 @@
 #include "lite/kernels/apu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace apu {
 
@@ -290,10 +290,10 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(elementwise_add,
                          kAPU,
-                         paddle::lite::subgraph::apu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::apu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_mul,
                          kAPU,
-                         paddle::lite::subgraph::apu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::apu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation,
                          kAPU,
-                         paddle::lite::subgraph::apu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::apu::ElementwiseConverter);

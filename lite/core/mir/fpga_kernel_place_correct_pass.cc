@@ -17,7 +17,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void FPGAKernelPlaceCorrectPass::Apply(const std::unique_ptr<SSAGraph> &graph) {
@@ -29,5 +29,5 @@ void FPGAKernelPlaceCorrectPass::Apply(const std::unique_ptr<SSAGraph> &graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__fpga_kernel_place_correct_pass,
-                  paddle::lite::mir::FPGAKernelPlaceCorrectPass)
+                  paddle::lite_metal::mir::FPGAKernelPlaceCorrectPass)
     .BindTargets({TARGET(kFPGA)});

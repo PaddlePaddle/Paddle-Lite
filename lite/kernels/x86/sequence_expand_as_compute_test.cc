@@ -23,7 +23,7 @@
 #include "lite/kernels/x86/sequence_expand_as_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -41,13 +41,13 @@ TEST(sequence_expand_as_x86, init) {
 }
 
 TEST(sequence_expand_as_x86, run_test) {
-  lite::Tensor x, y, out;
+  lite_metal::Tensor x, y, out;
   std::vector<int64_t> x_shape{4, 1};
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> y_shape{1, 5};
-  y.Resize(lite::DDim(y_shape));
+  y.Resize(lite_metal::DDim(y_shape));
   std::vector<int64_t> out_shape{8, 1};
-  out.Resize(lite::DDim(out_shape));
+  out.Resize(lite_metal::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
   auto y_data = y.mutable_data<float>();

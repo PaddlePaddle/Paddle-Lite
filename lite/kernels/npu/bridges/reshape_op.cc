@@ -18,7 +18,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -71,7 +71,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       auto shape =
           std::vector<int>(actual_shape_data,
                            actual_shape_data + actual_shape_dims.production());
-      auto out_shape = lite::operators::ValidateShape(shape, x_dims);
+      auto out_shape = lite_metal::operators::ValidateShape(shape, x_dims);
       if (out_shape.size() > 4) {
         LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
                         "but Shape has "
@@ -85,7 +85,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     reshape_op->set_input_w(*actual_shape_node->data());
   } else {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
-    auto out_shape = lite::operators::ValidateShape(shape, x_dims);
+    auto out_shape = lite_metal::operators::ValidateShape(shape, x_dims);
     out_shape = CvtShape(out_shape);
     if (out_shape.size() > 4) {
       LOG(WARNING) << "[NPU] HiAI DDK only supports less than 4 dimensions, "
@@ -107,7 +107,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(reshape,
                          kNPU,
-                         paddle::lite::subgraph::npu::ReshapeConverter);
+                         paddle::lite_metal::subgraph::npu::ReshapeConverter);
 REGISTER_SUBGRAPH_BRIDGE(reshape2,
                          kNPU,
-                         paddle::lite::subgraph::npu::ReshapeConverter);
+                         paddle::lite_metal::subgraph::npu::ReshapeConverter);

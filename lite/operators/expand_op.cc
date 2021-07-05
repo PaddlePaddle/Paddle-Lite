@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ExpandOpLite::CheckShape() const {
@@ -66,23 +66,23 @@ bool ExpandOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool ExpandOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool ExpandOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto X_name = opdesc.Input("X").front();
   auto Out_name = opdesc.Output("Out").front();
-  param_.X = GetVar<lite::Tensor>(scope, X_name);
-  param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
+  param_.X = GetVar<lite_metal::Tensor>(scope, X_name);
+  param_.Out = GetMutableVar<lite_metal::Tensor>(scope, Out_name);
 
   if (opdesc.HasInput("ExpandTimes") && !opdesc.Input("ExpandTimes").empty()) {
     auto expand_times_tensor_name = opdesc.Input("ExpandTimes").front();
     param_.ExpandTimes =
-        GetMutableVar<lite::Tensor>(scope, expand_times_tensor_name);
+        GetMutableVar<lite_metal::Tensor>(scope, expand_times_tensor_name);
   }
   param_.expand_times_tensor.clear();  // Avoid errors caused by repeated calls
   if (opdesc.HasInput("expand_times_tensor") &&
       !opdesc.Input("expand_times_tensor").empty()) {
     for (auto expand_times_tensor_name : opdesc.Input("expand_times_tensor")) {
       param_.expand_times_tensor.push_back(
-          GetMutableVar<lite::Tensor>(scope, expand_times_tensor_name));
+          GetMutableVar<lite_metal::Tensor>(scope, expand_times_tensor_name));
     }
   }
 
@@ -94,4 +94,4 @@ bool ExpandOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(expand, paddle::lite::operators::ExpandOpLite);
+REGISTER_LITE_OP(expand, paddle::lite_metal::operators::ExpandOpLite);

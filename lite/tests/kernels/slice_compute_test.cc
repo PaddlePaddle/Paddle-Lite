@@ -18,7 +18,7 @@
 #include "lite/core/arena/framework.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 inline std::vector<int64_t> vector_int2int64_t(std::vector<int> input) {
   std::vector<int64_t> output{};
@@ -180,9 +180,9 @@ class SliceComputeTester : public arena::TestCase {
       std::vector<std::string> ends_tensor_list_;
       for (size_t i = 0; i < starts_.size(); ++i) {
         starts_tensor_list_.push_back("starts_tensor_list_" +
-                                      paddle::lite::to_string(i));
+                                      paddle::lite_metal::to_string(i));
         ends_tensor_list_.push_back("ends_tensor_list_" +
-                                    paddle::lite::to_string(i));
+                                    paddle::lite_metal::to_string(i));
       }
       op_desc->SetInput("StartsTensorList", {starts_tensor_list_});
       op_desc->SetInput("EndsTensorList", {ends_tensor_list_});
@@ -215,12 +215,12 @@ class SliceComputeTester : public arena::TestCase {
                       ends_i64.data());
     } else if (use_tensor_list_) {
       for (size_t i = 0; i < starts_.size(); ++i) {
-        SetCommonTensor("starts_tensor_list_" + paddle::lite::to_string(i),
+        SetCommonTensor("starts_tensor_list_" + paddle::lite_metal::to_string(i),
                         DDim({1}),
                         &starts_i64[i]);
       }
       for (size_t i = 0; i < ends_.size(); ++i) {
-        SetCommonTensor("ends_tensor_list_" + paddle::lite::to_string(i),
+        SetCommonTensor("ends_tensor_list_" + paddle::lite_metal::to_string(i),
                         DDim({1}),
                         &ends_i64[i]);
       }

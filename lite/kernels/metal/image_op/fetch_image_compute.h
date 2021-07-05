@@ -30,7 +30,7 @@
 #include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 

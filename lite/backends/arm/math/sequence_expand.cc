@@ -18,7 +18,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 
@@ -27,7 +27,7 @@ void SequenceExpandImpl<float>(const float* x_data,
                                const LoD& x_lod,
                                int width,
                                const std::vector<uint64_t>& ref_lod,
-                               lite::Tensor* output) {
+                               lite_metal::Tensor* output) {
   float* output_data = output->mutable_data<float>();
   if (x_lod.size() == 0) {
     for (int i = 0; i < ref_lod.size() - 1; i++) {

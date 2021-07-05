@@ -15,7 +15,7 @@
 #include "lite/kernels/host/one_hot_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -52,15 +52,15 @@ template <>
 void OneHotCompute<PRECISION(kInt32)>::Run() {
   auto& param = this->template Param<param_t>();
   switch (param.dtype) {
-    case static_cast<int>(lite::core::FluidType::INT64):
+    case static_cast<int>(lite_metal::core::FluidType::INT64):
       OneHotKernelFunctor<int32_t, int64_t>(
           param.X, param.Out, param.depth, param.allow_out_of_range);
       break;
-    case static_cast<int>(lite::core::FluidType::INT32):
+    case static_cast<int>(lite_metal::core::FluidType::INT32):
       OneHotKernelFunctor<int32_t, int32_t>(
           param.X, param.Out, param.depth, param.allow_out_of_range);
       break;
-    case static_cast<int>(lite::core::FluidType::FP32):
+    case static_cast<int>(lite_metal::core::FluidType::FP32):
       OneHotKernelFunctor<int32_t, float>(
           param.X, param.Out, param.depth, param.allow_out_of_range);
       break;
@@ -73,15 +73,15 @@ template <>
 void OneHotCompute<PRECISION(kInt64)>::Run() {
   auto& param = this->template Param<param_t>();
   switch (param.dtype) {
-    case static_cast<int>(lite::core::FluidType::INT64):
+    case static_cast<int>(lite_metal::core::FluidType::INT64):
       OneHotKernelFunctor<int64_t, int64_t>(
           param.X, param.Out, param.depth, param.allow_out_of_range);
       break;
-    case static_cast<int>(lite::core::FluidType::INT32):
+    case static_cast<int>(lite_metal::core::FluidType::INT32):
       OneHotKernelFunctor<int64_t, int32_t>(
           param.X, param.Out, param.depth, param.allow_out_of_range);
       break;
-    case static_cast<int>(lite::core::FluidType::FP32):
+    case static_cast<int>(lite_metal::core::FluidType::FP32):
       OneHotKernelFunctor<int64_t, float>(
           param.X, param.Out, param.depth, param.allow_out_of_range);
       break;
@@ -95,9 +95,9 @@ void OneHotCompute<PRECISION(kInt64)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::host::OneHotCompute<PRECISION(kInt64)>
+typedef paddle::lite_metal::kernels::host::OneHotCompute<PRECISION(kInt64)>
     one_hot_64;
-typedef paddle::lite::kernels::host::OneHotCompute<PRECISION(kInt32)>
+typedef paddle::lite_metal::kernels::host::OneHotCompute<PRECISION(kInt32)>
     one_hot_32;
 
 REGISTER_LITE_KERNEL(one_hot, kHost, kAny, kAny, one_hot_64, def)

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SumOpLite::CheckShape() const {
@@ -34,17 +34,17 @@ bool SumOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool SumOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool SumOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto X_names = opdesc.Input("X");
   param_.X.clear();
   for (auto input_name : X_names) {
     auto input_var = scope->FindVar(input_name);
     CHECK(input_var);
-    param_.X.push_back(input_var->GetMutable<lite::Tensor>());
+    param_.X.push_back(input_var->GetMutable<lite_metal::Tensor>());
   }
   auto out_var = scope->FindVar(opdesc.Output("Out").front());
   CHECK(out_var);
-  param_.Out = out_var->GetMutable<lite::Tensor>();
+  param_.Out = out_var->GetMutable<lite_metal::Tensor>();
   if (opdesc.Output("Out").front() == X_names.front()) {
     param_.inplace = 1;
   }
@@ -55,4 +55,4 @@ bool SumOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sum, paddle::lite::operators::SumOpLite);
+REGISTER_LITE_OP(sum, paddle::lite_metal::operators::SumOpLite);

@@ -18,7 +18,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,7 +30,7 @@ namespace cuda {
               n * output_c * output_h * output_w]
 
 template <typename Dtype>
-void nchw2nhwc_ref(lite::Tensor* input, lite::Tensor* output) {
+void nchw2nhwc_ref(lite_metal::Tensor* input, lite_metal::Tensor* output) {
   auto* input_data = input->data<Dtype>();
   auto* output_data = output->mutable_data<Dtype>();
 
@@ -62,7 +62,7 @@ void nchw2nhwc_ref(lite::Tensor* input, lite::Tensor* output) {
   output_data[c + w * output_c + h * output_w * output_c + \
               n * output_h * output_w * output_c]
 template <typename Dtype>
-void nhwc2nchw_ref(lite::Tensor* input, lite::Tensor* output) {
+void nhwc2nchw_ref(lite_metal::Tensor* input, lite_metal::Tensor* output) {
   auto* input_data = input->data<Dtype>();
   auto* output_data = output->mutable_data<Dtype>();
 
@@ -91,8 +91,8 @@ void test_reformat(LayOutCompute<Dtype>* layout_kernel, bool nchw2nhwc) {
   auto& context = ctx->As<CUDAContext>();
   operators::LayoutParam param;
 
-  lite::Tensor x, x_cpu, x_ref;
-  lite::Tensor out, out_cpu, out_ref;
+  lite_metal::Tensor x, x_cpu, x_ref;
+  lite_metal::Tensor out, out_cpu, out_ref;
   int N = 5, C = 6, H = 7, W = 8;
   if (nchw2nhwc) {
     x.Resize({N, C, H, W});
@@ -123,7 +123,7 @@ void test_reformat(LayOutCompute<Dtype>* layout_kernel, bool nchw2nhwc) {
     x_ref_data[i] = static_cast<Dtype>((i + 1) % 127);
   }
 
-  x.Assign<Dtype, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<Dtype, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
 
   param.x = &x;
   param.y = &out;

@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(io_copy, compute) {
   LOG(INFO) << "to get kernel ...";
@@ -32,7 +32,7 @@ TEST(io_copy, compute) {
   auto d2h_kernel = std::move(*std::next(h2d_kernels.begin(), 1));
   LOG(INFO) << "get first kernel: " << h2d_kernel->doc();
   LOG(INFO) << "get second kernel: " << d2h_kernel->doc();
-  lite::Tensor h_x, d_y, h_y;
+  lite_metal::Tensor h_x, d_y, h_y;
   operators::IoCopyParam h2d_param;
   h2d_param.x = &h_x;
   h2d_param.y = &d_y;

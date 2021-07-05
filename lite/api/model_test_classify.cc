@@ -26,7 +26,7 @@
 #include "lite/core/profile/basic_profiler.h"
 #endif  // LITE_WITH_PROFILE
 
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 
 DEFINE_string(input_shape,
               "1,3,224,224",
@@ -57,7 +57,7 @@ void OutputOptModel(const std::string& load_model_dir,
 
   // delete old optimized model
   int ret = system(
-      paddle::lite::string_format("rm -rf %s", save_optimized_model_dir.c_str())
+      paddle::lite_metal::string_format("rm -rf %s", save_optimized_model_dir.c_str())
           .c_str());
   if (ret == 0) {
     LOG(INFO) << "delete old optimized model " << save_optimized_model_dir;
@@ -250,7 +250,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     std::ofstream out(FLAGS_arg_name + ".txt");
     for (size_t i = 0; i < arg_num; ++i) {
       sum += arg_tensor->data<float>()[i];
-      out << paddle::lite::to_string(arg_tensor->data<float>()[i]) << "\n";
+      out << paddle::lite_metal::to_string(arg_tensor->data<float>()[i]) << "\n";
     }
     LOG(INFO) << FLAGS_arg_name << " shape is " << os.str()
               << ", mean value is " << sum * 1. / arg_num;

@@ -21,7 +21,7 @@
 #include "lite/kernels/cuda/sequence_mask_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -142,10 +142,10 @@ void SequenceMaskCompute<T, Ptype>::Run() {
 }  // namespace paddle
 
 using SeqMaskFp32 =
-    paddle::lite::kernels::cuda::SequenceMaskCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::SequenceMaskCompute<float, PRECISION(kFloat)>;
 
 using SeqMaskFp16 =
-    paddle::lite::kernels::cuda::SequenceMaskCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::SequenceMaskCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(sequence_mask, kCUDA, kFloat, kNCHW, SeqMaskFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})

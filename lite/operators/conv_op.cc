@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ConvOpLite::CheckShape() const {
@@ -56,8 +56,8 @@ void UpdatePaddingAndDilation(std::vector<int>* paddings,
                               std::vector<int>* dilations,
                               const std::vector<int>& strides,
                               const std::string padding_algorithm,
-                              const lite::DDim data_dims,
-                              const lite::DDim& ksize) {
+                              const lite_metal::DDim data_dims,
+                              const lite_metal::DDim& ksize) {
   // when padding_desc is "VALID" or "SAME"
   if (padding_algorithm == "SAME") {
     for (size_t i = 0; i < strides.size(); ++i) {
@@ -103,7 +103,7 @@ bool ConvOpLite::InferShapeImpl() const {
   }
 
   // Set output dims
-  param_.output->Resize(lite::DDim(output_shape));
+  param_.output->Resize(lite_metal::DDim(output_shape));
   // share LoD
   param_.output->set_lod(param_.x->lod());
 
@@ -114,5 +114,5 @@ bool ConvOpLite::InferShapeImpl() const {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(conv2d, paddle::lite::operators::ConvOpLite);
-REGISTER_LITE_OP(depthwise_conv2d, paddle::lite::operators::ConvOpLite);
+REGISTER_LITE_OP(conv2d, paddle::lite_metal::operators::ConvOpLite);
+REGISTER_LITE_OP(depthwise_conv2d, paddle::lite_metal::operators::ConvOpLite);

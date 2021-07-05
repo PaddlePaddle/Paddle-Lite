@@ -19,12 +19,12 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
 inline std::vector<int64_t> get_new_data_from_tensorlist(
-    const std::vector<lite::Tensor*>& list_new_data_tensor) {
+    const std::vector<lite_metal::Tensor*>& list_new_data_tensor) {
   // get tensor
 
   std::vector<int64_t> vec_new_data;
@@ -45,7 +45,7 @@ inline std::vector<int64_t> get_new_data_from_tensorlist(
 }
 
 inline std::vector<int64_t> get_new_data_from_tensor(
-    const lite::Tensor* new_data_tensor) {
+    const lite_metal::Tensor* new_data_tensor) {
   std::vector<int64_t> vec_new_data;
   if (new_data_tensor->precision() == PrecisionType::kInt32) {
     auto* new_data = new_data_tensor->data<int32_t>();
@@ -183,7 +183,7 @@ void SliceCompute<T, PType>::Run() {
   auto* o_data = out->template mutable_data<T>();
   std::vector<int32_t> starts_final(starts.begin(), starts.end());
   std::vector<int32_t> ends_final(ends.begin(), ends.end());
-  lite::arm::math::slice(
+  lite_metal::arm::math::slice(
       x_data, in_dims.data(), axes, starts_final, ends_final, o_data, &ctx);
   param.Out->Resize(out_dims);
 }
@@ -194,7 +194,7 @@ void SliceCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using slice_float =
-    paddle::lite::kernels::arm::SliceCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::arm::SliceCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_float, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
@@ -225,7 +225,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using slice_boolean =
-    paddle::lite::kernels::arm::SliceCompute<bool, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::arm::SliceCompute<bool, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_boolean, bool_slice)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
     .BindInput("StartsTensor",
@@ -240,7 +240,7 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_boolean, bool_slice)
     .Finalize();
 
 using slice_int32 =
-    paddle::lite::kernels::arm::SliceCompute<int, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::arm::SliceCompute<int, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, int32_slice)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
@@ -256,7 +256,7 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, int32_slice)
     .Finalize();
 
 using slice_int64 =
-    paddle::lite::kernels::arm::SliceCompute<int64_t, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::arm::SliceCompute<int64_t, PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int64, def_int64)
     .BindInput("Input",

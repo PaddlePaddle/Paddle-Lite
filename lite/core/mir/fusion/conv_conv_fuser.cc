@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -109,8 +109,8 @@ void ConvConvFuser::BuildPattern() {
             VLOG(5) << "conv0_wei_name: " << a;
             VLOG(5) << "conv1_wei_name: " << b;
             auto conv_op_desc1 = next_node->stmt()->mutable_op_info();
-            auto weight0_dims = scope->FindVar(a)->Get<lite::Tensor>().dims();
-            auto weight1_dims = scope->FindVar(b)->Get<lite::Tensor>().dims();
+            auto weight0_dims = scope->FindVar(a)->Get<lite_metal::Tensor>().dims();
+            auto weight1_dims = scope->FindVar(b)->Get<lite_metal::Tensor>().dims();
             auto groups0 = conv_op_desc0->GetAttr<int>("groups");
             auto groups1 = conv_op_desc1->GetAttr<int>("groups");
             auto strides1 = conv_op_desc1->GetAttr<std::vector<int>>("strides");
@@ -177,11 +177,11 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 
   // conv0
   auto weight0_t = scope->FindVar(matched.at("conv_weight0")->arg()->name)
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
 
   // conv1
   auto weight1_t = scope->FindVar(matched.at("conv_weight1")->arg()->name)
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   bool enable0_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
   auto strides1 = conv_op_desc1->GetAttr<std::vector<int>>("strides");
   auto paddings1 = conv_op_desc1->GetAttr<std::vector<int>>("paddings");
@@ -237,11 +237,11 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   if (conv_has_bias0_ && conv_op_desc->HasInput("Bias") &&
       conv_op_desc->Input("Bias").size() > 0) {
     auto bias_t0 = scope->FindVar(matched.at("conv_bias0")->arg()->name)
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
     if (conv_has_bias1_ && conv_op_desc1->HasInput("Bias") &&
         conv_op_desc1->Input("Bias").size() > 0) {
       auto bias_t1 = scope->FindVar(matched.at("conv_bias1")->arg()->name)
-                         ->GetMutable<lite::Tensor>();
+                         ->GetMutable<lite_metal::Tensor>();
       Tensor bias;
       bias.CopyDataFrom(*bias_t1);
       auto bias_data = bias.mutable_data<float>();

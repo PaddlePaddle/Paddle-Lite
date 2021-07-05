@@ -22,11 +22,11 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
-namespace math = paddle::lite::x86::math;
+namespace math = paddle::lite_metal::x86::math;
 
 template <typename T>
 class SequenceConvCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {

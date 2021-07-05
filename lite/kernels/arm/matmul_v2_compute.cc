@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -79,7 +79,7 @@ void MatMulV2Compute::Run() {
 
     if (x_dims.size() > 2 && y_dims.size() > 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::sgemm(x_transpose,
+        lite_metal::arm::math::sgemm(x_transpose,
                                y_transpose,
                                m_,
                                n_,
@@ -99,7 +99,7 @@ void MatMulV2Compute::Run() {
       }
     } else if (x_dims.size() > 2 && y_dims.size() == 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::sgemm(x_transpose,
+        lite_metal::arm::math::sgemm(x_transpose,
                                y_transpose,
                                m_,
                                n_,
@@ -119,7 +119,7 @@ void MatMulV2Compute::Run() {
       }
     } else if (x_dims.size() == 2 && y_dims.size() > 2) {
       for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {
-        lite::arm::math::sgemm(x_transpose,
+        lite_metal::arm::math::sgemm(x_transpose,
                                y_transpose,
                                m_,
                                n_,
@@ -159,7 +159,7 @@ void MatMulV2Compute::Run() {
     }
     ldc = n_;
 
-    lite::arm::math::sgemm(x_transpose,
+    lite_metal::arm::math::sgemm(x_transpose,
                            y_transpose,
                            m_,
                            n_,
@@ -194,7 +194,7 @@ void MatMulV2Compute::Run() {
     int lda = k_;
     int ldb = n_;
     int ldc = n_;
-    lite::arm::math::sgemm(x_transpose,
+    lite_metal::arm::math::sgemm(x_transpose,
                            false,
                            m_,
                            n_,
@@ -229,7 +229,7 @@ void MatMulV2Compute::Run() {
     int lda = k_;
     int ldb = n_;
     int ldc = n_;
-    lite::arm::math::sgemm(false,
+    lite_metal::arm::math::sgemm(false,
                            y_transpose,
                            m_,
                            n_,
@@ -268,7 +268,7 @@ void MatMulV2Compute::Run() {
     int lda = k_;
     int ldb = n_;
     int ldc = n_;
-    lite::arm::math::sgemm(x_transpose,
+    lite_metal::arm::math::sgemm(x_transpose,
                            y_transpose,
                            m_,
                            n_,
@@ -300,7 +300,7 @@ REGISTER_LITE_KERNEL(matmul_v2,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::MatMulV2Compute,
+                     paddle::lite_metal::kernels::arm::MatMulV2Compute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})

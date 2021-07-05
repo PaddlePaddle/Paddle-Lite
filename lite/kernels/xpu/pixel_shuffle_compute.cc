@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -54,7 +54,7 @@ REGISTER_LITE_KERNEL(pixel_shuffle,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::PixelShuffleCompute<float>,
+                     paddle::lite_metal::kernels::xpu::PixelShuffleCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -64,7 +64,7 @@ REGISTER_LITE_KERNEL(pixel_shuffle,
                      kXPU,
                      kFP16,
                      kNCHW,
-                     paddle::lite::kernels::xpu::PixelShuffleCompute<float16>,
+                     paddle::lite_metal::kernels::xpu::PixelShuffleCompute<float16>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

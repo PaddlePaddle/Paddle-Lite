@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // This pass fuses two scale ops to one scale op.

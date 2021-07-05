@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void ShuffleChannelFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -35,6 +35,6 @@ void ShuffleChannelFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_shuffle_channel_fuse_pass,
-                  paddle::lite::mir::ShuffleChannelFusePass)
+                  paddle::lite_metal::mir::ShuffleChannelFusePass)
     .BindTargets({TARGET(kAny)})
     .BindKernel("shuffle_channel");

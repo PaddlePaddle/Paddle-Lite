@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -31,10 +31,10 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   const int64_t* output_shape_data =
@@ -49,7 +49,7 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     for (size_t i = 0; i < (x_dims.size() - output_dims.size()); i++) {
       i_output_shape_data[i] = 1;
     }
-    out_name = lite::subgraph::bm::UniqueName(op_type);
+    out_name = lite_metal::subgraph::bm::UniqueName(op_type);
   }
 
   for (size_t i = (x_dims.size() - output_dims.size()); i < output_dims.size();
@@ -90,7 +90,7 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(transpose,
                          kBM,
-                         paddle::lite::subgraph::bm::TransposeConverter);
+                         paddle::lite_metal::subgraph::bm::TransposeConverter);
 REGISTER_SUBGRAPH_BRIDGE(transpose2,
                          kBM,
-                         paddle::lite::subgraph::bm::TransposeConverter);
+                         paddle::lite_metal::subgraph::bm::TransposeConverter);

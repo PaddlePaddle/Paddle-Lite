@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool CollectFpnProposalsOpLite::CheckShape() const {
@@ -51,34 +51,34 @@ bool CollectFpnProposalsOpLite::InferShapeImpl() const {
 }
 
 bool CollectFpnProposalsOpLite::AttachImpl(const cpp::OpDesc& op_desc,
-                                           lite::Scope* scope) {
+                                           lite_metal::Scope* scope) {
   auto rois_names = op_desc.Input("MultiLevelRois");
   param_.multi_level_rois.clear();
   for (const auto& var_name : rois_names) {
     param_.multi_level_rois.push_back(
-        scope->FindVar(var_name)->GetMutable<lite::Tensor>());
+        scope->FindVar(var_name)->GetMutable<lite_metal::Tensor>());
   }
   auto scores_names = op_desc.Input("MultiLevelScores");
   param_.multi_level_scores.clear();
   for (const auto& var_name : scores_names) {
     param_.multi_level_scores.push_back(
-        scope->FindVar(var_name)->GetMutable<lite::Tensor>());
+        scope->FindVar(var_name)->GetMutable<lite_metal::Tensor>());
   }
   if (op_desc.HasInput("RoisNum")) {
     auto var = scope->FindVar(op_desc.Input("RoisNum").front());
     if (var != nullptr) {
-      param_.rois_num = var->GetMutable<lite::Tensor>();
+      param_.rois_num = var->GetMutable<lite_metal::Tensor>();
     }
   }
 
   auto fpn_rois = op_desc.Output("FpnRois").front();
-  param_.fpn_rois = scope->FindVar(fpn_rois)->GetMutable<lite::Tensor>();
+  param_.fpn_rois = scope->FindVar(fpn_rois)->GetMutable<lite_metal::Tensor>();
   if (op_desc.HasOutput("MultiLevelRoIsNum")) {
     auto multi_rois_num = op_desc.Output("MultiLevelRoIsNum");
     param_.multi_rois_num.clear();
     for (const auto& name : multi_rois_num) {
       param_.multi_rois_num.push_back(
-          scope->FindVar(name)->GetMutable<lite::Tensor>());
+          scope->FindVar(name)->GetMutable<lite_metal::Tensor>());
     }
   }
 
@@ -91,4 +91,4 @@ bool CollectFpnProposalsOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(collect_fpn_proposals,
-                 paddle::lite::operators::CollectFpnProposalsOpLite);
+                 paddle::lite_metal::operators::CollectFpnProposalsOpLite);

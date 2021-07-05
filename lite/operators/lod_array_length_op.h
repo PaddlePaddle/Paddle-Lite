@@ -17,7 +17,7 @@
 #include "lite/core/op_lite.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class LoDArrayLengthOp : public OpLite {
@@ -32,14 +32,14 @@ class LoDArrayLengthOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter *ch) {
     auto output_dims = param_.out->dims();
     ch->output_shape = ch->DimToStr(output_dims);
   }
 #endif
 
  protected:
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
  private:
   operators::LoDArrayLengthParam param_;

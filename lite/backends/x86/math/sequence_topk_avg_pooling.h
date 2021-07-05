@@ -19,21 +19,21 @@ limitations under the License. */
 #include "lite/fluid/data_type.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 template <typename T>
 void get_topk_pos(
     const T* data, int length, int k, int* pos, bool debug = false);
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class SequenceTopkAvgPoolingFunctor {
  public:
-  void operator()(const lite::Tensor& X,
-                  const lite::Tensor& ROW,
-                  const lite::Tensor& COLUMN,
-                  lite::Tensor* Out,
-                  lite::Tensor* pos,
+  void operator()(const lite_metal::Tensor& X,
+                  const lite_metal::Tensor& ROW,
+                  const lite_metal::Tensor& COLUMN,
+                  lite_metal::Tensor* Out,
+                  lite_metal::Tensor* pos,
                   int channel_num,
                   std::vector<int> topks);
 };

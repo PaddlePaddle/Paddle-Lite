@@ -20,7 +20,7 @@
 #include "lite/kernels/xpu/bridges/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 namespace bridges {
@@ -72,7 +72,7 @@ void conv_ref(const std::shared_ptr<operators::ConvOpLite> op) {
     auto bias_var_names = op_info->Input("Bias");
     if (bias_var_names.size() > 0) {
       auto bias_var_name = bias_var_names.front();
-      bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+      bias = scope->FindVar(bias_var_name)->GetMutable<lite_metal::Tensor>();
       auto bias_dims = bias->dims();
       is_channel_bias = bias_dims.production() == out_ch_size;
       bias_data = bias->mutable_data<float>();

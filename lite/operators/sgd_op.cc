@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SGDOpLite::CheckShape() const {
@@ -35,7 +35,7 @@ bool SGDOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool SGDOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool SGDOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto Param_name = opdesc.Input("Param").front();
   auto LearningRate_name = opdesc.Input("LearningRate").front();
   auto Grad_name = opdesc.Input("Grad").front();
@@ -43,8 +43,8 @@ bool SGDOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   // and share the same memory
   auto ParamOut_name = opdesc.Output("ParamOut").front();
 
-  param_.Param = GetVar<lite::Tensor>(scope, Param_name);
-  param_.LearningRate = GetVar<lite::Tensor>(scope, LearningRate_name);
+  param_.Param = GetVar<lite_metal::Tensor>(scope, Param_name);
+  param_.LearningRate = GetVar<lite_metal::Tensor>(scope, LearningRate_name);
   param_.Grad = GetVar<Tensor>(scope, Grad_name);
   param_.ParamOut = GetMutableVar<Tensor>(scope, ParamOut_name);
 
@@ -55,4 +55,4 @@ bool SGDOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sgd, paddle::lite::operators::SGDOpLite);
+REGISTER_LITE_OP(sgd, paddle::lite_metal::operators::SGDOpLite);

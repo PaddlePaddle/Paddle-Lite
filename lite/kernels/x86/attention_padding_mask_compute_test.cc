@@ -23,7 +23,7 @@
 #include "lite/kernels/x86/attention_padding_mask_compute.cc"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -95,8 +95,8 @@ TEST(attention_padding_mask_x86, init) {
 }
 
 TEST(attention_padding_mask_x86, run_test) {
-  lite::Tensor x, y;
-  lite::Tensor out, pad_begin, out_ref, pad_begin_ref;
+  lite_metal::Tensor x, y;
+  lite_metal::Tensor out, pad_begin, out_ref, pad_begin_ref;
 
   LoD x_lod{{0, 3, 6, 9, 12}}, y_lod{{0, 4, 6}};
   prepare_input(&x, x_lod, get_max_len(y_lod));

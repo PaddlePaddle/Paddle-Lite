@@ -21,11 +21,11 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-static void im2col_ref(const lite::Tensor& input,
+static void im2col_ref(const lite_metal::Tensor& input,
                        const int batch,
                        const int height,
                        const int width,
@@ -34,7 +34,7 @@ static void im2col_ref(const lite::Tensor& input,
                        const int stride_h,
                        const int stride_w,
                        const int input_channel,
-                       lite::Tensor* col) {
+                       lite_metal::Tensor* col) {
   int top_im_x = (width - 1) / stride_w + 1;
   int top_im_y = (height - 1) / stride_h + 1;
   int top_x = top_im_x * top_im_y;
@@ -116,8 +116,8 @@ static void naive_sgemm(const bool transpose_A,
   }
 }
 
-static void var_conv_2d_ref(const lite::Tensor* bottom,
-                            const lite::Tensor* w,
+static void var_conv_2d_ref(const lite_metal::Tensor* bottom,
+                            const lite_metal::Tensor* w,
                             const int batch,
                             const int height,
                             const int width,
@@ -127,8 +127,8 @@ static void var_conv_2d_ref(const lite::Tensor* bottom,
                             const int stride_w,
                             const int input_channel,
                             const int output_channel,
-                            lite::Tensor* top,
-                            lite::Tensor* col) {
+                            lite_metal::Tensor* top,
+                            lite_metal::Tensor* col) {
   im2col_ref(*bottom,
              batch,
              height,
@@ -183,12 +183,12 @@ class VarConvTest : public ::testing::Test {
                    out_channels,
                    (height - 1) / stride_h + 1,
                    (width - 1) / stride_w + 1}) {
-    X_gpu.Resize(lite::DDim(x_shape));
-    X_ref.Resize(lite::DDim(x_shape));
+    X_gpu.Resize(lite_metal::DDim(x_shape));
+    X_ref.Resize(lite_metal::DDim(x_shape));
     X_ref.set_lod(x_lod);
 
-    W_gpu.Resize(lite::DDim(w_shape));
-    W_ref.Resize(lite::DDim(w_shape));
+    W_gpu.Resize(lite_metal::DDim(w_shape));
+    W_ref.Resize(lite_metal::DDim(w_shape));
 
     auto x_ref_data = X_ref.mutable_data<float>();
     auto w_ref_data = W_ref.mutable_data<float>();
@@ -201,8 +201,8 @@ class VarConvTest : public ::testing::Test {
       w_ref_data[i] = static_cast<float>(i % 10 * 0.2);
     }
 
-    Out_ref.Resize(lite::DDim(out_shape));
-    Out_cpu.Resize(lite::DDim(out_shape));
+    Out_ref.Resize(lite_metal::DDim(out_shape));
+    Out_cpu.Resize(lite_metal::DDim(out_shape));
     conv_cpu_base(&X_ref, &W_ref, &Out_ref, &Col_ref);
 
     device_init();
@@ -225,34 +225,34 @@ class VarConvTest : public ::testing::Test {
   }
 
   void float_data_init() {
-    X_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
+    X_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
                                                    X_gpu.dims());
     X_gpu.set_lod(X_ref.lod());
-    W_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(W_ref.data<float>(),
+    W_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(W_ref.data<float>(),
                                                    W_gpu.dims());
   }
 
   void half_data_init() {
-    X_half.Resize(lite::DDim(x_shape));
+    X_half.Resize(lite_metal::DDim(x_shape));
     auto x_half_data = X_half.mutable_data<__half>();
     for (int64_t i = 0; i < X_half.numel(); i++) {
-      x_half_data[i] = half(lite::float16(X_ref.data<float>()[i]));
+      x_half_data[i] = half(lite_metal::float16(X_ref.data<float>()[i]));
     }
-    X_gpu.Assign<__half, lite::DDim, TARGET(kCUDA)>(x_half_data, X_gpu.dims());
+    X_gpu.Assign<__half, lite_metal::DDim, TARGET(kCUDA)>(x_half_data, X_gpu.dims());
     X_gpu.set_lod(X_ref.lod());
 
     W_half.Resize(W_ref.dims());
     auto w_half_data = W_half.mutable_data<half>();
     for (int64_t i = 0; i < W_half.numel(); i++) {
-      w_half_data[i] = half(lite::float16(W_ref.data<float>()[i]));
+      w_half_data[i] = half(lite_metal::float16(W_ref.data<float>()[i]));
     }
-    W_gpu.Assign<half, lite::DDim, TARGET(kCUDA)>(w_half_data, W_gpu.dims());
+    W_gpu.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(w_half_data, W_gpu.dims());
   }
 
-  void conv_cpu_base(const lite::Tensor* X,
-                     const lite::Tensor* W,
-                     lite::Tensor* Out,
-                     lite::Tensor* Col) {
+  void conv_cpu_base(const lite_metal::Tensor* X,
+                     const lite_metal::Tensor* W,
+                     lite_metal::Tensor* Out,
+                     lite_metal::Tensor* Col) {
     var_conv_2d_ref(X,
                     W,
                     batch,
@@ -273,10 +273,10 @@ class VarConvTest : public ::testing::Test {
   int stride_h, stride_w;
   LoD x_lod;
   std::vector<int64_t> x_shape, w_shape, out_shape;
-  lite::Tensor X_ref, W_ref, Out_ref, Col_ref;
-  lite::Tensor X_gpu, W_gpu;
-  lite::Tensor X_half, W_half;
-  lite::Tensor Out_cpu, Out_gpu;
+  lite_metal::Tensor X_ref, W_ref, Out_ref, Col_ref;
+  lite_metal::Tensor X_gpu, W_gpu;
+  lite_metal::Tensor X_half, W_half;
+  lite_metal::Tensor Out_cpu, Out_gpu;
 
   operators::VarConv2DParam param;
   std::unique_ptr<KernelContext> ctx;
@@ -345,7 +345,7 @@ TEST_F(VarConvTest, TestFP16) {
                           IoDirection::DtoH);
 
   for (int i = 0; i < Out_cpu.numel(); ++i) {
-    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float res = static_cast<float>(lite_metal::float16(out_cpu_data[i]));
     float ref = Out_ref.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }

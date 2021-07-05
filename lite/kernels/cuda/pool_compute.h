@@ -19,7 +19,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -42,7 +42,7 @@ class PoolComputeNHWC
   virtual ~PoolComputeNHWC() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::CudnnPool2DNHWC<PRECISION(kFloat)>>
+  std::unique_ptr<lite_metal::cuda::math::CudnnPool2DNHWC<PRECISION(kFloat)>>
       pool_impl_;
 };
 

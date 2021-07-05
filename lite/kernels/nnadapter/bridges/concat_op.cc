@@ -17,7 +17,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -50,7 +50,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands;
   for (int i = 0; i < num; i++) {
     auto x_name = x_names[i];
-    auto x_scale_name = "X" + paddle::lite::to_string(i) + "_scale";
+    auto x_scale_name = "X" + paddle::lite_metal::to_string(i) + "_scale";
     auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
     auto x_scale =
         has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
@@ -97,4 +97,4 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(concat,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ConcatConverter);
+                         paddle::lite_metal::subgraph::nnadapter::ConcatConverter);

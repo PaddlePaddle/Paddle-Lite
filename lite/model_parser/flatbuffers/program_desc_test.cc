@@ -18,7 +18,7 @@
 #include "lite/model_parser/flatbuffers/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC

@@ -30,7 +30,7 @@
 #include "lite/model_parser/compatible_pb.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 #ifndef LITE_ON_TINY_PUBLISH
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
@@ -55,7 +55,7 @@ void LoadParam(const std::string& path, Variable* out);
 
 void LoadCombinedParamsPb(
     const std::string& path,
-    lite::Scope* scope,
+    lite_metal::Scope* scope,
     const cpp::ProgramDesc& prog,
     const lite_api::CxxModelBuffer& model_buffer = lite_api::CxxModelBuffer());
 
@@ -76,26 +76,26 @@ void SaveModelPb(const std::string& model_dir,
                  bool combined = false);
 
 void SaveCombinedParamsPb(const std::string& path,
-                          const lite::Scope& exec_scope,
+                          const lite_metal::Scope& exec_scope,
                           const cpp::ProgramDesc& prog);
 
 // Serialize tensors to ostream.
 void SerializeTensor(std::ostream& os,
-                     const lite::Scope& scope,
+                     const lite_metal::Scope& scope,
                      const std::string& var);
 
 // LoDTensor to ostream
-void TensorToStream(std::ostream& os, const lite::Tensor& tensor);
-void TensorFromStream(std::istream& is, lite::Tensor* tensor);
+void TensorToStream(std::ostream& os, const lite_metal::Tensor& tensor);
+void TensorFromStream(std::istream& is, lite_metal::Tensor* tensor);
 void ReadBinaryFile(const std::string& filename, std::string* contents);
 
 // For naive buffer
 void SaveParamNaive(const std::string& path,
-                    const lite::Scope& exec_scope,
+                    const lite_metal::Scope& exec_scope,
                     const std::string& var_name);
 
 void SaveCombinedParamsNaive(const std::string& path,
-                             const lite::Scope& exec_scope,
+                             const lite_metal::Scope& exec_scope,
                              const cpp::ProgramDesc& cpp_prog);
 
 void SaveModelNaive(const std::string& model_dir,
@@ -107,12 +107,12 @@ void SaveModelFbs(const std::string& model_dir,
                   const cpp::ProgramDesc& cpp_prog);
 
 void LoadParamNaive(const std::string& path,
-                    lite::Scope* scope,
+                    lite_metal::Scope* scope,
                     const std::string& name);
 // warning:this old inference will be abandened in release/v3.0.0
 // and LoadModelNaiveFromFile is suggested.
 void LoadModelNaive(const std::string& model_dir,
-                    lite::Scope* scope,
+                    lite_metal::Scope* scope,
                     cpp::ProgramDesc* prog,
                     bool combined = true);
 void LoadModelNaiveV0FromFile(const std::string& filename,
@@ -123,7 +123,7 @@ void LoadModelNaiveV0FromMemory(const std::string& model_buffer,
                                 cpp::ProgramDesc* cpp_prog);
 void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               const std::string& param_buffer,
-                              lite::Scope* scope,
+                              lite_metal::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
 // Judge if file exists.
 bool FileExist(const std::string& file_name);
@@ -145,11 +145,11 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader* reader,
                           uint16_t meta_version);
 
 void LoadModelNaiveFromFile(const std::string& filename,
-                            lite::Scope* scope,
+                            lite_metal::Scope* scope,
                             cpp::ProgramDesc* prog);
 
 void LoadModelNaiveFromMemory(const std::string& model_buffer,
-                              lite::Scope* scope,
+                              lite_metal::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
 void LoadModelFbsFromMemory(model_parser::StringBufferReader* reader,
                             Scope* scope,

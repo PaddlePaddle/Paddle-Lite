@@ -15,7 +15,7 @@
 #include "lite/model_parser/naive_buffer/program_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 size_t ProgramDesc::BlocksSize() const { return GetBlockListBuilder().size(); }

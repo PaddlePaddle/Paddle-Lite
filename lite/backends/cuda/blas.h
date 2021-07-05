@@ -21,7 +21,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 
 #define CUBLAS_CHECK(xxx) CHECK_EQ((xxx), CUBLAS_STATUS_SUCCESS);
@@ -59,7 +59,7 @@ struct BlasBase {
 
 // T: Scalar type.
 template <typename T>
-class Blas : public lite::cuda::BlasBase {
+class Blas : public lite_metal::cuda::BlasBase {
  public:
   void sgemm(cublasOperation_t transa,
              cublasOperation_t transb,  //

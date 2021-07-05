@@ -22,7 +22,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace mlu {}  // namespace mlu
 }  // namespace kernels
@@ -34,7 +34,7 @@ REGISTER_LITE_KERNEL(
     kMLU,
     kFloat,
     kNHWC,
-    paddle::lite::kernels::mlu::SubgraphCompute<PRECISION(kFloat)>,
+    paddle::lite_metal::kernels::mlu::SubgraphCompute<PRECISION(kFloat)>,
     def_kFloat)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kMLU),
@@ -51,7 +51,7 @@ REGISTER_LITE_KERNEL(
     kMLU,
     kFP16,
     kNHWC,
-    paddle::lite::kernels::mlu::SubgraphCompute<PRECISION(kFP16)>,
+    paddle::lite_metal::kernels::mlu::SubgraphCompute<PRECISION(kFP16)>,
     def_FP16)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kMLU),

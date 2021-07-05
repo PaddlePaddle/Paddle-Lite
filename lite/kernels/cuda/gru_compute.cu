@@ -24,7 +24,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -43,20 +43,20 @@ struct GRUUnitFunctor {
   static void compute(GRUMetaValue<T> value,
                       int frame_size,
                       int batch_size,
-                      const lite::cuda::math::ActivationType& active_node,
-                      const lite::cuda::math::ActivationType& active_gate,
+                      const lite_metal::cuda::math::ActivationType& active_node,
+                      const lite_metal::cuda::math::ActivationType& active_gate,
                       bool origin_mode,
-                      lite::cuda::math::Gemm<T, T>* blas,
+                      lite_metal::cuda::math::Gemm<T, T>* blas,
                       CUDAContext* context) {
     dim3 threads, grids;
     if (batch_size == 1) {
-      if (lite::TargetWrapperCuda::GetComputeCapability() >= 70) {
+      if (lite_metal::TargetWrapperCuda::GetComputeCapability() >= 70) {
         if (frame_size < 16) {
           constexpr int tiled_size = 8;
           int frame_blocks = (frame_size * 2 + tiled_size - 1) / tiled_size;
           threads = dim3(tiled_size, 1);
           grids = dim3(frame_blocks, 1);
-          lite::cuda::math::FastCollectiveGruGate<
+          lite_metal::cuda::math::FastCollectiveGruGate<
               T,
               tiled_size><<<grids, threads, 0, context->exec_stream()>>>(
               value.gate_value,
@@ -67,7 +67,7 @@ struct GRUUnitFunctor {
               active_gate);
           frame_blocks = (frame_size + tiled_size - 1) / tiled_size;
           grids = dim3(frame_blocks, 1);
-          lite::cuda::math::FastCollectiveGruOut<
+          lite_metal::cuda::math::FastCollectiveGruOut<
               T,
               tiled_size><<<grids, threads, 0, context->exec_stream()>>>(
               value.state_weight,
@@ -83,7 +83,7 @@ struct GRUUnitFunctor {
           int frame_blocks = (frame_size * 2 + tiled_size - 1) / tiled_size;
           threads = dim3(tiled_size, 1);
           grids = dim3(frame_blocks, 1);
-          lite::cuda::math::FastCollectiveGruGate<
+          lite_metal::cuda::math::FastCollectiveGruGate<
               T,
               tiled_size><<<grids, threads, 0, context->exec_stream()>>>(
               value.gate_value,
@@ -94,7 +94,7 @@ struct GRUUnitFunctor {
               active_gate);
           frame_blocks = (frame_size + tiled_size - 1) / tiled_size;
           grids = dim3(frame_blocks, 1);
-          lite::cuda::math::FastCollectiveGruOut<
+          lite_metal::cuda::math::FastCollectiveGruOut<
               T,
               tiled_size><<<grids, threads, 0, context->exec_stream()>>>(
               value.state_weight,
@@ -136,7 +136,7 @@ struct GRUUnitFunctor {
                 context);
     }
 
-    lite::cuda::math::GruForwardResetOutput<
+    lite_metal::cuda::math::GruForwardResetOutput<
         T><<<grids, threads, 0, context->exec_stream()>>>(
         value.gate_value,
         value.reset_output_value,
@@ -165,7 +165,7 @@ struct GRUUnitFunctor {
                 context);
     }
 
-    lite::cuda::math::GruForwardFinalOutput<
+    lite_metal::cuda::math::GruForwardFinalOutput<
         T><<<grids, threads, 0, context->exec_stream()>>>(value.gate_value,
                                                           value.prev_out_value,
                                                           value.output_value,
@@ -185,10 +185,10 @@ struct GRUUnitFunctor<half> {
   static void compute(GRUMetaValue<half> value,
                       int frame_size,
                       int batch_size,
-                      const lite::cuda::math::ActivationType& active_node,
-                      const lite::cuda::math::ActivationType& active_gate,
+                      const lite_metal::cuda::math::ActivationType& active_node,
+                      const lite_metal::cuda::math::ActivationType& active_gate,
                       bool origin_mode,
-                      lite::cuda::math::Gemm<half, half>* blas,
+                      lite_metal::cuda::math::Gemm<half, half>* blas,
                       CUDAContext* context) {
     dim3 threads, grids;
     if (batch_size == 1) {
@@ -219,7 +219,7 @@ struct GRUUnitFunctor<half> {
                 context);
     }
 
-    lite::cuda::math::GruForwardResetOutput<
+    lite_metal::cuda::math::GruForwardResetOutput<
         half><<<grids, threads, 0, context->exec_stream()>>>(
         value.gate_value,
         value.reset_output_value,
@@ -248,7 +248,7 @@ struct GRUUnitFunctor<half> {
                 context);
     }
 
-    lite::cuda::math::GruForwardFinalOutput<
+    lite_metal::cuda::math::GruForwardFinalOutput<
         half><<<grids, threads, 0, context->exec_stream()>>>(
         value.gate_value,
         value.prev_out_value,
@@ -264,7 +264,7 @@ struct GRUUnitFunctor<half> {
 
 template <typename T, PrecisionType PType>
 void GRUCompute<T, PType>::PrepareForRun() {
-  gemm_impl_.reset(new lite::cuda::math::Gemm<T, T>);
+  gemm_impl_.reset(new lite_metal::cuda::math::Gemm<T, T>);
 }
 
 template <typename T, PrecisionType PType>
@@ -275,29 +275,29 @@ void GRUCompute<T, PType>::Run() {
 
   auto* input = param.input;
   T* x_data =
-      const_cast<lite::Tensor*>(input)->template mutable_data<T>(TARGET(kCUDA));
-  lite::Tensor* h0{nullptr};
+      const_cast<lite_metal::Tensor*>(input)->template mutable_data<T>(TARGET(kCUDA));
+  lite_metal::Tensor* h0{nullptr};
   if (param.h0) {
-    h0 = const_cast<lite::Tensor*>(param.h0);
+    h0 = const_cast<lite_metal::Tensor*>(param.h0);
   }
-  lite::Tensor* bias{nullptr};
+  lite_metal::Tensor* bias{nullptr};
   if (param.bias) {
-    bias = const_cast<lite::Tensor*>(param.bias);
+    bias = const_cast<lite_metal::Tensor*>(param.bias);
   }
-  const lite::Tensor* weight = param.weight;
+  const lite_metal::Tensor* weight = param.weight;
   T* weight_data = const_cast<T*>(weight->template data<T>());
-  lite::Tensor* batch_gate = param.batch_gate;
-  lite::Tensor* batch_reset_hidden_prev = param.batch_reset_hidden_prev;
-  lite::Tensor* batch_hidden = param.batch_hidden;
-  lite::Tensor* hidden = param.hidden;
+  lite_metal::Tensor* batch_gate = param.batch_gate;
+  lite_metal::Tensor* batch_reset_hidden_prev = param.batch_reset_hidden_prev;
+  lite_metal::Tensor* batch_hidden = param.batch_hidden;
+  lite_metal::Tensor* hidden = param.hidden;
   T* batch_reset_hidden_prev_data =
       batch_reset_hidden_prev->template mutable_data<T>(TARGET(kCUDA));
   T* out_data = hidden->template mutable_data<T>(TARGET(kCUDA));
   T* batch_gate_data = batch_gate->template mutable_data<T>(TARGET(kCUDA));
   T* batch_hidden_data = batch_hidden->template mutable_data<T>(TARGET(kCUDA));
   bool is_reverse = param.is_reverse;
-  auto active_node = lite::cuda::math::GetActiveType(param.activation);
-  auto active_gate = lite::cuda::math::GetActiveType(param.gate_activation);
+  auto active_node = lite_metal::cuda::math::GetActiveType(param.activation);
+  auto active_gate = lite_metal::cuda::math::GetActiveType(param.gate_activation);
   bool origin_mode = param.origin_mode;
 
   auto hidden_dims = hidden->dims();
@@ -321,7 +321,7 @@ void GRUCompute<T, PType>::Run() {
 
   if (bias) {
     // TODO(wilber): validate when bias is not nullptr
-    lite::cuda::math::RowwiseAdd<T> add_bias;
+    lite_metal::cuda::math::RowwiseAdd<T> add_bias;
     add_bias(x_data,
              bias->template data<T>(),
              x_data,
@@ -339,7 +339,7 @@ void GRUCompute<T, PType>::Run() {
     // to reorder.
     // TODO(wilber): validate when h0 is not nullptr
     ordered_h0_.Resize(h0->dims());
-    lite::cuda::math::CopyMatrixRowsFunctor<T> row_shuffle;
+    lite_metal::cuda::math::CopyMatrixRowsFunctor<T> row_shuffle;
     row_shuffle(*h0, &ordered_h0_, batch_gate->lod()[2], true, stream);
     gru_value.prev_out_value = ordered_h0_.mutable_data<T>(TARGET(kCUDA));
   } else {
@@ -380,9 +380,9 @@ void GRUCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using GRUFp32 =
-    paddle::lite::kernels::cuda::GRUCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::GRUCompute<float, PRECISION(kFloat)>;
 
-using GRUFp16 = paddle::lite::kernels::cuda::GRUCompute<half, PRECISION(kFP16)>;
+using GRUFp16 = paddle::lite_metal::kernels::cuda::GRUCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(gru, kCUDA, kFloat, kNCHW, GRUFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kCUDA))})

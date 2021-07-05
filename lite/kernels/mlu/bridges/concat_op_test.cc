@@ -21,7 +21,7 @@
 #include "lite/kernels/mlu/bridges/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -29,14 +29,14 @@ void concat_ref(const std::shared_ptr<operators::ConcatOpLite> op) {
   Scope* scope = op->scope();
   const OpInfo* op_info = op->op_info();
   auto x = op_info->Input("X");
-  std::vector<lite::Tensor*> inputs;
+  std::vector<lite_metal::Tensor*> inputs;
   for (auto var : x) {
-    inputs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    inputs.push_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   auto out =
       scope->FindVar(op_info->Output("Out").front())->GetMutable<Tensor>();
   int axis = op_info->GetAttr<int>("axis");
-  std::vector<lite::Tensor*> inputs_concat(inputs.size());
+  std::vector<lite_metal::Tensor*> inputs_concat(inputs.size());
   for (size_t j = 0; j < inputs.size(); ++j) {
     inputs_concat[j] = inputs[j];
   }

@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -107,7 +107,7 @@ REGISTER_LITE_KERNEL(sequence_expand,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SequenceExpandCompute,
+                     paddle::lite_metal::kernels::host::SequenceExpandCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost))})

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUResNet50Op::CheckShape() const { return true; }
@@ -30,28 +30,28 @@ bool XPUResNet50Op::InferShapeImpl() const {
   return true;
 }
 
-bool XPUResNet50Op::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  param_.input = const_cast<lite::Tensor*>(
-      &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
+bool XPUResNet50Op::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
+  param_.input = const_cast<lite_metal::Tensor*>(
+      &scope->FindVar(op_desc.Input("Input").front())->Get<lite_metal::Tensor>());
   param_.output = scope->FindVar(op_desc.Output("Output").front())
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
 
   param_.filter.clear();
   for (auto& name : op_desc.Input("Filter")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.filter.push_back(t);
   }
   param_.bias.clear();
   for (auto& name : op_desc.Input("Bias")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.bias.push_back(t);
   }
   param_.max_filter.clear();
   for (auto& name : op_desc.Input("MaxFilter")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.max_filter.push_back(t);
   }
   return true;
@@ -61,4 +61,4 @@ bool XPUResNet50Op::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__resnet50, paddle::lite::operators::XPUResNet50Op);
+REGISTER_LITE_OP(__xpu__resnet50, paddle::lite_metal::operators::XPUResNet50Op);

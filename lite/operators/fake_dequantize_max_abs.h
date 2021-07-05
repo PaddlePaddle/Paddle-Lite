@@ -24,7 +24,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class FakeDequantizeMaxAbsOpLite : public OpLite {
@@ -37,16 +37,16 @@ class FakeDequantizeMaxAbsOpLite : public OpLite {
 
   bool InferShapeImpl() const override { return true; }
 
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) override {
     auto x = op_desc.Input("X").front();
     auto in_scale = op_desc.Input("Scale").front();
 
     auto out = op_desc.Output("Out").front();
 
-    param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-    param_.in_scale = scope->FindVar(in_scale)->GetMutable<lite::Tensor>();
+    param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+    param_.in_scale = scope->FindVar(in_scale)->GetMutable<lite_metal::Tensor>();
 
-    param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+    param_.out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
     param_.max_range = op_desc.GetAttr<float>("max_range");
     return true;
   }

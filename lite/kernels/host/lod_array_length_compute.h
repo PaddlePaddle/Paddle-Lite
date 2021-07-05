@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -30,7 +30,7 @@ class LoDArrayLengthCompute
   virtual ~LoDArrayLengthCompute() = default;
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
+      paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = "lod_array_length_func";
   }
 #endif

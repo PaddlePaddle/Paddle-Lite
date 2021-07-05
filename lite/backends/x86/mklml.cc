@@ -17,7 +17,7 @@ limitations under the License. */
 #ifndef LITE_WITH_STATIC_MKL
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 
 std::once_flag mklml_dso_flag;

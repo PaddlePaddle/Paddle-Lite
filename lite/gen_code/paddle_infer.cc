@@ -21,13 +21,13 @@ namespace gencode {
 
 void Tensor::Resize(const Tensor::ddim_t &shape) {
   CHECK(raw_mutable_tensor_);
-  auto *tensor = static_cast<lite::Tensor *>(raw_mutable_tensor_);
+  auto *tensor = static_cast<lite_metal::Tensor *>(raw_mutable_tensor_);
   tensor->Resize(shape);
 }
 
 std::vector<int64_t> Tensor::shape() const {
   CHECK(raw_tensor_);
-  auto *tensor = static_cast<const lite::Tensor *>(raw_tensor_);
+  auto *tensor = static_cast<const lite_metal::Tensor *>(raw_tensor_);
   return tensor->dims().Vectorize();
 }
 
@@ -41,7 +41,7 @@ std::vector<int64_t> Tensor::shape() const {
   template <>                                                            \
   const T *Tensor::data<T>() const {                                     \
     CHECK(raw_tensor_);                                                  \
-    const auto *tensor = static_cast<const lite::Tensor *>(raw_tensor_); \
+    const auto *tensor = static_cast<const lite_metal::Tensor *>(raw_tensor_); \
     return tensor->data<T>();                                            \
   }
 FOR_EACH_TYPE(IMPL_DATA);
@@ -51,43 +51,43 @@ FOR_EACH_TYPE(IMPL_DATA);
   template <>                                                        \
   T *Tensor::mutable_data<T>() {                                     \
     CHECK(raw_mutable_tensor_);                                      \
-    auto *tensor = static_cast<lite::Tensor *>(raw_mutable_tensor_); \
+    auto *tensor = static_cast<lite_metal::Tensor *>(raw_mutable_tensor_); \
     return tensor->mutable_data<T>();                                \
   }
 FOR_EACH_TYPE(IMPL_MUTABLE_DATA);
 #undef IMPL_MUTABLE_DATA
 
 PaddlePredictor::PaddlePredictor() {
-  raw_ops_ = new std::vector<std::shared_ptr<lite::OpLite>>;
-  raw_kernels_ = new std::vector<std::unique_ptr<lite::KernelBase>>;
-  raw_scope_ = new lite::Scope;
-  raw_exe_scope_ = &(static_cast<lite::Scope *>(raw_scope_)->NewScope());
+  raw_ops_ = new std::vector<std::shared_ptr<lite_metal::OpLite>>;
+  raw_kernels_ = new std::vector<std::unique_ptr<lite_metal::KernelBase>>;
+  raw_scope_ = new lite_metal::Scope;
+  raw_exe_scope_ = &(static_cast<lite_metal::Scope *>(raw_scope_)->NewScope());
 }
 
 std::unique_ptr<Tensor> PaddlePredictor::GetTensor(
     const std::string &id) const {
-  auto *exe_scope = static_cast<lite::Scope *>(raw_exe_scope_);
+  auto *exe_scope = static_cast<lite_metal::Scope *>(raw_exe_scope_);
   const auto *var = exe_scope->FindVar(id);
-  const auto &tensor = var->Get<lite::Tensor>();
+  const auto &tensor = var->Get<lite_metal::Tensor>();
   return std::unique_ptr<Tensor>(new Tensor(&tensor, nullptr));
 }
 
 std::unique_ptr<Tensor> PaddlePredictor::GetMutableTensor(
     const std::string &id) {
-  auto *exe_scope = static_cast<lite::Scope *>(raw_exe_scope_);
+  auto *exe_scope = static_cast<lite_metal::Scope *>(raw_exe_scope_);
   auto *var = exe_scope->FindVar(id);
-  auto *tensor = var->GetMutable<lite::Tensor>();
+  auto *tensor = var->GetMutable<lite_metal::Tensor>();
   return std::unique_ptr<Tensor>(new Tensor(nullptr, tensor));
 }
 
 #define CAST_OPS \
   auto *ops =    \
-      static_cast<std::vector<std::shared_ptr<lite::OpLite>> *>(raw_ops_);
+      static_cast<std::vector<std::shared_ptr<lite_metal::OpLite>> *>(raw_ops_);
 #define CAST_KERNELS                                                 \
   auto *kernels =                                                    \
-      static_cast<std::vector<std::unique_ptr<lite::KernelBase>> *>( \
+      static_cast<std::vector<std::unique_ptr<lite_metal::KernelBase>> *>( \
           raw_kernels_);
-#define CAST_SCOPE auto *scope = static_cast<lite::Scope *>(raw_scope_);
+#define CAST_SCOPE auto *scope = static_cast<lite_metal::Scope *>(raw_scope_);
 
 PaddlePredictor::~PaddlePredictor() {
   CAST_OPS
@@ -121,10 +121,10 @@ void PaddlePredictor::Run() {
 }
 
 std::unique_ptr<Tensor> PaddlePredictor::GetInput(size_t offset) {
-  auto *exec_scope = static_cast<lite::Scope *>(raw_exe_scope_);
+  auto *exec_scope = static_cast<lite_metal::Scope *>(raw_exe_scope_);
   auto *_feed_list = exec_scope->FindVar("feed");
   CHECK(_feed_list) << "no feed variable in exec_scope";
-  auto *feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
+  auto *feed_list = _feed_list->GetMutable<std::vector<lite_metal::Tensor>>();
   if (offset >= feed_list->size()) {
     feed_list->resize(offset + 1);
   }
@@ -133,10 +133,10 @@ std::unique_ptr<Tensor> PaddlePredictor::GetInput(size_t offset) {
 }
 
 std::unique_ptr<Tensor> PaddlePredictor::GetOutput(size_t offset) {
-  auto *exec_scope = static_cast<lite::Scope *>(raw_exe_scope_);
+  auto *exec_scope = static_cast<lite_metal::Scope *>(raw_exe_scope_);
   auto *_fetch_list = exec_scope->FindVar("fetch");
   CHECK(_fetch_list) << "no fatch variable in exec_scope";
-  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+  auto &fetch_list = *_fetch_list->GetMutable<std::vector<lite_metal::Tensor>>();
   CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
   return std::unique_ptr<Tensor>(new Tensor(&fetch_list.at(offset), nullptr));
 }

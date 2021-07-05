@@ -26,7 +26,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 static LITE_THREAD_LOCAL int g_stream_id = 0;
@@ -133,7 +133,7 @@ Node* MLUPostprocessPass::InsertCastAfter(const std::string& op_type,
   cast_arg->AsArg().type = cast_type;
   auto* var = inst_node->AsStmt().op()->scope()->Var(cast_arg_name);
   // for CastAfter manully set the tensor's type
-  var->GetMutable<paddle::lite::Tensor>();
+  var->GetMutable<paddle::lite_metal::Tensor>();
   VLOG(4) << "insert cast after subgraph";
   VLOG(4) << "curent node type: " << cur_node->AsArg().type->name()
           << " cast to node type: " << cast_type->name();
@@ -285,7 +285,7 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
                 head_node->AsArg().name,
                 cur_node->AsArg().name);
   // for subgraph op, modify the BlockDesc
-  auto sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+  auto sub_program_desc = dynamic_cast<paddle::lite_metal::operators::SubgraphOp*>(
                               inst_node->AsStmt().op().get())
                               ->GetProgramDesc();
   CHECK(sub_program_desc);
@@ -451,7 +451,7 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
                  tail_node->AsArg().name,
                  cur_node->AsArg().name);
   // for subgraph op, modify the BlockDesc
-  auto sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+  auto sub_program_desc = dynamic_cast<paddle::lite_metal::operators::SubgraphOp*>(
                               inst_node->AsStmt().op().get())
                               ->GetProgramDesc();
   CHECK(sub_program_desc);
@@ -497,7 +497,7 @@ void MLUPostprocessPass::RecreateOp(Node* inst_node, SSAGraph* graph) {
 
 bool MLUPostprocessPass::IsFirstConvInSubgraph(Node* arg_node,
                                                Node* inst_node) {
-  auto sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+  auto sub_program_desc = dynamic_cast<paddle::lite_metal::operators::SubgraphOp*>(
                               inst_node->AsStmt().op().get())
                               ->GetProgramDesc();
   CHECK(sub_program_desc);
@@ -898,11 +898,11 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #ifdef LITE_WITH_MLU
   ModifyInputOutputDataType(graph.get());
 
-  if (lite::TargetWrapperMlu::InputLayout() == DATALAYOUT(kNHWC)) {
+  if (lite_metal::TargetWrapperMlu::InputLayout() == DATALAYOUT(kNHWC)) {
     ModifyLayout(graph.get());
   }
 
-  if (lite::TargetWrapperMlu::UseFirstConv()) {
+  if (lite_metal::TargetWrapperMlu::UseFirstConv()) {
     GatherAndModifyFirstConvNodes(graph.get());
   }
 #endif
@@ -943,5 +943,5 @@ void MLUPostprocessPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(mlu_postprocess_pass, paddle::lite::mir::MLUPostprocessPass)
+REGISTER_MIR_PASS(mlu_postprocess_pass, paddle::lite_metal::mir::MLUPostprocessPass)
     .BindTargets({TARGET(kMLU)});

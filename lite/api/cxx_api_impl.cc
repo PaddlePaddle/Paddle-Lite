@@ -34,7 +34,7 @@
 #include "lite/backends/x86/mklml.h"
 #endif
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
@@ -57,7 +57,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #endif
 #ifdef LITE_WITH_MLU
     Env<TARGET(kMLU)>::Init();
-    lite::TargetWrapperMlu::SetMLURunMode(config.mlu_core_version(),
+    lite_metal::TargetWrapperMlu::SetMLURunMode(config.mlu_core_version(),
                                           config.mlu_core_number(),
                                           config.mlu_input_layout(),
                                           config.mlu_firstconv_param());
@@ -158,7 +158,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     auto &input_tensors = preferred_input.second;
     if (input_tensors.empty()) continue;
     for (size_t i = 0; i < input_tensors.size(); i++) {
-      auto input_tensor = static_cast<lite::Tensor *>(input_tensors[i].get());
+      auto input_tensor = static_cast<lite_metal::Tensor *>(input_tensors[i].get());
       auto shape = input_tensor->dims().Vectorize();
       CHECK(!shape.empty())
           << "tensor is not set, with group_id: " << preferred_input.first
@@ -225,7 +225,7 @@ std::vector<std::string> CxxPaddleApiImpl::GetOutputNames() {
 
 void CxxPaddleApiImpl::Run() {
 #ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
+  lite_metal::DeviceInfo::Global().SetRunMode(mode_, threads_);
 #endif
   raw_predictor_->Run();
 }
@@ -233,7 +233,7 @@ void CxxPaddleApiImpl::Run() {
 std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
   std::lock_guard<std::mutex> lock(mutex_);
   auto predictor =
-      std::make_shared<lite::CxxPaddleApiImpl>(raw_predictor_->Clone());
+      std::make_shared<lite_metal::CxxPaddleApiImpl>(raw_predictor_->Clone());
   predictor->Init(config_);
   return predictor;
 }
@@ -241,7 +241,7 @@ std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
 std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone(
     const std::vector<std::string> &var_names) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto predictor = std::make_shared<lite::CxxPaddleApiImpl>(
+  auto predictor = std::make_shared<lite_metal::CxxPaddleApiImpl>(
       raw_predictor_->Clone(var_names));
   predictor->Init(config_);
   return predictor;
@@ -286,7 +286,7 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
     const CxxConfig &config) {
   static std::mutex mutex_conf;
   std::unique_lock<std::mutex> lck(mutex_conf);
-  auto x = std::make_shared<lite::CxxPaddleApiImpl>();
+  auto x = std::make_shared<lite_metal::CxxPaddleApiImpl>();
   x->Init(config);
   return x;
 }

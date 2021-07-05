@@ -19,7 +19,7 @@
 #include <cassert>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <>
 void* TargetWrapperMetal::MallocImage<float>(MetalContext* context,

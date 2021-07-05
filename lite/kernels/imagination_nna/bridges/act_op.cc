@@ -17,7 +17,7 @@
 #include "lite/kernels/imagination_nna/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace imagination_nna {
 
@@ -61,4 +61,4 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 REGISTER_SUBGRAPH_BRIDGE(relu,
                          kImaginationNNA,
-                         paddle::lite::subgraph::imagination_nna::ActConverter);
+                         paddle::lite_metal::subgraph::imagination_nna::ActConverter);

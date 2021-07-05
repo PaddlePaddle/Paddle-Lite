@@ -18,12 +18,12 @@
 #include "lite/core/arena/framework.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
-static inline void box_coder_ref(lite::Tensor* proposals,
-                                 const lite::Tensor* anchors,
-                                 const lite::Tensor* bbox_deltas,
-                                 const lite::Tensor* variances,
+static inline void box_coder_ref(lite_metal::Tensor* proposals,
+                                 const lite_metal::Tensor* anchors,
+                                 const lite_metal::Tensor* bbox_deltas,
+                                 const lite_metal::Tensor* variances,
                                  int axis,
                                  bool box_normalized,
                                  std::string code_type) {

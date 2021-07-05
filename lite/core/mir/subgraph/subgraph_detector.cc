@@ -26,7 +26,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 std::string SubgraphVisualizer::operator()() {
@@ -68,11 +68,11 @@ std::string SubgraphVisualizer::operator()() {
     } else {
       exists_ops[op_type]++;
     }
-    auto op_name = op_type + paddle::lite::to_string(exists_ops[op_type]);
+    auto op_name = op_type + paddle::lite_metal::to_string(exists_ops[op_type]);
     std::string op_color = "white";
     if (subgraph_indices.count(node)) {
       auto subgraph_idx = subgraph_indices[node];
-      op_name += "_subgraph_" + paddle::lite::to_string(subgraph_idx);
+      op_name += "_subgraph_" + paddle::lite_metal::to_string(subgraph_idx);
       op_color = subgraph_colors[subgraph_idx % subgraph_colors.size()];
     }
     dot.AddNode(op_name,

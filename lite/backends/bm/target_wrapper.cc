@@ -17,7 +17,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 int TargetWrapperBM::device_id_ = 0;
 std::map<int, void*> TargetWrapperBM::bm_hds_;

@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -66,4 +66,4 @@ int FillConstantBatchSizeLikeConverter(void* ctx,
 REGISTER_SUBGRAPH_BRIDGE(
     fill_constant_batch_size_like,
     kNPU,
-    paddle::lite::subgraph::npu::FillConstantBatchSizeLikeConverter);
+    paddle::lite_metal::subgraph::npu::FillConstantBatchSizeLikeConverter);

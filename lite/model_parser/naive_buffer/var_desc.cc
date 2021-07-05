@@ -16,7 +16,7 @@
 #include <string>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 std::string VarDesc::Name() const {

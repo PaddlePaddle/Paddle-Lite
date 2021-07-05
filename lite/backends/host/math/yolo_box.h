@@ -17,14 +17,14 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
-void YoloBox(lite::Tensor* X,
-             lite::Tensor* ImgSize,
-             lite::Tensor* Boxes,
-             lite::Tensor* Scores,
+void YoloBox(lite_metal::Tensor* X,
+             lite_metal::Tensor* ImgSize,
+             lite_metal::Tensor* Boxes,
+             lite_metal::Tensor* Scores,
              std::vector<int> anchors,
              int class_num,
              float conf_thresh,

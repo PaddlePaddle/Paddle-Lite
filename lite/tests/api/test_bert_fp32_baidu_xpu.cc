@@ -28,7 +28,7 @@ DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 9, "iteration times to run");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(Bert, test_bert_fp32_baidu_xpu) {
   lite_api::CxxConfig config;

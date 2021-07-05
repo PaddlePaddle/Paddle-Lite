@@ -21,7 +21,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <class T>
 static T BBoxArea(const T* box, const bool normalized) {

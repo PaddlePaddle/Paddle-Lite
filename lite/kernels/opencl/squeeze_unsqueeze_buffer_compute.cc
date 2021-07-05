@@ -19,7 +19,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -72,7 +72,7 @@ class SqueezeUnsqueezeCompute
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     if (!kernel_inplace) {
       ch->kernel_func_name = "io_copy_d2d";
       ch->io_duration = d2d_duration_;
@@ -93,7 +93,7 @@ REGISTER_LITE_KERNEL(squeeze,
                      kOpenCL,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::opencl::SqueezeUnsqueezeCompute,
+                     paddle::lite_metal::kernels::opencl::SqueezeUnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -109,7 +109,7 @@ REGISTER_LITE_KERNEL(squeeze2,
                      kOpenCL,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::opencl::SqueezeUnsqueezeCompute,
+                     paddle::lite_metal::kernels::opencl::SqueezeUnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -129,7 +129,7 @@ REGISTER_LITE_KERNEL(unsqueeze,
                      kOpenCL,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::opencl::SqueezeUnsqueezeCompute,
+                     paddle::lite_metal::kernels::opencl::SqueezeUnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -153,7 +153,7 @@ REGISTER_LITE_KERNEL(unsqueeze2,
                      kOpenCL,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::opencl::SqueezeUnsqueezeCompute,
+                     paddle::lite_metal::kernels::opencl::SqueezeUnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

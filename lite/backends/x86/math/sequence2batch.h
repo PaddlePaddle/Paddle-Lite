@@ -22,11 +22,11 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class CopyMatrixRowsFunctor {
  public:
   // If is_src_index is true,
@@ -34,14 +34,14 @@ class CopyMatrixRowsFunctor {
   // If is_src_index is false,
   // copy the input src to the indexed rows of output dst.
   // The indexed rows are based on the input index.
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& src,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& src,
                   const std::vector<uint64_t>& index_lod,
-                  lite::Tensor* dst,
+                  lite_metal::Tensor* dst,
                   bool is_src_index);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class LoDTensor2BatchFunctor {
   // Calculate the length of each sequence and
   // sort sequence index by the length.
@@ -59,9 +59,9 @@ class LoDTensor2BatchFunctor {
   };
 
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& lod_tensor,
-                  lite::Tensor* batch,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& lod_tensor,
+                  lite_metal::Tensor* batch,
                   bool is_cal_batch_lod,
                   bool is_reverse = false) const {
     if (!is_cal_batch_lod) {
@@ -155,12 +155,12 @@ class LoDTensor2BatchFunctor {
   }
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class Batch2LoDTensorFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& batch,
-                  lite::Tensor* lod_tensor) const {
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& batch,
+                  lite_metal::Tensor* lod_tensor) const {
     auto in_lod = batch.lod();
     CHECK_GT(in_lod.size(), 2UL)
         << "The LoD of LoDTensor should inlcude at least 2-level "

@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -31,5 +31,5 @@ class StackCompute : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
 
 } /* namespace host */
 } /* namespace kernels */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */

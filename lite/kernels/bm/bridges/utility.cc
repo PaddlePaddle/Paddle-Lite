@@ -17,7 +17,7 @@
 #include <mutex>  //NOLINT
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -33,7 +33,7 @@ std::string UniqueName(const std::string& prefix) {
     counter = ++(it->second);
   }
 
-  return prefix + "_" + paddle::lite::to_string(counter);
+  return prefix + "_" + paddle::lite_metal::to_string(counter);
 }
 
 bool HasInputArg(const OpInfo* op_info,

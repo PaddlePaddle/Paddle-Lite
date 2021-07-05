@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool NormOp::CheckShape() const {
@@ -33,11 +33,11 @@ bool NormOp::InferShapeImpl() const {
   return true;
 }
 
-bool NormOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool NormOp::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
   param_.axis = opdesc.GetAttr<int>("axis");
@@ -99,7 +99,7 @@ bool PNormOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool PNormOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool PNormOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto x_var = scope->FindVar(opdesc.Input("X").front());
   CHECK(x_var != nullptr);
   param_.X = &(x_var->Get<Tensor>());
@@ -130,5 +130,5 @@ bool PNormOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(norm, paddle::lite::operators::NormOp);
-REGISTER_LITE_OP(p_norm, paddle::lite::operators::PNormOpLite);
+REGISTER_LITE_OP(norm, paddle::lite_metal::operators::NormOp);
+REGISTER_LITE_OP(p_norm, paddle::lite_metal::operators::PNormOpLite);

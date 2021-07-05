@@ -21,7 +21,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 
@@ -58,8 +58,8 @@ void pad_reflect(const float* din,
                  const int pad_left,
                  const int pad_right,
                  const float pad_value);
-void pad2d_func(const lite::Tensor* input,
-                lite::Tensor* output,
+void pad2d_func(const lite_metal::Tensor* input,
+                lite_metal::Tensor* output,
                 int _mode,
                 std::vector<int> _pad_h,
                 std::vector<int> _pad_w,

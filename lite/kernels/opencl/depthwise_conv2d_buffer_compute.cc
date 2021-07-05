@@ -26,7 +26,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -124,7 +124,7 @@ class DepthwiseConv2dCompute
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -146,7 +146,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                      kOpenCL,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::opencl::DepthwiseConv2dCompute,
+                     paddle::lite_metal::kernels::opencl::DepthwiseConv2dCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kOpenCL))})

@@ -19,11 +19,11 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
-namespace math = paddle::lite::host::math;
+namespace math = paddle::lite_metal::host::math;
 
 template <typename T>
 class SequenceUnpadCompute
@@ -44,7 +44,7 @@ class SequenceUnpadCompute
     for (int64_t i = 0; i < batch_size; ++i) {
       out_lod0[i + 1] = out_lod0[i] + seq_len_ptr[i];
     }
-    paddle::lite::LoD out_lod;
+    paddle::lite_metal::LoD out_lod;
     out_lod.push_back(out_lod0);
 
     int64_t out_dim0 = out_lod0.back();
@@ -61,7 +61,7 @@ class SequenceUnpadCompute
 
     param.Out->template mutable_data<T>();
     int64_t padded_length = param.X->dims()[1];
-    math::UnpaddingLoDTensorFunctor<lite::TargetType::kHost, T>()(
+    math::UnpaddingLoDTensorFunctor<lite_metal::TargetType::kHost, T>()(
         ctx,
         *param.X,
         param.Out,

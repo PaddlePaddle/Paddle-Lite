@@ -27,7 +27,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class ConvOpLite : public OpLite {
@@ -40,7 +40,7 @@ class ConvOpLite : public OpLite {
   bool InferShapeImpl() const override;
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     auto filter_dims = param_.filter->dims();
     auto input_dims = param_.x->dims();
     auto output_dims = param_.output->dims();
@@ -68,15 +68,15 @@ class ConvOpLite : public OpLite {
 #endif
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
-  bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
+  bool AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) override {
     AttachParam(&param_);
     auto X = op_desc.Input("Input").front();
     auto Filter = op_desc.Input("Filter").front();
     auto Out = op_desc.Output("Output").front();
 
-    param_.x = scope->FindVar(X)->GetMutable<lite::Tensor>();
-    param_.filter = scope->FindVar(Filter)->GetMutable<lite::Tensor>();
-    param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
+    param_.x = scope->FindVar(X)->GetMutable<lite_metal::Tensor>();
+    param_.filter = scope->FindVar(Filter)->GetMutable<lite_metal::Tensor>();
+    param_.output = scope->FindVar(Out)->GetMutable<lite_metal::Tensor>();
 
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
     std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
@@ -93,7 +93,7 @@ class ConvOpLite : public OpLite {
         auto bias_var = scope->FindVar(bias_arguments.front());
         if (bias_var != nullptr) {
           param_.bias =
-              const_cast<lite::Tensor*>(&(bias_var->Get<lite::Tensor>()));
+              const_cast<lite_metal::Tensor*>(&(bias_var->Get<lite_metal::Tensor>()));
         }
       }
     }
@@ -104,8 +104,8 @@ class ConvOpLite : public OpLite {
       if (res_data_arguments.size() > 0) {
         auto residual_data_var = scope->FindVar(res_data_arguments.front());
         if (residual_data_var != nullptr) {
-          param_.residualData = const_cast<lite::Tensor*>(
-              &(residual_data_var->Get<lite::Tensor>()));
+          param_.residualData = const_cast<lite_metal::Tensor*>(
+              &(residual_data_var->Get<lite_metal::Tensor>()));
         }
       }
     }
@@ -148,7 +148,7 @@ class ConvOpLite : public OpLite {
         auto prelu_alpha_name = op_desc.Input("Prelu_alpha").front();
         auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
         param_.activation_param.Prelu_alpha =
-            const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>()));
+            const_cast<lite_metal::Tensor*>(&(prelu_alpha_var->Get<lite_metal::Tensor>()));
       } else {
         LOG(FATAL) << "The fused conv only supports fuse with relu, leaky "
                       "relu, hard_swish, while the given activation type is "
@@ -165,7 +165,7 @@ class ConvOpLite : public OpLite {
           op_desc.GetAttr<std::string>("fuse_elementwise_op_type");
       auto X = op_desc.Input("SecondInput").front();
       param_.second_x =
-          const_cast<lite::Tensor*>(&(scope->FindVar(X)->Get<lite::Tensor>()));
+          const_cast<lite_metal::Tensor*>(&(scope->FindVar(X)->Get<lite_metal::Tensor>()));
     }
 
     if (op_desc.HasAttr("padding_algorithm")) {
@@ -206,7 +206,7 @@ class ConvOpLite : public OpLite {
         auto scale_var = scope->FindVar(scale_arguments.front());
         if (scale_var != nullptr) {
           param_.scale =
-              const_cast<lite::Tensor*>(&(scale_var->Get<lite::Tensor>()));
+              const_cast<lite_metal::Tensor*>(&(scale_var->Get<lite_metal::Tensor>()));
         }
       }
     }
@@ -241,8 +241,8 @@ void UpdatePaddingAndDilation(std::vector<int>* paddings,
                               std::vector<int>* dilations,
                               const std::vector<int>& strides,
                               const std::string padding_algorithm,
-                              const lite::DDim data_dims,
-                              const lite::DDim& ksize);
+                              const lite_metal::DDim data_dims,
+                              const lite_metal::DDim& ksize);
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

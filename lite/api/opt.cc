@@ -88,14 +88,14 @@ namespace paddle {
 namespace lite_api {
 //! Display the kernel information.
 void DisplayKernels() {
-  LOG(INFO) << ::paddle::lite::KernelRegistry::Global().DebugString();
+  LOG(INFO) << ::paddle::lite_metal::KernelRegistry::Global().DebugString();
 }
 
 std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
     bool enable_fp16) {
   std::vector<Place> valid_places;
   std::vector<std::string> nnadapter_devices;
-  auto target_reprs = lite::Split(FLAGS_valid_targets, ",");
+  auto target_reprs = lite_metal::Split(FLAGS_valid_targets, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
       if (enable_fp16) {
@@ -190,7 +190,7 @@ std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_devices.emplace_back(target_repr);
     } else {
-      OPT_LOG_FATAL << lite::string_format(
+      OPT_LOG_FATAL << lite_metal::string_format(
           "Wrong target '%s' found, please check the command flag "
           "'valid_targets'",
           target_repr.c_str());
@@ -262,13 +262,13 @@ void CollectModelMetaInfo(const std::string& output_dir,
   std::set<std::string> total;
   for (const auto& name : models) {
     std::string model_path =
-        lite::Join<std::string>({output_dir, name, filename}, "/");
-    auto lines = lite::ReadLines(model_path);
+        lite_metal::Join<std::string>({output_dir, name, filename}, "/");
+    auto lines = lite_metal::ReadLines(model_path);
     total.insert(lines.begin(), lines.end());
   }
   std::string output_path =
-      lite::Join<std::string>({output_dir, filename}, "/");
-  lite::WriteLines(std::vector<std::string>(total.begin(), total.end()),
+      lite_metal::Join<std::string>({output_dir, filename}, "/");
+  lite_metal::WriteLines(std::vector<std::string>(total.begin(), total.end()),
                    output_path);
 }
 void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
@@ -345,7 +345,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
 /// Print help information
 void PrintHelpInfo() {
   // at least one argument should be inputed
-  const std::string opt_version = lite::version();
+  const std::string opt_version = lite_metal::version();
   const char help_info[] =
       "At least one argument should be inputed. Valid arguments are listed "
       "below:\n"
@@ -447,21 +447,21 @@ void CheckIfModelSupported() {
   if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
     is_combined_params_form = true;
   }
-  std::string prog_path = lite::FindModelFileName(
+  std::string prog_path = lite_metal::FindModelFileName(
       FLAGS_model_dir, FLAGS_model_file, is_combined_params_form);
 
-  lite::cpp::ProgramDesc cpp_prog;
-  framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
-  lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
+  lite_metal::cpp::ProgramDesc cpp_prog;
+  framework::proto::ProgramDesc pb_proto_prog = *lite_metal::LoadProgram(prog_path);
+  lite_metal::pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
-  lite::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);
+  lite_metal::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);
 
   std::set<std::string> unsupported_ops;
   std::set<std::string> input_model_ops;
   for (size_t index = 0; index < cpp_prog.BlocksSize(); index++) {
-    auto current_block = cpp_prog.GetBlock<lite::cpp::BlockDesc>(index);
+    auto current_block = cpp_prog.GetBlock<lite_metal::cpp::BlockDesc>(index);
     for (size_t i = 0; i < current_block->OpsSize(); ++i) {
-      auto& op_desc = *current_block->GetOp<lite::cpp::OpDesc>(i);
+      auto& op_desc = *current_block->GetOp<lite_metal::cpp::OpDesc>(i);
       auto op_type = op_desc.Type();
       input_model_ops.insert(op_type);
       if (valid_ops_set.count(op_type) == 0) {
@@ -531,8 +531,8 @@ void Main() {
     return;
   }
 
-  lite::MkDirRecur(FLAGS_optimize_out);
-  auto model_dirs = lite::ListDir(FLAGS_model_set_dir, true);
+  lite_metal::MkDirRecur(FLAGS_optimize_out);
+  auto model_dirs = lite_metal::ListDir(FLAGS_model_set_dir, true);
   if (model_dirs.size() == 0) {
     OPT_LOG_FATAL << "[" << FLAGS_model_set_dir
                   << "] does not contain any model";
@@ -540,18 +540,18 @@ void Main() {
   // Optimize models in FLAGS_model_set_dir
   for (const auto& name : model_dirs) {
     std::string input_model_dir =
-        lite::Join<std::string>({FLAGS_model_set_dir, name}, "/");
+        lite_metal::Join<std::string>({FLAGS_model_set_dir, name}, "/");
     std::string output_model_dir =
-        lite::Join<std::string>({FLAGS_optimize_out, name}, "/");
+        lite_metal::Join<std::string>({FLAGS_optimize_out, name}, "/");
 
     std::string model_file = "";
     std::string param_file = "";
 
     if (FLAGS_model_filename != "" && FLAGS_param_filename != "") {
       model_file =
-          lite::Join<std::string>({input_model_dir, FLAGS_model_filename}, "/");
+          lite_metal::Join<std::string>({input_model_dir, FLAGS_model_filename}, "/");
       param_file =
-          lite::Join<std::string>({input_model_dir, FLAGS_param_filename}, "/");
+          lite_metal::Join<std::string>({input_model_dir, FLAGS_param_filename}, "/");
     }
 
     OPT_LOG << "Start transformation ... ";
@@ -570,14 +570,14 @@ void Main() {
 
   // Collect all models information
   CollectModelMetaInfo(
-      FLAGS_optimize_out, model_dirs, lite::TAILORD_OPS_SOURCE_LIST_FILENAME);
+      FLAGS_optimize_out, model_dirs, lite_metal::TAILORD_OPS_SOURCE_LIST_FILENAME);
   CollectModelMetaInfo(
-      FLAGS_optimize_out, model_dirs, lite::TAILORD_OPS_LIST_NAME);
+      FLAGS_optimize_out, model_dirs, lite_metal::TAILORD_OPS_LIST_NAME);
   CollectModelMetaInfo(FLAGS_optimize_out,
                        model_dirs,
-                       lite::TAILORD_KERNELS_SOURCE_LIST_FILENAME);
+                       lite_metal::TAILORD_KERNELS_SOURCE_LIST_FILENAME);
   CollectModelMetaInfo(
-      FLAGS_optimize_out, model_dirs, lite::TAILORD_KERNELS_LIST_NAME);
+      FLAGS_optimize_out, model_dirs, lite_metal::TAILORD_KERNELS_LIST_NAME);
 }
 
 }  // namespace lite_api

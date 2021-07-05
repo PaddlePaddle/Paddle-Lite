@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUBlockFuseOp::CheckShape() const {
@@ -35,7 +35,7 @@ bool XPUBlockFuseOp::InferShapeImpl() const {
 }
 
 bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                lite::Scope* scope) {
+                                lite_metal::Scope* scope) {
   AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Output("Output").front()));
@@ -126,4 +126,4 @@ bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__block_fuse_op, paddle::lite::operators::XPUBlockFuseOp);
+REGISTER_LITE_OP(__xpu__block_fuse_op, paddle::lite_metal::operators::XPUBlockFuseOp);

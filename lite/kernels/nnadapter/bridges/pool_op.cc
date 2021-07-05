@@ -18,7 +18,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -74,7 +74,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("padding_algorithm")) {
     padding_algorithm = op_info->GetAttr<std::string>("padding_algorithm");
   }
-  lite::operators::UpdatePadding(&paddings,
+  lite_metal::operators::UpdatePadding(&paddings,
                                  global_pooling,
                                  adaptive,
                                  padding_algorithm,
@@ -173,4 +173,4 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(pool2d,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::PoolConverter);
+                         paddle::lite_metal::subgraph::nnadapter::PoolConverter);

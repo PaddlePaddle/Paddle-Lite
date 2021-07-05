@@ -20,7 +20,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void TestModel(const std::string& model_dir) {
   DeviceInfo::Init();

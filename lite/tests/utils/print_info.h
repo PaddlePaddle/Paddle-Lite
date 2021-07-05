@@ -20,9 +20,9 @@
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::Tensor Tensor;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::Tensor Tensor;
+using paddle::lite_metal::profile::Timer;
 
 void print_gops_info(std::string op_name,
                      const DDim dim_in,

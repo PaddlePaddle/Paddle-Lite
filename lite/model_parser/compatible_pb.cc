@@ -31,7 +31,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 /// For VarDesc transfrom
 #define TRANS_VAR_ANY_WITH_CPP_IMPL(T)                             \

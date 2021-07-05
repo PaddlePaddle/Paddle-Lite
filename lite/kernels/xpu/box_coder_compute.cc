@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -94,7 +94,7 @@ REGISTER_LITE_KERNEL(box_coder,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::BoxCoderCompute,
+                     paddle::lite_metal::kernels::xpu::BoxCoderCompute,
                      def)
     .BindInput("PriorBox", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("PriorBoxVar", {LiteType::GetTensorTy(TARGET(kXPU))})

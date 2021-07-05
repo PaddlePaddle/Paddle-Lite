@@ -28,11 +28,11 @@ DEFINE_string(startup_program_path, "", "");
 DEFINE_string(main_program_path, "", "");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #ifndef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 TEST(CXXApi, test) {
-  const lite::Tensor* out = RunHvyModel();
+  const lite_metal::Tensor* out = RunHvyModel();
   LOG(INFO) << out << " memory size " << out->data_size();
   for (int i = 0; i < 10; i++) {
     LOG(INFO) << "out " << out->data<float>()[i];
@@ -42,7 +42,7 @@ TEST(CXXApi, test) {
 }
 
 TEST(CXXApi, input_precision) {
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
   auto& precisions = predictor.GetInputPrecisions();
@@ -51,7 +51,7 @@ TEST(CXXApi, input_precision) {
 }
 
 TEST(CXXApi, save_model) {
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
@@ -63,7 +63,7 @@ TEST(CXXApi, save_model) {
 }
 
 TEST(CXXApi, clone_predictor) {
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
   auto cloned_predictor = predictor.Clone();
@@ -103,7 +103,7 @@ TEST(CXXApi, clone_predictor) {
 /*TEST(CXXTrainer, train) {
   Place place({TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)});
   std::vector<Place> valid_places({place});
-  auto scope = std::make_shared<lite::Scope>();
+  auto scope = std::make_shared<lite_metal::Scope>();
 
   CXXTrainer trainer(scope, valid_places);
 
@@ -135,7 +135,7 @@ TEST(CXXApi, clone_predictor) {
 
 #ifdef LITE_WITH_ARM
 TEST(CXXApi, save_model) {
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
@@ -147,7 +147,7 @@ TEST(CXXApi, save_model) {
 }
 
 TEST(CXXApi, load_model_naive) {
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)}});
   predictor.Build(FLAGS_optimized_model + ".naive.nb",
                   "",

@@ -20,7 +20,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class OpDescReadAPI {
  public:

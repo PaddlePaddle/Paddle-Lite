@@ -15,22 +15,22 @@ limitations under the License. */
 #include "lite/backends/x86/math/cross_entropy.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 template <typename T,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenMatrix = lite::fluid::EigenMatrix<T, MajorType, IndexType>;
+using EigenMatrix = lite_metal::fluid::EigenMatrix<T, MajorType, IndexType>;
 
 template <typename T>
-class CrossEntropyFunctor<lite::TargetType::kX86, T> {
+class CrossEntropyFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& ctx,
-                  lite::Tensor* out,
-                  const lite::Tensor* prob,
-                  const lite::Tensor* labels,
+  void operator()(const lite_metal::X86Context& ctx,
+                  lite_metal::Tensor* out,
+                  const lite_metal::Tensor* prob,
+                  const lite_metal::Tensor* labels,
                   const bool softLabel,
                   const int ignore_index,
                   const int axis_dim) {
@@ -45,7 +45,7 @@ class CrossEntropyFunctor<lite::TargetType::kX86, T> {
       auto lbl = EigenMatrix<T>::From(*labels);
       auto loss = EigenMatrix<T>::From(*out);
 
-      loss.device(lite::fluid::EigenDeviceType<lite::TargetType::kX86>()) =
+      loss.device(lite_metal::fluid::EigenDeviceType<lite_metal::TargetType::kX86>()) =
           -((lbl * in.log().unaryExpr(math::TolerableValue<T>()))
                 .reshape(batch_axis_remain)
                 .sum(Eigen::DSizes<int, 1>(1)));
@@ -70,8 +70,8 @@ class CrossEntropyFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class CrossEntropyFunctor<lite::TargetType::kX86, float>;
-template class CrossEntropyFunctor<lite::TargetType::kX86, double>;
+template class CrossEntropyFunctor<lite_metal::TargetType::kX86, float>;
+template class CrossEntropyFunctor<lite_metal::TargetType::kX86, double>;
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

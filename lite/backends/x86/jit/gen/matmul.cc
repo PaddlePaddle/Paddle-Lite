@@ -19,7 +19,7 @@
 #include "lite/backends/x86/jit/registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace gen {
 
@@ -128,6 +128,6 @@ class MatMulCreator : public JitCodeCreator<matmul_attr_t> {
 }  // namespace lite
 }  // namespace paddle
 
-namespace gen = paddle::lite::jit::gen;
+namespace gen = paddle::lite_metal::jit::gen;
 
 REGISTER_JITKERNEL_GEN_LITE(kMatMul, gen::MatMulCreator);

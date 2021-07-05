@@ -16,7 +16,7 @@
 #include "lite/backends/host/math/topk.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -30,7 +30,7 @@ void TopkCompute::Run() {
   int dim_size = x_dims.size();
   int m = x_dims.production() / x_dims[dim_size - 1];
   int n = x_dims[dim_size - 1];
-  lite::host::math::topk(x_data, out_val, out_ind, m, n, K);
+  lite_metal::host::math::topk(x_data, out_val, out_ind, m, n, K);
 }
 
 }  // namespace host
@@ -39,7 +39,7 @@ void TopkCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    top_k, kHost, kFloat, kNCHW, paddle::lite::kernels::host::TopkCompute, def)
+    top_k, kHost, kFloat, kNCHW, paddle::lite_metal::kernels::host::TopkCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Indices",

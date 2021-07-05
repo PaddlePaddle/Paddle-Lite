@@ -20,7 +20,7 @@
 #include "lite/kernels/cuda/sequence_unpad_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -47,7 +47,7 @@ void SequenceUnpadCompute<T, Ptype>::Run() {
   for (int64_t i = 0; i < batch_size; ++i) {
     out_lod0[i + 1] = out_lod0[i] + seq_len_cpu_.data<int64_t>()[i];
   }
-  paddle::lite::LoD out_lod;
+  paddle::lite_metal::LoD out_lod;
   out_lod.push_back(out_lod0);
 
   int64_t out_dim0 = out_lod0.back();
@@ -89,7 +89,7 @@ void SequenceUnpadCompute<T, Ptype>::Run() {
   const T* pad_data = pad_tensor->template data<T>();
   T* seq_data = seq_tensor->template mutable_data<T>(TARGET(kCUDA));
 
-  lite::cuda::math::SequenceUnpadding(seq_data,
+  lite_metal::cuda::math::SequenceUnpadding(seq_data,
                                       pad_data,
                                       seq_offsets_.data<size_t>(),
                                       seq_num,
@@ -104,10 +104,10 @@ void SequenceUnpadCompute<T, Ptype>::Run() {
 }  // namespace paddle
 
 using SeqUnadFp32 =
-    paddle::lite::kernels::cuda::SequenceUnpadCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::SequenceUnpadCompute<float, PRECISION(kFloat)>;
 
 using SeqUnadFp16 =
-    paddle::lite::kernels::cuda::SequenceUnpadCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::SequenceUnpadCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(sequence_unpad, kCUDA, kFloat, kNCHW, SeqUnadFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})

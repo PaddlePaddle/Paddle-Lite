@@ -18,7 +18,7 @@
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
@@ -65,14 +65,14 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       auto shape =
           std::vector<int>(actual_shape_data,
                            actual_shape_data + actual_shape_dims.production());
-      auto out_shape = lite::operators::ValidateShape(shape, x_dims);
+      auto out_shape = lite_metal::operators::ValidateShape(shape, x_dims);
       actual_shape_node =
           graph->Add<int>(actual_shape_name,
                           std::vector<int>(out_shape.begin(), out_shape.end()));
     }
   } else if (op_info->HasAttr("shape")) {
     auto shape = op_info->GetAttr<std::vector<int>>("shape");
-    auto out_shape = lite::operators::ValidateShape(shape, x_dims);
+    auto out_shape = lite_metal::operators::ValidateShape(shape, x_dims);
     actual_shape_node = graph->Add<int64_t>(
         out_name + "/shape",
         std::vector<int64_t>(out_shape.begin(), out_shape.end()));
@@ -99,8 +99,8 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     reshape,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ReshapeConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ReshapeConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     reshape2,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::ReshapeConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::ReshapeConverter);

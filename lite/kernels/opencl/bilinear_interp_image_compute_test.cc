@@ -23,7 +23,7 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 void bilinear_interp_ref(const float* din,
                          const DDim& x_dims,
                          float* dout,
@@ -133,7 +133,7 @@ TEST(bilinear_interp_image2d, compute) {
                   auto kernel = std::move(kernels.front());
                   LOG(INFO) << "get kernel:" << kernel->doc();
 
-                  lite::Tensor x, out;
+                  lite_metal::Tensor x, out;
                   operators::InterpolateParam param;
                   param.X = &x;
                   param.Out = &out;

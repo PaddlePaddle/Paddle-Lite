@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -222,25 +222,25 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(elementwise_add,
                          kNPU,
-                         paddle::lite::subgraph::npu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_sub,
                          kNPU,
-                         paddle::lite::subgraph::npu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_mul,
                          kNPU,
-                         paddle::lite::subgraph::npu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_div,
                          kNPU,
-                         paddle::lite::subgraph::npu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation,
                          kNPU,
-                         paddle::lite::subgraph::npu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_sub_activation,
                          kNPU,
-                         paddle::lite::subgraph::npu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_mul_activation,
                          kNPU,
-                         paddle::lite::subgraph::npu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation,
                          kNPU,
-                         paddle::lite::subgraph::npu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::npu::ElementwiseConverter);

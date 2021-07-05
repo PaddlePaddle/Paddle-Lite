@@ -17,7 +17,7 @@
 #include <gtest/gtest.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void BuildGraph(SSAGraph* g) {

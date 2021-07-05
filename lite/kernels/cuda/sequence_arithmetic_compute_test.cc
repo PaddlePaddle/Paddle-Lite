@@ -21,7 +21,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -77,9 +77,9 @@ void prepare_input(Tensor* x, const LoD& x_lod) {
 }
 
 TEST(sequence_arithmetic_cuda, run_test) {
-  lite::Tensor x, y, x_cpu, y_cpu;
-  lite::Tensor out, out_cpu, out_ref;
-  lite::LoD x_lod{{0, 2, 5, 9}}, y_lod{{0, 2, 5, 9}};
+  lite_metal::Tensor x, y, x_cpu, y_cpu;
+  lite_metal::Tensor out, out_cpu, out_ref;
+  lite_metal::LoD x_lod{{0, 2, 5, 9}}, y_lod{{0, 2, 5, 9}};
 
   prepare_input(&x_cpu, x_lod);
   prepare_input(&y_cpu, y_lod);
@@ -87,12 +87,12 @@ TEST(sequence_arithmetic_cuda, run_test) {
   x.Resize(x_cpu.dims());
   x.set_lod(x_cpu.lod());
   auto x_cpu_data = x_cpu.mutable_data<float>();
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
 
   y.Resize(y_cpu.dims());
   y.set_lod(y_cpu.lod());
   auto y_cpu_data = y_cpu.mutable_data<float>();
-  y.Assign<float, lite::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
+  y.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
 
   operators::SequenceArithmeticParam param;
   param.X = &x;

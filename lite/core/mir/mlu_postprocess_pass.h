@@ -22,7 +22,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 static void UpdateInputTo(cpp::OpDesc* desc,

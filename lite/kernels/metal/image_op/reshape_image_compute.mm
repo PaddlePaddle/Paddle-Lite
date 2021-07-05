@@ -18,7 +18,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -108,7 +108,7 @@ REGISTER_LITE_KERNEL(reshape2,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ReshapeImageCompute,
+    paddle::lite_metal::kernels::metal::ReshapeImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -127,7 +127,7 @@ REGISTER_LITE_KERNEL(reshape2,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ReshapeImageCompute,
+    paddle::lite_metal::kernels::metal::ReshapeImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
@@ -142,7 +142,7 @@ REGISTER_LITE_KERNEL(flatten,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ReshapeImageCompute,
+    paddle::lite_metal::kernels::metal::ReshapeImageCompute,
     image2d)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -159,7 +159,7 @@ REGISTER_LITE_KERNEL(flatten,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ReshapeImageCompute,
+    paddle::lite_metal::kernels::metal::ReshapeImageCompute,
     image2d)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
@@ -172,7 +172,7 @@ REGISTER_LITE_KERNEL(flatten2,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ReshapeImageCompute,
+    paddle::lite_metal::kernels::metal::ReshapeImageCompute,
     image2d)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -190,7 +190,7 @@ REGISTER_LITE_KERNEL(flatten2,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::ReshapeImageCompute,
+    paddle::lite_metal::kernels::metal::ReshapeImageCompute,
     image2d)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

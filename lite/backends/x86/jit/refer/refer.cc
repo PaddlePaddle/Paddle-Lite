@@ -15,7 +15,7 @@
 #include "lite/backends/x86/jit/refer/refer.h"
 #include "lite/backends/x86/jit/registry.h"
 
-namespace refer = paddle::lite::jit::refer;
+namespace refer = paddle::lite_metal::jit::refer;
 
 #define REGISTER_REFER_KERNEL(func) \
   REGISTER_JITKERNEL_REFER_LITE(    \

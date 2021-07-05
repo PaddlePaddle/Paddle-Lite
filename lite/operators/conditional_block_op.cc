@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ConditionalBlockOp::CheckShape() const {
@@ -31,18 +31,18 @@ bool ConditionalBlockOp::InferShapeImpl() const { return true; }
 
 bool ConditionalBlockOp::AttachImpl(const cpp::OpDesc& op_desc, Scope* scope) {
   auto condition = op_desc.Input("Cond").front();
-  param_.cond = scope->FindVar(condition)->GetMutable<lite::Tensor>();
+  param_.cond = scope->FindVar(condition)->GetMutable<lite_metal::Tensor>();
   auto inputs = op_desc.Input("Input");
   param_.inputs.clear();
 
   for (const auto& input : inputs) {
     auto* var = scope->FindVar(input);
     CHECK(var);
-    if (var->IsType<lite::Tensor>()) {
-      auto* tensor = var->GetMutable<lite::Tensor>();
+    if (var->IsType<lite_metal::Tensor>()) {
+      auto* tensor = var->GetMutable<lite_metal::Tensor>();
       param_.inputs.push_back(tensor);
-    } else if (var->IsType<std::vector<lite::Tensor>>()) {
-      auto* tensors = var->GetMutable<std::vector<lite::Tensor>>();
+    } else if (var->IsType<std::vector<lite_metal::Tensor>>()) {
+      auto* tensors = var->GetMutable<std::vector<lite_metal::Tensor>>();
       for (auto& tensor : *tensors) {
         param_.inputs.push_back(&tensor);
       }
@@ -64,4 +64,4 @@ bool ConditionalBlockOp::AttachImpl(const cpp::OpDesc& op_desc, Scope* scope) {
 }  // namespace paddle
 
 REGISTER_LITE_OP(conditional_block,
-                 paddle::lite::operators::ConditionalBlockOp);
+                 paddle::lite_metal::operators::ConditionalBlockOp);

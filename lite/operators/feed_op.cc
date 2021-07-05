@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class FeedOp : public OpLite {
@@ -49,17 +49,17 @@ class FeedOp : public OpLite {
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
  protected:
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override {
+  bool AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) override {
     auto feed_var_name = opdesc.Input("X").front();
     auto* feed_var = scope->FindVar(feed_var_name);
     CHECK(feed_var);
-    auto* feed_tensor_list = feed_var->GetMutable<std::vector<lite::Tensor>>();
+    auto* feed_tensor_list = feed_var->GetMutable<std::vector<lite_metal::Tensor>>();
     param_.feed_list = feed_tensor_list;
 
     auto out_name = opdesc.Output("Out").front();
     auto* out_var = scope->FindVar(out_name);
     CHECK(out_var);
-    param_.out = out_var->GetMutable<lite::Tensor>();
+    param_.out = out_var->GetMutable<lite_metal::Tensor>();
 
     // NOTE need boost here
     // TODO(Superjomn) drop the need of framework::op_desc
@@ -77,4 +77,4 @@ class FeedOp : public OpLite {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(feed, paddle::lite::operators::FeedOp);
+REGISTER_LITE_OP(feed, paddle::lite_metal::operators::FeedOp);

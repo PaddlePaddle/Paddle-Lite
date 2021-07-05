@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUMultiEncoderOp::CheckShape() const {
@@ -66,37 +66,37 @@ bool XPUMultiEncoderOp::InferShapeImpl() const {
 }
 
 bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                   lite::Scope* scope) {
-  param_.input = const_cast<lite::Tensor*>(
-      &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
-  param_.fc_weight_max = const_cast<lite::Tensor*>(
+                                   lite_metal::Scope* scope) {
+  param_.input = const_cast<lite_metal::Tensor*>(
+      &scope->FindVar(op_desc.Input("Input").front())->Get<lite_metal::Tensor>());
+  param_.fc_weight_max = const_cast<lite_metal::Tensor*>(
       &scope->FindVar(op_desc.Input("FCWeightMax").front())
-           ->Get<lite::Tensor>());
+           ->Get<lite_metal::Tensor>());
   param_.output = scope->FindVar(op_desc.Output("Output").front())
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
 
   param_.fc_weight.clear();
   for (auto& name : op_desc.Input("FCWeight")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.fc_weight.push_back(t);
   }
   param_.fc_bias.clear();
   for (auto& name : op_desc.Input("FCBias")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.fc_bias.push_back(t);
   }
   param_.ln_scale.clear();
   for (auto& name : op_desc.Input("LNScale")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.ln_scale.push_back(t);
   }
   param_.ln_bias.clear();
   for (auto& name : op_desc.Input("LNBias")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.ln_bias.push_back(t);
   }
 
@@ -107,7 +107,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.SeqLod = &(arg_var->Get<lite::Tensor>());
+        param_.SeqLod = &(arg_var->Get<lite_metal::Tensor>());
       }
     }
   }
@@ -117,7 +117,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.PadSeqLen = &(arg_var->Get<lite::Tensor>());
+        param_.PadSeqLen = &(arg_var->Get<lite_metal::Tensor>());
       }
     }
   }
@@ -127,7 +127,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.mask = &(arg_var->Get<lite::Tensor>());
+        param_.mask = &(arg_var->Get<lite_metal::Tensor>());
       }
     }
   }
@@ -163,4 +163,4 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__multi_encoder,
-                 paddle::lite::operators::XPUMultiEncoderOp);
+                 paddle::lite_metal::operators::XPUMultiEncoderOp);

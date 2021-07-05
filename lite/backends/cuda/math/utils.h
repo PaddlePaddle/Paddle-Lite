@@ -21,7 +21,7 @@
 #include <string>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 

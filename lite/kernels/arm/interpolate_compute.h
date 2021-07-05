@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 template <PrecisionType Ptype>
@@ -39,5 +39,5 @@ class NearestInterpCompute : public KernelLite<TARGET(kARM), Ptype> {
 
 } /* namespace arm */
 } /* namespace kernels */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */

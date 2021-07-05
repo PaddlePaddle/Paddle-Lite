@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -75,4 +75,4 @@ int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(gather,
                          kNPU,
-                         paddle::lite::subgraph::npu::GatherConverter);
+                         paddle::lite_metal::subgraph::npu::GatherConverter);

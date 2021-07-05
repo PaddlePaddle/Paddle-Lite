@@ -28,7 +28,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class FpgaConvOpLite : public ConvOpLite {
@@ -40,7 +40,7 @@ class FpgaConvOpLite : public ConvOpLite {
   bool InferShapeImpl() const;
 // TODO profile mode will be check later
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     auto filter_dims = param_.filter->dims();
     auto input_dims = param_.x->dims();
     auto output_dims = param_.output->dims();
@@ -60,7 +60,7 @@ class FpgaConvOpLite : public ConvOpLite {
   }
 #endif
 
-  bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
+  bool AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) override {
     ConvOpLite::AttachImpl(op_desc, scope);
 #ifdef LITE_WITH_FPGA
     // additional config for fpga conv op

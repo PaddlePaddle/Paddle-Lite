@@ -16,7 +16,7 @@
 #include <string>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 std::string MD5(std::string message) {
   const uint32_t shiftAmounts[] = {

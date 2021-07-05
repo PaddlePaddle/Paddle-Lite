@@ -17,7 +17,7 @@
 #include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -51,7 +51,7 @@ REGISTER_LITE_KERNEL(softmax,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::SoftmaxCompute,
+                     paddle::lite_metal::kernels::fpga::SoftmaxCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

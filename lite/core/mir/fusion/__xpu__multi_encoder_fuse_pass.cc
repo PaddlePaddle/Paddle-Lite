@@ -23,7 +23,7 @@
 #include "lite/operators/subgraph_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 namespace fusion {
@@ -708,15 +708,15 @@ class XPUMultiEncoderFuser {
         std::unique_ptr<float[]> weight_k_trans(new float[weight_k_len]);
         std::unique_ptr<float[]> weight_v_trans(new float[weight_v_len]);
         std::unique_ptr<float[]> weight_qkv_trans(new float[qkv_len]);
-        paddle::lite::xpu::math::Transpose(weight_q_on_host,
+        paddle::lite_metal::xpu::math::Transpose(weight_q_on_host,
                                            weight_q_trans.get(),
                                            weight_q_dims[0],
                                            weight_q_dims[1]);
-        paddle::lite::xpu::math::Transpose(weight_k_on_host,
+        paddle::lite_metal::xpu::math::Transpose(weight_k_on_host,
                                            weight_k_trans.get(),
                                            weight_k_dims[0],
                                            weight_k_dims[1]);
-        paddle::lite::xpu::math::Transpose(weight_v_on_host,
+        paddle::lite_metal::xpu::math::Transpose(weight_v_on_host,
                                            weight_v_trans.get(),
                                            weight_v_dims[0],
                                            weight_v_dims[1]);
@@ -741,7 +741,7 @@ class XPUMultiEncoderFuser {
              weight_q_dims[0]});
 
         // 3. int31 or int16
-        float max_f = paddle::lite::xpu::math::FindMaxAbs(
+        float max_f = paddle::lite_metal::xpu::math::FindMaxAbs(
             weight_qkv_trans.get(), qkv_len);
         fc_weight_max[i] = max_f;
         VLOG(3) << "QKV fused FC-" << i << ", weight_max:" << max_f;
@@ -751,7 +751,7 @@ class XPUMultiEncoderFuser {
                  qkv_len * sizeof(float));
         } else if (fc_precision_ == "int8") {
           std::unique_ptr<int8_t[]> weight_qkv_trans_int8(new int8_t[qkv_len]);
-          paddle::lite::xpu::math::ConvertFP32ToInt8(
+          paddle::lite_metal::xpu::math::ConvertFP32ToInt8(
               weight_qkv_trans.get(),
               weight_qkv_trans_int8.get(),
               max_f,
@@ -762,7 +762,7 @@ class XPUMultiEncoderFuser {
         } else {
           std::unique_ptr<int16_t[]> weight_qkv_trans_int16(
               new int16_t[qkv_len]);
-          paddle::lite::xpu::math::ConvertFP32ToInt16(
+          paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
               weight_qkv_trans.get(),
               weight_qkv_trans_int16.get(),
               max_f,
@@ -782,14 +782,14 @@ class XPUMultiEncoderFuser {
       float* weight_on_host = weight_t->mutable_data<float>();
 
       float max_f =
-          paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
+          paddle::lite_metal::xpu::math::FindMaxAbs(weight_on_host, weight_len);
       VLOG(3) << "FC-" << i << ", weight_max:" << max_f;
       // i ranges from 0 to 6*encoder_num, so we need to do i%6 to get relative
       // position in the encoder
       if (fc_precision_ == "int31") {
         // FCs in encoder use int31
         std::unique_ptr<float[]> weight_trans_fp32(new float[weight_len]);
-        paddle::lite::xpu::math::Transpose(weight_on_host,
+        paddle::lite_metal::xpu::math::Transpose(weight_on_host,
                                            weight_trans_fp32.get(),
                                            weight_dims[0],
                                            weight_dims[1]);
@@ -800,9 +800,9 @@ class XPUMultiEncoderFuser {
       } else if (fc_precision_ == "int8") {
         std::unique_ptr<int8_t[]> weight_int8(new int8_t[weight_len]);
         std::unique_ptr<int8_t[]> weight_trans_int8(new int8_t[weight_len]);
-        paddle::lite::xpu::math::ConvertFP32ToInt8(
+        paddle::lite_metal::xpu::math::ConvertFP32ToInt8(
             weight_on_host, weight_int8.get(), max_f, weight_len);
-        paddle::lite::xpu::math::Transpose(weight_int8.get(),
+        paddle::lite_metal::xpu::math::Transpose(weight_int8.get(),
                                            weight_trans_int8.get(),
                                            weight_dims[0],
                                            weight_dims[1]);
@@ -812,9 +812,9 @@ class XPUMultiEncoderFuser {
       } else {
         std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
         std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
-        paddle::lite::xpu::math::ConvertFP32ToInt16(
+        paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
             weight_on_host, weight_int16.get(), max_f, weight_len);
-        paddle::lite::xpu::math::Transpose(weight_int16.get(),
+        paddle::lite_metal::xpu::math::Transpose(weight_int16.get(),
                                            weight_trans_int16.get(),
                                            weight_dims[0],
                                            weight_dims[1]);
@@ -966,24 +966,24 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     // LITE_WITH_XPU==ON. To suppress linkage error, we use
     // #ifdef here. Any better idea?
     if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
+        lite_metal::TargetWrapperXPU::multi_encoder_precision == "int31") {
       fc_precision = "int31";
       VLOG(3) << "Use int31 in XPUMultiEncoderOp, "
-              << "lite::TargetWrapperXPU::multi_encoder_precision="
-              << lite::TargetWrapperXPU::multi_encoder_precision;
+              << "lite_metal::TargetWrapperXPU::multi_encoder_precision="
+              << lite_metal::TargetWrapperXPU::multi_encoder_precision;
     } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
+               lite_metal::TargetWrapperXPU::multi_encoder_precision == "int8") {
       fc_precision = "int8";
       VLOG(3) << "Use int8 in XPUMultiEncoderOp, "
-              << "lite::TargetWrapperXPU::multi_encoder_precision="
-              << lite::TargetWrapperXPU::multi_encoder_precision;
+              << "lite_metal::TargetWrapperXPU::multi_encoder_precision="
+              << lite_metal::TargetWrapperXPU::multi_encoder_precision;
     } else {
       fc_precision = "int16";
       VLOG(3) << "Use int16 in XPUMultiEncoderOp, "
-              << "lite::TargetWrapperXPU::multi_encoder_precision="
-              << lite::TargetWrapperXPU::multi_encoder_precision;
+              << "lite_metal::TargetWrapperXPU::multi_encoder_precision="
+              << lite_metal::TargetWrapperXPU::multi_encoder_precision;
     }
-    adaptive_seqlen = lite::TargetWrapperXPU::multi_encoder_adaptive_seqlen;
+    adaptive_seqlen = lite_metal::TargetWrapperXPU::multi_encoder_adaptive_seqlen;
 #endif
 
     for (auto& act_type : act_types) {
@@ -1020,6 +1020,6 @@ class XPUMultiEncoderFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__multi_encoder_fuse_pass,
-                  paddle::lite::mir::XPUMultiEncoderFusePass)
+                  paddle::lite_metal::mir::XPUMultiEncoderFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__multi_encoder");

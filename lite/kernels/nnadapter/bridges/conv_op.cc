@@ -18,7 +18,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -253,7 +253,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(conv2d,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ConvConverter);
+                         paddle::lite_metal::subgraph::nnadapter::ConvConverter);
 REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ConvConverter);
+                         paddle::lite_metal::subgraph::nnadapter::ConvConverter);

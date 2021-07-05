@@ -19,10 +19,10 @@ DEFINE_string(model_dir, "", "");
 DEFINE_string(optimized_model, "", "");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
-const lite::Tensor* RunHvyModel() {
-  lite::Predictor predictor;
+const lite_metal::Tensor* RunHvyModel() {
+  lite_metal::Predictor predictor;
 #ifndef LITE_WITH_CUDA
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
 #else

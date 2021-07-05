@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -54,7 +54,7 @@ void SplitCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    split, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::SplitCompute, def)
+    split, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::SplitCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),

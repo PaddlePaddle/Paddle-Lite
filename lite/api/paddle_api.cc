@@ -52,18 +52,18 @@ bool IsOpenCLBackendValid(bool check_fp16_valid) {
   bool opencl_valid = false;
 
 #ifdef LITE_WITH_OPENCL
-  bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
+  bool opencl_lib_found = paddle::lite_metal::CLWrapper::Global()->OpenclLibFound();
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
 #endif
   if (opencl_lib_found == false) return false;
 
-  bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
+  bool dlsym_success = paddle::lite_metal::CLWrapper::Global()->DlsymSuccess();
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "dlsym_success:" << dlsym_success;
 #endif
   if (dlsym_success == false) return false;
-  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice(
+  opencl_valid = paddle::lite_metal::CLRuntime::Global()->OpenCLAvaliableForDevice(
       check_fp16_valid);
 
 #ifdef LITE_WITH_LOG
@@ -78,9 +78,9 @@ Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 // TODO(Superjomn) refine this by using another `const void* const_raw`;
 Tensor::Tensor(const void *raw) { raw_tensor_ = const_cast<void *>(raw); }
 
-lite::Tensor *tensor(void *x) { return static_cast<lite::Tensor *>(x); }
-const lite::Tensor *ctensor(void *x) {
-  return static_cast<const lite::Tensor *>(x);
+lite_metal::Tensor *tensor(void *x) { return static_cast<lite_metal::Tensor *>(x); }
+const lite_metal::Tensor *ctensor(void *x) {
+  return static_cast<const lite_metal::Tensor *>(x);
 }
 
 void Tensor::Resize(const shape_t &shape) {
@@ -100,7 +100,7 @@ void Tensor::ShareExternalMemory(void *data,
                                  size_t memory_size,
                                  TargetType target) {
   auto buf =
-      std::make_shared<lite::Buffer>(lite::Buffer(data, target, memory_size));
+      std::make_shared<lite_metal::Buffer>(lite_metal::Buffer(data, target, memory_size));
   tensor(raw_tensor_)->ResetBuffer(buf, memory_size);
 }
 
@@ -140,26 +140,26 @@ void Tensor::CopyFromCpu(const T *src_data) {
   int64_t num = tensor(raw_tensor_)->numel();
   CHECK(num > 0) << "You should call Resize interface first";
   if (type == TargetType::kHost || type == TargetType::kARM) {
-    lite::TargetWrapperHost::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
+    lite_metal::TargetWrapperHost::MemcpySync(
+        data, src_data, num * sizeof(T), lite_metal::IoDirection::HtoH);
   } else if (type == TargetType::kCUDA) {
 #ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
+    lite_metal::TargetWrapperCuda::MemcpySync(
+        data, src_data, num * sizeof(T), lite_metal::IoDirection::HtoD);
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
   } else if (type == TargetType::kMLU) {
 #ifdef LITE_WITH_MLU
-    lite::TargetWrapperMlu::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
+    lite_metal::TargetWrapperMlu::MemcpySync(
+        data, src_data, num * sizeof(T), lite_metal::IoDirection::HtoD);
 #else
     LOG(FATAL) << "Please compile the lib with MLU.";
 #endif
   } else if (type == TargetType::kMetal) {
 #ifdef LITE_WITH_METAL
-    lite::TargetWrapperMetal::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
+    lite_metal::TargetWrapperMetal::MemcpySync(
+        data, src_data, num * sizeof(T), lite_metal::IoDirection::HtoD);
 #else
     LOG(FATAL) << "Please compile the lib with METAL.";
 #endif
@@ -177,26 +177,26 @@ void Tensor::CopyToCpu(T *data) const {
   }
   auto type = tensor(raw_tensor_)->target();
   if (type == TargetType::kHost || type == TargetType::kARM) {
-    lite::TargetWrapperHost::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
+    lite_metal::TargetWrapperHost::MemcpySync(
+        data, src_data, num * sizeof(T), lite_metal::IoDirection::HtoH);
   } else if (type == TargetType::kCUDA) {
 #ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
+    lite_metal::TargetWrapperCuda::MemcpySync(
+        data, src_data, num * sizeof(T), lite_metal::IoDirection::DtoH);
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
   } else if (type == TargetType::kMLU) {
 #ifdef LITE_WITH_MLU
-    lite::TargetWrapperMlu::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
+    lite_metal::TargetWrapperMlu::MemcpySync(
+        data, src_data, num * sizeof(T), lite_metal::IoDirection::DtoH);
 #else
     LOG(FATAL) << "Please compile the lib with MLU.";
 #endif
   } else if (type == TargetType::kMetal) {
 #ifdef LITE_WITH_METAL
-    lite::TargetWrapperMetal::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
+    lite_metal::TargetWrapperMetal::MemcpySync(
+        data, src_data, num * sizeof(T), lite_metal::IoDirection::HtoD);
 #else
     LOG(FATAL) << "Please compile the lib with METAL.";
 #endif
@@ -288,10 +288,10 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
 
 ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Init();
-  lite::DeviceInfo::Global().SetRunMode(mode, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
+  lite_metal::DeviceInfo::Init();
+  lite_metal::DeviceInfo::Global().SetRunMode(mode, threads);
+  mode_ = lite_metal::DeviceInfo::Global().mode();
+  threads_ = lite_metal::DeviceInfo::Global().threads();
 #endif
 }
 
@@ -301,11 +301,11 @@ void ConfigBase::set_opencl_binary_path_name(const std::string &path,
   if (paddle::lite_api::IsOpenCLBackendValid()) {
     opencl_bin_path_ = path;
     opencl_bin_name_ = name;
-    lite::CLRuntime::Global()->SetBinaryPathName(path, name);
+    lite_metal::CLRuntime::Global()->SetBinaryPathName(path, name);
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "opencl binary path and file name:"
-              << (lite::CLRuntime::Global()->GetBinaryPathName())[0] << "/"
-              << (lite::CLRuntime::Global()->GetBinaryPathName())[1];
+              << (lite_metal::CLRuntime::Global()->GetBinaryPathName())[0] << "/"
+              << (lite_metal::CLRuntime::Global()->GetBinaryPathName())[1];
 #endif
   }
 #endif
@@ -318,11 +318,11 @@ void ConfigBase::set_opencl_tune(CLTuneMode tune_mode,
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
     opencl_tune_mode_ = tune_mode;
-    paddle::lite::CLRuntime::Global()->set_auto_tune(
+    paddle::lite_metal::CLRuntime::Global()->set_auto_tune(
         opencl_tune_mode_, path, name, lws_repeats);
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "set opencl_tune_mode: "
-              << CLTuneModeToStr(lite::CLRuntime::Global()->auto_tune())
+              << CLTuneModeToStr(lite_metal::CLRuntime::Global()->auto_tune())
               << ", lws_repeats:" << lws_repeats;
     LOG(INFO) << "tuned file path & name:" << path << "/" << name;
 #endif
@@ -334,11 +334,11 @@ void ConfigBase::set_opencl_precision(CLPrecisionType p) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
     opencl_precision_ = p;
-    paddle::lite::CLRuntime::Global()->set_precision(p);
+    paddle::lite_metal::CLRuntime::Global()->set_precision(p);
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "set opencl precision: "
               << CLPrecisionTypeToStr(
-                     lite::CLRuntime::Global()->get_precision());
+                     lite_metal::CLRuntime::Global()->get_precision());
 #endif
   }
 #endif
@@ -346,17 +346,17 @@ void ConfigBase::set_opencl_precision(CLPrecisionType p) {
 
 void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
 #ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode, threads_);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
+  lite_metal::DeviceInfo::Global().SetRunMode(mode, threads_);
+  mode_ = lite_metal::DeviceInfo::Global().mode();
+  threads_ = lite_metal::DeviceInfo::Global().threads();
 #endif
 }
 
 void ConfigBase::set_threads(int threads) {
 #ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode_, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
+  lite_metal::DeviceInfo::Global().SetRunMode(mode_, threads);
+  mode_ = lite_metal::DeviceInfo::Global().mode();
+  threads_ = lite_metal::DeviceInfo::Global().threads();
 #endif
 }
 
@@ -404,7 +404,7 @@ bool ConfigBase::check_nnadapter_device(
     const std::string &nnadapter_device_name) {
   bool found = false;
 #ifdef LITE_WITH_NNADAPTER
-  found = lite::Context<TargetType::kNNAdapter>::CheckNNAdapterDevice(
+  found = lite_metal::Context<TargetType::kNNAdapter>::CheckNNAdapterDevice(
       nnadapter_device_name);
 #else
   LOG(WARNING) << "The invoking of the function 'check_nnadapter_device' is "
@@ -498,18 +498,18 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
   static std::mutex set_l3_mutex;
   const std::lock_guard<std::mutex> lock(set_l3_mutex);
   if (locked) {
-    if (!lite::TargetWrapperXPU::IsSharedL3Created()) {
-      lite::TargetWrapperXPU::shared_l3_size =
-          lite::TargetWrapperXPU::shared_l3_size > l3_size
-              ? lite::TargetWrapperXPU::shared_l3_size
+    if (!lite_metal::TargetWrapperXPU::IsSharedL3Created()) {
+      lite_metal::TargetWrapperXPU::shared_l3_size =
+          lite_metal::TargetWrapperXPU::shared_l3_size > l3_size
+              ? lite_metal::TargetWrapperXPU::shared_l3_size
               : l3_size;
     } else {
-      CHECK(lite::TargetWrapperXPU::shared_l3_size >= l3_size)
+      CHECK(lite_metal::TargetWrapperXPU::shared_l3_size >= l3_size)
           << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
     }
-    lite::TargetWrapperXPU::local_l3_size = 0;
+    lite_metal::TargetWrapperXPU::local_l3_size = 0;
   } else {
-    lite::TargetWrapperXPU::local_l3_size = l3_size;
+    lite_metal::TargetWrapperXPU::local_l3_size = l3_size;
   }
 #else
   LOG(WARNING) << "The invoking of the function "
@@ -520,7 +520,7 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 
 void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::SetDev(dev_no);
+  lite_metal::TargetWrapperXPU::SetDev(dev_no);
 #else
   LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
@@ -541,8 +541,8 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
                                              bool adaptive_seqlen) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::multi_encoder_precision = precision;
-  lite::TargetWrapperXPU::multi_encoder_adaptive_seqlen = adaptive_seqlen;
+  lite_metal::TargetWrapperXPU::multi_encoder_precision = precision;
+  lite_metal::TargetWrapperXPU::multi_encoder_adaptive_seqlen = adaptive_seqlen;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_multi_encoder_method' is "
@@ -553,8 +553,8 @@ void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
 void CxxConfig::set_xpu_conv_autotune(bool autotune,
                                       const std::string &autotune_file) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::conv_autotune = autotune;
-  lite::TargetWrapperXPU::conv_autotune_file = autotune_file;
+  lite_metal::TargetWrapperXPU::conv_autotune = autotune;
+  lite_metal::TargetWrapperXPU::conv_autotune_file = autotune_file;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_conv_autotune' is ignored, please "
@@ -577,13 +577,13 @@ void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
   auto &input_tensors = preferred_inputs_for_warmup_[group_idx];
   while (input_tensors.size() < tensor_idx + 1) {
     std::shared_ptr<void> input_tensor(
-        static_cast<void *>(new lite::Tensor),
-        [](void *x) { delete static_cast<lite::Tensor *>(x); });
+        static_cast<void *>(new lite_metal::Tensor),
+        [](void *x) { delete static_cast<lite_metal::Tensor *>(x); });
     input_tensors.emplace_back(input_tensor);
   }
 
   auto input_tensor =
-      static_cast<lite::Tensor *>(input_tensors[tensor_idx].get());
+      static_cast<lite_metal::Tensor *>(input_tensors[tensor_idx].get());
   input_tensor->Resize(shape);
   input_tensor->set_lod(lod);
   auto input_data = input_tensor->mutable_data<T>();
@@ -644,7 +644,7 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
 void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
                                      int absolute_val) {
 #ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetArmL3CacheSize(method, absolute_val);
+  lite_metal::DeviceInfo::Global().SetArmL3CacheSize(method, absolute_val);
 #endif
 }
 

@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -89,4 +89,4 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(dropout,
                          kMLU,
-                         paddle::lite::subgraph::mlu::DropoutConverter);
+                         paddle::lite_metal::subgraph::mlu::DropoutConverter);

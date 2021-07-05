@@ -25,7 +25,7 @@
 #include "lite/kernels/mlu/bridges/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -94,9 +94,9 @@ void lrn_compute_ref(std::shared_ptr<operators::LrnOpLite> op) {
   Scope* scope = op->scope();
   const OpInfo* op_info = op->op_info();
   auto x =
-      scope->FindVar(op_info->Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_info->Input("X").front())->GetMutable<lite_metal::Tensor>();
   auto out = scope->FindVar(op_info->Output("Out").front())
-                 ->GetMutable<lite::Tensor>();
+                 ->GetMutable<lite_metal::Tensor>();
 
   const float* x_data = x->data<const float>();
   float* out_data = out->mutable_data<float>();

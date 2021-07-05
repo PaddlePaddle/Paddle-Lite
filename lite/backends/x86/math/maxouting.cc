@@ -15,17 +15,17 @@ limitations under the License. */
 #include "lite/backends/x86/math/maxouting.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 // All tensors are in NCHW format, and the groups must be greater than 1
 template <typename T>
-class MaxOutFunctor<lite::TargetType::kX86, T> {
+class MaxOutFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
-                  lite::Tensor* output,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
+                  lite_metal::Tensor* output,
                   int groups) {
     const int batch_size = input.dims()[0];
     const int input_height = input.dims()[2];
@@ -35,7 +35,7 @@ class MaxOutFunctor<lite::TargetType::kX86, T> {
     // c_size means the output size of each sample
     int c_size = fea_size * output_channels;
     const T* input_data = input.data<T>();
-    T* output_data = output->template mutable_data<T>(lite::TargetType::kX86);
+    T* output_data = output->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     for (int i = 0; i < batch_size; ++i) {
       int new_bindex = c_size * i;
@@ -56,13 +56,13 @@ class MaxOutFunctor<lite::TargetType::kX86, T> {
 };
 
 template <class T>
-class MaxOutGradFunctor<lite::TargetType::kX86, T> {
+class MaxOutGradFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
-                  lite::Tensor* input_grad,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
+                  lite_metal::Tensor* input_grad,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   int groups) {
     const int batch_size = input.dims()[0];
     const int input_height = input.dims()[2];
@@ -73,7 +73,7 @@ class MaxOutGradFunctor<lite::TargetType::kX86, T> {
     const T* output_data = output.data<T>();
     const T* output_grad_data = output_grad.data<T>();
     T* input_grad_data =
-        input_grad->template mutable_data<T>(lite::TargetType::kX86);
+        input_grad->template mutable_data<T>(lite_metal::TargetType::kX86);
 
     for (int i = 0; i < batch_size; ++i) {
       int blen = fea_size * output_channels * i;
@@ -96,10 +96,10 @@ class MaxOutGradFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class MaxOutGradFunctor<lite::TargetType::kX86, float>;
-template class MaxOutGradFunctor<lite::TargetType::kX86, double>;
-template class MaxOutFunctor<lite::TargetType::kX86, float>;
-template class MaxOutFunctor<lite::TargetType::kX86, double>;
+template class MaxOutGradFunctor<lite_metal::TargetType::kX86, float>;
+template class MaxOutGradFunctor<lite_metal::TargetType::kX86, double>;
+template class MaxOutFunctor<lite_metal::TargetType::kX86, float>;
+template class MaxOutFunctor<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

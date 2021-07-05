@@ -21,7 +21,7 @@
 #include "lite/utils/io.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace huawei_ascend_npu {
 
 std::shared_ptr<AclModelClient> Device::LoadFromMem(
@@ -44,7 +44,7 @@ std::shared_ptr<AclModelClient> Device::LoadFromMem(
 
 std::shared_ptr<AclModelClient> Device::LoadFromFile(
     const std::string& model_path, const int device_id) {
-  if (!paddle::lite::IsFileExists(model_path)) {
+  if (!paddle::lite_metal::IsFileExists(model_path)) {
     VLOG(3) << "[HUAWEI_ASCEND_NPU] om model file not exists:" << model_path;
     return nullptr;
   }

@@ -21,7 +21,7 @@
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void RemoveScale1Pass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -125,5 +125,5 @@ void RemoveScale1Pass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(remove_scale1_pass, paddle::lite::mir::RemoveScale1Pass)
+REGISTER_MIR_PASS(remove_scale1_pass, paddle::lite_metal::mir::RemoveScale1Pass)
     .BindTargets({TARGET(kOpenCL)});

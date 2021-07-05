@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class FetchOp : public OpLite {
@@ -33,15 +33,15 @@ class FetchOp : public OpLite {
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
  protected:
-  bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override {
+  bool AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) override {
     auto _x = opdesc.Input("X").front();
     auto* x = scope->FindVar(_x);
     CHECK(x);
-    param_.input = scope->FindVar(_x)->GetMutable<lite::Tensor>();
+    param_.input = scope->FindVar(_x)->GetMutable<lite_metal::Tensor>();
 
     auto _out = opdesc.Output("Out").front();
     auto* out = scope->FindVar(_out);
-    param_.fetch_list = out->GetMutable<std::vector<lite::Tensor>>();
+    param_.fetch_list = out->GetMutable<std::vector<lite_metal::Tensor>>();
 
     param_.col = opdesc.GetAttr<int>("col");
     return true;
@@ -57,4 +57,4 @@ class FetchOp : public OpLite {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(fetch, paddle::lite::operators::FetchOp);
+REGISTER_LITE_OP(fetch, paddle::lite_metal::operators::FetchOp);

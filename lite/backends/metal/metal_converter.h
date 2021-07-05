@@ -20,7 +20,7 @@
 #include "lite/core/dim.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename P>
 class DataConverter {

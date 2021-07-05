@@ -24,14 +24,14 @@
 #include "lite/model_parser/flatbuffers/program_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 
 void FillParam(const std::string& name,
-               const lite::Tensor& tensor,
+               const lite_metal::Tensor& tensor,
                ParamDescWriteAPI* prog);
 
-void FillTensor(lite::Tensor* tensor, const ParamDescReadAPI& param);
+void FillTensor(lite_metal::Tensor* tensor, const ParamDescReadAPI& param);
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 class ParamSerializer {
@@ -43,7 +43,7 @@ class ParamSerializer {
         << "A valid writer should be passed in the ctor of param serializer.";
     WriteHeader();
   }
-  void ForwardWrite(const lite::Scope& scope,
+  void ForwardWrite(const lite_metal::Scope& scope,
                     const std::set<std::string>& param_names);
 
  private:
@@ -62,7 +62,7 @@ class ParamDeserializer {
         << "A valid reader should be passed in the ctor of param deserializer.";
     ReadHeader();
   }
-  void ForwardRead(lite::Scope* scope);
+  void ForwardRead(lite_metal::Scope* scope);
 
  private:
   void ReadBytesToBuffer(size_t size) {
@@ -75,9 +75,9 @@ class ParamDeserializer {
 };
 
 namespace deprecated {
-void SetScopeWithCombinedParams(lite::Scope* scope,
+void SetScopeWithCombinedParams(lite_metal::Scope* scope,
                                 const CombinedParamsDescReadAPI& params);
-void SetCombinedParamsWithScope(const lite::Scope& scope,
+void SetCombinedParamsWithScope(const lite_metal::Scope& scope,
                                 const std::set<std::string>& param_names,
                                 CombinedParamsDescWriteAPI* params);
 }  // namespace deprecated

@@ -18,7 +18,7 @@
 #include "lite/backends/x86/math/conv_utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -37,17 +37,17 @@ void DepthwiseConv<float>::Run() {
   const int pack_num = input_channel / pack_size;
 
   if (pack_size == 8) {
-    // lite::x86::math::pack8_m256(param.x, &input_pack_, pack_num, false);
-    // lite::x86::math::padding8_m256(
+    // lite_metal::x86::math::pack8_m256(param.x, &input_pack_, pack_num, false);
+    // lite_metal::x86::math::padding8_m256(
     //    &input_pack_, &input_padding_, *(param.paddings));
-    lite::x86::math::pack_padding8_m256(
+    lite_metal::x86::math::pack_padding8_m256(
         param.x, &input_padding_, pack_num, *(param.paddings));
   } else if (pack_size == 4) {
-    lite::x86::math::pack4_m128(param.x, &input_pack_, pack_num, false);
-    lite::x86::math::padding4_m128(
+    lite_metal::x86::math::pack4_m128(param.x, &input_pack_, pack_num, false);
+    lite_metal::x86::math::padding4_m128(
         &input_pack_, &input_padding_, *(param.paddings));
   } else {
-    lite::x86::math::padding1_float(
+    lite_metal::x86::math::padding1_float(
         param.x, &input_padding_, *(param.paddings));
   }
 
@@ -60,9 +60,9 @@ void DepthwiseConv<float>::Run() {
   // filter [oc, 1, ih, iw] & pack_size=8 => [oc/8, ih, iw, 8]
   // filter [oc, 1, ih, iw] & pack_size=4 => [ic/4, ih, iw, 4]
   if (pack_size == 8) {
-    lite::x86::math::pack8_m256(param.filter, &filter_pack_, pack_num, true);
+    lite_metal::x86::math::pack8_m256(param.filter, &filter_pack_, pack_num, true);
   } else if (pack_size == 4) {
-    lite::x86::math::pack4_m128(param.filter, &filter_pack_, pack_num, true);
+    lite_metal::x86::math::pack4_m128(param.filter, &filter_pack_, pack_num, true);
   }
 
   // attributes
@@ -91,7 +91,7 @@ void DepthwiseConv<float>::Run() {
   if (pack_size == 8) {
     if (kernel_h == 3 && kernel_w == 3 && stride_h == 1 && stride_w == 1 &&
         dilation_h == 1 && dilation_w == 1) {
-      lite::x86::math::conv_depthwise_3x3s1_m256(&input_padding_,
+      lite_metal::x86::math::conv_depthwise_3x3s1_m256(&input_padding_,
                                                  &output_pack_,
                                                  &filter_pack_,
                                                  param.bias,
@@ -102,7 +102,7 @@ void DepthwiseConv<float>::Run() {
 #endif
     } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
                stride_w == 2 && dilation_h == 1 && dilation_w == 1) {
-      lite::x86::math::conv_depthwise_3x3s2_m256(&input_padding_,
+      lite_metal::x86::math::conv_depthwise_3x3s2_m256(&input_padding_,
                                                  &output_pack_,
                                                  &filter_pack_,
                                                  param.bias,
@@ -112,7 +112,7 @@ void DepthwiseConv<float>::Run() {
       kernel_func_name_ = "conv_depthwise_3x3s2_m256";
 #endif
     } else {
-      lite::x86::math::conv_depthwise_m256(&input_padding_,
+      lite_metal::x86::math::conv_depthwise_m256(&input_padding_,
                                            &output_pack_,
                                            &filter_pack_,
                                            param.bias,
@@ -127,7 +127,7 @@ void DepthwiseConv<float>::Run() {
 #endif
     }
   } else if (pack_size == 4) {
-    lite::x86::math::conv_depthwise_m128(&input_padding_,
+    lite_metal::x86::math::conv_depthwise_m128(&input_padding_,
                                          &output_pack_,
                                          &filter_pack_,
                                          param.bias,
@@ -144,16 +144,16 @@ void DepthwiseConv<float>::Run() {
 
   // [bs, oh, ow, oc] => [bs, oc, oh, ow]
   if (pack_size == 8) {
-    lite::x86::math::unpack8_m256(&output_pack_, param.output);
+    lite_metal::x86::math::unpack8_m256(&output_pack_, param.output);
   } else if (pack_size == 4) {
-    lite::x86::math::unpack4_m128(&output_pack_, param.output);
+    lite_metal::x86::math::unpack4_m128(&output_pack_, param.output);
   }
 }
 
 #ifdef LITE_WITH_PROFILE
 template <>
 void DepthwiseConv<float>::SetProfileRuntimeKernelInfo(
-    paddle::lite::profile::OpCharacter* ch) {
+    paddle::lite_metal::profile::OpCharacter* ch) {
   ch->kernel_func_name = kernel_func_name_;
 }
 #endif

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool PriorBoxOpLite::CheckShape() const {
@@ -29,16 +29,16 @@ bool PriorBoxOpLite::CheckShape() const {
 
 bool PriorBoxOpLite::InferShapeImpl() const { return true; }
 
-bool PriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool PriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto input = opdesc.Input("Input").front();
   auto image = opdesc.Input("Image").front();
   auto boxes = opdesc.Output("Boxes").front();
   auto variances = opdesc.Output("Variances").front();
 
-  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.image = scope->FindVar(image)->GetMutable<lite::Tensor>();
-  param_.boxes = scope->FindVar(boxes)->GetMutable<lite::Tensor>();
-  param_.variances = scope->FindVar(variances)->GetMutable<lite::Tensor>();
+  param_.input = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
+  param_.image = scope->FindVar(image)->GetMutable<lite_metal::Tensor>();
+  param_.boxes = scope->FindVar(boxes)->GetMutable<lite_metal::Tensor>();
+  param_.variances = scope->FindVar(variances)->GetMutable<lite_metal::Tensor>();
 
   param_.min_sizes = opdesc.GetAttr<std::vector<float>>("min_sizes");
   param_.max_sizes = opdesc.GetAttr<std::vector<float>>("max_sizes");
@@ -82,4 +82,4 @@ bool PriorBoxOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(prior_box, paddle::lite::operators::PriorBoxOpLite);
+REGISTER_LITE_OP(prior_box, paddle::lite_metal::operators::PriorBoxOpLite);

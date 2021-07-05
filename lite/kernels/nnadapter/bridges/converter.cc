@@ -16,7 +16,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 

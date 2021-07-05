@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void SequenceReverseEmbeddingFusePass::Apply(
@@ -33,5 +33,5 @@ void SequenceReverseEmbeddingFusePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_sequence_reverse_embedding_fuse_pass,
-                  paddle::lite::mir::SequenceReverseEmbeddingFusePass)
+                  paddle::lite_metal::mir::SequenceReverseEmbeddingFusePass)
     .BindTargets({TARGET(kCUDA)});

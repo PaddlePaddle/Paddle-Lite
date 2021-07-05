@@ -25,7 +25,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -42,12 +42,12 @@ class GRUTest : public ::testing::Test {
         w_shape_({frame_size_, frame_size_ * 3}),
         out_shape_({batch_, frame_size_}),
         lod_({{0, 4, 9, 12}}) {
-    x_ref_.Resize(lite::DDim(x_shape_));
-    x_gpu_.Resize(lite::DDim(x_shape_));
+    x_ref_.Resize(lite_metal::DDim(x_shape_));
+    x_gpu_.Resize(lite_metal::DDim(x_shape_));
     x_ref_.set_lod(lod_);
 
-    w_ref_.Resize(lite::DDim(w_shape_));
-    w_gpu_.Resize(lite::DDim(w_shape_));
+    w_ref_.Resize(lite_metal::DDim(w_shape_));
+    w_gpu_.Resize(lite_metal::DDim(w_shape_));
 
     auto x_ref_data = x_ref_.mutable_data<float>();
     auto w_ref_data = w_ref_.mutable_data<float>();
@@ -59,12 +59,12 @@ class GRUTest : public ::testing::Test {
       w_ref_data[i] = static_cast<float>(i % 10 * 0.2);
     }
 
-    out_ref_.Resize(lite::DDim(out_shape_));
+    out_ref_.Resize(lite_metal::DDim(out_shape_));
     out_cpu_.Resize(out_ref_.dims());
     out_gpu_.Resize(out_ref_.dims());
-    batch_gate_gpu_.Resize(lite::DDim(x_shape_));
-    batch_hidden_gpu_.Resize(lite::DDim(out_shape_));
-    batch_reset_hidden_gpu_.Resize(lite::DDim(out_shape_));
+    batch_gate_gpu_.Resize(lite_metal::DDim(x_shape_));
+    batch_hidden_gpu_.Resize(lite_metal::DDim(out_shape_));
+    batch_reset_hidden_gpu_.Resize(lite_metal::DDim(out_shape_));
     RunBaseLine();
 
     InitParamAndContext();
@@ -88,27 +88,27 @@ class GRUTest : public ::testing::Test {
   }
 
   void InitFloatInput() {
-    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+    x_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
                                                     x_gpu_.dims());
     x_gpu_.set_lod(x_ref_.lod());
-    w_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(w_ref_.data<float>(),
+    w_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(w_ref_.data<float>(),
                                                     w_gpu_.dims());
   }
 
   void InitHalfInput() {
-    x_half_.Resize(lite::DDim(x_shape_));
+    x_half_.Resize(lite_metal::DDim(x_shape_));
     auto x_half_data = x_half_.mutable_data<half>();
     for (int64_t i = 0; i < x_half_.numel(); i++) {
-      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+      x_half_data[i] = half(lite_metal::float16(x_ref_.data<float>()[i]));
     }
-    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    x_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
     x_gpu_.set_lod(x_ref_.lod());
     w_half_.Resize(w_ref_.dims());
     auto w_half_data = w_half_.mutable_data<half>();
     for (int64_t i = 0; i < w_half_.numel(); i++) {
-      w_half_data[i] = half(lite::float16(w_ref_.data<float>()[i]));
+      w_half_data[i] = half(lite_metal::float16(w_ref_.data<float>()[i]));
     }
-    w_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(w_half_data, w_gpu_.dims());
+    w_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(w_half_data, w_gpu_.dims());
   }
 
   void RunBaseLine() {}
@@ -118,13 +118,13 @@ class GRUTest : public ::testing::Test {
   bool is_reverse_, origin_mode_;
   std::vector<int64_t> x_shape_, w_shape_, out_shape_;
   LoD lod_;
-  lite::Tensor x_ref_, w_ref_, out_ref_;
-  lite::Tensor x_gpu_, w_gpu_;
-  lite::Tensor x_half_, w_half_;
-  lite::Tensor batch_gate_gpu_;
-  lite::Tensor batch_hidden_gpu_;
-  lite::Tensor batch_reset_hidden_gpu_;
-  lite::Tensor out_cpu_, out_gpu_;
+  lite_metal::Tensor x_ref_, w_ref_, out_ref_;
+  lite_metal::Tensor x_gpu_, w_gpu_;
+  lite_metal::Tensor x_half_, w_half_;
+  lite_metal::Tensor batch_gate_gpu_;
+  lite_metal::Tensor batch_hidden_gpu_;
+  lite_metal::Tensor batch_reset_hidden_gpu_;
+  lite_metal::Tensor out_cpu_, out_gpu_;
 
   operators::GRUParam param_;
   std::unique_ptr<KernelContext> ctx_;

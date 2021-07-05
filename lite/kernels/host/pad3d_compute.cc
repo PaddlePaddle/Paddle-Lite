@@ -18,13 +18,13 @@
 #include "lite/backends/host/math/pad3d.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 void Pad3dCompute::Run() {
   auto& param = Param<operators::Pad2dParam>();
-  const lite::Tensor* inputs = param.X;
+  const lite_metal::Tensor* inputs = param.X;
   auto* out = param.Out;
 
   if (param.mode == "constant") {
@@ -80,7 +80,7 @@ void Pad3dCompute::Run() {
         << "pad right size must  <= inputs width - 1";
   }
   if (data_format_ == "NCDHW") {
-    lite::host::math::pad3d_ncdhw_func(inputs,
+    lite_metal::host::math::pad3d_ncdhw_func(inputs,
                                        out,
                                        batch,
                                        channels,
@@ -96,7 +96,7 @@ void Pad3dCompute::Run() {
                                        pad_depth_,
                                        pad_value_);
   } else if (data_format_ == "NDHWC") {
-    lite::host::math::pad3d_ndhwc_func(inputs,
+    lite_metal::host::math::pad3d_ndhwc_func(inputs,
                                        out,
                                        batch,
                                        channels,
@@ -123,7 +123,7 @@ void Pad3dCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    pad3d, kHost, kFloat, kNCHW, paddle::lite::kernels::host::Pad3dCompute, def)
+    pad3d, kHost, kFloat, kNCHW, paddle::lite_metal::kernels::host::Pad3dCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

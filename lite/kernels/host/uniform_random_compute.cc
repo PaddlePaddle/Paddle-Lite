@@ -15,7 +15,7 @@
 #include "lite/kernels/host/uniform_random_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -40,11 +40,11 @@ void UniformRandomKernelFunctor(Tensor* out, float min, float max, int seed) {
 void UniformRandomCompute::Run() {
   auto& param = this->template Param<param_t>();
   switch (param.dtype) {
-    case static_cast<int>(lite::core::FluidType::FP64):
+    case static_cast<int>(lite_metal::core::FluidType::FP64):
       UniformRandomKernelFunctor<double>(
           param.Out, param.min, param.max, param.seed);
       break;
-    case static_cast<int>(lite::core::FluidType::FP32):
+    case static_cast<int>(lite_metal::core::FluidType::FP32):
       UniformRandomKernelFunctor<float>(
           param.Out, param.min, param.max, param.seed);
       break;
@@ -63,7 +63,7 @@ REGISTER_LITE_KERNEL(uniform_random,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::UniformRandomCompute,
+                     paddle::lite_metal::kernels::host::UniformRandomCompute,
                      def)
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kHost),

@@ -29,7 +29,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 class BilinearInterpImageCompute
@@ -171,7 +171,7 @@ class BilinearInterpImageCompute
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
+namespace ocl = paddle::lite_metal::kernels::opencl;
 REGISTER_LITE_KERNEL(bilinear_interp,
                      kOpenCL,
                      kFP16,

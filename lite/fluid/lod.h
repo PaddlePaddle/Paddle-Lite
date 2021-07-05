@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 using LoD = std::vector<std::vector<uint64_t>>;
 

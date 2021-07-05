@@ -26,7 +26,7 @@
 #endif  // LITE_WITH_PROFILE
 #include <gflags/gflags.h>
 
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 
 DEFINE_string(input_shape,
               "1,3,224,224",
@@ -83,7 +83,7 @@ void OutputOptModel(const std::string& load_model_dir,
 
   // delete old optimized model
   int ret = system(
-      paddle::lite::string_format("rm -rf %s", save_optimized_model_dir.c_str())
+      paddle::lite_metal::string_format("rm -rf %s", save_optimized_model_dir.c_str())
           .c_str());
   if (ret == 0) {
     LOG(INFO) << "delete old optimized model " << save_optimized_model_dir;
@@ -180,8 +180,8 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     }
     auto out_data = output_tensor->data<float>();
     auto out_mean =
-        paddle::lite::compute_mean<float>(out_data, output_tensor_numel);
-    auto out_std_dev = paddle::lite::compute_standard_deviation<float>(
+        paddle::lite_metal::compute_mean<float>(out_data, output_tensor_numel);
+    auto out_std_dev = paddle::lite_metal::compute_standard_deviation<float>(
         out_data, output_tensor_numel, true, out_mean);
     FILE* fp1 = nullptr;
     if (flag_out) {
@@ -230,7 +230,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     std::ofstream out(FLAGS_arg_name + ".txt");
     for (size_t i = 0; i < arg_num; ++i) {
       sum += arg_tensor->data<float>()[i];
-      out << paddle::lite::to_string(arg_tensor->data<float>()[i]) << "\n";
+      out << paddle::lite_metal::to_string(arg_tensor->data<float>()[i]) << "\n";
     }
     LOG(INFO) << FLAGS_arg_name << " shape is " << os.str()
               << ", mean value is " << sum * 1. / arg_num;

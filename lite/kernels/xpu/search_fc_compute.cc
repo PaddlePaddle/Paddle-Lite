@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -100,7 +100,7 @@ REGISTER_LITE_KERNEL(search_fc,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SearchFcCompute,
+                     paddle::lite_metal::kernels::xpu::SearchFcCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kXPU))})

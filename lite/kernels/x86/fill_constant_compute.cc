@@ -20,7 +20,7 @@
 #include "paddle/fluid/operators/math/math_function.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -85,7 +85,7 @@ REGISTER_LITE_KERNEL(fill_constant,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::FillConstantCompute<float>,
+                     paddle::lite_metal::kernels::x86::FillConstantCompute<float>,
                      def)
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})

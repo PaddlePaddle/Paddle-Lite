@@ -20,7 +20,7 @@
 using namespace std;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -95,12 +95,12 @@ void GridSamplerImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::GridSamplerImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::GridSamplerImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite_metal::kernels::metal::GridSamplerImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::GridSamplerImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::GridSamplerImageCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::metal::GridSamplerImageCompute<float, PRECISION(kFloat)>
     MetalGridSamplerFp32;
-typedef paddle::lite::kernels::metal::GridSamplerImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::GridSamplerImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalGridSamplerFp16;
 
 REGISTER_LITE_KERNEL(grid_sampler, kMetal, kFloat, kMetalTexture2DArray, MetalGridSamplerFp32, def)

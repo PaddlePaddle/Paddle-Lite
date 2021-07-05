@@ -23,11 +23,11 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #ifdef LITE_WITH_FPGA
 TEST(ResNet50, test) {
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places(
       {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)}});
 

@@ -18,7 +18,7 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -27,11 +27,11 @@ namespace math {
  * Support dilation, stride and padding.
  */
 template <typename T>
-inline void im2col_common(const lite::Tensor& im,
+inline void im2col_common(const lite_metal::Tensor& im,
                           const std::vector<int>& dilation,
                           const std::vector<int>& stride,
                           const std::vector<int>& padding,
-                          lite::Tensor* col) {
+                          lite_metal::Tensor* col) {
   int im_channels = im.dims()[0];
   int im_height = im.dims()[1];
   int im_width = im.dims()[2];
@@ -66,8 +66,8 @@ inline void im2col_common(const lite::Tensor& im,
  * im2col algorithm with strides == 1, dilations == 1, paddings == 0
  */
 template <typename T>
-inline void im2col_sh1sw1dh1dw1ph0pw0(const lite::Tensor& im,
-                                      lite::Tensor* col) {
+inline void im2col_sh1sw1dh1dw1ph0pw0(const lite_metal::Tensor& im,
+                                      lite_metal::Tensor* col) {
   int im_channels = im.dims()[0];
   int im_height = im.dims()[1];
   int im_width = im.dims()[2];
@@ -107,8 +107,8 @@ inline void im2col_sh1sw1dh1dw1ph0pw0(const lite::Tensor& im,
  * and filter_width == 1 have a special implementation
  */
 template <typename T>
-inline void im2col_sh1sw1dh1dw1ph1pw1(const lite::Tensor& im,
-                                      lite::Tensor* col) {
+inline void im2col_sh1sw1dh1dw1ph1pw1(const lite_metal::Tensor& im,
+                                      lite_metal::Tensor* col) {
   int im_channels = im.dims()[0];
   int im_height = im.dims()[1];
   int im_width = im.dims()[2];

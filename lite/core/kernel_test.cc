@@ -17,7 +17,7 @@
 #include "lite/core/op_lite.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace core {
 
 int test_code{-1};

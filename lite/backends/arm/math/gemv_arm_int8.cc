@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/saturate.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 template <typename dtype>
@@ -2150,9 +2150,9 @@ void gemv_int8_oth(const int8_t* A,
   int8_t* ptr_zero = ctx->workspace_data<int8_t>();
   memset(ptr_zero, 0, Nup * 3);
   int8_t* data_in = ptr_zero + Nup;
-  lite::TargetWrapperHost::MemcpySync(data_in, x, N);
+  lite_metal::TargetWrapperHost::MemcpySync(data_in, x, N);
   int8_t* ptr_w = data_in + Nup;
-  lite::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
+  lite_metal::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
 
 #ifdef __aarch64__
   int out_cnt = M >> 3;
@@ -2332,9 +2332,9 @@ void gemv_int8_sdot(const int8_t* A,
   int8_t* ptr_zero = ctx->workspace_data<int8_t>();
   memset(ptr_zero, 0, Nup * 3);
   int8_t* data_in = ptr_zero + Nup;
-  lite::TargetWrapperHost::MemcpySync(data_in, x, N);
+  lite_metal::TargetWrapperHost::MemcpySync(data_in, x, N);
   int8_t* ptr_w = data_in + Nup;
-  lite::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
+  lite_metal::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
 
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {

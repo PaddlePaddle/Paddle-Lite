@@ -22,7 +22,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // Ported from github:dmlc-core
 class Any {

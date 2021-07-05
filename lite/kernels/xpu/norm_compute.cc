@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -61,7 +61,7 @@ void NormCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    norm, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::NormCompute, def)
+    norm, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::NormCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kXPU))})

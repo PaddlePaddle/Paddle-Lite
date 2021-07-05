@@ -17,7 +17,7 @@ limitations under the License. */
 #include "lite/backends/nnadapter/nnadapter/nnadapter.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class NNAdapterWrapper final {
  public:

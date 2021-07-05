@@ -15,7 +15,7 @@
 #include "lite/kernels/host/activation_grad_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -68,7 +68,7 @@ REGISTER_LITE_KERNEL(square_grad,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SquareGradCompute,
+                     paddle::lite_metal::kernels::host::SquareGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
@@ -79,7 +79,7 @@ REGISTER_LITE_KERNEL(relu_grad,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SquareGradCompute,
+                     paddle::lite_metal::kernels::host::SquareGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})
@@ -90,7 +90,7 @@ REGISTER_LITE_KERNEL(tanh_grad,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SquareGradCompute,
+                     paddle::lite_metal::kernels::host::SquareGradCompute,
                      def)
     .BindInput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kHost))})

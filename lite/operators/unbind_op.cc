@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool UnbindOp::CheckShape() const {
@@ -33,7 +33,7 @@ bool UnbindOp::InferShapeImpl() const {
   const auto &outs = param_.output;
   auto in_dims = param_.x->dims();
 
-  lite::DDim outs_dims;
+  lite_metal::DDim outs_dims;
   param_.axis = param_.axis >= 0 ? param_.axis : param_.axis + in_dims.size();
   for (int i = 0; i < in_dims.size(); i++) {
     if (i == param_.axis) continue;
@@ -47,15 +47,15 @@ bool UnbindOp::InferShapeImpl() const {
   return true;
 }
 
-bool UnbindOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool UnbindOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.axis = opdesc.GetAttr<int>("axis");
   auto input = opdesc.Input("X").front();
   auto outs = opdesc.Output("Out");
-  param_.x = scope->FindVar(input)->GetMutable<lite::Tensor>();
+  param_.x = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
   param_.output.clear();
   for (auto var : outs) {
-    param_.output.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.output.push_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   return true;
 }
@@ -64,4 +64,4 @@ bool UnbindOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(unbind, paddle::lite::operators::UnbindOp);
+REGISTER_LITE_OP(unbind, paddle::lite_metal::operators::UnbindOp);

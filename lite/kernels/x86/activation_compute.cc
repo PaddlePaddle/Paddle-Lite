@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(square,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SquareCompute<float>,
+                     paddle::lite_metal::kernels::x86::SquareCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -28,7 +28,7 @@ REGISTER_LITE_KERNEL(relu,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ReluCompute<float>,
+                     paddle::lite_metal::kernels::x86::ReluCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -38,7 +38,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::LeakyReluCompute<float>,
+                     paddle::lite_metal::kernels::x86::LeakyReluCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -49,7 +49,7 @@ REGISTER_LITE_KERNEL(tanh,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::TanhCompute<float>,
+                     paddle::lite_metal::kernels::x86::TanhCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -59,7 +59,7 @@ REGISTER_LITE_KERNEL(gelu,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::GeluCompute<float>,
+                     paddle::lite_metal::kernels::x86::GeluCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -69,7 +69,7 @@ REGISTER_LITE_KERNEL(softsign,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SoftsignCompute<float>,
+                     paddle::lite_metal::kernels::x86::SoftsignCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -79,7 +79,7 @@ REGISTER_LITE_KERNEL(sigmoid,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SigmoidCompute<float>,
+                     paddle::lite_metal::kernels::x86::SigmoidCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -89,7 +89,7 @@ REGISTER_LITE_KERNEL(relu6,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::Relu6Compute<float>,
+                     paddle::lite_metal::kernels::x86::Relu6Compute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -99,7 +99,7 @@ REGISTER_LITE_KERNEL(sqrt,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SqrtCompute<float>,
+                     paddle::lite_metal::kernels::x86::SqrtCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -109,7 +109,7 @@ REGISTER_LITE_KERNEL(rsqrt,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::RsqrtCompute<float>,
+                     paddle::lite_metal::kernels::x86::RsqrtCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})

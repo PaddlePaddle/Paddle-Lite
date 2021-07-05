@@ -26,7 +26,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -37,7 +37,7 @@ class SequenceMaskTest : public ::testing::Test {
         out_dtype_(5),
         x_data_({3, 2, 1, 0}),
         out_shape_({static_cast<int64_t>(x_data_.size()), maxlen_}) {
-    x_ref_.Resize(lite::DDim({static_cast<int64_t>(x_data_.size())}));
+    x_ref_.Resize(lite_metal::DDim({static_cast<int64_t>(x_data_.size())}));
     x_gpu_.Resize(x_ref_.dims());
 
     auto* x_ref_data = x_ref_.mutable_data<int64_t>();
@@ -47,7 +47,7 @@ class SequenceMaskTest : public ::testing::Test {
       x_ref_data[i] = x_data_[i];
     }
 
-    out_ref_.Resize(lite::DDim(out_shape_));
+    out_ref_.Resize(lite_metal::DDim(out_shape_));
     out_gpu_.Resize(out_ref_.dims());
     out_cpu_.Resize(out_ref_.dims());
     RunBaseLine(&x_ref_, &out_ref_);
@@ -67,16 +67,16 @@ class SequenceMaskTest : public ::testing::Test {
   }
 
   void InitFloatInput() {
-    x_gpu_.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(x_ref_.data<int64_t>(),
+    x_gpu_.Assign<int64_t, lite_metal::DDim, TARGET(kCUDA)>(x_ref_.data<int64_t>(),
                                                       x_gpu_.dims());
   }
 
   void InitHalfInput() {
-    x_gpu_.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(x_ref_.data<int64_t>(),
+    x_gpu_.Assign<int64_t, lite_metal::DDim, TARGET(kCUDA)>(x_ref_.data<int64_t>(),
                                                       x_gpu_.dims());
   }
 
-  void RunBaseLine(const lite::Tensor* x, lite::Tensor* out) {
+  void RunBaseLine(const lite_metal::Tensor* x, lite_metal::Tensor* out) {
     auto* out_data = out->mutable_data<float>();
 
     for (size_t i = 0; i < x_data_.size(); ++i) {
@@ -89,9 +89,9 @@ class SequenceMaskTest : public ::testing::Test {
   int maxlen_, out_dtype_;
   std::vector<int64_t> x_data_, out_shape_;
 
-  lite::Tensor x_ref_, out_ref_;
-  lite::Tensor x_gpu_, out_gpu_;
-  lite::Tensor out_cpu_;
+  lite_metal::Tensor x_ref_, out_ref_;
+  lite_metal::Tensor x_gpu_, out_gpu_;
+  lite_metal::Tensor out_cpu_;
 
   operators::SequenceMaskParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -158,7 +158,7 @@ TEST_F(SequenceMaskTest, TestFP16) {
                           sizeof(half) * out_gpu_.numel(),
                           IoDirection::DtoH);
   for (int i = 0; i < out_gpu_.numel(); ++i) {
-    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float res = static_cast<float>(lite_metal::float16(out_cpu_data[i]));
     float ref = out_ref_.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }

@@ -21,7 +21,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class ConditionalBlockOp : public OpLite {

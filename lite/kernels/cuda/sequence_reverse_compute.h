@@ -16,7 +16,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -29,7 +29,7 @@ class SequenceReverseCompute : public KernelLite<TARGET(kCUDA), Ptype> {
   virtual ~SequenceReverseCompute() = default;
 
  private:
-  lite::Tensor lod_cuda;
+  lite_metal::Tensor lod_cuda;
 };
 
 }  // namespace cuda

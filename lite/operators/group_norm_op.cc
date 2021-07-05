@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool GroupNormOp::CheckShape() const {
@@ -67,7 +67,7 @@ bool GroupNormOp::InferShapeImpl() const {
   return true;
 }
 
-bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.scale =
       scope->FindVar(op_desc.Input("Scale").front())->GetMutable<Tensor>();
@@ -105,7 +105,7 @@ bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }
 
 } /* namespace operators */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
-REGISTER_LITE_OP(group_norm, paddle::lite::operators::GroupNormOp);
+REGISTER_LITE_OP(group_norm, paddle::lite_metal::operators::GroupNormOp);

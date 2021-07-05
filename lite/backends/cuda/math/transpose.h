@@ -21,7 +21,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 
@@ -45,7 +45,7 @@ class Transpose {
   //               cudaStream_t* stream);
 
  private:
-  lite::Tensor Y_dims_, strides_;  // for transpose.
+  lite_metal::Tensor Y_dims_, strides_;  // for transpose.
 };
 
 }  // namespace math

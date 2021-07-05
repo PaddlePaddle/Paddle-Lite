@@ -20,7 +20,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace gen {
 
@@ -65,7 +65,7 @@ class VXXJitCode : public JitCode {
       base += "_Vec";
     }
     base += (with_relu_ ? "_Relu" : "");
-    base += "_D" + paddle::lite::to_string(num_);
+    base += "_D" + paddle::lite_metal::to_string(num_);
     return base;
   }
   void genCode() override;

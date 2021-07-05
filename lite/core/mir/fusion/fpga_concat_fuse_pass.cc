@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void FpgaConcatFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -31,5 +31,5 @@ void FpgaConcatFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(fpga_concat_fuse_pass, paddle::lite::mir::FpgaConcatFusePass)
+REGISTER_MIR_PASS(fpga_concat_fuse_pass, paddle::lite_metal::mir::FpgaConcatFusePass)
     .BindTargets({TARGET(kFPGA)});

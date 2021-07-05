@@ -18,7 +18,7 @@
 #include "lite/model_parser/naive_buffer/naive_buffer_wrapper_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 std::string ParamDesc::Name() const {

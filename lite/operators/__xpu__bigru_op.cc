@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUBiGRUOp::CheckShape() const {
@@ -81,15 +81,15 @@ bool XPUBiGRUOp::CheckShape() const {
 bool XPUBiGRUOp::InferShapeImpl() const {
   int batch_size = param_.input->dims()[0];
   int fw_gru_frame_size = param_.fw_gru_w->dims()[0];
-  param_.fw_output->Resize(lite::DDim({batch_size, fw_gru_frame_size}));
+  param_.fw_output->Resize(lite_metal::DDim({batch_size, fw_gru_frame_size}));
   *(param_.fw_output->mutable_lod()) = param_.input->lod();
   int bw_gru_frame_size = param_.bw_gru_w->dims()[0];
-  param_.bw_output->Resize(lite::DDim({batch_size, bw_gru_frame_size}));
+  param_.bw_output->Resize(lite_metal::DDim({batch_size, bw_gru_frame_size}));
   *(param_.bw_output->mutable_lod()) = param_.input->lod();
   return true;
 }
 
-bool XPUBiGRUOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool XPUBiGRUOp::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   AttachParam(&param_);
   bool has_mul_b = op_desc.GetAttr<bool>("has_mul_b");
   bool has_gru_b = op_desc.GetAttr<bool>("has_gru_b");
@@ -149,4 +149,4 @@ bool XPUBiGRUOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__bigru, paddle::lite::operators::XPUBiGRUOp);
+REGISTER_LITE_OP(__xpu__bigru, paddle::lite_metal::operators::XPUBiGRUOp);

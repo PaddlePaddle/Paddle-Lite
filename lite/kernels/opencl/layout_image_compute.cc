@@ -28,7 +28,7 @@
 #undef LITE_WITH_LOG
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -57,7 +57,7 @@ class LayoutComputeBufferChwToImageDefault
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -196,7 +196,7 @@ class LayoutComputeImageDefaultToBufferChw
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -320,7 +320,7 @@ class LayoutComputeBufferChwToImage2DNw
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -428,7 +428,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kAny,
     kImageDefault,
-    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImageDefault,
+    paddle::lite_metal::kernels::opencl::LayoutComputeBufferChwToImageDefault,
     NCHW_to_ImageDefault)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -445,7 +445,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kAny,
     kImageDefault,
-    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImageDefault,
+    paddle::lite_metal::kernels::opencl::LayoutComputeBufferChwToImageDefault,
     NCHW_to_ImageDefault)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -463,7 +463,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kAny,
     kNCHW,
-    paddle::lite::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
+    paddle::lite_metal::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
     ImageDefault_to_NCHW)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -480,7 +480,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kAny,
     kNCHW,
-    paddle::lite::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
+    paddle::lite_metal::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
     def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -497,7 +497,7 @@ REGISTER_LITE_KERNEL(
     kOpenCL,
     kAny,
     kNCHW,
-    paddle::lite::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
+    paddle::lite_metal::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
     ImageDefault_to_NCHW)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

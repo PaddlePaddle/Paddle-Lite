@@ -17,7 +17,7 @@
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace xpu {
 
@@ -49,7 +49,7 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
   CHECK_GE(idx, 1);
   node->set_data(std::make_shared<xtcl::xExpr>(layer));
   // Generate a unique name for the current XTCL layer
-  builder_.SetLayer(name + "__" + paddle::lite::to_string(idx));
+  builder_.SetLayer(name + "__" + paddle::lite_metal::to_string(idx));
   return node;
 }
 

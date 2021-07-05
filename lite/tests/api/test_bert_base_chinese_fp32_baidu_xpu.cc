@@ -28,7 +28,7 @@ DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(warmup_num, 1, "warmup rounds");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void ReadInputData(const std::string& input_file,
                    std::vector<std::vector<int64_t>>* input0,

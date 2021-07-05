@@ -17,14 +17,14 @@
 /*
  * This file implements the interface to manipute the protobuf/naive_buffer
  * message. We use
- * macros to make a compatible interface with the lite::cpp::XXDesc and
- * lite::pb::XXDesc/lite::naive_buffer::XXDesc.
+ * macros to make a compatible interface with the lite_metal::cpp::XXDesc and
+ * lite_metal::pb::XXDesc/lite_metal::naive_buffer::XXDesc.
  */
 
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 /// Transform an VarDesc from VarDescType to cpp format.
 template <typename VarDescType>

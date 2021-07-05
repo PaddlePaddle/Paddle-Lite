@@ -19,7 +19,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -48,7 +48,7 @@ class SearchSeqFcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     CHECK_EQ(out_dims[0], x_dims[0]) << "Wrong shape: out_dims[0] != x_dims[0]";
     CHECK_EQ(out_dims[1], out_size) << "Wrong shape: out_dims[1] != out_size";
 
-    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
+    auto blas = lite_metal::x86::math::GetBlas<lite_metal::TargetType::kX86, T>(context);
     blas.MatMul(*x, false, *w, true, out);
 
     if (b != nullptr) {

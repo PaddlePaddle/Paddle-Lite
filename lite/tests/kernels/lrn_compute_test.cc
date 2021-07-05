@@ -18,7 +18,7 @@
 #include "lite/core/arena/framework.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 /**
  * @brief get sum of x^2 between channels [size elements]

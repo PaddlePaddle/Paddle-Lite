@@ -16,17 +16,17 @@
 #include "lite/operators/activation_ops.h"
 
 // Extra activation ops
-REGISTER_LITE_OP(square, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(relu_clipped, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(swish, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(exp, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(abs, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(hard_sigmoid, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(sqrt, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(softsign, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(gelu, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(hard_swish, paddle::lite::operators::ActivationOp);
-REGISTER_LITE_OP(reciprocal, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(square, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(relu_clipped, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(swish, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(log, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(exp, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(abs, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(floor, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(hard_sigmoid, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(sqrt, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(rsqrt, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(softsign, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(gelu, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(hard_swish, paddle::lite_metal::operators::ActivationOp);
+REGISTER_LITE_OP(reciprocal, paddle::lite_metal::operators::ActivationOp);

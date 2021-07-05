@@ -21,7 +21,7 @@
 #include "lite/kernels/npu/bridges/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace npu {
 namespace bridges {
@@ -158,7 +158,7 @@ void reduce_mean_nc(const float* src,
                     int width_in) {
   // reduce n first.
   DDimLite ddimA({1, channel_in, height_in, width_in});
-  lite::Tensor tensor_tmp;
+  lite_metal::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
   reduce_mean_n(src, tmp_out, num_in, channel_in, height_in, width_in);
@@ -173,7 +173,7 @@ void reduce_mean_ch(const float* src,
                     int width_in) {
   // reduce c first
   DDimLite ddimA({num_in, 1, height_in, width_in});
-  lite::Tensor tensor_tmp;
+  lite_metal::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
   reduce_mean_c(src, tmp_out, num_in, channel_in, height_in, width_in);
@@ -188,7 +188,7 @@ void reduce_mean_hw(const float* src,
                     int width_in) {
   // reduce h first
   DDimLite ddimA({num_in, channel_in, 1, width_in});
-  lite::Tensor tensor_tmp;
+  lite_metal::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
   reduce_mean_h(src, tmp_out, num_in, channel_in, height_in, width_in);

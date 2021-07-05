@@ -24,7 +24,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 bool KernelScoreCmp(const std::pair<float, std::unique_ptr<KernelBase>>& a,
@@ -181,5 +181,5 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(static_kernel_pick_pass,
-                  paddle::lite::mir::StaticKernelPickPass)
+                  paddle::lite_metal::mir::StaticKernelPickPass)
     .BindTargets({TARGET(kAny)});

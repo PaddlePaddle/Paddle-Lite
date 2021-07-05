@@ -17,7 +17,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace imagination_nna {
 
 static void err_callback(imgdnn_report_flags flags,

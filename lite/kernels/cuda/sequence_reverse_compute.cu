@@ -17,7 +17,7 @@
 #include "lite/kernels/cuda/sequence_reverse_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -111,11 +111,11 @@ void SequenceReverseCompute<T, Ptype>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::cuda::SequenceReverseCompute<float,
+typedef paddle::lite_metal::kernels::cuda::SequenceReverseCompute<float,
                                                             PRECISION(kFloat)>
     ReverseFp32;
 
-typedef paddle::lite::kernels::cuda::SequenceReverseCompute<int64_t,
+typedef paddle::lite_metal::kernels::cuda::SequenceReverseCompute<int64_t,
                                                             PRECISION(kInt64)>
     ReverseInt64;
 

@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 /* fuse conv2d block in resnet50-like model to xpu_conv2d op    */
@@ -532,6 +532,6 @@ class XPUConv2dFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__conv2d_fuse_pass, paddle::lite::mir::XPUConv2dFusePass)
+REGISTER_MIR_PASS(__xpu__conv2d_fuse_pass, paddle::lite_metal::mir::XPUConv2dFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__conv2d");

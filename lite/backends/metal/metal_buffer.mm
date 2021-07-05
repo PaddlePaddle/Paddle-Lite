@@ -19,7 +19,7 @@
 #include <cassert>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 MetalBuffer::MetalBuffer(MetalContext* context, size_t size, void* data, METAL_ACCESS_FLAG access)
     : mtl_size_(size) {

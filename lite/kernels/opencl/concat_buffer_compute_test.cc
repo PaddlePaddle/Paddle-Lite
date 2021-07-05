@@ -20,7 +20,7 @@
 #include "lite/kernels/opencl/image_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename dtype>
 void concat2_compute_ref(const dtype *in0,
@@ -80,7 +80,7 @@ TEST(opencl_concat_buffer, compute) {
   const DDim x1_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
   const DDim x2_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
   const DDim out_dim = DDim(std::vector<DDim::value_type>{1, 6, 3, 4});
-  lite::Tensor x0, x1, x2, out, out_ref;
+  lite_metal::Tensor x0, x1, x2, out, out_ref;
   x0.Resize(x0_dim);
   x1.Resize(x1_dim);
   x2.Resize(x2_dim);
@@ -111,7 +111,7 @@ TEST(opencl_concat_buffer, compute) {
 
   // set param and kernel, then run
   operators::ConcatParam param;
-  std::vector<lite::Tensor *> ins;
+  std::vector<lite_metal::Tensor *> ins;
   ins.push_back(&x0);
   ins.push_back(&x1);
   ins.push_back(&x2);

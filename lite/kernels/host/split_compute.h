@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -34,16 +34,16 @@ class SplitCompute : public KernelLite<TARGET(kHost), PType> {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::host::SplitCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::host::SplitCompute<float, PRECISION(kFloat)>
     SplitFloat;
-typedef paddle::lite::kernels::host::SplitCompute<int, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::host::SplitCompute<int, PRECISION(kFloat)>
     SplitInt32;
-typedef paddle::lite::kernels::host::SplitCompute<int64_t, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::host::SplitCompute<int64_t, PRECISION(kFloat)>
     SplitInt64;
-typedef paddle::lite::kernels::host::SplitCompute<int64_t, PRECISION(kInt64)>
+typedef paddle::lite_metal::kernels::host::SplitCompute<int64_t, PRECISION(kInt64)>
     SplitInt64T;
 #ifdef ENABLE_ARM_FP16
 typedef __fp16 float16_t;
-typedef paddle::lite::kernels::host::SplitCompute<float16_t, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::host::SplitCompute<float16_t, PRECISION(kFP16)>
     SplitFP16T;
 #endif  // ENABLE_ARM_FP16

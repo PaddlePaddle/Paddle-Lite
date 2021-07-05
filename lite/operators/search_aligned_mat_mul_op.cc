@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SearchAlignedMatMulOpLite::CheckShape() const {
@@ -77,16 +77,16 @@ bool SearchAlignedMatMulOpLite::InferShapeImpl() const {
 }
 
 bool SearchAlignedMatMulOpLite::AttachImpl(const cpp::OpDesc& op_desc,
-                                           lite::Scope* scope) {
+                                           lite_metal::Scope* scope) {
   CHECK(!op_desc.Input("X").empty());
   CHECK(!op_desc.Input("Y").empty());
   CHECK(!op_desc.Output("Out").empty());
   auto X = op_desc.Input("X").front();
   auto Y = op_desc.Input("Y").front();
   auto Out = op_desc.Output("Out").front();
-  param_.X = GetVar<lite::Tensor>(scope, X);
-  param_.Y = GetVar<lite::Tensor>(scope, Y);
-  param_.Out = GetMutableVar<lite::Tensor>(scope, Out);
+  param_.X = GetVar<lite_metal::Tensor>(scope, X);
+  param_.Y = GetVar<lite_metal::Tensor>(scope, Y);
+  param_.Out = GetMutableVar<lite_metal::Tensor>(scope, Out);
   param_.transpose_X = op_desc.GetAttr<bool>("transpose_X");
   param_.transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
   param_.alpha = op_desc.GetAttr<float>("alpha");
@@ -98,4 +98,4 @@ bool SearchAlignedMatMulOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(search_aligned_mat_mul,
-                 paddle::lite::operators::SearchAlignedMatMulOpLite);
+                 paddle::lite_metal::operators::SearchAlignedMatMulOpLite);

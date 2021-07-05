@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -32,8 +32,8 @@ void XPUSqueezeExcitationCompute::PrepareForRun() {
 
   // max
   float weight1_max =
-      paddle::lite::xpu::math::FindMaxAbs(weight_ptr, weight1_len);
-  float weight2_max = paddle::lite::xpu::math::FindMaxAbs(
+      paddle::lite_metal::xpu::math::FindMaxAbs(weight_ptr, weight1_len);
+  float weight2_max = paddle::lite_metal::xpu::math::FindMaxAbs(
       weight_ptr + weight1_len, weight2_len);
   std::vector<float> weight_1_max_v(4, weight1_max);
 
@@ -57,7 +57,7 @@ void XPUSqueezeExcitationCompute::PrepareForRun() {
       TargetWrapperXPU::MallocScratchPad(weight1_len * sizeof(int16_t));
   quant_weight1_ptr_ = reinterpret_cast<int16_t*>(quant_weight1_guard_->addr_);
   std::vector<int16_t> quant_weight1_cpu(weight1_len, 0);
-  paddle::lite::xpu::math::ConvertFP32ToInt16(
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
       weight_ptr, quant_weight1_cpu.data(), weight1_max, weight1_len);
   XPU_CALL(xpu_memcpy(quant_weight1_ptr_,
                       quant_weight1_cpu.data(),
@@ -68,7 +68,7 @@ void XPUSqueezeExcitationCompute::PrepareForRun() {
       TargetWrapperXPU::MallocScratchPad(weight2_len * sizeof(int16_t));
   quant_weight2_ptr_ = reinterpret_cast<int16_t*>(quant_weight2_guard_->addr_);
   std::vector<int16_t> quant_weight2_cpu(weight2_len, 0);
-  paddle::lite::xpu::math::ConvertFP32ToInt16(weight_ptr + weight1_len,
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(weight_ptr + weight1_len,
                                               quant_weight2_cpu.data(),
                                               weight2_max,
                                               weight2_len);
@@ -141,7 +141,7 @@ REGISTER_LITE_KERNEL(__xpu__squeeze_excitation_block,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUSqueezeExcitationCompute,
+                     paddle::lite_metal::kernels::xpu::XPUSqueezeExcitationCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})

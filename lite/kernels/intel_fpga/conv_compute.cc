@@ -20,7 +20,7 @@
 #include "lite/kernels/intel_fpga/conv_gemmlike.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace intel_fpga {
 #define PARAM_INIT                                                           \
@@ -78,7 +78,7 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::intel_fpga::ConvCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::intel_fpga::ConvCompute<PRECISION(kFloat),
                                                        PRECISION(kFloat)>
     ConvFp32;
 

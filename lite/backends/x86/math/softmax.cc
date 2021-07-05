@@ -16,17 +16,17 @@ limitations under the License. */
 #include "lite/backends/x86/math/softmax_impl.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template class SoftmaxFunctor<lite::TargetType::kX86, float, true>;
+template class SoftmaxFunctor<lite_metal::TargetType::kX86, float, true>;
 // note: these implemetaions have not been called yet
-// template class SoftmaxFunctor<lite::TargetType::kX86, float, false>;
-// template class SoftmaxFunctor<lite::TargetType::kX86, double, true>;
-// template class SoftmaxFunctor<lite::TargetType::kX86, double, false>;
-// template class SoftmaxGradFunctor<lite::TargetType::kX86, float>;
-// template class SoftmaxGradFunctor<lite::TargetType::kX86, double>;
+// template class SoftmaxFunctor<lite_metal::TargetType::kX86, float, false>;
+// template class SoftmaxFunctor<lite_metal::TargetType::kX86, double, true>;
+// template class SoftmaxFunctor<lite_metal::TargetType::kX86, double, false>;
+// template class SoftmaxGradFunctor<lite_metal::TargetType::kX86, float>;
+// template class SoftmaxGradFunctor<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

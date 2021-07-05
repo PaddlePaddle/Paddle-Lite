@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(mul,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::MulCompute<float>,
+                     paddle::lite_metal::kernels::x86::MulCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})

@@ -17,7 +17,7 @@
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace xpu {
 
@@ -91,4 +91,4 @@ int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(gather,
                          kXPU,
-                         paddle::lite::subgraph::xpu::GatherConverter);
+                         paddle::lite_metal::subgraph::xpu::GatherConverter);

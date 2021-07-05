@@ -17,12 +17,12 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
-using LoDTensor = lite::Tensor;
-using LoDTensorArray = std::vector<lite::Tensor>;
+using LoDTensor = lite_metal::Tensor;
+using LoDTensorArray = std::vector<lite_metal::Tensor>;
 
 // all the lod have 2 levels.
 // The first is source level, the second is sentence level.
@@ -297,7 +297,7 @@ REGISTER_LITE_KERNEL(beam_search_decode,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::BeamSearchDecodeCompute,
+                     paddle::lite_metal::kernels::host::BeamSearchDecodeCompute,
                      def)
     .BindInput("Ids",
                {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kInt64))})

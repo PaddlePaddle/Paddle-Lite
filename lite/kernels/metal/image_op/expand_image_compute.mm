@@ -21,7 +21,7 @@
 using namespace std;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -71,10 +71,10 @@ void ExpandImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ExpandImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ExpandImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::ExpandImageCompute<float, PRECISION(kFloat)> MetalExpandFp32;
-typedef paddle::lite::kernels::metal::ExpandImageCompute<MetalHalf, PRECISION(kFP16)>
+template class paddle::lite_metal::kernels::metal::ExpandImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::ExpandImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite_metal::kernels::metal::ExpandImageCompute<float, PRECISION(kFloat)> MetalExpandFp32;
+typedef paddle::lite_metal::kernels::metal::ExpandImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalExpandFp16;
 
 REGISTER_LITE_KERNEL(expand, kMetal, kFloat, kMetalTexture2DArray, MetalExpandFp32, def)

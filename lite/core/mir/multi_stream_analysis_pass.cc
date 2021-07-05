@@ -25,7 +25,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void MultiStreamAnalysisPass::CleanUp() {
@@ -309,5 +309,5 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(multi_stream_analysis_pass,
-                  paddle::lite::mir::MultiStreamAnalysisPass)
+                  paddle::lite_metal::mir::MultiStreamAnalysisPass)
     .BindTargets({TARGET(kCUDA)});

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 inline int Im2SeqOutputSize(
     int input_size, int filter_size, int padding_0, int padding_1, int stride) {
@@ -52,15 +52,15 @@ bool Im2SequenceOp::InferShapeImpl() const {
   return true;
 }
 
-bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   if (opdesc.HasInput("Y") && opdesc.Input("Y").size()) {
     param_.Y =
-        scope->FindVar(opdesc.Input("Y").front())->GetMutable<lite::Tensor>();
+        scope->FindVar(opdesc.Input("Y").front())->GetMutable<lite_metal::Tensor>();
   }
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   CHECK(param_.Out);
   param_.strides = opdesc.GetAttr<std::vector<int>>("strides");
   param_.paddings = opdesc.GetAttr<std::vector<int>>("paddings");
@@ -76,4 +76,4 @@ bool Im2SequenceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(im2sequence, paddle::lite::operators::Im2SequenceOp);
+REGISTER_LITE_OP(im2sequence, paddle::lite_metal::operators::Im2SequenceOp);

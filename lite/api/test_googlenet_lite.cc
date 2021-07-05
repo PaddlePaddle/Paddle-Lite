@@ -24,7 +24,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 #ifdef LITE_WITH_X86
 TEST(CXXApi, test_lite_googlenet) {
   lite_api::CxxConfig config;

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MulOpLite::CheckShape() const {
@@ -49,7 +49,7 @@ bool MulOpLite::InferShapeImpl() const {
        ++i) {
     out_dims.push_back(y_dims[i]);
   }
-  param_.output->Resize(lite::DDim(out_dims));
+  param_.output->Resize(lite_metal::DDim(out_dims));
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x->lod();
 
@@ -62,4 +62,4 @@ bool MulOpLite::InferShapeImpl() const {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(mul, paddle::lite::operators::MulOpLite);
+REGISTER_LITE_OP(mul, paddle::lite_metal::operators::MulOpLite);

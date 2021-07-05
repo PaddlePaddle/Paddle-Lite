@@ -18,17 +18,17 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
 // using Tensor = framework::Tensor;
-inline lite::Tensor ReshapeToMatrix(const lite::Tensor& src, int num_col_dims) {
+inline lite_metal::Tensor ReshapeToMatrix(const lite_metal::Tensor& src, int num_col_dims) {
   int rank = src.dims().size();
   if (rank == 2) {
     return src;
   }
-  lite::Tensor res;
+  lite_metal::Tensor res;
   res.ShareDataWith(src);
   res.Resize(src.dims().Flatten2D(num_col_dims));
   return res;
@@ -70,7 +70,7 @@ class MulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       z->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
     }
 
-    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
+    auto blas = lite_metal::x86::math::GetBlas<lite_metal::TargetType::kX86, T>(context);
 
     blas.MatMul(x_matrix, y_matrix, z);
     if (z_dim.size() != 2) {

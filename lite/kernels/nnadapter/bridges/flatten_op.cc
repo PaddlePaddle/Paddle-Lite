@@ -18,7 +18,7 @@
 #include "lite/operators/reshape_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -102,7 +102,7 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(flatten,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::FlattenConverter);
+                         paddle::lite_metal::subgraph::nnadapter::FlattenConverter);
 REGISTER_SUBGRAPH_BRIDGE(flatten2,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::FlattenConverter);
+                         paddle::lite_metal::subgraph::nnadapter::FlattenConverter);

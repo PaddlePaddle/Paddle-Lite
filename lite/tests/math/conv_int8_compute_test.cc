@@ -58,14 +58,14 @@ DEFINE_bool(flag_bias, true, "with bias");
 DEFINE_double(clipped_coef, 1.0, "clipped relu coef");
 DEFINE_double(leakey_relu_alpha, 2.22, "leakey relu alpha");
 
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::operators::ConvParam ConvParam;
-typedef paddle::lite::operators::ActivationParam ActivationParam;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::operators::ConvParam ConvParam;
+typedef paddle::lite_metal::operators::ActivationParam ActivationParam;
+using paddle::lite_metal::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
-                     const paddle::lite::operators::ConvParam& param) {
+                     const paddle::lite_metal::operators::ConvParam& param) {
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
   DDim dim_out = dim_in;
@@ -87,7 +87,7 @@ DDim compute_out_dim(const DDim& dim_in,
   return dim_out;
 }
 
-template <paddle::lite::PrecisionType ptype>
+template <paddle::lite_metal::PrecisionType ptype>
 void get_conv_param(const DDim& dim_w,
                     int g,
                     const std::vector<int>& strides,
@@ -137,7 +137,7 @@ void test_conv_int8(const DDim& dim_in,
                     const std::vector<int>& power_mode,
                     const float six = 6.f,
                     const float alpha = 1.f) {
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
   ConvParam param_int8_out;
   ConvParam param_fp32_out;
 
@@ -161,12 +161,12 @@ void test_conv_int8(const DDim& dim_in,
   Tensor weight_fp32;
   Tensor bias_fp32;
   weight_fp32.Resize(weight_dim);
-  paddle::lite::fill_tensor_rand(*param_int8_out.filter, -127, 127);
+  paddle::lite_metal::fill_tensor_rand(*param_int8_out.filter, -127, 127);
   param_fp32_out.filter->CopyDataFrom(*param_int8_out.filter);
   if (flag_bias) {
     auto dim_b = param_int8_out.bias->dims();
     bias_fp32.Resize(dim_b);
-    paddle::lite::fill_tensor_rand(*param_int8_out.bias, -1.f, 1.f);
+    paddle::lite_metal::fill_tensor_rand(*param_int8_out.bias, -1.f, 1.f);
     param_fp32_out.bias->CopyDataFrom(*param_int8_out.bias);
     bias_fp32.CopyDataFrom(*param_int8_out.bias);
   }
@@ -209,7 +209,7 @@ void test_conv_int8(const DDim& dim_in,
   auto wptr_fp32 = weight_fp32.mutable_data<float>();
   auto bptr_fp32 = flag_bias ? bias_fp32.data<float>() : nullptr;
 
-  paddle::lite::arm::math::int8_to_fp32(param_int8_out.filter->data<int8_t>(),
+  paddle::lite_metal::arm::math::int8_to_fp32(param_int8_out.filter->data<int8_t>(),
                                         wptr_fp32,
                                         scale_w.data(),
                                         weight_dim[0],
@@ -218,19 +218,19 @@ void test_conv_int8(const DDim& dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      std::unique_ptr<paddle::lite::KernelContext> ctx2(
-          new paddle::lite::KernelContext);
-      auto& ctx_tmp1 = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx2(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx_tmp1 = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx_tmp1.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
-      auto& ctx_tmp2 = ctx2->As<paddle::lite::ARMContext>();
+      auto& ctx_tmp2 = ctx2->As<paddle::lite_metal::ARMContext>();
       ctx_tmp2.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
 
-      paddle::lite::kernels::arm::ConvCompute<PRECISION(kInt8),
+      paddle::lite_metal::kernels::arm::ConvCompute<PRECISION(kInt8),
                                               PRECISION(kInt8)>
           conv_int8_int8;
-      paddle::lite::kernels::arm::ConvCompute<PRECISION(kInt8),
+      paddle::lite_metal::kernels::arm::ConvCompute<PRECISION(kInt8),
                                               PRECISION(kFloat)>
           conv_int8_fp32;
       conv_int8_int8.SetContext(std::move(ctx1));
@@ -276,11 +276,11 @@ void test_conv_int8(const DDim& dim_in,
       Tensor tout_basic_fp32;
       Tensor tout_basic_int8;
 
-      paddle::lite::fill_tensor_rand(*param_int8_out.x, -127, 127);
+      paddle::lite_metal::fill_tensor_rand(*param_int8_out.x, -127, 127);
       param_fp32_out.x->CopyDataFrom(*param_int8_out.x);
 
       auto din_fp32 = tin_fp32.mutable_data<float>();
-      paddle::lite::arm::math::int8_to_fp32(param_int8_out.x->data<int8_t>(),
+      paddle::lite_metal::arm::math::int8_to_fp32(param_int8_out.x->data<int8_t>(),
                                             din_fp32,
                                             scale_in.data(),
                                             1,
@@ -319,7 +319,7 @@ void test_conv_int8(const DDim& dim_in,
                                  flag_act,
                                  six,
                                  alpha);
-        paddle::lite::arm::math::fp32_to_int8(dout_basic_fp32,
+        paddle::lite_metal::arm::math::fp32_to_int8(dout_basic_fp32,
                                               dout_basic_int8,
                                               scale_out.data(),
                                               1,

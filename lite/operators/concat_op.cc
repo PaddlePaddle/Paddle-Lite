@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ConcatOpLite::CheckShape() const {
@@ -65,17 +65,17 @@ bool ConcatOpLite::InferShapeImpl() const {
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
-bool ConcatOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool ConcatOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   auto inputs = op_desc.Input("X");
   auto out = op_desc.Output("Out").front();
 
   param_.x.clear();
   for (auto var : inputs) {
-    param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.x.push_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   CHECK(scope->FindVar(out));
-  param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.output = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
   param_.axis = op_desc.GetAttr<int>("axis");
 
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
@@ -85,7 +85,7 @@ bool ConcatOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
     if (arguments.size() > 0) {
       auto var = scope->FindVar(arguments.front());
       if (var != nullptr) {
-        param_.axis_tensor = var->GetMutable<lite::Tensor>();
+        param_.axis_tensor = var->GetMutable<lite_metal::Tensor>();
       }
     }
   }
@@ -96,4 +96,4 @@ bool ConcatOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(concat, paddle::lite::operators::ConcatOpLite);
+REGISTER_LITE_OP(concat, paddle::lite_metal::operators::ConcatOpLite);

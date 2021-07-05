@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 // Special fuse pass for the subgraph block in vis clarity model
@@ -248,6 +248,6 @@ class XPUSfaHeadMomentFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__sfa_head_moment_fuse_pass,
-                  paddle::lite::mir::XPUSfaHeadMomentFusePass)
+                  paddle::lite_metal::mir::XPUSfaHeadMomentFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("reduce_mean");

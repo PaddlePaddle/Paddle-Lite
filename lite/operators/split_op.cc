@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SplitOp::CheckShape() const {
@@ -46,9 +46,9 @@ bool SplitOp::InferShapeImpl() const {
   }
 
   const int outs_number = outs.size();
-  std::vector<lite::DDim> outs_dims;
+  std::vector<lite_metal::DDim> outs_dims;
   outs_dims.reserve(outs_number);
-  std::vector<lite::Tensor *> sections_tensor_list_ =
+  std::vector<lite_metal::Tensor *> sections_tensor_list_ =
       param_.sections_tensor_list;
   if (sections.size() > 0 && sections_tensor_list_.size() > 0) {
     std::vector<int> vec_sections;
@@ -81,7 +81,7 @@ bool SplitOp::InferShapeImpl() const {
   return true;
 }
 
-bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.axis = opdesc.GetAttr<int>("axis");
   param_.num = opdesc.GetAttr<int>("num");
@@ -111,4 +111,4 @@ bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(split, paddle::lite::operators::SplitOp);
+REGISTER_LITE_OP(split, paddle::lite_metal::operators::SplitOp);

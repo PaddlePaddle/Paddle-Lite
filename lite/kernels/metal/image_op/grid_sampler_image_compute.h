@@ -29,7 +29,7 @@
 #include "lite/kernels/metal/image_op/reshape_image_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 

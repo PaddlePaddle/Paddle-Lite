@@ -21,7 +21,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 
 static void SetNumThreads(int num_threads) {

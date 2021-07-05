@@ -18,7 +18,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -81,7 +81,7 @@ void DensityPriorBoxCompute::Run() {
   }
   std::vector<std::string> order = param.order;
 
-  lite::arm::math::density_prior_box(param.input,
+  lite_metal::arm::math::density_prior_box(param.input,
                                      param.image,
                                      &param.boxes,
                                      &param.variances,
@@ -113,7 +113,7 @@ REGISTER_LITE_KERNEL(density_prior_box,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::DensityPriorBoxCompute,
+                     paddle::lite_metal::kernels::fpga::DensityPriorBoxCompute,
                      fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),

@@ -21,7 +21,7 @@
 #include <arm_neon.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 void input_trans_c4_8x8(const float* src,

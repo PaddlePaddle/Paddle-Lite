@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -106,7 +106,7 @@ REGISTER_LITE_KERNEL(anchor_generator,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::AnchorGeneratorCompute,
+                     paddle::lite_metal::kernels::host::AnchorGeneratorCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Anchors", {LiteType::GetTensorTy(TARGET(kHost))})

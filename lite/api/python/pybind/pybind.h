@@ -18,7 +18,7 @@
 #include <pybind11/pybind11.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pybind {
 
 void BindLiteApi(pybind11::module *m);

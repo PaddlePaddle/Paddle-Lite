@@ -17,7 +17,7 @@
 #include "lite/kernels/apu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace apu {
 
@@ -44,4 +44,4 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu, kAPU, paddle::lite::subgraph::apu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu, kAPU, paddle::lite_metal::subgraph::apu::ActConverter);

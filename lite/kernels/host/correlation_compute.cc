@@ -15,7 +15,7 @@
 #include "lite/kernels/host/correlation_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -100,7 +100,7 @@ REGISTER_LITE_KERNEL(correlation,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::CorrelationCompute<float>,
+                     paddle::lite_metal::kernels::host::CorrelationCompute<float>,
                      def)
     .BindInput("Input1", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Input2", {LiteType::GetTensorTy(TARGET(kHost))})

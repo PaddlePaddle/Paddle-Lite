@@ -21,7 +21,7 @@
 #include "lite/kernels/arm/dropout_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -60,9 +60,9 @@ TEST(dropout_arm, compute) {
   DropoutCompute dropout;
   operators::DropoutParam param;
 
-  lite::Tensor x;
-  lite::Tensor output;
-  lite::Tensor output_ref;
+  lite_metal::Tensor x;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
 
   for (auto n : {1, 3, 4}) {
     for (auto c : {1, 3, 4}) {

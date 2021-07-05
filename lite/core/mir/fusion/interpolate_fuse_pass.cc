@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void InterpolateFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -39,5 +39,5 @@ void InterpolateFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_interpolate_fuse_pass,
-                  paddle::lite::mir::InterpolateFusePass)
+                  paddle::lite_metal::mir::InterpolateFusePass)
     .BindTargets({TARGET(kAny)});

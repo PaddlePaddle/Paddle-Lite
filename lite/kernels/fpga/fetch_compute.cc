@@ -17,7 +17,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -89,7 +89,7 @@ REGISTER_LITE_KERNEL(fetch,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::FetchCompute,
+                     paddle::lite_metal::kernels::fpga::FetchCompute,
                      host_host)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})

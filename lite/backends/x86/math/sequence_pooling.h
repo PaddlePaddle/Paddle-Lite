@@ -18,32 +18,32 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class SequencePoolFunctor {
  public:
   /* max pool has index output */
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const std::string pooltype,
                   T pad_value,
-                  const lite::Tensor& input,
-                  lite::Tensor* output,
+                  const lite_metal::Tensor& input,
+                  lite_metal::Tensor* output,
                   bool is_test = false,
-                  lite::Tensor* index = nullptr);
+                  lite_metal::Tensor* index = nullptr);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class SequencePoolGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const std::string pooltype,
-                  const lite::Tensor& out_grad,
-                  lite::Tensor* in_grad,
+                  const lite_metal::Tensor& out_grad,
+                  lite_metal::Tensor* in_grad,
                   /* max pool has index */
-                  const lite::Tensor* index = nullptr);
+                  const lite_metal::Tensor* index = nullptr);
 };
 
 }  // namespace math

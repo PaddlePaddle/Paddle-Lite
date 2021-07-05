@@ -25,7 +25,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 
 // make_unique is supported since c++14
@@ -88,18 +88,18 @@ class JitKernelRegistrar {
   STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                    \
       __reg_litejitkernel_##kernel_type##_refer_CPUPlace,           \
       "REGISTER_KERNEL_REFER must be called in global namespace");  \
-  static ::paddle::lite::jit::JitKernelRegistrar<                   \
-      ::paddle::lite::jit::ReferKernelPool,                         \
-      ::paddle::lite::fluid::CPUPlace,                              \
+  static ::paddle::lite_metal::jit::JitKernelRegistrar<                   \
+      ::paddle::lite_metal::jit::ReferKernelPool,                         \
+      ::paddle::lite_metal::fluid::CPUPlace,                              \
       __VA_ARGS__>                                                  \
       __jit_kernel_registrar_##kernel_type##_refer_CPUPlace_(       \
-          ::paddle::lite::jit::KernelType::kernel_type);            \
+          ::paddle::lite_metal::jit::KernelType::kernel_type);            \
   int LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_() {     \
     __jit_kernel_registrar_##kernel_type##_refer_CPUPlace_.Touch(); \
     return 0;                                                       \
   }
 
-// kernel_type: should be in paddle::lite::jit::KernelType
+// kernel_type: should be in paddle::lite_metal::jit::KernelType
 // place_type: should be one of CPUPlace and GPUPlace in paddle::platform
 #define REGISTER_KERNEL_MORE_LITE(kernel_type, impl_type, place_type, ...)    \
   STATIC_ASSERT_JITKERNEL_GLOBAL_NAMESPACE_LITE(                              \
@@ -108,12 +108,12 @@ class JitKernelRegistrar {
   extern int LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_();         \
   static int __assert_##kernel_type##_##impl_type##_##place_type##_has_refer_ \
       UNUSED = LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_();       \
-  static ::paddle::lite::jit::JitKernelRegistrar<                             \
-      ::paddle::lite::jit::KernelPool,                                        \
-      ::paddle::lite::fluid::place_type,                                      \
+  static ::paddle::lite_metal::jit::JitKernelRegistrar<                             \
+      ::paddle::lite_metal::jit::KernelPool,                                        \
+      ::paddle::lite_metal::fluid::place_type,                                      \
       __VA_ARGS__>                                                            \
       __jit_kernel_registrar_##kernel_type##_##impl_type##_##place_type##_(   \
-          ::paddle::lite::jit::KernelType::kernel_type);                      \
+          ::paddle::lite_metal::jit::KernelType::kernel_type);                      \
   int LiteTouchJitKernelReg_##kernel_type##_##impl_type##_##place_type##_() { \
     __jit_kernel_registrar_##kernel_type##_##impl_type##_##place_type##_      \
         .Touch();                                                             \
@@ -133,12 +133,12 @@ class JitKernelRegistrar {
   extern int LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_();    \
   static int __assert_gen_##kernel_type##_has_refer_ UNUSED =            \
       LiteTouchJitKernelReg_##kernel_type##_refer_CPUPlace_();           \
-  static ::paddle::lite::jit::JitKernelRegistrar<                        \
-      ::paddle::lite::jit::JitCodeCreatorPool,                           \
-      ::paddle::lite::fluid::CPUPlace,                                   \
+  static ::paddle::lite_metal::jit::JitKernelRegistrar<                        \
+      ::paddle::lite_metal::jit::JitCodeCreatorPool,                           \
+      ::paddle::lite_metal::fluid::CPUPlace,                                   \
       __VA_ARGS__>                                                       \
       __jit_kernel_registrar_gen_##kernel_type##_CPUPlace_(              \
-          ::paddle::lite::jit::KernelType::kernel_type);                 \
+          ::paddle::lite_metal::jit::KernelType::kernel_type);                 \
   int LiteTouchJitKernelReg_gen_##kernel_type##_CPUPlace_() {            \
     __jit_kernel_registrar_gen_##kernel_type##_CPUPlace_.Touch();        \
     return 0;                                                            \

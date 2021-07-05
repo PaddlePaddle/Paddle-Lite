@@ -40,15 +40,15 @@ DEFINE_int32(angle, 90, "rotate angel");
 DEFINE_int32(flip_num, 0, "flip x");
 DEFINE_int32(layout, 1, "layout nchw");
 
-typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
-typedef paddle::lite::utils::cv::FlipParam FlipParam;
+typedef paddle::lite_metal::utils::cv::ImageFormat ImageFormat;
+typedef paddle::lite_metal::utils::cv::FlipParam FlipParam;
 typedef paddle::lite_api::DataLayoutType LayoutType;
-typedef paddle::lite::utils::cv::TransParam TransParam;
-typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
+typedef paddle::lite_metal::utils::cv::TransParam TransParam;
+typedef paddle::lite_metal::utils::cv::ImagePreprocess ImagePreprocess;
 typedef paddle::lite_api::Tensor Tensor_api;
-typedef paddle::lite::Tensor Tensor;
+typedef paddle::lite_metal::Tensor Tensor;
 
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 
 inline void fill_data_rand(uint8_t* dio,
                            uint8_t vstart,
@@ -111,9 +111,9 @@ void test_convert(const std::vector<int>& cluster_id,
                   int test_iter = 10) {
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
       int size = 3 * srch * srcw;
@@ -235,9 +235,9 @@ void test_resize(const std::vector<int>& cluster_id,
   test_iter = 1;
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 
@@ -357,9 +357,9 @@ void test_flip(const std::vector<int>& cluster_id,
                int test_iter = 10) {
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 
@@ -475,9 +475,9 @@ void test_rotate(const std::vector<int>& cluster_id,
                  int test_iter = 10) {
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 
@@ -593,9 +593,9 @@ void test_to_tensor(const std::vector<int>& cluster_id,
                     int test_iter = 10) {
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 
@@ -743,7 +743,7 @@ void print_info(ImageFormat srcFormat,
                 float rotate_num,
                 int flip_num,
                 int layout) {
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
   LOG(INFO) << " input tensor size, num= " << 1 << ", channel= " << 1
             << ", height= " << srch << ", width= " << srcw
             << ", srcFormat= " << (ImageFormat)srcFormat;

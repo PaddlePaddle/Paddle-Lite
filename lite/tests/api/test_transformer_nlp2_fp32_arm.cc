@@ -24,7 +24,7 @@
 DEFINE_string(data_dir, "", "data dir");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <class T>
 void ShowVector(const std::string& info, const std::vector<T>& vct) {

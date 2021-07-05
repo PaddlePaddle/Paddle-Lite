@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 static void GetBroadcastDimsArrays(const DDim &x_dims,
@@ -96,15 +96,15 @@ bool CompareOp::InferShapeImpl() const {
   return true;
 }
 
-bool CompareOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool CompareOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.X =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   param_.Y =
-      scope->FindVar(opdesc.Input("Y").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("Y").front())->GetMutable<lite_metal::Tensor>();
   param_.axis = opdesc.GetAttr<int>("axis");
   param_.force_cpu = opdesc.GetAttr<bool>("force_cpu");
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Y);
   CHECK(param_.Out);
@@ -115,9 +115,9 @@ bool CompareOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(equal, paddle::lite::operators::CompareOp);
-REGISTER_LITE_OP(not_equal, paddle::lite::operators::CompareOp);
-REGISTER_LITE_OP(less_than, paddle::lite::operators::CompareOp);
-REGISTER_LITE_OP(less_equal, paddle::lite::operators::CompareOp);
-REGISTER_LITE_OP(greater_than, paddle::lite::operators::CompareOp);
-REGISTER_LITE_OP(greater_equal, paddle::lite::operators::CompareOp);
+REGISTER_LITE_OP(equal, paddle::lite_metal::operators::CompareOp);
+REGISTER_LITE_OP(not_equal, paddle::lite_metal::operators::CompareOp);
+REGISTER_LITE_OP(less_than, paddle::lite_metal::operators::CompareOp);
+REGISTER_LITE_OP(less_equal, paddle::lite_metal::operators::CompareOp);
+REGISTER_LITE_OP(greater_than, paddle::lite_metal::operators::CompareOp);
+REGISTER_LITE_OP(greater_equal, paddle::lite_metal::operators::CompareOp);

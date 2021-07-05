@@ -18,7 +18,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -75,7 +75,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   auto input_dims = x->dims();
 
-  lite::operators::UpdatePadding(&paddings,
+  lite_metal::operators::UpdatePadding(&paddings,
                                  global_pooling,
                                  adaptive,
                                  padding_algorithm,
@@ -128,4 +128,4 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(pool2d,
                          kMLU,
-                         paddle::lite::subgraph::mlu::PoolConverter);
+                         paddle::lite_metal::subgraph::mlu::PoolConverter);

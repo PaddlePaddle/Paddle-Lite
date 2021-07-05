@@ -17,7 +17,7 @@
 #include "lite/backends/host/math/unbind.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -28,7 +28,7 @@ void UnbindCompute<T, PType>::Run() {
   for (auto out : dout) {
     out->set_lod(param.x->lod());
   }
-  lite::host::math::unbind<T>(param.x, dout, param.axis);
+  lite_metal::host::math::unbind<T>(param.x, dout, param.axis);
 }
 
 }  // namespace host
@@ -37,7 +37,7 @@ void UnbindCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using unbind_float =
-    paddle::lite::kernels::host::UnbindCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::UnbindCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(unbind, kHost, kFloat, kNCHW, unbind_float, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindOutput("Out",
@@ -45,7 +45,7 @@ REGISTER_LITE_KERNEL(unbind, kHost, kFloat, kNCHW, unbind_float, def)
     .Finalize();
 
 using unbind_int64 =
-    paddle::lite::kernels::host::UnbindCompute<int64_t, PRECISION(kInt64)>;
+    paddle::lite_metal::kernels::host::UnbindCompute<int64_t, PRECISION(kInt64)>;
 REGISTER_LITE_KERNEL(unbind, kHost, kInt64, kNCHW, unbind_int64, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("Out",

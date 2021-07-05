@@ -18,7 +18,7 @@ limitations under the License. */
 // #include "paddle/fluid/platform/cudnn_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 

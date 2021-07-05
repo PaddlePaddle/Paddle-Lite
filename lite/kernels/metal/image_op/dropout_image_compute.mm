@@ -21,7 +21,7 @@
 using namespace std;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -81,12 +81,12 @@ void DropoutImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::DropoutImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::DropoutImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite_metal::kernels::metal::DropoutImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::DropoutImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::DropoutImageCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::metal::DropoutImageCompute<float, PRECISION(kFloat)>
     MetalDropoutFp32;
-typedef paddle::lite::kernels::metal::DropoutImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::DropoutImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalDropoutFp16;
 
 REGISTER_LITE_KERNEL(dropout, kMetal, kFloat, kMetalTexture2DArray, MetalDropoutFp32, def)

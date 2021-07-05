@@ -23,7 +23,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 using TargetWrapperMetal = TargetWrapper<TARGET(kMetal)>;
 
@@ -42,7 +42,7 @@ class TargetWrapper<TARGET(kMetal)> {
     static void MemcpySync(void* dst,
         const void* src,
         size_t size,
-        IoDirection dir = lite::IoDirection::HtoH);
+        IoDirection dir = lite_metal::IoDirection::HtoH);
 
     static void MemsetSync(void* dst, int value, size_t size);
 };

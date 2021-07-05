@@ -15,7 +15,7 @@
 #include "lite/kernels/host/shape_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -34,7 +34,7 @@ void ShapeCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    shape, kHost, kAny, kAny, paddle::lite::kernels::host::ShapeCompute, def)
+    shape, kHost, kAny, kAny, paddle::lite_metal::kernels::host::ShapeCompute, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})

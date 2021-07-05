@@ -31,7 +31,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SequenceTopkAvgPoolingOpLite::CheckShape() const {
@@ -53,24 +53,24 @@ bool SequenceTopkAvgPoolingOpLite::InferShapeImpl() const {
   vec_out_shape.push_back(row_shape_0);
   vec_out_shape.push_back(channel_num * num_k);
 
-  param_.Out->Resize(lite::DDim(vec_out_shape));
+  param_.Out->Resize(lite_metal::DDim(vec_out_shape));
   param_.Out->set_lod(param_.ROW->lod());
   return true;
 }
 
 bool SequenceTopkAvgPoolingOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                              lite::Scope *scope) {
+                                              lite_metal::Scope *scope) {
   auto X = op_desc.Input("X").front();
   auto ROW = op_desc.Input("ROW").front();
   auto COLUMN = op_desc.Input("COLUMN").front();
   auto Out = op_desc.Output("Out").front();
   auto pos = op_desc.Output("pos").front();
 
-  param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
-  param_.ROW = scope->FindVar(ROW)->GetMutable<lite::Tensor>();
-  param_.COLUMN = scope->FindVar(COLUMN)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
-  param_.pos = scope->FindVar(pos)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(X)->GetMutable<lite_metal::Tensor>();
+  param_.ROW = scope->FindVar(ROW)->GetMutable<lite_metal::Tensor>();
+  param_.COLUMN = scope->FindVar(COLUMN)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(Out)->GetMutable<lite_metal::Tensor>();
+  param_.pos = scope->FindVar(pos)->GetMutable<lite_metal::Tensor>();
   param_.channel_num = op_desc.GetAttr<int>("channel_num");
   param_.topks = op_desc.GetAttr<std::vector<int>>("topks");
 
@@ -82,4 +82,4 @@ bool SequenceTopkAvgPoolingOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(sequence_topk_avg_pooling,
-                 paddle::lite::operators::SequenceTopkAvgPoolingOpLite);
+                 paddle::lite_metal::operators::SequenceTopkAvgPoolingOpLite);

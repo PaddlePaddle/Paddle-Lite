@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -36,7 +36,7 @@ void SearchGrnnCompute::PrepareForRun() {
 }
 
 void SearchGrnnCompute::prepare_layout(const operators::SearchGrnnParam& param,
-                                       const paddle::lite::Tensor* bottom) {
+                                       const paddle::lite_metal::Tensor* bottom) {
   auto* idx_sorted_by_width = param.idx_sorted_by_width;
   auto* layout_input = param.layout_input;
 
@@ -271,7 +271,7 @@ REGISTER_LITE_KERNEL(search_grnn,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SearchGrnnCompute,
+                     paddle::lite_metal::kernels::xpu::SearchGrnnCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Wi", {LiteType::GetTensorTy(TARGET(kXPU))})

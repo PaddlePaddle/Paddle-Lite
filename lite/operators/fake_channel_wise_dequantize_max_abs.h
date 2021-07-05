@@ -24,7 +24,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class FakeChannelWiseDequantizeMaxAbsOpLite : public OpLite {
@@ -38,21 +38,21 @@ class FakeChannelWiseDequantizeMaxAbsOpLite : public OpLite {
 
   bool InferShapeImpl() const override { return true; }
 
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) override {
     auto x = op_desc.Input("X").front();
-    param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
+    param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
 
     auto args = op_desc.Input("Scales");
     param_.scale_tensors.clear();
     for (auto arg : args) {
       auto *var = scope->FindVar(arg);
       if (var != nullptr) {
-        param_.scale_tensors.push_back(var->GetMutable<lite::Tensor>());
+        param_.scale_tensors.push_back(var->GetMutable<lite_metal::Tensor>());
       }
     }
 
     auto out = op_desc.Output("Out").front();
-    param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+    param_.out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
     param_.quant_bits = op_desc.GetAttr<std::vector<int>>("quant_bits");
     return true;

@@ -105,10 +105,10 @@ class GRUPE : public PE {
 
       for (int i = 0; i < frame_size; i++) {
         update_gate_data[i] =
-            lite::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(
+            lite_metal::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(
                 update_gate_data[i]);
         reset_gate_data[i] =
-            lite::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(
+            lite_metal::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(
                 reset_gate_data[i]);
       }
       memcpy(tmp_data, reset_gate_data, frame_size * sizeof(float));

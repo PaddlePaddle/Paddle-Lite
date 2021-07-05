@@ -67,7 +67,7 @@
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 

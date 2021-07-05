@@ -18,7 +18,7 @@
 #include "lite/kernels/cuda/sigmoid_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -32,7 +32,7 @@ void SigmoidCompute<T, Ptype>::Run() {
   auto input = param.X->template data<T>();
   auto output = param.Out->template mutable_data<T>(TARGET(kCUDA));
 
-  lite::cuda::math::sigmoid<T>(num, input, output, stream);
+  lite_metal::cuda::math::sigmoid<T>(num, input, output, stream);
 }
 
 }  // namespace cuda
@@ -41,10 +41,10 @@ void SigmoidCompute<T, Ptype>::Run() {
 }  // namespace paddle
 
 using SigmoidFp32 =
-    paddle::lite::kernels::cuda::SigmoidCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::SigmoidCompute<float, PRECISION(kFloat)>;
 
 using SigmoidFp16 =
-    paddle::lite::kernels::cuda::SigmoidCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::SigmoidCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(sigmoid, kCUDA, kFloat, kNCHW, SigmoidFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})

@@ -27,7 +27,7 @@
 // These code references https://gist.github.com/shoooe/9202235
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <size_t arg1, size_t... others>
 struct static_max;

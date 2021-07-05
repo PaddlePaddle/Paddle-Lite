@@ -25,7 +25,7 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 @interface MetalContextImp () {
-    std::vector<paddle::lite::kernels::metal::FetchImageCompute *> _fetch_vector;
+    std::vector<paddle::lite_metal::kernels::metal::FetchImageCompute *> _fetch_vector;
 }
 @property (strong, nonatomic) id<MTLDevice> device;
 @property (strong, nonatomic) id<MTLLibrary> library;
@@ -74,13 +74,13 @@ extern NSString* cString2NSString(std::string cStr) {
 
 #pragma mark data
 
-- (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size access:(paddle::lite::METAL_ACCESS_FLAG)access {
+- (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size access:(paddle::lite_metal::METAL_ACCESS_FLAG)access {
     return [_device newBufferWithLength:size options:[self optionForAccess:access]];
 }
 
 - (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size
                            bytes:(void*)bytes
-                          access:(paddle::lite::METAL_ACCESS_FLAG)access {
+                          access:(paddle::lite_metal::METAL_ACCESS_FLAG)access {
     return [_device newBufferWithBytes:bytes length:size options:[self optionForAccess:access]];
 }
 
@@ -203,8 +203,8 @@ extern NSString* cString2NSString(std::string cStr) {
 #pragma mark c++ external
 
 - (void)add_fetch_kernel_ptr:(void *)ptr {
-    paddle::lite::kernels::metal::FetchImageCompute *fetch =
-        static_cast<paddle::lite::kernels::metal::FetchImageCompute *>(ptr);
+    paddle::lite_metal::kernels::metal::FetchImageCompute *fetch =
+        static_cast<paddle::lite_metal::kernels::metal::FetchImageCompute *>(ptr);
     _fetch_vector.push_back(fetch);
 }
 
@@ -262,18 +262,18 @@ extern NSString* cString2NSString(std::string cStr) {
 
 #pragma mark - internal
 
-- (MTLResourceOptions)optionForAccess:(paddle::lite::METAL_ACCESS_FLAG)access {
-    if (access == paddle::lite::METAL_ACCESS_FLAG::CPUWriteOnly) {
+- (MTLResourceOptions)optionForAccess:(paddle::lite_metal::METAL_ACCESS_FLAG)access {
+    if (access == paddle::lite_metal::METAL_ACCESS_FLAG::CPUWriteOnly) {
         return MTLResourceOptionCPUCacheModeWriteCombined;
-    } else if (access == paddle::lite::METAL_ACCESS_FLAG::CPUTransparent) {
+    } else if (access == paddle::lite_metal::METAL_ACCESS_FLAG::CPUTransparent) {
         if (@available(iOS 9.0, *)) {
             return MTLResourceStorageModePrivate;
         } else {
             return MTLResourceOptionCPUCacheModeDefault;
         }
-    } else if (access == paddle::lite::METAL_ACCESS_FLAG::CPUShared) {
+    } else if (access == paddle::lite_metal::METAL_ACCESS_FLAG::CPUShared) {
         return MTLStorageModeShared;
-    } else {  // access == paddle::lite::METAL_ACCESS_FLAG::CPUReadWrite
+    } else {  // access == paddle::lite_metal::METAL_ACCESS_FLAG::CPUReadWrite
         return MTLResourceOptionCPUCacheModeDefault;
     }
 }

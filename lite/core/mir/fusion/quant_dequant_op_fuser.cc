@@ -23,7 +23,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -153,7 +153,7 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
   int range = ((1 << (bit_length - 1)) - 1);
   auto* scope = quant_node->stmt()->op()->scope();
   auto* scale_tensor = scope->FindVar(output_scale_node->arg()->name)
-                           ->GetMutable<lite::Tensor>();
+                           ->GetMutable<lite_metal::Tensor>();
   float scale_value = scale_tensor->data<float>()[0] / range;
 
   auto in_act_name = input_act_node->arg()->name;
@@ -239,7 +239,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto op_desc = *quantized_op->stmt()->op_info();
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
-      scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
+      scope->FindVar(quantized_weight_var_name)->GetMutable<lite_metal::Tensor>();
 
   std::vector<float> weight_scale;
   int weight_scale_size = 0;
@@ -366,7 +366,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   int range = ((1 << (weight_bit_length - 1)) - 1);
   auto channel_scale_name = dequant_op_channel_scale->arg()->name;
   auto channel_scale_tensor =
-      scope->FindVar(channel_scale_name)->GetMutable<lite::Tensor>();
+      scope->FindVar(channel_scale_name)->GetMutable<lite_metal::Tensor>();
   auto* channel_scale_data = channel_scale_tensor->data<float>();
   for (size_t i = 0; i < channel_scale_tensor->data_size(); i++) {
     weight_scale.push_back(channel_scale_data[i] / range);
@@ -392,7 +392,7 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   // change the weight from the float type to int8 type.
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
-      scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
+      scope->FindVar(quantized_weight_var_name)->GetMutable<lite_metal::Tensor>();
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*quantized_weight_t);
   float* temp_data = temp_tensor.mutable_data<float>();
@@ -471,7 +471,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   // to the output channel of the weight.
   auto* scope = quant_dequant_node->stmt()->op()->scope();
   auto* input_var_tensor =
-      scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+      scope->FindVar(input_var_name)->GetMutable<lite_metal::Tensor>();
 
   std::vector<float> thresholds;
   if (input_var_is_activation) {
@@ -480,7 +480,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
         << "The quant_dequant type of activation should be "
         << "fake_quantize_dequantize_moving_average_abs_max for now.";
     auto* scale_tensor = scope->FindVar(output_scale_node->arg()->name)
-                             ->GetMutable<lite::Tensor>();
+                             ->GetMutable<lite_metal::Tensor>();
     thresholds.push_back(scale_tensor->data<float>()[0]);
   } else {
     CHECK(quant_dequant_op_type_ == "fake_quantize_dequantize_abs_max" ||
@@ -495,7 +495,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
       thresholds.push_back(threshold);
     } else {
       auto* scale_tensor = scope->FindVar(output_scale_node->arg()->name)
-                               ->GetMutable<lite::Tensor>();
+                               ->GetMutable<lite_metal::Tensor>();
       int64_t num = scale_tensor->numel();
       thresholds.resize(num);
       memcpy(
@@ -584,7 +584,7 @@ void DynamicQuantOpFuser::InsertNewNode(SSAGraph* graph,
 
   auto* scope = op_node->stmt()->op()->scope();
   std::string weight_name = weight_node->arg()->name;
-  auto weight_tensor = scope->FindVar(weight_name)->GetMutable<lite::Tensor>();
+  auto weight_tensor = scope->FindVar(weight_name)->GetMutable<lite_metal::Tensor>();
   auto weight_dims = weight_tensor->dims();
   CHECK(weight_dims.size() == 2) << "The rank of weight should be 2.";
   VLOG(4) << "Quantizes weight of lstm or gru:" << weight_name;

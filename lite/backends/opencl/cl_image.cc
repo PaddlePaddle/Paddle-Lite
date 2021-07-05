@@ -20,7 +20,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 std::ostream& operator<<(std::ostream& os, const CLImage& cl_image) {
   int width = cl_image.image_dims_[0];

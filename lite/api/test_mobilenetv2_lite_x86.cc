@@ -25,7 +25,7 @@
 // for googlenet
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(Mobilenet_v2, test_mobilenetv2_lite_x86) {
   lite_api::CxxConfig config;

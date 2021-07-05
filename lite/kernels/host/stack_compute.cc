@@ -16,15 +16,15 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 template <typename T, PrecisionType PType>
 void StackCompute<T, PType>::Run() {
   auto &param = this->template Param<operators::StackParam>();
-  std::vector<lite::Tensor *> x = param.X;
-  lite::Tensor *y = param.Out;
+  std::vector<lite_metal::Tensor *> x = param.X;
+  lite_metal::Tensor *y = param.Out;
   int axis = param.axis;
 
   if (axis < 0) axis += (x[0]->dims().size() + 1);
@@ -54,11 +54,11 @@ void StackCompute<T, PType>::Run() {
 
 } /* namespace host */
 } /* namespace kernels */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
 using stack_float =
-    paddle::lite::kernels::host::StackCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::StackCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
@@ -69,7 +69,7 @@ REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_float, def)
     .Finalize();
 
 using stack_int32 =
-    paddle::lite::kernels::host::StackCompute<int, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::StackCompute<int, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_int32, int32_def)
     .BindInput("X",
                {LiteType::GetTensorTy(
@@ -80,7 +80,7 @@ REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_int32, int32_def)
     .Finalize();
 
 using stack_int64 =
-    paddle::lite::kernels::host::StackCompute<int64_t, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::StackCompute<int64_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_int64, int64_def)
     .BindInput("X",
                {LiteType::GetTensorTy(

@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool CrfDecodingOpLite::CheckShape() const {
@@ -72,24 +72,24 @@ bool CrfDecodingOpLite::InferShapeImpl() const {
 }
 
 bool CrfDecodingOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                   lite::Scope *scope) {
+                                   lite_metal::Scope *scope) {
   // inputs
   param_.emission = scope->FindVar(op_desc.Input("Emission").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
   param_.transition = scope->FindVar(op_desc.Input("Transition").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   if (op_desc.HasInput("Label") && op_desc.Input("Label").size() > 0) {
     param_.label = scope->FindVar(op_desc.Input("Label").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   }
   if (op_desc.HasInput("Length") && op_desc.Input("Length").size() > 0) {
     param_.length = scope->FindVar(op_desc.Input("Length").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
   }
 
   // outputs
   param_.viterbi_path = scope->FindVar(op_desc.Output("ViterbiPath").front())
-                            ->GetMutable<lite::Tensor>();
+                            ->GetMutable<lite_metal::Tensor>();
   return true;
 }
 
@@ -97,4 +97,4 @@ bool CrfDecodingOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(crf_decoding, paddle::lite::operators::CrfDecodingOpLite);
+REGISTER_LITE_OP(crf_decoding, paddle::lite_metal::operators::CrfDecodingOpLite);

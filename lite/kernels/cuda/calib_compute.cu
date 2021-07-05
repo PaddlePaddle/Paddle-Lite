@@ -20,7 +20,7 @@
 #include "lite/kernels/cuda/calib_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,7 +30,7 @@ __global__ void Fp32ToInt8Kernel(const int num,
                                  int8_t* output) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < num) {
-    output[index] = lite::cuda::math::from_float<int8_t>(input[index] / scale);
+    output[index] = lite_metal::cuda::math::from_float<int8_t>(input[index] / scale);
   }
 }
 
@@ -58,7 +58,7 @@ __global__ void Fp16ToFp32Kernel(const int num,
                                  float* output) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index < num) {
-    output[index] = lite::cuda::math::from_float<half>(input[index]);
+    output[index] = lite_metal::cuda::math::from_float<half>(input[index]);
   }
 }
 
@@ -123,7 +123,7 @@ void CalibOnceComputeFp32ToFp16::Run() {
   Fp32ToFp16Kernel<<<blocks, threads>>>(num, din, dout);
 
   // remove the unneeded fp32 weights.
-  const_cast<lite::Tensor*>(param.input)->clear();
+  const_cast<lite_metal::Tensor*>(param.input)->clear();
 
   cudaError_t error = cudaGetLastError();
   CHECK(error == cudaSuccess) << cudaGetErrorString(error);
@@ -154,7 +154,7 @@ REGISTER_LITE_KERNEL(calib,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::CalibComputeFp32ToInt8,
+                     paddle::lite_metal::kernels::cuda::CalibComputeFp32ToInt8,
                      fp32_to_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -170,7 +170,7 @@ REGISTER_LITE_KERNEL(calib,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::CalibComputeInt8ToFp32,
+                     paddle::lite_metal::kernels::cuda::CalibComputeInt8ToFp32,
                      int8_to_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -186,7 +186,7 @@ REGISTER_LITE_KERNEL(calib,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::CalibComputeFp16ToFp32,
+                     paddle::lite_metal::kernels::cuda::CalibComputeFp16ToFp32,
                      fp16_to_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -201,7 +201,7 @@ REGISTER_LITE_KERNEL(calib,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::CalibComputeFp32ToFp16,
+                     paddle::lite_metal::kernels::cuda::CalibComputeFp32ToFp16,
                      fp32_to_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -217,7 +217,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::CalibComputeFp32ToInt8,
+                     paddle::lite_metal::kernels::cuda::CalibComputeFp32ToInt8,
                      fp32_to_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -232,7 +232,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::CalibComputeInt8ToFp32,
+                     paddle::lite_metal::kernels::cuda::CalibComputeInt8ToFp32,
                      int8_to_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -248,7 +248,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::CalibComputeFp16ToFp32,
+                     paddle::lite_metal::kernels::cuda::CalibComputeFp16ToFp32,
                      fp16_to_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -263,7 +263,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::CalibOnceComputeFp32ToFp16,
+                     paddle::lite_metal::kernels::cuda::CalibOnceComputeFp32ToFp16,
                      fp32_to_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),

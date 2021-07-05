@@ -16,7 +16,7 @@
 #include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -49,7 +49,7 @@ void NormCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    norm, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::NormCompute, def)
+    norm, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::NormCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),

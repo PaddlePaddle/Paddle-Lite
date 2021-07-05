@@ -27,7 +27,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 
 class OpDescView : public OpDescAPI {
@@ -129,11 +129,11 @@ class OpDescView : public OpDescAPI {
   }
 
   template <typename T>
-  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(
+  typename lite_metal::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(
       const char* name) const;
 
   template <typename T>
-  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(
+  typename lite_metal::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(
       const std::string& name) const;
 
  private:

@@ -17,7 +17,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -146,12 +146,12 @@ void PriorBoxImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::PriorBoxImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::PriorBoxImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite_metal::kernels::metal::PriorBoxImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::PriorBoxImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::PriorBoxImageCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::metal::PriorBoxImageCompute<float, PRECISION(kFloat)>
     MetalPriorBoxFp32;
-typedef paddle::lite::kernels::metal::PriorBoxImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::PriorBoxImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalPriorBoxFp16;
 
 REGISTER_LITE_KERNEL(prior_box, kMetal, kFloat, kMetalTexture2DArray, MetalPriorBoxFp32, def)

@@ -16,7 +16,7 @@
 
 #include <stdint.h>
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 void bgr_rotate_hwc(

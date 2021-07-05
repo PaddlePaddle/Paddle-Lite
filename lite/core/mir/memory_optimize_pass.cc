@@ -21,7 +21,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 typedef struct {
@@ -267,7 +267,7 @@ void MemoryOptimizePass::PerformReusePlan(
       if (reuse_table.count(name) && reuse_table.at(name) != name) {
         auto replace_name = reuse_table.at(name);
         input_node->AsArg().name =
-            replace_name + "(" + paddle::lite::to_string(node_append_idx) + ")";
+            replace_name + "(" + paddle::lite_metal::to_string(node_append_idx) + ")";
         node_append_idx++;
       }
     }
@@ -291,7 +291,7 @@ void MemoryOptimizePass::PerformReusePlan(
       if (reuse_table.count(name) && reuse_table.at(name) != name) {
         auto replace_name = reuse_table.at(name);
         out_node->AsArg().name =
-            replace_name + "(" + paddle::lite::to_string(node_append_idx) + ")";
+            replace_name + "(" + paddle::lite_metal::to_string(node_append_idx) + ")";
         node_append_idx++;
       }
     }
@@ -348,7 +348,7 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
+REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite_metal::mir::MemoryOptimizePass)
     .BindTargets({TARGET(kARM), TARGET(kOpenCL), TARGET(kXPU)})
     .ExcludeTargets({TARGET(kNPU),
                      TARGET(kBM),

@@ -21,7 +21,7 @@
 #include "lite/backends/fpga/KD/pes/fully_connected_pe.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 

@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -102,4 +102,4 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(reduce_mean,
                          kNPU,
-                         paddle::lite::subgraph::npu::ReduceMeanConverter);
+                         paddle::lite_metal::subgraph::npu::ReduceMeanConverter);

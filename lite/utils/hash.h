@@ -16,7 +16,7 @@
 #include <functional>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // A simplified implementation of boost::hash_combine.
 template <typename T>

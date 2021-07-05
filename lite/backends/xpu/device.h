@@ -22,7 +22,7 @@
 #include "lite/backends/xpu/xpu_header_sitter.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace xpu {
 
 class Device {

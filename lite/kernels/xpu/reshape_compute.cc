@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -52,7 +52,7 @@ REGISTER_LITE_KERNEL(reshape2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ReshapeCompute<float>,
+                     paddle::lite_metal::kernels::xpu::ReshapeCompute<float>,
                      float32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("ShapeTensor",
@@ -67,7 +67,7 @@ REGISTER_LITE_KERNEL(reshape2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ReshapeCompute<int>,
+                     paddle::lite_metal::kernels::xpu::ReshapeCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("ShapeTensor",
@@ -82,7 +82,7 @@ REGISTER_LITE_KERNEL(reshape2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ReshapeCompute<int64_t>,
+                     paddle::lite_metal::kernels::xpu::ReshapeCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("ShapeTensor",
@@ -97,7 +97,7 @@ REGISTER_LITE_KERNEL(reshape,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ReshapeCompute<float>,
+                     paddle::lite_metal::kernels::xpu::ReshapeCompute<float>,
                      float32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("ShapeTensor",
@@ -111,7 +111,7 @@ REGISTER_LITE_KERNEL(flatten,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ReshapeCompute<float>,
+                     paddle::lite_metal::kernels::xpu::ReshapeCompute<float>,
                      float32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Shape",
@@ -123,7 +123,7 @@ REGISTER_LITE_KERNEL(flatten2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ReshapeCompute<float>,
+                     paddle::lite_metal::kernels::xpu::ReshapeCompute<float>,
                      float32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Shape",

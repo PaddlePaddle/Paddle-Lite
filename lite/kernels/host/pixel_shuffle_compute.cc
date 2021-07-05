@@ -15,7 +15,7 @@
 #include "lite/kernels/host/pixel_shuffle_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -62,7 +62,7 @@ REGISTER_LITE_KERNEL(pixel_shuffle,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::PixelShuffleCompute,
+                     paddle::lite_metal::kernels::host::PixelShuffleCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})

@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool FillConstantOp::CheckShape() const {
@@ -49,10 +49,10 @@ bool FillConstantOp::InferShapeImpl() const {
   return true;
 }
 
-bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto out_name = opdesc.Output("Out").front();
 
-  param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
+  param_.out = GetMutableVar<lite_metal::Tensor>(scope, out_name);
   param_.dtype = opdesc.GetAttr<int>("dtype");
   if (opdesc.HasAttr("shape")) {
     param_.shape = opdesc.GetAttr<std::vector<int64_t>>("shape");
@@ -62,7 +62,7 @@ bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 
   if (opdesc.HasInput("ValueTensor") && !opdesc.Input("ValueTensor").empty()) {
     auto value_tensor_name = opdesc.Input("ValueTensor").front();
-    param_.value_tensor = GetMutableVar<lite::Tensor>(scope, value_tensor_name);
+    param_.value_tensor = GetMutableVar<lite_metal::Tensor>(scope, value_tensor_name);
     CHECK_EQ(param_.value_tensor->numel(), 1)
         << "When use Tensor as value to set Tensor value in fill_cosntant, "
            "value input(ValueTensor) size must be 1, but get "
@@ -71,7 +71,7 @@ bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 
   if (opdesc.HasInput("ShapeTensor") && !opdesc.Input("ShapeTensor").empty()) {
     auto shape_tensor_name = opdesc.Input("ShapeTensor").front();
-    param_.shape_tensor = GetMutableVar<lite::Tensor>(scope, shape_tensor_name);
+    param_.shape_tensor = GetMutableVar<lite_metal::Tensor>(scope, shape_tensor_name);
   }
 
   param_.shape_tensor_list.clear();
@@ -79,7 +79,7 @@ bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
       !opdesc.Input("ShapeTensorList").empty()) {
     for (auto shape_tensor_name : opdesc.Input("ShapeTensorList")) {
       param_.shape_tensor_list.push_back(
-          GetMutableVar<lite::Tensor>(scope, shape_tensor_name));
+          GetMutableVar<lite_metal::Tensor>(scope, shape_tensor_name));
     }
   }
   return true;
@@ -89,4 +89,4 @@ bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(fill_constant, paddle::lite::operators::FillConstantOp);
+REGISTER_LITE_OP(fill_constant, paddle::lite_metal::operators::FillConstantOp);

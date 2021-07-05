@@ -22,7 +22,7 @@
 #include "lite/kernels/x86/search_grnn_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -42,7 +42,7 @@ TEST(search_grnn_x86, run_test) {
   int num_input = 128;
   int num_hidden = 128;
   int num_batch = 3;
-  lite::Tensor x, wi, wh, out, idx_sorted_by_width, layout_input, tmp_buffer;
+  lite_metal::Tensor x, wi, wh, out, idx_sorted_by_width, layout_input, tmp_buffer;
   x.Resize({num_batch, num_input});
   wi.Resize({3, num_hidden, num_input});
   wh.Resize({3, num_hidden, num_hidden});

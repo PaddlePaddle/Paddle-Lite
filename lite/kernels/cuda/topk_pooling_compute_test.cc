@@ -25,7 +25,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -47,11 +47,11 @@ class TopkPooingTest : public ::testing::Test {
       CHECK_LE(x_lod[0][i] - x_lod[0][i - 1], height) << "invalid input.";
     }
 
-    X_gpu.Resize(lite::DDim(x_shape));
-    X_ref.Resize(lite::DDim(x_shape));
+    X_gpu.Resize(lite_metal::DDim(x_shape));
+    X_ref.Resize(lite_metal::DDim(x_shape));
     X_ref.set_lod(x_lod);
-    Y_gpu.Resize(lite::DDim(x_shape));
-    Y_ref.Resize(lite::DDim(x_shape));
+    Y_gpu.Resize(lite_metal::DDim(x_shape));
+    Y_ref.Resize(lite_metal::DDim(x_shape));
     Y_ref.set_lod(y_lod);
     auto x_ref_data = X_ref.mutable_data<float>();
     auto y_ref_data = Y_ref.mutable_data<float>();
@@ -64,9 +64,9 @@ class TopkPooingTest : public ::testing::Test {
       y_ref_data[i] = static_cast<float>(i % 16);
     }
 
-    Out_ref.Resize(lite::DDim(out_shape));
-    Out_gpu.Resize(lite::DDim(out_shape));
-    Out_cpu.Resize(lite::DDim(out_shape));
+    Out_ref.Resize(lite_metal::DDim(out_shape));
+    Out_gpu.Resize(lite_metal::DDim(out_shape));
+    Out_cpu.Resize(lite_metal::DDim(out_shape));
 
     device_init();
   }
@@ -82,27 +82,27 @@ class TopkPooingTest : public ::testing::Test {
   }
 
   void float_data_init() {
-    X_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
+    X_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(X_ref.data<float>(),
                                                    X_gpu.dims());
     X_gpu.set_lod(X_ref.lod());
-    Y_gpu.Assign<float, lite::DDim, TARGET(kCUDA)>(Y_ref.data<float>(),
+    Y_gpu.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(Y_ref.data<float>(),
                                                    Y_gpu.dims());
     Y_gpu.set_lod(Y_ref.lod());
   }
 
   void half_data_init() {}
 
-  void cpu_base(const lite::Tensor* X,
-                const lite::Tensor* Y,
-                lite::Tensor* Out) {}
+  void cpu_base(const lite_metal::Tensor* X,
+                const lite_metal::Tensor* Y,
+                lite_metal::Tensor* Out) {}
 
   int num, channels, height, width;
   int top_k, feat_map_num;
   std::vector<std::vector<uint64_t>> x_lod, y_lod;
   std::vector<int64_t> x_shape, out_shape;
-  lite::Tensor X_ref, Y_ref, Out_ref;
-  lite::Tensor X_gpu, Y_gpu;
-  lite::Tensor Out_cpu, Out_gpu;
+  lite_metal::Tensor X_ref, Y_ref, Out_ref;
+  lite_metal::Tensor X_gpu, Y_gpu;
+  lite_metal::Tensor Out_cpu, Out_gpu;
 
   operators::TopkPoolingParam param;
   std::unique_ptr<KernelContext> ctx;

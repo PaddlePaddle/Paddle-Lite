@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPULogitOp::CheckShape() const {
@@ -34,7 +34,7 @@ bool XPULogitOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPULogitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool XPULogitOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   CHECK(scope->FindVar(opdesc.Input("X").front()));
   CHECK(scope->FindVar(opdesc.Output("Out").front()));
@@ -51,4 +51,4 @@ bool XPULogitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__logit, paddle::lite::operators::XPULogitOp);
+REGISTER_LITE_OP(__xpu__logit, paddle::lite_metal::operators::XPULogitOp);

@@ -31,7 +31,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // Type is the definition of all the types that supported by the Variable that
 // represents as the input and output of an operator or kernel.
@@ -61,13 +61,13 @@ namespace lite {
 // arguments have a specific Types.
 //
 // REGISTER_LITE_KERNEL(mul, kHost, kFloat,
-//     paddle::lite::kernels::host::MulCompute, def)
-//   .BindInput("X", {paddle::lite::Type::Get<paddle::lite::TensorFp32NCHWTy>(
+//     paddle::lite_metal::kernels::host::MulCompute, def)
+//   .BindInput("X", {paddle::lite_metal::Type::Get<paddle::lite_metal::TensorFp32NCHWTy>(
 //       TARGET(kHost))})
-//   .BindInput("Y", {paddle::lite::Type::Get<paddle::lite::TensorFp32NCHWTy>(
+//   .BindInput("Y", {paddle::lite_metal::Type::Get<paddle::lite_metal::TensorFp32NCHWTy>(
 //       TARGET(kHost))})
 //   .BindOutput("Out",
-//   {paddle::lite::Type::Get<paddle::lite::TensorFp32NCHWTy>(TARGET(kHost))})
+//   {paddle::lite_metal::Type::Get<paddle::lite_metal::TensorFp32NCHWTy>(TARGET(kHost))})
 //   .Finalize();
 //
 // The above definition will be used in MIR by Type inference and uncompatible

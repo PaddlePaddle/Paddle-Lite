@@ -31,7 +31,7 @@
 #include "lite/backends/fpga/KD/pes/gru_util.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -103,12 +103,12 @@ void GRUCompute::Run() {
   const float* weight_data = weight->data<float>();
   float* batch_gate_data = batch_gate->mutable_data<float>();
 
-  lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
+  lite_metal::arm::math::LoDTensor2BatchFunctor<float> to_batch;
   to_batch(*input, batch_gate, true, param.is_reverse);  // 1.
 
   if (bias) {
     auto bias_data = bias->data<float>();  // 2.
-    lite::arm::math::gru_add_with_bias(batch_gate_data,
+    lite_metal::arm::math::gru_add_with_bias(batch_gate_data,
                                        bias_data,
                                        batch_gate_data,
                                        batch_size,
@@ -116,7 +116,7 @@ void GRUCompute::Run() {
   }
 
   zynqmp::GRUTensors gru_tensors;
-  lite::arm::math::GRUMetaValue<float> gru_value;
+  lite_metal::arm::math::GRUMetaValue<float> gru_value;
   gru_value.gate_weight = const_cast<float*>(weight_data);
   gru_value.state_weight =
       const_cast<float*>(weight_data + 2 * frame_size * frame_size);
@@ -128,7 +128,7 @@ void GRUCompute::Run() {
     // Since the batch computing for GRU reorders the input sequences
     // according to their length. The initialized cell state also needs
     // to reorder.
-    // lite::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true);
+    // lite_metal::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true);
     // //3.
     gru_value.prev_out_value = ordered_h0.mutable_data<float>();
     gru_tensors.pre_output = ordered_h0.ZynqTensor();
@@ -187,7 +187,7 @@ void GRUCompute::Run() {
 
     gru_tensors.pre_output = gru_tensors.output;
   }
-  lite::arm::math::Batch2LoDTensorFunctor<float> to_seq;  // 5.
+  lite_metal::arm::math::Batch2LoDTensorFunctor<float> to_seq;  // 5.
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
   batch_hidden->mutable_data<float>();
   to_seq(*batch_hidden, hidden);
@@ -199,7 +199,7 @@ void GRUCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    gru, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::GRUCompute, def)
+    gru, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::GRUCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kARM))})

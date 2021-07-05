@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -47,7 +47,7 @@ REGISTER_LITE_KERNEL(box_clip,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::BoxClipCompute,
+                     paddle::lite_metal::kernels::xpu::BoxClipCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("ImInfo", {LiteType::GetTensorTy(TARGET(kHost))})

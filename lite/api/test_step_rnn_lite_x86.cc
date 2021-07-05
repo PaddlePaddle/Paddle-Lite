@@ -24,7 +24,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(Step_rnn, test_step_rnn_lite_x86) {
   std::string model_dir = FLAGS_model_dir;

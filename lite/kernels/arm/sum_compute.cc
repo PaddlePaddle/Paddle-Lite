@@ -19,19 +19,19 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
-using sum_int32 = paddle::lite::kernels::arm::SumCompute<int32_t>;
+using sum_int32 = paddle::lite_metal::kernels::arm::SumCompute<int32_t>;
 REGISTER_LITE_KERNEL(sum, kARM, kFloat, kNCHW, sum_int32, sum_i32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
-using sum_int64 = paddle::lite::kernels::arm::SumCompute<int64_t>;
+using sum_int64 = paddle::lite_metal::kernels::arm::SumCompute<int64_t>;
 REGISTER_LITE_KERNEL(sum, kARM, kFloat, kNCHW, sum_int64, sum_i64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
 
-using sum_fp32 = paddle::lite::kernels::arm::SumCompute<float>;
+using sum_fp32 = paddle::lite_metal::kernels::arm::SumCompute<float>;
 REGISTER_LITE_KERNEL(sum, kARM, kFloat, kNCHW, sum_fp32, sum_fp32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})

@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -36,7 +36,7 @@ bool _QuantFilter<int16_t>(const float* filter_on_host,
                            int16_t* quant_res,
                            float max,
                            int64_t len) {
-  paddle::lite::xpu::math::ConvertFP32ToInt16(
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
       filter_on_host, quant_res, max, len);
   return true;
 }
@@ -46,7 +46,7 @@ bool _QuantFilter<int8_t>(const float* filter_on_host,
                           int8_t* quant_res,
                           float max,
                           int64_t len) {
-  paddle::lite::xpu::math::ConvertFP32ToInt8(
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt8(
       filter_on_host, quant_res, max, len);
   return true;
 }
@@ -70,7 +70,7 @@ void XPUConvPixelShuffleCompute<TM, TW, PType>::PrepareForRun() {
   auto filter_ptr = param.filter_0->template data<float>();
   auto filter_len = param.filter_0->numel();
   // max_0
-  float max_f = paddle::lite::xpu::math::FindMaxAbs(filter_ptr, filter_len);
+  float max_f = paddle::lite_metal::xpu::math::FindMaxAbs(filter_ptr, filter_len);
   std::vector<float> max_f_v(4, max_f);
   filter_max_guard_0_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   filter_max_0_ = reinterpret_cast<float*>(filter_max_guard_0_->addr_);
@@ -94,7 +94,7 @@ void XPUConvPixelShuffleCompute<TM, TW, PType>::PrepareForRun() {
   filter_ptr = param.filter_1->template data<float>();
   filter_len = param.filter_1->numel();
   // max_1
-  max_f = paddle::lite::xpu::math::FindMaxAbs(filter_ptr, filter_len);
+  max_f = paddle::lite_metal::xpu::math::FindMaxAbs(filter_ptr, filter_len);
   max_f_v = std::vector<float>(4, max_f);
   filter_max_guard_1_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   filter_max_1_ = reinterpret_cast<float*>(filter_max_guard_1_->addr_);
@@ -263,7 +263,7 @@ void XPUConvPixelShuffleCompute<TM, TW, PType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace xpu = paddle::lite::kernels::xpu;
+namespace xpu = paddle::lite_metal::kernels::xpu;
 using XPUConvPixelShuffleFp32 =
     xpu::XPUConvPixelShuffleCompute<float, int16_t, PRECISION(kFloat)>;
 using XPUConvPixelShuffleFp16 =

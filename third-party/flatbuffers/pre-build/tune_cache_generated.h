@@ -7,7 +7,7 @@
 #include "flatbuffers/flatbuffers.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 namespace opencl {
 namespace proto {
@@ -141,7 +141,7 @@ inline flatbuffers::Offset<TunePair> CreateTunePairDirect(
     const std::vector<int32_t> *value = nullptr) {
   auto key__ = key ? _fbb.CreateString(key) : 0;
   auto value__ = value ? _fbb.CreateVector<int32_t>(*value) : 0;
-  return paddle::lite::fbs::opencl::proto::TuneCache_::CreateTunePair(
+  return paddle::lite_metal::fbs::opencl::proto::TuneCache_::CreateTunePair(
       _fbb,
       key__,
       value__);
@@ -153,7 +153,7 @@ flatbuffers::Offset<TunePair> CreateTunePair(flatbuffers::FlatBufferBuilder &_fb
 
 struct TuneCacheT : public flatbuffers::NativeTable {
   typedef TuneCache TableType;
-  std::vector<std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCache_::TunePairT>> tune_map;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePairT>> tune_map;
   TuneCacheT() {
   }
 };
@@ -177,11 +177,11 @@ struct TuneCache FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_TUNE_MAP = 4
   };
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache_::TunePair>> *tune_map() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache_::TunePair>> *>(VT_TUNE_MAP);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePair>> *tune_map() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePair>> *>(VT_TUNE_MAP);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache_::TunePair>> *mutable_tune_map() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache_::TunePair>> *>(VT_TUNE_MAP);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePair>> *mutable_tune_map() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePair>> *>(VT_TUNE_MAP);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -199,7 +199,7 @@ struct TuneCacheBuilder {
   typedef TuneCache Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_tune_map(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache_::TunePair>>> tune_map) {
+  void add_tune_map(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePair>>> tune_map) {
     fbb_.AddOffset(TuneCache::VT_TUNE_MAP, tune_map);
   }
   explicit TuneCacheBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -217,7 +217,7 @@ struct TuneCacheBuilder {
 
 inline flatbuffers::Offset<TuneCache> CreateTuneCache(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache_::TunePair>>> tune_map = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePair>>> tune_map = 0) {
   TuneCacheBuilder builder_(_fbb);
   builder_.add_tune_map(tune_map);
   return builder_.Finish();
@@ -225,9 +225,9 @@ inline flatbuffers::Offset<TuneCache> CreateTuneCache(
 
 inline flatbuffers::Offset<TuneCache> CreateTuneCacheDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    std::vector<flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache_::TunePair>> *tune_map = nullptr) {
-  auto tune_map__ = tune_map ? _fbb.CreateVectorOfSortedTables<paddle::lite::fbs::opencl::proto::TuneCache_::TunePair>(tune_map) : 0;
-  return paddle::lite::fbs::opencl::proto::CreateTuneCache(
+    std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePair>> *tune_map = nullptr) {
+  auto tune_map__ = tune_map ? _fbb.CreateVectorOfSortedTables<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePair>(tune_map) : 0;
+  return paddle::lite_metal::fbs::opencl::proto::CreateTuneCache(
       _fbb,
       tune_map__);
 }
@@ -237,7 +237,7 @@ flatbuffers::Offset<TuneCache> CreateTuneCache(flatbuffers::FlatBufferBuilder &_
 namespace TuneCache_ {
 
 inline TunePairT *TunePair::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCache_::TunePairT> _o = std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCache_::TunePairT>(new TunePairT());
+  std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePairT> _o = std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePairT>(new TunePairT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -259,7 +259,7 @@ inline flatbuffers::Offset<TunePair> CreateTunePair(flatbuffers::FlatBufferBuild
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const TunePairT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _key = _fbb.CreateString(_o->key);
   auto _value = _fbb.CreateVector(_o->value);
-  return paddle::lite::fbs::opencl::proto::TuneCache_::CreateTunePair(
+  return paddle::lite_metal::fbs::opencl::proto::TuneCache_::CreateTunePair(
       _fbb,
       _key,
       _value);
@@ -268,7 +268,7 @@ inline flatbuffers::Offset<TunePair> CreateTunePair(flatbuffers::FlatBufferBuild
 }  // namespace TuneCache_
 
 inline TuneCacheT *TuneCache::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCacheT> _o = std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCacheT>(new TuneCacheT());
+  std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCacheT> _o = std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCacheT>(new TuneCacheT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -276,7 +276,7 @@ inline TuneCacheT *TuneCache::UnPack(const flatbuffers::resolver_function_t *_re
 inline void TuneCache::UnPackTo(TuneCacheT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = tune_map(); if (_e) { _o->tune_map.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->tune_map[_i] = std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCache_::TunePairT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = tune_map(); if (_e) { _o->tune_map.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->tune_map[_i] = std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePairT>(_e->Get(_i)->UnPack(_resolver)); } } }
 }
 
 inline flatbuffers::Offset<TuneCache> TuneCache::Pack(flatbuffers::FlatBufferBuilder &_fbb, const TuneCacheT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -287,8 +287,8 @@ inline flatbuffers::Offset<TuneCache> CreateTuneCache(flatbuffers::FlatBufferBui
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const TuneCacheT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _tune_map = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache_::TunePair>> (_o->tune_map.size(), [](size_t i, _VectorArgs *__va) { return CreateTunePair(*__va->__fbb, __va->__o->tune_map[i].get(), __va->__rehasher); }, &_va );
-  return paddle::lite::fbs::opencl::proto::CreateTuneCache(
+  auto _tune_map = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePair>> (_o->tune_map.size(), [](size_t i, _VectorArgs *__va) { return CreateTunePair(*__va->__fbb, __va->__o->tune_map[i].get(), __va->__rehasher); }, &_va );
+  return paddle::lite_metal::fbs::opencl::proto::CreateTuneCache(
       _fbb,
       _tune_map);
 }
@@ -317,7 +317,7 @@ inline const flatbuffers::TypeTable *TuneCacheTypeTable() {
     { flatbuffers::ET_SEQUENCE, 1, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::opencl::proto::TuneCache_::TunePairTypeTable
+    paddle::lite_metal::fbs::opencl::proto::TuneCache_::TunePairTypeTable
   };
   static const char * const names[] = {
     "tune_map"
@@ -328,12 +328,12 @@ inline const flatbuffers::TypeTable *TuneCacheTypeTable() {
   return &tt;
 }
 
-inline const paddle::lite::fbs::opencl::proto::TuneCache *GetTuneCache(const void *buf) {
-  return flatbuffers::GetRoot<paddle::lite::fbs::opencl::proto::TuneCache>(buf);
+inline const paddle::lite_metal::fbs::opencl::proto::TuneCache *GetTuneCache(const void *buf) {
+  return flatbuffers::GetRoot<paddle::lite_metal::fbs::opencl::proto::TuneCache>(buf);
 }
 
-inline const paddle::lite::fbs::opencl::proto::TuneCache *GetSizePrefixedTuneCache(const void *buf) {
-  return flatbuffers::GetSizePrefixedRoot<paddle::lite::fbs::opencl::proto::TuneCache>(buf);
+inline const paddle::lite_metal::fbs::opencl::proto::TuneCache *GetSizePrefixedTuneCache(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<paddle::lite_metal::fbs::opencl::proto::TuneCache>(buf);
 }
 
 inline TuneCache *GetMutableTuneCache(void *buf) {
@@ -342,42 +342,42 @@ inline TuneCache *GetMutableTuneCache(void *buf) {
 
 inline bool VerifyTuneCacheBuffer(
     flatbuffers::Verifier &verifier) {
-  return verifier.VerifyBuffer<paddle::lite::fbs::opencl::proto::TuneCache>(nullptr);
+  return verifier.VerifyBuffer<paddle::lite_metal::fbs::opencl::proto::TuneCache>(nullptr);
 }
 
 inline bool VerifySizePrefixedTuneCacheBuffer(
     flatbuffers::Verifier &verifier) {
-  return verifier.VerifySizePrefixedBuffer<paddle::lite::fbs::opencl::proto::TuneCache>(nullptr);
+  return verifier.VerifySizePrefixedBuffer<paddle::lite_metal::fbs::opencl::proto::TuneCache>(nullptr);
 }
 
 inline void FinishTuneCacheBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache> root) {
+    flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache> root) {
   fbb.Finish(root);
 }
 
 inline void FinishSizePrefixedTuneCacheBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<paddle::lite::fbs::opencl::proto::TuneCache> root) {
+    flatbuffers::Offset<paddle::lite_metal::fbs::opencl::proto::TuneCache> root) {
   fbb.FinishSizePrefixed(root);
 }
 
-inline std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCacheT> UnPackTuneCache(
+inline std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCacheT> UnPackTuneCache(
     const void *buf,
     const flatbuffers::resolver_function_t *res = nullptr) {
-  return std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCacheT>(GetTuneCache(buf)->UnPack(res));
+  return std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCacheT>(GetTuneCache(buf)->UnPack(res));
 }
 
-inline std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCacheT> UnPackSizePrefixedTuneCache(
+inline std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCacheT> UnPackSizePrefixedTuneCache(
     const void *buf,
     const flatbuffers::resolver_function_t *res = nullptr) {
-  return std::unique_ptr<paddle::lite::fbs::opencl::proto::TuneCacheT>(GetSizePrefixedTuneCache(buf)->UnPack(res));
+  return std::unique_ptr<paddle::lite_metal::fbs::opencl::proto::TuneCacheT>(GetSizePrefixedTuneCache(buf)->UnPack(res));
 }
 
 }  // namespace proto
 }  // namespace opencl
 }  // namespace fbs
-}  // namespace lite
+}  // namespace lite_metal
 }  // namespace paddle
 
 #endif  // FLATBUFFERS_GENERATED_TUNECACHE_PADDLE_LITE_FBS_OPENCL_PROTO_H_

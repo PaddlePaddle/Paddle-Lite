@@ -22,7 +22,7 @@
 #include "lite/utils/variant.h"  // for likely
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 
 /*

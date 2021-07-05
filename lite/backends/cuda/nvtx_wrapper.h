@@ -18,7 +18,7 @@
 #include "nvtx3/nvToolsExt.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 enum class Color : uint32_t {
   Engine = 0xFFD2691E,

@@ -20,7 +20,7 @@
 #include "lite/kernels/x86/elementwise_op_function.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -84,7 +84,7 @@ class ElementwiseAddCompute
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
     param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<AddFunctor<T>, lite::TargetType::kX86, T>(
+    ElementwiseComputeEx<AddFunctor<T>, lite_metal::TargetType::kX86, T>(
         context, param.X, param.Y, param.axis, AddFunctor<T>(), param.Out);
   }
 
@@ -102,7 +102,7 @@ class ElementwiseSubCompute
     auto& context = ctx_->As<X86Context>();
 
     param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<SubFunctor<T>, lite::TargetType::kX86, T>(
+    ElementwiseComputeEx<SubFunctor<T>, lite_metal::TargetType::kX86, T>(
         context, param.X, param.Y, param.axis, SubFunctor<T>(), param.Out);
   }
 
@@ -118,7 +118,7 @@ class ElementwiseMulCompute
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
     param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<MulFunctor<T>, lite::TargetType::kX86, T>(
+    ElementwiseComputeEx<MulFunctor<T>, lite_metal::TargetType::kX86, T>(
         context, param.X, param.Y, param.axis, MulFunctor<T>(), param.Out);
   }
 
@@ -134,7 +134,7 @@ class ElementwiseDivCompute
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
     param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<DivFunctor<T>, lite::TargetType::kX86, T>(
+    ElementwiseComputeEx<DivFunctor<T>, lite_metal::TargetType::kX86, T>(
         context, param.X, param.Y, param.axis, DivFunctor<T>(), param.Out);
   }
 
@@ -150,7 +150,7 @@ class ElementwiseFloorDivCompute
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
     param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<FloorDivFunctor<T>, lite::TargetType::kX86, T>(
+    ElementwiseComputeEx<FloorDivFunctor<T>, lite_metal::TargetType::kX86, T>(
         context, param.X, param.Y, param.axis, FloorDivFunctor<T>(), param.Out);
   }
 
@@ -166,7 +166,7 @@ class ElementwisePowCompute
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
     param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<PowFunctor<T>, lite::TargetType::kX86, T>(
+    ElementwiseComputeEx<PowFunctor<T>, lite_metal::TargetType::kX86, T>(
         context, param.X, param.Y, param.axis, PowFunctor<T>(), param.Out);
   }
 
@@ -182,7 +182,7 @@ class ElementwiseModCompute
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
     param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<ModFunctor<T>, lite::TargetType::kX86, T>(
+    ElementwiseComputeEx<ModFunctor<T>, lite_metal::TargetType::kX86, T>(
         context, param.X, param.Y, param.axis, ModFunctor<T>(), param.Out);
   }
 
@@ -198,7 +198,7 @@ class ElementwiseMaxCompute
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
     param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<MaxFunctor<T>, lite::TargetType::kX86, T>(
+    ElementwiseComputeEx<MaxFunctor<T>, lite_metal::TargetType::kX86, T>(
         context, param.X, param.Y, param.axis, MaxFunctor<T>(), param.Out);
   }
 
@@ -214,7 +214,7 @@ class ElementwiseMinCompute
     auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<X86Context>();
     param.Out->template mutable_data<T>();
-    ElementwiseComputeEx<MinFunctor<T>, lite::TargetType::kX86, T>(
+    ElementwiseComputeEx<MinFunctor<T>, lite_metal::TargetType::kX86, T>(
         context, param.X, param.Y, param.axis, MinFunctor<T>(), param.Out);
   }
 

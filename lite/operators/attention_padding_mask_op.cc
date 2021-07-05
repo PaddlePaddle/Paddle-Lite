@@ -17,7 +17,7 @@
 #include "lite/core/scope.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool AttentionPaddingMaskOp::CheckShape() const {
@@ -47,7 +47,7 @@ bool AttentionPaddingMaskOp::InferShapeImpl() const {
 }
 
 bool AttentionPaddingMaskOp::AttachImpl(const cpp::OpDesc &op_desc,
-                                        lite::Scope *scope) {
+                                        lite_metal::Scope *scope) {
   param_.X = scope->FindTensor(op_desc.Input("X").front());
   param_.Y = scope->FindTensor(op_desc.Input("Y").front());
   param_.Out = scope->FindMutableTensor(op_desc.Output("Out").front());
@@ -65,6 +65,6 @@ bool AttentionPaddingMaskOp::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(attention_padding_mask,
-                 paddle::lite::operators::AttentionPaddingMaskOp);
+                 paddle::lite_metal::operators::AttentionPaddingMaskOp);
 REGISTER_LITE_OP(search_attention_padding_mask,
-                 paddle::lite::operators::AttentionPaddingMaskOp);
+                 paddle::lite_metal::operators::AttentionPaddingMaskOp);

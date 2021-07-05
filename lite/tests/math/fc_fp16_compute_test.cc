@@ -32,7 +32,7 @@ DEFINE_int32(M, 512, "gemm: M");
 DEFINE_int32(N, 512, "gemm: N");
 DEFINE_int32(K, 512, "gemm: K");
 
-typedef paddle::lite::operators::FcParam FcParam;
+typedef paddle::lite_metal::operators::FcParam FcParam;
 
 DDim compute_out_dim(const DDim& dim_in,
                      const DDim& wdim,
@@ -66,7 +66,7 @@ void test_fc_fp16(const DDim in_dim,
                   const std::vector<int>& thread_num,
                   const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   FcParam param;
   param.input = new Tensor;
@@ -111,11 +111,11 @@ void test_fc_fp16(const DDim in_dim,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::FcCompute<PRECISION(kFP16), PRECISION(kFP16)>
+      paddle::lite_metal::kernels::arm::FcCompute<PRECISION(kFP16), PRECISION(kFP16)>
           fc;
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       DDim dim_out = compute_out_dim(in_dim, weight_dim, in_num_col_dims);
       if (dim_out[2] < 1 || dim_out[3] < 1) {

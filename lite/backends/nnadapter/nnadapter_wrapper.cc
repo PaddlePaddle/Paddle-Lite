@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 NNAdapterWrapper& NNAdapterWrapper::Global() {
   static NNAdapterWrapper wrapper;

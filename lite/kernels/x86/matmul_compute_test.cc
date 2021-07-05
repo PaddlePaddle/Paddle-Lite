@@ -23,7 +23,7 @@
 #include "lite/kernels/x86/matmul_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -34,20 +34,20 @@ TEST(matmul_x86, retrive_op) {
 }
 
 TEST(matmul_x86, init) {
-  lite::kernels::x86::MatMulCompute<float> matmul;
+  lite_metal::kernels::x86::MatMulCompute<float> matmul;
   ASSERT_EQ(matmul.precision(), PRECISION(kFloat));
   ASSERT_EQ(matmul.target(), TARGET(kX86));
 }
 
 TEST(matmul_x86, run_test) {
-  lite::Tensor x, y, out;
+  lite_metal::Tensor x, y, out;
   constexpr int batch_size = 1;
   std::vector<int64_t> x_shape{batch_size, 3, 2};
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> y_shape{2, 4};
-  y.Resize(lite::DDim(y_shape));
+  y.Resize(lite_metal::DDim(y_shape));
   std::vector<int64_t> out_shape{batch_size, 3, 4};
-  out.Resize(lite::DDim(out_shape));
+  out.Resize(lite_metal::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
   auto y_data = y.mutable_data<float>();

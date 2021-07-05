@@ -19,7 +19,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #define A(i, j) a[i * lda + j]
 #define B(i, j) cur_b[i * ldb + j]
@@ -225,7 +225,7 @@ TEST(conv2d, compute_conv2d_1x1) {
                 ASSERT_FALSE(kernels.empty());
                 auto kernel = std::move(kernels.front());
 
-                lite::Tensor x, filter, bias, out, out_ref;
+                lite_metal::Tensor x, filter, bias, out, out_ref;
                 operators::ConvParam param;
                 param.x = &x;
                 param.filter = &filter;
@@ -453,7 +453,7 @@ TEST(conv2d, compute_conv2d_gemm) {
                 ASSERT_FALSE(kernels.empty());
                 auto kernel = std::move(kernels.front());
 
-                lite::Tensor x, filter, bias, out, out_ref;
+                lite_metal::Tensor x, filter, bias, out, out_ref;
                 operators::ConvParam param;
                 param.x = &x;
                 param.filter = &filter;

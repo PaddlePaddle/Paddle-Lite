@@ -24,7 +24,7 @@ limitations under the License. */
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -55,7 +55,7 @@ inline void vec_scal(const int n, const T a, T* x) {
 #ifdef PADDLE_WITH_MKLML
 
 #ifndef LITE_WITH_STATIC_MKL
-using namespace lite::x86;  // NOLINT
+using namespace lite_metal::x86;  // NOLINT
 #endif
 
 template <>
@@ -87,7 +87,7 @@ inline void vec_scal<double>(const int n, const double a, double* x) {
 #endif
 
 // MKL scal only support inplace, choose this if src and dst are not equal
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_scal(const int n, const T a, const T* x, T* y) {
   for (int i = 0; i < n; ++i) {
     y[i] = a * x[i];
@@ -95,14 +95,14 @@ inline void vec_scal(const int n, const T a, const T* x, T* y) {
 }
 
 template <>
-inline void vec_scal<float, lite::x86::avx>(const int n,
+inline void vec_scal<float, lite_metal::x86::avx>(const int n,
                                             const float a,
                                             const float* x,
                                             float* y) {
 #ifdef __AVX__
   constexpr int block = YMM_FLOAT_BLOCK;
   if (n < block) {
-    vec_scal<float, lite::x86::isa_any>(n, a, x, y);
+    vec_scal<float, lite_metal::x86::isa_any>(n, a, x, y);
     return;
   }
   const int rest = n % block;
@@ -126,28 +126,28 @@ inline void vec_scal<float, lite::x86::avx>(const int n,
     y[i] = a * x[i];
   }
 #else
-  vec_scal<float, lite::x86::isa_any>(n, a, x, y);
+  vec_scal<float, lite_metal::x86::isa_any>(n, a, x, y);
 #endif
 }
 
 template <>
-inline void vec_scal<float, lite::x86::avx2>(const int n,
+inline void vec_scal<float, lite_metal::x86::avx2>(const int n,
                                              const float a,
                                              const float* x,
                                              float* y) {
-  vec_scal<float, lite::x86::avx>(n, a, x, y);
+  vec_scal<float, lite_metal::x86::avx>(n, a, x, y);
 }
 
 template <>
-inline void vec_scal<float, lite::x86::avx512f>(const int n,
+inline void vec_scal<float, lite_metal::x86::avx512f>(const int n,
                                                 const float a,
                                                 const float* x,
                                                 float* y) {
   // TODO(TJ): enable me
-  vec_scal<float, lite::x86::avx2>(n, a, x, y);
+  vec_scal<float, lite_metal::x86::avx2>(n, a, x, y);
 }
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_sum(const size_t n, const T* x, T* s) {
   s[0] = x[0];
   for (size_t i = 1; i < n; ++i) {
@@ -156,13 +156,13 @@ inline void vec_sum(const size_t n, const T* x, T* s) {
 }
 
 template <>
-inline void vec_sum<float, lite::x86::avx>(const size_t n,
+inline void vec_sum<float, lite_metal::x86::avx>(const size_t n,
                                            const float* x,
                                            float* s) {
 #ifdef __AVX__
   constexpr unsigned int block = YMM_FLOAT_BLOCK;
   if (n < block) {
-    vec_sum<float, lite::x86::isa_any>(n, x, s);
+    vec_sum<float, lite_metal::x86::isa_any>(n, x, s);
     return;
   }
 
@@ -186,11 +186,11 @@ inline void vec_sum<float, lite::x86::avx>(const size_t n,
     s[0] += x[i];
   }
 #else
-  vec_sum<float, lite::x86::isa_any>(n, x, s);
+  vec_sum<float, lite_metal::x86::isa_any>(n, x, s);
 #endif
 }
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_mul(const size_t n, const T* x, const T* y, T* z) {
   for (size_t i = 0; i < n; ++i) {
     z[i] = x[i] * y[i];
@@ -198,14 +198,14 @@ inline void vec_mul(const size_t n, const T* x, const T* y, T* z) {
 }
 
 template <>
-inline void vec_mul<float, lite::x86::avx>(const size_t n,
+inline void vec_mul<float, lite_metal::x86::avx>(const size_t n,
                                            const float* x,
                                            const float* y,
                                            float* z) {
 #ifdef __AVX__
   constexpr unsigned int block = YMM_FLOAT_BLOCK;
   if (n < block) {
-    vec_mul<float, lite::x86::isa_any>(n, x, y, z);
+    vec_mul<float, lite_metal::x86::isa_any>(n, x, y, z);
     return;
   }
 
@@ -220,11 +220,11 @@ inline void vec_mul<float, lite::x86::avx>(const size_t n,
     z[i] = x[i] * y[i];
   }
 #else
-  vec_mul<float, lite::x86::isa_any>(n, x, y, z);
+  vec_mul<float, lite_metal::x86::isa_any>(n, x, y, z);
 #endif
 }
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_mul_reduce(const size_t n, const T* x, const T* y, T* z) {
   z[0] = x[0] * y[0];
   for (size_t i = 1; i < n; ++i) {
@@ -233,14 +233,14 @@ inline void vec_mul_reduce(const size_t n, const T* x, const T* y, T* z) {
 }
 
 template <>
-inline void vec_mul_reduce<float, lite::x86::avx>(const size_t n,
+inline void vec_mul_reduce<float, lite_metal::x86::avx>(const size_t n,
                                                   const float* x,
                                                   const float* y,
                                                   float* z) {
 #ifdef __AVX__
   constexpr unsigned int block = YMM_FLOAT_BLOCK;
   if (n < block) {
-    vec_mul_reduce<float, lite::x86::isa_any>(n, x, y, z);
+    vec_mul_reduce<float, lite_metal::x86::isa_any>(n, x, y, z);
     return;
   }
 
@@ -264,11 +264,11 @@ inline void vec_mul_reduce<float, lite::x86::avx>(const size_t n,
     z[0] += x[i] * y[i];
   }
 #else
-  vec_mul_reduce<float, lite::x86::isa_any>(n, x, y, z);
+  vec_mul_reduce<float, lite_metal::x86::isa_any>(n, x, y, z);
 #endif
 }
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_bias_sub(const int n, const T a, const T* x, T* y) {
   for (int i = 0; i < n; ++i) {
     y[i] = a - x[i];
@@ -276,14 +276,14 @@ inline void vec_bias_sub(const int n, const T a, const T* x, T* y) {
 }
 
 template <>
-inline void vec_bias_sub<float, lite::x86::avx>(const int n,
+inline void vec_bias_sub<float, lite_metal::x86::avx>(const int n,
                                                 const float a,
                                                 const float* x,
                                                 float* y) {
 #ifdef __AVX__
   constexpr int block = YMM_FLOAT_BLOCK;
   if (n < block) {
-    vec_bias_sub<float, lite::x86::isa_any>(n, a, x, y);
+    vec_bias_sub<float, lite_metal::x86::isa_any>(n, a, x, y);
     return;
   }
   const int rest = n % block;
@@ -307,29 +307,29 @@ inline void vec_bias_sub<float, lite::x86::avx>(const int n,
     y[i] = a - x[i];
   }
 #else
-  vec_bias_sub<float, lite::x86::isa_any>(n, a, x, y);
+  vec_bias_sub<float, lite_metal::x86::isa_any>(n, a, x, y);
 #endif
 }
 
 template <>
-inline void vec_bias_sub<float, lite::x86::avx2>(const int n,
+inline void vec_bias_sub<float, lite_metal::x86::avx2>(const int n,
                                                  const float a,
                                                  const float* x,
                                                  float* y) {
-  vec_bias_sub<float, lite::x86::avx>(n, a, x, y);
+  vec_bias_sub<float, lite_metal::x86::avx>(n, a, x, y);
 }
 
 template <>
-inline void vec_bias_sub<float, lite::x86::avx512f>(const int n,
+inline void vec_bias_sub<float, lite_metal::x86::avx512f>(const int n,
                                                     const float a,
                                                     const float* x,
                                                     float* y) {
   // TODO(TJ): enable me
-  vec_bias_sub<float, lite::x86::avx2>(n, a, x, y);
+  vec_bias_sub<float, lite_metal::x86::avx2>(n, a, x, y);
 }
 
 // out = x*y + (1-x)*z
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_cross(const int n, const T* x, const T* y, const T* z, T* out) {
   for (int i = 0; i < n; ++i) {
     out[i] = x[i] * y[i] + (static_cast<T>(1) - x[i]) * z[i];
@@ -337,12 +337,12 @@ inline void vec_cross(const int n, const T* x, const T* y, const T* z, T* out) {
 }
 
 template <>
-inline void vec_cross<float, lite::x86::avx>(
+inline void vec_cross<float, lite_metal::x86::avx>(
     const int n, const float* x, const float* y, const float* z, float* out) {
 #ifdef __AVX__
   constexpr int block = YMM_FLOAT_BLOCK;
   if (n < block) {
-    vec_cross<float, lite::x86::isa_any>(n, x, y, z, out);
+    vec_cross<float, lite_metal::x86::isa_any>(n, x, y, z, out);
     return;
   }
   const int rest = n % block;
@@ -368,24 +368,24 @@ inline void vec_cross<float, lite::x86::avx>(
     out[i] = x[i] * y[i] + (1.f - x[i]) * z[i];
   }
 #else
-  vec_cross<float, lite::x86::isa_any>(n, x, y, z, out);
+  vec_cross<float, lite_metal::x86::isa_any>(n, x, y, z, out);
 #endif
 }
 
 template <>
-inline void vec_cross<float, lite::x86::avx2>(
+inline void vec_cross<float, lite_metal::x86::avx2>(
     const int n, const float* x, const float* y, const float* z, float* out) {
-  vec_cross<float, lite::x86::avx>(n, x, y, z, out);
+  vec_cross<float, lite_metal::x86::avx>(n, x, y, z, out);
 }
 
 template <>
-inline void vec_cross<float, lite::x86::avx512f>(
+inline void vec_cross<float, lite_metal::x86::avx512f>(
     const int n, const float* x, const float* y, const float* z, float* out) {
   // TODO(TJ): enable me
-  vec_cross<float, lite::x86::avx>(n, x, y, z, out);
+  vec_cross<float, lite_metal::x86::avx>(n, x, y, z, out);
 }
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_clip(const size_t n, const T a, const T* x, T* y) {
   for (size_t i = 0; i < n; ++i) {
     y[i] = x[i] < a ? a : x[i];
@@ -393,14 +393,14 @@ inline void vec_clip(const size_t n, const T a, const T* x, T* y) {
 }
 
 template <>
-inline void vec_clip<float, lite::x86::avx>(const size_t n,
+inline void vec_clip<float, lite_metal::x86::avx>(const size_t n,
                                             const float a,
                                             const float* x,
                                             float* y) {
 #ifdef __AVX__
   constexpr unsigned int block = YMM_FLOAT_BLOCK;
   if (n < block) {
-    vec_clip<float, lite::x86::isa_any>(n, a, x, y);
+    vec_clip<float, lite_metal::x86::isa_any>(n, a, x, y);
     return;
   }
 
@@ -416,11 +416,11 @@ inline void vec_clip<float, lite::x86::avx>(const size_t n,
     y[i] = x[i] < a ? a : x[i];
   }
 #else
-  vec_clip<float, lite::x86::isa_any>(n, a, x, y);
+  vec_clip<float, lite_metal::x86::isa_any>(n, a, x, y);
 #endif
 }
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_add_bias(const int n, const T a, const T* x, T* y) {
   for (int i = 0; i < n; ++i) {
     y[i] = x[i] + a;
@@ -428,14 +428,14 @@ inline void vec_add_bias(const int n, const T a, const T* x, T* y) {
 }
 
 template <>
-inline void vec_add_bias<float, lite::x86::avx>(const int n,
+inline void vec_add_bias<float, lite_metal::x86::avx>(const int n,
                                                 const float a,
                                                 const float* x,
                                                 float* y) {
 #ifdef __AVX__
   constexpr int block = YMM_FLOAT_BLOCK;
   if (n < block) {
-    vec_add_bias<float, lite::x86::isa_any>(n, a, x, y);
+    vec_add_bias<float, lite_metal::x86::isa_any>(n, a, x, y);
     return;
   }
   const int rest = n % block;
@@ -459,34 +459,34 @@ inline void vec_add_bias<float, lite::x86::avx>(const int n,
     y[i] = x[i] + a;
   }
 #else
-  vec_add_bias<float, lite::x86::isa_any>(n, a, x, y);
+  vec_add_bias<float, lite_metal::x86::isa_any>(n, a, x, y);
 #endif
 }
 
 template <>
-inline void vec_add_bias<float, lite::x86::avx2>(const int n,
+inline void vec_add_bias<float, lite_metal::x86::avx2>(const int n,
                                                  const float a,
                                                  const float* x,
                                                  float* y) {
-  vec_add_bias<float, lite::x86::avx>(n, a, x, y);
+  vec_add_bias<float, lite_metal::x86::avx>(n, a, x, y);
 }
 
 template <>
-inline void vec_add_bias<float, lite::x86::avx512f>(const int n,
+inline void vec_add_bias<float, lite_metal::x86::avx512f>(const int n,
                                                     const float a,
                                                     const float* x,
                                                     float* y) {
   // TODO(TJ): enable me
-  vec_add_bias<float, lite::x86::avx2>(n, a, x, y);
+  vec_add_bias<float, lite_metal::x86::avx2>(n, a, x, y);
 }
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_identity(const int n, const T* x, T* y) {
   // do nothing
   return;
 }
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_sigmoid(const int n, const T* x, T* y) {
   const T min = SIGMOID_THRESHOLD_MIN;
   const T max = SIGMOID_THRESHOLD_MAX;
@@ -501,13 +501,13 @@ inline void vec_sigmoid(const int n, const T* x, T* y) {
 }
 
 template <>
-inline void vec_sigmoid<float, lite::x86::avx>(const int n,
+inline void vec_sigmoid<float, lite_metal::x86::avx>(const int n,
                                                const float* x,
                                                float* y) {
 #ifdef __AVX__
   constexpr int block = YMM_FLOAT_BLOCK;
   if (n < block) {
-    vec_sigmoid<float, lite::x86::isa_any>(n, x, y);
+    vec_sigmoid<float, lite_metal::x86::isa_any>(n, x, y);
     return;
   }
   const int rest = n % block;
@@ -556,26 +556,26 @@ inline void vec_sigmoid<float, lite::x86::avx>(const int n,
     y[i] = 1.f / (1.f + y[i]);
   }
 #else
-  vec_sigmoid<float, lite::x86::isa_any>(n, x, y);
+  vec_sigmoid<float, lite_metal::x86::isa_any>(n, x, y);
 #endif
 }
 
 template <>
-inline void vec_sigmoid<float, lite::x86::avx2>(const int n,
+inline void vec_sigmoid<float, lite_metal::x86::avx2>(const int n,
                                                 const float* x,
                                                 float* y) {
-  vec_sigmoid<float, lite::x86::avx>(n, x, y);
+  vec_sigmoid<float, lite_metal::x86::avx>(n, x, y);
 }
 
 template <>
-inline void vec_sigmoid<float, lite::x86::avx512f>(const int n,
+inline void vec_sigmoid<float, lite_metal::x86::avx512f>(const int n,
                                                    const float* x,
                                                    float* y) {
   // TODO(TJ): enable me
-  vec_sigmoid<float, lite::x86::avx2>(n, x, y);
+  vec_sigmoid<float, lite_metal::x86::avx2>(n, x, y);
 }
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_tanh(const int n, const T* x, T* y) {
   vec_scal<T, isa>(n, static_cast<T>(2), x, y);
   vec_sigmoid<T, isa>(n, y, y);
@@ -584,7 +584,7 @@ inline void vec_tanh(const int n, const T* x, T* y) {
 }
 
 // TODO(TJ): make relu clip
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 inline void vec_relu(const int n, const T* x, T* y) {
   for (int i = 0; i < n; ++i) {
     y[i] = x[i] > 0 ? x[i] : 0;
@@ -592,13 +592,13 @@ inline void vec_relu(const int n, const T* x, T* y) {
 }
 
 template <>
-inline void vec_relu<float, lite::x86::avx>(const int n,
+inline void vec_relu<float, lite_metal::x86::avx>(const int n,
                                             const float* x,
                                             float* y) {
 #ifdef __AVX__
   constexpr int block = YMM_FLOAT_BLOCK;
   if (n < block * 4) {
-    vec_relu<float, lite::x86::isa_any>(n, x, y);
+    vec_relu<float, lite_metal::x86::isa_any>(n, x, y);
     return;
   }
 
@@ -622,28 +622,28 @@ inline void vec_relu<float, lite::x86::avx>(const int n,
 #undef MOVE_ONE_STEP
 
 #else
-  vec_relu<float, lite::x86::isa_any>(n, x, y);
+  vec_relu<float, lite_metal::x86::isa_any>(n, x, y);
 #endif
 }
 
 template <>
-inline void vec_relu<float, lite::x86::avx2>(const int n,
+inline void vec_relu<float, lite_metal::x86::avx2>(const int n,
                                              const float* x,
                                              float* y) {
-  vec_relu<float, lite::x86::avx>(n, x, y);
+  vec_relu<float, lite_metal::x86::avx>(n, x, y);
 }
 
 template <>
-inline void vec_relu<float, lite::x86::avx512f>(const int n,
+inline void vec_relu<float, lite_metal::x86::avx512f>(const int n,
                                                 const float* x,
                                                 float* y) {
   // TODO(TJ): enable me
-  vec_relu<float, lite::x86::avx2>(n, x, y);
+  vec_relu<float, lite_metal::x86::avx2>(n, x, y);
 }
 
 // TODO(TJ): optimize double of sigmoid, tanh and relu if necessary
 
-template <typename T, lite::x86::cpu_isa_t isa = lite::x86::isa_any>
+template <typename T, lite_metal::x86::cpu_isa_t isa = lite_metal::x86::isa_any>
 class VecActivations {
  public:
   std::function<void(const int, const T*, T*)> operator()(

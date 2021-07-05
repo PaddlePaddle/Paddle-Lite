@@ -19,7 +19,7 @@
 #include "lite/operators/conv_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUConv2dOp::CheckShape() const {
@@ -84,7 +84,7 @@ bool XPUConv2dOp::InferShapeImpl() const {
   }
 
   // Set output and output max dims
-  param_.output->Resize(lite::DDim(output_shape));
+  param_.output->Resize(lite_metal::DDim(output_shape));
   param_.output_max->Resize({4});
   // share LoD
   param_.output->set_lod(param_.input->lod());
@@ -100,7 +100,7 @@ bool XPUConv2dOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter").front()));
@@ -147,7 +147,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
         param_.branch =
-            const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
+            const_cast<lite_metal::Tensor*>(&(arg_var->Get<lite_metal::Tensor>()));
       }
     }
   }
@@ -158,7 +158,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
         param_.bias =
-            const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
+            const_cast<lite_metal::Tensor*>(&(arg_var->Get<lite_metal::Tensor>()));
       }
     }
   }
@@ -195,4 +195,4 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__conv2d, paddle::lite::operators::XPUConv2dOp);
+REGISTER_LITE_OP(__xpu__conv2d, paddle::lite_metal::operators::XPUConv2dOp);

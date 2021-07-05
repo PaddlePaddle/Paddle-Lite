@@ -22,8 +22,8 @@
 
 template <class Tin,
           class Tout,
-          paddle::lite::PrecisionType Ptype,
-          paddle::lite::PrecisionType OutType>
+          paddle::lite_metal::PrecisionType Ptype,
+          paddle::lite_metal::PrecisionType OutType>
 void bench_conv(const benchmark::State& state_in, const char* net) {
   // const in parameter is used to pass CI system
   // because google bench mark must work with a `benchmark::State &`
@@ -56,8 +56,8 @@ void bench_conv(const benchmark::State& state_in, const char* net) {
   auto rng = std::mt19937(random_device());
   auto input_rng =
       std::bind(std::uniform_int_distribution<int32_t>(-10, 10), std::ref(rng));
-  using paddle::lite::DDim;
-  using paddle::lite::Tensor;
+  using paddle::lite_metal::DDim;
+  using paddle::lite_metal::Tensor;
 
   Tensor x, filter, bias, output;
   x.Resize(DDim(
@@ -82,8 +82,8 @@ void bench_conv(const benchmark::State& state_in, const char* net) {
                       output_width}));
   output.mutable_data<Tout>();
 
-  paddle::lite::kernels::arm::ConvCompute<Ptype, OutType> conv_compute;
-  paddle::lite::operators::ConvParam param;
+  paddle::lite_metal::kernels::arm::ConvCompute<Ptype, OutType> conv_compute;
+  paddle::lite_metal::operators::ConvParam param;
   param.x = &x;
   param.bias = &bias;
   param.filter = &filter;
@@ -114,9 +114,9 @@ void bench_conv(const benchmark::State& state_in, const char* net) {
 
   conv_compute.SetParam(param);
 
-  auto ctx1 = paddle::lite::ContextScheduler::Global().NewContext(
+  auto ctx1 = paddle::lite_metal::ContextScheduler::Global().NewContext(
       paddle::lite_api::TargetType::kARM);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(
                      paddle::lite_api::PowerMode::LITE_POWER_HIGH),
                  1);

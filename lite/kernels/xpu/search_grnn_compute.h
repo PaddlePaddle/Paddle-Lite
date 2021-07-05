@@ -19,7 +19,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -30,7 +30,7 @@ class SearchGrnnCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   void PrepareForRun() override;
 
   void prepare_layout(const operators::SearchGrnnParam& param,
-                      const paddle::lite::Tensor* bottom);
+                      const paddle::lite_metal::Tensor* bottom);
   void Run() override;
 
  private:

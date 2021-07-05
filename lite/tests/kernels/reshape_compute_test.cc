@@ -19,7 +19,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class ReshapeComputeTester : public arena::TestCase {
  protected:
@@ -50,7 +50,7 @@ class ReshapeComputeTester : public arena::TestCase {
     if (is_shape_tensor_vct) {
       for (size_t i = 0; i < shape.size(); i++) {
         shape_tensor_vct_.emplace_back(op_type_ + "/shape" +
-                                       paddle::lite::to_string(i));
+                                       paddle::lite_metal::to_string(i));
       }
     } else if (is_shape_tensor) {
       shape_tensor_ = op_type_ + "/shape";

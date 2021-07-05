@@ -54,7 +54,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <TargetType Type>
 class Context;
@@ -485,11 +485,11 @@ class Context<TargetType::kMLU> {
   void SetIoQueue(cnrtQueue_t queue) { io_queue_ = queue; }
 
   cnmlCoreVersion_t MLUCoreVersion() {
-    return paddle::lite::TargetWrapperMlu::MLUCoreVersion();
+    return paddle::lite_metal::TargetWrapperMlu::MLUCoreVersion();
   }
 
   int MLUCoreNumber() {
-    return paddle::lite::TargetWrapperMlu::MLUCoreNumber();
+    return paddle::lite_metal::TargetWrapperMlu::MLUCoreNumber();
   }
 
   u32_t affinity() { return affinity_; }

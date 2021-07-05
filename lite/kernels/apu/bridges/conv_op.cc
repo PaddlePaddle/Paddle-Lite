@@ -20,7 +20,7 @@
 #include "lite/kernels/apu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace apu {
 
@@ -593,7 +593,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(conv2d,
                          kAPU,
-                         paddle::lite::subgraph::apu::ConvConverter);
+                         paddle::lite_metal::subgraph::apu::ConvConverter);
 REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
                          kAPU,
-                         paddle::lite::subgraph::apu::ConvConverter);
+                         paddle::lite_metal::subgraph::apu::ConvConverter);

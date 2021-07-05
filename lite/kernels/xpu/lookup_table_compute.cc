@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -51,7 +51,7 @@ REGISTER_LITE_KERNEL(lookup_table,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::LookupTableCompute,
+                     paddle::lite_metal::kernels::xpu::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
@@ -62,7 +62,7 @@ REGISTER_LITE_KERNEL(lookup_table_v2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::LookupTableCompute,
+                     paddle::lite_metal::kernels::xpu::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})

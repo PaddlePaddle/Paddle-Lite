@@ -26,7 +26,7 @@
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -87,13 +87,13 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     if (!flag_trans_weights_ && n > 1 && m > 1) {
       if (param.filter->precision() == PrecisionType::kFP16) {
 #ifdef ENABLE_ARM_FP16
-        lite::arm::math::fp16::trans_gemm_weights_fp16(
+        lite_metal::arm::math::fp16::trans_gemm_weights_fp16(
             *(param.filter), weights_, param.groups, &ctx);
 #else
         LOG(FATAL) << "FP16 conv must open ENABLE_ARM_FP16";
 #endif
       } else {
-        lite::arm::math::trans_gemm_weights<Ptype>(
+        lite_metal::arm::math::trans_gemm_weights<Ptype>(
             *(param.filter), weights_, param.groups, &ctx);
       }
       flag_trans_weights_ = true;
@@ -107,7 +107,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
 
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
+      paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
   }
 
@@ -115,7 +115,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
 #define PROFILE_INFO(dtype1, dtype2)                                        \
   template <>                                                               \
   void GemmLikeConv<PRECISION(dtype1), PRECISION(dtype2)>::                 \
-      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+      SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) { \
     ch->kernel_func_name = kernel_func_name_;                               \
   }
 

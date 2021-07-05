@@ -20,7 +20,7 @@ REGISTER_LITE_KERNEL(flip,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::FlipCompute<float>,
+                     paddle::lite_metal::kernels::host::FlipCompute<float>,
                      flip_fp32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindOutput("Out",
@@ -31,7 +31,7 @@ REGISTER_LITE_KERNEL(flip,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::FlipCompute<int64_t>,
+                     paddle::lite_metal::kernels::host::FlipCompute<int64_t>,
                      flip_i64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("Out",

@@ -17,7 +17,7 @@ limitations under the License. */
 #include <string>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 

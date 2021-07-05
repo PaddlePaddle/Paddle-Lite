@@ -24,7 +24,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 /*

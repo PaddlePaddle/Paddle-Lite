@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -81,7 +81,7 @@ REGISTER_LITE_KERNEL(
     kXPU,
     kAny,
     kNCHW,
-    paddle::lite::kernels::xpu::FillConstantBatchSizeLikeCompute,
+    paddle::lite_metal::kernels::xpu::FillConstantBatchSizeLikeCompute,
     def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})

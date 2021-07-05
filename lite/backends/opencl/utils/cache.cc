@@ -17,14 +17,14 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 namespace opencl {
 
 Cache::Cache(const std::vector<uint8_t>& buffer) {
   flatbuffers::Verifier verifier(
       reinterpret_cast<const uint8_t*>(buffer.data()), buffer.size());
-  CHECK(verifier.VerifyBuffer<paddle::lite::fbs::opencl::proto::Cache>(nullptr))
+  CHECK(verifier.VerifyBuffer<paddle::lite_metal::fbs::opencl::proto::Cache>(nullptr))
       << "OpenCL Cache verification failed.";
   SyncFromFbs(proto::GetCache(buffer.data()));
 }
@@ -38,7 +38,7 @@ void Cache::CopyDataToBuffer(std::vector<uint8_t>* buffer) const {
   std::memcpy(buffer->data(), buf.data(), buf.size());
 }
 
-void Cache::SyncFromFbs(const paddle::lite::fbs::opencl::proto::Cache* desc) {
+void Cache::SyncFromFbs(const paddle::lite_metal::fbs::opencl::proto::Cache* desc) {
   CHECK(desc);
   const auto* binary_map_desc = desc->binary_map();
   CHECK(binary_map_desc);
@@ -85,7 +85,7 @@ void TuneCache::CopyDataToBuffer(std::vector<int>* buffer) const {
 }
 
 void TuneCache::SyncFromFbs(
-    const paddle::lite::fbs::opencl::proto::TuneCache* desc) {
+    const paddle::lite_metal::fbs::opencl::proto::TuneCache* desc) {
   CHECK(desc);
   const auto* tune_map_desc = desc->tune_map();
   CHECK(tune_map_desc);

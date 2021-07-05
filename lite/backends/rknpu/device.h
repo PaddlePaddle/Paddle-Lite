@@ -21,7 +21,7 @@
 #include "rknpu/rknpu_pub.h"  // NOLINT
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace rknpu {
 
 class Device {

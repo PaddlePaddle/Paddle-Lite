@@ -29,13 +29,13 @@ void anchor_generatre(int n,
                       std::vector<float> stride_,
                       std::vector<float> variances_,
                       float offset_,
-                      paddle::lite::Tensor* vars,
-                      paddle::lite::Tensor* anchors) {
-  auto input_dims_ = paddle::lite::DDim(std::vector<int64_t>({n, c, h, w}));
+                      paddle::lite_metal::Tensor* vars,
+                      paddle::lite_metal::Tensor* anchors) {
+  auto input_dims_ = paddle::lite_metal::DDim(std::vector<int64_t>({n, c, h, w}));
   int num_anchors = anchor_sizes_.size() * aspect_ratios_.size();
   std::vector<int64_t> output_shape(
       {input_dims_[2], input_dims_[3], num_anchors, 4});
-  paddle::lite::DDim output_dims(output_shape);
+  paddle::lite_metal::DDim output_dims(output_shape);
   anchors->Resize(output_dims);
   vars->Resize(output_dims);
   auto* anchors_data = anchors->mutable_data<float>();
@@ -92,7 +92,7 @@ void anchor_generatre(int n,
 }
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 static const double kBBoxClipDefault = std::log(1000.0 / 16.0);
 
 static void permute(const Tensor& input,

@@ -15,7 +15,7 @@
 #pragma once
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 

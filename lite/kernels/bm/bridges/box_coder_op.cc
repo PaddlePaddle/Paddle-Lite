@@ -21,7 +21,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -34,17 +34,17 @@ int BoxCoderConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto box_var_name = op_info->Input("PriorBox").front();
-  auto box = scope->FindVar(box_var_name)->GetMutable<lite::Tensor>();
+  auto box = scope->FindVar(box_var_name)->GetMutable<lite_metal::Tensor>();
   auto box_dims = box->dims();
   auto box_var_var_name = op_info->Input("PriorBoxVar").front();
-  auto box_var = scope->FindVar(box_var_var_name)->GetMutable<lite::Tensor>();
+  auto box_var = scope->FindVar(box_var_var_name)->GetMutable<lite_metal::Tensor>();
   auto box_var_dims = box_var->dims();
   auto target_box_var_name = op_info->Input("TargetBox").front();
   auto target_box =
-      scope->FindVar(target_box_var_name)->GetMutable<lite::Tensor>();
+      scope->FindVar(target_box_var_name)->GetMutable<lite_metal::Tensor>();
   auto target_box_dims = target_box->dims();
   auto output_var_name = op_info->Output("OutputBox").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
 
   std::vector<int32_t> i_box_shape_data(box_dims.size());
@@ -131,4 +131,4 @@ int BoxCoderConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(box_coder,
                          kBM,
-                         paddle::lite::subgraph::bm::BoxCoderConverter);
+                         paddle::lite_metal::subgraph::bm::BoxCoderConverter);

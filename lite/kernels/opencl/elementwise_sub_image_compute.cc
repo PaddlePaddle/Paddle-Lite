@@ -19,7 +19,7 @@
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -74,7 +74,7 @@ void ElementwiseSubImageCompute::Run() {
   VLOG(4) << "axis:" << axis;
 #endif
 
-  paddle::lite::CLImageConverterDefault default_convertor;
+  paddle::lite_metal::CLImageConverterDefault default_convertor;
   auto x_img_shape = default_convertor.InitImageDimInfoWith(x->dims());  // w, h
   auto x_img_width = x_img_shape[0];
   auto x_img_height = x_img_shape[1];
@@ -153,7 +153,7 @@ void ElementwiseSubImageCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
+namespace ocl = paddle::lite_metal::kernels::opencl;
 
 // TODO(ysh329): May need fix.
 // "Y" may from constant value like conv bias (kARM, need do cl_image_converter

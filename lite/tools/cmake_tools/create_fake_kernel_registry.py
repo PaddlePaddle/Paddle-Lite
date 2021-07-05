@@ -55,7 +55,7 @@ out_lines = [
 fake_kernel = '''
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class %s : public KernelLite<TARGET(%s), PRECISION(%s), DATALAYOUT(%s)> {
  public:
@@ -136,7 +136,7 @@ def parse_fake_kernels_from_path(list_path):
                         k.target,
                         k.precision,
                         k.data_layout,
-                        '::paddle::lite::' + kernel_name,
+                        '::paddle::lite_metal::' + kernel_name,
                         k.alias
                     )
                     out_lines.append(key)

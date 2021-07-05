@@ -20,7 +20,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void LightPredictor::Build(const std::string& lite_model_file,
                            bool model_from_memory) {
@@ -85,13 +85,13 @@ Tensor* LightPredictor::GetInput(size_t offset) {
   auto* in_var = program_->exec_scope()->FindVar(input_names_[offset]);
   CHECK(in_var) << "no fatch variable " << input_names_[offset]
                 << " in exec_scope";
-  return in_var->GetMutable<lite::Tensor>();
+  return in_var->GetMutable<lite_metal::Tensor>();
 }
 #else
 Tensor* LightPredictor::GetInput(size_t offset) {
   auto* _feed_list = program_->exec_scope()->FindVar("feed");
   CHECK(_feed_list) << "no feed variable in exec_scope";
-  auto* feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
+  auto* feed_list = _feed_list->GetMutable<std::vector<lite_metal::Tensor>>();
   if (offset >= feed_list->size()) {
     feed_list->resize(offset + 1);
   }
@@ -123,13 +123,13 @@ const Tensor* LightPredictor::GetOutput(size_t offset) {
   auto* out_var = program_->exec_scope()->FindVar(output_names_.at(offset));
   CHECK(out_var) << "no fatch variable " << output_names_.at(offset)
                  << " in exec_scope";
-  return out_var->GetMutable<lite::Tensor>();
+  return out_var->GetMutable<lite_metal::Tensor>();
 }
 #else
-const lite::Tensor* LightPredictor::GetOutput(size_t offset) {
+const lite_metal::Tensor* LightPredictor::GetOutput(size_t offset) {
   auto* _fetch_list = program_->exec_scope()->FindVar("fetch");
   CHECK(_fetch_list) << "no fetch variable in exec_scope";
-  auto& fetch_list = *_fetch_list->GetMutable<std::vector<lite::Tensor>>();
+  auto& fetch_list = *_fetch_list->GetMutable<std::vector<lite_metal::Tensor>>();
   CHECK_LT(offset, fetch_list.size()) << "offset " << offset << " overflow";
   return &fetch_list.at(offset);
 }
@@ -182,8 +182,8 @@ void LightPredictor::BuildRuntimeProgram(
     const std::shared_ptr<const cpp::ProgramDesc>& program_desc) {
   auto* exe_scope = &scope_->NewScope();
   // Prepare workspace
-  scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
-  scope_->Var("fetch")->GetMutable<std::vector<lite::Tensor>>();
+  scope_->Var("feed")->GetMutable<std::vector<lite_metal::Tensor>>();
+  scope_->Var("fetch")->GetMutable<std::vector<lite_metal::Tensor>>();
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
   CHECK(block_size);
@@ -194,10 +194,10 @@ void LightPredictor::BuildRuntimeProgram(
       auto var_desc = block_desc->GetVar<cpp::VarDesc>(var_idx);
       if (!var_desc->Persistable()) {
         auto* var = exe_scope->Var(var_desc->Name());
-        if (var_desc->GetType() == lite::VarDescAPI::Type::LOD_TENSOR) {
+        if (var_desc->GetType() == lite_metal::VarDescAPI::Type::LOD_TENSOR) {
           const auto var_data_type =
               ConvertPrecisionType(var_desc->GetDataType());
-          auto* tensor = var->GetMutable<lite::Tensor>();
+          auto* tensor = var->GetMutable<lite_metal::Tensor>();
           tensor->set_precision(var_data_type);
         }
       } else {
@@ -249,7 +249,7 @@ void LightPredictor::DequantizeWeight() {
           std::string input_scale_name = input_name + "_quant_scale";
           if (op_desc->HasAttr(input_scale_name)) {  // the input is quantized
             auto input_tensor =
-                scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+                scope_->FindVar(input_name)->GetMutable<lite_metal::Tensor>();
             tmp_tensor.CopyDataFrom(*input_tensor);
             auto scale_list =
                 op_desc->GetAttr<std::vector<float>>(input_scale_name);
@@ -317,14 +317,14 @@ void LightPredictor::WeightFP32ToFP16() {
           if (op_desc->HasAttr(input_weight_name)) {  // the input is fp16
             Tensor tmp_tensor;
             auto input_tensor =
-                scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+                scope_->FindVar(input_name)->GetMutable<lite_metal::Tensor>();
             tmp_tensor.CopyDataFrom(*input_tensor);
             input_tensor->clear();
             input_tensor->set_precision(PRECISION(kFP16));
 
             float16_t* fp_data = input_tensor->mutable_data<float16_t>();
             const float* in_data = tmp_tensor.data<float>();
-            lite::arm::math::fp16::fp32_to_fp16(
+            lite_metal::arm::math::fp16::fp32_to_fp16(
                 in_data, fp_data, input_tensor->numel());
           }
         }
@@ -350,13 +350,13 @@ void LightPredictor::CheckInputValid() {
 bool LightPredictor::TryShrinkMemory() {
 #ifdef LITE_WITH_ARM
   // Clear ArmL3Cache
-  lite::DeviceInfo::Global().ClearArmL3Cache();
+  lite_metal::DeviceInfo::Global().ClearArmL3Cache();
 #endif
   const std::vector<std::string>& local_var_names =
       program_->exec_scope()->LocalVarNames();
   for (auto& var_name : local_var_names) {
     Variable* var = program_->exec_scope()->FindLocalVar(var_name);
-    if (var->IsType<lite::Tensor>()) {
+    if (var->IsType<lite_metal::Tensor>()) {
       // Clear unpersistable tensors
       auto* tensor = program_->exec_scope()->FindMutableTensor(var_name);
       if (!tensor->persistable()) {

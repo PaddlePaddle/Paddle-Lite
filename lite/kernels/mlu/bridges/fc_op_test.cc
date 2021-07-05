@@ -20,7 +20,7 @@
 #include "lite/kernels/mlu/bridges/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -39,7 +39,7 @@ void fc_ref(const std::shared_ptr<operators::FcOpLite> op) {
     auto bias_var_names = op_info->Input("Bias");
     if (bias_var_names.size() > 0) {
       auto bias_var_name = bias_var_names.front();
-      bias = scope->FindVar(bias_var_name)->GetMutable<lite::Tensor>();
+      bias = scope->FindVar(bias_var_name)->GetMutable<lite_metal::Tensor>();
       bias_data = bias->mutable_data<float>();
     }
   }

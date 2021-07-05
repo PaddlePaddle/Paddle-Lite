@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -83,25 +83,25 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 
   // bn
   auto bn_scale_t = scope->FindVar(matched.at("bn_scale")->arg()->name)
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
   auto bn_scale_d = bn_scale_t->mutable_data<float>();
   auto bn_mean_t = scope->FindVar(matched.at("bn_mean")->arg()->name)
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   auto bn_mean_d = bn_mean_t->mutable_data<float>();
 
   auto bn_var_t = scope->FindVar(matched.at("bn_variance")->arg()->name)
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
   auto bn_var_d = bn_var_t->mutable_data<float>();
 
   auto bn_bias_t = scope->FindVar(matched.at("bn_bias")->arg()->name)
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   auto bn_bias_d = bn_bias_t->mutable_data<float>();
   auto eps = matched.at("bn")->stmt()->op_info()->GetAttr<float>("epsilon");
 
   // conv
   std::string conv_weight_name = matched.at("conv_weight")->arg()->name;
   auto conv_weight_t =
-      scope->FindVar(conv_weight_name)->GetMutable<lite::Tensor>();
+      scope->FindVar(conv_weight_name)->GetMutable<lite_metal::Tensor>();
   auto groups = conv_op_desc->GetAttr<int>("groups");
   if (conv_type_ == "conv2d_transpose") {
     CHECK_EQ(static_cast<size_t>(bn_scale_t->data_size()),
@@ -228,7 +228,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   if (conv_has_bias_ && conv_op_desc->HasInput("Bias") &&
       conv_op_desc->Input("Bias").size() > 0) {
     auto conv_bias_t = scope->FindVar(matched.at("conv_bias")->arg()->name)
-                           ->GetMutable<lite::Tensor>();
+                           ->GetMutable<lite_metal::Tensor>();
     auto conv_bias_d = conv_bias_t->data<float>();
     for (unsigned int i = 0; i < bn_bias_t->data_size();
          ++i) {  // bias_size == h == conv2d output channls

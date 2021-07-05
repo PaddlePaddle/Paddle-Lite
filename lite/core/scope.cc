@@ -14,16 +14,16 @@
 
 #include "lite/core/scope.h"
 #define SCOPE_KIDS_READER_LOCK \
-  lite::fluid::AutoRDLock auto_lock(kids_lock_.get());
+  lite_metal::fluid::AutoRDLock auto_lock(kids_lock_.get());
 #define SCOPE_KIDS_WRITER_LOCK \
-  lite::fluid::AutoWRLock auto_lock(kids_lock_.get());
+  lite_metal::fluid::AutoWRLock auto_lock(kids_lock_.get());
 #define SCOPE_VARS_READER_LOCK \
-  lite::fluid::AutoRDLock auto_lock(vars_lock_.get());
+  lite_metal::fluid::AutoRDLock auto_lock(vars_lock_.get());
 #define SCOPE_VARS_WRITER_LOCK \
-  lite::fluid::AutoWRLock auto_lock(vars_lock_.get());
+  lite_metal::fluid::AutoWRLock auto_lock(vars_lock_.get());
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 Scope::~Scope() {
   SCOPE_KIDS_WRITER_LOCK

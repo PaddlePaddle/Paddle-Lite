@@ -21,7 +21,7 @@
 #include "lite/operators/relu_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 

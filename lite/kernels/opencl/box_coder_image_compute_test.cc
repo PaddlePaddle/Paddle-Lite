@@ -22,7 +22,7 @@
 
 #define FP16_MAX_DIFF (5e-1)
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 void box_coder_ref(float* proposals_data,
                    const float* anchors_data,
                    const float* bbox_deltas_data,
@@ -113,7 +113,7 @@ TEST(box_coder_image2d, compute) {
             auto kernel = std::move(kernels.front());
             LOG(INFO) << "get kernel:" << kernel->doc();
 
-            lite::Tensor prior_box, prior_box_var, target_box, output_box;
+            lite_metal::Tensor prior_box, prior_box_var, target_box, output_box;
             operators::BoxCoderParam param;
             param.prior_box = &prior_box;
             param.prior_box_var = &prior_box_var;
@@ -218,7 +218,7 @@ TEST(box_coder_image2d, compute) {
 
             CLRuntime::Global()->command_queue().finish();
 
-            lite::Tensor out_ref_tensor;
+            lite_metal::Tensor out_ref_tensor;
             out_ref_tensor.Resize(out_dim);
             box_coder_ref(out_ref_tensor.mutable_data<float>(),
                           prior_box_data.data(),

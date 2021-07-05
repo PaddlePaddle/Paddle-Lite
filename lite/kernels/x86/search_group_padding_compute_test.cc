@@ -22,7 +22,7 @@
 #include "lite/kernels/x86/search_group_padding_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -40,7 +40,7 @@ TEST(search_group_padding_x86, init) {
 }
 
 TEST(search_group_padding_x86, run_test) {
-  lite::Tensor x, out_emb_padding, out_new, out_padding;
+  lite_metal::Tensor x, out_emb_padding, out_new, out_padding;
   x.Resize({2, 3});
   out_emb_padding.Resize({-1, 3});
   out_new.Resize({2, 1});

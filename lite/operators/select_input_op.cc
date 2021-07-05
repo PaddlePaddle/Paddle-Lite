@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SelectInputOpLite::CheckShape() const {
@@ -41,7 +41,7 @@ bool SelectInputOpLite::InferShapeImpl() const {
 }
 
 bool SelectInputOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                   lite::Scope *scope) {
+                                   lite_metal::Scope *scope) {
   AttachParam(&param_);
   auto inputs = op_desc.Input("X");
   auto mask = op_desc.Input("Mask").front();
@@ -49,11 +49,11 @@ bool SelectInputOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 
   param_.X.clear();
   for (auto var : inputs) {
-    param_.X.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.X.push_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   CHECK(scope->FindVar(out));
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
-  param_.Mask = scope->FindVar(mask)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
+  param_.Mask = scope->FindVar(mask)->GetMutable<lite_metal::Tensor>();
 
   return true;
 }
@@ -62,4 +62,4 @@ bool SelectInputOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(select_input, paddle::lite::operators::SelectInputOpLite);
+REGISTER_LITE_OP(select_input, paddle::lite_metal::operators::SelectInputOpLite);

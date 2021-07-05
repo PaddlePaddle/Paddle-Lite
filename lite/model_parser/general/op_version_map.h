@@ -21,7 +21,7 @@
 #include "lite/model_parser/general/var_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace general {
 
 /*

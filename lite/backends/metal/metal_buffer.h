@@ -26,7 +26,7 @@
 #include "lite/backends/metal/metal_converter.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 /**
  * Data arrangement :

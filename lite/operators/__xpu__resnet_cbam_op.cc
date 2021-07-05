@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUResNetCbamOp::CheckShape() const { return true; }
@@ -25,23 +25,23 @@ bool XPUResNetCbamOp::CheckShape() const { return true; }
 bool XPUResNetCbamOp::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
   std::vector<int64_t> output_shape_vec{1, 64};
-  paddle::lite::DDim output_shape(output_shape_vec);
+  paddle::lite_metal::DDim output_shape(output_shape_vec);
   output_shape[0] = input_shape[0];
   param_.output->Resize(output_shape);
   return true;
 }
 
 bool XPUResNetCbamOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                 lite::Scope* scope) {
-  param_.input = const_cast<lite::Tensor*>(
-      &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
+                                 lite_metal::Scope* scope) {
+  param_.input = const_cast<lite_metal::Tensor*>(
+      &scope->FindVar(op_desc.Input("Input").front())->Get<lite_metal::Tensor>());
   param_.output = scope->FindVar(op_desc.Output("Output").front())
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
 
   param_.filter.clear();
   for (auto& name : op_desc.Input("Filter")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.filter.push_back(t);
   }
   param_.bias.clear();
@@ -50,14 +50,14 @@ bool XPUResNetCbamOp::AttachImpl(const cpp::OpDesc& op_desc,
       param_.bias.push_back(nullptr);
     } else {
       auto t =
-          const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+          const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
       param_.bias.push_back(t);
     }
   }
   param_.max_filter.clear();
   for (auto& name : op_desc.Input("MaxFilter")) {
     auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+        const_cast<lite_metal::Tensor*>(&scope->FindVar(name)->Get<lite_metal::Tensor>());
     param_.max_filter.push_back(t);
   }
 
@@ -69,4 +69,4 @@ bool XPUResNetCbamOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__resnet_cbam, paddle::lite::operators::XPUResNetCbamOp);
+REGISTER_LITE_OP(__xpu__resnet_cbam, paddle::lite_metal::operators::XPUResNetCbamOp);

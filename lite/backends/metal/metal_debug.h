@@ -26,7 +26,7 @@
 #define LITE_METAL_SAVE_TENSOR 0
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class MetalDebug {
    public:

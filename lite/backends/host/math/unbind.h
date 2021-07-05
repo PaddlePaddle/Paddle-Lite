@@ -18,13 +18,13 @@
 #include "lite/core/op_lite.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
 template <typename T>
-void unbind(const lite::Tensor* in,
-            const std::vector<lite::Tensor*>& outs,
+void unbind(const lite_metal::Tensor* in,
+            const std::vector<lite_metal::Tensor*>& outs,
             const int axis) {
   auto in_dim = in->dims();
   const T* din = in->template data<T>();

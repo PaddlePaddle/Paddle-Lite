@@ -23,7 +23,7 @@ limitations under the License. */
 #include "lite/backends/opencl/cl_include.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class CLContext {
  public:

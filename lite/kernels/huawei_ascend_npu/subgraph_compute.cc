@@ -26,7 +26,7 @@
 #include "lite/utils/md5.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace huawei_ascend_npu {
 
@@ -69,7 +69,7 @@ bool DeviceProgram::LoadFromCacheFile(
   auto model_path = model_cache_dir + "/" + model_name_ + ".om";
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Loading model from cached file from:"
           << model_path;
-  model_client_ = lite::huawei_ascend_npu::Device::Global().LoadFromFile(
+  model_client_ = lite_metal::huawei_ascend_npu::Device::Global().LoadFromFile(
       model_path, device_id);
   if (!model_client_) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Load model from cached file failed!";
@@ -156,7 +156,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Build the IR graph to the om model
   std::vector<char> model_buffer;
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Building model from model buffer...";
-  if (!lite::huawei_ascend_npu::Device::Global().Build(
+  if (!lite_metal::huawei_ascend_npu::Device::Global().Build(
           device_inodes, device_onodes, &model_buffer)) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Build model failed!";
     return false;
@@ -164,7 +164,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Build model success.";
   // Load the om model and create a model manager client
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Loading model from memory ...";
-  model_client_ = lite::huawei_ascend_npu::Device::Global().LoadFromMem(
+  model_client_ = lite_metal::huawei_ascend_npu::Device::Global().LoadFromMem(
       model_buffer, device_id);
   if (!model_client_) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Load model from memory failed!";
@@ -444,7 +444,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      kHuaweiAscendNPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::huawei_ascend_npu::SubgraphCompute,
+                     paddle::lite_metal::kernels::huawei_ascend_npu::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})

@@ -17,12 +17,12 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
 inline std::vector<int> GetIntDataFromTensorList(
-    const std::vector<lite::Tensor*>& list_tensor) {
+    const std::vector<lite_metal::Tensor*>& list_tensor) {
   std::vector<int> vec_data;
   for (auto& tensor_i : list_tensor) {
     CHECK_EQ(tensor_i->dims(), DDim({1}))
@@ -189,7 +189,7 @@ void SliceCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using SliceFloat32 = paddle::lite::kernels::xpu::SliceCompute<float>;
+using SliceFloat32 = paddle::lite_metal::kernels::xpu::SliceCompute<float>;
 REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceFloat32, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
@@ -204,7 +204,7 @@ REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceFloat32, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();
 
-using SliceInt32 = paddle::lite::kernels::xpu::SliceCompute<int32_t>;
+using SliceInt32 = paddle::lite_metal::kernels::xpu::SliceCompute<int32_t>;
 REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt32, int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
@@ -219,7 +219,7 @@ REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt32, int32)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
 
-using SliceInt64 = paddle::lite::kernels::xpu::SliceCompute<int64_t>;
+using SliceInt64 = paddle::lite_metal::kernels::xpu::SliceCompute<int64_t>;
 REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt64, int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})

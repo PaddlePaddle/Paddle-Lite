@@ -15,7 +15,7 @@
 #include "lite/kernels/host/conditional_block_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -57,7 +57,7 @@ REGISTER_LITE_KERNEL(conditional_block,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::ConditionalBlockCompute,
+                     paddle::lite_metal::kernels::host::ConditionalBlockCompute,
                      def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),

@@ -20,7 +20,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -36,7 +36,7 @@ class FcCompute : public KernelLite<TARGET(kCUDA), PType> {
   virtual ~FcCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
+  std::unique_ptr<lite_metal::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
 };
 
 }  // namespace cuda

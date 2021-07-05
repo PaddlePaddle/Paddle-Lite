@@ -17,7 +17,7 @@
 #include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/kernel.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -34,9 +34,9 @@ class SequenceTopkAvgPoolingCompute
   virtual ~SequenceTopkAvgPoolingCompute() = default;
 
  protected:
-  lite::Tensor _height_offset;
-  lite::Tensor _width_offset;
-  lite::Tensor _top_ks;
+  lite_metal::Tensor _height_offset;
+  lite_metal::Tensor _width_offset;
+  lite_metal::Tensor _top_ks;
   int _shared_mem_size;
 };
 

@@ -24,7 +24,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -37,10 +37,10 @@ class MatMulTest : public ::testing::Test {
         x_shape_({4, 1, 2}),
         y_shape_({4, 1, 2}),
         out_shape_({4, 1, 1}) {
-    x_ref_.Resize(lite::DDim(x_shape_));
+    x_ref_.Resize(lite_metal::DDim(x_shape_));
     x_gpu_.Resize(x_ref_.dims());
 
-    y_ref_.Resize(lite::DDim(y_shape_));
+    y_ref_.Resize(lite_metal::DDim(y_shape_));
     y_gpu_.Resize(y_ref_.dims());
 
     auto x_ref_data = x_ref_.mutable_data<float>();
@@ -54,7 +54,7 @@ class MatMulTest : public ::testing::Test {
       y_ref_data[i] = static_cast<float>(1);
     }
 
-    out_ref_.Resize(lite::DDim(out_shape_));
+    out_ref_.Resize(lite_metal::DDim(out_shape_));
     out_cpu_.Resize(out_ref_.dims());
     out_gpu_.Resize(out_ref_.dims());
     RunBaseLine();
@@ -76,9 +76,9 @@ class MatMulTest : public ::testing::Test {
   }
 
   void InitFloatInput() {
-    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+    x_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
                                                     x_gpu_.dims());
-    y_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(y_ref_.data<float>(),
+    y_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(y_ref_.data<float>(),
                                                     y_gpu_.dims());
   }
 
@@ -86,15 +86,15 @@ class MatMulTest : public ::testing::Test {
     x_half_.Resize(x_ref_.dims());
     auto x_half_data = x_half_.mutable_data<half>();
     for (int64_t i = 0; i < x_half_.numel(); ++i) {
-      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+      x_half_data[i] = half(lite_metal::float16(x_ref_.data<float>()[i]));
     }
-    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    x_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
     y_half_.Resize(y_ref_.dims());
     auto y_half_data = y_half_.mutable_data<half>();
     for (int64_t i = 0; i < y_half_.numel(); i++) {
-      y_half_data[i] = half(lite::float16(y_ref_.data<float>()[i]));
+      y_half_data[i] = half(lite_metal::float16(y_ref_.data<float>()[i]));
     }
-    y_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(y_half_data, y_gpu_.dims());
+    y_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(y_half_data, y_gpu_.dims());
   }
 
   void RunBaseLine() {
@@ -107,10 +107,10 @@ class MatMulTest : public ::testing::Test {
   bool x_trans_, y_trans_;
   float alpha_;
   std::vector<int64_t> x_shape_, y_shape_, out_shape_;
-  lite::Tensor x_ref_, y_ref_, out_ref_;
-  lite::Tensor x_gpu_, y_gpu_;
-  lite::Tensor x_half_, y_half_;
-  lite::Tensor out_cpu_, out_gpu_;
+  lite_metal::Tensor x_ref_, y_ref_, out_ref_;
+  lite_metal::Tensor x_gpu_, y_gpu_;
+  lite_metal::Tensor x_half_, y_half_;
+  lite_metal::Tensor out_cpu_, out_gpu_;
 
   operators::MatMulParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -181,7 +181,7 @@ TEST_F(MatMulTest, TestFP16) {
                           IoDirection::DtoH);
 
   for (int i = 0; i < out_gpu_.numel(); ++i) {
-    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float res = static_cast<float>(lite_metal::float16(out_cpu_data[i]));
     float ref = out_ref_.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }

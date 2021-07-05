@@ -21,7 +21,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -79,7 +79,7 @@ REGISTER_LITE_KERNEL(box_clip,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::BoxClipCompute,
+                     paddle::lite_metal::kernels::arm::BoxClipCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("ImInfo", {LiteType::GetTensorTy(TARGET(kARM))})

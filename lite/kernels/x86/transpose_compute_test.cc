@@ -22,7 +22,7 @@
 #include "lite/kernels/x86/transpose_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -34,18 +34,18 @@ TEST(transpose_x86, retrive_op) {
 }
 
 TEST(transpose_x86, init) {
-  lite::kernels::x86::TransposeCompute<float> transpose;
+  lite_metal::kernels::x86::TransposeCompute<float> transpose;
   ASSERT_EQ(transpose.precision(), PRECISION(kFloat));
   ASSERT_EQ(transpose.target(), TARGET(kX86));
 }
 
 TEST(transpose_x86, run_test) {
-  lite::Tensor x;
-  lite::Tensor out;
+  lite_metal::Tensor x;
+  lite_metal::Tensor out;
   std::vector<int64_t> x_shape({3, 4, 5});
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> out_shape({3, 5, 4});
-  out.Resize(lite::DDim(out_shape));
+  out.Resize(lite_metal::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
   auto out_data = out.mutable_data<float>();
@@ -82,21 +82,21 @@ TEST(transpose2_x86, retrive_op) {
 }
 
 TEST(transpose2_x86, init) {
-  lite::kernels::x86::Transpose2Compute<float> transpose2;
+  lite_metal::kernels::x86::Transpose2Compute<float> transpose2;
   ASSERT_EQ(transpose2.precision(), PRECISION(kFloat));
   ASSERT_EQ(transpose2.target(), TARGET(kX86));
 }
 
 TEST(transpose2_x86, run_test) {
-  lite::Tensor x;
-  lite::Tensor xshape;
-  lite::Tensor out;
+  lite_metal::Tensor x;
+  lite_metal::Tensor xshape;
+  lite_metal::Tensor out;
   std::vector<int64_t> x_shape({3, 4, 5});
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> out_shape({3, 5, 4});
-  out.Resize(lite::DDim(out_shape));
+  out.Resize(lite_metal::DDim(out_shape));
   std::vector<int64_t> xshape_shape({3, 4, 5});
-  xshape.Resize(lite::DDim(xshape_shape));
+  xshape.Resize(lite_metal::DDim(xshape_shape));
 
   auto x_data = x.mutable_data<float>();
   auto out_data = out.mutable_data<float>();

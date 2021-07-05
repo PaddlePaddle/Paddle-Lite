@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace xpu {
 namespace math {
 
@@ -154,22 +154,22 @@ static inline void Transpose(const T *in, T *out, int h, int w) {
  * Get row matrix shape from a vector shape. If the rank of x_dim > 1, the
  * original x_dim is returned.
  */
-static lite::DDim RowMatrixFromVector(const lite::DDim &x_dim) {
+static lite_metal::DDim RowMatrixFromVector(const lite_metal::DDim &x_dim) {
   if (x_dim.size() > 1) {
     return x_dim;
   }
-  return lite::DDim({1, x_dim[0]});
+  return lite_metal::DDim({1, x_dim[0]});
 }
 
 /**
  * Get column matrix shape from a vector shape. If the rank of y_dim > 1, the
  * original y_dim is returned.
  */
-static lite::DDim ColumnMatrixFromVector(const lite::DDim &y_dim) {
+static lite_metal::DDim ColumnMatrixFromVector(const lite_metal::DDim &y_dim) {
   if (y_dim.size() > 1) {
     return y_dim;
   }
-  return lite::DDim({y_dim[0], 1});
+  return lite_metal::DDim({y_dim[0], 1});
 }
 
 /**
@@ -199,7 +199,7 @@ struct MatDescriptor {
   bool trans_;
 };
 
-static MatDescriptor CreateMatrixDescriptor(const lite::DDimLite &tensor_dim,
+static MatDescriptor CreateMatrixDescriptor(const lite_metal::DDimLite &tensor_dim,
                                             int num_flatten_cols,
                                             bool trans) {
   MatDescriptor retv;

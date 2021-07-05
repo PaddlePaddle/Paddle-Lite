@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 namespace {
 inline float sigmoid(float x) { return 1.f / (1.f + expf(-x)); }
@@ -123,8 +123,8 @@ class YoloBoxComputeTester : public arena::TestCase {
   }
 
   void RunBaseline(Scope* scope) override {
-    const lite::Tensor* X = scope->FindTensor(input0_);
-    const lite::Tensor* ImgSize = scope->FindTensor(input1_);
+    const lite_metal::Tensor* X = scope->FindTensor(input0_);
+    const lite_metal::Tensor* ImgSize = scope->FindTensor(input1_);
     auto* in = X;
     auto* imgsize = ImgSize;
     auto anchors = anchors_;
@@ -139,8 +139,8 @@ class YoloBoxComputeTester : public arena::TestCase {
     int in_size = downsample_ratio * h;
     int box_num = in->dims()[2] * in->dims()[3] * an_num;
 
-    lite::Tensor* Boxes = scope->NewTensor(output0_);
-    lite::Tensor* Scores = scope->NewTensor(output1_);
+    lite_metal::Tensor* Boxes = scope->NewTensor(output0_);
+    lite_metal::Tensor* Scores = scope->NewTensor(output1_);
     CHECK(Boxes);
     CHECK(Scores);
     Boxes->Resize({in->dims()[0], box_num, 4});

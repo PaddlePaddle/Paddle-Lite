@@ -14,17 +14,17 @@ limitations under the License. */
 
 #include "lite/fluid/selected_rows.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
 struct ReAllocateVisitor {
-  ReAllocateVisitor(const lite::DDim& dims, lite::Tensor* tensor)
+  ReAllocateVisitor(const lite_metal::DDim& dims, lite_metal::Tensor* tensor)
       : dims_(dims), tensor_(tensor) {}
 
   template <typename T>
   void operator()() const {
-    lite::Tensor cpu_tensor;
-    T* ptr = cpu_tensor.mutable_data<T>(lite::TargetType::kX86, dims_);
+    lite_metal::Tensor cpu_tensor;
+    T* ptr = cpu_tensor.mutable_data<T>(lite_metal::TargetType::kX86, dims_);
     const T* old_ptr =
         tensor_->memory_size() == 0 ? nullptr : tensor_->mutable_data<T>();
     if (old_ptr != nullptr) {
@@ -33,14 +33,14 @@ struct ReAllocateVisitor {
     tensor_->ShareDataWith(cpu_tensor);
   }
 
-  lite::DDim dims_;
-  lite::Tensor* tensor_;
+  lite_metal::DDim dims_;
+  lite_metal::Tensor* tensor_;
 };
 
 struct TensorCopyVisitor {
-  TensorCopyVisitor(lite::Tensor* dst,
+  TensorCopyVisitor(lite_metal::Tensor* dst,
                     int64_t dst_offset,
-                    const lite::Tensor src,
+                    const lite_metal::Tensor src,
                     int64_t src_offset,
                     int64_t size)
       : dst_(dst),
@@ -54,18 +54,18 @@ struct TensorCopyVisitor {
     // TODO(Yancey1989): support other place
     std::copy_n(src_.data<T>() + src_offset_,
                 size_,
-                dst_->mutable_data<T>(lite::TargetType::kX86) + dst_offset_);
+                dst_->mutable_data<T>(lite_metal::TargetType::kX86) + dst_offset_);
   }
 
-  lite::Tensor* dst_;
+  lite_metal::Tensor* dst_;
   int64_t dst_offset_;
-  lite::Tensor src_;
+  lite_metal::Tensor src_;
   int64_t src_offset_;
   int64_t size_;
 };
 
 struct TensorFillVisitor {
-  TensorFillVisitor(lite::Tensor* dst,
+  TensorFillVisitor(lite_metal::Tensor* dst,
                     int64_t dst_offset,
                     int64_t size,
                     float value)
@@ -75,20 +75,20 @@ struct TensorFillVisitor {
   void apply() const {
     // TODO(qiao): support other place
     //    paddle::platform::CPUPlace cpu;
-    auto* tensor_data = dst_->mutable_data<T>(lite::TargetType::kX86);
+    auto* tensor_data = dst_->mutable_data<T>(lite_metal::TargetType::kX86);
     auto* start = tensor_data + dst_offset_;
     auto* end = start + size_;
     std::fill(start, end, static_cast<T>(0.0));
   }
 
-  lite::Tensor* dst_;
+  lite_metal::Tensor* dst_;
   int64_t dst_offset_;
   int64_t size_;
 };
 
 void SerializeToStream(std::ostream& os,
                        const SelectedRows& selected_rows,
-                       const lite::Context<lite::TargetType::kX86>& dev_ctx) {
+                       const lite_metal::Context<lite_metal::TargetType::kX86>& dev_ctx) {
   {  // the 1st field, uint32_t version
     constexpr uint32_t version = 0;
     os.write(reinterpret_cast<const char*>(&version), sizeof(version));
@@ -114,7 +114,7 @@ void SerializeToStream(std::ostream& os,
 void DeserializeFromStream(
     std::istream& is,
     SelectedRows* selected_rows,
-    const lite::Context<lite::TargetType::kX86>& dev_ctx) {
+    const lite_metal::Context<lite_metal::TargetType::kX86>& dev_ctx) {
   {
     // the 1st field, unit32_t version for SelectedRows
     uint32_t version;
@@ -207,8 +207,8 @@ void SelectedRows::SyncIndex() {
   rwlock_->UNLock();
 }
 
-void SelectedRows::Get(const lite::Tensor& ids,
-                       lite::Tensor* value,
+void SelectedRows::Get(const lite_metal::Tensor& ids,
+                       lite_metal::Tensor* value,
                        bool auto_grown,
                        bool is_test) {
   CHECK(value->IsInitialized()) << "The value tensor should be initialized.";

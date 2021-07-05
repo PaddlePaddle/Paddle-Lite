@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SearchGrnnOpLite::CheckShape() const {
@@ -63,13 +63,13 @@ bool SearchGrnnOpLite::InferShapeImpl() const {
 }
 
 bool SearchGrnnOpLite::AttachImpl(const cpp::OpDesc& op_desc,
-                                  lite::Scope* scope) {
+                                  lite_metal::Scope* scope) {
   auto x = op_desc.Input("X").front();
   auto wi = op_desc.Input("Wi").front();
   auto wh = op_desc.Input("Wh").front();
-  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.wi = scope->FindVar(wi)->GetMutable<lite::Tensor>();
-  param_.wh = scope->FindVar(wh)->GetMutable<lite::Tensor>();
+  param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+  param_.wi = scope->FindVar(wi)->GetMutable<lite_metal::Tensor>();
+  param_.wh = scope->FindVar(wh)->GetMutable<lite_metal::Tensor>();
 
   param_.num_input = op_desc.GetAttr<int>("num_input");
   param_.num_hidden = op_desc.GetAttr<int>("num_hidden");
@@ -78,12 +78,12 @@ bool SearchGrnnOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   auto tmp_buffer = op_desc.Output("tmp_buffer").front();
   auto idx_sorted_by_width = op_desc.Output("idx_sorted_by_width").front();
   auto layout_input = op_desc.Output("layout_input").front();
-  param_.out = scope->FindVar(out)->GetMutable<lite::Tensor>();
-  param_.tmp_buffer = scope->FindVar(tmp_buffer)->GetMutable<lite::Tensor>();
+  param_.out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
+  param_.tmp_buffer = scope->FindVar(tmp_buffer)->GetMutable<lite_metal::Tensor>();
   param_.idx_sorted_by_width =
-      scope->FindVar(idx_sorted_by_width)->GetMutable<lite::Tensor>();
+      scope->FindVar(idx_sorted_by_width)->GetMutable<lite_metal::Tensor>();
   param_.layout_input =
-      scope->FindVar(layout_input)->GetMutable<lite::Tensor>();
+      scope->FindVar(layout_input)->GetMutable<lite_metal::Tensor>();
 
 #ifdef LITE_WITH_XPU
   if (op_desc.HasAttr("__xpu__float_to_fix")) {
@@ -104,4 +104,4 @@ bool SearchGrnnOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(search_grnn, paddle::lite::operators::SearchGrnnOpLite);
+REGISTER_LITE_OP(search_grnn, paddle::lite_metal::operators::SearchGrnnOpLite);

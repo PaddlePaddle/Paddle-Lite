@@ -17,7 +17,7 @@
 #include <memory>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 const int MALLOC_ALIGN = 64;
 

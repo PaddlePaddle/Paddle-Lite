@@ -47,7 +47,7 @@
   "QUANT_INPUT_OUTPUT_SCALE_RESTRICT_METHOD"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static std::string GetStringFromEnv(const std::string& str,
                                     const std::string& def = "") {

@@ -33,7 +33,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename Dtype>
 void fill_tensor_host_const_impl(Dtype* dio, Dtype value, int64_t size) {

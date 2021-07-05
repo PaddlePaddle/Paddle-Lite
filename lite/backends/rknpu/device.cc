@@ -16,7 +16,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace rknpu {
 
 std::unique_ptr<rk::nn::Exection> Device::Build(

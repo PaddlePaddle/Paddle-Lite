@@ -24,7 +24,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // Prior-box don't depend on feature-map data, only depend on image &
@@ -102,10 +102,10 @@ class SSDBoxesCalcOfflinePass : public mir::StmtPass {
   void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
                           bool flip,
                           std::vector<float>* output_aspect_ratior);
-  void ComputePriorbox(const lite::Tensor* input,
-                       const lite::Tensor* image,
-                       lite::Tensor** boxes,
-                       lite::Tensor** variances,
+  void ComputePriorbox(const lite_metal::Tensor* input,
+                       const lite_metal::Tensor* image,
+                       lite_metal::Tensor** boxes,
+                       lite_metal::Tensor** variances,
                        const std::vector<float>& min_size_,
                        const std::vector<float>& max_size_,
                        const std::vector<float>& aspect_ratio_,
@@ -120,10 +120,10 @@ class SSDBoxesCalcOfflinePass : public mir::StmtPass {
                        bool is_clip_,
                        const std::vector<std::string>& order_,
                        bool min_max_aspect_ratios_order);
-  void ComputeReshape(const lite::Tensor* in, lite::Tensor* out);
-  void ComputeFlatten(const lite::Tensor* in, lite::Tensor* out);
-  void ComputeConcat(const std::vector<lite::Tensor*> inputs,
-                     lite::Tensor* output);
+  void ComputeReshape(const lite_metal::Tensor* in, lite_metal::Tensor* out);
+  void ComputeFlatten(const lite_metal::Tensor* in, lite_metal::Tensor* out);
+  void ComputeConcat(const std::vector<lite_metal::Tensor*> inputs,
+                     lite_metal::Tensor* output);
   std::vector<size_t> StrideNumel(const DDim& ddim);
 };
 

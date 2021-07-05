@@ -19,7 +19,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -154,7 +154,7 @@ void CollectFpnProposalsCompute::Run() {
     }
   }
   lod0.emplace_back(post_nms_topN);
-  lite::LoD lod;
+  lite_metal::LoD lod;
   lod.emplace_back(lod0);
   fpn_rois->set_lod(lod);
 
@@ -170,7 +170,7 @@ REGISTER_LITE_KERNEL(collect_fpn_proposals,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::CollectFpnProposalsCompute,
+                     paddle::lite_metal::kernels::host::CollectFpnProposalsCompute,
                      def)
     .BindInput("MultiLevelRois", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("MultiLevelScores", {LiteType::GetTensorTy(TARGET(kHost))})

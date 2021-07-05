@@ -15,10 +15,10 @@ limitations under the License. */
 #include "lite/kernels/cuda/concat_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 template <typename Dtype>
 __global__ void Concat(const int num,
@@ -99,7 +99,7 @@ REGISTER_LITE_KERNEL(concat,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::ConcatCompute<float>,
+                     paddle::lite_metal::kernels::cuda::ConcatCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("AxisTensor",

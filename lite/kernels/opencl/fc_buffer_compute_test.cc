@@ -22,7 +22,7 @@
 #define FP16_MAX_DIFF (1e-2)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #define A(i, j) a[i * lda + j]
 #define B(i, j) b[i * ldb + j]
@@ -101,7 +101,7 @@ TEST(fc, compute) {
         ASSERT_FALSE(kernels.empty());
         auto kernel = std::move(kernels.front());
 
-        lite::Tensor x, w, bias, out, out_ref;
+        lite_metal::Tensor x, w, bias, out, out_ref;
         operators::FcParam param;
         param.input = &x;
         param.w = &w;

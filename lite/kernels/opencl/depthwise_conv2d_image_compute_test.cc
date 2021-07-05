@@ -25,7 +25,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #define SHADOW_LOG VLOG(4)
 #define FP16_RELATIVE_DIFF (5e-2)
@@ -138,11 +138,11 @@ static void conv_basic(const Dtype1* din,
 
 template <typename T, int STRIDE_H = 1, int STRIDE_W = 1>
 void depth_conv(const T* input_data,
-                const lite::DDim& input_dims,
+                const lite_metal::DDim& input_dims,
                 const T* filter_data,
-                const lite::DDim& filter_dims,
+                const lite_metal::DDim& filter_dims,
                 T* output_data,
-                const lite::DDim& output_dims) {
+                const lite_metal::DDim& output_dims) {
   int stride_h = STRIDE_H, stride_w = STRIDE_W;
 
   int64_t batches = input_dims[0];
@@ -269,7 +269,7 @@ void test_precision(const lite_api::CLPrecisionType p) {
         auto kernel = std::move(kernels.front());
 
         LOG(INFO) << "get kernel";
-        lite::Tensor input, filter, bias, output;
+        lite_metal::Tensor input, filter, bias, output;
         operators::ConvParam param;
         param.x = &input;
         param.filter = &filter;
@@ -311,11 +311,11 @@ void test_precision(const lite_api::CLPrecisionType p) {
 
         LOG(INFO) << "kernel ready";
         const DDim& input_dim =
-            lite::DDim{std::vector<int64_t>({1, ic, ih, iw})};
+            lite_metal::DDim{std::vector<int64_t>({1, ic, ih, iw})};
         const DDim& filter_dim =
-            lite::DDim{std::vector<int64_t>({fb, fc, fh, fw})};
+            lite_metal::DDim{std::vector<int64_t>({fb, fc, fh, fw})};
         const DDim& output_dim =
-            lite::DDim{std::vector<int64_t>({1, oc, oh, ow})};
+            lite_metal::DDim{std::vector<int64_t>({1, oc, oh, ow})};
         // channel wise bias
         const DDim bias_dim = DDim(std::vector<DDim::value_type>{oc});
         input.Resize(input_dim);
@@ -348,13 +348,13 @@ void test_precision(const lite_api::CLPrecisionType p) {
                          input_image_data.data());
 
         LOG(INFO) << "prepare kernel";
-        filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+        filter.Assign<float, lite_metal::DDim, TARGET(kARM)>(filter_v.data(),
                                                        filter_dim);
         if (bias_flag) {
           bias.Resize(bias_dim);
           bias_v.resize(bias_dim.production());
           fill_data_rand(bias_v.data(), -1.f, 1.f, bias_dim.production());
-          bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(), bias_dim);
+          bias.Assign<float, lite_metal::DDim, TARGET(kARM)>(bias_v.data(), bias_dim);
         }
 
         LOG(INFO) << "launch";
@@ -369,7 +369,7 @@ void test_precision(const lite_api::CLPrecisionType p) {
 
         CLRuntime::Global()->command_queue().finish();
 
-        lite::Tensor out_ref;
+        lite_metal::Tensor out_ref;
         out_ref.Resize(output_dim);
         auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
 
@@ -501,7 +501,7 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         auto kernel = std::move(kernels.front());
 
         LOG(INFO) << "get kernel";
-        lite::Tensor input, filter, bias, output;
+        lite_metal::Tensor input, filter, bias, output;
         operators::ConvParam param;
         param.x = &input;
         param.filter = &filter;
@@ -543,11 +543,11 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
 
         LOG(INFO) << "kernel ready";
         const DDim& input_dim =
-            lite::DDim{std::vector<int64_t>({1, ic, ih, iw})};
+            lite_metal::DDim{std::vector<int64_t>({1, ic, ih, iw})};
         const DDim& filter_dim =
-            lite::DDim{std::vector<int64_t>({fb, fc, fh, fw})};
+            lite_metal::DDim{std::vector<int64_t>({fb, fc, fh, fw})};
         const DDim& output_dim =
-            lite::DDim{std::vector<int64_t>({1, oc, oh, ow})};
+            lite_metal::DDim{std::vector<int64_t>({1, oc, oh, ow})};
         // channel wise bias
         const DDim bias_dim = DDim(std::vector<DDim::value_type>{oc});
         input.Resize(input_dim);
@@ -591,10 +591,10 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
                                                     input_image_data.data());
 
         LOG(INFO) << "prepare kernel";
-        filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
+        filter.Assign<float, lite_metal::DDim, TARGET(kARM)>(filter_v.data(),
                                                        filter_dim);
         if (bias_flag) {
-          bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(), bias_dim);
+          bias.Assign<float, lite_metal::DDim, TARGET(kARM)>(bias_v.data(), bias_dim);
         }
 
         LOG(INFO) << "launch";
@@ -609,7 +609,7 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
 
         CLRuntime::Global()->command_queue().finish();
 
-        lite::Tensor out_ref;
+        lite_metal::Tensor out_ref;
         out_ref.Resize(output_dim);
         auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
 

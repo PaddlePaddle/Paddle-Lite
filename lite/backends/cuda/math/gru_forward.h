@@ -26,7 +26,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 
@@ -94,7 +94,7 @@ __global__ void GruForwardResetOutput(
     T* prev_output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_gate,
+    lite_metal::cuda::math::ActivationType active_gate,
     bool is_batch);
 
 template <typename T>
@@ -104,7 +104,7 @@ __global__ void GruForwardFinalOutput(
     T* output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_node,
+    lite_metal::cuda::math::ActivationType active_node,
     bool origin_mode,
     bool is_batch);
 

@@ -17,16 +17,16 @@
 #include "lite/backends/host/math/yolo_box.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 void YoloBoxCompute::Run() {
   auto& param = Param<operators::YoloBoxParam>();
-  lite::Tensor* X = param.X;
-  lite::Tensor* ImgSize = param.ImgSize;
-  lite::Tensor* Boxes = param.Boxes;
-  lite::Tensor* Scores = param.Scores;
+  lite_metal::Tensor* X = param.X;
+  lite_metal::Tensor* ImgSize = param.ImgSize;
+  lite_metal::Tensor* Boxes = param.Boxes;
+  lite_metal::Tensor* Scores = param.Scores;
   std::vector<int> anchors = param.anchors;
   int class_num = param.class_num;
   float conf_thresh = param.conf_thresh;
@@ -36,7 +36,7 @@ void YoloBoxCompute::Run() {
   float bias = -0.5 * (scale_x_y - 1.);
   Boxes->clear();
   Scores->clear();
-  lite::host::math::YoloBox(X,
+  lite_metal::host::math::YoloBox(X,
                             ImgSize,
                             Boxes,
                             Scores,
@@ -58,7 +58,7 @@ REGISTER_LITE_KERNEL(yolo_box,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::YoloBoxCompute,
+                     paddle::lite_metal::kernels::host::YoloBoxCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("ImgSize",

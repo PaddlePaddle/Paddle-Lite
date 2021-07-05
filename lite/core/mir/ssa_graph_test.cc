@@ -22,7 +22,7 @@
 #include "paddle/fluid/framework/program_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void BuildFc(framework::ProgramDesc* desc,
@@ -41,9 +41,9 @@ TEST(SSAGraph, test) {
   auto program_faker = ProgramFaker();
   SSAGraph graph;
   std::vector<Place> places{{TARGET(kHost), PRECISION(kFloat)}};
-  auto scope = std::make_shared<lite::Scope>();
+  auto scope = std::make_shared<lite_metal::Scope>();
 
-  lite::Program program(*program_faker.program()->Proto(), scope, places);
+  lite_metal::Program program(*program_faker.program()->Proto(), scope, places);
   graph.Build(program, places);
 
   Visualize(&graph);

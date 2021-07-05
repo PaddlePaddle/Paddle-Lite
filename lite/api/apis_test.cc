@@ -27,9 +27,9 @@ DEFINE_string(model_dir, "", "");
 DEFINE_string(optimized_model, "", "");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
-void SetConstInput(lite::Tensor* x) {
+void SetConstInput(lite_metal::Tensor* x) {
   x->Resize(DDim(std::vector<DDim::value_type>({100, 100})));
   auto* data = x->mutable_data<float>();
   for (int i = 0; i < 100 * 100; i++) {
@@ -46,7 +46,7 @@ bool CompareTensors(const std::string& name,
 }
 
 TEST(CXXApi_LightApi, optim_model) {
-  lite::Predictor cxx_api;
+  lite_metal::Predictor cxx_api;
   std::vector<Place> valid_places({
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},  // Both works on X86 and ARM
@@ -58,8 +58,8 @@ TEST(CXXApi_LightApi, optim_model) {
 }
 
 TEST(CXXApi_LightApi, save_and_load_model) {
-  lite::Predictor cxx_api;
-  lite::LightPredictor light_api(FLAGS_optimized_model + ".nb", false);
+  lite_metal::Predictor cxx_api;
+  lite_metal::LightPredictor light_api(FLAGS_optimized_model + ".nb", false);
 
   // CXXAPi
   {

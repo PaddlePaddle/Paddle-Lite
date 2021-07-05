@@ -20,7 +20,7 @@ limitations under the License. */
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,8 +30,8 @@ void TransposeCompute<T, Ptype>::Run() {
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
 
-  const lite::Tensor* X = param.x;
-  lite::Tensor* Out = param.output;
+  const lite_metal::Tensor* X = param.x;
+  lite_metal::Tensor* Out = param.output;
   std::vector<int> axes = param.axis;
 
   const T* in = X->template data<T>();
@@ -69,10 +69,10 @@ void TransposeCompute<T, Ptype>::Run() {
 }  // namespace paddle
 
 using TransFp32 =
-    paddle::lite::kernels::cuda::TransposeCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::TransposeCompute<float, PRECISION(kFloat)>;
 
 using TransFp16 =
-    paddle::lite::kernels::cuda::TransposeCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::TransposeCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(transpose, kCUDA, kFloat, kNCHW, TransFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})

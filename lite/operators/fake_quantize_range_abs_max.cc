@@ -16,12 +16,12 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_OP(fake_quantize_range_abs_max,
-                 paddle::lite::operators::FakeQuantizeRangeMaxAbsOpLite);
+                 paddle::lite_metal::operators::FakeQuantizeRangeMaxAbsOpLite);
 REGISTER_LITE_OP(fake_quantize_abs_max,
-                 paddle::lite::operators::FakeQuantizeRangeMaxAbsOpLite);
+                 paddle::lite_metal::operators::FakeQuantizeRangeMaxAbsOpLite);

@@ -16,7 +16,7 @@
 #include "lite/backends/cuda/cuda_utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 size_t TargetWrapperCuda::num_devices() {
   int count = 0;

@@ -18,7 +18,7 @@
 #include "lite/kernels/host/sequence_unpad_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -42,7 +42,7 @@ void SequenceUnpadCompute::Run() {
   for (int64_t i = 0; i < batch_size; ++i) {
     out_lod0[i + 1] = out_lod0[i] + seq_len_ptr[i];
   }
-  paddle::lite::LoD out_lod;
+  paddle::lite_metal::LoD out_lod;
   out_lod.push_back(out_lod0);
 
   int64_t out_dim0 = out_lod0.back();
@@ -90,7 +90,7 @@ REGISTER_LITE_KERNEL(sequence_unpad,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SequenceUnpadCompute,
+                     paddle::lite_metal::kernels::xpu::SequenceUnpadCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Length",
@@ -100,7 +100,7 @@ REGISTER_LITE_KERNEL(sequence_unpad,
 
 // fake xpu kernel
 using SequenceUnpadInt64 =
-    paddle::lite::kernels::host::SequenceUnpadCompute<int64_t>;
+    paddle::lite_metal::kernels::host::SequenceUnpadCompute<int64_t>;
 REGISTER_LITE_KERNEL(
     sequence_unpad, kXPU, kFloat, kAny, SequenceUnpadInt64, int64)
     .BindInput("X",

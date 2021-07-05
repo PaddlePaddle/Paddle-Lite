@@ -17,7 +17,7 @@ limitations under the License. */
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -26,12 +26,12 @@ namespace math {
  * each dimension must be the same, except the axis dimension.
  */
 template <typename T>
-class ConcatFunctor<lite::TargetType::kX86, T> {
+class ConcatFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const std::vector<lite::Tensor>& input,
+  void operator()(const lite_metal::X86Context& context,
+                  const std::vector<lite_metal::Tensor>& input,
                   int axis,
-                  lite::Tensor* output) {
+                  lite_metal::Tensor* output) {
     // TODO(zcd): Add input data validity checking
     int num = input.size();
 
@@ -74,13 +74,13 @@ class ConcatFunctor<lite::TargetType::kX86, T> {
  * each dimension must be the same, except the axis dimension.
  */
 template <typename T>
-class SplitFunctor<lite::TargetType::kX86, T> {
+class SplitFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::X86Context& context,
-                  const lite::Tensor& input,
-                  const std::vector<const lite::Tensor*>& ref_inputs,
+  void operator()(const lite_metal::X86Context& context,
+                  const lite_metal::Tensor& input,
+                  const std::vector<const lite_metal::Tensor*>& ref_inputs,
                   const int axis,
-                  std::vector<lite::Tensor*>* outputs) {
+                  std::vector<lite_metal::Tensor*>* outputs) {
     // TODO(zcd): Add input data validity checking
     size_t num = outputs->size();
 
@@ -120,8 +120,8 @@ class SplitFunctor<lite::TargetType::kX86, T> {
 };
 
 #define DEFINE_FUNCTOR(type)                                  \
-  template class ConcatFunctor<lite::TargetType::kX86, type>; \
-  template class SplitFunctor<lite::TargetType::kX86, type>;
+  template class ConcatFunctor<lite_metal::TargetType::kX86, type>; \
+  template class SplitFunctor<lite_metal::TargetType::kX86, type>;
 
 FOR_ALL_TYPES(DEFINE_FUNCTOR);
 

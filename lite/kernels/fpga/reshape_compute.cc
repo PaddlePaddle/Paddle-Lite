@@ -19,7 +19,7 @@
 #include "lite/operators/reshape_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -84,7 +84,7 @@ REGISTER_LITE_KERNEL(reshape,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ReshapeCompute,
+                     paddle::lite_metal::kernels::fpga::ReshapeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -104,7 +104,7 @@ REGISTER_LITE_KERNEL(reshape2,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ReshapeCompute,
+                     paddle::lite_metal::kernels::fpga::ReshapeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -128,7 +128,7 @@ REGISTER_LITE_KERNEL(flatten,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::FlattenCompute,
+                     paddle::lite_metal::kernels::fpga::FlattenCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -148,7 +148,7 @@ REGISTER_LITE_KERNEL(flatten2,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::FlattenCompute,
+                     paddle::lite_metal::kernels::fpga::FlattenCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

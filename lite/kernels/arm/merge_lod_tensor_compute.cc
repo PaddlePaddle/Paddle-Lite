@@ -22,7 +22,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -33,11 +33,11 @@ struct CopyRange {
 
 void MergeLodTensorCompute::Run() {
   auto &param = Param<operators::MergeLodTensorParam>();
-  const lite::Tensor *x = param.x;
-  const lite::Tensor *mask = param.mask;
-  const lite::Tensor *in_true = param.in_true;
-  const lite::Tensor *in_false = param.in_false;
-  lite::Tensor *out = param.out;
+  const lite_metal::Tensor *x = param.x;
+  const lite_metal::Tensor *mask = param.mask;
+  const lite_metal::Tensor *in_true = param.in_true;
+  const lite_metal::Tensor *in_false = param.in_false;
+  lite_metal::Tensor *out = param.out;
   int level = param.level;
 
   CHECK(in_true->IsInitialized() || in_false->IsInitialized());
@@ -86,11 +86,11 @@ void MergeLodTensorCompute::Run() {
       input = in_true;
       in_idx = &in_true_idx;
     }
-    auto lod_and_offset = lite::arm::math::GetSubLoDAndAbsoluteOffset(
+    auto lod_and_offset = lite_metal::arm::math::GetSubLoDAndAbsoluteOffset(
         input->lod(), *in_idx, (*in_idx) + 1, 0);
     auto &lod_length = lod_and_offset.first;
 
-    lite::arm::math::AppendLoD(out_lod, lod_length);
+    lite_metal::arm::math::AppendLoD(out_lod, lod_length);
 
     size_t start_offset = lod_and_offset.second.first;
     size_t end_offset = lod_and_offset.second.second;
@@ -124,7 +124,7 @@ REGISTER_LITE_KERNEL(merge_lod_tensor,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::MergeLodTensorCompute,
+                     paddle::lite_metal::kernels::arm::MergeLodTensorCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})

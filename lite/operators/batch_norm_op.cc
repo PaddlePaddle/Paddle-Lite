@@ -15,7 +15,7 @@
 #include "lite/operators/batch_norm_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool BatchNormOp::CheckShape() const {
@@ -72,7 +72,7 @@ bool BatchNormOp::InferShapeImpl() const {
   return true;
 }
 
-bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.bias =
@@ -124,5 +124,5 @@ bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(batch_norm, paddle::lite::operators::BatchNormOp);
-REGISTER_LITE_OP(sync_batch_norm, paddle::lite::operators::BatchNormOp);
+REGISTER_LITE_OP(batch_norm, paddle::lite_metal::operators::BatchNormOp);
+REGISTER_LITE_OP(sync_batch_norm, paddle::lite_metal::operators::BatchNormOp);

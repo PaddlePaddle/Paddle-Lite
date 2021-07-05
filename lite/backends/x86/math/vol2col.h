@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 /*
@@ -64,26 +64,26 @@ namespace math {
  * \note The caller needs to ensure that volShape.inputChannels is equal to
  *       colShape.inputChannels.
  */
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class Vol2ColFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& vol,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& vol,
                   const std::vector<int>& dilations,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
-                  lite::Tensor* col) const;
+                  lite_metal::Tensor* col) const;
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class Col2VolFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& col,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& col,
                   const std::vector<int>& dilations,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
-                  lite::Tensor* vol) const;
+                  lite_metal::Tensor* vol) const;
 };
 
 }  // namespace math

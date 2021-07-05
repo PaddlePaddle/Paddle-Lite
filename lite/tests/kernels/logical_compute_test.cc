@@ -18,7 +18,7 @@
 #include "lite/core/arena/framework.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 struct _logical_and_func {
   inline bool operator()(const bool& a, const bool& b) const { return a && b; }

@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -203,7 +203,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
+                     paddle::lite_metal::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
                      host_to_device)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -219,7 +219,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
+                     paddle::lite_metal::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
                      host_float_chw_to_device_fp16_hwc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -235,7 +235,7 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kFPGA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
+                     paddle::lite_metal::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
                      host_float_chw_to_device_fp16_hwc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -251,7 +251,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCHWCompute,
+                     paddle::lite_metal::kernels::fpga::IoCopyFpgaToHostCHWCompute,
                      device_to_host_chw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -267,7 +267,7 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kFPGA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCHWCompute,
+                     paddle::lite_metal::kernels::fpga::IoCopyFpgaToHostCHWCompute,
                      device_to_host_chw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -283,7 +283,7 @@ REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCHWCompute,
+                     paddle::lite_metal::kernels::fpga::IoCopyFpgaToHostCHWCompute,
                      device_to_host_hwc_chw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -299,7 +299,7 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kFPGA,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCHWCompute,
+                     paddle::lite_metal::kernels::fpga::IoCopyFpgaToHostCHWCompute,
                      device_to_host_hwc_chw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),

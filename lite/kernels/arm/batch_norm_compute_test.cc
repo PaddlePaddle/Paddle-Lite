@@ -23,7 +23,7 @@
 #include "lite/kernels/arm/batch_norm_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 

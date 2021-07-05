@@ -20,7 +20,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 bool SSAGraph::CheckBidirectionalConnection() {

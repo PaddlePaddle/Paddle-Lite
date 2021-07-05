@@ -17,7 +17,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,7 +30,7 @@ class TransposeCompute : public KernelLite<TARGET(kCUDA), Ptype> {
   virtual ~TransposeCompute() = default;
 
  private:
-  lite::cuda::math::Transpose<Dtype> trans_;
+  lite_metal::cuda::math::Transpose<Dtype> trans_;
 };
 
 }  // namespace cuda

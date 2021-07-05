@@ -19,7 +19,7 @@
 #include "lite/kernels/arm/activation_extra_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 
 using param_t = operators::ActivationParam;

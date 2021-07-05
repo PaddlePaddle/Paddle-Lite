@@ -15,7 +15,7 @@
 #include "lite/model_parser/pb/op_version_map.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pb {
 
 std::map<std::string, int32_t> OpVersionMap::GetOpVersionMap() const {

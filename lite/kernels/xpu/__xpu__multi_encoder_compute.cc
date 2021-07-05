@@ -15,13 +15,13 @@
 #include "lite/kernels/xpu/__xpu__multi_encoder_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
 template <typename T>
 static std::vector<const T*> prepare_weight(
-    const std::vector<lite::Tensor*>& fc_weight) {
+    const std::vector<lite_metal::Tensor*>& fc_weight) {
   std::vector<const T*> result;
   for (auto* weight : fc_weight) {
     result.push_back(reinterpret_cast<const T*>(weight->data<float>()));
@@ -184,7 +184,7 @@ REGISTER_LITE_KERNEL(__xpu__multi_encoder,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMultiEncoderCompute,
+                     paddle::lite_metal::kernels::xpu::XPUMultiEncoderCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("SeqLod",

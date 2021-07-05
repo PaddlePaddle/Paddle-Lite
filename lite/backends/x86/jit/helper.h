@@ -27,7 +27,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 
 template <typename KernelTuple, typename PlaceType>
@@ -77,7 +77,7 @@ GetJitCode(const typename KernelTuple::attr_type& attr) {
 template <typename KernelTuple>
 inline const Kernel* GetReferKernel() {
   auto& ref_pool = ReferKernelPool::Instance().AllKernels();
-  KernelKey kkey(KernelTuple::kernel_type, lite::fluid::CPUPlace());
+  KernelKey kkey(KernelTuple::kernel_type, lite_metal::fluid::CPUPlace());
   auto ref_iter = ref_pool.find(kkey);
   CHECK(ref_iter != ref_pool.end())
       << "Every Kernel should have reference function.";
@@ -131,7 +131,7 @@ std::vector<const Kernel*> GetAllCandidateKernels(
   return res;
 }
 
-template <typename KernelTuple, typename PlaceType = lite::fluid::CPUPlace>
+template <typename KernelTuple, typename PlaceType = lite_metal::fluid::CPUPlace>
 std::vector<std::pair<std::string, typename KernelTuple::func_type>>
 GetAllCandidateFuncsWithTypes(const typename KernelTuple::attr_type& attr) {
   using Func = typename KernelTuple::func_type;
@@ -152,7 +152,7 @@ GetAllCandidateFuncsWithTypes(const typename KernelTuple::attr_type& attr) {
   return res;
 }
 
-template <typename KernelTuple, typename PlaceType = lite::fluid::CPUPlace>
+template <typename KernelTuple, typename PlaceType = lite_metal::fluid::CPUPlace>
 std::vector<typename KernelTuple::func_type> GetAllCandidateFuncs(
     const typename KernelTuple::attr_type& attr) {
   auto funcs = GetAllCandidateFuncsWithTypes<KernelTuple, PlaceType>(attr);
@@ -163,7 +163,7 @@ std::vector<typename KernelTuple::func_type> GetAllCandidateFuncs(
   return res;
 }
 
-template <typename KernelTuple, typename PlaceType = lite::fluid::CPUPlace>
+template <typename KernelTuple, typename PlaceType = lite_metal::fluid::CPUPlace>
 typename KernelTuple::func_type GetDefaultBestFunc(
     const typename KernelTuple::attr_type& attr) {
   auto funcs = GetAllCandidateFuncs<KernelTuple, PlaceType>(attr);

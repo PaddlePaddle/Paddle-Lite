@@ -21,7 +21,7 @@
 #include "lite/kernels/x86/scale_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -38,12 +38,12 @@ TEST(scale_x86, init) {
 }
 
 TEST(scale_x86, run_test) {
-  lite::Tensor x, y, out;
+  lite_metal::Tensor x, y, out;
   constexpr int batch_size = 1;
   std::vector<int64_t> x_shape{batch_size, 3, 2, 2};
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> out_shape{batch_size, 3, 2, 2};
-  out.Resize(lite::DDim(out_shape));
+  out.Resize(lite_metal::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
   auto out_data = out.mutable_data<float>();

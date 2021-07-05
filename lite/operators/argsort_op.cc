@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ArgsortOpLite::CheckShape() const {
@@ -50,7 +50,7 @@ bool ArgsortOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool ArgsortOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool ArgsortOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   param_.Indices = scope->FindMutableTensor(opdesc.Output("Indices").front());
@@ -68,4 +68,4 @@ bool ArgsortOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(argsort, paddle::lite::operators::ArgsortOpLite);
+REGISTER_LITE_OP(argsort, paddle::lite_metal::operators::ArgsortOpLite);

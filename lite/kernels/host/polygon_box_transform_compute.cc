@@ -15,17 +15,17 @@
 #include "lite/kernels/host/polygon_box_transform_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 template <class T>
 void PolygonBoxTransformCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
-  const lite::Tensor* in = param.input;
+  const lite_metal::Tensor* in = param.input;
   auto in_dims = in->dims();
   const T* in_data = in->template data<T>();
-  lite::Tensor* out = param.output;
+  lite_metal::Tensor* out = param.output;
   T* out_data = out->template mutable_data<T>();
 
   int batch_size = in_dims[0];
@@ -57,7 +57,7 @@ REGISTER_LITE_KERNEL(
     kHost,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::host::PolygonBoxTransformCompute<float>,
+    paddle::lite_metal::kernels::host::PolygonBoxTransformCompute<float>,
     def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),

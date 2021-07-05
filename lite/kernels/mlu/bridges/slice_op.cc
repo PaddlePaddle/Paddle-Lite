@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -32,11 +32,11 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // input
   auto input_var_name = op_info->Input("Input").front();
-  auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+  auto input = scope->FindVar(input_var_name)->GetMutable<lite_metal::Tensor>();
   auto input_shape = input->dims().Vectorize();
   // output
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   // attr
   auto axes = op_info->GetAttr<std::vector<int32_t>>("axes");
   auto starts = op_info->GetAttr<std::vector<int32_t>>("starts");
@@ -90,4 +90,4 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(slice,
                          kMLU,
-                         paddle::lite::subgraph::mlu::SliceConverter);
+                         paddle::lite_metal::subgraph::mlu::SliceConverter);

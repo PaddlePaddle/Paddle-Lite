@@ -16,7 +16,7 @@
 #include <string>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 using value_type = int64_t;
 
 value_type DDimLite::production() const {

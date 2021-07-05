@@ -7,7 +7,7 @@
 #include "flatbuffers/flatbuffers.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 namespace proto {
 
@@ -92,7 +92,7 @@ template<typename T> struct VariableDescTraits {
   static const VariableDesc enum_value = VariableDesc_NONE;
 };
 
-template<> struct VariableDescTraits<paddle::lite::fbs::proto::ParamDesc_::LoDTensorDesc> {
+template<> struct VariableDescTraits<paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDesc> {
   static const VariableDesc enum_value = VariableDesc_LoDTensorDesc;
 };
 
@@ -128,13 +128,13 @@ struct VariableDescUnion {
   static void *UnPack(const void *obj, VariableDesc type, const flatbuffers::resolver_function_t *resolver);
   flatbuffers::Offset<void> Pack(flatbuffers::FlatBufferBuilder &_fbb, const flatbuffers::rehasher_function_t *_rehasher = nullptr) const;
 
-  paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT *AsLoDTensorDesc() {
+  paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT *AsLoDTensorDesc() {
     return type == VariableDesc_LoDTensorDesc ?
-      reinterpret_cast<paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT *>(value) : nullptr;
+      reinterpret_cast<paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT *>(value) : nullptr;
   }
-  const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT *AsLoDTensorDesc() const {
+  const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT *AsLoDTensorDesc() const {
     return type == VariableDesc_LoDTensorDesc ?
-      reinterpret_cast<const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT *>(value) : nullptr;
+      reinterpret_cast<const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT *>(value) : nullptr;
   }
 };
 
@@ -146,8 +146,8 @@ inline bool operator==(const VariableDescUnion &lhs, const VariableDescUnion &rh
       return true;
     }
     case VariableDesc_LoDTensorDesc: {
-      return *(reinterpret_cast<const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT *>(lhs.value)) ==
-             *(reinterpret_cast<const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT *>(rhs.value));
+      return *(reinterpret_cast<const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT *>(lhs.value)) ==
+             *(reinterpret_cast<const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT *>(rhs.value));
     }
     default: {
       return false;
@@ -166,7 +166,7 @@ bool VerifyVariableDescVector(flatbuffers::Verifier &verifier, const flatbuffers
 
 struct CombinedParamsDescT : public flatbuffers::NativeTable {
   typedef CombinedParamsDesc TableType;
-  std::vector<std::unique_ptr<paddle::lite::fbs::proto::ParamDescT>> params;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDescT>> params;
   CombinedParamsDescT() {
   }
 };
@@ -190,11 +190,11 @@ struct CombinedParamsDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_PARAMS = 4
   };
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc>> *params() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc>> *>(VT_PARAMS);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc>> *params() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc>> *>(VT_PARAMS);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc>> *mutable_params() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc>> *>(VT_PARAMS);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc>> *mutable_params() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc>> *>(VT_PARAMS);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -212,7 +212,7 @@ struct CombinedParamsDescBuilder {
   typedef CombinedParamsDesc Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_params(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc>>> params) {
+  void add_params(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc>>> params) {
     fbb_.AddOffset(CombinedParamsDesc::VT_PARAMS, params);
   }
   explicit CombinedParamsDescBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -229,7 +229,7 @@ struct CombinedParamsDescBuilder {
 
 inline flatbuffers::Offset<CombinedParamsDesc> CreateCombinedParamsDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc>>> params = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc>>> params = 0) {
   CombinedParamsDescBuilder builder_(_fbb);
   builder_.add_params(params);
   return builder_.Finish();
@@ -237,9 +237,9 @@ inline flatbuffers::Offset<CombinedParamsDesc> CreateCombinedParamsDesc(
 
 inline flatbuffers::Offset<CombinedParamsDesc> CreateCombinedParamsDescDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    std::vector<flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc>> *params = nullptr) {
-  auto params__ = params ? _fbb.CreateVectorOfSortedTables<paddle::lite::fbs::proto::ParamDesc>(params) : 0;
-  return paddle::lite::fbs::proto::CreateCombinedParamsDesc(
+    std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc>> *params = nullptr) {
+  auto params__ = params ? _fbb.CreateVectorOfSortedTables<paddle::lite_metal::fbs::proto::ParamDesc>(params) : 0;
+  return paddle::lite_metal::fbs::proto::CreateCombinedParamsDesc(
       _fbb,
       params__);
 }
@@ -253,11 +253,11 @@ struct LoDTensorDescT : public flatbuffers::NativeTable {
   int32_t lod_level;
   std::vector<int64_t> lod;
   std::vector<int64_t> dim;
-  paddle::lite::fbs::proto::VarType_::Type data_type;
+  paddle::lite_metal::fbs::proto::VarType_::Type data_type;
   std::vector<int8_t> data;
   LoDTensorDescT()
       : lod_level(0),
-        data_type(paddle::lite::fbs::proto::VarType_::Type_BOOL) {
+        data_type(paddle::lite_metal::fbs::proto::VarType_::Type_BOOL) {
   }
 };
 
@@ -306,10 +306,10 @@ struct LoDTensorDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   flatbuffers::Vector<int64_t> *mutable_dim() {
     return GetPointer<flatbuffers::Vector<int64_t> *>(VT_DIM);
   }
-  paddle::lite::fbs::proto::VarType_::Type data_type() const {
-    return static_cast<paddle::lite::fbs::proto::VarType_::Type>(GetField<int32_t>(VT_DATA_TYPE, 0));
+  paddle::lite_metal::fbs::proto::VarType_::Type data_type() const {
+    return static_cast<paddle::lite_metal::fbs::proto::VarType_::Type>(GetField<int32_t>(VT_DATA_TYPE, 0));
   }
-  bool mutate_data_type(paddle::lite::fbs::proto::VarType_::Type _data_type) {
+  bool mutate_data_type(paddle::lite_metal::fbs::proto::VarType_::Type _data_type) {
     return SetField<int32_t>(VT_DATA_TYPE, static_cast<int32_t>(_data_type), 0);
   }
   const flatbuffers::Vector<int8_t> *data() const {
@@ -348,7 +348,7 @@ struct LoDTensorDescBuilder {
   void add_dim(flatbuffers::Offset<flatbuffers::Vector<int64_t>> dim) {
     fbb_.AddOffset(LoDTensorDesc::VT_DIM, dim);
   }
-  void add_data_type(paddle::lite::fbs::proto::VarType_::Type data_type) {
+  void add_data_type(paddle::lite_metal::fbs::proto::VarType_::Type data_type) {
     fbb_.AddElement<int32_t>(LoDTensorDesc::VT_DATA_TYPE, static_cast<int32_t>(data_type), 0);
   }
   void add_data(flatbuffers::Offset<flatbuffers::Vector<int8_t>> data) {
@@ -371,7 +371,7 @@ inline flatbuffers::Offset<LoDTensorDesc> CreateLoDTensorDesc(
     int32_t lod_level = 0,
     flatbuffers::Offset<flatbuffers::Vector<int64_t>> lod = 0,
     flatbuffers::Offset<flatbuffers::Vector<int64_t>> dim = 0,
-    paddle::lite::fbs::proto::VarType_::Type data_type = paddle::lite::fbs::proto::VarType_::Type_BOOL,
+    paddle::lite_metal::fbs::proto::VarType_::Type data_type = paddle::lite_metal::fbs::proto::VarType_::Type_BOOL,
     flatbuffers::Offset<flatbuffers::Vector<int8_t>> data = 0) {
   LoDTensorDescBuilder builder_(_fbb);
   builder_.add_data(data);
@@ -387,12 +387,12 @@ inline flatbuffers::Offset<LoDTensorDesc> CreateLoDTensorDescDirect(
     int32_t lod_level = 0,
     const std::vector<int64_t> *lod = nullptr,
     const std::vector<int64_t> *dim = nullptr,
-    paddle::lite::fbs::proto::VarType_::Type data_type = paddle::lite::fbs::proto::VarType_::Type_BOOL,
+    paddle::lite_metal::fbs::proto::VarType_::Type data_type = paddle::lite_metal::fbs::proto::VarType_::Type_BOOL,
     const std::vector<int8_t> *data = nullptr) {
   auto lod__ = lod ? _fbb.CreateVector<int64_t>(*lod) : 0;
   auto dim__ = dim ? _fbb.CreateVector<int64_t>(*dim) : 0;
   auto data__ = data ? _fbb.CreateVector<int8_t>(*data) : 0;
-  return paddle::lite::fbs::proto::ParamDesc_::CreateLoDTensorDesc(
+  return paddle::lite_metal::fbs::proto::ParamDesc_::CreateLoDTensorDesc(
       _fbb,
       lod_level,
       lod__,
@@ -495,9 +495,9 @@ flatbuffers::Offset<VersionDesc> CreateVersionDesc(flatbuffers::FlatBufferBuilde
 
 struct ParamDescT : public flatbuffers::NativeTable {
   typedef ParamDesc TableType;
-  std::unique_ptr<paddle::lite::fbs::proto::ParamDesc_::VersionDescT> version;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDesc_::VersionDescT> version;
   std::string name;
-  paddle::lite::fbs::proto::ParamDesc_::VariableDescUnion variable;
+  paddle::lite_metal::fbs::proto::ParamDesc_::VariableDescUnion variable;
   ParamDescT() {
   }
 };
@@ -526,11 +526,11 @@ struct ParamDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_VARIABLE_TYPE = 8,
     VT_VARIABLE = 10
   };
-  const paddle::lite::fbs::proto::ParamDesc_::VersionDesc *version() const {
-    return GetPointer<const paddle::lite::fbs::proto::ParamDesc_::VersionDesc *>(VT_VERSION);
+  const paddle::lite_metal::fbs::proto::ParamDesc_::VersionDesc *version() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::ParamDesc_::VersionDesc *>(VT_VERSION);
   }
-  paddle::lite::fbs::proto::ParamDesc_::VersionDesc *mutable_version() {
-    return GetPointer<paddle::lite::fbs::proto::ParamDesc_::VersionDesc *>(VT_VERSION);
+  paddle::lite_metal::fbs::proto::ParamDesc_::VersionDesc *mutable_version() {
+    return GetPointer<paddle::lite_metal::fbs::proto::ParamDesc_::VersionDesc *>(VT_VERSION);
   }
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
@@ -544,15 +544,15 @@ struct ParamDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   int KeyCompareWithValue(const char *val) const {
     return strcmp(name()->c_str(), val);
   }
-  paddle::lite::fbs::proto::ParamDesc_::VariableDesc variable_type() const {
-    return static_cast<paddle::lite::fbs::proto::ParamDesc_::VariableDesc>(GetField<uint8_t>(VT_VARIABLE_TYPE, 0));
+  paddle::lite_metal::fbs::proto::ParamDesc_::VariableDesc variable_type() const {
+    return static_cast<paddle::lite_metal::fbs::proto::ParamDesc_::VariableDesc>(GetField<uint8_t>(VT_VARIABLE_TYPE, 0));
   }
   const void *variable() const {
     return GetPointer<const void *>(VT_VARIABLE);
   }
   template<typename T> const T *variable_as() const;
-  const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDesc *variable_as_LoDTensorDesc() const {
-    return variable_type() == paddle::lite::fbs::proto::ParamDesc_::VariableDesc_LoDTensorDesc ? static_cast<const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDesc *>(variable()) : nullptr;
+  const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDesc *variable_as_LoDTensorDesc() const {
+    return variable_type() == paddle::lite_metal::fbs::proto::ParamDesc_::VariableDesc_LoDTensorDesc ? static_cast<const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDesc *>(variable()) : nullptr;
   }
   void *mutable_variable() {
     return GetPointer<void *>(VT_VARIABLE);
@@ -573,7 +573,7 @@ struct ParamDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   static flatbuffers::Offset<ParamDesc> Pack(flatbuffers::FlatBufferBuilder &_fbb, const ParamDescT* _o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 };
 
-template<> inline const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDesc *ParamDesc::variable_as<paddle::lite::fbs::proto::ParamDesc_::LoDTensorDesc>() const {
+template<> inline const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDesc *ParamDesc::variable_as<paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDesc>() const {
   return variable_as_LoDTensorDesc();
 }
 
@@ -581,13 +581,13 @@ struct ParamDescBuilder {
   typedef ParamDesc Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_version(flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc_::VersionDesc> version) {
+  void add_version(flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc_::VersionDesc> version) {
     fbb_.AddOffset(ParamDesc::VT_VERSION, version);
   }
   void add_name(flatbuffers::Offset<flatbuffers::String> name) {
     fbb_.AddOffset(ParamDesc::VT_NAME, name);
   }
-  void add_variable_type(paddle::lite::fbs::proto::ParamDesc_::VariableDesc variable_type) {
+  void add_variable_type(paddle::lite_metal::fbs::proto::ParamDesc_::VariableDesc variable_type) {
     fbb_.AddElement<uint8_t>(ParamDesc::VT_VARIABLE_TYPE, static_cast<uint8_t>(variable_type), 0);
   }
   void add_variable(flatbuffers::Offset<void> variable) {
@@ -608,9 +608,9 @@ struct ParamDescBuilder {
 
 inline flatbuffers::Offset<ParamDesc> CreateParamDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc_::VersionDesc> version = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc_::VersionDesc> version = 0,
     flatbuffers::Offset<flatbuffers::String> name = 0,
-    paddle::lite::fbs::proto::ParamDesc_::VariableDesc variable_type = paddle::lite::fbs::proto::ParamDesc_::VariableDesc_NONE,
+    paddle::lite_metal::fbs::proto::ParamDesc_::VariableDesc variable_type = paddle::lite_metal::fbs::proto::ParamDesc_::VariableDesc_NONE,
     flatbuffers::Offset<void> variable = 0) {
   ParamDescBuilder builder_(_fbb);
   builder_.add_variable(variable);
@@ -622,12 +622,12 @@ inline flatbuffers::Offset<ParamDesc> CreateParamDesc(
 
 inline flatbuffers::Offset<ParamDesc> CreateParamDescDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc_::VersionDesc> version = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc_::VersionDesc> version = 0,
     const char *name = nullptr,
-    paddle::lite::fbs::proto::ParamDesc_::VariableDesc variable_type = paddle::lite::fbs::proto::ParamDesc_::VariableDesc_NONE,
+    paddle::lite_metal::fbs::proto::ParamDesc_::VariableDesc variable_type = paddle::lite_metal::fbs::proto::ParamDesc_::VariableDesc_NONE,
     flatbuffers::Offset<void> variable = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
-  return paddle::lite::fbs::proto::CreateParamDesc(
+  return paddle::lite_metal::fbs::proto::CreateParamDesc(
       _fbb,
       version,
       name__,
@@ -638,7 +638,7 @@ inline flatbuffers::Offset<ParamDesc> CreateParamDescDirect(
 flatbuffers::Offset<ParamDesc> CreateParamDesc(flatbuffers::FlatBufferBuilder &_fbb, const ParamDescT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
 inline CombinedParamsDescT *CombinedParamsDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::CombinedParamsDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::CombinedParamsDescT>(new CombinedParamsDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::CombinedParamsDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::CombinedParamsDescT>(new CombinedParamsDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -646,7 +646,7 @@ inline CombinedParamsDescT *CombinedParamsDesc::UnPack(const flatbuffers::resolv
 inline void CombinedParamsDesc::UnPackTo(CombinedParamsDescT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = params(); if (_e) { _o->params.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->params[_i] = std::unique_ptr<paddle::lite::fbs::proto::ParamDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = params(); if (_e) { _o->params.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->params[_i] = std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
 }
 
 inline flatbuffers::Offset<CombinedParamsDesc> CombinedParamsDesc::Pack(flatbuffers::FlatBufferBuilder &_fbb, const CombinedParamsDescT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -657,8 +657,8 @@ inline flatbuffers::Offset<CombinedParamsDesc> CreateCombinedParamsDesc(flatbuff
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const CombinedParamsDescT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _params = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::ParamDesc>> (_o->params.size(), [](size_t i, _VectorArgs *__va) { return CreateParamDesc(*__va->__fbb, __va->__o->params[i].get(), __va->__rehasher); }, &_va );
-  return paddle::lite::fbs::proto::CreateCombinedParamsDesc(
+  auto _params = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::ParamDesc>> (_o->params.size(), [](size_t i, _VectorArgs *__va) { return CreateParamDesc(*__va->__fbb, __va->__o->params[i].get(), __va->__rehasher); }, &_va );
+  return paddle::lite_metal::fbs::proto::CreateCombinedParamsDesc(
       _fbb,
       _params);
 }
@@ -666,7 +666,7 @@ inline flatbuffers::Offset<CombinedParamsDesc> CreateCombinedParamsDesc(flatbuff
 namespace ParamDesc_ {
 
 inline LoDTensorDescT *LoDTensorDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT>(new LoDTensorDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT>(new LoDTensorDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -694,7 +694,7 @@ inline flatbuffers::Offset<LoDTensorDesc> CreateLoDTensorDesc(flatbuffers::FlatB
   auto _dim = _fbb.CreateVector(_o->dim);
   auto _data_type = _o->data_type;
   auto _data = _fbb.CreateVector(_o->data);
-  return paddle::lite::fbs::proto::ParamDesc_::CreateLoDTensorDesc(
+  return paddle::lite_metal::fbs::proto::ParamDesc_::CreateLoDTensorDesc(
       _fbb,
       _lod_level,
       _lod,
@@ -704,7 +704,7 @@ inline flatbuffers::Offset<LoDTensorDesc> CreateLoDTensorDesc(flatbuffers::FlatB
 }
 
 inline VersionDescT *VersionDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::ParamDesc_::VersionDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::ParamDesc_::VersionDescT>(new VersionDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDesc_::VersionDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDesc_::VersionDescT>(new VersionDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -726,7 +726,7 @@ inline flatbuffers::Offset<VersionDesc> CreateVersionDesc(flatbuffers::FlatBuffe
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const VersionDescT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _version = _o->version;
   auto _model_version = _o->model_version;
-  return paddle::lite::fbs::proto::ParamDesc_::CreateVersionDesc(
+  return paddle::lite_metal::fbs::proto::ParamDesc_::CreateVersionDesc(
       _fbb,
       _version,
       _model_version);
@@ -735,7 +735,7 @@ inline flatbuffers::Offset<VersionDesc> CreateVersionDesc(flatbuffers::FlatBuffe
 }  // namespace ParamDesc_
 
 inline ParamDescT *ParamDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::ParamDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::ParamDescT>(new ParamDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDescT>(new ParamDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -743,10 +743,10 @@ inline ParamDescT *ParamDesc::UnPack(const flatbuffers::resolver_function_t *_re
 inline void ParamDesc::UnPackTo(ParamDescT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = version(); if (_e) _o->version = std::unique_ptr<paddle::lite::fbs::proto::ParamDesc_::VersionDescT>(_e->UnPack(_resolver)); }
+  { auto _e = version(); if (_e) _o->version = std::unique_ptr<paddle::lite_metal::fbs::proto::ParamDesc_::VersionDescT>(_e->UnPack(_resolver)); }
   { auto _e = name(); if (_e) _o->name = _e->str(); }
   { auto _e = variable_type(); _o->variable.type = _e; }
-  { auto _e = variable(); if (_e) _o->variable.value = paddle::lite::fbs::proto::ParamDesc_::VariableDescUnion::UnPack(_e, variable_type(), _resolver); }
+  { auto _e = variable(); if (_e) _o->variable.value = paddle::lite_metal::fbs::proto::ParamDesc_::VariableDescUnion::UnPack(_e, variable_type(), _resolver); }
 }
 
 inline flatbuffers::Offset<ParamDesc> ParamDesc::Pack(flatbuffers::FlatBufferBuilder &_fbb, const ParamDescT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -761,7 +761,7 @@ inline flatbuffers::Offset<ParamDesc> CreateParamDesc(flatbuffers::FlatBufferBui
   auto _name = _fbb.CreateString(_o->name);
   auto _variable_type = _o->variable.type;
   auto _variable = _o->variable.Pack(_fbb);
-  return paddle::lite::fbs::proto::CreateParamDesc(
+  return paddle::lite_metal::fbs::proto::CreateParamDesc(
       _fbb,
       _version,
       _name,
@@ -777,7 +777,7 @@ inline bool VerifyVariableDesc(flatbuffers::Verifier &verifier, const void *obj,
       return true;
     }
     case VariableDesc_LoDTensorDesc: {
-      auto ptr = reinterpret_cast<const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDesc *>(obj);
+      auto ptr = reinterpret_cast<const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDesc *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;
@@ -799,7 +799,7 @@ inline bool VerifyVariableDescVector(flatbuffers::Verifier &verifier, const flat
 inline void *VariableDescUnion::UnPack(const void *obj, VariableDesc type, const flatbuffers::resolver_function_t *resolver) {
   switch (type) {
     case VariableDesc_LoDTensorDesc: {
-      auto ptr = reinterpret_cast<const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDesc *>(obj);
+      auto ptr = reinterpret_cast<const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDesc *>(obj);
       return ptr->UnPack(resolver);
     }
     default: return nullptr;
@@ -809,7 +809,7 @@ inline void *VariableDescUnion::UnPack(const void *obj, VariableDesc type, const
 inline flatbuffers::Offset<void> VariableDescUnion::Pack(flatbuffers::FlatBufferBuilder &_fbb, const flatbuffers::rehasher_function_t *_rehasher) const {
   switch (type) {
     case VariableDesc_LoDTensorDesc: {
-      auto ptr = reinterpret_cast<const paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT *>(value);
+      auto ptr = reinterpret_cast<const paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT *>(value);
       return CreateLoDTensorDesc(_fbb, ptr, _rehasher).Union();
     }
     default: return 0;
@@ -819,7 +819,7 @@ inline flatbuffers::Offset<void> VariableDescUnion::Pack(flatbuffers::FlatBuffer
 inline VariableDescUnion::VariableDescUnion(const VariableDescUnion &u) : type(u.type), value(nullptr) {
   switch (type) {
     case VariableDesc_LoDTensorDesc: {
-      value = new paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT(*reinterpret_cast<paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT *>(u.value));
+      value = new paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT(*reinterpret_cast<paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT *>(u.value));
       break;
     }
     default:
@@ -830,7 +830,7 @@ inline VariableDescUnion::VariableDescUnion(const VariableDescUnion &u) : type(u
 inline void VariableDescUnion::Reset() {
   switch (type) {
     case VariableDesc_LoDTensorDesc: {
-      auto ptr = reinterpret_cast<paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescT *>(value);
+      auto ptr = reinterpret_cast<paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescT *>(value);
       delete ptr;
       break;
     }
@@ -846,7 +846,7 @@ inline const flatbuffers::TypeTable *VariableDescTypeTable() {
     { flatbuffers::ET_SEQUENCE, 0, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::ParamDesc_::LoDTensorDescTypeTable
+    paddle::lite_metal::fbs::proto::ParamDesc_::LoDTensorDescTypeTable
   };
   static const char * const names[] = {
     "NONE",
@@ -865,7 +865,7 @@ inline const flatbuffers::TypeTable *CombinedParamsDescTypeTable() {
     { flatbuffers::ET_SEQUENCE, 1, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::ParamDescTypeTable
+    paddle::lite_metal::fbs::proto::ParamDescTypeTable
   };
   static const char * const names[] = {
     "params"
@@ -887,7 +887,7 @@ inline const flatbuffers::TypeTable *LoDTensorDescTypeTable() {
     { flatbuffers::ET_CHAR, 1, -1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarType_::TypeTypeTable
+    paddle::lite_metal::fbs::proto::VarType_::TypeTypeTable
   };
   static const char * const names[] = {
     "lod_level",
@@ -927,8 +927,8 @@ inline const flatbuffers::TypeTable *ParamDescTypeTable() {
     { flatbuffers::ET_SEQUENCE, 0, 1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::ParamDesc_::VersionDescTypeTable,
-    paddle::lite::fbs::proto::ParamDesc_::VariableDescTypeTable
+    paddle::lite_metal::fbs::proto::ParamDesc_::VersionDescTypeTable,
+    paddle::lite_metal::fbs::proto::ParamDesc_::VariableDescTypeTable
   };
   static const char * const names[] = {
     "version",
@@ -942,12 +942,12 @@ inline const flatbuffers::TypeTable *ParamDescTypeTable() {
   return &tt;
 }
 
-inline const paddle::lite::fbs::proto::CombinedParamsDesc *GetCombinedParamsDesc(const void *buf) {
-  return flatbuffers::GetRoot<paddle::lite::fbs::proto::CombinedParamsDesc>(buf);
+inline const paddle::lite_metal::fbs::proto::CombinedParamsDesc *GetCombinedParamsDesc(const void *buf) {
+  return flatbuffers::GetRoot<paddle::lite_metal::fbs::proto::CombinedParamsDesc>(buf);
 }
 
-inline const paddle::lite::fbs::proto::CombinedParamsDesc *GetSizePrefixedCombinedParamsDesc(const void *buf) {
-  return flatbuffers::GetSizePrefixedRoot<paddle::lite::fbs::proto::CombinedParamsDesc>(buf);
+inline const paddle::lite_metal::fbs::proto::CombinedParamsDesc *GetSizePrefixedCombinedParamsDesc(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<paddle::lite_metal::fbs::proto::CombinedParamsDesc>(buf);
 }
 
 inline CombinedParamsDesc *GetMutableCombinedParamsDesc(void *buf) {
@@ -956,41 +956,41 @@ inline CombinedParamsDesc *GetMutableCombinedParamsDesc(void *buf) {
 
 inline bool VerifyCombinedParamsDescBuffer(
     flatbuffers::Verifier &verifier) {
-  return verifier.VerifyBuffer<paddle::lite::fbs::proto::CombinedParamsDesc>(nullptr);
+  return verifier.VerifyBuffer<paddle::lite_metal::fbs::proto::CombinedParamsDesc>(nullptr);
 }
 
 inline bool VerifySizePrefixedCombinedParamsDescBuffer(
     flatbuffers::Verifier &verifier) {
-  return verifier.VerifySizePrefixedBuffer<paddle::lite::fbs::proto::CombinedParamsDesc>(nullptr);
+  return verifier.VerifySizePrefixedBuffer<paddle::lite_metal::fbs::proto::CombinedParamsDesc>(nullptr);
 }
 
 inline void FinishCombinedParamsDescBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<paddle::lite::fbs::proto::CombinedParamsDesc> root) {
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::CombinedParamsDesc> root) {
   fbb.Finish(root);
 }
 
 inline void FinishSizePrefixedCombinedParamsDescBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<paddle::lite::fbs::proto::CombinedParamsDesc> root) {
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::CombinedParamsDesc> root) {
   fbb.FinishSizePrefixed(root);
 }
 
-inline std::unique_ptr<paddle::lite::fbs::proto::CombinedParamsDescT> UnPackCombinedParamsDesc(
+inline std::unique_ptr<paddle::lite_metal::fbs::proto::CombinedParamsDescT> UnPackCombinedParamsDesc(
     const void *buf,
     const flatbuffers::resolver_function_t *res = nullptr) {
-  return std::unique_ptr<paddle::lite::fbs::proto::CombinedParamsDescT>(GetCombinedParamsDesc(buf)->UnPack(res));
+  return std::unique_ptr<paddle::lite_metal::fbs::proto::CombinedParamsDescT>(GetCombinedParamsDesc(buf)->UnPack(res));
 }
 
-inline std::unique_ptr<paddle::lite::fbs::proto::CombinedParamsDescT> UnPackSizePrefixedCombinedParamsDesc(
+inline std::unique_ptr<paddle::lite_metal::fbs::proto::CombinedParamsDescT> UnPackSizePrefixedCombinedParamsDesc(
     const void *buf,
     const flatbuffers::resolver_function_t *res = nullptr) {
-  return std::unique_ptr<paddle::lite::fbs::proto::CombinedParamsDescT>(GetSizePrefixedCombinedParamsDesc(buf)->UnPack(res));
+  return std::unique_ptr<paddle::lite_metal::fbs::proto::CombinedParamsDescT>(GetSizePrefixedCombinedParamsDesc(buf)->UnPack(res));
 }
 
 }  // namespace proto
 }  // namespace fbs
-}  // namespace lite
+}  // namespace lite_metal
 }  // namespace paddle
 
 #endif  // FLATBUFFERS_GENERATED_PARAM_PADDLE_LITE_FBS_PROTO_H_

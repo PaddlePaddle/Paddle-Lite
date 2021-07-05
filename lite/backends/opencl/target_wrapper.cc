@@ -20,7 +20,7 @@
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static cl_channel_type GetCLChannelType(const PrecisionType type) {
   switch (type) {

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -26,7 +26,7 @@ void FeedCompute<T, Ptype>::Run() {
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
   VLOG(4) << "feed_list.size: " << param.feed_list->size();
-  const lite::Tensor& feed_item = (*param.feed_list)[param.col];
+  const lite_metal::Tensor& feed_item = (*param.feed_list)[param.col];
 
   int num = static_cast<int>(feed_item.numel());
   auto input = feed_item.data<T>();
@@ -43,13 +43,13 @@ void FeedCompute<T, Ptype>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::cuda::FeedCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::cuda::FeedCompute<float, PRECISION(kFloat)>
     FeedFp32;
 
-typedef paddle::lite::kernels::cuda::FeedCompute<int64_t, PRECISION(kInt64)>
+typedef paddle::lite_metal::kernels::cuda::FeedCompute<int64_t, PRECISION(kInt64)>
     FeedInt64;
 
-typedef paddle::lite::kernels::cuda::FeedCompute<int32_t, PRECISION(kInt32)>
+typedef paddle::lite_metal::kernels::cuda::FeedCompute<int32_t, PRECISION(kInt32)>
     FeedInt32;
 
 REGISTER_LITE_KERNEL(feed, kCUDA, kFloat, kNCHW, FeedFp32, nchw)

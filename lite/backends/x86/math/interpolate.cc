@@ -18,7 +18,7 @@ limitations under the License. */
 #include "lite/backends/x86/math/math_function.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -34,7 +34,7 @@ void bilinear_interp(const float* input_data,
                      const int w_out,
                      const bool align_corners,
                      const bool align_mode) {
-  int* buf = static_cast<int*>(lite::host::malloc(
+  int* buf = static_cast<int*>(lite_metal::host::malloc(
       sizeof(int) * (w_out + h_out + w_out * 2 + h_out * 2)));
 
   int* xofs = buf;
@@ -113,9 +113,9 @@ void bilinear_interp(const float* input_data,
     const float* betap = beta;
 
     float* rowsbuf0 =
-        static_cast<float*>(lite::host::malloc(sizeof(int) * w_out));
+        static_cast<float*>(lite_metal::host::malloc(sizeof(int) * w_out));
     float* rowsbuf1 =
-        static_cast<float*>(lite::host::malloc(sizeof(int) * w_out));
+        static_cast<float*>(lite_metal::host::malloc(sizeof(int) * w_out));
     float* rows0 = rowsbuf0;
     float* rows1 = rowsbuf1;
     // h_bound loop
@@ -445,10 +445,10 @@ void bilinear_interp(const float* input_data,
 
       betap += 2;
     }  // end h_bound - h_out loop
-    lite::host::free(rowsbuf0);
-    lite::host::free(rowsbuf1);
+    lite_metal::host::free(rowsbuf0);
+    lite_metal::host::free(rowsbuf1);
   }
-  lite::host::free(buf);
+  lite_metal::host::free(buf);
 }
 
 void nearest_interp(const float* input_data,
@@ -507,7 +507,7 @@ void nearest_interp(const float* input_data,
 }
 
 inline std::vector<int> get_new_shape(
-    std::vector<const lite::Tensor*> list_new_shape_tensor) {
+    std::vector<const lite_metal::Tensor*> list_new_shape_tensor) {
   // get tensor from
   std::vector<int> vec_new_shape;
   for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
@@ -522,17 +522,17 @@ template <typename T>
 inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
   std::vector<T> vec_new_data;
   auto* new_data = new_data_tensor->data<T>();
-  lite::Tensor cpu_starts_tensor;
+  lite_metal::Tensor cpu_starts_tensor;
   vec_new_data =
       std::vector<T>(new_data, new_data + new_data_tensor->dims().production());
   return vec_new_data;
 }
 
-void interpolate(lite::Tensor* input,
-                 lite::Tensor* out_size,
-                 std::vector<const lite::Tensor*> list_new_size_tensor,
-                 lite::Tensor* scale_tensor,
-                 lite::Tensor* output,
+void interpolate(lite_metal::Tensor* input,
+                 lite_metal::Tensor* out_size,
+                 std::vector<const lite_metal::Tensor*> list_new_size_tensor,
+                 lite_metal::Tensor* scale_tensor,
+                 lite_metal::Tensor* output,
                  float scale,
                  int out_h,
                  int out_w,

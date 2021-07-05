@@ -15,15 +15,15 @@
 #include "lite/kernels/host/cumsum_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 template <class T, PrecisionType PType>
 void CumsumCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
-  const lite::Tensor* x = param.X;
-  lite::Tensor* out = param.Out;
+  const lite_metal::Tensor* x = param.X;
+  lite_metal::Tensor* out = param.Out;
 
   auto x_dims = x->dims();
   const T* x_data = x->template data<T>();
@@ -63,7 +63,7 @@ void CumsumCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using cumsum_float =
-    paddle::lite::kernels::host::CumsumCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::CumsumCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(cumsum, kHost, kFloat, kAny, cumsum_float, float32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -76,7 +76,7 @@ REGISTER_LITE_KERNEL(cumsum, kHost, kFloat, kAny, cumsum_float, float32)
     .Finalize();
 
 using cumsum_int32 =
-    paddle::lite::kernels::host::CumsumCompute<int32_t, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::CumsumCompute<int32_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(cumsum, kHost, kFloat, kAny, cumsum_int32, int32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -89,7 +89,7 @@ REGISTER_LITE_KERNEL(cumsum, kHost, kFloat, kAny, cumsum_int32, int32)
     .Finalize();
 
 using cumsum_int64 =
-    paddle::lite::kernels::host::CumsumCompute<int64_t, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::CumsumCompute<int64_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(cumsum, kHost, kFloat, kAny, cumsum_int64, int64)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

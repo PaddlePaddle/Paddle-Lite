@@ -27,7 +27,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -64,7 +64,7 @@ class TrigonometricComputeImage2D
       first_epoch_for_reinit_ = false;
 
       // compute image shape
-      paddle::lite::CLImageConverterDefault default_convertor;
+      paddle::lite_metal::CLImageConverterDefault default_convertor;
       out_img_shape_ = default_convertor.InitImageDimInfoWith(
           trigonometric_param_->Out->dims());
 
@@ -113,7 +113,7 @@ class TrigonometricComputeImage2D
     return "";
   }
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = KernelFunctionName();
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -166,7 +166,7 @@ REGISTER_LITE_KERNEL(sin,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::SinComputeImage2D,
+                     paddle::lite_metal::kernels::opencl::SinComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -182,7 +182,7 @@ REGISTER_LITE_KERNEL(cos,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::CosComputeImage2D,
+                     paddle::lite_metal::kernels::opencl::CosComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -198,7 +198,7 @@ REGISTER_LITE_KERNEL(tan,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::TanComputeImage2D,
+                     paddle::lite_metal::kernels::opencl::TanComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -214,7 +214,7 @@ REGISTER_LITE_KERNEL(atan,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::AtanComputeImage2D,
+                     paddle::lite_metal::kernels::opencl::AtanComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -230,7 +230,7 @@ REGISTER_LITE_KERNEL(asin,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::AsinComputeImage2D,
+                     paddle::lite_metal::kernels::opencl::AsinComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -246,7 +246,7 @@ REGISTER_LITE_KERNEL(acos,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::AcosComputeImage2D,
+                     paddle::lite_metal::kernels::opencl::AcosComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

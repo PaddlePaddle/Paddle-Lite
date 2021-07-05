@@ -17,7 +17,7 @@
 #include "lite/kernels/rknpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace rknpu {
 
@@ -29,10 +29,10 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   const int64_t* output_shape_data =
@@ -135,10 +135,10 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(relu,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::ActConverter);
+                         paddle::lite_metal::subgraph::rknpu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(sigmoid,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::ActConverter);
+                         paddle::lite_metal::subgraph::rknpu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(relu6,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::ActConverter);
+                         paddle::lite_metal::subgraph::rknpu::ActConverter);

@@ -22,7 +22,7 @@
 #include "lite/kernels/x86/match_matrix_tensor_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -40,7 +40,7 @@ TEST(match_matrix_tensor_x86, init) {
 
 TEST(match_matrix_tensor_x86, run_test) {
   int ix = 5, iy = 4, h = 2, dim_t = 2;
-  lite::Tensor x, w, y, out, tmp;
+  lite_metal::Tensor x, w, y, out, tmp;
   x.Resize({ix, h});
   w.Resize({h, dim_t, h});
   y.Resize({iy, h});

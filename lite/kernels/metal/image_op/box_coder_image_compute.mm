@@ -20,7 +20,7 @@
 #include <algorithm>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -81,12 +81,12 @@ void BoxCoderImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::BoxCoderImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::BoxCoderImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite_metal::kernels::metal::BoxCoderImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::BoxCoderImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::BoxCoderImageCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::metal::BoxCoderImageCompute<float, PRECISION(kFloat)>
     MetalBoxCoderFp32;
-typedef paddle::lite::kernels::metal::BoxCoderImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::BoxCoderImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalBoxCoderFp16;
 
 REGISTER_LITE_KERNEL(box_coder, kMetal, kFloat, kMetalTexture2DArray, MetalBoxCoderFp32, def)

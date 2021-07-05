@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -156,7 +156,7 @@ void MatchMatrixTensorCompute::Run() {
     }
   }
 
-  paddle::lite::LoD out_lod;
+  paddle::lite_metal::LoD out_lod;
   out_lod.push_back(top_offset);
   out_lod.push_back(offset_l);
   out_lod.push_back(offset_r);
@@ -172,7 +172,7 @@ REGISTER_LITE_KERNEL(match_matrix_tensor,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::MatchMatrixTensorCompute,
+                     paddle::lite_metal::kernels::xpu::MatchMatrixTensorCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kXPU))})

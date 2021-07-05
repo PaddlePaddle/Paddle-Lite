@@ -20,7 +20,7 @@
 #include "lite/operators/retinanet_detection_output_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -410,7 +410,7 @@ REGISTER_LITE_KERNEL(
     kHost,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::host::RetinanetDetectionOutputCompute,
+    paddle::lite_metal::kernels::host::RetinanetDetectionOutputCompute,
     def)
     .BindInput("BBoxes",
                {LiteType::GetTensorTy(TARGET(kHost),

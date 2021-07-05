@@ -19,7 +19,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -33,11 +33,11 @@ class MatchMatrixTensorCompute
   virtual ~MatchMatrixTensorCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_;
-  lite::Tensor _input_l_transform;
-  lite::Tensor _input_l_transform_reorganize;
-  lite::Tensor _output_tmp;
-  lite::Tensor _offset_r;
+  std::unique_ptr<lite_metal::cuda::math::Gemm<float, float>> gemm_impl_;
+  lite_metal::Tensor _input_l_transform;
+  lite_metal::Tensor _input_l_transform_reorganize;
+  lite_metal::Tensor _output_tmp;
+  lite_metal::Tensor _offset_r;
 };
 
 }  // namespace cuda

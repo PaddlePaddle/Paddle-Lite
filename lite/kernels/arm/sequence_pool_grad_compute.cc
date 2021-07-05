@@ -21,7 +21,7 @@ limitations under the License. */
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -39,22 +39,22 @@ void SequencePoolGradCompute::Run() {
   const auto lod = param.X->lod()[0];
   int64_t width = param.X->numel() / param.X->dims()[0];
   if (pool_type == "SUM") {
-    lite::arm::math::seq_pool_sum_grad(
+    lite_metal::arm::math::seq_pool_sum_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "AVERAGE") {
-    lite::arm::math::seq_pool_average_grad(
+    lite_metal::arm::math::seq_pool_average_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "SQRT") {
-    lite::arm::math::seq_pool_sqrt_grad(
+    lite_metal::arm::math::seq_pool_sqrt_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "MAX" || pool_type == "MIN") {
-    lite::arm::math::seq_pool_max_grad(
+    lite_metal::arm::math::seq_pool_max_grad(
         din_ptr, dout_grad_ptr, index_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "FIRST") {
-    lite::arm::math::seq_pool_first_grad(
+    lite_metal::arm::math::seq_pool_first_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "LAST") {
-    lite::arm::math::seq_pool_last_grad(
+    lite_metal::arm::math::seq_pool_last_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else {
     LOG(ERROR) << " UNKNOWN sequence pool type";
@@ -70,7 +70,7 @@ REGISTER_LITE_KERNEL(sequence_pool_grad,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::SequencePoolGradCompute,
+                     paddle::lite_metal::kernels::arm::SequencePoolGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})

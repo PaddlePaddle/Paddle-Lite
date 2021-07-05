@@ -16,7 +16,7 @@
 #include "lite/backends/host/math/norm.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -32,7 +32,7 @@ void NormCompute::Run() {
   int pre_n = input_dims.count(0, axis);
   int post_n = input_dims.count(axis + 1, dim_size);
   int n = input_dims[axis];
-  lite::host::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data);
+  lite_metal::host::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data);
 }
 
 void PNormCompute::Run() {
@@ -49,7 +49,7 @@ void PNormCompute::Run() {
   int pre = xdims.count(0, axis);
   int post = xdims.count(axis + 1, xdims.size());
   int n = xdims[axis];
-  lite::host::math::p_norm(
+  lite_metal::host::math::p_norm(
       x_data, pre, n, post, param.epsilon, out_data, porder);
 }
 
@@ -59,7 +59,7 @@ void PNormCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    norm, kHost, kFloat, kNCHW, paddle::lite::kernels::host::NormCompute, def)
+    norm, kHost, kFloat, kNCHW, paddle::lite_metal::kernels::host::NormCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kHost))})
@@ -69,7 +69,7 @@ REGISTER_LITE_KERNEL(p_norm,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::PNormCompute,
+                     paddle::lite_metal::kernels::host::PNormCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindOutput("Out",

@@ -18,7 +18,7 @@
 #include "lite/operators/calib_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class CalibOnceOp : public CalibOpLite {

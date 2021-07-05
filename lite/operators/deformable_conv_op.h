@@ -27,7 +27,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class DeformableConvOpLite : public OpLite {
@@ -40,7 +40,7 @@ class DeformableConvOpLite : public OpLite {
   bool InferShapeImpl() const override;
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     auto filter_dims = param_.conv_param.filter->dims();
     auto input_dims = param_.x->dims();
     auto output_dims = param_.output->dims();
@@ -65,7 +65,7 @@ class DeformableConvOpLite : public OpLite {
 #endif
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
-  bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
+  bool AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) override {
     AttachParam(&param_);
     auto X = op_desc.Input("Input").front();
     auto Filter = op_desc.Input("Filter").front();
@@ -73,15 +73,15 @@ class DeformableConvOpLite : public OpLite {
     auto Offset = op_desc.Input("Offset").front();
     auto Out = op_desc.Output("Output").front();
 
-    param_.x = scope->FindVar(X)->GetMutable<lite::Tensor>();
-    param_.mask = scope->FindVar(Mask)->GetMutable<lite::Tensor>();
-    param_.offset = scope->FindVar(Offset)->GetMutable<lite::Tensor>();
-    param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
+    param_.x = scope->FindVar(X)->GetMutable<lite_metal::Tensor>();
+    param_.mask = scope->FindVar(Mask)->GetMutable<lite_metal::Tensor>();
+    param_.offset = scope->FindVar(Offset)->GetMutable<lite_metal::Tensor>();
+    param_.output = scope->FindVar(Out)->GetMutable<lite_metal::Tensor>();
     param_.deformable_groups = op_desc.GetAttr<int>("deformable_groups");
     param_.im2col_step = op_desc.GetAttr<int>("im2col_step");
 
     param_.conv_param.filter =
-        scope->FindVar(Filter)->GetMutable<lite::Tensor>();
+        scope->FindVar(Filter)->GetMutable<lite_metal::Tensor>();
     param_.conv_param.strides = op_desc.GetAttr<std::vector<int>>("strides");
     std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
@@ -111,7 +111,7 @@ class DeformableConvOpLite : public OpLite {
         auto bias_var = scope->FindVar(bias_arguments.front());
         if (bias_var != nullptr) {
           param_.conv_param.bias =
-              const_cast<lite::Tensor*>(&(bias_var->Get<lite::Tensor>()));
+              const_cast<lite_metal::Tensor*>(&(bias_var->Get<lite_metal::Tensor>()));
         }
       }
     }

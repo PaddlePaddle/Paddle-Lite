@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -63,7 +63,7 @@ int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(unsqueeze,
                          kNPU,
-                         paddle::lite::subgraph::npu::UnsqueezeConverter);
+                         paddle::lite_metal::subgraph::npu::UnsqueezeConverter);
 REGISTER_SUBGRAPH_BRIDGE(unsqueeze2,
                          kNPU,
-                         paddle::lite::subgraph::npu::UnsqueezeConverter);
+                         paddle::lite_metal::subgraph::npu::UnsqueezeConverter);

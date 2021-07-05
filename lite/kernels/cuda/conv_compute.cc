@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -39,7 +39,7 @@ template <typename T, PrecisionType PType>
 void ConvCompute<T, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
-  conv_impl_.reset(new lite::cuda::math::CudnnConv2D<T, PType>);
+  conv_impl_.reset(new lite_metal::cuda::math::CudnnConv2D<T, PType>);
   conv_impl_->init(param, &ctx);
 }
 
@@ -72,10 +72,10 @@ void ConvComputeInt8<Ptype_out>::PrepareForRun() {
                                           param.strides[i]));
   }
   output_shape.push_back(filter_dims[0]);
-  param.output->Resize(lite::DDim(output_shape));
+  param.output->Resize(lite_metal::DDim(output_shape));
 
   auto& ctx = this->ctx_->template As<CUDAContext>();
-  conv_impl_.reset(new lite::cuda::math::CudnnConv2DInt8<Ptype_out>);
+  conv_impl_.reset(new lite_metal::cuda::math::CudnnConv2DInt8<Ptype_out>);
   conv_impl_->init(param, &ctx);
 }
 
@@ -97,7 +97,7 @@ void ConvComputeInt8<Ptype_out>::Run() {
                                           param.strides[i]));
   }
   output_shape.push_back(filter_dims[0]);
-  param.output->Resize(lite::DDim(output_shape));
+  param.output->Resize(lite_metal::DDim(output_shape));
 
   conv_impl_->run(param);
 }
@@ -111,9 +111,9 @@ template class ConvComputeInt8<PRECISION(kFloat)>;
 }  // namespace paddle
 
 using ConvFp32 =
-    paddle::lite::kernels::cuda::ConvCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::ConvCompute<float, PRECISION(kFloat)>;
 using ConvFp16 =
-    paddle::lite::kernels::cuda::ConvCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::ConvCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(conv2d, kCUDA, kFloat, kNCHW, ConvFp32, def)
     .BindInput("Input",
@@ -190,7 +190,7 @@ REGISTER_LITE_KERNEL(
     kCUDA,
     kInt8,
     kNHWC,
-    paddle::lite::kernels::cuda::ConvComputeInt8<PRECISION(kFloat)>,
+    paddle::lite_metal::kernels::cuda::ConvComputeInt8<PRECISION(kFloat)>,
     fp32_out)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -214,7 +214,7 @@ REGISTER_LITE_KERNEL(
     kCUDA,
     kInt8,
     kNHWC,
-    paddle::lite::kernels::cuda::ConvComputeInt8<PRECISION(kInt8)>,
+    paddle::lite_metal::kernels::cuda::ConvComputeInt8<PRECISION(kInt8)>,
     int8_out)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),

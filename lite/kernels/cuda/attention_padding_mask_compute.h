@@ -16,7 +16,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -29,7 +29,7 @@ class AttentionPaddingMaskCompute
   virtual ~AttentionPaddingMaskCompute() = default;
 
  private:
-  lite::Tensor src_offset_cuda;
+  lite_metal::Tensor src_offset_cuda;
 };
 
 }  // namespace cuda

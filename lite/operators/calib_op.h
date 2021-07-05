@@ -24,7 +24,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 /*
@@ -44,14 +44,14 @@ class CalibOpLite : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "calib"; }
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter *ch) {
     auto input_dims = param_.input->dims();
     auto output_dims = param_.output->dims();
     ch->input_shape = ch->DimToStr(input_dims);

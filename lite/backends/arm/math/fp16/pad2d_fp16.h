@@ -21,7 +21,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 namespace fp16 {
@@ -35,8 +35,8 @@ typedef __fp16 float16_t;
 void pad_constant_fp16(PAD2D_PARAM);
 void pad_edge_fp16(PAD2D_PARAM);
 void pad_reflect_fp16(PAD2D_PARAM);
-void pad2d_func_fp16(const lite::Tensor* input,
-                     lite::Tensor* output,
+void pad2d_func_fp16(const lite_metal::Tensor* input,
+                     lite_metal::Tensor* output,
                      int _mode,
                      std::vector<int> _pad_h,
                      std::vector<int> _pad_w,

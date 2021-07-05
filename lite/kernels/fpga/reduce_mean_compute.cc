@@ -15,7 +15,7 @@
 #include "lite/kernels/fpga/reduce_mean_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -57,7 +57,7 @@ REGISTER_LITE_KERNEL(reduce_mean,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::ReduceMeanCompute,
+                     paddle::lite_metal::kernels::fpga::ReduceMeanCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

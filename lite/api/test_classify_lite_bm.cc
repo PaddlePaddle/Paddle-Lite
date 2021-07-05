@@ -29,13 +29,13 @@ DEFINE_string(input_img_txt_path,
               "if set input_img_txt_path, read the img filename as input.");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 const int g_batch_size = 1;
 const int g_thread_num = 1;
 
 void instance_run() {
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<std::string> passes;
   std::vector<Place> valid_places({Place{TARGET(kBM), PRECISION(kFloat)},
                                    Place{TARGET(kX86), PRECISION(kFloat)}});

@@ -17,7 +17,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 proto::OpDesc::Attr* FindAttr(proto::OpDesc* desc, const std::string& name) {

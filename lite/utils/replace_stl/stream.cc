@@ -20,7 +20,7 @@
 #if defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_XCODE)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace replace_stl {
 
 #ifndef LITE_WITH_LOG

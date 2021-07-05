@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool FillZerosLikeOp::InferShapeImpl() const {
@@ -26,7 +26,7 @@ bool FillZerosLikeOp::InferShapeImpl() const {
 }
 
 bool FillZerosLikeOp::AttachImpl(const cpp::OpDesc& opdesc,
-                                 lite::Scope* scope) {
+                                 lite_metal::Scope* scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   return true;
@@ -36,4 +36,4 @@ bool FillZerosLikeOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(fill_zeros_like, paddle::lite::operators::FillZerosLikeOp);
+REGISTER_LITE_OP(fill_zeros_like, paddle::lite_metal::operators::FillZerosLikeOp);

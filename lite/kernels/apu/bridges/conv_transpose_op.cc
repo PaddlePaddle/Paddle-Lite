@@ -20,7 +20,7 @@
 #include "lite/operators/conv_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace apu {
 
@@ -486,4 +486,4 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(conv2d_transpose,
                          kAPU,
-                         paddle::lite::subgraph::apu::ConvTransposeConverter);
+                         paddle::lite_metal::subgraph::apu::ConvTransposeConverter);

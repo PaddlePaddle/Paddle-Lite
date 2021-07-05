@@ -18,7 +18,7 @@
 #include "lite/operators/io_copy_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class IoCopyOnceOp : public IoCopyOp {

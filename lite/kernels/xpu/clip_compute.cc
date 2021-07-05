@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -49,7 +49,7 @@ void ClipCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    clip, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::ClipCompute, def)
+    clip, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::ClipCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Min", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Max", {LiteType::GetTensorTy(TARGET(kHost))})

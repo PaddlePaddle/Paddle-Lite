@@ -17,7 +17,7 @@
 #include <cmath>
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ElementwiseGradOp::CheckShape() const {
@@ -39,7 +39,7 @@ bool ElementwiseGradOp::InferShapeImpl() const {
 }
 
 bool ElementwiseGradOp::AttachImpl(const cpp::OpDesc& opdesc,
-                                   lite::Scope* scope) {
+                                   lite_metal::Scope* scope) {
   auto Y_name = opdesc.Input("Y").front();
   auto X_name = opdesc.Input("X").front();
   auto Out_name = opdesc.Input("Out@GRAD").front();
@@ -48,16 +48,16 @@ bool ElementwiseGradOp::AttachImpl(const cpp::OpDesc& opdesc,
 
   if (!opdesc.Output("X@GRAD").empty()) {
     auto x_grad_name = opdesc.Output("X@GRAD").front();
-    param_.XGrad = GetMutableVar<lite::Tensor>(scope, x_grad_name);
+    param_.XGrad = GetMutableVar<lite_metal::Tensor>(scope, x_grad_name);
   }
   if (!opdesc.Output("Y@GRAD").empty()) {
     auto y_grad_name = opdesc.Output("Y@GRAD").front();
-    param_.YGrad = GetMutableVar<lite::Tensor>(scope, y_grad_name);
+    param_.YGrad = GetMutableVar<lite_metal::Tensor>(scope, y_grad_name);
   }
 
-  param_.X = GetVar<lite::Tensor>(scope, X_name);
-  param_.Y = GetVar<lite::Tensor>(scope, Y_name);
-  param_.OutGrad = GetVar<lite::Tensor>(scope, Out_name);
+  param_.X = GetVar<lite_metal::Tensor>(scope, X_name);
+  param_.Y = GetVar<lite_metal::Tensor>(scope, Y_name);
+  param_.OutGrad = GetVar<lite_metal::Tensor>(scope, Out_name);
   param_.axis = opdesc.GetAttr<int>("axis");
   return true;
 }
@@ -67,11 +67,11 @@ bool ElementwiseGradOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(elementwise_sub_grad,
-                 paddle::lite::operators::ElementwiseGradOp);
+                 paddle::lite_metal::operators::ElementwiseGradOp);
 REGISTER_LITE_OP(elementwise_add_grad,
-                 paddle::lite::operators::ElementwiseGradOp);
+                 paddle::lite_metal::operators::ElementwiseGradOp);
 
 REGISTER_LITE_OP(elementwise_grad_mul,
-                 paddle::lite::operators::ElementwiseGradOp);
+                 paddle::lite_metal::operators::ElementwiseGradOp);
 REGISTER_LITE_OP(elementwise_grad_max,
-                 paddle::lite::operators::ElementwiseGradOp);
+                 paddle::lite_metal::operators::ElementwiseGradOp);

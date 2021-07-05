@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(var_conv_2d,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::VarConv2DCompute<float>,
+                     paddle::lite_metal::kernels::x86::VarConv2DCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("COLUMN", {LiteType::GetTensorTy(TARGET(kX86))})

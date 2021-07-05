@@ -39,7 +39,7 @@
 #include <algorithm>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 void ImageResize::choose(const uint8_t* src,

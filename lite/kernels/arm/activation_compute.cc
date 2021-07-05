@@ -19,7 +19,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 template <>
@@ -29,7 +29,7 @@ void ReluCompute<PRECISION(kFloat)>::Run() {
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
-  lite::arm::math::act_relu<float>(
+  lite_metal::arm::math::act_relu<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
@@ -41,7 +41,7 @@ void ReluCompute<PRECISION(kFP16)>::Run() {
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float16_t>();
   auto output_data = param.Out->mutable_data<float16_t>();
-  lite::arm::math::fp16::act_relu<float16_t>(
+  lite_metal::arm::math::fp16::act_relu<float16_t>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 #endif
@@ -53,7 +53,7 @@ void LeakyReluCompute::Run() {
   auto x_data = param.X->data<float>();
   auto alpha = param.Leaky_relu_alpha;
   auto output_data = param.Out->mutable_data<float>();
-  lite::arm::math::act_relu_neg<float>(
+  lite_metal::arm::math::act_relu_neg<float>(
       x_data, output_data, x_dims.production(), alpha, ctx.threads());
 }
 
@@ -70,7 +70,7 @@ void PReluCompute::Run() {
   int channel_size = x_dims[1];
   int inner_size = x_dims.count(2, x_dims.size());
 
-  lite::arm::math::act_prelu<float>(x_data,
+  lite_metal::arm::math::act_prelu<float>(x_data,
                                     output_data,
                                     outer_size,
                                     channel_size,
@@ -86,7 +86,7 @@ void SigmoidCompute::Run() {
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
-  lite::arm::math::act_sigmoid<float>(
+  lite_metal::arm::math::act_sigmoid<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
@@ -96,7 +96,7 @@ void TanhCompute::Run() {
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
-  lite::arm::math::act_tanh<float>(
+  lite_metal::arm::math::act_tanh<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
@@ -107,7 +107,7 @@ void Relu6Compute::Run() {
   auto x_data = param.X->data<float>();
   float coef = 6.;
   auto output_data = param.Out->mutable_data<float>();
-  lite::arm::math::act_clipped_relu<float>(
+  lite_metal::arm::math::act_clipped_relu<float>(
       x_data, output_data, x_dims.production(), coef, ctx.threads());
 }
 
@@ -118,7 +118,7 @@ void ThresholdedReluCompute::Run() {
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
   float threshold = param.relu_threshold;
-  lite::arm::math::act_thresholded_relu<float>(
+  lite_metal::arm::math::act_thresholded_relu<float>(
       x_data, output_data, x_dims.production(), threshold, ctx.threads());
 }
 
@@ -129,7 +129,7 @@ void EluCompute::Run() {
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
   float alpha = param.Elu_alpha;
-  lite::arm::math::act_elu<float>(
+  lite_metal::arm::math::act_elu<float>(
       x_data, output_data, x_dims.production(), alpha, ctx.threads());
 }
 
@@ -142,7 +142,7 @@ REGISTER_LITE_KERNEL(relu,
                      kARM,
                      kFP16,
                      kNCHW,
-                     paddle::lite::kernels::arm::ReluCompute<PRECISION(kFP16)>,
+                     paddle::lite_metal::kernels::arm::ReluCompute<PRECISION(kFP16)>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
@@ -153,7 +153,7 @@ REGISTER_LITE_KERNEL(relu,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ReluCompute<PRECISION(kFloat)>,
+                     paddle::lite_metal::kernels::arm::ReluCompute<PRECISION(kFloat)>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -163,7 +163,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::LeakyReluCompute,
+                     paddle::lite_metal::kernels::arm::LeakyReluCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("alpha", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -171,7 +171,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
     .BindPaddleOpVersion("leaky_relu", 1)
     .Finalize();
 REGISTER_LITE_KERNEL(
-    prelu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PReluCompute, def)
+    prelu, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::PReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("mode", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -181,18 +181,18 @@ REGISTER_LITE_KERNEL(sigmoid,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::SigmoidCompute,
+                     paddle::lite_metal::kernels::arm::SigmoidCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
-    tanh, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::TanhCompute, def)
+    tanh, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::TanhCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
-    relu6, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::Relu6Compute, def)
+    relu6, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::Relu6Compute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
@@ -200,13 +200,13 @@ REGISTER_LITE_KERNEL(thresholded_relu,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ThresholdedReluCompute,
+                     paddle::lite_metal::kernels::arm::ThresholdedReluCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 REGISTER_LITE_KERNEL(
-    elu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::EluCompute, def)
+    elu, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::EluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

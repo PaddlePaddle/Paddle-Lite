@@ -17,7 +17,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -237,13 +237,13 @@ void Conv2dTransposeImageCompute<P, PTYPE>::SetupWithoutMPS() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::Conv2dTransposeImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::Conv2dTransposeImageCompute<MetalHalf,
+template class paddle::lite_metal::kernels::metal::Conv2dTransposeImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::Conv2dTransposeImageCompute<MetalHalf,
     PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::Conv2dTransposeImageCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::metal::Conv2dTransposeImageCompute<float, PRECISION(kFloat)>
     MetalConv2dTransposeFp32;
-typedef paddle::lite::kernels::metal::Conv2dTransposeImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::Conv2dTransposeImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalConv2dTransposeFp16;
 
 // TODO:(lzy) need debug to open the kernel

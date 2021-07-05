@@ -23,7 +23,7 @@
 #ifdef LITE_WITH_ARM
 #include "lite/kernels/arm/sequence_expand_as_compute.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 TEST(sequence_expand_as, retrive_op) {
   auto sequence_expand_as =
       KernelRegistry::Global().Create("sequence_expand_as");
@@ -32,19 +32,19 @@ TEST(sequence_expand_as, retrive_op) {
 }
 
 TEST(sequence_expand_as, init) {
-  paddle::lite::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
+  paddle::lite_metal::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
   ASSERT_EQ(sequence_expand_as.precision(), PRECISION(kFloat));
   ASSERT_EQ(sequence_expand_as.target(), TARGET(kARM));
 }
 
 TEST(sequence_expand_as, run_test) {
-  lite::Tensor x, y, out;
+  lite_metal::Tensor x, y, out;
   std::vector<int64_t> x_shape{4, 1};
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> y_shape{1, 5};
-  y.Resize(lite::DDim(y_shape));
+  y.Resize(lite_metal::DDim(y_shape));
   std::vector<int64_t> out_shape{8, 1};
-  out.Resize(lite::DDim(out_shape));
+  out.Resize(lite_metal::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
   auto y_data = y.mutable_data<float>();
@@ -58,7 +58,7 @@ TEST(sequence_expand_as, run_test) {
 
   std::vector<std::vector<uint64_t>> lod{{0, 3, 6, 7, 8}};
   y.set_lod(lod);
-  paddle::lite::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
+  paddle::lite_metal::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
 
   operators::SequenceExpandAsParam param;
 

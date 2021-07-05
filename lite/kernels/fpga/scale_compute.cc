@@ -15,7 +15,7 @@
 #include "lite/kernels/fpga/scale_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -57,7 +57,7 @@ void ScaleCompute::Run() { pe_.dispatch(); }
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    scale, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ScaleCompute, def)
+    scale, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::ScaleCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),

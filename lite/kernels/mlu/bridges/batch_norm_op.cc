@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -102,4 +102,4 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(batch_norm,
                          kMLU,
-                         paddle::lite::subgraph::mlu::BatchNormConverter);
+                         paddle::lite_metal::subgraph::mlu::BatchNormConverter);

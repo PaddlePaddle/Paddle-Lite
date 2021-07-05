@@ -19,7 +19,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename T1, typename T2>
 bool comp_func(std::pair<T1, T2> a, std::pair<T1, T2> b) {

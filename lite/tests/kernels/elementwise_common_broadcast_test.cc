@@ -94,7 +94,7 @@ int randint(int beg, int end) {
 bool randbool() { return randint(0, 1000000) < 50000; }
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 template <class T>
 class ElementwiseComputeTester : public arena::TestCase {
  protected:
@@ -103,9 +103,9 @@ class ElementwiseComputeTester : public arena::TestCase {
   std::string y_ = "y";
   std::string out_ = "out";
   std::string elt_type_ = "";  // add, sub, mul, div, max
-  paddle::lite::DDim x_dims_;
-  paddle::lite::DDim y_dims_;
-  paddle::lite::DDim out_dims_;
+  paddle::lite_metal::DDim x_dims_;
+  paddle::lite_metal::DDim y_dims_;
+  paddle::lite_metal::DDim out_dims_;
   std::vector<int> x_dim_full_;
   std::vector<int> y_dim_full_;
   int axis_ = 1;
@@ -310,19 +310,19 @@ bool RunOnRandomArgs(const Place& place,
 TEST(elementwise_broadcast, compute_fp32) {
   const int TEST_RETEAT_NUM = 10;
   for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+    EXPECT_TRUE(paddle::lite_metal::RunOnRandomArgs<float>(
         TARGET(kARM), "def", "add", "", [](float l, float r) {
           return l + r;
         }));
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+    EXPECT_TRUE(paddle::lite_metal::RunOnRandomArgs<float>(
         TARGET(kARM), "def", "sub", "", [](float l, float r) {
           return l - r;
         }));
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+    EXPECT_TRUE(paddle::lite_metal::RunOnRandomArgs<float>(
         TARGET(kARM), "def", "mul", "", [](float l, float r) {
           return l * r;
         }));
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+    EXPECT_TRUE(paddle::lite_metal::RunOnRandomArgs<float>(
         TARGET(kARM), "def", "div", "", [](float l, float r) {
           return l / r;
         }));
@@ -332,26 +332,26 @@ TEST(elementwise_broadcast, compute_fp32) {
 TEST(elementwise_broadcast, compute_i32) {
   const int TEST_RETEAT_NUM = 10;
   for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
-        paddle::lite::Place(TARGET(kARM), PRECISION(kInt32)),
+    EXPECT_TRUE(paddle::lite_metal::RunOnRandomArgs<int32_t>(
+        paddle::lite_metal::Place(TARGET(kARM), PRECISION(kInt32)),
         "def",
         "add",
         "",
         [](int32_t l, int32_t r) { return l + r; }));
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
-        paddle::lite::Place(TARGET(kARM), PRECISION(kInt32)),
+    EXPECT_TRUE(paddle::lite_metal::RunOnRandomArgs<int32_t>(
+        paddle::lite_metal::Place(TARGET(kARM), PRECISION(kInt32)),
         "def",
         "sub",
         "",
         [](int32_t l, int32_t r) { return l - r; }));
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
-        paddle::lite::Place(TARGET(kARM), PRECISION(kInt32)),
+    EXPECT_TRUE(paddle::lite_metal::RunOnRandomArgs<int32_t>(
+        paddle::lite_metal::Place(TARGET(kARM), PRECISION(kInt32)),
         "def",
         "mul",
         "",
         [](int32_t l, int32_t r) { return l * r; }));
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
-        paddle::lite::Place(TARGET(kARM), PRECISION(kInt32)),
+    EXPECT_TRUE(paddle::lite_metal::RunOnRandomArgs<int32_t>(
+        paddle::lite_metal::Place(TARGET(kARM), PRECISION(kInt32)),
         "def",
         "div",
         "",

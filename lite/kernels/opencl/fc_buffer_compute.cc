@@ -26,7 +26,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -179,7 +179,7 @@ class FcCompute
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -209,7 +209,7 @@ class FcCompute
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, def)
+    fc, kOpenCL, kFloat, kNCHW, paddle::lite_metal::kernels::opencl::FcCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -218,7 +218,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, pc)
+    fc, kOpenCL, kFloat, kNCHW, paddle::lite_metal::kernels::opencl::FcCompute, pc)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kHost))})

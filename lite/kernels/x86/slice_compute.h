@@ -24,12 +24,12 @@
 #include "lite/operators/relu_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
 inline std::vector<int> GetIntDataFromTensorList(
-    const std::vector<lite::Tensor*>& list_tensor) {
+    const std::vector<lite_metal::Tensor*>& list_tensor) {
   std::vector<int> vec_data;
   for (auto& tensor_i : list_tensor) {
     CHECK_EQ(tensor_i->dims(), DDim({1}))
@@ -80,16 +80,16 @@ inline std::vector<int> GetIntDataFromTensor(const Tensor* tensor) {
 }
 
 template <class T, size_t D>
-void slice_compute(const lite::Tensor* in,
-                   lite::Tensor* out,
+void slice_compute(const lite_metal::Tensor* in,
+                   lite_metal::Tensor* out,
                    std::vector<int> axes,
                    std::vector<int> starts,
                    std::vector<int> ends,
                    std::vector<int> decrease_axis,
-                   const lite::Tensor* StartsTensor,
-                   const lite::Tensor* EndsTensor,
-                   std::vector<lite::Tensor*> StartsTensorList,
-                   std::vector<lite::Tensor*> EndsTensorList,
+                   const lite_metal::Tensor* StartsTensor,
+                   const lite_metal::Tensor* EndsTensor,
+                   std::vector<lite_metal::Tensor*> StartsTensorList,
+                   std::vector<lite_metal::Tensor*> EndsTensorList,
                    std::vector<int> infer_flags) {
   auto out_dims = out->dims();
   auto in_dims = in->dims();
@@ -167,7 +167,7 @@ void slice_compute(const lite::Tensor* in,
   if (decrease_axis.size() > 0) {
     if (decrease_axis.size() == (size_t)in_dims.size()) {
       std::vector<int64_t> vec_origin_out_shape(decrease_axis.size(), 1);
-      // lite::DDim dims(vec_origin_out_shape);
+      // lite_metal::DDim dims(vec_origin_out_shape);
       out->Resize(vec_origin_out_shape);
     } else {
       std::vector<int64_t> vec_origin_out_shape(
@@ -182,7 +182,7 @@ void slice_compute(const lite::Tensor* in,
           ++index;
         }
       }
-      // lite::DDim dims(vec_origin_out_shape);
+      // lite_metal::DDim dims(vec_origin_out_shape);
       out->Resize(vec_origin_out_shape);
     }
   }
@@ -206,10 +206,10 @@ void slice_compute(const lite::Tensor* in,
     offsets[axes[i]] = start;
   }
   auto in_t =
-      lite::fluid::EigenTensor<T, D, Eigen::RowMajor, Eigen::DenseIndex>::From(
+      lite_metal::fluid::EigenTensor<T, D, Eigen::RowMajor, Eigen::DenseIndex>::From(
           *in, in->dims());
   auto out_t =
-      lite::fluid::EigenTensor<T, D, Eigen::RowMajor, Eigen::DenseIndex>::From(
+      lite_metal::fluid::EigenTensor<T, D, Eigen::RowMajor, Eigen::DenseIndex>::From(
           *out, new_out_dims);
   out_t = in_t.slice(offsets, extents);
 
@@ -217,16 +217,16 @@ void slice_compute(const lite::Tensor* in,
 }
 
 template <class T>
-void slice_compute_(const lite::Tensor* Input,
-                    lite::Tensor* Out,
+void slice_compute_(const lite_metal::Tensor* Input,
+                    lite_metal::Tensor* Out,
                     std::vector<int> axes,
                     std::vector<int> starts,
                     std::vector<int> ends,
                     std::vector<int> decrease_axis,
-                    const lite::Tensor* StartsTensor,
-                    const lite::Tensor* EndsTensor,
-                    std::vector<lite::Tensor*> StartsTensorList,
-                    std::vector<lite::Tensor*> EndsTensorList,
+                    const lite_metal::Tensor* StartsTensor,
+                    const lite_metal::Tensor* EndsTensor,
+                    std::vector<lite_metal::Tensor*> StartsTensorList,
+                    std::vector<lite_metal::Tensor*> EndsTensorList,
                     std::vector<int> infer_flags) {
   int rank = Input->dims().size();
   switch (rank) {

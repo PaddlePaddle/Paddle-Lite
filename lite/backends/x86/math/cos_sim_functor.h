@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -167,9 +167,9 @@ struct CosSimDxFunctor {
   const size_t cols_;
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct CosSimDyFunctor {
-  void operator()(const lite::Context<Target>& ctx,
+  void operator()(const lite_metal::Context<Target>& ctx,
                   const T* x_norm,
                   const T* y_norm,
                   const T* x,

@@ -17,7 +17,7 @@
 #include "lite/kernels/rknpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace rknpu {
 
@@ -133,4 +133,4 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(batch_norm,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::BatchNormConverter);
+                         paddle::lite_metal::subgraph::rknpu::BatchNormConverter);

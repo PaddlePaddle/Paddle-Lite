@@ -19,7 +19,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -118,9 +118,9 @@ TEST(search_seq_fc_compute, normal) {
           for (int i = 0; i < w_host.dims().production(); i++) {
             w_host_data[i] = i * 0.5f;
           }
-          x_dev.Assign<float, lite::DDim, TARGET(kCUDA)>(x_host_data,
+          x_dev.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_host_data,
                                                          x_host.dims());
-          w_dev.Assign<float, lite::DDim, TARGET(kCUDA)>(w_host_data,
+          w_dev.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(w_host_data,
                                                          w_host.dims());
           // prepare cuda context, initialize param, and run kernel
           operators::SearchSeqFcParam param;
@@ -133,7 +133,7 @@ TEST(search_seq_fc_compute, normal) {
             for (int i = 0; i < b_host.dims().production(); i++) {
               b_host_data[i] = i * 0.5f;
             }
-            b_dev.Assign<float, lite::DDim, TARGET(kCUDA)>(b_host_data,
+            b_dev.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(b_host_data,
                                                            b_host.dims());
             param.b = &b_dev;
           }

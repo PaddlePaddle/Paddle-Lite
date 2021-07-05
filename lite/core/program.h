@@ -34,7 +34,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static const char kKernelTypeAttr[] = "__@kernel_type_attr@__";
 
@@ -157,7 +157,7 @@ struct Instruction {
     if (op_->Type() != "feed" && op_->Type() != "fetch") {
 #endif
       profile::OpCharacter ch;
-      ch.op_lite = static_cast<void*>(const_cast<paddle::lite::OpLite*>(op()));
+      ch.op_lite = static_cast<void*>(const_cast<paddle::lite_metal::OpLite*>(op()));
       ch.target = kernel()->target();
       ch.op_type = op_->Type();
       ch.kernel_name = kernel()->name();
@@ -171,9 +171,9 @@ struct Instruction {
 #endif
   }
 
-  void SetProfileRuntimeOpInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeOpInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     CHECK(ch != nullptr) << "OpCharacter should not be nullptr.";
-    auto* op_lite = static_cast<paddle::lite::OpLite*>(ch->op_lite);
+    auto* op_lite = static_cast<paddle::lite_metal::OpLite*>(ch->op_lite);
     CHECK(op_lite != nullptr) << "op_lite should not be nullptr.";
     op_lite->GetOpRuntimeInfo(ch);
   }
@@ -225,7 +225,7 @@ class LITE_API RuntimeProgram {
     for (auto& inst : instructions_[kRootBlockIdx]) {
       NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
       register_layer_names_.push_back(annotator.RegisterString(
-          const_cast<paddle::lite::OpLite*>(inst.op())->Type().c_str()));
+          const_cast<paddle::lite_metal::OpLite*>(inst.op())->Type().c_str()));
     }
     register_layer_names_.push_back(annotator.RegisterString("one_loop"));
 #endif

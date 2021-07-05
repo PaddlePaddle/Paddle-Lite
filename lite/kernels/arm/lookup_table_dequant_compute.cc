@@ -22,7 +22,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -92,7 +92,7 @@ REGISTER_LITE_KERNEL(lookup_table_dequant,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::LookupTableDequantCompute,
+                     paddle::lite_metal::kernels::arm::LookupTableDequantCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})

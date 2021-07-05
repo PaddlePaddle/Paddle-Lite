@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/graph.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -31,10 +31,10 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   bool x_is_const = !graph->HasNode(x_var_name);
   std::vector<int32_t> i_x_shape_data(x_dims.size());
@@ -98,12 +98,12 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu, kBM, paddle::lite::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu, kBM, paddle::lite_metal::subgraph::bm::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
                          kBM,
-                         paddle::lite::subgraph::bm::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(sqrt, kBM, paddle::lite::subgraph::bm::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(square, kBM, paddle::lite::subgraph::bm::ActConverter);
+                         paddle::lite_metal::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(sqrt, kBM, paddle::lite_metal::subgraph::bm::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(square, kBM, paddle::lite_metal::subgraph::bm::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(sigmoid,
                          kBM,
-                         paddle::lite::subgraph::bm::ActConverter);
+                         paddle::lite_metal::subgraph::bm::ActConverter);

@@ -17,7 +17,7 @@
 #include "lite/kernels/rknpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace rknpu {
 
@@ -136,4 +136,4 @@ int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(pad2d,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::Pad2dConverter);
+                         paddle::lite_metal::subgraph::rknpu::Pad2dConverter);

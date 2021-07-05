@@ -16,10 +16,10 @@ limitations under the License. */
 #include "lite/kernels/cuda/lookup_table_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 template <int BlockDimX, int BlockDimY, int GridDimX, bool PaddingFlag>
 __global__ void LookupTableKernel(float *output,
@@ -91,7 +91,7 @@ REGISTER_LITE_KERNEL(lookup_table,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::LookupTableCompute,
+                     paddle::lite_metal::kernels::cuda::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})
@@ -102,7 +102,7 @@ REGISTER_LITE_KERNEL(lookup_table_v2,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::LookupTableCompute,
+                     paddle::lite_metal::kernels::cuda::LookupTableCompute,
                      def)
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})

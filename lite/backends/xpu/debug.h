@@ -22,7 +22,7 @@
 #include "lite/backends/xpu/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace xpu {
 
 template <typename T>

@@ -20,7 +20,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -34,7 +34,7 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // input
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   std::vector<int> i_x_shape_data(x_dims.size());
@@ -43,14 +43,14 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   // output
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   std::vector<int32_t> i_output_shape_data(output_dims.size());
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = output_dims[i];
   }
   auto unique_sigmoid_name =
-      lite::subgraph::bm::UniqueName(op_type + "_sigmoid");
+      lite_metal::subgraph::bm::UniqueName(op_type + "_sigmoid");
   if (op_type == "swish") {
     auto beta = op_info->GetAttr<float>("beta");
     CHECK_EQ(beta, 1.f);
@@ -73,7 +73,7 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto offset = op_info->GetAttr<float>("offset");
 
     auto unique_add_offset_name =
-        lite::subgraph::bm::UniqueName(op_type + "_add_offset");
+        lite_metal::subgraph::bm::UniqueName(op_type + "_add_offset");
     add_const_binary_layer(
         graph->GetCompilerHandle(),
         static_cast<const char*>(x_var_name.c_str()),
@@ -84,7 +84,7 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         BINARY_ADD,
         0);
 
-    auto unique_max_name = lite::subgraph::bm::UniqueName(op_type + "_max");
+    auto unique_max_name = lite_metal::subgraph::bm::UniqueName(op_type + "_max");
     add_const_binary_layer(
         graph->GetCompilerHandle(),
         static_cast<const char*>(unique_add_offset_name.c_str()),
@@ -95,7 +95,7 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         BINARY_MAX,
         0);
 
-    auto unique_min_name = lite::subgraph::bm::UniqueName(op_type + "_min");
+    auto unique_min_name = lite_metal::subgraph::bm::UniqueName(op_type + "_min");
     add_const_binary_layer(graph->GetCompilerHandle(),
                            static_cast<const char*>(unique_max_name.c_str()),
                            const_cast<const int*>(&i_x_shape_data[0]),
@@ -105,7 +105,7 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                            BINARY_MIN,
                            0);
 
-    auto unique_mul_name = lite::subgraph::bm::UniqueName(op_type + "_mul");
+    auto unique_mul_name = lite_metal::subgraph::bm::UniqueName(op_type + "_mul");
     bm_add_binary_layer(graph->GetCompilerHandle(),
                         static_cast<const char*>(x_var_name.c_str()),
                         static_cast<const char*>(unique_min_name.c_str()),
@@ -123,7 +123,7 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto slope = op_info->GetAttr<float>("slope");
     auto offset = op_info->GetAttr<float>("offset");
     auto unique_mul_slope_name =
-        lite::subgraph::bm::UniqueName(op_type + "_mul_slope");
+        lite_metal::subgraph::bm::UniqueName(op_type + "_mul_slope");
     add_const_binary_layer(
         graph->GetCompilerHandle(),
         static_cast<const char*>(x_var_name.c_str()),
@@ -134,7 +134,7 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         BINARY_MUL,
         0);
     auto unique_add_offset_name =
-        lite::subgraph::bm::UniqueName(op_type + "_add_offset");
+        lite_metal::subgraph::bm::UniqueName(op_type + "_add_offset");
     add_const_binary_layer(
         graph->GetCompilerHandle(),
         static_cast<const char*>(unique_mul_slope_name.c_str()),
@@ -144,7 +144,7 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         static_cast<const char*>(unique_add_offset_name.c_str()),
         BINARY_ADD,
         0);
-    auto unique_min_name = lite::subgraph::bm::UniqueName(op_type + "_min");
+    auto unique_min_name = lite_metal::subgraph::bm::UniqueName(op_type + "_min");
     add_const_binary_layer(
         graph->GetCompilerHandle(),
         static_cast<const char*>(unique_add_offset_name.c_str()),
@@ -174,10 +174,10 @@ int ActEnhanceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(swish,
                          kBM,
-                         paddle::lite::subgraph::bm::ActEnhanceConverter);
+                         paddle::lite_metal::subgraph::bm::ActEnhanceConverter);
 REGISTER_SUBGRAPH_BRIDGE(hard_swish,
                          kBM,
-                         paddle::lite::subgraph::bm::ActEnhanceConverter);
+                         paddle::lite_metal::subgraph::bm::ActEnhanceConverter);
 REGISTER_SUBGRAPH_BRIDGE(hard_sigmoid,
                          kBM,
-                         paddle::lite::subgraph::bm::ActEnhanceConverter);
+                         paddle::lite_metal::subgraph::bm::ActEnhanceConverter);

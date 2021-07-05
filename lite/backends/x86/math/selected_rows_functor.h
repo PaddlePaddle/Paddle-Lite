@@ -27,39 +27,39 @@ limitations under the License. */
     for (int64_t j = 0; j < sizej; j++)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct SelectedRowsAdd {
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const fluid::SelectedRows& input1,
                   const fluid::SelectedRows& input2,
                   fluid::SelectedRows* output);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct SelectedRowsAddTensor {
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const fluid::SelectedRows& input1,
-                  const lite::Tensor& input2,
-                  lite::Tensor* output);
+                  const lite_metal::Tensor& input2,
+                  lite_metal::Tensor* output);
 };
 
 // input2 = input1 + input2
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct SelectedRowsAddTo {
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const fluid::SelectedRows& input1,
                   const int64_t input2_offset,
                   fluid::SelectedRows* input2);
 };
 
 // input2 = [all input in input1] + input2
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct SelectedRowsSumTo {
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const std::vector<fluid::SelectedRows*>& input1,
                   const std::vector<int64_t>& input2_offsets,
                   fluid::SelectedRows* input2);
@@ -68,27 +68,27 @@ struct SelectedRowsSumTo {
 // FIXME: The result of SelectedRowsAddToTensor maybe non deterministic,
 // because it uses CudaAtomicAdd.
 // input2 = input1 + input2
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct SelectedRowsAddToTensor {
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const fluid::SelectedRows& input1,
-                  lite::Tensor* input2);
+                  lite_metal::Tensor* input2);
 };
 
 namespace scatter {
 // functors for manuplating SelectedRows data
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct MergeAdd {
   // unary functor, merge by adding duplicated rows in
   // the input SelectedRows object.
-  fluid::SelectedRows operator()(const lite::Context<Target>& context,
+  fluid::SelectedRows operator()(const lite_metal::Context<Target>& context,
                                  const fluid::SelectedRows& input,
                                  const bool sorted_result = false);
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const fluid::SelectedRows& input,
                   fluid::SelectedRows* output,
                   const bool sorted_result = false);
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const std::vector<const fluid::SelectedRows*>& inputs,
                   fluid::SelectedRows* output,
                   const bool sorted_result = false);
@@ -97,12 +97,12 @@ struct MergeAdd {
 enum class ScatterOps { ASSIGN, ADD, SUB, SUBBY, MUL, DIV, DIVBY };
 
 // out = selected_rows_in / tensor
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct UpdateToTensor {
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const ScatterOps& op,
                   const fluid::SelectedRows& input1,
-                  lite::Tensor* input2);
+                  lite_metal::Tensor* input2);
 };
 
 }  // namespace scatter

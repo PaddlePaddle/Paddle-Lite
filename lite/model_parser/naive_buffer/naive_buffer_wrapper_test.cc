@@ -21,7 +21,7 @@
 #include "lite/model_parser/naive_buffer/var_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 TEST(NaiveBufferWrapper, OpDesc) {

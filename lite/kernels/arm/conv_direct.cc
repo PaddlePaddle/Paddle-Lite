@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/conv_direct.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -29,7 +29,7 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   // extend workspace
   ctx.ExtendWorkspace(
-      lite::arm::math::conv3x3s2_direct_workspace_size(param, &ctx));
+      lite_metal::arm::math::conv3x3s2_direct_workspace_size(param, &ctx));
 
   const auto* i_data = param.x->data<float>();
   const auto* w_data = weights_.data<float>();
@@ -48,7 +48,7 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  lite::arm::math::conv_3x3s2_direct_fp32(
+  lite_metal::arm::math::conv_3x3s2_direct_fp32(
       i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
   KERNEL_FUNC_NAME("conv_3x3s2_direct_fp32")
 }
@@ -81,7 +81,7 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  lite::arm::math::conv_3x3s2_direct_int8(i_data,
+  lite_metal::arm::math::conv_3x3s2_direct_int8(i_data,
                                           o_data,
                                           bs,
                                           oc,
@@ -126,7 +126,7 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  lite::arm::math::conv_3x3s2_direct_int8(i_data,
+  lite_metal::arm::math::conv_3x3s2_direct_int8(i_data,
                                           o_data,
                                           bs,
                                           oc,
@@ -151,10 +151,10 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   // extend workspace
   if (param.strides[0] == 2) {
     ctx.ExtendWorkspace(
-        lite::arm::math::fp16::conv3x3s2_direct_workspace_size(param, &ctx));
+        lite_metal::arm::math::fp16::conv3x3s2_direct_workspace_size(param, &ctx));
   } else {
     ctx.ExtendWorkspace(
-        lite::arm::math::fp16::conv3x3s1_direct_workspace_size(param, &ctx));
+        lite_metal::arm::math::fp16::conv3x3s1_direct_workspace_size(param, &ctx));
   }
   const auto* i_data = param.x->data<float16_t>();
   const auto* w_data = weights_.data<float16_t>();
@@ -173,7 +173,7 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
   if (param.strides[0] == 2) {
-    lite::arm::math::fp16::conv_3x3s2_direct_fp16(i_data,
+    lite_metal::arm::math::fp16::conv_3x3s2_direct_fp16(i_data,
                                                   o_data,
                                                   bs,
                                                   oc,
@@ -188,7 +188,7 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                                   &ctx);
     KERNEL_FUNC_NAME("conv_3x3s2_direct_fp16")
   } else {
-    lite::arm::math::fp16::conv_3x3s1_direct_fp16(i_data,
+    lite_metal::arm::math::fp16::conv_3x3s1_direct_fp16(i_data,
                                                   o_data,
                                                   bs,
                                                   oc,

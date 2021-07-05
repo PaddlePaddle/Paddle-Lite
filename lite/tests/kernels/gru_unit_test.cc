@@ -18,7 +18,7 @@
 #include "lite/tests/utils/naive_math_impl.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 static float sigmoid(float a) { return 1.f / (1.f + exp(-a)); }
 
@@ -278,9 +278,9 @@ class GRUUnitTester : public arena::TestCase {
     CHECK(hidden);
     CHECK(reset_hidden_prev);
     CHECK(gate);
-    hidden->Resize(lite::DDim({batch_size, frame_size}));
-    reset_hidden_prev->Resize(lite::DDim({batch_size, frame_size}));
-    gate->Resize(lite::DDim({batch_size, 3 * frame_size}));
+    hidden->Resize(lite_metal::DDim({batch_size, frame_size}));
+    reset_hidden_prev->Resize(lite_metal::DDim({batch_size, frame_size}));
+    gate->Resize(lite_metal::DDim({batch_size, 3 * frame_size}));
 
     gru_unit_basic(input,
                    hidden_prev,

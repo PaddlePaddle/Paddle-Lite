@@ -19,7 +19,7 @@
 #include <cuda_runtime.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 NVTXRangeAnnotation::NVTXRangeAnnotation(nvtxDomainHandle_t domain)
     : domain_(domain), isGenerating_(false) {}

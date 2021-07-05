@@ -17,7 +17,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -92,4 +92,4 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(softmax,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::SoftmaxConverter);
+                         paddle::lite_metal::subgraph::nnadapter::SoftmaxConverter);

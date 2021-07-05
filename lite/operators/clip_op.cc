@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ClipOpLite::CheckShape() const {
@@ -32,7 +32,7 @@ bool ClipOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool ClipOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool ClipOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   AttachInput(op_desc, scope, "X", false, &param_.x);
   AttachInput(op_desc, scope, "Min", true, &param_.min_tensor);
   AttachInput(op_desc, scope, "Max", true, &param_.max_tensor);
@@ -48,4 +48,4 @@ bool ClipOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(clip, paddle::lite::operators::ClipOpLite);
+REGISTER_LITE_OP(clip, paddle::lite_metal::operators::ClipOpLite);

@@ -24,7 +24,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -38,8 +38,8 @@ class SoftmaxTest : public ::testing::Test {
         axis_(1),
         use_cudnn_(true),
         shape_({n_, c_, h_, w_}) {
-    x_ref_.Resize(lite::DDim(shape_));
-    x_gpu_.Resize(lite::DDim(shape_));
+    x_ref_.Resize(lite_metal::DDim(shape_));
+    x_gpu_.Resize(lite_metal::DDim(shape_));
 
     auto x_ref_data = x_ref_.mutable_data<float>();
 
@@ -47,7 +47,7 @@ class SoftmaxTest : public ::testing::Test {
       x_ref_data[i] = static_cast<float>(i % 10 * 0.2);
     }
 
-    out_ref_.Resize(lite::DDim(shape_));
+    out_ref_.Resize(lite_metal::DDim(shape_));
     out_cpu_.Resize(out_ref_.dims());
     out_gpu_.Resize(out_ref_.dims());
     RunBaseLine();
@@ -67,7 +67,7 @@ class SoftmaxTest : public ::testing::Test {
   }
 
   void InitFloatInput() {
-    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+    x_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
                                                     x_gpu_.dims());
   }
 
@@ -75,9 +75,9 @@ class SoftmaxTest : public ::testing::Test {
     x_half_.Resize(x_ref_.dims());
     auto x_half_data = x_half_.mutable_data<half>();
     for (int64_t i = 0; i < x_half_.numel(); i++) {
-      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+      x_half_data[i] = half(lite_metal::float16(x_ref_.data<float>()[i]));
     }
-    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    x_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
   }
 
   void RunBaseLine() {
@@ -126,10 +126,10 @@ class SoftmaxTest : public ::testing::Test {
   int n_, c_, h_, w_, axis_;
   bool use_cudnn_;
   std::vector<int64_t> shape_;
-  lite::Tensor x_ref_, out_ref_;
-  lite::Tensor x_gpu_;
-  lite::Tensor x_half_;
-  lite::Tensor out_cpu_, out_gpu_;
+  lite_metal::Tensor x_ref_, out_ref_;
+  lite_metal::Tensor x_gpu_;
+  lite_metal::Tensor x_half_;
+  lite_metal::Tensor out_cpu_, out_gpu_;
 
   operators::SoftmaxParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -200,7 +200,7 @@ TEST_F(SoftmaxTest, TestFP16) {
                           IoDirection::DtoH);
 
   for (int i = 0; i < out_gpu_.numel(); ++i) {
-    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float res = static_cast<float>(lite_metal::float16(out_cpu_data[i]));
     float ref = out_ref_.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }

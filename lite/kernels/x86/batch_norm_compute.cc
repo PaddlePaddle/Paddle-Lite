@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(batch_norm,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::BatchNormCompute<float>,
+                     paddle::lite_metal::kernels::x86::BatchNormCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kX86))})

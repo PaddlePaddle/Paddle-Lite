@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -124,7 +124,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(reshape,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ReshapeConverter);
+                         paddle::lite_metal::subgraph::mlu::ReshapeConverter);
 REGISTER_SUBGRAPH_BRIDGE(reshape2,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ReshapeConverter);
+                         paddle::lite_metal::subgraph::mlu::ReshapeConverter);

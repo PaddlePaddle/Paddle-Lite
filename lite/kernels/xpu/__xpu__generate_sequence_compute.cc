@@ -17,15 +17,15 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
 template <typename T>
 std::vector<T> XPUGenerateSequenceCompute::generate_sequence() {
   auto& param = this->template Param<param_t>();
-  const lite::Tensor* x = param.input;
-  lite::Tensor* y = param.output;
+  const lite_metal::Tensor* x = param.input;
+  lite_metal::Tensor* y = param.output;
   auto x_dims = x->dims();
 
   int axis = (param.axis < 0 ? param.axis + x_dims.size() : param.axis);
@@ -60,7 +60,7 @@ std::vector<T> XPUGenerateSequenceCompute::generate_sequence() {
 
 void XPUGenerateSequenceCompute::Run() {
   auto& param = this->template Param<param_t>();
-  lite::Tensor* y = param.output;
+  lite_metal::Tensor* y = param.output;
   int dtype = param.dtype;
 
   switch (dtype) {
@@ -108,7 +108,7 @@ REGISTER_LITE_KERNEL(__xpu__generate_sequence,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUGenerateSequenceCompute,
+                     paddle::lite_metal::kernels::xpu::XPUGenerateSequenceCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})

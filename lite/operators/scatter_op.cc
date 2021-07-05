@@ -15,7 +15,7 @@
 #include "lite/operators/scatter_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ScatterOp::CheckShape() const {
@@ -36,7 +36,7 @@ bool ScatterOp::InferShapeImpl() const {
   return true;
 }
 
-bool ScatterOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool ScatterOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   auto x = op_desc.Input("X").front();
   auto indexs = op_desc.Input("Ids").front();
@@ -63,4 +63,4 @@ bool ScatterOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(scatter, paddle::lite::operators::ScatterOp);
+REGISTER_LITE_OP(scatter, paddle::lite_metal::operators::ScatterOp);

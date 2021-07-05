@@ -42,15 +42,15 @@ DEFINE_int32(layout, 1, "layout nchw");
 DEFINE_string(in_txt, "", "input text");
 DEFINE_string(out_txt, "", "output text");
 
-typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
-typedef paddle::lite::utils::cv::FlipParam FlipParam;
+typedef paddle::lite_metal::utils::cv::ImageFormat ImageFormat;
+typedef paddle::lite_metal::utils::cv::FlipParam FlipParam;
 typedef paddle::lite_api::DataLayoutType LayoutType;
-typedef paddle::lite::utils::cv::TransParam TransParam;
-typedef paddle::lite::utils::cv::ImagePreprocess ImagePreprocess;
+typedef paddle::lite_metal::utils::cv::TransParam TransParam;
+typedef paddle::lite_metal::utils::cv::ImagePreprocess ImagePreprocess;
 typedef paddle::lite_api::Tensor Tensor_api;
-typedef paddle::lite::Tensor Tensor;
+typedef paddle::lite_metal::Tensor Tensor;
 
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 
 void fill_tensor_host_rand(uint8_t* dio, int64_t size) {
   fill_data_rand<uint8_t>(dio, 0, 256, size);
@@ -102,13 +102,13 @@ void test_img(const std::vector<int>& cluster_id,
               LayoutType layout,
               int test_iter = 10) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 
@@ -596,13 +596,13 @@ void test_rotate(const std::vector<int>& cluster_id,
                  LayoutType layout,
                  int test_iter = 10) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 
@@ -766,13 +766,13 @@ void test_flip(const std::vector<int>& cluster_id,
                LayoutType layout,
                int test_iter = 10) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 
@@ -936,14 +936,14 @@ void test_resize(const std::vector<int>& cluster_id,
                  LayoutType layout,
                  int test_iter = 10) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   test_iter = 1;
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 
@@ -1111,13 +1111,13 @@ void test_convert(const std::vector<int>& cluster_id,
                   LayoutType layout,
                   int test_iter = 10) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       LOG(INFO) << "cluster: " << cls << ", threads: " << th;
 

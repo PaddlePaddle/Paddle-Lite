@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 /* Squeeze and Excitation Block Fusion for SE-ResNet */
@@ -466,11 +466,11 @@ class XPUSqueezeExcitationFuser : public FuseBase {
           "filter_dims",
           {static_cast<int>(mul_1_w_dims[1] / mul_1_w_dims[0]),
            static_cast<int>(mul_1_w_dims[1])});
-      paddle::lite::xpu::math::Transpose(mul_1_w_on_host,
+      paddle::lite_metal::xpu::math::Transpose(mul_1_w_on_host,
                                          encode_filter_float.get(),
                                          mul_1_w_dims[0],
                                          mul_1_w_dims[1]);
-      paddle::lite::xpu::math::Transpose(
+      paddle::lite_metal::xpu::math::Transpose(
           mul_2_w_on_host,
           encode_filter_float.get() + mul_1_w_len,
           mul_2_w_dims[0],
@@ -685,6 +685,6 @@ class XPUSqueezeExcitationFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__squeeze_excitation_fuse_pass,
-                  paddle::lite::mir::XPUSqueezeExcitationFusePass)
+                  paddle::lite_metal::mir::XPUSqueezeExcitationFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__squeeze_excitation_block");

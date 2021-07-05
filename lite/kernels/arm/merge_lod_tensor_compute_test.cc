@@ -23,7 +23,7 @@
 #include "lite/kernels/arm/merge_lod_tensor_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 

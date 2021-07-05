@@ -17,7 +17,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 namespace {
@@ -84,5 +84,5 @@ class ElementwiseMulConstantEliminatePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(elementwise_mul_constant_eliminate_pass,
-                  paddle::lite::mir::ElementwiseMulConstantEliminatePass)
+                  paddle::lite_metal::mir::ElementwiseMulConstantEliminatePass)
     .BindTargets({TARGET(kAny)});

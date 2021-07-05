@@ -15,7 +15,7 @@
 #include "lite/backends/arm/math/sgemm.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 

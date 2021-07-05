@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -97,7 +97,7 @@ REGISTER_LITE_KERNEL(layout,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NCHWToNHWCCompute,
+                     paddle::lite_metal::kernels::cuda::NCHWToNHWCCompute,
                      nchw2nhwc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -113,7 +113,7 @@ REGISTER_LITE_KERNEL(layout,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NHWCToNCHWCompute,
+                     paddle::lite_metal::kernels::cuda::NHWCToNCHWCompute,
                      nhwc2nchw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -129,7 +129,7 @@ REGISTER_LITE_KERNEL(layout,
                      kCUDA,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NCHWToNHWCComputeInt8,
+                     paddle::lite_metal::kernels::cuda::NCHWToNHWCComputeInt8,
                      int8_nchw2nhwc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -145,7 +145,7 @@ REGISTER_LITE_KERNEL(layout,
                      kCUDA,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NHWCToNCHWComputeInt8,
+                     paddle::lite_metal::kernels::cuda::NHWCToNCHWComputeInt8,
                      int8_nhwc2nchw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -161,7 +161,7 @@ REGISTER_LITE_KERNEL(layout_once,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NCHWToNHWCCompute,
+                     paddle::lite_metal::kernels::cuda::NCHWToNHWCCompute,
                      nchw2nhwc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -177,7 +177,7 @@ REGISTER_LITE_KERNEL(layout_once,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NHWCToNCHWCompute,
+                     paddle::lite_metal::kernels::cuda::NHWCToNCHWCompute,
                      nhwc2nchw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -193,7 +193,7 @@ REGISTER_LITE_KERNEL(layout_once,
                      kCUDA,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NCHWToNHWCComputeInt8,
+                     paddle::lite_metal::kernels::cuda::NCHWToNHWCComputeInt8,
                      int8_nchw2nhwc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -209,7 +209,7 @@ REGISTER_LITE_KERNEL(layout_once,
                      kCUDA,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::cuda::NHWCToNCHWComputeInt8,
+                     paddle::lite_metal::kernels::cuda::NHWCToNCHWComputeInt8,
                      int8_nhwc2nchw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kCUDA),

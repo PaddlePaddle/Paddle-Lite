@@ -17,7 +17,7 @@
 #include "lite/backends/x86/jit/macro.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 
 typedef enum {

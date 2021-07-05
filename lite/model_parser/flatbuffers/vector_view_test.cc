@@ -20,7 +20,7 @@
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(VectorView, std_vector) {
   std::vector<int64_t> vector{1, 2, 3};
@@ -37,7 +37,7 @@ TEST(VectorView, std_vector) {
 
 TEST(VectorView, Flatbuffers) {
   using namespace flatbuffers;        // NOLINT
-  using namespace paddle::lite::fbs;  // NOLINT
+  using namespace paddle::lite_metal::fbs;  // NOLINT
 
   auto create_desc = [](FlatBufferBuilder& fbb) {
     /* --------- Set --------- */

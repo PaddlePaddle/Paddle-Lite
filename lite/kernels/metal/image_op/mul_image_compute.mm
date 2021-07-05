@@ -18,7 +18,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -112,11 +112,11 @@ void MulImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::MulImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::MulImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite_metal::kernels::metal::MulImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::MulImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::MulImageCompute<float, PRECISION(kFloat)> MetalMulFp32;
-typedef paddle::lite::kernels::metal::MulImageCompute<MetalHalf, PRECISION(kFP16)> MetalMulFp16;
+typedef paddle::lite_metal::kernels::metal::MulImageCompute<float, PRECISION(kFloat)> MetalMulFp32;
+typedef paddle::lite_metal::kernels::metal::MulImageCompute<MetalHalf, PRECISION(kFP16)> MetalMulFp16;
 
 REGISTER_LITE_KERNEL(mul, kMetal, kFloat, kMetalTexture2DArray, MetalMulFp32, def)
     .BindInput("X",

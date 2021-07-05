@@ -20,7 +20,7 @@
 #include "lite/tests/utils/naive_math_impl.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class SearchAlignedMatMulComputeTester : public arena::TestCase {
  protected:

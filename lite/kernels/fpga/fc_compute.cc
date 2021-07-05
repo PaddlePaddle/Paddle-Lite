@@ -20,7 +20,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -68,7 +68,7 @@ void FcCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    fc, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FcCompute, def)
+    fc, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::FcCompute, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),

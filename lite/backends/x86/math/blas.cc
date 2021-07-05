@@ -17,10 +17,10 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
-MatDescriptor CreateMatrixDescriptor(const lite::DDimLite &tensor_dim,
+MatDescriptor CreateMatrixDescriptor(const lite_metal::DDimLite &tensor_dim,
                                      int num_flatten_cols,
                                      bool trans) {
   CHECK_GT(tensor_dim.size(), 1u);

@@ -19,7 +19,7 @@
 #include "lite/fluid/eigen.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -27,7 +27,7 @@ template <typename T,
           size_t D,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenTensor = lite::fluid::EigenTensor<T, D, MajorType, IndexType>;
+using EigenTensor = lite_metal::fluid::EigenTensor<T, D, MajorType, IndexType>;
 
 using Array4 = Eigen::DSizes<int64_t, 4>;
 
@@ -42,7 +42,7 @@ void Unnormalize(const X86Context& ctx,
                  Tensor* grid_slice,
                  const int max_val,  // height-1 or width-1
                  bool align_corners) {
-  auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+  auto place = lite_metal::fluid::EigenDeviceType<TARGET(kX86)>();
   auto grid_slice_t = EigenTensor<T, 3>::From(*grid_slice);
 
   if (!align_corners) {
@@ -61,7 +61,7 @@ void Clip(const X86Context& ctx,
           const int max_val,  // height-1 or width-1
           bool align_corners,
           std::string padding_mode) {
-  auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+  auto place = lite_metal::fluid::EigenDeviceType<TARGET(kX86)>();
   auto grid_slice_t = EigenTensor<T, 3>::From(*grid_slice);
   if (padding_mode == "border") {
     grid_slice_t.device(place) = grid_slice_t.cwiseMax(static_cast<T>(0))
@@ -170,7 +170,7 @@ void AllNeigbors(const X86Context& ctx,
                  Tensor* v_en,
                  Tensor* v_ws,
                  Tensor* v_es) {  // values
-  auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+  auto place = lite_metal::fluid::EigenDeviceType<TARGET(kX86)>();
 
   const int c = input.dims()[1];
   const int n = grid_x->dims()[0];
@@ -239,7 +239,7 @@ void BilinearInter(const X86Context& ctx,
                    Tensor* grid_x,
                    Tensor* grid_y,
                    Tensor* out) {
-  auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+  auto place = lite_metal::fluid::EigenDeviceType<TARGET(kX86)>();
   const int n = grid_x->dims()[0];
   const int out_h = grid_x->dims()[1];
   const int out_w = grid_x->dims()[2];
@@ -308,7 +308,7 @@ void GridSamplerCompute<T>::Run() {
   const int in_w = input_dims[3];
 
   output->template mutable_data<T>();
-  lite::x86::math::SetConstant<TARGET(kX86), T> set_zero;
+  lite_metal::x86::math::SetConstant<TARGET(kX86), T> set_zero;
   set_zero(context, output, static_cast<T>(0));
 
   Tensor grid_x, grid_y;
@@ -345,7 +345,7 @@ REGISTER_LITE_KERNEL(grid_sampler,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::GridSamplerCompute<float>,
+                     paddle::lite_metal::kernels::x86::GridSamplerCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Grid", {LiteType::GetTensorTy(TARGET(kX86))})

@@ -15,7 +15,7 @@
 #include "lite/operators/scatter_nd_add_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ScatterNdAddOp::InferShapeImpl() const {
@@ -48,7 +48,7 @@ bool ScatterNdAddOp::InferShapeImpl() const {
 }
 
 bool ScatterNdAddOp::AttachImpl(const cpp::OpDesc &op_desc,
-                                lite::Scope *scope) {
+                                lite_metal::Scope *scope) {
   AttachParam(&param_);
   auto x = op_desc.Input("X").front();
   auto indexs = op_desc.Input("Index").front();
@@ -71,4 +71,4 @@ bool ScatterNdAddOp::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(scatter_nd_add, paddle::lite::operators::ScatterNdAddOp);
+REGISTER_LITE_OP(scatter_nd_add, paddle::lite_metal::operators::ScatterNdAddOp);

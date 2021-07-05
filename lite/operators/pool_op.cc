@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool PoolOpLite::CheckShape() const {
@@ -92,7 +92,7 @@ bool PoolOpLite::InferShapeImpl() const {
                                             param_.ceil_mode));
     }
   }
-  param_.output->Resize(lite::DDim(output_shape));
+  param_.output->Resize(lite_metal::DDim(output_shape));
 
   return true;
 }
@@ -101,4 +101,4 @@ bool PoolOpLite::InferShapeImpl() const {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(pool2d, paddle::lite::operators::PoolOpLite);
+REGISTER_LITE_OP(pool2d, paddle::lite_metal::operators::PoolOpLite);

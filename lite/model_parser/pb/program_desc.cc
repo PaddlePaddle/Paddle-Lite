@@ -15,7 +15,7 @@
 #include "lite/model_parser/pb/program_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pb {
 
 template <>

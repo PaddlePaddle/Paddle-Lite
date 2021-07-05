@@ -28,7 +28,7 @@
   }
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // MAX(lod.size()) = 32
 const int XPU_MAX_LOD_SIZE = 32;

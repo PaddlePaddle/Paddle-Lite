@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool NegativeOpLite::CheckShape() const {
@@ -27,19 +27,19 @@ bool NegativeOpLite::CheckShape() const {
 }
 
 bool NegativeOpLite::InferShapeImpl() const {
-  lite::DDim input_dims;
+  lite_metal::DDim input_dims;
   input_dims = param_.X->dims();
-  param_.Out->Resize(lite::DDim(input_dims));
+  param_.Out->Resize(lite_metal::DDim(input_dims));
   return true;
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
 bool NegativeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                lite::Scope *scope) {
+                                lite_metal::Scope *scope) {
   auto inputs = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
-  param_.X = scope->FindVar(inputs)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(inputs)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
   return true;
 }
@@ -48,4 +48,4 @@ bool NegativeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(negative, paddle::lite::operators::NegativeOpLite);
+REGISTER_LITE_OP(negative, paddle::lite_metal::operators::NegativeOpLite);

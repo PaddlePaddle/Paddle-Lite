@@ -25,13 +25,13 @@
 #include "lite/core/memory.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class DDimLite;
 class TensorLite;
 
-using DDim = lite::DDimLite;
-using Tensor = lite::TensorLite;
+using DDim = lite_metal::DDimLite;
+using Tensor = lite_metal::TensorLite;
 using LoD = std::vector<std::vector<uint64_t>>;
 
 // A light-weight tensor implementation.

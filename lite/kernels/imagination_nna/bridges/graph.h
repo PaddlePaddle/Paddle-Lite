@@ -27,7 +27,7 @@
 #include "utility.h"  // NOLINT
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace imagination_nna {
 
@@ -77,7 +77,7 @@ class Node {
 
 class Graph {
  public:
-  explicit Graph(lite::imagination_nna::ImgdnnManager* pMgr) {
+  explicit Graph(lite_metal::imagination_nna::ImgdnnManager* pMgr) {
     pImgdnnMgr = pMgr;
   }
 
@@ -116,7 +116,7 @@ class Graph {
     return nodes_.find(name) != nodes_.end();
   }
 
-  lite::imagination_nna::ImgdnnManager* GetBuilder() {
+  lite_metal::imagination_nna::ImgdnnManager* GetBuilder() {
     CHECK(pImgdnnMgr != nullptr) << "pImgdnnMgr used before initialize";
     return pImgdnnMgr;
   }
@@ -131,7 +131,7 @@ class Graph {
                             Node::Role role);
 
   std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
-  lite::imagination_nna::ImgdnnManager* pImgdnnMgr{nullptr};
+  lite_metal::imagination_nna::ImgdnnManager* pImgdnnMgr{nullptr};
 };
 
 }  // namespace imagination_nna

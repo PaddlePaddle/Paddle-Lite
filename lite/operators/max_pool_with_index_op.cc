@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MaxPoolWithIndexOpLite::CheckShape() const {
@@ -64,7 +64,7 @@ bool MaxPoolWithIndexOpLite::InferShapeImpl() const {
           MaxPoolOutputSize(x_dims[i + 2], ksize[i], paddings[i], strides[i]));
     }
   }
-  param_.output->Resize(lite::DDim(output_shape));
+  param_.output->Resize(lite_metal::DDim(output_shape));
   return true;
 }
 
@@ -73,4 +73,4 @@ bool MaxPoolWithIndexOpLite::InferShapeImpl() const {
 }  // namespace paddle
 
 REGISTER_LITE_OP(max_pool2d_with_index,
-                 paddle::lite::operators::MaxPoolWithIndexOpLite);
+                 paddle::lite_metal::operators::MaxPoolWithIndexOpLite);

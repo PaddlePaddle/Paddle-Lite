@@ -28,30 +28,30 @@ limitations under the License. */
 #include "lite/fluid/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template struct SetConstant<lite::TargetType::kX86, lite::fluid::float16>;
-template struct SetConstant<lite::TargetType::kX86, float>;
-template struct SetConstant<lite::TargetType::kX86, double>;
-template struct SetConstant<lite::TargetType::kX86, int>;
-template struct SetConstant<lite::TargetType::kX86, int64_t>;
-template struct SetConstant<lite::TargetType::kX86, bool>;
-template struct SetConstant<lite::TargetType::kX86, uint8_t>;
+template struct SetConstant<lite_metal::TargetType::kX86, lite_metal::fluid::float16>;
+template struct SetConstant<lite_metal::TargetType::kX86, float>;
+template struct SetConstant<lite_metal::TargetType::kX86, double>;
+template struct SetConstant<lite_metal::TargetType::kX86, int>;
+template struct SetConstant<lite_metal::TargetType::kX86, int64_t>;
+template struct SetConstant<lite_metal::TargetType::kX86, bool>;
+template struct SetConstant<lite_metal::TargetType::kX86, uint8_t>;
 
 #define DEFINE_CPU_TRANS(RANK)                                      \
-  template struct Transpose<lite::TargetType::kX86,                 \
-                            lite::fluid::float16,                   \
+  template struct Transpose<lite_metal::TargetType::kX86,                 \
+                            lite_metal::fluid::float16,                   \
                             RANK>;                                  \
-  template struct Transpose<lite::TargetType::kX86, float, RANK>;   \
-  template struct Transpose<lite::TargetType::kX86, double, RANK>;  \
-  template struct Transpose<lite::TargetType::kX86, int, RANK>;     \
-  template struct Transpose<lite::TargetType::kX86, int64_t, RANK>; \
-  template struct Transpose<lite::TargetType::kX86, bool, RANK>;    \
-  template struct Transpose<lite::TargetType::kX86, int16_t, RANK>; \
-  template struct Transpose<lite::TargetType::kX86, uint8_t, RANK>; \
-  template struct Transpose<lite::TargetType::kX86, int8_t, RANK>;
+  template struct Transpose<lite_metal::TargetType::kX86, float, RANK>;   \
+  template struct Transpose<lite_metal::TargetType::kX86, double, RANK>;  \
+  template struct Transpose<lite_metal::TargetType::kX86, int, RANK>;     \
+  template struct Transpose<lite_metal::TargetType::kX86, int64_t, RANK>; \
+  template struct Transpose<lite_metal::TargetType::kX86, bool, RANK>;    \
+  template struct Transpose<lite_metal::TargetType::kX86, int16_t, RANK>; \
+  template struct Transpose<lite_metal::TargetType::kX86, uint8_t, RANK>; \
+  template struct Transpose<lite_metal::TargetType::kX86, int8_t, RANK>;
 
 DEFINE_CPU_TRANS(1);
 DEFINE_CPU_TRANS(2);
@@ -61,23 +61,23 @@ DEFINE_CPU_TRANS(5);
 DEFINE_CPU_TRANS(6);
 
 struct TensorSetConstantCPU {
-  TensorSetConstantCPU(lite::Tensor* tensor, float value)
+  TensorSetConstantCPU(lite_metal::Tensor* tensor, float value)
       : tensor_(tensor), value_(value) {}
   template <typename T>
   void apply() const {
-    auto* begin = tensor_->template mutable_data<T>(lite::TargetType::kX86);
+    auto* begin = tensor_->template mutable_data<T>(lite_metal::TargetType::kX86);
     std::fill(begin, begin + tensor_->numel(), static_cast<T>(value_));
   }
-  lite::Tensor* tensor_;
+  lite_metal::Tensor* tensor_;
   float value_;
 };
 
 template <>
-void set_constant_with_place<lite::TargetType::kX86>(
-    const lite::Context<lite::TargetType::kX86>& context,
-    lite::Tensor* tensor,
+void set_constant_with_place<lite_metal::TargetType::kX86>(
+    const lite_metal::Context<lite_metal::TargetType::kX86>& context,
+    lite_metal::Tensor* tensor,
     float value) {
-  // lite::VisitDataType(tensor->type(), TensorSetConstantCPU(tensor, value));
+  // lite_metal::VisitDataType(tensor->type(), TensorSetConstantCPU(tensor, value));
   TensorSetConstantCPU(tensor, value).apply<float>();
 }
 
@@ -89,10 +89,10 @@ void set_constant_with_place<lite::TargetType::kX86>(
 //  value));
 //}
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 struct TensorSetConstantWithTarget /*: public boost::static_visitor<void>*/ {
-  TensorSetConstantWithTarget(const lite::Context<Target>& context,
-                              lite::Tensor* tensor,
+  TensorSetConstantWithTarget(const lite_metal::Context<Target>& context,
+                              lite_metal::Tensor* tensor,
                               float value)
       : context_(context), tensor_(tensor), value_(value) {}
 
@@ -100,25 +100,25 @@ struct TensorSetConstantWithTarget /*: public boost::static_visitor<void>*/ {
     set_constant_with_place<Target>(context_, tensor_, value_);
   }
 
-  const lite::Context<Target>& context_;
-  lite::Tensor* tensor_;
+  const lite_metal::Context<Target>& context_;
+  lite_metal::Tensor* tensor_;
   float value_;
 };
 
-template <lite::TargetType Target>
-void set_constant(const lite::Context<Target>& context,
-                  lite::Tensor* tensor,
+template <lite_metal::TargetType Target>
+void set_constant(const lite_metal::Context<Target>& context,
+                  lite_metal::Tensor* tensor,
                   float value) {
   TensorSetConstantWithTarget<Target> func(context, tensor, value);
   func();
 }
 
 template <typename T>
-struct RowwiseAdd<lite::TargetType::kX86, T> {
-  void operator()(const lite::Context<lite::TargetType::kX86>& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& vector,
-                  lite::Tensor* output) {
+struct RowwiseAdd<lite_metal::TargetType::kX86, T> {
+  void operator()(const lite_metal::Context<lite_metal::TargetType::kX86>& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& vector,
+                  lite_metal::Tensor* output) {
     const auto& in_dims = input.dims();
     auto size = input.numel() / in_dims[0];
     CHECK_EQ(vector.numel(), size);
@@ -135,19 +135,19 @@ struct RowwiseAdd<lite::TargetType::kX86, T> {
   }
 };
 
-template struct RowwiseAdd<lite::TargetType::kX86, float>;
-template struct RowwiseAdd<lite::TargetType::kX86, double>;
+template struct RowwiseAdd<lite_metal::TargetType::kX86, float>;
+template struct RowwiseAdd<lite_metal::TargetType::kX86, double>;
 
-template struct ColwiseSum<lite::TargetType::kX86, float>;
-template struct ColwiseSum<lite::TargetType::kX86, double>;
-template struct ColwiseSum<lite::TargetType::kX86, int>;
-template struct ColwiseSum<lite::TargetType::kX86, int64_t>;
+template struct ColwiseSum<lite_metal::TargetType::kX86, float>;
+template struct ColwiseSum<lite_metal::TargetType::kX86, double>;
+template struct ColwiseSum<lite_metal::TargetType::kX86, int>;
+template struct ColwiseSum<lite_metal::TargetType::kX86, int64_t>;
 
-template struct RowwiseSum<lite::TargetType::kX86, float>;
-template struct RowwiseSum<lite::TargetType::kX86, double>;
+template struct RowwiseSum<lite_metal::TargetType::kX86, float>;
+template struct RowwiseSum<lite_metal::TargetType::kX86, double>;
 
-template struct RowwiseMean<lite::TargetType::kX86, float>;
-template struct RowwiseMean<lite::TargetType::kX86, double>;
+template struct RowwiseMean<lite_metal::TargetType::kX86, float>;
+template struct RowwiseMean<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

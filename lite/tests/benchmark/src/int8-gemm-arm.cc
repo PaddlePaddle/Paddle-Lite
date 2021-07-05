@@ -38,8 +38,8 @@ static void test_gemm_s8(const benchmark::State &state_in,
   const int n = state.range(1);
   const int k = state.range(2);
 
-  using paddle::lite::DDim;
-  using paddle::lite::Tensor;
+  using paddle::lite_metal::DDim;
+  using paddle::lite_metal::Tensor;
   Tensor x, y, z;
   Tensor bias, scale;
   DDim dim_x = DDim({m, k});
@@ -84,21 +84,21 @@ static void test_gemm_s8(const benchmark::State &state_in,
                 std::ref(f32rng));
   z.mutable_data<float>();  // pre alloc
 
-  paddle::lite::operators::ActivationParam act_param;
+  paddle::lite_metal::operators::ActivationParam act_param;
   act_param.has_active = has_relu;
   if (has_relu) {
     act_param.active_type = (paddle::lite_api::ActivationType)1;
   }
 
-  auto ctx1 = paddle::lite::ContextScheduler::Global().NewContext(
+  auto ctx1 = paddle::lite_metal::ContextScheduler::Global().NewContext(
       paddle::lite_api::TargetType::kARM);
-  auto &ctx = ctx1->As<paddle::lite::ARMContext>();
+  auto &ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(
                      paddle::lite_api::PowerMode::LITE_POWER_HIGH),
                  1);
 
   for (auto _ : state) {
-    paddle::lite::arm::math::gemm_s8(istranA,
+    paddle::lite_metal::arm::math::gemm_s8(istranA,
                                      isTransB,
                                      m,
                                      n,

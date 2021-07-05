@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(search_seq_fc,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SearchSeqFcCompute<float>,
+                     paddle::lite_metal::kernels::x86::SearchSeqFcCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})

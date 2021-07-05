@@ -19,7 +19,7 @@
 #include "lite/core/mir/xpu_pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 namespace fusion {
@@ -183,5 +183,5 @@ class XPUGraphDedupPass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__graph_dedup_pass, paddle::lite::mir::XPUGraphDedupPass)
+REGISTER_MIR_PASS(__xpu__graph_dedup_pass, paddle::lite_metal::mir::XPUGraphDedupPass)
     .BindTargets({TARGET(kXPU)});

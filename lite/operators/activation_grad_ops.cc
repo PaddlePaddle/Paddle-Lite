@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ActivationGradOp::CheckShape() const {
@@ -31,21 +31,21 @@ bool ActivationGradOp::InferShapeImpl() const {
 }
 
 bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
-                                  lite::Scope* scope) {
+                                  lite_metal::Scope* scope) {
   auto Out_grad_name = opdesc.Input("Out@GRAD").front();
   auto X_grad_name = opdesc.Output("X@GRAD").front();
 
-  param_.Out_grad = GetVar<lite::Tensor>(scope, Out_grad_name);
+  param_.Out_grad = GetVar<lite_metal::Tensor>(scope, Out_grad_name);
   param_.X_grad = GetMutableVar<Tensor>(scope, X_grad_name);
 
   if (opdesc.HasInput("X")) {
     auto X_name = opdesc.Input("X").front();
-    param_.X = GetVar<lite::Tensor>(scope, X_name);
+    param_.X = GetVar<lite_metal::Tensor>(scope, X_name);
   }
 
   if (opdesc.HasInput("Out")) {
     auto Out_name = opdesc.Input("Out").front();
-    param_.Out = GetVar<lite::Tensor>(scope, Out_name);
+    param_.Out = GetVar<lite_metal::Tensor>(scope, Out_name);
   }
 
   return true;
@@ -55,6 +55,6 @@ bool ActivationGradOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(square_grad, paddle::lite::operators::ActivationGradOp);
-REGISTER_LITE_OP(relu_grad, paddle::lite::operators::ActivationGradOp);
-REGISTER_LITE_OP(tanh_grad, paddle::lite::operators::ActivationGradOp);
+REGISTER_LITE_OP(square_grad, paddle::lite_metal::operators::ActivationGradOp);
+REGISTER_LITE_OP(relu_grad, paddle::lite_metal::operators::ActivationGradOp);
+REGISTER_LITE_OP(tanh_grad, paddle::lite_metal::operators::ActivationGradOp);

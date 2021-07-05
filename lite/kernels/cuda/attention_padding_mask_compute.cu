@@ -18,7 +18,7 @@
 #include "lite/kernels/cuda/attention_padding_mask_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -150,7 +150,7 @@ REGISTER_LITE_KERNEL(search_attention_padding_mask,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::AttentionPaddingMaskCompute,
+                     paddle::lite_metal::kernels::cuda::AttentionPaddingMaskCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})

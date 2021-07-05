@@ -21,12 +21,12 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
 bool infer_shape(const operators::ConcatParam& param) {
-  std::vector<lite::DDim> input_dims;
+  std::vector<lite_metal::DDim> input_dims;
   for (auto p : param.x) {
     input_dims.push_back(p->dims());
   }
@@ -48,16 +48,16 @@ bool infer_shape(const operators::ConcatParam& param) {
     out_dims[axis] = -1;
   }
   // Set output dims
-  param.output->Resize(lite::DDim(out_dims));
+  param.output->Resize(lite_metal::DDim(out_dims));
   return true;
 }
 
 void concat_compute_ref(const operators::ConcatParam& param) {
-  std::vector<lite::Tensor*> input = param.x;
+  std::vector<lite_metal::Tensor*> input = param.x;
   int axis = param.axis;
   infer_shape(param);
 
-  lite::Tensor* output = param.output;
+  lite_metal::Tensor* output = param.output;
   int num = input.size();
   int rows = 1;
   auto dim_0 = input[0]->dims();
@@ -107,24 +107,24 @@ TEST(concat, compute_input_multi) {
 
   LOG(INFO) << "test concat start";
   // init param
-  std::vector<lite::Tensor*> x;
-  std::vector<lite::Tensor*> x_cpu;
-  std::vector<lite::Tensor*> x_ref;
-  lite::Tensor out;
-  lite::Tensor out_cpu;
-  lite::Tensor out_ref;
-  lite::Tensor tensorA;
-  lite::Tensor tensorB;
-  lite::Tensor tensorC;
-  lite::Tensor tensorD;
-  lite::Tensor tensorA_cpu;
-  lite::Tensor tensorB_cpu;
-  lite::Tensor tensorC_cpu;
-  lite::Tensor tensorD_cpu;
-  lite::Tensor tensorA_ref;
-  lite::Tensor tensorB_ref;
-  lite::Tensor tensorC_ref;
-  lite::Tensor tensorD_ref;
+  std::vector<lite_metal::Tensor*> x;
+  std::vector<lite_metal::Tensor*> x_cpu;
+  std::vector<lite_metal::Tensor*> x_ref;
+  lite_metal::Tensor out;
+  lite_metal::Tensor out_cpu;
+  lite_metal::Tensor out_ref;
+  lite_metal::Tensor tensorA;
+  lite_metal::Tensor tensorB;
+  lite_metal::Tensor tensorC;
+  lite_metal::Tensor tensorD;
+  lite_metal::Tensor tensorA_cpu;
+  lite_metal::Tensor tensorB_cpu;
+  lite_metal::Tensor tensorC_cpu;
+  lite_metal::Tensor tensorD_cpu;
+  lite_metal::Tensor tensorA_ref;
+  lite_metal::Tensor tensorB_ref;
+  lite_metal::Tensor tensorC_ref;
+  lite_metal::Tensor tensorD_ref;
 
   DDimLite ddimA({1, 3, 38, 38});
   DDimLite ddimB({1, 4, 38, 38});
@@ -166,13 +166,13 @@ TEST(concat, compute_input_multi) {
     tensorD_cpu.mutable_data<float>()[i] = i + 9;
     tensorD_ref.mutable_data<float>()[i] = i + 9;
   }
-  tensorA.Assign<float, lite::DDim, TARGET(kCUDA)>(
+  tensorA.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(
       tensorA_cpu.mutable_data<float>(), tensorA_cpu.dims());
-  tensorB.Assign<float, lite::DDim, TARGET(kCUDA)>(
+  tensorB.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(
       tensorB_cpu.mutable_data<float>(), tensorB_cpu.dims());
-  tensorC.Assign<float, lite::DDim, TARGET(kCUDA)>(
+  tensorC.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(
       tensorC_cpu.mutable_data<float>(), tensorC_cpu.dims());
-  tensorD.Assign<float, lite::DDim, TARGET(kCUDA)>(
+  tensorD.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(
       tensorD_cpu.mutable_data<float>(), tensorD_cpu.dims());
 
   x.push_back(&tensorA);

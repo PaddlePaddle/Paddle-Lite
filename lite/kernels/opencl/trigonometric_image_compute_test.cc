@@ -23,7 +23,7 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void sin(const float* input_data, const DDim& in_dim, float* output_data) {
   for (int i = 0; i < in_dim.production(); i++) {
@@ -83,7 +83,7 @@ TEST(sin_image2d_fp16, compute) {
 
     LOG(INFO) << "Get kernel:" << kernel->doc();
 
-    lite::Tensor x, out;
+    lite_metal::Tensor x, out;
     operators::SinParam param;
     param.X = &x;
     param.Out = &out;

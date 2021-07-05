@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void MatmulElementwiseAddFusePass::Apply(
@@ -51,7 +51,7 @@ void MatmulElementwiseAddFusePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_matmul_element_add_fuse_pass,
-                  paddle::lite::mir::MatmulElementwiseAddFusePass)
+                  paddle::lite_metal::mir::MatmulElementwiseAddFusePass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
     .BindKernel("fc");

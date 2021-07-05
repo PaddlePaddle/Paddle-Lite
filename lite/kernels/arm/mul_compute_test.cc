@@ -26,7 +26,7 @@
 #include "lite/kernels/arm/mul_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -89,7 +89,7 @@ TEST(mul_arm, compare_test) {
     for (int n : {1, 2, 3, 4}) {
       for (int k : {1, 2, 3, 4}) {
         VLOG(3) << "m: " << m << ", n: " << n << ", k: " << k;
-        lite::Tensor x, y, out, ref;
+        lite_metal::Tensor x, y, out, ref;
         x.Resize({m, k});
         y.Resize({k, n});
         out.Resize({m, n});
@@ -134,7 +134,7 @@ TEST(mul_arm, compare_test) {
 TEST(mul_arm, num_col_dims) {
   using T = float;
 
-  lite::Tensor x, y, out, ref;
+  lite_metal::Tensor x, y, out, ref;
   x.Resize({2, 3, 4});
   y.Resize({3, 4, 5});
   out.Resize({2, 5});

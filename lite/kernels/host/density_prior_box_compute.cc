@@ -19,7 +19,7 @@
 #include "lite/backends/host/math/prior_box.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -40,7 +40,7 @@ void DensityPriorBoxCompute::Run() {
   float step_h = param.step_h;
   float offset = param.offset;
   std::vector<float> aspect_ratios_vec;
-  lite::host::math::ExpandAspectRatios(
+  lite_metal::host::math::ExpandAspectRatios(
       aspect_ratio, is_flip, &aspect_ratios_vec);
   size_t prior_num = aspect_ratios_vec.size() * min_size.size();
   prior_num += max_size.size();
@@ -59,7 +59,7 @@ void DensityPriorBoxCompute::Run() {
   }
   std::vector<std::string> order = param.order;
 
-  lite::host::math::DensityPriorBox(param.input,
+  lite_metal::host::math::DensityPriorBox(param.input,
                                     param.image,
                                     param.boxes,
                                     param.variances,
@@ -91,7 +91,7 @@ REGISTER_LITE_KERNEL(density_prior_box,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::DensityPriorBoxCompute,
+                     paddle::lite_metal::kernels::host::DensityPriorBoxCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Image", {LiteType::GetTensorTy(TARGET(kHost))})

@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -61,4 +61,4 @@ int ShuffleChannelConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(shuffle_channel,
                          kNPU,
-                         paddle::lite::subgraph::npu::ShuffleChannelConverter);
+                         paddle::lite_metal::subgraph::npu::ShuffleChannelConverter);

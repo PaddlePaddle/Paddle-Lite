@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

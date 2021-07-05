@@ -20,7 +20,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -588,9 +588,9 @@ void fix_x_y_dims(const Tensor *X,
 }
 
 template <class T>
-BatchElementWiseArg<T, int64_t> GenBatchElementWiseArg(const lite::Tensor *X,
-                                                       const lite::Tensor *Y,
-                                                       lite::Tensor *Out,
+BatchElementWiseArg<T, int64_t> GenBatchElementWiseArg(const lite_metal::Tensor *X,
+                                                       const lite_metal::Tensor *Y,
+                                                       lite_metal::Tensor *Out,
                                                        int axis = -1) {
   int out_dim_size = Out->dims().size();
   std::vector<int64_t> x_dims;

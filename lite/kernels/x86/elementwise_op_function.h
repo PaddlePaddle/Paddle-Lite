@@ -25,7 +25,7 @@ limitations under the License. */
 #include "lite/utils/variant.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -46,8 +46,8 @@ namespace x86 {
  *    mid_flag should not be NULL.
  *    x.shape(2, 3, 20) * y.shape(2, 1, 20).broadcast(2, 3, 20)
  */
-inline void get_mid_dims(const lite::DDim &x_dims,
-                         const lite::DDim &y_dims,
+inline void get_mid_dims(const lite_metal::DDim &x_dims,
+                         const lite_metal::DDim &y_dims,
                          const int axis,
                          int *pre,
                          int *n,
@@ -103,7 +103,7 @@ inline void get_mid_dims(const lite::DDim &x_dims,
   }
 }
 
-inline lite::DDim trim_trailing_singular_dims(const lite::DDim &dims) {
+inline lite_metal::DDim trim_trailing_singular_dims(const lite_metal::DDim &dims) {
   // Remove trailing dimensions of size 1 for y
   auto actual_dims_size = dims.size();
   for (; actual_dims_size != 0; --actual_dims_size) {
@@ -116,21 +116,21 @@ inline lite::DDim trim_trailing_singular_dims(const lite::DDim &dims) {
     trim_dims[i] = dims[i];
   }
   if (trim_dims.size() == 0) {
-    return lite::DDim();
+    return lite_metal::DDim();
   }
-  lite::DDim actual_dims = lite::DDim(trim_dims);
+  lite_metal::DDim actual_dims = lite_metal::DDim(trim_dims);
   return actual_dims;
 }
 
-template <typename T, lite::TargetType Target>
+template <typename T, lite_metal::TargetType Target>
 class RowwiseTransformIterator;
 
-template <typename T, lite::TargetType Target>
+template <typename T, lite_metal::TargetType Target>
 class MidWiseTransformIterator;
 
 // NOTE(dzhwinter): ptrdiff_t in iterator is deperecated in c++17
 template <typename T>
-class RowwiseTransformIterator<T, lite::TargetType::kX86>
+class RowwiseTransformIterator<T, lite_metal::TargetType::kX86>
     : public std::iterator<std::random_access_iterator_tag,
                            T,
                            std::ptrdiff_t,
@@ -139,7 +139,7 @@ class RowwiseTransformIterator<T, lite::TargetType::kX86>
  public:
   RowwiseTransformIterator(const T *ptr, int n) : ptr_(ptr), i_(0), n_(n) {}
 
-  RowwiseTransformIterator<T, lite::TargetType::kX86> &operator++() {
+  RowwiseTransformIterator<T, lite_metal::TargetType::kX86> &operator++() {
     ++i_;
     if (UNLIKELY(i_ == n_)) {
       i_ = 0;
@@ -147,7 +147,7 @@ class RowwiseTransformIterator<T, lite::TargetType::kX86>
     return *this;
   }
 
-  RowwiseTransformIterator<T, lite::TargetType::kX86> &operator+(int n) {
+  RowwiseTransformIterator<T, lite_metal::TargetType::kX86> &operator+(int n) {
     while (n-- > 0) {
       ++i_;
       if (UNLIKELY(i_ == n_)) {
@@ -159,12 +159,12 @@ class RowwiseTransformIterator<T, lite::TargetType::kX86>
   }
 
   bool operator==(
-      const RowwiseTransformIterator<T, lite::TargetType::kX86> &rhs) const {
+      const RowwiseTransformIterator<T, lite_metal::TargetType::kX86> &rhs) const {
     return (ptr_ + i_) == &(*rhs);
   }
 
   bool operator!=(
-      const RowwiseTransformIterator<T, lite::TargetType::kX86> &rhs) const {
+      const RowwiseTransformIterator<T, lite_metal::TargetType::kX86> &rhs) const {
     return (ptr_ + i_) != &(*rhs);
   }
 
@@ -177,7 +177,7 @@ class RowwiseTransformIterator<T, lite::TargetType::kX86>
 };
 
 template <typename T>
-class MidWiseTransformIterator<T, lite::TargetType::kX86>
+class MidWiseTransformIterator<T, lite_metal::TargetType::kX86>
     : public std::iterator<std::random_access_iterator_tag,
                            T,
                            std::ptrdiff_t,
@@ -187,7 +187,7 @@ class MidWiseTransformIterator<T, lite::TargetType::kX86>
   MidWiseTransformIterator(const T *ptr, int n, int post)
       : ptr_(ptr), i_(0), j_(0), n_(n), post_(post) {}
 
-  MidWiseTransformIterator<T, lite::TargetType::kX86> &operator++() {
+  MidWiseTransformIterator<T, lite_metal::TargetType::kX86> &operator++() {
     ++j_;
     if (UNLIKELY(j_ == post_)) {
       ++i_;
@@ -199,7 +199,7 @@ class MidWiseTransformIterator<T, lite::TargetType::kX86>
     return *this;
   }
 
-  MidWiseTransformIterator<T, lite::TargetType::kX86> &operator+(int n) {
+  MidWiseTransformIterator<T, lite_metal::TargetType::kX86> &operator+(int n) {
     while (n-- > 0) {
       ++j_;
       if (UNLIKELY(j_ == post_)) {
@@ -214,12 +214,12 @@ class MidWiseTransformIterator<T, lite::TargetType::kX86>
   }
 
   bool operator==(
-      const MidWiseTransformIterator<T, lite::TargetType::kX86> &rhs) const {
+      const MidWiseTransformIterator<T, lite_metal::TargetType::kX86> &rhs) const {
     return (ptr_ + i_) == &(*rhs);
   }
 
   bool operator!=(
-      const MidWiseTransformIterator<T, lite::TargetType::kX86> &rhs) const {
+      const MidWiseTransformIterator<T, lite_metal::TargetType::kX86> &rhs) const {
     return (ptr_ + i_) != &(*rhs);
   }
 
@@ -235,14 +235,14 @@ class MidWiseTransformIterator<T, lite::TargetType::kX86>
 
 template <typename Functor,
           typename T,
-          lite::TargetType Target,
+          lite_metal::TargetType Target,
           typename OutType = T>
 class TransformFunctor {
  public:
-  TransformFunctor(const lite::Tensor *x,
-                   const lite::Tensor *y,
-                   lite::Tensor *z,
-                   const lite::Context<Target> &ctx,
+  TransformFunctor(const lite_metal::Tensor *x,
+                   const lite_metal::Tensor *y,
+                   lite_metal::Tensor *z,
+                   const lite_metal::Context<Target> &ctx,
                    Functor func)
       : x_(x->template data<T>()),
         y_(y->template data<T>()),
@@ -252,12 +252,12 @@ class TransformFunctor {
         func_(func) {}
 
   inline void Run() const {
-    lite::fluid::Transform<Target> trans;
+    lite_metal::fluid::Transform<Target> trans;
     trans(ctx_, x_, x_ + nx_, y_, z_, func_);
   }
 
   inline void RunRowWise(int n, int pre) const {
-    lite::fluid::Transform<Target> trans;
+    lite_metal::fluid::Transform<Target> trans;
     trans(ctx_,
           x_,
           x_ + nx_,
@@ -267,7 +267,7 @@ class TransformFunctor {
   }
 
   inline void RunMidWise(int n, int pre, int post) const {
-    lite::fluid::Transform<Target> trans;
+    lite_metal::fluid::Transform<Target> trans;
     trans(ctx_,
           x_,
           x_ + nx_,
@@ -277,7 +277,7 @@ class TransformFunctor {
   }
 
   inline void RunMidRowWise(int n, int pre, int post) const {
-    lite::fluid::Transform<Target> trans;
+    lite_metal::fluid::Transform<Target> trans;
     for (int i = 0; i < pre; i++) {
       trans(ctx_,
             x_ + i * n * post,
@@ -293,21 +293,21 @@ class TransformFunctor {
   const T *y_;
   OutType *z_;
   int64_t nx_;
-  const lite::Context<Target> &ctx_;
+  const lite_metal::Context<Target> &ctx_;
   Functor func_;
 };
 
 template <typename Functor,
-          lite::TargetType Target,
+          lite_metal::TargetType Target,
           typename T,
           typename OutType = T>
 
-void ElementwiseComputeEx(const lite::Context<Target> &ctx,
-                          const lite::Tensor *x,
-                          const lite::Tensor *y,
+void ElementwiseComputeEx(const lite_metal::Context<Target> &ctx,
+                          const lite_metal::Tensor *x,
+                          const lite_metal::Tensor *y,
                           int axis,
                           Functor func,
-                          lite::Tensor *z) {
+                          lite_metal::Tensor *z) {
   TransformFunctor<Functor, T, Target, OutType> functor(x, y, z, ctx, func);
   auto x_dims = x->dims();
   auto y_dims_untrimed = y->dims();
@@ -458,20 +458,20 @@ static void FusedElemwiseAndActBroadcast2CPU(const T *x,
   }
 }
 
-template <lite::TargetType Target,
+template <lite_metal::TargetType Target,
           typename T,
           typename CompoundFunctor,
           bool KeepIntermediateOut>
-void FusedElemwiseAndActComputeNoBroadcast(const lite::Context<Target> &ctx,
-                                           const lite::DDim &x_dim,
-                                           const lite::Tensor &x,
-                                           const lite::Tensor &y,
+void FusedElemwiseAndActComputeNoBroadcast(const lite_metal::Context<Target> &ctx,
+                                           const lite_metal::DDim &x_dim,
+                                           const lite_metal::Tensor &x,
+                                           const lite_metal::Tensor &y,
                                            CompoundFunctor compound_functor,
-                                           lite::Tensor *out,
-                                           lite::Tensor *intermediate_out) {
+                                           lite_metal::Tensor *out,
+                                           lite_metal::Tensor *intermediate_out) {
   size_t N = static_cast<size_t>(x_dim.production());
 
-  lite::fluid::ForRange<Target> for_range(ctx, N);
+  lite_metal::fluid::ForRange<Target> for_range(ctx, N);
 
   for_range(
       FusedElemwiseAndActNoBroadcast<T, CompoundFunctor, KeepIntermediateOut>{
@@ -484,21 +484,21 @@ void FusedElemwiseAndActComputeNoBroadcast(const lite::Context<Target> &ctx,
               : intermediate_out->template mutable_data<T>()});
 }
 
-template <lite::TargetType Target,
+template <lite_metal::TargetType Target,
           typename T,
           typename CompoundFunctor,
           bool BcastY,
           bool KeepIntermediateOut,
           bool SameShapeOfIntermediateOutAndOut>
-void FusedElemwiseAndActComputeWithBroadcast(const lite::Context<Target> &ctx,
-                                             const lite::DDim &x_dim,
-                                             const lite::DDim &y_dim_untrimed,
-                                             const lite::Tensor &x,
-                                             const lite::Tensor &y,
+void FusedElemwiseAndActComputeWithBroadcast(const lite_metal::Context<Target> &ctx,
+                                             const lite_metal::DDim &x_dim,
+                                             const lite_metal::DDim &y_dim_untrimed,
+                                             const lite_metal::Tensor &x,
+                                             const lite_metal::Tensor &y,
                                              CompoundFunctor compound_functor,
                                              int axis,
-                                             lite::Tensor *out,
-                                             lite::Tensor *intermediate_out) {
+                                             lite_metal::Tensor *out,
+                                             lite_metal::Tensor *intermediate_out) {
   axis = (axis == -1 ? x_dim.size() - y_dim_untrimed.size() : axis);
   auto y_dim = trim_trailing_singular_dims(y_dim_untrimed);
   axis = (y_dim.size() == 0) ? x_dim.size() : axis;
@@ -543,25 +543,25 @@ void FusedElemwiseAndActComputeWithBroadcast(const lite::Context<Target> &ctx,
   }
 }
 
-template <lite::TargetType Target,
+template <lite_metal::TargetType Target,
           typename T,
           typename CompoundFunctor,
           bool KeepIntermediateOut,
           bool SameShapeOfIntermediateOutAndOut>
-void FusedElemwiseAndActComputeEx(const lite::Context<Target> &ctx,
-                                  const lite::Tensor &x,
-                                  const lite::Tensor &y,
+void FusedElemwiseAndActComputeEx(const lite_metal::Context<Target> &ctx,
+                                  const lite_metal::Tensor &x,
+                                  const lite_metal::Tensor &y,
                                   int axis,
                                   CompoundFunctor compound_functor,
-                                  lite::Tensor *out,
-                                  lite::Tensor *intermediate_out) {
+                                  lite_metal::Tensor *out,
+                                  lite_metal::Tensor *intermediate_out) {
   if (KeepIntermediateOut) {
     CHECK(intermediate_out) << "The save_intermediate_out is opened, "
                                "intermediate_out should not be nullptr.";
   }
 
-  const lite::DDim &x_dim = x.dims();
-  const lite::DDim &y_dim = y.dims();
+  const lite_metal::DDim &x_dim = x.dims();
+  const lite_metal::DDim &y_dim = y.dims();
   if (x.dims() == y.dims()) {
     FusedElemwiseAndActComputeNoBroadcast<Target,
                                           T,

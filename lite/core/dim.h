@@ -24,7 +24,7 @@
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 // class DDimLite;
 
 class DDimLite {
@@ -85,7 +85,7 @@ class DDimLite {
   std::vector<value_type> data_;
 };
 
-using DDim = paddle::lite::DDimLite;
+using DDim = paddle::lite_metal::DDimLite;
 }  // namespace lite
 }  // namespace paddle
 

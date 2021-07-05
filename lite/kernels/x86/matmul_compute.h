@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -26,22 +26,22 @@ namespace x86 {
  * Get row matrix shape from a vector shape. If the rank of x_dim > 1, the
  * original x_dim is returned.
  */
-static lite::DDim RowMatrixFromVector(const lite::DDim &x_dim) {
+static lite_metal::DDim RowMatrixFromVector(const lite_metal::DDim &x_dim) {
   if (x_dim.size() > 1) {
     return x_dim;
   }
-  return lite::DDim({1, x_dim[0]});
+  return lite_metal::DDim({1, x_dim[0]});
 }
 
 /**
  * Get column matrix shape from a vector shape. If the ran of y_dim > 1, the
  * original y_dim is returned.
  */
-static lite::DDim ColumnMatrixFromVector(const lite::DDim &y_dim) {
+static lite_metal::DDim ColumnMatrixFromVector(const lite_metal::DDim &y_dim) {
   if (y_dim.size() > 1) {
     return y_dim;
   }
-  return lite::DDim({y_dim[0], 1});
+  return lite_metal::DDim({y_dim[0], 1});
 }
 
 template <typename T>
@@ -58,10 +58,10 @@ class MatMulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto *out = param.Out;
     out->template mutable_data<T>();
 
-    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
-    auto mat_dim_a = lite::x86::math::CreateMatrixDescriptor(
+    auto blas = lite_metal::x86::math::GetBlas<lite_metal::TargetType::kX86, T>(context);
+    auto mat_dim_a = lite_metal::x86::math::CreateMatrixDescriptor(
         RowMatrixFromVector(x->dims()), 0, param.transpose_X);
-    auto mat_dim_b = lite::x86::math::CreateMatrixDescriptor(
+    auto mat_dim_b = lite_metal::x86::math::CreateMatrixDescriptor(
         ColumnMatrixFromVector(y->dims()), 0, param.transpose_Y);
     auto scale = static_cast<T>(param.alpha);
     blas.MatMul(*x, mat_dim_a, *y, mat_dim_b, scale, out, T(0));

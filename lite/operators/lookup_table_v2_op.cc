@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool LookupTableV2OpLite::CheckShape() const {
@@ -41,13 +41,13 @@ bool LookupTableV2OpLite::InferShapeImpl() const {
     out_dims.push_back(ids_dims[i]);
   }
   out_dims.push_back(table_dims[1]);
-  param_.Out->Resize(lite::DDim{out_dims});
+  param_.Out->Resize(lite_metal::DDim{out_dims});
   param_.Out->set_lod(param_.Ids->lod());
   return true;
 }
 
 bool LookupTableV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                     lite::Scope *scope) {
+                                     lite_metal::Scope *scope) {
   auto input = op_desc.Input("W").front();
   auto ids = op_desc.Input("Ids").front();
   auto out = op_desc.Output("Out").front();
@@ -65,4 +65,4 @@ bool LookupTableV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(lookup_table_v2, paddle::lite::operators::LookupTableV2OpLite)
+REGISTER_LITE_OP(lookup_table_v2, paddle::lite_metal::operators::LookupTableV2OpLite)

@@ -21,10 +21,10 @@
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::operators::FcParam FcParam;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::operators::FcParam FcParam;
+using paddle::lite_metal::profile::Timer;
 using paddle::lite_api::PrecisionType;
 
 template <PrecisionType Ptype, PrecisionType OutType>
@@ -58,10 +58,10 @@ void test_fc(const int m,
   param.in_num_col_dims = 1;
   param.in_mat_dims = param.input->dims();
 
-  paddle::lite::kernels::arm::FcCompute<Ptype, OutType> fc_compute;
-  std::unique_ptr<paddle::lite::KernelContext> ctx1(
-      new paddle::lite::KernelContext);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  paddle::lite_metal::kernels::arm::FcCompute<Ptype, OutType> fc_compute;
+  std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+      new paddle::lite_metal::KernelContext);
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
                  thread_num);
   // set param and context
@@ -69,11 +69,11 @@ void test_fc(const int m,
   fc_compute.SetContext(std::move(ctx1));
   // prepare for run
   fc_compute.PrepareForRun();
-  paddle::lite::fill_tensor_rand(*param.input, -1.f, 1.f);
-  paddle::lite::fill_tensor_rand(*param.w, -1.f, 1.f);
+  paddle::lite_metal::fill_tensor_rand(*param.input, -1.f, 1.f);
+  paddle::lite_metal::fill_tensor_rand(*param.w, -1.f, 1.f);
 
   if (has_bias) {
-    paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
+    paddle::lite_metal::fill_tensor_rand(*param.bias, -1.f, 1.f);
   }
   // warm up
   for (int i = 0; i < warmup; ++i) {
@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
 
   int m = atoi(argv[1]);

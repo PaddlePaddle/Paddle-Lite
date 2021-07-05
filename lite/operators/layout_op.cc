@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool LayoutOp::CheckShape() const {
@@ -31,7 +31,7 @@ bool LayoutOp::InferShapeImpl() const {
 }
 bool LayoutOp::Run() { return OpLite::Run(); }
 bool LayoutOp::AttachImpl(const cpp::OpDesc &opdesc,
-                          paddle::lite::Scope *scope) {
+                          paddle::lite_metal::Scope *scope) {
   auto x = opdesc.Input("Input").front();
   auto out = opdesc.Output("Out").front();
   param_.x = GetTensor(scope, x);
@@ -47,4 +47,4 @@ std::string LayoutOp::DebugString() const { return "layout_op"; }
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(layout, paddle::lite::operators::LayoutOp);
+REGISTER_LITE_OP(layout, paddle::lite_metal::operators::LayoutOp);

@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -53,7 +53,7 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   auto output_var_name = op_info->Output("Out").front();
   std::vector<int32_t> i_x_shape_data(x_dims.size());
@@ -95,4 +95,4 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(cast, kBM, paddle::lite::subgraph::bm::CastConverter);
+REGISTER_SUBGRAPH_BRIDGE(cast, kBM, paddle::lite_metal::subgraph::bm::CastConverter);

@@ -17,7 +17,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,7 +30,7 @@ class SequenceMaskCompute : public KernelLite<TARGET(kCUDA), Ptype> {
   virtual ~SequenceMaskCompute() = default;
 
  private:
-  lite::Tensor max_tensor_;
+  lite_metal::Tensor max_tensor_;
 };
 
 }  // namespace cuda

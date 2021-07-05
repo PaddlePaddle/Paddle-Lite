@@ -18,7 +18,7 @@
 #include "lite/core/device_info.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 
@@ -33,7 +33,7 @@ __global__ void GruForwardResetOutput(
     T* prev_output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_gate,
+    lite_metal::cuda::math::ActivationType active_gate,
     bool is_batch) {
   const int frame_idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (frame_idx >= frame_size) return;
@@ -57,13 +57,13 @@ __global__ void GruForwardResetOutput(
     prev_out = prev_output_value[frame_idx];
   }
 
-  if (active_gate == lite::cuda::math::ActivationType::kSigmoid) {
+  if (active_gate == lite_metal::cuda::math::ActivationType::kSigmoid) {
     update_gate_value = Sigmoid(update_gate_value);
     reset_gate_value = Sigmoid(reset_gate_value);
-  } else if (active_gate == lite::cuda::math::ActivationType::kReLU) {
+  } else if (active_gate == lite_metal::cuda::math::ActivationType::kReLU) {
     update_gate_value = ReLU(update_gate_value);
     reset_gate_value = ReLU(reset_gate_value);
-  } else if (active_gate == lite::cuda::math::ActivationType::kTanh) {
+  } else if (active_gate == lite_metal::cuda::math::ActivationType::kTanh) {
     update_gate_value = Tanh(update_gate_value);
     reset_gate_value = Tanh(reset_gate_value);
   }
@@ -82,7 +82,7 @@ __global__ void GruForwardResetOutput(
     half* prev_output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_gate,
+    lite_metal::cuda::math::ActivationType active_gate,
     bool is_batch) {
   const int frame_idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (frame_idx >= frame_size) return;
@@ -139,7 +139,7 @@ __global__ void GruForwardFinalOutput(
     T* output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_node,
+    lite_metal::cuda::math::ActivationType active_node,
     bool origin_mode,
     bool is_batch) {
   const int frame_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -164,11 +164,11 @@ __global__ void GruForwardFinalOutput(
     prev_out = prev_output_value[frame_idx];
   }
 
-  if (active_node == lite::cuda::math::ActivationType::kSigmoid) {
+  if (active_node == lite_metal::cuda::math::ActivationType::kSigmoid) {
     state_frame_value = Sigmoid(state_frame_value);
-  } else if (active_node == lite::cuda::math::ActivationType::kReLU) {
+  } else if (active_node == lite_metal::cuda::math::ActivationType::kReLU) {
     state_frame_value = ReLU(state_frame_value);
-  } else if (active_node == lite::cuda::math::ActivationType::kTanh) {
+  } else if (active_node == lite_metal::cuda::math::ActivationType::kTanh) {
     state_frame_value = Tanh(state_frame_value);
   }
 
@@ -191,7 +191,7 @@ __global__ void GruForwardFinalOutput(
     half* output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_node,
+    lite_metal::cuda::math::ActivationType active_node,
     bool origin_mode,
     bool is_batch) {
   const int frame_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -216,11 +216,11 @@ __global__ void GruForwardFinalOutput(
     prev_out = prev_output_value[frame_idx];
   }
 
-  if (active_node == lite::cuda::math::ActivationType::kSigmoid) {
+  if (active_node == lite_metal::cuda::math::ActivationType::kSigmoid) {
     state_frame_value = Sigmoid(state_frame_value);
-  } else if (active_node == lite::cuda::math::ActivationType::kReLU) {
+  } else if (active_node == lite_metal::cuda::math::ActivationType::kReLU) {
     state_frame_value = ReLU(state_frame_value);
-  } else if (active_node == lite::cuda::math::ActivationType::kTanh) {
+  } else if (active_node == lite_metal::cuda::math::ActivationType::kTanh) {
     state_frame_value = Tanh(state_frame_value);
   }
 
@@ -259,7 +259,7 @@ template __global__ void GruForwardFinalOutput<float>(
     float* output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_node,
+    lite_metal::cuda::math::ActivationType active_node,
     bool origin_mode,
     bool is_batch);
 
@@ -269,7 +269,7 @@ template __global__ void GruForwardResetOutput<float>(
     float* prev_output_value,
     int frame_size,
     int batch_size,
-    lite::cuda::math::ActivationType active_gate,
+    lite_metal::cuda::math::ActivationType active_gate,
     bool is_batch);
 
 }  // namespace math

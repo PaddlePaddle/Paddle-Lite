@@ -26,7 +26,7 @@
 #ifdef LITE_WITH_LOG
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void gen_log(STL::ostream& log_stream_,
              const char* file,

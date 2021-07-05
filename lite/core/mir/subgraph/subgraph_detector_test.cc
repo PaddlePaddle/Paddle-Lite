@@ -28,7 +28,7 @@ DEFINE_string(model_file, "", "model file path of combined protobuf model");
 DEFINE_string(params_file, "", "params file path of combined protobuf model");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // The helper functions for building model manually
 std::vector<std::string> AddFCDesc(
@@ -39,7 +39,7 @@ std::vector<std::string> AddFCDesc(
   CHECK_EQ(input_var_names.size(), 1u);
   CHECK_EQ(wshape.size(), 2u);
   static int id = 0;
-  std::string prefix = "fc_" + paddle::lite::to_string(id);
+  std::string prefix = "fc_" + paddle::lite_metal::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
 
   auto* wgt = block_desc->AddVar<cpp::VarDesc>();
@@ -76,7 +76,7 @@ std::vector<std::string> AddElementwiseAddDesc(
     const std::vector<std::string>& input_Y_names) {
   // CHECK_EQ(input_var_names.size(), 2);
   static int id = 0;
-  std::string prefix = "elementwise_add_" + paddle::lite::to_string(id);
+  std::string prefix = "elementwise_add_" + paddle::lite_metal::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
   auto* out = block_desc->AddVar<cpp::VarDesc>();
 
@@ -100,7 +100,7 @@ std::vector<std::string> AddFeedDesc(
     const std::vector<std::string>& input_X_names) {
   // CHECK_EQ(input_var_names.size(), 1);
   static int id = 0;
-  std::string prefix = "feed_" + paddle::lite::to_string(id);
+  std::string prefix = "feed_" + paddle::lite_metal::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
   auto* out = block_desc->AddVar<cpp::VarDesc>();
 
@@ -123,7 +123,7 @@ std::vector<std::string> AddFetchDesc(
     const std::vector<std::string>& input_X_names) {
   // CHECK_EQ(input_var_names.size(), 1);
   static int id = 0;
-  std::string prefix = "fetch_" + paddle::lite::to_string(id);
+  std::string prefix = "fetch_" + paddle::lite_metal::to_string(id);
   auto* op_desc = block_desc->AddOp<cpp::OpDesc>();
   auto* out = block_desc->AddVar<cpp::VarDesc>();
 

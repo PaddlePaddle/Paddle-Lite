@@ -20,7 +20,7 @@
 #include "lite/kernels/opencl/image_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void pad2d_ref(const float *x_data,
                Tensor *y,
@@ -168,7 +168,7 @@ TEST(pad2d_image2d, compute) {
                       // layout(buf->img): x -> pad2d_in
                       // pad2d(img): pad2d_in -> pad2d_out
                       // layout(img->buf): pad2d_out -> y
-                      lite::Tensor x, y, pad2d_in, pad2d_out, y_ref;
+                      lite_metal::Tensor x, y, pad2d_in, pad2d_out, y_ref;
                       operators::LayoutParam BufferToImageParam;
                       operators::LayoutParam ImageToBufferParam;
                       BufferToImageParam.x = &x;
@@ -194,7 +194,7 @@ TEST(pad2d_image2d, compute) {
                       pad2d_out.Resize(y_dim);
                       y_ref.Resize(y_dim);
                       auto pad2d_image2d_shape =
-                          paddle::lite::kernels::opencl::InitImageDimInfoWith(
+                          paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(
                               x_dim);
 
                       // initialize tensors

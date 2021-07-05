@@ -45,7 +45,7 @@
 #include "lite/backends/x86/cpu_info.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 /* __m128 is ugly to write */
 typedef __m256 v8sf;   // vector of 8 float (avx)
 typedef __m256i v8si;  // vector of 8 int   (avx)

@@ -25,7 +25,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -250,7 +250,7 @@ void OpenCLTypeLayoutTransformPass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(type_layout_cast_pass,
-                  paddle::lite::mir::TypeLayoutTransformPass)
+                  paddle::lite_metal::mir::TypeLayoutTransformPass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kMLU)})
     .ExcludeTargets({TARGET(kMetal)})
@@ -258,7 +258,7 @@ REGISTER_MIR_PASS(type_layout_cast_pass,
     .BindKernel("layout");
 
 REGISTER_MIR_PASS(type_layout_cast_preprocess_pass,
-                  paddle::lite::mir::OpenCLTypeLayoutTransformPass)
+                  paddle::lite_metal::mir::OpenCLTypeLayoutTransformPass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kMLU)})
     .BindKernel("layout_once")

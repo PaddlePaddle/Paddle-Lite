@@ -18,7 +18,7 @@
 #include "lite/kernels/rknpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace rknpu {
 
@@ -118,4 +118,4 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(norm,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::NormConverter);
+                         paddle::lite_metal::subgraph::rknpu::NormConverter);

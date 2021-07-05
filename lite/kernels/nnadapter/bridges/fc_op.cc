@@ -17,7 +17,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -188,4 +188,4 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(fc,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::FCConverter);
+                         paddle::lite_metal::subgraph::nnadapter::FCConverter);

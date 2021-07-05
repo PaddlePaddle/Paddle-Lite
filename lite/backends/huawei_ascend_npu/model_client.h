@@ -20,7 +20,7 @@
 #include "lite/backends/huawei_ascend_npu/utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace huawei_ascend_npu {
 
 class TensorDesc {

@@ -33,7 +33,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace model_parser {
 
 inline void* memcpy(void* dest, const void* src, std::size_t count) {
@@ -67,11 +67,11 @@ class Buffer {
   size_t size() const { return size_; }
   void ResetLazy(size_t size);
 
-  std::unique_ptr<lite::Buffer> Release() { return std::move(raw_); }
-  const lite::Buffer* raw() const { return raw_.get(); }
+  std::unique_ptr<lite_metal::Buffer> Release() { return std::move(raw_); }
+  const lite_metal::Buffer* raw() const { return raw_.get(); }
 
  private:
-  std::unique_ptr<lite::Buffer> raw_{new lite::Buffer};
+  std::unique_ptr<lite_metal::Buffer> raw_{new lite_metal::Buffer};
   size_t size_{0};
 };
 

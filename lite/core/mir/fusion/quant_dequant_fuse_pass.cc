@@ -22,7 +22,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -71,5 +71,5 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_quant_dequant_fuse_pass,
-                  paddle::lite::mir::QuantDequantFusePass)
+                  paddle::lite_metal::mir::QuantDequantFusePass)
     .BindTargets({TARGET(kAny)});

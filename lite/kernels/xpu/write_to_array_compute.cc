@@ -17,7 +17,7 @@
 #include "lite/backends/xpu/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -56,7 +56,7 @@ REGISTER_LITE_KERNEL(write_to_array,
                      kXPU,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::xpu::WriteToArrayCompute,
+                     paddle::lite_metal::kernels::xpu::WriteToArrayCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),

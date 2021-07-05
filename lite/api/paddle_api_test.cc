@@ -161,7 +161,7 @@ TEST(LightApi, run) {
 TEST(MobileConfig, LoadfromMemory) {
   // Get naive buffer
   auto model_file = std::string(FLAGS_model_dir) + ".opt2.naive.nb";
-  std::string model_buffer = lite::ReadFile(model_file);
+  std::string model_buffer = lite_metal::ReadFile(model_file);
   // set model buffer and run model
   lite_api::MobileConfig config;
   config.set_model_from_buffer(model_buffer);

@@ -16,7 +16,7 @@
 #include "lite/kernels/cuda/tanh_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -50,7 +50,7 @@ void TanhCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    tanh, kCUDA, kFloat, kNCHW, paddle::lite::kernels::cuda::TanhCompute, def)
+    tanh, kCUDA, kFloat, kNCHW, paddle::lite_metal::kernels::cuda::TanhCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

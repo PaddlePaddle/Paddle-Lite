@@ -19,7 +19,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -43,21 +43,21 @@ void ReduceMaxCompute::Run() {
 
   if (x_dims.size() == 3) {
     if (dim.size() == 0 || dim.size() == 3) {
-      lite::arm::math::reduce_all_of_three(
+      lite_metal::arm::math::reduce_all_of_three(
           input, output, x_dims[0], x_dims[1], x_dims[2]);
     } else if (dim.size() == 1) {
       switch (dim[0]) {
         case 0:
-          lite::arm::math::reduce_first_of_three(
+          lite_metal::arm::math::reduce_first_of_three(
               input, output, x_dims[0], x_dims[1], x_dims[2]);
           break;
         case 1:
-          lite::arm::math::reduce_second_of_three(
+          lite_metal::arm::math::reduce_second_of_three(
               input, output, x_dims[0], x_dims[1], x_dims[2]);
           break;
 
         case 2:
-          lite::arm::math::reduce_third_of_three(
+          lite_metal::arm::math::reduce_third_of_three(
               input, output, x_dims[0], x_dims[1], x_dims[2]);
           break;
         default:
@@ -75,31 +75,31 @@ void ReduceMaxCompute::Run() {
     int w_in = x_dims[3];
 
     if (dim.size() == 0) {
-      lite::arm::math::reduce_all(input, output, n_in, c_in, h_in, w_in);
+      lite_metal::arm::math::reduce_all(input, output, n_in, c_in, h_in, w_in);
     } else if (dim.size() == 1) {
       switch (dim[0]) {
         case 0:
-          lite::arm::math::reduce_n(input, output, n_in, c_in, h_in, w_in);
+          lite_metal::arm::math::reduce_n(input, output, n_in, c_in, h_in, w_in);
           break;
         case 1:
-          lite::arm::math::reduce_c(input, output, n_in, c_in, h_in, w_in);
+          lite_metal::arm::math::reduce_c(input, output, n_in, c_in, h_in, w_in);
           break;
         case 2:
-          lite::arm::math::reduce_h(input, output, n_in, c_in, h_in, w_in);
+          lite_metal::arm::math::reduce_h(input, output, n_in, c_in, h_in, w_in);
           break;
         case 3:
-          lite::arm::math::reduce_w(input, output, n_in, c_in, h_in, w_in);
+          lite_metal::arm::math::reduce_w(input, output, n_in, c_in, h_in, w_in);
           break;
         default:
           LOG(FATAL) << "error!!!";
       }
     } else if (dim.size() == 2) {
       if (dim[0] == 0 && dim[1] == 1) {
-        lite::arm::math::reduce_nc(input, output, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_nc(input, output, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 1 && dim[1] == 2) {
-        lite::arm::math::reduce_ch(input, output, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_ch(input, output, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 2 && dim[1] == 3) {
-        lite::arm::math::reduce_hw(input, output, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_hw(input, output, n_in, c_in, h_in, w_in);
       } else {
         LOG(FATAL) << "invalid dim!!";
       }
@@ -112,20 +112,20 @@ void ReduceMaxCompute::Run() {
     if (dim.size() == 1) {
       switch (dim[0]) {
         case 0:
-          lite::arm::math::reduce_first_of_two<float>(
+          lite_metal::arm::math::reduce_first_of_two<float>(
               input,
               output,
               first_in,
               second_in,
-              lite::arm::math::MaxMinType::kMax);
+              lite_metal::arm::math::MaxMinType::kMax);
           break;
         case 1:
-          lite::arm::math::reduce_second_of_two<float>(
+          lite_metal::arm::math::reduce_second_of_two<float>(
               input,
               output,
               first_in,
               second_in,
-              lite::arm::math::MaxMinType::kMax);
+              lite_metal::arm::math::MaxMinType::kMax);
           break;
         default:
           LOG(FATAL) << "error!!!";
@@ -147,7 +147,7 @@ REGISTER_LITE_KERNEL(reduce_max,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ReduceMaxCompute,
+                     paddle::lite_metal::kernels::arm::ReduceMaxCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})

@@ -16,7 +16,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace xpu {
 
 std::unique_ptr<xtcl::network::xRuntimeInstance> Device::Build(

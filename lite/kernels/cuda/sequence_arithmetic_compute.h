@@ -17,7 +17,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,9 +30,9 @@ class SequenceArithmeticCompute
   virtual ~SequenceArithmeticCompute() = default;
 
  private:
-  lite::Tensor offset_x;
-  lite::Tensor offset_y;
-  lite::Tensor word_id_to_seq_id;
+  lite_metal::Tensor offset_x;
+  lite_metal::Tensor offset_y;
+  lite_metal::Tensor word_id_to_seq_id;
 };
 
 }  // namespace cuda

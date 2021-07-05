@@ -19,7 +19,7 @@
 #include "lite/kernels/cuda/sequence_pool_concat_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -259,7 +259,7 @@ REGISTER_LITE_KERNEL(sequence_pool_concat,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::SequencePoolConcatCompute,
+                     paddle::lite_metal::kernels::cuda::SequencePoolConcatCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})

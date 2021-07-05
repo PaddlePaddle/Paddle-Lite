@@ -21,14 +21,14 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
 template <typename InType, typename OutType>
-void argmax_func(const lite::Tensor* input,
+void argmax_func(const lite_metal::Tensor* input,
                  const int axis,
-                 lite::Tensor* output);
+                 lite_metal::Tensor* output);
 
 }  // namespace math
 }  // namespace host

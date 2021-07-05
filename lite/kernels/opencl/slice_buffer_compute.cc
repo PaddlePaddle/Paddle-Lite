@@ -22,12 +22,12 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
 inline static std::vector<int32_t> get_new_data_from_tensorlist(
-    const std::vector<lite::Tensor*>& list_new_data_tensor) {
+    const std::vector<lite_metal::Tensor*>& list_new_data_tensor) {
   // get tensor
   std::vector<int32_t> vec_new_data;
   for (size_t i = 0; i < list_new_data_tensor.size(); ++i) {
@@ -39,7 +39,7 @@ inline static std::vector<int32_t> get_new_data_from_tensorlist(
 }
 
 inline static std::vector<int32_t> get_new_data_from_tensor(
-    const lite::Tensor* new_data_tensor) {
+    const lite_metal::Tensor* new_data_tensor) {
   std::vector<int32_t> vec_new_data;
   auto* new_data = new_data_tensor->data<int32_t>();
   vec_new_data =
@@ -180,7 +180,7 @@ void SliceCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using slice_float =
-    paddle::lite::kernels::opencl::SliceCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::opencl::SliceCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(slice, kOpenCL, kFloat, kNCHW, slice_float, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kFloat))})
@@ -197,7 +197,7 @@ REGISTER_LITE_KERNEL(slice, kOpenCL, kFloat, kNCHW, slice_float, def)
     .Finalize();
 
 using slice_int32 =
-    paddle::lite::kernels::opencl::SliceCompute<int, PRECISION(kInt32)>;
+    paddle::lite_metal::kernels::opencl::SliceCompute<int, PRECISION(kInt32)>;
 REGISTER_LITE_KERNEL(slice, kOpenCL, kInt32, kNCHW, slice_int32, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kInt32))})
@@ -214,7 +214,7 @@ REGISTER_LITE_KERNEL(slice, kOpenCL, kInt32, kNCHW, slice_int32, def)
     .Finalize();
 
 using slice_int64 =
-    paddle::lite::kernels::opencl::SliceCompute<int64_t, PRECISION(kInt64)>;
+    paddle::lite_metal::kernels::opencl::SliceCompute<int64_t, PRECISION(kInt64)>;
 REGISTER_LITE_KERNEL(slice, kOpenCL, kInt64, kNCHW, slice_int64, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kInt64))})

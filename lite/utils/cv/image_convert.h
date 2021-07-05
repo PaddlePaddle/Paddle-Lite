@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include "lite/utils/cv/paddle_image_preprocess.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 typedef void (*convert_func)(const uint8_t* src,

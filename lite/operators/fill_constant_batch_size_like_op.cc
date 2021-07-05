@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool FillConstantBatchSizeLikeOp::CheckShape() const {
@@ -41,12 +41,12 @@ bool FillConstantBatchSizeLikeOp::InferShapeImpl() const {
 }
 
 bool FillConstantBatchSizeLikeOp::AttachImpl(const cpp::OpDesc& opdesc,
-                                             lite::Scope* scope) {
+                                             lite_metal::Scope* scope) {
   auto out_name = opdesc.Output("Out").front();
   auto input_name = opdesc.Input("Input").front();
 
-  param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
-  param_.input = GetMutableVar<lite::Tensor>(scope, input_name);
+  param_.out = GetMutableVar<lite_metal::Tensor>(scope, out_name);
+  param_.input = GetMutableVar<lite_metal::Tensor>(scope, input_name);
   param_.dtype = opdesc.GetAttr<int>("dtype");
   param_.shape = opdesc.GetAttr<std::vector<int>>("shape");
   if (opdesc.HasAttr("value")) {
@@ -67,4 +67,4 @@ bool FillConstantBatchSizeLikeOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(fill_constant_batch_size_like,
-                 paddle::lite::operators::FillConstantBatchSizeLikeOp);
+                 paddle::lite_metal::operators::FillConstantBatchSizeLikeOp);

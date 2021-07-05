@@ -63,7 +63,7 @@ limitations under the License. */
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
 // Forward declare float16 for eigen.h
@@ -77,7 +77,7 @@ struct float16;
 #include "unsupported/Eigen/CXX11/Tensor"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
 // Use PADDLE_ALIGNED(2) to ensure that each float16 will be allocated
@@ -909,39 +909,39 @@ namespace std {
 // constructor in float16. Hence, we override is_pod here following C++11
 // so that .cu files can be successfully compiled by nvcc.
 template <>
-struct is_pod<paddle::lite::fluid::float16> {
+struct is_pod<paddle::lite_metal::fluid::float16> {
   static const bool value =
-      is_trivial<paddle::lite::fluid::float16>::value &&
-      is_standard_layout<paddle::lite::fluid::float16>::value;
+      is_trivial<paddle::lite_metal::fluid::float16>::value &&
+      is_standard_layout<paddle::lite_metal::fluid::float16>::value;
 };
 
 template <>
-struct is_floating_point<paddle::lite::fluid::float16>
+struct is_floating_point<paddle::lite_metal::fluid::float16>
     : std::integral_constant<
           bool,
-          std::is_same<paddle::lite::fluid::float16,
+          std::is_same<paddle::lite_metal::fluid::float16,
                        typename std::remove_cv<
-                           paddle::lite::fluid::float16>::type>::value> {};
+                           paddle::lite_metal::fluid::float16>::type>::value> {};
 template <>
-struct is_signed<paddle::lite::fluid::float16> {
+struct is_signed<paddle::lite_metal::fluid::float16> {
   static const bool value = true;
 };
 
 template <>
-struct is_unsigned<paddle::lite::fluid::float16> {
+struct is_unsigned<paddle::lite_metal::fluid::float16> {
   static const bool value = false;
 };
 
-inline bool isnan(const paddle::lite::fluid::float16& a) {
-  return paddle::lite::fluid::isnan(a);
+inline bool isnan(const paddle::lite_metal::fluid::float16& a) {
+  return paddle::lite_metal::fluid::isnan(a);
 }
 
-inline bool isinf(const paddle::lite::fluid::float16& a) {
-  return paddle::lite::fluid::isinf(a);
+inline bool isinf(const paddle::lite_metal::fluid::float16& a) {
+  return paddle::lite_metal::fluid::isinf(a);
 }
 
 template <>
-struct numeric_limits<paddle::lite::fluid::float16> {
+struct numeric_limits<paddle::lite_metal::fluid::float16> {
   static const bool is_specialized = true;
   static const bool is_signed = true;
   static const bool is_integer = false;
@@ -966,32 +966,32 @@ struct numeric_limits<paddle::lite::fluid::float16> {
   static const bool traps = true;
   static const bool tinyness_before = false;
 
-  static paddle::lite::fluid::float16(min)() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x400);
+  static paddle::lite_metal::fluid::float16(min)() {
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x400);
   }
-  static paddle::lite::fluid::float16 lowest() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0xfbff);
+  static paddle::lite_metal::fluid::float16 lowest() {
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0xfbff);
   }
-  static paddle::lite::fluid::float16(max)() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x7bff);
+  static paddle::lite_metal::fluid::float16(max)() {
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x7bff);
   }
-  static paddle::lite::fluid::float16 epsilon() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x0800);
+  static paddle::lite_metal::fluid::float16 epsilon() {
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x0800);
   }
-  static paddle::lite::fluid::float16 round_error() {
-    return paddle::lite::fluid::float16(0.5);
+  static paddle::lite_metal::fluid::float16 round_error() {
+    return paddle::lite_metal::fluid::float16(0.5);
   }
-  static paddle::lite::fluid::float16 infinity() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x7c00);
+  static paddle::lite_metal::fluid::float16 infinity() {
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x7c00);
   }
-  static paddle::lite::fluid::float16 quiet_NaN() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x7e00);
+  static paddle::lite_metal::fluid::float16 quiet_NaN() {
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x7e00);
   }
-  static paddle::lite::fluid::float16 signaling_NaN() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x7e00);
+  static paddle::lite_metal::fluid::float16 signaling_NaN() {
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x7e00);
   }
-  static paddle::lite::fluid::float16 denorm_min() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x1);
+  static paddle::lite_metal::fluid::float16 denorm_min() {
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x1);
   }
 };
 
@@ -999,7 +999,7 @@ struct numeric_limits<paddle::lite::fluid::float16> {
 
 namespace Eigen {
 
-using float16 = paddle::lite::fluid::float16;
+using float16 = paddle::lite_metal::fluid::float16;
 
 template <>
 struct NumTraits<float16> : GenericNumTraits<float16> {
@@ -1011,20 +1011,20 @@ struct NumTraits<float16> : GenericNumTraits<float16> {
   };
 
   HOSTDEVICE static inline float16 epsilon() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x0800);
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x0800);
   }
   HOSTDEVICE static inline float16 dummy_precision() { return float16(1e-2f); }
   HOSTDEVICE static inline float16 highest() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x7bff);
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x7bff);
   }
   HOSTDEVICE static inline float16 lowest() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0xfbff);
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0xfbff);
   }
   HOSTDEVICE static inline float16 infinity() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x7c00);
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x7c00);
   }
   HOSTDEVICE static inline float16 quiet_NaN() {
-    return paddle::lite::fluid::raw_uint16_to_float16(0x7c01);
+    return paddle::lite_metal::fluid::raw_uint16_to_float16(0x7c01);
   }
 };
 
@@ -1032,17 +1032,17 @@ namespace numext {
 
 template <>
 HOSTDEVICE inline bool(isnan)(const float16& a) {
-  return (paddle::lite::fluid::isnan)(a);
+  return (paddle::lite_metal::fluid::isnan)(a);
 }
 
 template <>
 HOSTDEVICE inline bool(isinf)(const float16& a) {
-  return (paddle::lite::fluid::isinf)(a);
+  return (paddle::lite_metal::fluid::isinf)(a);
 }
 
 template <>
 HOSTDEVICE inline bool(isfinite)(const float16& a) {
-  return (paddle::lite::fluid::isfinite)(a);
+  return (paddle::lite_metal::fluid::isfinite)(a);
 }
 
 template <>

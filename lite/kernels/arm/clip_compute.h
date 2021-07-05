@@ -18,7 +18,7 @@
 #include "lite/operators/clip_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 

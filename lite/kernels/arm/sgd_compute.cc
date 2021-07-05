@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -46,7 +46,7 @@ void SGDCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    sgd, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SGDCompute, def)
+    sgd, kARM, kFloat, kNCHW, paddle::lite_metal::kernels::arm::SGDCompute, def)
     .BindInput("Param", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Grad", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("LearningRate", {LiteType::GetTensorTy(TARGET(kARM))})

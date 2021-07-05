@@ -23,7 +23,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void GraphVisualizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -47,15 +47,15 @@ std::string Visualize(mir::SSAGraph* graph) {
     switch (attr_type) {
       case AttrType::INT:
         os << ":int:"
-           << paddle::lite::to_string(op_info->GetAttr<int>(attr_name));
+           << paddle::lite_metal::to_string(op_info->GetAttr<int>(attr_name));
         break;
       case AttrType::FLOAT:
         os << ":float:"
-           << paddle::lite::to_string(op_info->GetAttr<float>(attr_name));
+           << paddle::lite_metal::to_string(op_info->GetAttr<float>(attr_name));
         break;
       case AttrType::BOOLEAN:
         os << ":int:"
-           << paddle::lite::to_string(op_info->GetAttr<bool>(attr_name));
+           << paddle::lite_metal::to_string(op_info->GetAttr<bool>(attr_name));
         break;
       case AttrType::STRING:
         os << ":string: \""
@@ -169,5 +169,5 @@ std::string Visualize(mir::SSAGraph* graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(graph_visualize_pass, paddle::lite::mir::GraphVisualizePass)
+REGISTER_MIR_PASS(graph_visualize_pass, paddle::lite_metal::mir::GraphVisualizePass)
     .BindTargets({TARGET(kAny)});

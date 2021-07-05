@@ -17,7 +17,7 @@ limitations under the License. */
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -35,7 +35,7 @@ void ScaleCompute::Run() {
   if (!bias_after_scale) {
     bias *= scale;
   }
-  lite::cuda::math::scale(
+  lite_metal::cuda::math::scale(
       x_dims.production(), x_data, output_data, scale, bias, stream);
 }
 
@@ -45,7 +45,7 @@ void ScaleCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    scale, kCUDA, kFloat, kNCHW, paddle::lite::kernels::cuda::ScaleCompute, def)
+    scale, kCUDA, kFloat, kNCHW, paddle::lite_metal::kernels::cuda::ScaleCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

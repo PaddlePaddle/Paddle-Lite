@@ -20,7 +20,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,8 +30,8 @@ class MatMulCompute : public KernelLite<TARGET(kCUDA), Ptype> {
   using param_t = operators::MatMulParam;
 
   void PrepareForRun() override {
-    strided_gemm_impl_.reset(new lite::cuda::math::StridedGemm<T, T>);
-    gemm_impl_.reset(new lite::cuda::math::Gemm<T, T>);
+    strided_gemm_impl_.reset(new lite_metal::cuda::math::StridedGemm<T, T>);
+    gemm_impl_.reset(new lite_metal::cuda::math::Gemm<T, T>);
   }
 
   void Run() override;
@@ -39,9 +39,9 @@ class MatMulCompute : public KernelLite<TARGET(kCUDA), Ptype> {
   virtual ~MatMulCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::StridedGemm<T, T>> strided_gemm_impl_{
+  std::unique_ptr<lite_metal::cuda::math::StridedGemm<T, T>> strided_gemm_impl_{
       nullptr};
-  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
+  std::unique_ptr<lite_metal::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
 };
 
 }  // namespace cuda

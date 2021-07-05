@@ -28,7 +28,7 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
                     const std::vector<int>& thread_num,
                     const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   PoolParam param;
   param.x = new Tensor;
@@ -49,12 +49,12 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::PoolCompute<PRECISION(kFP16),
+      paddle::lite_metal::kernels::arm::PoolCompute<PRECISION(kFP16),
                                               PRECISION(kFP16)>
           pool;
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
       pool.SetParam(param);

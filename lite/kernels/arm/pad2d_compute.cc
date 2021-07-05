@@ -24,13 +24,13 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
 #define PAD2D_INIT                                      \
   auto& param = Param<operators::Pad2dParam>();         \
-  const lite::Tensor* inputs = param.X;                 \
+  const lite_metal::Tensor* inputs = param.X;                 \
   auto* out = param.Out;                                \
   if (param.mode == "constant") {                       \
     mode_ = 0;                                          \
@@ -59,7 +59,7 @@ namespace arm {
 template <>
 void Pad2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   PAD2D_INIT
-  lite::arm::math::pad2d_func(inputs, out, mode_, pad_h_, pad_w_, pad_value_);
+  lite_metal::arm::math::pad2d_func(inputs, out, mode_, pad_h_, pad_w_, pad_value_);
   return;
 }
 
@@ -68,7 +68,7 @@ template <>
 void Pad2dCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   PAD2D_INIT
   float16_t pad_val = static_cast<float16_t>(pad_value_);
-  lite::arm::math::fp16::pad2d_func_fp16(
+  lite_metal::arm::math::fp16::pad2d_func_fp16(
       inputs, out, mode_, pad_h_, pad_w_, pad_val);
   return;
 }
@@ -80,7 +80,7 @@ void Pad2dCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
 }  // namespace paddle
 
 #ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::Pad2dCompute<PRECISION(kFP16),
+typedef paddle::lite_metal::kernels::arm::Pad2dCompute<PRECISION(kFP16),
                                                  PRECISION(kFP16)>
     Pad2dFp16;
 REGISTER_LITE_KERNEL(pad2d, kARM, kFP16, kNCHW, Pad2dFp16, def)
@@ -89,7 +89,7 @@ REGISTER_LITE_KERNEL(pad2d, kARM, kFP16, kNCHW, Pad2dFp16, def)
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 
-typedef paddle::lite::kernels::arm::Pad2dCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::Pad2dCompute<PRECISION(kFloat),
                                                  PRECISION(kFloat)>
     Pad2dFp32;
 REGISTER_LITE_KERNEL(pad2d, kARM, kFloat, kNCHW, Pad2dFp32, def)

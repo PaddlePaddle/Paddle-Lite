@@ -29,7 +29,7 @@
 #include "lite/operators/conv_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -65,7 +65,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     // To-do(qili93): remove below lines of code after all kernels implemented
     auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::ConvParam>();
-    lite::Tensor filter = *param.filter;
+    lite_metal::Tensor filter = *param.filter;
     param.output->template mutable_data<T>();
     const int batch_size = static_cast<int>(param.x->dims()[0]);
 
@@ -96,43 +96,43 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       col_shape_vec[j + 1] = filter_shape_vec[j + 2];
       col_shape_vec[j + 1 + data_dim] = output_shape_vec[j + 2];
     }
-    lite::DDim col_shape(col_shape_vec);
-    lite::DDim col_matrix_shape = col_shape.Flatten2D(data_dim + 1);
+    lite_metal::DDim col_shape(col_shape_vec);
+    lite_metal::DDim col_matrix_shape = col_shape.Flatten2D(data_dim + 1);
     bool is_expand = IsExpand(
         filter_shape_vec, param.strides, *param.paddings, *param.dilations);
-    lite::Tensor col;
-    lite::Tensor col_matrix;
+    lite_metal::Tensor col;
+    lite_metal::Tensor col_matrix;
     if (is_expand) {
       col.Resize(col_shape);
       col.mutable_data<T>();
       col_matrix.ShareDataWith(col);
       col_matrix.Resize(col_matrix_shape);
     }
-    lite::DDim input_shape = param.x->dims().Slice(1, param.x->dims().size());
-    lite::DDim filter_matrix_shape(std::vector<int64_t>{
+    lite_metal::DDim input_shape = param.x->dims().Slice(1, param.x->dims().size());
+    lite_metal::DDim filter_matrix_shape(std::vector<int64_t>{
         filter.dims()[0], filter.dims().production() / filter.dims()[0]});
     filter.Resize(filter_matrix_shape);
-    lite::DDim output_matrix_shape(std::vector<int64_t>{
+    lite_metal::DDim output_matrix_shape(std::vector<int64_t>{
         param.output->dims()[1],
         param.output->dims().production() /
             (param.output->dims()[0] * param.output->dims()[1])});
     int in_step = static_cast<int>(param.x->dims()[1]) / param.groups;
     int out_step = static_cast<int>(param.output->dims()[1]) / param.groups;
-    paddle::lite::x86::math::Vol2ColFunctor<lite::TargetType::kX86, T> vol2col;
-    paddle::lite::x86::math::Im2ColFunctor<
-        paddle::lite::x86::math::ColFormat::kCFO,
-        lite::TargetType::kX86,
+    paddle::lite_metal::x86::math::Vol2ColFunctor<lite_metal::TargetType::kX86, T> vol2col;
+    paddle::lite_metal::x86::math::Im2ColFunctor<
+        paddle::lite_metal::x86::math::ColFormat::kCFO,
+        lite_metal::TargetType::kX86,
         T>
         im2col;
     auto blas =
-        paddle::lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
+        paddle::lite_metal::x86::math::GetBlas<lite_metal::TargetType::kX86, T>(context);
     for (int i = 0; i < batch_size; i++) {
-      lite::Tensor in_batch = param.x->template Slice<T>(i, i + 1);
+      lite_metal::Tensor in_batch = param.x->template Slice<T>(i, i + 1);
       in_batch.Resize(input_shape);
-      lite::Tensor out_batch = param.output->template Slice<T>(i, i + 1);
+      lite_metal::Tensor out_batch = param.output->template Slice<T>(i, i + 1);
       out_batch.Resize(output_matrix_shape);
       for (int g = 0; g < param.groups; g++) {
-        lite::Tensor in_slice =
+        lite_metal::Tensor in_slice =
             in_batch.Slice<T>(static_cast<int64_t>(g * in_step),
                               static_cast<int64_t>((g + 1) * in_step));
         auto paddings = *param.paddings;
@@ -160,11 +160,11 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         }
 
         // gemm
-        lite::Tensor out_slice;
+        lite_metal::Tensor out_slice;
         out_slice =
             out_batch.Slice<T>(static_cast<int64_t>(g * out_step),
                                static_cast<int64_t>((g + 1) * out_step));
-        lite::Tensor filter_slice;
+        lite_metal::Tensor filter_slice;
         filter_slice =
             filter.Slice<T>(static_cast<int64_t>(g * out_step),
                             static_cast<int64_t>((g + 1) * out_step));
@@ -189,14 +189,14 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       auto act_param = param.activation_param;
       if (act_param.has_active) {
         if (act_param.active_type == lite_api::ActivationType::kRelu) {
-          lite::x86::math::bias_add_relu_broadcast(out_data,
+          lite_metal::x86::math::bias_add_relu_broadcast(out_data,
                                                    bias_data,
                                                    out_data,
                                                    batch_size,
                                                    output_channel,
                                                    output_number);
         } else if (act_param.active_type == lite_api::ActivationType::kRelu6) {
-          lite::x86::math::bias_add_relu6_broadcast(out_data,
+          lite_metal::x86::math::bias_add_relu6_broadcast(out_data,
                                                     bias_data,
                                                     out_data,
                                                     batch_size,
@@ -206,7 +206,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
           LOG(FATAL) << "[X86] unsupported Activation type";
         }
       } else {
-        lite::x86::math::bias_add_broadcast(out_data,
+        lite_metal::x86::math::bias_add_broadcast(out_data,
                                             bias_data,
                                             out_data,
                                             batch_size,
@@ -218,7 +218,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
+      paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = "NotImplForConv";
   }
 #endif

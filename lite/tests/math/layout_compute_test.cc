@@ -44,11 +44,11 @@ DEFINE_int32(in_width, 112, "input width");
 
 DEFINE_bool(flag_nchw, true, "do nchw to nhwc");
 
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::operators::LayoutParam LayoutParam;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::operators::LayoutParam LayoutParam;
 
-using paddle::lite::profile::Timer;
+using paddle::lite_metal::profile::Timer;
 
 #define IN(n, c, h, w)                                 \
   input_data[w + h * input_w + c * input_h * input_w + \
@@ -119,7 +119,7 @@ void test_layout_fp32_nchw(DDim dim_in,
                            const std::vector<int>& thread_num,
                            const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   LayoutParam param;
   param.x = new Tensor;
@@ -130,12 +130,12 @@ void test_layout_fp32_nchw(DDim dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kFloat)> layout;
+      paddle::lite_metal::kernels::arm::NCHWToNHWCCompute<PRECISION(kFloat)> layout;
       DDim dim_out({dim_in[0], dim_in[2], dim_in[3], dim_in[1]});
 
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
       const_cast<Tensor*>(param.x)->Resize(dim_in);
@@ -143,9 +143,9 @@ void test_layout_fp32_nchw(DDim dim_in,
 
       layout.SetParam(param);
 
-      paddle::lite::fill_tensor_rand(
+      paddle::lite_metal::fill_tensor_rand(
           *(const_cast<Tensor*>(param.x)), -1.f, 1.f);
-      //   paddle::lite::fill_tensor_const(*param.x, 1.f);
+      //   paddle::lite_metal::fill_tensor_const(*param.x, 1.f);
 
       auto din = param.x->data<float>();
 
@@ -220,7 +220,7 @@ void test_layout_fp32_nhwc(DDim dim_in,
                            const std::vector<int>& thread_num,
                            const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
 
   LayoutParam param;
@@ -232,13 +232,13 @@ void test_layout_fp32_nhwc(DDim dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::NHWCToNCHWCompute<PRECISION(kFloat)> layout;
+      paddle::lite_metal::kernels::arm::NHWCToNCHWCompute<PRECISION(kFloat)> layout;
       // n h w c == n c h w
       DDim dim_out({dim_in[0], dim_in[3], dim_in[1], dim_in[2]});
 
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
       const_cast<Tensor*>(param.x)->Resize(dim_in);
@@ -246,9 +246,9 @@ void test_layout_fp32_nhwc(DDim dim_in,
 
       layout.SetParam(param);
 
-      paddle::lite::fill_tensor_rand(
+      paddle::lite_metal::fill_tensor_rand(
           *(const_cast<Tensor*>(param.x)), -1.f, 1.f);
-      //   paddle::lite::fill_tensor_const(*param.x, 1.f);
+      //   paddle::lite_metal::fill_tensor_const(*param.x, 1.f);
 
       auto din = param.x->data<float>();
 
@@ -323,7 +323,7 @@ void test_layout_int8_nchw(DDim dim_in,
                            const std::vector<int>& thread_num,
                            const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
 
   LayoutParam param;
@@ -335,12 +335,12 @@ void test_layout_int8_nchw(DDim dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kInt8)> layout;
+      paddle::lite_metal::kernels::arm::NCHWToNHWCCompute<PRECISION(kInt8)> layout;
       DDim dim_out({dim_in[0], dim_in[2], dim_in[3], dim_in[1]});
 
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
       const_cast<Tensor*>(param.x)->Resize(dim_in);
@@ -348,8 +348,8 @@ void test_layout_int8_nchw(DDim dim_in,
 
       layout.SetParam(param);
 
-      paddle::lite::fill_tensor_rand(*(const_cast<Tensor*>(param.x)));
-      //   paddle::lite::fill_tensor_const(*param.x, 1.f);
+      paddle::lite_metal::fill_tensor_rand(*(const_cast<Tensor*>(param.x)));
+      //   paddle::lite_metal::fill_tensor_const(*param.x, 1.f);
 
       auto din = param.x->data<int8_t>();
 
@@ -426,7 +426,7 @@ void test_layout_int8_nhwc(DDim dim_in,
                            const std::vector<int>& thread_num,
                            const std::vector<int>& power_mode) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
 
   LayoutParam param;
@@ -438,13 +438,13 @@ void test_layout_int8_nhwc(DDim dim_in,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::NHWCToNCHWCompute<PRECISION(kInt8)> layout;
+      paddle::lite_metal::kernels::arm::NHWCToNCHWCompute<PRECISION(kInt8)> layout;
       // n h w c == n c h w
       DDim dim_out({dim_in[0], dim_in[3], dim_in[1], dim_in[2]});
 
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
       const_cast<Tensor*>(param.x)->Resize(dim_in);
@@ -452,8 +452,8 @@ void test_layout_int8_nhwc(DDim dim_in,
 
       layout.SetParam(param);
 
-      paddle::lite::fill_tensor_rand(*(const_cast<Tensor*>(param.x)));
-      //   paddle::lite::fill_tensor_const(*param.x, 1.f);
+      paddle::lite_metal::fill_tensor_rand(*(const_cast<Tensor*>(param.x)));
+      //   paddle::lite_metal::fill_tensor_const(*param.x, 1.f);
 
       auto din = param.x->data<int8_t>();
 

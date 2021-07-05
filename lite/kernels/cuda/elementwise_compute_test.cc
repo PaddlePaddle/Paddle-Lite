@@ -19,11 +19,11 @@
 #include "lite/api/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 static void ElementwiseAddRef(float* x, float* y, float* out, int num) {
   for (int i = 0; i < num; ++i) {
@@ -83,8 +83,8 @@ TEST(elementwise_add, normal) {
     y_ref_data[i] = i - 5.0;
   }
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  y.Assign<float, lite::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  y.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
 
   param.X = &x;
   param.Y = &y;
@@ -151,8 +151,8 @@ TEST(elementwise_add, bias) {
     y_ref_data[i] = i - 5.0;
   }
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  y.Assign<float, lite::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  y.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
 
   param.X = &x;
   param.Y = &y;
@@ -220,8 +220,8 @@ TEST(elementwise_add_nhwc, bias) {
     y_ref_data[i] = i - 5.0;
   }
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  y.Assign<float, lite::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  y.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(y_cpu_data, y_cpu.dims());
 
   param.X = &x;
   param.Y = &y;

@@ -16,7 +16,7 @@ limitations under the License. */
 #include <algorithm>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -60,8 +60,8 @@ static inline void transpose8_ps(__m256& row0,  // NOLINT
 
 // input  [bs, ic, ih, iw] => [bs, ic/8, ih, iw, 8]
 // filter [oc, 01, ih, iw] => [01, ic/8, ih, iw, 8] for depthwise
-void pack8_m256(lite::Tensor* input,
-                lite::Tensor* output,
+void pack8_m256(lite_metal::Tensor* input,
+                lite_metal::Tensor* output,
                 const int channel_num,
                 const bool is_filter) {
   int batch_size, input_channel, input_height, input_width;
@@ -154,8 +154,8 @@ void pack8_m256(lite::Tensor* input,
 
 // input  [bs, ic, ih, iw] => [bs, ic/4, ih, iw, 4]
 // filter [oc, 01, ih, iw] => [01, ic/4, ih, iw, 4] for depthwise
-void pack4_m128(lite::Tensor* input,
-                lite::Tensor* output,
+void pack4_m128(lite_metal::Tensor* input,
+                lite_metal::Tensor* output,
                 const int channel_num,
                 const bool is_filter) {
   int batch_size, input_channel, input_height, input_width;
@@ -227,7 +227,7 @@ void pack4_m128(lite::Tensor* input,
 }
 
 // output_trans [bs, oc/8, oh, ow, 8] => output [bs, oc, oh, ow]
-void unpack8_m256(lite::Tensor* input, lite::Tensor* output) {
+void unpack8_m256(lite_metal::Tensor* input, lite_metal::Tensor* output) {
   CHECK_EQ(input->dims().size(), 5UL);
   const int batch_size = input->dims()[0];
   const int channel_num = input->dims()[1];
@@ -310,7 +310,7 @@ void unpack8_m256(lite::Tensor* input, lite::Tensor* output) {
 }
 
 // output_trans [bs, oc/4, oh, ow, 4] => output [bs, oc, oh, ow]
-void unpack4_m128(lite::Tensor* input, lite::Tensor* output) {
+void unpack4_m128(lite_metal::Tensor* input, lite_metal::Tensor* output) {
   CHECK_EQ(input->dims().size(), 5UL);
   const int batch_size = input->dims()[0];
   const int channel_num = input->dims()[1];
@@ -372,8 +372,8 @@ void unpack4_m128(lite::Tensor* input, lite::Tensor* output) {
   }    // end of for bs
 }
 
-void padding8_m256(lite::Tensor* input,
-                   lite::Tensor* output,
+void padding8_m256(lite_metal::Tensor* input,
+                   lite_metal::Tensor* output,
                    const std::vector<int>& paddings) {
   CHECK_EQ(paddings.size(), 4UL);
   int top = paddings[0];
@@ -438,8 +438,8 @@ void padding8_m256(lite::Tensor* input,
   }
 }
 
-void padding4_m128(lite::Tensor* input,
-                   lite::Tensor* output,
+void padding4_m128(lite_metal::Tensor* input,
+                   lite_metal::Tensor* output,
                    const std::vector<int>& paddings) {
   CHECK_EQ(paddings.size(), 4UL);
   int top = paddings[0];
@@ -504,8 +504,8 @@ void padding4_m128(lite::Tensor* input,
   }
 }
 
-void padding1_float(lite::Tensor* input,
-                    lite::Tensor* output,
+void padding1_float(lite_metal::Tensor* input,
+                    lite_metal::Tensor* output,
                     const std::vector<int>& paddings) {
   CHECK_EQ(paddings.size(), 4UL);
   int top = paddings[0];
@@ -557,8 +557,8 @@ void padding1_float(lite::Tensor* input,
   }
 }
 
-void pack_padding8_m256(lite::Tensor* input,
-                        lite::Tensor* output,
+void pack_padding8_m256(lite_metal::Tensor* input,
+                        lite_metal::Tensor* output,
                         const int channel_num,
                         const std::vector<int>& paddings) {
   CHECK_EQ(input->dims().size(), 4UL);

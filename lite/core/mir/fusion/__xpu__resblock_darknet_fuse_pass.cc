@@ -18,7 +18,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -343,6 +343,6 @@ class XPUResBlockDarknetFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__resblock_darknet_fuse_pass,
-                  paddle::lite::mir::XPUResBlockDarknetFusePass)
+                  paddle::lite_metal::mir::XPUResBlockDarknetFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__block_fuse_op");

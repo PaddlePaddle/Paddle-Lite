@@ -16,7 +16,7 @@
 #include <bmcompiler_if.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 

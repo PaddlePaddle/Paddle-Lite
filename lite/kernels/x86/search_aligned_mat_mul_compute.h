@@ -19,7 +19,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -58,19 +58,19 @@ class SearchAlignedMatMulCompute
     CHECK_EQ(X_K, Y_K) << "K of Input(X) and Input(Y) is not equal";
     int K = X_K;
 
-    lite::x86::math::MatDescriptor mat_dim_a;
+    lite_metal::x86::math::MatDescriptor mat_dim_a;
     mat_dim_a.height_ = M;
     mat_dim_a.width_ = K;
     mat_dim_a.stride_ = x_batch_size * x_inner_size;
     mat_dim_a.batch_size_ = seq_num;
     mat_dim_a.trans_ = x_transpose;
-    lite::x86::math::MatDescriptor mat_dim_b;
+    lite_metal::x86::math::MatDescriptor mat_dim_b;
     mat_dim_b.height_ = K;
     mat_dim_b.width_ = N;
     mat_dim_b.stride_ = y_batch_size * y_inner_size;
     mat_dim_b.batch_size_ = seq_num;
     mat_dim_b.trans_ = y_transpose;
-    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
+    auto blas = lite_metal::x86::math::GetBlas<lite_metal::TargetType::kX86, T>(context);
     blas.MatMul(*x, mat_dim_a, *y, mat_dim_b, static_cast<T>(alpha), out, T(0));
   }
 

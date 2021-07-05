@@ -16,7 +16,7 @@
 #include <cmath>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 std::vector<int64_t> CorrelationOutputSize(int batch,
@@ -76,7 +76,7 @@ bool CorrelationOp::InferShapeImpl() const {
   return true;
 }
 
-bool CorrelationOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool CorrelationOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   param_.input1 = scope->FindTensor(op_desc.Input("Input1").front());
   param_.input2 = scope->FindTensor(op_desc.Input("Input2").front());
   param_.output = scope->FindMutableTensor(op_desc.Output("Output").front());
@@ -93,4 +93,4 @@ bool CorrelationOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(correlation, paddle::lite::operators::CorrelationOp);
+REGISTER_LITE_OP(correlation, paddle::lite_metal::operators::CorrelationOp);

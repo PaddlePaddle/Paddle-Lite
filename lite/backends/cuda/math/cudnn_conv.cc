@@ -20,7 +20,7 @@
 #include "lite/backends/cuda/math/type_trans.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 
@@ -368,7 +368,7 @@ bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,
     }
   }
   this->scale_.Resize({oc});
-  this->scale_.template Assign<float, lite::DDim, TARGET(kCUDA)>(
+  this->scale_.template Assign<float, lite_metal::DDim, TARGET(kCUDA)>(
       weight_scale.data(), this->scale_.dims());
 
   CHECK(ic % param.groups == 0)

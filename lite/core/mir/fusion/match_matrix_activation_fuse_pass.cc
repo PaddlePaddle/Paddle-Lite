@@ -21,7 +21,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void MatchMatrixActFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -34,5 +34,5 @@ void MatchMatrixActFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_match_matrix_activation_fuse_pass,
-                  paddle::lite::mir::MatchMatrixActFusePass)
+                  paddle::lite_metal::mir::MatchMatrixActFusePass)
     .BindTargets({TARGET(kCUDA)});

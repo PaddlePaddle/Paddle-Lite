@@ -18,9 +18,9 @@
 #include "lite/core/tensor.h"
 #include "lite/utils/cv/paddle_image_preprocess.h"
 
-typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
-typedef paddle::lite::utils::cv::FlipParam FlipParam;
-typedef paddle::lite::Tensor Tensor;
+typedef paddle::lite_metal::utils::cv::ImageFormat ImageFormat;
+typedef paddle::lite_metal::utils::cv::FlipParam FlipParam;
+typedef paddle::lite_metal::Tensor Tensor;
 typedef paddle::lite_api::DataLayoutType LayoutType;
 
 void rotate(const uint8_t* src, uint8_t* dst, int srcw, int srch, int angle);

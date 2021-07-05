@@ -28,7 +28,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // For registry factory.
 struct Registry {
@@ -81,11 +81,11 @@ class OpLite : public Registry {
   virtual bool run_once() const { return false; }
   std::string Type() const { return op_type_; }
 #ifdef LITE_WITH_PROFILE
-  virtual void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {}
+  virtual void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter *ch) {}
 #endif
 
   // Link the external execution environ to internal context.
-  bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
+  bool Attach(const cpp::OpDesc &opdesc, lite_metal::Scope *scope);
 
   template <typename T>
   inline void AttachParam(T *param) {
@@ -122,23 +122,23 @@ class OpLite : public Registry {
 
   // Attach input variable from scope by op_desc and input name
   void AttachInput(const cpp::OpDesc &op_desc,
-                   lite::Scope *scope,
+                   lite_metal::Scope *scope,
                    const std::string &input_name,
                    bool is_dispensable,
-                   lite::Tensor **input_var);
+                   lite_metal::Tensor **input_var);
 
   // Attach output variable from scope by op_desc and output name
   void AttachOutput(const cpp::OpDesc &op_desc,
-                    lite::Scope *scope,
+                    lite_metal::Scope *scope,
                     const std::string &output_name,
                     bool is_dispensable,
-                    lite::Tensor **output_var);
+                    lite_metal::Tensor **output_var);
 
   virtual ~OpLite() = default;
 
  protected:
   // Attach it with the runtime environment.
-  virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) = 0;
+  virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) = 0;
 
   // Specify the kernel to run by default. This will specify the value of
   // `kernel_place_`.
@@ -154,8 +154,8 @@ class OpLite : public Registry {
   // some inputs are ready.
   void RecordOutputEvents() {}
 
-  const Tensor *GetTensor(lite::Scope *scope, const std::string &name) const;
-  Tensor *GetMutableTensor(lite::Scope *scope, const std::string &name) const;
+  const Tensor *GetTensor(lite_metal::Scope *scope, const std::string &name) const;
+  Tensor *GetMutableTensor(lite_metal::Scope *scope, const std::string &name) const;
 
   friend class mir::Node;
   friend class mir::SSAGraph;

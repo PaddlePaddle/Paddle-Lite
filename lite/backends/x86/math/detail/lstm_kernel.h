@@ -17,7 +17,7 @@ limitations under the License. */
 #include "lite/backends/x86/math/detail/activation_functions.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 namespace detail {

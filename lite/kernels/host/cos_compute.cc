@@ -17,7 +17,7 @@
 #include <cmath>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -41,7 +41,7 @@ void CosCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    cos, kHost, kFloat, kNCHW, paddle::lite::kernels::host::CosCompute, def)
+    cos, kHost, kFloat, kNCHW, paddle::lite_metal::kernels::host::CosCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

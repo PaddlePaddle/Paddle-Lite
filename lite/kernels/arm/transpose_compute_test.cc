@@ -24,7 +24,7 @@
 #include "lite/kernels/arm/transpose_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -35,8 +35,8 @@ namespace arm {
   output_data[w + h * output_w + c * output_h * output_w + \
               n * output_c * output_h * output_w]
 void transpose_compute_ref(const operators::TransposeParam& param) {
-  const lite::Tensor* input = param.x;
-  lite::Tensor* output = param.output;
+  const lite_metal::Tensor* input = param.x;
+  lite_metal::Tensor* output = param.output;
   std::vector<int> axis = param.axis;
 
   auto* input_data = input->data<float>();
@@ -76,9 +76,9 @@ TEST(transpose_arm, compute_shape_nchw) {
   std::vector<int> axis{0, 2, 3, 1};
   param.axis = axis;
 
-  lite::Tensor input;
-  lite::Tensor output;
-  lite::Tensor output_ref;
+  lite_metal::Tensor input;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
 
   const std::vector<int64_t> input_shape{1, 24, 2, 2};
   const std::vector<int64_t> output_shape{1, 2, 2, 24};
@@ -143,9 +143,9 @@ TEST(transpose2_arm, compute_shape_nchw) {
   std::vector<int> axis{0, 2, 3, 1};
   param.axis = axis;
 
-  lite::Tensor input;
-  lite::Tensor output;
-  lite::Tensor output_ref;
+  lite_metal::Tensor input;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
 
   const std::vector<int64_t> input_shape{1, 24, 2, 2};
   const std::vector<int64_t> output_shape{1, 2, 2, 24};

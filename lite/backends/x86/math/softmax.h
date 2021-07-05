@@ -17,30 +17,30 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template <lite::TargetType Target,
+template <lite_metal::TargetType Target,
           typename T,
           bool is_test,
           typename Enable = void>
 class SoftmaxFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const int axis_dim,
-                  const lite::Tensor* X,
-                  lite::Tensor* Y);
+                  const lite_metal::Tensor* X,
+                  lite_metal::Tensor* Y);
 };
 
-template <lite::TargetType Target, typename T, typename Enable = void>
+template <lite_metal::TargetType Target, typename T, typename Enable = void>
 class SoftmaxGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const int axis_dim,
-                  const lite::TensorLite* y,
-                  const lite::TensorLite* y_grad,
-                  lite::TensorLite* x_grad);
+                  const lite_metal::TensorLite* y,
+                  const lite_metal::TensorLite* y_grad,
+                  lite_metal::TensorLite* x_grad);
 };
 
 //#ifdef PADDLE_WITH_CUDA
@@ -48,15 +48,15 @@ class SoftmaxGradFunctor {
 // class SoftmaxCUDNNFunctor {
 // public:
 //  void operator()(const platform::CUDADeviceContext& context,
-//                  const lite::TensorLite* X, lite::TensorLite* Y);
+//                  const lite_metal::TensorLite* X, lite_metal::TensorLite* Y);
 //};
 //
 // template <typename T>
 // class SoftmaxGradCUDNNFunctor {
 // public:
 //  void operator()(const platform::CUDADeviceContext& context,
-//                  const lite::TensorLite* Y, const lite::TensorLite* y_grad,
-//                  lite::TensorLite* x_grad);
+//                  const lite_metal::TensorLite* Y, const lite_metal::TensorLite* y_grad,
+//                  lite_metal::TensorLite* x_grad);
 //};
 //
 //#endif

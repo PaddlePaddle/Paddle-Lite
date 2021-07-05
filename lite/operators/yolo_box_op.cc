@@ -19,7 +19,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool YoloBoxOp::CheckShape() const {
@@ -59,15 +59,15 @@ bool YoloBoxOp::InferShapeImpl() const {
   return true;
 }
 
-bool YoloBoxOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool YoloBoxOp::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   auto X = op_desc.Input("X").front();
   auto ImgSize = op_desc.Input("ImgSize").front();
   auto Boxes = op_desc.Output("Boxes").front();
   auto Scores = op_desc.Output("Scores").front();
-  param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
-  param_.ImgSize = scope->FindVar(ImgSize)->GetMutable<lite::Tensor>();
-  param_.Boxes = scope->FindVar(Boxes)->GetMutable<lite::Tensor>();
-  param_.Scores = scope->FindVar(Scores)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(X)->GetMutable<lite_metal::Tensor>();
+  param_.ImgSize = scope->FindVar(ImgSize)->GetMutable<lite_metal::Tensor>();
+  param_.Boxes = scope->FindVar(Boxes)->GetMutable<lite_metal::Tensor>();
+  param_.Scores = scope->FindVar(Scores)->GetMutable<lite_metal::Tensor>();
   param_.anchors = op_desc.GetAttr<std::vector<int>>("anchors");
   param_.class_num = op_desc.GetAttr<int>("class_num");
   param_.conf_thresh = op_desc.GetAttr<float>("conf_thresh");
@@ -85,4 +85,4 @@ bool YoloBoxOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(yolo_box, paddle::lite::operators::YoloBoxOp);
+REGISTER_LITE_OP(yolo_box, paddle::lite_metal::operators::YoloBoxOp);

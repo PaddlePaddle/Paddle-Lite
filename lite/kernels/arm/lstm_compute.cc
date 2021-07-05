@@ -23,7 +23,7 @@
 #include "lite/backends/arm/math/sgemm.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -54,7 +54,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
   cell_out->mutable_data<float>();
 
   bool is_reverse = param.is_reverse;
-  lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
+  lite_metal::arm::math::LoDTensor2BatchFunctor<float> to_batch;
   to_batch(*input, batch_gate, true, is_reverse);
 
   auto in_dims = input->dims();
@@ -63,10 +63,10 @@ void LSTMComputeRun(const operators::LstmParam& param,
 
   if (bias) {
     // checkpoint1
-    lite::arm::math::add_bias_rowwise(batch_gate, bias, 0, 4 * frame_size);
+    lite_metal::arm::math::add_bias_rowwise(batch_gate, bias, 0, 4 * frame_size);
   }
 
-  lite::arm::math::LstmMetaValue<float> lstm_value;
+  lite_metal::arm::math::LstmMetaValue<float> lstm_value;
   if (bias && param.use_peepholes) {
     float* bias_data = const_cast<float*>(bias->data<float>());
     // the code style in LstmMetaValue will be updated later.
@@ -87,7 +87,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
     // Since the batch computing for LSTM reorders the input sequence
     // according to their length. The initialized cell state also needs
     // to reorder.
-    lite::arm::math::ReorderInitState<float>(
+    lite_metal::arm::math::ReorderInitState<float>(
         *cell_t0, order, &ordered_c0, true);
     lstm_value.prev_state_value = ordered_c0.mutable_data<float>();
   }
@@ -111,11 +111,11 @@ void LSTMComputeRun(const operators::LstmParam& param,
   for (size_t n = 0; n < num_batch; n++) {
     int bstart = static_cast<int>(batch_starts[n]);
     int bend = static_cast<int>(batch_starts[n + 1]);
-    auto gate_t = lite::arm::math::row_offset(*batch_gate, bstart);
-    auto out_t = lite::arm::math::row_offset(batch_hidden, bstart);
-    auto cell_t = lite::arm::math::row_offset(batch_cell, bstart);
+    auto gate_t = lite_metal::arm::math::row_offset(*batch_gate, bstart);
+    auto out_t = lite_metal::arm::math::row_offset(batch_hidden, bstart);
+    auto cell_t = lite_metal::arm::math::row_offset(batch_cell, bstart);
     auto cell_pre_act_t =
-        lite::arm::math::row_offset(*batch_cell_pre_act, bstart);
+        lite_metal::arm::math::row_offset(*batch_cell_pre_act, bstart);
 
     int cur_batch_size = bend - bstart;
     operators::ActivationParam act_param;
@@ -127,7 +127,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
       int pre_h_end = pre_h_start + cur_batch_size;
 
       auto pre_hidden_t =
-          lite::arm::math::row_offset(batch_hidden, pre_h_start);
+          lite_metal::arm::math::row_offset(batch_hidden, pre_h_start);
       int M = pre_h_end - pre_h_start;
       int N = matrix_width;
       int K = frame_size;
@@ -136,11 +136,11 @@ void LSTMComputeRun(const operators::LstmParam& param,
         // quantize Ht-1
         int pre_hidden_size = M * K;
         float threshold =
-            lite::arm::math::FindAbsMax(pre_hidden_t, pre_hidden_size);
+            lite_metal::arm::math::FindAbsMax(pre_hidden_t, pre_hidden_size);
         float pre_hidden_scale =
-            lite::arm::math::GetScale(threshold, bit_length);
+            lite_metal::arm::math::GetScale(threshold, bit_length);
         std::unique_ptr<int8_t[]> pre_hidden_int8(new int8_t[pre_hidden_size]);
-        lite::arm::math::QuantizeTensor(pre_hidden_t,
+        lite_metal::arm::math::QuantizeTensor(pre_hidden_t,
                                         pre_hidden_int8.get(),
                                         pre_hidden_size,
                                         pre_hidden_scale);
@@ -154,7 +154,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
         act_param.has_active = false;
 
         std::unique_ptr<float[]> o_data(new float[M * N]);
-        lite::arm::math::gemm_s8(false,
+        lite_metal::arm::math::gemm_s8(false,
                                  false,
                                  M,
                                  N,
@@ -172,7 +172,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
           gate_t[i] += o_data[i];
         }
       } else {
-        lite::arm::math::sgemm(false,
+        lite_metal::arm::math::sgemm(false,
                                false,
                                M,
                                N,
@@ -198,12 +198,12 @@ void LSTMComputeRun(const operators::LstmParam& param,
       // according to their length. The initialized hidden state also needs
       // to reorder.
       Tensor ordered_h0;
-      lite::arm::math::ReorderInitState<float>(
+      lite_metal::arm::math::ReorderInitState<float>(
           *hidden_t0, order, &ordered_h0, true);
       int M = ordered_h0.dims()[0];
       int N = matrix_width;
       int K = frame_size;
-      lite::arm::math::sgemm(false,
+      lite_metal::arm::math::sgemm(false,
                              false,
                              M,
                              N,
@@ -228,7 +228,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
     lstm_value.state_active_value = cell_pre_act_t;
     float cell_clip = 0.0;
     // checkpoint
-    lite::arm::math::LstmUnitFunctor<float>::compute(lstm_value,
+    lite_metal::arm::math::LstmUnitFunctor<float>::compute(lstm_value,
                                                      frame_size,
                                                      cur_batch_size,
                                                      cell_clip,
@@ -239,7 +239,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
     lstm_value.prev_state_value = lstm_value.state_value;
   }
 
-  lite::arm::math::Batch2LoDTensorFunctor<float> to_seq;
+  lite_metal::arm::math::Batch2LoDTensorFunctor<float> to_seq;
   auto* lod_hidden = batch_hidden.mutable_lod();
   *lod_hidden = batch_gate->lod();
   to_seq(batch_hidden, hidden_out);
@@ -271,7 +271,7 @@ REGISTER_LITE_KERNEL(lstm,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::LstmCompute<PRECISION(kFloat)>,
+                     paddle::lite_metal::kernels::arm::LstmCompute<PRECISION(kFloat)>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -288,7 +288,7 @@ REGISTER_LITE_KERNEL(lstm,
                      kARM,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::arm::LstmCompute<PRECISION(kInt8)>,
+                     paddle::lite_metal::kernels::arm::LstmCompute<PRECISION(kInt8)>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Weight",

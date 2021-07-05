@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -115,43 +115,43 @@ int ActConverter<ge::op::Activation>(void* ctx,
 REGISTER_SUBGRAPH_BRIDGE(
     sigmoid,
     kNPU,
-    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
-    relu, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    relu, kNPU, paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
-    tanh, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    tanh, kNPU, paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     relu_clipped,
     kNPU,
-    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
-    relu6, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    relu6, kNPU, paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     leaky_relu,
     kNPU,
-    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
-    abs, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    abs, kNPU, paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     softsign,
     kNPU,
-    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     softplus,
     kNPU,
-    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     hard_sigmoid,
     kNPU,
-    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     thresholded_relu,
     kNPU,
-    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+    paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Activation>);
 
 REGISTER_SUBGRAPH_BRIDGE(
-    log, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Log>);
+    log, kNPU, paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Log>);
 REGISTER_SUBGRAPH_BRIDGE(
-    square, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Square>);
+    square, kNPU, paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Square>);
 REGISTER_SUBGRAPH_BRIDGE(
-    sqrt, kNPU, paddle::lite::subgraph::npu::ActConverter<ge::op::Sqrt>);
+    sqrt, kNPU, paddle::lite_metal::subgraph::npu::ActConverter<ge::op::Sqrt>);

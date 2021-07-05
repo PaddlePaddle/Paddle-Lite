@@ -16,7 +16,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -43,7 +43,7 @@ class FetchCompute
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    fetch, kHost, kAny, kAny, paddle::lite::kernels::host::FetchCompute, def)
+    fetch, kHost, kAny, kAny, paddle::lite_metal::kernels::host::FetchCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})

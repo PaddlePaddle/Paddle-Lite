@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool CropOpLite::CheckShape() const {
@@ -44,7 +44,7 @@ bool CropOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool CropOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool CropOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   param_.X = scope->FindTensor(op_desc.Input("X").front());
   if (op_desc.HasInput("Y")) {
     auto names = op_desc.Input("Y");
@@ -69,4 +69,4 @@ bool CropOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(crop, paddle::lite::operators::CropOpLite);
+REGISTER_LITE_OP(crop, paddle::lite_metal::operators::CropOpLite);

@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -76,7 +76,7 @@ TEST(calib_cuda, int8_to_fp32) {
     float sign = i % 3 == 0 ? -1.0f : 1.0f;
     x_cpu_data[i] = static_cast<int8_t>(sign * (i % 127));
   }
-  x.Assign<int8_t, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<int8_t, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
   // prepare kernel params and run
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();
@@ -126,7 +126,7 @@ TEST(calib_cuda, fp32_to_int8) {
     float sign = i % 3 == 0 ? -1.0f : 1.0f;
     x_cpu_data[i] = sign * (i % 127) * 0.013f;
   }
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
   // prepare kernel params and run
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();

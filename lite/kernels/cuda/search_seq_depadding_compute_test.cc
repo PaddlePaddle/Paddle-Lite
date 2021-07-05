@@ -20,11 +20,11 @@
 #include "lite/api/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 TEST(search_seq_depadding, normal) {
   std::unique_ptr<KernelContext> ctx(new KernelContext);
@@ -55,8 +55,8 @@ TEST(search_seq_depadding, normal) {
     pad_cpu_data[i] = static_cast<float>(i);
   }
 
-  pad.Assign<float, lite::DDim, TARGET(kCUDA)>(pad_cpu_data, pad_cpu.dims());
-  src.Assign<float, lite::DDim, TARGET(kCUDA)>(src_cpu_data, src_cpu.dims());
+  pad.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(pad_cpu_data, pad_cpu.dims());
+  src.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(src_cpu_data, src_cpu.dims());
 
   param.pad = &pad;
   param.src = &src;

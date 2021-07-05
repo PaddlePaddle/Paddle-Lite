@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -47,7 +47,7 @@ void FetchCompute<T, Ptype>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::cuda::FetchCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::cuda::FetchCompute<float, PRECISION(kFloat)>
     FetchFp32;
 
 // When the model ends with a cpu kernel, adding cuda's fetch kernel will add

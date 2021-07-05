@@ -31,7 +31,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 using L3CacheSetMethod = lite_api::L3CacheSetMethod;
 #if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))

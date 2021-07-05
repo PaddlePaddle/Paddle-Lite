@@ -32,7 +32,7 @@
 #include "lite/model_parser/model_parser.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 /*
  * The light weight predictor, mainly for mobile. It loads an optimized model,
@@ -81,9 +81,9 @@ class LITE_API LightPredictor {
   // Get offset-th col of fetch outputs.
   const Tensor* GetOutput(size_t offset);
 
-  const lite::Tensor* GetTensor(const std::string& name) const {
+  const lite_metal::Tensor* GetTensor(const std::string& name) const {
     auto* var = program_->exec_scope()->FindVar(name);
-    return &var->Get<lite::Tensor>();
+    return &var->Get<lite_metal::Tensor>();
   }
 
   // get inputnames and get outputnames.
@@ -169,7 +169,7 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   bool TryShrinkMemory() override;
 
  private:
-  std::unique_ptr<lite::LightPredictor> raw_predictor_;
+  std::unique_ptr<lite_metal::LightPredictor> raw_predictor_;
 };
 
 }  // namespace lite

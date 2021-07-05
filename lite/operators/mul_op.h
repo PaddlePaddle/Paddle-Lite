@@ -22,7 +22,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class MulOpLite : public OpLite {
@@ -37,7 +37,7 @@ class MulOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) override {
     AttachParam(&param_);
 
     CHECK(!op_desc.Input("X").empty());
@@ -64,7 +64,7 @@ class MulOpLite : public OpLite {
   std::string DebugString() const override { return "mul"; }
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter *ch) {
     ch->input_shape = ch->DimToStr(param_.x->dims());
     ch->filter_shape = ch->DimToStr(param_.y->dims());
     ch->output_shape = ch->DimToStr(param_.output->dims());

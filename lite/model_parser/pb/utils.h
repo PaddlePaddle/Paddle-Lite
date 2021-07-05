@@ -18,14 +18,14 @@
 #include "lite/model_parser/base/traits.h"
 #include "lite/utils/logging.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pb {
 
-lite::VarDataType ConvertVarType(
+lite_metal::VarDataType ConvertVarType(
     ::paddle::framework::proto::VarType_Type pb_type);
 
 ::paddle::framework::proto::VarType_Type ConvertVarType(
-    lite::VarDataType var_type);
+    lite_metal::VarDataType var_type);
 
 inline bool IsParamVarDesc(const paddle::framework::proto::VarDesc& var) {
   return var.type().type() ==

@@ -21,7 +21,7 @@
 using namespace std;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -100,7 +100,7 @@ REGISTER_LITE_KERNEL(fc,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::FCImageCompute,
+    paddle::lite_metal::kernels::metal::FCImageCompute,
     def)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -124,7 +124,7 @@ REGISTER_LITE_KERNEL(fc,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::FCImageCompute,
+    paddle::lite_metal::kernels::metal::FCImageCompute,
     def)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

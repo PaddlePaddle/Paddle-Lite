@@ -27,7 +27,7 @@ DEFINE_int32(batch, 1, "batch of image");
 DEFINE_int32(channel, 3, "image channel");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(ResNet50, test_resnet50_fp32_huawei_ascend_npu) {
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;

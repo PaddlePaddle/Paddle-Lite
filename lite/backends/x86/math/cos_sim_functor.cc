@@ -15,13 +15,13 @@ limitations under the License. */
 #include "lite/backends/x86/math/cos_sim_functor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 template <typename T>
-struct CosSimDyFunctor<lite::TargetType::kX86, T> {
-  void operator()(const lite::X86Context& ctx,
+struct CosSimDyFunctor<lite_metal::TargetType::kX86, T> {
+  void operator()(const lite_metal::X86Context& ctx,
                   const T* x_norm,
                   const T* y_norm,
                   const T* x,
@@ -48,8 +48,8 @@ struct CosSimDyFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template struct CosSimDyFunctor<lite::TargetType::kX86, float>;
-template struct CosSimDyFunctor<lite::TargetType::kX86, double>;
+template struct CosSimDyFunctor<lite_metal::TargetType::kX86, float>;
+template struct CosSimDyFunctor<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

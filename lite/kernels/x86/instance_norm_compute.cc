@@ -20,7 +20,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -43,7 +43,7 @@ void InstanceNormCompute::Run() {
   int height = param.x->dims()[2];
   int width = param.x->dims()[3];
 
-  lite::x86::math::instance_norm(in,
+  lite_metal::x86::math::instance_norm(in,
                                  out,
                                  n,
                                  c,
@@ -65,7 +65,7 @@ REGISTER_LITE_KERNEL(instance_norm,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::InstanceNormCompute,
+                     paddle::lite_metal::kernels::x86::InstanceNormCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kX86))})

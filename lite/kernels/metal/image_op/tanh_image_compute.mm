@@ -18,7 +18,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -69,10 +69,10 @@ void TanhImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::TanhImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::TanhImageCompute<MetalHalf, PRECISION(kFP16)>;
-typedef paddle::lite::kernels::metal::TanhImageCompute<float, PRECISION(kFloat)> MetalTanhFp32;
-typedef paddle::lite::kernels::metal::TanhImageCompute<MetalHalf, PRECISION(kFP16)> MetalTanhFp16;
+template class paddle::lite_metal::kernels::metal::TanhImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::TanhImageCompute<MetalHalf, PRECISION(kFP16)>;
+typedef paddle::lite_metal::kernels::metal::TanhImageCompute<float, PRECISION(kFloat)> MetalTanhFp32;
+typedef paddle::lite_metal::kernels::metal::TanhImageCompute<MetalHalf, PRECISION(kFP16)> MetalTanhFp16;
 
 REGISTER_LITE_KERNEL(tanh, kMetal, kFloat, kMetalTexture2DArray, MetalTanhFp32, def)
     .BindInput("X",

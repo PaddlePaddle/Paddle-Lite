@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -65,7 +65,7 @@ void MulCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    mul, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::MulCompute, def)
+    mul, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::MulCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

@@ -23,7 +23,7 @@ limitations under the License. */
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 CLWrapper *CLWrapper::Global() {
   static CLWrapper wrapper;
@@ -190,7 +190,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetPlatformIDs(cl_uint num_entries,
                                                  cl_platform_id *platforms,
                                                  cl_uint *num_platforms)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetPlatformIDs()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetPlatformIDs()(
       num_entries, platforms, num_platforms);
 }
 
@@ -200,7 +200,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetPlatformInfo(cl_platform_id platform,
                                                   void *param_value,
                                                   size_t *param_value_size_ret)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetPlatformInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetPlatformInfo()(
       platform,
       param_name,
       param_value_size,
@@ -215,7 +215,7 @@ CL_API_ENTRY cl_int CL_API_CALL clBuildProgram(
     const char *options,
     void(CL_CALLBACK *pfn_notify)(cl_program program, void *user_data),
     void *user_data) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clBuildProgram()(
+  return paddle::lite_metal::CLWrapper::Global()->clBuildProgram()(
       program, num_devices, device_list, options, pfn_notify, user_data);
 }
 
@@ -229,7 +229,7 @@ clEnqueueNDRangeKernel(cl_command_queue command_queue,
                        cl_uint num_events_in_wait_list,
                        const cl_event *event_wait_list,
                        cl_event *event) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueNDRangeKernel()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueNDRangeKernel()(
       command_queue,
       kernel,
       work_dim,
@@ -246,18 +246,18 @@ CL_API_ENTRY cl_int CL_API_CALL clSetKernelArg(cl_kernel kernel,
                                                size_t arg_size,
                                                const void *arg_value)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clSetKernelArg()(
+  return paddle::lite_metal::CLWrapper::Global()->clSetKernelArg()(
       kernel, arg_index, arg_size, arg_value);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainMemObject(cl_mem memobj)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clRetainMemObject()(memobj);
+  return paddle::lite_metal::CLWrapper::Global()->clRetainMemObject()(memobj);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseMemObject(cl_mem memobj)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clReleaseMemObject()(memobj);
+  return paddle::lite_metal::CLWrapper::Global()->clReleaseMemObject()(memobj);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL
@@ -267,7 +267,7 @@ clEnqueueUnmapMemObject(cl_command_queue command_queue,
                         cl_uint num_events_in_wait_list,
                         const cl_event *event_wait_list,
                         cl_event *event) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueUnmapMemObject()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueUnmapMemObject()(
       command_queue,
       memobj,
       mapped_ptr,
@@ -278,7 +278,7 @@ clEnqueueUnmapMemObject(cl_command_queue command_queue,
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainCommandQueue(
     cl_command_queue command_queue) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clRetainCommandQueue()(
+  return paddle::lite_metal::CLWrapper::Global()->clRetainCommandQueue()(
       command_queue);
 }
 
@@ -292,7 +292,7 @@ clCreateContext(const cl_context_properties *properties,
                                               void *user_data),
                 void *user_data,
                 cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clCreateContext()(
+  return paddle::lite_metal::CLWrapper::Global()->clCreateContext()(
       properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
 }
 
@@ -305,24 +305,24 @@ clCreateContextFromType(const cl_context_properties *properties,
                                                       void *user_data),
                         void *user_data,
                         cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clCreateContextFromType()(
+  return paddle::lite_metal::CLWrapper::Global()->clCreateContextFromType()(
       properties, device_type, pfn_notify, user_data, errcode_ret);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseContext(cl_context context)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clReleaseContext()(context);
+  return paddle::lite_metal::CLWrapper::Global()->clReleaseContext()(context);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clWaitForEvents(
     cl_uint num_events, const cl_event *event_list) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clWaitForEvents()(num_events,
+  return paddle::lite_metal::CLWrapper::Global()->clWaitForEvents()(num_events,
                                                               event_list);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseEvent(cl_event event)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clReleaseEvent()(event);
+  return paddle::lite_metal::CLWrapper::Global()->clReleaseEvent()(event);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL
@@ -335,7 +335,7 @@ clEnqueueWriteBuffer(cl_command_queue command_queue,
                      cl_uint num_events_in_wait_list,
                      const cl_event *event_wait_list,
                      cl_event *event) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueWriteBuffer()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueWriteBuffer()(
       command_queue,
       buffer,
       blocking_write,
@@ -357,7 +357,7 @@ clEnqueueReadBuffer(cl_command_queue command_queue,
                     cl_uint num_events_in_wait_list,
                     const cl_event *event_wait_list,
                     cl_event *event) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueReadBuffer()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueReadBuffer()(
       command_queue,
       buffer,
       blocking_read,
@@ -381,7 +381,7 @@ clEnqueueReadImage(cl_command_queue command_queue,
                    cl_uint num_events_in_wait_list,
                    const cl_event *event_wait_list,
                    cl_event *event) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueReadImage()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueReadImage()(
       command_queue,
       image,
       blocking_read,
@@ -402,7 +402,7 @@ clGetProgramBuildInfo(cl_program program,
                       size_t param_value_size,
                       void *param_value,
                       size_t *param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetProgramBuildInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetProgramBuildInfo()(
       program,
       device,
       param_name,
@@ -413,7 +413,7 @@ clGetProgramBuildInfo(cl_program program,
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainProgram(cl_program program)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clRetainProgram()(program);
+  return paddle::lite_metal::CLWrapper::Global()->clRetainProgram()(program);
 }
 
 CL_API_ENTRY void *CL_API_CALL
@@ -427,7 +427,7 @@ clEnqueueMapBuffer(cl_command_queue command_queue,
                    const cl_event *event_wait_list,
                    cl_event *event,
                    cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueMapBuffer()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueMapBuffer()(
       command_queue,
       buffer,
       blocking_map,
@@ -453,7 +453,7 @@ clEnqueueMapImage(cl_command_queue command_queue,
                   const cl_event *event_wait_list,
                   cl_event *event,
                   cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueMapImage()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueMapImage()(
       command_queue,
       image,
       blocking_map,
@@ -474,7 +474,7 @@ clCreateCommandQueue(cl_context context,
                      cl_command_queue_properties properties,
                      cl_int *errcode_ret)
     CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED {
-  return paddle::lite::CLWrapper::Global()->clCreateCommandQueue()(
+  return paddle::lite_metal::CLWrapper::Global()->clCreateCommandQueue()(
       context, device, properties, errcode_ret);
 }
 
@@ -484,7 +484,7 @@ clGetCommandQueueInfo(cl_command_queue command_queue,
                       size_t param_value_size,
                       void *param_value,
                       size_t *param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetCommandQueueInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetCommandQueueInfo()(
       command_queue,
       param_name,
       param_value_size,
@@ -499,7 +499,7 @@ CL_API_ENTRY cl_command_queue CL_API_CALL clCreateCommandQueueWithProperties(
     cl_device_id device,
     const cl_queue_properties *properties,
     cl_int *errcode_ret) CL_API_SUFFIX__VERSION_2_0 {
-  return paddle::lite::CLWrapper::Global()
+  return paddle::lite_metal::CLWrapper::Global()
       ->clCreateCommandQueueWithProperties()(
           context, device, properties, errcode_ret);
 }
@@ -508,7 +508,7 @@ CL_API_ENTRY cl_command_queue CL_API_CALL clCreateCommandQueueWithProperties(
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseCommandQueue(
     cl_command_queue command_queue) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clReleaseCommandQueue()(
+  return paddle::lite_metal::CLWrapper::Global()->clReleaseCommandQueue()(
       command_queue);
 }
 
@@ -520,7 +520,7 @@ clCreateProgramWithBinary(cl_context context,
                           const unsigned char **binaries,
                           cl_int *binary_status,
                           cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clCreateProgramWithBinary()(
+  return paddle::lite_metal::CLWrapper::Global()->clCreateProgramWithBinary()(
       context,
       num_devices,
       device_list,
@@ -532,7 +532,7 @@ clCreateProgramWithBinary(cl_context context,
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainContext(cl_context context)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clRetainContext()(context);
+  return paddle::lite_metal::CLWrapper::Global()->clRetainContext()(context);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clGetContextInfo(cl_context context,
@@ -541,23 +541,23 @@ CL_API_ENTRY cl_int CL_API_CALL clGetContextInfo(cl_context context,
                                                  void *param_value,
                                                  size_t *param_value_size_ret)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetContextInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetContextInfo()(
       context, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseProgram(cl_program program)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clReleaseProgram()(program);
+  return paddle::lite_metal::CLWrapper::Global()->clReleaseProgram()(program);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clFlush(cl_command_queue command_queue)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clFlush()(command_queue);
+  return paddle::lite_metal::CLWrapper::Global()->clFlush()(command_queue);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clFinish(cl_command_queue command_queue)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clFinish()(command_queue);
+  return paddle::lite_metal::CLWrapper::Global()->clFinish()(command_queue);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clGetProgramInfo(cl_program program,
@@ -566,7 +566,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetProgramInfo(cl_program program,
                                                  void *param_value,
                                                  size_t *param_value_size_ret)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetProgramInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetProgramInfo()(
       program, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
@@ -574,13 +574,13 @@ CL_API_ENTRY cl_kernel CL_API_CALL clCreateKernel(cl_program program,
                                                   const char *kernel_name,
                                                   cl_int *errcode_ret)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clCreateKernel()(
+  return paddle::lite_metal::CLWrapper::Global()->clCreateKernel()(
       program, kernel_name, errcode_ret);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainKernel(cl_kernel kernel)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clRetainKernel()(kernel);
+  return paddle::lite_metal::CLWrapper::Global()->clRetainKernel()(kernel);
 }
 
 CL_API_ENTRY cl_mem CL_API_CALL clCreateBuffer(cl_context context,
@@ -589,7 +589,7 @@ CL_API_ENTRY cl_mem CL_API_CALL clCreateBuffer(cl_context context,
                                                void *host_ptr,
                                                cl_int *errcode_ret)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clCreateBuffer()(
+  return paddle::lite_metal::CLWrapper::Global()->clCreateBuffer()(
       context, flags, size, host_ptr, errcode_ret);
 }
 
@@ -602,7 +602,7 @@ clCreateImage2D(cl_context context,
                 size_t image_row_pitch,
                 void *host_ptr,
                 cl_int *errcode_ret) CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED {
-  return paddle::lite::CLWrapper::Global()->clCreateImage2D()(context,
+  return paddle::lite_metal::CLWrapper::Global()->clCreateImage2D()(context,
                                                               flags,
                                                               image_format,
                                                               image_width,
@@ -621,7 +621,7 @@ clCreateImage(cl_context context,
               const cl_image_desc *image_desc,
               void *host_ptr,
               cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_2 {
-  return paddle::lite::CLWrapper::Global()->clCreateImage()(
+  return paddle::lite_metal::CLWrapper::Global()->clCreateImage()(
       context, flags, image_format, image_desc, host_ptr, errcode_ret);
 }
 
@@ -629,7 +629,7 @@ clCreateImage(cl_context context,
 
 CL_API_ENTRY cl_event CL_API_CALL clCreateUserEvent(
     cl_context context, cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_1 {
-  return paddle::lite::CLWrapper::Global()->clCreateUserEvent()(context,
+  return paddle::lite_metal::CLWrapper::Global()->clCreateUserEvent()(context,
                                                                 errcode_ret);
 }
 
@@ -639,13 +639,13 @@ clCreateProgramWithSource(cl_context context,
                           const char **strings,
                           const size_t *lengths,
                           cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clCreateProgramWithSource()(
+  return paddle::lite_metal::CLWrapper::Global()->clCreateProgramWithSource()(
       context, count, strings, lengths, errcode_ret);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseKernel(cl_kernel kernel)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clReleaseKernel()(kernel);
+  return paddle::lite_metal::CLWrapper::Global()->clReleaseKernel()(kernel);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clGetDeviceInfo(cl_device_id device,
@@ -654,7 +654,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetDeviceInfo(cl_device_id device,
                                                 void *param_value,
                                                 size_t *param_value_size_ret)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetDeviceInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetDeviceInfo()(
       device, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
@@ -664,7 +664,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetDeviceIDs(cl_platform_id platform,
                                                cl_device_id *devices,
                                                cl_uint *num_devices)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetDeviceIDs()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetDeviceIDs()(
       platform, device_type, num_entries, devices, num_devices);
 }
 
@@ -672,19 +672,19 @@ CL_API_ENTRY cl_int CL_API_CALL clGetDeviceIDs(cl_platform_id platform,
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainDevice(cl_device_id device)
     CL_API_SUFFIX__VERSION_1_2 {
-  return paddle::lite::CLWrapper::Global()->clRetainDevice()(device);
+  return paddle::lite_metal::CLWrapper::Global()->clRetainDevice()(device);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseDevice(cl_device_id device)
     CL_API_SUFFIX__VERSION_1_2 {
-  return paddle::lite::CLWrapper::Global()->clReleaseDevice()(device);
+  return paddle::lite_metal::CLWrapper::Global()->clReleaseDevice()(device);
 }
 
 #endif
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainEvent(cl_event event)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clRetainEvent()(event);
+  return paddle::lite_metal::CLWrapper::Global()->clRetainEvent()(event);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clGetKernelWorkGroupInfo(
@@ -694,7 +694,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetKernelWorkGroupInfo(
     size_t param_value_size,
     void *param_value,
     size_t *param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetKernelWorkGroupInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetKernelWorkGroupInfo()(
       kernel,
       device,
       param_name,
@@ -709,7 +709,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetEventInfo(cl_event event,
                                                void *param_value,
                                                size_t *param_value_size_ret)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetEventInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetEventInfo()(
       event, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
@@ -719,7 +719,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetEventProfilingInfo(
     size_t param_value_size,
     void *param_value,
     size_t *param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetEventProfilingInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetEventProfilingInfo()(
       event, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
@@ -729,7 +729,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetImageInfo(cl_mem image,
                                                void *param_value,
                                                size_t *param_value_size_ret)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetImageInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetImageInfo()(
       image, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
@@ -739,7 +739,7 @@ CL_API_ENTRY cl_int CL_API_CALL clGetMemObjectInfo(cl_mem memobj,
                                                    void *param_value,
                                                    size_t *param_value_size_ret)
     CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clGetMemObjectInfo()(
+  return paddle::lite_metal::CLWrapper::Global()->clGetMemObjectInfo()(
       memobj, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
@@ -753,7 +753,7 @@ clEnqueueCopyBuffer(cl_command_queue command_queue,
                     cl_uint num_events_in_wait_list,
                     const cl_event *event_wait_list,
                     cl_event *event) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueCopyBuffer()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueCopyBuffer()(
       command_queue,
       src_buffer,
       dst_buffer,
@@ -777,7 +777,7 @@ clEnqueueWriteImage(cl_command_queue command_queue,
                     cl_uint num_events_in_wait_list,
                     const cl_event *event_wait_list,
                     cl_event *event) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueWriteImage()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueWriteImage()(
       command_queue,
       image,
       blocking_write,
@@ -801,7 +801,7 @@ clEnqueueCopyImage(cl_command_queue command_queue,
                    cl_uint num_events_in_wait_list,
                    const cl_event *event_wait_list,
                    cl_event *event) CL_API_SUFFIX__VERSION_1_0 {
-  return paddle::lite::CLWrapper::Global()->clEnqueueCopyImage()(
+  return paddle::lite_metal::CLWrapper::Global()->clEnqueueCopyImage()(
       command_queue,
       src_image,
       dst_image,

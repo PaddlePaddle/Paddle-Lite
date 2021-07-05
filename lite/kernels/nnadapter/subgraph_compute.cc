@@ -24,7 +24,7 @@
 #include "lite/utils/md5.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace nnadapter {
 
@@ -372,7 +372,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      kNNAdapter,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::nnadapter::SubgraphCompute,
+                     paddle::lite_metal::kernels::nnadapter::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kHost),

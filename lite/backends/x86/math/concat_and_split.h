@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/fluid/data_type.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -35,13 +35,13 @@ namespace math {
  *               [3,4],
  *               [5,6]]
  */
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class ConcatFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const std::vector<lite::Tensor>& input,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const std::vector<lite_metal::Tensor>& input,
                   int axis,
-                  lite::Tensor* output);
+                  lite_metal::Tensor* output);
 };
 
 /*
@@ -56,14 +56,14 @@ class ConcatFunctor {
  *     Output[0] = [[1,2],[3,4]]
  *     Output[1] = [[5,6]]
  */
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class SplitFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  const std::vector<const lite::Tensor*>& ref_inputs,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  const std::vector<const lite_metal::Tensor*>& ref_inputs,
                   int axis,
-                  std::vector<lite::Tensor*>* outputs);
+                  std::vector<lite_metal::Tensor*>* outputs);
 };
 
 }  // namespace math
@@ -80,4 +80,4 @@ class SplitFunctor {
   macro(int16_t);            \
   macro(uint8_t);            \
   macro(int8_t);             \
-  macro(::paddle::lite::fluid::float16)
+  macro(::paddle::lite_metal::fluid::float16)

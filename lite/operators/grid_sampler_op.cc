@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool GridSamplerOp::CheckShape() const {
@@ -48,7 +48,7 @@ bool GridSamplerOp::InferShapeImpl() const {
   return true;
 }
 
-bool GridSamplerOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool GridSamplerOp::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.grid =
       scope->FindVar(op_desc.Input("Grid").front())->GetMutable<Tensor>();
@@ -71,7 +71,7 @@ bool GridSamplerOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }
 
 } /* namespace operators */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
-REGISTER_LITE_OP(grid_sampler, paddle::lite::operators::GridSamplerOp);
+REGISTER_LITE_OP(grid_sampler, paddle::lite_metal::operators::GridSamplerOp);

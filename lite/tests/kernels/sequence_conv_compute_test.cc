@@ -19,7 +19,7 @@
 #include "lite/core/arena/framework.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class SequenceConvComputeTester : public arena::TestCase {
  public:

@@ -24,7 +24,7 @@
 #include "lite/operators/layer_norm_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -54,12 +54,12 @@ class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto matrix_dim = x_dims.Flatten2D(begin_norm_axis);
     int left = static_cast<int>(matrix_dim[0]);
     int right = static_cast<int>(matrix_dim[1]);
-    lite::DDim matrix_shape({left, right});
+    lite_metal::DDim matrix_shape({left, right});
 
-    lite::Tensor in;
+    lite_metal::Tensor in;
     in.ShareDataWith(*x);
     in.Resize(matrix_shape);
-    lite::Tensor out;
+    lite_metal::Tensor out;
     out.ShareDataWith(*y);
     out.Resize(matrix_shape);
 
@@ -68,8 +68,8 @@ class LayerNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     CHECK_EQ(Scale->numel(), right);
     CHECK_EQ(Bias->numel(), right);
 
-    auto ker = paddle::lite::jit::KernelFuncs<jit::LayerNormTuple<T>,
-                                              lite::fluid::CPUPlace>::Cache()
+    auto ker = paddle::lite_metal::jit::KernelFuncs<jit::LayerNormTuple<T>,
+                                              lite_metal::fluid::CPUPlace>::Cache()
                    .At(right);
     ker(in.mutable_data<T>(),
         out.mutable_data<T>(),

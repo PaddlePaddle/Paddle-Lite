@@ -1,18 +1,18 @@
 include "framework.fbs";
 
-namespace paddle.lite.fbs.proto;
+namespace paddle.lite_metal.fbs.proto;
 
 table CombinedParamsDesc {
-  params:[paddle.lite.fbs.proto.ParamDesc];
+  params:[paddle.lite_metal.fbs.proto.ParamDesc];
 }
 
-namespace paddle.lite.fbs.proto.ParamDesc_;
+namespace paddle.lite_metal.fbs.proto.ParamDesc_;
 
 table LoDTensorDesc {
   lod_level:int;
   lod:[long];
   dim:[long];
-  data_type:paddle.lite.fbs.proto.VarType_.Type;
+  data_type:paddle.lite_metal.fbs.proto.VarType_.Type;
   data:[byte];
 }
 
@@ -25,13 +25,13 @@ union VariableDesc {
   LoDTensorDesc
 }
 
-namespace paddle.lite.fbs.proto;
+namespace paddle.lite_metal.fbs.proto;
 
 table ParamDesc {
-  version:paddle.lite.fbs.proto.ParamDesc_.VersionDesc;
+  version:paddle.lite_metal.fbs.proto.ParamDesc_.VersionDesc;
   name:string (required, key);
-  variable:paddle.lite.fbs.proto.ParamDesc_.VariableDesc;
+  variable:paddle.lite_metal.fbs.proto.ParamDesc_.VariableDesc;
 }
 
-root_type paddle.lite.fbs.proto.ParamDesc;
-root_type paddle.lite.fbs.proto.CombinedParamsDesc;
+root_type paddle.lite_metal.fbs.proto.ParamDesc;
+root_type paddle.lite_metal.fbs.proto.CombinedParamsDesc;

@@ -37,7 +37,7 @@
 #endif  // _WIN32
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 
 size_t CpuTotalPhysicalMemory();

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool CumsumOpLite::CheckShape() const {
@@ -39,7 +39,7 @@ bool CumsumOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool CumsumOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool CumsumOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   param_.X = scope->FindTensor(op_desc.Input("X").front());
   param_.Out = scope->FindMutableTensor(op_desc.Output("Out").front());
 
@@ -59,4 +59,4 @@ bool CumsumOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(cumsum, paddle::lite::operators::CumsumOpLite);
+REGISTER_LITE_OP(cumsum, paddle::lite_metal::operators::CumsumOpLite);

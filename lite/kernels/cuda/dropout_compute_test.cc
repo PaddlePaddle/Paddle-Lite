@@ -20,7 +20,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -49,12 +49,12 @@ TEST(dropout_cuda, normal) {
   auto& context = ctx->As<CUDAContext>();
 
   operators::DropoutParam param;
-  lite::Tensor x;
-  lite::Tensor x_cpu;
-  lite::Tensor x_ref;
-  lite::Tensor output;
-  lite::Tensor output_cpu;
-  lite::Tensor output_ref;
+  lite_metal::Tensor x;
+  lite_metal::Tensor x_cpu;
+  lite_metal::Tensor x_ref;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_cpu;
+  lite_metal::Tensor output_ref;
 
   for (auto n : {1, 3, 4}) {
     for (auto c : {1, 3, 4, 256}) {
@@ -80,7 +80,7 @@ TEST(dropout_cuda, normal) {
                 x_ref_data[i] = i;
               }
 
-              x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data,
+              x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data,
                                                          x_cpu.dims());
 
               param.x = &x;

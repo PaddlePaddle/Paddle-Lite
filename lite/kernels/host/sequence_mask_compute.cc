@@ -15,7 +15,7 @@
 #include "lite/kernels/host/sequence_mask_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -56,16 +56,16 @@ void SequenceMaskCompute<T>::Run() {
   y->set_lod(x->lod());
 
   int out_type = param.out_dtype;
-  switch (lite::core::FluidType(out_type)) {
-    case lite::core::FluidType::FP32: {
+  switch (lite_metal::core::FluidType(out_type)) {
+    case lite_metal::core::FluidType::FP32: {
       SequenceMask(x_data, y->template mutable_data<float>(), x_size, max_len);
       break;
     }
-    case lite::core::FluidType::INT32: {
+    case lite_metal::core::FluidType::INT32: {
       SequenceMask(x_data, y->template mutable_data<int>(), x_size, max_len);
       break;
     }
-    case lite::core::FluidType::INT64: {
+    case lite_metal::core::FluidType::INT64: {
       SequenceMask(
           x_data, y->template mutable_data<int64_t>(), x_size, max_len);
       break;
@@ -85,7 +85,7 @@ REGISTER_LITE_KERNEL(sequence_mask,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SequenceMaskCompute<float>,
+                     paddle::lite_metal::kernels::host::SequenceMaskCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("MaxLenTensor",
@@ -97,7 +97,7 @@ REGISTER_LITE_KERNEL(sequence_mask,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SequenceMaskCompute<int>,
+                     paddle::lite_metal::kernels::host::SequenceMaskCompute<int>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("MaxLenTensor",
@@ -109,7 +109,7 @@ REGISTER_LITE_KERNEL(sequence_mask,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SequenceMaskCompute<int64_t>,
+                     paddle::lite_metal::kernels::host::SequenceMaskCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("MaxLenTensor",

@@ -20,7 +20,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void* TargetMalloc(TargetType target, size_t size) {
   void* data{nullptr};

@@ -20,15 +20,15 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename T, int STRIDE_H = 1, int STRIDE_W = 1>
 void depth_conv(const T* input_data,
-                const lite::DDim& input_dims,
+                const lite_metal::DDim& input_dims,
                 const T* filter_data,
-                const lite::DDim& filter_dims,
+                const lite_metal::DDim& filter_dims,
                 T* output_data,
-                const lite::DDim& output_dims) {
+                const lite_metal::DDim& output_dims) {
   int stride_h = STRIDE_H, stride_w = STRIDE_W;
 
   int64_t batches = input_dims[0];
@@ -101,7 +101,7 @@ TEST(depthwise_conv2d_buffer_fp32, compute) {
   auto kernel = std::move(kernels.front());
 
   LOG(INFO) << "get kernel";
-  lite::Tensor input, filter, output;
+  lite_metal::Tensor input, filter, output;
   operators::ConvParam param;
   param.x = &input;
   param.filter = &filter;
@@ -130,16 +130,16 @@ TEST(depthwise_conv2d_buffer_fp32, compute) {
     f = gen(engine);
   }
 
-  input.Assign<float, lite::DDim, TARGET(kOpenCL)>(
-      input_v.data(), lite::DDim{std::vector<int64_t>({4, 32, 112, 112})});
-  filter.Assign<float, lite::DDim, TARGET(kOpenCL)>(
-      filter_v.data(), lite::DDim{std::vector<int64_t>({32, 1, 3, 3})});
+  input.Assign<float, lite_metal::DDim, TARGET(kOpenCL)>(
+      input_v.data(), lite_metal::DDim{std::vector<int64_t>({4, 32, 112, 112})});
+  filter.Assign<float, lite_metal::DDim, TARGET(kOpenCL)>(
+      filter_v.data(), lite_metal::DDim{std::vector<int64_t>({32, 1, 3, 3})});
   output.Resize({4, 32, 110, 110});
   kernel->Launch();
 
   CLRuntime::Global()->command_queue().finish();
 
-  lite::Tensor output_ref;
+  lite_metal::Tensor output_ref;
   output_ref.Resize({4, 32, 110, 110});
   auto* output_ref_data = output_ref.mutable_data<float>(TARGET(kARM));
   auto* input_data = input.mutable_data<float, cl::Buffer>();

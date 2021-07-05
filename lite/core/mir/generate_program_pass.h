@@ -26,7 +26,7 @@
 #include "lite/kernels/host/while_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 /*

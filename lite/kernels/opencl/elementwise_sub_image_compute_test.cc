@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename dtype>
 void fill_data(dtype *x, const int length, int set_value = -1) {
@@ -144,14 +144,14 @@ TEST(elementwise_sub_image, compute) {
 
     // tensor
     VLOG(4) << "set tensors about op param";
-    lite::Tensor elesub_x, elesub_y, elesub_out;
+    lite_metal::Tensor elesub_x, elesub_y, elesub_out;
     elesub_x.Resize(x_dim);
     elesub_y.Resize(y_dim);
     elesub_out.Resize(out_dim);
 
     // initialize tensors
     VLOG(4) << "initialize tensors";
-    paddle::lite::CLImageConverterDefault default_convertor;
+    paddle::lite_metal::CLImageConverterDefault default_convertor;
     // x
     std::vector<float> x_v(x_dim.production());
     fill_data<float>(x_v.data(), x_v.size());  // fill with index value

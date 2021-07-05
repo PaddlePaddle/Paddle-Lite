@@ -24,9 +24,9 @@ namespace lite_api {
 size_t Place::hash() const {
   std::hash<int> h;
   size_t hash = h(static_cast<int>(target));
-  lite::CombineHash(static_cast<int64_t>(precision), &hash);
-  lite::CombineHash(static_cast<int64_t>(layout), &hash);
-  lite::CombineHash(static_cast<int64_t>(device), &hash);
+  lite_metal::CombineHash(static_cast<int64_t>(precision), &hash);
+  lite_metal::CombineHash(static_cast<int64_t>(layout), &hash);
+  lite_metal::CombineHash(static_cast<int64_t>(device), &hash);
   return hash;
 }
 

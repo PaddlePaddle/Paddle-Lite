@@ -51,7 +51,7 @@
   {                                                              \
     auto e = (func);                                             \
     CHECK_EQ(e, CUBLAS_STATUS_SUCCESS)                           \
-        << "cuBlas: " << paddle::lite::cuda::CublasErrorInfo(e); \
+        << "cuBlas: " << paddle::lite_metal::cuda::CublasErrorInfo(e); \
   }
 
 #define CUDNN_VERSION_MIN(major, minor, patch) \
@@ -76,7 +76,7 @@ inline int CUDA_GET_BLOCKS(const int N, const int base) {
        i += blockDim.x * gridDim.x)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 
 static const char* CublasErrorInfo(int error) {

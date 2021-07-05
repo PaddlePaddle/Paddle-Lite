@@ -23,7 +23,7 @@
 #include "lite/core/mir/ssa_graph.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 class FuseBase {

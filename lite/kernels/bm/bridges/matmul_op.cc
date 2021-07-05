@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -31,17 +31,17 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
+  auto unique_op_name = lite_metal::subgraph::bm::UniqueName(op_type);
   // input
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   std::vector<int32_t> i_x_shape_data(x_dims.size());
   for (size_t i = 0; i < x_dims.size(); i++) {
     i_x_shape_data[i] = static_cast<int>(x_dims[i]);
   }
   auto y_var_name = op_info->Input("Y").front();
-  auto y = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
+  auto y = scope->FindVar(y_var_name)->GetMutable<lite_metal::Tensor>();
   auto y_dims = y->dims();
   std::vector<int32_t> i_y_shape_data(y_dims.size());
   for (size_t i = 0; i < y_dims.size(); i++) {
@@ -49,7 +49,7 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   // output
   auto output_var_name = op_info->Output("Out").front();
-  auto out = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto out = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto out_dims = out->dims();
   std::vector<int32_t> i_out_shape_data(out_dims.size());
   for (size_t i = 0; i < out_dims.size(); i++) {
@@ -87,4 +87,4 @@ int MatMulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(matmul,
                          kBM,
-                         paddle::lite::subgraph::bm::MatMulConverter);
+                         paddle::lite_metal::subgraph::bm::MatMulConverter);

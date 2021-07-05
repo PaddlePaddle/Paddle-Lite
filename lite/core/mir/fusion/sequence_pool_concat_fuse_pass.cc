@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void SequencePoolConcatFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -35,5 +35,5 @@ void SequencePoolConcatFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_sequence_pool_concat_fuse_pass,
-                  paddle::lite::mir::SequencePoolConcatFusePass)
+                  paddle::lite_metal::mir::SequencePoolConcatFusePass)
     .BindTargets({TARGET(kCUDA)});

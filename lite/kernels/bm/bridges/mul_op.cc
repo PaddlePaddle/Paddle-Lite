@@ -18,7 +18,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -29,10 +29,10 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto unique_op_name = lite::subgraph::bm::UniqueName(op_type);
+  auto unique_op_name = lite_metal::subgraph::bm::UniqueName(op_type);
   // input
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
   std::vector<int> i_x_shape_data(x_dims.size());
@@ -48,7 +48,7 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   int reshape_param[] = {0, -1};
   auto unique_op_reshape_name =
-      lite::subgraph::bm::UniqueName(op_type + "_reshape");
+      lite_metal::subgraph::bm::UniqueName(op_type + "_reshape");
   add_reshape_layer(graph->GetCompilerHandle(),
                     const_cast<const int*>(&i_x_shape_data[0]),
                     x_dims.size(),
@@ -59,7 +59,7 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                     const_cast<const int*>(reshape_param));
 
   auto y_var_name = op_info->Input("Y").front();
-  auto y = scope->FindVar(y_var_name)->GetMutable<lite::Tensor>();
+  auto y = scope->FindVar(y_var_name)->GetMutable<lite_metal::Tensor>();
   auto y_dims = y->dims();
   bool y_is_const = !graph->HasNode(y_var_name);
   CHECK_EQ(y_dims.size(), 2);
@@ -69,7 +69,7 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   // output
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   const int64_t* output_shape_data =
       const_cast<const int64_t*>(&output_dims.data()[0]);
@@ -119,4 +119,4 @@ int MulConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(mul, kBM, paddle::lite::subgraph::bm::MulConverter);
+REGISTER_SUBGRAPH_BRIDGE(mul, kBM, paddle::lite_metal::subgraph::bm::MulConverter);

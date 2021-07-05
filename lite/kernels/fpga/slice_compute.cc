@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -55,7 +55,7 @@ void SliceCompute::Run() { pe_.dispatch(); }
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    slice, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::SliceCompute, def)
+    slice, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::SliceCompute, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kAny),

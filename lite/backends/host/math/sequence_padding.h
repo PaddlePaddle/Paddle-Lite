@@ -22,7 +22,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
@@ -40,8 +40,8 @@ inline static uint64_t MaximumSequenceLength(
   return max_seq_len;
 }
 
-inline static void CheckDims(const lite::DDim& seq_tensor_dims,
-                             const lite::DDim& pad_tensor_dims,
+inline static void CheckDims(const lite_metal::DDim& seq_tensor_dims,
+                             const lite_metal::DDim& pad_tensor_dims,
                              const std::vector<uint64_t>& seq_offset,
                              int64_t padded_seq_len,
                              int64_t step_width,
@@ -82,25 +82,25 @@ inline static void CheckDims(const lite::DDim& seq_tensor_dims,
  *
  * \note  transposition is also done in this functor.
  */
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class PaddingLoDTensorFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& seq_tensor,
-                  lite::Tensor* pad_tensor,
-                  const lite::Tensor& pad_value,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& seq_tensor,
+                  lite_metal::Tensor* pad_tensor,
+                  const lite_metal::Tensor& pad_value,
                   int pad_seq_len = -1,
                   int lod_level = 0,
                   bool norm_by_times = false,
                   const PadLayout layout = kBatchLengthWidth);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class UnpaddingLoDTensorFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& pad_tensor,
-                  lite::Tensor* seq_tensor,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& pad_tensor,
+                  lite_metal::Tensor* seq_tensor,
                   int pad_seq_len = -1,
                   int lod_level = 0,
                   bool norm_by_times = false,

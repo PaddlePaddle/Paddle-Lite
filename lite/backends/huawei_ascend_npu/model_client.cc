@@ -15,7 +15,7 @@
 #include "lite/backends/huawei_ascend_npu/model_client.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace huawei_ascend_npu {
 
 bool AclModelClient::LoadFromMem(const void* data, uint32_t size) {

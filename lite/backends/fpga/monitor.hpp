@@ -25,7 +25,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class Monitor {
  public:
@@ -50,9 +50,9 @@ class Monitor {
       std::ifstream infile(path);
       if (infile.good()) {
         auto* var = op->scope()->FindVar(name);
-        if (var->IsType<lite::Tensor>()) {
-          lite::Tensor* tensor =
-              const_cast<lite::Tensor*>(&var->Get<lite::Tensor>());
+        if (var->IsType<lite_metal::Tensor>()) {
+          lite_metal::Tensor* tensor =
+              const_cast<lite_metal::Tensor*>(&var->Get<lite_metal::Tensor>());
           if (tensor->ZynqTensor() != nullptr) {
             tensor->ZynqTensor()->readHalfFromFile(path);
             tensor->ZynqTensor()->flush();
@@ -81,9 +81,9 @@ class Monitor {
     for (auto name : out_args) {
       VLOG(4) << "\n out_tensor:" << name;
       auto* var = op->scope()->FindVar(name);
-      if (var->IsType<lite::Tensor>()) {
-        lite::Tensor* tensor =
-            const_cast<lite::Tensor*>(&var->Get<lite::Tensor>());
+      if (var->IsType<lite_metal::Tensor>()) {
+        lite_metal::Tensor* tensor =
+            const_cast<lite_metal::Tensor*>(&var->Get<lite_metal::Tensor>());
         if (tensor->ZynqTensor() != nullptr) {
           std::string substr = "/";
           std::size_t found = name.rfind(substr);

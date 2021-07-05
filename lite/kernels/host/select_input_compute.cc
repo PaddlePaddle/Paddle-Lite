@@ -15,7 +15,7 @@
 #include "lite/kernels/host/select_input_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -33,7 +33,7 @@ REGISTER_LITE_KERNEL(select_input,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::SelectInputCompute,
+                     paddle::lite_metal::kernels::host::SelectInputCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("Mask",

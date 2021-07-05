@@ -27,7 +27,7 @@
 #include "lite/core/program.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // An Graph for MIR. It is built from a list of Op and a scope.

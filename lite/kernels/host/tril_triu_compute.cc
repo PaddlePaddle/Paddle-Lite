@@ -15,7 +15,7 @@
 #include "lite/kernels/host/tril_triu_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -39,8 +39,8 @@ void TrilTriu(const T* in,
 template <class T>
 void TrilTriuCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
-  const lite::Tensor* x = param.x;
-  lite::Tensor* out = param.out;
+  const lite_metal::Tensor* x = param.x;
+  lite_metal::Tensor* out = param.out;
   int64_t diagonal = param.diagonal;
   bool lower = param.lower;
 
@@ -64,7 +64,7 @@ void TrilTriuCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using TrilTriuFloat32 = paddle::lite::kernels::host::TrilTriuCompute<float>;
+using TrilTriuFloat32 = paddle::lite_metal::kernels::host::TrilTriuCompute<float>;
 REGISTER_LITE_KERNEL(tril_triu, kHost, kAny, kNCHW, TrilTriuFloat32, float32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindOutput("Out",

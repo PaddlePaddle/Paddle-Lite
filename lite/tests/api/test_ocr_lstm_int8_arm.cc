@@ -24,7 +24,7 @@
 DEFINE_string(data_dir, "", "input image path");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(OCR_LSTM_INT8_MODEL, test_ocr_lstm_int8_arm) {
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;

@@ -19,7 +19,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 
@@ -342,9 +342,9 @@ void pad_reflect(const float* din,
   }
 }
 
-// void pad2d_func(const lite::Tensor *input,lite::Tensor *output)
-void pad2d_func(const lite::Tensor* input,
-                lite::Tensor* output,
+// void pad2d_func(const lite_metal::Tensor *input,lite_metal::Tensor *output)
+void pad2d_func(const lite_metal::Tensor* input,
+                lite_metal::Tensor* output,
                 int _mode,
                 std::vector<int> _pad_h,
                 std::vector<int> _pad_w,

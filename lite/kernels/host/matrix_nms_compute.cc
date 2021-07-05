@@ -19,7 +19,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -339,7 +339,7 @@ REGISTER_LITE_KERNEL(matrix_nms,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::MatrixNmsCompute,
+                     paddle::lite_metal::kernels::host::MatrixNmsCompute,
                      def)
     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})

@@ -19,7 +19,7 @@
 #include "lite/kernels/xpu/bridges/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 namespace bridges {

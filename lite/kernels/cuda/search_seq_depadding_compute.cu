@@ -15,10 +15,10 @@ limitations under the License. */
 #include "lite/kernels/cuda/search_seq_depadding_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 #define CUDA_KERNEL_LOOP(i, n)                                 \
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); \
@@ -98,7 +98,7 @@ REGISTER_LITE_KERNEL(search_seq_depadding,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::SearchSeqDepaddingCompute,
+                     paddle::lite_metal::kernels::cuda::SearchSeqDepaddingCompute,
                      def)
     .BindInput("Src",
                {LiteType::GetTensorTy(TARGET(kCUDA),

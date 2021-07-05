@@ -17,7 +17,7 @@
 #include <cmath>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 

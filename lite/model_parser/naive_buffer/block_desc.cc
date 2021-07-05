@@ -15,7 +15,7 @@
 #include "lite/model_parser/naive_buffer/block_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 int32_t BlockDesc::Idx() const {

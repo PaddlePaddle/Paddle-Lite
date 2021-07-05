@@ -15,7 +15,7 @@ limitations under the License. */
 #include "lite/backends/metal/metal_half.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // ftp://ftp.fox-toolkit.org/pub/fasthalffloatconversion.pdf
 

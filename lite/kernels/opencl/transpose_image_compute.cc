@@ -28,7 +28,7 @@
 #undef LITE_WITH_LOG
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -177,7 +177,7 @@ class TransposeComputeFloatImage
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -243,7 +243,7 @@ class TransposeComputeFloatImage
       // do image layout transform: image to buffer
       // create and set param, context to kernel im2buf
       operators::LayoutParam im2buf_param;
-      std::shared_ptr<lite::Tensor> im2buf_out_t(new lite::Tensor);
+      std::shared_ptr<lite_metal::Tensor> im2buf_out_t(new lite_metal::Tensor);
       im2buf_out_t->Resize(x_tensor_dims_);
       auto im2buf_out_t_buffer_p =
           im2buf_out_t->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
@@ -258,7 +258,7 @@ class TransposeComputeFloatImage
       im2buf_kernel_->Launch();
 
       // create and set param, context to kernel buf2im
-      std::shared_ptr<lite::Tensor> buf2im_in_t(new lite::Tensor);
+      std::shared_ptr<lite_metal::Tensor> buf2im_in_t(new lite_metal::Tensor);
       buf2im_in_t->Resize(transpose_param_->output->dims());
       auto buf2im_in_t_buffer_p =
           buf2im_in_t->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
@@ -340,7 +340,7 @@ REGISTER_LITE_KERNEL(transpose,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::TransposeComputeFloatImage,
+                     paddle::lite_metal::kernels::opencl::TransposeComputeFloatImage,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -356,7 +356,7 @@ REGISTER_LITE_KERNEL(transpose2,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::TransposeComputeFloatImage,
+                     paddle::lite_metal::kernels::opencl::TransposeComputeFloatImage,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

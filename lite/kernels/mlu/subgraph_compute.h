@@ -34,7 +34,7 @@
 #include "lite/utils/env.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace mlu {
 
@@ -126,7 +126,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
 
   bool BuildDeviceProgramImpl() {
     int status = 0;
-    auto graph = std::make_shared<paddle::lite::subgraph::mlu::Graph>();
+    auto graph = std::make_shared<paddle::lite_metal::subgraph::mlu::Graph>();
     graph->SetFPType(fp_type_);
     std::vector<std::vector<int64_t>> new_shape;
     origin_itensors_.clear();
@@ -331,7 +331,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
     bool disable_mlu_cast = GetBoolFromEnv("LITE_DISABLE_MLU_CAST");
 
     if (!disable_batch_size_changeable_) {
-      std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
+      std::vector<std::shared_ptr<paddle::lite_metal::subgraph::mlu::MLUTensor>>
           graph_in;
       if (shape_tensor_map_in_.find(all_inputs_shape_) !=
           shape_tensor_map_in_.end()) {
@@ -343,12 +343,12 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
       } else {
         graph_in.reserve(origin_itensors_.size());
         for (size_t i = 0; i < origin_itensors_.size(); ++i) {
-          paddle::lite::subgraph::mlu::MLUTensor tmp(
+          paddle::lite_metal::subgraph::mlu::MLUTensor tmp(
               origin_itensors_[i]->dims().Vectorize());
           tmp.set_mlu_dtype(graph_input->at(i)->dtype());
           tmp.set_mlu_ptr(const_cast<void*>(origin_itensors_[i]->raw_data()));
           graph_in.push_back(
-              std::make_shared<paddle::lite::subgraph::mlu::MLUTensor>(tmp));
+              std::make_shared<paddle::lite_metal::subgraph::mlu::MLUTensor>(tmp));
         }
         shape_tensor_map_in_[all_inputs_shape_] = graph_in;
       }
@@ -362,7 +362,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
       // const std::vector<std::vector<int64_t>> new_output_size =
       //    graph->InferOutputsShape(graph_in);
 
-      std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>
+      std::vector<std::shared_ptr<paddle::lite_metal::subgraph::mlu::MLUTensor>>
           graph_out;
 
       if (shape_tensor_map_out_.find(all_inputs_shape_) !=
@@ -377,13 +377,13 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
         graph_out.reserve(origin_otensors_.size());
         for (size_t i = 0; i < origin_otensors_.size(); ++i) {
           // origin_otensors_[i]->Resize(new_output_size.at(i));
-          paddle::lite::subgraph::mlu::MLUTensor tmp(
+          paddle::lite_metal::subgraph::mlu::MLUTensor tmp(
               origin_otensors_[i]->dims().Vectorize());
           tmp.set_mlu_dtype(graph_output->at(i)->dtype());
           tmp.set_mlu_ptr(
               GetOutputDataPtr(origin_otensors_[i], !disable_mlu_cast));
           graph_out.push_back(
-              std::make_shared<paddle::lite::subgraph::mlu::MLUTensor>(tmp));
+              std::make_shared<paddle::lite_metal::subgraph::mlu::MLUTensor>(tmp));
         }
         shape_tensor_map_out_[all_inputs_shape_] = graph_out;
       }
@@ -448,7 +448,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
   std::vector<std::vector<int64_t>> inputs_shape_{};
   std::vector<std::vector<int64_t>> all_inputs_shape_{};
   std::map<std::vector<std::vector<int64_t>>,
-           std::shared_ptr<paddle::lite::subgraph::mlu::Graph>>
+           std::shared_ptr<paddle::lite_metal::subgraph::mlu::Graph>>
       shape_graph_map_{};
   // enable batch size changeable by default, this cound be changed by
   // environment variable PADDLE_LITE_MLU_DISABLE_BATCH_SIZE_CHANGEABLE and
@@ -459,12 +459,12 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
   // search output runtime MLUTensor for certain output shape when enable
   // BATCH_SIZE_CHANGEABLE
   std::map<std::vector<std::vector<int64_t>>,
-           std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>>
+           std::vector<std::shared_ptr<paddle::lite_metal::subgraph::mlu::MLUTensor>>>
       shape_tensor_map_out_{};
   // search input runtime MLUTensor for certain input shape when enable
   // BATCH_SIZE_CHANGEABLE
   std::map<std::vector<std::vector<int64_t>>,
-           std::vector<std::shared_ptr<paddle::lite::subgraph::mlu::MLUTensor>>>
+           std::vector<std::shared_ptr<paddle::lite_metal::subgraph::mlu::MLUTensor>>>
       shape_tensor_map_in_{};
   // search output shape for certain input shape when enable
   // BATCH_SIZE_CHANGEABLE

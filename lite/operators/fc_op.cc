@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool FcOpLite::CheckShape() const {
@@ -74,15 +74,15 @@ bool FcOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   AttachParam(&param_);
 
   auto input = op_desc.Input("Input").front();
   auto W = op_desc.Input("W").front();
   auto out = op_desc.Output("Out").front();
 
-  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.w = scope->FindVar(W)->GetMutable<lite::Tensor>();
+  param_.input = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
+  param_.w = scope->FindVar(W)->GetMutable<lite_metal::Tensor>();
   param_.w_dims = param_.w->dims();
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=
@@ -91,12 +91,12 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     if (bias_arguments.size() > 0) {
       auto bias_var = scope->FindVar(bias_arguments.front());
       if (bias_var != nullptr) {
-        param_.bias = bias_var->GetMutable<lite::Tensor>();
+        param_.bias = bias_var->GetMutable<lite_metal::Tensor>();
       }
     }
   }
   CHECK(scope->FindVar(out));
-  param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.output = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
   param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
 
   if (op_desc.HasAttr("activation_type")) {
@@ -113,7 +113,7 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     auto prelu_alpha_name = op_desc.Input("Alpha").front();
     auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
     param_.Prelu_alpha =
-        const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>()));
+        const_cast<lite_metal::Tensor*>(&(prelu_alpha_var->Get<lite_metal::Tensor>()));
   }
 
   // For Int8
@@ -148,4 +148,4 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(fc, paddle::lite::operators::FcOpLite);
+REGISTER_LITE_OP(fc, paddle::lite_metal::operators::FcOpLite);

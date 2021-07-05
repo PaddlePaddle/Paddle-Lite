@@ -19,7 +19,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -32,7 +32,7 @@ class SearchFcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& param = *param_.get_mutable<param_t>();
 
     param.Out->Resize({param.X->dims()[0], param.out_size});
-    lite::x86::math::SearchFcFunctor<lite::TargetType::kX86, T> search_fc;
+    lite_metal::x86::math::SearchFcFunctor<lite_metal::TargetType::kX86, T> search_fc;
     search_fc(context, *param.X, *param.W, *param.b, param.Out, param.out_size);
   }
   virtual ~SearchFcCompute() = default;

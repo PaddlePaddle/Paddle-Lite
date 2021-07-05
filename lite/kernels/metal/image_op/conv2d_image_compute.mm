@@ -23,7 +23,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -460,7 +460,7 @@ void Conv2dImageCompute::setup_with_mps() {
         // bias
         if (param.bias && canMPSAddByChannel()) {
             if (bias_buffer_->src_tensor_) {
-                lite::Tensor* y = (lite::Tensor*)(bias_buffer_->src_tensor_);
+                lite_metal::Tensor* y = (lite_metal::Tensor*)(bias_buffer_->src_tensor_);
                 auto bias = y->data<float>();
                 scoure.biasTerms = const_cast<float*>(bias);
             }
@@ -507,7 +507,7 @@ bool Conv2dImageCompute::canMPSAddByChannel() {
     if (!bias_buffer_->src_tensor_) {
         return false;
     }
-    lite::Tensor* y = (lite::Tensor*)(bias_buffer_->src_tensor_);
+    lite_metal::Tensor* y = (lite_metal::Tensor*)(bias_buffer_->src_tensor_);
     if (y->dims().size() == 1) {
         return true;
     }
@@ -516,7 +516,7 @@ bool Conv2dImageCompute::canMPSAddByChannel() {
 
 bool Conv2dImageCompute::canMPSAddByElement() {
     const auto& param = this->Param<param_t>();
-    lite::Tensor* y = (lite::Tensor*)(bias_buffer_->src_tensor_);
+    lite_metal::Tensor* y = (lite_metal::Tensor*)(bias_buffer_->src_tensor_);
     if (y->dims() == param.output->dims()) {
         return true;
     }
@@ -551,7 +551,7 @@ REGISTER_LITE_KERNEL(conv2d,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::Conv2dImageCompute,
+    paddle::lite_metal::kernels::metal::Conv2dImageCompute,
     def)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -573,7 +573,7 @@ REGISTER_LITE_KERNEL(conv2d,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::Conv2dImageCompute,
+    paddle::lite_metal::kernels::metal::Conv2dImageCompute,
     def)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

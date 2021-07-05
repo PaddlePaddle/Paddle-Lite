@@ -17,7 +17,7 @@ limitations under the License. */
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 DDim CLImageConverterDefault::InitImageDimInfoWith(const DDim &tensor_dim) {
   size_t new_dims[] = {1, 1, 1, 1};
   for (size_t j = 0; j < tensor_dim.size(); ++j) {

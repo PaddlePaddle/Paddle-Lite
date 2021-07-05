@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void FcPreluFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -31,6 +31,6 @@ void FcPreluFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_fc_prelu_fuse_pass, paddle::lite::mir::FcPreluFusePass)
+REGISTER_MIR_PASS(lite_fc_prelu_fuse_pass, paddle::lite_metal::mir::FcPreluFusePass)
     .BindTargets({TARGET(kOpenCL)})
     .BindKernel("fc");

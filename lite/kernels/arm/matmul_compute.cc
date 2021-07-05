@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -152,7 +152,7 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
     if (x_dims.size() > 2 && y_dims.size() > 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::sgemm(x_transpose,
+        lite_metal::arm::math::sgemm(x_transpose,
                                y_transpose,
                                m_,
                                n_,
@@ -172,7 +172,7 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       }
     } else if (x_dims.size() > 2 && y_dims.size() == 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::sgemm(x_transpose,
+        lite_metal::arm::math::sgemm(x_transpose,
                                y_transpose,
                                m_,
                                n_,
@@ -192,7 +192,7 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       }
     } else if (x_dims.size() == 2 && y_dims.size() > 2) {
       for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {
-        lite::arm::math::sgemm(x_transpose,
+        lite_metal::arm::math::sgemm(x_transpose,
                                y_transpose,
                                m_,
                                n_,
@@ -232,7 +232,7 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     }
     ldc = n_;
 
-    lite::arm::math::sgemm(x_transpose,
+    lite_metal::arm::math::sgemm(x_transpose,
                            y_transpose,
                            m_,
                            n_,
@@ -278,7 +278,7 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       int ldb = n_;
       int ldc = n_;
       if (n_ == 1) {
-        lite::arm::math::sgemv(x_data,
+        lite_metal::arm::math::sgemv(x_data,
                                y_data,
                                o_data,
                                false,
@@ -296,7 +296,7 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
           }
         }
       } else {
-        lite::arm::math::sgemm(false,
+        lite_metal::arm::math::sgemm(false,
                                false,
                                m_,
                                n_,
@@ -366,7 +366,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 
     if (x_dims.size() > 2 && y_dims.size() > 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::gemm_s8(x_transpose,
+        lite_metal::arm::math::gemm_s8(x_transpose,
                                  y_transpose,
                                  m_,
                                  n_,
@@ -382,7 +382,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       }
     } else if (x_dims.size() > 2 && y_dims.size() == 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
-        lite::arm::math::gemm_s8(x_transpose,
+        lite_metal::arm::math::gemm_s8(x_transpose,
                                  y_transpose,
                                  m_,
                                  n_,
@@ -398,7 +398,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       }
     } else if (x_dims.size() == 2 && y_dims.size() > 2) {
       for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {
-        lite::arm::math::gemm_s8(x_transpose,
+        lite_metal::arm::math::gemm_s8(x_transpose,
                                  y_transpose,
                                  m_,
                                  n_,
@@ -415,7 +415,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     }
   } else if (x_dims.size() == 2 && y_dims.size() == 2) {
     // x: [M, K], y: [K, N], out: [M, N]
-    lite::arm::math::gemm_s8(x_transpose,
+    lite_metal::arm::math::gemm_s8(x_transpose,
                              y_transpose,
                              m_,
                              n_,
@@ -451,7 +451,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     // x: [M], y: [N], x_transpose: true, y_transpose: true, out: [M, N]
     if (x_transpose == true && y_transpose == true) {
       if (n_ == 1) {
-        lite::arm::math::gemv_int8(x_data,
+        lite_metal::arm::math::gemv_int8(x_data,
                                    y_data,
                                    o_data,
                                    false,
@@ -468,7 +468,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
           }
         }
       } else {
-        lite::arm::math::gemm_s8(false,
+        lite_metal::arm::math::gemm_s8(false,
                                  false,
                                  m_,
                                  n_,
@@ -495,11 +495,11 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::arm::MatMulCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::MatMulCompute<PRECISION(kFloat),
                                                   PRECISION(kFloat)>
     Matmul_f32_f32;
 
-typedef paddle::lite::kernels::arm::MatMulCompute<PRECISION(kInt8),
+typedef paddle::lite_metal::kernels::arm::MatMulCompute<PRECISION(kInt8),
                                                   PRECISION(kFloat)>
     Matmul_int8_f32;
 

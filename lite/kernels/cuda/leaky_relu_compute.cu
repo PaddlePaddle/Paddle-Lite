@@ -16,7 +16,7 @@
 #include "lite/kernels/cuda/leaky_relu_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -62,7 +62,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::LeakyReluCompute,
+                     paddle::lite_metal::kernels::cuda::LeakyReluCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})

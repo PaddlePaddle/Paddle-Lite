@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool AffineChannelOpLite::CheckShape() const {
@@ -52,19 +52,19 @@ bool AffineChannelOpLite::InferShapeImpl() const {
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
 bool AffineChannelOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                     lite::Scope *scope) {
+                                     lite_metal::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto scale = op_desc.Input("Scale").front();
   auto bias = op_desc.Input("Bias").front();
   auto output = op_desc.Output("Out").front();
 
-  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
-  param_.Scale = scope->FindVar(scale)->GetMutable<lite::Tensor>();
-  param_.Bias = scope->FindVar(bias)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+  param_.Scale = scope->FindVar(scale)->GetMutable<lite_metal::Tensor>();
+  param_.Bias = scope->FindVar(bias)->GetMutable<lite_metal::Tensor>();
   if (op_desc.HasAttr("data_layout")) {
     param_.data_layout = op_desc.GetAttr<std::string>("data_layout");
   }
-  param_.Out = scope->FindVar(output)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(output)->GetMutable<lite_metal::Tensor>();
 
   return true;
 }
@@ -73,4 +73,4 @@ bool AffineChannelOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(affine_channel, paddle::lite::operators::AffineChannelOpLite);
+REGISTER_LITE_OP(affine_channel, paddle::lite_metal::operators::AffineChannelOpLite);

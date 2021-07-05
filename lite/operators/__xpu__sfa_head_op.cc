@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUSfaHeadOp::CheckShape() const {
@@ -54,14 +54,14 @@ bool XPUSfaHeadOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUSfaHeadOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool XPUSfaHeadOp::AttachImpl(const cpp::OpDesc& op_desc, lite_metal::Scope* scope) {
   auto input = op_desc.Input("Input").front();
   auto output = op_desc.Output("Output").front();
   CHECK(scope->FindVar(input));
   CHECK(scope->FindVar(output));
 
-  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.output = scope->FindVar(output)->GetMutable<lite::Tensor>();
+  param_.input = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
+  param_.output = scope->FindVar(output)->GetMutable<lite_metal::Tensor>();
   param_.op_type = op_desc.GetAttr<std::string>("op_type");
 
   return true;
@@ -71,4 +71,4 @@ bool XPUSfaHeadOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__sfa_head, paddle::lite::operators::XPUSfaHeadOp);
+REGISTER_LITE_OP(__xpu__sfa_head, paddle::lite_metal::operators::XPUSfaHeadOp);

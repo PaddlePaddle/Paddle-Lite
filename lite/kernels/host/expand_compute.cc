@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -102,7 +102,7 @@ void ExpandCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    expand, kHost, kAny, kAny, paddle::lite::kernels::host::ExpandCompute, def)
+    expand, kHost, kAny, kAny, paddle::lite_metal::kernels::host::ExpandCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),

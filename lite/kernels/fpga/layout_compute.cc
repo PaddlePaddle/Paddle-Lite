@@ -21,7 +21,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -192,7 +192,7 @@ REGISTER_LITE_KERNEL(layout,
                      kFPGA,
                      kAny,
                      kNHWC,
-                     paddle::lite::kernels::fpga::TransHwcToChwCompute,
+                     paddle::lite_metal::kernels::fpga::TransHwcToChwCompute,
                      hwc_to_chw_fpga_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -208,7 +208,7 @@ REGISTER_LITE_KERNEL(layout,
                      kFPGA,
                      kAny,
                      kNHWC,
-                     paddle::lite::kernels::fpga::TransHwcToChwCompute,
+                     paddle::lite_metal::kernels::fpga::TransHwcToChwCompute,
                      hwc_to_chw_arm_float)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM),
@@ -224,7 +224,7 @@ REGISTER_LITE_KERNEL(layout,
                      kFPGA,
                      kAny,
                      kNHWC,
-                     paddle::lite::kernels::fpga::TransChwToHwcCompute,
+                     paddle::lite_metal::kernels::fpga::TransChwToHwcCompute,
                      chw_to_hwc_fpga_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -240,7 +240,7 @@ REGISTER_LITE_KERNEL(layout_once,
                      kFPGA,
                      kAny,
                      kNHWC,
-                     paddle::lite::kernels::fpga::TransHwcToChwCompute,
+                     paddle::lite_metal::kernels::fpga::TransHwcToChwCompute,
                      hwc_to_chw_fpga_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -256,7 +256,7 @@ REGISTER_LITE_KERNEL(layout_once,
                      kFPGA,
                      kAny,
                      kNHWC,
-                     paddle::lite::kernels::fpga::TransChwToHwcCompute,
+                     paddle::lite_metal::kernels::fpga::TransChwToHwcCompute,
                      chw_to_hwc_fpga_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),

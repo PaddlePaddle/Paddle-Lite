@@ -19,7 +19,7 @@
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 namespace fp16 {
@@ -291,8 +291,8 @@ void pad_reflect_fp16(const float16_t* din,
   }
 }
 
-void pad2d_func_fp16(const lite::Tensor* input,
-                     lite::Tensor* output,
+void pad2d_func_fp16(const lite_metal::Tensor* input,
+                     lite_metal::Tensor* output,
                      int mode,
                      std::vector<int> pad_h,
                      std::vector<int> pad_w,

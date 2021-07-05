@@ -24,67 +24,67 @@ limitations under the License. */
 // #include "lite/tensor_util.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 // template <typename T, int Rank>
 //    struct Transpose {
-//        void operator()(const lite::Context<Target::kX86> &context)
+//        void operator()(const lite_metal::Context<Target::kX86> &context)
 //    };
 
-template <lite::TargetType Target, typename T, int Rank>
+template <lite_metal::TargetType Target, typename T, int Rank>
 struct Transpose {
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& in,
-                  lite::Tensor* out,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& in,
+                  lite_metal::Tensor* out,
                   const std::vector<int>& axis);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct SetConstant {
-  void operator()(const lite::Context<Target>& context,
-                  lite::Tensor* tensor,
+  void operator()(const lite_metal::Context<Target>& context,
+                  lite_metal::Tensor* tensor,
                   T num);
 };
 
-template <lite::TargetType Target>
-void set_constant_with_place(const lite::Context<Target>& context,
-                             lite::Tensor* tensor,
+template <lite_metal::TargetType Target>
+void set_constant_with_place(const lite_metal::Context<Target>& context,
+                             lite_metal::Tensor* tensor,
                              float value);
 
-template <lite::TargetType Target>
-void set_constant(const lite::Context<Target>& context,
-                  lite::Tensor* tensor,
+template <lite_metal::TargetType Target>
+void set_constant(const lite_metal::Context<Target>& context,
+                  lite_metal::Tensor* tensor,
                   float value);
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct RowwiseAdd {
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& vec,
-                  lite::Tensor* output);
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& vec,
+                  lite_metal::Tensor* output);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct ColwiseSum {
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  lite::Tensor* vec);
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  lite_metal::Tensor* vec);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct RowwiseSum {
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  lite::Tensor* vec);
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  lite_metal::Tensor* vec);
 };
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 struct RowwiseMean {
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  lite::Tensor* vec);
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  lite_metal::Tensor* vec);
 };
 
 }  // namespace math

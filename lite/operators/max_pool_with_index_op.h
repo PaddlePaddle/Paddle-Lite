@@ -26,7 +26,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class MaxPoolWithIndexOpLite : public OpLite {
@@ -40,7 +40,7 @@ class MaxPoolWithIndexOpLite : public OpLite {
   bool InferShapeImpl() const override;
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
+  bool AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) override {
     auto x = op_desc.Input("X").front();
     auto out = op_desc.Output("Out").front();
     auto mask = op_desc.Output("Mask").front();
@@ -48,8 +48,8 @@ class MaxPoolWithIndexOpLite : public OpLite {
     CHECK(scope->FindVar(x));
     CHECK(scope->FindVar(out));
     CHECK(scope->FindVar(mask));
-    param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
-    param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
+    param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
+    param_.output = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
     param_.ksize = op_desc.GetAttr<std::vector<int>>("ksize");
     param_.global_pooling = op_desc.GetAttr<bool>("global_pooling");

@@ -19,7 +19,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -39,29 +39,29 @@ void SoftmaxCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int axis_size = x_dims[axis];
   if (inner_num == 1) {
     if (axis_size > 4) {
-      lite::arm::math::softmax_inner1_large_axis(
+      lite_metal::arm::math::softmax_inner1_large_axis(
           din, dout, outer_num, axis_size);
     } else {
-      lite::arm::math::softmax_inner1_small_axis(
+      lite_metal::arm::math::softmax_inner1_small_axis(
           din, dout, outer_num, axis_size);
     }
   } else {
     int compute_size = outer_num * inner_num;
     if (axis_size == 4 && inner_num % 8 == 0) {
-      lite::arm::math::softmax_inner8_axis4(
+      lite_metal::arm::math::softmax_inner8_axis4(
           din, dout, axis_size, inner_num, outer_num);
     } else if (axis_size == 4 && inner_num % 4 == 0) {
-      lite::arm::math::softmax_inner4_axis4(
+      lite_metal::arm::math::softmax_inner4_axis4(
           din, dout, axis_size, inner_num, outer_num);
     } else {
       if (inner_num % 8 == 0) {
-        lite::arm::math::softmax_inner8(
+        lite_metal::arm::math::softmax_inner8(
             din, dout, axis_size, inner_num, outer_num);
       } else if (inner_num % 4 == 0) {
-        lite::arm::math::softmax_inner4(
+        lite_metal::arm::math::softmax_inner4(
             din, dout, axis_size, inner_num, outer_num);
       } else {
-        lite::arm::math::softmax_basic(
+        lite_metal::arm::math::softmax_basic(
             din, dout, axis_size, inner_num, outer_num);
       }
     }
@@ -85,23 +85,23 @@ void SoftmaxCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int axis_size = x_dims[axis];
   if (inner_num == 1) {
     if (axis_size >= 8) {
-      lite::arm::math::fp16::softmax_inner1_large_axis_fp16(
+      lite_metal::arm::math::fp16::softmax_inner1_large_axis_fp16(
           din, dout, outer_num, axis_size);
     } else {
-      lite::arm::math::fp16::softmax_inner1_small_axis_fp16(
+      lite_metal::arm::math::fp16::softmax_inner1_small_axis_fp16(
           din, dout, outer_num, axis_size);
     }
   } else {
     int compute_size = outer_num * inner_num;
     if (axis_size == 4 && inner_num % 8 == 0) {
-      lite::arm::math::fp16::softmax_inner8_axis4_fp16(
+      lite_metal::arm::math::fp16::softmax_inner8_axis4_fp16(
           din, dout, axis_size, inner_num, outer_num);
     } else {
       if (inner_num % 8 == 0) {
-        lite::arm::math::fp16::softmax_inner8_axis1_fp16(
+        lite_metal::arm::math::fp16::softmax_inner8_axis1_fp16(
             din, dout, axis_size, inner_num, outer_num);
       } else {
-        lite::arm::math::fp16::softmax_basic_fp16(
+        lite_metal::arm::math::fp16::softmax_basic_fp16(
             din, dout, axis_size, inner_num, outer_num);
       }
     }
@@ -114,7 +114,7 @@ void SoftmaxCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
 }  // namespace paddle
 
 #ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::SoftmaxCompute<PRECISION(kFP16),
+typedef paddle::lite_metal::kernels::arm::SoftmaxCompute<PRECISION(kFP16),
                                                    PRECISION(kFP16)>
     SoftmaxFp16;
 REGISTER_LITE_KERNEL(softmax, kARM, kFP16, kNCHW, SoftmaxFp16, def)
@@ -123,7 +123,7 @@ REGISTER_LITE_KERNEL(softmax, kARM, kFP16, kNCHW, SoftmaxFp16, def)
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 
-typedef paddle::lite::kernels::arm::SoftmaxCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::SoftmaxCompute<PRECISION(kFloat),
                                                    PRECISION(kFloat)>
     SoftmaxFp32;
 REGISTER_LITE_KERNEL(softmax, kARM, kFloat, kNCHW, SoftmaxFp32, def)

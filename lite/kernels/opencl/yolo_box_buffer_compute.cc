@@ -28,7 +28,7 @@
 
 #undef LITE_WITH_LOG
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -49,7 +49,7 @@ class YoloBoxComputeBuffer
     scale_x_y_ = yolo_box_param_->scale_x_y;
     bias_ = -0.5 * (scale_x_y_ - 1.);
     // X: input
-    lite::Tensor* X = yolo_box_param_->X;
+    lite_metal::Tensor* X = yolo_box_param_->X;
     x_n_ = X->dims()[0];
     x_c_ = X->dims()[1];
     x_h_ = X->dims()[2];
@@ -72,7 +72,7 @@ class YoloBoxComputeBuffer
                                 IoDirection::HtoD);
 
     // ImgSize: input
-    lite::Tensor* ImgSize = yolo_box_param_->ImgSize;
+    lite_metal::Tensor* ImgSize = yolo_box_param_->ImgSize;
     imgsize_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     imgsize_gpu_t_->Resize(ImgSize->dims());
     imgsize_gpu_data_ =
@@ -91,7 +91,7 @@ class YoloBoxComputeBuffer
       first_epoch_for_reinit_ = false;
 
       // X: input
-      lite::Tensor* X = yolo_box_param_->X;
+      lite_metal::Tensor* X = yolo_box_param_->X;
       x_n_ = X->dims()[0];
       x_c_ = X->dims()[1];
       x_h_ = X->dims()[2];
@@ -101,12 +101,12 @@ class YoloBoxComputeBuffer
       x_data_ = X->mutable_data<float, cl::Buffer>();
 
       // Boxes: output
-      lite::Tensor* Boxes = yolo_box_param_->Boxes;
+      lite_metal::Tensor* Boxes = yolo_box_param_->Boxes;
       boxes_data_ = Boxes->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
       box_num_ = Boxes->dims()[1];
 
       // Scores: output
-      lite::Tensor* Scores = yolo_box_param_->Scores;
+      lite_metal::Tensor* Scores = yolo_box_param_->Scores;
       scores_data_ = Scores->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
@@ -202,7 +202,7 @@ class YoloBoxComputeBuffer
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
@@ -256,7 +256,7 @@ REGISTER_LITE_KERNEL(yolo_box,
                      kOpenCL,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::opencl::YoloBoxComputeBuffer,
+                     paddle::lite_metal::kernels::opencl::YoloBoxComputeBuffer,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kAny))})
     .BindInput("ImgSize",

@@ -19,11 +19,11 @@
 #include "lite/model_parser/flatbuffers/program_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 namespace test {
 #ifdef LITE_WITH_FLATBUFFERS_DESC
-inline lite::model_parser::Buffer GenerateProgramCache() {
+inline lite_metal::model_parser::Buffer GenerateProgramCache() {
   /* --------- Set Program --------- */
   ProgramDesc program;
   program.SetVersion(1000600);
@@ -32,12 +32,12 @@ inline lite::model_parser::Buffer GenerateProgramCache() {
   BlockDesc block_a(program.AddBlock<proto::BlockDescT>());
 
   VarDesc var_a2(block_a.AddVar<proto::VarDescT>());
-  var_a2.SetType(paddle::lite::VarDataType::LOD_TENSOR);
+  var_a2.SetType(paddle::lite_metal::VarDataType::LOD_TENSOR);
   var_a2.SetName("var_a2");
   var_a2.SetShape({2, 2, 1});
 
   VarDesc var_a0(block_a.AddVar<proto::VarDescT>());
-  var_a0.SetType(paddle::lite::VarDataType::LOD_TENSOR);
+  var_a0.SetType(paddle::lite_metal::VarDataType::LOD_TENSOR);
   var_a0.SetName("var_a0");
   var_a0.SetShape({1, 2});
 
@@ -55,7 +55,7 @@ inline lite::model_parser::Buffer GenerateProgramCache() {
   BlockDesc block_b(program.AddBlock<proto::BlockDescT>());
 
   VarDesc var_b0(block_b.AddVar<proto::VarDescT>());
-  var_b0.SetType(paddle::lite::VarDataType::LOD_TENSOR);
+  var_b0.SetType(paddle::lite_metal::VarDataType::LOD_TENSOR);
   var_b0.SetName("var_b0");
   var_b0.SetShape({-1, 1});
 

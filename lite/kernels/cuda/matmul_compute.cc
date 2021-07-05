@@ -19,7 +19,7 @@
 #include "lite/kernels/cuda/matmul_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -138,10 +138,10 @@ void MatMulCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using MatMulFp32 =
-    paddle::lite::kernels::cuda::MatMulCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::MatMulCompute<float, PRECISION(kFloat)>;
 
 using MatMulFp16 =
-    paddle::lite::kernels::cuda::MatMulCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::MatMulCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(matmul, kCUDA, kFloat, kNCHW, MatMulFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})

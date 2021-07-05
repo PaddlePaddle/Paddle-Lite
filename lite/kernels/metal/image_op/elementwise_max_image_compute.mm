@@ -21,7 +21,7 @@
 using namespace std;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -105,13 +105,13 @@ void ElementwiseMaxImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::ElementwiseMaxImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::ElementwiseMaxImageCompute<MetalHalf,
+template class paddle::lite_metal::kernels::metal::ElementwiseMaxImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::ElementwiseMaxImageCompute<MetalHalf,
     PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::ElementwiseMaxImageCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::metal::ElementwiseMaxImageCompute<float, PRECISION(kFloat)>
     MetalElementwiseMaxFp32;
-typedef paddle::lite::kernels::metal::ElementwiseMaxImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::ElementwiseMaxImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalElementwiseMaxFp16;
 
 REGISTER_LITE_KERNEL(elementwise_max,

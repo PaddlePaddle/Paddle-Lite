@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SequenceReverseEmbeddingOp::CheckShape() const {
@@ -53,7 +53,7 @@ bool SequenceReverseEmbeddingOp::InferShapeImpl() const {
 }
 
 bool SequenceReverseEmbeddingOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                            lite::Scope* scope) {
+                                            lite_metal::Scope* scope) {
   auto input = op_desc.Input("W").front();
   auto ids = op_desc.Input("Ids").front();
   auto out = op_desc.Output("Out").front();
@@ -72,4 +72,4 @@ bool SequenceReverseEmbeddingOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(sequence_reverse_embedding,
-                 paddle::lite::operators::SequenceReverseEmbeddingOp);
+                 paddle::lite_metal::operators::SequenceReverseEmbeddingOp);

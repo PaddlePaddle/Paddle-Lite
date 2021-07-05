@@ -28,7 +28,7 @@
 #include "lite/utils/md5.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace npu {
 
@@ -77,7 +77,7 @@ bool DeviceProgram::LoadFromCacheFile(
   }
   bool model_comp = false;
   model_client_ =
-      lite::npu::Device::Global().Load(model_name_, &model_buffer, &model_comp);
+      lite_metal::npu::Device::Global().Load(model_name_, &model_buffer, &model_comp);
   if (!model_client_) {
     LOG(WARNING) << "[NPU] Load model failed!";
     return false;
@@ -164,7 +164,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   }
   // Build the HiAI IR graph to the HiAI om model
   std::vector<char> model_buffer;
-  if (!lite::npu::Device::Global().Build(
+  if (!lite_metal::npu::Device::Global().Build(
           device_inodes, device_onodes, &model_buffer)) {
     LOG(WARNING) << "[NPU] Build model failed!";
     return false;
@@ -173,7 +173,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Service) to run inference.
   bool model_comp = true;
   model_client_ =
-      lite::npu::Device::Global().Load(model_name_, &model_buffer, &model_comp);
+      lite_metal::npu::Device::Global().Load(model_name_, &model_buffer, &model_comp);
   if (!model_client_) {
     LOG(WARNING) << "[NPU] Load model failed!";
     return false;
@@ -424,7 +424,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      kNPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::npu::SubgraphCompute,
+                     paddle::lite_metal::kernels::npu::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})

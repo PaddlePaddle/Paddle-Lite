@@ -21,7 +21,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mlu {
 
 void cnrtMemcpyHtoD(void* dst, const void* src, size_t size) {

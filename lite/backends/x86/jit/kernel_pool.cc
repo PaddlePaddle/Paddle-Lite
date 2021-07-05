@@ -18,7 +18,7 @@
 #include <string>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 
 JitCodeCreatorPool& JitCodeCreatorPool::Instance() {

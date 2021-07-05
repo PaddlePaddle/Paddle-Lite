@@ -15,7 +15,7 @@
 #include "lite/model_parser/pb/op_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pb {
 
 google::protobuf::internal::RepeatedPtrIterator<framework::proto::OpDesc_Attr>

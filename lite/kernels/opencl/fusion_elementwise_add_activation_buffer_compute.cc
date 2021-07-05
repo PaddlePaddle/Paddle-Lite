@@ -17,7 +17,7 @@
 #include "lite/kernels/opencl/elementwise_add_buffer_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -47,7 +47,7 @@ class FusionElementwiseAddActivationCompute : public ElementwiseAddCompute {
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
+namespace ocl = paddle::lite_metal::kernels::opencl;
 REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
                      kOpenCL,
                      kFloat,

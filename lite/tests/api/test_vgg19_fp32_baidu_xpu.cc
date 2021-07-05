@@ -32,7 +32,7 @@ DEFINE_int32(batch, 16, "batch of image");
 DEFINE_int32(warmup_num, 1, "warmup rounds");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(VGG19, test_vgg19_fp32_baidu_xpu) {
   lite_api::CxxConfig config;

@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -40,7 +40,7 @@ REGISTER_LITE_KERNEL(flatten_contiguous_range,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::FlattenContiguousRangeCompute,
+                     paddle::lite_metal::kernels::host::FlattenContiguousRangeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(

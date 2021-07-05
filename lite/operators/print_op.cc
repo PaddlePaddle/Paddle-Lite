@@ -15,7 +15,7 @@
 #include "lite/operators/print_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool PrintOp::CheckShape() const {
@@ -30,7 +30,7 @@ bool PrintOp::InferShapeImpl() const {
   return true;
 }
 
-bool PrintOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool PrintOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   AttachParam(&param_);
 
   param_.name = op_desc.Input("In").front();
@@ -53,4 +53,4 @@ bool PrintOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(print, paddle::lite::operators::PrintOp);
+REGISTER_LITE_OP(print, paddle::lite_metal::operators::PrintOp);

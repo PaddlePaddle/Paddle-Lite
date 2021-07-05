@@ -21,13 +21,13 @@
 #include "lite/kernels/cuda/assign_value_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
 template <class T>
 void TensorFromVector(const std::vector<T>& src,
-                      lite::Tensor* dst,
+                      lite_metal::Tensor* dst,
                       cudaStream_t* stream) {
   auto* src_ptr = static_cast<const void*>(src.data());
   auto* dst_ptr = static_cast<void*>(dst->mutable_data<T>(TARGET(kCUDA)));
@@ -47,13 +47,13 @@ void AssignValueCompute::Run() {
   std::vector<int> bool_values = param.bool_values;
   auto* out = param.Out;
 
-  if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
+  if (dtype == static_cast<int>(lite_metal::core::FluidType::INT32)) {
     TensorFromVector(int32_values, out, &stream);
-  } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
+  } else if (dtype == static_cast<int>(lite_metal::core::FluidType::FP32)) {
     TensorFromVector(fp32_values, out, &stream);
-  } else if (dtype == static_cast<int>(lite::core::FluidType::INT64)) {
+  } else if (dtype == static_cast<int>(lite_metal::core::FluidType::INT64)) {
     TensorFromVector(int64_values, out, &stream);
-  } else if (dtype == static_cast<int>(lite::core::FluidType::BOOL)) {
+  } else if (dtype == static_cast<int>(lite_metal::core::FluidType::BOOL)) {
     TensorFromVector(bool_values, out, &stream);
   } else {
     LOG(FATAL) << "Unsupported dtype for assign_value_op:" << dtype;
@@ -70,7 +70,7 @@ REGISTER_LITE_KERNEL(assign_value,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::AssignValueCompute,
+                     paddle::lite_metal::kernels::cuda::AssignValueCompute,
                      def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kAny))})
     .Finalize();

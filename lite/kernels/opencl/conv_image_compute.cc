@@ -23,7 +23,7 @@
 #undef LITE_WITH_LOG
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -1435,11 +1435,11 @@ void ConvImageCompute::OIHW2OHWIO4I4(
 void ConvImageCompute::AssignDataFromCPUToGPU(const Tensor* tensor_cpu_p,
                                               Tensor* tensor_gpu_p) {
   bool fp16_support =
-      lite::CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+      lite_metal::CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
   fp16_support
-      ? tensor_gpu_p->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
+      ? tensor_gpu_p->Assign<half_t, lite_metal::DDim, TARGET(kOpenCL)>(
             tensor_cpu_p->data<half_t>(), tensor_cpu_p->dims())
-      : tensor_gpu_p->Assign<float, lite::DDim, TARGET(kOpenCL)>(
+      : tensor_gpu_p->Assign<float, lite_metal::DDim, TARGET(kOpenCL)>(
             tensor_cpu_p->data<float>(), tensor_cpu_p->dims());
 }
 
@@ -2226,7 +2226,7 @@ REGISTER_LITE_KERNEL(conv2d,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::ConvImageCompute,
+                     paddle::lite_metal::kernels::opencl::ConvImageCompute,
                      image2d)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -2250,7 +2250,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::ConvImageCompute,
+                     paddle::lite_metal::kernels::opencl::ConvImageCompute,
                      image2d)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -2271,7 +2271,7 @@ REGISTER_LITE_KERNEL(conv2d,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::ConvImageCompute,
+                     paddle::lite_metal::kernels::opencl::ConvImageCompute,
                      image2d_pc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -2295,7 +2295,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::ConvImageCompute,
+                     paddle::lite_metal::kernels::opencl::ConvImageCompute,
                      image2d_pc)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

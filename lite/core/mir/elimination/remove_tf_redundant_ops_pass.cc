@@ -21,7 +21,7 @@
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void RemoveTFRedundantOpsPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -59,14 +59,14 @@ void RemoveTFRedundantOpsPass::RemoveReshape2Pattern(
   auto* scope = softmax_node->AsStmt().op()->scope();
   auto softmax_out_arg_name = softmax_node->outlinks.front()->AsArg().name;
   auto softmax_out_tensor =
-      scope->FindVar(softmax_out_arg_name)->Get<lite::Tensor>();
+      scope->FindVar(softmax_out_arg_name)->Get<lite_metal::Tensor>();
   softmax_out_dims = softmax_out_tensor.dims();
 
   for (auto out_node : reshape2_node->outlinks) {
     if (out_node->IsArg() && out_node->outlinks.size() != 0) {
       reshape2_out_arg_name = reshape2_node->outlinks.front()->AsArg().name;
       auto reshape2_out_tensor =
-          scope->FindVar(reshape2_out_arg_name)->Get<lite::Tensor>();
+          scope->FindVar(reshape2_out_arg_name)->Get<lite_metal::Tensor>();
       reshape2_out_dims = reshape2_out_tensor.dims();
     }
   }
@@ -136,7 +136,7 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
       if (in_link->IsArg() && squeeze2_inlinks.size() == 1) {
         out_arg_node = in_link;
         auto* var = scope->FindVar(out_arg_node->AsArg().name);
-        out_arg_dims = var->Get<lite::Tensor>().dims();
+        out_arg_dims = var->Get<lite_metal::Tensor>().dims();
         VLOG(5) << "arg name:" << out_arg_node->AsArg().name
                 << " dims:" << out_arg_dims;
       } else {
@@ -153,7 +153,7 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
           squeeze2_out_link->outlinks.size() != 0) {
         auto* squeeze2_out_var =
             scope->FindVar(squeeze2_out_link->AsArg().name);
-        squeeze2_out_dims = squeeze2_out_var->Get<lite::Tensor>().dims();
+        squeeze2_out_dims = squeeze2_out_var->Get<lite_metal::Tensor>().dims();
 
         VLOG(5) << "squeeze2_out_arg.name:" << squeeze2_out_link->AsArg().name
                 << " squeeze2_out_dims:" << squeeze2_out_dims
@@ -171,7 +171,7 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
                 auto* reshape2_out_var =
                     scope->FindVar(reshape2_out_link->AsArg().name);
                 reshape2_out_dims =
-                    reshape2_out_var->Get<lite::Tensor>().dims();
+                    reshape2_out_var->Get<lite_metal::Tensor>().dims();
 
                 VLOG(5) << "reshape2_out_node:" << reshape2_out_node
                         << " reshape2_out_name:"
@@ -246,5 +246,5 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(remove_tf_redundant_ops_pass,
-                  paddle::lite::mir::RemoveTFRedundantOpsPass)
+                  paddle::lite_metal::mir::RemoveTFRedundantOpsPass)
     .BindTargets({TARGET(kOpenCL), TARGET(kARM)});

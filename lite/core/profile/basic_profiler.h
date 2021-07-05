@@ -35,7 +35,7 @@
 #include <gflags/gflags.h>
 #endif
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace profile {
 
 struct TimerInfo {
@@ -208,11 +208,11 @@ struct ProfileBlock {
 
 #define LITE_PROFILE_ONE(key__)                            \
   static int key__##__profiler_id =                        \
-      ::paddle::lite::profile::BasicProfiler<              \
-          ::paddle::lite::profile::BasicTimer>::Global()   \
+      ::paddle::lite_metal::profile::BasicProfiler<              \
+          ::paddle::lite_metal::profile::BasicTimer>::Global()   \
           .NewRcd(#key__)                                  \
           .id();                                           \
-  ::paddle::lite::profile::ProfileBlock key__##profiler__( \
+  ::paddle::lite_metal::profile::ProfileBlock key__##profiler__( \
       key__##__profiler_id, #key__);
 
 }  // namespace profile

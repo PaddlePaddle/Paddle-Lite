@@ -21,7 +21,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 inline std::vector<uint64_t> GetNmsLodFromRoisNum(const Tensor* rois_num) {
   std::vector<uint64_t> rois_lod;

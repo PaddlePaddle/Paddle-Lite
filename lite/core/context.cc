@@ -16,7 +16,7 @@
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
 LITE_THREAD_LOCAL std::string

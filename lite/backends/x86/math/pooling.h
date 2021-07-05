@@ -20,7 +20,7 @@ limitations under the License. */
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -95,90 +95,90 @@ HOSTDEVICE inline int AdaptEndIndex(int ph, int input_size, int output_size) {
  * MaxPool2dGradFunctor, MaxPool3dGradFunctor.
  */
 
-template <lite::TargetType Target, typename PoolProcess, typename T>
+template <lite_metal::TargetType Target, typename PoolProcess, typename T>
 class Pool2dFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor* input,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor* input,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   PoolProcess pool_compute,
                   bool exclusive,
                   bool adaptive,
-                  lite::Tensor* output);
+                  lite_metal::Tensor* output);
 };
 
-template <lite::TargetType Target, typename PoolProcess, typename T>
+template <lite_metal::TargetType Target, typename PoolProcess, typename T>
 class Pool2dGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   PoolProcess pool_compute,
                   bool exclusive,
                   bool adaptive,
-                  lite::Tensor* input_grad);
+                  lite_metal::Tensor* input_grad);
 };
 
-template <lite::TargetType Target, class T>
+template <lite_metal::TargetType Target, class T>
 class MaxPool2dGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
-                  lite::Tensor* input_grad);
+                  lite_metal::Tensor* input_grad);
 };
 
-template <lite::TargetType Target, typename PoolProcess, typename T>
+template <lite_metal::TargetType Target, typename PoolProcess, typename T>
 class Pool3dFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   PoolProcess pool_compute,
                   bool exclusive,
                   bool adaptive,
-                  lite::Tensor* output);
+                  lite_metal::Tensor* output);
 };
 
-template <lite::TargetType Target, typename PoolProcess, typename T>
+template <lite_metal::TargetType Target, typename PoolProcess, typename T>
 class Pool3dGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   PoolProcess pool_compute,
                   bool exclusive,
                   bool adaptive,
-                  lite::Tensor* input_grad);
+                  lite_metal::Tensor* input_grad);
 };
 
-template <lite::TargetType Target, class T>
+template <lite_metal::TargetType Target, class T>
 class MaxPool3dGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
-                  const lite::Tensor& output,
-                  const lite::Tensor& output_grad,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
+                  const lite_metal::Tensor& output,
+                  const lite_metal::Tensor& output_grad,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
-                  lite::Tensor* input_grad);
+                  lite_metal::Tensor* input_grad);
 };
 
 /*
@@ -188,56 +188,56 @@ class MaxPool3dGradFunctor {
  * In pool2d, all tensors are in NCHW format. In pool3d, all tensors are in
  * NCDHW format.
  */
-template <lite::TargetType Target, typename T1, typename T2>
+template <lite_metal::TargetType Target, typename T1, typename T2>
 class MaxPool2dWithIndexFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   bool adaptive,
-                  lite::Tensor* output,
-                  lite::Tensor* mask);
+                  lite_metal::Tensor* output,
+                  lite_metal::Tensor* mask);
 };
 
-template <lite::TargetType Target, typename T1, typename T2>
+template <lite_metal::TargetType Target, typename T1, typename T2>
 class MaxPool2dWithIndexGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& output_grad,
-                  const lite::Tensor& mask,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& output_grad,
+                  const lite_metal::Tensor& mask,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   bool adaptive,
-                  lite::Tensor* input_grad);
+                  lite_metal::Tensor* input_grad);
 };
 
-template <lite::TargetType Target, typename T1, typename T2>
+template <lite_metal::TargetType Target, typename T1, typename T2>
 class MaxPool3dWithIndexFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& input,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& input,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   bool adaptive,
-                  lite::Tensor* output,
-                  lite::Tensor* mask);
+                  lite_metal::Tensor* output,
+                  lite_metal::Tensor* mask);
 };
 
-template <lite::TargetType Target, typename T1, typename T2>
+template <lite_metal::TargetType Target, typename T1, typename T2>
 class MaxPool3dWithIndexGradFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& output_grad,
-                  const lite::Tensor& mask,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& output_grad,
+                  const lite_metal::Tensor& mask,
                   const std::vector<int>& ksize,
                   const std::vector<int>& strides,
                   const std::vector<int>& paddings,
                   bool adaptive,
-                  lite::Tensor* input_grad);
+                  lite_metal::Tensor* input_grad);
 };
 
 }  // namespace math

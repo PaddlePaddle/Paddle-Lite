@@ -15,7 +15,7 @@
 #include "lite/operators/unsqueeze_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 static DDim GetOutputShape(const std::vector<int> &unsqz_dims,
@@ -88,7 +88,7 @@ bool UnsqueezeOp::InferShapeImpl() const {
   return true;
 }
 
-bool UnsqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool UnsqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
@@ -100,7 +100,7 @@ bool UnsqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasInput("AxesTensor") && opdesc.Input("AxesTensor").size() > 0) {
     auto var = scope->FindVar(opdesc.Input("AxesTensor").front());
     if (var != nullptr) {
-      param_.axes_tensor = var->GetMutable<lite::Tensor>();
+      param_.axes_tensor = var->GetMutable<lite_metal::Tensor>();
       VLOG(5) << "load AxesTensor";
     }
   }
@@ -111,7 +111,7 @@ bool UnsqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     for (auto arg : args) {
       auto *var = scope->FindVar(arg);
       if (var != nullptr) {
-        param_.axes_tensor_vct.push_back(var->GetMutable<lite::Tensor>());
+        param_.axes_tensor_vct.push_back(var->GetMutable<lite_metal::Tensor>());
       }
     }
   }
@@ -140,7 +140,7 @@ bool Unsqueeze2Op::InferShapeImpl() const {
   return true;
 }
 
-bool Unsqueeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool Unsqueeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   UnsqueezeOp::AttachImpl(opdesc, scope);
   param_.XShape = scope->FindMutableTensor(opdesc.Output("XShape").front());
   CHECK(param_.XShape) << "Output(XShape) of Unsqueeze2Op should not be null.";
@@ -151,5 +151,5 @@ bool Unsqueeze2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(unsqueeze, paddle::lite::operators::UnsqueezeOp);
-REGISTER_LITE_OP(unsqueeze2, paddle::lite::operators::Unsqueeze2Op);
+REGISTER_LITE_OP(unsqueeze, paddle::lite_metal::operators::UnsqueezeOp);
+REGISTER_LITE_OP(unsqueeze2, paddle::lite_metal::operators::Unsqueeze2Op);

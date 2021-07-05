@@ -28,7 +28,7 @@ def gen_opencl_kernels():
 #include <string>
 #include <vector>
 namespace paddle {
-namespace lite {
+namespace lite_metal {
     // file name => source
     extern const std::map<std::string, std::vector<unsigned char>> opencl_kernels_files = {
     %s

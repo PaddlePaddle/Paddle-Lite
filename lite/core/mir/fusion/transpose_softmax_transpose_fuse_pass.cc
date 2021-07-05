@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void TransposeSoftmaxTransposeFusePass::Apply(
@@ -36,5 +36,5 @@ void TransposeSoftmaxTransposeFusePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_transpose_softmax_transpose_fuse_pass,
-                  paddle::lite::mir::TransposeSoftmaxTransposeFusePass)
+                  paddle::lite_metal::mir::TransposeSoftmaxTransposeFusePass)
     .BindTargets({TARGET(kAny)});

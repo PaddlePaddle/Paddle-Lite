@@ -21,7 +21,7 @@
 #include "lite/kernels/fpga/transpose_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -117,7 +117,7 @@ REGISTER_LITE_KERNEL(transpose,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::TransposeCompute,
+                     paddle::lite_metal::kernels::fpga::TransposeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
@@ -134,7 +134,7 @@ REGISTER_LITE_KERNEL(transpose2,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::Transpose2Compute,
+                     paddle::lite_metal::kernels::fpga::Transpose2Compute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

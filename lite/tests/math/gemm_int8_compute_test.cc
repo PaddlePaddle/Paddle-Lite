@@ -25,9 +25,9 @@
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 
-typedef paddle::lite::Tensor Tensor;
-using paddle::lite::profile::Timer;
-typedef paddle::lite::operators::ActivationParam ActivationParam;
+typedef paddle::lite_metal::Tensor Tensor;
+using paddle::lite_metal::profile::Timer;
+typedef paddle::lite_metal::operators::ActivationParam ActivationParam;
 
 DEFINE_int32(power_mode,
              0,
@@ -155,9 +155,9 @@ bool test_gemm_int8(bool tra,
     auto da_fp32 = ta_fp32.mutable_data<float>();
     auto db_fp32 = tb_fp32.mutable_data<float>();
 
-    paddle::lite::arm::math::int8_to_fp32(
+    paddle::lite_metal::arm::math::int8_to_fp32(
         da, da_fp32, scale_a.data(), 1, 1, ta.numel());
-    paddle::lite::arm::math::int8_to_fp32(
+    paddle::lite_metal::arm::math::int8_to_fp32(
         db, db_fp32, scale_b.data(), 1, 1, tb.numel());
     basic_gemm(tra,
                trb,
@@ -175,7 +175,7 @@ bool test_gemm_int8(bool tra,
                dbias,
                has_bias,
                has_relu);
-    paddle::lite::arm::math::fp32_to_int8(dc_basic_fp32,
+    paddle::lite_metal::arm::math::fp32_to_int8(dc_basic_fp32,
                                           dc_basic_int8,
                                           scale_c.data(),
                                           1,
@@ -185,25 +185,25 @@ bool test_gemm_int8(bool tra,
   Timer t0;
   //! compute
   double ops = 2.0 * m * n * k;
-  std::unique_ptr<paddle::lite::KernelContext> ctx1(
-      new paddle::lite::KernelContext);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+      new paddle::lite_metal::KernelContext);
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
   //! prepack
   Tensor tpackedA;
-  int hblock = paddle::lite::arm::math::get_hblock_int8(&ctx);
+  int hblock = paddle::lite_metal::arm::math::get_hblock_int8(&ctx);
   int round_up_a = ((hblock + m - 1) / hblock) * hblock;
   int round_up_k = 4 * ((k + 3) / 4);
   tpackedA.Resize({round_up_a * round_up_k});
   auto prepack_data = tpackedA.data<int8_t>();
 
-  paddle::lite::arm::math::prepackA_int8(
+  paddle::lite_metal::arm::math::prepackA_int8(
       tpackedA.mutable_data<int8_t>(), da, lda, 0, m, 0, k, tra, &ctx);
   prepack_data = tpackedA.data<int8_t>();
 
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
+    paddle::lite_metal::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
                                                db,
                                                dbias,
                                                dc_fp32,
@@ -227,7 +227,7 @@ bool test_gemm_int8(bool tra,
   }
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
+    paddle::lite_metal::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
                                                db,
                                                dbias_int8,
                                                dc_int8,
@@ -254,7 +254,7 @@ bool test_gemm_int8(bool tra,
   t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
+    paddle::lite_metal::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
                                                db,
                                                dbias,
                                                dc_fp32,
@@ -345,7 +345,7 @@ bool test_gemm_int8(bool tra,
 TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
   if (FLAGS_basic_test) {
 #ifdef LITE_WITH_ARM
-    paddle::lite::DeviceInfo::Init();
+    paddle::lite_metal::DeviceInfo::Init();
 #endif
     for (auto& m : {1, 3, 8, 32, 33, 34, 35, 38, 41, 397}) {
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
@@ -394,7 +394,7 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
 
 TEST(TestGemmInt8Custom, gemm_prepacked_int8_custom) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   auto flag = test_gemm_int8(FLAGS_traA,
                              FLAGS_traB,

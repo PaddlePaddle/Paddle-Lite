@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -118,7 +118,7 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(flatten,
                          kMLU,
-                         paddle::lite::subgraph::mlu::FlattenConverter);
+                         paddle::lite_metal::subgraph::mlu::FlattenConverter);
 REGISTER_SUBGRAPH_BRIDGE(flatten2,
                          kMLU,
-                         paddle::lite::subgraph::mlu::FlattenConverter);
+                         paddle::lite_metal::subgraph::mlu::FlattenConverter);

@@ -18,7 +18,7 @@
 #include "lite/kernels/opencl/elementwise_sub_image_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -46,7 +46,7 @@ class FusionElementwiseSubActivationImageCompute
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
+namespace ocl = paddle::lite_metal::kernels::opencl;
 
 REGISTER_LITE_KERNEL(fusion_elementwise_sub_activation,
                      kOpenCL,

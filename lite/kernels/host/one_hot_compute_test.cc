@@ -25,7 +25,7 @@
 #include "lite/kernels/host/one_hot_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -48,7 +48,7 @@ Out is a LoDTensor:
 TEST(one_hot, test) {
   using T = float;
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   x.Resize({4, 1});
   out.Resize({4, 4});
 
@@ -67,7 +67,7 @@ TEST(one_hot, test) {
   param.X = &x;
   param.Out = &out;
   param.depth = 4;
-  // static_cast<int>(lite::core::FluidType::FP32) = 5;
+  // static_cast<int>(lite_metal::core::FluidType::FP32) = 5;
   param.dtype = 5;
 
   one_hot.SetParam(param);

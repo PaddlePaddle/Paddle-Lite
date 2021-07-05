@@ -15,12 +15,12 @@ limitations under the License. */
 #include "lite/backends/x86/math/context_project.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
-template class ContextProjectFunctor<lite::TargetType::kX86, float>;
-template class ContextProjectFunctor<lite::TargetType::kX86, double>;
+template class ContextProjectFunctor<lite_metal::TargetType::kX86, float>;
+template class ContextProjectFunctor<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

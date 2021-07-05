@@ -18,7 +18,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -171,7 +171,7 @@ REGISTER_LITE_KERNEL(instance_norm,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::InstanceNormCompute,
+                     paddle::lite_metal::kernels::arm::InstanceNormCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})

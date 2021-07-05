@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool CalibOpLite::CheckShape() const {
@@ -30,13 +30,13 @@ bool CalibOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool CalibOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool CalibOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   auto x_var = scope->FindVar(opdesc.Input("Input").front());
   auto output_var = scope->FindVar(opdesc.Output("Out").front());
   CHECK(x_var);
   CHECK(output_var);
-  param_.input = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
-  param_.output = output_var->GetMutable<lite::Tensor>();
+  param_.input = const_cast<lite_metal::Tensor *>(&(x_var->Get<lite_metal::Tensor>()));
+  param_.output = output_var->GetMutable<lite_metal::Tensor>();
   std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
   if (opdesc.HasAttr("scale")) {
     param_.scale = opdesc.GetAttr<float>("scale");
@@ -50,4 +50,4 @@ bool CalibOpLite::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(calib, paddle::lite::operators::CalibOpLite);
+REGISTER_LITE_OP(calib, paddle::lite_metal::operators::CalibOpLite);

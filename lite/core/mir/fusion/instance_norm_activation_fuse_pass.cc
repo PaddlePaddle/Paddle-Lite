@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void InstanceNormActivationFusePass::Apply(
@@ -35,6 +35,6 @@ void InstanceNormActivationFusePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_instance_norm_activation_fuse_pass,
-                  paddle::lite::mir::InstanceNormActivationFusePass)
+                  paddle::lite_metal::mir::InstanceNormActivationFusePass)
     .BindTargets({TARGET(kOpenCL)})
     .BindKernel("instance_norm");

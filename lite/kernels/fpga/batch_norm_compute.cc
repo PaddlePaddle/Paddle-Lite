@@ -17,7 +17,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -58,7 +58,7 @@ REGISTER_LITE_KERNEL(batch_norm,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::BatchNormCompute,
+                     paddle::lite_metal::kernels::fpga::BatchNormCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

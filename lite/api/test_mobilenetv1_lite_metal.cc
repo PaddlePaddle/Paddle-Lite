@@ -26,7 +26,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(Mobilenet_v1, test_mobilenetv1_lite_metal) {
   lite_api::CxxConfig config;

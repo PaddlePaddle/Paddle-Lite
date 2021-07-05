@@ -20,7 +20,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 class ConcatOpLite : public OpLite {
@@ -32,7 +32,7 @@ class ConcatOpLite : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "concat"; }
@@ -43,7 +43,7 @@ class ConcatOpLite : public OpLite {
   }
 
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+  void GetOpRuntimeInfo(paddle::lite_metal::profile::OpCharacter *ch) {
     auto output_dims = param_.output->dims();
     std::string inputs_shape = "";
     for (size_t i = 0; i < param_.x.size(); ++i) {

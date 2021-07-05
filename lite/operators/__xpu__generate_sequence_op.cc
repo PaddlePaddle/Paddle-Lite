@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUGenerateSequenceOp::CheckShape() const {
@@ -43,7 +43,7 @@ bool XPUGenerateSequenceOp::InferShapeImpl() const {
 }
 
 bool XPUGenerateSequenceOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                       lite::Scope *scope) {
+                                       lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.input = scope->FindTensor(opdesc.Input("X").front());
   param_.output = scope->FindMutableTensor(opdesc.Output("Out").front());
@@ -60,4 +60,4 @@ bool XPUGenerateSequenceOp::AttachImpl(const cpp::OpDesc &opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__generate_sequence,
-                 paddle::lite::operators::XPUGenerateSequenceOp);
+                 paddle::lite_metal::operators::XPUGenerateSequenceOp);

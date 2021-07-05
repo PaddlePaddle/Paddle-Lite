@@ -20,7 +20,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -32,7 +32,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
 
   auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+  auto output = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   auto output_dims = output->dims();
   std::vector<int32_t> i_output_shape_data(output_dims.size());
   int buffer_size = 1;
@@ -63,4 +63,4 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(fill_constant,
                          kBM,
-                         paddle::lite::subgraph::bm::FillConstantConverter);
+                         paddle::lite_metal::subgraph::bm::FillConstantConverter);

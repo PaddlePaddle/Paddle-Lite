@@ -18,12 +18,12 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 
 inline std::vector<int> get_new_shape(
-    std::vector<const lite::Tensor*> list_new_shape_tensor) {
+    std::vector<const lite_metal::Tensor*> list_new_shape_tensor) {
   // get tensor from
   std::vector<int> vec_new_shape;
   for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
@@ -38,7 +38,7 @@ template <typename T>
 inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
   std::vector<T> vec_new_data;
   auto* new_data = new_data_tensor->data<T>();
-  lite::Tensor cpu_starts_tensor;
+  lite_metal::Tensor cpu_starts_tensor;
   vec_new_data =
       std::vector<T>(new_data, new_data + new_data_tensor->dims().production());
   return vec_new_data;
@@ -499,11 +499,11 @@ void nearest_interp(const float* src,
   }
 }
 
-void interpolate(lite::Tensor* X,
-                 lite::Tensor* OutSize,
-                 std::vector<const lite::Tensor*> SizeTensor,
-                 lite::Tensor* Scale,
-                 lite::Tensor* Out,
+void interpolate(lite_metal::Tensor* X,
+                 lite_metal::Tensor* OutSize,
+                 std::vector<const lite_metal::Tensor*> SizeTensor,
+                 lite_metal::Tensor* Scale,
+                 lite_metal::Tensor* Out,
                  int out_height,
                  int out_width,
                  float scale,
@@ -585,5 +585,5 @@ void interpolate(lite::Tensor* X,
 
 } /* namespace math */
 } /* namespace arm */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */

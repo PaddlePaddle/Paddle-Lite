@@ -17,7 +17,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -96,13 +96,13 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(relu,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+                         paddle::lite_metal::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(sigmoid,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+                         paddle::lite_metal::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(relu6,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+                         paddle::lite_metal::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(tanh,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+                         paddle::lite_metal::subgraph::nnadapter::ActConverter);

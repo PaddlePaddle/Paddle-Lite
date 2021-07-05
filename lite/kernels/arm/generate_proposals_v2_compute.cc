@@ -24,7 +24,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -496,7 +496,7 @@ REGISTER_LITE_KERNEL(generate_proposals_v2,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::GenerateProposalsV2Compute,
+                     paddle::lite_metal::kernels::arm::GenerateProposalsV2Compute,
                      def)
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("BboxDeltas", {LiteType::GetTensorTy(TARGET(kHost))})

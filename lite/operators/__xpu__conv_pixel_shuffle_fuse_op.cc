@@ -19,7 +19,7 @@
 #include "lite/operators/conv_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 std::string padding_algorithm_0_ = "";  // NOLINT
@@ -104,7 +104,7 @@ bool XPUConvPixelShuffleOp::InferShapeImpl() const {
                                       param_.dilations_1.get(),
                                       param_.strides_1,
                                       padding_algorithm_1_,
-                                      lite::DDim(mid_shape),
+                                      lite_metal::DDim(mid_shape),
                                       filter_1_dims);
   std::vector<int64_t> output_shape({mid_shape[0], filter_1_dims[0]});
   auto paddings_1 = *param_.paddings_1;
@@ -118,7 +118,7 @@ bool XPUConvPixelShuffleOp::InferShapeImpl() const {
                                           param_.strides_1[i]));
   }
   // Set output and output max dims
-  param_.output->Resize(lite::DDim(output_shape));
+  param_.output->Resize(lite_metal::DDim(output_shape));
   param_.output_max->Resize({4});
   // share LoD
   param_.output->set_lod(param_.input->lod());
@@ -126,7 +126,7 @@ bool XPUConvPixelShuffleOp::InferShapeImpl() const {
 }
 
 bool XPUConvPixelShuffleOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                       lite::Scope* scope) {
+                                       lite_metal::Scope* scope) {
   AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter_0").front()));
@@ -182,7 +182,7 @@ bool XPUConvPixelShuffleOp::AttachImpl(const cpp::OpDesc& op_desc,
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
         param_.bias_0 =
-            const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
+            const_cast<lite_metal::Tensor*>(&(arg_var->Get<lite_metal::Tensor>()));
       }
     }
   }
@@ -193,7 +193,7 @@ bool XPUConvPixelShuffleOp::AttachImpl(const cpp::OpDesc& op_desc,
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
         param_.bias_1 =
-            const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
+            const_cast<lite_metal::Tensor*>(&(arg_var->Get<lite_metal::Tensor>()));
       }
     }
   }
@@ -239,4 +239,4 @@ bool XPUConvPixelShuffleOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__conv_pixel_shuffle_fuse_op,
-                 paddle::lite::operators::XPUConvPixelShuffleOp);
+                 paddle::lite_metal::operators::XPUConvPixelShuffleOp);

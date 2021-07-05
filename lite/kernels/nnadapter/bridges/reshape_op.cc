@@ -18,7 +18,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -110,7 +110,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(reshape,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ReshapeConverter);
+                         paddle::lite_metal::subgraph::nnadapter::ReshapeConverter);
 REGISTER_SUBGRAPH_BRIDGE(reshape2,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ReshapeConverter);
+                         paddle::lite_metal::subgraph::nnadapter::ReshapeConverter);

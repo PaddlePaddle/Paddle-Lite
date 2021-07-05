@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SearchGroupPaddingOp::CheckShape() const {
@@ -41,17 +41,17 @@ bool SearchGroupPaddingOp::InferShapeImpl() const {
 }
 
 bool SearchGroupPaddingOp::AttachImpl(const cpp::OpDesc &op_desc,
-                                      lite::Scope *scope) {
+                                      lite_metal::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto out_emb_padding = op_desc.Output("Out_emb_padding").front();
   auto out_new = op_desc.Output("Out_new").front();
   auto out_padding = op_desc.Output("Out_padding").front();
 
-  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
+  param_.x = scope->FindVar(x)->GetMutable<lite_metal::Tensor>();
   param_.out_emb_padding =
-      scope->FindVar(out_emb_padding)->GetMutable<lite::Tensor>();
-  param_.out_new = scope->FindVar(out_new)->GetMutable<lite::Tensor>();
-  param_.out_padding = scope->FindVar(out_padding)->GetMutable<lite::Tensor>();
+      scope->FindVar(out_emb_padding)->GetMutable<lite_metal::Tensor>();
+  param_.out_new = scope->FindVar(out_new)->GetMutable<lite_metal::Tensor>();
+  param_.out_padding = scope->FindVar(out_padding)->GetMutable<lite_metal::Tensor>();
   param_.pad_id = op_desc.GetAttr<int>("pad_id");
 
   CHECK(param_.out_emb_padding)
@@ -64,4 +64,4 @@ bool SearchGroupPaddingOp::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(search_group_padding,
-                 paddle::lite::operators::SearchGroupPaddingOp);
+                 paddle::lite_metal::operators::SearchGroupPaddingOp);

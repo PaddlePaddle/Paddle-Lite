@@ -15,7 +15,7 @@
 #include "lite/kernels/host/increment_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -67,7 +67,7 @@ REGISTER_LITE_KERNEL(increment,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::IncrementCompute,
+                     paddle::lite_metal::kernels::host::IncrementCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})

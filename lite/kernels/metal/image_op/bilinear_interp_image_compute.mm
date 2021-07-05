@@ -19,7 +19,7 @@
 #include "lite/kernels/metal/image_op/bilinear_interp_image_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -102,7 +102,7 @@ REGISTER_LITE_KERNEL(bilinear_interp,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::BilinearInterpImageCompute,
+    paddle::lite_metal::kernels::metal::BilinearInterpImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -124,7 +124,7 @@ REGISTER_LITE_KERNEL(bilinear_interp,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::BilinearInterpImageCompute,
+    paddle::lite_metal::kernels::metal::BilinearInterpImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

@@ -23,7 +23,7 @@
 DEFINE_string(data_dir, "", "data dir");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(NLP_LSTM_INT8_MODEL, test_nlp_lstm_int8_arm) {
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;

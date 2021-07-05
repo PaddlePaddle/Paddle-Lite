@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool DeformableConvOpLite::CheckShape() const {
@@ -73,7 +73,7 @@ bool DeformableConvOpLite::InferShapeImpl() const {
   }
 
   // Set output dims
-  param_.output->Resize(lite::DDim(output_shape));
+  param_.output->Resize(lite_metal::DDim(output_shape));
   // share LoD
   param_.output->set_lod(param_.x->lod());
 
@@ -85,4 +85,4 @@ bool DeformableConvOpLite::InferShapeImpl() const {
 }  // namespace paddle
 
 REGISTER_LITE_OP(deformable_conv,
-                 paddle::lite::operators::DeformableConvOpLite);
+                 paddle::lite_metal::operators::DeformableConvOpLite);

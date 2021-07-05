@@ -17,15 +17,15 @@
 #include "lite/backends/host/math/slice.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 template <class T, PrecisionType PType>
 void CropCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::CropParam>();
-  const lite::Tensor* x = param.X;
-  lite::Tensor* out = param.Out;
+  const lite_metal::Tensor* x = param.X;
+  lite_metal::Tensor* out = param.Out;
 
   auto out_shape = out->dims().Vectorize();
   std::vector<int> shape = std::vector<int>(out_shape.begin(), out_shape.end());
@@ -46,7 +46,7 @@ void CropCompute<T, PType>::Run() {
     axes.push_back(i);
   }
 
-  lite::host::math::slice(x->template data<T>(),
+  lite_metal::host::math::slice(x->template data<T>(),
                           x->dims().Vectorize(),
                           axes,
                           starts,
@@ -62,7 +62,7 @@ void CropCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using crop_float =
-    paddle::lite::kernels::host::CropCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::CropCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(crop, kHost, kFloat, kAny, crop_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -83,7 +83,7 @@ REGISTER_LITE_KERNEL(crop, kHost, kFloat, kAny, crop_float, def)
     .Finalize();
 
 using crop_int32 =
-    paddle::lite::kernels::host::CropCompute<int, PRECISION(kInt32)>;
+    paddle::lite_metal::kernels::host::CropCompute<int, PRECISION(kInt32)>;
 REGISTER_LITE_KERNEL(crop, kHost, kInt32, kAny, crop_int32, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

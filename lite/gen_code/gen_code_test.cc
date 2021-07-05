@@ -33,35 +33,35 @@ DEFINE_string(optimized_model, "", "");
 DEFINE_string(generated_code_file, "__generated_code__.cc", "");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace gencode {
 
 // Manually construct a program.
 TEST(gen_code, manual) {
   // For holding the weights.
-  lite::Scope scope;
+  lite_metal::Scope scope;
   // For holding the temporary variables.
   auto &tmp_scope = scope.NewScope();
 
   // Create weight variables.
-  auto *w0 = scope.Var("w0")->GetMutable<lite::Tensor>();
+  auto *w0 = scope.Var("w0")->GetMutable<lite_metal::Tensor>();
   // Create temporary variables.
-  auto *a = tmp_scope.Var("x")->GetMutable<lite::Tensor>();
-  tmp_scope.Var("out")->GetMutable<lite::Tensor>();
+  auto *a = tmp_scope.Var("x")->GetMutable<lite_metal::Tensor>();
+  tmp_scope.Var("out")->GetMutable<lite_metal::Tensor>();
 
   // Set weights.
   std::vector<float> w0_data({0, 1, 2, 3});
   std::vector<float> a_data({0, 1, 2, 3});
 #ifdef LITE_WITH_ARM
-  w0->Assign<float, lite::DDim, TARGET(kARM)>(
-      w0_data.data(), lite::DDim{std::vector<int64_t>({2, 2})});
-  a->Assign<float, lite::DDim, TARGET(kARM)>(
-      a_data.data(), lite::DDim{std::vector<int64_t>({2, 2})});
+  w0->Assign<float, lite_metal::DDim, TARGET(kARM)>(
+      w0_data.data(), lite_metal::DDim{std::vector<int64_t>({2, 2})});
+  a->Assign<float, lite_metal::DDim, TARGET(kARM)>(
+      a_data.data(), lite_metal::DDim{std::vector<int64_t>({2, 2})});
 #else
-  w0->Assign<float, lite::DDim, TARGET(kX86)>(
-      w0_data.data(), lite::DDim{std::vector<int64_t>({2, 2})});
-  a->Assign<float, lite::DDim, TARGET(kX86)>(
-      a_data.data(), lite::DDim{std::vector<int64_t>({2, 2})});
+  w0->Assign<float, lite_metal::DDim, TARGET(kX86)>(
+      w0_data.data(), lite_metal::DDim{std::vector<int64_t>({2, 2})});
+  a->Assign<float, lite_metal::DDim, TARGET(kX86)>(
+      a_data.data(), lite_metal::DDim{std::vector<int64_t>({2, 2})});
 #endif
 
   std::vector<Place> valid_places({
@@ -143,7 +143,7 @@ TEST(gen_code, auto_gen) {
 }
 
 TEST(gen_code, optimized_program) {
-  lite::Scope scope;
+  lite_metal::Scope scope;
   cpp::ProgramDesc cpp_desc;
   std::string model_file = FLAGS_optimized_model + "/model";
   std::string param_file = FLAGS_optimized_model + "/params";
@@ -151,7 +151,7 @@ TEST(gen_code, optimized_program) {
       FLAGS_optimized_model, model_file, param_file, &scope, &cpp_desc, true);
 
   framework::proto::ProgramDesc pb_proto_desc;
-  lite::pb::ProgramDesc pb_desc(&pb_proto_desc);
+  lite_metal::pb::ProgramDesc pb_desc(&pb_proto_desc);
   TransformProgramDescCppToAny(cpp_desc, &pb_desc);
 
   ProgramCodeGenerator codegen(pb_proto_desc, scope);

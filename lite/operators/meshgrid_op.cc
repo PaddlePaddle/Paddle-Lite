@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MeshgridOpLite::CheckShape() const {
@@ -41,16 +41,16 @@ bool MeshgridOpLite::InferShapeImpl() const {
   return true;
 }
 
-bool MeshgridOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
+bool MeshgridOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
   auto input_list = opdesc.Input("X");
   param_.X.clear();
   for (auto var : input_list) {
-    param_.X.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.X.push_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   auto output_list = opdesc.Output("Out");
   param_.Out.clear();
   for (auto var : output_list) {
-    param_.Out.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.Out.push_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   return true;
 }
@@ -59,4 +59,4 @@ bool MeshgridOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(meshgrid, paddle::lite::operators::MeshgridOpLite);
+REGISTER_LITE_OP(meshgrid, paddle::lite_metal::operators::MeshgridOpLite);

@@ -18,7 +18,7 @@
 #include "lite/core/arena/framework.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <class T,
           bool has_expandtimes = false,
@@ -82,7 +82,7 @@ class ExpandComputeTester : public arena::TestCase {
       std::vector<std::string> expand_times_tensor_;
       for (size_t i = 0; i < expand_times_.size(); i++) {
         expand_times_tensor_.push_back("expand_times_tensor_" +
-                                       paddle::lite::to_string(i));
+                                       paddle::lite_metal::to_string(i));
         op_desc->SetInput("expand_times_tensor", expand_times_tensor_);
       }
     }
@@ -103,7 +103,7 @@ class ExpandComputeTester : public arena::TestCase {
     }
     if (has_expand_times_tensor) {
       for (size_t i = 0; i < expand_times_.size(); ++i) {
-        SetCommonTensor("expand_times_tensor_" + paddle::lite::to_string(i),
+        SetCommonTensor("expand_times_tensor_" + paddle::lite_metal::to_string(i),
                         DDim({1}),
                         &expand_times_[i]);
       }

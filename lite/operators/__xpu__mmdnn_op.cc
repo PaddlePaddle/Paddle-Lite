@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUMmdnnBidEmbGrnnAttOp::CheckShape() const { return true; }
@@ -42,39 +42,39 @@ bool XPUMmdnnBidEmbGrnnAttOp::InferShapeImpl() const {
 }
 
 bool XPUMmdnnBidEmbGrnnAttOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                         lite::Scope* scope) {
+                                         lite_metal::Scope* scope) {
   param_.id0 =
-      scope->FindVar(op_desc.Input("id0").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Input("id0").front())->GetMutable<lite_metal::Tensor>();
   param_.id1 =
-      scope->FindVar(op_desc.Input("id1").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Input("id1").front())->GetMutable<lite_metal::Tensor>();
   param_.emb_tbl = scope->FindVar(op_desc.Input("emb_tbl").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.grnn_fw_wh = scope->FindVar(op_desc.Input("grnn_fw_wh").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_fw_wi = scope->FindVar(op_desc.Input("grnn_fw_wi").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_rv_wh = scope->FindVar(op_desc.Input("grnn_rv_wh").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_rv_wi = scope->FindVar(op_desc.Input("grnn_rv_wi").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.att_fc_w = scope->FindVar(op_desc.Input("att_fc_w").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
   param_.att_fc_b = scope->FindVar(op_desc.Input("att_fc_b").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
 
   param_.grnn_fw_pool_out =
       scope->FindVar(op_desc.Output("grnn_fw_pool_out").front())
-          ->GetMutable<lite::Tensor>();
+          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_rv_pool_out =
       scope->FindVar(op_desc.Output("grnn_rv_pool_out").front())
-          ->GetMutable<lite::Tensor>();
+          ->GetMutable<lite_metal::Tensor>();
   param_.att_pool_out = scope->FindVar(op_desc.Output("att_pool_out").front())
-                            ->GetMutable<lite::Tensor>();
+                            ->GetMutable<lite_metal::Tensor>();
   param_.concat_3in1_out =
       scope->FindVar(op_desc.Output("concat_3in1_out").front())
-          ->GetMutable<lite::Tensor>();
+          ->GetMutable<lite_metal::Tensor>();
   param_.emb_fw_out = scope->FindVar(op_desc.Output("emb_fw_out").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
 
   param_.grnn_fw_wh_maxs =
       op_desc.GetAttr<std::vector<float>>("grnn_fw_wh_maxs");
@@ -112,41 +112,41 @@ bool XPUMmdnnBidEmbGrnnAttOp2::InferShapeImpl() const {
 }
 
 bool XPUMmdnnBidEmbGrnnAttOp2::AttachImpl(const cpp::OpDesc& op_desc,
-                                          lite::Scope* scope) {
+                                          lite_metal::Scope* scope) {
   param_.id0 =
-      scope->FindVar(op_desc.Input("id0").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Input("id0").front())->GetMutable<lite_metal::Tensor>();
   param_.id1 =
-      scope->FindVar(op_desc.Input("id1").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Input("id1").front())->GetMutable<lite_metal::Tensor>();
   param_.emb_tbl = scope->FindVar(op_desc.Input("emb_tbl").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.grnn_fw_wh = scope->FindVar(op_desc.Input("grnn_fw_wh").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_fw_wi = scope->FindVar(op_desc.Input("grnn_fw_wi").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_rv_wh = scope->FindVar(op_desc.Input("grnn_rv_wh").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_rv_wi = scope->FindVar(op_desc.Input("grnn_rv_wi").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.att_fc_w = scope->FindVar(op_desc.Input("att_fc_w").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
   param_.att_fc_b = scope->FindVar(op_desc.Input("att_fc_b").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
 
   param_.emb0_out = scope->FindVar(op_desc.Output("emb0_out").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
   param_.grnn_fw_pool_out =
       scope->FindVar(op_desc.Output("grnn_fw_pool_out").front())
-          ->GetMutable<lite::Tensor>();
+          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_rv_pool_out =
       scope->FindVar(op_desc.Output("grnn_rv_pool_out").front())
-          ->GetMutable<lite::Tensor>();
+          ->GetMutable<lite_metal::Tensor>();
   param_.att_pool_out = scope->FindVar(op_desc.Output("att_pool_out").front())
-                            ->GetMutable<lite::Tensor>();
+                            ->GetMutable<lite_metal::Tensor>();
   param_.concat_3in1_out =
       scope->FindVar(op_desc.Output("concat_3in1_out").front())
-          ->GetMutable<lite::Tensor>();
+          ->GetMutable<lite_metal::Tensor>();
   param_.emb_fw_out = scope->FindVar(op_desc.Output("emb_fw_out").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
 
   param_.grnn_fw_wh_maxs =
       op_desc.GetAttr<std::vector<float>>("grnn_fw_wh_maxs");
@@ -174,22 +174,22 @@ bool XPUMmdnnBidEmbAttOp::InferShapeImpl() const {
 }
 
 bool XPUMmdnnBidEmbAttOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                     lite::Scope* scope) {
+                                     lite_metal::Scope* scope) {
   param_.id0 =
-      scope->FindVar(op_desc.Input("id0").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Input("id0").front())->GetMutable<lite_metal::Tensor>();
   param_.id1 =
-      scope->FindVar(op_desc.Input("id1").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Input("id1").front())->GetMutable<lite_metal::Tensor>();
   param_.emb_tbl = scope->FindVar(op_desc.Input("emb_tbl").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.att_fc_w = scope->FindVar(op_desc.Input("att_fc_w").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
   param_.att_fc_b = scope->FindVar(op_desc.Input("att_fc_b").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
 
   param_.att_pool_out = scope->FindVar(op_desc.Output("att_pool_out").front())
-                            ->GetMutable<lite::Tensor>();
+                            ->GetMutable<lite_metal::Tensor>();
   param_.emb_fw_out = scope->FindVar(op_desc.Output("emb_fw_out").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
 
   param_.att_fc_w_max = op_desc.GetAttr<float>("att_fc_w_max");
   return true;
@@ -207,24 +207,24 @@ bool XPUMmdnnMatchConvTopkOp::InferShapeImpl() const {
   vec_out_shape.push_back(row_shape_0);
   vec_out_shape.push_back(channel_num * num_k);
 
-  param_.topk_out->Resize(lite::DDim(vec_out_shape));
+  param_.topk_out->Resize(lite_metal::DDim(vec_out_shape));
   param_.topk_out->set_lod(param_.input_x->lod());
   return true;
 }
 
 bool XPUMmdnnMatchConvTopkOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                         lite::Scope* scope) {
+                                         lite_metal::Scope* scope) {
   param_.input_x = scope->FindVar(op_desc.Input("input_x").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.input_y = scope->FindVar(op_desc.Input("input_y").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.input_w = scope->FindVar(op_desc.Input("input_w").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.conv_w = scope->FindVar(op_desc.Input("conv_w").front())
-                      ->GetMutable<lite::Tensor>();
+                      ->GetMutable<lite_metal::Tensor>();
 
   param_.topk_out = scope->FindVar(op_desc.Output("topk_out").front())
-                        ->GetMutable<lite::Tensor>();
+                        ->GetMutable<lite_metal::Tensor>();
 
   param_.input_w_max = op_desc.GetAttr<float>("input_w_max");
   param_.conv_w_max = op_desc.GetAttr<float>("conv_w_max");
@@ -244,45 +244,45 @@ bool XPUMmdnnMergeAllOp::InferShapeImpl() const {
   vec_out_shape.push_back(dim0);
   vec_out_shape.push_back(dim1);
 
-  param_.out->Resize(lite::DDim(vec_out_shape));
+  param_.out->Resize(lite_metal::DDim(vec_out_shape));
   return true;
 }
 
 bool XPUMmdnnMergeAllOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                    lite::Scope* scope) {
+                                    lite_metal::Scope* scope) {
   param_.concat_7in1_x.clear();
   for (auto& name : op_desc.Input("concat_7in1_x")) {
-    auto t = scope->FindVar(name)->GetMutable<lite::Tensor>();
+    auto t = scope->FindVar(name)->GetMutable<lite_metal::Tensor>();
     param_.concat_7in1_x.push_back(t);
   }
   param_.concat_topk_x.clear();
   for (auto& name : op_desc.Input("concat_topk_x")) {
-    auto t = scope->FindVar(name)->GetMutable<lite::Tensor>();
+    auto t = scope->FindVar(name)->GetMutable<lite_metal::Tensor>();
     param_.concat_topk_x.push_back(t);
   }
   param_.grnn_fw_wh = scope->FindVar(op_desc.Input("grnn_fw_wh").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_fw_wi = scope->FindVar(op_desc.Input("grnn_fw_wi").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_rv_wh = scope->FindVar(op_desc.Input("grnn_rv_wh").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.grnn_rv_wi = scope->FindVar(op_desc.Input("grnn_rv_wi").front())
-                          ->GetMutable<lite::Tensor>();
+                          ->GetMutable<lite_metal::Tensor>();
   param_.fc0_w = scope->FindVar(op_desc.Input("fc0_w").front())
-                     ->GetMutable<lite::Tensor>();
+                     ->GetMutable<lite_metal::Tensor>();
   param_.fc0_b = scope->FindVar(op_desc.Input("fc0_b").front())
-                     ->GetMutable<lite::Tensor>();
+                     ->GetMutable<lite_metal::Tensor>();
   param_.fc1_w = scope->FindVar(op_desc.Input("fc1_w").front())
-                     ->GetMutable<lite::Tensor>();
+                     ->GetMutable<lite_metal::Tensor>();
   param_.fc1_b = scope->FindVar(op_desc.Input("fc1_b").front())
-                     ->GetMutable<lite::Tensor>();
+                     ->GetMutable<lite_metal::Tensor>();
   param_.fc2_w = scope->FindVar(op_desc.Input("fc2_w").front())
-                     ->GetMutable<lite::Tensor>();
+                     ->GetMutable<lite_metal::Tensor>();
   param_.fc2_b = scope->FindVar(op_desc.Input("fc2_b").front())
-                     ->GetMutable<lite::Tensor>();
+                     ->GetMutable<lite_metal::Tensor>();
 
   param_.out =
-      scope->FindVar(op_desc.Output("out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(op_desc.Output("out").front())->GetMutable<lite_metal::Tensor>();
 
   param_.grnn_fw_wh_maxs =
       op_desc.GetAttr<std::vector<float>>("grnn_fw_wh_maxs");
@@ -303,12 +303,12 @@ bool XPUMmdnnMergeAllOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__mmdnn_bid_emb_grnn_att,
-                 paddle::lite::operators::XPUMmdnnBidEmbGrnnAttOp);
+                 paddle::lite_metal::operators::XPUMmdnnBidEmbGrnnAttOp);
 REGISTER_LITE_OP(__xpu__mmdnn_bid_emb_grnn_att2,
-                 paddle::lite::operators::XPUMmdnnBidEmbGrnnAttOp2);
+                 paddle::lite_metal::operators::XPUMmdnnBidEmbGrnnAttOp2);
 REGISTER_LITE_OP(__xpu__mmdnn_bid_emb_att,
-                 paddle::lite::operators::XPUMmdnnBidEmbAttOp);
+                 paddle::lite_metal::operators::XPUMmdnnBidEmbAttOp);
 REGISTER_LITE_OP(__xpu__mmdnn_match_conv_topk,
-                 paddle::lite::operators::XPUMmdnnMatchConvTopkOp);
+                 paddle::lite_metal::operators::XPUMmdnnMatchConvTopkOp);
 REGISTER_LITE_OP(__xpu__mmdnn_merge_all,
-                 paddle::lite::operators::XPUMmdnnMergeAllOp);
+                 paddle::lite_metal::operators::XPUMmdnnMergeAllOp);

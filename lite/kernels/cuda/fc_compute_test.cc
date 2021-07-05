@@ -24,7 +24,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -40,14 +40,14 @@ class FcTest : public ::testing::Test {
         w_shape_({k_, n_}),
         b_shape_({n_}),
         out_shape_({m_, n_}) {
-    x_ref_.Resize(lite::DDim(x_shape_));
-    x_gpu_.Resize(lite::DDim(x_shape_));
+    x_ref_.Resize(lite_metal::DDim(x_shape_));
+    x_gpu_.Resize(lite_metal::DDim(x_shape_));
 
-    w_ref_.Resize(lite::DDim(w_shape_));
-    w_gpu_.Resize(lite::DDim(w_shape_));
+    w_ref_.Resize(lite_metal::DDim(w_shape_));
+    w_gpu_.Resize(lite_metal::DDim(w_shape_));
 
-    b_ref_.Resize(lite::DDim(b_shape_));
-    b_gpu_.Resize(lite::DDim(b_shape_));
+    b_ref_.Resize(lite_metal::DDim(b_shape_));
+    b_gpu_.Resize(lite_metal::DDim(b_shape_));
 
     auto x_ref_data = x_ref_.mutable_data<float>();
     auto w_ref_data = w_ref_.mutable_data<float>();
@@ -64,7 +64,7 @@ class FcTest : public ::testing::Test {
       b_ref_data[i] = static_cast<float>(i % 10 * 0.2);
     }
 
-    out_ref_.Resize(lite::DDim(out_shape_));
+    out_ref_.Resize(lite_metal::DDim(out_shape_));
     out_cpu_.Resize(out_ref_.dims());
     out_gpu_.Resize(out_ref_.dims());
     RunBaseLine(&x_ref_, &w_ref_, &b_ref_, &out_ref_);
@@ -86,39 +86,39 @@ class FcTest : public ::testing::Test {
   }
 
   void InitFloatInput() {
-    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+    x_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
                                                     x_gpu_.dims());
-    w_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(w_ref_.data<float>(),
+    w_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(w_ref_.data<float>(),
                                                     w_gpu_.dims());
-    b_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(b_ref_.data<float>(),
+    b_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(b_ref_.data<float>(),
                                                     b_gpu_.dims());
   }
 
   void InitHalfInput() {
-    x_half_.Resize(lite::DDim(x_shape_));
+    x_half_.Resize(lite_metal::DDim(x_shape_));
     auto x_half_data = x_half_.mutable_data<half>();
     for (int64_t i = 0; i < x_half_.numel(); i++) {
-      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+      x_half_data[i] = half(lite_metal::float16(x_ref_.data<float>()[i]));
     }
-    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    x_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
     w_half_.Resize(w_ref_.dims());
     auto w_half_data = w_half_.mutable_data<half>();
     for (int64_t i = 0; i < w_half_.numel(); i++) {
-      w_half_data[i] = half(lite::float16(w_ref_.data<float>()[i]));
+      w_half_data[i] = half(lite_metal::float16(w_ref_.data<float>()[i]));
     }
-    w_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(w_half_data, w_gpu_.dims());
+    w_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(w_half_data, w_gpu_.dims());
     b_half_.Resize(b_ref_.dims());
     auto b_half_data = b_half_.mutable_data<half>();
     for (int64_t i = 0; i < b_half_.numel(); i++) {
-      b_half_data[i] = half(lite::float16(b_ref_.data<float>()[i]));
+      b_half_data[i] = half(lite_metal::float16(b_ref_.data<float>()[i]));
     }
-    b_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(b_half_data, b_gpu_.dims());
+    b_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(b_half_data, b_gpu_.dims());
   }
 
-  void RunBaseLine(const lite::Tensor* x,
-                   const lite::Tensor* w,
-                   const lite::Tensor* b,
-                   lite::Tensor* out) {
+  void RunBaseLine(const lite_metal::Tensor* x,
+                   const lite_metal::Tensor* w,
+                   const lite_metal::Tensor* b,
+                   lite_metal::Tensor* out) {
     const float* data_in = x->data<float>();
     const float* bias = b->data<float>();
     const float* weights = w->data<float>();
@@ -145,10 +145,10 @@ class FcTest : public ::testing::Test {
   int m_, k_, n_, in_num_col_dims_;
   std::string act_type_;
   std::vector<int64_t> x_shape_, w_shape_, b_shape_, out_shape_;
-  lite::Tensor x_ref_, w_ref_, b_ref_, out_ref_;
-  lite::Tensor x_gpu_, w_gpu_, b_gpu_;
-  lite::Tensor x_half_, w_half_, b_half_;
-  lite::Tensor out_cpu_, out_gpu_;
+  lite_metal::Tensor x_ref_, w_ref_, b_ref_, out_ref_;
+  lite_metal::Tensor x_gpu_, w_gpu_, b_gpu_;
+  lite_metal::Tensor x_half_, w_half_, b_half_;
+  lite_metal::Tensor out_cpu_, out_gpu_;
 
   operators::FcParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -219,7 +219,7 @@ TEST_F(FcTest, TestFP16) {
                           IoDirection::DtoH);
 
   for (int i = 0; i < out_gpu_.numel(); ++i) {
-    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float res = static_cast<float>(lite_metal::float16(out_cpu_data[i]));
     float ref = out_ref_.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 2e-2);
   }

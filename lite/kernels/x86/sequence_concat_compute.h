@@ -18,13 +18,13 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
 template <typename T>
-inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs,
-                     std::vector<lite::Tensor>* xs_in_order) {
+inline LoD ConcatLoD(const std::vector<lite_metal::Tensor*>& xs,
+                     std::vector<lite_metal::Tensor>* xs_in_order) {
   std::vector<uint64_t> result;
   result.resize(xs[0]->lod()[0].size());
 
@@ -77,7 +77,7 @@ class SequenceConcatCompute
 
     T* dout = param.Out->template mutable_data<T>();
 
-    std::vector<lite::Tensor> x_in_order;
+    std::vector<lite_metal::Tensor> x_in_order;
     param.Out->set_lod(ConcatLoD<T>(param.X, &x_in_order));
 
     int num = x_in_order.size();

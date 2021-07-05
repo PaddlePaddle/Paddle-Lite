@@ -46,7 +46,7 @@ DEFINE_int32(arm_thread_num, 1, "Arm thread nums, 1 as default");
 DEFINE_string(separator, ",", "Deafult separator, use in string split");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace tools {
 namespace debug {
 
@@ -63,7 +63,7 @@ struct DebugConfig {
   int tensor_output_length;
   int arm_thread_num;
 
-  std::map<std::string, lite::pb::VarDesc> var_descs;
+  std::map<std::string, lite_metal::pb::VarDesc> var_descs;
   std::vector<std::vector<std::string>> input_values;
 };
 
@@ -89,7 +89,7 @@ void CollectFeedVarsInfo(std::map<int, std::string>* feed_vars_info,
   auto desc = prog_desc;
   for (const auto& proto_op_desc : desc.blocks(0).ops()) {
     auto tmp_desc = proto_op_desc;
-    lite::pb::OpDesc op_desc(&tmp_desc);
+    lite_metal::pb::OpDesc op_desc(&tmp_desc);
     auto op_type = op_desc.Type();
     if (op_type == "feed") {
       (*feed_vars_info)
@@ -98,7 +98,7 @@ void CollectFeedVarsInfo(std::map<int, std::string>* feed_vars_info,
   }
 }
 template <typename T>
-void FillTensorData(lite::Tensor* tensor, const DebugConfig& conf, int col) {
+void FillTensorData(lite_metal::Tensor* tensor, const DebugConfig& conf, int col) {
   CHECK(tensor);
   auto dim_size = tensor->dims().production();
   auto* data = tensor->mutable_data<T>();
@@ -130,14 +130,14 @@ void CheckDim(std::vector<DDim::value_type>* dim) {
 }
 
 void PrepareModelInputTensor(const DebugConfig& conf,
-                             lite::Scope* scope,
+                             lite_metal::Scope* scope,
                              const framework::proto::ProgramDesc& desc) {
   CHECK(scope);
 
   std::map<int, std::string> feed_vars_info;
   CollectFeedVarsInfo(&feed_vars_info, desc);
   auto* feed_var =
-      scope->FindVar("feed")->GetMutable<std::vector<lite::Tensor>>();
+      scope->FindVar("feed")->GetMutable<std::vector<lite_metal::Tensor>>();
   feed_var->resize(feed_vars_info.size());
 
   for (auto& item : feed_vars_info) {
@@ -243,14 +243,14 @@ void CollectAndDumpTopoInfo(const std::vector<Instruction>& instructions,
   os.close();
 }
 
-void CollectVarDescs(std::map<std::string, lite::pb::VarDesc>* var_descs,
+void CollectVarDescs(std::map<std::string, lite_metal::pb::VarDesc>* var_descs,
                      framework::proto::ProgramDesc* desc) {
   CHECK(desc);
   CHECK(var_descs);
   CHECK(!desc->blocks().empty());
   std::set<std::string> weights;
   for (auto& proto_var_desc : *desc->mutable_blocks(0)->mutable_vars()) {
-    lite::pb::VarDesc var_desc(&proto_var_desc);
+    lite_metal::pb::VarDesc var_desc(&proto_var_desc);
     (*var_descs).emplace(var_desc.Name(), std::move(var_desc));
   }
 }
@@ -274,7 +274,7 @@ std::set<std::string> CollectUnusedVars(
   return unused;
 }
 
-std::string GetTensorRepr(const lite::Tensor& tensor, int out_data_len) {
+std::string GetTensorRepr(const lite_metal::Tensor& tensor, int out_data_len) {
   STL::stringstream ss;
   auto size = tensor.dims().production();
   if (out_data_len >= 0) {
@@ -290,14 +290,14 @@ std::string GetTensorRepr(const lite::Tensor& tensor, int out_data_len) {
 void CollectAndDumpTensorInfo(const std::vector<Instruction>& instructions,
                               const DebugConfig& conf) {
   CHECK(instructions.size() > 0) << "No instruction found";
-  const auto* scope = const_cast<lite::OpLite*>(instructions[0].op())->scope();
+  const auto* scope = const_cast<lite_metal::OpLite*>(instructions[0].op())->scope();
   std::ofstream os(conf.tensor_output_file);
   CHECK(os.is_open());
 
   std::set<std::string> dump_vars;
 #define DUMP_TENSOR_ONCE(name__)                                  \
   LOG(INFO) << "----------------- dump tensor: " << name__;       \
-  auto& tensor = scope->FindVar(name__)->Get<lite::Tensor>();     \
+  auto& tensor = scope->FindVar(name__)->Get<lite_metal::Tensor>();     \
   os << name__ << "\t" << tensor.dims() << "\t"                   \
      << GetTensorRepr(tensor, conf.tensor_output_length) << "\n"; \
   dump_vars.insert(name__)

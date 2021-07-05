@@ -20,11 +20,11 @@
 #include "lite/api/test_helper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 TEST(search_grnn, normal) {
   std::unique_ptr<KernelContext> ctx(new KernelContext);
@@ -64,9 +64,9 @@ TEST(search_grnn, normal) {
     wh_cpu_data[i] = static_cast<float>(i);
   }
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
-  wi.Assign<float, lite::DDim, TARGET(kCUDA)>(wi_cpu_data, wi_cpu.dims());
-  wh.Assign<float, lite::DDim, TARGET(kCUDA)>(wh_cpu_data, wh_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  wi.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(wi_cpu_data, wi_cpu.dims());
+  wh.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(wh_cpu_data, wh_cpu.dims());
 
   param.x = &x;
   param.wi = &wi;

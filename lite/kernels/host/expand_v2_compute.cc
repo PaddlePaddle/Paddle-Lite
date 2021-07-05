@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -98,7 +98,7 @@ void ExpandV2Compute<T, PType>::Run() {
 }  // namespace paddle
 
 using expand_v2_float =
-    paddle::lite::kernels::host::ExpandV2Compute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::ExpandV2Compute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(expand_v2, kHost, kFloat, kAny, expand_v2_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -119,7 +119,7 @@ REGISTER_LITE_KERNEL(expand_v2, kHost, kFloat, kAny, expand_v2_float, def)
     .Finalize();
 
 using expand_v2_int32 =
-    paddle::lite::kernels::host::ExpandV2Compute<int, PRECISION(kInt32)>;
+    paddle::lite_metal::kernels::host::ExpandV2Compute<int, PRECISION(kInt32)>;
 REGISTER_LITE_KERNEL(expand_v2, kHost, kInt32, kAny, expand_v2_int32, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -140,7 +140,7 @@ REGISTER_LITE_KERNEL(expand_v2, kHost, kInt32, kAny, expand_v2_int32, def)
     .Finalize();
 
 using expand_v2_int64 =
-    paddle::lite::kernels::host::ExpandV2Compute<int64_t, PRECISION(kInt64)>;
+    paddle::lite_metal::kernels::host::ExpandV2Compute<int64_t, PRECISION(kInt64)>;
 REGISTER_LITE_KERNEL(expand_v2, kHost, kInt64, kAny, expand_v2_int64, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

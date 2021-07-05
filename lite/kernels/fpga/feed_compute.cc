@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -75,7 +75,7 @@ void FeedCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    feed, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FeedCompute, def)
+    feed, kFPGA, kFP16, kNHWC, paddle::lite_metal::kernels::fpga::FeedCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
@@ -90,7 +90,7 @@ REGISTER_LITE_KERNEL(feed,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::FeedCompute,
+                     paddle::lite_metal::kernels::fpga::FeedCompute,
                      feed_int32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

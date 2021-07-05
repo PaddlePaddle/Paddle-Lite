@@ -20,7 +20,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -41,7 +41,7 @@ class ConvCompute : public KernelLite<TARGET(kARM), Ptype> {
 
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
+      paddle::lite_metal::profile::OpCharacter* ch) {
     impl_->SetProfileRuntimeKernelInfo(ch);
   }
 #endif

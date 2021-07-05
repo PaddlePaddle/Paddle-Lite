@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -35,7 +35,7 @@ void ArgmaxCompute::Run() {
     axis += rank;
   }
   if (param.dtype == -1 || param.dtype == 3) {
-    // default int64_t, static_cast<int>(lite::core::FluidType::INT64) == 3
+    // default int64_t, static_cast<int>(lite_metal::core::FluidType::INT64) == 3
     int r =
         xdnn::argmax<float, int64_t>(ctx.GetRawContext(),
                                      x->data<float>(),
@@ -58,7 +58,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::ArgmaxCompute,
+                     paddle::lite_metal::kernels::xpu::ArgmaxCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})

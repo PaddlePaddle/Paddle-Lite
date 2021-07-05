@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void VarConv2dActivationFusePass::Apply(
@@ -36,5 +36,5 @@ void VarConv2dActivationFusePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_var_conv_2d_activation_fuse_pass,
-                  paddle::lite::mir::VarConv2dActivationFusePass)
+                  paddle::lite_metal::mir::VarConv2dActivationFusePass)
     .BindTargets({TARGET(kCUDA)});

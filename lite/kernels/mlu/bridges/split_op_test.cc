@@ -21,7 +21,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -33,7 +33,7 @@ void split_ref(const std::shared_ptr<operators::SplitOp> op) {
   int num = op_info->GetAttr<int>("num");
   int axis = op_info->GetAttr<int>("axis");
   std::vector<int> sections = op_info->GetAttr<std::vector<int>>("sections");
-  std::vector<lite::Tensor*> output_vec;
+  std::vector<lite_metal::Tensor*> output_vec;
   auto output = op_info->Output("Out");
   for (auto out_var : output) {
     output_vec.push_back(scope->Var(out_var)->GetMutable<Tensor>());
@@ -41,7 +41,7 @@ void split_ref(const std::shared_ptr<operators::SplitOp> op) {
   auto in_dims = x->dims();
   auto rank = in_dims.size();
   int outs_number = output_vec.size();
-  std::vector<lite::DDimLite> outs_dims;
+  std::vector<lite_metal::DDimLite> outs_dims;
   outs_dims.reserve(outs_number);
   if (axis < 0) {
     axis += rank;

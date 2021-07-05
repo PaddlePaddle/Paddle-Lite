@@ -23,7 +23,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 
 class VarDescView : public VarDescAPI {
@@ -138,7 +138,7 @@ class VarDesc : public VarDescAPI {
   }
   bool owned_{false};
   proto::VarDescT* desc_{nullptr};
-  paddle::lite::fbs::proto::VarTypeT* type_{nullptr};
+  paddle::lite_metal::fbs::proto::VarTypeT* type_{nullptr};
 };
 #endif  // LITE_WITH_FLATBUFFERS_DESC
 

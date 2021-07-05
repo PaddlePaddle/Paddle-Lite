@@ -17,7 +17,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 std::string KernelBase::summary() const {
   STL::stringstream ss;
@@ -56,7 +56,7 @@ void KernelBase::ParseKernelType(const std::string &kernel_type,
                                  std::string *op_type,
                                  std::string *alias,
                                  Place *place) {
-  auto parts = lite::SplitView(kernel_type, '/');
+  auto parts = lite_metal::SplitView(kernel_type, '/');
   CHECK_EQ(parts.size(), 5u);
 
   *op_type = parts[0];

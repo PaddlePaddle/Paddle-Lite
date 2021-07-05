@@ -18,7 +18,7 @@
 #include "lite/core/arena/framework.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void reduce_prod_n(const float* src,
                    float* dst,
@@ -134,7 +134,7 @@ void reduce_prod_nc(const float* src,
                     int width_in) {
   // reduce n first.
   DDimLite ddimA({1, channel_in, height_in, width_in});
-  lite::Tensor tensor_tmp;
+  lite_metal::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
   reduce_prod_n(src, tmp_out, num_in, channel_in, height_in, width_in);
@@ -149,7 +149,7 @@ void reduce_prod_ch(const float* src,
                     int width_in) {
   // reduce c first
   DDimLite ddimA({num_in, 1, height_in, width_in});
-  lite::Tensor tensor_tmp;
+  lite_metal::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
   reduce_prod_c(src, tmp_out, num_in, channel_in, height_in, width_in);
@@ -164,7 +164,7 @@ void reduce_prod_hw(const float* src,
                     int width_in) {
   // reduce h first
   DDimLite ddimA({num_in, channel_in, 1, width_in});
-  lite::Tensor tensor_tmp;
+  lite_metal::Tensor tensor_tmp;
   tensor_tmp.Resize(ddimA);
   float* tmp_out = tensor_tmp.mutable_data<float>();
   reduce_prod_h(src, tmp_out, num_in, channel_in, height_in, width_in);

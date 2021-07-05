@@ -23,7 +23,7 @@
 #include "lite/utils/env.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -195,24 +195,24 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(npu_subgraph_pass, paddle::lite::mir::NPUSubgraphPass)
+REGISTER_MIR_PASS(npu_subgraph_pass, paddle::lite_metal::mir::NPUSubgraphPass)
     .BindTargets({TARGET(kNPU)});
 REGISTER_MIR_PASS(huawei_ascend_npu_subgraph_pass,
-                  paddle::lite::mir::HuaweiAscendNPUSubgraphPass)
+                  paddle::lite_metal::mir::HuaweiAscendNPUSubgraphPass)
     .BindTargets({TARGET(kHuaweiAscendNPU)});
-REGISTER_MIR_PASS(apu_subgraph_pass, paddle::lite::mir::APUSubgraphPass)
+REGISTER_MIR_PASS(apu_subgraph_pass, paddle::lite_metal::mir::APUSubgraphPass)
     .BindTargets({TARGET(kAPU)});
-REGISTER_MIR_PASS(xpu_subgraph_pass, paddle::lite::mir::XPUSubgraphPass)
+REGISTER_MIR_PASS(xpu_subgraph_pass, paddle::lite_metal::mir::XPUSubgraphPass)
     .BindTargets({TARGET(kXPU)});
-REGISTER_MIR_PASS(bm_subgraph_pass, paddle::lite::mir::BMSubgraphPass)
+REGISTER_MIR_PASS(bm_subgraph_pass, paddle::lite_metal::mir::BMSubgraphPass)
     .BindTargets({TARGET(kBM)});
-REGISTER_MIR_PASS(rknpu_subgraph_pass, paddle::lite::mir::RKNPUSubgraphPass)
+REGISTER_MIR_PASS(rknpu_subgraph_pass, paddle::lite_metal::mir::RKNPUSubgraphPass)
     .BindTargets({TARGET(kRKNPU)});
-REGISTER_MIR_PASS(mlu_subgraph_pass, paddle::lite::mir::MLUSubgraphPass)
+REGISTER_MIR_PASS(mlu_subgraph_pass, paddle::lite_metal::mir::MLUSubgraphPass)
     .BindTargets({TARGET(kMLU)});
 REGISTER_MIR_PASS(imagination_nna_subgraph_pass,
-                  paddle::lite::mir::ImaginationNNASubgraphPass)
+                  paddle::lite_metal::mir::ImaginationNNASubgraphPass)
     .BindTargets({TARGET(kImaginationNNA)});
 REGISTER_MIR_PASS(nnadapter_subgraph_pass,
-                  paddle::lite::mir::NNAdapterSubgraphPass)
+                  paddle::lite_metal::mir::NNAdapterSubgraphPass)
     .BindTargets({TARGET(kNNAdapter)});

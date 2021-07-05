@@ -22,7 +22,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -32,7 +32,7 @@ class SearchAlignedMatMulCompute
   using param_t = operators::MatMulParam;
 
   void PrepareForRun() override {
-    batched_gemm_impl_.reset(new lite::cuda::math::BatchedGemm<float, float>);
+    batched_gemm_impl_.reset(new lite_metal::cuda::math::BatchedGemm<float, float>);
     last_seq_num_ = std::numeric_limits<int>::min();
   }
 
@@ -89,7 +89,7 @@ class SearchAlignedMatMulCompute
   ~SearchAlignedMatMulCompute() { batched_gemm_impl_.reset(); }
 
  private:
-  std::unique_ptr<lite::cuda::math::BatchedGemm<float, float>>
+  std::unique_ptr<lite_metal::cuda::math::BatchedGemm<float, float>>
       batched_gemm_impl_;
   int last_seq_num_;
 };

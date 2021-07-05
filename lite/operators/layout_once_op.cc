@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool LayoutOnceOp::run_once() const { return true; }
@@ -27,4 +27,4 @@ std::string LayoutOnceOp::DebugString() const { return "layout_once_op"; }
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(layout_once, paddle::lite::operators::LayoutOnceOp);
+REGISTER_LITE_OP(layout_once, paddle::lite_metal::operators::LayoutOnceOp);

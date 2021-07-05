@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/packed_sgemm.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -92,19 +92,19 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
          weights_.numel() * sizeof(float));
   switch (wino_iw) {
     case 8:
-      lite::arm::math::weight_trans_c4_8x8(
+      lite_metal::arm::math::weight_trans_c4_8x8(
           weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
       break;
     case 6:
-      lite::arm::math::weight_trans_c4_6x6(
+      lite_metal::arm::math::weight_trans_c4_6x6(
           weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
       break;
     case 4:
-      lite::arm::math::weight_trans_c4_4x4(
+      lite_metal::arm::math::weight_trans_c4_4x4(
           weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
       break;
     default:
-      lite::arm::math::weight_trans_c4_8x8(
+      lite_metal::arm::math::weight_trans_c4_8x8(
           weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
   }
 
@@ -141,20 +141,20 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oc = o_dims[1];
 
   if (wino_iw == 8) {
-    lite::arm::math::conv_compute_6x6_3x3(FUNCS_PARAM, param, &ctx);
+    lite_metal::arm::math::conv_compute_6x6_3x3(FUNCS_PARAM, param, &ctx);
     KERNEL_FUNC_NAME("conv_compute_6x6_3x3")
   } else if (wino_iw == 6) {
-    lite::arm::math::conv_compute_4x4_3x3(FUNCS_PARAM, param, &ctx);
+    lite_metal::arm::math::conv_compute_4x4_3x3(FUNCS_PARAM, param, &ctx);
     KERNEL_FUNC_NAME("conv_compute_4x4_3x3")
   } else {
     int tile_block = 8;
     int block_count =
         (((ow + 1) / 2) * ((oh + 1) / 2) + tile_block - 1) / tile_block;
     if (block_count != 1) {
-      lite::arm::math::conv_compute_2x2_3x3(FUNCS_PARAM, param, &ctx);
+      lite_metal::arm::math::conv_compute_2x2_3x3(FUNCS_PARAM, param, &ctx);
       KERNEL_FUNC_NAME("conv_compute_2x2_3x3")
     } else {
-      lite::arm::math::conv_compute_2x2_3x3_small(FUNCS_PARAM, param, &ctx);
+      lite_metal::arm::math::conv_compute_2x2_3x3_small(FUNCS_PARAM, param, &ctx);
       KERNEL_FUNC_NAME("conv_compute_2x2_3x3_small")
     }
   }
@@ -254,7 +254,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
          weights_.numel() * sizeof(int16_t));
   switch (wino_iw) {
     case 4:
-      lite::arm::math::weight_trans_c8_4x4_int8(
+      lite_metal::arm::math::weight_trans_c8_4x4_int8(
           weights_data_,
           param.filter->template data<int8_t>(),
           ic,
@@ -262,7 +262,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
           trans_tmp_ptr);
       break;
     case 6:
-      lite::arm::math::weight_trans_c8_6x6_int8(
+      lite_metal::arm::math::weight_trans_c8_6x6_int8(
           weights_data_,
           param.filter->template data<int8_t>(),
           ic,
@@ -270,7 +270,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
           trans_tmp_ptr);
       break;
     default:
-      lite::arm::math::weight_trans_c8_6x6_int8(
+      lite_metal::arm::math::weight_trans_c8_6x6_int8(
           weights_data_,
           param.filter->template data<int8_t>(),
           ic,
@@ -310,22 +310,22 @@ void WinogradConv<PRECISION(kInt8), OutType>::Run() {
   if (OutType == PRECISION(kInt8)) {
     auto* o_data = param.output->template mutable_data<int8_t>();
     if (wino_iw == 6) {
-      lite::arm::math::conv_compute_4x4_3x3_int8<int8_t>(
+      lite_metal::arm::math::conv_compute_4x4_3x3_int8<int8_t>(
           FUNCS_PARAM, w_scale_.data(), param, &ctx);
       KERNEL_FUNC_NAME("conv_compute_4x4_3x3_int8_int8")
     } else {
-      lite::arm::math::conv_compute_2x2_3x3_int8<int8_t>(
+      lite_metal::arm::math::conv_compute_2x2_3x3_int8<int8_t>(
           FUNCS_PARAM, w_scale_.data(), param, &ctx);
       KERNEL_FUNC_NAME("conv_compute_2x2_3x3_int8_int8")
     }
   } else {
     auto* o_data = param.output->template mutable_data<float>();
     if (wino_iw == 6) {
-      lite::arm::math::conv_compute_4x4_3x3_int8<float>(
+      lite_metal::arm::math::conv_compute_4x4_3x3_int8<float>(
           FUNCS_PARAM, w_scale_.data(), param, &ctx);
       KERNEL_FUNC_NAME("conv_compute_4x4_3x3_int8_float")
     } else {
-      lite::arm::math::conv_compute_2x2_3x3_int8<float>(
+      lite_metal::arm::math::conv_compute_2x2_3x3_int8<float>(
           FUNCS_PARAM, w_scale_.data(), param, &ctx);
       KERNEL_FUNC_NAME("conv_compute_2x2_3x3_int8_float")
     }
@@ -373,7 +373,7 @@ void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {
          weights_.numel() * sizeof(int16_t));
   switch (wino_iw) {
     case 4:
-      lite::arm::math::fp16::weight_trans_c8_4x4_fp16(
+      lite_metal::arm::math::fp16::weight_trans_c8_4x4_fp16(
           weights_data_,
           param.filter->template data<float16_t>(),
           ic,
@@ -381,7 +381,7 @@ void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {
           trans_tmp_ptr);
       break;
     case 6:
-      lite::arm::math::fp16::weight_trans_c8_6x6_fp16(
+      lite_metal::arm::math::fp16::weight_trans_c8_6x6_fp16(
           weights_data_,
           param.filter->template data<float16_t>(),
           ic,
@@ -389,7 +389,7 @@ void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {
           trans_tmp_ptr);
       break;
     default:
-      lite::arm::math::fp16::weight_trans_c8_6x6_fp16(
+      lite_metal::arm::math::fp16::weight_trans_c8_6x6_fp16(
           weights_data_,
           param.filter->template data<float16_t>(),
           ic,
@@ -427,10 +427,10 @@ void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int oc = o_dims[1];
 
   if (wino_iw == 6) {
-    lite::arm::math::fp16::conv_compute_4x4_3x3_fp16(FUNCS_PARAM, param, &ctx);
+    lite_metal::arm::math::fp16::conv_compute_4x4_3x3_fp16(FUNCS_PARAM, param, &ctx);
     KERNEL_FUNC_NAME("conv_compute_4x4_3x3_fp16")
   } else {
-    lite::arm::math::fp16::conv_compute_2x2_3x3_fp16(FUNCS_PARAM, param, &ctx);
+    lite_metal::arm::math::fp16::conv_compute_2x2_3x3_fp16(FUNCS_PARAM, param, &ctx);
     KERNEL_FUNC_NAME("conv_compute_2x2_3x3_fp16")
   }
 }

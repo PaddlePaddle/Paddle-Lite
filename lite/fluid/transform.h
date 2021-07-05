@@ -21,7 +21,7 @@ limitations under the License. */
 #include "lite/fluid/hostdevice.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
 // Transform applys a unary or a binary functor on each element in a
@@ -37,11 +37,11 @@ namespace fluid {
 // NOTE: We don't assume that InputIter to be const InputType* and
 //       OutputIter to be OutputType*, because we might use a iterator
 //       class, paddle::fluid::operators::RowwiseTRansformIterator.
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 struct Transform {
   // The unary version.
   template <typename InputIter, typename OutputIter, typename UnaryOperation>
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   InputIter first,
                   InputIter last,
                   OutputIter result,
@@ -52,7 +52,7 @@ struct Transform {
             typename InputIter2,
             typename OutputIter,
             typename BinaryOperation>
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   InputIter1 first1,
                   InputIter1 last1,
                   InputIter2 first2,
@@ -61,9 +61,9 @@ struct Transform {
 };
 
 template <>
-struct Transform<lite::TargetType::kX86> {
+struct Transform<lite_metal::TargetType::kX86> {
   template <typename InputIter, typename OutputIter, typename UnaryOperation>
-  void operator()(const lite::X86Context& context,
+  void operator()(const lite_metal::X86Context& context,
                   InputIter first,
                   InputIter last,
                   OutputIter result,
@@ -75,7 +75,7 @@ struct Transform<lite::TargetType::kX86> {
             typename InputIter2,
             typename OutputIter,
             typename BinaryOperation>
-  void operator()(const lite::X86Context& context,
+  void operator()(const lite_metal::X86Context& context,
                   InputIter1 first1,
                   InputIter1 last1,
                   InputIter2 first2,

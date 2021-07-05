@@ -21,12 +21,12 @@
 #include "lite/model_parser/model_parser.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 
 namespace {
 template <typename T>
-void set_tensor(paddle::lite::Tensor* tensor,
+void set_tensor(paddle::lite_metal::Tensor* tensor,
                 const std::vector<int64_t>& dims) {
   auto production =
       std::accumulate(begin(dims), end(dims), 1, std::multiplies<int64_t>());
@@ -72,7 +72,7 @@ TEST(CombinedParamsDesc, Scope) {
   fbs::CombinedParamsDesc combined_param;
   deprecated::SetCombinedParamsWithScope(scope, params_set, &combined_param);
 
-  auto check_params = [&](const lite::Scope& scope) {
+  auto check_params = [&](const lite_metal::Scope& scope) {
     // variable 0
     Variable* var_l0 = scope.FindVar(param_names[0]);
     CHECK(var_l0);

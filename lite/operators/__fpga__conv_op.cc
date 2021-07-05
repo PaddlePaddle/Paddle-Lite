@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool FpgaConvOpLite::InferShapeImpl() const {
@@ -43,4 +43,4 @@ bool FpgaConvOpLite::InferShapeImpl() const {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(fpga_conv2d, paddle::lite::operators::FpgaConvOpLite);
+REGISTER_LITE_OP(fpga_conv2d, paddle::lite_metal::operators::FpgaConvOpLite);

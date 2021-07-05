@@ -16,7 +16,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 class DemoPass : public mir::DebugPass {
@@ -34,5 +34,5 @@ bool RegisterDemoPass() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(demo, paddle::lite::mir::DemoPass)
+REGISTER_MIR_PASS(demo, paddle::lite_metal::mir::DemoPass)
     .BindTargets({TARGET(kAny)});

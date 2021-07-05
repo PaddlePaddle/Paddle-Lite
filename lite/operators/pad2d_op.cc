@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool Pad2dOpLite::CheckShape() const {
@@ -35,12 +35,12 @@ bool Pad2dOpLite::InferShapeImpl() const {
   auto x_dims = param_.X->dims();
   int out_h = x_dims[2] + param_.paddings[0] + param_.paddings[1];
   int out_w = x_dims[3] + param_.paddings[2] + param_.paddings[3];
-  param_.Out->Resize(lite::DDim({x_dims[0], x_dims[1], out_h, out_w}));
+  param_.Out->Resize(lite_metal::DDim({x_dims[0], x_dims[1], out_h, out_w}));
   return true;
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
-bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   param_.X = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.Out =
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
@@ -68,4 +68,4 @@ bool Pad2dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(pad2d, paddle::lite::operators::Pad2dOpLite);
+REGISTER_LITE_OP(pad2d, paddle::lite_metal::operators::Pad2dOpLite);

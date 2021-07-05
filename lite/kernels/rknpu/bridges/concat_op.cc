@@ -17,7 +17,7 @@
 #include "lite/kernels/rknpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace rknpu {
 
@@ -69,7 +69,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   for (int i = 0; i < num; i++) {
     auto x_name = x_names[i];
-    auto x_scale_name = "X" + paddle::lite::to_string(i) + "_scale";
+    auto x_scale_name = "X" + paddle::lite_metal::to_string(i) + "_scale";
     auto x = scope->FindMutableTensor(x_name);
     auto x_dims = x->dims();
     std::shared_ptr<Node> x_node = nullptr;
@@ -124,4 +124,4 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(concat,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::ConcatConverter);
+                         paddle::lite_metal::subgraph::rknpu::ConcatConverter);

@@ -15,7 +15,7 @@
 #include "lite/kernels/host/shuffle_channel_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 void shuffle_kernel(
@@ -70,7 +70,7 @@ REGISTER_LITE_KERNEL(shuffle_channel,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::ShuffleChannelCompute,
+                     paddle::lite_metal::kernels::host::ShuffleChannelCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})

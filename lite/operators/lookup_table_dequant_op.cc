@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool LookupTableDequantOpLite::CheckShape() const {
@@ -50,14 +50,14 @@ bool LookupTableDequantOpLite::InferShapeImpl() const {
 }
 
 bool LookupTableDequantOpLite::AttachImpl(const cpp::OpDesc& op_desc,
-                                          lite::Scope* scope) {
+                                          lite_metal::Scope* scope) {
   auto input = op_desc.Input("W").front();
   auto ids = op_desc.Input("Ids").front();
   auto out = op_desc.Output("Out").front();
 
-  param_.W = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.Ids = scope->FindVar(ids)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.W = scope->FindVar(input)->GetMutable<lite_metal::Tensor>();
+  param_.Ids = scope->FindVar(ids)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
 
   param_.padding_idx = op_desc.GetAttr<int64_t>("padding_idx");
 
@@ -69,4 +69,4 @@ bool LookupTableDequantOpLite::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(lookup_table_dequant,
-                 paddle::lite::operators::LookupTableDequantOpLite)
+                 paddle::lite_metal::operators::LookupTableDequantOpLite)

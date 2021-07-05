@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 TEST(NaiveBuffer, primary) {
@@ -155,7 +155,7 @@ TEST(ListBuilder, basic) {
 
   for (int i = 0; i < num_elems; i++) {
     auto* elem = li.New();
-    elem->set("elem-" + paddle::lite::to_string(i));
+    elem->set("elem-" + paddle::lite_metal::to_string(i));
   }
   li.Save();
   table.SaveToFile("2.bf");
@@ -169,7 +169,7 @@ TEST(ListBuilder, basic) {
   li1.Load();
 
   for (int i = 0; i < num_elems; i++) {
-    ASSERT_EQ(li1.Get(i).data(), "elem-" + paddle::lite::to_string(i));
+    ASSERT_EQ(li1.Get(i).data(), "elem-" + paddle::lite_metal::to_string(i));
   }
 }
 

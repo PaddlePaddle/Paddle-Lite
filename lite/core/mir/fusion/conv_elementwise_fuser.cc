@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -82,13 +82,13 @@ void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
     auto conv_bias_var = scope->FindVar(conv_op_desc->Input("Bias").front());
     if (conv_bias_var != nullptr) {
       // conv bias
-      auto conv_bias_t = &(conv_bias_var->Get<lite::Tensor>());
+      auto conv_bias_t = &(conv_bias_var->Get<lite_metal::Tensor>());
       auto conv_bias_d = conv_bias_t->data<float>();
 
       // elementwise_add bias
       auto elementwise_add_bias_t =
           scope->FindVar(matched.at("bias")->arg()->name)
-              ->GetMutable<lite::Tensor>();
+              ->GetMutable<lite_metal::Tensor>();
       auto elementwise_add_bias_d =
           elementwise_add_bias_t->mutable_data<float>();
 

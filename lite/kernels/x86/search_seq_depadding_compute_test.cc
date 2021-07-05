@@ -22,7 +22,7 @@
 #include "lite/kernels/x86/search_seq_depadding_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -39,7 +39,7 @@ TEST(search_seq_depadding_x86, init) {
 }
 
 TEST(search_seq_depadding_x86, run_test) {
-  lite::Tensor pad, src, out;
+  lite_metal::Tensor pad, src, out;
   pad.Resize({2 * 3, 4});
   src.Resize({3, 1});
   out.Resize({3, 4});

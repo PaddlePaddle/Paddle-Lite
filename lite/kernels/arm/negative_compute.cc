@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -34,7 +34,7 @@ void NegativeCompute::Run() {
   auto* o_data = param.Out->mutable_data<float>();
   int num = param.X->dims().production();
   LOG(INFO) << "into negative fun";
-  lite::arm::math::negative_func<float>(x_data, o_data, num);
+  lite_metal::arm::math::negative_func<float>(x_data, o_data, num);
 }
 
 }  // namespace arm
@@ -46,7 +46,7 @@ REGISTER_LITE_KERNEL(negative,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::NegativeCompute,
+                     paddle::lite_metal::kernels::arm::NegativeCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})

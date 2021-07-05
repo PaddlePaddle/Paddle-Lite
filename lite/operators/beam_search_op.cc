@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool BeamSearchOp::CheckShape() const {
@@ -32,7 +32,7 @@ bool BeamSearchOp::CheckShape() const {
 
 bool BeamSearchOp::InferShapeImpl() const { return true; }
 
-bool BeamSearchOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool BeamSearchOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.pre_ids = scope->FindTensor(opdesc.Input("pre_ids").front());
   param_.pre_scores = scope->FindTensor(opdesc.Input("pre_scores").front());
   param_.ids = scope->FindTensor(opdesc.Input("ids").front());
@@ -62,4 +62,4 @@ bool BeamSearchOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(beam_search, paddle::lite::operators::BeamSearchOp);
+REGISTER_LITE_OP(beam_search, paddle::lite_metal::operators::BeamSearchOp);

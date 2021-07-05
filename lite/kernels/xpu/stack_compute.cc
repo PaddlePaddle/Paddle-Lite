@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -65,7 +65,7 @@ void StackCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    stack, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::StackCompute, def)
+    stack, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::StackCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

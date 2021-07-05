@@ -18,7 +18,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -235,7 +235,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(conv2d,
                          kNPU,
-                         paddle::lite::subgraph::npu::ConvConverter);
+                         paddle::lite_metal::subgraph::npu::ConvConverter);
 REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
                          kNPU,
-                         paddle::lite::subgraph::npu::ConvConverter);
+                         paddle::lite_metal::subgraph::npu::ConvConverter);

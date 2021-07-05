@@ -23,14 +23,14 @@
 #include "lite/operators/dropout_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
 template <typename T,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenMatrix = lite::fluid::EigenMatrix<T, MajorType, IndexType>;
+using EigenMatrix = lite_metal::fluid::EigenMatrix<T, MajorType, IndexType>;
 
 template <typename T>
 class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
@@ -67,9 +67,9 @@ class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       auto X = EigenMatrix<T>::Reshape(*param.x, 1);
       auto Y = EigenMatrix<T>::Reshape(*param.output, 1);
       if (param.dropout_implementation == "upscale_in_train") {
-        Y.device(lite::fluid::EigenDeviceType<lite::TargetType::kX86>()) = X;
+        Y.device(lite_metal::fluid::EigenDeviceType<lite_metal::TargetType::kX86>()) = X;
       } else {
-        Y.device(lite::fluid::EigenDeviceType<lite::TargetType::kX86>()) =
+        Y.device(lite_metal::fluid::EigenDeviceType<lite_metal::TargetType::kX86>()) =
             X * static_cast<T>(1.0f - param.dropout_prob);
       }
     }

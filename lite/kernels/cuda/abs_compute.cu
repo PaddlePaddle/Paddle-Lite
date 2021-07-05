@@ -16,7 +16,7 @@
 #include "lite/kernels/cuda/abs_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -65,7 +65,7 @@ void AbsCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    abs, kCUDA, kFloat, kNCHW, paddle::lite::kernels::cuda::AbsCompute, def)
+    abs, kCUDA, kFloat, kNCHW, paddle::lite_metal::kernels::cuda::AbsCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

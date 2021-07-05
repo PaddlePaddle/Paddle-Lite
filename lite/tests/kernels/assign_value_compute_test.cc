@@ -17,10 +17,10 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
 
-using paddle::lite::core::FluidType;
+using paddle::lite_metal::core::FluidType;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class AssignValueComputeTester : public arena::TestCase {
  protected:

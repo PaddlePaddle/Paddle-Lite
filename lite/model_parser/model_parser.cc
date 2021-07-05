@@ -38,12 +38,12 @@
 #endif
 #include "lite/utils/io.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 #ifndef LITE_ON_TINY_PUBLISH
 void LoadLoDTensor(model_parser::pb::LoDTensorDeserializer *loader,
                    model_parser::ByteReader *reader,
                    Variable *var) {
-  auto *tensor = var->GetMutable<lite::Tensor>();
+  auto *tensor = var->GetMutable<lite_metal::Tensor>();
   CHECK(tensor) << "Can not get allocation of the tensor.";
   CHECK(loader) << "The input argument loader is nullptr.";
   CHECK(var) << "The input argument var is nullptr.";
@@ -80,7 +80,7 @@ bool IsPersistable(const cpp::VarDesc &var) {
 }
 
 void LoadCombinedParamsPb(const std::string &path,
-                          lite::Scope *scope,
+                          lite_metal::Scope *scope,
                           const cpp::ProgramDesc &cpp_prog,
                           const lite_api::CxxModelBuffer &model_buffer) {
   CHECK(scope) << "The input argument scope is nullptr.";
@@ -116,10 +116,10 @@ void LoadCombinedParamsPb(const std::string &path,
                             << " LoadCombinedParamsPb, use LoadParam instead.";
 }
 
-void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {
+void TensorToStream(std::ostream &os, const lite_metal::Tensor &tensor) {
   LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
 }
-void TensorFromStream(std::istream &is, lite::Tensor *tensor) {
+void TensorFromStream(std::istream &is, lite_metal::Tensor *tensor) {
   LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
 }
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
@@ -294,7 +294,7 @@ void SaveModelPb(const std::string &model_dir,
       model_parser::BinaryFileWriter file(path);
       model_parser::pb::LoDTensorSerializer saver;
       auto *var = exec_scope.FindVar(item.name());
-      const auto &tensor = var->Get<lite::Tensor>();
+      const auto &tensor = var->Get<lite_metal::Tensor>();
       if (tensor.target() == TARGET(kCUDA)) {
         LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
                       "please copy it to the Host Tensor temporarily.";
@@ -306,7 +306,7 @@ void SaveModelPb(const std::string &model_dir,
 }
 
 void SaveCombinedParamsPb(const std::string &path,
-                          const lite::Scope &exec_scope,
+                          const lite_metal::Scope &exec_scope,
                           const cpp::ProgramDesc &cpp_prog) {
   auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
@@ -325,7 +325,7 @@ void SaveCombinedParamsPb(const std::string &path,
   model_parser::pb::LoDTensorSerializer saver;
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = exec_scope.FindVar(paramlist[i]);
-    const auto &tensor = var->Get<lite::Tensor>();
+    const auto &tensor = var->Get<lite_metal::Tensor>();
     if (tensor.target() == TARGET(kCUDA)) {
       LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
                     "please copy it to the Host Tensor temporarily.";
@@ -336,7 +336,7 @@ void SaveCombinedParamsPb(const std::string &path,
 
 /// For navie buffer
 void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
-                       const lite::Scope &scope,
+                       const lite_metal::Scope &scope,
                        const std::string &var_name) {
   CHECK(param_desc);
   auto &desc = *param_desc;
@@ -345,7 +345,7 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
   constexpr uint32_t version = 0;
 
   auto *var = scope.FindVar(var_name);
-  const auto &tensor = var->Get<lite::Tensor>();
+  const auto &tensor = var->Get<lite_metal::Tensor>();
 
   desc.SetName(var_name);
 
@@ -421,7 +421,7 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
 }
 
 void SaveParamNaive(const std::string &path,
-                    const lite::Scope &scope,
+                    const lite_metal::Scope &scope,
                     const std::string &var_name) {
   naive_buffer::BinaryTable table;
   naive_buffer::proto::ParamDesc pt_desc(&table);
@@ -435,7 +435,7 @@ void SaveParamNaive(const std::string &path,
 }
 
 void SaveCombinedParamsNaive(const std::string &path,
-                             const lite::Scope &exec_scope,
+                             const lite_metal::Scope &exec_scope,
                              const cpp::ProgramDesc &cpp_prog) {
   naive_buffer::BinaryTable table;
   naive_buffer::proto::CombinedParamsDesc pt_desc(&table);
@@ -571,14 +571,14 @@ void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {
 }
 
 void GetParamInfoNaive(const naive_buffer::ParamDesc &desc,
-                       lite::Scope *scope,
+                       lite_metal::Scope *scope,
                        const std::string &name) {
   CHECK(scope);
   CHECK_EQ(desc.Name(), name)
       << "Var name not equal: ParamDesc.name=" << desc.Name()
       << "vs filename=" << name;
 
-  auto *tensor = scope->Var(name)->GetMutable<lite::Tensor>();
+  auto *tensor = scope->Var(name)->GetMutable<lite_metal::Tensor>();
 
   VLOG(3) << "model version " << desc.ModelVersion();
   CHECK_EQ(desc.TensorVersion(), 0U) << "Only version 0 is supported";
@@ -589,7 +589,7 @@ void GetParamInfoNaive(const naive_buffer::ParamDesc &desc,
   tgt_lod->assign(desc_lod.begin(), desc_lod.end());
 
   // Load Dim info
-  tensor->Resize(lite::DDim(desc.Dim()));
+  tensor->Resize(lite_metal::DDim(desc.Dim()));
 
   // Load data
   switch (desc.GetDataType()) {
@@ -616,7 +616,7 @@ void GetParamInfoNaive(const naive_buffer::ParamDesc &desc,
 }
 
 void LoadParamNaive(const std::string &path,
-                    lite::Scope *scope,
+                    lite_metal::Scope *scope,
                     const std::string &name) {
   // Load param
   naive_buffer::BinaryTable table;
@@ -629,7 +629,7 @@ void LoadParamNaive(const std::string &path,
 
 void LoadCombinedParamsNaive(const std::string &path,
                              const uint64_t &offset,
-                             lite::Scope *scope,
+                             lite_metal::Scope *scope,
                              const cpp::ProgramDesc &cpp_prog,
                              bool params_from_memory) {
   naive_buffer::BinaryTable table;
@@ -885,14 +885,14 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader *reader,
   VLOG(4) << "topo_size: " << topo_size;
 
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
-  lite::model_parser::Buffer buf(topo_size);
+  lite_metal::model_parser::Buffer buf(topo_size);
   reader->Read(buf.data(), topo_size);
   cpp_prog->Init(std::move(buf));
 #elif LITE_ON_TINY_PUBLISH
   LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
                 "the model cannot be loaded.";
 #else
-  lite::model_parser::Buffer buf(topo_size);
+  lite_metal::model_parser::Buffer buf(topo_size);
   reader->Read(buf.data(), topo_size);
   fbs::ProgramDesc program(buf);
   TransformProgramDescAnyToCpp(program, cpp_prog);
@@ -902,7 +902,7 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader *reader,
   switch (meta_version) {
     case 1: {
       /* load scope from param.fbs with meta_version=1 */
-      lite::model_parser::Buffer buf(reader->length() - reader->current());
+      lite_metal::model_parser::Buffer buf(reader->length() - reader->current());
       reader->Read(buf.data(), reader->length() - reader->current());
       fbs::CombinedParamsDescView params(std::move(buf));
       fbs::deprecated::SetScopeWithCombinedParams(scope, params);

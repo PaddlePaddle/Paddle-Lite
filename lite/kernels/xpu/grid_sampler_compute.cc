@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -74,7 +74,7 @@ REGISTER_LITE_KERNEL(grid_sampler,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::GridSamplerCompute,
+                     paddle::lite_metal::kernels::xpu::GridSamplerCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Grid", {LiteType::GetTensorTy(TARGET(kXPU))})

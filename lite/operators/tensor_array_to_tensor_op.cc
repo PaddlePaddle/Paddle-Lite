@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool TensorArrayToTensorOpLite::CheckShape() const {
@@ -75,7 +75,7 @@ bool TensorArrayToTensorOpLite::InferShapeImpl() const {
 }
 
 bool TensorArrayToTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                           lite::Scope *scope) {
+                                           lite_metal::Scope *scope) {
   AttachParam(&param_);
   auto out = op_desc.Output("Out").front();
   auto outIndex = op_desc.Output("OutIndex").front();
@@ -84,8 +84,8 @@ bool TensorArrayToTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.X = scope->FindVar(in)->GetMutable<std::vector<Tensor>>();
 
   CHECK(scope->FindVar(out));
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
-  param_.OutIndex = scope->FindVar(outIndex)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(out)->GetMutable<lite_metal::Tensor>();
+  param_.OutIndex = scope->FindVar(outIndex)->GetMutable<lite_metal::Tensor>();
   param_.axis = op_desc.GetAttr<int>("axis");
   param_.use_stack = op_desc.GetAttr<bool>("use_stack");
 
@@ -97,4 +97,4 @@ bool TensorArrayToTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(tensor_array_to_tensor,
-                 paddle::lite::operators::TensorArrayToTensorOpLite);
+                 paddle::lite_metal::operators::TensorArrayToTensorOpLite);

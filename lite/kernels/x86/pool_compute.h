@@ -22,7 +22,7 @@
 #include "lite/fluid/eigen.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -41,12 +41,12 @@ class PoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     switch (param.ksize.size()) {
       case 2: {
         if (param.pooling_type == "max") {
-          paddle::lite::x86::math::Pool2dFunctor<
-              lite::TargetType::kX86,
-              paddle::lite::x86::math::MaxPool<T>,
+          paddle::lite_metal::x86::math::Pool2dFunctor<
+              lite_metal::TargetType::kX86,
+              paddle::lite_metal::x86::math::MaxPool<T>,
               T>
               pool2d_forward;
-          paddle::lite::x86::math::MaxPool<T> pool_process;
+          paddle::lite_metal::x86::math::MaxPool<T> pool_process;
           pool2d_forward(context,
                          param.x,
                          param.ksize,
@@ -57,12 +57,12 @@ class PoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                          false,
                          param.output);
         } else if (param.pooling_type == "avg") {
-          paddle::lite::x86::math::Pool2dFunctor<
-              lite::TargetType::kX86,
-              paddle::lite::x86::math::AvgPool<T>,
+          paddle::lite_metal::x86::math::Pool2dFunctor<
+              lite_metal::TargetType::kX86,
+              paddle::lite_metal::x86::math::AvgPool<T>,
               T>
               pool2d_forward;
-          paddle::lite::x86::math::AvgPool<T> pool_process;
+          paddle::lite_metal::x86::math::AvgPool<T> pool_process;
           pool2d_forward(context,
                          param.x,
                          param.ksize,

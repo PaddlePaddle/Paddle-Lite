@@ -24,7 +24,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 
@@ -54,7 +54,7 @@ inline void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
   CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
   int m = tin.dims()[0] / group;
   int k = tin.dims().count(1, 4);
-  int hblock = lite::arm::math::get_hblock(ctx);
+  int hblock = lite_metal::arm::math::get_hblock(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
   float* w_trans_ptr = nullptr;
@@ -64,7 +64,7 @@ inline void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
   for (int g = 0; g < group; ++g) {
     const float* weights_group = w_data + g * m * k;
     float* weights_trans_ptr = w_trans_ptr + g * group_size_round_up;
-    lite::arm::math::prepackA(
+    lite_metal::arm::math::prepackA(
         weights_trans_ptr, weights_group, 1.f, k, 0, m, 0, k, false, ctx);
   }
 }
@@ -383,7 +383,7 @@ static bool prepack_input_nxw(const dtype* din,
       for (int w = ws; w < w0; ++w) {
         *(out_array[j]++) = 0.f;
       }
-      lite::TargetWrapperHost::MemcpySync(out_array[j], in_array, valid_w_byte);
+      lite_metal::TargetWrapperHost::MemcpySync(out_array[j], in_array, valid_w_byte);
       out_array[j] += valid_w;
       for (int w = w1; w < we; ++w) {
         *(out_array[j]++) = 0.f;
@@ -4202,7 +4202,7 @@ static bool write_to_output_numc(const dtype* din,
       const dtype* din_ptr = din + h * size_c_in;
       for (int i = 0; i < ch_n; i++) {
         dtype* dout_ptr = out_array[i] + h * width;
-        lite::TargetWrapperHost::MemcpySync(dout_ptr, din_ptr, valid_w_byte);
+        lite_metal::TargetWrapperHost::MemcpySync(dout_ptr, din_ptr, valid_w_byte);
         din_ptr += size_w;
       }
     }

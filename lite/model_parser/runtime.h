@@ -20,7 +20,7 @@
 #include "paddle/fluid/framework/framework.pb.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // We define the runtime data structure for framework.proto to support some
 // other model format such as JSON if needed.

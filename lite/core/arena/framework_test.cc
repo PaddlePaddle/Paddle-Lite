@@ -18,7 +18,7 @@
 #include "lite/api/paddle_use_ops.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class ScaleComputeTester : public arena::TestCase {
   // common attributes for this op.

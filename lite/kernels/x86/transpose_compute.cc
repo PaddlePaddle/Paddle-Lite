@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(transpose,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::TransposeCompute<float>,
+                     paddle::lite_metal::kernels::x86::TransposeCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -28,7 +28,7 @@ REGISTER_LITE_KERNEL(transpose2,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::Transpose2Compute<float>,
+                     paddle::lite_metal::kernels::x86::Transpose2Compute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})

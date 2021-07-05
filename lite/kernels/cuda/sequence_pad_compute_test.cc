@@ -26,7 +26,7 @@
 #include "lite/utils/float16.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -42,15 +42,15 @@ class SequencePadTest : public ::testing::Test {
         out_shape_({static_cast<int64_t>(x_lod_[0].size() - 1),
                     padded_length_,
                     features_}) {
-    x_ref_.Resize(lite::DDim(x_shape_));
+    x_ref_.Resize(lite_metal::DDim(x_shape_));
     x_ref_.set_lod(x_lod_);
     x_gpu_.Resize(x_ref_.dims());
 
-    pad_value_ref_.Resize(lite::DDim(pad_value_shape_));
+    pad_value_ref_.Resize(lite_metal::DDim(pad_value_shape_));
     pad_value_gpu_.Resize(pad_value_ref_.dims());
 
     length_ref_.Resize(
-        lite::DDim({static_cast<int64_t>(x_lod_[0].size() - 1)}));
+        lite_metal::DDim({static_cast<int64_t>(x_lod_[0].size() - 1)}));
     length_gpu_.Resize(length_ref_.dims());
     length_cpu_.Resize(length_ref_.dims());
 
@@ -64,7 +64,7 @@ class SequencePadTest : public ::testing::Test {
       pad_value_ref_data[i] = static_cast<float>(i);
     }
 
-    out_ref_.Resize(lite::DDim(out_shape_));
+    out_ref_.Resize(lite_metal::DDim(out_shape_));
     out_gpu_.Resize(out_ref_.dims());
     out_cpu_.Resize(out_ref_.dims());
     RunBaseLine(&x_ref_, &pad_value_ref_, &out_ref_, &length_ref_);
@@ -85,35 +85,35 @@ class SequencePadTest : public ::testing::Test {
   }
 
   void InitFloatInput() {
-    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+    x_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
                                                     x_gpu_.dims());
     x_gpu_.set_lod(x_ref_.lod());
-    pad_value_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(
+    pad_value_gpu_.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(
         pad_value_ref_.data<float>(), pad_value_gpu_.dims());
   }
 
   void InitHalfInput() {
-    x_half_.Resize(lite::DDim(x_shape_));
+    x_half_.Resize(lite_metal::DDim(x_shape_));
     auto x_half_data = x_half_.mutable_data<half>();
     for (int64_t i = 0; i < x_half_.numel(); i++) {
-      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+      x_half_data[i] = half(lite_metal::float16(x_ref_.data<float>()[i]));
     }
-    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    x_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
     x_gpu_.set_lod(x_ref_.lod());
     pad_value_half_.Resize(pad_value_ref_.dims());
     auto pad_value_half_data = pad_value_half_.mutable_data<half>();
     for (int64_t i = 0; i < pad_value_half_.numel(); i++) {
       pad_value_half_data[i] =
-          half(lite::float16(pad_value_ref_.data<float>()[i]));
+          half(lite_metal::float16(pad_value_ref_.data<float>()[i]));
     }
-    pad_value_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(
+    pad_value_gpu_.Assign<half, lite_metal::DDim, TARGET(kCUDA)>(
         pad_value_half_data, pad_value_gpu_.dims());
   }
 
-  void RunBaseLine(const lite::Tensor* x,
-                   const lite::Tensor* pad_value,
-                   lite::Tensor* out,
-                   lite::Tensor* length) {
+  void RunBaseLine(const lite_metal::Tensor* x,
+                   const lite_metal::Tensor* pad_value,
+                   lite_metal::Tensor* out,
+                   lite_metal::Tensor* length) {
     auto* length_data = length->mutable_data<int64_t>();
     auto* out_data = out->mutable_data<float>();
     length_data[0] = 2;
@@ -133,10 +133,10 @@ class SequencePadTest : public ::testing::Test {
   LoD x_lod_;
   std::vector<int64_t> x_shape_, pad_value_shape_, out_shape_;
 
-  lite::Tensor x_ref_, pad_value_ref_, out_ref_, length_ref_;
-  lite::Tensor x_gpu_, pad_value_gpu_, out_gpu_, length_gpu_;
-  lite::Tensor x_half_, pad_value_half_;
-  lite::Tensor out_cpu_, length_cpu_;
+  lite_metal::Tensor x_ref_, pad_value_ref_, out_ref_, length_ref_;
+  lite_metal::Tensor x_gpu_, pad_value_gpu_, out_gpu_, length_gpu_;
+  lite_metal::Tensor x_half_, pad_value_half_;
+  lite_metal::Tensor out_cpu_, length_cpu_;
 
   operators::SequencePadParam param_;
   std::unique_ptr<KernelContext> ctx_;
@@ -217,7 +217,7 @@ TEST_F(SequencePadTest, TestFP16) {
                           sizeof(int64_t) * length_gpu_.numel(),
                           IoDirection::DtoH);
   for (int i = 0; i < out_gpu_.numel(); ++i) {
-    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float res = static_cast<float>(lite_metal::float16(out_cpu_data[i]));
     float ref = out_ref_.data<float>()[i];
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }

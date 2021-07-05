@@ -32,7 +32,7 @@ DEFINE_int32(H, 224, "input_height");
 DEFINE_int32(W, 224, "input_width");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void TestModel(const std::vector<Place>& valid_places,
                const std::string& model_dir) {
@@ -40,13 +40,13 @@ void TestModel(const std::vector<Place>& valid_places,
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
 
   LOG(INFO) << "Optimize model.";
-  lite::Predictor cxx_predictor;
+  lite_metal::Predictor cxx_predictor;
   cxx_predictor.Build(model_dir, "", "", valid_places);
   cxx_predictor.SaveModel(FLAGS_optimized_model,
                           paddle::lite_api::LiteModelType::kNaiveBuffer);
 
   LOG(INFO) << "Load optimized model.";
-  lite::LightPredictor predictor(FLAGS_optimized_model + ".nb", false);
+  lite_metal::LightPredictor predictor(FLAGS_optimized_model + ".nb", false);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(

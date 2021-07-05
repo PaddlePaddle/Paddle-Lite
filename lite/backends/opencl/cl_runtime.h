@@ -71,7 +71,7 @@ typedef cl_uint cl_priority_hint;
 #define CL_PRIORITY_HINT_LOW_QCOM 0x40CC
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 extern const std::map<std::string, std::vector<unsigned char>>
     opencl_kernels_files;
@@ -91,12 +91,12 @@ class CLRuntime {
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
 #endif
-    if (!paddle::lite::CLWrapper::Global()->OpenclLibFound() ||
-        !paddle::lite::CLWrapper::Global()->DlsymSuccess()) {
+    if (!paddle::lite_metal::CLWrapper::Global()->OpenclLibFound() ||
+        !paddle::lite_metal::CLWrapper::Global()->DlsymSuccess()) {
       LOG(ERROR) << "Invalid opencl device, OpenclLibFound:"
-                 << paddle::lite::CLWrapper::Global()->OpenclLibFound()
+                 << paddle::lite_metal::CLWrapper::Global()->OpenclLibFound()
                  << ", DlsymSuccess:"
-                 << paddle::lite::CLWrapper::Global()->DlsymSuccess();
+                 << paddle::lite_metal::CLWrapper::Global()->DlsymSuccess();
       return false;
     }
     if (device_info_.count("CL_DEVICE_TYPE") == 0) {

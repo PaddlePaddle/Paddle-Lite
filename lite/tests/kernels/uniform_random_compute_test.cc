@@ -22,7 +22,7 @@
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -33,14 +33,14 @@ TEST(uniformrandom, test) {
   float max = 10.0f;
   int seed = 0;
   int dtype = static_cast<int>(VarDescAPI::VarDataType::FP64);
-  lite::Tensor shape_tensor, out;
+  lite_metal::Tensor shape_tensor, out;
   shape_tensor.Resize({1, 2});
   auto* shape_tensor_data = shape_tensor.mutable_data<int64_t>();
   shape_tensor_data[0] = 2;
   shape_tensor_data[1] = 2;
   out.Resize({shape_tensor_data[0], shape_tensor_data[1]});
   UniformRandomCompute uniform_random;
-  paddle::lite::operators::UniformRandomParam param;
+  paddle::lite_metal::operators::UniformRandomParam param;
   param.shape_tensor = &shape_tensor;
   param.shape = shape;
   param.min = min;

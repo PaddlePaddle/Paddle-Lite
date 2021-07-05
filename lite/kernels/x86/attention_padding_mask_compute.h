@@ -24,7 +24,7 @@
 #include "lite/operators/attention_padding_mask_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -75,7 +75,7 @@ class AttentionPaddingMaskCompute
   virtual ~AttentionPaddingMaskCompute() = default;
 
  private:
-  lite::Tensor src_offset_;
+  lite_metal::Tensor src_offset_;
 };
 
 }  // namespace x86

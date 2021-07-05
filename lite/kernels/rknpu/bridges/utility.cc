@@ -23,7 +23,7 @@
 #include "rknpu/rknpu_pub.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace rknpu {
 

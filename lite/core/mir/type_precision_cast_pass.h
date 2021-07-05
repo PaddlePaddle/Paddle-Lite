@@ -22,7 +22,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void UpdateInputs(OpLite* op, const std::string& from, const std::string& to);

@@ -18,7 +18,7 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <>
 void TargetWrapper<TARGET(kX86)>::MemcpySync(void *dst,

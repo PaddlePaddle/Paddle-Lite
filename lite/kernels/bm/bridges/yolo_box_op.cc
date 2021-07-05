@@ -22,7 +22,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -36,16 +36,16 @@ int YoloBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   auto img_size_var_name = op_info->Input("ImgSize").front();
-  auto img_size = scope->FindVar(img_size_var_name)->GetMutable<lite::Tensor>();
+  auto img_size = scope->FindVar(img_size_var_name)->GetMutable<lite_metal::Tensor>();
   auto img_size_dims = img_size->dims();
   auto boxes_var_name = op_info->Output("Boxes").front();
-  auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
+  auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite_metal::Tensor>();
   auto boxes_dims = boxes->dims();
   auto scores_var_name = op_info->Output("Scores").front();
-  auto scores = scope->FindVar(scores_var_name)->GetMutable<lite::Tensor>();
+  auto scores = scope->FindVar(scores_var_name)->GetMutable<lite_metal::Tensor>();
   auto scores_dims = scores->dims();
   std::vector<int32_t> i_x_shape_data(x_dims.size());
   for (size_t i = 0; i < x_dims.size(); i++) {
@@ -125,4 +125,4 @@ int YoloBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(yolo_box,
                          kBM,
-                         paddle::lite::subgraph::bm::YoloBoxConverter);
+                         paddle::lite_metal::subgraph::bm::YoloBoxConverter);

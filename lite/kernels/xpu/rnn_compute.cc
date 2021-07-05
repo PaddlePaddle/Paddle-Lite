@@ -19,7 +19,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -288,7 +288,7 @@ void RnnCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    rnn, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::RnnCompute, def)
+    rnn, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::RnnCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("WeightList", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("PreState", {LiteType::GetTensorTy(TARGET(kXPU))})

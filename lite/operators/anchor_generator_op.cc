@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool AnchorGeneratorOpLite::CheckShape() const {
@@ -42,14 +42,14 @@ bool AnchorGeneratorOpLite::InferShapeImpl() const {
 }
 
 bool AnchorGeneratorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                       lite::Scope *scope) {
+                                       lite_metal::Scope *scope) {
   auto input_name = op_desc.Input("Input").front();
   auto anchor_name = op_desc.Output("Anchors").front();
   auto variances_name = op_desc.Output("Variances").front();
 
-  param_.Input = scope->FindVar(input_name)->GetMutable<lite::Tensor>();
-  param_.Anchors = scope->FindVar(anchor_name)->GetMutable<lite::Tensor>();
-  param_.Variances = scope->FindVar(variances_name)->GetMutable<lite::Tensor>();
+  param_.Input = scope->FindVar(input_name)->GetMutable<lite_metal::Tensor>();
+  param_.Anchors = scope->FindVar(anchor_name)->GetMutable<lite_metal::Tensor>();
+  param_.Variances = scope->FindVar(variances_name)->GetMutable<lite_metal::Tensor>();
   param_.anchor_sizes = op_desc.GetAttr<std::vector<float>>("anchor_sizes");
   param_.aspect_ratios = op_desc.GetAttr<std::vector<float>>("aspect_ratios");
   param_.stride = op_desc.GetAttr<std::vector<float>>("stride");
@@ -68,4 +68,4 @@ bool AnchorGeneratorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(anchor_generator,
-                 paddle::lite::operators::AnchorGeneratorOpLite);
+                 paddle::lite_metal::operators::AnchorGeneratorOpLite);

@@ -17,17 +17,17 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
-static inline lite::Tensor ReshapeToMatrix(const lite::Tensor& src,
+static inline lite_metal::Tensor ReshapeToMatrix(const lite_metal::Tensor& src,
                                            int num_col_dims) {
   int rank = src.dims().size();
   if (rank == 2) {
     return src;
   }
-  lite::Tensor res;
+  lite_metal::Tensor res;
   res.ShareDataWith(src);
   res.Resize(src.dims().Flatten2D(num_col_dims));
   return res;

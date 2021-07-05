@@ -15,7 +15,7 @@
 #include "lite/model_parser/base/io.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace model_parser {
 
 void Buffer::CopyDataFrom(const Buffer& other) {
@@ -65,7 +65,7 @@ void BinaryFileWriter::Write(const void* src, size_t size) const {
 
 void StringBufferReader::Read(void* dst, size_t size) const {
   CHECK(dst);
-  lite::TargetCopy(TargetType::kHost, dst, buf_ + cur_, size);
+  lite_metal::TargetCopy(TargetType::kHost, dst, buf_ + cur_, size);
   cur_ += size;
 }
 

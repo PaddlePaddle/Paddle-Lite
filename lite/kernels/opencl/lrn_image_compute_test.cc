@@ -23,7 +23,7 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 float lrn_square(const float* din,
                  int c,
                  int offset,
@@ -120,7 +120,7 @@ TEST(lrn_image2d, compute) {
                     auto kernel = std::move(kernels.front());
                     LOG(INFO) << "get kernel:" << kernel->doc();
 
-                    lite::Tensor x, out;
+                    lite_metal::Tensor x, out;
                     operators::LrnParam param;
                     param.X = &x;
                     param.Out = &out;

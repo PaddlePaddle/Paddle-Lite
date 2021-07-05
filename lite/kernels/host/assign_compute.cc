@@ -15,7 +15,7 @@
 #include "lite/kernels/host/assign_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -47,7 +47,7 @@ void AssignCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    assign, kHost, kAny, kAny, paddle::lite::kernels::host::AssignCompute, def)
+    assign, kHost, kAny, kAny, paddle::lite_metal::kernels::host::AssignCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kAny),
@@ -62,7 +62,7 @@ REGISTER_LITE_KERNEL(assign,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::AssignCompute,
+                     paddle::lite_metal::kernels::host::AssignCompute,
                      def_tensor_array)
     .BindInput("X",
                {LiteType::GetTensorListTy(TARGET(kHost),

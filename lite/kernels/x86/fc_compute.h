@@ -27,14 +27,14 @@
 #include "lite/operators/fc_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class FCFunctor {
  public:
-  void operator()(const lite::X86Context& context,
+  void operator()(const lite_metal::X86Context& context,
                   const int M,
                   const int N,
                   const int K,
@@ -44,7 +44,7 @@ class FCFunctor {
                   const T* B = nullptr,
                   bool relu = false,
                   bool padding_weights = false) {
-    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
+    auto blas = lite_metal::x86::math::GetBlas<lite_metal::TargetType::kX86, T>(context);
     T* Y1_data = nullptr;
 
     auto compute =
@@ -69,11 +69,11 @@ class FCFunctor {
 
       // NOTE: here need to mutable_data for temporary Tensor X1 and Y1,
       //  the overhead is unmeasured.
-      lite::Tensor X1;
+      lite_metal::Tensor X1;
       X1.Resize(std::vector<int64_t>{M * KK});
       T* X1_data = X1.mutable_data<T>();
 
-      lite::Tensor Y1;
+      lite_metal::Tensor Y1;
       Y1.Resize(std::vector<int64_t>{M * NN});
       Y1_data = Y1.mutable_data<T>();
 
@@ -82,7 +82,7 @@ class FCFunctor {
           memcpy(X1_data + i * KK, X + i * K, K * sizeof(T));
         }
       };
-      lite::x86::RunParallelFor(0, M, parallel_memcpy_x);
+      lite_metal::x86::RunParallelFor(0, M, parallel_memcpy_x);
 
       blas.GEMM(false,
                 false,
@@ -104,18 +104,18 @@ class FCFunctor {
             memcpy(Y + i * N, Y1_data + i * NN, N * sizeof(T));
           }
         };
-        lite::x86::RunParallelFor(0, M, parallel_memcpy_y);
+        lite_metal::x86::RunParallelFor(0, M, parallel_memcpy_y);
         return;
       }
 
-      lite::x86::RunParallelFor(0, M, parallel_compute);
+      lite_metal::x86::RunParallelFor(0, M, parallel_compute);
     } else {
       blas.MatMul(M, N, K, X, W, Y);
       if (!B) {
         return;
       }
 
-      lite::x86::RunParallelFor(0, M, parallel_compute);
+      lite_metal::x86::RunParallelFor(0, M, parallel_compute);
     }
   }
 };
@@ -145,7 +145,7 @@ class FcCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     T* output_data = output->template mutable_data<T>();
 
     auto& context = ctx_->As<X86Context>();
-    FCFunctor<lite::TargetType::kX86, T> fc;
+    FCFunctor<lite_metal::TargetType::kX86, T> fc;
     fc(context,
        M,
        w_dims1,

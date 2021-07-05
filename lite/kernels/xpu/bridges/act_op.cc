@@ -17,7 +17,7 @@
 #include "lite/kernels/xpu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace xpu {
 
@@ -65,6 +65,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu, kXPU, paddle::lite::subgraph::xpu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh, kXPU, paddle::lite::subgraph::xpu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(gelu, kXPU, paddle::lite::subgraph::xpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu, kXPU, paddle::lite_metal::subgraph::xpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(tanh, kXPU, paddle::lite_metal::subgraph::xpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(gelu, kXPU, paddle::lite_metal::subgraph::xpu::ActConverter);

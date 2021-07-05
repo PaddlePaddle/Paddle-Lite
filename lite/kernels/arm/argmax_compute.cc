@@ -21,15 +21,15 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
 template <typename T>
 void ArgmaxCompute<T>::Run() {
   auto& param = Param<operators::ArgmaxParam>();
-  lite::Tensor* input = param.X;
-  lite::Tensor* output = param.Out;
+  lite_metal::Tensor* input = param.X;
+  lite_metal::Tensor* output = param.Out;
   int axis = param.Axis;
   if (axis < 0) {
     axis += input->dims().size();
@@ -38,17 +38,17 @@ void ArgmaxCompute<T>::Run() {
   switch (param.dtype) {
     // default indices type: int64_t
     case -1: {
-      lite::arm::math::argmax_func<T, int64_t>(input, axis, output);
+      lite_metal::arm::math::argmax_func<T, int64_t>(input, axis, output);
       break;
     }
-    // static_cast<int>(lite::core::FluidType::INT32) == 2
+    // static_cast<int>(lite_metal::core::FluidType::INT32) == 2
     case 2: {
-      lite::arm::math::argmax_func<T, int32_t>(input, axis, output);
+      lite_metal::arm::math::argmax_func<T, int32_t>(input, axis, output);
       break;
     }
-    // static_cast<int>(lite::core::FluidType::INT64) == 3
+    // static_cast<int>(lite_metal::core::FluidType::INT64) == 3
     case 3: {
-      lite::arm::math::argmax_func<T, int64_t>(input, axis, output);
+      lite_metal::arm::math::argmax_func<T, int64_t>(input, axis, output);
       break;
     }
     default: {
@@ -73,7 +73,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::ArgmaxCompute<float>,
+                     paddle::lite_metal::kernels::arm::ArgmaxCompute<float>,
                      fp32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
@@ -86,7 +86,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::ArgmaxCompute<int64_t>,
+                     paddle::lite_metal::kernels::arm::ArgmaxCompute<int64_t>,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
@@ -97,7 +97,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::ArgmaxCompute<int32_t>,
+                     paddle::lite_metal::kernels::arm::ArgmaxCompute<int32_t>,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
@@ -108,7 +108,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::ArgmaxCompute<int16_t>,
+                     paddle::lite_metal::kernels::arm::ArgmaxCompute<int16_t>,
                      int16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
@@ -119,7 +119,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::ArgmaxCompute<uint8_t>,
+                     paddle::lite_metal::kernels::arm::ArgmaxCompute<uint8_t>,
                      uint8)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kUInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})

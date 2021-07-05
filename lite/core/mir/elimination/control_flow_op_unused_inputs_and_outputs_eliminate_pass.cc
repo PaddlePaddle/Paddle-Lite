@@ -24,7 +24,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // Remove all of the unused nodes from the contorl flow op and update the inputs
@@ -240,5 +240,5 @@ void ControlFlowOpUnusedInputsAndOutputsEliminatePass::Apply(
 
 REGISTER_MIR_PASS(
     control_flow_op_unused_inputs_and_outputs_eliminate_pass,
-    paddle::lite::mir::ControlFlowOpUnusedInputsAndOutputsEliminatePass)
+    paddle::lite_metal::mir::ControlFlowOpUnusedInputsAndOutputsEliminatePass)
     .BindTargets({TARGET(kNPU)});

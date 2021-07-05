@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -31,16 +31,16 @@ void FillAnyLikeCompute::Run() {
   if (dtype == -1) {
     switch (param.X->precision()) {
       case PRECISION(kFloat):
-        dtype = static_cast<int32_t>(lite::core::FluidType::FP32);
+        dtype = static_cast<int32_t>(lite_metal::core::FluidType::FP32);
         break;
       case PRECISION(kInt32):
-        dtype = static_cast<int32_t>(lite::core::FluidType::INT32);
+        dtype = static_cast<int32_t>(lite_metal::core::FluidType::INT32);
         break;
       case PRECISION(kInt8):
-        dtype = static_cast<int32_t>(lite::core::FluidType::INT8);
+        dtype = static_cast<int32_t>(lite_metal::core::FluidType::INT8);
         break;
       case PRECISION(kInt64):
-        dtype = static_cast<int32_t>(lite::core::FluidType::INT64);
+        dtype = static_cast<int32_t>(lite_metal::core::FluidType::INT64);
         break;
       default:
         LOG(FATAL) << "not supported x dtype: "
@@ -103,7 +103,7 @@ REGISTER_LITE_KERNEL(fill_any_like,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::FillAnyLikeCompute,
+                     paddle::lite_metal::kernels::xpu::FillAnyLikeCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})

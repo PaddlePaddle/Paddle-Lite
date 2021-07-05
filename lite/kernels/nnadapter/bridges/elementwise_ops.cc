@@ -17,7 +17,7 @@
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace nnadapter {
 
@@ -161,32 +161,32 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_add,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+    paddle::lite_metal::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_sub,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+    paddle::lite_metal::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_mul,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+    paddle::lite_metal::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     elementwise_div,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+    paddle::lite_metal::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_add_activation,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+    paddle::lite_metal::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_sub_activation,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+    paddle::lite_metal::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_mul_activation,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+    paddle::lite_metal::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_div_activation,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+    paddle::lite_metal::subgraph::nnadapter::ElementwiseConverter);

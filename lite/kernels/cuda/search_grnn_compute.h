@@ -20,7 +20,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -89,17 +89,17 @@ class SearchGrnnCompute
   void WeightsPreprocess();
 
  private:
-  std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_;
+  std::unique_ptr<lite_metal::cuda::math::Gemm<float, float>> gemm_impl_;
 
-  lite::Tensor _temp_tensor_in;
-  lite::Tensor _temp_tensor_out;
-  lite::Tensor _temp_wx;
-  lite::Tensor _temp_wh;
-  lite::Tensor _temp_zero;
-  lite::Tensor _temp_weights_h2h;
+  lite_metal::Tensor _temp_tensor_in;
+  lite_metal::Tensor _temp_tensor_out;
+  lite_metal::Tensor _temp_wx;
+  lite_metal::Tensor _temp_wh;
+  lite_metal::Tensor _temp_zero;
+  lite_metal::Tensor _temp_weights_h2h;
 
-  lite::Tensor _wi;
-  lite::Tensor _wh;
+  lite_metal::Tensor _wi;
+  lite_metal::Tensor _wh;
 
   SeqSortedseqTranseUtil _seq_util;
 };

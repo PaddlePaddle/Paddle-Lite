@@ -19,7 +19,7 @@
 #include "lite/operators/im2sequence_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 

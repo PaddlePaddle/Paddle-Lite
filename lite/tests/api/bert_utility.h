@@ -24,7 +24,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <class T = int64_t>
 void ReadRawData(const std::string& input_data_dir,

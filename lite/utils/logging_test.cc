@@ -16,7 +16,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(logging, basic) {
   CHECK_EQ(1, 1) << "error";

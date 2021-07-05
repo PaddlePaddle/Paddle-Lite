@@ -15,7 +15,7 @@
 #include "lite/operators/one_hot_v2_op.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool OneHotV2Op::CheckShape() const {
@@ -35,7 +35,7 @@ bool OneHotV2Op::InferShapeImpl() const {
   return true;
 }
 
-bool OneHotV2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool OneHotV2Op::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
   param_.X = scope->FindVar(x)->GetMutable<Tensor>();
@@ -63,4 +63,4 @@ bool OneHotV2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(one_hot_v2, paddle::lite::operators::OneHotV2Op);
+REGISTER_LITE_OP(one_hot_v2, paddle::lite_metal::operators::OneHotV2Op);

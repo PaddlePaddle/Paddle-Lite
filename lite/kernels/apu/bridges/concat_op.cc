@@ -18,7 +18,7 @@
 #include "lite/kernels/apu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace apu {
 
@@ -59,7 +59,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NeuronOperandType xType;
   for (int i = 0; i < num; i++) {
     auto x_name = x_names[i];
-    auto x_scale_name = "X" + paddle::lite::to_string(i) + "_scale";
+    auto x_scale_name = "X" + paddle::lite_metal::to_string(i) + "_scale";
     auto x = scope->FindMutableTensor(x_name);
     auto x_dims = x->dims();
     std::shared_ptr<Node> x_node = nullptr;
@@ -224,4 +224,4 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(concat,
                          kAPU,
-                         paddle::lite::subgraph::apu::ConcatConverter);
+                         paddle::lite_metal::subgraph::apu::ConcatConverter);

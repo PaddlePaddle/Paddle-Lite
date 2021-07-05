@@ -23,7 +23,7 @@
 #include "lite/core/op_lite.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // Node in a MIR graph.
@@ -51,7 +51,7 @@ class Node {
     // Refresh the operator and kernels with the latest OpInfo.
     void ResetOp(const cpp::OpDesc& op_desc,
                  const std::vector<Place>& valid_places,
-                 lite::Scope* scope = nullptr);
+                 lite_metal::Scope* scope = nullptr);
 
     void ResetKernels(const std::vector<Place>& valid_places);
     std::string op_type() const { return op_info()->Type(); }

@@ -18,7 +18,7 @@
 #include "lite/backends/x86/math/blas.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -28,7 +28,7 @@ T sigmoid(T z) {
 }
 
 template <typename T>
-void CallGemm(const lite::x86::math::BlasT<TARGET(kX86), T>& blas,
+void CallGemm(const lite_metal::x86::math::BlasT<TARGET(kX86), T>& blas,
               const CBLAS_TRANSPOSE TransA,
               const CBLAS_TRANSPOSE TransB,
               const int M,
@@ -213,7 +213,7 @@ void SearchGrnnCompute<T>::Run() {
   // the internal hidden
   auto* hidden = buffer_data + 19 * _cap_l * _cap_h;
 
-  auto blas = lite::x86::math::GetBlas<TARGET(kX86), T>(context);
+  auto blas = lite_metal::x86::math::GetBlas<TARGET(kX86), T>(context);
   CallGemm(blas,
            CblasNoTrans,
            CblasTrans,
@@ -319,7 +319,7 @@ REGISTER_LITE_KERNEL(search_grnn,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SearchGrnnCompute<float>,
+                     paddle::lite_metal::kernels::x86::SearchGrnnCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Wi", {LiteType::GetTensorTy(TARGET(kX86))})

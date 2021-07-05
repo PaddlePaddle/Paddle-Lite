@@ -23,7 +23,7 @@ limitations under the License. */
 #include "lite/backends/x86/port.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 
 extern std::once_flag mklml_dso_flag;
@@ -40,7 +40,7 @@ extern void* mklml_dso_handle;
     auto operator()(Args... args) -> DECLARE_TYPE(__name, args...) { \
       using mklmlFunc = decltype(&::__name);                         \
       std::call_once(mklml_dso_flag, []() {                          \
-        mklml_dso_handle = paddle::lite::x86::GetMKLMLDsoHandle();   \
+        mklml_dso_handle = paddle::lite_metal::x86::GetMKLMLDsoHandle();   \
       });                                                            \
       static void* p_##_name = dlsym(mklml_dso_handle, #__name);     \
       return reinterpret_cast<mklmlFunc>(p_##_name)(args...);        \

@@ -21,7 +21,7 @@ limitations under the License. */
 #include "unsupported/Eigen/CXX11/Tensor"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fluid {
 
 // EigenDim converts paddle::platform::DDim into Eigen::DSizes.
@@ -29,7 +29,7 @@ template <int D>
 struct EigenDim {
   using Type = Eigen::DSizes<Eigen::DenseIndex, D>;
 
-  static Type From(const lite::DDim& dims) {
+  static Type From(const lite_metal::DDim& dims) {
     CHECK_EQ(dims.size(), D) << "D must match DDim::size";
     Type ret;
     for (size_t d = 0; d < dims.size(); d++) {
@@ -59,7 +59,7 @@ struct EigenTensor {
   using ConstType =
       Eigen::TensorMap<Eigen::Tensor<const T, D, MajorType, IndexType>>;
 
-  static Type From(Tensor& tensor, const lite::DDim& dims) {  // NOLINT
+  static Type From(Tensor& tensor, const lite_metal::DDim& dims) {  // NOLINT
     return Type(const_cast<T*>(tensor.data<T>()),
                 EigenDim<D>::From(dims));  // NOLINT
   }
@@ -68,7 +68,7 @@ struct EigenTensor {
     return From(tensor, tensor.dims());
   }  // NOLINT
 
-  static ConstType From(const Tensor& tensor, const lite::DDim& dims) {
+  static ConstType From(const Tensor& tensor, const lite_metal::DDim& dims) {
     return ConstType(tensor.data<T>(), EigenDim<D>::From(dims));
   }
 
@@ -135,15 +135,15 @@ struct EigenScalar {
   }
 };
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 struct EigenDevice;
 
 template <>
-struct EigenDevice<lite::TargetType::kX86> {
+struct EigenDevice<lite_metal::TargetType::kX86> {
   using Type = ::Eigen::DefaultDevice;
 };
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 using EigenDeviceType = typename EigenDevice<Target>::Type;
 
 }  // namespace fluid

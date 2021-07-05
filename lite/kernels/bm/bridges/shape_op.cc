@@ -20,7 +20,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -34,7 +34,7 @@ int ShapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   // input
   auto x_var_name = op_info->Input("Input").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
+  auto x = scope->FindVar(x_var_name)->GetMutable<lite_metal::Tensor>();
   auto x_dims = x->dims();
   // output
   auto output_var_name = op_info->Output("Out").front();
@@ -58,4 +58,4 @@ int ShapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(shape,
                          kBM,
-                         paddle::lite::subgraph::bm::ShapeConverter);
+                         paddle::lite_metal::subgraph::bm::ShapeConverter);

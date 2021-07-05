@@ -15,17 +15,17 @@ limitations under the License. */
 #include "lite/backends/x86/math/sequence2batch.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
 template <typename T>
-class CopyMatrixRowsFunctor<lite::TargetType::kX86, T> {
+class CopyMatrixRowsFunctor<lite_metal::TargetType::kX86, T> {
  public:
-  void operator()(const lite::Context<lite::TargetType::kX86>& context,
-                  const lite::Tensor& src,
+  void operator()(const lite_metal::Context<lite_metal::TargetType::kX86>& context,
+                  const lite_metal::Tensor& src,
                   const std::vector<uint64_t>& index_lod,
-                  lite::Tensor* dst,
+                  lite_metal::Tensor* dst,
                   bool is_src_index) {
     const uint64_t* index = index_lod.data();
     const auto& src_dims = src.dims();
@@ -51,13 +51,13 @@ class CopyMatrixRowsFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class CopyMatrixRowsFunctor<lite::TargetType::kX86, float>;
-template class CopyMatrixRowsFunctor<lite::TargetType::kX86, double>;
+template class CopyMatrixRowsFunctor<lite_metal::TargetType::kX86, float>;
+template class CopyMatrixRowsFunctor<lite_metal::TargetType::kX86, double>;
 
-template class LoDTensor2BatchFunctor<lite::TargetType::kX86, float>;
-template class LoDTensor2BatchFunctor<lite::TargetType::kX86, double>;
-template class Batch2LoDTensorFunctor<lite::TargetType::kX86, float>;
-template class Batch2LoDTensorFunctor<lite::TargetType::kX86, double>;
+template class LoDTensor2BatchFunctor<lite_metal::TargetType::kX86, float>;
+template class LoDTensor2BatchFunctor<lite_metal::TargetType::kX86, double>;
+template class Batch2LoDTensorFunctor<lite_metal::TargetType::kX86, float>;
+template class Batch2LoDTensorFunctor<lite_metal::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

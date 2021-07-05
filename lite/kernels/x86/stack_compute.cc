@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 using stack_float =
-    paddle::lite::kernels::host::StackCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::StackCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(stack, kX86, kFloat, kNCHW, stack_float, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})

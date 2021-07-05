@@ -19,13 +19,13 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
 namespace {
-inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs,
-                     std::vector<lite::Tensor>* xs_in_order) {
+inline LoD ConcatLoD(const std::vector<lite_metal::Tensor*>& xs,
+                     std::vector<lite_metal::Tensor>* xs_in_order) {
   std::vector<size_t> result;
   result.resize(xs[0]->lod()[0].size());
 
@@ -45,8 +45,8 @@ inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs,
   return lod;
 }
 
-static void sequence_concat_ref(const std::vector<lite::Tensor*>& xs,
-                                lite::Tensor* out) {
+static void sequence_concat_ref(const std::vector<lite_metal::Tensor*>& xs,
+                                lite_metal::Tensor* out) {
   std::vector<int64_t> out_dims;
   int64_t batch_size = 0;
   int64_t feature_size = 0;
@@ -65,7 +65,7 @@ static void sequence_concat_ref(const std::vector<lite::Tensor*>& xs,
   }
   out_dims[0] = batch_size;
   out->Resize(out_dims);
-  std::vector<lite::Tensor> x_in_order;
+  std::vector<lite_metal::Tensor> x_in_order;
   out->set_lod(ConcatLoD(xs, &x_in_order));
 
   int num = x_in_order.size();
@@ -96,7 +96,7 @@ static void sequence_concat_ref(const std::vector<lite::Tensor*>& xs,
     name##_cpu_data[i] = (i - 2.0) * 1.0;                        \
     name##_ref_data[i] = (i - 2.0) * 1.0;                        \
   }                                                              \
-  name.Assign<float, lite::DDim, TARGET(kCUDA)>(name##_cpu_data, \
+  name.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(name##_cpu_data, \
                                                 name##_cpu.dims());
 
 #define PREPARE_OUTPUT_INFO(name)              \
@@ -113,8 +113,8 @@ TEST(sequence_concat_cuda, normal) {
   auto& context = ctx->As<CUDAContext>();
 
   operators::SequenceConcatParam param;
-  lite::Tensor x1, x2, x3, x1_cpu, x2_cpu, x3_cpu, x1_ref, x2_ref, x3_ref;
-  lite::Tensor y, y_cpu, y_ref;
+  lite_metal::Tensor x1, x2, x3, x1_cpu, x2_cpu, x3_cpu, x1_ref, x2_ref, x3_ref;
+  lite_metal::Tensor y, y_cpu, y_ref;
 
   int32_t x1_lod_len = 10, feature_len = 4;
   int32_t x2_lod_len = 4, x3_lod_len = 8;
@@ -133,7 +133,7 @@ TEST(sequence_concat_cuda, normal) {
   PREPARE_INPUT_DATA(x3);
   PREPARE_OUTPUT_INFO(y);
 
-  param.X = std::vector<lite::Tensor*>({&x1, &x2, &x3});
+  param.X = std::vector<lite_metal::Tensor*>({&x1, &x2, &x3});
   param.Out = &y;
   seq_kernel.SetParam(param);
 
@@ -149,7 +149,7 @@ TEST(sequence_concat_cuda, normal) {
   CopySync<TARGET(kCUDA)>(
       y_cpu_data, y_data, sizeof(float) * y.numel(), IoDirection::DtoH);
 
-  std::vector<lite::Tensor*> input_ref({&x1_ref, &x2_ref, &x3_ref});
+  std::vector<lite_metal::Tensor*> input_ref({&x1_ref, &x2_ref, &x3_ref});
   sequence_concat_ref(input_ref, &y_ref);
   float* y_ref_data = y_ref.mutable_data<float>();
   for (int i = 0; i < y.numel(); i++) {

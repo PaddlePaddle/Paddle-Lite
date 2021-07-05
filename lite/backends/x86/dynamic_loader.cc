@@ -28,41 +28,41 @@ limitations under the License. */
 //               "Specify path for loading libcudnn.so. For instance, "
 //               "/usr/local/cudnn/lib. If empty [default], dlopen "
 //               "will search cudnn from LD_LIBRARY_PATH");
-std::string cudnn_dir = paddle::lite::GetStringFromEnv("cudnn_dir");  // NOLINT
+std::string cudnn_dir = paddle::lite_metal::GetStringFromEnv("cudnn_dir");  // NOLINT
 
 // DEFINE_string(cuda_dir,
 //               "",
 //               "Specify path for loading cuda library, such as libcublas, "
 //               "libcurand. For instance, /usr/local/cuda/lib64. If default, "
 //               "dlopen will search cuda from LD_LIBRARY_PATH");
-std::string cuda_dir = paddle::lite::GetStringFromEnv("cuda_dir");  // NOLINT
+std::string cuda_dir = paddle::lite_metal::GetStringFromEnv("cuda_dir");  // NOLINT
 
 // DEFINE_string(warpctc_dir, "", "Specify path for loading libwarpctc.so.");
 std::string f_warpctc_dir =                         // NOLINT
-    paddle::lite::GetStringFromEnv("warpctc_dir");  // NOLINT
+    paddle::lite_metal::GetStringFromEnv("warpctc_dir");  // NOLINT
 
 // DEFINE_string(nccl_dir,
 //               "",
 //               "Specify path for loading nccl library, such as libcublas, "
 //               "libcurand. For instance, /usr/local/cuda/lib64. If default, "
 //               "dlopen will search cuda from LD_LIBRARY_PATH");
-std::string nccl_dir = paddle::lite::GetStringFromEnv("nccl_dir");  // NOLINT
+std::string nccl_dir = paddle::lite_metal::GetStringFromEnv("nccl_dir");  // NOLINT
 
 // DEFINE_string(cupti_dir, "", "Specify path for loading cupti.so.");
-std::string cupti_dir = paddle::lite::GetStringFromEnv("cupti_dir");  // NOLINT
+std::string cupti_dir = paddle::lite_metal::GetStringFromEnv("cupti_dir");  // NOLINT
 
 // DEFINE_string(
 //     tensorrt_dir,
 //     "",
 //     "Specify path for loading tensorrt library, such as libnvinfer.so.");
 std::string tensorrt_dir =                           // NOLINT
-    paddle::lite::GetStringFromEnv("tensorrt_dir");  // NOLINT
+    paddle::lite_metal::GetStringFromEnv("tensorrt_dir");  // NOLINT
 
 // DEFINE_string(mklml_dir, "", "Specify path for loading libmklml_intel.so.");
-std::string mklml_dir = paddle::lite::GetStringFromEnv("mklml_dir");  // NOLINT
+std::string mklml_dir = paddle::lite_metal::GetStringFromEnv("mklml_dir");  // NOLINT
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 static constexpr char cupti_lib_path[] = CUPTI_LIB_PATH;
 static constexpr char warpctc_lib_path[] = WARPCTC_LIB_PATH;

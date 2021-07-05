@@ -19,7 +19,7 @@
 #include "lite/backends/cuda/math/utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 
@@ -41,8 +41,8 @@ __global__ void CopyMatrixRowsKernel(const T* src,
 
 template <typename T>
 void CopyMatrixRowsFunctor<T>::operator()(
-    const lite::Tensor& src,
-    lite::Tensor* dst,
+    const lite_metal::Tensor& src,
+    lite_metal::Tensor* dst,
     const std::vector<uint64_t>& index_lod,
     bool is_src_index,
     const cudaStream_t& stream) {

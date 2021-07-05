@@ -16,7 +16,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 class ArgumentTypeDisplayPass : public DebugPass {
@@ -42,5 +42,5 @@ class ArgumentTypeDisplayPass : public DebugPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(argument_type_display_pass,
-                  paddle::lite::mir::ArgumentTypeDisplayPass)
+                  paddle::lite_metal::mir::ArgumentTypeDisplayPass)
     .BindTargets({TARGET(kAny)});

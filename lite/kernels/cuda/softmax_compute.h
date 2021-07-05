@@ -17,7 +17,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -32,9 +32,9 @@ class SoftmaxCompute
   virtual ~SoftmaxCompute() = default;
 
  private:
-  lite::cuda::math::CudnnSoftmax<Dtype, Ptype> cudnn_softmax_;
-  lite::Tensor tmax_data_;
-  lite::Tensor tsum_data_;
+  lite_metal::cuda::math::CudnnSoftmax<Dtype, Ptype> cudnn_softmax_;
+  lite_metal::Tensor tmax_data_;
+  lite_metal::Tensor tsum_data_;
   size_t sharedmem_size_;
   int max_dimsize_;
   int axis_size_;

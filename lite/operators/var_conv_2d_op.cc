@@ -16,32 +16,32 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool VarConv2dOp::CheckShape() const { return true; }
 
 bool VarConv2dOp::InferShapeImpl() const { return true; }
 
-bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
+bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
+  param_.X = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("X").front())->Get<lite_metal::Tensor>());
   if (opdesc.HasInput("ROW") && !opdesc.Input("ROW").empty()) {
-    param_.ROW = const_cast<lite::Tensor *>(
-        &scope->FindVar(opdesc.Input("ROW").front())->Get<lite::Tensor>());
+    param_.ROW = const_cast<lite_metal::Tensor *>(
+        &scope->FindVar(opdesc.Input("ROW").front())->Get<lite_metal::Tensor>());
     CHECK(param_.ROW) << "Input(ROW) of VarConv2dOP should not be null.";
   }
   if (opdesc.HasInput("COLUMN") && !opdesc.Input("COLUMN").empty()) {
-    param_.COLUMN = const_cast<lite::Tensor *>(
-        &scope->FindVar(opdesc.Input("COLUMN").front())->Get<lite::Tensor>());
+    param_.COLUMN = const_cast<lite_metal::Tensor *>(
+        &scope->FindVar(opdesc.Input("COLUMN").front())->Get<lite_metal::Tensor>());
     CHECK(param_.COLUMN) << "Input(COLUMN) of VarConv2dOP should not be null.";
   }
-  param_.W = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("W").front())->Get<lite::Tensor>());
+  param_.W = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("W").front())->Get<lite_metal::Tensor>());
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   param_.Col =
-      scope->FindVar(opdesc.Output("Col").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Col").front())->GetMutable<lite_metal::Tensor>();
   CHECK(param_.X) << "X(Input) of VarConv2dOP should not be null.";
   CHECK(param_.W) << "W(Input) of VarConv2dOP should not be null.";
   CHECK(param_.Out) << "Out(Output) of VarConv2dOP should not be null.";
@@ -72,4 +72,4 @@ bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(var_conv_2d, paddle::lite::operators::VarConv2dOp);
+REGISTER_LITE_OP(var_conv_2d, paddle::lite_metal::operators::VarConv2dOp);

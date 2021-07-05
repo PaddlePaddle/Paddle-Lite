@@ -15,7 +15,7 @@
 #include "lite/kernels/xpu/__xpu__resnet_cbam_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -72,7 +72,7 @@ REGISTER_LITE_KERNEL(__xpu__resnet_cbam,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUResNetCbamCompute,
+                     paddle::lite_metal::kernels::xpu::XPUResNetCbamCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})

@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -64,7 +64,7 @@ REGISTER_LITE_KERNEL(sequence_softmax,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SequenceSoftmaxCompute,
+                     paddle::lite_metal::kernels::host::SequenceSoftmaxCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})

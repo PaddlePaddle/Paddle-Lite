@@ -17,7 +17,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
@@ -140,16 +140,16 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(elementwise_add,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::mlu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::mlu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_sub,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::mlu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_mul,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::mlu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(elementwise_div,
                          kMLU,
-                         paddle::lite::subgraph::mlu::ElementwiseConverter);
+                         paddle::lite_metal::subgraph::mlu::ElementwiseConverter);

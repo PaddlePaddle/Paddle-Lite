@@ -21,16 +21,16 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 template <class T>
-void TensorFromVector(const std::vector<T>& src, lite::Tensor* dst) {
+void TensorFromVector(const std::vector<T>& src, lite_metal::Tensor* dst) {
   auto* src_ptr = static_cast<const void*>(src.data());
   auto* dst_ptr = static_cast<void*>(dst->mutable_data<T>());
   auto size = src.size() * sizeof(T);
-  lite::TargetWrapperHost::MemcpySync(
+  lite_metal::TargetWrapperHost::MemcpySync(
       dst_ptr, src_ptr, size, IoDirection::HtoH);
 }
 
@@ -43,13 +43,13 @@ void AssignValueCompute::Run() {
   std::vector<int> bool_values = param.bool_values;
   auto* out = param.Out;
 
-  if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
+  if (dtype == static_cast<int>(lite_metal::core::FluidType::INT32)) {
     TensorFromVector(int32_values, out);
-  } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
+  } else if (dtype == static_cast<int>(lite_metal::core::FluidType::FP32)) {
     TensorFromVector(fp32_values, out);
-  } else if (dtype == static_cast<int>(lite::core::FluidType::INT64)) {
+  } else if (dtype == static_cast<int>(lite_metal::core::FluidType::INT64)) {
     TensorFromVector(int64_values, out);
-  } else if (dtype == static_cast<int>(lite::core::FluidType::BOOL)) {
+  } else if (dtype == static_cast<int>(lite_metal::core::FluidType::BOOL)) {
     TensorFromVector(bool_values, out);
   } else {
     LOG(FATAL) << "Unsupported dtype for assign_value_op:" << dtype;
@@ -66,7 +66,7 @@ REGISTER_LITE_KERNEL(assign_value,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::AssignValueCompute,
+                     paddle::lite_metal::kernels::host::AssignValueCompute,
                      def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();

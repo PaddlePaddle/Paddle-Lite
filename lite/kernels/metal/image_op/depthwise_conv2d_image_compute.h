@@ -31,7 +31,7 @@
 #include "lite/kernels/metal/image_op/conv2d_image_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 

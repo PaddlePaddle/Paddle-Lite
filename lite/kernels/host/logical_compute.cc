@@ -15,7 +15,7 @@
 #include "lite/kernels/host/logical_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -72,8 +72,8 @@ REGISTER_LITE_KERNEL(logical_xor,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::BinaryLogicalCompute<
-                         paddle::lite::kernels::host::_LogicalXorFunctor>,
+                     paddle::lite_metal::kernels::host::BinaryLogicalCompute<
+                         paddle::lite_metal::kernels::host::_LogicalXorFunctor>,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -93,8 +93,8 @@ REGISTER_LITE_KERNEL(logical_and,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::BinaryLogicalCompute<
-                         paddle::lite::kernels::host::_LogicalAndFunctor>,
+                     paddle::lite_metal::kernels::host::BinaryLogicalCompute<
+                         paddle::lite_metal::kernels::host::_LogicalAndFunctor>,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -114,8 +114,8 @@ REGISTER_LITE_KERNEL(logical_or,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::BinaryLogicalCompute<
-                         paddle::lite::kernels::host::_LogicalOrFunctor>,
+                     paddle::lite_metal::kernels::host::BinaryLogicalCompute<
+                         paddle::lite_metal::kernels::host::_LogicalOrFunctor>,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -135,8 +135,8 @@ REGISTER_LITE_KERNEL(logical_not,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::UnaryLogicalCompute<
-                         paddle::lite::kernels::host::_LogicalNotFunctor>,
+                     paddle::lite_metal::kernels::host::UnaryLogicalCompute<
+                         paddle::lite_metal::kernels::host::_LogicalNotFunctor>,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

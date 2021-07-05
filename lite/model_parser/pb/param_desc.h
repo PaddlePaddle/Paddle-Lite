@@ -21,7 +21,7 @@
 #include "lite/model_parser/pb/utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pb {
 
 class TensorInfoReader : public TensorInfoReadAPI {

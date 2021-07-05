@@ -37,7 +37,7 @@
 typedef __fp16 float16_t;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 namespace fp16 {

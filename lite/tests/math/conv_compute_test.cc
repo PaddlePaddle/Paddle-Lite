@@ -27,7 +27,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                     const std::vector<int>& power_mode,
                     const float leakey_relu_scale) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   ConvParam param;
   param.x = new Tensor;
@@ -51,23 +51,23 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFloat));
 
-  paddle::lite::fill_tensor_rand(*param.filter, -1.f, 1.f);
-  //  paddle::lite::fill_tensor_const(*param.filter, 1.f);
+  paddle::lite_metal::fill_tensor_rand(*param.filter, -1.f, 1.f);
+  //  paddle::lite_metal::fill_tensor_const(*param.filter, 1.f);
   if (flag_bias) {
-    paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
-    //    paddle::lite::fill_tensor_const(*param.bias, 1.f);
+    paddle::lite_metal::fill_tensor_rand(*param.bias, -1.f, 1.f);
+    //    paddle::lite_metal::fill_tensor_const(*param.bias, 1.f);
   }
   auto wptr = param.filter->data<float>();
   auto bias_ptr = flag_bias ? param.bias->data<float>() : nullptr;
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::ConvCompute<PRECISION(kFloat),
+      paddle::lite_metal::kernels::arm::ConvCompute<PRECISION(kFloat),
                                               PRECISION(kFloat)>
           conv;
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+          new paddle::lite_metal::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       /// set param and context
       for (auto& dim_in : input_dims) {
@@ -94,8 +94,8 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
         param.x->Resize(dim_in);
         param.output->Resize(dim_out);
 
-        paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
-        // paddle::lite::fill_tensor_const(*param.x, 1.f);
+        paddle::lite_metal::fill_tensor_rand(*param.x, -1.f, 1.f);
+        // paddle::lite_metal::fill_tensor_const(*param.x, 1.f);
         auto din = param.x->data<float>();
 
         Tensor tout_basic;

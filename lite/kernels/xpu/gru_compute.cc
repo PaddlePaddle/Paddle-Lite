@@ -21,7 +21,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -53,9 +53,9 @@ void GRUCompute::PrepareForRun() {
   CHECK_EQ(weight_len, weight_s1_len + weight_s2_len);
   // max
   weight_s1_abs_max_ =
-      paddle::lite::xpu::math::FindMaxAbs(weight_s1_ptr, weight_s1_len);
+      paddle::lite_metal::xpu::math::FindMaxAbs(weight_s1_ptr, weight_s1_len);
   weight_s2_abs_max_ =
-      paddle::lite::xpu::math::FindMaxAbs(weight_s2_ptr, weight_s2_len);
+      paddle::lite_metal::xpu::math::FindMaxAbs(weight_s2_ptr, weight_s2_len);
   std::vector<float> weight_max_vector(8);
   for (int i = 0; i < 4; i++) {
     weight_max_vector[i] = weight_s1_abs_max_;
@@ -72,11 +72,11 @@ void GRUCompute::PrepareForRun() {
   std::vector<int16_t> quant_weight_cpu(weight_len);
   int16_t* quant_weight_s1_cpu_ptr = quant_weight_cpu.data();
   int16_t* quant_weight_s2_cpu_ptr = quant_weight_s1_cpu_ptr + weight_s1_len;
-  paddle::lite::xpu::math::ConvertFP32ToInt16(weight_s1_ptr,
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(weight_s1_ptr,
                                               quant_weight_s1_cpu_ptr,
                                               weight_s1_abs_max_,
                                               weight_s1_len);
-  paddle::lite::xpu::math::ConvertFP32ToInt16(weight_s2_ptr,
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(weight_s2_ptr,
                                               quant_weight_s2_cpu_ptr,
                                               weight_s2_abs_max_,
                                               weight_s2_len);
@@ -142,7 +142,7 @@ void GRUCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    gru, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::GRUCompute, def)
+    gru, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::GRUCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kHost))})

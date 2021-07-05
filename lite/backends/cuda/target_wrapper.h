@@ -19,7 +19,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 using TargetWrapperCuda = TargetWrapper<TARGET(kCUDA)>;
 

@@ -16,7 +16,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -41,7 +41,7 @@ namespace arm {
     memcpy(output, input, sizeof(type) * n * h * w);                     \
     return;                                                              \
   }                                                                      \
-  lite::arm::math::NCHW2NHWC<type>(n, c, h * w, input, output);
+  lite_metal::arm::math::NCHW2NHWC<type>(n, c, h * w, input, output);
 
 #define NHWCTONCHW(type)                                                 \
   auto& param = this->template Param<param_t>();                         \
@@ -64,7 +64,7 @@ namespace arm {
     memcpy(output, input, sizeof(type) * n * h * w);                     \
     return;                                                              \
   }                                                                      \
-  lite::arm::math::NHWC2NCHW<type>(n, c, h * w, input, output);
+  lite_metal::arm::math::NHWC2NCHW<type>(n, c, h * w, input, output);
 
 template <>
 void NCHWToNHWCCompute<PRECISION(kFloat)>::Run() {
@@ -91,13 +91,13 @@ void NHWCToNCHWCompute<PRECISION(kInt8)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::arm::NCHWToNHWCCompute<PRECISION(kFloat)>
     NCHW_fp32;
-typedef paddle::lite::kernels::arm::NCHWToNHWCCompute<PRECISION(kInt8)>
+typedef paddle::lite_metal::kernels::arm::NCHWToNHWCCompute<PRECISION(kInt8)>
     NCHW_int8;
-typedef paddle::lite::kernels::arm::NHWCToNCHWCompute<PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::arm::NHWCToNCHWCompute<PRECISION(kFloat)>
     NHWC_fp32;
-typedef paddle::lite::kernels::arm::NHWCToNCHWCompute<PRECISION(kInt8)>
+typedef paddle::lite_metal::kernels::arm::NHWCToNCHWCompute<PRECISION(kInt8)>
     NHWC_int8;
 
 REGISTER_LITE_KERNEL(layout, kARM, kFloat, kNCHW, NCHW_fp32, nchw2nhwc)

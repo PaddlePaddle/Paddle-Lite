@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 /* fuse xpu_conv2d and pixel_shuffle and xpu_conv2d as xpu_block */
@@ -242,6 +242,6 @@ class XPUConvPixelShuffleFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__conv_pixel_shuffle_fuse_pass,
-                  paddle::lite::mir::XPUConvPixelShuffleFusePass)
+                  paddle::lite_metal::mir::XPUConvPixelShuffleFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__conv_pixel_shuffle_fuse_op");

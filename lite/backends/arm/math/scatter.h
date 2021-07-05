@@ -16,7 +16,7 @@ limitations under the License. */
 #include <stdint.h>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 

@@ -19,7 +19,7 @@
 #include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -70,7 +70,7 @@ REGISTER_LITE_KERNEL(dropout,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::DropoutCompute,
+                     paddle::lite_metal::kernels::fpga::DropoutCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),

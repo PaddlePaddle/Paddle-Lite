@@ -15,17 +15,17 @@
 #include "lite/model_parser/pb/utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace pb {
 
-lite::VarDataType ConvertVarType(
+lite_metal::VarDataType ConvertVarType(
     ::paddle::framework::proto::VarType_Type pb_type) {
   typedef ::paddle::framework::proto::VarType_Type VarType_Type;
-  lite::VarDataType type{};
+  lite_metal::VarDataType type{};
   switch (pb_type) {
 #define CASE(vtype)                        \
   case VarType_Type::VarType_Type_##vtype: \
-    type = lite::VarDataType::vtype;       \
+    type = lite_metal::VarDataType::vtype;       \
     break
     CASE(FP64);
     CASE(FP32);
@@ -42,12 +42,12 @@ lite::VarDataType ConvertVarType(
 }
 
 ::paddle::framework::proto::VarType_Type ConvertVarType(
-    lite::VarDataType var_type) {
+    lite_metal::VarDataType var_type) {
   typedef ::paddle::framework::proto::VarType_Type VarType_Type;
   VarType_Type type{};
   switch (var_type) {
 #define CASE(vtype)                            \
-  case lite::VarDataType::vtype:               \
+  case lite_metal::VarDataType::vtype:               \
     type = VarType_Type::VarType_Type_##vtype; \
     break
     CASE(FP64);

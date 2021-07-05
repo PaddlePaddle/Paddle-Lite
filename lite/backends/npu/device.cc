@@ -17,7 +17,7 @@
 #include "lite/utils/io.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace npu {
 
 std::shared_ptr<hiai::AiModelMngerClient> Device::Load(

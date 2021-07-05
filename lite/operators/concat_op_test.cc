@@ -17,18 +17,18 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 TEST(concat_op_lite, test) {
   // prepare variables
-  lite::Scope scope;
-  auto* x0 = scope.Var("x0")->GetMutable<lite::Tensor>();
-  auto* x1 = scope.Var("x1")->GetMutable<lite::Tensor>();
-  auto* output = scope.Var("output")->GetMutable<lite::Tensor>();
-  x0->Resize(lite::DDim(std::vector<int64_t>({10, 20})));
-  x1->Resize(lite::DDim(std::vector<int64_t>({10, 20})));
-  output->Resize(lite::DDim(std::vector<int64_t>{20, 20}));
+  lite_metal::Scope scope;
+  auto* x0 = scope.Var("x0")->GetMutable<lite_metal::Tensor>();
+  auto* x1 = scope.Var("x1")->GetMutable<lite_metal::Tensor>();
+  auto* output = scope.Var("output")->GetMutable<lite_metal::Tensor>();
+  x0->Resize(lite_metal::DDim(std::vector<int64_t>({10, 20})));
+  x1->Resize(lite_metal::DDim(std::vector<int64_t>({10, 20})));
+  output->Resize(lite_metal::DDim(std::vector<int64_t>{20, 20}));
 
   // set data
   for (int i = 0; i < 10 * 20; i++) {

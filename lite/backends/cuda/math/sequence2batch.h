@@ -25,7 +25,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 
@@ -35,14 +35,14 @@ class CopyMatrixRowsFunctor {
   // If is_src_index is true, copy the indexed rows of input src to the output
   // dst. If is_src_index is false, copy the input src to the indexed of output
   // dst. The indexes rows are based on the input index.
-  void operator()(const lite::Tensor& src,
-                  lite::Tensor* dst,
+  void operator()(const lite_metal::Tensor& src,
+                  lite_metal::Tensor* dst,
                   const std::vector<uint64_t>& index_lod,
                   bool is_src_index,
                   const cudaStream_t& stream);
 
  private:
-  lite::Tensor index_tensor_;
+  lite_metal::Tensor index_tensor_;
 };
 
 template <typename T>
@@ -61,8 +61,8 @@ class LoDTensor2BatchFunctor {
   };
 
  public:
-  void operator()(const lite::Tensor& lod_tensor,
-                  lite::Tensor* batch_tensor,
+  void operator()(const lite_metal::Tensor& lod_tensor,
+                  lite_metal::Tensor* batch_tensor,
                   bool is_reverse,
                   const cudaStream_t& stream) const {
     auto lods = lod_tensor.lod();
@@ -138,7 +138,7 @@ class LoDTensor2BatchFunctor {
 
     batch_tensor->set_lod(batch_lods);
 
-    lite::cuda::math::CopyMatrixRowsFunctor<T> to_batch;
+    lite_metal::cuda::math::CopyMatrixRowsFunctor<T> to_batch;
     to_batch(lod_tensor, batch_tensor, batch_lods[1], true, stream);
     CUDA_POST_KERNEL_CHECK;
   }
@@ -147,15 +147,15 @@ class LoDTensor2BatchFunctor {
 template <typename T>
 class Batch2LoDTensorFunctor {
  public:
-  void operator()(const lite::Tensor& batch_tensor,
-                  lite::Tensor* lod_tensor,
+  void operator()(const lite_metal::Tensor& batch_tensor,
+                  lite_metal::Tensor* lod_tensor,
                   const cudaStream_t& stream) {
     auto in_lod = batch_tensor.lod();
     CHECK_GT(in_lod.size(), 2UL) << "The LoD of LoDTensor should include at "
                                     "least 2-level sequence infomation.";
     CHECK_EQ(in_lod[1].size(), static_cast<size_t>(lod_tensor->dims()[0]))
         << "The LoD information should be consistent with the dims.";
-    lite::cuda::math::CopyMatrixRowsFunctor<T> to_seq;
+    lite_metal::cuda::math::CopyMatrixRowsFunctor<T> to_seq;
     to_seq(batch_tensor, lod_tensor, in_lod[1], false, stream);
     CUDA_POST_KERNEL_CHECK;
   }

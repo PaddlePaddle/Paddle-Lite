@@ -16,13 +16,13 @@
 #include <algorithm>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
 template <typename T>
 void split(const T* din,
-           const std::vector<lite::Tensor*>& dout,
+           const std::vector<lite_metal::Tensor*>& dout,
            const int axis,
            const std::vector<int>& in_strides) {
   int input_offset = 0;
@@ -51,21 +51,21 @@ void split(const T* din,
 }
 
 template void split(const float* din,
-                    const std::vector<lite::Tensor*>& dout,
+                    const std::vector<lite_metal::Tensor*>& dout,
                     const int axis,
                     const std::vector<int>& in_strides);
 template void split(const int* din,
-                    const std::vector<lite::Tensor*>& dout,
+                    const std::vector<lite_metal::Tensor*>& dout,
                     const int axis,
                     const std::vector<int>& in_strides);
 template void split(const int64_t* din,
-                    const std::vector<lite::Tensor*>& dout,
+                    const std::vector<lite_metal::Tensor*>& dout,
                     const int axis,
                     const std::vector<int>& in_strides);
 
 #ifdef ENABLE_ARM_FP16
 template void split(const lite_api::float16_t* din,
-                    const std::vector<lite::Tensor*>& dout,
+                    const std::vector<lite_metal::Tensor*>& dout,
                     const int axis,
                     const std::vector<int>& in_strides);
 #endif

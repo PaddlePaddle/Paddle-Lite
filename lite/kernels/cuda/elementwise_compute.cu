@@ -17,7 +17,7 @@ limitations under the License. */
 #include "lite/kernels/cuda/elementwise_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -74,9 +74,9 @@ inline bool is_broadcast(const DDim& x_dims,
   auto& param = this->Param<param_t>();                            \
   auto& ctx = this->ctx_->template As<CUDAContext>();              \
   auto stream = ctx.exec_stream();                                 \
-  const lite::Tensor* x = param.X;                                 \
-  const lite::Tensor* y = param.Y;                                 \
-  lite::Tensor* out = param.Out;                                   \
+  const lite_metal::Tensor* x = param.X;                                 \
+  const lite_metal::Tensor* y = param.Y;                                 \
+  lite_metal::Tensor* out = param.Out;                                   \
   int axis = param.axis;                                           \
   auto* x_data = x->data<float>();                                 \
   auto* y_data = y->data<float>();                                 \
@@ -86,10 +86,10 @@ inline bool is_broadcast(const DDim& x_dims,
   int n = pixel_num;                                               \
   int post = 1;                                                    \
   if (is_broadcast(x->dims(), y->dims(), axis, &pre, &n, &post)) { \
-    lite::cuda::math::elementwise(                                 \
+    lite_metal::cuda::math::elementwise(                                 \
         x_data, y_data, out_data, pre, n, post, OP, stream);       \
   } else {                                                         \
-    lite::cuda::math::elementwise(                                 \
+    lite_metal::cuda::math::elementwise(                                 \
         x_data, y_data, out_data, 1, pixel_num, 1, OP, stream);    \
   }
 
@@ -97,9 +97,9 @@ inline bool is_broadcast(const DDim& x_dims,
   auto& param = this->Param<param_t>();                              \
   auto& ctx = this->ctx_->template As<CUDAContext>();                \
   auto stream = ctx.exec_stream();                                   \
-  const lite::Tensor* x = param.X;                                   \
-  const lite::Tensor* y = param.Y;                                   \
-  lite::Tensor* out = param.Out;                                     \
+  const lite_metal::Tensor* x = param.X;                                   \
+  const lite_metal::Tensor* y = param.Y;                                   \
+  lite_metal::Tensor* out = param.Out;                                     \
   int axis = param.axis;                                             \
   auto* x_data = x->data<float>();                                   \
   auto* y_data = y->data<float>();                                   \
@@ -110,10 +110,10 @@ inline bool is_broadcast(const DDim& x_dims,
   int post = 1;                                                      \
   auto act = param.act_type;                                         \
   if (is_broadcast(x->dims(), y->dims(), axis, &pre, &n, &post)) {   \
-    lite::cuda::math::elementwise_act(                               \
+    lite_metal::cuda::math::elementwise_act(                               \
         x_data, y_data, out_data, pre, n, post, act, OP, stream);    \
   } else {                                                           \
-    lite::cuda::math::elementwise_act(                               \
+    lite_metal::cuda::math::elementwise_act(                               \
         x_data, y_data, out_data, 1, pixel_num, 1, act, OP, stream); \
   }
 
@@ -122,9 +122,9 @@ inline bool is_broadcast(const DDim& x_dims,
   auto& param = this->Param<param_t>();                            \
   auto& ctx = this->ctx_->template As<CUDAContext>();              \
   auto stream = ctx.exec_stream();                                 \
-  const lite::Tensor* x = param.X;                                 \
-  const lite::Tensor* y = param.Y;                                 \
-  lite::Tensor* out = param.Out;                                   \
+  const lite_metal::Tensor* x = param.X;                                 \
+  const lite_metal::Tensor* y = param.Y;                                 \
+  lite_metal::Tensor* out = param.Out;                                   \
   int axis = param.axis;                                           \
   if (axis < 0) axis = x->dims().size() - y->dims().size();        \
   CHECK(axis >= 0) << "invalid axis of elementwise op";            \
@@ -137,10 +137,10 @@ inline bool is_broadcast(const DDim& x_dims,
   int n = pixel_num;                                               \
   int post = 1;                                                    \
   if (is_broadcast(x->dims(), y->dims(), axis, &pre, &n, &post)) { \
-    lite::cuda::math::elementwise(                                 \
+    lite_metal::cuda::math::elementwise(                                 \
         x_data, y_data, out_data, pre, n, post, OP, stream);       \
   } else {                                                         \
-    lite::cuda::math::elementwise(                                 \
+    lite_metal::cuda::math::elementwise(                                 \
         x_data, y_data, out_data, 1, pixel_num, 1, OP, stream);    \
   }
 
@@ -149,9 +149,9 @@ inline bool is_broadcast(const DDim& x_dims,
   auto& param = this->Param<param_t>();                              \
   auto& ctx = this->ctx_->template As<CUDAContext>();                \
   auto stream = ctx.exec_stream();                                   \
-  const lite::Tensor* x = param.X;                                   \
-  const lite::Tensor* y = param.Y;                                   \
-  lite::Tensor* out = param.Out;                                     \
+  const lite_metal::Tensor* x = param.X;                                   \
+  const lite_metal::Tensor* y = param.Y;                                   \
+  lite_metal::Tensor* out = param.Out;                                     \
   int axis = param.axis;                                             \
   if (axis < 0) axis = x->dims().size() - y->dims().size();          \
   CHECK(axis >= 0) << "invalid axis of elementwise op";              \
@@ -165,81 +165,81 @@ inline bool is_broadcast(const DDim& x_dims,
   int post = 1;                                                      \
   auto act = param.act_type;                                         \
   if (is_broadcast(x->dims(), y->dims(), axis, &pre, &n, &post)) {   \
-    lite::cuda::math::elementwise_act(                               \
+    lite_metal::cuda::math::elementwise_act(                               \
         x_data, y_data, out_data, pre, n, post, act, OP, stream);    \
   } else {                                                           \
-    lite::cuda::math::elementwise_act(                               \
+    lite_metal::cuda::math::elementwise_act(                               \
         x_data, y_data, out_data, 1, pixel_num, 1, act, OP, stream); \
   }
 
 void ElementwiseAddCompute::Run() {
-  ELEMENTWISE_COMPUTE(lite::cuda::math::BinaryOperation::kADD)
+  ELEMENTWISE_COMPUTE(lite_metal::cuda::math::BinaryOperation::kADD)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseAddComputeNHWC::Run() {
-  ELEMENTWISE_COMPUTE_NHWC(lite::cuda::math::BinaryOperation::kADD)
+  ELEMENTWISE_COMPUTE_NHWC(lite_metal::cuda::math::BinaryOperation::kADD)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseSubCompute::Run() {
-  ELEMENTWISE_COMPUTE(lite::cuda::math::BinaryOperation::kSUB)
+  ELEMENTWISE_COMPUTE(lite_metal::cuda::math::BinaryOperation::kSUB)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseSubComputeNHWC::Run() {
-  ELEMENTWISE_COMPUTE_NHWC(lite::cuda::math::BinaryOperation::kSUB)
+  ELEMENTWISE_COMPUTE_NHWC(lite_metal::cuda::math::BinaryOperation::kSUB)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseMulCompute::Run() {
-  ELEMENTWISE_COMPUTE(lite::cuda::math::BinaryOperation::kMUL)
+  ELEMENTWISE_COMPUTE(lite_metal::cuda::math::BinaryOperation::kMUL)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseMulComputeNHWC::Run() {
-  ELEMENTWISE_COMPUTE_NHWC(lite::cuda::math::BinaryOperation::kMUL)
+  ELEMENTWISE_COMPUTE_NHWC(lite_metal::cuda::math::BinaryOperation::kMUL)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseAddActivationCompute::Run() {
-  ELEMENTWISE_COMPUTE_ACT(lite::cuda::math::BinaryOperation::kADD)
+  ELEMENTWISE_COMPUTE_ACT(lite_metal::cuda::math::BinaryOperation::kADD)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseAddActivationComputeNHWC::Run() {
-  ELEMENTWISE_COMPUTE_ACT_NHWC(lite::cuda::math::BinaryOperation::kADD)
+  ELEMENTWISE_COMPUTE_ACT_NHWC(lite_metal::cuda::math::BinaryOperation::kADD)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseSubActivationCompute::Run() {
-  ELEMENTWISE_COMPUTE_ACT(lite::cuda::math::BinaryOperation::kSUB)
+  ELEMENTWISE_COMPUTE_ACT(lite_metal::cuda::math::BinaryOperation::kSUB)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseSubActivationComputeNHWC::Run() {
-  ELEMENTWISE_COMPUTE_ACT_NHWC(lite::cuda::math::BinaryOperation::kSUB)
+  ELEMENTWISE_COMPUTE_ACT_NHWC(lite_metal::cuda::math::BinaryOperation::kSUB)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseMulActivationCompute::Run() {
-  ELEMENTWISE_COMPUTE_ACT(lite::cuda::math::BinaryOperation::kMUL)
+  ELEMENTWISE_COMPUTE_ACT(lite_metal::cuda::math::BinaryOperation::kMUL)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
 
 void ElementwiseMulActivationComputeNHWC::Run() {
-  ELEMENTWISE_COMPUTE_ACT_NHWC(lite::cuda::math::BinaryOperation::kMUL)
+  ELEMENTWISE_COMPUTE_ACT_NHWC(lite_metal::cuda::math::BinaryOperation::kMUL)
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
@@ -253,7 +253,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::ElementwiseAddCompute,
+                     paddle::lite_metal::kernels::cuda::ElementwiseAddCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
@@ -264,7 +264,7 @@ REGISTER_LITE_KERNEL(elementwise_sub,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::ElementwiseSubCompute,
+                     paddle::lite_metal::kernels::cuda::ElementwiseSubCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
@@ -275,7 +275,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                      kCUDA,
                      kFloat,
                      kNHWC,
-                     paddle::lite::kernels::cuda::ElementwiseAddComputeNHWC,
+                     paddle::lite_metal::kernels::cuda::ElementwiseAddComputeNHWC,
                      nhwc_format)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -295,7 +295,7 @@ REGISTER_LITE_KERNEL(elementwise_sub,
                      kCUDA,
                      kFloat,
                      kNHWC,
-                     paddle::lite::kernels::cuda::ElementwiseSubComputeNHWC,
+                     paddle::lite_metal::kernels::cuda::ElementwiseSubComputeNHWC,
                      nhwc_format)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -315,7 +315,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::ElementwiseMulCompute,
+                     paddle::lite_metal::kernels::cuda::ElementwiseMulCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
@@ -326,7 +326,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kCUDA,
                      kFloat,
                      kNHWC,
-                     paddle::lite::kernels::cuda::ElementwiseMulComputeNHWC,
+                     paddle::lite_metal::kernels::cuda::ElementwiseMulComputeNHWC,
                      nhwc_format)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -347,7 +347,7 @@ REGISTER_LITE_KERNEL(
     kCUDA,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::cuda::ElementwiseAddActivationCompute,
+    paddle::lite_metal::kernels::cuda::ElementwiseAddActivationCompute,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
@@ -359,7 +359,7 @@ REGISTER_LITE_KERNEL(
     kCUDA,
     kFloat,
     kNHWC,
-    paddle::lite::kernels::cuda::ElementwiseAddActivationComputeNHWC,
+    paddle::lite_metal::kernels::cuda::ElementwiseAddActivationComputeNHWC,
     nhwc_format)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -380,7 +380,7 @@ REGISTER_LITE_KERNEL(
     kCUDA,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::cuda::ElementwiseSubActivationCompute,
+    paddle::lite_metal::kernels::cuda::ElementwiseSubActivationCompute,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
@@ -392,7 +392,7 @@ REGISTER_LITE_KERNEL(
     kCUDA,
     kFloat,
     kNHWC,
-    paddle::lite::kernels::cuda::ElementwiseSubActivationComputeNHWC,
+    paddle::lite_metal::kernels::cuda::ElementwiseSubActivationComputeNHWC,
     nhwc_format)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),
@@ -413,7 +413,7 @@ REGISTER_LITE_KERNEL(
     kCUDA,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::cuda::ElementwiseMulActivationCompute,
+    paddle::lite_metal::kernels::cuda::ElementwiseMulActivationCompute,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
@@ -425,7 +425,7 @@ REGISTER_LITE_KERNEL(
     kCUDA,
     kFloat,
     kNHWC,
-    paddle::lite::kernels::cuda::ElementwiseMulActivationComputeNHWC,
+    paddle::lite_metal::kernels::cuda::ElementwiseMulActivationComputeNHWC,
     nhwc_format)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),

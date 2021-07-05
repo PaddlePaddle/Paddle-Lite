@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool TrilTriuOp::CheckShape() const {
@@ -32,7 +32,7 @@ bool TrilTriuOp::InferShapeImpl() const {
   return true;
 }
 
-bool TrilTriuOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool TrilTriuOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   param_.x = scope->FindTensor(op_desc.Input("X").front());
   param_.out = scope->FindMutableTensor(op_desc.Output("Out").front());
 
@@ -45,4 +45,4 @@ bool TrilTriuOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(tril_triu, paddle::lite::operators::TrilTriuOp);
+REGISTER_LITE_OP(tril_triu, paddle::lite_metal::operators::TrilTriuOp);

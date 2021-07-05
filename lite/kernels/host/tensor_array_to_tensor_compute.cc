@@ -18,7 +18,7 @@
 #include "lite/backends/host/math/stack.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -40,17 +40,17 @@ void TensorArrayToTensorCompute::Run() {
   bool use_stack = param.use_stack;
   auto out = param.Out;
   if (use_stack) {
-    lite::host::math::stack_func<float>(inputs, axis, out);
+    lite_metal::host::math::stack_func<float>(inputs, axis, out);
   } else {
-    lite::host::math::concat_func<float>(inputs, axis, out);
+    lite_metal::host::math::concat_func<float>(inputs, axis, out);
   }
 
 #define PROCESS(precision, dtype)                              \
   case PRECISION(precision): {                                 \
     if (use_stack) {                                           \
-      lite::host::math::stack_func<dtype>(inputs, axis, out);  \
+      lite_metal::host::math::stack_func<dtype>(inputs, axis, out);  \
     } else {                                                   \
-      lite::host::math::concat_func<dtype>(inputs, axis, out); \
+      lite_metal::host::math::concat_func<dtype>(inputs, axis, out); \
     }                                                          \
     break;                                                     \
   }
@@ -78,7 +78,7 @@ REGISTER_LITE_KERNEL(tensor_array_to_tensor,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::TensorArrayToTensorCompute,
+                     paddle::lite_metal::kernels::host::TensorArrayToTensorCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})

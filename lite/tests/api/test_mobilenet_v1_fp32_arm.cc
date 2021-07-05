@@ -27,7 +27,7 @@ DEFINE_int32(batch, 1, "batch of image");
 DEFINE_int32(channel, 3, "image channel");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 TEST(MobileNetV1, test_mobilenet_v1_arm) {
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;

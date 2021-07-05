@@ -20,7 +20,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -105,7 +105,7 @@ REGISTER_LITE_KERNEL(crf_decoding,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::CrfDecodingCompute,
+                     paddle::lite_metal::kernels::host::CrfDecodingCompute,
                      def)
     .BindInput("Emission", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Transition", {LiteType::GetTensorTy(TARGET(kHost))})

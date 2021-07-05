@@ -16,13 +16,13 @@
 #include "lite/backends/host/math/beam_search.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
 void BeamSearchCompute::Run() {
   auto& param = this->Param<operators::BeamSearchParam>();
-  lite::host::math::beam_search(param.pre_ids,
+  lite_metal::host::math::beam_search(param.pre_ids,
                                 param.pre_scores,
                                 param.ids,
                                 param.scores,
@@ -44,7 +44,7 @@ REGISTER_LITE_KERNEL(beam_search,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::BeamSearchCompute,
+                     paddle::lite_metal::kernels::host::BeamSearchCompute,
                      def)
     .BindInput("pre_ids",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})

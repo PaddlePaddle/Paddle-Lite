@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SoftmaxOp::CheckShape() const {
@@ -37,13 +37,13 @@ bool SoftmaxOp::InferShapeImpl() const {
   return true;
 }
 
-bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
 
-  param_.x = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
+  param_.x = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("X").front())->Get<lite_metal::Tensor>());
   param_.output =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
 
   if (opdesc.HasAttr("axis")) {
     param_.axis = opdesc.GetAttr<int>("axis");
@@ -64,4 +64,4 @@ bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(softmax, paddle::lite::operators::SoftmaxOp);
+REGISTER_LITE_OP(softmax, paddle::lite_metal::operators::SoftmaxOp);

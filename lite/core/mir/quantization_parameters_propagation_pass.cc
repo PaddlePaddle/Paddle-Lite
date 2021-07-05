@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 static bool HasOutputThreshold(const OpInfo* op_info,
@@ -138,5 +138,5 @@ void QuantizationParametersPropagationPass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(quantization_parameters_propagation_pass,
-                  paddle::lite::mir::QuantizationParametersPropagationPass)
+                  paddle::lite_metal::mir::QuantizationParametersPropagationPass)
     .BindTargets({TARGET(kNNAdapter)});

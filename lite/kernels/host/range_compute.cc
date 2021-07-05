@@ -15,7 +15,7 @@
 #include "lite/kernels/host/range_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -39,7 +39,7 @@ void RangeCompute<T, PType>::Run() {
 }  // namespace paddle
 
 using range_float =
-    paddle::lite::kernels::host::RangeCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::RangeCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_float, def)
     .BindInput("Start",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -60,7 +60,7 @@ REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_float, def)
     .Finalize();
 
 using range_int64 =
-    paddle::lite::kernels::host::RangeCompute<int64_t, PRECISION(kInt64)>;
+    paddle::lite_metal::kernels::host::RangeCompute<int64_t, PRECISION(kInt64)>;
 REGISTER_LITE_KERNEL(range, kHost, kInt64, kAny, range_int64, def)
     .BindInput("Start",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -81,7 +81,7 @@ REGISTER_LITE_KERNEL(range, kHost, kInt64, kAny, range_int64, def)
     .Finalize();
 
 using range_int32 =
-    paddle::lite::kernels::host::RangeCompute<int, PRECISION(kInt32)>;
+    paddle::lite_metal::kernels::host::RangeCompute<int, PRECISION(kInt32)>;
 REGISTER_LITE_KERNEL(range, kHost, kInt32, kAny, range_int32, def)
     .BindInput("Start",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -104,7 +104,7 @@ REGISTER_LITE_KERNEL(range, kHost, kInt32, kAny, range_int32, def)
 #ifdef LITE_BUILD_EXTRA
 // float kernel has higher score when picking kernel.
 using range_int32_f =
-    paddle::lite::kernels::host::RangeCompute<int, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::RangeCompute<int, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int32_f, int32)
     .BindInput("Start",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -126,7 +126,7 @@ REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int32_f, int32)
 
 // float kernel has higher score when picking kernel.
 using range_int64_f =
-    paddle::lite::kernels::host::RangeCompute<int64_t, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::RangeCompute<int64_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int64_f, int64)
     .BindInput("Start",
                {LiteType::GetTensorTy(TARGET(kHost),

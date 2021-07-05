@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 /* link the previous xpu_fusion_op's OutputMax to   */
@@ -106,5 +106,5 @@ class XPULinkMaxPass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__link_previous_out_max_pass,
-                  paddle::lite::mir::XPULinkMaxPass)
+                  paddle::lite_metal::mir::XPULinkMaxPass)
     .BindTargets({TARGET(kXPU)});

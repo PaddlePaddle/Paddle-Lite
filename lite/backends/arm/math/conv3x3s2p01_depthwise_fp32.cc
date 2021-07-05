@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/conv_depthwise.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 void conv_depthwise_3x3s2p0_bias_relu6(float* dout,

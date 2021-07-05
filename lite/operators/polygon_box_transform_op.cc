@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool PolygonBoxTransformOp::CheckShape() const {
@@ -34,7 +34,7 @@ bool PolygonBoxTransformOp::InferShapeImpl() const {
 }
 
 bool PolygonBoxTransformOp::AttachImpl(const cpp::OpDesc &op_desc,
-                                       lite::Scope *scope) {
+                                       lite_metal::Scope *scope) {
   param_.input = scope->FindTensor(op_desc.Input("Input").front());
   param_.output = scope->FindMutableTensor(op_desc.Output("Output").front());
   return true;
@@ -45,4 +45,4 @@ bool PolygonBoxTransformOp::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(polygon_box_transform,
-                 paddle::lite::operators::PolygonBoxTransformOp);
+                 paddle::lite_metal::operators::PolygonBoxTransformOp);

@@ -19,7 +19,7 @@
 #include "paddle/fluid/operators/jit/kernels.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -64,7 +64,7 @@ REGISTER_LITE_KERNEL(uniform_random,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::UniformRandomCompute<float>,
+                     paddle::lite_metal::kernels::x86::UniformRandomCompute<float>,
                      def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

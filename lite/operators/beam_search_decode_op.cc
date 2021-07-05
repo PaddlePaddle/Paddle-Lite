@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool BeamSearchDecodeOpLite::CheckShape() const {
@@ -31,15 +31,15 @@ bool BeamSearchDecodeOpLite::CheckShape() const {
 bool BeamSearchDecodeOpLite::InferShapeImpl() const { return true; }
 
 bool BeamSearchDecodeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                        lite::Scope *scope) {
+                                        lite_metal::Scope *scope) {
   auto ids = op_desc.Input("Ids").front();
   auto scores = op_desc.Input("Scores").front();
   auto sentence_ids = op_desc.Output("SentenceIds").front();
   auto sentence_scores = op_desc.Output("SentenceScores").front();
 
-  param_.ids = scope->FindVar(ids)->GetMutable<std::vector<lite::Tensor>>();
+  param_.ids = scope->FindVar(ids)->GetMutable<std::vector<lite_metal::Tensor>>();
   param_.scores =
-      scope->FindVar(scores)->GetMutable<std::vector<lite::Tensor>>();
+      scope->FindVar(scores)->GetMutable<std::vector<lite_metal::Tensor>>();
   param_.sentence_ids = scope->FindMutableTensor(sentence_ids);
   param_.sentence_scores = scope->FindMutableTensor(sentence_scores);
 
@@ -54,4 +54,4 @@ bool BeamSearchDecodeOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(beam_search_decode,
-                 paddle::lite::operators::BeamSearchDecodeOpLite)
+                 paddle::lite_metal::operators::BeamSearchDecodeOpLite)

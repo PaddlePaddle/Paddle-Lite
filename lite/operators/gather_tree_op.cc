@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool GatherTreeOp::CheckShape() const {
@@ -36,7 +36,7 @@ bool GatherTreeOp::InferShapeImpl() const {
   return true;
 }
 
-bool GatherTreeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool GatherTreeOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.ids = scope->FindTensor(opdesc.Input("Ids").front());
   param_.parents = scope->FindTensor(opdesc.Input("Parents").front());
   param_.out = scope->FindMutableTensor(opdesc.Output("Out").front());
@@ -47,4 +47,4 @@ bool GatherTreeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(gather_tree, paddle::lite::operators::GatherTreeOp);
+REGISTER_LITE_OP(gather_tree, paddle::lite_metal::operators::GatherTreeOp);

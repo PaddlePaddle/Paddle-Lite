@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUSqueezeExcitationOp::CheckShape() const {
@@ -53,7 +53,7 @@ bool XPUSqueezeExcitationOp::InferShapeImpl() const {
 }
 
 bool XPUSqueezeExcitationOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                        lite::Scope* scope) {
+                                        lite_metal::Scope* scope) {
   AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter").front()));
@@ -98,4 +98,4 @@ bool XPUSqueezeExcitationOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__squeeze_excitation_block,
-                 paddle::lite::operators::XPUSqueezeExcitationOp);
+                 paddle::lite_metal::operators::XPUSqueezeExcitationOp);

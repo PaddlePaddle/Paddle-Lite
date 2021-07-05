@@ -20,9 +20,9 @@
 #include "lite/utils/all.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
-using FeedFetchList = std::vector<lite::Tensor>;
+using FeedFetchList = std::vector<lite_metal::Tensor>;
 
 class Variable {
  public:

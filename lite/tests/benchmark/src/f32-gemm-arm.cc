@@ -31,10 +31,10 @@ static void LiteGEMMBench(const benchmark::State &state_in) {
   const int nc = state.range(1);
   const int kc = state.range(2);
 
-  using paddle::lite::DDim;
-  using paddle::lite::Tensor;
+  using paddle::lite_metal::DDim;
+  using paddle::lite_metal::Tensor;
 
-  paddle::lite::kernels::arm::MatMulCompute matmul_compute;
+  paddle::lite_metal::kernels::arm::MatMulCompute matmul_compute;
   Tensor x, y, z;
   DDim dim_x = DDim({mc, kc});
   DDim dim_y = DDim({kc, nc});
@@ -60,15 +60,15 @@ static void LiteGEMMBench(const benchmark::State &state_in) {
                 std::ref(f32rng));
   z.mutable_data<float>();  // pre alloc
 
-  paddle::lite::operators::MatMulParam param;
+  paddle::lite_metal::operators::MatMulParam param;
   param.X = &x;
   param.Y = &y;
   param.Out = &z;
   matmul_compute.SetParam(param);
 
-  auto ctx1 = paddle::lite::ContextScheduler::Global().NewContext(
+  auto ctx1 = paddle::lite_metal::ContextScheduler::Global().NewContext(
       paddle::lite_api::TargetType::kARM);
-  auto &ctx = ctx1->As<paddle::lite::ARMContext>();
+  auto &ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(
                      paddle::lite_api::PowerMode::LITE_POWER_HIGH),
                  1);

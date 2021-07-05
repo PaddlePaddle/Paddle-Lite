@@ -16,7 +16,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {}  // namespace x86
 }  // namespace lite
 }  // namespace paddle

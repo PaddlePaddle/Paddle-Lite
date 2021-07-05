@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -62,7 +62,7 @@ void Conv2dCompute<PRECISION(kFloat)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace xpu = paddle::lite::kernels::xpu;
+namespace xpu = paddle::lite_metal::kernels::xpu;
 using Conv2dFp32 = xpu::Conv2dCompute<PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(conv2d, kXPU, kFloat, kNCHW, Conv2dFp32, def)

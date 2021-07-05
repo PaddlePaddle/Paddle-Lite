@@ -22,7 +22,7 @@ limitations under the License. */
 #include "lite/fluid/eigen.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -37,22 +37,22 @@ static T adjust_prob(const T prob, const int num_samples, const int num_tries) {
   }
 }
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class SampleWithProb {
  public:
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const Sampler& sampler,
                   const std::size_t num_samples,
-                  const lite::Tensor* L,
-                  lite::Tensor* S,
-                  lite::Tensor* P) {
+                  const lite_metal::Tensor* L,
+                  lite_metal::Tensor* S,
+                  lite_metal::Tensor* P) {
     // UNDERSTAND: dimension issues
     const auto lbl_dim = L->dims();
     const int batch_size = lbl_dim[0];
     const int num_true = lbl_dim[1];
     const int num_sampled_classes = num_true + num_samples;
     // std::vector<int64_t> ret_dim_vec = {batch_size, num_sampled_classes};
-    // lite::DDim ret_dim(ret_dim_vec);
+    // lite_metal::DDim ret_dim(ret_dim_vec);
 
     // UNDERSTAND: raw data view
     const int64_t* label_data = L->data<int64_t>();
@@ -114,12 +114,12 @@ class SampleWithProb {
 //  template <typename T>
 //  class GPUSampleWithProb {
 //  public:
-//   void operator()(const platform::CUDAlite::Context<Target>& context, const
+//   void operator()(const platform::CUDAlite_metal::Context<Target>& context, const
 //   int seed,
 //                   const int dict_size, const bool uniq,
-//                   const std::size_t num_samples, const lite::Tensor* L,
-//                   lite::Tensor* S,
-//                   lite::Tensor* P);
+//                   const std::size_t num_samples, const lite_metal::Tensor* L,
+//                   lite_metal::Tensor* S,
+//                   lite_metal::Tensor* P);
 // };
 // #endif
 }  // namespace math

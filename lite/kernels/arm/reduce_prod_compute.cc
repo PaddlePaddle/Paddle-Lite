@@ -18,7 +18,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 template <typename T, PrecisionType Ptype>
@@ -41,7 +41,7 @@ void ReduceProdCompute<T, Ptype>::Run() {
   }
 
   if (reduce_all) {
-    lite::arm::math::reduce_prod_all(input, Out, x_dims.production());
+    lite_metal::arm::math::reduce_prod_all(input, Out, x_dims.production());
   } else {
     CHECK_EQ(x_rank, 4U);
     int n_in = x_dims[0];
@@ -52,27 +52,27 @@ void ReduceProdCompute<T, Ptype>::Run() {
     if (dim.size() == 1) {
       switch (dim[0]) {
         case 0:
-          lite::arm::math::reduce_prod_n(input, Out, n_in, c_in, h_in, w_in);
+          lite_metal::arm::math::reduce_prod_n(input, Out, n_in, c_in, h_in, w_in);
           break;
         case 1:
-          lite::arm::math::reduce_prod_c(input, Out, n_in, c_in, h_in, w_in);
+          lite_metal::arm::math::reduce_prod_c(input, Out, n_in, c_in, h_in, w_in);
           break;
         case 2:
-          lite::arm::math::reduce_prod_h(input, Out, n_in, c_in, h_in, w_in);
+          lite_metal::arm::math::reduce_prod_h(input, Out, n_in, c_in, h_in, w_in);
           break;
         case 3:
-          lite::arm::math::reduce_prod_w(input, Out, n_in, c_in, h_in, w_in);
+          lite_metal::arm::math::reduce_prod_w(input, Out, n_in, c_in, h_in, w_in);
           break;
         default:
           LOG(FATAL) << "dim[0] should be less than 4.";
       }
     } else if (dim.size() == 2) {
       if (dim[0] == 0 && dim[1] == 1) {
-        lite::arm::math::reduce_prod_nc(input, Out, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_prod_nc(input, Out, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 1 && dim[1] == 2) {
-        lite::arm::math::reduce_prod_ch(input, Out, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_prod_ch(input, Out, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 2 && dim[1] == 3) {
-        lite::arm::math::reduce_prod_hw(input, Out, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_prod_hw(input, Out, n_in, c_in, h_in, w_in);
       } else {
         LOG(FATAL)
             << "Only support the values of the dim are 0,1 1,2 or 2,3 for now.";
@@ -89,11 +89,11 @@ void ReduceProdCompute<T, Ptype>::Run() {
 }  // namespace paddle
 
 using reduce_prob_arm_int32 =
-    paddle::lite::kernels::arm::ReduceProdCompute<int, PRECISION(kInt32)>;
+    paddle::lite_metal::kernels::arm::ReduceProdCompute<int, PRECISION(kInt32)>;
 using reduce_prob_arm_float =
-    paddle::lite::kernels::arm::ReduceProdCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::arm::ReduceProdCompute<float, PRECISION(kFloat)>;
 using reduce_prob_arm_int64 =
-    paddle::lite::kernels::arm::ReduceProdCompute<int64_t, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::arm::ReduceProdCompute<int64_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(
     reduce_prod, kARM, kInt32, kNCHW, reduce_prob_arm_int32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})

@@ -18,7 +18,7 @@
 #include "lite/core/kernel.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -32,7 +32,7 @@ class ConvCompute : public KernelLite<TARGET(kCUDA), PType> {
   virtual ~ConvCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::CudnnConv2D<T, PType>> conv_impl_;
+  std::unique_ptr<lite_metal::cuda::math::CudnnConv2D<T, PType>> conv_impl_;
 };
 
 template <PrecisionType Ptype_out>
@@ -46,7 +46,7 @@ class ConvComputeInt8
   virtual ~ConvComputeInt8() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::CudnnConv2DInt8<Ptype_out>> conv_impl_;
+  std::unique_ptr<lite_metal::cuda::math::CudnnConv2DInt8<Ptype_out>> conv_impl_;
 };
 
 }  // namespace cuda

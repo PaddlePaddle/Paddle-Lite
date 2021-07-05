@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -53,7 +53,7 @@ void MatchMatrixTensorCompute<T>::Run() {
   memset(out_data, 0.0, out->dims()[0] * out->dims()[1] * sizeof(T));
   memset(bottom_l_trans_data, 0.0, tmp->dims()[0] * tmp->dims()[1] * sizeof(T));
 
-  auto blas = lite::x86::math::GetBlas<TARGET(kX86), T>(context);
+  auto blas = lite_metal::x86::math::GetBlas<TARGET(kX86), T>(context);
   blas.GEMM(CblasNoTrans,
             CblasNoTrans,
             x->dims()[0],
@@ -77,7 +77,7 @@ void MatchMatrixTensorCompute<T>::Run() {
           bottom_l_trans_data + offset_l[b] * dim_t * dim_in + t * dim_in;
       const auto* r_data = bottom_r_data + offset_r[b] * dim_in;
 
-      auto blas = lite::x86::math::GetBlas<TARGET(kX86), T>(context);
+      auto blas = lite_metal::x86::math::GetBlas<TARGET(kX86), T>(context);
       blas.GEMM(CblasNoTrans,
                 CblasTrans,
                 len_l,
@@ -132,7 +132,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::x86::MatchMatrixTensorCompute<float>,
+    paddle::lite_metal::kernels::x86::MatchMatrixTensorCompute<float>,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kX86))})

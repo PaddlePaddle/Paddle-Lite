@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void Squeeze2MatmulFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -32,5 +32,5 @@ void Squeeze2MatmulFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_squeeze2_matmul_fuse_pass,
-                  paddle::lite::mir::Squeeze2MatmulFusePass)
+                  paddle::lite_metal::mir::Squeeze2MatmulFusePass)
     .BindTargets({TARGET(kAny)});

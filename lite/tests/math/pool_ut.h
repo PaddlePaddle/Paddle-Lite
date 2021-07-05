@@ -63,13 +63,13 @@ DEFINE_bool(use_quantizer, false, "no do use_quantizer");
 
 DEFINE_string(pooling_type, "max", "do max pooling");
 
-typedef paddle::lite::DDim DDim;
-typedef paddle::lite::Tensor Tensor;
-typedef paddle::lite::operators::PoolParam PoolParam;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::DDim DDim;
+typedef paddle::lite_metal::Tensor Tensor;
+typedef paddle::lite_metal::operators::PoolParam PoolParam;
+using paddle::lite_metal::profile::Timer;
 
 DDim compute_out_dim(const DDim& dim_in,
-                     const paddle::lite::operators::PoolParam& param) {
+                     const paddle::lite_metal::operators::PoolParam& param) {
   DDim dim_out = dim_in;
   auto kernel_h = param.ksize[0];
   auto kernel_w = param.ksize[1];

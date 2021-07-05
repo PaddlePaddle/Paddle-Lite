@@ -24,12 +24,12 @@
 #include "lite/kernels/arm/concat_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
 bool infer_shape(const operators::ConcatParam& param) {
-  std::vector<lite::DDim> input_dims;
+  std::vector<lite_metal::DDim> input_dims;
   for (auto p : param.x) {
     input_dims.push_back(p->dims());
   }
@@ -51,16 +51,16 @@ bool infer_shape(const operators::ConcatParam& param) {
     out_dims[axis] = -1;
   }
   // Set output dims
-  param.output->Resize(lite::DDim(out_dims));
+  param.output->Resize(lite_metal::DDim(out_dims));
   return true;
 }
 
 void concat_compute_ref(const operators::ConcatParam& param) {
-  std::vector<lite::Tensor*> input = param.x;
+  std::vector<lite_metal::Tensor*> input = param.x;
   int axis = param.axis;
   infer_shape(param);
 
-  lite::Tensor* output = param.output;
+  lite_metal::Tensor* output = param.output;
   int num = input.size();
   int rows = 1;
   auto dim_0 = input[0]->dims();
@@ -106,9 +106,9 @@ TEST(concat_arm, compute_input_single) {
   operators::ConcatParam param;
 
   LOG(INFO) << "test concat start";
-  lite::Tensor output;
-  lite::Tensor output_ref;
-  lite::Tensor tensorA;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
+  lite_metal::Tensor tensorA;
   DDimLite ddimA({10, 4, 3, 2});
   tensorA.Resize(ddimA);
 
@@ -153,12 +153,12 @@ TEST(concat_arm, compute_input_multi) {
   // init param
   // x: tensorA, tensorB, tensorC, tensorD
   // axis: 0
-  lite::Tensor output;
-  lite::Tensor output_ref;
-  lite::Tensor tensorA;
-  lite::Tensor tensorB;
-  lite::Tensor tensorC;
-  lite::Tensor tensorD;
+  lite_metal::Tensor output;
+  lite_metal::Tensor output_ref;
+  lite_metal::Tensor tensorA;
+  lite_metal::Tensor tensorB;
+  lite_metal::Tensor tensorC;
+  lite_metal::Tensor tensorD;
 
   DDimLite ddimA({10, 4, 3, 2});
   DDimLite ddimB({20, 4, 3, 2});

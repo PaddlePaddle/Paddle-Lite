@@ -18,7 +18,7 @@ limitations under the License. */
 // #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -170,10 +170,10 @@ void YoloBoxCompute::Run() {
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
 
-  lite::Tensor* X = param.X;
-  lite::Tensor* ImgSize = param.ImgSize;
-  lite::Tensor* Boxes = param.Boxes;
-  lite::Tensor* Scores = param.Scores;
+  lite_metal::Tensor* X = param.X;
+  lite_metal::Tensor* ImgSize = param.ImgSize;
+  lite_metal::Tensor* Boxes = param.Boxes;
+  lite_metal::Tensor* Scores = param.Scores;
   std::vector<int> anchors = param.anchors;
   int class_num = param.class_num;
   float conf_thresh = param.conf_thresh;
@@ -239,7 +239,7 @@ REGISTER_LITE_KERNEL(yolo_box,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::YoloBoxCompute,
+                     paddle::lite_metal::kernels::cuda::YoloBoxCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),

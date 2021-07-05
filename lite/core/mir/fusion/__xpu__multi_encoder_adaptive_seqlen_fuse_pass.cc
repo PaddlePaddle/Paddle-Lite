@@ -19,7 +19,7 @@
 #include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -157,5 +157,5 @@ class XPUMultiEncoderAdaptiveSeqlenFusePass : public ProgramPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(__xpu__multi_encoder_adaptive_seqlen_fuse_pass,
-                  paddle::lite::mir::XPUMultiEncoderAdaptiveSeqlenFusePass)
+                  paddle::lite_metal::mir::XPUMultiEncoderAdaptiveSeqlenFusePass)
     .BindTargets({TARGET(kXPU)});

@@ -16,10 +16,10 @@ limitations under the License. */
 #include "lite/kernels/cuda/match_matrix_tensor_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 template <typename dtype>
 void gpu_transpose(
@@ -77,7 +77,7 @@ __global__ void padding_out(const dtype* src,
 }
 
 void MatchMatrixTensorCompute::PrepareForRun() {
-  gemm_impl_.reset(new lite::cuda::math::Gemm<float, float>);
+  gemm_impl_.reset(new lite_metal::cuda::math::Gemm<float, float>);
 }
 
 void MatchMatrixTensorCompute::Run() {
@@ -177,7 +177,7 @@ REGISTER_LITE_KERNEL(match_matrix_tensor,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::MatchMatrixTensorCompute,
+                     paddle::lite_metal::kernels::cuda::MatchMatrixTensorCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MulticlassNmsOpLite::CheckShape() const {
@@ -48,7 +48,7 @@ bool MulticlassNmsOpLite::InferShapeImpl() const {
 }
 
 bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
-                                     lite::Scope* scope) {
+                                     lite_metal::Scope* scope) {
   auto bboxes_name = opdesc.Input("BBoxes").front();
   auto scores_name = opdesc.Input("Scores").front();
   auto out_name = opdesc.Output("Out").front();
@@ -56,11 +56,11 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   if (std::find(output_arg_names.begin(), output_arg_names.end(), "Index") !=
       output_arg_names.end()) {
     auto index_name = opdesc.Output("Index").front();
-    param_.index = GetMutableVar<lite::Tensor>(scope, index_name);
+    param_.index = GetMutableVar<lite_metal::Tensor>(scope, index_name);
   }
-  param_.bboxes = GetVar<lite::Tensor>(scope, bboxes_name);
-  param_.scores = GetVar<lite::Tensor>(scope, scores_name);
-  param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
+  param_.bboxes = GetVar<lite_metal::Tensor>(scope, bboxes_name);
+  param_.scores = GetVar<lite_metal::Tensor>(scope, scores_name);
+  param_.out = GetMutableVar<lite_metal::Tensor>(scope, out_name);
   param_.background_label = opdesc.GetAttr<int>("background_label");
   param_.keep_top_k = opdesc.GetAttr<int>("keep_top_k");
   param_.nms_top_k = opdesc.GetAttr<int>("nms_top_k");
@@ -76,7 +76,7 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
       input_arg_names.end()) {
     auto rois_num_name = opdesc.Input("RoisNum");
     if (rois_num_name.size() > 0) {
-      param_.rois_num = GetVar<lite::Tensor>(scope, rois_num_name.front());
+      param_.rois_num = GetVar<lite_metal::Tensor>(scope, rois_num_name.front());
     }
   }
 
@@ -84,7 +84,7 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
                 output_arg_names.end(),
                 "NmsRoisNum") != output_arg_names.end()) {
     auto nms_rois_name = opdesc.Output("NmsRoisNum").front();
-    param_.nms_rois_num = GetMutableVar<lite::Tensor>(scope, nms_rois_name);
+    param_.nms_rois_num = GetMutableVar<lite_metal::Tensor>(scope, nms_rois_name);
   }
 
   return true;
@@ -94,6 +94,6 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(multiclass_nms, paddle::lite::operators::MulticlassNmsOpLite);
-REGISTER_LITE_OP(multiclass_nms2, paddle::lite::operators::MulticlassNmsOpLite);
-REGISTER_LITE_OP(multiclass_nms3, paddle::lite::operators::MulticlassNmsOpLite);
+REGISTER_LITE_OP(multiclass_nms, paddle::lite_metal::operators::MulticlassNmsOpLite);
+REGISTER_LITE_OP(multiclass_nms2, paddle::lite_metal::operators::MulticlassNmsOpLite);
+REGISTER_LITE_OP(multiclass_nms3, paddle::lite_metal::operators::MulticlassNmsOpLite);

@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -74,7 +74,7 @@ REGISTER_LITE_KERNEL(anchor_generator,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::AnchorGeneratorCompute,
+                     paddle::lite_metal::kernels::xpu::AnchorGeneratorCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Anchors", {LiteType::GetTensorTy(TARGET(kXPU))})

@@ -20,7 +20,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -30,7 +30,7 @@ void XPUFcCompute::PrepareForRun() {
   auto w_len = param.w->numel();
   auto weight_dims = param.w->dims();
   // max
-  w_max = paddle::lite::xpu::math::FindMaxAbs(w_ptr, w_len);
+  w_max = paddle::lite_metal::xpu::math::FindMaxAbs(w_ptr, w_len);
   std::vector<float> w_max_v(4, w_max);
   weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard_->addr_),
@@ -39,7 +39,7 @@ void XPUFcCompute::PrepareForRun() {
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   // transpose
   std::vector<float> transpose_w(w_len, 0);
-  paddle::lite::xpu::math::Transpose(
+  paddle::lite_metal::xpu::math::Transpose(
       w_ptr, transpose_w.data(), weight_dims[0], weight_dims[1]);
   // quant
   if (param.precision == "int31") {
@@ -53,7 +53,7 @@ void XPUFcCompute::PrepareForRun() {
     quant_weight_guard_ =
         TargetWrapperXPU::MallocScratchPad(w_len * sizeof(int16_t));
     std::vector<int16_t> quant_weight_cpu(w_len, 0);
-    paddle::lite::xpu::math::ConvertFP32ToInt16(
+    paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
         transpose_w.data(), quant_weight_cpu.data(), w_max, w_len);
     XPU_CALL(xpu_memcpy(reinterpret_cast<int16_t*>(quant_weight_guard_->addr_),
                         quant_weight_cpu.data(),
@@ -63,7 +63,7 @@ void XPUFcCompute::PrepareForRun() {
     quant_weight_guard_ =
         TargetWrapperXPU::MallocScratchPad(w_len * sizeof(int8_t));
     std::vector<int8_t> quant_weight_cpu(w_len, 0);
-    paddle::lite::xpu::math::ConvertFP32ToInt8(
+    paddle::lite_metal::xpu::math::ConvertFP32ToInt8(
         transpose_w.data(), quant_weight_cpu.data(), w_max, w_len);
     XPU_CALL(xpu_memcpy(reinterpret_cast<int8_t*>(quant_weight_guard_->addr_),
                         quant_weight_cpu.data(),
@@ -188,7 +188,7 @@ REGISTER_LITE_KERNEL(__xpu__fc,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUFcCompute,
+                     paddle::lite_metal::kernels::xpu::XPUFcCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})

@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool AssignOpLite::CheckShape() const {
@@ -38,7 +38,7 @@ bool AssignOpLite::InferShapeImpl() const {
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
-bool AssignOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool AssignOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto x_name = op_desc.Input("X").front();
   auto out_name = op_desc.Output("Out").front();
 
@@ -62,4 +62,4 @@ bool AssignOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(assign, paddle::lite::operators::AssignOpLite);
+REGISTER_LITE_OP(assign, paddle::lite_metal::operators::AssignOpLite);

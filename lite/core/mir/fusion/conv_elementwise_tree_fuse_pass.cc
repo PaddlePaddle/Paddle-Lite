@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void ConvElementwiseTreeFusePass::Apply(
@@ -57,5 +57,5 @@ void ConvElementwiseTreeFusePass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_elementwise_tree_fuse_pass,
-                  paddle::lite::mir::ConvElementwiseTreeFusePass)
+                  paddle::lite_metal::mir::ConvElementwiseTreeFusePass)
     .BindTargets({TARGET(kOpenCL)});

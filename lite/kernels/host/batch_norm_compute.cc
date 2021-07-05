@@ -15,7 +15,7 @@
 #include "lite/kernels/host/batch_norm_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 void BatchNormCompute::Run() {
@@ -66,7 +66,7 @@ REGISTER_LITE_KERNEL(batch_norm,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::BatchNormCompute,
+                     paddle::lite_metal::kernels::arm::BatchNormCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost))})

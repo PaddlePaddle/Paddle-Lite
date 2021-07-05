@@ -7,7 +7,7 @@
 #include "flatbuffers/flatbuffers.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace fbs {
 namespace proto {
 
@@ -446,9 +446,9 @@ flatbuffers::Offset<Version> CreateVersion(flatbuffers::FlatBufferBuilder &_fbb,
 struct OpDescT : public flatbuffers::NativeTable {
   typedef OpDesc TableType;
   std::string type;
-  std::vector<std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::VarT>> inputs;
-  std::vector<std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::VarT>> outputs;
-  std::vector<std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::AttrT>> attrs;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::VarT>> inputs;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::VarT>> outputs;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::AttrT>> attrs;
   bool is_target;
   OpDescT()
       : is_target(false) {
@@ -488,23 +488,23 @@ struct OpDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   flatbuffers::String *mutable_type() {
     return GetPointer<flatbuffers::String *>(VT_TYPE);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *inputs() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *>(VT_INPUTS);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *inputs() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *>(VT_INPUTS);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *mutable_inputs() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *>(VT_INPUTS);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *mutable_inputs() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *>(VT_INPUTS);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *outputs() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *>(VT_OUTPUTS);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *outputs() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *>(VT_OUTPUTS);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *mutable_outputs() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *>(VT_OUTPUTS);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *mutable_outputs() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *>(VT_OUTPUTS);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Attr>> *attrs() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Attr>> *>(VT_ATTRS);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Attr>> *attrs() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Attr>> *>(VT_ATTRS);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Attr>> *mutable_attrs() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Attr>> *>(VT_ATTRS);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Attr>> *mutable_attrs() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Attr>> *>(VT_ATTRS);
   }
   bool is_target() const {
     return GetField<uint8_t>(VT_IS_TARGET, 0) != 0;
@@ -540,13 +540,13 @@ struct OpDescBuilder {
   void add_type(flatbuffers::Offset<flatbuffers::String> type) {
     fbb_.AddOffset(OpDesc::VT_TYPE, type);
   }
-  void add_inputs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>>> inputs) {
+  void add_inputs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>>> inputs) {
     fbb_.AddOffset(OpDesc::VT_INPUTS, inputs);
   }
-  void add_outputs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>>> outputs) {
+  void add_outputs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>>> outputs) {
     fbb_.AddOffset(OpDesc::VT_OUTPUTS, outputs);
   }
-  void add_attrs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Attr>>> attrs) {
+  void add_attrs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Attr>>> attrs) {
     fbb_.AddOffset(OpDesc::VT_ATTRS, attrs);
   }
   void add_is_target(bool is_target) {
@@ -568,9 +568,9 @@ struct OpDescBuilder {
 inline flatbuffers::Offset<OpDesc> CreateOpDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> type = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>>> inputs = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>>> outputs = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Attr>>> attrs = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>>> inputs = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>>> outputs = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Attr>>> attrs = 0,
     bool is_target = false) {
   OpDescBuilder builder_(_fbb);
   builder_.add_attrs(attrs);
@@ -584,15 +584,15 @@ inline flatbuffers::Offset<OpDesc> CreateOpDesc(
 inline flatbuffers::Offset<OpDesc> CreateOpDescDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *type = nullptr,
-    std::vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *inputs = nullptr,
-    std::vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> *outputs = nullptr,
-    std::vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Attr>> *attrs = nullptr,
+    std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *inputs = nullptr,
+    std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> *outputs = nullptr,
+    std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Attr>> *attrs = nullptr,
     bool is_target = false) {
   auto type__ = type ? _fbb.CreateString(type) : 0;
-  auto inputs__ = inputs ? _fbb.CreateVectorOfSortedTables<paddle::lite::fbs::proto::OpDesc_::Var>(inputs) : 0;
-  auto outputs__ = outputs ? _fbb.CreateVectorOfSortedTables<paddle::lite::fbs::proto::OpDesc_::Var>(outputs) : 0;
-  auto attrs__ = attrs ? _fbb.CreateVectorOfSortedTables<paddle::lite::fbs::proto::OpDesc_::Attr>(attrs) : 0;
-  return paddle::lite::fbs::proto::CreateOpDesc(
+  auto inputs__ = inputs ? _fbb.CreateVectorOfSortedTables<paddle::lite_metal::fbs::proto::OpDesc_::Var>(inputs) : 0;
+  auto outputs__ = outputs ? _fbb.CreateVectorOfSortedTables<paddle::lite_metal::fbs::proto::OpDesc_::Var>(outputs) : 0;
+  auto attrs__ = attrs ? _fbb.CreateVectorOfSortedTables<paddle::lite_metal::fbs::proto::OpDesc_::Attr>(attrs) : 0;
+  return paddle::lite_metal::fbs::proto::CreateOpDesc(
       _fbb,
       type__,
       inputs__,
@@ -608,7 +608,7 @@ namespace OpDesc_ {
 struct AttrT : public flatbuffers::NativeTable {
   typedef Attr TableType;
   std::string name;
-  paddle::lite::fbs::proto::AttrType type;
+  paddle::lite_metal::fbs::proto::AttrType type;
   int32_t i;
   float f;
   std::string s;
@@ -622,7 +622,7 @@ struct AttrT : public flatbuffers::NativeTable {
   std::vector<int32_t> blocks_idx;
   std::vector<int64_t> longs;
   AttrT()
-      : type(paddle::lite::fbs::proto::AttrType_INT),
+      : type(paddle::lite_metal::fbs::proto::AttrType_INT),
         i(0),
         f(0.0f),
         b(false),
@@ -688,10 +688,10 @@ struct Attr FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   int KeyCompareWithValue(const char *val) const {
     return strcmp(name()->c_str(), val);
   }
-  paddle::lite::fbs::proto::AttrType type() const {
-    return static_cast<paddle::lite::fbs::proto::AttrType>(GetField<int32_t>(VT_TYPE, 0));
+  paddle::lite_metal::fbs::proto::AttrType type() const {
+    return static_cast<paddle::lite_metal::fbs::proto::AttrType>(GetField<int32_t>(VT_TYPE, 0));
   }
-  bool mutate_type(paddle::lite::fbs::proto::AttrType _type) {
+  bool mutate_type(paddle::lite_metal::fbs::proto::AttrType _type) {
     return SetField<int32_t>(VT_TYPE, static_cast<int32_t>(_type), 0);
   }
   int32_t i() const {
@@ -805,7 +805,7 @@ struct AttrBuilder {
   void add_name(flatbuffers::Offset<flatbuffers::String> name) {
     fbb_.AddOffset(Attr::VT_NAME, name);
   }
-  void add_type(paddle::lite::fbs::proto::AttrType type) {
+  void add_type(paddle::lite_metal::fbs::proto::AttrType type) {
     fbb_.AddElement<int32_t>(Attr::VT_TYPE, static_cast<int32_t>(type), 0);
   }
   void add_i(int32_t i) {
@@ -860,7 +860,7 @@ struct AttrBuilder {
 inline flatbuffers::Offset<Attr> CreateAttr(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> name = 0,
-    paddle::lite::fbs::proto::AttrType type = paddle::lite::fbs::proto::AttrType_INT,
+    paddle::lite_metal::fbs::proto::AttrType type = paddle::lite_metal::fbs::proto::AttrType_INT,
     int32_t i = 0,
     float f = 0.0f,
     flatbuffers::Offset<flatbuffers::String> s = 0,
@@ -894,7 +894,7 @@ inline flatbuffers::Offset<Attr> CreateAttr(
 inline flatbuffers::Offset<Attr> CreateAttrDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
-    paddle::lite::fbs::proto::AttrType type = paddle::lite::fbs::proto::AttrType_INT,
+    paddle::lite_metal::fbs::proto::AttrType type = paddle::lite_metal::fbs::proto::AttrType_INT,
     int32_t i = 0,
     float f = 0.0f,
     const char *s = nullptr,
@@ -915,7 +915,7 @@ inline flatbuffers::Offset<Attr> CreateAttrDirect(
   auto bools__ = bools ? _fbb.CreateVector<uint8_t>(*bools) : 0;
   auto blocks_idx__ = blocks_idx ? _fbb.CreateVector<int32_t>(*blocks_idx) : 0;
   auto longs__ = longs ? _fbb.CreateVector<int64_t>(*longs) : 0;
-  return paddle::lite::fbs::proto::OpDesc_::CreateAttr(
+  return paddle::lite_metal::fbs::proto::OpDesc_::CreateAttr(
       _fbb,
       name__,
       type,
@@ -1035,7 +1035,7 @@ inline flatbuffers::Offset<Var> CreateVarDirect(
     const std::vector<flatbuffers::Offset<flatbuffers::String>> *arguments = nullptr) {
   auto parameter__ = parameter ? _fbb.CreateString(parameter) : 0;
   auto arguments__ = arguments ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*arguments) : 0;
-  return paddle::lite::fbs::proto::OpDesc_::CreateVar(
+  return paddle::lite_metal::fbs::proto::OpDesc_::CreateVar(
       _fbb,
       parameter__,
       arguments__);
@@ -1047,14 +1047,14 @@ flatbuffers::Offset<Var> CreateVar(flatbuffers::FlatBufferBuilder &_fbb, const V
 
 struct VarTypeT : public flatbuffers::NativeTable {
   typedef VarType TableType;
-  paddle::lite::fbs::proto::VarType_::Type type;
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::TensorDescT> selected_rows;
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorDescT> lod_tensor;
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorArrayDescT> tensor_array;
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::ReaderDescT> reader;
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::TupleT> tuple;
+  paddle::lite_metal::fbs::proto::VarType_::Type type;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TensorDescT> selected_rows;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDescT> lod_tensor;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDescT> tensor_array;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::ReaderDescT> reader;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TupleT> tuple;
   VarTypeT()
-      : type(paddle::lite::fbs::proto::VarType_::Type_BOOL) {
+      : type(paddle::lite_metal::fbs::proto::VarType_::Type_BOOL) {
   }
 };
 
@@ -1087,41 +1087,41 @@ struct VarType FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_READER = 12,
     VT_TUPLE = 14
   };
-  paddle::lite::fbs::proto::VarType_::Type type() const {
-    return static_cast<paddle::lite::fbs::proto::VarType_::Type>(GetField<int32_t>(VT_TYPE, 0));
+  paddle::lite_metal::fbs::proto::VarType_::Type type() const {
+    return static_cast<paddle::lite_metal::fbs::proto::VarType_::Type>(GetField<int32_t>(VT_TYPE, 0));
   }
-  bool mutate_type(paddle::lite::fbs::proto::VarType_::Type _type) {
+  bool mutate_type(paddle::lite_metal::fbs::proto::VarType_::Type _type) {
     return SetField<int32_t>(VT_TYPE, static_cast<int32_t>(_type), 0);
   }
-  const paddle::lite::fbs::proto::VarType_::TensorDesc *selected_rows() const {
-    return GetPointer<const paddle::lite::fbs::proto::VarType_::TensorDesc *>(VT_SELECTED_ROWS);
+  const paddle::lite_metal::fbs::proto::VarType_::TensorDesc *selected_rows() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::VarType_::TensorDesc *>(VT_SELECTED_ROWS);
   }
-  paddle::lite::fbs::proto::VarType_::TensorDesc *mutable_selected_rows() {
-    return GetPointer<paddle::lite::fbs::proto::VarType_::TensorDesc *>(VT_SELECTED_ROWS);
+  paddle::lite_metal::fbs::proto::VarType_::TensorDesc *mutable_selected_rows() {
+    return GetPointer<paddle::lite_metal::fbs::proto::VarType_::TensorDesc *>(VT_SELECTED_ROWS);
   }
-  const paddle::lite::fbs::proto::VarType_::LoDTensorDesc *lod_tensor() const {
-    return GetPointer<const paddle::lite::fbs::proto::VarType_::LoDTensorDesc *>(VT_LOD_TENSOR);
+  const paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc *lod_tensor() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc *>(VT_LOD_TENSOR);
   }
-  paddle::lite::fbs::proto::VarType_::LoDTensorDesc *mutable_lod_tensor() {
-    return GetPointer<paddle::lite::fbs::proto::VarType_::LoDTensorDesc *>(VT_LOD_TENSOR);
+  paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc *mutable_lod_tensor() {
+    return GetPointer<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc *>(VT_LOD_TENSOR);
   }
-  const paddle::lite::fbs::proto::VarType_::LoDTensorArrayDesc *tensor_array() const {
-    return GetPointer<const paddle::lite::fbs::proto::VarType_::LoDTensorArrayDesc *>(VT_TENSOR_ARRAY);
+  const paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDesc *tensor_array() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDesc *>(VT_TENSOR_ARRAY);
   }
-  paddle::lite::fbs::proto::VarType_::LoDTensorArrayDesc *mutable_tensor_array() {
-    return GetPointer<paddle::lite::fbs::proto::VarType_::LoDTensorArrayDesc *>(VT_TENSOR_ARRAY);
+  paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDesc *mutable_tensor_array() {
+    return GetPointer<paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDesc *>(VT_TENSOR_ARRAY);
   }
-  const paddle::lite::fbs::proto::VarType_::ReaderDesc *reader() const {
-    return GetPointer<const paddle::lite::fbs::proto::VarType_::ReaderDesc *>(VT_READER);
+  const paddle::lite_metal::fbs::proto::VarType_::ReaderDesc *reader() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::VarType_::ReaderDesc *>(VT_READER);
   }
-  paddle::lite::fbs::proto::VarType_::ReaderDesc *mutable_reader() {
-    return GetPointer<paddle::lite::fbs::proto::VarType_::ReaderDesc *>(VT_READER);
+  paddle::lite_metal::fbs::proto::VarType_::ReaderDesc *mutable_reader() {
+    return GetPointer<paddle::lite_metal::fbs::proto::VarType_::ReaderDesc *>(VT_READER);
   }
-  const paddle::lite::fbs::proto::VarType_::Tuple *tuple() const {
-    return GetPointer<const paddle::lite::fbs::proto::VarType_::Tuple *>(VT_TUPLE);
+  const paddle::lite_metal::fbs::proto::VarType_::Tuple *tuple() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::VarType_::Tuple *>(VT_TUPLE);
   }
-  paddle::lite::fbs::proto::VarType_::Tuple *mutable_tuple() {
-    return GetPointer<paddle::lite::fbs::proto::VarType_::Tuple *>(VT_TUPLE);
+  paddle::lite_metal::fbs::proto::VarType_::Tuple *mutable_tuple() {
+    return GetPointer<paddle::lite_metal::fbs::proto::VarType_::Tuple *>(VT_TUPLE);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1147,22 +1147,22 @@ struct VarTypeBuilder {
   typedef VarType Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_type(paddle::lite::fbs::proto::VarType_::Type type) {
+  void add_type(paddle::lite_metal::fbs::proto::VarType_::Type type) {
     fbb_.AddElement<int32_t>(VarType::VT_TYPE, static_cast<int32_t>(type), 0);
   }
-  void add_selected_rows(flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::TensorDesc> selected_rows) {
+  void add_selected_rows(flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::TensorDesc> selected_rows) {
     fbb_.AddOffset(VarType::VT_SELECTED_ROWS, selected_rows);
   }
-  void add_lod_tensor(flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc> lod_tensor) {
+  void add_lod_tensor(flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc> lod_tensor) {
     fbb_.AddOffset(VarType::VT_LOD_TENSOR, lod_tensor);
   }
-  void add_tensor_array(flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorArrayDesc> tensor_array) {
+  void add_tensor_array(flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDesc> tensor_array) {
     fbb_.AddOffset(VarType::VT_TENSOR_ARRAY, tensor_array);
   }
-  void add_reader(flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::ReaderDesc> reader) {
+  void add_reader(flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::ReaderDesc> reader) {
     fbb_.AddOffset(VarType::VT_READER, reader);
   }
-  void add_tuple(flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::Tuple> tuple) {
+  void add_tuple(flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::Tuple> tuple) {
     fbb_.AddOffset(VarType::VT_TUPLE, tuple);
   }
   explicit VarTypeBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -1179,12 +1179,12 @@ struct VarTypeBuilder {
 
 inline flatbuffers::Offset<VarType> CreateVarType(
     flatbuffers::FlatBufferBuilder &_fbb,
-    paddle::lite::fbs::proto::VarType_::Type type = paddle::lite::fbs::proto::VarType_::Type_BOOL,
-    flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::TensorDesc> selected_rows = 0,
-    flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc> lod_tensor = 0,
-    flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorArrayDesc> tensor_array = 0,
-    flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::ReaderDesc> reader = 0,
-    flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::Tuple> tuple = 0) {
+    paddle::lite_metal::fbs::proto::VarType_::Type type = paddle::lite_metal::fbs::proto::VarType_::Type_BOOL,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::TensorDesc> selected_rows = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc> lod_tensor = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDesc> tensor_array = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::ReaderDesc> reader = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::Tuple> tuple = 0) {
   VarTypeBuilder builder_(_fbb);
   builder_.add_tuple(tuple);
   builder_.add_reader(reader);
@@ -1201,10 +1201,10 @@ namespace VarType_ {
 
 struct TensorDescT : public flatbuffers::NativeTable {
   typedef TensorDesc TableType;
-  paddle::lite::fbs::proto::VarType_::Type data_type;
+  paddle::lite_metal::fbs::proto::VarType_::Type data_type;
   std::vector<int64_t> dims;
   TensorDescT()
-      : data_type(paddle::lite::fbs::proto::VarType_::Type_BOOL) {
+      : data_type(paddle::lite_metal::fbs::proto::VarType_::Type_BOOL) {
   }
 };
 
@@ -1229,10 +1229,10 @@ struct TensorDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_DATA_TYPE = 4,
     VT_DIMS = 6
   };
-  paddle::lite::fbs::proto::VarType_::Type data_type() const {
-    return static_cast<paddle::lite::fbs::proto::VarType_::Type>(GetField<int32_t>(VT_DATA_TYPE, 0));
+  paddle::lite_metal::fbs::proto::VarType_::Type data_type() const {
+    return static_cast<paddle::lite_metal::fbs::proto::VarType_::Type>(GetField<int32_t>(VT_DATA_TYPE, 0));
   }
-  bool mutate_data_type(paddle::lite::fbs::proto::VarType_::Type _data_type) {
+  bool mutate_data_type(paddle::lite_metal::fbs::proto::VarType_::Type _data_type) {
     return SetField<int32_t>(VT_DATA_TYPE, static_cast<int32_t>(_data_type), 0);
   }
   const flatbuffers::Vector<int64_t> *dims() const {
@@ -1257,7 +1257,7 @@ struct TensorDescBuilder {
   typedef TensorDesc Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_data_type(paddle::lite::fbs::proto::VarType_::Type data_type) {
+  void add_data_type(paddle::lite_metal::fbs::proto::VarType_::Type data_type) {
     fbb_.AddElement<int32_t>(TensorDesc::VT_DATA_TYPE, static_cast<int32_t>(data_type), 0);
   }
   void add_dims(flatbuffers::Offset<flatbuffers::Vector<int64_t>> dims) {
@@ -1277,7 +1277,7 @@ struct TensorDescBuilder {
 
 inline flatbuffers::Offset<TensorDesc> CreateTensorDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
-    paddle::lite::fbs::proto::VarType_::Type data_type = paddle::lite::fbs::proto::VarType_::Type_BOOL,
+    paddle::lite_metal::fbs::proto::VarType_::Type data_type = paddle::lite_metal::fbs::proto::VarType_::Type_BOOL,
     flatbuffers::Offset<flatbuffers::Vector<int64_t>> dims = 0) {
   TensorDescBuilder builder_(_fbb);
   builder_.add_dims(dims);
@@ -1287,10 +1287,10 @@ inline flatbuffers::Offset<TensorDesc> CreateTensorDesc(
 
 inline flatbuffers::Offset<TensorDesc> CreateTensorDescDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    paddle::lite::fbs::proto::VarType_::Type data_type = paddle::lite::fbs::proto::VarType_::Type_BOOL,
+    paddle::lite_metal::fbs::proto::VarType_::Type data_type = paddle::lite_metal::fbs::proto::VarType_::Type_BOOL,
     const std::vector<int64_t> *dims = nullptr) {
   auto dims__ = dims ? _fbb.CreateVector<int64_t>(*dims) : 0;
-  return paddle::lite::fbs::proto::VarType_::CreateTensorDesc(
+  return paddle::lite_metal::fbs::proto::VarType_::CreateTensorDesc(
       _fbb,
       data_type,
       dims__);
@@ -1300,7 +1300,7 @@ flatbuffers::Offset<TensorDesc> CreateTensorDesc(flatbuffers::FlatBufferBuilder 
 
 struct LoDTensorDescT : public flatbuffers::NativeTable {
   typedef LoDTensorDesc TableType;
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::TensorDescT> tensor;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TensorDescT> tensor;
   int32_t lod_level;
   LoDTensorDescT()
       : lod_level(0) {
@@ -1328,11 +1328,11 @@ struct LoDTensorDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_TENSOR = 4,
     VT_LOD_LEVEL = 6
   };
-  const paddle::lite::fbs::proto::VarType_::TensorDesc *tensor() const {
-    return GetPointer<const paddle::lite::fbs::proto::VarType_::TensorDesc *>(VT_TENSOR);
+  const paddle::lite_metal::fbs::proto::VarType_::TensorDesc *tensor() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::VarType_::TensorDesc *>(VT_TENSOR);
   }
-  paddle::lite::fbs::proto::VarType_::TensorDesc *mutable_tensor() {
-    return GetPointer<paddle::lite::fbs::proto::VarType_::TensorDesc *>(VT_TENSOR);
+  paddle::lite_metal::fbs::proto::VarType_::TensorDesc *mutable_tensor() {
+    return GetPointer<paddle::lite_metal::fbs::proto::VarType_::TensorDesc *>(VT_TENSOR);
   }
   int32_t lod_level() const {
     return GetField<int32_t>(VT_LOD_LEVEL, 0);
@@ -1356,7 +1356,7 @@ struct LoDTensorDescBuilder {
   typedef LoDTensorDesc Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_tensor(flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::TensorDesc> tensor) {
+  void add_tensor(flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::TensorDesc> tensor) {
     fbb_.AddOffset(LoDTensorDesc::VT_TENSOR, tensor);
   }
   void add_lod_level(int32_t lod_level) {
@@ -1377,7 +1377,7 @@ struct LoDTensorDescBuilder {
 
 inline flatbuffers::Offset<LoDTensorDesc> CreateLoDTensorDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::TensorDesc> tensor = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::TensorDesc> tensor = 0,
     int32_t lod_level = 0) {
   LoDTensorDescBuilder builder_(_fbb);
   builder_.add_lod_level(lod_level);
@@ -1389,7 +1389,7 @@ flatbuffers::Offset<LoDTensorDesc> CreateLoDTensorDesc(flatbuffers::FlatBufferBu
 
 struct LoDTensorArrayDescT : public flatbuffers::NativeTable {
   typedef LoDTensorArrayDesc TableType;
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::TensorDescT> tensor;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TensorDescT> tensor;
   int32_t lod_level;
   LoDTensorArrayDescT()
       : lod_level(0) {
@@ -1417,11 +1417,11 @@ struct LoDTensorArrayDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_TENSOR = 4,
     VT_LOD_LEVEL = 6
   };
-  const paddle::lite::fbs::proto::VarType_::TensorDesc *tensor() const {
-    return GetPointer<const paddle::lite::fbs::proto::VarType_::TensorDesc *>(VT_TENSOR);
+  const paddle::lite_metal::fbs::proto::VarType_::TensorDesc *tensor() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::VarType_::TensorDesc *>(VT_TENSOR);
   }
-  paddle::lite::fbs::proto::VarType_::TensorDesc *mutable_tensor() {
-    return GetPointer<paddle::lite::fbs::proto::VarType_::TensorDesc *>(VT_TENSOR);
+  paddle::lite_metal::fbs::proto::VarType_::TensorDesc *mutable_tensor() {
+    return GetPointer<paddle::lite_metal::fbs::proto::VarType_::TensorDesc *>(VT_TENSOR);
   }
   int32_t lod_level() const {
     return GetField<int32_t>(VT_LOD_LEVEL, 0);
@@ -1445,7 +1445,7 @@ struct LoDTensorArrayDescBuilder {
   typedef LoDTensorArrayDesc Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_tensor(flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::TensorDesc> tensor) {
+  void add_tensor(flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::TensorDesc> tensor) {
     fbb_.AddOffset(LoDTensorArrayDesc::VT_TENSOR, tensor);
   }
   void add_lod_level(int32_t lod_level) {
@@ -1466,7 +1466,7 @@ struct LoDTensorArrayDescBuilder {
 
 inline flatbuffers::Offset<LoDTensorArrayDesc> CreateLoDTensorArrayDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::TensorDesc> tensor = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::TensorDesc> tensor = 0,
     int32_t lod_level = 0) {
   LoDTensorArrayDescBuilder builder_(_fbb);
   builder_.add_lod_level(lod_level);
@@ -1478,7 +1478,7 @@ flatbuffers::Offset<LoDTensorArrayDesc> CreateLoDTensorArrayDesc(flatbuffers::Fl
 
 struct ReaderDescT : public flatbuffers::NativeTable {
   typedef ReaderDesc TableType;
-  std::vector<std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorDescT>> lod_tensor;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDescT>> lod_tensor;
   ReaderDescT() {
   }
 };
@@ -1502,11 +1502,11 @@ struct ReaderDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_LOD_TENSOR = 4
   };
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc>> *lod_tensor() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc>> *>(VT_LOD_TENSOR);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc>> *lod_tensor() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc>> *>(VT_LOD_TENSOR);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc>> *mutable_lod_tensor() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc>> *>(VT_LOD_TENSOR);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc>> *mutable_lod_tensor() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc>> *>(VT_LOD_TENSOR);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1524,7 +1524,7 @@ struct ReaderDescBuilder {
   typedef ReaderDesc Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_lod_tensor(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc>>> lod_tensor) {
+  void add_lod_tensor(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc>>> lod_tensor) {
     fbb_.AddOffset(ReaderDesc::VT_LOD_TENSOR, lod_tensor);
   }
   explicit ReaderDescBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -1541,7 +1541,7 @@ struct ReaderDescBuilder {
 
 inline flatbuffers::Offset<ReaderDesc> CreateReaderDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc>>> lod_tensor = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc>>> lod_tensor = 0) {
   ReaderDescBuilder builder_(_fbb);
   builder_.add_lod_tensor(lod_tensor);
   return builder_.Finish();
@@ -1549,9 +1549,9 @@ inline flatbuffers::Offset<ReaderDesc> CreateReaderDesc(
 
 inline flatbuffers::Offset<ReaderDesc> CreateReaderDescDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc>> *lod_tensor = nullptr) {
-  auto lod_tensor__ = lod_tensor ? _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc>>(*lod_tensor) : 0;
-  return paddle::lite::fbs::proto::VarType_::CreateReaderDesc(
+    const std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc>> *lod_tensor = nullptr) {
+  auto lod_tensor__ = lod_tensor ? _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc>>(*lod_tensor) : 0;
+  return paddle::lite_metal::fbs::proto::VarType_::CreateReaderDesc(
       _fbb,
       lod_tensor__);
 }
@@ -1560,7 +1560,7 @@ flatbuffers::Offset<ReaderDesc> CreateReaderDesc(flatbuffers::FlatBufferBuilder 
 
 struct TupleT : public flatbuffers::NativeTable {
   typedef Tuple TableType;
-  std::vector<paddle::lite::fbs::proto::VarType_::Type> element_type;
+  std::vector<paddle::lite_metal::fbs::proto::VarType_::Type> element_type;
   TupleT() {
   }
 };
@@ -1632,7 +1632,7 @@ inline flatbuffers::Offset<Tuple> CreateTupleDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<int32_t> *element_type = nullptr) {
   auto element_type__ = element_type ? _fbb.CreateVector<int32_t>(*element_type) : 0;
-  return paddle::lite::fbs::proto::VarType_::CreateTuple(
+  return paddle::lite_metal::fbs::proto::VarType_::CreateTuple(
       _fbb,
       element_type__);
 }
@@ -1644,7 +1644,7 @@ flatbuffers::Offset<Tuple> CreateTuple(flatbuffers::FlatBufferBuilder &_fbb, con
 struct VarDescT : public flatbuffers::NativeTable {
   typedef VarDesc TableType;
   std::string name;
-  std::unique_ptr<paddle::lite::fbs::proto::VarTypeT> type;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarTypeT> type;
   bool persistable;
   bool need_check_feed;
   VarDescT()
@@ -1690,11 +1690,11 @@ struct VarDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   int KeyCompareWithValue(const char *val) const {
     return strcmp(name()->c_str(), val);
   }
-  const paddle::lite::fbs::proto::VarType *type() const {
-    return GetPointer<const paddle::lite::fbs::proto::VarType *>(VT_TYPE);
+  const paddle::lite_metal::fbs::proto::VarType *type() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::VarType *>(VT_TYPE);
   }
-  paddle::lite::fbs::proto::VarType *mutable_type() {
-    return GetPointer<paddle::lite::fbs::proto::VarType *>(VT_TYPE);
+  paddle::lite_metal::fbs::proto::VarType *mutable_type() {
+    return GetPointer<paddle::lite_metal::fbs::proto::VarType *>(VT_TYPE);
   }
   bool persistable() const {
     return GetField<uint8_t>(VT_PERSISTABLE, 0) != 0;
@@ -1730,7 +1730,7 @@ struct VarDescBuilder {
   void add_name(flatbuffers::Offset<flatbuffers::String> name) {
     fbb_.AddOffset(VarDesc::VT_NAME, name);
   }
-  void add_type(flatbuffers::Offset<paddle::lite::fbs::proto::VarType> type) {
+  void add_type(flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType> type) {
     fbb_.AddOffset(VarDesc::VT_TYPE, type);
   }
   void add_persistable(bool persistable) {
@@ -1756,7 +1756,7 @@ struct VarDescBuilder {
 inline flatbuffers::Offset<VarDesc> CreateVarDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> name = 0,
-    flatbuffers::Offset<paddle::lite::fbs::proto::VarType> type = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType> type = 0,
     bool persistable = false,
     bool need_check_feed = false) {
   VarDescBuilder builder_(_fbb);
@@ -1770,11 +1770,11 @@ inline flatbuffers::Offset<VarDesc> CreateVarDesc(
 inline flatbuffers::Offset<VarDesc> CreateVarDescDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
-    flatbuffers::Offset<paddle::lite::fbs::proto::VarType> type = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType> type = 0,
     bool persistable = false,
     bool need_check_feed = false) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
-  return paddle::lite::fbs::proto::CreateVarDesc(
+  return paddle::lite_metal::fbs::proto::CreateVarDesc(
       _fbb,
       name__,
       type,
@@ -1788,8 +1788,8 @@ struct BlockDescT : public flatbuffers::NativeTable {
   typedef BlockDesc TableType;
   int32_t idx;
   int32_t parent_idx;
-  std::vector<std::unique_ptr<paddle::lite::fbs::proto::VarDescT>> vars;
-  std::vector<std::unique_ptr<paddle::lite::fbs::proto::OpDescT>> ops;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::proto::VarDescT>> vars;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::proto::OpDescT>> ops;
   int32_t forward_block_idx;
   BlockDescT()
       : idx(0),
@@ -1837,17 +1837,17 @@ struct BlockDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool mutate_parent_idx(int32_t _parent_idx) {
     return SetField<int32_t>(VT_PARENT_IDX, _parent_idx, 0);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarDesc>> *vars() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarDesc>> *>(VT_VARS);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarDesc>> *vars() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarDesc>> *>(VT_VARS);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarDesc>> *mutable_vars() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarDesc>> *>(VT_VARS);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarDesc>> *mutable_vars() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarDesc>> *>(VT_VARS);
   }
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc>> *ops() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc>> *>(VT_OPS);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc>> *ops() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc>> *>(VT_OPS);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc>> *mutable_ops() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc>> *>(VT_OPS);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc>> *mutable_ops() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc>> *>(VT_OPS);
   }
   int32_t forward_block_idx() const {
     return GetField<int32_t>(VT_FORWARD_BLOCK_IDX, -1);
@@ -1883,10 +1883,10 @@ struct BlockDescBuilder {
   void add_parent_idx(int32_t parent_idx) {
     fbb_.AddElement<int32_t>(BlockDesc::VT_PARENT_IDX, parent_idx, 0);
   }
-  void add_vars(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarDesc>>> vars) {
+  void add_vars(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarDesc>>> vars) {
     fbb_.AddOffset(BlockDesc::VT_VARS, vars);
   }
-  void add_ops(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc>>> ops) {
+  void add_ops(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc>>> ops) {
     fbb_.AddOffset(BlockDesc::VT_OPS, ops);
   }
   void add_forward_block_idx(int32_t forward_block_idx) {
@@ -1908,8 +1908,8 @@ inline flatbuffers::Offset<BlockDesc> CreateBlockDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
     int32_t idx = 0,
     int32_t parent_idx = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarDesc>>> vars = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc>>> ops = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarDesc>>> vars = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc>>> ops = 0,
     int32_t forward_block_idx = -1) {
   BlockDescBuilder builder_(_fbb);
   builder_.add_forward_block_idx(forward_block_idx);
@@ -1924,12 +1924,12 @@ inline flatbuffers::Offset<BlockDesc> CreateBlockDescDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     int32_t idx = 0,
     int32_t parent_idx = 0,
-    std::vector<flatbuffers::Offset<paddle::lite::fbs::proto::VarDesc>> *vars = nullptr,
-    const std::vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc>> *ops = nullptr,
+    std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarDesc>> *vars = nullptr,
+    const std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc>> *ops = nullptr,
     int32_t forward_block_idx = -1) {
-  auto vars__ = vars ? _fbb.CreateVectorOfSortedTables<paddle::lite::fbs::proto::VarDesc>(vars) : 0;
-  auto ops__ = ops ? _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc>>(*ops) : 0;
-  return paddle::lite::fbs::proto::CreateBlockDesc(
+  auto vars__ = vars ? _fbb.CreateVectorOfSortedTables<paddle::lite_metal::fbs::proto::VarDesc>(vars) : 0;
+  auto ops__ = ops ? _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc>>(*ops) : 0;
+  return paddle::lite_metal::fbs::proto::CreateBlockDesc(
       _fbb,
       idx,
       parent_idx,
@@ -2014,7 +2014,7 @@ flatbuffers::Offset<OpVersion> CreateOpVersion(flatbuffers::FlatBufferBuilder &_
 
 struct OpVersionMapT : public flatbuffers::NativeTable {
   typedef OpVersionMap TableType;
-  std::vector<std::unique_ptr<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPairT>> pair;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPairT>> pair;
   OpVersionMapT() {
   }
 };
@@ -2038,11 +2038,11 @@ struct OpVersionMap FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_PAIR = 4
   };
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPair>> *pair() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPair>> *>(VT_PAIR);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPair>> *pair() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPair>> *>(VT_PAIR);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPair>> *mutable_pair() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPair>> *>(VT_PAIR);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPair>> *mutable_pair() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPair>> *>(VT_PAIR);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -2060,7 +2060,7 @@ struct OpVersionMapBuilder {
   typedef OpVersionMap Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_pair(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPair>>> pair) {
+  void add_pair(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPair>>> pair) {
     fbb_.AddOffset(OpVersionMap::VT_PAIR, pair);
   }
   explicit OpVersionMapBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -2077,7 +2077,7 @@ struct OpVersionMapBuilder {
 
 inline flatbuffers::Offset<OpVersionMap> CreateOpVersionMap(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPair>>> pair = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPair>>> pair = 0) {
   OpVersionMapBuilder builder_(_fbb);
   builder_.add_pair(pair);
   return builder_.Finish();
@@ -2085,9 +2085,9 @@ inline flatbuffers::Offset<OpVersionMap> CreateOpVersionMap(
 
 inline flatbuffers::Offset<OpVersionMap> CreateOpVersionMapDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    std::vector<flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPair>> *pair = nullptr) {
-  auto pair__ = pair ? _fbb.CreateVectorOfSortedTables<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPair>(pair) : 0;
-  return paddle::lite::fbs::proto::CreateOpVersionMap(
+    std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPair>> *pair = nullptr) {
+  auto pair__ = pair ? _fbb.CreateVectorOfSortedTables<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPair>(pair) : 0;
+  return paddle::lite_metal::fbs::proto::CreateOpVersionMap(
       _fbb,
       pair__);
 }
@@ -2099,7 +2099,7 @@ namespace OpVersionMap_ {
 struct OpVersionPairT : public flatbuffers::NativeTable {
   typedef OpVersionPair TableType;
   std::string op_name;
-  std::unique_ptr<paddle::lite::fbs::proto::OpVersionT> op_version;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionT> op_version;
   OpVersionPairT() {
   }
 };
@@ -2137,11 +2137,11 @@ struct OpVersionPair FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   int KeyCompareWithValue(const char *val) const {
     return strcmp(op_name()->c_str(), val);
   }
-  const paddle::lite::fbs::proto::OpVersion *op_version() const {
-    return GetPointer<const paddle::lite::fbs::proto::OpVersion *>(VT_OP_VERSION);
+  const paddle::lite_metal::fbs::proto::OpVersion *op_version() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::OpVersion *>(VT_OP_VERSION);
   }
-  paddle::lite::fbs::proto::OpVersion *mutable_op_version() {
-    return GetPointer<paddle::lite::fbs::proto::OpVersion *>(VT_OP_VERSION);
+  paddle::lite_metal::fbs::proto::OpVersion *mutable_op_version() {
+    return GetPointer<paddle::lite_metal::fbs::proto::OpVersion *>(VT_OP_VERSION);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -2163,7 +2163,7 @@ struct OpVersionPairBuilder {
   void add_op_name(flatbuffers::Offset<flatbuffers::String> op_name) {
     fbb_.AddOffset(OpVersionPair::VT_OP_NAME, op_name);
   }
-  void add_op_version(flatbuffers::Offset<paddle::lite::fbs::proto::OpVersion> op_version) {
+  void add_op_version(flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersion> op_version) {
     fbb_.AddOffset(OpVersionPair::VT_OP_VERSION, op_version);
   }
   explicit OpVersionPairBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -2183,7 +2183,7 @@ struct OpVersionPairBuilder {
 inline flatbuffers::Offset<OpVersionPair> CreateOpVersionPair(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> op_name = 0,
-    flatbuffers::Offset<paddle::lite::fbs::proto::OpVersion> op_version = 0) {
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersion> op_version = 0) {
   OpVersionPairBuilder builder_(_fbb);
   builder_.add_op_version(op_version);
   builder_.add_op_name(op_name);
@@ -2193,9 +2193,9 @@ inline flatbuffers::Offset<OpVersionPair> CreateOpVersionPair(
 inline flatbuffers::Offset<OpVersionPair> CreateOpVersionPairDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *op_name = nullptr,
-    flatbuffers::Offset<paddle::lite::fbs::proto::OpVersion> op_version = 0) {
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersion> op_version = 0) {
   auto op_name__ = op_name ? _fbb.CreateString(op_name) : 0;
-  return paddle::lite::fbs::proto::OpVersionMap_::CreateOpVersionPair(
+  return paddle::lite_metal::fbs::proto::OpVersionMap_::CreateOpVersionPair(
       _fbb,
       op_name__,
       op_version);
@@ -2207,9 +2207,9 @@ flatbuffers::Offset<OpVersionPair> CreateOpVersionPair(flatbuffers::FlatBufferBu
 
 struct ProgramDescT : public flatbuffers::NativeTable {
   typedef ProgramDesc TableType;
-  std::vector<std::unique_ptr<paddle::lite::fbs::proto::BlockDescT>> blocks;
-  std::unique_ptr<paddle::lite::fbs::proto::VersionT> version;
-  std::unique_ptr<paddle::lite::fbs::proto::OpVersionMapT> op_version_map;
+  std::vector<std::unique_ptr<paddle::lite_metal::fbs::proto::BlockDescT>> blocks;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VersionT> version;
+  std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionMapT> op_version_map;
   ProgramDescT() {
   }
 };
@@ -2237,23 +2237,23 @@ struct ProgramDesc FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_VERSION = 6,
     VT_OP_VERSION_MAP = 8
   };
-  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::BlockDesc>> *blocks() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::BlockDesc>> *>(VT_BLOCKS);
+  const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::BlockDesc>> *blocks() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::BlockDesc>> *>(VT_BLOCKS);
   }
-  flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::BlockDesc>> *mutable_blocks() {
-    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::BlockDesc>> *>(VT_BLOCKS);
+  flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::BlockDesc>> *mutable_blocks() {
+    return GetPointer<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::BlockDesc>> *>(VT_BLOCKS);
   }
-  const paddle::lite::fbs::proto::Version *version() const {
-    return GetPointer<const paddle::lite::fbs::proto::Version *>(VT_VERSION);
+  const paddle::lite_metal::fbs::proto::Version *version() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::Version *>(VT_VERSION);
   }
-  paddle::lite::fbs::proto::Version *mutable_version() {
-    return GetPointer<paddle::lite::fbs::proto::Version *>(VT_VERSION);
+  paddle::lite_metal::fbs::proto::Version *mutable_version() {
+    return GetPointer<paddle::lite_metal::fbs::proto::Version *>(VT_VERSION);
   }
-  const paddle::lite::fbs::proto::OpVersionMap *op_version_map() const {
-    return GetPointer<const paddle::lite::fbs::proto::OpVersionMap *>(VT_OP_VERSION_MAP);
+  const paddle::lite_metal::fbs::proto::OpVersionMap *op_version_map() const {
+    return GetPointer<const paddle::lite_metal::fbs::proto::OpVersionMap *>(VT_OP_VERSION_MAP);
   }
-  paddle::lite::fbs::proto::OpVersionMap *mutable_op_version_map() {
-    return GetPointer<paddle::lite::fbs::proto::OpVersionMap *>(VT_OP_VERSION_MAP);
+  paddle::lite_metal::fbs::proto::OpVersionMap *mutable_op_version_map() {
+    return GetPointer<paddle::lite_metal::fbs::proto::OpVersionMap *>(VT_OP_VERSION_MAP);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -2275,13 +2275,13 @@ struct ProgramDescBuilder {
   typedef ProgramDesc Table;
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_blocks(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::BlockDesc>>> blocks) {
+  void add_blocks(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::BlockDesc>>> blocks) {
     fbb_.AddOffset(ProgramDesc::VT_BLOCKS, blocks);
   }
-  void add_version(flatbuffers::Offset<paddle::lite::fbs::proto::Version> version) {
+  void add_version(flatbuffers::Offset<paddle::lite_metal::fbs::proto::Version> version) {
     fbb_.AddOffset(ProgramDesc::VT_VERSION, version);
   }
-  void add_op_version_map(flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap> op_version_map) {
+  void add_op_version_map(flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap> op_version_map) {
     fbb_.AddOffset(ProgramDesc::VT_OP_VERSION_MAP, op_version_map);
   }
   explicit ProgramDescBuilder(flatbuffers::FlatBufferBuilder &_fbb)
@@ -2298,9 +2298,9 @@ struct ProgramDescBuilder {
 
 inline flatbuffers::Offset<ProgramDesc> CreateProgramDesc(
     flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite::fbs::proto::BlockDesc>>> blocks = 0,
-    flatbuffers::Offset<paddle::lite::fbs::proto::Version> version = 0,
-    flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap> op_version_map = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::BlockDesc>>> blocks = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::Version> version = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap> op_version_map = 0) {
   ProgramDescBuilder builder_(_fbb);
   builder_.add_op_version_map(op_version_map);
   builder_.add_version(version);
@@ -2310,11 +2310,11 @@ inline flatbuffers::Offset<ProgramDesc> CreateProgramDesc(
 
 inline flatbuffers::Offset<ProgramDesc> CreateProgramDescDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<flatbuffers::Offset<paddle::lite::fbs::proto::BlockDesc>> *blocks = nullptr,
-    flatbuffers::Offset<paddle::lite::fbs::proto::Version> version = 0,
-    flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap> op_version_map = 0) {
-  auto blocks__ = blocks ? _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::BlockDesc>>(*blocks) : 0;
-  return paddle::lite::fbs::proto::CreateProgramDesc(
+    const std::vector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::BlockDesc>> *blocks = nullptr,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::Version> version = 0,
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap> op_version_map = 0) {
+  auto blocks__ = blocks ? _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::BlockDesc>>(*blocks) : 0;
+  return paddle::lite_metal::fbs::proto::CreateProgramDesc(
       _fbb,
       blocks__,
       version,
@@ -2324,7 +2324,7 @@ inline flatbuffers::Offset<ProgramDesc> CreateProgramDescDirect(
 flatbuffers::Offset<ProgramDesc> CreateProgramDesc(flatbuffers::FlatBufferBuilder &_fbb, const ProgramDescT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 
 inline VersionT *Version::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::VersionT> _o = std::unique_ptr<paddle::lite::fbs::proto::VersionT>(new VersionT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VersionT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::VersionT>(new VersionT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2344,13 +2344,13 @@ inline flatbuffers::Offset<Version> CreateVersion(flatbuffers::FlatBufferBuilder
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const VersionT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _version = _o->version;
-  return paddle::lite::fbs::proto::CreateVersion(
+  return paddle::lite_metal::fbs::proto::CreateVersion(
       _fbb,
       _version);
 }
 
 inline OpDescT *OpDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::OpDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::OpDescT>(new OpDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::OpDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::OpDescT>(new OpDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2359,9 +2359,9 @@ inline void OpDesc::UnPackTo(OpDescT *_o, const flatbuffers::resolver_function_t
   (void)_o;
   (void)_resolver;
   { auto _e = type(); if (_e) _o->type = _e->str(); }
-  { auto _e = inputs(); if (_e) { _o->inputs.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->inputs[_i] = std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::VarT>(_e->Get(_i)->UnPack(_resolver)); } } }
-  { auto _e = outputs(); if (_e) { _o->outputs.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->outputs[_i] = std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::VarT>(_e->Get(_i)->UnPack(_resolver)); } } }
-  { auto _e = attrs(); if (_e) { _o->attrs.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->attrs[_i] = std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::AttrT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = inputs(); if (_e) { _o->inputs.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->inputs[_i] = std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::VarT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = outputs(); if (_e) { _o->outputs.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->outputs[_i] = std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::VarT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = attrs(); if (_e) { _o->attrs.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->attrs[_i] = std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::AttrT>(_e->Get(_i)->UnPack(_resolver)); } } }
   { auto _e = is_target(); _o->is_target = _e; }
 }
 
@@ -2374,11 +2374,11 @@ inline flatbuffers::Offset<OpDesc> CreateOpDesc(flatbuffers::FlatBufferBuilder &
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const OpDescT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _type = _fbb.CreateString(_o->type);
-  auto _inputs = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> (_o->inputs.size(), [](size_t i, _VectorArgs *__va) { return CreateVar(*__va->__fbb, __va->__o->inputs[i].get(), __va->__rehasher); }, &_va );
-  auto _outputs = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Var>> (_o->outputs.size(), [](size_t i, _VectorArgs *__va) { return CreateVar(*__va->__fbb, __va->__o->outputs[i].get(), __va->__rehasher); }, &_va );
-  auto _attrs = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc_::Attr>> (_o->attrs.size(), [](size_t i, _VectorArgs *__va) { return CreateAttr(*__va->__fbb, __va->__o->attrs[i].get(), __va->__rehasher); }, &_va );
+  auto _inputs = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> (_o->inputs.size(), [](size_t i, _VectorArgs *__va) { return CreateVar(*__va->__fbb, __va->__o->inputs[i].get(), __va->__rehasher); }, &_va );
+  auto _outputs = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Var>> (_o->outputs.size(), [](size_t i, _VectorArgs *__va) { return CreateVar(*__va->__fbb, __va->__o->outputs[i].get(), __va->__rehasher); }, &_va );
+  auto _attrs = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc_::Attr>> (_o->attrs.size(), [](size_t i, _VectorArgs *__va) { return CreateAttr(*__va->__fbb, __va->__o->attrs[i].get(), __va->__rehasher); }, &_va );
   auto _is_target = _o->is_target;
-  return paddle::lite::fbs::proto::CreateOpDesc(
+  return paddle::lite_metal::fbs::proto::CreateOpDesc(
       _fbb,
       _type,
       _inputs,
@@ -2390,7 +2390,7 @@ inline flatbuffers::Offset<OpDesc> CreateOpDesc(flatbuffers::FlatBufferBuilder &
 namespace OpDesc_ {
 
 inline AttrT *Attr::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::AttrT> _o = std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::AttrT>(new AttrT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::AttrT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::AttrT>(new AttrT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2436,7 +2436,7 @@ inline flatbuffers::Offset<Attr> CreateAttr(flatbuffers::FlatBufferBuilder &_fbb
   auto _l = _o->l;
   auto _blocks_idx = _fbb.CreateVector(_o->blocks_idx);
   auto _longs = _fbb.CreateVector(_o->longs);
-  return paddle::lite::fbs::proto::OpDesc_::CreateAttr(
+  return paddle::lite_metal::fbs::proto::OpDesc_::CreateAttr(
       _fbb,
       _name,
       _type,
@@ -2455,7 +2455,7 @@ inline flatbuffers::Offset<Attr> CreateAttr(flatbuffers::FlatBufferBuilder &_fbb
 }
 
 inline VarT *Var::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::VarT> _o = std::unique_ptr<paddle::lite::fbs::proto::OpDesc_::VarT>(new VarT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::VarT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::OpDesc_::VarT>(new VarT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2477,7 +2477,7 @@ inline flatbuffers::Offset<Var> CreateVar(flatbuffers::FlatBufferBuilder &_fbb, 
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const VarT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _parameter = _fbb.CreateString(_o->parameter);
   auto _arguments = _fbb.CreateVectorOfStrings(_o->arguments);
-  return paddle::lite::fbs::proto::OpDesc_::CreateVar(
+  return paddle::lite_metal::fbs::proto::OpDesc_::CreateVar(
       _fbb,
       _parameter,
       _arguments);
@@ -2486,7 +2486,7 @@ inline flatbuffers::Offset<Var> CreateVar(flatbuffers::FlatBufferBuilder &_fbb, 
 }  // namespace OpDesc_
 
 inline VarTypeT *VarType::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::VarTypeT> _o = std::unique_ptr<paddle::lite::fbs::proto::VarTypeT>(new VarTypeT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarTypeT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::VarTypeT>(new VarTypeT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2495,11 +2495,11 @@ inline void VarType::UnPackTo(VarTypeT *_o, const flatbuffers::resolver_function
   (void)_o;
   (void)_resolver;
   { auto _e = type(); _o->type = _e; }
-  { auto _e = selected_rows(); if (_e) _o->selected_rows = std::unique_ptr<paddle::lite::fbs::proto::VarType_::TensorDescT>(_e->UnPack(_resolver)); }
-  { auto _e = lod_tensor(); if (_e) _o->lod_tensor = std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorDescT>(_e->UnPack(_resolver)); }
-  { auto _e = tensor_array(); if (_e) _o->tensor_array = std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorArrayDescT>(_e->UnPack(_resolver)); }
-  { auto _e = reader(); if (_e) _o->reader = std::unique_ptr<paddle::lite::fbs::proto::VarType_::ReaderDescT>(_e->UnPack(_resolver)); }
-  { auto _e = tuple(); if (_e) _o->tuple = std::unique_ptr<paddle::lite::fbs::proto::VarType_::TupleT>(_e->UnPack(_resolver)); }
+  { auto _e = selected_rows(); if (_e) _o->selected_rows = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TensorDescT>(_e->UnPack(_resolver)); }
+  { auto _e = lod_tensor(); if (_e) _o->lod_tensor = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDescT>(_e->UnPack(_resolver)); }
+  { auto _e = tensor_array(); if (_e) _o->tensor_array = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDescT>(_e->UnPack(_resolver)); }
+  { auto _e = reader(); if (_e) _o->reader = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::ReaderDescT>(_e->UnPack(_resolver)); }
+  { auto _e = tuple(); if (_e) _o->tuple = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TupleT>(_e->UnPack(_resolver)); }
 }
 
 inline flatbuffers::Offset<VarType> VarType::Pack(flatbuffers::FlatBufferBuilder &_fbb, const VarTypeT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -2516,7 +2516,7 @@ inline flatbuffers::Offset<VarType> CreateVarType(flatbuffers::FlatBufferBuilder
   auto _tensor_array = _o->tensor_array ? CreateLoDTensorArrayDesc(_fbb, _o->tensor_array.get(), _rehasher) : 0;
   auto _reader = _o->reader ? CreateReaderDesc(_fbb, _o->reader.get(), _rehasher) : 0;
   auto _tuple = _o->tuple ? CreateTuple(_fbb, _o->tuple.get(), _rehasher) : 0;
-  return paddle::lite::fbs::proto::CreateVarType(
+  return paddle::lite_metal::fbs::proto::CreateVarType(
       _fbb,
       _type,
       _selected_rows,
@@ -2529,7 +2529,7 @@ inline flatbuffers::Offset<VarType> CreateVarType(flatbuffers::FlatBufferBuilder
 namespace VarType_ {
 
 inline TensorDescT *TensorDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::TensorDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::VarType_::TensorDescT>(new TensorDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TensorDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TensorDescT>(new TensorDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2551,14 +2551,14 @@ inline flatbuffers::Offset<TensorDesc> CreateTensorDesc(flatbuffers::FlatBufferB
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const TensorDescT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _data_type = _o->data_type;
   auto _dims = _fbb.CreateVector(_o->dims);
-  return paddle::lite::fbs::proto::VarType_::CreateTensorDesc(
+  return paddle::lite_metal::fbs::proto::VarType_::CreateTensorDesc(
       _fbb,
       _data_type,
       _dims);
 }
 
 inline LoDTensorDescT *LoDTensorDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorDescT>(new LoDTensorDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDescT>(new LoDTensorDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2566,7 +2566,7 @@ inline LoDTensorDescT *LoDTensorDesc::UnPack(const flatbuffers::resolver_functio
 inline void LoDTensorDesc::UnPackTo(LoDTensorDescT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = tensor(); if (_e) _o->tensor = std::unique_ptr<paddle::lite::fbs::proto::VarType_::TensorDescT>(_e->UnPack(_resolver)); }
+  { auto _e = tensor(); if (_e) _o->tensor = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TensorDescT>(_e->UnPack(_resolver)); }
   { auto _e = lod_level(); _o->lod_level = _e; }
 }
 
@@ -2580,14 +2580,14 @@ inline flatbuffers::Offset<LoDTensorDesc> CreateLoDTensorDesc(flatbuffers::FlatB
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const LoDTensorDescT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _tensor = _o->tensor ? CreateTensorDesc(_fbb, _o->tensor.get(), _rehasher) : 0;
   auto _lod_level = _o->lod_level;
-  return paddle::lite::fbs::proto::VarType_::CreateLoDTensorDesc(
+  return paddle::lite_metal::fbs::proto::VarType_::CreateLoDTensorDesc(
       _fbb,
       _tensor,
       _lod_level);
 }
 
 inline LoDTensorArrayDescT *LoDTensorArrayDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorArrayDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorArrayDescT>(new LoDTensorArrayDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDescT>(new LoDTensorArrayDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2595,7 +2595,7 @@ inline LoDTensorArrayDescT *LoDTensorArrayDesc::UnPack(const flatbuffers::resolv
 inline void LoDTensorArrayDesc::UnPackTo(LoDTensorArrayDescT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = tensor(); if (_e) _o->tensor = std::unique_ptr<paddle::lite::fbs::proto::VarType_::TensorDescT>(_e->UnPack(_resolver)); }
+  { auto _e = tensor(); if (_e) _o->tensor = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TensorDescT>(_e->UnPack(_resolver)); }
   { auto _e = lod_level(); _o->lod_level = _e; }
 }
 
@@ -2609,14 +2609,14 @@ inline flatbuffers::Offset<LoDTensorArrayDesc> CreateLoDTensorArrayDesc(flatbuff
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const LoDTensorArrayDescT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _tensor = _o->tensor ? CreateTensorDesc(_fbb, _o->tensor.get(), _rehasher) : 0;
   auto _lod_level = _o->lod_level;
-  return paddle::lite::fbs::proto::VarType_::CreateLoDTensorArrayDesc(
+  return paddle::lite_metal::fbs::proto::VarType_::CreateLoDTensorArrayDesc(
       _fbb,
       _tensor,
       _lod_level);
 }
 
 inline ReaderDescT *ReaderDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::ReaderDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::VarType_::ReaderDescT>(new ReaderDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::ReaderDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::ReaderDescT>(new ReaderDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2624,7 +2624,7 @@ inline ReaderDescT *ReaderDesc::UnPack(const flatbuffers::resolver_function_t *_
 inline void ReaderDesc::UnPackTo(ReaderDescT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = lod_tensor(); if (_e) { _o->lod_tensor.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->lod_tensor[_i] = std::unique_ptr<paddle::lite::fbs::proto::VarType_::LoDTensorDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = lod_tensor(); if (_e) { _o->lod_tensor.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->lod_tensor[_i] = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
 }
 
 inline flatbuffers::Offset<ReaderDesc> ReaderDesc::Pack(flatbuffers::FlatBufferBuilder &_fbb, const ReaderDescT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -2635,14 +2635,14 @@ inline flatbuffers::Offset<ReaderDesc> CreateReaderDesc(flatbuffers::FlatBufferB
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const ReaderDescT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _lod_tensor = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::VarType_::LoDTensorDesc>> (_o->lod_tensor.size(), [](size_t i, _VectorArgs *__va) { return CreateLoDTensorDesc(*__va->__fbb, __va->__o->lod_tensor[i].get(), __va->__rehasher); }, &_va );
-  return paddle::lite::fbs::proto::VarType_::CreateReaderDesc(
+  auto _lod_tensor = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarType_::LoDTensorDesc>> (_o->lod_tensor.size(), [](size_t i, _VectorArgs *__va) { return CreateLoDTensorDesc(*__va->__fbb, __va->__o->lod_tensor[i].get(), __va->__rehasher); }, &_va );
+  return paddle::lite_metal::fbs::proto::VarType_::CreateReaderDesc(
       _fbb,
       _lod_tensor);
 }
 
 inline TupleT *Tuple::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::VarType_::TupleT> _o = std::unique_ptr<paddle::lite::fbs::proto::VarType_::TupleT>(new TupleT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TupleT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::VarType_::TupleT>(new TupleT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2650,7 +2650,7 @@ inline TupleT *Tuple::UnPack(const flatbuffers::resolver_function_t *_resolver) 
 inline void Tuple::UnPackTo(TupleT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = element_type(); if (_e) { _o->element_type.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->element_type[_i] = static_cast<paddle::lite::fbs::proto::VarType_::Type>(_e->Get(_i)); } } }
+  { auto _e = element_type(); if (_e) { _o->element_type.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->element_type[_i] = static_cast<paddle::lite_metal::fbs::proto::VarType_::Type>(_e->Get(_i)); } } }
 }
 
 inline flatbuffers::Offset<Tuple> Tuple::Pack(flatbuffers::FlatBufferBuilder &_fbb, const TupleT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -2662,7 +2662,7 @@ inline flatbuffers::Offset<Tuple> CreateTuple(flatbuffers::FlatBufferBuilder &_f
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const TupleT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _element_type = _fbb.CreateVectorScalarCast<int32_t>(flatbuffers::data(_o->element_type), _o->element_type.size());
-  return paddle::lite::fbs::proto::VarType_::CreateTuple(
+  return paddle::lite_metal::fbs::proto::VarType_::CreateTuple(
       _fbb,
       _element_type);
 }
@@ -2670,7 +2670,7 @@ inline flatbuffers::Offset<Tuple> CreateTuple(flatbuffers::FlatBufferBuilder &_f
 }  // namespace VarType_
 
 inline VarDescT *VarDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::VarDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::VarDescT>(new VarDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::VarDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::VarDescT>(new VarDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2679,7 +2679,7 @@ inline void VarDesc::UnPackTo(VarDescT *_o, const flatbuffers::resolver_function
   (void)_o;
   (void)_resolver;
   { auto _e = name(); if (_e) _o->name = _e->str(); }
-  { auto _e = type(); if (_e) _o->type = std::unique_ptr<paddle::lite::fbs::proto::VarTypeT>(_e->UnPack(_resolver)); }
+  { auto _e = type(); if (_e) _o->type = std::unique_ptr<paddle::lite_metal::fbs::proto::VarTypeT>(_e->UnPack(_resolver)); }
   { auto _e = persistable(); _o->persistable = _e; }
   { auto _e = need_check_feed(); _o->need_check_feed = _e; }
 }
@@ -2696,7 +2696,7 @@ inline flatbuffers::Offset<VarDesc> CreateVarDesc(flatbuffers::FlatBufferBuilder
   auto _type = _o->type ? CreateVarType(_fbb, _o->type.get(), _rehasher) : 0;
   auto _persistable = _o->persistable;
   auto _need_check_feed = _o->need_check_feed;
-  return paddle::lite::fbs::proto::CreateVarDesc(
+  return paddle::lite_metal::fbs::proto::CreateVarDesc(
       _fbb,
       _name,
       _type,
@@ -2705,7 +2705,7 @@ inline flatbuffers::Offset<VarDesc> CreateVarDesc(flatbuffers::FlatBufferBuilder
 }
 
 inline BlockDescT *BlockDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::BlockDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::BlockDescT>(new BlockDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::BlockDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::BlockDescT>(new BlockDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2715,8 +2715,8 @@ inline void BlockDesc::UnPackTo(BlockDescT *_o, const flatbuffers::resolver_func
   (void)_resolver;
   { auto _e = idx(); _o->idx = _e; }
   { auto _e = parent_idx(); _o->parent_idx = _e; }
-  { auto _e = vars(); if (_e) { _o->vars.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->vars[_i] = std::unique_ptr<paddle::lite::fbs::proto::VarDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
-  { auto _e = ops(); if (_e) { _o->ops.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->ops[_i] = std::unique_ptr<paddle::lite::fbs::proto::OpDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = vars(); if (_e) { _o->vars.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->vars[_i] = std::unique_ptr<paddle::lite_metal::fbs::proto::VarDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = ops(); if (_e) { _o->ops.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->ops[_i] = std::unique_ptr<paddle::lite_metal::fbs::proto::OpDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
   { auto _e = forward_block_idx(); _o->forward_block_idx = _e; }
 }
 
@@ -2730,10 +2730,10 @@ inline flatbuffers::Offset<BlockDesc> CreateBlockDesc(flatbuffers::FlatBufferBui
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const BlockDescT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _idx = _o->idx;
   auto _parent_idx = _o->parent_idx;
-  auto _vars = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::VarDesc>> (_o->vars.size(), [](size_t i, _VectorArgs *__va) { return CreateVarDesc(*__va->__fbb, __va->__o->vars[i].get(), __va->__rehasher); }, &_va );
-  auto _ops = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::OpDesc>> (_o->ops.size(), [](size_t i, _VectorArgs *__va) { return CreateOpDesc(*__va->__fbb, __va->__o->ops[i].get(), __va->__rehasher); }, &_va );
+  auto _vars = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::VarDesc>> (_o->vars.size(), [](size_t i, _VectorArgs *__va) { return CreateVarDesc(*__va->__fbb, __va->__o->vars[i].get(), __va->__rehasher); }, &_va );
+  auto _ops = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpDesc>> (_o->ops.size(), [](size_t i, _VectorArgs *__va) { return CreateOpDesc(*__va->__fbb, __va->__o->ops[i].get(), __va->__rehasher); }, &_va );
   auto _forward_block_idx = _o->forward_block_idx;
-  return paddle::lite::fbs::proto::CreateBlockDesc(
+  return paddle::lite_metal::fbs::proto::CreateBlockDesc(
       _fbb,
       _idx,
       _parent_idx,
@@ -2743,7 +2743,7 @@ inline flatbuffers::Offset<BlockDesc> CreateBlockDesc(flatbuffers::FlatBufferBui
 }
 
 inline OpVersionT *OpVersion::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::OpVersionT> _o = std::unique_ptr<paddle::lite::fbs::proto::OpVersionT>(new OpVersionT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionT>(new OpVersionT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2763,13 +2763,13 @@ inline flatbuffers::Offset<OpVersion> CreateOpVersion(flatbuffers::FlatBufferBui
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const OpVersionT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _version = _o->version;
-  return paddle::lite::fbs::proto::CreateOpVersion(
+  return paddle::lite_metal::fbs::proto::CreateOpVersion(
       _fbb,
       _version);
 }
 
 inline OpVersionMapT *OpVersionMap::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::OpVersionMapT> _o = std::unique_ptr<paddle::lite::fbs::proto::OpVersionMapT>(new OpVersionMapT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionMapT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionMapT>(new OpVersionMapT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2777,7 +2777,7 @@ inline OpVersionMapT *OpVersionMap::UnPack(const flatbuffers::resolver_function_
 inline void OpVersionMap::UnPackTo(OpVersionMapT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = pair(); if (_e) { _o->pair.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->pair[_i] = std::unique_ptr<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPairT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = pair(); if (_e) { _o->pair.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->pair[_i] = std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPairT>(_e->Get(_i)->UnPack(_resolver)); } } }
 }
 
 inline flatbuffers::Offset<OpVersionMap> OpVersionMap::Pack(flatbuffers::FlatBufferBuilder &_fbb, const OpVersionMapT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -2788,8 +2788,8 @@ inline flatbuffers::Offset<OpVersionMap> CreateOpVersionMap(flatbuffers::FlatBuf
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const OpVersionMapT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _pair = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPair>> (_o->pair.size(), [](size_t i, _VectorArgs *__va) { return CreateOpVersionPair(*__va->__fbb, __va->__o->pair[i].get(), __va->__rehasher); }, &_va );
-  return paddle::lite::fbs::proto::CreateOpVersionMap(
+  auto _pair = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPair>> (_o->pair.size(), [](size_t i, _VectorArgs *__va) { return CreateOpVersionPair(*__va->__fbb, __va->__o->pair[i].get(), __va->__rehasher); }, &_va );
+  return paddle::lite_metal::fbs::proto::CreateOpVersionMap(
       _fbb,
       _pair);
 }
@@ -2797,7 +2797,7 @@ inline flatbuffers::Offset<OpVersionMap> CreateOpVersionMap(flatbuffers::FlatBuf
 namespace OpVersionMap_ {
 
 inline OpVersionPairT *OpVersionPair::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPairT> _o = std::unique_ptr<paddle::lite::fbs::proto::OpVersionMap_::OpVersionPairT>(new OpVersionPairT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPairT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPairT>(new OpVersionPairT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2806,7 +2806,7 @@ inline void OpVersionPair::UnPackTo(OpVersionPairT *_o, const flatbuffers::resol
   (void)_o;
   (void)_resolver;
   { auto _e = op_name(); if (_e) _o->op_name = _e->str(); }
-  { auto _e = op_version(); if (_e) _o->op_version = std::unique_ptr<paddle::lite::fbs::proto::OpVersionT>(_e->UnPack(_resolver)); }
+  { auto _e = op_version(); if (_e) _o->op_version = std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionT>(_e->UnPack(_resolver)); }
 }
 
 inline flatbuffers::Offset<OpVersionPair> OpVersionPair::Pack(flatbuffers::FlatBufferBuilder &_fbb, const OpVersionPairT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -2819,7 +2819,7 @@ inline flatbuffers::Offset<OpVersionPair> CreateOpVersionPair(flatbuffers::FlatB
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const OpVersionPairT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
   auto _op_name = _fbb.CreateString(_o->op_name);
   auto _op_version = _o->op_version ? CreateOpVersion(_fbb, _o->op_version.get(), _rehasher) : 0;
-  return paddle::lite::fbs::proto::OpVersionMap_::CreateOpVersionPair(
+  return paddle::lite_metal::fbs::proto::OpVersionMap_::CreateOpVersionPair(
       _fbb,
       _op_name,
       _op_version);
@@ -2828,7 +2828,7 @@ inline flatbuffers::Offset<OpVersionPair> CreateOpVersionPair(flatbuffers::FlatB
 }  // namespace OpVersionMap_
 
 inline ProgramDescT *ProgramDesc::UnPack(const flatbuffers::resolver_function_t *_resolver) const {
-  std::unique_ptr<paddle::lite::fbs::proto::ProgramDescT> _o = std::unique_ptr<paddle::lite::fbs::proto::ProgramDescT>(new ProgramDescT());
+  std::unique_ptr<paddle::lite_metal::fbs::proto::ProgramDescT> _o = std::unique_ptr<paddle::lite_metal::fbs::proto::ProgramDescT>(new ProgramDescT());
   UnPackTo(_o.get(), _resolver);
   return _o.release();
 }
@@ -2836,9 +2836,9 @@ inline ProgramDescT *ProgramDesc::UnPack(const flatbuffers::resolver_function_t 
 inline void ProgramDesc::UnPackTo(ProgramDescT *_o, const flatbuffers::resolver_function_t *_resolver) const {
   (void)_o;
   (void)_resolver;
-  { auto _e = blocks(); if (_e) { _o->blocks.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->blocks[_i] = std::unique_ptr<paddle::lite::fbs::proto::BlockDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
-  { auto _e = version(); if (_e) _o->version = std::unique_ptr<paddle::lite::fbs::proto::VersionT>(_e->UnPack(_resolver)); }
-  { auto _e = op_version_map(); if (_e) _o->op_version_map = std::unique_ptr<paddle::lite::fbs::proto::OpVersionMapT>(_e->UnPack(_resolver)); }
+  { auto _e = blocks(); if (_e) { _o->blocks.resize(_e->size()); for (flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->blocks[_i] = std::unique_ptr<paddle::lite_metal::fbs::proto::BlockDescT>(_e->Get(_i)->UnPack(_resolver)); } } }
+  { auto _e = version(); if (_e) _o->version = std::unique_ptr<paddle::lite_metal::fbs::proto::VersionT>(_e->UnPack(_resolver)); }
+  { auto _e = op_version_map(); if (_e) _o->op_version_map = std::unique_ptr<paddle::lite_metal::fbs::proto::OpVersionMapT>(_e->UnPack(_resolver)); }
 }
 
 inline flatbuffers::Offset<ProgramDesc> ProgramDesc::Pack(flatbuffers::FlatBufferBuilder &_fbb, const ProgramDescT* _o, const flatbuffers::rehasher_function_t *_rehasher) {
@@ -2849,10 +2849,10 @@ inline flatbuffers::Offset<ProgramDesc> CreateProgramDesc(flatbuffers::FlatBuffe
   (void)_rehasher;
   (void)_o;
   struct _VectorArgs { flatbuffers::FlatBufferBuilder *__fbb; const ProgramDescT* __o; const flatbuffers::rehasher_function_t *__rehasher; } _va = { &_fbb, _o, _rehasher}; (void)_va;
-  auto _blocks = _fbb.CreateVector<flatbuffers::Offset<paddle::lite::fbs::proto::BlockDesc>> (_o->blocks.size(), [](size_t i, _VectorArgs *__va) { return CreateBlockDesc(*__va->__fbb, __va->__o->blocks[i].get(), __va->__rehasher); }, &_va );
+  auto _blocks = _fbb.CreateVector<flatbuffers::Offset<paddle::lite_metal::fbs::proto::BlockDesc>> (_o->blocks.size(), [](size_t i, _VectorArgs *__va) { return CreateBlockDesc(*__va->__fbb, __va->__o->blocks[i].get(), __va->__rehasher); }, &_va );
   auto _version = _o->version ? CreateVersion(_fbb, _o->version.get(), _rehasher) : 0;
   auto _op_version_map = _o->op_version_map ? CreateOpVersionMap(_fbb, _o->op_version_map.get(), _rehasher) : 0;
-  return paddle::lite::fbs::proto::CreateProgramDesc(
+  return paddle::lite_metal::fbs::proto::CreateProgramDesc(
       _fbb,
       _blocks,
       _version,
@@ -2875,7 +2875,7 @@ inline const flatbuffers::TypeTable *AttrTypeTypeTable() {
     { flatbuffers::ET_INT, 0, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::AttrTypeTypeTable
+    paddle::lite_metal::fbs::proto::AttrTypeTypeTable
   };
   static const char * const names[] = {
     "INT",
@@ -2924,7 +2924,7 @@ inline const flatbuffers::TypeTable *TypeTypeTable() {
     { flatbuffers::ET_INT, 0, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarType_::TypeTypeTable
+    paddle::lite_metal::fbs::proto::VarType_::TypeTypeTable
   };
   static const int64_t values[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21 };
   static const char * const names[] = {
@@ -2969,7 +2969,7 @@ inline const flatbuffers::TypeTable *TypeTypeTable() {
     { flatbuffers::ET_INT, 0, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::CompatibleInfo_::TypeTypeTable
+    paddle::lite_metal::fbs::proto::CompatibleInfo_::TypeTypeTable
   };
   static const char * const names[] = {
     "COMPATIBLE",
@@ -3008,8 +3008,8 @@ inline const flatbuffers::TypeTable *OpDescTypeTable() {
     { flatbuffers::ET_BOOL, 0, -1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::OpDesc_::VarTypeTable,
-    paddle::lite::fbs::proto::OpDesc_::AttrTypeTable
+    paddle::lite_metal::fbs::proto::OpDesc_::VarTypeTable,
+    paddle::lite_metal::fbs::proto::OpDesc_::AttrTypeTable
   };
   static const char * const names[] = {
     "type",
@@ -3044,7 +3044,7 @@ inline const flatbuffers::TypeTable *AttrTypeTable() {
     { flatbuffers::ET_LONG, 1, -1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::AttrTypeTypeTable
+    paddle::lite_metal::fbs::proto::AttrTypeTypeTable
   };
   static const char * const names[] = {
     "name",
@@ -3095,12 +3095,12 @@ inline const flatbuffers::TypeTable *VarTypeTypeTable() {
     { flatbuffers::ET_SEQUENCE, 0, 5 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarType_::TypeTypeTable,
-    paddle::lite::fbs::proto::VarType_::TensorDescTypeTable,
-    paddle::lite::fbs::proto::VarType_::LoDTensorDescTypeTable,
-    paddle::lite::fbs::proto::VarType_::LoDTensorArrayDescTypeTable,
-    paddle::lite::fbs::proto::VarType_::ReaderDescTypeTable,
-    paddle::lite::fbs::proto::VarType_::TupleTypeTable
+    paddle::lite_metal::fbs::proto::VarType_::TypeTypeTable,
+    paddle::lite_metal::fbs::proto::VarType_::TensorDescTypeTable,
+    paddle::lite_metal::fbs::proto::VarType_::LoDTensorDescTypeTable,
+    paddle::lite_metal::fbs::proto::VarType_::LoDTensorArrayDescTypeTable,
+    paddle::lite_metal::fbs::proto::VarType_::ReaderDescTypeTable,
+    paddle::lite_metal::fbs::proto::VarType_::TupleTypeTable
   };
   static const char * const names[] = {
     "type",
@@ -3124,7 +3124,7 @@ inline const flatbuffers::TypeTable *TensorDescTypeTable() {
     { flatbuffers::ET_LONG, 1, -1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarType_::TypeTypeTable
+    paddle::lite_metal::fbs::proto::VarType_::TypeTypeTable
   };
   static const char * const names[] = {
     "data_type",
@@ -3142,7 +3142,7 @@ inline const flatbuffers::TypeTable *LoDTensorDescTypeTable() {
     { flatbuffers::ET_INT, 0, -1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarType_::TensorDescTypeTable
+    paddle::lite_metal::fbs::proto::VarType_::TensorDescTypeTable
   };
   static const char * const names[] = {
     "tensor",
@@ -3160,7 +3160,7 @@ inline const flatbuffers::TypeTable *LoDTensorArrayDescTypeTable() {
     { flatbuffers::ET_INT, 0, -1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarType_::TensorDescTypeTable
+    paddle::lite_metal::fbs::proto::VarType_::TensorDescTypeTable
   };
   static const char * const names[] = {
     "tensor",
@@ -3177,7 +3177,7 @@ inline const flatbuffers::TypeTable *ReaderDescTypeTable() {
     { flatbuffers::ET_SEQUENCE, 1, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarType_::LoDTensorDescTypeTable
+    paddle::lite_metal::fbs::proto::VarType_::LoDTensorDescTypeTable
   };
   static const char * const names[] = {
     "lod_tensor"
@@ -3193,7 +3193,7 @@ inline const flatbuffers::TypeTable *TupleTypeTable() {
     { flatbuffers::ET_INT, 1, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarType_::TypeTypeTable
+    paddle::lite_metal::fbs::proto::VarType_::TypeTypeTable
   };
   static const char * const names[] = {
     "element_type"
@@ -3214,7 +3214,7 @@ inline const flatbuffers::TypeTable *VarDescTypeTable() {
     { flatbuffers::ET_BOOL, 0, -1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarTypeTypeTable
+    paddle::lite_metal::fbs::proto::VarTypeTypeTable
   };
   static const char * const names[] = {
     "name",
@@ -3237,8 +3237,8 @@ inline const flatbuffers::TypeTable *BlockDescTypeTable() {
     { flatbuffers::ET_INT, 0, -1 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::VarDescTypeTable,
-    paddle::lite::fbs::proto::OpDescTypeTable
+    paddle::lite_metal::fbs::proto::VarDescTypeTable,
+    paddle::lite_metal::fbs::proto::OpDescTypeTable
   };
   static const char * const names[] = {
     "idx",
@@ -3271,7 +3271,7 @@ inline const flatbuffers::TypeTable *OpVersionMapTypeTable() {
     { flatbuffers::ET_SEQUENCE, 1, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::OpVersionMap_::OpVersionPairTypeTable
+    paddle::lite_metal::fbs::proto::OpVersionMap_::OpVersionPairTypeTable
   };
   static const char * const names[] = {
     "pair"
@@ -3290,7 +3290,7 @@ inline const flatbuffers::TypeTable *OpVersionPairTypeTable() {
     { flatbuffers::ET_SEQUENCE, 0, 0 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::OpVersionTypeTable
+    paddle::lite_metal::fbs::proto::OpVersionTypeTable
   };
   static const char * const names[] = {
     "op_name",
@@ -3311,9 +3311,9 @@ inline const flatbuffers::TypeTable *ProgramDescTypeTable() {
     { flatbuffers::ET_SEQUENCE, 0, 2 }
   };
   static const flatbuffers::TypeFunction type_refs[] = {
-    paddle::lite::fbs::proto::BlockDescTypeTable,
-    paddle::lite::fbs::proto::VersionTypeTable,
-    paddle::lite::fbs::proto::OpVersionMapTypeTable
+    paddle::lite_metal::fbs::proto::BlockDescTypeTable,
+    paddle::lite_metal::fbs::proto::VersionTypeTable,
+    paddle::lite_metal::fbs::proto::OpVersionMapTypeTable
   };
   static const char * const names[] = {
     "blocks",
@@ -3326,12 +3326,12 @@ inline const flatbuffers::TypeTable *ProgramDescTypeTable() {
   return &tt;
 }
 
-inline const paddle::lite::fbs::proto::ProgramDesc *GetProgramDesc(const void *buf) {
-  return flatbuffers::GetRoot<paddle::lite::fbs::proto::ProgramDesc>(buf);
+inline const paddle::lite_metal::fbs::proto::ProgramDesc *GetProgramDesc(const void *buf) {
+  return flatbuffers::GetRoot<paddle::lite_metal::fbs::proto::ProgramDesc>(buf);
 }
 
-inline const paddle::lite::fbs::proto::ProgramDesc *GetSizePrefixedProgramDesc(const void *buf) {
-  return flatbuffers::GetSizePrefixedRoot<paddle::lite::fbs::proto::ProgramDesc>(buf);
+inline const paddle::lite_metal::fbs::proto::ProgramDesc *GetSizePrefixedProgramDesc(const void *buf) {
+  return flatbuffers::GetSizePrefixedRoot<paddle::lite_metal::fbs::proto::ProgramDesc>(buf);
 }
 
 inline ProgramDesc *GetMutableProgramDesc(void *buf) {
@@ -3340,41 +3340,41 @@ inline ProgramDesc *GetMutableProgramDesc(void *buf) {
 
 inline bool VerifyProgramDescBuffer(
     flatbuffers::Verifier &verifier) {
-  return verifier.VerifyBuffer<paddle::lite::fbs::proto::ProgramDesc>(nullptr);
+  return verifier.VerifyBuffer<paddle::lite_metal::fbs::proto::ProgramDesc>(nullptr);
 }
 
 inline bool VerifySizePrefixedProgramDescBuffer(
     flatbuffers::Verifier &verifier) {
-  return verifier.VerifySizePrefixedBuffer<paddle::lite::fbs::proto::ProgramDesc>(nullptr);
+  return verifier.VerifySizePrefixedBuffer<paddle::lite_metal::fbs::proto::ProgramDesc>(nullptr);
 }
 
 inline void FinishProgramDescBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<paddle::lite::fbs::proto::ProgramDesc> root) {
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::ProgramDesc> root) {
   fbb.Finish(root);
 }
 
 inline void FinishSizePrefixedProgramDescBuffer(
     flatbuffers::FlatBufferBuilder &fbb,
-    flatbuffers::Offset<paddle::lite::fbs::proto::ProgramDesc> root) {
+    flatbuffers::Offset<paddle::lite_metal::fbs::proto::ProgramDesc> root) {
   fbb.FinishSizePrefixed(root);
 }
 
-inline std::unique_ptr<paddle::lite::fbs::proto::ProgramDescT> UnPackProgramDesc(
+inline std::unique_ptr<paddle::lite_metal::fbs::proto::ProgramDescT> UnPackProgramDesc(
     const void *buf,
     const flatbuffers::resolver_function_t *res = nullptr) {
-  return std::unique_ptr<paddle::lite::fbs::proto::ProgramDescT>(GetProgramDesc(buf)->UnPack(res));
+  return std::unique_ptr<paddle::lite_metal::fbs::proto::ProgramDescT>(GetProgramDesc(buf)->UnPack(res));
 }
 
-inline std::unique_ptr<paddle::lite::fbs::proto::ProgramDescT> UnPackSizePrefixedProgramDesc(
+inline std::unique_ptr<paddle::lite_metal::fbs::proto::ProgramDescT> UnPackSizePrefixedProgramDesc(
     const void *buf,
     const flatbuffers::resolver_function_t *res = nullptr) {
-  return std::unique_ptr<paddle::lite::fbs::proto::ProgramDescT>(GetSizePrefixedProgramDesc(buf)->UnPack(res));
+  return std::unique_ptr<paddle::lite_metal::fbs::proto::ProgramDescT>(GetSizePrefixedProgramDesc(buf)->UnPack(res));
 }
 
 }  // namespace proto
 }  // namespace fbs
-}  // namespace lite
+}  // namespace lite_metal
 }  // namespace paddle
 
 #endif  // FLATBUFFERS_GENERATED_FRAMEWORK_PADDLE_LITE_FBS_PROTO_H_

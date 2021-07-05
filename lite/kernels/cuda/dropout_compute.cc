@@ -17,7 +17,7 @@
 #include "lite/backends/cuda/math/scale.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -34,7 +34,7 @@ void DropoutCompute::Run() {
   if (param.dropout_implementation == "downgrade_in_infer") {
     scale = 1.0f - prob_data;
   }
-  lite::cuda::math::scale(num, x_data, out_data, scale, 0.f, stream);
+  lite_metal::cuda::math::scale(num, x_data, out_data, scale, 0.f, stream);
 }
 
 }  // namespace cuda
@@ -46,7 +46,7 @@ REGISTER_LITE_KERNEL(dropout,
                      kCUDA,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::cuda::DropoutCompute,
+                     paddle::lite_metal::kernels::cuda::DropoutCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})

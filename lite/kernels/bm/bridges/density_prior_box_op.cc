@@ -20,7 +20,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -42,16 +42,16 @@ float* compute_density_priorbox_kernel(OpLite* op, st_priorbox_param* param) {
   auto scope = op->scope();
   // inputs
   auto in_var_name = op_info->Input("Input").front();
-  auto in = scope->FindVar(in_var_name)->GetMutable<lite::Tensor>();
+  auto in = scope->FindVar(in_var_name)->GetMutable<lite_metal::Tensor>();
   auto in_dims = in->dims();
   auto img_var_name = op_info->Input("Image").front();
-  auto img = scope->FindVar(img_var_name)->GetMutable<lite::Tensor>();
+  auto img = scope->FindVar(img_var_name)->GetMutable<lite_metal::Tensor>();
   auto img_dims = img->dims();
   // outputs
   auto boxes_var_name = op_info->Output("Boxes").front();
-  auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
+  auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite_metal::Tensor>();
   auto var_var_name = op_info->Output("Variances").front();
-  auto var = scope->FindVar(var_var_name)->GetMutable<lite::Tensor>();
+  auto var = scope->FindVar(var_var_name)->GetMutable<lite_metal::Tensor>();
 
   auto img_width = img_dims[3];
   auto img_height = img_dims[2];
@@ -147,10 +147,10 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   // inputs
   auto in_var_name = op_info->Input("Input").front();
-  auto in = scope->FindVar(in_var_name)->GetMutable<lite::Tensor>();
+  auto in = scope->FindVar(in_var_name)->GetMutable<lite_metal::Tensor>();
   auto in_dims = in->dims();
   auto img_var_name = op_info->Input("Image").front();
-  auto img = scope->FindVar(img_var_name)->GetMutable<lite::Tensor>();
+  auto img = scope->FindVar(img_var_name)->GetMutable<lite_metal::Tensor>();
   auto img_dims = img->dims();
   std::vector<int32_t> i_input_shape_data(in_dims.size());
   for (size_t i = 0; i < in_dims.size(); i++) {
@@ -162,7 +162,7 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   // outputs
   auto boxes_var_name = op_info->Output("Boxes").front();
-  auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
+  auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite_metal::Tensor>();
   auto var_var_name = op_info->Output("Variances").front();
   // param
   st_priorbox_param param;
@@ -184,9 +184,9 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   i_pri_out_shape_data[0] = 1;
   i_pri_out_shape_data[1] = 2;
   i_pri_out_shape_data[2] = boxes->data_size();
-  auto bm_priorbox_name = lite::subgraph::bm::UniqueName("bm_priorbox");
+  auto bm_priorbox_name = lite_metal::subgraph::bm::UniqueName("bm_priorbox");
   float* cpu_data = compute_density_priorbox_kernel(op, &param);
-  boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
+  boxes = scope->FindVar(boxes_var_name)->GetMutable<lite_metal::Tensor>();
   i_pri_out_shape_data[2] = boxes->data_size();
 #ifndef BM_DYNAMIC_COMPILE
   add_priorbox_layer(graph->GetCompilerHandle(),
@@ -288,8 +288,8 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   i_split_shape_data[1] /= 2;
   shape[0] = &i_split_shape_data[0];
   shape[1] = &i_split_shape_data[0];
-  auto boxes_name = lite::subgraph::bm::UniqueName("bm_boxes");
-  auto var_name = lite::subgraph::bm::UniqueName("bm_var");
+  auto boxes_name = lite_metal::subgraph::bm::UniqueName("bm_boxes");
+  auto var_name = lite_metal::subgraph::bm::UniqueName("bm_var");
   name[0] = static_cast<const char*>(boxes_name.c_str());
   name[1] = static_cast<const char*>(var_name.c_str());
   int split_size[2];
@@ -338,4 +338,4 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(density_prior_box,
                          kBM,
-                         paddle::lite::subgraph::bm::DensityPriorBoxConverter);
+                         paddle::lite_metal::subgraph::bm::DensityPriorBoxConverter);

@@ -30,7 +30,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool TileOp::CheckShape() const {
@@ -110,7 +110,7 @@ bool TileOp::InferShapeImpl() const {
   return true;
 }
 
-bool TileOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool TileOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.X = scope->FindMutableTensor(opdesc.Input("X").front());
   if (opdesc.HasInput("RepeatTimes") && !opdesc.Input("RepeatTimes").empty()) {
@@ -121,7 +121,7 @@ bool TileOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     auto temp = opdesc.Input("repeat_times_tensor");
     for (auto var : temp) {
       param_.repeat_times_tensor.push_back(
-          scope->FindVar(var)->GetMutable<lite::Tensor>());
+          scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
     }
   } else if (opdesc.HasAttr("repeat_times")) {
     param_.repeat_times = opdesc.GetAttr<std::vector<int>>("repeat_times");
@@ -135,4 +135,4 @@ bool TileOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(tile, paddle::lite::operators::TileOp);
+REGISTER_LITE_OP(tile, paddle::lite_metal::operators::TileOp);

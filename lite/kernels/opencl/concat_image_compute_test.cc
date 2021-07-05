@@ -23,7 +23,7 @@
 #define FP16_MAX_DIFF (5e-1)
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <typename dtype>
 void concat2_compute_ref(const dtype *in0,
@@ -135,7 +135,7 @@ TEST(concat_image2d_concat2, compute) {
 
         // set tensors about op param
         LOG(INFO) << "set tensors about op param";
-        lite::Tensor x0, x1, y, concat_in0, concat_in1, concat_out, y_ref;
+        lite_metal::Tensor x0, x1, y, concat_in0, concat_in1, concat_out, y_ref;
         operators::LayoutParam BufferToImageParam0, BufferToImageParam1,
             BufferToImageParam2;
         operators::LayoutParam ImageToBufferParam;
@@ -145,7 +145,7 @@ TEST(concat_image2d_concat2, compute) {
         BufferToImageParam1.y = &concat_in1;
         ImageToBufferParam.x = &concat_out;
         ImageToBufferParam.y = &y;
-        std::vector<lite::Tensor *> ins;
+        std::vector<lite_metal::Tensor *> ins;
         operators::ConcatParam concatParam;
         ins.push_back(&concat_in0);
         ins.push_back(&concat_in1);
@@ -167,11 +167,11 @@ TEST(concat_image2d_concat2, compute) {
         concat_out.Resize(out_dim);
         y_ref.Resize(out_dim);
         auto concat_image2d_shape =
-            paddle::lite::kernels::opencl::InitImageDimInfoWith(out_dim);
+            paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(out_dim);
         auto concat_image2d_shape_in0 =
-            paddle::lite::kernels::opencl::InitImageDimInfoWith(x0_dim);
+            paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(x0_dim);
         auto concat_image2d_shape_in1 =
-            paddle::lite::kernels::opencl::InitImageDimInfoWith(x1_dim);
+            paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(x1_dim);
 
         // initialize tensors
         LOG(INFO) << "initialize tensors";
@@ -376,7 +376,7 @@ TEST(concat_image2d_multi, compute) {
 
         // set tensors about op param
         LOG(INFO) << "set tensors about op param";
-        lite::Tensor x0, x1, x2, y, concat_in0, concat_in1, concat_in2,
+        lite_metal::Tensor x0, x1, x2, y, concat_in0, concat_in1, concat_in2,
             concat_out, y_ref;
         operators::LayoutParam BufferToImageParam0, BufferToImageParam1,
             BufferToImageParam2;
@@ -389,7 +389,7 @@ TEST(concat_image2d_multi, compute) {
         BufferToImageParam2.y = &concat_in2;
         ImageToBufferParam.x = &concat_out;
         ImageToBufferParam.y = &y;
-        std::vector<lite::Tensor *> ins;
+        std::vector<lite_metal::Tensor *> ins;
         operators::ConcatParam concatParam;
         ins.push_back(&concat_in0);
         ins.push_back(&concat_in1);
@@ -414,13 +414,13 @@ TEST(concat_image2d_multi, compute) {
         concat_out.Resize(out_dim);
         y_ref.Resize(out_dim);
         auto concat_image2d_shape =
-            paddle::lite::kernels::opencl::InitImageDimInfoWith(out_dim);
+            paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(out_dim);
         auto concat_image2d_shape_in0 =
-            paddle::lite::kernels::opencl::InitImageDimInfoWith(x0_dim);
+            paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(x0_dim);
         auto concat_image2d_shape_in1 =
-            paddle::lite::kernels::opencl::InitImageDimInfoWith(x1_dim);
+            paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(x1_dim);
         auto concat_image2d_shape_in2 =
-            paddle::lite::kernels::opencl::InitImageDimInfoWith(x2_dim);
+            paddle::lite_metal::kernels::opencl::InitImageDimInfoWith(x2_dim);
 
         // initialize tensors
         LOG(INFO) << "initialize tensors";

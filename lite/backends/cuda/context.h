@@ -23,7 +23,7 @@
 #include "lite/core/device_info.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <TargetType Type>
 class Context;
@@ -39,7 +39,7 @@ class Context<TargetType::kCUDA> {
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {
     if (devs.size() > 0) {
-      cublas_fp32_ = std::make_shared<lite::cuda::Blas<float>>();
+      cublas_fp32_ = std::make_shared<lite_metal::cuda::Blas<float>>();
     } else {
       LOG(INFO) << "No cuda device(s) found, CUDAContext init failed.";
     }

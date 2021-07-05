@@ -20,7 +20,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class CorrelationComputeTester : public arena::TestCase {
  protected:
@@ -52,7 +52,7 @@ class CorrelationComputeTester : public arena::TestCase {
     auto* x1_pad_data = x1_pad.mutable_data<float>();
     auto* x2_pad_data = x2_pad.mutable_data<float>();
 
-    lite::host::math::Pad2DConstNCHW(x1->data<float>(),
+    lite_metal::host::math::Pad2DConstNCHW(x1->data<float>(),
                                      x_dims_[0],
                                      x_dims_[1],
                                      x_dims_[2],
@@ -63,7 +63,7 @@ class CorrelationComputeTester : public arena::TestCase {
                                      pad_size_,
                                      0.f,
                                      x1_pad_data);
-    lite::host::math::Pad2DConstNCHW(x2->data<float>(),
+    lite_metal::host::math::Pad2DConstNCHW(x2->data<float>(),
                                      x_dims_[0],
                                      x_dims_[1],
                                      x_dims_[2],

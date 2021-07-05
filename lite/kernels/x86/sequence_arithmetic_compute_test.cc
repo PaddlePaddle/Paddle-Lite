@@ -22,7 +22,7 @@
 #include "lite/kernels/x86/sequence_arithmetic_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -95,8 +95,8 @@ TEST(sequence_arithmetic_x86, run_test) {
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   ctx->As<X86Context>();
 
-  lite::Tensor x, y, out, out_ref;
-  lite::LoD x_lod{{0, 2, 5, 9}}, y_lod{{0, 2, 5, 9}};
+  lite_metal::Tensor x, y, out, out_ref;
+  lite_metal::LoD x_lod{{0, 2, 5, 9}}, y_lod{{0, 2, 5, 9}};
   prepare_input(&x, x_lod);
   prepare_input(&y, y_lod);
 

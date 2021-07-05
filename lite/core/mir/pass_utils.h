@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // Query if the specified kernel has been registered.
 bool KernelRegistered(const std::string name, const Place& place);

@@ -20,7 +20,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -41,12 +41,12 @@ class SequencePoolCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     dims[0] = lod[0].size() - 1;
     out->Resize({dims});
     out->template mutable_data<T>();
-    lite::Tensor* index = nullptr;
+    lite_metal::Tensor* index = nullptr;
 
     const bool is_test = true;
     float pad_value = 0.0;
 
-    lite::x86::math::SequencePoolFunctor<lite::TargetType::kX86, T> pool;
+    lite_metal::x86::math::SequencePoolFunctor<lite_metal::TargetType::kX86, T> pool;
     pool(context, param.pool_type, pad_value, *param.X, out, is_test, index);
   }
 

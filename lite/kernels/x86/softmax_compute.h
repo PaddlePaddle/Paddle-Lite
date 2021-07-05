@@ -18,7 +18,7 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -64,7 +64,7 @@ class SoftmaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     const int axis = CanonicalAxis(param.axis, rank);
     int axis_dim = x->dims()[axis];
     if (rank == 2 && axis == 1) {
-      lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
+      lite_metal::x86::math::SoftmaxFunctor<lite_metal::TargetType::kX86, T, true>()(
           context, axis_dim, x, output);
     } else {
       const int n = SizeToAxis(axis, x->dims());
@@ -77,7 +77,7 @@ class SoftmaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       x->Resize(shape_2d);
       output->Resize(shape_2d);
 
-      lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
+      lite_metal::x86::math::SoftmaxFunctor<lite_metal::TargetType::kX86, T, true>()(
           context, axis_dim, x, output);
       x->Resize(x_dims);
       output->Resize(out_dims);

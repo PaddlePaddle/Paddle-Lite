@@ -18,7 +18,7 @@ limitations under the License. */
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 NeuronAdapter* NeuronAdapter::Global() {
   static NeuronAdapter adapter;
   return &adapter;
@@ -107,23 +107,23 @@ void NeuronAdapter::InitFunctions() {
 }  // namespace paddle
 
 int Neuron_getVersion(uint32_t* version) {
-  return paddle::lite::NeuronAdapter::Global()->Neuron_getVersion()(version);
+  return paddle::lite_metal::NeuronAdapter::Global()->Neuron_getVersion()(version);
 }
 
 int NeuronModel_create(NeuronModel** model) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronModel_create()(model);
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronModel_create()(model);
 }
 
 void NeuronModel_free(NeuronModel* model) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronModel_free()(model);
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronModel_free()(model);
 }
 
 int NeuronModel_finish(NeuronModel* model) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronModel_finish()(model);
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronModel_finish()(model);
 }
 
 int NeuronModel_addOperand(NeuronModel* model, const NeuronOperandType* type) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronModel_addOperand()(model,
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronModel_addOperand()(model,
                                                                          type);
 }
 
@@ -131,7 +131,7 @@ int NeuronModel_setOperandValue(NeuronModel* model,
                                 int32_t index,
                                 const void* buffer,
                                 size_t length) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronModel_setOperandValue()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronModel_setOperandValue()(
       model, index, buffer, length);
 }
 
@@ -139,7 +139,7 @@ int NeuronModel_setOperandSymmPerChannelQuantParams(
     NeuronModel* model,
     int32_t index,
     const NeuronSymmPerChannelQuantParams* channelQuant) {
-  return paddle::lite::NeuronAdapter::Global()
+  return paddle::lite_metal::NeuronAdapter::Global()
       ->NeuronModel_setOperandSymmPerChannelQuantParams()(
           model, index, channelQuant);
 }
@@ -150,7 +150,7 @@ int NeuronModel_addOperation(NeuronModel* model,
                              const uint32_t* inputs,
                              uint32_t outputCount,
                              const uint32_t* outputs) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronModel_addOperation()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronModel_addOperation()(
       model, type, inputCount, inputs, outputCount, outputs);
 }
 
@@ -162,7 +162,7 @@ int NeuronModel_addOperationExtension(NeuronModel* model,
                                       const uint32_t* inputs,
                                       uint32_t outputCount,
                                       const uint32_t* outputs) {
-  return paddle::lite::NeuronAdapter::Global()
+  return paddle::lite_metal::NeuronAdapter::Global()
       ->NeuronModel_addOperationExtension()(model,
                                             name,
                                             vendor,
@@ -178,7 +178,7 @@ int NeuronModel_identifyInputsAndOutputs(NeuronModel* model,
                                          const uint32_t* inputs,
                                          uint32_t outputCount,
                                          const uint32_t* outputs) {
-  return paddle::lite::NeuronAdapter::Global()
+  return paddle::lite_metal::NeuronAdapter::Global()
       ->NeuronModel_identifyInputsAndOutputs()(
           model, inputCount, inputs, outputCount, outputs);
 }
@@ -187,44 +187,44 @@ int NeuronModel_restoreFromCompiledNetwork(NeuronModel** model,
                                            NeuronCompilation** compilation,
                                            const void* buffer,
                                            const size_t size) {
-  return paddle::lite::NeuronAdapter::Global()
+  return paddle::lite_metal::NeuronAdapter::Global()
       ->NeuronModel_restoreFromCompiledNetwork()(
           model, compilation, buffer, size);
 }
 
 int NeuronCompilation_create(NeuronModel* model,
                              NeuronCompilation** compilation) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronCompilation_create()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronCompilation_create()(
       model, compilation);
 }
 
 void NeuronCompilation_free(NeuronCompilation* compilation) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronCompilation_free()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronCompilation_free()(
       compilation);
 }
 
 int NeuronCompilation_finish(NeuronCompilation* compilation) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronCompilation_finish()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronCompilation_finish()(
       compilation);
 }
 
 int NeuronCompilation_setCaching(NeuronCompilation* compilation,
                                  const char* cacheDir,
                                  const uint8_t* token) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronCompilation_setCaching()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronCompilation_setCaching()(
       compilation, cacheDir, token);
 }
 
 int NeuronCompilation_storeCompiledNetwork(NeuronCompilation* compilation,
                                            void* buffer,
                                            const size_t size) {
-  return paddle::lite::NeuronAdapter::Global()
+  return paddle::lite_metal::NeuronAdapter::Global()
       ->NeuronCompilation_storeCompiledNetwork()(compilation, buffer, size);
 }
 
 int NeuronCompilation_getCompiledNetworkSize(NeuronCompilation* compilation,
                                              size_t* size) {
-  return paddle::lite::NeuronAdapter::Global()
+  return paddle::lite_metal::NeuronAdapter::Global()
       ->NeuronCompilation_getCompiledNetworkSize()(compilation, size);
 }
 
@@ -232,19 +232,19 @@ int NeuronCompilation_createForDevices(NeuronModel* model,
                                        const NeuronDevice* const* devices,
                                        uint32_t numDevices,
                                        NeuronCompilation** compilation) {
-  return paddle::lite::NeuronAdapter::Global()
+  return paddle::lite_metal::NeuronAdapter::Global()
       ->NeuronCompilation_createForDevices()(
           model, devices, numDevices, compilation);
 }
 
 int NeuronExecution_create(NeuronCompilation* compilation,
                            NeuronExecution** execution) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronExecution_create()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronExecution_create()(
       compilation, execution);
 }
 
 void NeuronExecution_free(NeuronExecution* execution) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronExecution_free()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronExecution_free()(
       execution);
 }
 
@@ -253,7 +253,7 @@ int NeuronExecution_setInput(NeuronExecution* execution,
                              const NeuronOperandType* type,
                              const void* buffer,
                              size_t length) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronExecution_setInput()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronExecution_setInput()(
       execution, index, type, buffer, length);
 }
 
@@ -262,26 +262,26 @@ int NeuronExecution_setOutput(NeuronExecution* execution,
                               const NeuronOperandType* type,
                               void* buffer,
                               size_t length) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronExecution_setOutput()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronExecution_setOutput()(
       execution, index, type, buffer, length);
 }
 
 int NeuronExecution_compute(NeuronExecution* execution) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronExecution_compute()(
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronExecution_compute()(
       execution);
 }
 
 int Neuron_getDeviceCount(uint32_t* numDevices) {
-  return paddle::lite::NeuronAdapter::Global()->Neuron_getDeviceCount()(
+  return paddle::lite_metal::NeuronAdapter::Global()->Neuron_getDeviceCount()(
       numDevices);
 }
 
 int Neuron_getDevice(uint32_t devIndex, NeuronDevice** device) {
-  return paddle::lite::NeuronAdapter::Global()->Neuron_getDevice()(devIndex,
+  return paddle::lite_metal::NeuronAdapter::Global()->Neuron_getDevice()(devIndex,
                                                                    device);
 }
 
 int NeuronDevice_getName(const NeuronDevice* device, const char** name) {
-  return paddle::lite::NeuronAdapter::Global()->NeuronDevice_getName()(device,
+  return paddle::lite_metal::NeuronAdapter::Global()->NeuronDevice_getName()(device,
                                                                        name);
 }

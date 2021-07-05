@@ -19,14 +19,14 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
 void SumCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  std::vector<lite::Tensor*>& inputs = param.X;
+  std::vector<lite_metal::Tensor*>& inputs = param.X;
   auto* out_data = param.Out->mutable_data<float>(TARGET(kXPU));
   if (inputs.size() == 1) {
     if (!param.inplace) {
@@ -74,7 +74,7 @@ void SumCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    sum, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SumCompute, def)
+    sum, kXPU, kFloat, kNCHW, paddle::lite_metal::kernels::xpu::SumCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();

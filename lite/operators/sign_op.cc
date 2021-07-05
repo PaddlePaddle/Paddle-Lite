@@ -18,7 +18,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SignOp::CheckShape() const {
@@ -32,13 +32,13 @@ bool SignOp::InferShapeImpl() const {
   return true;
 }
 
-bool SignOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool SignOp::AttachImpl(const cpp::OpDesc &op_desc, lite_metal::Scope *scope) {
   auto X = op_desc.Input("X").front();
   auto Out = op_desc.Output("Out").front();
   CHECK(scope->FindVar(X));
   CHECK(scope->FindVar(Out));
-  param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(X)->GetMutable<lite_metal::Tensor>();
+  param_.Out = scope->FindVar(Out)->GetMutable<lite_metal::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
 
@@ -46,7 +46,7 @@ bool SignOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }
 
 } /* namespace operators */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
-REGISTER_LITE_OP(sign, paddle::lite::operators::SignOp);
+REGISTER_LITE_OP(sign, paddle::lite_metal::operators::SignOp);

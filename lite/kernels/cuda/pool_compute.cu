@@ -16,11 +16,11 @@ limitations under the License. */
 #include "lite/utils/macros.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
-using Tensor = lite::Tensor;
-using DDim = lite::DDim;
+using Tensor = lite_metal::Tensor;
+using DDim = lite_metal::DDim;
 
 #define MAX_VAL(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN_VAL(a, b) (((a) < (b)) ? (a) : (b))
@@ -373,7 +373,7 @@ inline int PoolOutputSize(
 void PoolComputeNHWC::PrepareForRun() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
-  pool_impl_.reset(new lite::cuda::math::CudnnPool2DNHWC<PRECISION(kFloat)>);
+  pool_impl_.reset(new lite_metal::cuda::math::CudnnPool2DNHWC<PRECISION(kFloat)>);
   pool_impl_->init(param, &ctx);
 }
 
@@ -405,7 +405,7 @@ void PoolComputeNHWC::Run() {
     }
   }
   output_shape.push_back(x_dims[3]);
-  param.output->Resize(lite::DDim(output_shape));
+  param.output->Resize(lite_metal::DDim(output_shape));
 
   pool_impl_->run(param);
 
@@ -419,7 +419,7 @@ void PoolComputeNHWC::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    pool2d, kCUDA, kFloat, kNCHW, paddle::lite::kernels::cuda::PoolCompute, def)
+    pool2d, kCUDA, kFloat, kNCHW, paddle::lite_metal::kernels::cuda::PoolCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),
                                       PRECISION(kFloat),
@@ -434,7 +434,7 @@ REGISTER_LITE_KERNEL(pool2d,
                      kCUDA,
                      kFloat,
                      kNHWC,
-                     paddle::lite::kernels::cuda::PoolComputeNHWC,
+                     paddle::lite_metal::kernels::cuda::PoolComputeNHWC,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),

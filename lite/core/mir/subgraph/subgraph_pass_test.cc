@@ -30,7 +30,7 @@ DEFINE_string(output_tensor_type, "float32", "data type of output tensors");
 DEFINE_string(subgraph_model_cache_dir, "", "dir of subgraph model cache");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // The helper functions for loading and running model from command line and
 // verifying output data

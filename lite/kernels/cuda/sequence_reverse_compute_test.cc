@@ -18,11 +18,11 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
-static void sequence_reverse_ref(const lite::Tensor* x, lite::Tensor* y) {
+static void sequence_reverse_ref(const lite_metal::Tensor* x, lite_metal::Tensor* y) {
   const auto* x_data = x->data<float>();
   auto seq_offset = x->lod()[x->lod().size() - 1];
   int width = x->numel() / x->dims()[0];
@@ -45,8 +45,8 @@ TEST(sequence_reverse_cuda, normal) {
   auto& context = ctx->As<CUDAContext>();
 
   operators::SequenceReverseParam param;
-  lite::Tensor x, x_cpu, x_ref;
-  lite::Tensor y, y_cpu, y_ref;
+  lite_metal::Tensor x, x_cpu, x_ref;
+  lite_metal::Tensor y, y_cpu, y_ref;
 
   int32_t lod_len = 10, feature_len = 4;
   LoD lod_info{{0, 2, 4}, {0, 3, 5, 6, 10}};
@@ -76,7 +76,7 @@ TEST(sequence_reverse_cuda, normal) {
     x_ref_data[i] = (i - 2.0) * 1.0;
   }
 
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
 
   param.X = &x;
   param.Out = &y;

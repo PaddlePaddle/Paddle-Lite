@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -149,7 +149,7 @@ void ReduceCompute<T, Functor>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace xpu = paddle::lite::kernels::xpu;
+namespace xpu = paddle::lite_metal::kernels::xpu;
 using ReduceAll = xpu::ReduceCompute<bool, xpu::ReduceAllFunctor<bool>>;
 using ReduceAny = xpu::ReduceCompute<bool, xpu::ReduceAnyFunctor<bool>>;
 using ReduceMeanFloat32 =

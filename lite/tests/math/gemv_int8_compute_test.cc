@@ -24,8 +24,8 @@
 #include "lite/core/tensor.h"
 #include "lite/tests/utils/tensor_utils.h"
 
-typedef paddle::lite::Tensor Tensor;
-using paddle::lite::profile::Timer;
+typedef paddle::lite_metal::Tensor Tensor;
+using paddle::lite_metal::profile::Timer;
 
 DEFINE_int32(power_mode,
              3,
@@ -112,7 +112,7 @@ bool test_gemv_int8(bool tra,
   memset(reinterpret_cast<char*>(dc_basic_fp32),
          0,
          tc_basic_fp32.numel() * sizeof(float));
-  paddle::lite::operators::ActivationParam act_param;
+  paddle::lite_metal::operators::ActivationParam act_param;
   paddle::lite_api::ActivationType act =
       paddle::lite_api::ActivationType::kIndentity;
   if (flag_act == 1) {
@@ -137,9 +137,9 @@ bool test_gemv_int8(bool tra,
     auto da_fp32 = ta_fp32.mutable_data<float>();
     auto db_fp32 = tb_fp32.mutable_data<float>();
 
-    paddle::lite::arm::math::int8_to_fp32(
+    paddle::lite_metal::arm::math::int8_to_fp32(
         da, da_fp32, scale_a.data(), 1, 1, ta.numel());
-    paddle::lite::arm::math::int8_to_fp32(
+    paddle::lite_metal::arm::math::int8_to_fp32(
         db, db_fp32, scale_b.data(), 1, 1, tb.numel());
     basic_gemv(m,
                n,
@@ -153,7 +153,7 @@ bool test_gemv_int8(bool tra,
                has_bias,
                flag_act,
                alpha);
-    paddle::lite::arm::math::fp32_to_int8(dc_basic_fp32,
+    paddle::lite_metal::arm::math::fp32_to_int8(dc_basic_fp32,
                                           dc_basic_int8,
                                           scale_c.data(),
                                           1,
@@ -163,13 +163,13 @@ bool test_gemv_int8(bool tra,
   Timer t0;
   //! compute
   double ops = 2.0 * m * n;
-  std::unique_ptr<paddle::lite::KernelContext> ctx1(
-      new paddle::lite::KernelContext);
-  auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
+      new paddle::lite_metal::KernelContext);
+  auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::gemv_int8(da,
+    paddle::lite_metal::arm::math::gemv_int8(da,
                                        db,
                                        dc_fp32,
                                        false,
@@ -192,7 +192,7 @@ bool test_gemv_int8(bool tra,
   }
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::gemv_int8(da,
+    paddle::lite_metal::arm::math::gemv_int8(da,
                                        db,
                                        dc_fp32,
                                        false,
@@ -221,7 +221,7 @@ bool test_gemv_int8(bool tra,
   t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::gemv_int8(da,
+    paddle::lite_metal::arm::math::gemv_int8(da,
                                        db,
                                        dc_int8,
                                        false,
@@ -311,7 +311,7 @@ bool test_gemv_int8(bool tra,
 TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
   if (FLAGS_basic_test) {
 #ifdef LITE_WITH_ARM
-    paddle::lite::DeviceInfo::Init();
+    paddle::lite_metal::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemm test";
     for (auto& m : {3, 8, 32, 397}) {
@@ -355,7 +355,7 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
 
 TEST(TestGemvInt8Custom, gemv_prepacked_int8_custom) {
 #ifdef LITE_WITH_ARM
-  paddle::lite::DeviceInfo::Init();
+  paddle::lite_metal::DeviceInfo::Init();
 #endif
   auto flag = test_gemv_int8(FLAGS_traA,
                              FLAGS_M,

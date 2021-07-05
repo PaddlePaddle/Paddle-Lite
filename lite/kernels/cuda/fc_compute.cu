@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -198,7 +198,7 @@ __global__ void AddBiasRelu<half>(const int num, const half* bias, half* data) {
 
 template <typename T, PrecisionType PType>
 void FcCompute<T, PType>::PrepareForRun() {
-  gemm_impl_.reset(new lite::cuda::math::Gemm<T, T>);
+  gemm_impl_.reset(new lite_metal::cuda::math::Gemm<T, T>);
 }
 
 template <typename T, PrecisionType PType>
@@ -333,9 +333,9 @@ void FcCompute<half, PRECISION(kFP16)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using FcFp32 = paddle::lite::kernels::cuda::FcCompute<float, PRECISION(kFloat)>;
+using FcFp32 = paddle::lite_metal::kernels::cuda::FcCompute<float, PRECISION(kFloat)>;
 
-using FcFp16 = paddle::lite::kernels::cuda::FcCompute<half, PRECISION(kFP16)>;
+using FcFp16 = paddle::lite_metal::kernels::cuda::FcCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(fc, kCUDA, kFloat, kNCHW, FcFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kCUDA))})

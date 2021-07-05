@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool RetinanetDetectionOutputOpLite::CheckShape() const {
@@ -53,21 +53,21 @@ bool RetinanetDetectionOutputOpLite::InferShapeImpl() const {
 }
 
 bool RetinanetDetectionOutputOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                                lite::Scope *scope) {
+                                                lite_metal::Scope *scope) {
   param_.bboxes.clear();
   for (auto arg_name : op_desc.Input("BBoxes")) {
     param_.bboxes.push_back(
-        scope->FindVar(arg_name)->GetMutable<lite::Tensor>());
+        scope->FindVar(arg_name)->GetMutable<lite_metal::Tensor>());
   }
   param_.scores.clear();
   for (auto arg_name : op_desc.Input("Scores")) {
     param_.scores.push_back(
-        scope->FindVar(arg_name)->GetMutable<lite::Tensor>());
+        scope->FindVar(arg_name)->GetMutable<lite_metal::Tensor>());
   }
   param_.anchors.clear();
   for (auto arg_name : op_desc.Input("Anchors")) {
     param_.anchors.push_back(
-        scope->FindVar(arg_name)->GetMutable<lite::Tensor>());
+        scope->FindVar(arg_name)->GetMutable<lite_metal::Tensor>());
   }
   AttachInput(op_desc, scope, "ImInfo", false, &param_.im_info);
   AttachOutput(op_desc, scope, "Out", false, &param_.out);
@@ -86,4 +86,4 @@ bool RetinanetDetectionOutputOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(retinanet_detection_output,
-                 paddle::lite::operators::RetinanetDetectionOutputOpLite);
+                 paddle::lite_metal::operators::RetinanetDetectionOutputOpLite);

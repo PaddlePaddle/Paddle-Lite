@@ -19,7 +19,7 @@
 #include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace bm {
 
@@ -33,7 +33,7 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   // input
   auto input_var_name = op_info->Input("Input").front();
-  auto input = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+  auto input = scope->FindVar(input_var_name)->GetMutable<lite_metal::Tensor>();
   auto input_dims = input->dims();
   const int64_t* input_shape_data =
       const_cast<const int64_t*>(&input_dims.data()[0]);
@@ -88,4 +88,4 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(slice,
                          kBM,
-                         paddle::lite::subgraph::bm::SliceConverter);
+                         paddle::lite_metal::subgraph::bm::SliceConverter);

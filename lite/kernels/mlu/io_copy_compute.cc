@@ -8,7 +8,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace mlu {
 
@@ -105,7 +105,7 @@ REGISTER_LITE_KERNEL(
     kMLU,
     kFloat,
     kNHWC,
-    paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFloat)>,
+    paddle::lite_metal::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFloat)>,
     host_to_device_kFloat)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -122,7 +122,7 @@ REGISTER_LITE_KERNEL(
     kMLU,
     kFP16,
     kNHWC,
-    paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFP16)>,
+    paddle::lite_metal::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kFP16)>,
     host_to_device_kFP16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -139,7 +139,7 @@ REGISTER_LITE_KERNEL(
     kMLU,
     kInt32,
     kNHWC,
-    paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kInt32)>,
+    paddle::lite_metal::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kInt32)>,
     host_to_device_kInt32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -156,7 +156,7 @@ REGISTER_LITE_KERNEL(
     kMLU,
     kFloat,
     kNHWC,
-    paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFloat)>,
+    paddle::lite_metal::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFloat)>,
     device_to_host_kFloat)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kMLU),
@@ -173,7 +173,7 @@ REGISTER_LITE_KERNEL(
     kMLU,
     kFP16,
     kNHWC,
-    paddle::lite::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFP16)>,
+    paddle::lite_metal::kernels::mlu::IoCopyMluToHostCompute<PRECISION(kFP16)>,
     device_to_host_kFP16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kMLU),
@@ -190,7 +190,7 @@ REGISTER_LITE_KERNEL(
     kMLU,
     kInt8,
     kNHWC,
-    paddle::lite::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kInt8)>,
+    paddle::lite_metal::kernels::mlu::IoCopyHostToMluCompute<PRECISION(kInt8)>,
     host_to_device_to_kInt8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),

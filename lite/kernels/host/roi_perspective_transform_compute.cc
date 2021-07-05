@@ -17,7 +17,7 @@
 #include <cmath>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -343,7 +343,7 @@ REGISTER_LITE_KERNEL(
     kHost,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::host::RoiPerspectiveTransformCompute<float>,
+    paddle::lite_metal::kernels::host::RoiPerspectiveTransformCompute<float>,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("ROIs", {LiteType::GetTensorTy(TARGET(kHost))})

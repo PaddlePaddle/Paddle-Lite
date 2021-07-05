@@ -23,7 +23,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // Sync the type of variable to the shared one in subblocks

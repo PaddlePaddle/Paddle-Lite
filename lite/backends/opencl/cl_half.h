@@ -16,7 +16,7 @@ limitations under the License. */
 #include <cstdint>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 typedef uint16_t half_t;
 

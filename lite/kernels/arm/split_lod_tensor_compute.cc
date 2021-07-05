@@ -22,7 +22,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -33,10 +33,10 @@ struct CopyRange {
 
 void SplitLodTensorCompute::Run() {
   auto &param = Param<operators::SplitLodTensorParam>();
-  const lite::Tensor *x = param.x;
-  const lite::Tensor *mask = param.mask;
-  lite::Tensor *out_true = param.out_true;
-  lite::Tensor *out_false = param.out_false;
+  const lite_metal::Tensor *x = param.x;
+  const lite_metal::Tensor *mask = param.mask;
+  lite_metal::Tensor *out_true = param.out_true;
+  lite_metal::Tensor *out_false = param.out_false;
   int level = param.level;
 
   auto &x_lod = x->lod();
@@ -57,11 +57,11 @@ void SplitLodTensorCompute::Run() {
       // VLOG(4) << "mask: " << mask_data[i];
       if (static_cast<size_t>(mask_data[i]) == t) {
         size_t start_idx = i;
-        auto lod_and_offset = lite::arm::math::GetSubLoDAndAbsoluteOffset(
+        auto lod_and_offset = lite_metal::arm::math::GetSubLoDAndAbsoluteOffset(
             x_lod, start_idx, start_idx + 1, level);
 
         auto &lod_length = lod_and_offset.first;
-        lite::arm::math::AppendLoD(lod, lod_length);
+        lite_metal::arm::math::AppendLoD(lod, lod_length);
 
         size_t start_offset = lod_and_offset.second.first;
         size_t end_offset = lod_and_offset.second.second;
@@ -118,7 +118,7 @@ REGISTER_LITE_KERNEL(split_lod_tensor,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::SplitLodTensorCompute,
+                     paddle::lite_metal::kernels::arm::SplitLodTensorCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})

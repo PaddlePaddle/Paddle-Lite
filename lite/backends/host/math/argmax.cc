@@ -21,14 +21,14 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
 template <typename InType, typename OutType>
-void argmax_func(const lite::Tensor *input,
+void argmax_func(const lite_metal::Tensor *input,
                  const int axis,
-                 lite::Tensor *output) {
+                 lite_metal::Tensor *output) {
   auto input_ddim = input->dims();
   auto output_ddim = output->dims();
 
@@ -59,43 +59,43 @@ void argmax_func(const lite::Tensor *input,
   }
 }
 
-template void argmax_func<float, int32_t>(const lite::Tensor *input,
+template void argmax_func<float, int32_t>(const lite_metal::Tensor *input,
                                           const int axis,
-                                          lite::Tensor *output);
-template void argmax_func<float, int64_t>(const lite::Tensor *input,
+                                          lite_metal::Tensor *output);
+template void argmax_func<float, int64_t>(const lite_metal::Tensor *input,
                                           const int axis,
-                                          lite::Tensor *output);
+                                          lite_metal::Tensor *output);
 #ifdef LITE_BUILD_EXTRA
-template void argmax_func<double, int32_t>(const lite::Tensor *input,
+template void argmax_func<double, int32_t>(const lite_metal::Tensor *input,
                                            const int axis,
-                                           lite::Tensor *output);
-template void argmax_func<double, int64_t>(const lite::Tensor *input,
+                                           lite_metal::Tensor *output);
+template void argmax_func<double, int64_t>(const lite_metal::Tensor *input,
                                            const int axis,
-                                           lite::Tensor *output);
-template void argmax_func<int64_t, int32_t>(const lite::Tensor *input,
+                                           lite_metal::Tensor *output);
+template void argmax_func<int64_t, int32_t>(const lite_metal::Tensor *input,
                                             const int axis,
-                                            lite::Tensor *output);
-template void argmax_func<int64_t, int64_t>(const lite::Tensor *input,
+                                            lite_metal::Tensor *output);
+template void argmax_func<int64_t, int64_t>(const lite_metal::Tensor *input,
                                             const int axis,
-                                            lite::Tensor *output);
-template void argmax_func<int32_t, int32_t>(const lite::Tensor *input,
+                                            lite_metal::Tensor *output);
+template void argmax_func<int32_t, int32_t>(const lite_metal::Tensor *input,
                                             const int axis,
-                                            lite::Tensor *output);
-template void argmax_func<int32_t, int64_t>(const lite::Tensor *input,
+                                            lite_metal::Tensor *output);
+template void argmax_func<int32_t, int64_t>(const lite_metal::Tensor *input,
                                             const int axis,
-                                            lite::Tensor *output);
-template void argmax_func<int16_t, int32_t>(const lite::Tensor *input,
+                                            lite_metal::Tensor *output);
+template void argmax_func<int16_t, int32_t>(const lite_metal::Tensor *input,
                                             const int axis,
-                                            lite::Tensor *output);
-template void argmax_func<int16_t, int64_t>(const lite::Tensor *input,
+                                            lite_metal::Tensor *output);
+template void argmax_func<int16_t, int64_t>(const lite_metal::Tensor *input,
                                             const int axis,
-                                            lite::Tensor *output);
-template void argmax_func<uint8_t, int32_t>(const lite::Tensor *input,
+                                            lite_metal::Tensor *output);
+template void argmax_func<uint8_t, int32_t>(const lite_metal::Tensor *input,
                                             const int axis,
-                                            lite::Tensor *output);
-template void argmax_func<uint8_t, int64_t>(const lite::Tensor *input,
+                                            lite_metal::Tensor *output);
+template void argmax_func<uint8_t, int64_t>(const lite_metal::Tensor *input,
                                             const int axis,
-                                            lite::Tensor *output);
+                                            lite_metal::Tensor *output);
 #endif
 }  // namespace math
 }  // namespace host

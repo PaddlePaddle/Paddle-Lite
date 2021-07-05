@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -80,26 +80,26 @@ enum class ColFormat { kCFO = 0, kOCF = 1 };
  * \note The caller needs to ensure that imShape.inputChannels is equal to
  *       colShape.inputChannels.
  */
-template <ColFormat Format, lite::TargetType Target, typename T>
+template <ColFormat Format, lite_metal::TargetType Target, typename T>
 class Im2ColFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& im,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& im,
                   const std::vector<int>& dilation,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
-                  lite::Tensor* col);
+                  lite_metal::Tensor* col);
 };
 
-template <ColFormat Format, lite::TargetType Target, typename T>
+template <ColFormat Format, lite_metal::TargetType Target, typename T>
 class Col2ImFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
-                  const lite::Tensor& col,
+  void operator()(const lite_metal::Context<Target>& context,
+                  const lite_metal::Tensor& col,
                   const std::vector<int>& dilation,
                   const std::vector<int>& stride,
                   const std::vector<int>& padding,
-                  lite::Tensor* im);
+                  lite_metal::Tensor* im);
 };
 
 }  // namespace math

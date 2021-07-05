@@ -15,7 +15,7 @@
 #include "lite/model_parser/runtime.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void VarDesc::Parse(const framework::proto::VarDesc& desc) {
   name = desc.name();

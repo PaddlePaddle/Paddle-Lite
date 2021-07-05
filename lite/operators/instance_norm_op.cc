@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool InstanceNormOp::CheckShape() const {
@@ -58,7 +58,7 @@ bool InstanceNormOp::InferShapeImpl() const {
 }
 
 bool InstanceNormOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                lite::Scope* scope) {
+                                lite_metal::Scope* scope) {
   AttachInput(op_desc, scope, "X", false /*is_dispensable*/, &param_.x);
   AttachInput(op_desc, scope, "Scale", true, &param_.scale);
   AttachInput(op_desc, scope, "Bias", true, &param_.bias);
@@ -84,7 +84,7 @@ bool InstanceNormOp::AttachImpl(const cpp::OpDesc& op_desc,
 }
 
 } /* namespace operators */
-} /* namespace lite */
+} /* namespace lite_metal */
 } /* namespace paddle */
 
-REGISTER_LITE_OP(instance_norm, paddle::lite::operators::InstanceNormOp);
+REGISTER_LITE_OP(instance_norm, paddle::lite_metal::operators::InstanceNormOp);

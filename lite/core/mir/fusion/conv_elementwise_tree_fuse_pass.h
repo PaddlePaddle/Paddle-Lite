@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // This pass fuse conv2d_1x1 and elementwise_add.

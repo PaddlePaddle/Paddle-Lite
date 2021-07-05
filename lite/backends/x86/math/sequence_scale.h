@@ -18,7 +18,7 @@ limitations under the License. */
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -45,12 +45,12 @@ namespace math {
  *
  */
 
-template <lite::TargetType Target, typename T>
+template <lite_metal::TargetType Target, typename T>
 class ScaleLoDTensorFunctor {
  public:
-  void operator()(const lite::Context<Target>& context,
+  void operator()(const lite_metal::Context<Target>& context,
                   const T* scales,
-                  lite::Tensor* seq);
+                  lite_metal::Tensor* seq);
 };
 
 }  // namespace math

@@ -18,7 +18,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 namespace fusion {
 
@@ -33,7 +33,7 @@ void Reshape2MatmulFuser::BuildPattern() {
     auto reshape2_input_x_name = reshape2_op_desc.Input("X").front();
     auto* scope = const_cast<Node*>(node)->stmt()->op()->scope();
     auto reshape2_in_x_shape =
-        scope->FindVar(reshape2_input_x_name)->Get<lite::Tensor>().dims();
+        scope->FindVar(reshape2_input_x_name)->Get<lite_metal::Tensor>().dims();
     size_t reshape2_in_x_rank = reshape2_in_x_shape.size();
 
     return (reshape2_in_x_rank == 4 && reshape2_in_x_shape[2] == 1 &&
@@ -59,8 +59,8 @@ void Reshape2MatmulFuser::BuildPattern() {
     auto input_y_name = op_desc.Input("Y").front();
     auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
 
-    auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
-    auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
+    auto x_shape = scope->FindVar(input_x_name)->Get<lite_metal::Tensor>().dims();
+    auto y_shape = scope->FindVar(input_y_name)->Get<lite_metal::Tensor>().dims();
     size_t x_rank = x_shape.size();
     size_t y_rank = y_shape.size();
 

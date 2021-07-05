@@ -17,7 +17,7 @@
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace npu {
 
@@ -66,4 +66,4 @@ int TopkConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(top_k,
                          kNPU,
-                         paddle::lite::subgraph::npu::TopkConverter);
+                         paddle::lite_metal::subgraph::npu::TopkConverter);

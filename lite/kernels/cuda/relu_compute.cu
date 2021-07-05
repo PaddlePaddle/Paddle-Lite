@@ -16,7 +16,7 @@
 #include "lite/kernels/cuda/relu_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -54,7 +54,7 @@ void ReluCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    relu, kCUDA, kFloat, kNCHW, paddle::lite::kernels::cuda::ReluCompute, def)
+    relu, kCUDA, kFloat, kNCHW, paddle::lite_metal::kernels::cuda::ReluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();

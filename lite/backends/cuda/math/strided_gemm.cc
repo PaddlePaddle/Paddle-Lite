@@ -19,7 +19,7 @@
 #include "lite/core/device_info.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace cuda {
 namespace math {
 

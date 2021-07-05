@@ -22,7 +22,7 @@
 #include "lite/tools/debug/debug_utils.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace tools {
 namespace debug {
 
@@ -33,7 +33,7 @@ void Run(DebugConfig* conf) {
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH,
                                   conf->arm_thread_num);
 #endif
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
   std::vector<Place> valid_places({
 #ifdef LITE_WITH_ARM
       Place{TARGET(kARM), PRECISION(kFloat)},
@@ -64,7 +64,7 @@ void Run(DebugConfig* conf) {
   predictor.GenRuntimeProgram();
   auto& instructions = predictor.runtime_program().instructions();
   CHECK(!instructions.empty()) << "No instruction found";
-  auto* scope = const_cast<lite::OpLite*>(instructions[0].op())->scope();
+  auto* scope = const_cast<lite_metal::OpLite*>(instructions[0].op())->scope();
 
   // TODO(sangoly): Reload pb program for debug, this may not be a good manner,
   // refine this
@@ -93,9 +93,9 @@ void Run(DebugConfig* conf) {
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  paddle::lite::tools::debug::DebugConfig conf;
-  paddle::lite::tools::debug::ParseConfig(&conf);
-  paddle::lite::tools::debug::Run(&conf);
+  paddle::lite_metal::tools::debug::DebugConfig conf;
+  paddle::lite_metal::tools::debug::ParseConfig(&conf);
+  paddle::lite_metal::tools::debug::Run(&conf);
 
   return 0;
 }

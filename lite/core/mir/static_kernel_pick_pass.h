@@ -23,7 +23,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 /*
@@ -50,8 +50,8 @@ class StaticKernelPickPass : public mir::StmtPass {
 
  private:
   // Score the kernel.
-  size_t KernelGrade(const lite::mir::Node::Stmt& instruct,
-                     const lite::KernelBase& kernel,
+  size_t KernelGrade(const lite_metal::mir::Node::Stmt& instruct,
+                     const lite_metal::KernelBase& kernel,
                      const std::vector<Place>& places,
                      const std::map<std::string, PrecisionType>& in_types,
                      const std::map<std::string, PrecisionType>& out_types,

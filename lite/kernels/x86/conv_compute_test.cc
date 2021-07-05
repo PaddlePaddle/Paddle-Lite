@@ -22,7 +22,7 @@
 #include "lite/kernels/x86/conv_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -39,16 +39,16 @@ TEST(conv2d_x86, init) {
 }
 
 TEST(conv2d_x86, run_test) {
-  lite::Tensor x, filter, b, out;
+  lite_metal::Tensor x, filter, b, out;
   const int batch_size = 1;
   std::vector<int64_t> x_shape{batch_size, 3, 3, 3};
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
   std::vector<int64_t> filter_shape{1, 3, 3, 3};
-  filter.Resize(lite::DDim(filter_shape));
+  filter.Resize(lite_metal::DDim(filter_shape));
   std::vector<int64_t> b_shape{1, 3, 1, 1};
-  b.Resize(lite::DDim(b_shape));
+  b.Resize(lite_metal::DDim(b_shape));
   std::vector<int64_t> out_shape{batch_size, 1, 1, 1};
-  out.Resize(lite::DDim(out_shape));
+  out.Resize(lite_metal::DDim(out_shape));
 
   auto x_data = x.mutable_data<float>();
   auto filter_data = filter.mutable_data<float>();

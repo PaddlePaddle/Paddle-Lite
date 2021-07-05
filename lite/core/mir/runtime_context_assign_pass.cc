@@ -16,7 +16,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 class RuntimeContextAssignPass : public StmtPass {
@@ -63,5 +63,5 @@ class RuntimeContextAssignPass : public StmtPass {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(runtime_context_assign_pass,
-                  paddle::lite::mir::RuntimeContextAssignPass)
+                  paddle::lite_metal::mir::RuntimeContextAssignPass)
     .BindTargets({TARGET(kAny)});

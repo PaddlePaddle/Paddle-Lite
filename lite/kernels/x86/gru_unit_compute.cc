@@ -16,14 +16,14 @@
 #include "lite/backends/x86/math/blas.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
 template <typename T,
           int MajorType = Eigen::RowMajor,
           typename IndexType = Eigen::DenseIndex>
-using EigenMatrix = lite::fluid::EigenMatrix<T, MajorType, IndexType>;
+using EigenMatrix = lite_metal::fluid::EigenMatrix<T, MajorType, IndexType>;
 
 template <class T>
 void GRUUnitCompute<T>::Run() {
@@ -49,7 +49,7 @@ void GRUUnitCompute<T>::Run() {
   auto g = EigenMatrix<T>::From(*gate);
   auto r_h_p = EigenMatrix<T>::From(*reset_hidden_prev);
   auto h = EigenMatrix<T>::From(*hidden);
-  const auto& place = lite::fluid::EigenDeviceType<lite::TargetType::kX86>();
+  const auto& place = lite_metal::fluid::EigenDeviceType<lite_metal::TargetType::kX86>();
 
   if (bias) {
     auto b = EigenMatrix<T>::From(*bias);
@@ -65,7 +65,7 @@ void GRUUnitCompute<T>::Run() {
   const T* weight_data = weight->template data<T>();
   T* gate_data = gate->template mutable_data<T>();
   T* reset_hidden_prev_data = reset_hidden_prev->template mutable_data<T>();
-  auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
+  auto blas = lite_metal::x86::math::GetBlas<lite_metal::TargetType::kX86, T>(context);
   blas.GEMM(false,
             false,
             batch_size,
@@ -138,7 +138,7 @@ REGISTER_LITE_KERNEL(gru_unit,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::GRUUnitCompute<float>,
+                     paddle::lite_metal::kernels::x86::GRUUnitCompute<float>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("HiddenPrev", {LiteType::GetTensorTy(TARGET(kX86))})

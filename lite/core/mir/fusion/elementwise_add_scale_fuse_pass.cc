@@ -20,7 +20,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void ElementwiseScaleFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -39,5 +39,5 @@ void ElementwiseScaleFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_elementwise_scale_fuse_pass,
-                  paddle::lite::mir::ElementwiseScaleFusePass)
+                  paddle::lite_metal::mir::ElementwiseScaleFusePass)
     .BindTargets({TARGET(kOpenCL)});

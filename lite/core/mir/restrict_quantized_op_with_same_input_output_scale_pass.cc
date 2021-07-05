@@ -23,7 +23,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // Collect the input/output scales and the touched op nodes recursively
@@ -163,5 +163,5 @@ void RestrictQuantizedOpWithSameInputOutputScalePass::Apply(
 
 REGISTER_MIR_PASS(
     restrict_quantized_op_with_same_input_output_scale_pass,
-    paddle::lite::mir::RestrictQuantizedOpWithSameInputOutputScalePass)
+    paddle::lite_metal::mir::RestrictQuantizedOpWithSameInputOutputScalePass)
     .BindTargets({TARGET(kRKNPU), TARGET(kNNAdapter)});

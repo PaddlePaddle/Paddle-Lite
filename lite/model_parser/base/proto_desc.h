@@ -15,7 +15,7 @@
 #pragma once
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 // The Index of first Block in Program. also called root block.
 constexpr int kRootBlockIdx = 0;

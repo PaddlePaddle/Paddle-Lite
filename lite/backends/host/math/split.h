@@ -17,13 +17,13 @@
 #include "lite/core/op_lite.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
 template <typename T>
 void split(const T* din,
-           const std::vector<lite::Tensor*>& dout,
+           const std::vector<lite_metal::Tensor*>& dout,
            const int axis,
            const std::vector<int>& in_strides);
 

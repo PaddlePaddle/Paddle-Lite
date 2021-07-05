@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -68,7 +68,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::x86::SearchSeqDepaddingCompute<float>,
+    paddle::lite_metal::kernels::x86::SearchSeqDepaddingCompute<float>,
     def)
     .BindInput("Pad", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Src", {LiteType::GetTensorTy(TARGET(kX86))})

@@ -19,7 +19,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 template <class XType, class IndexType>
 class GatherNdComputeTest : public arena::TestCase {

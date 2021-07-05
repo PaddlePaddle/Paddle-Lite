@@ -30,7 +30,7 @@ DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(batch, 16, "batch of image");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 float CompareDiffWithCpu(
     const std::unordered_map<std::string, std::vector<float>>& outs,

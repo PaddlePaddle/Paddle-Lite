@@ -21,7 +21,7 @@
 using namespace std;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -77,12 +77,12 @@ void HardSwishImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::HardSwishImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::HardSwishImageCompute<MetalHalf, PRECISION(kFP16)>;
+template class paddle::lite_metal::kernels::metal::HardSwishImageCompute<float, PRECISION(kFloat)>;
+template class paddle::lite_metal::kernels::metal::HardSwishImageCompute<MetalHalf, PRECISION(kFP16)>;
 
-typedef paddle::lite::kernels::metal::HardSwishImageCompute<float, PRECISION(kFloat)>
+typedef paddle::lite_metal::kernels::metal::HardSwishImageCompute<float, PRECISION(kFloat)>
     MetalHardSwishFp32;
-typedef paddle::lite::kernels::metal::HardSwishImageCompute<MetalHalf, PRECISION(kFP16)>
+typedef paddle::lite_metal::kernels::metal::HardSwishImageCompute<MetalHalf, PRECISION(kFP16)>
     MetalHardSwishFp16;
 
 REGISTER_LITE_KERNEL(hard_swish, kMetal, kFloat, kMetalTexture2DArray, MetalHardSwishFp32, def)

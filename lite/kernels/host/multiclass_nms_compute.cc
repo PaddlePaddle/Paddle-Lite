@@ -19,7 +19,7 @@
 #include "lite/backends/host/math/nms_util.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -75,7 +75,7 @@ void NMSFast(const Tensor& bbox,
   std::vector<T> scores_data(num_boxes);
   std::copy_n(scores.data<T>(), num_boxes, scores_data.begin());
   std::vector<std::pair<T, int>> sorted_indices;
-  lite::host::math::GetMaxScoreIndex(
+  lite_metal::host::math::GetMaxScoreIndex(
       scores_data, score_threshold, top_k, &sorted_indices);
 
   selected_indices->clear();
@@ -91,7 +91,7 @@ void NMSFast(const Tensor& bbox,
         T overlap = T(0.);
         // 4: [xmin ymin xmax ymax]
         if (box_size == 4) {
-          overlap = lite::host::math::JaccardOverlap<T>(
+          overlap = lite_metal::host::math::JaccardOverlap<T>(
               bbox_data + idx * box_size,
               bbox_data + kept_idx * box_size,
               normalized);
@@ -100,7 +100,7 @@ void NMSFast(const Tensor& bbox,
         if (box_size == 8 || box_size == 16 || box_size == 24 ||
             box_size == 32) {
           overlap =
-              lite::host::math::PolyIoU<T>(bbox_data + idx * box_size,
+              lite_metal::host::math::PolyIoU<T>(bbox_data + idx * box_size,
                                            bbox_data + kept_idx * box_size,
                                            box_size,
                                            normalized);
@@ -189,7 +189,7 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
     std::stable_sort(
         score_index_pairs.begin(),
         score_index_pairs.end(),
-        lite::host::math::SortScorePairDescend<std::pair<int, int>>);
+        lite_metal::host::math::SortScorePairDescend<std::pair<int, int>>);
     score_index_pairs.resize(keep_top_k);
 
     // Store the new indices.
@@ -397,7 +397,7 @@ REGISTER_LITE_KERNEL(multiclass_nms,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::MulticlassNmsCompute,
+                     paddle::lite_metal::kernels::host::MulticlassNmsCompute,
                      def)
     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
@@ -408,7 +408,7 @@ REGISTER_LITE_KERNEL(multiclass_nms2,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::MulticlassNmsCompute,
+                     paddle::lite_metal::kernels::host::MulticlassNmsCompute,
                      def)
     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
@@ -421,7 +421,7 @@ REGISTER_LITE_KERNEL(multiclass_nms3,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::MulticlassNmsCompute,
+                     paddle::lite_metal::kernels::host::MulticlassNmsCompute,
                      def)
     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})

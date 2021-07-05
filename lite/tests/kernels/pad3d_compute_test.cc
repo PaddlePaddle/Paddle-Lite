@@ -19,7 +19,7 @@
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 class Pad3dComputeTester : public arena::TestCase {
  protected:
@@ -55,9 +55,9 @@ class Pad3dComputeTester : public arena::TestCase {
       out_d = dims_[1] + paddings_[4] + paddings_[5];
       out_h = dims_[2] + paddings_[2] + paddings_[3];
       out_w = dims_[3] + paddings_[0] + paddings_[1];
-      out->Resize(lite::DDim({dims_[0], out_d, out_h, out_w, dims_[1]}));
+      out->Resize(lite_metal::DDim({dims_[0], out_d, out_h, out_w, dims_[1]}));
     } else {
-      out->Resize(lite::DDim({dims_[0], dims_[1], out_d, out_h, out_w}));
+      out->Resize(lite_metal::DDim({dims_[0], dims_[1], out_d, out_h, out_w}));
     }
     auto* out_data = out->mutable_data<float>();
     auto* x = scope->FindTensor(x_);

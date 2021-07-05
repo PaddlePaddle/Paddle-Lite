@@ -23,7 +23,7 @@
 #include "lite/kernels/x86/batch_norm_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
@@ -40,38 +40,38 @@ TEST(batch_norm_x86, init) {
 }
 
 TEST(batch_norm_x86, run_test) {
-  lite::Tensor x, scale, bias, mean, variance, y, mean_out, variance_out,
+  lite_metal::Tensor x, scale, bias, mean, variance, y, mean_out, variance_out,
       saved_mean, saved_variance;
   constexpr int batch_size = 2;
   std::vector<int64_t> x_shape{batch_size, 3, 64, 64};
-  x.Resize(lite::DDim(x_shape));
+  x.Resize(lite_metal::DDim(x_shape));
 
   std::vector<int64_t> scale_shape{3};
-  scale.Resize(lite::DDim(scale_shape));
+  scale.Resize(lite_metal::DDim(scale_shape));
 
   std::vector<int64_t> bias_shape{3};
-  bias.Resize(lite::DDim(bias_shape));
+  bias.Resize(lite_metal::DDim(bias_shape));
 
   std::vector<int64_t> mean_shape{3};
-  mean.Resize(lite::DDim(mean_shape));
+  mean.Resize(lite_metal::DDim(mean_shape));
 
   std::vector<int64_t> variance_shape{3};
-  variance.Resize(lite::DDim(variance_shape));
+  variance.Resize(lite_metal::DDim(variance_shape));
 
   std::vector<int64_t> y_shape{batch_size, 3, 64, 64};
-  y.Resize(lite::DDim(y_shape));
+  y.Resize(lite_metal::DDim(y_shape));
 
   std::vector<int64_t> mean_out_shape{3};
-  mean_out.Resize(lite::DDim(mean_out_shape));
+  mean_out.Resize(lite_metal::DDim(mean_out_shape));
 
   std::vector<int64_t> variance_out_shape{3};
-  variance_out.Resize(lite::DDim(variance_out_shape));
+  variance_out.Resize(lite_metal::DDim(variance_out_shape));
 
   std::vector<int64_t> saved_mean_shape{3};
-  saved_mean.Resize(lite::DDim(saved_mean_shape));
+  saved_mean.Resize(lite_metal::DDim(saved_mean_shape));
 
   std::vector<int64_t> saved_variance_shape{3};
-  saved_variance.Resize(lite::DDim(saved_variance_shape));
+  saved_variance.Resize(lite_metal::DDim(saved_variance_shape));
 
   auto x_data = x.mutable_data<float>();
   auto scale_data = scale.mutable_data<float>();

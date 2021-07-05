@@ -19,7 +19,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::x86::SequenceTopkAvgPoolingCompute<float>,
+    paddle::lite_metal::kernels::x86::SequenceTopkAvgPoolingCompute<float>,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("ROW", {LiteType::GetTensorTy(TARGET(kX86))})

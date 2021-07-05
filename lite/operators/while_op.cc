@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool WhileOp::CheckShape() const {
@@ -31,7 +31,7 @@ bool WhileOp::InferShapeImpl() const { return true; }
 
 bool WhileOp::AttachImpl(const cpp::OpDesc &op_desc, Scope *scope) {
   auto condition = op_desc.Input("Condition");
-  param_.cond = scope->FindVar(condition[0])->GetMutable<lite::Tensor>();
+  param_.cond = scope->FindVar(condition[0])->GetMutable<lite_metal::Tensor>();
   CHECK(param_.program_desc);
   param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
   CHECK_GE(param_.block_idx, 0);
@@ -44,4 +44,4 @@ bool WhileOp::AttachImpl(const cpp::OpDesc &op_desc, Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(while, paddle::lite::operators::WhileOp);
+REGISTER_LITE_OP(while, paddle::lite_metal::operators::WhileOp);

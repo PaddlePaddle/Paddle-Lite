@@ -20,7 +20,7 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace gen {
 
@@ -125,6 +125,6 @@ class SgdCreator : public JitCodeCreator<sgd_attr_t> {
 }  // namespace lite
 }  // namespace paddle
 
-namespace gen = paddle::lite::jit::gen;
+namespace gen = paddle::lite_metal::jit::gen;
 
 REGISTER_JITKERNEL_GEN_LITE(kSgd, gen::SgdCreator);

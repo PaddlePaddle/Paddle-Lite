@@ -17,7 +17,7 @@
 #include <utility>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace general {
 
 std::vector<std::string> OpDesc::OutputArgumentNames() const {

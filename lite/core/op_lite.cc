@@ -21,7 +21,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 bool OpLite::InferShape() {
   // if input_tensor_ptrs and output_tensor_ptrs are overloaded in param_
@@ -135,7 +135,7 @@ bool OpLite::Run() {
   return true;
 }
 
-bool OpLite::Attach(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool OpLite::Attach(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   // valid_places_.clear();
   CHECK(scope != nullptr);
   // CHECK(!op_info_.get());
@@ -145,45 +145,45 @@ bool OpLite::Attach(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return AttachImpl(*op_info(), scope);
 }
 
-const Tensor *OpLite::GetTensor(lite::Scope *scope,
+const Tensor *OpLite::GetTensor(lite_metal::Scope *scope,
                                 const std::string &name) const {
   auto *var = scope->FindVar(name);
   CHECK(var) << "no variable called " << name << " found";
-  return &var->Get<lite::Tensor>();
+  return &var->Get<lite_metal::Tensor>();
 }
 
-Tensor *OpLite::GetMutableTensor(lite::Scope *scope,
+Tensor *OpLite::GetMutableTensor(lite_metal::Scope *scope,
                                  const std::string &name) const {
   auto *var = scope->FindVar(name);
   CHECK(var) << "no variable called " << name << " found";
-  return var->GetMutable<lite::Tensor>();
+  return var->GetMutable<lite_metal::Tensor>();
 }
 
 void OpLite::AttachInput(const cpp::OpDesc &op_desc,
-                         lite::Scope *scope,
+                         lite_metal::Scope *scope,
                          const std::string &input_name,
                          bool is_dispensable,
-                         lite::Tensor **input_var) {
+                         lite_metal::Tensor **input_var) {
   bool is_have_input =
       op_desc.HasInput(input_name) && op_desc.Input(input_name).size() > 0;
   CHECK(is_dispensable || is_have_input);
   if (is_have_input) {
     std::string input_var_name = op_desc.Input(input_name).front();
-    *input_var = scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+    *input_var = scope->FindVar(input_var_name)->GetMutable<lite_metal::Tensor>();
   }
 }
 
 void OpLite::AttachOutput(const cpp::OpDesc &op_desc,
-                          lite::Scope *scope,
+                          lite_metal::Scope *scope,
                           const std::string &output_name,
                           bool is_dispensable,
-                          lite::Tensor **output_var) {
+                          lite_metal::Tensor **output_var) {
   bool is_have_output =
       op_desc.HasOutput(output_name) && op_desc.Output(output_name).size() > 0;
   CHECK(is_dispensable || is_have_output);
   if (is_have_output) {
     std::string output_var_name = op_desc.Output(output_name).front();
-    *output_var = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
+    *output_var = scope->FindVar(output_var_name)->GetMutable<lite_metal::Tensor>();
   }
 }
 

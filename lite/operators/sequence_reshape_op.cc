@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SequenceReshapeOp::CheckShape() const {
@@ -32,16 +32,16 @@ bool SequenceReshapeOp::InferShapeImpl() const {
   auto x_numel = param_.x->dims().production();
   std::vector<int64_t> out_shape{x_numel / new_dim,
                                  static_cast<int64_t>(new_dim)};
-  param_.output->Resize(lite::DDim(out_shape));
+  param_.output->Resize(lite_metal::DDim(out_shape));
   return true;
 }
 
 bool SequenceReshapeOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                   lite::Scope *scope) {
+                                   lite_metal::Scope *scope) {
   param_.x =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   param_.output =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
 
   param_.new_dim = opdesc.GetAttr<int>("new_dim");
   return true;
@@ -51,4 +51,4 @@ bool SequenceReshapeOp::AttachImpl(const cpp::OpDesc &opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_reshape, paddle::lite::operators::SequenceReshapeOp);
+REGISTER_LITE_OP(sequence_reshape, paddle::lite_metal::operators::SequenceReshapeOp);

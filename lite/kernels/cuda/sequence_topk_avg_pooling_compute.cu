@@ -16,7 +16,7 @@ limitations under the License. */
 #include "lite/kernels/cuda/sequence_topk_avg_pooling_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -215,7 +215,7 @@ void SequenceTopkAvgPoolingCompute<T>::Run() {
       << "ROW sequence offset is not valid";
 
   int width_offset_len = param.X->lod()[0].size();
-  lite::DDim width_offset_shape(std::vector<int64_t>{width_offset_len});
+  lite_metal::DDim width_offset_shape(std::vector<int64_t>{width_offset_len});
   _width_offset.Resize(width_offset_shape);
   std::vector<int> width_lod_0(width_offset_len, 0);
   for (size_t i = 0; i < param.X->lod()[0].size(); ++i) {
@@ -228,7 +228,7 @@ void SequenceTopkAvgPoolingCompute<T>::Run() {
                   cuda_stream);
 
   int height_offset_len = param.ROW->lod()[0].size();
-  lite::DDim height_offset_shape(std::vector<int64_t>{height_offset_len});
+  lite_metal::DDim height_offset_shape(std::vector<int64_t>{height_offset_len});
   _height_offset.Resize(height_offset_shape);
   std::vector<int> height_lod_0(height_offset_len, 0);
   for (size_t i = 0; i < param.ROW->lod()[0].size(); ++i) {
@@ -246,7 +246,7 @@ void SequenceTopkAvgPoolingCompute<T>::Run() {
   T *out_data = out_tensor->mutable_data<T>(TARGET(kCUDA));
 
   int topk_num = param.topks.size();
-  lite::DDim top_ks_shape(std::vector<int64_t>{topk_num, 1, 1, 1});
+  lite_metal::DDim top_ks_shape(std::vector<int64_t>{topk_num, 1, 1, 1});
   _top_ks.Resize(top_ks_shape);
   cudaMemcpyAsync(_top_ks.mutable_data<int>(TARGET(kCUDA)),
                   &param.topks[0],
@@ -310,7 +310,7 @@ REGISTER_LITE_KERNEL(
     kCUDA,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::cuda::SequenceTopkAvgPoolingCompute<float>,
+    paddle::lite_metal::kernels::cuda::SequenceTopkAvgPoolingCompute<float>,
     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kCUDA),

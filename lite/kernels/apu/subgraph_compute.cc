@@ -26,7 +26,7 @@
 #include "lite/utils/md5.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace apu {
 
@@ -203,7 +203,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   VLOG(1) << "[APU] APU NIR model created, Create cost "
           << GetCurrentUS() - start_time << " us";
 
-  compilation_ = lite::apu::Device::Global().Build(model_);
+  compilation_ = lite_metal::apu::Device::Global().Build(model_);
   if (compilation_ == nullptr) {
     LOG(WARNING) << "[APU] Build APU DLA model failed!";
     return false;
@@ -415,7 +415,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      kAPU,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::apu::SubgraphCompute,
+                     paddle::lite_metal::kernels::apu::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kHost),

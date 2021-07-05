@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool SequenceConvOp::CheckShape() const {
@@ -56,14 +56,14 @@ bool SequenceConvOp::InferShapeImpl() const {
   return true;
 }
 
-bool SequenceConvOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool SequenceConvOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   // required params
-  param_.X = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
-  param_.Filter = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("Filter").front())->Get<lite::Tensor>());
+  param_.X = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("X").front())->Get<lite_metal::Tensor>());
+  param_.Filter = const_cast<lite_metal::Tensor *>(
+      &scope->FindVar(opdesc.Input("Filter").front())->Get<lite_metal::Tensor>());
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   param_.contextStart = opdesc.GetAttr<int>("contextStart");
   param_.contextStride = opdesc.GetAttr<int>("contextStride");
   param_.contextLength = opdesc.GetAttr<int>("contextLength");
@@ -91,4 +91,4 @@ bool SequenceConvOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_conv, paddle::lite::operators::SequenceConvOp);
+REGISTER_LITE_OP(sequence_conv, paddle::lite_metal::operators::SequenceConvOp);

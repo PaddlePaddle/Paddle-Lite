@@ -18,20 +18,20 @@
 #include "lite/backends/x86/math/interpolate.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
 void BilinearInterpCompute::Run() {
   auto& param = Param<operators::InterpolateParam>();
   // required input
-  lite::Tensor* X = param.X;
+  lite_metal::Tensor* X = param.X;
   // optionla inputs
-  lite::Tensor* OutSize = param.OutSize;
+  lite_metal::Tensor* OutSize = param.OutSize;
   auto SizeTensor = param.SizeTensor;
   auto Scale = param.Scale;
   // output
-  lite::Tensor* Out = param.Out;
+  lite_metal::Tensor* Out = param.Out;
   // optional attributes
   float scale = param.scale;
   int out_w = param.out_w;
@@ -40,7 +40,7 @@ void BilinearInterpCompute::Run() {
   // required attributes
   bool align_corners = param.align_corners;
   std::string interp_method = "Bilinear";
-  lite::x86::math::interpolate(X,
+  lite_metal::x86::math::interpolate(X,
                                OutSize,
                                SizeTensor,
                                Scale,
@@ -56,13 +56,13 @@ void BilinearInterpCompute::Run() {
 void NearestInterpCompute::Run() {
   auto& param = Param<operators::InterpolateParam>();
   // required input
-  lite::Tensor* X = param.X;
+  lite_metal::Tensor* X = param.X;
   // optionla inputs
-  lite::Tensor* OutSize = param.OutSize;
+  lite_metal::Tensor* OutSize = param.OutSize;
   auto SizeTensor = param.SizeTensor;
   auto Scale = param.Scale;
   // output
-  lite::Tensor* Out = param.Out;
+  lite_metal::Tensor* Out = param.Out;
   // optional attributes
   float scale = param.scale;
   int out_w = param.out_w;
@@ -71,7 +71,7 @@ void NearestInterpCompute::Run() {
   // required attributes
   bool align_corners = param.align_corners;
   std::string interp_method = "Nearest";
-  lite::x86::math::interpolate(X,
+  lite_metal::x86::math::interpolate(X,
                                OutSize,
                                SizeTensor,
                                Scale,
@@ -93,7 +93,7 @@ REGISTER_LITE_KERNEL(bilinear_interp,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::BilinearInterpCompute,
+                     paddle::lite_metal::kernels::x86::BilinearInterpCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("OutSize",
@@ -108,7 +108,7 @@ REGISTER_LITE_KERNEL(nearest_interp,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::NearestInterpCompute,
+                     paddle::lite_metal::kernels::x86::NearestInterpCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("OutSize",

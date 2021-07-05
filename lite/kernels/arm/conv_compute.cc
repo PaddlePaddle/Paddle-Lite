@@ -25,7 +25,7 @@
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 #define PARAM_INIT                                                           \
@@ -173,18 +173,18 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::arm::ConvCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::ConvCompute<PRECISION(kFloat),
                                                 PRECISION(kFloat)>
     ConvFp32;
-typedef paddle::lite::kernels::arm::ConvCompute<PRECISION(kInt8),
+typedef paddle::lite_metal::kernels::arm::ConvCompute<PRECISION(kInt8),
                                                 PRECISION(kFloat)>
     ConvInt8_Fp32;
-typedef paddle::lite::kernels::arm::ConvCompute<PRECISION(kInt8),
+typedef paddle::lite_metal::kernels::arm::ConvCompute<PRECISION(kInt8),
                                                 PRECISION(kInt8)>
     ConvInt8_Int8;
 
 #ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::ConvCompute<PRECISION(kFP16),
+typedef paddle::lite_metal::kernels::arm::ConvCompute<PRECISION(kFP16),
                                                 PRECISION(kFP16)>
     ConvFp16;
 

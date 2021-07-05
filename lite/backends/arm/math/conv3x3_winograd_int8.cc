@@ -20,7 +20,7 @@
 #endif
 #include <arm_neon.h>
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 void input_trans_c8_4x4_int8(const int8_t* src,

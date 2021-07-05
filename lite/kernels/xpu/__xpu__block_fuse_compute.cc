@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -50,14 +50,14 @@ bool QuantBlockFilter<int16_t>(const float* cpu_w,
                                int16_t* xpu_quant_w,
                                float* xpu_wmax,
                                const int64_t len) {
-  float max_f = paddle::lite::xpu::math::FindMaxAbs(cpu_w, len);
+  float max_f = paddle::lite_metal::xpu::math::FindMaxAbs(cpu_w, len);
   std::vector<float> max_f_v(4, max_f);
   XPU_CALL(xpu_memcpy(xpu_wmax,
                       max_f_v.data(),
                       4 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   std::vector<int16_t> cpu_quant_w(len, 0);
-  paddle::lite::xpu::math::ConvertFP32ToInt16(
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt16(
       cpu_w, cpu_quant_w.data(), max_f, len);
   XPU_CALL(xpu_memcpy(xpu_quant_w,
                       cpu_quant_w.data(),
@@ -71,14 +71,14 @@ bool QuantBlockFilter<int8_t>(const float* cpu_w,
                               int8_t* xpu_quant_w,
                               float* xpu_wmax,
                               const int64_t len) {
-  float max_f = paddle::lite::xpu::math::FindMaxAbs(cpu_w, len);
+  float max_f = paddle::lite_metal::xpu::math::FindMaxAbs(cpu_w, len);
   std::vector<float> max_f_v(4, max_f);
   XPU_CALL(xpu_memcpy(xpu_wmax,
                       max_f_v.data(),
                       4 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   std::vector<int8_t> cpu_quant_w(len, 0);
-  paddle::lite::xpu::math::ConvertFP32ToInt8(
+  paddle::lite_metal::xpu::math::ConvertFP32ToInt8(
       cpu_w, cpu_quant_w.data(), max_f, len);
   XPU_CALL(xpu_memcpy(xpu_quant_w,
                       cpu_quant_w.data(),
@@ -474,7 +474,7 @@ void XPUBlockFuseCompute<TM, TW, PType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace xpu = paddle::lite::kernels::xpu;
+namespace xpu = paddle::lite_metal::kernels::xpu;
 using XPUBlockFp32 =
     xpu::XPUBlockFuseCompute<float, int16_t, PRECISION(kFloat)>;
 

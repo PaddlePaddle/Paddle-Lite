@@ -37,7 +37,7 @@
 #include <algorithm>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 void rotate90_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in);

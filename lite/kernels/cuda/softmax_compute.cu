@@ -18,10 +18,10 @@ limitations under the License. */
 #include "lite/kernels/cuda/softmax_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 extern __shared__ char tile[];
 template <typename dtype>
@@ -408,9 +408,9 @@ void SoftmaxCompute<Dtype, Ptype>::Run() {
 }  // namespace paddle
 
 using SoftmaxFp32 =
-    paddle::lite::kernels::cuda::SoftmaxCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::cuda::SoftmaxCompute<float, PRECISION(kFloat)>;
 using SoftmaxFp16 =
-    paddle::lite::kernels::cuda::SoftmaxCompute<half, PRECISION(kFP16)>;
+    paddle::lite_metal::kernels::cuda::SoftmaxCompute<half, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(softmax, kCUDA, kFloat, kNCHW, SoftmaxFp32, def)
     .BindInput("X",

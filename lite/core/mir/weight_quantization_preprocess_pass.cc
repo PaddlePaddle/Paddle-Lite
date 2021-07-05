@@ -19,7 +19,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 bool IsAbsMaxQuantizedOp(const OpInfo& op_info) {
@@ -59,7 +59,7 @@ void WeightQuantizationPreprocessPass::Apply(
             VLOG(0) << " WeightQuantizationPreprocessPass op:"
                     << op_desc->Type() << " input_name:" << input_name;
             auto input_tensor =
-                scope->FindVar(input_name)->GetMutable<lite::Tensor>();
+                scope->FindVar(input_name)->GetMutable<lite_metal::Tensor>();
             int weight_out_channel;
             if (op_desc->Type() == "mul") {
               weight_out_channel = static_cast<int>(input_tensor->dims()[1]);
@@ -82,5 +82,5 @@ void WeightQuantizationPreprocessPass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(weight_quantization_preprocess_pass,
-                  paddle::lite::mir::WeightQuantizationPreprocessPass)
+                  paddle::lite_metal::mir::WeightQuantizationPreprocessPass)
     .BindTargets({TARGET(kAny)});

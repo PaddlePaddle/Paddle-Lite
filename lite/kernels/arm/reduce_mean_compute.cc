@@ -17,7 +17,7 @@
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -47,31 +47,31 @@ void ReduceMeanCompute::Run() {
   int h_in = new_dims[2];
   int w_in = new_dims[3];
   if (dim.size() == 0) {
-    lite::arm::math::reduce_mean_all(input, output, n_in, c_in, h_in, w_in);
+    lite_metal::arm::math::reduce_mean_all(input, output, n_in, c_in, h_in, w_in);
   } else if (dim.size() == 1) {
     switch (dim[0]) {
       case 0:
-        lite::arm::math::reduce_mean_n(input, output, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_mean_n(input, output, n_in, c_in, h_in, w_in);
         break;
       case 1:
-        lite::arm::math::reduce_mean_c(input, output, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_mean_c(input, output, n_in, c_in, h_in, w_in);
         break;
       case 2:
-        lite::arm::math::reduce_mean_h(input, output, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_mean_h(input, output, n_in, c_in, h_in, w_in);
         break;
       case 3:
-        lite::arm::math::reduce_mean_w(input, output, n_in, c_in, h_in, w_in);
+        lite_metal::arm::math::reduce_mean_w(input, output, n_in, c_in, h_in, w_in);
         break;
       default:
         LOG(FATAL) << "error!!!";
     }
   } else if (dim.size() == 2) {
     if (dim[0] == 0 && dim[1] == 1) {
-      lite::arm::math::reduce_mean_nc(input, output, n_in, c_in, h_in, w_in);
+      lite_metal::arm::math::reduce_mean_nc(input, output, n_in, c_in, h_in, w_in);
     } else if (dim[0] == 1 && dim[1] == 2) {
-      lite::arm::math::reduce_mean_ch(input, output, n_in, c_in, h_in, w_in);
+      lite_metal::arm::math::reduce_mean_ch(input, output, n_in, c_in, h_in, w_in);
     } else if (dim[0] == 2 && dim[1] == 3) {
-      lite::arm::math::reduce_mean_hw(input, output, n_in, c_in, h_in, w_in);
+      lite_metal::arm::math::reduce_mean_hw(input, output, n_in, c_in, h_in, w_in);
     } else {
       LOG(FATAL) << "invalid dim!!";
     }
@@ -89,7 +89,7 @@ REGISTER_LITE_KERNEL(reduce_mean,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::ReduceMeanCompute,
+                     paddle::lite_metal::kernels::arm::ReduceMeanCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})

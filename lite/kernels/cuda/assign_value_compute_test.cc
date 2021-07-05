@@ -27,7 +27,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -48,7 +48,7 @@ class AssignValueTest : public ::testing::Test {
     }
     std::vector<int64_t> out_shape(shape_.size(), 0);
     for (size_t i = 0; i < shape_.size(); ++i) out_shape[i] = shape_[i];
-    out_ref_.Resize(lite::DDim(out_shape));
+    out_ref_.Resize(lite_metal::DDim(out_shape));
     out_gpu_.Resize(out_ref_.dims());
     out_cpu_.Resize(out_ref_.dims());
 
@@ -75,20 +75,20 @@ class AssignValueTest : public ::testing::Test {
 
   void InitHalfInput() {}
 
-  void RunBaseLine(lite::Tensor* out) {
-    if (dtype_ == static_cast<int>(lite::core::FluidType::INT32)) {
+  void RunBaseLine(lite_metal::Tensor* out) {
+    if (dtype_ == static_cast<int>(lite_metal::core::FluidType::INT32)) {
       for (size_t i = 0; i < int32_values_.size(); ++i) {
         out->mutable_data<int>()[i] = int32_values_[i];
       }
-    } else if (dtype_ == static_cast<int>(lite::core::FluidType::FP32)) {
+    } else if (dtype_ == static_cast<int>(lite_metal::core::FluidType::FP32)) {
       for (size_t i = 0; i < fp32_values_.size(); ++i) {
         out->mutable_data<float>()[i] = fp32_values_[i];
       }
-    } else if (dtype_ == static_cast<int>(lite::core::FluidType::INT64)) {
+    } else if (dtype_ == static_cast<int>(lite_metal::core::FluidType::INT64)) {
       for (size_t i = 0; i < int64_values_.size(); ++i) {
         out->mutable_data<int64_t>()[i] = int64_values_[i];
       }
-    } else if (dtype_ == static_cast<bool>(lite::core::FluidType::BOOL)) {
+    } else if (dtype_ == static_cast<bool>(lite_metal::core::FluidType::BOOL)) {
       for (size_t i = 0; i < bool_values_.size(); ++i) {
         out->mutable_data<bool>()[i] = bool_values_[i];
       }
@@ -104,9 +104,9 @@ class AssignValueTest : public ::testing::Test {
   std::vector<int64_t> int64_values_;
   std::vector<int> bool_values_;
 
-  lite::Tensor out_ref_;
-  lite::Tensor out_gpu_;
-  lite::Tensor out_cpu_;
+  lite_metal::Tensor out_ref_;
+  lite_metal::Tensor out_gpu_;
+  lite_metal::Tensor out_cpu_;
 
   operators::AssignValueParam param_;
   std::unique_ptr<KernelContext> ctx_;

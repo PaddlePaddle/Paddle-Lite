@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool MatrixNmsOpLite::CheckShape() const {
@@ -42,19 +42,19 @@ bool MatrixNmsOpLite::InferShapeImpl() const {
 }
 
 bool MatrixNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
-                                 lite::Scope* scope) {
+                                 lite_metal::Scope* scope) {
   auto bboxes_name = opdesc.Input("BBoxes").front();
   auto scores_name = opdesc.Input("Scores").front();
   auto out_name = opdesc.Output("Out").front();
   auto index_name = opdesc.Output("Index").front();
   if (opdesc.HasOutput("RoisNum")) {
     auto rois_num_name = opdesc.Output("RoisNum").front();
-    param_.rois_num = GetMutableVar<lite::Tensor>(scope, rois_num_name);
+    param_.rois_num = GetMutableVar<lite_metal::Tensor>(scope, rois_num_name);
   }
-  param_.bboxes = GetVar<lite::Tensor>(scope, bboxes_name);
-  param_.scores = GetVar<lite::Tensor>(scope, scores_name);
-  param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
-  param_.index = GetMutableVar<lite::Tensor>(scope, index_name);
+  param_.bboxes = GetVar<lite_metal::Tensor>(scope, bboxes_name);
+  param_.scores = GetVar<lite_metal::Tensor>(scope, scores_name);
+  param_.out = GetMutableVar<lite_metal::Tensor>(scope, out_name);
+  param_.index = GetMutableVar<lite_metal::Tensor>(scope, index_name);
   param_.background_label = opdesc.GetAttr<int>("background_label");
   param_.score_threshold = opdesc.GetAttr<float>("score_threshold");
   param_.post_threshold = opdesc.GetAttr<float>("post_threshold");
@@ -70,4 +70,4 @@ bool MatrixNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(matrix_nms, paddle::lite::operators::MatrixNmsOpLite);
+REGISTER_LITE_OP(matrix_nms, paddle::lite_metal::operators::MatrixNmsOpLite);

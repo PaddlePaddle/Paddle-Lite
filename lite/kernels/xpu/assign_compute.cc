@@ -16,7 +16,7 @@
 #include <algorithm>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -45,7 +45,7 @@ REGISTER_LITE_KERNEL(assign,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::AssignCompute<float>,
+                     paddle::lite_metal::kernels::xpu::AssignCompute<float>,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
@@ -61,7 +61,7 @@ REGISTER_LITE_KERNEL(assign,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::AssignCompute<int>,
+                     paddle::lite_metal::kernels::xpu::AssignCompute<int>,
                      int32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
@@ -77,7 +77,7 @@ REGISTER_LITE_KERNEL(assign,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::AssignCompute<int64_t>,
+                     paddle::lite_metal::kernels::xpu::AssignCompute<int64_t>,
                      int64)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),

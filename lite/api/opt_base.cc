@@ -61,7 +61,7 @@ void OptBase::SetPassesInternal(
 
 void OptBase::SetValidPlaces(const std::string& valid_places) {
   valid_places_.clear();
-  auto target_reprs = lite::Split(valid_places, ",");
+  auto target_reprs = lite_metal::Split(valid_places, ",");
   std::vector<std::string> nnadapter_devices;
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
@@ -127,7 +127,7 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_devices.push_back(target_repr);
     } else {
-      OPT_LOG_FATAL << lite::string_format(
+      OPT_LOG_FATAL << lite_metal::string_format(
           "Wrong target '%s' found, please check the command flag "
           "'valid_targets'",
           target_repr.c_str());
@@ -192,13 +192,13 @@ void CollectModelMetaInfo(const std::string& output_dir,
   std::set<std::string> total;
   for (const auto& name : models) {
     std::string model_path =
-        lite::Join<std::string>({output_dir, name, filename}, "/");
-    auto lines = lite::ReadLines(model_path);
+        lite_metal::Join<std::string>({output_dir, name, filename}, "/");
+    auto lines = lite_metal::ReadLines(model_path);
     total.insert(lines.begin(), lines.end());
   }
   std::string output_path =
-      lite::Join<std::string>({output_dir, filename}, "/");
-  lite::WriteLines(std::vector<std::string>(total.begin(), total.end()),
+      lite_metal::Join<std::string>({output_dir, filename}, "/");
+  lite_metal::WriteLines(std::vector<std::string>(total.begin(), total.end()),
                    output_path);
 }
 
@@ -207,8 +207,8 @@ void OptBase::SetModelSetDir(const std::string& model_set_path) {
 }
 void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
   // 1. mkdir of outputed optimized model set.
-  lite::MkDirRecur(lite_out_name_);
-  auto model_dirs = lite::ListDir(model_set_dir_, true);
+  lite_metal::MkDirRecur(lite_out_name_);
+  auto model_dirs = lite_metal::ListDir(model_set_dir_, true);
   if (model_dirs.size() == 0) {
     OPT_LOG_FATAL << "[" << model_set_dir_ << "] does not contain any model";
   }
@@ -218,15 +218,15 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
   std::string param_file = opt_config_.param_file();
   for (const auto& name : model_dirs) {
     std::string input_model_dir =
-        lite::Join<std::string>({model_set_dir_, name}, "/");
+        lite_metal::Join<std::string>({model_set_dir_, name}, "/");
     std::string output_model_dir =
-        lite::Join<std::string>({lite_out_name_, name}, "/");
+        lite_metal::Join<std::string>({lite_out_name_, name}, "/");
 
     if (opt_config_.model_file() != "" && opt_config_.param_file() != "") {
       auto model_file_path =
-          lite::Join<std::string>({input_model_dir, model_file}, "/");
+          lite_metal::Join<std::string>({input_model_dir, model_file}, "/");
       auto param_file_path =
-          lite::Join<std::string>({input_model_dir, param_file}, "/");
+          lite_metal::Join<std::string>({input_model_dir, param_file}, "/");
     }
 
     opt_config_.set_model_dir(input_model_dir);
@@ -242,20 +242,20 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
   if (record_strip_info) {
     // Collect all models information
     CollectModelMetaInfo(
-        lite_out_name_, model_dirs, lite::TAILORD_OPS_SOURCE_LIST_FILENAME);
+        lite_out_name_, model_dirs, lite_metal::TAILORD_OPS_SOURCE_LIST_FILENAME);
     CollectModelMetaInfo(
-        lite_out_name_, model_dirs, lite::TAILORD_OPS_LIST_NAME);
+        lite_out_name_, model_dirs, lite_metal::TAILORD_OPS_LIST_NAME);
     CollectModelMetaInfo(
-        lite_out_name_, model_dirs, lite::TAILORD_KERNELS_SOURCE_LIST_FILENAME);
+        lite_out_name_, model_dirs, lite_metal::TAILORD_KERNELS_SOURCE_LIST_FILENAME);
     CollectModelMetaInfo(
-        lite_out_name_, model_dirs, lite::TAILORD_KERNELS_LIST_NAME);
+        lite_out_name_, model_dirs, lite_metal::TAILORD_KERNELS_LIST_NAME);
     OPT_LOG << "Record the information of stripped models into :"
             << lite_out_name_ << "successfully";
   }
 }
 
 void OptBase::PrintHelpInfo() {
-  const std::string opt_version = lite::version();
+  const std::string opt_version = lite_metal::version();
   const char help_info[] =
       "------------------------------------------------------------------------"
       "-----------------------------------------------------------\n"
@@ -306,7 +306,7 @@ void OptBase::PrintHelpInfo() {
 }
 
 void OptBase::PrintExecutableBinHelpInfo() {
-  const std::string opt_version = lite::version();
+  const std::string opt_version = lite_metal::version();
   const char help_info[] =
       "At least one argument should be inputed. Valid arguments are listed "
       "below:\n"
@@ -400,7 +400,7 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
 }
 
 void OptBase::DisplayKernelsInfo() {  // Display kernel information
-  OPT_LOG << ::paddle::lite::KernelRegistry::Global().DebugString();
+  OPT_LOG << ::paddle::lite_metal::KernelRegistry::Global().DebugString();
 }
 void OptBase::PrintAllOps() {
   // 1. Get supported ops on these targets
@@ -458,22 +458,22 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
       !(opt_config_.param_file()).empty()) {
     is_combined_params_form = true;
   }
-  std::string prog_path = lite::FindModelFileName(opt_config_.model_dir(),
+  std::string prog_path = lite_metal::FindModelFileName(opt_config_.model_dir(),
                                                   (opt_config_.model_file()),
                                                   is_combined_params_form);
 
-  lite::cpp::ProgramDesc cpp_prog;
-  framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
-  lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
+  lite_metal::cpp::ProgramDesc cpp_prog;
+  framework::proto::ProgramDesc pb_proto_prog = *lite_metal::LoadProgram(prog_path);
+  lite_metal::pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
-  lite::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);
+  lite_metal::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);
 
   std::set<std::string> unsupported_ops;
   std::set<std::string> input_model_ops;
   for (size_t index = 0; index < cpp_prog.BlocksSize(); index++) {
-    auto current_block = cpp_prog.GetBlock<lite::cpp::BlockDesc>(index);
+    auto current_block = cpp_prog.GetBlock<lite_metal::cpp::BlockDesc>(index);
     for (size_t i = 0; i < current_block->OpsSize(); ++i) {
-      auto& op_desc = *current_block->GetOp<lite::cpp::OpDesc>(i);
+      auto& op_desc = *current_block->GetOp<lite_metal::cpp::OpDesc>(i);
       auto op_type = op_desc.Type();
       input_model_ops.insert(op_type);
       if (valid_ops_set.count(op_type) == 0) {

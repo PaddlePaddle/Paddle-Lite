@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool RnnOp::CheckShape() const {
@@ -42,20 +42,20 @@ bool RnnOp::InferShapeImpl() const {
   return true;
 }
 
-bool RnnOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool RnnOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   param_.Input =
-      scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite_metal::Tensor>();
 
   auto PreState = opdesc.Input("PreState");
   param_.PreState.clear();
   for (auto var : PreState) {
-    param_.PreState.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.PreState.push_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   auto WeightList = opdesc.Input("WeightList");
   param_.WeightList.clear();
   for (auto var : WeightList) {
     param_.WeightList.push_back(
-        scope->FindVar(var)->GetMutable<lite::Tensor>());
+        scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   if (opdesc.HasInput("SequenceLength") &&
       !opdesc.Input("SequenceLength").empty()) {
@@ -63,15 +63,15 @@ bool RnnOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
         scope->FindTensor(opdesc.Input("SequenceLength").front());
   }
   param_.DropoutState = scope->FindVar(opdesc.Output("DropoutState").front())
-                            ->GetMutable<lite::Tensor>();
+                            ->GetMutable<lite_metal::Tensor>();
   param_.Reserve = scope->FindVar(opdesc.Output("Reserve").front())
-                       ->GetMutable<lite::Tensor>();
+                       ->GetMutable<lite_metal::Tensor>();
   param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
   auto State = opdesc.Output("State");
   param_.State.clear();
   for (auto var : State) {
-    param_.State.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+    param_.State.push_back(scope->FindVar(var)->GetMutable<lite_metal::Tensor>());
   }
   param_.dropout_prob = opdesc.GetAttr<float>("dropout_prob");
   param_.is_bidirec = opdesc.GetAttr<bool>("is_bidirec");
@@ -89,4 +89,4 @@ bool RnnOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(rnn, paddle::lite::operators::RnnOp);
+REGISTER_LITE_OP(rnn, paddle::lite_metal::operators::RnnOp);

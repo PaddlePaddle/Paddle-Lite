@@ -18,7 +18,7 @@
 #include "lite/backends/x86/math/math_function.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace x86 {
 namespace math {
 
@@ -28,7 +28,7 @@ struct CBlas;
 #ifdef PADDLE_WITH_MKLML
 
 #ifndef LITE_WITH_STATIC_MKL
-using namespace lite::x86;  // NOLINT
+using namespace lite_metal::x86;  // NOLINT
 #endif
 
 template <>
@@ -291,7 +291,7 @@ struct CBlas<double> {
 #endif
 
 template <>
-struct CBlas<lite::fluid::float16> {
+struct CBlas<lite_metal::fluid::float16> {
   static void GEMM(...) { LOG(FATAL) << "float16 GEMM not supported on CPU"; }
   static void SMM_GEMM(...) {
     LOG(FATAL) << "float16 SMM_GEMM not supported on CPU";
@@ -315,7 +315,7 @@ struct CBlas<lite::fluid::float16> {
 #ifdef PADDLE_WITH_MKLML
 template <>
 template <typename T>
-T *Blas<lite::TargetType::kX86>::GEMM_ALLOC(const CBLAS_IDENTIFIER id,
+T *Blas<lite_metal::TargetType::kX86>::GEMM_ALLOC(const CBLAS_IDENTIFIER id,
                                             const int M,
                                             const int N,
                                             const int K) const {
@@ -324,7 +324,7 @@ T *Blas<lite::TargetType::kX86>::GEMM_ALLOC(const CBLAS_IDENTIFIER id,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::GEMM_PACK(const CBLAS_IDENTIFIER id,
+void Blas<lite_metal::TargetType::kX86>::GEMM_PACK(const CBLAS_IDENTIFIER id,
                                              const CBLAS_TRANSPOSE trans,
                                              int M,
                                              int N,
@@ -338,7 +338,7 @@ void Blas<lite::TargetType::kX86>::GEMM_PACK(const CBLAS_IDENTIFIER id,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::GEMM_COMPUTE(int transA,
+void Blas<lite_metal::TargetType::kX86>::GEMM_COMPUTE(int transA,
                                                 int transB,
                                                 int M,
                                                 int N,
@@ -356,14 +356,14 @@ void Blas<lite::TargetType::kX86>::GEMM_COMPUTE(int transA,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::GEMM_FREE(T *data) const {
+void Blas<lite_metal::TargetType::kX86>::GEMM_FREE(T *data) const {
   CBlas<T>::GEMM_FREE(data);
 }
 #endif
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::GEMM(CBLAS_TRANSPOSE transA,
+void Blas<lite_metal::TargetType::kX86>::GEMM(CBLAS_TRANSPOSE transA,
                                         CBLAS_TRANSPOSE transB,
                                         int M,
                                         int N,
@@ -394,7 +394,7 @@ void Blas<lite::TargetType::kX86>::GEMM(CBLAS_TRANSPOSE transA,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::GEMM(bool transA,
+void Blas<lite_metal::TargetType::kX86>::GEMM(bool transA,
                                         bool transB,
                                         int M,
                                         int N,
@@ -425,7 +425,7 @@ void Blas<lite::TargetType::kX86>::GEMM(bool transA,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::GEMM(CBLAS_TRANSPOSE transA,
+void Blas<lite_metal::TargetType::kX86>::GEMM(CBLAS_TRANSPOSE transA,
                                         CBLAS_TRANSPOSE transB,
                                         int M,
                                         int N,
@@ -454,14 +454,14 @@ void Blas<lite::TargetType::kX86>::GEMM(CBLAS_TRANSPOSE transA,
                  ldc);
 }
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 template <typename T>
-void Blas<Target>::MatMul(const lite::Tensor &mat_a,
+void Blas<Target>::MatMul(const lite_metal::Tensor &mat_a,
                           bool trans_a,
-                          const lite::Tensor &mat_b,
+                          const lite_metal::Tensor &mat_b,
                           bool trans_b,
                           T alpha,
-                          lite::Tensor *mat_out,
+                          lite_metal::Tensor *mat_out,
                           T beta) const {
   auto dim_a = mat_a.dims();
   auto dim_b = mat_b.dims();
@@ -493,7 +493,7 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::AXPY(int n,
+void Blas<lite_metal::TargetType::kX86>::AXPY(int n,
                                         T alpha,
                                         const T *x,
                                         T *y) const {
@@ -502,13 +502,13 @@ void Blas<lite::TargetType::kX86>::AXPY(int n,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::VCOPY(int n, const T *x, T *y) const {
+void Blas<lite_metal::TargetType::kX86>::VCOPY(int n, const T *x, T *y) const {
   CBlas<T>::VCOPY(n, x, 1, y, 1);
 }
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::VADD(int n,
+void Blas<lite_metal::TargetType::kX86>::VADD(int n,
                                         const T *x,
                                         const T *y,
                                         T *z) const {
@@ -522,7 +522,7 @@ void Blas<lite::TargetType::kX86>::VADD(int n,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::VMUL(int n,
+void Blas<lite_metal::TargetType::kX86>::VMUL(int n,
                                         const T *x,
                                         const T *y,
                                         T *z) const {
@@ -538,7 +538,7 @@ void Blas<lite::TargetType::kX86>::VMUL(int n,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::VEXP(int n, const T *x, T *y) const {
+void Blas<lite_metal::TargetType::kX86>::VEXP(int n, const T *x, T *y) const {
 #ifdef PADDLE_WITH_MKLML
   CBlas<T>::VEXP(n, x, y);
 #else
@@ -551,7 +551,7 @@ void Blas<lite::TargetType::kX86>::VEXP(int n, const T *x, T *y) const {
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::VSQUARE(int n, const T *x, T *y) const {
+void Blas<lite_metal::TargetType::kX86>::VSQUARE(int n, const T *x, T *y) const {
 #ifdef PADDLE_WITH_MKLML
   CBlas<T>::VSQUARE(n, x, y);
 #else
@@ -563,7 +563,7 @@ void Blas<lite::TargetType::kX86>::VSQUARE(int n, const T *x, T *y) const {
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::VPOW(int n, const T *x, T a, T *y) const {
+void Blas<lite_metal::TargetType::kX86>::VPOW(int n, const T *x, T a, T *y) const {
 #ifdef PADDLE_WITH_MKLML
   CBlas<T>::VPOW(n, x, a, y);
 #else
@@ -575,7 +575,7 @@ void Blas<lite::TargetType::kX86>::VPOW(int n, const T *x, T a, T *y) const {
 
 template <>
 template <typename T>
-T Blas<lite::TargetType::kX86>::DOT(int n, const T *x, const T *y) const {
+T Blas<lite_metal::TargetType::kX86>::DOT(int n, const T *x, const T *y) const {
 #ifdef PADDLE_WITH_MKLML
   return CBlas<T>::DOT(n, x, 1, y, 1);
 #else
@@ -590,7 +590,7 @@ T Blas<lite::TargetType::kX86>::DOT(int n, const T *x, const T *y) const {
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::SCAL(int n, const T a, T *x) const {
+void Blas<lite_metal::TargetType::kX86>::SCAL(int n, const T a, T *x) const {
 #ifdef PADDLE_WITH_MKLML
   CBlas<T>::SCAL(n, a, x, 1);
 #else
@@ -603,7 +603,7 @@ void Blas<lite::TargetType::kX86>::SCAL(int n, const T a, T *x) const {
 
 template <>
 template <typename T>
-T Blas<lite::TargetType::kX86>::ASUM(int n, T *x, int inc) const {
+T Blas<lite_metal::TargetType::kX86>::ASUM(int n, T *x, int inc) const {
   auto sum = static_cast<T>(0.0);
 #ifdef PADDLE_WITH_MKLML
   sum = CBlas<T>::ASUM(n, x, inc);
@@ -618,7 +618,7 @@ T Blas<lite::TargetType::kX86>::ASUM(int n, T *x, int inc) const {
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::GEMV(bool trans_a,
+void Blas<lite_metal::TargetType::kX86>::GEMV(bool trans_a,
                                         int M,
                                         int N,
                                         T alpha,
@@ -632,7 +632,7 @@ void Blas<lite::TargetType::kX86>::GEMV(bool trans_a,
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::BatchedGEMM(CBLAS_TRANSPOSE transA,
+void Blas<lite_metal::TargetType::kX86>::BatchedGEMM(CBLAS_TRANSPOSE transA,
                                                CBLAS_TRANSPOSE transB,
                                                int M,
                                                int N,
@@ -684,7 +684,7 @@ void Blas<lite::TargetType::kX86>::BatchedGEMM(CBLAS_TRANSPOSE transA,
 #endif
 }
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 template <typename T>
 void Blas<Target>::MatMul(
     const int M, const int N, const int K, const T *A, const T *B, T *C) const {
@@ -706,7 +706,7 @@ void Blas<Target>::MatMul(
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::MatMul(
+void Blas<lite_metal::TargetType::kX86>::MatMul(
     const int M, const int N, const int K, const T *A, const T *B, T *C) const {
 #ifdef PADDLE_WITH_LIBXSMM
   // Refer to https://github.com/hfp/libxsmm/blob/master/README.md
@@ -742,14 +742,14 @@ void Blas<lite::TargetType::kX86>::MatMul(
                  N);
 }
 
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 template <typename T>
-void Blas<Target>::MatMul(const lite::Tensor &mat_a,
+void Blas<Target>::MatMul(const lite_metal::Tensor &mat_a,
                           const MatDescriptor &dim_a,
-                          const lite::Tensor &mat_b,
+                          const lite_metal::Tensor &mat_b,
                           const MatDescriptor &dim_b,
                           T alpha,
-                          lite::Tensor *mat_out,
+                          lite_metal::Tensor *mat_out,
                           T beta) const {
   CHECK_EQ(dim_a.width_, dim_b.height_);
   CBLAS_TRANSPOSE transA = !dim_a.trans_ ? CblasNoTrans : CblasTrans;
@@ -784,7 +784,7 @@ void Blas<Target>::MatMul(const lite::Tensor &mat_a,
         dim_b.stride_);
   }
 }
-template <lite::TargetType Target>
+template <lite_metal::TargetType Target>
 template <typename T>
 void Blas<Target>::VINV(int n, const T *a, T *y) const {
 #ifdef PADDLE_WITH_MKLML
@@ -798,7 +798,7 @@ void Blas<Target>::VINV(int n, const T *a, T *y) const {
 
 template <>
 template <typename T>
-void Blas<lite::TargetType::kX86>::VMERF(int n,
+void Blas<lite_metal::TargetType::kX86>::VMERF(int n,
                                          const T *a,
                                          T *y,
                                          int64_t mode) const {

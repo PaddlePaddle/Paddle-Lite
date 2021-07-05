@@ -21,7 +21,7 @@
 #include "lite/kernels/host/deformable_conv_op.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -173,7 +173,7 @@ void DeformableConvComputeHost<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 }  // namespace paddle
 
 using DeformableConvFp32Host =
-    paddle::lite::kernels::host::DeformableConvComputeHost<PRECISION(kFloat),
+    paddle::lite_metal::kernels::host::DeformableConvComputeHost<PRECISION(kFloat),
                                                            PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(

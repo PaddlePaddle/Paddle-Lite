@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -51,7 +51,7 @@ class ShapeCompute
   }
 
 #ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  void SetProfileRuntimeKernelInfo(paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = "shape";
     ch->io_duration = h2d_duration_;
   }
@@ -69,7 +69,7 @@ REGISTER_LITE_KERNEL(shape,
                      kOpenCL,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::opencl::ShapeCompute,
+                     paddle::lite_metal::kernels::opencl::ShapeCompute,
                      def)
     .BindInput("Input",
                {LiteType::GetTensorTy(

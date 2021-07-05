@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 static constexpr int kROISize = 4;
@@ -89,7 +89,7 @@ REGISTER_LITE_KERNEL(roi_align,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::RoiAlignCompute,
+                     paddle::lite_metal::kernels::xpu::RoiAlignCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("ROIs", {LiteType::GetTensorTy(TARGET(kXPU))})

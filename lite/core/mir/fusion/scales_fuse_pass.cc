@@ -21,7 +21,7 @@
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 void ScalesFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -33,5 +33,5 @@ void ScalesFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_scales_fuse_pass, paddle::lite::mir::ScalesFusePass)
+REGISTER_MIR_PASS(lite_scales_fuse_pass, paddle::lite_metal::mir::ScalesFusePass)
     .BindTargets({TARGET(kAny)});

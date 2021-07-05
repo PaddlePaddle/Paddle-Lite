@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 
@@ -116,7 +116,7 @@ class MMDNNIdInfo {
     cpu_buffer_ = cpu_buffer_guard_.get();
   }
 
-  void Update(lite::Tensor* id0, lite::Tensor* id1) {
+  void Update(lite_metal::Tensor* id0, lite_metal::Tensor* id1) {
     auto& id0_lod = id0->lod()[0];
     lod.clear();
     for (auto e : id0_lod) {
@@ -199,9 +199,9 @@ class MMDNNFcOp {
     out_max = reinterpret_cast<float*>(in_max_guard_->addr_);
   }
 
-  void Init(lite::Tensor* weight,
+  void Init(lite_metal::Tensor* weight,
             float weight_max,
-            lite::Tensor* bias,
+            lite_metal::Tensor* bias,
             int n,
             int k,
             xdnn::Activation_t::act_enum act_type) {
@@ -264,9 +264,9 @@ class MMDNNGrnnOp {
   int max_cap_l_;
 
  public:
-  void Init(lite::Tensor* wh,
+  void Init(lite_metal::Tensor* wh,
             const std::vector<float>& wh_maxs,
-            lite::Tensor* wi,
+            lite_metal::Tensor* wi,
             const std::vector<float>& wi_maxs,
             int cap_e,
             int cap_h,
@@ -388,9 +388,9 @@ class MMDNNAttentionOp {
   // batchgemm1_out: [cap_l, dim_], reuse of seqfc_out
 
  public:
-  void Init(lite::Tensor* att_fc_w,
+  void Init(lite_metal::Tensor* att_fc_w,
             float att_fc_w_max,
-            lite::Tensor* att_fc_b,
+            lite_metal::Tensor* att_fc_b,
             int dim,
             int upper_bound_batch,
             int upper_bound_seqlen) {
@@ -510,9 +510,9 @@ class MMDNNMatchConvTopk {
  public:
   float* seq_avg_topk_out{nullptr};
 
-  void Init(lite::Tensor* input_w,
+  void Init(lite_metal::Tensor* input_w,
             float input_w_max,
-            lite::Tensor* conv_w,
+            lite_metal::Tensor* conv_w,
             float conv_w_max,
             int dim_t,
             int dim_in,
@@ -569,9 +569,9 @@ class MMDNNMatchConvTopk {
   }
 
   void Infer(xdnn::Context* ctx,
-             lite::Tensor* left,
-             lite::Tensor* right,
-             lite::Tensor* out,
+             lite_metal::Tensor* left,
+             lite_metal::Tensor* right,
+             lite_metal::Tensor* out,
              float* l3_buffer = nullptr,
              int l3_size = 0) {
     auto left_lod = left->lod()[0];
@@ -747,18 +747,18 @@ class MMDNNBidEmbGrnnAtt {
   float* pool_rv{nullptr};
   float* att_out{nullptr};
 
-  void Init(lite::Tensor* table,
-            lite::Tensor* fw_wh,
+  void Init(lite_metal::Tensor* table,
+            lite_metal::Tensor* fw_wh,
             const std::vector<float>& fw_wh_maxs,
-            lite::Tensor* fw_wi,
+            lite_metal::Tensor* fw_wi,
             const std::vector<float>& fw_wi_maxs,
-            lite::Tensor* rv_wh,
+            lite_metal::Tensor* rv_wh,
             const std::vector<float>& rv_wh_maxs,
-            lite::Tensor* rv_wi,
+            lite_metal::Tensor* rv_wi,
             const std::vector<float>& rv_wi_maxs,
-            lite::Tensor* att_fc_w,
+            lite_metal::Tensor* att_fc_w,
             float att_fc_w_max,
-            lite::Tensor* att_fc_b,
+            lite_metal::Tensor* att_fc_b,
             int upper_bound_batch,
             int upper_bound_seqlen) {
     table_ = table->data<float>();
@@ -786,11 +786,11 @@ class MMDNNBidEmbGrnnAtt {
   void Infer(xdnn::Context* ctx,
              int batch,
              const MMDNNIdInfo& sentense,
-             lite::Tensor* grnn_fw_pool_out,
-             lite::Tensor* grnn_rv_pool_out,
-             lite::Tensor* att_pool_out,
-             lite::Tensor* concat_3in1_out,
-             lite::Tensor* emb_fw_out,
+             lite_metal::Tensor* grnn_fw_pool_out,
+             lite_metal::Tensor* grnn_rv_pool_out,
+             lite_metal::Tensor* att_pool_out,
+             lite_metal::Tensor* concat_3in1_out,
+             lite_metal::Tensor* emb_fw_out,
              float* l3_buffer = nullptr,
              int l3_size = 0) {
     int cap_l = sentense.seqlen_sum;
@@ -888,10 +888,10 @@ class MMDNNEmbAtt {
   float* emb_fw{nullptr};
   float* att_out{nullptr};
 
-  void Init(lite::Tensor* table,
-            lite::Tensor* att_fc_w,
+  void Init(lite_metal::Tensor* table,
+            lite_metal::Tensor* att_fc_w,
             float att_fc_w_max,
-            lite::Tensor* att_fc_b,
+            lite_metal::Tensor* att_fc_b,
             int upper_bound_batch,
             int upper_bound_seqlen) {
     table_ = table->data<float>();
@@ -908,8 +908,8 @@ class MMDNNEmbAtt {
   void Infer(xdnn::Context* ctx,
              int batch,
              const MMDNNIdInfo& sentense,
-             lite::Tensor* att_pool_out,
-             lite::Tensor* emb_fw_out,
+             lite_metal::Tensor* att_pool_out,
+             lite_metal::Tensor* emb_fw_out,
              float* l3_buffer = nullptr,
              int l3_size = 0) {
     emb_fw = emb_fw_out->mutable_data<float>(TARGET(kXPU));
@@ -966,23 +966,23 @@ class MMDNNMergeAll {
   // fc2_out:             [batch, fc2_n_]
 
  public:
-  void Init(lite::Tensor* grnn_fw_wh,
+  void Init(lite_metal::Tensor* grnn_fw_wh,
             std::vector<float> grnn_fw_wh_maxs,
-            lite::Tensor* grnn_fw_wi,
+            lite_metal::Tensor* grnn_fw_wi,
             std::vector<float> grnn_fw_wi_maxs,
-            lite::Tensor* grnn_rv_wh,
+            lite_metal::Tensor* grnn_rv_wh,
             std::vector<float> grnn_rv_wh_maxs,
-            lite::Tensor* grnn_rv_wi,
+            lite_metal::Tensor* grnn_rv_wi,
             std::vector<float> grnn_rv_wi_maxs,
-            lite::Tensor* fc0_w,
+            lite_metal::Tensor* fc0_w,
             float fc0_w_max,
-            lite::Tensor* fc0_b,
-            lite::Tensor* fc1_w,
+            lite_metal::Tensor* fc0_b,
+            lite_metal::Tensor* fc1_w,
             float fc1_w_max,
-            lite::Tensor* fc1_b,
-            lite::Tensor* fc2_w,
+            lite_metal::Tensor* fc1_b,
+            lite_metal::Tensor* fc2_w,
             float fc2_w_max,
-            lite::Tensor* fc2_b,
+            lite_metal::Tensor* fc2_b,
             int upper_bound_batch,
             int upper_bound_seqlen) {
     int max_cap_l = upper_bound_batch * upper_bound_seqlen;
@@ -1021,9 +1021,9 @@ class MMDNNMergeAll {
 
   void Infer(xdnn::Context* ctx,
              const MMDNNIdInfo& sentense,
-             const std::vector<lite::Tensor*> concat_topk_x,
-             const std::vector<lite::Tensor*> concat_7in1_x,
-             lite::Tensor* out,
+             const std::vector<lite_metal::Tensor*> concat_topk_x,
+             const std::vector<lite_metal::Tensor*> concat_7in1_x,
+             lite_metal::Tensor* out,
              float* l3_buffer = nullptr,
              int l3_size = 0) {
     int batch = sentense.batch;
@@ -1404,7 +1404,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_bid_emb_grnn_att,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMmdnnBidEmbGrnnAttCompute,
+                     paddle::lite_metal::kernels::xpu::XPUMmdnnBidEmbGrnnAttCompute,
                      def)
     .BindInput("id0", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("id1", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
@@ -1426,7 +1426,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_bid_emb_grnn_att2,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMmdnnBidEmbGrnnAttCompute2,
+                     paddle::lite_metal::kernels::xpu::XPUMmdnnBidEmbGrnnAttCompute2,
                      def)
     .BindInput("id0", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("id1", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
@@ -1449,7 +1449,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_bid_emb_att,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMmdnnBidEmbAttCompute,
+                     paddle::lite_metal::kernels::xpu::XPUMmdnnBidEmbAttCompute,
                      def)
     .BindInput("id0", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("id1", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
@@ -1465,7 +1465,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_match_conv_topk,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMmdnnMatchConvTopkCompute,
+                     paddle::lite_metal::kernels::xpu::XPUMmdnnMatchConvTopkCompute,
                      def)
     .BindInput("input_x", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("input_y", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -1478,7 +1478,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_merge_all,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMmdnnMergeAllCompute,
+                     paddle::lite_metal::kernels::xpu::XPUMmdnnMergeAllCompute,
                      def)
     .BindInput("concat_7in1_x", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("concat_topk_x", {LiteType::GetTensorTy(TARGET(kXPU))})

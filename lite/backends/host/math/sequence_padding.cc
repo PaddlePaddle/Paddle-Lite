@@ -15,13 +15,13 @@ limitations under the License. */
 #include "lite/backends/host/math/sequence_padding.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
 template <typename T>
-void CopyValidData(lite::Tensor* dst_tensor,
-                   const lite::Tensor* src_tensor,
+void CopyValidData(lite_metal::Tensor* dst_tensor,
+                   const lite_metal::Tensor* src_tensor,
                    const std::vector<uint64_t>& seq_offsets,
                    int pad_seq_len,
                    int step_width,
@@ -82,18 +82,18 @@ static void fast_mem_init(void* dest,
 }
 
 template <typename T>
-class PaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
+class PaddingLoDTensorFunctor<lite_metal::TargetType::kHost, T> {
  public:
-  void operator()(const lite::Context<lite::TargetType::kHost>& context,
-                  const lite::Tensor& seq_tensor,
-                  lite::Tensor* pad_tensor,
-                  const lite::Tensor& pad_value,
+  void operator()(const lite_metal::Context<lite_metal::TargetType::kHost>& context,
+                  const lite_metal::Tensor& seq_tensor,
+                  lite_metal::Tensor* pad_tensor,
+                  const lite_metal::Tensor& pad_value,
                   int pad_seq_len = -1,
                   int lod_level = 0,
                   bool norm_by_times = false,
                   const PadLayout layout = kBatchLengthWidth) {
     auto seq_lod = seq_tensor.lod();
-    const auto seq_offsets = lite::fluid::ToAbsOffset(seq_lod)[lod_level];
+    const auto seq_offsets = lite_metal::fluid::ToAbsOffset(seq_lod)[lod_level];
     const auto& seq_tensor_dims = seq_tensor.dims();
     const auto& pad_tensor_dims = pad_tensor->dims();
     if (pad_seq_len == -1) {
@@ -135,16 +135,16 @@ class PaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
 };
 
 template <typename T>
-class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
+class UnpaddingLoDTensorFunctor<lite_metal::TargetType::kHost, T> {
  public:
-  void operator()(const lite::Context<lite::TargetType::kHost>& context,
-                  const lite::Tensor& pad_tensor,
-                  lite::Tensor* seq_tensor,
+  void operator()(const lite_metal::Context<lite_metal::TargetType::kHost>& context,
+                  const lite_metal::Tensor& pad_tensor,
+                  lite_metal::Tensor* seq_tensor,
                   int pad_seq_len = -1,
                   int lod_level = 0,
                   bool norm_by_times = false,
                   const PadLayout layout = kBatchLengthWidth) {
-    auto seq_offsets = lite::fluid::ToAbsOffset(seq_tensor->lod())[lod_level];
+    auto seq_offsets = lite_metal::fluid::ToAbsOffset(seq_tensor->lod())[lod_level];
     const auto& seq_tensor_dims = seq_tensor->dims();
     const auto& pad_tensor_dims = pad_tensor.dims();
     if (pad_seq_len == -1) {
@@ -170,15 +170,15 @@ class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
   }
 };
 
-template class PaddingLoDTensorFunctor<lite::TargetType::kHost, int>;
-template class PaddingLoDTensorFunctor<lite::TargetType::kHost, int64_t>;
-template class PaddingLoDTensorFunctor<lite::TargetType::kHost, float>;
-template class PaddingLoDTensorFunctor<lite::TargetType::kHost, double>;
+template class PaddingLoDTensorFunctor<lite_metal::TargetType::kHost, int>;
+template class PaddingLoDTensorFunctor<lite_metal::TargetType::kHost, int64_t>;
+template class PaddingLoDTensorFunctor<lite_metal::TargetType::kHost, float>;
+template class PaddingLoDTensorFunctor<lite_metal::TargetType::kHost, double>;
 
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, int>;
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, int64_t>;
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, float>;
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, double>;
+template class UnpaddingLoDTensorFunctor<lite_metal::TargetType::kHost, int>;
+template class UnpaddingLoDTensorFunctor<lite_metal::TargetType::kHost, int64_t>;
+template class UnpaddingLoDTensorFunctor<lite_metal::TargetType::kHost, float>;
+template class UnpaddingLoDTensorFunctor<lite_metal::TargetType::kHost, double>;
 
 }  // namespace math
 }  // namespace host

@@ -17,7 +17,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool ReshapeOp::CheckShape() const {
@@ -55,12 +55,12 @@ bool ReshapeOp::InferShapeImpl() const {
   return true;
 }
 
-bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.x =
-      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Input("X").front())->GetMutable<lite_metal::Tensor>();
   param_.output =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite_metal::Tensor>();
 
   // prority: input(ShapeTensor) > input(Shape) > attr(shape)
   param_.shape_tensor_vct.clear();
@@ -69,7 +69,7 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     for (auto arg : args) {
       auto *var = scope->FindVar(arg);
       if (var != nullptr) {
-        param_.shape_tensor_vct.push_back(var->GetMutable<lite::Tensor>());
+        param_.shape_tensor_vct.push_back(var->GetMutable<lite_metal::Tensor>());
       }
     }
     CHECK_GT(param_.shape_tensor_vct.size(), 0u)
@@ -81,7 +81,7 @@ bool ReshapeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasInput("Shape") && !opdesc.Input("Shape").empty()) {
     auto var = scope->FindVar(opdesc.Input("Shape").front());
     if (var != nullptr) {
-      param_.shape_tensor = var->GetMutable<lite::Tensor>();
+      param_.shape_tensor = var->GetMutable<lite_metal::Tensor>();
     }
   }
   if (opdesc.HasAttr("shape")) {
@@ -113,10 +113,10 @@ bool Reshape2Op::InferShapeImpl() const {
   return true;
 }
 
-bool Reshape2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool Reshape2Op::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   ReshapeOp::AttachImpl(opdesc, scope);
   auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
-  param_.xshape = xshape_var->GetMutable<lite::Tensor>();
+  param_.xshape = xshape_var->GetMutable<lite_metal::Tensor>();
   return true;
 }
 
@@ -183,5 +183,5 @@ std::vector<DDim::value_type> ValidateShape(const std::vector<int> &shape,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(reshape, paddle::lite::operators::ReshapeOp);
-REGISTER_LITE_OP(reshape2, paddle::lite::operators::Reshape2Op);
+REGISTER_LITE_OP(reshape, paddle::lite_metal::operators::ReshapeOp);
+REGISTER_LITE_OP(reshape2, paddle::lite_metal::operators::Reshape2Op);

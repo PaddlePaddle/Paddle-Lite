@@ -15,7 +15,7 @@
 #include "lite/kernels/host/fill_constant_compute.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -34,17 +34,17 @@ void FillConstantCompute::FillConstData() {
 
 void FillConstantCompute::Run() {
   auto& param = *param_.get_mutable<param_t>();
-  if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
+  if (param.dtype == static_cast<int32_t>(lite_metal::core::FluidType::FP32)) {
     FillConstData<float>();
   } else if (param.dtype ==
-             static_cast<int32_t>(lite::core::FluidType::INT32)) {
+             static_cast<int32_t>(lite_metal::core::FluidType::INT32)) {
     FillConstData<int32_t>();
-  } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::INT8)) {
+  } else if (param.dtype == static_cast<int32_t>(lite_metal::core::FluidType::INT8)) {
     FillConstData<int8_t>();
   } else if (param.dtype ==
-             static_cast<int32_t>(lite::core::FluidType::INT64)) {
+             static_cast<int32_t>(lite_metal::core::FluidType::INT64)) {
     FillConstData<int64_t>();
-  } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::BOOL)) {
+  } else if (param.dtype == static_cast<int32_t>(lite_metal::core::FluidType::BOOL)) {
     FillConstData<bool>();
   } else {
     LOG(FATAL) << "not supported dtype " << param.dtype;
@@ -61,7 +61,7 @@ REGISTER_LITE_KERNEL(fill_constant,
                      kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::host::FillConstantCompute,
+                     paddle::lite_metal::kernels::host::FillConstantCompute,
                      def)
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})

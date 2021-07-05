@@ -16,7 +16,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -35,7 +35,7 @@ REGISTER_LITE_KERNEL(write_back,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::WriteBackCompute,
+                     paddle::lite_metal::kernels::host::WriteBackCompute,
                      tensor_copy)
     .BindInput("Src_LoDTensor",
                {LiteType::GetTensorTy(TARGET(kHost),

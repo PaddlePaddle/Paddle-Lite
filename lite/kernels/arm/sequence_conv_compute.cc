@@ -29,7 +29,7 @@ limitations under the License. */
 #endif
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -85,7 +85,7 @@ void SequenceConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto hidden_dim = static_cast<int64_t>(param.X->dims()[1]);
   auto sequence_len = static_cast<int64_t>(param.X->dims()[0]);
   auto lod = param.X->lod();
-  lite::Tensor col;
+  lite_metal::Tensor col;
   col.Resize({sequence_len, kernel_size * hidden_dim});
   auto* col_data = col.mutable_data<float>();
   auto lod_level_0 = lod[0];
@@ -116,8 +116,8 @@ void SequenceConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   // [sequence_len, kernel_size * hidden_dim] * [kernel_size * hidden_dim,
   // kernel_num]
   // = [sequence_len, kernel_num]
-  paddle::lite::operators::ActivationParam act_param;
-  paddle::lite::arm::math::sgemm(false,
+  paddle::lite_metal::operators::ActivationParam act_param;
+  paddle::lite_metal::arm::math::sgemm(false,
                                  false,                     // is_transB,
                                  sequence_len,              // M
                                  kernel_num,                // N
@@ -161,7 +161,7 @@ void SequenceConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto hidden_dim = static_cast<int64_t>(param.X->dims()[1]);
   auto sequence_len = static_cast<int64_t>(param.X->dims()[0]);
   auto lod = param.X->lod();
-  lite::Tensor col;
+  lite_metal::Tensor col;
   col.Resize({sequence_len, kernel_size * hidden_dim});
   auto* col_data = col.mutable_data<float16_t>();
   auto lod_level_0 = lod[0];
@@ -192,8 +192,8 @@ void SequenceConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   // [sequence_len, kernel_size * hidden_dim] * [kernel_size * hidden_dim,
   // kernel_num]
   // = [sequence_len, kernel_num]
-  paddle::lite::operators::ActivationParam act_param;
-  paddle::lite::arm::math::fp16::sgemm_fp16(false,
+  paddle::lite_metal::operators::ActivationParam act_param;
+  paddle::lite_metal::arm::math::fp16::sgemm_fp16(false,
                                             false,         // is_transB,
                                             sequence_len,  // M
                                             kernel_num,    // N
@@ -217,11 +217,11 @@ void SequenceConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-typedef paddle::lite::kernels::arm::SequenceConvCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::SequenceConvCompute<PRECISION(kFloat),
                                                         PRECISION(kFloat)>
     SeqConvFp32;
 #ifdef ENABLE_ARM_FP16
-typedef paddle::lite::kernels::arm::SequenceConvCompute<PRECISION(kFP16),
+typedef paddle::lite_metal::kernels::arm::SequenceConvCompute<PRECISION(kFP16),
                                                         PRECISION(kFP16)>
     SeqConvFp16;
 

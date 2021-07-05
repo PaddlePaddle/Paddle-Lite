@@ -20,7 +20,7 @@
 #include "lite/core/tensor.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void pool_avg(const int padding_height,
               const int padding_width,
@@ -82,7 +82,7 @@ TEST(pool2d_buffer_fp32, compute) {
   auto kernel = std::move(kernels.front());
   LOG(INFO) << "get kernel:" << kernel->doc();
 
-  lite::Tensor x, out;
+  lite_metal::Tensor x, out;
   operators::PoolParam param;
   param.x = &x;
   param.output = &out;

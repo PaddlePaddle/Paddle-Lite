@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -68,7 +68,7 @@ void ExpandAsCompute<T, PType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 using expand_as_float =
-    paddle::lite::kernels::host::ExpandAsCompute<float, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::ExpandAsCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(expand_as, kHost, kFloat, kAny, expand_as_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -85,7 +85,7 @@ REGISTER_LITE_KERNEL(expand_as, kHost, kFloat, kAny, expand_as_float, def)
     .Finalize();
 
 using expand_as_int64 =
-    paddle::lite::kernels::host::ExpandAsCompute<int64_t, PRECISION(kFloat)>;
+    paddle::lite_metal::kernels::host::ExpandAsCompute<int64_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(expand_as, kHost, kFloat, kAny, expand_as_int64, int64)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),

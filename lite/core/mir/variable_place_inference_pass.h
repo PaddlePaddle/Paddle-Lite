@@ -21,7 +21,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 /*
@@ -264,7 +264,7 @@ class VariablePlaceInferencePass : public DebugPass {
                                        .op()
                                        ->scope()
                                        ->Var(in_arg_name)
-                                       ->GetMutable<lite::Tensor>();
+                                       ->GetMutable<lite_metal::Tensor>();
                 tmp_tensor->set_precision(in->AsArg().type->precision());
               }
             }
@@ -281,7 +281,7 @@ class VariablePlaceInferencePass : public DebugPass {
                                        .op()
                                        ->scope()
                                        ->Var(out_arg_name)
-                                       ->GetMutable<lite::Tensor>();
+                                       ->GetMutable<lite_metal::Tensor>();
                 out->AsArg().type =
                     LiteType::GetTensorTy(out->AsArg().type->target(),
                                           tmp_tensor->precision(),

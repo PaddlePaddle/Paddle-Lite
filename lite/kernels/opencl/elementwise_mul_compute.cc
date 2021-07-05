@@ -19,7 +19,7 @@
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace opencl {
 
@@ -71,7 +71,7 @@ void ElementwiseMulFloatImageCompute::Run() {
   VLOG(4) << "y->dims():" << y->dims();
   VLOG(4) << "out->dims():" << out->dims();
 
-  paddle::lite::CLImageConverterDefault default_convertor;
+  paddle::lite_metal::CLImageConverterDefault default_convertor;
   auto x_img_shape = default_convertor.InitImageDimInfoWith(x->dims());  // w, h
   auto x_img_width = x_img_shape[0];
   auto x_img_height = x_img_shape[1];
@@ -171,7 +171,7 @@ void ElementwiseMulFloatImageCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
+namespace ocl = paddle::lite_metal::kernels::opencl;
 REGISTER_LITE_KERNEL(elementwise_mul,
                      kOpenCL,
                      kFloat,

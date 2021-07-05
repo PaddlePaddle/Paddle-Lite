@@ -83,8 +83,8 @@ static void softmax(Tensor *X, Tensor *Y) {
         float32x4_t x1 = vld1q_f32(input + 4);
         x0 = vsubq_f32(x0, __max);
         x1 = vsubq_f32(x1, __max);
-        x0 = lite::arm::math::exp_ps(x0);
-        x1 = lite::arm::math::exp_ps(x1);
+        x0 = lite_metal::arm::math::exp_ps(x0);
+        x1 = lite_metal::arm::math::exp_ps(x1);
         vst1q_f32(output, x0);
         vst1q_f32(output + 4, x1);
       }

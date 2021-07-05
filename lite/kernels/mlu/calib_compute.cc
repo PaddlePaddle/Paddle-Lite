@@ -19,7 +19,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace mlu {
 
@@ -28,7 +28,7 @@ void CalibComputeFp32ToInt8::Run() {
   // std::vector<float> scale = {param.scale};
   // const auto* din = param.input->data<float>();
   // auto* dout = param.output->mutable_data<signed char>();
-  // lite::arm::math::fp32_to_int8(
+  // lite_metal::arm::math::fp32_to_int8(
   //     din, dout, scale.data(), 1, 1, param.input->numel());
   // return;
 }
@@ -38,7 +38,7 @@ void CalibComputeInt8ToFp32::Run() {
   // const auto* din = param.input->data<signed char>();
   // std::vector<float> scale = {param.scale};
   // auto* dout = param.output->mutable_data<float>();
-  // lite::arm::math::int8_to_fp32(
+  // lite_metal::arm::math::int8_to_fp32(
   //     din, dout, scale.data(), 1, 1, param.input->numel());
   // return;
 }
@@ -52,7 +52,7 @@ REGISTER_LITE_KERNEL(calib,
                      kMLU,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::mlu::CalibComputeFp32ToInt8,
+                     paddle::lite_metal::kernels::mlu::CalibComputeFp32ToInt8,
                      fp32_to_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kMLU), PRECISION(kFloat))})
@@ -63,7 +63,7 @@ REGISTER_LITE_KERNEL(calib,
                      kMLU,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::mlu::CalibComputeInt8ToFp32,
+                     paddle::lite_metal::kernels::mlu::CalibComputeInt8ToFp32,
                      int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMLU), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMLU), PRECISION(kFloat))})
@@ -72,7 +72,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kMLU,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::mlu::CalibComputeFp32ToInt8,
+                     paddle::lite_metal::kernels::mlu::CalibComputeFp32ToInt8,
                      fp32_to_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kMLU), PRECISION(kFloat))})
@@ -83,7 +83,7 @@ REGISTER_LITE_KERNEL(calib_once,
                      kMLU,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::mlu::CalibComputeInt8ToFp32,
+                     paddle::lite_metal::kernels::mlu::CalibComputeInt8ToFp32,
                      int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMLU), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMLU), PRECISION(kFloat))})

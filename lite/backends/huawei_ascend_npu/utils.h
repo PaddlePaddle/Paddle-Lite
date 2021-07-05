@@ -30,19 +30,19 @@
  */
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace huawei_ascend_npu {
 
 #define ACL_CALL(msg)                                       \
   CHECK_EQ(reinterpret_cast<aclError>(msg), ACL_ERROR_NONE) \
       << (msg) << " Huawei Ascend NPU ACL Error: "          \
-      << ::paddle::lite::huawei_ascend_npu::AclErrorInfo(   \
+      << ::paddle::lite_metal::huawei_ascend_npu::AclErrorInfo(   \
              reinterpret_cast<int>(msg))
 
 #define ATC_CALL(msg)                                                 \
   CHECK_EQ(reinterpret_cast<ge::graphStatus>(msg), ge::GRAPH_SUCCESS) \
       << (msg) << " Huawei Ascend NPU ATC Error: "                    \
-      << ::paddle::lite::huawei_ascend_npu::AtcErrorInfo(             \
+      << ::paddle::lite_metal::huawei_ascend_npu::AtcErrorInfo(             \
              reinterpret_cast<uint32_t>(msg))
 
 static const char* AtcErrorInfo(uint32_t error) {

@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool XPUSoftmaxTopkOp::CheckShape() const {
@@ -44,7 +44,7 @@ bool XPUSoftmaxTopkOp::InferShapeImpl() const {
 }
 
 bool XPUSoftmaxTopkOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                  lite::Scope *scope) {
+                                  lite_metal::Scope *scope) {
   AttachParam(&param_);
   param_.x = scope->FindTensor(opdesc.Input("X").front());
   param_.output = scope->FindMutableTensor(opdesc.Output("Out").front());
@@ -68,4 +68,4 @@ bool XPUSoftmaxTopkOp::AttachImpl(const cpp::OpDesc &opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__softmax_topk,
-                 paddle::lite::operators::XPUSoftmaxTopkOp);
+                 paddle::lite_metal::operators::XPUSoftmaxTopkOp);

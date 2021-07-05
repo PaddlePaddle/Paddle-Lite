@@ -21,7 +21,7 @@
 #include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -34,7 +34,7 @@ class SearchSeqFcCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   virtual ~SearchSeqFcCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_{nullptr};
+  std::unique_ptr<lite_metal::cuda::math::Gemm<float, float>> gemm_impl_{nullptr};
 };
 
 }  // namespace cuda

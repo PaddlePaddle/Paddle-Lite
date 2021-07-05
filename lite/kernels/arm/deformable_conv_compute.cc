@@ -24,7 +24,7 @@
 #include "lite/kernels/arm/conv_winograd.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -290,7 +290,7 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       output_3d_slice.Resize(
           DDim(output_3d.dims()).Slice(1, output_3d.dims().size()));
       if (N == 1) {
-        lite::arm::math::sgemv(
+        lite_metal::arm::math::sgemv(
             weights_group,
             col_buffer_3d_slice.data<float>(),
             const_cast<float*>(output_3d_slice.data<float>()),
@@ -306,7 +306,7 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
             param.conv_param.activation_param.Relu_clipped_coef,
             param.conv_param.activation_param.Leaky_relu_alpha);
       } else {
-        lite::arm::math::sgemm_prepack(
+        lite_metal::arm::math::sgemm_prepack(
             false,
             output_3d_slice.dims()[0],
             output_3d_slice.dims()[1],
@@ -333,7 +333,7 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::arm::DeformableConvCompute<PRECISION(kFloat),
+typedef paddle::lite_metal::kernels::arm::DeformableConvCompute<PRECISION(kFloat),
                                                           PRECISION(kFloat)>
     DeformableConvFp32;
 

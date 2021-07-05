@@ -30,19 +30,19 @@
 extern int32_t paddle_num_threads;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace x86 {
 
-using Tensor = lite::Tensor;
+using Tensor = lite_metal::Tensor;
 
 template <typename T>
-inline void ReorderInitState(const lite::Context<TARGET(kX86)>& context,
+inline void ReorderInitState(const lite_metal::Context<TARGET(kX86)>& context,
                              const Tensor& src,
                              const std::vector<uint64_t>& index_lod,
                              Tensor* dst,
                              bool indexed_src) {
-  lite::x86::math::CopyMatrixRowsFunctor<TARGET(kX86), T> row_shuffle;
+  lite_metal::x86::math::CopyMatrixRowsFunctor<TARGET(kX86), T> row_shuffle;
   dst->Resize(src.dims());
   dst->template mutable_data<T>();
   row_shuffle(context, src, index_lod, dst, indexed_src);
@@ -81,16 +81,16 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     const auto& hidden_dims = hidden->dims();
 
-    lite::x86::math::LoDTensor2BatchFunctor<TARGET(kX86), T> to_batch;
+    lite_metal::x86::math::LoDTensor2BatchFunctor<TARGET(kX86), T> to_batch;
     to_batch(context, *input, batch_gate, true, is_reverse);
 
     if (bias) {
-      lite::x86::math::RowwiseAdd<TARGET(kX86), T> add_bias;
+      lite_metal::x86::math::RowwiseAdd<TARGET(kX86), T> add_bias;
       add_bias(context, *batch_gate, *bias, batch_gate);
     }
 
     int frame_size = hidden_dims[1];
-    lite::x86::math::GRUMetaValue<T> gru_value;
+    lite_metal::x86::math::GRUMetaValue<T> gru_value;
     gru_value.gate_weight = const_cast<T*>(weight_data);
     gru_value.state_weight =
         const_cast<T*>(weight_data + 2 * frame_size * frame_size);
@@ -114,14 +114,14 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         CalculateSeqWidth(batch_reset_hidden_prev->dims());
     int64_t batch_hidden_width = CalculateSeqWidth(batch_hidden->dims());
     auto active_node =
-        lite::x86::math::detail::GetActivationType(param.activation);
+        lite_metal::x86::math::detail::GetActivationType(param.activation);
     auto active_gate =
-        lite::x86::math::detail::GetActivationType(param.gate_activation);
+        lite_metal::x86::math::detail::GetActivationType(param.gate_activation);
 
 #ifdef PADDLE_WITH_MKLML
     // use MKL packed to speedup GEMM
     if (paddle_num_threads >= 4) {
-      auto blas = lite::x86::math::GetBlas<TARGET(kX86), T>(context);
+      auto blas = lite_metal::x86::math::GetBlas<TARGET(kX86), T>(context);
       T* packed_gate = blas.GEMM_ALLOC(CblasBMatrix,
                                        1 /*height of C*/,
                                        frame_size * 2 /*width of weight*/,
@@ -175,8 +175,8 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                             frame_size * 3);
         }
 
-        lite::x86::math::detail::forward_final_output(
-            lite::x86::math::detail::forward::gru_finalOutput<T>(),
+        lite_metal::x86::math::detail::forward_final_output(
+            lite_metal::x86::math::detail::forward::gru_finalOutput<T>(),
             gru_value,
             frame_size,
             cur_batch_size,
@@ -200,7 +200,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         gru_value.reset_output_value = batch_reset_hidden_prev_ptr +
                                        bstart * batch_reset_hidden_prev_width;
 
-        lite::x86::math::GRUUnitFunctor<TARGET(kX86), T>::compute(
+        lite_metal::x86::math::GRUUnitFunctor<TARGET(kX86), T>::compute(
             context,
             gru_value,
             frame_size,
@@ -214,7 +214,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 #ifdef PADDLE_WITH_MKLML
     }
 #endif
-    lite::x86::math::Batch2LoDTensorFunctor<TARGET(kX86), T> to_seq;
+    lite_metal::x86::math::Batch2LoDTensorFunctor<TARGET(kX86), T> to_seq;
     batch_hidden->set_lod(batch_gate->lod());
     to_seq(context, *batch_hidden, hidden);
   }

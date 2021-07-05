@@ -22,7 +22,7 @@
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 /*
  * Use post_quant_dynamic method to quantize the model.

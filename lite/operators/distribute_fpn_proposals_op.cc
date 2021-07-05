@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool DistributeFpnProposalsOpLite::CheckShape() const {
@@ -45,7 +45,7 @@ bool DistributeFpnProposalsOpLite::InferShapeImpl() const {
 }
 
 bool DistributeFpnProposalsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                              lite::Scope *scope) {
+                                              lite_metal::Scope *scope) {
   param_.fpn_rois = scope->FindTensor(op_desc.Input("FpnRois").front());
 
   if (op_desc.HasInput("RoisNum") && !op_desc.Input("RoisNum").empty()) {
@@ -82,4 +82,4 @@ bool DistributeFpnProposalsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(distribute_fpn_proposals,
-                 paddle::lite::operators::DistributeFpnProposalsOpLite);
+                 paddle::lite_metal::operators::DistributeFpnProposalsOpLite);

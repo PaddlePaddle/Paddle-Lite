@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -44,7 +44,7 @@ REGISTER_LITE_KERNEL(subgraph,
                      kFPGA,
                      kAny,
                      kNHWC,
-                     paddle::lite::kernels::fpga::SubgraphCompute,
+                     paddle::lite_metal::kernels::fpga::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kFPGA),

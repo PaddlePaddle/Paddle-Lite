@@ -23,7 +23,7 @@
 #include "lite/core/subgraph_engine_base.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace xpu {
 

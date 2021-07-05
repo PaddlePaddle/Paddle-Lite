@@ -16,7 +16,7 @@
 #include <string>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void TensorLite::ShareDataWith(const TensorLite &other) {
   dims_ = other.dims_;

@@ -17,7 +17,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool FusionElementwiseActivationOp::CheckShape() const {
@@ -40,14 +40,14 @@ bool FusionElementwiseActivationOp::InferShapeImpl() const {
 }
 
 bool FusionElementwiseActivationOp::AttachImpl(const cpp::OpDesc& opdesc,
-                                               lite::Scope* scope) {
+                                               lite_metal::Scope* scope) {
   auto X_name = opdesc.Input("X").front();
   auto Y_name = opdesc.Input("Y").front();
   auto Out_name = opdesc.Output("Out").front();
 
-  param_.X = GetVar<lite::Tensor>(scope, X_name);
-  param_.Y = GetVar<lite::Tensor>(scope, Y_name);
-  param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
+  param_.X = GetVar<lite_metal::Tensor>(scope, X_name);
+  param_.Y = GetVar<lite_metal::Tensor>(scope, Y_name);
+  param_.Out = GetMutableVar<lite_metal::Tensor>(scope, Out_name);
   param_.axis = opdesc.GetAttr<int>("axis");
   param_.act_type = opdesc.GetAttr<std::string>("act_type");
 
@@ -70,14 +70,14 @@ bool FusionElementwiseActivationOp::AttachImpl(const cpp::OpDesc& opdesc,
 // }
 
 // bool FusionElementwiseActivationGradExplicitOp::AttachImpl(
-//     const cpp::OpDesc& opdesc, lite::Scope* scope) {
+//     const cpp::OpDesc& opdesc, lite_metal::Scope* scope) {
 //   CHECK_EQ(opdesc.InputArgumentNames().size(), 1UL);
 //   auto Out_name = opdesc.Input(framework::GradVarName("Out")).front();
 //   auto X_name = opdesc.Output(framework::GradVarName("X")).front();
 //   auto Y_name = opdesc.Output(framework::GradVarName("Y")).front();
 
-//   param_.Out_grad = GetVar<lite::Tensor>(scope, Out_name);
-//   param_.X_grad = GetMutableVar<lite::Tensor>(scope, X_name);
+//   param_.Out_grad = GetVar<lite_metal::Tensor>(scope, Out_name);
+//   param_.X_grad = GetMutableVar<lite_metal::Tensor>(scope, X_name);
 //   param_.Y_grad = GetMutableVar<Tensor>(scope, Y_name);
 //   param_.axis = opdesc.GetAttr<int>("axis");
 //   param_.act_type = opdesc.GetAttr<std::string>("act_type");
@@ -94,20 +94,20 @@ bool FusionElementwiseActivationOp::AttachImpl(const cpp::OpDesc& opdesc,
 }  // namespace paddle
 
 REGISTER_LITE_OP(fusion_elementwise_sub_activation,
-                 paddle::lite::operators::FusionElementwiseActivationOp);
+                 paddle::lite_metal::operators::FusionElementwiseActivationOp);
 REGISTER_LITE_OP(fusion_elementwise_add_activation,
-                 paddle::lite::operators::FusionElementwiseActivationOp);
+                 paddle::lite_metal::operators::FusionElementwiseActivationOp);
 REGISTER_LITE_OP(fusion_elementwise_mul_activation,
-                 paddle::lite::operators::FusionElementwiseActivationOp);
+                 paddle::lite_metal::operators::FusionElementwiseActivationOp);
 REGISTER_LITE_OP(fusion_elementwise_max_activation,
-                 paddle::lite::operators::FusionElementwiseActivationOp);
+                 paddle::lite_metal::operators::FusionElementwiseActivationOp);
 REGISTER_LITE_OP(fusion_elementwise_min_activation,
-                 paddle::lite::operators::FusionElementwiseActivationOp);
+                 paddle::lite_metal::operators::FusionElementwiseActivationOp);
 REGISTER_LITE_OP(fusion_elementwise_div_activation,
-                 paddle::lite::operators::FusionElementwiseActivationOp);
+                 paddle::lite_metal::operators::FusionElementwiseActivationOp);
 
 // #ifdef LITE_WITH_TRAIN
 // REGISTER_LITE_OP(
 //     fusion_elementwise_sub_activation_grad,
-//     paddle::lite::operators::FusionElementwiseActivationGradExplicitOp);
+//     paddle::lite_metal::operators::FusionElementwiseActivationGradExplicitOp);
 // #endif

@@ -21,7 +21,7 @@ limitations under the License. */
 #include "lite/backends/fpga/KD/pes/transposed_conv_pe.hpp"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
@@ -40,7 +40,7 @@ class Conv2DTransposeCompute
 
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
+      paddle::lite_metal::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
   }
   std::string kernel_func_name_{"NotImplForConvTranspose"};

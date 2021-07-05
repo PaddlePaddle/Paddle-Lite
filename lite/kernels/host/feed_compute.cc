@@ -16,7 +16,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace host {
 
@@ -29,7 +29,7 @@ class FeedCompute
     auto &param = Param<operators::FeedParam>();
     VLOG(4) << "feed_list.size: " << param.feed_list->size();
     VLOG(4) << "col " << param.col;
-    const lite::Tensor &feed_item = (*param.feed_list)[param.col];
+    const lite_metal::Tensor &feed_item = (*param.feed_list)[param.col];
     param.out->ShareDataWith(feed_item);
   }
 };
@@ -40,7 +40,7 @@ class FeedCompute
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    feed, kHost, kAny, kAny, paddle::lite::kernels::host::FeedCompute, def)
+    feed, kHost, kAny, kAny, paddle::lite_metal::kernels::host::FeedCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();

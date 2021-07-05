@@ -21,14 +21,14 @@
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 
 template <typename T>
-void stack_func(const std::vector<lite::Tensor *> &input,
+void stack_func(const std::vector<lite_metal::Tensor *> &input,
                 int axis,
-                lite::Tensor *output) {
+                lite_metal::Tensor *output) {
   if (axis < 0) axis += (input[0]->dims().size() + 1);
   int n = input.size();
   auto *y_data = output->mutable_data<T>();

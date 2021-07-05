@@ -17,7 +17,7 @@
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
@@ -79,4 +79,4 @@ int GatherConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     gather,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::GatherConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::GatherConverter);

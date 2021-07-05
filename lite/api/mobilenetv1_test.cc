@@ -29,14 +29,14 @@ DEFINE_int32(H, 224, "input_height");
 DEFINE_int32(W, 224, "input_width");
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 
 void TestModel(const std::vector<Place>& valid_places,
                const std::string& model_dir = FLAGS_model_dir,
                bool save_model = false) {
   DeviceInfo::Init();
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
-  lite::Predictor predictor;
+  lite_metal::Predictor predictor;
 
   predictor.Build(model_dir, "", "", valid_places);
 

@@ -21,7 +21,7 @@
 #include "lite/core/type_system.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace arm {
 
@@ -462,7 +462,7 @@ void transpose_mat(const lite_api::float16_t* din,
 }
 #endif
 
-std::vector<int> get_stride(const paddle::lite::DDimLite& dims) {
+std::vector<int> get_stride(const paddle::lite_metal::DDimLite& dims) {
   std::vector<int> data_stride{0};
 
   for (int i = 0; i < dims.size(); ++i) {
@@ -529,8 +529,8 @@ void TransposeCompute::PrepareForRun() { ReInitWhenNeeded(); }
 
 template <typename Dtype>
 void TransposeCompute_(const std::vector<int>& axis,
-                       const lite::Tensor* input,
-                       lite::Tensor* output) {
+                       const lite_metal::Tensor* input,
+                       lite_metal::Tensor* output) {
   const Dtype* input_ptr = input->data<Dtype>();
   Dtype* output_ptr = output->mutable_data<Dtype>();
 
@@ -644,7 +644,7 @@ REGISTER_LITE_KERNEL(transpose,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::TransposeCompute,
+                     paddle::lite_metal::kernels::arm::TransposeCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
@@ -655,7 +655,7 @@ REGISTER_LITE_KERNEL(transpose2,
                      kARM,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::Transpose2Compute,
+                     paddle::lite_metal::kernels::arm::Transpose2Compute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})

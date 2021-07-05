@@ -19,7 +19,7 @@
 #include "lite/backends/host/math/poly_util.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace host {
 namespace math {
 

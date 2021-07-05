@@ -22,7 +22,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace gen {
 
@@ -38,8 +38,8 @@ class MatMulJitCode : public JitCode {
 
   std::string name() const override {
     std::string base = "MatMulJitCode";
-    base = base + "_M" + paddle::lite::to_string(m_) + "_N" +
-           paddle::lite::to_string(n_) + "_K" + paddle::lite::to_string(k_);
+    base = base + "_M" + paddle::lite_metal::to_string(m_) + "_N" +
+           paddle::lite_metal::to_string(n_) + "_K" + paddle::lite_metal::to_string(k_);
     return base;
   }
   void genCode() override;

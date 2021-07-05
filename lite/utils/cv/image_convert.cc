@@ -17,7 +17,7 @@
 #include <math.h>
 #include <string.h>
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace utils {
 namespace cv {
 void nv_to_bgr(

@@ -15,7 +15,7 @@
 #include "lite/core/mir/pass_manager.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

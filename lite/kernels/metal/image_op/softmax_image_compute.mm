@@ -20,7 +20,7 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
@@ -187,7 +187,7 @@ REGISTER_LITE_KERNEL(softmax,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::SoftmaxImageCompute,
+    paddle::lite_metal::kernels::metal::SoftmaxImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
@@ -203,7 +203,7 @@ REGISTER_LITE_KERNEL(softmax,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::SoftmaxImageCompute,
+    paddle::lite_metal::kernels::metal::SoftmaxImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})

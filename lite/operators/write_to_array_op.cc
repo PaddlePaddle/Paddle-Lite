@@ -16,7 +16,7 @@
 #include "lite/core/op_registry.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace operators {
 
 bool WriteToArrayOp::CheckShape() const {
@@ -28,7 +28,7 @@ bool WriteToArrayOp::CheckShape() const {
 
 bool WriteToArrayOp::InferShapeImpl() const { return true; }
 
-bool WriteToArrayOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool WriteToArrayOp::AttachImpl(const cpp::OpDesc &opdesc, lite_metal::Scope *scope) {
   auto inputs = opdesc.Input("X").front();
   param_.X = scope->FindTensor(inputs);
 
@@ -44,4 +44,4 @@ bool WriteToArrayOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(write_to_array, paddle::lite::operators::WriteToArrayOp);
+REGISTER_LITE_OP(write_to_array, paddle::lite_metal::operators::WriteToArrayOp);

@@ -18,7 +18,7 @@
 #pragma once
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace arm {
 namespace math {
 
@@ -27,7 +27,7 @@ void SequenceExpandImpl(const T* x_data,
                         const LoD& x_lod,
                         int width,
                         const std::vector<uint64_t>& ref_lod,
-                        lite::Tensor* output);
+                        lite_metal::Tensor* output);
 
 }  // namespace math
 }  // namespace arm

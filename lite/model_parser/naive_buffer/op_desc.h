@@ -27,12 +27,12 @@
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace naive_buffer {
 
 /*
- * The lite::naive_buffer::OpDesc, an light-weight implementation of wrapper of
- * lite::naive_buffer::proto::OpDesc.
+ * The lite_metal::naive_buffer::OpDesc, an light-weight implementation of wrapper of
+ * lite_metal::naive_buffer::proto::OpDesc.
  */
 class OpDesc : public OpDescAPI {
  public:

@@ -23,7 +23,7 @@
 #include "lite/core/types.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace mir {
 
 // Due to some hardware limitations, we need to apply the constraints for the

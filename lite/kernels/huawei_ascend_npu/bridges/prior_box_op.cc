@@ -18,7 +18,7 @@
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
@@ -104,4 +104,4 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     prior_box,
     kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::PriorBoxConverter);
+    paddle::lite_metal::subgraph::huawei_ascend_npu::PriorBoxConverter);

@@ -19,13 +19,13 @@
 #include "lite/backends/x86/mklml.h"
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace jit {
 namespace more {
 namespace mkl {
 
 #ifndef LITE_WITH_STATIC_MKL
-using namespace lite::x86;  // NOLINT
+using namespace lite_metal::x86;  // NOLINT
 #endif
 
 template <>
@@ -315,7 +315,7 @@ AWALYS_USE_ME_WITH_DOUBLE(Softmax);
 }  // namespace lite
 }  // namespace paddle
 
-namespace mkl = paddle::lite::jit::more::mkl;
+namespace mkl = paddle::lite_metal::jit::more::mkl;
 
 #define REGISTER_MKL_KERNEL(func) \
   REGISTER_JITKERNEL_MORE(        \

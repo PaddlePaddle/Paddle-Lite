@@ -21,7 +21,7 @@
 #include <vector>
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace cuda {
 
@@ -30,8 +30,8 @@ TEST(sequence_pool_cuda, normal) {
   std::unique_ptr<KernelContext> ctx(new KernelContext);
   auto& context = ctx->As<CUDAContext>();
 
-  lite::Tensor x, x_cpu, out, out_cpu;
-  lite::LoD lod;
+  lite_metal::Tensor x, x_cpu, out, out_cpu;
+  lite_metal::LoD lod;
   lod.push_back(std::vector<uint64_t>{0, 10});
 
   x.set_lod(lod);
@@ -39,14 +39,14 @@ TEST(sequence_pool_cuda, normal) {
   const size_t second_dim = 8u;
   std::vector<int64_t> input_shape{static_cast<int64_t>(lod[0].back()),
                                    static_cast<int64_t>(second_dim)};
-  lite::DDim in_dims(input_shape);
+  lite_metal::DDim in_dims(input_shape);
   x.Resize(in_dims);
   x_cpu.Resize(in_dims);
 
   const size_t out_first_dim = lod[0].size() - 1;
   std::vector<int64_t> output_shape{static_cast<int64_t>(out_first_dim),
                                     static_cast<int64_t>(second_dim)};
-  lite::DDim out_dims(output_shape);
+  lite_metal::DDim out_dims(output_shape);
   out.Resize(out_dims);
   out_cpu.Resize(out_dims);
 
@@ -57,7 +57,7 @@ TEST(sequence_pool_cuda, normal) {
   for (int64_t i = 0; i < x_cpu.dims().production(); i++) {
     x_cpu_data[i] = 1.1f * i;
   }
-  x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
+  x.Assign<float, lite_metal::DDim, TARGET(kCUDA)>(x_cpu_data, x_cpu.dims());
 
   operators::SequencePoolParam param;
   param.X = &x;
