@@ -1076,8 +1076,8 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
                                      CL_KERNEL_WORK_GROUP_SIZE,
                                      &max_work_group_size);
     std::set<cl::NDRange, CLContext::CompareByRange> lwss =
-        context.cl_context()->GenerateLocalWorkSizes(
-            global_work_size_, max_work_group_size, false);
+        context.cl_context()->GenerateLocalWorkSizes(global_work_size_,
+                                                     max_work_group_size);
     if (lwss.size() < 1) {
       local_work_size_ = cl::NullRange;
       return;
