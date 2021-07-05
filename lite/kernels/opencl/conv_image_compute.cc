@@ -2156,7 +2156,10 @@ void ConvImageCompute::Run() {
         kernel_, global_work_size_, local_work_size_, &event_);
     */
     std::vector<uint32_t> internal_global_work_size(3);
-    if (local_work_size_ != cl::NullRange) {
+
+    // static_cast<int>(local_work_size_[0]) != 0) mean local_work_size_ !=
+    // cl::NullRange
+    if (static_cast<int>(local_work_size_[0]) != 0) {
       internal_global_work_size[0] =
           ROUND_UP(global_work_size_[0], local_work_size_[0]);
       internal_global_work_size[1] =
