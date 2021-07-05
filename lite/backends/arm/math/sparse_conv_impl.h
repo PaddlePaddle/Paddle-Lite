@@ -46,34 +46,6 @@ void sparse_conv_fp32_pipelined(const float* A,
                                 const operators::SparseConvParam& param,
                                 ARMContext* ctx);
 
-// void sparse_conv_int8_fp32_pipelined(const int8_t* A,
-//                                      const int8_t* B,
-//                                      const int32_t* widx_dmap,
-//                                      const uint32_t* nidx_nnzmap,
-//                                      const float* bias,
-//                                      int M,
-//                                      int K,
-//                                      int N,
-//                                      bool is_bias,
-//                                      int flag_act,
-//                                      const float* scale,
-//                                      const float* alpha,
-//                                      float* output);
-
-// void sparse_conv_int8_int8_pipelined(const int8_t* A,
-//                                      const int8_t* B,
-//                                      const int32_t* widx_dmap,
-//                                      const uint32_t* nidx_nnzmap,
-//                                      const float* bias,
-//                                      int M,
-//                                      int K,
-//                                      int N,
-//                                      bool is_bias,
-//                                      int flag_act,
-//                                      const float* scale,
-//                                      const float* alpha,
-//                                      int8_t* output);
-
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

@@ -60,6 +60,7 @@ void SparseConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                               im_size,
                                               param,
                                               &ctx);
+  KERNEL_FUNC_NAME("sparse_conv_fp32_pipelined")
 }
 
 }  // namespace arm
