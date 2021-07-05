@@ -577,79 +577,59 @@ void loadb(float16_t *out,
     int rem_rem_rem = rem_rem;
     int temp = y_line ? stride_w * (y / 4) : 0;
     int temp2 = (y > 0 && rem_cnt > 0) ? stride_w2 * (y / 4) : 0;
-    asm volatile(
-        "cmp %w[cnt], #1                            \n"
-        "prfm   pldl1keep, [%[ptr0]]                \n"
-        "prfm   pldl1keep, [%[ptr1]]                \n"
-        "prfm   pldl1keep, [%[ptr2]]                \n"
-        "prfm   pldl1keep, [%[ptr3]]                \n"
-        "blt 1f                                     \n"
-        "0:                                         \n"
-        "ldp q0, q1, [%[ptr0]], #32                 \n"
-        "ldp q2, q3, [%[ptr1]], #32                 \n"
-        "ldp q4, q5, [%[ptr2]], #32                 \n"
-        "ldp q6, q7, [%[ptr3]], #32                 \n"
-        "subs %w[cnt], %w[cnt], #1                  \n"
-        "stp q0, q1, [%[outptr]]                    \n"
-        "stp q2, q3, [%[outptr], #32]               \n"
-        "stp q4, q5, [%[outptr], #64]               \n"
-        "stp q6, q7, [%[outptr], #96]               \n"
-        // outptr+= stride_out(16k)
-        "add %[outptr], %[outptr], %[stride_out]    \n"
-        "bne 0b                                     \n"
-        "1:                                         \n"
-        "cmp %w[right_remain], #1                   \n"
-        "blt 2f                                     \n"
-        // rem_cnt > 0
-        "cmp %w[rem_cnt], #1                        \n"
-        "sub %[outptr], %[outptr], %[temp]          \n"
-        "blt 3f                                     \n"
-        "4:                                         \n"
-        "ldr d0, [%[ptr0]], #8                      \n"
-        "ldr d1, [%[ptr1]], #8                      \n"
-        "ldr d2, [%[ptr2]], #8                      \n"
-        "ldr d3, [%[ptr3]], #8                      \n"
-        "subs %w[rem_cnt], %w[rem_cnt], #1          \n"
-        "str d0, [%[outptr]]                        \n"
-        "str d1, [%[outptr], #0x08]                 \n"
-        "str d2, [%[outptr], #0x10]                 \n"
-        "str d3, [%[outptr], #0x18]                 \n"
-        // outptr+= stride
-        "add %[outptr], %[outptr], %[stride]        \n"
-        "bne 4b                                     \n"
-        "sub %[outptr], %[outptr], %[temp2]         \n"
-        "3:                                         \n"
-        // rem_rem > 0
-        "cmp %w[rem_rem], #1                        \n"
-        "blt 2f                                     \n"
-        "5:                                         \n"
-        "ldr s0, [%[ptr0]], #2                      \n"
-        "ldr s1, [%[ptr1]], #2                      \n"
-        "ldr s2, [%[ptr2]], #2                      \n"
-        "ldr s3, [%[ptr3]], #2                      \n"
-        "subs %w[rem_rem], %w[rem_rem], #1          \n"
-        "str s0, [%[outptr]]                        \n"
-        "str s1, [%[outptr], #0x02]                 \n"
-        "str s2, [%[outptr], #0x04]                 \n"
-        "str s3, [%[outptr], #0x06]                 \n"
-        "add %[outptr], %[outptr], %[stride_k]      \n"
-        "bne 5b                                     \n"
-        "2:                                         \n"
-        : [ptr0] "+r"(ptr0),
-          [ptr1] "+r"(ptr1),
-          [ptr2] "+r"(ptr2),
-          [ptr3] "+r"(ptr3),
-          [outptr] "+r"(outptr_row_col),
-          [rem_cnt] "+r"(cnt_rem_num),
-          [rem_rem] "+r"(rem_rem_rem),
-          [cnt] "+r"(cnt_col)
-        : [right_remain] "r"(right_remain),
-          [stride_out] "r"(stride_out),
-          [stride] "r"(stride),
-          [stride_k] "r"(stride_k),
-          [temp2] "r"(temp2),
-          [temp] "r"(temp)
-        : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+    if (cnt > 0) {
+      for (int i = 0; i < cnt; i++) {
+        uint16x8_t v0 = vld1q_u16(ptr0);
+        uint16x8_t v01 = vld1q_u16(ptr0 + 8);
+        uint16x8_t v1 = vld1q_u16(ptr1);
+        uint16x8_t v11 = vld1q_u16(ptr1 + 8);
+        uint16x8_t v2 = vld1q_u16(ptr2);
+        uint16x8_t v21 = vld1q_u16(ptr2 + 8);
+        vst1q_u16(outptr_row_col, v0);
+        uint16x8_t v3 = vld1q_u16(ptr3);
+        vst1q_u16(outptr_row_col + 8, v01);
+        uint16x8_t v31 = vld1q_u16(ptr3 + 8);
+        vst1q_u16(outptr_row_col + 16, v1);
+        ptr0 += 16;
+        vst1q_u16(outptr_row_col + 24, v11);
+        ptr1 += 16;
+        vst1q_u16(outptr_row_col + 32, v2);
+        ptr2 += 16;
+        vst1q_u16(outptr_row_col + 40, v21);
+        ptr3 += 16;
+        vst1q_u16(outptr_row_col + 48, v3);
+        vst1q_u16(outptr_row_col + 56, v31);
+        outptr_row_col += (stride_out / 2);
+      }
+      outptr_row_col -= (temp / 2);
+    }
+    if (rem_cnt > 0) {
+      for (int i = 0; i < rem_cnt; i++) {
+        uint16x4_t v0 = vld1_u16(ptr0);
+        uint16x4_t v1 = vld1_u16(ptr1);
+        uint16x4_t v2 = vld1_u16(ptr2);
+        uint16x4_t v3 = vld1_u16(ptr3);
+        ptr0 += 4;
+        vst1_u16(outptr_row_col, v0);
+        ptr1 += 4;
+        vst1_u16(outptr_row_col + 4, v1);
+        ptr2 += 4;
+        vst1_u16(outptr_row_col + 8, v2);
+        ptr3 += 4;
+        vst1_u16(outptr_row_col + 12, v3);
+        outptr_row_col += (stride / 2);
+      }
+      outptr_row_col -= (temp2 / 2);
+    }
+    if (rem_rem > 0) {
+      for (int i = 0; i < rem_rem; i++) {
+        outptr_row_col[0] = *ptr0++;
+        outptr_row_col[1] = *ptr1++;
+        outptr_row_col[2] = *ptr2++;
+        outptr_row_col[3] = *ptr3++;
+        outptr_row_col += (stride_k / 2);
+      }
+    }
   }
 
 #pragma omp parallel for
@@ -666,55 +646,32 @@ void loadb(float16_t *out,
     // (y - cnt_y) * (4 - 1) * 2
     int temp2 =
         (y > 0 && rem_cnt > 0) ? (stride_w2 * (y / 4) + (y - cnt_y) * 6) : 0;
-    asm volatile(
-        "cmp %w[cnt], #1                            \n"
-        "prfm   pldl1keep, [%[ptr0]]                \n"
-        "blt 1f                                     \n"
-        "0:                                         \n"
-        "ldp q0, q1, [%[ptr0]], #32                 \n"
-        "prfm   pldl1keep, [%[ptr0]]                \n"
-        "subs %w[cnt], %w[cnt], #1                  \n"
-        "stp q0, q1, [%[outptr]]                    \n"
-        "add %[outptr], %[outptr], %[stride_out]    \n"
-        "bne 0b                                     \n"
-        "1:                                         \n"
-        "cmp %w[right_remain], #1                   \n"
-        "blt 2f                                     \n"
-        // rem_cnt > 0
-        "cmp %w[rem_cnt], #1                        \n"
-        "sub %[outptr], %[outptr], %[temp]          \n"
-        "blt 3f                                     \n"
-        "4:                                         \n"
-        "ldr d0, [%[ptr0]], #8                      \n"
-        "subs %w[rem_cnt], %w[rem_cnt], #1          \n"
-        "str d0, [%[outptr]]                        \n"
-        // outptr+= stride
-        "add %[outptr], %[outptr], %[stride]        \n"
-        "bne 4b                                     \n"
-        "sub %[outptr], %[outptr], %[temp2]         \n"
-        "3:                                         \n"
-        // rem_rem > 0
-        "cmp %w[rem_rem], #1                        \n"
-        "blt 2f                                     \n"
-        "5:                                         \n"
-        "ldr s0, [%[ptr0]], #2                      \n"
-        "subs %w[rem_rem], %w[rem_rem], #1          \n"
-        "str s0, [%[outptr]]                        \n"
-        "add %[outptr], %[outptr], %[stride_k]      \n"
-        "bne 5b                                     \n"
-        "2:                                         \n"
-        : [ptr0] "+r"(ptr0),
-          [outptr] "+r"(outptr_row_col),
-          [rem_cnt] "+r"(cnt_rem_num),
-          [rem_rem] "+r"(rem_rem_rem),
-          [cnt] "+r"(cnt_col)
-        : [right_remain] "r"(right_remain),
-          [stride_out] "r"(stride_out),
-          [stride] "r"(stride),
-          [stride_k] "r"(stride_k),
-          [temp2] "r"(temp2),
-          [temp] "r"(temp)
-        : "cc", "memory", "v0", "v1");
+    if (cnt > 0) {
+      for (int i = 0; i < cnt; i++) {
+        uint16x8_t v0 = vld1q_u16(ptr0);
+        uint16x8_t v1 = vld1q_u16(ptr0 + 8);
+        ptr0 += 16;
+        vst1q_u16(outptr_row_col, v0);
+        vst1q_u16(outptr_row_col + 8, v1);
+        outptr_row_col += (stride_out / 2);
+      }
+      outptr_row_col -= (temp / 2);
+    }
+    if (rem_cnt > 0) {
+      for (int i = 0; i < rem_cnt; i++) {
+        uint16x4_t v0 = vld1_u16(ptr0);
+        ptr0 += 4;
+        vst1_u16(outptr_row_col, v0);
+        outptr_row_col += (stride / 2);
+      }
+      outptr_row_col -= (temp2 / 2);
+    }
+    if (rem_rem > 0) {
+      for (int i = 0; i < rem_rem; i++) {
+        *outptr_row_col = *ptr0++;
+        outptr_row_col += (stride_k / 2);
+      }
+    }
   }
 }
 

@@ -481,7 +481,7 @@ void Conv2DTransposeCompute<PRECISION(kFP16),
   DEPTHWISE_PARAM
   if (!depth_wise_s1 && !depth_wise_s2) {
     lite::Tensor tmp_weights;
-    lite::arm::math::prepackA(
+    lite::arm::math::fp16::prepackA_fp16(
         &tmp_weights, *(param.filter), 1.f, m, k, group, true, &ctx);
     param.filter->Resize(tmp_weights.dims());
     param.filter->CopyDataFrom(tmp_weights);
@@ -508,7 +508,7 @@ void Conv2DTransposeCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int group_size_coldata = m * n;
 
   bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
-  int hblock = lite::arm::math::get_hblock(&ctx);
+  int hblock = lite::arm::math::fp16::get_hblock_fp16(&ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
