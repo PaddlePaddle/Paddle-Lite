@@ -29,15 +29,6 @@ class SparseConvDetectPass : public ProgramPass {
   template <typename T>
   int ComputeSparseZeros(const lite::Tensor* weights, const int num);
 
-  // template <typename T>
-  // int ComputeSparseWeight(const T* weights,
-  //                         const int ch_out,
-  //                         const int ch_in,
-  //                         const int input_size,
-  //                         const int num_nonzeroes,
-  //                         T* nonzero_output,
-  //                         uint32_t* oc_nonzeros,
-  //                         int32_t* diffs);
   template <typename T>
   int ComputeSparseWeight(const lite::Tensor* w_tensor,
                           const int M,

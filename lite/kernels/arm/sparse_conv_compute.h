@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -28,6 +29,17 @@ class SparseConvCompute : public KernelLite<TARGET(kARM), Ptype> {
   virtual void Run();
 
   ~SparseConvCompute() {}
+
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForSparseConv"};
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
+#else
+#define KERNEL_FUNC_NAME(kernel_func_name)
+#endif
 
  private:
   using param_t = operators::SparseConvParam;
