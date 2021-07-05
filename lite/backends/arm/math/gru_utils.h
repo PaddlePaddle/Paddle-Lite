@@ -73,7 +73,7 @@ inline void gru_add_with_bias(
   }
 }
 
-template <lite_api::ActivationType Act>
+template <lite_metal_api::ActivationType Act>
 static void gru_unit_reset_act_impl(float* updata_gate,
                                     int stride_update,
                                     float* reset_gate,
@@ -137,7 +137,7 @@ static void gru_unit_reset_act_impl(float* updata_gate,
   }
 }
 
-template <lite_api::ActivationType Act>
+template <lite_metal_api::ActivationType Act>
 static void gru_unit_out_act_impl(bool origin_mode,
                                   float* updata_gate,
                                   int stride_update,
@@ -236,7 +236,7 @@ static void gru_unit_out_act_impl(bool origin_mode,
   }
 }
 
-inline void gru_unit_reset_act(lite_api::ActivationType act_type,
+inline void gru_unit_reset_act(lite_metal_api::ActivationType act_type,
                                GRUMetaValue<float> value,
                                int frame_size,
                                int batch_size) {
@@ -250,8 +250,8 @@ inline void gru_unit_reset_act(lite_api::ActivationType act_type,
   int stride_reset_hidden_prev = frame_size;
 
   switch (act_type) {
-    case lite_api::ActivationType::kIndentity:
-      gru_unit_reset_act_impl<lite_api::ActivationType::kIndentity>(
+    case lite_metal_api::ActivationType::kIndentity:
+      gru_unit_reset_act_impl<lite_metal_api::ActivationType::kIndentity>(
           updata_gate,
           stride_update,
           reset_gate,
@@ -263,8 +263,8 @@ inline void gru_unit_reset_act(lite_api::ActivationType act_type,
           frame_size,
           batch_size);
       break;
-    case lite_api::ActivationType::kTanh:
-      gru_unit_reset_act_impl<lite_api::ActivationType::kTanh>(
+    case lite_metal_api::ActivationType::kTanh:
+      gru_unit_reset_act_impl<lite_metal_api::ActivationType::kTanh>(
           updata_gate,
           stride_update,
           reset_gate,
@@ -276,8 +276,8 @@ inline void gru_unit_reset_act(lite_api::ActivationType act_type,
           frame_size,
           batch_size);
       break;
-    case lite_api::ActivationType::kSigmoid:
-      gru_unit_reset_act_impl<lite_api::ActivationType::kSigmoid>(
+    case lite_metal_api::ActivationType::kSigmoid:
+      gru_unit_reset_act_impl<lite_metal_api::ActivationType::kSigmoid>(
           updata_gate,
           stride_update,
           reset_gate,
@@ -289,8 +289,8 @@ inline void gru_unit_reset_act(lite_api::ActivationType act_type,
           frame_size,
           batch_size);
       break;
-    case lite_api::ActivationType::kRelu:
-      gru_unit_reset_act_impl<lite_api::ActivationType::kRelu>(
+    case lite_metal_api::ActivationType::kRelu:
+      gru_unit_reset_act_impl<lite_metal_api::ActivationType::kRelu>(
           updata_gate,
           stride_update,
           reset_gate,
@@ -307,7 +307,7 @@ inline void gru_unit_reset_act(lite_api::ActivationType act_type,
   }
 }
 
-inline void gru_unit_out_act(lite_api::ActivationType act_type,
+inline void gru_unit_out_act(lite_metal_api::ActivationType act_type,
                              bool origin_mode,
                              GRUMetaValue<float> value,
                              int frame_size,
@@ -323,8 +323,8 @@ inline void gru_unit_out_act(lite_api::ActivationType act_type,
   int stride_hidden = frame_size;
 
   switch (act_type) {
-    case lite_api::ActivationType::kIndentity:
-      gru_unit_out_act_impl<lite_api::ActivationType::kIndentity>(
+    case lite_metal_api::ActivationType::kIndentity:
+      gru_unit_out_act_impl<lite_metal_api::ActivationType::kIndentity>(
           origin_mode,
           updata_gate,
           stride_update,
@@ -337,8 +337,8 @@ inline void gru_unit_out_act(lite_api::ActivationType act_type,
           frame_size,
           batch_size);
       break;
-    case lite_api::ActivationType::kTanh:
-      gru_unit_out_act_impl<lite_api::ActivationType::kTanh>(origin_mode,
+    case lite_metal_api::ActivationType::kTanh:
+      gru_unit_out_act_impl<lite_metal_api::ActivationType::kTanh>(origin_mode,
                                                              updata_gate,
                                                              stride_update,
                                                              cell_state,
@@ -350,8 +350,8 @@ inline void gru_unit_out_act(lite_api::ActivationType act_type,
                                                              frame_size,
                                                              batch_size);
       break;
-    case lite_api::ActivationType::kSigmoid:
-      gru_unit_out_act_impl<lite_api::ActivationType::kSigmoid>(
+    case lite_metal_api::ActivationType::kSigmoid:
+      gru_unit_out_act_impl<lite_metal_api::ActivationType::kSigmoid>(
           origin_mode,
           updata_gate,
           stride_update,
@@ -364,8 +364,8 @@ inline void gru_unit_out_act(lite_api::ActivationType act_type,
           frame_size,
           batch_size);
       break;
-    case lite_api::ActivationType::kRelu:
-      gru_unit_out_act_impl<lite_api::ActivationType::kRelu>(origin_mode,
+    case lite_metal_api::ActivationType::kRelu:
+      gru_unit_out_act_impl<lite_metal_api::ActivationType::kRelu>(origin_mode,
                                                              updata_gate,
                                                              stride_update,
                                                              cell_state,
@@ -387,8 +387,8 @@ struct GRUUnitFunctor {
   static void compute(GRUMetaValue<T> value,
                       int frame_size,
                       int batch_size,
-                      const lite_api::ActivationType active_node,
-                      const lite_api::ActivationType active_gate,
+                      const lite_metal_api::ActivationType active_node,
+                      const lite_metal_api::ActivationType active_gate,
                       bool origin_mode,
                       ARMContext* ctx) {
     operators::ActivationParam act_param;
@@ -448,8 +448,8 @@ struct GRUUnitFunctor {
   static void quant_compute(GRUMetaValue<T> value,
                             int frame_size,
                             int batch_size,
-                            const lite_api::ActivationType active_node,
-                            const lite_api::ActivationType active_gate,
+                            const lite_metal_api::ActivationType active_node,
+                            const lite_metal_api::ActivationType active_gate,
                             bool origin_mode,
                             std::vector<float> weight_scale,
                             int bit_length,

@@ -28,7 +28,7 @@ namespace lite_metal {
 TEST(model, test) {
 #ifdef LITE_WITH_ARM
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_metal_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite_metal::Predictor predictor;
   std::vector<Place> valid_places({Place{TARGET(kARM), PRECISION(kFloat)},
                                    Place{TARGET(kARM), PRECISION(kInt8)}});

@@ -277,7 +277,7 @@ TEST(conv2d, compute_conv2d_gemm) {
                                     param.activation_param.Relu_clipped_coef = 6.f;
                                     param.activation_param.has_active = true;
                                     param.activation_param.active_type =
-                                        lite_api::ActivationType::kRelu6;
+                                        lite_metal_api::ActivationType::kRelu6;
                                 }
                                 param.paddings = std::make_shared<std::vector<int>>(paddings);
                                 param.dilations = std::make_shared<std::vector<int>>(dilations);

@@ -202,7 +202,7 @@ class XPUSqueezeExcitationFuser_DEPREC : public FuseBase {
     new_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_filter_t = scope->NewTensor(new_filter_name);
-    new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_filter_t->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     new_filter_t->set_persistable(true);
     new_filter_t->Resize({mul_1_w_len + mul_2_w_len});
     float* new_filter_ptr = new_filter_t->mutable_data<float>();
@@ -226,7 +226,7 @@ class XPUSqueezeExcitationFuser_DEPREC : public FuseBase {
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* max_output_tensor = scope->NewTensor(max_output_name);
-    max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_output_tensor->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
@@ -482,7 +482,7 @@ class XPUSqueezeExcitationFuser : public FuseBase {
     new_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_filter_t = scope->NewTensor(new_filter_name);
-    new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_filter_t->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     new_filter_t->set_persistable(true);
     new_filter_t->Resize({mul_1_w_len + mul_2_w_len});
     float* new_filter_ptr = new_filter_t->mutable_data<float>();
@@ -497,7 +497,7 @@ class XPUSqueezeExcitationFuser : public FuseBase {
     new_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_bias_t = scope->NewTensor(new_bias_name);
-    new_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_bias_t->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     new_bias_t->set_persistable(true);
     if (with_bias_) {
       std::vector<std::string> bias_name{matched.at("mul_1_bias")->arg()->name,
@@ -537,7 +537,7 @@ class XPUSqueezeExcitationFuser : public FuseBase {
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* max_output_tensor = scope->NewTensor(max_output_name);
-    max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_output_tensor->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
 

@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
   x.Resize(dim_in);
   paddle::lite_metal::fill_tensor_rand(x, -1.f, 1.f);
   act_param.X = &x;
-  act_param.active_type = (paddle::lite_api::ActivationType)act_type;
+  act_param.active_type = (paddle::lite_metal_api::ActivationType)act_type;
   act_param.has_active = true;
 
   if (act_type == 2) {
@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -227,7 +227,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -247,7 +247,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -267,7 +267,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();
@@ -287,7 +287,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
         new paddle::lite_metal::KernelContext);
     auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-    ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+    ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                    thread_num);
     act_compute.SetContext(std::move(ctx1));
     act_compute.PrepareForRun();

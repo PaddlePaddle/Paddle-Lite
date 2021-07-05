@@ -54,20 +54,20 @@ void OptModel(const std::string& load_model_dir,
               const std::string& model_filename,
               const std::string& params_filename,
               const std::string& save_model_path) {
-  paddle::lite_api::CxxConfig config;
+  paddle::lite_metal_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
   if (!model_filename.empty() && !params_filename.empty()) {
     config.set_model_file(load_model_dir + "/" + model_filename);
     config.set_param_file(load_model_dir + "/" + params_filename);
   }
-  std::vector<paddle::lite_api::Place> vaild_places = {
-      paddle::lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-      paddle::lite_api::Place{TARGET(kARM), PRECISION(kInt32)},
-      paddle::lite_api::Place{TARGET(kARM), PRECISION(kInt64)},
+  std::vector<paddle::lite_metal_api::Place> vaild_places = {
+      paddle::lite_metal_api::Place{TARGET(kARM), PRECISION(kFloat)},
+      paddle::lite_metal_api::Place{TARGET(kARM), PRECISION(kInt32)},
+      paddle::lite_metal_api::Place{TARGET(kARM), PRECISION(kInt64)},
   };
   config.set_valid_places(vaild_places);
 
-  auto predictor = paddle::lite_api::CreatePaddlePredictor(config);
+  auto predictor = paddle::lite_metal_api::CreatePaddlePredictor(config);
 
   std::string cmd_str = "rm -rf " + save_model_path;
   int ret = system(cmd_str.c_str());
@@ -75,7 +75,7 @@ void OptModel(const std::string& load_model_dir,
     std::cout << "Delete old optimized model " << save_model_path << std::endl;
   }
   predictor->SaveOptimizedModel(save_model_path,
-                                paddle::lite_api::LiteModelType::kNaiveBuffer);
+                                paddle::lite_metal_api::LiteModelType::kNaiveBuffer);
   std::cout << "Load model from " << load_model_dir << std::endl;
   std::cout << "Save optimized model to " << save_model_path << std::endl;
 }
@@ -89,11 +89,11 @@ void Run(const std::string& model_path,
          const int height,
          const int width) {
   // set config and create predictor
-  paddle::lite_api::MobileConfig config;
+  paddle::lite_metal_api::MobileConfig config;
   config.set_threads(3);
   config.set_model_from_file(model_path);
 
-  auto predictor = paddle::lite_api::CreatePaddlePredictor(config);
+  auto predictor = paddle::lite_metal_api::CreatePaddlePredictor(config);
 
   // set input
   auto input_tensor = predictor->GetInput(0);

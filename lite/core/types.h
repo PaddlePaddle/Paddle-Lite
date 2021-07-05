@@ -129,7 +129,7 @@ class KernelPickFactor {
 
  private:
   unsigned char data_{};
-  lite_api::TargetType target_{TARGET(kUnk)};
+  lite_metal_api::TargetType target_{TARGET(kUnk)};
 };
 
 struct dim2 {

@@ -27,33 +27,33 @@ namespace paddle {
 namespace lite_metal {
 
 float run_test(bool is_quant_model, int quant_bit = 16) {
-  std::shared_ptr<lite_api::PaddlePredictor> predictor = nullptr;
+  std::shared_ptr<lite_metal_api::PaddlePredictor> predictor = nullptr;
   // Use the full api with CxxConfig to generate the optimized model
-  lite_api::CxxConfig cxx_config;
+  lite_metal_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(FLAGS_model_dir);
   cxx_config.set_valid_places(
-      {lite_api::Place{TARGET(kARM), PRECISION(kFloat)}});
+      {lite_metal_api::Place{TARGET(kARM), PRECISION(kFloat)}});
   if (is_quant_model) {
     cxx_config.set_quant_model(true);
     if (quant_bit == 16) {
-      cxx_config.set_quant_type(lite_api::QuantType::QUANT_INT16);
+      cxx_config.set_quant_type(lite_metal_api::QuantType::QUANT_INT16);
     } else if (quant_bit == 8) {
-      cxx_config.set_quant_type(lite_api::QuantType::QUANT_INT8);
+      cxx_config.set_quant_type(lite_metal_api::QuantType::QUANT_INT8);
     } else {
       LOG(FATAL) << "quant_bit should be 8 or 16.";
     }
   }
-  predictor = lite_api::CreatePaddlePredictor(cxx_config);
+  predictor = lite_metal_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
-                                lite_api::LiteModelType::kNaiveBuffer);
+                                lite_metal_api::LiteModelType::kNaiveBuffer);
 
   // Use the light api with MobileConfig to load and run the optimized model
-  lite_api::MobileConfig mobile_config;
+  lite_metal_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(FLAGS_model_dir + ".nb");
   mobile_config.set_threads(FLAGS_threads);
   mobile_config.set_power_mode(
-      static_cast<lite_api::PowerMode>(FLAGS_power_mode));
-  predictor = lite_api::CreatePaddlePredictor(mobile_config);
+      static_cast<lite_metal_api::PowerMode>(FLAGS_power_mode));
+  predictor = lite_metal_api::CreatePaddlePredictor(mobile_config);
 
   // prepare
   std::ifstream fs(FLAGS_data_dir);

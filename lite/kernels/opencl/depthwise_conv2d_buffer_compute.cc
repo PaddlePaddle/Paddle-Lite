@@ -44,7 +44,7 @@ class DepthwiseConv2dCompute
     if (param.fuse_relu) {
       build_options_ += " -DRELU";
     } else if (param.activation_param.active_type ==
-               lite_api::ActivationType::kRelu6) {
+               lite_metal_api::ActivationType::kRelu6) {
       build_options_ += " -DRELU6";
     }
     auto& context = ctx_->As<OpenCLContext>();

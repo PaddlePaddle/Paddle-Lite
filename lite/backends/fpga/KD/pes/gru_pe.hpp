@@ -86,7 +86,7 @@ class GRUPE : public PE {
 
   bool dispatch() { return true; }
 
-  void gru_unit_reset_act(const lite_api::ActivationType active_gate,
+  void gru_unit_reset_act(const lite_metal_api::ActivationType active_gate,
                           GRUTensors& value,  // NOLINT
                           int frame_size,
                           int batch_size) {
@@ -105,10 +105,10 @@ class GRUPE : public PE {
 
       for (int i = 0; i < frame_size; i++) {
         update_gate_data[i] =
-            lite_metal::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(
+            lite_metal::arm::math::active_f32<lite_metal_api::ActivationType::kSigmoid>(
                 update_gate_data[i]);
         reset_gate_data[i] =
-            lite_metal::arm::math::active_f32<lite_api::ActivationType::kSigmoid>(
+            lite_metal::arm::math::active_f32<lite_metal_api::ActivationType::kSigmoid>(
                 reset_gate_data[i]);
       }
       memcpy(tmp_data, reset_gate_data, frame_size * sizeof(float));
@@ -128,7 +128,7 @@ class GRUPE : public PE {
     }
   }
 
-  void gru_unit_out_act(const lite_api::ActivationType active_node,
+  void gru_unit_out_act(const lite_metal_api::ActivationType active_node,
                         bool origin_mode,
                         GRUTensors& value,  // NOLINT
                         int frame_size,
@@ -144,8 +144,8 @@ class GRUPE : public PE {
   void GRUCOmpute(GRUTensors& value,  // NOLINT
                   int frame_size,
                   int batch_size,
-                  const lite_api::ActivationType active_node,
-                  const lite_api::ActivationType active_gate,
+                  const lite_metal_api::ActivationType active_node,
+                  const lite_metal_api::ActivationType active_gate,
                   bool origin_mode) {
     copy_input(value);
 

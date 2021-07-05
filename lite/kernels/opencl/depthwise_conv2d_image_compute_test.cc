@@ -219,9 +219,9 @@ int ConvOutputSize(int input_size,
 
 #ifdef TEST_DEPTHWISE_CONV_IMAGE_BASIC
 // #define LOOP_TEST
-void test_precision(const lite_api::CLPrecisionType p) {
+void test_precision(const lite_metal_api::CLPrecisionType p) {
   CLRuntime::Global()->set_precision(p);
-  const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
+  const bool fp16_flag = (p == lite_metal_api::CLPrecisionType::CL_PRECISION_FP16);
   const int fc = 1;
   const int fw = 7;
   const int fh = fw;
@@ -285,14 +285,14 @@ void test_precision(const lite_api::CLPrecisionType p) {
         if (act_flag == "relu") {
           param.fuse_relu = true;
           param.activation_param.has_active = true;
-          param.activation_param.active_type = lite_api::ActivationType::kRelu;
+          param.activation_param.active_type = lite_metal_api::ActivationType::kRelu;
         } else if (act_flag == "relu6") {
           param.activation_param.Relu_clipped_coef = 6.f;
           param.activation_param.has_active = true;
-          param.activation_param.active_type = lite_api::ActivationType::kRelu6;
+          param.activation_param.active_type = lite_metal_api::ActivationType::kRelu6;
         } else if (act_flag == "leaky_relu") {
           param.activation_param.active_type =
-              lite_api::ActivationType::kLeakyRelu;
+              lite_metal_api::ActivationType::kLeakyRelu;
           param.activation_param.has_active = true;
           param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
         } else {
@@ -445,12 +445,12 @@ void test_precision(const lite_api::CLPrecisionType p) {
 #else
 // nothing to do.
 #endif
-  LOG(INFO) << "\n\t[  PASSED  ] " << lite_api::CLPrecisionTypeToStr(p);
+  LOG(INFO) << "\n\t[  PASSED  ] " << lite_metal_api::CLPrecisionTypeToStr(p);
 }
 
 TEST(depthwise_conv2d, compute_basic) {
-  for (auto ins : {lite_api::CLPrecisionType::CL_PRECISION_FP32,
-                   lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
+  for (auto ins : {lite_metal_api::CLPrecisionType::CL_PRECISION_FP32,
+                   lite_metal_api::CLPrecisionType::CL_PRECISION_FP16}) {
     test_precision(ins);
   }
 }
@@ -517,14 +517,14 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         if (relu_flag == "relu") {
           param.fuse_relu = true;  // relu only
           param.activation_param.has_active = true;
-          param.activation_param.active_type = lite_api::ActivationType::kRelu;
+          param.activation_param.active_type = lite_metal_api::ActivationType::kRelu;
         } else if (relu_flag == "relu6") {
           param.activation_param.Relu_clipped_coef = 6.f;
           param.activation_param.has_active = true;
-          param.activation_param.active_type = lite_api::ActivationType::kRelu6;
+          param.activation_param.active_type = lite_metal_api::ActivationType::kRelu6;
         } else if (relu_flag == "leaky_relu") {
           param.activation_param.active_type =
-              lite_api::ActivationType::kLeakyRelu;
+              lite_metal_api::ActivationType::kLeakyRelu;
           param.activation_param.has_active = true;
           param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
         } else {

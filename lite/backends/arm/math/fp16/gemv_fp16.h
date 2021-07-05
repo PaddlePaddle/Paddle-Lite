@@ -36,7 +36,7 @@ void gemv_fp16(const float16_t *A,
                bool is_bias,
                const float16_t *bias,
                bool flag_act,
-               lite_api::ActivationType act,
+               lite_metal_api::ActivationType act,
                ARMContext *ctx,
                float16_t six = 6.f,
                float16_t alpha = 1.f);

@@ -427,7 +427,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
   if (flag_act > 0) {
     ActivationParam act_param;
     act_param.has_active = true;
-    act_param.active_type = (paddle::lite_api::ActivationType)
+    act_param.active_type = (paddle::lite_metal_api::ActivationType)
         flag_act;  // 1-relu, 2-relu6, 4-leakyrelu
     if (flag_act == 1) {
       param.conv_param.fuse_relu = true;
@@ -459,7 +459,7 @@ void test_deformable_conv_fp32(const std::vector<DDim>& input_dims,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       /// set param and context
       for (auto& dim_in : input_dims) {
         param.x->Resize(dim_in);

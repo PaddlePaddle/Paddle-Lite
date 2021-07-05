@@ -97,7 +97,7 @@ class StackComputeTester : public arena::TestCase {
 
 template <class T = float>
 void test_stack(Place place) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   for (float axis : {0, 1, 3}) {
     std::unique_ptr<arena::TestCase> tester(
         new StackComputeTester<T>(place, "def", axis));

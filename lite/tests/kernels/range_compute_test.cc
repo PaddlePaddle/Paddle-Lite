@@ -85,7 +85,7 @@ class RangeComputeTester : public arena::TestCase {
 
 template <class T>
 void test_range(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
 
   std::unique_ptr<arena::TestCase> tester1(
       new RangeComputeTester<T>(place, "def", 1, 10, 1));

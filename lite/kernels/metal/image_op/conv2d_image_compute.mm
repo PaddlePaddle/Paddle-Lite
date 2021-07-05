@@ -44,9 +44,9 @@ void Conv2dImageCompute::PrepareForRun() {
     activate_type_ = 0;
     if (param.activation_param.has_active) {
         switch (param.activation_param.active_type) {
-            case lite_api::ActivationType::kRelu:
-            case lite_api::ActivationType::kRelu6:
-            case lite_api::ActivationType::kLeakyRelu: {
+            case lite_metal_api::ActivationType::kRelu:
+            case lite_metal_api::ActivationType::kRelu6:
+            case lite_metal_api::ActivationType::kLeakyRelu: {
                 activate_type_ = (uint16_t)param.activation_param.active_type;
             } break;
             default: { LOG(FATAL) << "Conv2d: cannot support the activate type"; } break;
@@ -102,11 +102,11 @@ void Conv2dImageCompute::PrepareForRun() {
 
     // MPS don't support relu6
     switch (param.activation_param.active_type) {
-        case lite_api::ActivationType::kIndentity:
-        case lite_api::ActivationType::kRelu:
+        case lite_metal_api::ActivationType::kIndentity:
+        case lite_metal_api::ActivationType::kRelu:
             break;
-        case lite_api::ActivationType::kRelu6:
-        case lite_api::ActivationType::kLeakyRelu:
+        case lite_metal_api::ActivationType::kRelu6:
+        case lite_metal_api::ActivationType::kLeakyRelu:
             should_use_mps = NO;
             break;
         default:
@@ -303,13 +303,13 @@ void Conv2dImageCompute::setup_without_mps() {
     // relu
     ActivationMetalParam activation_params{(unsigned short)activate_type_, 0.0, 0.0, 0.0, 0.0};
     switch (param.activation_param.active_type) {
-        case lite_api::ActivationType::kIndentity:
-        case lite_api::ActivationType::kRelu:
+        case lite_metal_api::ActivationType::kIndentity:
+        case lite_metal_api::ActivationType::kRelu:
             break;
-        case lite_api::ActivationType::kRelu6: {
+        case lite_metal_api::ActivationType::kRelu6: {
             activation_params.threshold = param.activation_param.threshold;
         } break;
-        case lite_api::ActivationType::kLeakyRelu: {
+        case lite_metal_api::ActivationType::kLeakyRelu: {
             activation_params.alpha = param.activation_param.Leaky_relu_alpha;
         } break;
         default:
@@ -428,7 +428,7 @@ void Conv2dImageCompute::setup_with_mps() {
         description.dilationRateY = (*param.dilations)[1];
         // active function
         switch (param.activation_param.active_type) {
-            case lite_api::ActivationType::kRelu: {
+            case lite_metal_api::ActivationType::kRelu: {
                 description.fusedNeuronDescriptor =
                     [MPSNNNeuronDescriptor cnnNeuronDescriptorWithType:MPSCNNNeuronTypeReLU a:0.0];
             } break;

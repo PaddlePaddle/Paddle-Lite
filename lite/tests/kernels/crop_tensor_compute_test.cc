@@ -183,9 +183,9 @@ class CropTensorComputeTester : public arena::TestCase {
 
 template <class T = float>
 void TestCropTensor(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<float>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<float>::Type();
   std::string alias = "def";
-  if (lite_api::PrecisionTypeTrait<T>::Type() == PrecisionType::kInt32) {
+  if (lite_metal_api::PrecisionTypeTrait<T>::Type() == PrecisionType::kInt32) {
     alias = "int32_precision";
   }
 
@@ -204,7 +204,7 @@ void TestCropTensor(Place place, float abs_error = 1e-5) {
 
 template <class T = float>
 void TestCropTensorShape(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   std::unique_ptr<arena::TestCase> tester(new CropTensorComputeTester<T>(
       place, "def", {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5}), true));
   arena::Arena arena(std::move(tester), place, abs_error);
@@ -213,7 +213,7 @@ void TestCropTensorShape(Place place, float abs_error = 1e-5) {
 
 template <class T = float>
 void TestCropTensorOffsets(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   std::unique_ptr<arena::TestCase> tester(
       new CropTensorComputeTester<T>(place,
                                      "def",
@@ -228,7 +228,7 @@ void TestCropTensorOffsets(Place place, float abs_error = 1e-5) {
 
 template <class T = float>
 void TestCropTensorShapeTensor(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   std::unique_ptr<arena::TestCase> tester(
       new CropTensorComputeTester<T>(place,
                                      "def",
@@ -244,7 +244,7 @@ void TestCropTensorShapeTensor(Place place, float abs_error = 1e-5) {
 
 template <class T = float>
 void TestCropTensorOffsetsTensor(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   std::unique_ptr<arena::TestCase> tester(
       new CropTensorComputeTester<T>(place,
                                      "def",

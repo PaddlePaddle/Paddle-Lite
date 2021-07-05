@@ -27,7 +27,7 @@
 #include "paddle_place.h"  // NOLINT
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 using shape_t = std::vector<int64_t>;
 using lod_t = std::vector<std::vector<uint64_t>>;
@@ -135,7 +135,7 @@ class LITE_API PaddlePredictor {
 
  protected:
   int threads_{1};
-  lite_api::PowerMode mode_{lite_api::LITE_POWER_NO_BIND};
+  lite_metal_api::PowerMode mode_{lite_metal_api::LITE_POWER_NO_BIND};
 };
 
 /// Base class for all the configs.
@@ -285,7 +285,7 @@ class LITE_API CxxConfig : public ConfigBase {
   bool multi_stream_{false};
 #endif
 #ifdef LITE_WITH_MLU
-  lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
+  lite_metal_api::MLUCoreVersion mlu_core_version_{lite_metal_api::MLUCoreVersion::MLU_270};
   int mlu_core_number_{1};
   DataLayoutType mlu_input_layout_{DATALAYOUT(kNCHW)};
   std::vector<float> mlu_first_conv_mean_{};
@@ -333,7 +333,7 @@ class LITE_API CxxConfig : public ConfigBase {
 
 #ifdef LITE_WITH_MLU
   // set MLU core version, which is used when compiling MLU kernels
-  void set_mlu_core_version(lite_api::MLUCoreVersion core_version);
+  void set_mlu_core_version(lite_metal_api::MLUCoreVersion core_version);
   // set MLU core number, which is used when compiling MLU kernels
   void set_mlu_core_number(int core_number);
   // whether use MLU's first conv kernel. First conv is a special kernel
@@ -347,7 +347,7 @@ class LITE_API CxxConfig : public ConfigBase {
   // default is NCHW
   void set_mlu_input_layout(DataLayoutType layout);
 
-  lite_api::MLUCoreVersion mlu_core_version() const;
+  lite_metal_api::MLUCoreVersion mlu_core_version() const;
   int mlu_core_number() const;
   DataLayoutType mlu_input_layout() const;
   // std::pair<mean, std>

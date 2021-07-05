@@ -85,7 +85,7 @@ DEFINE_bool(print_all_ops,
 DEFINE_bool(print_model_ops, false, "Print operators in the input model");
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 //! Display the kernel information.
 void DisplayKernels() {
   LOG(INFO) << ::paddle::lite_metal::KernelRegistry::Global().DebugString();
@@ -220,7 +220,7 @@ void RunOptimize(const std::string& model_dir,
         << "Load combined-param model. Option model_dir will be ignored";
   }
 
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_dir(model_dir);
   config.set_model_file(model_file);
   config.set_param_file(param_file);
@@ -236,7 +236,7 @@ void RunOptimize(const std::string& model_dir,
   } else {
     OPT_LOG_FATAL << "Unsupported quant type: " << quant_type;
   }
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   LiteModelType model_type;
   if (optimize_out_type == "protobuf") {
@@ -401,7 +401,7 @@ void ParseInputCommand() {
     PrintOpsInfo();
     exit(1);
   } else if (FLAGS_print_supported_ops) {
-    auto valid_places = paddle::lite_api::ParserValidPlaces(FLAGS_enable_fp16);
+    auto valid_places = paddle::lite_metal_api::ParserValidPlaces(FLAGS_enable_fp16);
     // get valid_targets string
     std::vector<TargetType> target_types = {};
     for (size_t i = 0; i < valid_places.first.size(); i++) {
@@ -428,7 +428,7 @@ void ParseInputCommand() {
 // test whether this model is supported
 void CheckIfModelSupported() {
   // 1. parse valid places and valid targets
-  auto valid_places = paddle::lite_api::ParserValidPlaces(FLAGS_enable_fp16);
+  auto valid_places = paddle::lite_metal_api::ParserValidPlaces(FLAGS_enable_fp16);
   // set valid_ops
   auto valid_ops = supported_ops_target[static_cast<int>(TARGET(kHost))];
   auto valid_unktype_ops = supported_ops_target[static_cast<int>(TARGET(kUnk))];
@@ -586,13 +586,13 @@ void Main() {
 int main(int argc, char** argv) {
   // If there is none input argument, print help info.
   if (argc < 2) {
-    paddle::lite_api::PrintHelpInfo();
+    paddle::lite_metal_api::PrintHelpInfo();
   }
   google::ParseCommandLineFlags(&argc, &argv, false);
-  paddle::lite_api::ParseInputCommand();
+  paddle::lite_metal_api::ParseInputCommand();
   if (FLAGS_model_set_dir == "") {
-    paddle::lite_api::CheckIfModelSupported();
+    paddle::lite_metal_api::CheckIfModelSupported();
   }
-  paddle::lite_api::Main();
+  paddle::lite_metal_api::Main();
   return 0;
 }

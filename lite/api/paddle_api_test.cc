@@ -21,17 +21,17 @@
 DEFINE_string(model_dir, "", "");
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 TEST(CxxApi, run) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   LOG(INFO) << "Version: " << predictor->GetVersion();
 
@@ -75,14 +75,14 @@ TEST(CxxApi, run) {
 }
 
 TEST(CxxApi, share_external_data) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({
       Place{TARGET(kX86), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   auto inputs = predictor->GetInputNames();
   auto outputs = predictor->GetOutputNames();
@@ -113,11 +113,11 @@ TEST(CxxApi, share_external_data) {
 // Demo1 for Mobile Devices :Load model from file and run
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 TEST(LightApi, run) {
-  lite_api::MobileConfig config;
+  lite_metal_api::MobileConfig config;
   config.set_model_from_file(FLAGS_model_dir + ".opt2.naive.nb");
   // disable L3 cache on workspace_ allocating
   config.SetArmL3CacheSize(L3CacheSetMethod::kDeviceL2Cache);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   auto inputs = predictor->GetInputNames();
   LOG(INFO) << "input size: " << inputs.size();
@@ -163,12 +163,12 @@ TEST(MobileConfig, LoadfromMemory) {
   auto model_file = std::string(FLAGS_model_dir) + ".opt2.naive.nb";
   std::string model_buffer = lite_metal::ReadFile(model_file);
   // set model buffer and run model
-  lite_api::MobileConfig config;
+  lite_metal_api::MobileConfig config;
   config.set_model_from_buffer(model_buffer);
   // allocate 1M initial space for workspace_
   config.SetArmL3CacheSize(L3CacheSetMethod::kAbsolute, 1024 * 1024);
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
   auto input_tensor = predictor->GetInput(0);
   input_tensor->Resize(std::vector<int64_t>({100, 100}));
   auto* data = input_tensor->mutable_data<float>();

@@ -53,26 +53,26 @@ std::vector<T> ReadLineNums(std::istream& is) {
 }
 
 TEST(TRANSFORMER_FP32_MODEL, test_transformer_nlp2_fp32_arm) {
-  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
+  std::shared_ptr<paddle::lite_metal_api::PaddlePredictor> predictor = nullptr;
   // Use the full api with CxxConfig to generate the optimized model
-  lite_api::CxxConfig cxx_config;
+  lite_metal_api::CxxConfig cxx_config;
   cxx_config.set_model_file(FLAGS_model_dir + "/model");
   cxx_config.set_param_file(FLAGS_model_dir + "/params");
   cxx_config.set_valid_places(
-      {lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-       lite_api::Place{TARGET(kARM), PRECISION(kInt32)},
-       lite_api::Place{TARGET(kARM), PRECISION(kInt64)}});
-  predictor = lite_api::CreatePaddlePredictor(cxx_config);
+      {lite_metal_api::Place{TARGET(kARM), PRECISION(kFloat)},
+       lite_metal_api::Place{TARGET(kARM), PRECISION(kInt32)},
+       lite_metal_api::Place{TARGET(kARM), PRECISION(kInt64)}});
+  predictor = lite_metal_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
-                                paddle::lite_api::LiteModelType::kNaiveBuffer);
+                                paddle::lite_metal_api::LiteModelType::kNaiveBuffer);
 
   // Use the light api with MobileConfig to load and run the optimized model
-  paddle::lite_api::MobileConfig mobile_config;
+  paddle::lite_metal_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(FLAGS_model_dir + ".nb");
   mobile_config.set_threads(FLAGS_threads);
   mobile_config.set_power_mode(
-      static_cast<lite_api::PowerMode>(FLAGS_power_mode));
-  predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
+      static_cast<lite_metal_api::PowerMode>(FLAGS_power_mode));
+  predictor = paddle::lite_metal_api::CreatePaddlePredictor(mobile_config);
 
   // prepare
   std::ifstream fs(FLAGS_data_dir);

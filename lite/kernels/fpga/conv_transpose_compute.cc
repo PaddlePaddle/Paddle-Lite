@@ -24,7 +24,7 @@ namespace lite_metal {
 namespace kernels {
 namespace fpga {
 
-using lite_api::ActivationType;
+using lite_metal_api::ActivationType;
 
 void Conv2DTransposeCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();

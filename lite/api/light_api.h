@@ -55,8 +55,8 @@ class LITE_API LightPredictor {
                  const std::string& model_buffer = "",
                  const std::string& param_buffer = "",
                  bool model_from_memory = false,
-                 lite_api::LiteModelType model_type =
-                     lite_api::LiteModelType::kNaiveBuffer) {
+                 lite_metal_api::LiteModelType model_type =
+                     lite_metal_api::LiteModelType::kNaiveBuffer) {
     scope_ = std::make_shared<Scope>();
     program_desc_ = std::make_shared<cpp::ProgramDesc>();
     Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
@@ -95,7 +95,7 @@ class LITE_API LightPredictor {
   Scope* scope() { return scope_.get(); }
 
 #ifdef LITE_WITH_METAL
-  void ConfigMetalContext(const lite_api::MobileConfig& config) {
+  void ConfigMetalContext(const lite_metal_api::MobileConfig& config) {
     program_->ConfigMetalContext(config.metal_lib_path(),
                                  config.metal_use_mps(),
                                  config.metal_use_aggressive());
@@ -115,7 +115,7 @@ class LITE_API LightPredictor {
       const std::string& model_dir,
       const std::string& model_buffer,
       const std::string& param_buffer,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      lite_metal_api::LiteModelType model_type = lite_metal_api::LiteModelType::kProtobuf,
       bool model_from_memory = false);
 
   void BuildRuntimeProgram(
@@ -136,30 +136,30 @@ class LITE_API LightPredictor {
   std::vector<PrecisionType> input_precisions_;
 };
 
-class LightPredictorImpl : public lite_api::PaddlePredictor {
+class LightPredictorImpl : public lite_metal_api::PaddlePredictor {
  public:
   LightPredictorImpl() = default;
 
-  std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
+  std::unique_ptr<lite_metal_api::Tensor> GetInput(int i) override;
 
-  std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+  std::unique_ptr<const lite_metal_api::Tensor> GetOutput(int i) const override;
 
   void Run() override;
 
-  std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
-  std::shared_ptr<lite_api::PaddlePredictor> Clone(
+  std::shared_ptr<lite_metal_api::PaddlePredictor> Clone() override;
+  std::shared_ptr<lite_metal_api::PaddlePredictor> Clone(
       const std::vector<std::string>& var_names) override;
   std::string GetVersion() const override;
   std::vector<std::string> GetInputNames() override;
   std::vector<std::string> GetOutputNames() override;
 
-  std::unique_ptr<const lite_api::Tensor> GetTensor(
+  std::unique_ptr<const lite_metal_api::Tensor> GetTensor(
       const std::string& name) const override;
   // Get InputTebsor by name
-  std::unique_ptr<lite_api::Tensor> GetInputByName(
+  std::unique_ptr<lite_metal_api::Tensor> GetInputByName(
       const std::string& name) override;
 
-  void Init(const lite_api::MobileConfig& config);
+  void Init(const lite_metal_api::MobileConfig& config);
 
   /// \brief Release all tmp tensor to compress the size of the memory pool.
   /// The memory pool is considered to be composed of a list of chunks, if

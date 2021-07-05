@@ -46,12 +46,12 @@ DEFINE_string(in_txt, "", "input text");
 DEFINE_string(out_txt, "", "output text");
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 void OutputOptModel(const std::string& load_model_dir,
                     const std::string& save_optimized_model_dir,
                     const std::vector<std::vector<int64_t>>& input_shapes) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
 #ifdef LITE_WITH_X86
   config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
@@ -79,7 +79,7 @@ void OutputOptModel(const std::string& load_model_dir,
     }
   }
 #endif
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   // delete old optimized model
   int ret = system(
@@ -101,12 +101,12 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int thread_num,
          const int repeat,
          const int warmup_times = 0) {
-  lite_api::MobileConfig config;
+  lite_metal_api::MobileConfig config;
   config.set_model_from_file(model_dir);
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
   bool flag_in = true;
   bool flag_out = true;
   if (FLAGS_in_txt == "") {
@@ -298,17 +298,17 @@ int main(int argc, char** argv) {
 
   if (!FLAGS_use_optimize_nb) {
     // Output optimized model
-    paddle::lite_api::OutputOptModel(
+    paddle::lite_metal_api::OutputOptModel(
         FLAGS_model_dir, save_optimized_model_dir, input_shapes);
     save_optimized_model_dir += ".nb";
   }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
   // Run inference using optimized model
-  paddle::lite_api::Run(
+  paddle::lite_metal_api::Run(
       input_shapes,
       save_optimized_model_dir,
-      static_cast<paddle::lite_api::PowerMode>(FLAGS_power_mode),
+      static_cast<paddle::lite_metal_api::PowerMode>(FLAGS_power_mode),
       FLAGS_threads,
       FLAGS_repeats,
       FLAGS_warmup);

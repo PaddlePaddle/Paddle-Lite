@@ -27,7 +27,7 @@ typedef paddle::lite_metal::DDim DDim;
 typedef paddle::lite_metal::operators::ActivationParam ActivationParam;
 
 using paddle::lite_metal::profile::Timer;
-using paddle::lite_api::PrecisionType;
+using paddle::lite_metal_api::PrecisionType;
 
 DDim compute_out_dim(const DDim& dim_in,
                      const paddle::lite_metal::operators::ConvParam& param) {
@@ -108,7 +108,7 @@ void test_conv(const DDim& input_dims,
   if (flag_act > 0) {
     ActivationParam act_param;
     act_param.has_active = true;
-    act_param.active_type = (paddle::lite_api::ActivationType)
+    act_param.active_type = (paddle::lite_metal_api::ActivationType)
         flag_act;  // 1-relu, 2-relu6, 4-leakyrelu
     if (flag_act == 1) {
       param.fuse_relu = true;
@@ -132,7 +132,7 @@ void test_conv(const DDim& input_dims,
   std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
       new paddle::lite_metal::KernelContext);
   auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                  thread_num);
 
   param.x->Resize(input_dims);

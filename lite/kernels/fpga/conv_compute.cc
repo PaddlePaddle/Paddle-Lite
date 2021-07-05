@@ -25,7 +25,7 @@ namespace kernels {
 namespace fpga {
 
 using float16 = zynqmp::float16;
-using lite_api::ActivationType;
+using lite_metal_api::ActivationType;
 
 void ConvCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();

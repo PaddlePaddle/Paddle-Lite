@@ -35,14 +35,14 @@ namespace paddle {
 namespace lite_metal {
 
 TEST(VGG16, test_vgg16_fp32_baidu_xpu) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_file(FLAGS_model_dir + "/inference.pdmodel");
   config.set_param_file(FLAGS_model_dir + "/inference.pdiparams");
-  config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  config.set_valid_places({lite_metal_api::Place{TARGET(kXPU), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_workspace_l3_size_per_thread();
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
   std::vector<int> input_shape{FLAGS_batch, 3, 224, 224};

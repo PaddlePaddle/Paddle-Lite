@@ -6803,16 +6803,16 @@ void gemm_prepack_int8(const int8_t* A_packed,
   float alpha[4] = {0.f, 0.f, 0.f, 0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       float local_alpha = act_param.Relu_clipped_coef;
       alpha[0] = local_alpha;
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       float local_alpha = act_param.Leaky_relu_alpha;
       alpha[0] = local_alpha;

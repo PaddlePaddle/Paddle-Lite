@@ -208,7 +208,7 @@ bool CudnnConv2D<T, Ptype_out>::init(const operators::ConvParam& param,
   cudnnCreateTensorDescriptor(&this->bias_desc_);
 
   if (param.activation_param.has_active) {
-    if (param.activation_param.active_type == lite_api::ActivationType::kRelu) {
+    if (param.activation_param.active_type == lite_metal_api::ActivationType::kRelu) {
       cudnnCreateActivationDescriptor(&this->act_desc_);
     } else {
       this->with_relu_act_ = false;
@@ -302,7 +302,7 @@ bool CudnnConv2D<T, Ptype_out>::run(const operators::ConvParam& param) {
 
   if (!this->with_relu_act_) {
     CHECK(param.activation_param.active_type ==
-          lite_api::ActivationType::kLeakyRelu)
+          lite_metal_api::ActivationType::kLeakyRelu)
         << "Only support leaky relu now.";
     auto out_dims = param.output->dims();
     int n = out_dims[0], c = out_dims[1], h = out_dims[2], w = out_dims[3];
@@ -452,7 +452,7 @@ bool CudnnConv2DInt8<Ptype_out>::init(const operators::ConvParam& param,
 
   if (param.activation_param.has_active) {
     if (!(param.activation_param.active_type ==
-          lite_api::ActivationType::kRelu)) {
+          lite_metal_api::ActivationType::kRelu)) {
       this->with_relu_act_ = false;
     }
   }

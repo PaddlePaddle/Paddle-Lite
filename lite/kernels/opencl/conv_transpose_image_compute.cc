@@ -134,19 +134,19 @@ void ConvTransposeImageCompute::PrepareForRun() {
           << conv_param_->activation_param.has_active;
   if (conv_param_->activation_param.has_active) {
     if (conv_param_->activation_param.active_type ==
-        lite_api::ActivationType::kRelu) {
+        lite_metal_api::ActivationType::kRelu) {
       build_options_single += " -DRELU";
     } else if (conv_param_->activation_param.active_type ==
-               lite_api::ActivationType::kRelu6) {
+               lite_metal_api::ActivationType::kRelu6) {
       build_options_single += " -DRELU6";
     } else if (conv_param_->activation_param.active_type ==
-               lite_api::ActivationType::kLeakyRelu) {
+               lite_metal_api::ActivationType::kLeakyRelu) {
       std::string leaky_relu_alpha_str =
           std::to_string(conv_param_->activation_param.Leaky_relu_alpha);
       build_options_single +=
           " -DLEAKY_RELU -DLEAKY_RELU_ALPHA=" + leaky_relu_alpha_str + "f";
     } else if (conv_param_->activation_param.active_type ==
-               lite_api::ActivationType::kHardSwish) {
+               lite_metal_api::ActivationType::kHardSwish) {
       std::string threshold =
           std::to_string(conv_param_->activation_param.hard_swish_threshold);
       std::string scale =
@@ -157,7 +157,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
                               "f" + " -DACT_SCALE=" + scale + "f" +
                               " -DACT_OFFSET=" + offset + "f";
     } else if (conv_param_->activation_param.active_type ==
-               lite_api::ActivationType::kHardSigmoid) {
+               lite_metal_api::ActivationType::kHardSigmoid) {
       std::string slope =
           std::to_string(conv_param_->activation_param.hard_sigmoid_slope);
       std::string offset =

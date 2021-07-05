@@ -393,20 +393,20 @@ template <typename T>
 void fill_bias_fc(
     T* tensor, const T* bias, int num, int channel, bool flag_relu);
 
-template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
+template <lite_metal_api::ActivationType Act = lite_metal_api::ActivationType::kIndentity>
 inline float32x4_t vactive_f32(const float32x4_t& x) {
   return x;
 }
 
 template <>
-inline float32x4_t vactive_f32<lite_api::ActivationType::kRelu>(
+inline float32x4_t vactive_f32<lite_metal_api::ActivationType::kRelu>(
     const float32x4_t& x) {
   float32x4_t __zero = vdupq_n_f32(0.f);
   return vmaxq_f32(x, __zero);
 }
 
 template <>
-inline float32x4_t vactive_f32<lite_api::ActivationType::kRelu6>(
+inline float32x4_t vactive_f32<lite_metal_api::ActivationType::kRelu6>(
     const float32x4_t& x) {
   float32x4_t __zero = vdupq_n_f32(0.f);
   float32x4_t __six = vdupq_n_f32(6.f);
@@ -414,7 +414,7 @@ inline float32x4_t vactive_f32<lite_api::ActivationType::kRelu6>(
 }
 
 template <>
-inline float32x4_t vactive_f32<lite_api::ActivationType::kSigmoid>(
+inline float32x4_t vactive_f32<lite_metal_api::ActivationType::kSigmoid>(
     const float32x4_t& x) {
   float32x4_t __one = vdupq_n_f32(1.f);
   float32x4_t __x = vnegq_f32(x);
@@ -425,7 +425,7 @@ inline float32x4_t vactive_f32<lite_api::ActivationType::kSigmoid>(
 }
 
 template <>
-inline float32x4_t vactive_f32<lite_api::ActivationType::kTanh>(
+inline float32x4_t vactive_f32<lite_metal_api::ActivationType::kTanh>(
     const float32x4_t& x) {
   float32x4_t __one = vdupq_n_f32(1.f);
   float32x4_t __x = vmulq_n_f32(x, -2.f);
@@ -437,28 +437,28 @@ inline float32x4_t vactive_f32<lite_api::ActivationType::kTanh>(
   return vsubq_f32(__out, __one);
 }
 
-template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
+template <lite_metal_api::ActivationType Act = lite_metal_api::ActivationType::kIndentity>
 inline float active_f32(const float& x) {
   return x;
 }
 
 template <>
-inline float active_f32<lite_api::ActivationType::kRelu>(const float& x) {
+inline float active_f32<lite_metal_api::ActivationType::kRelu>(const float& x) {
   return std::max(x, 0.f);
 }
 
 template <>
-inline float active_f32<lite_api::ActivationType::kRelu6>(const float& x) {
+inline float active_f32<lite_metal_api::ActivationType::kRelu6>(const float& x) {
   return std::min(std::max(x, 0.f), 6.f);
 }
 
 template <>
-inline float active_f32<lite_api::ActivationType::kSigmoid>(const float& x) {
+inline float active_f32<lite_metal_api::ActivationType::kSigmoid>(const float& x) {
   return 1.f / (1.f + exp(-x));
 }
 
 template <>
-inline float active_f32<lite_api::ActivationType::kTanh>(const float& x) {
+inline float active_f32<lite_metal_api::ActivationType::kTanh>(const float& x) {
   return 2.f / (1.f + exp(-2.f * x)) - 1.f;
 }
 

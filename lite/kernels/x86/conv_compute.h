@@ -188,14 +188,14 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       auto* out_data = param.output->template mutable_data<T>();
       auto act_param = param.activation_param;
       if (act_param.has_active) {
-        if (act_param.active_type == lite_api::ActivationType::kRelu) {
+        if (act_param.active_type == lite_metal_api::ActivationType::kRelu) {
           lite_metal::x86::math::bias_add_relu_broadcast(out_data,
                                                    bias_data,
                                                    out_data,
                                                    batch_size,
                                                    output_channel,
                                                    output_number);
-        } else if (act_param.active_type == lite_api::ActivationType::kRelu6) {
+        } else if (act_param.active_type == lite_metal_api::ActivationType::kRelu6) {
           lite_metal::x86::math::bias_add_relu6_broadcast(out_data,
                                                     bias_data,
                                                     out_data,

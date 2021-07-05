@@ -37,7 +37,7 @@ bool GatherOp::InferShapeImpl() const {
       axis_index = axis_data[0];
     } else {
       LOG(FATAL) << "Axis unsupport data type: "
-                 << lite_api::PrecisionToStr(param_.Axis->precision());
+                 << lite_metal_api::PrecisionToStr(param_.Axis->precision());
     }
     int index_size = param_.Index->numel();
     auto input_dim = param_.X->dims();

@@ -46,14 +46,14 @@ void LightPredictor::Build(const std::string& lite_model_file,
 void LightPredictor::Build(const std::string& model_dir,
                            const std::string& model_buffer,
                            const std::string& param_buffer,
-                           lite_api::LiteModelType model_type,
+                           lite_metal_api::LiteModelType model_type,
                            bool model_from_memory) {
   switch (model_type) {
 #ifndef LITE_ON_TINY_PUBLISH
-    case lite_api::LiteModelType::kProtobuf:
+    case lite_metal_api::LiteModelType::kProtobuf:
       LoadModelPb(model_dir, "", "", scope_.get(), program_desc_.get());
       break;
-    case lite_api::LiteModelType::kNaiveBuffer: {
+    case lite_metal_api::LiteModelType::kNaiveBuffer: {
       if (model_from_memory) {
         LoadModelNaiveFromMemory(
             model_buffer, param_buffer, scope_.get(), program_desc_.get());

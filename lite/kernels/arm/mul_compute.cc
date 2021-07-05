@@ -60,7 +60,7 @@ void MulCompute::Run() {
                            false,
                            nullptr,
                            false,
-                           lite_api::ActivationType::kIndentity,
+                           lite_metal_api::ActivationType::kIndentity,
                            &ctx);
 
   } else {

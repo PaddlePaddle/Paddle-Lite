@@ -55,7 +55,7 @@ void test_cast_FP16_to_FP32(std::vector<int64_t> shape) {
   data.Resize(DDim(shape));
   auto* copy_data = data.mutable_data<paddle::lite_metal::fluid::float16>();
   data.CopyDataFrom(*x);
-  x->set_precision(paddle::lite_api::PrecisionType::kFP16);
+  x->set_precision(paddle::lite_metal_api::PrecisionType::kFP16);
   LaunchOp(op, {x_var_name}, {out_var_name});
 
   // compare results
@@ -96,7 +96,7 @@ void test_cast_FP32_to_FP16(std::vector<int64_t> shape) {
   data.Resize(DDim(shape));
   auto* copy_data = data.mutable_data<float>();
   data.CopyDataFrom(*x);
-  x->set_precision(paddle::lite_api::PrecisionType::kFloat);
+  x->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
   LaunchOp(op, {x_var_name}, {out_var_name});
 
   // compare results

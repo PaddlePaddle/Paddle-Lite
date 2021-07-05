@@ -107,7 +107,7 @@ T ShapeProduction(const std::vector<T>& shape) {
 
 template <class T>
 void FillTensor(
-    const std::shared_ptr<paddle::lite_api::PaddlePredictor>& predictor,
+    const std::shared_ptr<paddle::lite_metal_api::PaddlePredictor>& predictor,
     int tensor_id,
     const std::vector<int64_t>& tensor_shape,
     const std::vector<T>& tensor_value,

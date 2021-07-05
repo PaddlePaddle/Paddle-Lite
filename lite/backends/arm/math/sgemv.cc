@@ -71,7 +71,7 @@ void sgemv_trans(const int M,
                  bool flag_bias,
                  const float *bias,
                  bool flag_act,
-                 lite_api::ActivationType act,
+                 lite_metal_api::ActivationType act,
                  const ARMContext *ctx,
                  float six,
                  float alpha);
@@ -86,7 +86,7 @@ bool sgemv(const float *A,
            bool is_bias,
            const float *bias,
            bool flag_act,
-           lite_api::ActivationType act,
+           lite_metal_api::ActivationType act,
            const ARMContext *ctx,
            float six,
            float alpha) {
@@ -96,11 +96,11 @@ bool sgemv(const float *A,
         M, N, A, x, y, beta, is_bias, bias, flag_act, act, ctx, six, alpha);
   } else {
     if (flag_act) {
-      if (act == lite_api::ActivationType::kRelu) {
+      if (act == lite_metal_api::ActivationType::kRelu) {
         sgemv_relu(M, N, A, x, y, beta, is_bias, has_a53, bias);
-      } else if (act == lite_api::ActivationType::kRelu6) {
+      } else if (act == lite_metal_api::ActivationType::kRelu6) {
         sgemv_relu6(M, N, A, x, y, beta, is_bias, bias, six);
-      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+      } else if (act == lite_metal_api::ActivationType::kLeakyRelu) {
         sgemv_leakey_relu(M, N, A, x, y, beta, is_bias, bias, alpha);
       } else {
         LOG(FATAL)
@@ -123,7 +123,7 @@ void sgemv_trans(const int M,
                  bool flag_bias,
                  const float *bias,
                  bool flag_act,
-                 lite_api::ActivationType act,
+                 lite_metal_api::ActivationType act,
                  const ARMContext *ctx,
                  float six,
                  float alpha) {
@@ -356,7 +356,7 @@ void sgemv_trans(const int M,
       float *in_y = y_buf;
       float32x4_t vzero = vdupq_n_f32(0.f);
       float32x4_t vbeta = vdupq_n_f32(beta);
-      if (act == lite_api::ActivationType::kRelu) {
+      if (act == lite_metal_api::ActivationType::kRelu) {
         if (cnt4 > 0) {
           int cnt = cnt4;
           asm volatile(
@@ -376,7 +376,7 @@ void sgemv_trans(const int M,
         for (int r = 0; r < remain; ++r) {
           y[r] = beta * y[r] + in_y[r] > 0.f ? in_y[r] : 0.f;
         }
-      } else if (act == lite_api::ActivationType::kRelu6) {
+      } else if (act == lite_metal_api::ActivationType::kRelu6) {
         float32x4_t vsix = vdupq_n_f32(six);
         if (cnt4 > 0) {
           int cnt = cnt4;
@@ -399,7 +399,7 @@ void sgemv_trans(const int M,
           float tmp = in_y[r] > 0.f ? in_y[r] : 0.f;
           y[r] = beta * y[r] + (tmp > six ? six : y[r]);
         }
-      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+      } else if (act == lite_metal_api::ActivationType::kLeakyRelu) {
         float32x4_t valpha = vdupq_n_f32(alpha);
         if (cnt4 > 0) {
           int cnt = cnt4;
@@ -430,7 +430,7 @@ void sgemv_trans(const int M,
     if (flag_act) {
       float *in_y = y_buf;
       float32x4_t vzero = vdupq_n_f32(0.f);
-      if (act == lite_api::ActivationType::kRelu) {
+      if (act == lite_metal_api::ActivationType::kRelu) {
         if (cnt4 > 0) {
           int cnt = cnt4;
           asm volatile(
@@ -449,7 +449,7 @@ void sgemv_trans(const int M,
         for (int r = 0; r < remain; ++r) {
           y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
         }
-      } else if (act == lite_api::ActivationType::kRelu6) {
+      } else if (act == lite_metal_api::ActivationType::kRelu6) {
         float32x4_t vsix = vdupq_n_f32(six);
         if (cnt4 > 0) {
           int cnt = cnt4;
@@ -471,7 +471,7 @@ void sgemv_trans(const int M,
           y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
           y[r] = y[r] > six ? six : y[r];
         }
-      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+      } else if (act == lite_metal_api::ActivationType::kLeakyRelu) {
         float32x4_t valpha = vdupq_n_f32(alpha);
         if (cnt4 > 0) {
           int cnt = cnt4;
@@ -510,7 +510,7 @@ void sgemv_trans(const int M,
                  bool flag_bias,
                  const float *bias,
                  bool flag_act,
-                 lite_api::ActivationType act,
+                 lite_metal_api::ActivationType act,
                  const ARMContext *ctx,
                  float six,
                  float alpha) {
@@ -704,7 +704,7 @@ void sgemv_trans(const int M,
       float32x4_t vbeta = vdupq_n_f32(beta);
       m_cnt4 = M >> 2;
       m_remain = M & 3;
-      if (act == lite_api::ActivationType::kRelu) {
+      if (act == lite_metal_api::ActivationType::kRelu) {
         if (m_cnt4 > 0) {
           int cnt4 = m_cnt4;
           asm volatile(
@@ -724,7 +724,7 @@ void sgemv_trans(const int M,
         for (int r = 0; r < m_remain; ++r) {
           y[r] = beta * y[r] + (in_y[r] > 0.f ? in_y[r] : 0.f);
         }
-      } else if (act == lite_api::ActivationType::kRelu6) {
+      } else if (act == lite_metal_api::ActivationType::kRelu6) {
         float32x4_t vsix = vdupq_n_f32(six);
         if (m_cnt4 > 0) {
           int cnt4 = m_cnt4;
@@ -747,7 +747,7 @@ void sgemv_trans(const int M,
           float tmp = in_y[r] > 0.f ? in_y[r] : 0.f;
           y[r] = beta * y[r] + (tmp > six ? six : y[r]);
         }
-      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+      } else if (act == lite_metal_api::ActivationType::kLeakyRelu) {
         float32x4_t valpha = vdupq_n_f32(alpha);
         if (m_cnt4 > 0) {
           int cnt4 = m_cnt4;
@@ -780,7 +780,7 @@ void sgemv_trans(const int M,
       float32x4_t vzero = vdupq_n_f32(0.f);
       m_cnt4 = M >> 2;
       m_remain = M & 3;
-      if (act == lite_api::ActivationType::kRelu) {
+      if (act == lite_metal_api::ActivationType::kRelu) {
         if (m_cnt4 > 0) {
           int cnt4 = m_cnt4;
           asm volatile(
@@ -799,7 +799,7 @@ void sgemv_trans(const int M,
         for (int r = 0; r < m_remain; ++r) {
           y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
         }
-      } else if (act == lite_api::ActivationType::kRelu6) {
+      } else if (act == lite_metal_api::ActivationType::kRelu6) {
         float32x4_t vsix = vdupq_n_f32(six);
         if (m_cnt4 > 0) {
           int cnt4 = m_cnt4;
@@ -821,7 +821,7 @@ void sgemv_trans(const int M,
           y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
           y[r] = y[r] > six ? six : y[r];
         }
-      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+      } else if (act == lite_metal_api::ActivationType::kLeakyRelu) {
         float32x4_t valpha = vdupq_n_f32(alpha);
         if (m_cnt4 > 0) {
           int cnt4 = m_cnt4;

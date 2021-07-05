@@ -136,7 +136,7 @@ class RefactorBackwardGRUv1 : public FuseBase {
     seq_rev_in_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* seq_rev_in_tensor = scope->NewTensor(seq_rev_in_name);
-    seq_rev_in_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    seq_rev_in_tensor->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     seq_rev_in_tensor->set_persistable(true);
 
     auto gru_op_info = matched.at("gru")->stmt()->op_info();

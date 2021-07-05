@@ -31,13 +31,13 @@ namespace paddle {
 namespace lite_metal {
 
 TEST(Bert, test_bert_fp32_baidu_xpu) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  config.set_valid_places({lite_metal_api::Place{TARGET(kXPU), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_l3_cache_method(16773120, false);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   std::string input_data_file = FLAGS_data_dir + std::string("/bert_in.txt");
   std::vector<std::vector<int64_t>> input0;

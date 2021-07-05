@@ -113,15 +113,15 @@ bool test_gemv_int8(bool tra,
          0,
          tc_basic_fp32.numel() * sizeof(float));
   paddle::lite_metal::operators::ActivationParam act_param;
-  paddle::lite_api::ActivationType act =
-      paddle::lite_api::ActivationType::kIndentity;
+  paddle::lite_metal_api::ActivationType act =
+      paddle::lite_metal_api::ActivationType::kIndentity;
   if (flag_act == 1) {
-    act = paddle::lite_api::ActivationType::kRelu;
+    act = paddle::lite_metal_api::ActivationType::kRelu;
   } else if (flag_act == 2) {
-    act = paddle::lite_api::ActivationType::kRelu6;
+    act = paddle::lite_metal_api::ActivationType::kRelu6;
     act_param.threshold = alpha;
   } else if (flag_act == 4) {
-    act = paddle::lite_api::ActivationType::kLeakyRelu;
+    act = paddle::lite_metal_api::ActivationType::kLeakyRelu;
     act_param.Leaky_relu_alpha = alpha;
   }
   act_param.active_type = act;
@@ -166,7 +166,7 @@ bool test_gemv_int8(bool tra,
   std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
       new paddle::lite_metal::KernelContext);
   auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), ths);
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
     paddle::lite_metal::arm::math::gemv_int8(da,

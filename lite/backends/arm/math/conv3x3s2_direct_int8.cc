@@ -52,16 +52,16 @@ void conv_3x3s2_direct_int8(const int8_t* din,
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
   float alpha[4] = {0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 1;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 2;
       float local_alpha = act_param.Relu_clipped_coef;
       alpha[0] = local_alpha;
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 3;
       float local_alpha = act_param.Leaky_relu_alpha;
       alpha[0] = local_alpha;
@@ -501,16 +501,16 @@ void conv_3x3s2_direct_int8(const int8_t* din,
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
   float alpha[4] = {0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 1;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 2;
       float local_alpha = act_param.Relu_clipped_coef;
       alpha[0] = local_alpha;
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 3;
       float local_alpha = act_param.Leaky_relu_alpha;
       alpha[0] = local_alpha;

@@ -69,14 +69,14 @@ float CompareDiff(const std::vector<std::vector<float>>& outs,
 }
 
 TEST(bert_base_chinese, test_bert_base_chinese_fp32_baidu_xpu) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_file(FLAGS_model_dir + "/model.pdmodel");
   config.set_param_file(FLAGS_model_dir + "/model.pdiparams");
-  config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  config.set_valid_places({lite_metal_api::Place{TARGET(kXPU), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_workspace_l3_size_per_thread();
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   std::string input_data_file = FLAGS_data_dir + std::string("/input0.txt");
   std::vector<std::vector<int64_t>> input0;

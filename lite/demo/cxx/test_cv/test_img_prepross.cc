@@ -28,12 +28,12 @@
 // #include "paddle_use_kernels.h"  // NOLINT
 // #include "paddle_use_ops.h"      // NOLINT
 
-typedef paddle::lite_api::Tensor Tensor;
+typedef paddle::lite_metal_api::Tensor Tensor;
 typedef paddle::lite_metal::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite_metal::utils::cv::FlipParam FlipParam;
 typedef paddle::lite_metal::utils::cv::TransParam TransParam;
 typedef paddle::lite_metal::utils::cv::ImagePreprocess ImagePreprocess;
-typedef paddle::lite_api::DataLayoutType LayoutType;
+typedef paddle::lite_metal_api::DataLayoutType LayoutType;
 using namespace paddle::lite_api;  // NOLINT
 
 // crop point

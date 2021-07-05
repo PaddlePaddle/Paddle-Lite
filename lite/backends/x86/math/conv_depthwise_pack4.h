@@ -30,7 +30,7 @@ void conv_depthwise_m128(lite_metal::Tensor* input,
                          const int dilation_h,
                          const int dilation_w,
                          const bool has_act,
-                         const lite_api::ActivationType act_type);
+                         const lite_metal_api::ActivationType act_type);
 
 }  // namespace math
 }  // namespace x86

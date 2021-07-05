@@ -24,10 +24,10 @@ namespace lite_metal {
 
 void TestModel(const std::string& model_dir) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_metal_api::LITE_POWER_NO_BIND, FLAGS_threads);
 
   LOG(INFO) << "Load fp32 model from " << model_dir;
-  lite_api::CxxConfig cxx_config;
+  lite_metal_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(model_dir);
   cxx_config.set_model_file(model_dir + "/__model__");
   cxx_config.set_param_file(model_dir + "/__params__");
@@ -37,17 +37,17 @@ void TestModel(const std::string& model_dir) {
       Place{TARGET(kARM), PRECISION(kInt64)},
   };
   cxx_config.set_valid_places(vaild_places);
-  auto cxx_predictor = lite_api::CreatePaddlePredictor(cxx_config);
+  auto cxx_predictor = lite_metal_api::CreatePaddlePredictor(cxx_config);
 
   std::string opt_model_path = model_dir + "/fast_rcnn_opt";
   LOG(INFO) << "Save quantized model to " << opt_model_path;
   cxx_predictor->SaveOptimizedModel(opt_model_path,
-                                    lite_api::LiteModelType::kNaiveBuffer);
+                                    lite_metal_api::LiteModelType::kNaiveBuffer);
 
   LOG(INFO) << "Load optimized model";
-  lite_api::MobileConfig mobile_config;
+  lite_metal_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(opt_model_path + ".nb");
-  auto mobile_predictor = lite_api::CreatePaddlePredictor(mobile_config);
+  auto mobile_predictor = lite_metal_api::CreatePaddlePredictor(mobile_config);
 
   // set input
   int n = 1;

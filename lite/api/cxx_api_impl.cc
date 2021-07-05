@@ -36,7 +36,7 @@
 namespace paddle {
 namespace lite_metal {
 
-void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
+void CxxPaddleApiImpl::Init(const lite_metal_api::CxxConfig &config) {
   config_ = config;
   if (!status_is_cloned_) {
     auto places = config.valid_places();
@@ -170,29 +170,29 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       int64_t size = std::accumulate(
           shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
       switch (input_tensor->precision()) {
-        case lite_api::PrecisionType::kFloat:
+        case lite_metal_api::PrecisionType::kFloat:
           memcpy(in_tensor->mutable_data<float>(),
                  input_tensor->data<float>(),
                  sizeof(float) * size);
           break;
-        case lite_api::PrecisionType::kFP64:
+        case lite_metal_api::PrecisionType::kFP64:
           memcpy(in_tensor->mutable_data<double>(),
                  input_tensor->data<double>(),
                  sizeof(double) * size);
           break;
-        case lite_api::PrecisionType::kInt32:
+        case lite_metal_api::PrecisionType::kInt32:
           memcpy(in_tensor->mutable_data<int32_t>(),
                  input_tensor->data<int32_t>(),
                  sizeof(int32_t) * size);
           break;
-        case lite_api::PrecisionType::kInt64:
+        case lite_metal_api::PrecisionType::kInt64:
           memcpy(in_tensor->mutable_data<int64_t>(),
                  input_tensor->data<int64_t>(),
                  sizeof(int64_t) * size);
           break;
         default:
           LOG(FATAL) << "unsupport data type: "
-                     << lite_api::PrecisionToStr(input_tensor->precision());
+                     << lite_metal_api::PrecisionToStr(input_tensor->precision());
       }
     }
     Run();
@@ -200,15 +200,15 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #endif
 }
 
-std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
+std::unique_ptr<lite_metal_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
   auto *x = raw_predictor_->GetInput(i);
-  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+  return std::unique_ptr<lite_metal_api::Tensor>(new lite_metal_api::Tensor(x));
 }
 
-std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
+std::unique_ptr<const lite_metal_api::Tensor> CxxPaddleApiImpl::GetOutput(
     int i) const {
   const auto *x = raw_predictor_->GetOutput(i);
-  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+  return std::unique_ptr<lite_metal_api::Tensor>(new lite_metal_api::Tensor(x));
 }
 
 std::vector<std::string> CxxPaddleApiImpl::GetInputNames() {
@@ -230,7 +230,7 @@ void CxxPaddleApiImpl::Run() {
   raw_predictor_->Run();
 }
 
-std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
+std::shared_ptr<lite_metal_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
   std::lock_guard<std::mutex> lock(mutex_);
   auto predictor =
       std::make_shared<lite_metal::CxxPaddleApiImpl>(raw_predictor_->Clone());
@@ -238,7 +238,7 @@ std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone() {
   return predictor;
 }
 
-std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone(
+std::shared_ptr<lite_metal_api::PaddlePredictor> CxxPaddleApiImpl::Clone(
     const std::vector<std::string> &var_names) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto predictor = std::make_shared<lite_metal::CxxPaddleApiImpl>(
@@ -249,26 +249,26 @@ std::shared_ptr<lite_api::PaddlePredictor> CxxPaddleApiImpl::Clone(
 
 std::string CxxPaddleApiImpl::GetVersion() const { return version(); }
 
-std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetTensor(
+std::unique_ptr<const lite_metal_api::Tensor> CxxPaddleApiImpl::GetTensor(
     const std::string &name) const {
   auto *x = raw_predictor_->GetTensor(name);
-  return std::unique_ptr<const lite_api::Tensor>(new lite_api::Tensor(x));
+  return std::unique_ptr<const lite_metal_api::Tensor>(new lite_metal_api::Tensor(x));
 }
 
-std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetMutableTensor(
+std::unique_ptr<lite_metal_api::Tensor> CxxPaddleApiImpl::GetMutableTensor(
     const std::string &name) {
-  return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(raw_predictor_->GetMutableTensor(name)));
+  return std::unique_ptr<lite_metal_api::Tensor>(
+      new lite_metal_api::Tensor(raw_predictor_->GetMutableTensor(name)));
 }
 
-std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(
+std::unique_ptr<lite_metal_api::Tensor> CxxPaddleApiImpl::GetInputByName(
     const std::string &name) {
-  return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(raw_predictor_->GetInputByName(name)));
+  return std::unique_ptr<lite_metal_api::Tensor>(
+      new lite_metal_api::Tensor(raw_predictor_->GetInputByName(name)));
 }
 
 void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
-                                          lite_api::LiteModelType model_type,
+                                          lite_metal_api::LiteModelType model_type,
                                           bool record_info) {
   raw_predictor_->SaveModel(model_dir, model_type, record_info);
 }
@@ -279,7 +279,7 @@ bool CxxPaddleApiImpl::TryShrinkMemory() {
 
 }  // namespace lite
 
-namespace lite_api {
+namespace lite_metal_api {
 
 template <>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(

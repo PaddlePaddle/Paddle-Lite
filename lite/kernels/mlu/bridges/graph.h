@@ -291,13 +291,13 @@ class Graph {
     CNML_CALL(cnmlDestroyQuantizedParam(&quant_param));
   }
 
-  void SetFPType(paddle::lite_api::PrecisionType type) {
+  void SetFPType(paddle::lite_metal_api::PrecisionType type) {
     origin_fp_type_ = type;
     switch (type) {
-      case paddle::lite_api::PrecisionType::kFP16:
+      case paddle::lite_metal_api::PrecisionType::kFP16:
         fp_type_ = CNML_DATA_FLOAT16;
         break;
-      case paddle::lite_api::PrecisionType::kFloat:
+      case paddle::lite_metal_api::PrecisionType::kFloat:
         fp_type_ = CNML_DATA_FLOAT32;
         break;
       default:
@@ -309,7 +309,7 @@ class Graph {
 
  private:
   cnmlDataType_t fp_type_{CNML_DATA_FLOAT32};
-  paddle::lite_api::PrecisionType origin_fp_type_{PRECISION(kFloat)};
+  paddle::lite_metal_api::PrecisionType origin_fp_type_{PRECISION(kFloat)};
   std::unordered_map<std::string, std::shared_ptr<MLUTensor>> nodes_;
   std::vector<cnmlTensor_t> inputs_;
   std::vector<cnmlTensor_t> outputs_;

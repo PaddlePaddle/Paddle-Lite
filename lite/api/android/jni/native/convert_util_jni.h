@@ -22,7 +22,7 @@ limitations under the License. */
 #include "lite/api/paddle_place.h"
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 inline std::string jstring_to_cpp_string(JNIEnv *env, jstring jstr) {
   // In java, a unicode char will be encoded using 2 bytes (utf16).
@@ -124,7 +124,7 @@ inline std::vector<int64_t> jlongarray_to_int64_vector(JNIEnv *env,
 }
 
 /**
- * Converts Java com.baidu.paddle.lite.Place to c++ paddle::lite_api::Place.
+ * Converts Java com.baidu.paddle.lite.Place to c++ paddle::lite_metal_api::Place.
  */
 inline Place jplace_to_cpp_place(JNIEnv *env, jobject java_place) {
   jclass place_jclazz = env->GetObjectClass(java_place);
@@ -142,9 +142,9 @@ inline Place jplace_to_cpp_place(JNIEnv *env, jobject java_place) {
   int data_layout = env->CallIntMethod(java_place, data_layout_method);
   int device = env->CallIntMethod(java_place, device_method);
 
-  return Place(static_cast<paddle::lite_api::TargetType>(target),
-               static_cast<paddle::lite_api::PrecisionType>(precision),
-               static_cast<paddle::lite_api::DataLayoutType>(data_layout),
+  return Place(static_cast<paddle::lite_metal_api::TargetType>(target),
+               static_cast<paddle::lite_metal_api::PrecisionType>(precision),
+               static_cast<paddle::lite_metal_api::DataLayoutType>(data_layout),
                device);
 }
 
@@ -230,7 +230,7 @@ inline MobileConfig jmobileconfig_to_cpp_mobileconfig(JNIEnv *env,
   jmethodID power_mode_method =
       env->GetMethodID(mobileconfig_jclazz, "getPowerModeInt", "()I");
   int power_mode = env->CallIntMethod(jmobileconfig, power_mode_method);
-  config.set_power_mode(static_cast<paddle::lite_api::PowerMode>(power_mode));
+  config.set_power_mode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode));
 
   return config;
 }

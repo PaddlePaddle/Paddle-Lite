@@ -108,15 +108,15 @@ void ReadInputData(
 }
 
 TEST(yolov3_darknet53, test_yolov3_darknet53_fp32_baidu_xpu) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_file(FLAGS_model_dir + "/__model__");
   config.set_param_file(FLAGS_model_dir + "/__params__");
-  config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  config.set_valid_places({lite_metal_api::Place{TARGET(kXPU), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_l3_cache_method(16773120, false);
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   std::string cpu_out_dir =
       FLAGS_data_dir + std::string("/output_data/out_cpu.txt");

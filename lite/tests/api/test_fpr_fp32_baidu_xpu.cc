@@ -27,15 +27,15 @@ namespace paddle {
 namespace lite_metal {
 
 TEST(ResnetCbam, test_resnet_cbam_fp32_baidu_xpu) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   // config.set_model_dir(FLAGS_model_dir);
   config.set_model_file(FLAGS_model_dir + "/__model__");
   config.set_param_file(FLAGS_model_dir + "/__params__");
-  config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  config.set_valid_places({lite_metal_api::Place{TARGET(kXPU), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_l3_cache_method(16773120, false);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   auto input_tensor = predictor->GetInput(0);
   std::vector<int64_t> input_shape{1, 3, 224, 224};

@@ -260,7 +260,7 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
     // Share data buf between device_itensor and origin_itensor
     std::shared_ptr<Buffer> buffer = std::make_shared<Buffer>(
         reinterpret_cast<void*>((*device_itensors)[i]->GetData()),
-        lite_api::TargetType::kHost,
+        lite_metal_api::TargetType::kHost,
         (*device_itensors)[i]->GetSize());
     (*origin_itensors)[i]->ResetBuffer(buffer,
                                        (*device_itensors)[i]->GetSize());
@@ -299,7 +299,7 @@ bool DeviceProgram::SharedBufferWithOutputTensors(
     // Share data buf between device_itensor and origin_itensor
     std::shared_ptr<Buffer> buffer = std::make_shared<Buffer>(
         reinterpret_cast<void*>((*device_otensors)[i]->GetData()),
-        lite_api::TargetType::kHost,
+        lite_metal_api::TargetType::kHost,
         (*device_otensors)[i]->GetSize());
     (*origin_otensors)[i]->ResetBuffer(buffer,
                                        (*device_otensors)[i]->GetSize());

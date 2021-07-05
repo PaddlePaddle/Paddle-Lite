@@ -148,13 +148,13 @@ CLContext::GenerateLocalWorkSizes(cl::NDRange gws, size_t max_ws) {
   };
   std::set<bool> tune_reverses{true, false};
   std::set<size_t> divisors;
-  if (tune_type == lite_api::CL_TUNE_NONE) {
+  if (tune_type == lite_metal_api::CL_TUNE_NONE) {
     return lwss;
-  } else if (tune_type == lite_api::CL_TUNE_RAPID) {
+  } else if (tune_type == lite_metal_api::CL_TUNE_RAPID) {
     divisors = {1, 2, 4, 8};
-  } else if (tune_type == lite_api::CL_TUNE_NORMAL) {
+  } else if (tune_type == lite_metal_api::CL_TUNE_NORMAL) {
     divisors = {1, 3, 5, 7, 9, 11, 13};
-  } else if (tune_type == lite_api::CL_TUNE_EXHAUSTIVE) {
+  } else if (tune_type == lite_metal_api::CL_TUNE_EXHAUSTIVE) {
     divisors = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
   } else {
     LOG(FATAL) << "Unsupported opencl tune type:" << tune_type;

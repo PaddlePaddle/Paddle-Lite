@@ -52,8 +52,8 @@ void CastCompute<InType>::Run() {
         ctx.GetRawContext(), in_data, out_data, numel);
   } else {
     LOG(FATAL) << "cast from in_type("
-               << lite_api::PrecisionToStr(
-                      lite_api::PrecisionTypeTrait<InType>::Type())
+               << lite_metal_api::PrecisionToStr(
+                      lite_metal_api::PrecisionTypeTrait<InType>::Type())
                << ") to out_type(" << out_dtype << ") is not supported.";
   }
   CHECK_EQ(r, 0);

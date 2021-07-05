@@ -119,7 +119,7 @@ void TestSequenceMaskHelper(const Place place,
                             const int out_type = 5,
                             const bool use_max_len_tensor = false) {
   std::string alias;
-  auto precision = lite_api::PrecisionTypeTrait<T>::Type();
+  auto precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   switch (precision) {
     case PRECISION(kFloat):
       alias = std::string("def");
@@ -132,7 +132,7 @@ void TestSequenceMaskHelper(const Place place,
       break;
     default:
       LOG(FATAL) << "unsupported input data type: "
-                 << lite_api::PrecisionToStr(precision);
+                 << lite_metal_api::PrecisionToStr(precision);
       break;
   }
   std::unique_ptr<arena::TestCase> tester(new SequenceMaskTester<T>(

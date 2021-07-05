@@ -26,18 +26,18 @@ namespace lite_metal {
 namespace kernels {
 namespace arm {
 
-inline lite_api::ActivationType convert_gru_act_type(int act_type) {
+inline lite_metal_api::ActivationType convert_gru_act_type(int act_type) {
   switch (act_type) {
     case 0:
-      return lite_api::ActivationType::kIndentity;
+      return lite_metal_api::ActivationType::kIndentity;
     case 1:
-      return lite_api::ActivationType::kSigmoid;
+      return lite_metal_api::ActivationType::kSigmoid;
     case 2:
-      return lite_api::ActivationType::kTanh;
+      return lite_metal_api::ActivationType::kTanh;
     case 3:
-      return lite_api::ActivationType::kRelu;
+      return lite_metal_api::ActivationType::kRelu;
     default:
-      return lite_api::ActivationType::kIndentity;
+      return lite_metal_api::ActivationType::kIndentity;
   }
 }
 

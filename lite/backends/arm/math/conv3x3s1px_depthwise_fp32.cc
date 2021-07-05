@@ -521,7 +521,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
   float relu_ptr[4] = {0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     switch (act_param.active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
         conv_3x3s1_depthwise_fp32_relu(i_data,
                                        o_data,
                                        bs,
@@ -539,7 +539,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                        param,
                                        ctx);
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
         six_ptr[0] = act_param.Relu_clipped_coef;
         six_ptr[1] = act_param.Relu_clipped_coef;
         six_ptr[2] = act_param.Relu_clipped_coef;
@@ -561,7 +561,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                         param,
                                         ctx);
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
         scale_ptr[0] = act_param.Leaky_relu_alpha;
         scale_ptr[1] = act_param.Leaky_relu_alpha;
         scale_ptr[2] = act_param.Leaky_relu_alpha;

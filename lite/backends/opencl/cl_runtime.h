@@ -110,34 +110,34 @@ class CLRuntime {
     return is_device_avaliable_for_opencl_;
   }
 
-  void set_auto_tune(lite_api::CLTuneMode tune_mode,
+  void set_auto_tune(lite_metal_api::CLTuneMode tune_mode,
                      const std::string& path,
                      const std::string& name,
                      size_t lws_repeats = 4);
 
-  lite_api::CLTuneMode auto_tune() { return auto_tune_; }
+  lite_metal_api::CLTuneMode auto_tune() { return auto_tune_; }
 
   size_t lws_repeats() { return lws_repeats_; }
 
   void set_precision(
-      lite_api::CLPrecisionType p = lite_api::CL_PRECISION_AUTO) {
+      lite_metal_api::CLPrecisionType p = lite_metal_api::CL_PRECISION_AUTO) {
     // CL_PRECISION_AUTO: 0
     // CL_PRECISION_FP32: 1
     // CL_PRECISION_FP16: 2
-    if ((lite_api::CL_PRECISION_AUTO == p ||
-         lite_api::CL_PRECISION_FP16 == p) &&
+    if ((lite_metal_api::CL_PRECISION_AUTO == p ||
+         lite_metal_api::CL_PRECISION_FP16 == p) &&
         support_half()) {
-      precision_ = lite_api::CL_PRECISION_FP16;
-    } else if (lite_api::CL_PRECISION_AUTO == p ||
-               lite_api::CL_PRECISION_FP32 == p) {
-      precision_ = lite_api::CL_PRECISION_FP32;
+      precision_ = lite_metal_api::CL_PRECISION_FP16;
+    } else if (lite_metal_api::CL_PRECISION_AUTO == p ||
+               lite_metal_api::CL_PRECISION_FP32 == p) {
+      precision_ = lite_metal_api::CL_PRECISION_FP32;
     } else {
       LOG(FATAL) << "unsupported precision for opencl:"
                  << static_cast<size_t>(p);
     }
   }
 
-  lite_api::CLPrecisionType get_precision() { return precision_; }
+  lite_metal_api::CLPrecisionType get_precision() { return precision_; }
 
   void SetBinaryPathName(const std::string& path, const std::string& name) {
     binary_path_name_.push_back(path);
@@ -315,13 +315,13 @@ class CLRuntime {
   // 1 - Rapid
   // 2 - Normal
   // 3 - Exhaustive
-  lite_api::CLTuneMode auto_tune_{lite_api::CL_TUNE_NONE};
+  lite_metal_api::CLTuneMode auto_tune_{lite_metal_api::CL_TUNE_NONE};
 
   size_t lws_repeats_{0};
 
   // CLPrecisionType
   // 0 - AUTO, 1 - fp32, 2 - fp16
-  lite_api::CLPrecisionType precision_{lite_api::CL_PRECISION_AUTO};
+  lite_metal_api::CLPrecisionType precision_{lite_metal_api::CL_PRECISION_AUTO};
 
   std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::map<std::string, cl::Program::Binaries> programs_precompiled_binary_;

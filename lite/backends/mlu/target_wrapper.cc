@@ -89,15 +89,15 @@ void TargetWrapperMlu::MemcpySync(void* dst,
   }
 }
 void TargetWrapperMlu::SetMLURunMode(
-    lite_api::MLUCoreVersion core_version,
+    lite_metal_api::MLUCoreVersion core_version,
     int core_number,
     DataLayoutType input_layout,
     std::pair<std::vector<float>, std::vector<float>> firstconv_param) {
   switch (core_version) {
-    case (lite_api::MLUCoreVersion::MLU_220):
+    case (lite_metal_api::MLUCoreVersion::MLU_220):
       mlu_core_version_ = CNML_MLU220;
       break;
-    case (lite_api::MLUCoreVersion::MLU_270):
+    case (lite_metal_api::MLUCoreVersion::MLU_270):
       mlu_core_version_ = CNML_MLU270;
       break;
     default:

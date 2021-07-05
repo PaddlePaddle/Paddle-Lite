@@ -27,7 +27,7 @@ namespace lite_metal {
 
 void TestModel(const std::vector<Place>& valid_places) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_metal_api::LITE_POWER_HIGH, FLAGS_threads);
   lite_metal::Predictor predictor;
 
   predictor.Build(FLAGS_model_dir, "", "", valid_places);

@@ -1744,12 +1744,12 @@ void conv_3x3s2_direct_fp32(const float* i_data,
   float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       alpha = act_param.Relu_clipped_coef;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       alpha = act_param.Leaky_relu_alpha;
     }
@@ -2448,12 +2448,12 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
   float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       alpha = act_param.Relu_clipped_coef;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       alpha = act_param.Leaky_relu_alpha;
     }
@@ -3034,12 +3034,12 @@ void conv_3x3s2_direct_fp32_c3_a53(const float* i_data,
   float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       alpha = act_param.Relu_clipped_coef;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       alpha = act_param.Leaky_relu_alpha;
     }

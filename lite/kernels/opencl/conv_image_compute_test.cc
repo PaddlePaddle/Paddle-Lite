@@ -215,15 +215,15 @@ TEST(conv2d, compute_image2d_1x1) {
                 param.fuse_relu = true;  // relu only
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu;
+                    lite_metal_api::ActivationType::kRelu;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu6;
+                    lite_metal_api::ActivationType::kRelu6;
               } else if (relu_flag == "leaky_relu") {
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kLeakyRelu;
+                    lite_metal_api::ActivationType::kLeakyRelu;
                 param.activation_param.has_active = true;
                 param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
               } else {
@@ -574,15 +574,15 @@ const int stride = 2;
                 param.fuse_relu = true;  // relu only
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu;
+                    lite_metal_api::ActivationType::kRelu;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu6;
+                    lite_metal_api::ActivationType::kRelu6;
               } else if (relu_flag == "leaky_relu") {
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kLeakyRelu;
+                    lite_metal_api::ActivationType::kLeakyRelu;
                 param.activation_param.has_active = true;
                 param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
               } else {
@@ -915,15 +915,15 @@ TEST(conv2d, compute_image2d_5x5) {
                 param.fuse_relu = true;  // relu only
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu;
+                    lite_metal_api::ActivationType::kRelu;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu6;
+                    lite_metal_api::ActivationType::kRelu6;
               } else if (relu_flag == "leaky_relu") {
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kLeakyRelu;
+                    lite_metal_api::ActivationType::kLeakyRelu;
                 param.activation_param.has_active = true;
                 param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
               } else {
@@ -1242,15 +1242,15 @@ TEST(conv2d, compute_image2d_7x7) {
                 param.fuse_relu = true;  // relu only
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu;
+                    lite_metal_api::ActivationType::kRelu;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu6;
+                    lite_metal_api::ActivationType::kRelu6;
               } else if (relu_flag == "leaky_relu") {
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kLeakyRelu;
+                    lite_metal_api::ActivationType::kLeakyRelu;
                 param.activation_param.has_active = true;
                 param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
               } else {
@@ -1598,15 +1598,15 @@ const int stride = 2;
                 param.fuse_relu = true;  // relu only
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu;
+                    lite_metal_api::ActivationType::kRelu;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kRelu6;
+                    lite_metal_api::ActivationType::kRelu6;
               } else if (relu_flag == "leaky_relu") {
                 param.activation_param.active_type =
-                    lite_api::ActivationType::kLeakyRelu;
+                    lite_metal_api::ActivationType::kLeakyRelu;
                 param.activation_param.has_active = true;
                 param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
               } else {

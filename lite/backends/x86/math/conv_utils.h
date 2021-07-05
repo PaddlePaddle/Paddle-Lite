@@ -54,9 +54,9 @@ void pack_padding8_m256(lite_metal::Tensor* input,
                         const std::vector<int>& paddings);
 
 // for activation - only support relu, relu6
-__m256 activation8_m256(__m256 input, const lite_api::ActivationType act_type);
-__m128 activation4_m128(__m128 input, const lite_api::ActivationType act_type);
-float activation1_float(float input, const lite_api::ActivationType act_type);
+__m256 activation8_m256(__m256 input, const lite_metal_api::ActivationType act_type);
+__m128 activation4_m128(__m128 input, const lite_metal_api::ActivationType act_type);
+float activation1_float(float input, const lite_metal_api::ActivationType act_type);
 
 }  // namespace math
 }  // namespace x86

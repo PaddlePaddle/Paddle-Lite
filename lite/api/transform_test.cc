@@ -180,7 +180,7 @@ void TestModel(const std::vector<Place>& valid_places,
                bool use_npu = false) {
 #ifdef LITE_WITH_ARM
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_metal_api::LITE_POWER_HIGH, FLAGS_threads);
 #endif
   lite_metal::Predictor predictor;
   std::string test_data_path = FLAGS_input;

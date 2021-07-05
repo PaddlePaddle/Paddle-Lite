@@ -26,14 +26,14 @@ void conv_depthwise_3x3s1_m256(lite_metal::Tensor* input,
                                lite_metal::Tensor* filter,
                                lite_metal::Tensor* bias,
                                const bool has_act,
-                               const lite_api::ActivationType act_type);
+                               const lite_metal_api::ActivationType act_type);
 
 void conv_depthwise_3x3s2_m256(lite_metal::Tensor* input,
                                lite_metal::Tensor* output,
                                lite_metal::Tensor* filter,
                                lite_metal::Tensor* bias,
                                const bool has_act,
-                               const lite_api::ActivationType act_type);
+                               const lite_metal_api::ActivationType act_type);
 
 void conv_depthwise_m256(lite_metal::Tensor* input,
                          lite_metal::Tensor* output,
@@ -44,7 +44,7 @@ void conv_depthwise_m256(lite_metal::Tensor* input,
                          const int dilation_h,
                          const int dilation_w,
                          const bool has_act,
-                         const lite_api::ActivationType act_type);
+                         const lite_metal_api::ActivationType act_type);
 
 }  // namespace math
 }  // namespace x86

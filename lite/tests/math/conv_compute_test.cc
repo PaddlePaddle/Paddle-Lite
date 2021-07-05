@@ -68,7 +68,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       /// set param and context
       for (auto& dim_in : input_dims) {
         param.x->Resize(dim_in);

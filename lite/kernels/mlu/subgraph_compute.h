@@ -47,7 +47,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
                  Scope* exec_scope,
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names,
-                 paddle::lite_api::PrecisionType type)
+                 paddle::lite_metal_api::PrecisionType type)
       : subgraph::SubgraphEngineBase(ctx,
                                      block_idx,
                                      program_desc,
@@ -92,13 +92,13 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
 
   inline cnmlDataType_t PrecisionToDatatype(PrecisionType data_type) {
     switch (data_type) {
-      case paddle::lite_api::PrecisionType::kFP16:
+      case paddle::lite_metal_api::PrecisionType::kFP16:
         return CNML_DATA_FLOAT16;
-      case paddle::lite_api::PrecisionType::kFloat:
+      case paddle::lite_metal_api::PrecisionType::kFloat:
         return CNML_DATA_FLOAT32;
-      case paddle::lite_api::PrecisionType::kInt32:
+      case paddle::lite_metal_api::PrecisionType::kInt32:
         return CNML_DATA_INT32;
-      case paddle::lite_api::PrecisionType::kInt8:
+      case paddle::lite_metal_api::PrecisionType::kInt8:
         return CNML_DATA_UINT8;
       default:
         return PrecisionToDatatype(fp_type_);
@@ -444,7 +444,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
     return true;
   }
 
-  paddle::lite_api::PrecisionType fp_type_;
+  paddle::lite_metal_api::PrecisionType fp_type_;
   std::vector<std::vector<int64_t>> inputs_shape_{};
   std::vector<std::vector<int64_t>> all_inputs_shape_{};
   std::map<std::vector<std::vector<int64_t>>,

@@ -36,7 +36,7 @@ void TestModel(const std::vector<Place>& valid_places,
                const std::string& model_dir = FLAGS_model_dir,
                bool save_model = false) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_metal_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite_metal::Predictor predictor;
 
   predictor.Build(model_dir, "", "", valid_places);

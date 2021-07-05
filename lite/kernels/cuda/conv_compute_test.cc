@@ -236,7 +236,7 @@ TEST(conv_compute, int8) {
 
   operators::ActivationParam act_param;
   act_param.has_active = true;
-  act_param.active_type = lite_api::ActivationType::kRelu;
+  act_param.active_type = lite_metal_api::ActivationType::kRelu;
   operators::ConvParam param;
   // param.activation_param = act_param;
   param.groups = 1;
@@ -304,8 +304,8 @@ TEST(conv_compute, int8_int8_out) {
 
   operators::ActivationParam act_param;
   act_param.has_active = true;
-  act_param.active_type = lite_api::ActivationType::kRelu;
-  // act_param.active_type = lite_api::ActivationType::kLeakyRelu;
+  act_param.active_type = lite_metal_api::ActivationType::kRelu;
+  // act_param.active_type = lite_metal_api::ActivationType::kLeakyRelu;
   act_param.Leaky_relu_alpha = 0.1;
   operators::ConvParam param;
   param.activation_param = act_param;

@@ -155,7 +155,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   float vscale[4] = {ss, ss, ss, ss};
   if (has_active) {
     switch (act_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
         if (pad == 0) {
           if (w_in > 5) {
             conv_depthwise_3x3s1p0_bias_relu(dout,
@@ -219,7 +219,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
           }
         }
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
         if (pad == 0) {
           if (w_in > 5) {
             conv_depthwise_3x3s1p0_bias_relu6(dout,
@@ -283,7 +283,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
           }
         }
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
         if (pad == 0) {
           if (w_in > 5) {
             conv_depthwise_3x3s1p0_bias_leakyRelu(dout,

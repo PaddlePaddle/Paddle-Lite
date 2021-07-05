@@ -102,13 +102,13 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   auto kw = w_dims[3];
   auto act_param = param.activation_param;
   bool has_act = act_param.has_active;
-  lite_api::ActivationType act_type = act_param.active_type;
+  lite_metal_api::ActivationType act_type = act_param.active_type;
   // s1: no activation and relu activation is supported now
   // s2: only support pad=1
   bool support_act_type_s1 =
       (has_act == false) ||
-      (has_act == true && (act_type == lite_api::ActivationType::kRelu ||
-                           act_type == lite_api::ActivationType::kRelu6));
+      (has_act == true && (act_type == lite_metal_api::ActivationType::kRelu ||
+                           act_type == lite_metal_api::ActivationType::kRelu6));
   bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] < 2);
   bool support_pad_type_s2 = pads_equal && (paddings[0] == 1);
   bool support_stride_type_s1 = (strides[0] == 1 && strides[1] == 1);
@@ -118,8 +118,8 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   bool s1_trans =
       (!support_act_type_s1 || !pads_equal || !support_width_type_s1);
   bool s2_trans = (!support_pad_type_s2 || !support_width_type_s2);
-  (has_act == true && (act_type == lite_api::ActivationType::kRelu ||
-                       act_type == lite_api::ActivationType::kRelu6));
+  (has_act == true && (act_type == lite_metal_api::ActivationType::kRelu ||
+                       act_type == lite_metal_api::ActivationType::kRelu6));
   /// select dw conv kernel
   if (kw == 3) {
     // trans weights
@@ -202,13 +202,13 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {
   auto kw = w_dims[3];
   auto act_param = param.activation_param;
   bool has_act = act_param.has_active;
-  lite_api::ActivationType act_type = act_param.active_type;
+  lite_metal_api::ActivationType act_type = act_param.active_type;
   // s1: no activation and relu activation is supported now
   // s2: only support pad=1
   bool support_act_type_s1 =
       (has_act == false) ||
-      (has_act == true && (act_type == lite_api::ActivationType::kRelu ||
-                           act_type == lite_api::ActivationType::kRelu6));
+      (has_act == true && (act_type == lite_metal_api::ActivationType::kRelu ||
+                           act_type == lite_metal_api::ActivationType::kRelu6));
   bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] < 2);
   bool support_pad_type_s2 = pads_equal && (paddings[0] == 1);
   bool support_stride_type_s1 = (strides[0] == 1 && strides[1] == 1);
@@ -276,7 +276,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   }
   //! update relu6 parameter
   if (param.activation_param.has_active &&
-      param.activation_param.active_type == lite_api::ActivationType::kRelu6) {
+      param.activation_param.active_type == lite_metal_api::ActivationType::kRelu6) {
     param.activation_param.Relu_clipped_coef =
         param.activation_param.Relu_clipped_coef / param.output_scale;
   }

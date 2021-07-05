@@ -21,13 +21,13 @@
 namespace paddle {
 namespace lite_metal {
 
-using lite_api::Place;
+using lite_metal_api::Place;
 
 void ExpandPlaces(std::set<Place>* places, const Place& place) {
-  for (const auto& target : lite_api::ExpandValidTargets(place.target)) {
+  for (const auto& target : lite_metal_api::ExpandValidTargets(place.target)) {
     for (const auto& precision :
-         lite_api::ExpandValidPrecisions(place.precision)) {
-      for (const auto& layout : lite_api::ExpandValidLayouts(place.layout)) {
+         lite_metal_api::ExpandValidPrecisions(place.precision)) {
+      for (const auto& layout : lite_metal_api::ExpandValidLayouts(place.layout)) {
         places->insert(Place(target, precision, layout));
       }
     }

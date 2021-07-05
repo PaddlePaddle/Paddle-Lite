@@ -41,17 +41,17 @@ namespace lite_metal {
 namespace pybind {
 
 using lite_metal::LightPredictorImpl;
-using lite_api::CxxConfig;
-using lite_api::DataLayoutType;
-using lite_api::MLUCoreVersion;
-using lite_api::MobileConfig;
-using lite_api::OptBase;
-using lite_api::Place;
-using lite_api::PowerMode;
-using lite_api::PrecisionType;
-using lite_api::TargetType;
-using lite_api::Tensor;
-using lite_api::CxxModelBuffer;
+using lite_metal_api::CxxConfig;
+using lite_metal_api::DataLayoutType;
+using lite_metal_api::MLUCoreVersion;
+using lite_metal_api::MobileConfig;
+using lite_metal_api::OptBase;
+using lite_metal_api::Place;
+using lite_metal_api::PowerMode;
+using lite_metal_api::PrecisionType;
+using lite_metal_api::TargetType;
+using lite_metal_api::Tensor;
+using lite_metal_api::CxxModelBuffer;
 
 #ifndef LITE_ON_TINY_PUBLISH
 using lite_metal::CxxPaddleApiImpl;
@@ -311,7 +311,7 @@ void BindLiteCxxPredictor(py::module *m) {
       .def("save_optimized_model",
            [](CxxPaddleApiImpl &self, const std::string &output_dir) {
              self.SaveOptimizedModel(output_dir,
-                                     lite_api::LiteModelType::kNaiveBuffer);
+                                     lite_metal_api::LiteModelType::kNaiveBuffer);
            });
 }
 #endif

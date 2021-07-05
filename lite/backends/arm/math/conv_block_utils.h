@@ -886,7 +886,7 @@ inline void act_switch_c1_fp32(const float* din_ptr,
     float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
 #ifdef __aarch64__
         asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
                          NCHWC1_TRANS_FP32_STORE
@@ -918,7 +918,7 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                      : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
 /* 0 <= din <= 6 */
 #ifdef __aarch64__
         asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
@@ -951,7 +951,7 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                      : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
 /*din = din >= 0 ? din : din * scale*/
 #ifdef __aarch64__
         asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_LEAKY_RELU
@@ -1074,13 +1074,13 @@ inline bool write_to_output_c1_fp32(const float* din,
         float six = act_param->Relu_clipped_coef;
         float scale = act_param->Leaky_relu_alpha;
         switch (act_param->active_type) {
-          case lite_api::ActivationType::kRelu:
+          case lite_metal_api::ActivationType::kRelu:
             for (; j < width; ++j) {
               *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
               din_hei_ptr++;
             }
             break;
-          case lite_api::ActivationType::kRelu6:
+          case lite_metal_api::ActivationType::kRelu6:
             /* 0 <= din <= 6 */
             for (; j < width; ++j) {
               float tmp = LITEMAX(din_hei_ptr[0], 0.f);
@@ -1088,7 +1088,7 @@ inline bool write_to_output_c1_fp32(const float* din,
               din_hei_ptr++;
             }
             break;
-          case lite_api::ActivationType::kLeakyRelu:
+          case lite_metal_api::ActivationType::kLeakyRelu:
             /*din = din >= 0 ? din : din * scale*/
             for (; j < width; ++j) {
               if (din_hei_ptr[0] >= 0) {
@@ -1196,7 +1196,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
     float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
 #ifdef __aarch64__
         asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_RELU
                          NCHWC2_TRANS_FP32_STORE
@@ -1230,7 +1230,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                      : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
 /* 0 <= din <= 6 */
 #ifdef __aarch64__
         asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_RELU
@@ -1265,7 +1265,7 @@ inline void act_switch_c2_fp32(const float* din_ptr,
                      : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
 /*din = din >= 0 ? din : din * scale*/
 #ifdef __aarch64__
         asm volatile(NCHWC2_TRANS_FP32_COMPUTE NCHWC2_TRANS_FP32_LEAKY_RELU
@@ -1404,14 +1404,14 @@ inline bool write_to_output_c2_fp32(const float* din,
         float six = act_param->Relu_clipped_coef;
         float scale = act_param->Leaky_relu_alpha;
         switch (act_param->active_type) {
-          case lite_api::ActivationType::kRelu:
+          case lite_metal_api::ActivationType::kRelu:
             for (; j < width; ++j) {
               *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
               *(doutc1_ptr++) = LITEMAX(din_hei_ptr[1], 0.f);
               din_hei_ptr += 2;
             }
             break;
-          case lite_api::ActivationType::kRelu6:
+          case lite_metal_api::ActivationType::kRelu6:
             /* 0 <= din <= 6 */
             for (; j < width; ++j) {
               float tmp1 = LITEMAX(din_hei_ptr[0], 0.f);
@@ -1421,7 +1421,7 @@ inline bool write_to_output_c2_fp32(const float* din,
               din_hei_ptr += 2;
             }
             break;
-          case lite_api::ActivationType::kLeakyRelu:
+          case lite_metal_api::ActivationType::kLeakyRelu:
             /*din = din >= 0 ? din : din * scale*/
             for (; j < width; ++j) {
               if (din_hei_ptr[0] >= 0) {
@@ -1643,7 +1643,7 @@ inline bool write_to_output_c4_fp32(const float* din,
     float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     switch (act_param->active_type) {
-          case lite_api::ActivationType::kRelu:
+          case lite_metal_api::ActivationType::kRelu:
             for (int i = 0; i < size_h; i++) {
               int size_w = i * width;
               float* doutc0_ptr = doutc0r0;
@@ -1724,7 +1724,7 @@ inline bool write_to_output_c4_fp32(const float* din,
               ptr_din += w_stride;
             }
             break;
-          case lite_api::ActivationType::kRelu6:
+          case lite_metal_api::ActivationType::kRelu6:
             for (int i = 0; i < size_h; i++) {
               int size_w = i * width;
               float* doutc0_ptr = doutc0r0;
@@ -1807,7 +1807,7 @@ inline bool write_to_output_c4_fp32(const float* din,
               ptr_din += w_stride;
             }
             break;
-          case lite_api::ActivationType::kLeakyRelu:
+          case lite_metal_api::ActivationType::kLeakyRelu:
             for (int i = 0; i < size_h; i++) {
               int size_w = i * width;
               float* doutc0_ptr = doutc0r0;
@@ -2214,7 +2214,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
     float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
 #ifdef __aarch64__
         asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_RELU
                          NCHWC8_TRANS_FP32_STORE
@@ -2278,7 +2278,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        "q15");
 #endif
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
 /* 0 <= din <= 6 */
 #ifdef __aarch64__
         asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_RELU6
@@ -2339,7 +2339,7 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        "q15");
 #endif
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
 /*din = din >= 0 ? din : din * scale*/
 #ifdef __aarch64__
         asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_LEAKY_RELU
@@ -2582,7 +2582,7 @@ inline void act_switch_process(float* src,
     float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     if (cnt > 0) {
       switch (act_param->active_type) {
-        case lite_api::ActivationType::kRelu:
+        case lite_metal_api::ActivationType::kRelu:
 #ifdef __aarch64__
           asm volatile(
               LOAD_DATA DO_RELU DO_STORE
@@ -2597,7 +2597,7 @@ inline void act_switch_process(float* src,
               : "memory", "cc", "q3", "q4", "q5", "q6");
 #endif
           break;
-        case lite_api::ActivationType::kRelu6:
+        case lite_metal_api::ActivationType::kRelu6:
 #ifdef __aarch64__
           asm volatile(
               LOAD_DATA DO_RELU DO_RELU6 DO_STORE
@@ -2612,7 +2612,7 @@ inline void act_switch_process(float* src,
               : "memory", "cc", "q3", "q4", "q5", "q6");
 #endif
           break;
-        case lite_api::ActivationType::kLeakyRelu:
+        case lite_metal_api::ActivationType::kLeakyRelu:
 #ifdef __aarch64__
           asm volatile(
               LOAD_DATA DO_LEAKY_RELU DO_STORE
@@ -2661,14 +2661,14 @@ inline void act_switch_process(float* src,
     }
     // remain
     switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
         for (int i = 0; i < remain; i++) {
           *dst = *src >= 0.f ? *src : 0.f;
           src++;
           dst++;
         }
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
         for (int i = 0; i < remain; i++) {
           float tmp = *src >= 0.f ? *src : 0.f;
           *dst = tmp <= act_param->Relu_clipped_coef
@@ -2678,7 +2678,7 @@ inline void act_switch_process(float* src,
           dst++;
         }
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
         for (int i = 0; i < remain; i++) {
           if (*src >= 0.f) {
             *dst = *src;
@@ -2804,7 +2804,7 @@ inline bool write_to_output_c8_fp32(const float* din,
         float six = act_param->Relu_clipped_coef;
         float scale = act_param->Leaky_relu_alpha;
         switch (act_param->active_type) {
-          case lite_api::ActivationType::kRelu:
+          case lite_metal_api::ActivationType::kRelu:
             for (; i < width; ++i) {
               *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
               *(doutc1_ptr++) = LITEMAX(din_hei_ptr[1], 0.f);
@@ -2817,7 +2817,7 @@ inline bool write_to_output_c8_fp32(const float* din,
               din_hei_ptr += 8;
             }
             break;
-          case lite_api::ActivationType::kRelu6:
+          case lite_metal_api::ActivationType::kRelu6:
             /* 0 <= din <= 6 */
             for (; i < width; ++i) {
               float tmp1 = LITEMAX(din_hei_ptr[0], 0.f);
@@ -2839,7 +2839,7 @@ inline bool write_to_output_c8_fp32(const float* din,
               din_hei_ptr += 8;
             }
             break;
-          case lite_api::ActivationType::kLeakyRelu:
+          case lite_metal_api::ActivationType::kLeakyRelu:
             /*din = din >= 0 ? din : din * scale*/
             for (; i < width; ++i) {
               if (din_hei_ptr[0] >= 0) {

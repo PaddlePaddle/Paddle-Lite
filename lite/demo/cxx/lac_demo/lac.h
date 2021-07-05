@@ -47,9 +47,9 @@ class LAC {
   std::unordered_map<std::string, std::string> _config_dict;
   int64_t _oov_id;
 
-  std::shared_ptr<paddle::lite_api::PaddlePredictor> _predictor;   //
-  std::unique_ptr<paddle::lite_api::Tensor> _input_tensor;         //
-  std::unique_ptr<const paddle::lite_api::Tensor> _output_tensor;  //
+  std::shared_ptr<paddle::lite_metal_api::PaddlePredictor> _predictor;   //
+  std::unique_ptr<paddle::lite_metal_api::Tensor> _input_tensor;         //
+  std::unique_ptr<const paddle::lite_metal_api::Tensor> _output_tensor;  //
 
   int feed_data(const std::vector<std::string> &querys);
 

@@ -87,14 +87,14 @@ static void test_gemm_s8(const benchmark::State &state_in,
   paddle::lite_metal::operators::ActivationParam act_param;
   act_param.has_active = has_relu;
   if (has_relu) {
-    act_param.active_type = (paddle::lite_api::ActivationType)1;
+    act_param.active_type = (paddle::lite_metal_api::ActivationType)1;
   }
 
   auto ctx1 = paddle::lite_metal::ContextScheduler::Global().NewContext(
-      paddle::lite_api::TargetType::kARM);
+      paddle::lite_metal_api::TargetType::kARM);
   auto &ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(
-                     paddle::lite_api::PowerMode::LITE_POWER_HIGH),
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(
+                     paddle::lite_metal_api::PowerMode::LITE_POWER_HIGH),
                  1);
 
   for (auto _ : state) {

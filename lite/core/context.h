@@ -375,7 +375,7 @@ class Context<TargetType::kARM> {
 
   void CopySharedTo(ARMContext* ctx) {}
 
-  void SetRunMode(lite_api::PowerMode mode, int threads) {
+  void SetRunMode(lite_metal_api::PowerMode mode, int threads) {
     return DeviceInfo::Global().SetRunMode(mode, threads);
   }
   void SetCache(int l1size, int l2size, int l3size) {
@@ -383,7 +383,7 @@ class Context<TargetType::kARM> {
   }
   void SetArch(ARMArch arch) { return DeviceInfo::Global().SetArch(arch); }
 
-  lite_api::PowerMode mode() const { return DeviceInfo::Global().mode(); }
+  lite_metal_api::PowerMode mode() const { return DeviceInfo::Global().mode(); }
   int threads() const { return DeviceInfo::Global().threads(); }
   ARMArch arch() const { return DeviceInfo::Global().arch(); }
   int l1_cache_size() const { return DeviceInfo::Global().l1_cache_size(); }

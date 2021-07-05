@@ -347,7 +347,7 @@ void fill_bias_act<float>(float* tensor,
     float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
         for (int j = 0; j < channel; j++) {
           float bias_data = flag_bias ? bias[j] : 0.f;
           float* src = data + j * channel_size;
@@ -377,7 +377,7 @@ void fill_bias_act<float>(float* tensor,
           }
         }
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
         for (int j = 0; j < channel; j++) {
           float bias_data = flag_bias ? bias[j] : 0.f;
           float* src = data + j * channel_size;
@@ -410,7 +410,7 @@ void fill_bias_act<float>(float* tensor,
           }
         }
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
         for (int j = 0; j < channel; j++) {
           float bias_data = flag_bias ? bias[j] : 0.f;
           float* src = data + j * channel_size;
@@ -522,7 +522,7 @@ void fill_bias_act_calib<float>(float* dout,
     float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
     switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
         for (int j = 0; j < channel; j++) {
           const float bias_data = flag_bias ? bias[j] : 0.f;
           const int32_t* src = din + j * channel_size;
@@ -575,7 +575,7 @@ void fill_bias_act_calib<float>(float* dout,
           }
         }
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
         for (int j = 0; j < channel; j++) {
           const float bias_data = flag_bias ? bias[j] : 0.f;
           const int32_t* src = din + j * channel_size;
@@ -633,7 +633,7 @@ void fill_bias_act_calib<float>(float* dout,
           }
         }
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
         for (int j = 0; j < channel; j++) {
           const float bias_data = flag_bias ? bias[j] : 0.f;
           const int32_t* src = din + j * channel_size;
@@ -745,12 +745,12 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
   float32x4_t vmax = vdupq_n_f32(-127.f);
   if (act_param != nullptr && act_param->has_active) {
     float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
-    if (act_param->active_type == lite_api::ActivationType::kLeakyRelu) {
+    if (act_param->active_type == lite_metal_api::ActivationType::kLeakyRelu) {
       vsix = vdupq_n_f32(act_param->Leaky_relu_alpha);
     }
 
     switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
         for (int j = 0; j < channel; j++) {
           const float bias_data = flag_bias ? bias[j] : 0.f;
           const int32_t* src = din + j * channel_size;
@@ -807,7 +807,7 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
           }
         }
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
         for (int j = 0; j < channel; j++) {
           const float bias_data = flag_bias ? bias[j] : 0.f;
           const int32_t* src = din + j * channel_size;
@@ -869,7 +869,7 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
           }
         }
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
         for (int j = 0; j < channel; j++) {
           const float bias_data = flag_bias ? bias[j] : 0.f;
           const int32_t* src = din + j * channel_size;

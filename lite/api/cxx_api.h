@@ -80,10 +80,10 @@ class LITE_API Predictor {
 
   // Build from a model, with places set for hardware config.
   void Build(
-      const lite_api::CxxConfig& config,
+      const lite_metal_api::CxxConfig& config,
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf);
+      lite_metal_api::LiteModelType model_type = lite_metal_api::LiteModelType::kProtobuf);
 
   void Build(
       const std::string& model_path,
@@ -91,9 +91,9 @@ class LITE_API Predictor {
       const std::string& param_file_path,
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
-      const lite_api::CxxModelBuffer& model_buffer =
-          lite_api::CxxModelBuffer());
+      lite_metal_api::LiteModelType model_type = lite_metal_api::LiteModelType::kProtobuf,
+      const lite_metal_api::CxxModelBuffer& model_buffer =
+          lite_metal_api::CxxModelBuffer());
 
   void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
              const std::vector<Place>& valid_places,
@@ -210,7 +210,7 @@ class LITE_API Predictor {
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(
       const std::string& dir,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      lite_metal_api::LiteModelType model_type = lite_metal_api::LiteModelType::kProtobuf,
       bool record_info = false);
   void SaveOpKernelInfo(const std::string& model_dir);
 
@@ -247,7 +247,7 @@ class LITE_API Predictor {
   std::vector<PrecisionType> input_precisions_;
 };
 
-class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
+class CxxPaddleApiImpl : public lite_metal_api::PaddlePredictor {
  public:
   CxxPaddleApiImpl() {
     raw_predictor_ = std::make_shared<Predictor>();
@@ -259,11 +259,11 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   }
 
   /// Create a new predictor from a config.
-  void Init(const lite_api::CxxConfig& config);
+  void Init(const lite_metal_api::CxxConfig& config);
 
-  std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
+  std::unique_ptr<lite_metal_api::Tensor> GetInput(int i) override;
 
-  std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+  std::unique_ptr<const lite_metal_api::Tensor> GetOutput(int i) const override;
 
   void Run() override;
 
@@ -274,9 +274,9 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   /// \return a boolean variable.
   bool TryShrinkMemory() override;
 
-  std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
+  std::shared_ptr<lite_metal_api::PaddlePredictor> Clone() override;
 
-  std::shared_ptr<lite_api::PaddlePredictor> Clone(
+  std::shared_ptr<lite_metal_api::PaddlePredictor> Clone(
       const std::vector<std::string>& var_names) override;
 
   std::string GetVersion() const override;
@@ -288,24 +288,24 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   std::vector<std::string> GetParamNames() override;
 
   // get tensor according to tensor's name
-  std::unique_ptr<const lite_api::Tensor> GetTensor(
+  std::unique_ptr<const lite_metal_api::Tensor> GetTensor(
       const std::string& name) const override;
   // get a mutable tensor according to tensor's name
-  std::unique_ptr<lite_api::Tensor> GetMutableTensor(
+  std::unique_ptr<lite_metal_api::Tensor> GetMutableTensor(
       const std::string& name) override;
 
   // Get InputTebsor by name
-  std::unique_ptr<lite_api::Tensor> GetInputByName(
+  std::unique_ptr<lite_metal_api::Tensor> GetInputByName(
       const std::string& name) override;
 
   void SaveOptimizedModel(
       const std::string& model_dir,
-      lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      lite_metal_api::LiteModelType model_type = lite_metal_api::LiteModelType::kProtobuf,
       bool record_info = false) override;
 
  private:
   std::shared_ptr<Predictor> raw_predictor_;
-  lite_api::CxxConfig config_;
+  lite_metal_api::CxxConfig config_;
   std::mutex mutex_;
   bool status_is_cloned_;
 };

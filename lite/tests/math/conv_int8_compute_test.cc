@@ -173,7 +173,7 @@ void test_conv_int8(const DDim& dim_in,
   if (flag_act > 0) {
     ActivationParam act_param;
     act_param.has_active = true;
-    act_param.active_type = (paddle::lite_api::ActivationType)
+    act_param.active_type = (paddle::lite_metal_api::ActivationType)
         flag_act;  // 1-relu, 2-relu6, 4-leakyrelu
     if (flag_act == 1) {
       param_fp32_out.fuse_relu = true;
@@ -223,9 +223,9 @@ void test_conv_int8(const DDim& dim_in,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx2(
           new paddle::lite_metal::KernelContext);
       auto& ctx_tmp1 = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx_tmp1.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx_tmp1.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       auto& ctx_tmp2 = ctx2->As<paddle::lite_metal::ARMContext>();
-      ctx_tmp2.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx_tmp2.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
 
       paddle::lite_metal::kernels::arm::ConvCompute<PRECISION(kInt8),
                                               PRECISION(kInt8)>

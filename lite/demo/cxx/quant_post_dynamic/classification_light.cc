@@ -39,11 +39,11 @@ void Run(const std::string& model_path,
          const int height,
          const int width) {
   // set config and create predictor
-  paddle::lite_api::MobileConfig config;
+  paddle::lite_metal_api::MobileConfig config;
   config.set_threads(3);
   config.set_model_from_file(model_path);
 
-  auto predictor = paddle::lite_api::CreatePaddlePredictor(config);
+  auto predictor = paddle::lite_metal_api::CreatePaddlePredictor(config);
 
   // set input
   auto input_tensor = predictor->GetInput(0);

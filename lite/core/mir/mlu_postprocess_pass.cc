@@ -315,7 +315,7 @@ void MLUPostprocessPass::GetSubgraphOpArgType(Node* inst_node,
 
   // get subgraph's valid precision
   const auto& places = graph->valid_places();
-  std::set<paddle::lite_api::PrecisionType> prec_set;
+  std::set<paddle::lite_metal_api::PrecisionType> prec_set;
   for (const auto& place : places) {
     if (place.target == TARGET(kMLU)) {
       prec_set.insert(place.precision);
@@ -543,7 +543,7 @@ void MLUPostprocessPass::GatherAndModifyFirstConvNodes(SSAGraph* graph) {
           const auto* old_type = out->AsArg().type;
           out->AsArg().type =
               LiteType::GetTensorTy(old_type->target(),
-                                    paddle::lite_api::PrecisionType::kInt8,
+                                    paddle::lite_metal_api::PrecisionType::kInt8,
                                     old_type->layout(),
                                     old_type->device());
         }
@@ -637,7 +637,7 @@ void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
           out->AsArg().type =
               LiteType::GetTensorTy(old_type->target(),
                                     old_type->precision(),
-                                    paddle::lite_api::DataLayoutType::kNHWC,
+                                    paddle::lite_metal_api::DataLayoutType::kNHWC,
                                     old_type->device());
           // modify inst feed to NHWC, while set_mlu_input_layout(kNHWC)
           // invoked, to keep consistent with actual data layout
@@ -666,7 +666,7 @@ void MLUPostprocessPass::ModifyLayout(SSAGraph* graph) {
           inp->AsArg().type =
               LiteType::GetTensorTy(old_type->target(),
                                     old_type->precision(),
-                                    paddle::lite_api::DataLayoutType::kNHWC,
+                                    paddle::lite_metal_api::DataLayoutType::kNHWC,
                                     old_type->device());
         }
       }

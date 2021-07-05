@@ -34,9 +34,9 @@ namespace paddle {
 namespace lite_metal {
 namespace pybind {
 
-using lite_api::PrecisionType;
-using lite_api::TargetType;
-using lite_api::Tensor;
+using lite_metal_api::PrecisionType;
+using lite_metal_api::TargetType;
+using lite_metal_api::Tensor;
 
 ////////////////////////////////////////////////////////////////
 // Function Name: TensorDTypeToPyDTypeStr
@@ -81,7 +81,7 @@ inline py::array TensorToPyArray(const Tensor &tensor,
 
   const auto &tensor_dims = tensor.shape();
   auto tensor_dtype = tensor.precision();
-  size_t sizeof_dtype = lite_api::PrecisionTypeLength(tensor_dtype);
+  size_t sizeof_dtype = lite_metal_api::PrecisionTypeLength(tensor_dtype);
   std::vector<size_t> py_dims(tensor_dims.size());
   std::vector<size_t> py_strides(tensor_dims.size());
 

@@ -37,13 +37,13 @@ namespace lite_metal {
 void TestModel(const std::vector<Place>& valid_places,
                const std::string& model_dir) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_metal_api::LITE_POWER_NO_BIND, FLAGS_threads);
 
   LOG(INFO) << "Optimize model.";
   lite_metal::Predictor cxx_predictor;
   cxx_predictor.Build(model_dir, "", "", valid_places);
   cxx_predictor.SaveModel(FLAGS_optimized_model,
-                          paddle::lite_api::LiteModelType::kNaiveBuffer);
+                          paddle::lite_metal_api::LiteModelType::kNaiveBuffer);
 
   LOG(INFO) << "Load optimized model.";
   lite_metal::LightPredictor predictor(FLAGS_optimized_model + ".nb", false);

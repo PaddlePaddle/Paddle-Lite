@@ -85,7 +85,7 @@ void RunModel(std::string model_dir,
   // 1. Set MobileConfig
   MobileConfig config;
   config.set_model_from_file(model_dir);
-  config.set_power_mode(static_cast<paddle::lite_api::PowerMode>(power_mode));
+  config.set_power_mode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode));
 
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
@@ -137,7 +137,7 @@ void RunModel(std::string model_dir,
   std::cout << "output tensor num:" << output_tensor_num << std::endl;
 
   for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
-    std::unique_ptr<const paddle::lite_api::Tensor> output_tensor =
+    std::unique_ptr<const paddle::lite_metal_api::Tensor> output_tensor =
         predictor->GetOutput(tidx);
     std::cout << "\n--- output tensor " << tidx << " ---" << std::endl;
     auto out_shape = output_tensor->shape();

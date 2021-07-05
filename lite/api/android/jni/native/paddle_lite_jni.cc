@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 inline static std::shared_ptr<PaddlePredictor> *getPaddlePredictorPointer(
     JNIEnv *env, jobject jpaddle_predictor) {
@@ -125,7 +125,7 @@ paddle_lite_CxxConfig_2(JNIEnv *env,
 #ifndef LITE_ON_TINY_PUBLISH
   CxxConfig config = jcxxconfig_to_cpp_cxxconfig(env, jcxxconfig);
   std::shared_ptr<PaddlePredictor> predictor =
-      paddle::lite_api::CreatePaddlePredictor(config);
+      paddle::lite_metal_api::CreatePaddlePredictor(config);
   if (predictor == nullptr) {
     return 0;
   }
@@ -144,7 +144,7 @@ paddle_lite_MobileConfig_2(JNIEnv *env,
                            jobject jmobileconfig) {
   MobileConfig config = jmobileconfig_to_cpp_mobileconfig(env, jmobileconfig);
   std::shared_ptr<PaddlePredictor> predictor =
-      paddle::lite_api::CreatePaddlePredictor(config);
+      paddle::lite_metal_api::CreatePaddlePredictor(config);
   if (predictor == nullptr) {
     return 0;
   }

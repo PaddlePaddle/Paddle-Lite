@@ -881,7 +881,7 @@ class XPUMultiEncoderFuser {
     memcpy(max_filter_tensor->mutable_data<float>(),
            &fc_weight_max[0],
            sizeof(float) * fc_weight_max.size());
-    max_filter_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_filter_tensor->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     max_filter_tensor->set_persistable(true);
     op_desc.SetInput("FCWeightMax", {max_name});
 

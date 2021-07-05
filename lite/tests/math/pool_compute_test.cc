@@ -55,7 +55,7 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       /// set param and context
       pool.SetParam(param);
       pool.SetContext(std::move(ctx1));

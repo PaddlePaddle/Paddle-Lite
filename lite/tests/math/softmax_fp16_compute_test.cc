@@ -117,7 +117,7 @@ void test_softmax_fp16(const DDim in_dim,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       /// set param and context
       softmax.SetParam(param);
       softmax.SetContext(std::move(ctx1));

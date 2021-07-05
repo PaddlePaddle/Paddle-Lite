@@ -19,7 +19,7 @@
 #include "lite/utils/string.h"
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 size_t Place::hash() const {
   std::hash<int> h;

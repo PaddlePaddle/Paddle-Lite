@@ -29,7 +29,7 @@ namespace lite_metal {
 template <typename T>
 void SetTensorData(const std::vector<T> &data,
                    const std::vector<int64_t> &shape,
-                   paddle::lite_api::Tensor *tensor,
+                   paddle::lite_metal_api::Tensor *tensor,
                    const std::vector<std::vector<uint64_t>> &lod = {}) {
   tensor->Resize(shape);
   tensor->SetLoD(lod);
@@ -37,7 +37,7 @@ void SetTensorData(const std::vector<T> &data,
 }
 
 void PrepareInputData(
-    const std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor,
+    const std::shared_ptr<paddle::lite_metal_api::PaddlePredictor> &predictor,
     std::vector<int64_t> src_word_data,
     int max_seq_len = 16,  // padding
     int max_out_len = 8,
@@ -158,7 +158,7 @@ void PrepareInputData(
 }
 
 void CheckOutputData(
-    const std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor,
+    const std::shared_ptr<paddle::lite_metal_api::PaddlePredictor> &predictor,
     const std::vector<int64_t> &ref_seq_ids_data,
     const std::vector<float> &ref_seq_scores_data) {
   // seq_ids
@@ -189,20 +189,20 @@ void CheckOutputData(
 
 TEST(TransformerWithMask, test_transformer_with_mask_fp32_arm) {
   // Save the optimized model by using full api with CxxConfig
-  lite_api::CxxConfig cxx_config;
+  lite_metal_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(FLAGS_model_dir);
   cxx_config.set_valid_places(
-      {lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-       lite_api::Place{TARGET(kARM), PRECISION(kInt64)}});
-  auto predictor = lite_api::CreatePaddlePredictor(cxx_config);
+      {lite_metal_api::Place{TARGET(kARM), PRECISION(kFloat)},
+       lite_metal_api::Place{TARGET(kARM), PRECISION(kInt64)}});
+  auto predictor = lite_metal_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".nb",
-                                paddle::lite_api::LiteModelType::kNaiveBuffer);
+                                paddle::lite_metal_api::LiteModelType::kNaiveBuffer);
   // Load the optimized model and run inference by using light api with
   // MobileConfig
-  paddle::lite_api::MobileConfig mobile_config;
+  paddle::lite_metal_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(FLAGS_model_dir + ".nb");
   mobile_config.set_threads(1);
-  mobile_config.set_power_mode(paddle::lite_api::PowerMode::LITE_POWER_HIGH);
+  mobile_config.set_power_mode(paddle::lite_metal_api::PowerMode::LITE_POWER_HIGH);
   std::vector<std::pair<std::vector<int64_t>,
                         std::pair<std::vector<int64_t>, std::vector<float>>>>
       test_cases = {

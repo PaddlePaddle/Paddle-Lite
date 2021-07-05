@@ -64,7 +64,7 @@ void FCImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     uint16_t activate_type_ = 0;
     if (param.activation_type == "relu") {
-        activate_type_ = (uint16_t)lite_api::ActivationType::kRelu;
+        activate_type_ = (uint16_t)lite_metal_api::ActivationType::kRelu;
     }
     ActivationMetalParam activation_params{(unsigned short)activate_type_, 0.0, 0.0, 0.0, 0.0};
     params_buffer_ = std::make_shared<MetalBuffer>(

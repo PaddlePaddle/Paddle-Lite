@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
       new paddle::lite_metal::KernelContext);
   auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                  thread_num);
   batch_norm.SetContext(std::move(ctx1));
 

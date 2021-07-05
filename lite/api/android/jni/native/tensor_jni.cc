@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 inline static int64_t product(const std::vector<int64_t> &vec) {
   if (vec.empty()) {

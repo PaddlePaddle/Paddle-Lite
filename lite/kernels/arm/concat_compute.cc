@@ -74,7 +74,7 @@ void ConcatCompute::Run() {
     axis += static_cast<int>(inputs[0]->dims().size());
   }
 
-  lite_api::PrecisionType type = PRECISION(kUnk);
+  lite_metal_api::PrecisionType type = PRECISION(kUnk);
   for (auto* tensor : inputs) {
     if (tensor->IsInitialized() && tensor->numel() > 0) {
       if (type == PRECISION(kUnk)) {

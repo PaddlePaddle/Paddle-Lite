@@ -155,7 +155,7 @@ class CropComputeTester : public arena::TestCase {
 
 template <class T = float>
 void TestCrop(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
 
   // test 1D
   std::unique_ptr<arena::TestCase> tester_1d(
@@ -172,7 +172,7 @@ void TestCrop(Place place, float abs_error = 1e-5) {
 
 template <class T = float>
 void TestCropY(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   std::unique_ptr<arena::TestCase> tester(new CropComputeTester<T>(
       place, "def", {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5}), true));
   arena::Arena arena(std::move(tester), place, abs_error);
@@ -181,7 +181,7 @@ void TestCropY(Place place, float abs_error = 1e-5) {
 
 template <class T = float>
 void TestCropOffsets(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   std::unique_ptr<arena::TestCase> tester(
       new CropComputeTester<T>(place,
                                "def",

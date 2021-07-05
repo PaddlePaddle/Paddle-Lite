@@ -29,7 +29,7 @@ class CompatibleChecker {
                              const int64_t mini_version = 1005000)
       : program_(program), mini_version_(mini_version) {}
 
-  bool operator()(const lite_api::Place& place) {
+  bool operator()(const lite_metal_api::Place& place) {
     bool status = true;
     const std::set<std::string>& ops_type = OpsType(&program_);
     if (ops_type.empty()) {
@@ -46,7 +46,7 @@ class CompatibleChecker {
  private:
   std::set<std::string> OpsType(T* program);
   bool CheckKernelVersion(const std::string& type,
-                          const lite_api::Place& place);
+                          const lite_metal_api::Place& place);
   T program_;
   int64_t mini_version_;
 };

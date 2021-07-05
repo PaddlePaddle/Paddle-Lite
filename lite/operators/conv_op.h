@@ -114,20 +114,20 @@ class ConvOpLite : public OpLite {
       param_.activation_param.has_active = true;
       auto act_type = op_desc.GetAttr<std::string>("act_type");
       if (act_type == "relu") {
-        param_.activation_param.active_type = lite_api::ActivationType::kRelu;
+        param_.activation_param.active_type = lite_metal_api::ActivationType::kRelu;
         param_.fuse_relu = true;
       } else if (act_type == "relu6") {
-        param_.activation_param.active_type = lite_api::ActivationType::kRelu6;
+        param_.activation_param.active_type = lite_metal_api::ActivationType::kRelu6;
         param_.activation_param.Relu_clipped_coef =
             op_desc.GetAttr<float>("fuse_brelu_threshold");  // 6.f
       } else if (act_type == "leaky_relu") {
         param_.activation_param.active_type =
-            lite_api::ActivationType::kLeakyRelu;
+            lite_metal_api::ActivationType::kLeakyRelu;
         param_.activation_param.Leaky_relu_alpha =
             op_desc.GetAttr<float>("leaky_relu_alpha");
       } else if (act_type == "hard_swish") {
         param_.activation_param.active_type =
-            lite_api::ActivationType::kHardSwish;
+            lite_metal_api::ActivationType::kHardSwish;
         param_.activation_param.hard_swish_threshold =
             op_desc.GetAttr<float>("hard_swish_threshold");
         param_.activation_param.hard_swish_scale =
@@ -136,13 +136,13 @@ class ConvOpLite : public OpLite {
             op_desc.GetAttr<float>("hard_swish_offset");
       } else if (act_type == "hard_sigmoid") {
         param_.activation_param.active_type =
-            lite_api::ActivationType::kHardSigmoid;
+            lite_metal_api::ActivationType::kHardSigmoid;
         param_.activation_param.hard_sigmoid_slope =
             op_desc.GetAttr<float>("slope");
         param_.activation_param.hard_sigmoid_offset =
             op_desc.GetAttr<float>("offset");
       } else if (act_type == "prelu") {
-        param_.activation_param.active_type = lite_api::ActivationType::kPRelu;
+        param_.activation_param.active_type = lite_metal_api::ActivationType::kPRelu;
         param_.activation_param.Prelu_mode =
             op_desc.GetAttr<std::string>("prelu_mode");
         auto prelu_alpha_name = op_desc.Input("Prelu_alpha").front();

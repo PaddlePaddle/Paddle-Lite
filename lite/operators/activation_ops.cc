@@ -38,10 +38,10 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scop
   param_.X = scope->FindVar(x_name)->GetMutable<lite_metal::Tensor>();
 
   if (opdesc.Type() == "relu") {
-    param_.active_type = lite_api::ActivationType::kRelu;
+    param_.active_type = lite_metal_api::ActivationType::kRelu;
   } else if (opdesc.Type() == "leaky_relu") {
     param_.Leaky_relu_alpha = opdesc.GetAttr<float>("alpha");
-    param_.active_type = lite_api::ActivationType::kLeakyRelu;
+    param_.active_type = lite_metal_api::ActivationType::kLeakyRelu;
   } else if (opdesc.Type() == "relu_clipped") {
     param_.Relu_clipped_coef = opdesc.GetAttr<float>("Relu_clipped_coef");
   } else if (opdesc.Type() == "prelu") {
@@ -49,51 +49,51 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite_metal::Scope* scop
     auto prelu_alpha_name = opdesc.Input("Alpha").front();
     param_.Prelu_alpha =
         scope->FindVar(prelu_alpha_name)->GetMutable<lite_metal::Tensor>();
-    param_.active_type = lite_api::ActivationType::kPRelu;
+    param_.active_type = lite_metal_api::ActivationType::kPRelu;
   } else if (opdesc.Type() == "swish") {
     param_.Swish_beta = opdesc.GetAttr<float>("beta");
-    param_.active_type = lite_api::ActivationType::kSwish;
+    param_.active_type = lite_metal_api::ActivationType::kSwish;
   } else if (opdesc.Type() == "hard_sigmoid") {
-    param_.active_type = lite_api::ActivationType::kHardSigmoid;
+    param_.active_type = lite_metal_api::ActivationType::kHardSigmoid;
     param_.hard_sigmoid_slope = opdesc.GetAttr<float>("slope");
     param_.hard_sigmoid_offset = opdesc.GetAttr<float>("offset");
   } else if (opdesc.Type() == "sigmoid") {
-    param_.active_type = lite_api::ActivationType::kSigmoid;
+    param_.active_type = lite_metal_api::ActivationType::kSigmoid;
   } else if (opdesc.Type() == "tanh") {
-    param_.active_type = lite_api::ActivationType::kTanh;
+    param_.active_type = lite_metal_api::ActivationType::kTanh;
   } else if (opdesc.Type() == "exp") {
-    param_.active_type = lite_api::ActivationType::kExp;
+    param_.active_type = lite_metal_api::ActivationType::kExp;
   } else if (opdesc.Type() == "log") {
-    param_.active_type = lite_api::ActivationType::kLog;
+    param_.active_type = lite_metal_api::ActivationType::kLog;
   } else if (opdesc.Type() == "abs") {
-    param_.active_type = lite_api::ActivationType::kAbs;
+    param_.active_type = lite_metal_api::ActivationType::kAbs;
   } else if (opdesc.Type() == "hard_swish") {
-    param_.active_type = lite_api::ActivationType::kHardSwish;
+    param_.active_type = lite_metal_api::ActivationType::kHardSwish;
     param_.hard_swish_threshold = opdesc.GetAttr<float>("threshold");
     param_.hard_swish_scale = opdesc.GetAttr<float>("scale");
     param_.hard_swish_offset = opdesc.GetAttr<float>("offset");
   } else if (opdesc.Type() == "reciprocal") {
-    param_.active_type = lite_api::ActivationType::kReciprocal;
+    param_.active_type = lite_metal_api::ActivationType::kReciprocal;
   } else if (opdesc.Type() == "thresholded_relu") {
-    param_.active_type = lite_api::ActivationType::kThresholdedRelu;
+    param_.active_type = lite_metal_api::ActivationType::kThresholdedRelu;
     param_.relu_threshold = opdesc.GetAttr<float>("threshold");
   } else if (opdesc.Type() == "elu") {
-    param_.active_type = lite_api::ActivationType::kElu;
+    param_.active_type = lite_metal_api::ActivationType::kElu;
     param_.Elu_alpha = opdesc.GetAttr<float>("alpha");
   } else if (opdesc.Type() == "relu6") {
-    param_.active_type = lite_api::ActivationType::kRelu6;
+    param_.active_type = lite_metal_api::ActivationType::kRelu6;
     param_.threshold = opdesc.GetAttr<float>("threshold");
   } else if (opdesc.Type() == "gelu") {
-    param_.active_type = lite_api::ActivationType::kGelu;
+    param_.active_type = lite_metal_api::ActivationType::kGelu;
     if (opdesc.HasAttr("approximate")) {
       param_.gelu_approximate = opdesc.GetAttr<bool>("approximate");
     }
   } else if (opdesc.Type() == "erf") {
-    param_.active_type = lite_api::ActivationType::kErf;
+    param_.active_type = lite_metal_api::ActivationType::kErf;
   } else if (opdesc.Type() == "sign") {
-    param_.active_type = lite_api::ActivationType::kSign;
+    param_.active_type = lite_metal_api::ActivationType::kSign;
   } else if (opdesc.Type() == "softplus") {
-    param_.active_type = lite_api::ActivationType::kSoftPlus;
+    param_.active_type = lite_metal_api::ActivationType::kSoftPlus;
   }
 
   VLOG(4) << "opdesc.Type():" << opdesc.Type();

@@ -27,7 +27,7 @@ namespace lite_metal {
 
 template <typename T>
 bool CompatibleChecker<T>::CheckKernelVersion(const std::string& type,
-                                              const lite_api::Place& place) {
+                                              const lite_metal_api::Place& place) {
   int64_t impl_version = ParamTypeRegistry::Global().GetVersion(type, place);
   const int64_t prog_version = program_.Version();
   VLOG(3) << "Kernel implement version: " << type << ", " << impl_version;

@@ -43,7 +43,7 @@
 #endif
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 bool IsOpenCLBackendValid(bool check_fp16_valid) {
 #ifdef LITE_WITH_LOG
@@ -298,7 +298,7 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 void ConfigBase::set_opencl_binary_path_name(const std::string &path,
                                              const std::string &name) {
 #ifdef LITE_WITH_OPENCL
-  if (paddle::lite_api::IsOpenCLBackendValid()) {
+  if (paddle::lite_metal_api::IsOpenCLBackendValid()) {
     opencl_bin_path_ = path;
     opencl_bin_name_ = name;
     lite_metal::CLRuntime::Global()->SetBinaryPathName(path, name);
@@ -316,7 +316,7 @@ void ConfigBase::set_opencl_tune(CLTuneMode tune_mode,
                                  const std::string &name,
                                  size_t lws_repeats) {
 #ifdef LITE_WITH_OPENCL
-  if (paddle::lite_api::IsOpenCLBackendValid()) {
+  if (paddle::lite_metal_api::IsOpenCLBackendValid()) {
     opencl_tune_mode_ = tune_mode;
     paddle::lite_metal::CLRuntime::Global()->set_auto_tune(
         opencl_tune_mode_, path, name, lws_repeats);
@@ -332,7 +332,7 @@ void ConfigBase::set_opencl_tune(CLTuneMode tune_mode,
 
 void ConfigBase::set_opencl_precision(CLPrecisionType p) {
 #ifdef LITE_WITH_OPENCL
-  if (paddle::lite_api::IsOpenCLBackendValid()) {
+  if (paddle::lite_metal_api::IsOpenCLBackendValid()) {
     opencl_precision_ = p;
     paddle::lite_metal::CLRuntime::Global()->set_precision(p);
 #ifdef LITE_WITH_LOG
@@ -344,7 +344,7 @@ void ConfigBase::set_opencl_precision(CLPrecisionType p) {
 #endif
 }
 
-void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
+void ConfigBase::set_power_mode(paddle::lite_metal_api::PowerMode mode) {
 #ifdef LITE_WITH_ARM
   lite_metal::DeviceInfo::Global().SetRunMode(mode, threads_);
   mode_ = lite_metal::DeviceInfo::Global().mode();
@@ -457,7 +457,7 @@ const CxxModelBuffer &CxxConfig::get_model_buffer() const {
 }
 
 #ifdef LITE_WITH_MLU
-void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
+void CxxConfig::set_mlu_core_version(lite_metal_api::MLUCoreVersion core_version) {
   mlu_core_version_ = core_version;
 }
 void CxxConfig::set_mlu_core_number(int core_number) {
@@ -471,7 +471,7 @@ void CxxConfig::set_mlu_firstconv_param(const std::vector<float> &mean,
   mlu_first_conv_mean_ = mean;
   mlu_first_conv_std_ = std;
 }
-lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
+lite_metal_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
   return mlu_core_version_;
 }
 int CxxConfig::mlu_core_number() const { return mlu_core_number_; }

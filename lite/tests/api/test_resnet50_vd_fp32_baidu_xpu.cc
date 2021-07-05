@@ -90,14 +90,14 @@ std::unordered_map<std::string, std::vector<float>> ReadInputData(
 }
 
 TEST(Resnet50_vd, test_resnet50_vd_fp32_baidu_xpu) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_file(FLAGS_model_dir + "/inference.pdmodel");
   config.set_param_file(FLAGS_model_dir + "/inference.pdiparams");
-  config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  config.set_valid_places({lite_metal_api::Place{TARGET(kXPU), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                           lite_metal_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_l3_cache_method(16773120, false);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   std::string labels_dir = FLAGS_data_dir + std::string("/val_list.txt");
   auto labels = ReadLabels(labels_dir);

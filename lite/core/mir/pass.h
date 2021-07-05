@@ -97,17 +97,17 @@ class Pass {
   // explicitly declared.
   // Bind kernels. All kernels bound at runtime must be registered.
   void BindKernels(
-      const std::map<std::string, std::set<lite_api::Place>>& kernels) {
+      const std::map<std::string, std::set<lite_metal_api::Place>>& kernels) {
     bound_kernels_ = kernels;
   }
   // Get all bound kernels.
-  const std::map<std::string, std::set<lite_api::Place>>& GetBoundKernels()
+  const std::map<std::string, std::set<lite_metal_api::Place>>& GetBoundKernels()
       const {
     return bound_kernels_;
   }
   // Add one kernel to the bound kernels.
   void BindKernel(const std::string& kernel_name,
-                  const lite_api::Place& place) {
+                  const lite_metal_api::Place& place) {
     if (!bound_kernels_.count(kernel_name)) {
       bound_kernels_.insert({kernel_name, {place}});
     } else {
@@ -149,7 +149,7 @@ class Pass {
   std::string doc_;
   std::set<TargetType> bound_targets_;
   std::set<TargetType> excluded_targets_;
-  std::map<std::string, std::set<lite_api::Place>> bound_kernels_;
+  std::map<std::string, std::set<lite_metal_api::Place>> bound_kernels_;
   std::map<std::string, variant<Node, std::vector<Node*>>> pass_attrs_;
 };
 

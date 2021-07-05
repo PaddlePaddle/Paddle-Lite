@@ -77,7 +77,7 @@ void ParamSerializer::ForwardWrite(const lite_metal::Scope& scope,
   for (const auto& name : param_names) {
     auto& tensor = scope.FindVar(name)->Get<lite_metal::Tensor>();
     size_t tensor_size =
-        tensor.numel() * lite_api::PrecisionTypeLength(tensor.precision());
+        tensor.numel() * lite_metal_api::PrecisionTypeLength(tensor.precision());
     if (tensor_size > max_tensor_size) {
       max_tensor_size = tensor_size;
     }

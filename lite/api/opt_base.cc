@@ -16,7 +16,7 @@
 #include "all_kernel_faked.cc"  // NOLINT
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 void OptBase::SetModelDir(const std::string& model_path) {
   opt_config_.set_model_dir(model_path);
@@ -46,9 +46,9 @@ void OptBase::SetQuantModel(bool quant_model) {
 
 void OptBase::SetQuantType(const std::string& quant_type) {
   if (quant_type == "QUANT_INT8") {
-    opt_config_.set_quant_type(lite_api::QuantType::QUANT_INT8);
+    opt_config_.set_quant_type(lite_metal_api::QuantType::QUANT_INT8);
   } else if (quant_type == "QUANT_INT16") {
-    opt_config_.set_quant_type(lite_api::QuantType::QUANT_INT16);
+    opt_config_.set_quant_type(lite_metal_api::QuantType::QUANT_INT16);
   } else {
     OPT_LOG_FATAL << "Unsupported quant type: " << quant_type;
   }
@@ -156,7 +156,7 @@ void OptBase::Run() {
   if (model_set_dir_ != "") {
     RunOptimizeFromModelSet(record_strip_info_);
   } else {
-    auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
+    auto opt_predictor = lite_metal_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
   }
@@ -180,7 +180,7 @@ void OptBase::RunOptimize(const std::string& model_dir_path,
   if (model_set_dir_ != "") {
     RunOptimizeFromModelSet(record_strip_info_);
   } else {
-    auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
+    auto opt_predictor = lite_metal_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
   }
@@ -233,7 +233,7 @@ void OptBase::RunOptimizeFromModelSet(bool record_strip_info) {
     opt_config_.set_model_file(model_file);
     opt_config_.set_param_file(param_file);
 
-    auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
+    auto opt_predictor = lite_metal_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info);
   }

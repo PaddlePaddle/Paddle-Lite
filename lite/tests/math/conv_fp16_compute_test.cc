@@ -77,7 +77,7 @@ void test_conv_fp16(const DDim dim_in,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       /// set param and context
       CHECK_EQ(weight_dim[1] * group, dim_in[1])
           << "input channel must equal to weights channel";

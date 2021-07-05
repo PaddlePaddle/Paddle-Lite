@@ -30,13 +30,13 @@ const std::vector<std::vector<uint64_t>>& get_lod(const lite_metal::Tensor& tens
 
 void set_allocation(lite_metal::Tensor* tensor,
                     const std::vector<int64_t>& shape,
-                    paddle::lite_api::PrecisionType precision) {
+                    paddle::lite_metal_api::PrecisionType precision) {
   tensor->Resize(shape);
   tensor->set_persistable(true);
   tensor->set_precision(precision);
   tensor->mutable_data(
       TargetType::kHost,
-      tensor->numel() * lite_api::PrecisionTypeLength(precision));
+      tensor->numel() * lite_metal_api::PrecisionTypeLength(precision));
 }
 
 void set_allocation(const lite_metal::Tensor& tensor,

@@ -85,7 +85,7 @@ void MulGradCompute::Run() {
                              false,
                              nullptr,
                              false,
-                             lite_api::ActivationType::kIndentity,
+                             lite_metal_api::ActivationType::kIndentity,
                              &ctx);
     } else {
       paddle::lite_metal::arm::math::sgemm(false,
@@ -122,7 +122,7 @@ void MulGradCompute::Run() {
                              false,
                              nullptr,
                              false,
-                             lite_api::ActivationType::kIndentity,
+                             lite_metal_api::ActivationType::kIndentity,
                              &ctx);
     } else {
       paddle::lite_metal::arm::math::sgemm(true,           // is_transA

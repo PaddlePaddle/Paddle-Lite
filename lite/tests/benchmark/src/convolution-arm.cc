@@ -115,10 +115,10 @@ void bench_conv(const benchmark::State& state_in, const char* net) {
   conv_compute.SetParam(param);
 
   auto ctx1 = paddle::lite_metal::ContextScheduler::Global().NewContext(
-      paddle::lite_api::TargetType::kARM);
+      paddle::lite_metal_api::TargetType::kARM);
   auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(
-                     paddle::lite_api::PowerMode::LITE_POWER_HIGH),
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(
+                     paddle::lite_metal_api::PowerMode::LITE_POWER_HIGH),
                  1);
 
   conv_compute.SetContext(std::move(ctx1));

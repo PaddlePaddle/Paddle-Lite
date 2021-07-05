@@ -51,7 +51,7 @@ void LoadLoDTensor(model_parser::pb::LoDTensorDeserializer *loader,
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string &path, const lite_api::CxxModelBuffer &model_buffer) {
+    const std::string &path, const lite_metal_api::CxxModelBuffer &model_buffer) {
   std::unique_ptr<framework::proto::ProgramDesc> main_program(
       new framework::proto::ProgramDesc);
   if (model_buffer.is_empty()) {
@@ -82,7 +82,7 @@ bool IsPersistable(const cpp::VarDesc &var) {
 void LoadCombinedParamsPb(const std::string &path,
                           lite_metal::Scope *scope,
                           const cpp::ProgramDesc &cpp_prog,
-                          const lite_api::CxxModelBuffer &model_buffer) {
+                          const lite_metal_api::CxxModelBuffer &model_buffer) {
   CHECK(scope) << "The input argument scope is nullptr.";
   auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
@@ -174,7 +174,7 @@ std::string FindModelFileName(const std::string &model_dir,
 // load noncombined params from directory.
 void LoadNonCombinedParamsPb(const std::string &model_dir,
                              cpp::ProgramDesc *cpp_prog,
-                             const lite_api::CxxModelBuffer &model_buffer,
+                             const lite_metal_api::CxxModelBuffer &model_buffer,
                              Scope *scope) {
   auto *main_block = cpp_prog->GetBlock<cpp::BlockDesc>(0);
   std::string log_info = "Loading non-combined params data from " + model_dir;
@@ -222,7 +222,7 @@ void LoadModelPb(const std::string &model_dir,
                  Scope *scope,
                  cpp::ProgramDesc *cpp_prog,
                  bool combined,
-                 const lite_api::CxxModelBuffer &model_buffer) {
+                 const lite_metal_api::CxxModelBuffer &model_buffer) {
   CHECK(cpp_prog) << "The input cpp program pointer var is nullptr.";
   CHECK(scope) << "The input scope var is nullptr.";
   cpp_prog->ClearBlocks();

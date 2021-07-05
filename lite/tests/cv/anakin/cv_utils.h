@@ -21,7 +21,7 @@
 typedef paddle::lite_metal::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite_metal::utils::cv::FlipParam FlipParam;
 typedef paddle::lite_metal::Tensor Tensor;
-typedef paddle::lite_api::DataLayoutType LayoutType;
+typedef paddle::lite_metal_api::DataLayoutType LayoutType;
 
 void rotate(const uint8_t* src, uint8_t* dst, int srcw, int srch, int angle);
 

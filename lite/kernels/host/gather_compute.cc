@@ -88,7 +88,7 @@ void GatherCompute<IndexType, AxisType>::Run() {
         break;
 #ifdef ENABLE_ARM_FP16
       case PRECISION(kFP16):
-        GatherV2Func<IndexType, AxisType, lite_api::float16_t>(param);
+        GatherV2Func<IndexType, AxisType, lite_metal_api::float16_t>(param);
         break;
 #endif
       case PRECISION(kInt8):
@@ -105,7 +105,7 @@ void GatherCompute<IndexType, AxisType>::Run() {
         break;
       default:
         LOG(FATAL) << "unsupport data type: "
-                   << lite_api::PrecisionToStr(param.X->precision());
+                   << lite_metal_api::PrecisionToStr(param.X->precision());
     }
     return;
   } else {
@@ -115,7 +115,7 @@ void GatherCompute<IndexType, AxisType>::Run() {
         break;
 #ifdef ENABLE_ARM_FP16
       case PRECISION(kFP16):
-        GatherFunc<IndexType, lite_api::float16_t>(param);
+        GatherFunc<IndexType, lite_metal_api::float16_t>(param);
         break;
 #endif
       case PRECISION(kInt8):
@@ -132,7 +132,7 @@ void GatherCompute<IndexType, AxisType>::Run() {
         break;
       default:
         LOG(FATAL) << "unsupport data type: "
-                   << lite_api::PrecisionToStr(param.X->precision());
+                   << lite_metal_api::PrecisionToStr(param.X->precision());
     }
     return;
   }

@@ -136,7 +136,7 @@ void test_layout_fp32_nchw(DDim dim_in,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       /// set param and context
       const_cast<Tensor*>(param.x)->Resize(dim_in);
       param.y->Resize(dim_out);
@@ -239,7 +239,7 @@ void test_layout_fp32_nhwc(DDim dim_in,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       /// set param and context
       const_cast<Tensor*>(param.x)->Resize(dim_in);
       param.y->Resize(dim_out);
@@ -341,7 +341,7 @@ void test_layout_int8_nchw(DDim dim_in,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       /// set param and context
       const_cast<Tensor*>(param.x)->Resize(dim_in);
       param.y->Resize(dim_out);
@@ -445,7 +445,7 @@ void test_layout_int8_nhwc(DDim dim_in,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       /// set param and context
       const_cast<Tensor*>(param.x)->Resize(dim_in);
       param.y->Resize(dim_out);

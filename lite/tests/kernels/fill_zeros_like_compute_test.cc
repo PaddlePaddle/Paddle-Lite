@@ -65,7 +65,7 @@ void TestFillZerosLike(Place place, float abs_error) {
   std::vector<std::vector<int64_t>> x_shapes{
       {2, 3, 4, 5}, {2, 3, 4}, {3, 4}, {4}};
   std::string alias("def");
-  auto precision = lite_api::PrecisionTypeTrait<T>::Type();
+  auto precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   switch (precision) {
     case PRECISION(kFloat):
       alias = std::string("float32");
@@ -78,7 +78,7 @@ void TestFillZerosLike(Place place, float abs_error) {
       break;
     default:
       LOG(FATAL) << "unsupported data type: "
-                 << lite_api::PrecisionToStr(precision);
+                 << lite_metal_api::PrecisionToStr(precision);
   }
   for (auto x_shape : x_shapes) {
     std::unique_ptr<arena::TestCase> tester(

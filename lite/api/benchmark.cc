@@ -75,7 +75,7 @@ DEFINE_bool(use_fp16,
 DEFINE_bool(show_output, false, "Wether to show the output in shell.");
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 inline double GetCurrentUS() {
   struct timeval time;
@@ -159,7 +159,7 @@ void PrintUsage() {
 }
 
 void OutputOptModel(const std::string& save_optimized_model_dir) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   if (!FLAGS_model_filename.empty() && !FLAGS_params_filename.empty()) {
     config.set_model_file(FLAGS_model_dir + "/" + FLAGS_model_filename);
@@ -174,7 +174,7 @@ void OutputOptModel(const std::string& save_optimized_model_dir) {
   }
   vaild_places.push_back(Place{TARGET(kARM), PRECISION(kFloat)});
   config.set_valid_places(vaild_places);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   int ret = system(
       paddle::lite_metal::string_format("rm -rf %s", save_optimized_model_dir.c_str())
@@ -200,12 +200,12 @@ void Run(const std::string& model_path,
   bool show_output = FLAGS_show_output;
 
   // set config and create predictor
-  lite_api::MobileConfig config;
+  lite_metal_api::MobileConfig config;
   config.set_model_from_file(model_path);
   config.set_threads(threads);
   config.set_power_mode(static_cast<PowerMode>(power_mode));
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   // set input
   auto input_tensor = predictor->GetInput(0);
@@ -291,13 +291,13 @@ int main(int argc, char** argv) {
   bool is_origin_model = FLAGS_model_dir != "";
   if (!is_origin_model && !is_opt_model) {
     LOG(INFO) << "Input error, the model path should not be empty.\n";
-    paddle::lite_api::PrintUsage();
+    paddle::lite_metal_api::PrintUsage();
     exit(0);
   }
 
   // Get input shape
   std::vector<int64_t> input_shape =
-      paddle::lite_api::GetInputShape(FLAGS_input_shape);
+      paddle::lite_metal_api::GetInputShape(FLAGS_input_shape);
 
   // Get model_name and run_model_path
   std::string model_name;
@@ -309,7 +309,7 @@ int main(int argc, char** argv) {
     std::size_t found = FLAGS_model_dir.find_last_of("/");
     model_name = FLAGS_model_dir.substr(found + 1);
     std::string optimized_model_path = FLAGS_model_dir + "_opt2";
-    paddle::lite_api::OutputOptModel(optimized_model_path);
+    paddle::lite_metal_api::OutputOptModel(optimized_model_path);
     run_model_path = optimized_model_path + ".nb";
   } else {
     size_t found1 = FLAGS_optimized_model_path.find_last_of("/");
@@ -320,7 +320,7 @@ int main(int argc, char** argv) {
   }
 
   // Run test
-  paddle::lite_api::Run(run_model_path, model_name, input_shape);
+  paddle::lite_metal_api::Run(run_model_path, model_name, input_shape);
 
   return 0;
 }

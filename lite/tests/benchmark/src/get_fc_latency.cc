@@ -25,7 +25,7 @@ typedef paddle::lite_metal::Tensor Tensor;
 typedef paddle::lite_metal::DDim DDim;
 typedef paddle::lite_metal::operators::FcParam FcParam;
 using paddle::lite_metal::profile::Timer;
-using paddle::lite_api::PrecisionType;
+using paddle::lite_metal_api::PrecisionType;
 
 template <PrecisionType Ptype, PrecisionType OutType>
 void test_fc(const int m,
@@ -62,7 +62,7 @@ void test_fc(const int m,
   std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
       new paddle::lite_metal::KernelContext);
   auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(power_mode),
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(power_mode),
                  thread_num);
   // set param and context
   fc_compute.SetParam(param);

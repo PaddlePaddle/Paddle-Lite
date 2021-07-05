@@ -60,7 +60,7 @@ int64_t ShapeProduction(std::vector<int64_t> shape) {
 }
 
 void FillInputTensors(
-    const std::shared_ptr<lite_api::PaddlePredictor>& predictor,
+    const std::shared_ptr<lite_metal_api::PaddlePredictor>& predictor,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
     const std::vector<std::string>& input_tensor_type,
     const float value) {
@@ -83,8 +83,8 @@ void FillInputTensors(
 }
 
 void CheckOutputTensors(
-    const std::shared_ptr<lite_api::PaddlePredictor>& tar_predictor,
-    const std::shared_ptr<lite_api::PaddlePredictor>& ref_predictor,
+    const std::shared_ptr<lite_metal_api::PaddlePredictor>& tar_predictor,
+    const std::shared_ptr<lite_metal_api::PaddlePredictor>& ref_predictor,
     const std::vector<std::string>& output_tensor_type) {
 #define CHECK_TENSOR_WITH_TYPE(type)                                          \
   auto tar_output_tensor_data = tar_output_tensor->data<type>();              \
@@ -113,30 +113,30 @@ void CheckOutputTensors(
 #undef CHECK_TENSOR_WITH_TYPE
 }
 
-std::shared_ptr<lite_api::PaddlePredictor> TestModel(
+std::shared_ptr<lite_metal_api::PaddlePredictor> TestModel(
     const std::string& model_dir,
     const std::string& model_file,
     const std::string& params_file,
-    const std::vector<lite_api::Place>& valid_places,
+    const std::vector<lite_metal_api::Place>& valid_places,
     const std::vector<std::vector<int64_t>>& input_tensor_shape,
     const std::vector<std::string>& input_tensor_type,
     const std::string& optimized_model_dir) {
   // Generate optimized model
-  lite_api::CxxConfig cxx_config;
+  lite_metal_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(model_dir);
   cxx_config.set_model_file(model_file);
   cxx_config.set_param_file(params_file);
   cxx_config.set_valid_places(valid_places);
-  auto predictor = lite_api::CreatePaddlePredictor(cxx_config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(optimized_model_dir,
-                                lite_api::LiteModelType::kNaiveBuffer);
+                                lite_metal_api::LiteModelType::kNaiveBuffer);
   // Load optimized model
-  lite_api::MobileConfig mobile_config;
+  lite_metal_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(optimized_model_dir + ".nb");
-  mobile_config.set_power_mode(lite_api::PowerMode::LITE_POWER_HIGH);
+  mobile_config.set_power_mode(lite_metal_api::PowerMode::LITE_POWER_HIGH);
   mobile_config.set_threads(1);
   mobile_config.set_subgraph_model_cache_dir(FLAGS_subgraph_model_cache_dir);
-  predictor = lite_api::CreatePaddlePredictor(mobile_config);
+  predictor = lite_metal_api::CreatePaddlePredictor(mobile_config);
   FillInputTensors(predictor, input_tensor_shape, input_tensor_type, 1);
   // Run optimized model
   for (int i = 0; i < FLAGS_warmup; i++) {
@@ -165,12 +165,12 @@ TEST(Subgraph, generate_model_and_check_precision) {
   // formats: "float32" and "float32:int64:int8"
   auto input_tensor_type = TypeParsing(FLAGS_input_tensor_type);
   auto output_tensor_type = TypeParsing(FLAGS_output_tensor_type);
-  std::vector<lite_api::Place> valid_places({
+  std::vector<lite_metal_api::Place> valid_places({
 #ifdef LITE_WITH_ARM
-      lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+      lite_metal_api::Place{TARGET(kARM), PRECISION(kFloat)},
 #endif
 #ifdef LITE_WITH_X86
-      lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
+      lite_metal_api::Place{TARGET(kX86), PRECISION(kFloat)},
 #endif
   });
   // Generate and run optimized model on CPU as the reference predictor
@@ -183,14 +183,14 @@ TEST(Subgraph, generate_model_and_check_precision) {
                                  FLAGS_optimized_model_dir + "_ref_opt_model");
 // Generate and run optimized model on NPU/XPU as the target predictor
 #ifdef LITE_WITH_NPU
-  valid_places.push_back(lite_api::Place{TARGET(kNPU), PRECISION(kFloat)});
+  valid_places.push_back(lite_metal_api::Place{TARGET(kNPU), PRECISION(kFloat)});
 #endif
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
   valid_places.push_back(
-      lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)});
+      lite_metal_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)});
 #endif
 #ifdef LITE_WITH_XTCL
-  valid_places.push_back(lite_api::Place{TARGET(kXPU), PRECISION(kFloat)});
+  valid_places.push_back(lite_metal_api::Place{TARGET(kXPU), PRECISION(kFloat)});
 #endif
   auto tar_predictor = TestModel(FLAGS_model_dir,
                                  FLAGS_model_file,

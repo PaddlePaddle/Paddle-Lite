@@ -116,7 +116,7 @@ void test_fc_fp16(const DDim in_dim,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       DDim dim_out = compute_out_dim(in_dim, weight_dim, in_num_col_dims);
       if (dim_out[2] < 1 || dim_out[3] < 1) {
         return;

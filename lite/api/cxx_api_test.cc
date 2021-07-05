@@ -57,9 +57,9 @@ TEST(CXXApi, save_model) {
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
   predictor.SaveModel(FLAGS_optimized_model,
-                      lite_api::LiteModelType::kProtobuf);
+                      lite_metal_api::LiteModelType::kProtobuf);
   predictor.SaveModel(FLAGS_optimized_model + ".naive",
-                      lite_api::LiteModelType::kNaiveBuffer);
+                      lite_metal_api::LiteModelType::kNaiveBuffer);
 }
 
 TEST(CXXApi, clone_predictor) {
@@ -141,9 +141,9 @@ TEST(CXXApi, save_model) {
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
   predictor.SaveModel(FLAGS_optimized_model,
-                      lite_api::LiteModelType::kProtobuf);
+                      lite_metal_api::LiteModelType::kProtobuf);
   predictor.SaveModel(FLAGS_optimized_model + ".naive",
-                      lite_api::LiteModelType::kNaiveBuffer);
+                      lite_metal_api::LiteModelType::kNaiveBuffer);
 }
 
 TEST(CXXApi, load_model_naive) {
@@ -154,7 +154,7 @@ TEST(CXXApi, load_model_naive) {
                   "",
                   valid_places,
                   {},
-                  lite_api::LiteModelType::kNaiveBuffer);
+                  lite_metal_api::LiteModelType::kNaiveBuffer);
 
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(std::vector<int64_t>({1, 100}));

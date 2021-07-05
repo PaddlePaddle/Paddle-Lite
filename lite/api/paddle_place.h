@@ -40,7 +40,7 @@
 #endif
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 enum class TargetType : int {
   kUnk = 0,
@@ -175,7 +175,7 @@ struct PrecisionTypeTrait {
 };
 
 #define _ForEachPrecisionTypeHelper(callback, cpp_type, precision_type) \
-  callback(cpp_type, ::paddle::lite_api::PrecisionType::precision_type);
+  callback(cpp_type, ::paddle::lite_metal_api::PrecisionType::precision_type);
 
 #define _ForEachPrecisionType(callback)                   \
   _ForEachPrecisionTypeHelper(callback, bool, kBool);     \
@@ -204,9 +204,9 @@ _ForEachPrecisionTypeHelper(DefinePrecisionTypeTrait, float16_t, kFP16);
 #undef _ForEachPrecisionType
 #undef DefinePrecisionTypeTrait
 
-#define TARGET(item__) paddle::lite_api::TargetType::item__
-#define PRECISION(item__) paddle::lite_api::PrecisionType::item__
-#define DATALAYOUT(item__) paddle::lite_api::DataLayoutType::item__
+#define TARGET(item__) paddle::lite_metal_api::TargetType::item__
+#define PRECISION(item__) paddle::lite_metal_api::PrecisionType::item__
+#define DATALAYOUT(item__) paddle::lite_metal_api::DataLayoutType::item__
 
 const std::string& ActivationTypeToStr(ActivationType act);
 

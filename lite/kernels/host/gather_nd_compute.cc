@@ -83,7 +83,7 @@ void GatherNdCompute::Run() {
       break;                                                  \
     default:                                                  \
       LOG(FATAL) << "unsupported input(x) type: "             \
-                 << lite_api::PrecisionToStr(x->precision()); \
+                 << lite_metal_api::PrecisionToStr(x->precision()); \
       break;                                                  \
   }
 
@@ -98,7 +98,7 @@ void GatherNdCompute::Run() {
     }
     default: {
       LOG(FATAL) << "unsupported index type: "
-                 << lite_api::PrecisionToStr(index->precision());
+                 << lite_metal_api::PrecisionToStr(index->precision());
     }
   }
 #undef SELECT_GATHERND

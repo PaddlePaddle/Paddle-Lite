@@ -46,9 +46,9 @@ DDim ConvTransposeOutputSize(const DDim& dim_in,
 }
 
 #define LOOP_TEST
-void test_precision(const lite_api::CLPrecisionType p) {
+void test_precision(const lite_metal_api::CLPrecisionType p) {
   CLRuntime::Global()->set_precision(p);
-  const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
+  const bool fp16_flag = (p == lite_metal_api::CLPrecisionType::CL_PRECISION_FP16);
   const int fc = 3;
   const int fw = 2;
   const int fh = fw;
@@ -100,7 +100,7 @@ void test_precision(const lite_api::CLPrecisionType p) {
         if (relu_flag) {
           param.fuse_relu = true;
           param.activation_param.has_active = true;
-          param.activation_param.active_type = lite_api::ActivationType::kRelu;
+          param.activation_param.active_type = lite_metal_api::ActivationType::kRelu;
         } else {
           param.fuse_relu = false;
           param.activation_param.has_active = false;
@@ -263,12 +263,12 @@ void test_precision(const lite_api::CLPrecisionType p) {
 #else
 // nothing to do.
 #endif
-  LOG(INFO) << "\n\t[  PASSED  ] " << lite_api::CLPrecisionTypeToStr(p);
+  LOG(INFO) << "\n\t[  PASSED  ] " << lite_metal_api::CLPrecisionTypeToStr(p);
 }
 
 TEST(conv2d_transpose, compute_basic) {
-  for (auto ins : {lite_api::CLPrecisionType::CL_PRECISION_FP32,
-                   lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
+  for (auto ins : {lite_metal_api::CLPrecisionType::CL_PRECISION_FP32,
+                   lite_metal_api::CLPrecisionType::CL_PRECISION_FP16}) {
     test_precision(ins);
   }
 }

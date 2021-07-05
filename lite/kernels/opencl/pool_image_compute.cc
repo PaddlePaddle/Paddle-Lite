@@ -120,7 +120,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       uint32_t workgroup_size = 0;
 
       int type_size =
-          (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
+          (CLRuntime::Global()->get_precision() == lite_metal_api::CL_PRECISION_FP16)
               ? sizeof(uint16_t)
               : sizeof(float);
       if (pooling_type == "avg") {

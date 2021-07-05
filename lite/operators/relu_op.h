@@ -49,40 +49,40 @@ class ReluOp : public OpLite {
     ch->output_shape = ch->DimToStr(output_dims);
     ch->remark = ActivationTypeToStr(param_.active_type);
     switch (param_.active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
         ch->macs = param_.X->numel();
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
         ch->macs = param_.X->numel() * 2.0;
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
         ch->macs = param_.X->numel() * 2.0;
         break;
-      case lite_api::ActivationType::kPRelu:
+      case lite_metal_api::ActivationType::kPRelu:
         ch->macs = param_.X->numel() * 2.0;
         break;
-      case lite_api::ActivationType::kSwish:
+      case lite_metal_api::ActivationType::kSwish:
         ch->macs = param_.X->numel() * 4.0;
         break;
-      case lite_api::ActivationType::kSigmoid:
+      case lite_metal_api::ActivationType::kSigmoid:
         ch->macs = param_.X->numel() * 3.0;
         break;
-      case lite_api::ActivationType::kTanh:
+      case lite_metal_api::ActivationType::kTanh:
         ch->macs = param_.X->numel() * 5.0;
         break;
-      case lite_api::ActivationType::kExp:
+      case lite_metal_api::ActivationType::kExp:
         ch->macs = param_.X->numel();
         break;
-      case lite_api::ActivationType::kAbs:
+      case lite_metal_api::ActivationType::kAbs:
         ch->macs = param_.X->numel();
         break;
-      case lite_api::ActivationType::kHardSwish:
+      case lite_metal_api::ActivationType::kHardSwish:
         ch->macs = param_.X->numel() * 5.0;
         break;
-      case lite_api::ActivationType::kReciprocal:
+      case lite_metal_api::ActivationType::kReciprocal:
         ch->macs = param_.X->numel();
         break;
-      case lite_api::ActivationType::kIndentity:
+      case lite_metal_api::ActivationType::kIndentity:
         break;
       default:
         LOG(FATAL) << "This Type of Activation:"

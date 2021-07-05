@@ -239,13 +239,13 @@ class ParamTypeDummyRegistry {
 #define ParamTypeRegistry(                                                \
     op_type__, target__, precision__, layout__, KernelClass, alias__)     \
   static auto                                                             \
-      op_type__##target__##precision__##layout__##alias__##param_register \
+      metal_##op_type__##target__##precision__##layout__##alias__##param_register \
           UNUSED = paddle::lite_metal::ParamTypeDummyRegistry::NewInstance()
 #else
 #define ParamTypeRegistry(                                                \
     op_type__, target__, precision__, layout__, KernelClass, alias__)     \
   static auto                                                             \
-      op_type__##target__##precision__##layout__##alias__##param_register \
+      metal_##op_type__##target__##precision__##layout__##alias__##param_register \
           UNUSED = paddle::lite_metal::ParamTypeRegistry::NewInstance<          \
               TARGET(target__),                                           \
               PRECISION(precision__),                                     \
@@ -254,12 +254,12 @@ class ParamTypeDummyRegistry {
 
 // Register an op.
 #define REGISTER_LITE_OP(op_type__, OpClass)                                   \
-  static paddle::lite_metal::OpLiteRegistrar op_type__##__registry(                  \
+  static paddle::lite_metal::OpLiteRegistrar metal_##op_type__##__registry(                  \
       #op_type__, []() {                                                       \
         return std::unique_ptr<paddle::lite_metal::OpLite>(new OpClass(#op_type__)); \
       });                                                                      \
-  int touch_op_##op_type__() {                                                 \
-    op_type__##__registry.touch();                                             \
+  int touch_op_metal_##op_type__() {                                                 \
+    metal_##op_type__##__registry.touch();                                             \
     OpKernelInfoCollector::Global().AddOp2path(#op_type__, __FILE__);          \
     return 0;                                                                  \
   }
@@ -268,7 +268,7 @@ class ParamTypeDummyRegistry {
 #define REGISTER_LITE_KERNEL(                                                 \
     op_type__, target__, precision__, layout__, KernelClass, alias__)         \
   static paddle::lite_metal::KernelRegistrar                                        \
-      op_type__##target__##precision__##layout__##alias__##_kernel_registry(  \
+      metal_##op_type__##target__##precision__##layout__##alias__##_kernel_registry(  \
           #op_type__,                                                         \
           TARGET(target__),                                                   \
           PRECISION(precision__),                                             \
@@ -279,8 +279,8 @@ class ParamTypeDummyRegistry {
             x->set_alias(#alias__);                                           \
             return x;                                                         \
           });                                                                 \
-  int touch_##op_type__##target__##precision__##layout__##alias__() {         \
-    op_type__##target__##precision__##layout__##alias__##_kernel_registry     \
+  int touch_metal_##op_type__##target__##precision__##layout__##alias__() {         \
+    metal_##op_type__##target__##precision__##layout__##alias__##_kernel_registry     \
         .touch();                                                             \
     OpKernelInfoCollector::Global().AddKernel2path(                           \
         #op_type__ "," #target__ "," #precision__ "," #layout__ "," #alias__, \

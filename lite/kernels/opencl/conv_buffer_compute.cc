@@ -80,7 +80,7 @@ void ConvCompute::PrepareForRun() {
     if (relu_fused) {
       build_options_.push_back("-DCL_DTYPE_float -DRELU");
     } else if (param.activation_param.active_type ==
-               lite_api::ActivationType::kRelu6) {
+               lite_metal_api::ActivationType::kRelu6) {
       build_options_.push_back("-DCL_DTYPE_float -DRELU6");
     } else {
       build_options_.push_back("-DCL_DTYPE_float");
@@ -99,7 +99,7 @@ void ConvCompute::PrepareForRun() {
     if (relu_fused) {
       build_options_.push_back("-DCL_DTYPE_float -DRELU");
     } else if (param.activation_param.active_type ==
-               lite_api::ActivationType::kRelu6) {
+               lite_metal_api::ActivationType::kRelu6) {
       build_options_.push_back("-DCL_DTYPE_float -DRELU6");
     } else {
       build_options_.push_back("-DCL_DTYPE_float");

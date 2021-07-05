@@ -444,12 +444,12 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
   float16_t leaky_alpha = static_cast<float16_t>(act_param.Leaky_relu_alpha);
   float16_t scale[8];
   switch (act_type) {
-    case lite_api::ActivationType::kRelu6:
+    case lite_metal_api::ActivationType::kRelu6:
       for (int i = 0; i < 8; ++i) {
         scale[i] = relu6_coff;
       }
       break;
-    case lite_api::ActivationType::kLeakyRelu:
+    case lite_metal_api::ActivationType::kLeakyRelu:
       for (int i = 0; i < 8; ++i) {
         scale[i] = leaky_alpha;
       }
@@ -461,7 +461,7 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
   o_data, i_data, weights, bias, scale, flag_bias, num, ic, ih, win, oh, ow, ctx
   if (has_active) {
     switch (act_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
           if (win <= 8)
             conv_depthwise_3x3s1p1_bias_relu_small_fp16_fp16(
@@ -496,7 +496,7 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
                      << "is not supported!";
         }
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
           if (win <= 8)
             conv_depthwise_3x3s1p1_bias_relu6_small_fp16_fp16(
@@ -531,7 +531,7 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
                      << "is not supported!";
         }
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
           if (win <= 8)
             conv_depthwise_3x3s1p1_bias_leaky_relu_small_fp16_fp16(

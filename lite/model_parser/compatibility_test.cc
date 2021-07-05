@@ -34,7 +34,7 @@ TEST(CompatibleChecker, CppProgramDesc) {
   op->SetType("leaky_relu");
 
   CompatibleChecker<cpp::ProgramDesc> checker(program);
-  lite_api::Place place{TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)};
+  lite_metal_api::Place place{TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)};
   CHECK(checker(place));
 }
 

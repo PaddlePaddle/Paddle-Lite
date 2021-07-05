@@ -174,7 +174,7 @@ TEST(act_image2d_fp16, compute) {
                 actParam.X = &act_in;
                 actParam.Out = &act_out;
                 actParam.active_type =
-                    (paddle::lite_api::ActivationType)act_type;
+                    (paddle::lite_metal_api::ActivationType)act_type;
                 actParam.Relu_clipped_coef = threshold;
                 actParam.Leaky_relu_alpha = scale;
                 actParam.Swish_beta = scale;

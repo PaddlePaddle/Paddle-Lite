@@ -46,7 +46,7 @@ inline std::vector<int> GetIntDataFromTensorList(
       }
       default: {
         LOG(FATAL) << "unsupported data precision: "
-                   << lite_api::PrecisionToStr(precision);
+                   << lite_metal_api::PrecisionToStr(precision);
         break;
       }
     }
@@ -72,7 +72,7 @@ inline std::vector<int> GetIntDataFromTensor(const Tensor* tensor) {
     }
     default: {
       LOG(FATAL) << "unsupported data precision: "
-                 << lite_api::PrecisionToStr(precision);
+                 << lite_metal_api::PrecisionToStr(precision);
       break;
     }
   }

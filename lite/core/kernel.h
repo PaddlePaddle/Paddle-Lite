@@ -219,7 +219,7 @@ class KernelBase {
   cl::Event event_1;
   cl::Event event_2;
   bool fp16_support_{paddle::lite_metal::CLRuntime::Global()->get_precision() ==
-                     lite_api::CL_PRECISION_FP16};
+                     lite_metal_api::CL_PRECISION_FP16};
 #endif
 };
 

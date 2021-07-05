@@ -33,10 +33,10 @@ LAC::LAC(const std::string &model_path,
   *_id2label_dict = load_id2label_dict(conf_path + "/tag.dic");
   std::cout << "read word dict succeed" << std::endl;
 
-  paddle::lite_api::MobileConfig config;
+  paddle::lite_metal_api::MobileConfig config;
   config.set_threads(threads);
   config.set_model_from_file(model_path);
-  this->_predictor = paddle::lite_api::CreatePaddlePredictor(config);
+  this->_predictor = paddle::lite_metal_api::CreatePaddlePredictor(config);
   std::cout << "load model succeed" << std::endl;
 
   this->_input_tensor = this->_predictor->GetInput(0);

@@ -401,7 +401,7 @@ struct ConcatParam : ParamBase {
 struct ActivationParam : ParamBase {
   const lite_metal::Tensor* X{};
   lite_metal::Tensor* Out{};
-  lite_api::ActivationType active_type{lite_api::ActivationType::kIndentity};
+  lite_metal_api::ActivationType active_type{lite_metal_api::ActivationType::kIndentity};
   bool has_active{false};
   float Leaky_relu_alpha{0.f};   // leaky_relu param
   float Relu_clipped_coef{6.f};  // relu_clipped param
@@ -1879,9 +1879,9 @@ struct LstmParam : ParamBase {
   lite_metal::Tensor* C0{nullptr};
   bool use_peepholes;
   bool is_reverse;
-  lite_api::ActivationType gate_activation;
-  lite_api::ActivationType cell_activation;
-  lite_api::ActivationType candidate_activation;
+  lite_metal_api::ActivationType gate_activation;
+  lite_metal_api::ActivationType cell_activation;
+  lite_metal_api::ActivationType candidate_activation;
   // for int8
   WITH_INT8_CONFIG
 };

@@ -127,7 +127,7 @@ bool test_sgemm_c4(
   std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
       new paddle::lite_metal::KernelContext);
   auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), ths);
   auto dc = tc.mutable_data<float>();
   for (int j = 0; j < FLAGS_warmup; ++j) {
     paddle::lite_metal::arm::math::sgemm_prepack_c4(
@@ -260,7 +260,7 @@ bool test_sgemm_c8(
   std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
       new paddle::lite_metal::KernelContext);
   auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), ths);
   auto dc = tc.mutable_data<int32_t>();
   for (int j = 0; j < FLAGS_warmup; ++j) {
     paddle::lite_metal::arm::math::sgemm_prepack_c8_int16_small(

@@ -44,12 +44,12 @@ DEFINE_bool(use_optimize_nb,
 DEFINE_int32(test_type, 0, "multithread test type");
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 void OutputOptModel(const std::string& load_model_dir,
                     const std::string& save_optimized_model_dir,
                     const std::vector<std::vector<int64_t>>& input_shapes) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_dir(load_model_dir);
   if (FLAGS_target == "arm") {
     config.set_valid_places({
@@ -64,7 +64,7 @@ void OutputOptModel(const std::string& load_model_dir,
         Place{TARGET(kARM)},  // enable kARM CPU kernel when no opencl kernel
     });
   }
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   // delete old optimized model
   int ret = system(
@@ -87,12 +87,12 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
          const int repeat,
          int tid,
          const int warmup_times = 5) {
-  lite_api::MobileConfig config;
+  lite_metal_api::MobileConfig config;
   config.set_model_from_file(model_dir + ".nb");
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   for (int j = 0; j < input_shapes.size(); ++j) {
     auto input_tensor = predictor->GetInput(j);
@@ -206,12 +206,12 @@ void RunTestType_10(const std::vector<std::vector<int64_t>>& input_shapes,
                     const int thread_num,
                     const int repeat,
                     int warmup = 5) {
-  lite_api::MobileConfig config;
+  lite_metal_api::MobileConfig config;
   config.set_model_from_file(model_dir + ".nb");
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   for (int i = 0; i < repeat; ++i) {
     std::thread pre_th0(
@@ -227,15 +227,15 @@ void RunTestType_11(const std::vector<std::vector<int64_t>>& input_shapes,
                     const int thread_num,
                     const int repeat,
                     int warmup = 5) {
-  lite_api::MobileConfig config;
+  lite_metal_api::MobileConfig config;
   config.set_model_from_file(model_dir + ".nb");
   config.set_power_mode(power_mode);
   config.set_threads(thread_num);
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   config.set_model_from_file(model_dir_0 + ".nb");
-  auto predictor_0 = lite_api::CreatePaddlePredictor(config);
+  auto predictor_0 = lite_metal_api::CreatePaddlePredictor(config);
 
   for (int i = 0; i < 2 * repeat; i += 2) {
     std::thread pre_th0(
@@ -316,49 +316,49 @@ int main(int argc, char** argv) {
 
   if (!FLAGS_use_optimize_nb) {
     // Output optimized model
-    paddle::lite_api::OutputOptModel(
+    paddle::lite_metal_api::OutputOptModel(
         FLAGS_model_dir, save_optimized_model_dir, input_shapes);
-    paddle::lite_api::OutputOptModel(
+    paddle::lite_metal_api::OutputOptModel(
         FLAGS_model_dir_0, save_optimized_model_dir_0, input_shapes_0);
   }
 
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
   // Run inference using optimized model
   if (FLAGS_test_type == 0) {
-    paddle::lite_api::RunTestType_00(
+    paddle::lite_metal_api::RunTestType_00(
         input_shapes,
         save_optimized_model_dir,
-        static_cast<paddle::lite_api::PowerMode>(0),
+        static_cast<paddle::lite_metal_api::PowerMode>(0),
         FLAGS_threads,
         FLAGS_repeats,
         5);
     LOG(INFO) << "=========above is case 0, below is case "
                  "1============================";
-    paddle::lite_api::RunTestType_10(
+    paddle::lite_metal_api::RunTestType_10(
         input_shapes,
         save_optimized_model_dir,
-        static_cast<paddle::lite_api::PowerMode>(0),
+        static_cast<paddle::lite_metal_api::PowerMode>(0),
         FLAGS_threads,
         FLAGS_repeats);
   }
   if (FLAGS_test_type == 1) {
-    paddle::lite_api::RunTestType_01(
+    paddle::lite_metal_api::RunTestType_01(
         input_shapes,
         save_optimized_model_dir,
         input_shapes_0,
         save_optimized_model_dir_0,
-        static_cast<paddle::lite_api::PowerMode>(0),
+        static_cast<paddle::lite_metal_api::PowerMode>(0),
         FLAGS_threads,
         FLAGS_repeats,
         5);
     LOG(INFO) << "=========above is case 0, below is case "
                  "1============================";
-    paddle::lite_api::RunTestType_11(
+    paddle::lite_metal_api::RunTestType_11(
         input_shapes,
         save_optimized_model_dir,
         input_shapes_0,
         save_optimized_model_dir_0,
-        static_cast<paddle::lite_api::PowerMode>(0),
+        static_cast<paddle::lite_metal_api::PowerMode>(0),
         FLAGS_threads,
         FLAGS_repeats);
   }

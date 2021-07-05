@@ -18,22 +18,22 @@
 namespace paddle {
 namespace lite_metal {
 namespace operators {
-inline lite_api::ActivationType GetActivationType(const std::string &type) {
+inline lite_metal_api::ActivationType GetActivationType(const std::string &type) {
   if (type == "sigmoid") {
-    return lite_api::ActivationType::kSigmoid;
+    return lite_metal_api::ActivationType::kSigmoid;
   } else if (type == "sigmoid_v2") {
-    return lite_api::ActivationType::kSigmoid_v2;
+    return lite_metal_api::ActivationType::kSigmoid_v2;
   } else if (type == "relu") {
-    return lite_api::ActivationType::kRelu;
+    return lite_metal_api::ActivationType::kRelu;
   } else if (type == "tanh") {
-    return lite_api::ActivationType::kTanh;
+    return lite_metal_api::ActivationType::kTanh;
   } else if (type == "tanh_v2") {
-    return lite_api::ActivationType::kTanh_v2;
+    return lite_metal_api::ActivationType::kTanh_v2;
   } else if (type == "identity" || type == "") {
-    return lite_api::ActivationType::kIndentity;
+    return lite_metal_api::ActivationType::kIndentity;
   }
   LOG(FATAL) << "The input type is not supported: " << type;
-  return lite_api::ActivationType::kIndentity;
+  return lite_metal_api::ActivationType::kIndentity;
 }
 bool LstmOp::CheckShape() const {
   CHECK_OR_FALSE(param_.Input);

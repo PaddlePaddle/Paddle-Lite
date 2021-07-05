@@ -29,15 +29,15 @@ namespace paddle {
 namespace lite_metal {
 
 TEST(Mobilenet_v1, test_mobilenetv1_lite_metal) {
-  lite_api::CxxConfig config;
+  lite_metal_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_metal_dir(FLAGS_metal_dir);
   config.set_valid_places(
-      {lite_api::Place{
+      {lite_metal_api::Place{
            TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)},
-       lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-       lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+       lite_metal_api::Place{TARGET(kX86), PRECISION(kFloat)},
+       lite_metal_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  auto predictor = lite_metal_api::CreatePaddlePredictor(config);
 
   auto input_tensor = predictor->GetInput(0);
   std::vector<int64_t> input_shape{1, 3, 224, 224};

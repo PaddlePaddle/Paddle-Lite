@@ -122,7 +122,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
     ActivationParam act_param;
     act_param.has_active = true;
     act_param.active_type =
-        (paddle::lite_api::ActivationType)1;  // 2-relu6 4-leakyrelu
+        (paddle::lite_metal_api::ActivationType)1;  // 2-relu6 4-leakyrelu
     param.activation_param = act_param;
   }
   Tensor tmp_weights;
@@ -139,7 +139,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
       std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
           new paddle::lite_metal::KernelContext);
       auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), th);
       conv_t.SetParam(param);
       conv_t.SetContext(std::move(ctx1));
       for (auto& dim_in : input_dims) {

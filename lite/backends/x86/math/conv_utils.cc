@@ -675,10 +675,10 @@ void pack_padding8_m256(lite_metal::Tensor* input,
   }
 }
 
-__m256 activation8_m256(__m256 input, const lite_api::ActivationType act_type) {
-  if (act_type == lite_api::ActivationType::kRelu) {
+__m256 activation8_m256(__m256 input, const lite_metal_api::ActivationType act_type) {
+  if (act_type == lite_metal_api::ActivationType::kRelu) {
     return _mm256_max_ps(input, _mm256_setzero_ps());
-  } else if (act_type == lite_api::ActivationType::kRelu6) {
+  } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
     __m256 _val = _mm256_max_ps(input, _mm256_setzero_ps());
     return _mm256_min_ps(_val, _mm256_set1_ps(6.f));
   } else {
@@ -687,10 +687,10 @@ __m256 activation8_m256(__m256 input, const lite_api::ActivationType act_type) {
   return _mm256_setzero_ps();
 }
 
-__m128 activation4_m128(__m128 input, const lite_api::ActivationType act_type) {
-  if (act_type == lite_api::ActivationType::kRelu) {
+__m128 activation4_m128(__m128 input, const lite_metal_api::ActivationType act_type) {
+  if (act_type == lite_metal_api::ActivationType::kRelu) {
     return _mm_max_ps(input, _mm_setzero_ps());
-  } else if (act_type == lite_api::ActivationType::kRelu6) {
+  } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
     __m128 _val = _mm_max_ps(input, _mm_setzero_ps());
     return _mm_min_ps(_val, _mm_set1_ps(6.f));
   } else {
@@ -699,10 +699,10 @@ __m128 activation4_m128(__m128 input, const lite_api::ActivationType act_type) {
   return _mm_setzero_ps();
 }
 
-float activation1_float(float input, const lite_api::ActivationType act_type) {
-  if (act_type == lite_api::ActivationType::kRelu) {
+float activation1_float(float input, const lite_metal_api::ActivationType act_type) {
+  if (act_type == lite_metal_api::ActivationType::kRelu) {
     return (std::max)(input, 0.f);
-  } else if (act_type == lite_api::ActivationType::kRelu6) {
+  } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
     return (std::min)((std::max)(input, 0.f), 6.0f);
   } else {
     LOG(FATAL) << "[X86] activation type not supported";

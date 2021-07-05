@@ -212,7 +212,7 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     new_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_filter_t = scope->NewTensor(new_filter_name);
-    new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_filter_t->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     new_filter_t->set_persistable(true);
     new_filter_t->Resize({encode_filter_size.back()});
     float* new_filter_ptr = new_filter_t->mutable_data<float>();
@@ -235,7 +235,7 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     new_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_bias_t = scope->NewTensor(new_bias_name);
-    new_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_bias_t->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     new_bias_t->set_persistable(true);
     new_bias_t->Resize({encode_bias_size.back()});
     float* new_bias_ptr = new_bias_t->mutable_data<float>();

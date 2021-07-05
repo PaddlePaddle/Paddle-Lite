@@ -36,7 +36,7 @@
 #include "supported_kernel_op_info.h"  // NOLINT
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 /// The PaddlePredictor defines the basic interfaces for different kinds of
 /// predictors.

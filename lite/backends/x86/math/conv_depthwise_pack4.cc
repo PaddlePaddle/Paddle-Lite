@@ -30,7 +30,7 @@ void conv_depthwise_m128(lite_metal::Tensor* input,
                          const int dilation_h,
                          const int dilation_w,
                          const bool has_act,
-                         const lite_api::ActivationType act_type) {
+                         const lite_metal_api::ActivationType act_type) {
   // input [bs, ic/8, ih, iw, 8]
   CHECK_EQ(input->dims().size(), 5UL);
   const int batch_size = input->dims()[0];

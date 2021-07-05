@@ -150,7 +150,7 @@ bool test_sgemm(bool tra,
   if (has_relu) {
     act_param.has_active = true;
     act_param.active_type =
-        (paddle::lite_api::ActivationType)1;  // 2-relu6 4-leakyrelu
+        (paddle::lite_metal_api::ActivationType)1;  // 2-relu6 4-leakyrelu
   }
 #ifdef LITE_WITH_ARM
   //! compute
@@ -158,7 +158,7 @@ bool test_sgemm(bool tra,
   std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
       new paddle::lite_metal::KernelContext);
   auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), ths);
   //! prepack
   Tensor tpackedA;
   int hblock = paddle::lite_metal::arm::math::get_hblock(&ctx);

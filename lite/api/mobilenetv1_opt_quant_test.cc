@@ -30,12 +30,12 @@ namespace lite_metal {
 void TestModel(const std::string& model_dir,
                const std::vector<float>& ref,
                float eps,
-               lite_api::QuantType quant_type) {
+               lite_metal_api::QuantType quant_type) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_metal_api::LITE_POWER_NO_BIND, FLAGS_threads);
 
   LOG(INFO) << "Load fp32 model from " << model_dir;
-  lite_api::CxxConfig cxx_config;
+  lite_metal_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(model_dir);
   std::vector<Place> vaild_places = {
       Place{TARGET(kARM), PRECISION(kFloat)},
@@ -45,22 +45,22 @@ void TestModel(const std::string& model_dir,
   cxx_config.set_valid_places(vaild_places);
   cxx_config.set_quant_model(true);
   cxx_config.set_quant_type(quant_type);
-  auto cxx_predictor = lite_api::CreatePaddlePredictor(cxx_config);
+  auto cxx_predictor = lite_metal_api::CreatePaddlePredictor(cxx_config);
 
   LOG(INFO) << "Save quantized model";
   std::string opt_model_path;
-  if (quant_type == lite_api::QuantType::QUANT_INT8) {
+  if (quant_type == lite_metal_api::QuantType::QUANT_INT8) {
     opt_model_path = model_dir + "/mobilenetv1_opt_quant_int8";
-  } else if (quant_type == lite_api::QuantType::QUANT_INT16) {
+  } else if (quant_type == lite_metal_api::QuantType::QUANT_INT16) {
     opt_model_path = model_dir + "/mobilenetv1_opt_quant_int16";
   }
   cxx_predictor->SaveOptimizedModel(opt_model_path,
-                                    lite_api::LiteModelType::kNaiveBuffer);
+                                    lite_metal_api::LiteModelType::kNaiveBuffer);
 
   LOG(INFO) << "Load optimized model";
-  lite_api::MobileConfig mobile_config;
+  lite_metal_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(opt_model_path + ".nb");
-  auto mobile_predictor = lite_api::CreatePaddlePredictor(mobile_config);
+  auto mobile_predictor = lite_metal_api::CreatePaddlePredictor(mobile_config);
 
   auto input_tensor = mobile_predictor->GetInput(0);
   input_tensor->Resize({FLAGS_N, FLAGS_C, FLAGS_H, FLAGS_W});
@@ -88,14 +88,14 @@ TEST(bobileetv1_opt_quant_int16, test_arm) {
       0.000191383, 0.000592063, 0.000112282, 6.27426e-05, 0.000127522};
   float eps = 1e-5;
   TestModel(
-      FLAGS_model_dir, ref, eps, paddle::lite_api::QuantType::QUANT_INT16);
+      FLAGS_model_dir, ref, eps, paddle::lite_metal_api::QuantType::QUANT_INT16);
 }
 
 TEST(mobilenetv1_opt_quant_int8, test_arm) {
   std::vector<float> ref = {
       0.0002320, 0.0006248689, 0.000112282, 6.27426e-05, 0.0001111296};
   float eps = 3e-5;
-  TestModel(FLAGS_model_dir, ref, eps, paddle::lite_api::QuantType::QUANT_INT8);
+  TestModel(FLAGS_model_dir, ref, eps, paddle::lite_metal_api::QuantType::QUANT_INT8);
 }
 
 }  // namespace lite

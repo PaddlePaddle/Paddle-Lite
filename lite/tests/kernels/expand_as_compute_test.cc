@@ -104,18 +104,18 @@ class ExpandAsComputeTester : public arena::TestCase {
 
 template <class T>
 void test_expand_as_3dim(Place place, float abs_error) {
-  auto precision = lite_api::PrecisionTypeTrait<T>::Type();
+  auto precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   std::string alias("def");
   switch (precision) {
-    case lite_api::PrecisionType::kFloat:
+    case lite_metal_api::PrecisionType::kFloat:
       alias = std::string("def");
       break;
-    case lite_api::PrecisionType::kInt64:
+    case lite_metal_api::PrecisionType::kInt64:
       alias = std::string("int64");
       break;
     default:
       LOG(FATAL) << "unsupported precision: "
-                 << lite_api::PrecisionToStr(precision);
+                 << lite_metal_api::PrecisionToStr(precision);
   }
 
   for (int C : {3}) {
@@ -132,18 +132,18 @@ void test_expand_as_3dim(Place place, float abs_error) {
 
 template <class T>
 void test_expand_as_4dim(Place place, float abs_error) {
-  auto precision = lite_api::PrecisionTypeTrait<T>::Type();
+  auto precision = lite_metal_api::PrecisionTypeTrait<T>::Type();
   std::string alias("def");
   switch (precision) {
-    case lite_api::PrecisionType::kFloat:
+    case lite_metal_api::PrecisionType::kFloat:
       alias = std::string("def");
       break;
-    case lite_api::PrecisionType::kInt64:
+    case lite_metal_api::PrecisionType::kInt64:
       alias = std::string("int64");
       break;
     default:
       LOG(FATAL) << "unsupported precision: "
-                 << lite_api::PrecisionToStr(precision);
+                 << lite_metal_api::PrecisionToStr(precision);
   }
 
   for (int N : {2}) {

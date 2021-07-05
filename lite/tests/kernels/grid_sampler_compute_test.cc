@@ -257,7 +257,7 @@ void test_grid_sampler(Place place) {
                                                padding_mode));
 #ifdef LITE_WITH_ARM
                 auto& ctx = tester->context()->As<ARMContext>();
-                ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
+                ctx.SetRunMode(lite_metal_api::LITE_POWER_HIGH, 1);
 #endif
 #ifdef LITE_WITH_X86
                 if (padding_mode == "reflection" || mode == "nearest") continue;

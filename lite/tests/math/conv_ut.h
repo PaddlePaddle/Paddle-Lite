@@ -117,7 +117,7 @@ void act_init(ConvParam& param,  // NOLINT
   if (flag_act > 0) {
     ActivationParam act_param;
     act_param.has_active = true;
-    act_param.active_type = (paddle::lite_api::ActivationType)
+    act_param.active_type = (paddle::lite_metal_api::ActivationType)
         flag_act;  // 1-relu, 2-relu6, 4-leakyrelu
     if (flag_act == 1) {
       param.fuse_relu = true;

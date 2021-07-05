@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 namespace paddle {
-namespace lite_api {
+namespace lite_metal_api {
 
 /*
  * Class:     com_baidu_paddle_lite_PaddlePredictor

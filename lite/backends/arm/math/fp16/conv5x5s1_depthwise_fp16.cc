@@ -353,7 +353,7 @@ void act_switch_5x5s1(const float16_t* inr0,
     float16x8_t vscale = vdupq_n_f16(ss);
 #endif
     switch (act_param.active_type) {
-      case lite_api::ActivationType::kRelu:
+      case lite_metal_api::ActivationType::kRelu:
 #ifdef __aarch64__
         asm volatile(COMPUTE RELU STORE
                      : [inr0] "+r"(inr0),
@@ -406,7 +406,7 @@ void act_switch_5x5s1(const float16_t* inr0,
 #else
 #endif
         break;
-      case lite_api::ActivationType::kRelu6:
+      case lite_metal_api::ActivationType::kRelu6:
 #ifdef __aarch64__
         asm volatile(COMPUTE RELU RELU6 STORE
                      : [inr0] "+r"(inr0),
@@ -460,7 +460,7 @@ void act_switch_5x5s1(const float16_t* inr0,
 #else
 #endif
         break;
-      case lite_api::ActivationType::kLeakyRelu:
+      case lite_metal_api::ActivationType::kLeakyRelu:
 #ifdef __aarch64__
         asm volatile(COMPUTE LEAKY_RELU STORE
                      : [inr0] "+r"(inr0),

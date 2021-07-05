@@ -56,7 +56,7 @@ void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  config.set_power_mode((paddle::lite_api::PowerMode)FLAGS_power_mode);
+  config.set_power_mode((paddle::lite_metal_api::PowerMode)FLAGS_power_mode);
   config.set_threads(FLAGS_threads);
 
   std::vector<Place> valid_places;

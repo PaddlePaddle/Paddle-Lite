@@ -163,20 +163,20 @@ typedef __fp16 float16_t;
     *pout7++ = cout7[i];             \
   }
 
-inline void act_acquire(lite_api::ActivationType act,
+inline void act_acquire(lite_metal_api::ActivationType act,
                         int &flag_act,       // NOLINT
                         float &local_alpha,  // NOLINT
                         float six,
                         float alpha) {
   switch (act) {
-    case lite_api::ActivationType::kRelu:
+    case lite_metal_api::ActivationType::kRelu:
       flag_act = 0x01;
       break;
-    case lite_api::ActivationType::kRelu6:
+    case lite_metal_api::ActivationType::kRelu6:
       flag_act = 0x02;
       local_alpha = six;
       break;
-    case lite_api::ActivationType::kLeakyRelu:
+    case lite_metal_api::ActivationType::kLeakyRelu:
       flag_act = 0x03;
       local_alpha = alpha;
       break;

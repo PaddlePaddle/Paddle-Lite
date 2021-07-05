@@ -39,7 +39,7 @@ class PassRegistry {
     return *this;
   }
   PassRegistry& BindKernel(const std::string& name,
-                           const lite_api::Place& place) {
+                           const lite_metal_api::Place& place) {
     pass_->BindKernel(name, place);
     return *this;
   }

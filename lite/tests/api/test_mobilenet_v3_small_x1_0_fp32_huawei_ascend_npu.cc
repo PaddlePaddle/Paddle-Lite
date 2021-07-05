@@ -30,31 +30,31 @@ namespace paddle {
 namespace lite_metal {
 
 TEST(MobileNetV3Small, test_mobilenet_v3_small_x1_0_fp32_huawei_ascend_npu) {
-  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
+  std::shared_ptr<paddle::lite_metal_api::PaddlePredictor> predictor = nullptr;
   // Use the full api with CxxConfig to generate the optimized model
-  lite_api::CxxConfig cxx_config;
+  lite_metal_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(FLAGS_model_dir);
 #if defined(LITE_WITH_ARM)
   cxx_config.set_valid_places(
-      {lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
-       lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-       lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+      {lite_metal_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
+       lite_metal_api::Place{TARGET(kARM), PRECISION(kFloat)},
+       lite_metal_api::Place{TARGET(kHost), PRECISION(kFloat)}});
 #else
   cxx_config.set_valid_places(
-      {lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
-       lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-       lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+      {lite_metal_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
+       lite_metal_api::Place{TARGET(kX86), PRECISION(kFloat)},
+       lite_metal_api::Place{TARGET(kHost), PRECISION(kFloat)}});
 #endif
-  predictor = lite_api::CreatePaddlePredictor(cxx_config);
+  predictor = lite_metal_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
-                                paddle::lite_api::LiteModelType::kNaiveBuffer);
+                                paddle::lite_metal_api::LiteModelType::kNaiveBuffer);
   // Use the light api with MobileConfig to load and run the optimized model
-  paddle::lite_api::MobileConfig mobile_config;
+  paddle::lite_metal_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(FLAGS_model_dir + ".nb");
   mobile_config.set_threads(FLAGS_threads);
   mobile_config.set_power_mode(
-      static_cast<lite_api::PowerMode>(FLAGS_power_mode));
-  predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
+      static_cast<lite_metal_api::PowerMode>(FLAGS_power_mode));
+  predictor = paddle::lite_metal_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
   std::vector<int> input_shape{

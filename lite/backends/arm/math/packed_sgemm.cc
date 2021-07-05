@@ -393,7 +393,7 @@ void sgemm_prepack(bool is_transB,
     bool has_act = act_param.has_active;
     bool act_flag =
         (has_act == false) ||
-        (has_act == true && act_type == lite_api::ActivationType::kRelu);
+        (has_act == true && act_type == lite_metal_api::ActivationType::kRelu);
     bool has_beta = fabsf(beta) > 1e-8f ? true : false;
     bool a53_sgemm = act_flag && !has_beta;
     if (a53_sgemm) {
@@ -3485,12 +3485,12 @@ void sgemm_prepacked_8x12(bool is_transB,
   float local_alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       local_alpha = act_param.Relu_clipped_coef;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       local_alpha = act_param.Leaky_relu_alpha;
     }
@@ -4561,12 +4561,12 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
   float local_alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       local_alpha = act_param.Relu_clipped_coef;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       local_alpha = act_param.Leaky_relu_alpha;
     }
@@ -5946,12 +5946,12 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
   float local_alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       local_alpha = act_param.Relu_clipped_coef;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       local_alpha = act_param.Leaky_relu_alpha;
     }
@@ -6474,16 +6474,16 @@ void sgemm_prepacked_4x8(bool is_transB,
   const int n_block = 8;
   const int m_block = 4;
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       float local_alpha = act_param.Relu_clipped_coef;
       alpha[0] = local_alpha;
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       float local_alpha = act_param.Leaky_relu_alpha;
       alpha[0] = local_alpha;
@@ -6878,16 +6878,16 @@ void sgemm_prepacked_4x4(bool is_transB,
   float alpha[4] = {0.f, 0.f, 0.f, 0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       float local_alpha = act_param.Relu_clipped_coef;
       alpha[0] = local_alpha;
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       float local_alpha = act_param.Leaky_relu_alpha;
       alpha[0] = local_alpha;
@@ -7226,16 +7226,16 @@ void sgemm_prepacked_6x8(bool is_transB,
   float alpha[4] = {0.f, 0.f, 0.f, 0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       float local_alpha = act_param.Relu_clipped_coef;
       alpha[0] = local_alpha;
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       float local_alpha = act_param.Leaky_relu_alpha;
       alpha[0] = local_alpha;
@@ -8227,16 +8227,16 @@ void sgemm_prepacked_4x8(bool is_transB,
   float alpha[4] = {0.f, 0.f, 0.f, 0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
+    if (act_type == lite_metal_api::ActivationType::kRelu) {
       flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
+    } else if (act_type == lite_metal_api::ActivationType::kRelu6) {
       flag_act = 0x02;
       float local_alpha = act_param.Relu_clipped_coef;
       alpha[0] = local_alpha;
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+    } else if (act_type == lite_metal_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       float local_alpha = act_param.Leaky_relu_alpha;
       alpha[0] = local_alpha;

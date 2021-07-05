@@ -41,7 +41,7 @@ class IoCopyHostToXPUCompute
       y->ShareDataWith(*x);
     } else {
       LOG(FATAL) << "IoCopyHostToXPU can not handle with the input target: "
-                 << lite_api::TargetToStr(x->target());
+                 << lite_metal_api::TargetToStr(x->target());
     }
   }
 
@@ -100,7 +100,7 @@ class IoCopyXPUToHostCompute
       y->CopyDataFrom(*x);
     } else {
       LOG(FATAL) << "IoCopyXPUToHost can not handle with the input target: "
-                 << lite_api::TargetToStr(x->target());
+                 << lite_metal_api::TargetToStr(x->target());
     }
   }
 

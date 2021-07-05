@@ -249,9 +249,9 @@ class NearestInterpComputeTester : public arena::TestCase {
     } else if (dtype_ == "fp16") {
 #ifdef ENABLE_ARM_FP16
       if (interp_method_ == "nearest") {
-        ResizeNearestAlign<lite_api::float16_t>(input, output, align_corners_);
+        ResizeNearestAlign<lite_metal_api::float16_t>(input, output, align_corners_);
       } else if (interp_method_ == "bilinear") {
-        BilinearInterpRef<lite_api::float16_t>(
+        BilinearInterpRef<lite_metal_api::float16_t>(
             input, output, align_corners_, align_mode_);
       }
 #endif
@@ -292,7 +292,7 @@ class NearestInterpComputeTester : public arena::TestCase {
     fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
     if (dtype_ == "fp16") {
 #ifdef ENABLE_ARM_FP16
-      std::vector<lite_api::float16_t> din_fp16(dims_.production());
+      std::vector<lite_metal_api::float16_t> din_fp16(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
         din_fp16[i] = din[i];
       }

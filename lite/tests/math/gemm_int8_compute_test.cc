@@ -109,12 +109,12 @@ bool test_gemm_int8(bool tra,
     case 2:
     case 3:
       act_param.has_active = has_relu;
-      act_param.active_type = (paddle::lite_api::ActivationType)relu_type;
+      act_param.active_type = (paddle::lite_metal_api::ActivationType)relu_type;
       break;
     default:
       has_relu = true;
       act_param.has_active = has_relu;
-      act_param.active_type = (paddle::lite_api::ActivationType)1;
+      act_param.active_type = (paddle::lite_metal_api::ActivationType)1;
   }
 
   for (int j = 0; j < m; ++j) {
@@ -188,7 +188,7 @@ bool test_gemm_int8(bool tra,
   std::unique_ptr<paddle::lite_metal::KernelContext> ctx1(
       new paddle::lite_metal::KernelContext);
   auto& ctx = ctx1->As<paddle::lite_metal::ARMContext>();
-  ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
+  ctx.SetRunMode(static_cast<paddle::lite_metal_api::PowerMode>(cls), ths);
   //! prepack
   Tensor tpackedA;
   int hblock = paddle::lite_metal::arm::math::get_hblock_int8(&ctx);

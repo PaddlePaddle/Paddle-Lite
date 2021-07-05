@@ -156,9 +156,9 @@ void PostQuantDynamicPerChannel(OpInfo* op_info,
 
 void PostQuantDynamicPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   int quant_bits = 16;
-  if (quant_type_ == lite_api::QuantType::QUANT_INT8) {
+  if (quant_type_ == lite_metal_api::QuantType::QUANT_INT8) {
     quant_bits = 8;
-  } else if (quant_type_ == lite_api::QuantType::QUANT_INT16) {
+  } else if (quant_type_ == lite_metal_api::QuantType::QUANT_INT16) {
     quant_bits = 16;
   } else {
     LOG(FATAL) << "Not support quant type:" << static_cast<int>(quant_type_);

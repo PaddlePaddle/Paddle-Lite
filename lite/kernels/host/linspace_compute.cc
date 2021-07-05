@@ -59,7 +59,7 @@ void LinspaceCompute<T, PType>::Run() {
       break;
     default:
       LOG(FATAL) << "Linspace op unsupport output data type: "
-                 << lite_api::PrecisionToStr(param.Out->precision());
+                 << lite_metal_api::PrecisionToStr(param.Out->precision());
   }
   return;
 }

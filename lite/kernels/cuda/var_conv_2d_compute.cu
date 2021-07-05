@@ -101,7 +101,7 @@ void VarConv2DCompute<T, PType>::PrepareForRun() {
   }
   if (param.fuse_relu) {
     conv_param_.activation_param.has_active = true;
-    conv_param_.activation_param.active_type = lite_api::ActivationType::kRelu;
+    conv_param_.activation_param.active_type = lite_metal_api::ActivationType::kRelu;
   }
   conv_param_.output->Resize({output_shape});
   conv_impl_.reset(new lite_metal::cuda::math::CudnnConv2D<T, PType>);

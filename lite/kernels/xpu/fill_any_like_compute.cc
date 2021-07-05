@@ -44,7 +44,7 @@ void FillAnyLikeCompute::Run() {
         break;
       default:
         LOG(FATAL) << "not supported x dtype: "
-                   << lite_api::PrecisionToStr(param.X->precision());
+                   << lite_metal_api::PrecisionToStr(param.X->precision());
         break;
     }
   }

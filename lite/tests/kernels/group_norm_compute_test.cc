@@ -195,7 +195,7 @@ void TestGroupNorm(Place place,
 #ifdef LITE_WITH_ARM
             if (place == TARGET(kARM)) {
               auto& ctx = tester->context()->As<ARMContext>();
-              ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 4);
+              ctx.SetRunMode(lite_metal_api::LITE_POWER_HIGH, 4);
             }
 #endif
             arena::Arena arena(std::move(tester), place, abs_error);

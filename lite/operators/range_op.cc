@@ -67,7 +67,7 @@ bool RangeOpLite::InferShapeImpl() const {
       break;
     default:
       LOG(FATAL) << "not supported precision type of range: "
-                 << lite_api::PrecisionToStr(param_.Start->precision());
+                 << lite_metal_api::PrecisionToStr(param_.Start->precision());
       break;
   }
   param_.Out->Resize(std::vector<int64_t>({size}));

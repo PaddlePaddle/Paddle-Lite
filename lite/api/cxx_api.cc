@@ -69,17 +69,17 @@ bool IsQuantizedMode(const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
 }
 
 void Predictor::SaveModel(const std::string &dir,
-                          lite_api::LiteModelType model_type,
+                          lite_metal_api::LiteModelType model_type,
                           bool record_info) {
   if (!program_) {
     GenRuntimeProgram();
   }
   program_->SaveToProgram(program_desc_);
   switch (model_type) {
-    case lite_api::LiteModelType::kProtobuf:
+    case lite_metal_api::LiteModelType::kProtobuf:
       SaveModelPb(dir, *program_->exec_scope(), *program_desc_.get(), true);
       break;
-    case lite_api::LiteModelType::kNaiveBuffer:
+    case lite_metal_api::LiteModelType::kNaiveBuffer:
       SaveModelNaive(dir, *program_->exec_scope(), *program_desc_.get());
       break;
     default:
@@ -289,10 +289,10 @@ const cpp::ProgramDesc &Predictor::program_desc() const {
 }
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
-void Predictor::Build(const lite_api::CxxConfig &config,
+void Predictor::Build(const lite_metal_api::CxxConfig &config,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
-                      lite_api::LiteModelType model_type) {
+                      lite_metal_api::LiteModelType model_type) {
   if (config.is_model_from_memory()) {
     LOG(INFO) << "Load model from memory.";
     Build(config.model_dir(),
@@ -317,10 +317,10 @@ void Predictor::Build(const std::string &model_path,
                       const std::string &param_file,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
-                      lite_api::LiteModelType model_type,
-                      const lite_api::CxxModelBuffer &model_buffer) {
+                      lite_metal_api::LiteModelType model_type,
+                      const lite_metal_api::CxxModelBuffer &model_buffer) {
   switch (model_type) {
-    case lite_api::LiteModelType::kProtobuf: {
+    case lite_metal_api::LiteModelType::kProtobuf: {
       bool combined_param = false;
       if (!model_buffer.is_empty() ||
           (!model_file.empty() && !param_file.empty())) {
@@ -334,7 +334,7 @@ void Predictor::Build(const std::string &model_path,
                   combined_param,
                   model_buffer);
     } break;
-    case lite_api::LiteModelType::kNaiveBuffer:
+    case lite_metal_api::LiteModelType::kNaiveBuffer:
       CHECK(!model_path.empty())
           << "NaiveBuffer backend only supported combined param";
       LoadModelNaiveFromFile(model_path, scope_.get(), program_desc_.get());

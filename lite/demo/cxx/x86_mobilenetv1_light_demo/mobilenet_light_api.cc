@@ -257,7 +257,7 @@ void RunModel(std::string model_dir,
   std::cout << "output tensor num:" << output_tensor_num << std::endl;
 
   for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
-    std::unique_ptr<const paddle::lite_api::Tensor> output_tensor =
+    std::unique_ptr<const paddle::lite_metal_api::Tensor> output_tensor =
         predictor->GetOutput(tidx);
     std::cout << "\n--- output tensor " << tidx << " ---" << std::endl;
     auto out_shape = output_tensor->shape();

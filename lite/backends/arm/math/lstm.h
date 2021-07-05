@@ -65,22 +65,22 @@ template <typename T>
 void activation(const T* din,
                 T* dout,
                 int size,
-                lite_api::ActivationType act_type,
+                lite_metal_api::ActivationType act_type,
                 int threads) {
   switch (act_type) {
-    case lite_api::ActivationType::kSigmoid:
+    case lite_metal_api::ActivationType::kSigmoid:
       act_sigmoid(din, dout, size, threads);
       break;
-    case lite_api::ActivationType::kSigmoid_v2:
+    case lite_metal_api::ActivationType::kSigmoid_v2:
       act_sigmoid(din, dout, size, threads);
       break;
-    case lite_api::ActivationType::kTanh:
+    case lite_metal_api::ActivationType::kTanh:
       act_tanh(din, dout, size, threads);
       break;
-    case lite_api::ActivationType::kTanh_v2:
+    case lite_metal_api::ActivationType::kTanh_v2:
       act_tanh(din, dout, size, threads);
       break;
-    case lite_api::ActivationType::kRelu:
+    case lite_metal_api::ActivationType::kRelu:
       act_relu(din, dout, size, threads);
       break;
     default:
@@ -101,9 +101,9 @@ struct LstmUnitFunctor {
                       int frame_size,
                       int batch_size,
                       T cell_clip,
-                      lite_api::ActivationType gate_act,
-                      lite_api::ActivationType cell_act,
-                      lite_api::ActivationType cand_act,
+                      lite_metal_api::ActivationType gate_act,
+                      lite_metal_api::ActivationType cell_act,
+                      lite_metal_api::ActivationType cand_act,
                       int threads) {
     for (int b = 0; b < batch_size; ++b) {
       const int temp_len = frame_size;
@@ -165,9 +165,9 @@ struct RnnLstmUnitFunctor {
                       int frame_size,
                       int batch_size,
                       T cell_clip,
-                      lite_api::ActivationType gate_act,
-                      lite_api::ActivationType cell_act,
-                      lite_api::ActivationType cand_act,
+                      lite_metal_api::ActivationType gate_act,
+                      lite_metal_api::ActivationType cell_act,
+                      lite_metal_api::ActivationType cand_act,
                       int threads) {
     for (int b = 0; b < batch_size; ++b) {
       const int temp_len = frame_size;

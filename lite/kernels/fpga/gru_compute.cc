@@ -37,15 +37,15 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-inline lite_api::ActivationType get_gru_act_type(const std::string& type) {
+inline lite_metal_api::ActivationType get_gru_act_type(const std::string& type) {
   if (type == "sigmoid") {
-    return lite_api::ActivationType::kSigmoid;
+    return lite_metal_api::ActivationType::kSigmoid;
   } else if (type == "tanh") {
-    return lite_api::ActivationType::kTanh;
+    return lite_metal_api::ActivationType::kTanh;
   } else if (type == "relu") {
-    return lite_api::ActivationType::kRelu;
+    return lite_metal_api::ActivationType::kRelu;
   } else if (type == "identity") {
-    return lite_api::ActivationType::kIndentity;
+    return lite_metal_api::ActivationType::kIndentity;
   } else {
     LOG(FATAL) << "unsupported activation type: " << type;
   }

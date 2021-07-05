@@ -138,7 +138,7 @@ class XPUConv2dPool2dFuser : public FuseBase {
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* max_output_tensor = scope->NewTensor(max_output_name);
-    max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_output_tensor->set_precision(paddle::lite_metal_api::PrecisionType::kFloat);
     max_output_tensor->set_persistable(true);
 
     op_desc.SetType("__xpu__block_fuse_op");

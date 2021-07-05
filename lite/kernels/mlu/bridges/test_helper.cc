@@ -25,7 +25,7 @@ namespace lite_metal {
 namespace subgraph {
 namespace mlu {
 
-template <lite_api::PrecisionType Dtype>
+template <lite_metal_api::PrecisionType Dtype>
 void PrepareInput(Graph* graph,
                   const std::string& input_name,
                   Tensor* input_tensor,

@@ -33,7 +33,7 @@
 namespace paddle {
 namespace lite_metal {
 
-using L3CacheSetMethod = lite_api::L3CacheSetMethod;
+using L3CacheSetMethod = lite_metal_api::L3CacheSetMethod;
 #if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
 
 typedef enum {
@@ -66,11 +66,11 @@ class DeviceInfo {
   int Setup();
   bool set_a53_valid();
 
-  void SetRunMode(lite_api::PowerMode mode, int thread_num);
+  void SetRunMode(lite_metal_api::PowerMode mode, int thread_num);
   void SetCache(int l1size, int l2size, int l3size);
   void SetArch(ARMArch arch) { arch_ = arch; }
 
-  lite_api::PowerMode mode() const { return mode_; }
+  lite_metal_api::PowerMode mode() const { return mode_; }
   int threads() const { return active_ids_.size(); }
   ARMArch arch() const { return arch_; }
   int l1_cache_size() const { return L1_cache_[active_ids_[0]]; }
@@ -151,7 +151,7 @@ class DeviceInfo {
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,
   // LITE_POWER_FULL stands for using all cores
-  static LITE_THREAD_LOCAL lite_api::PowerMode mode_;
+  static LITE_THREAD_LOCAL lite_metal_api::PowerMode mode_;
   static LITE_THREAD_LOCAL ARMArch arch_;
   static LITE_THREAD_LOCAL int mem_size_;
   static LITE_THREAD_LOCAL std::vector<int> active_ids_;
