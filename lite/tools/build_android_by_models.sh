@@ -28,6 +28,8 @@ rm -rf models_opt && mkdir models_opt
 for name in $models_names
 do
   ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/$name --record_tailoring_info=true
+  name_fp16 = $name + "_fp16"
+  ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/$name_fp16 --record_tailoring_info=true --enable_fp16=1
 done
 
 
@@ -64,6 +66,11 @@ cp -rf build.lite.android.armv7.$TOOL_CHAIN/inference_lite_lib.android.armv7 $re
 cp -rf build.lite.android.armv8.$TOOL_CHAIN/inference_lite_lib.android.armv8 $result_name/armv8.$TOOL_CHAIN
 cp build.opt/lite/api/opt $result_name/
 mv build.opt/lite/api/optimized_model $result_name
+
+# FP16 lib
+rm -rf build.lite.android.armv8.$TOOL_CHAIN
+./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL --with_arm82_fp16=ON
+cp -rf build.lite.android.armv8.$TOOL_CHAIN/inference_lite_lib.android.armv8 $result_name/armv8_fp16.$TOOL_CHAIN
 
 # step6. compress the result into tar file
 tar zcf $result_name.tar.gz $result_name
