@@ -300,6 +300,7 @@ void LightPredictor::WeightFP32ToFP16() {
   std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
   std::vector<std::string> fp16_ops{"conv2d",
                                     "depthwise_conv2d",
+                                    "conv2d_transpose",
                                     "fc",
                                     "gru",
                                     "sequence_conv",
