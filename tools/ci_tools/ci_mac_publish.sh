@@ -22,7 +22,6 @@ WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 BUILD_OPENCL=ON
 # Model download url
 mobilenet_v1_url=http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
-ssd_mobilenet_v3_large_url=https://paddlelite-data.bj.bcebos.com/doc_models/ssd_mobilenet_v3_large.tar
 
 ####################################################################################################
 # Functions of downloading model file
@@ -68,13 +67,10 @@ function publish_inference_lib {
       python$python_version -m pip install --force-reinstall  inference_lite_lib/python/install/dist/*.whl
       # download test model
       prepare_model mobilenet_v1 $mobilenet_v1_url
-      prepare_model ssd_mobilenet_v3_large $ssd_mobilenet_v3_large_url
       # test opt
       paddle_lite_opt
       paddle_lite_opt --model_dir=mobilenet_v1 --optimize_out=mobilenet_v1_arm
       paddle_lite_opt --model_dir=mobilenet_v1 --enable_fp16=1 --optimize_out=mobilenet_v1_arm_fp16
-      paddle_lite_opt --model_dir=ssd_mobilenet_v3_large --optimize_out=ssd_mobilenet_v3_large_arm
-      paddle_lite_opt --model_dir=ssd_mobilenet_v3_large --enable_fp16=1 --optimize_out=ssd_mobilenet_v3_large_arm_fp16
       paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86 --optimize_out=mobilenet_v1_x86
       paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86,opencl --optimize_out=mobilenet_v1_x86_opencl
       # test inference demo
