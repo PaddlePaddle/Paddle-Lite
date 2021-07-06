@@ -111,7 +111,7 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
-    program_->SaveToProgram(program_desc_);
+    program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
     auto predictor =
@@ -136,7 +136,7 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
-    program_->SaveToProgram(program_desc_);
+    program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
     auto predictor = std::make_shared<Predictor>(
