@@ -136,7 +136,7 @@ void prepackA_trans_6x8(float *out,
                         int k0,
                         int kmax);
 
-// v7: for kA72(three emit), 6x8
+// v7: for kA72, 6x8
 void sgemm_prepacked_6x8(bool is_transB,
                          int M,
                          int N,
@@ -185,7 +185,7 @@ void prepackA_trans_4x8(float *out,
                         int k0,
                         int kmax);
 
-// v7: for kA73(double emit), 4x8; M <= 4
+// v7: for kA73, 4x8; M <= 4
 void sgemm_prepacked_4x8(bool is_transB,
                          int M,
                          int N,
