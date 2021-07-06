@@ -67,7 +67,7 @@ cp -rf build.lite.android.armv8.$TOOL_CHAIN/inference_lite_lib.android.armv8 $re
 cp build.opt/lite/api/opt $result_name/
 mv build.opt/lite/api/optimized_model $result_name
 
-# FP16 lib
+# step 6. compiling FP16 lib
 rm -rf build.lite.android.armv8.$TOOL_CHAIN
 ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL --with_arm82_fp16=ON
 cp -rf build.lite.android.armv8.$TOOL_CHAIN/inference_lite_lib.android.armv8 $result_name/armv8_fp16.$TOOL_CHAIN
