@@ -214,6 +214,20 @@ class VariablePlaceInferencePass : public DebugPass {
             UpdateTypeFrom(var_type, decl_type);
           }
         }
+
+        // only for the output(index) of multiclass_nms2 in the xpu model
+        if (op_type == "multiclass_nms2" && arg_name == "Index") {
+          bool is_xpu_model = false;
+          for (auto place : graph->valid_places()) {
+            if (place.target == TARGET(kXPU)) {
+              is_xpu_model = true;
+              break;
+            }
+          }
+          if (is_xpu_model) {
+            *var_type = decl_type;
+          }
+        }
       }
     }
   }
