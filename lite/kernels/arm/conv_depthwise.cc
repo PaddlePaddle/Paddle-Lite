@@ -58,6 +58,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
       flag_trans_weights_ = true;
     }
     impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
+
     KERNEL_FUNC_NAME("conv_depthwise_3x3_fp32")
   } else if (kw == 5) {
     auto strides = param.strides;
@@ -166,6 +167,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     ReInitWhenNeeded();
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_fp32;
     KERNEL_FUNC_NAME("conv_depthwise_3x3_int8_fp32")
+
   } else if (kw == 5) {
     // trans weights
     impl_ = lite::arm::math::conv_depthwise_5x5_int8_fp32;
@@ -330,6 +332,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
   impl_(CONV_DW_PARAM, w_scale_.data());
 }
+
 PROFILE_INFO(kInt8, kFloat)
 
 template <>
@@ -362,6 +365,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 }
 
 PROFILE_INFO(kInt8, kInt8)
+
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& param = this->Param<param_t>();
@@ -444,7 +448,8 @@ void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<float16_t>();
-  const auto* w_data = param.filter->data<float16_t>();
+  const auto* w_data = flag_trans_weights_ ? weights_.data<float16_t>()
+                                           : param.filter->data<float16_t>();
   const auto* b_data = param.bias ? param.bias->data<float16_t>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float16_t>();
