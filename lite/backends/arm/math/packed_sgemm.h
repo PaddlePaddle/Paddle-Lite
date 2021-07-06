@@ -43,6 +43,17 @@ inline int get_hblock(ARMContext* ctx) {
 }
 #endif  // __aarch64__
 
+#define X_BLOCK_COMPUTE(l2_cache, MBLOCK, NBLOCK, M, N, K)                  \
+  int x_block = (l2_cache - (MBLOCK * K)) / (sizeof(float) * (K + MBLOCK)); \
+  x_block /= NBLOCK;                                                        \
+  x_block = (x_block == 0) ? 1 : x_block;                                   \
+  x_block *= NBLOCK;                                                        \
+  int x_num = (N + (x_block - 1)) / x_block;                                \
+  x_block = (N + x_num - 1) / x_num;                                        \
+  x_block = (x_block + NBLOCK - 1) / NBLOCK;                                \
+  x_block *= NBLOCK;                                                        \
+  x_block = x_block < NBLOCK ? NBLOCK : x_block;
+
 void prepackA(float* out,
               const float* in,
               float alpha,
@@ -63,6 +74,11 @@ void prepackA(TensorLite* tout,
               bool is_trans,
               ARMContext* ctx);
 
+void loadb(
+    float* out, const float* in, int ldin, int k0, int kmax, int n0, int nmax);
+
+void loadb_trans(
+    float* out, const float* in, int ldin, int k0, int kmax, int n0, int nmax);
 void sgemm_prepack(bool is_transB,
                    int M,
                    int N,
@@ -77,7 +93,7 @@ void sgemm_prepack(bool is_transB,
                    bool has_bias,
                    const operators::ActivationParam act_param,
                    ARMContext* ctx);
-
+#undef X_BLOCK_COMPUTE
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
