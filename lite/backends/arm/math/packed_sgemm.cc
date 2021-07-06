@@ -411,8 +411,22 @@ void sgemm_prepack(bool is_transB,
         (has_act == true && act_type == lite_api::ActivationType::kRelu);
     bool has_beta = fabsf(beta) > 1e-8f ? true : false;
     bool a53_sgemm = act_flag && !has_beta;
-    if (a53_sgemm) {
+    if (a53_sgemm && ctx->arch() == kA53) {
       sgemm_prepacked_6x8_a53(is_transB,
+                              M,
+                              N,
+                              K,
+                              A_packed,
+                              B,
+                              ldb,
+                              C,
+                              ldc,
+                              bias,
+                              has_bias,
+                              static_cast<int>(has_act),
+                              ctx);
+    } else if (a53_sgemm && ctx->arch() == kA35) {
+      sgemm_prepacked_6x8_a35(is_transB,
                               M,
                               N,
                               K,
@@ -6384,6 +6398,19 @@ void sgemm_prepacked_4x4(bool is_transB,
     }
   }
 }
+#undef INIT_4
+#undef INIT_4_A53
+#undef FMLA_N0
+#undef FMLA_N1
+#undef FMLA_N2
+#undef FMLA_N3
+#undef INS_4_0
+#undef INS_4_1
+#undef FADD_8
+#undef FMAX
+#undef FMIN
+#undef LEAKY1
+#undef LEAKY2
 #else  // __aarch64__
 /**
  * \brief gemm with ablock = 6, bblock = 8, output 6x8
