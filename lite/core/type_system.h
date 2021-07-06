@@ -208,6 +208,8 @@ static bool DataLayoutCompatible(const Type& a, const Type& b) {
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
   return a.IsVoid() ||  //
          (((a.IsTensor() && b.IsTensor()) ||
+           (a.IsTensorList() && b.IsTensor()) ||
+           (a.IsTensor() && b.IsTensorList()) ||
            (a.IsTensorList() && b.IsTensorList())) &&
           (a.precision() == b.precision() ||  //
            b.precision() == PRECISION(kAny) ||
