@@ -243,6 +243,10 @@ __kernel void conv2d_1x1_opt(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
+      out_nh >= global_size_dim2) {
+    return;
+  }
 
   int out_w0 = out_w;
   int out_w1 = out_w + global_size_dim1;
@@ -543,6 +547,10 @@ __kernel void conv2d_1x1_h1w4c1(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
+      out_nh >= global_size_dim2) {
+    return;
+  }
 
   int out_w0 = out_w;
   int out_w1 = out_w + global_size_dim1;
@@ -734,6 +742,10 @@ __kernel void conv2d_1x1_h1w2c1(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
+      out_nh >= global_size_dim2) {
+    return;
+  }
 
   int out_w0 = out_w;
   int out_w1 = out_w + global_size_dim1;
@@ -858,6 +870,10 @@ __kernel void conv2d_1x1_h1w5c1(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
+      out_nh >= global_size_dim2) {
+    return;
+  }
 
   int out_w0 = out_w;
   int out_w1 = out_w + global_size_dim1;
@@ -1069,6 +1085,10 @@ __kernel void conv2d_1x1_h1w7c1(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
+      out_nh >= global_size_dim2) {
+    return;
+  }
 
   int out_w0 = out_w;
   int out_w1 = out_w + global_size_dim1;
@@ -1338,6 +1358,10 @@ __kernel void conv2d_1x1_h2w2c1(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1) * 2;
   const int out_nh = get_global_id(2) * 2;
+  if (out_c >= global_size_dim0 || get_global_id(1) >= global_size_dim1 ||
+      get_global_id(2) >= global_size_dim2) {
+    return;
+  }
 
   int in_pos_w0 = out_w * stride + offset;
   int in_pos_w1 = (out_w + 1) * stride + offset;
@@ -1532,6 +1556,11 @@ __kernel void conv2d_1x1_h2w2c2(
   const int out_c = get_global_id(0) * 2;
   const int out_w = get_global_id(1) * 2;
   const int out_nh = get_global_id(2) * 2;
+  if (get_global_id(0) >= (global_size_dim0 + 1) / 2 ||
+      get_global_id(1) >= global_size_dim1 ||
+      get_global_id(2) >= global_size_dim2) {
+    return;
+  }
 
   int in_pos_w0 = out_w * stride + offset;
   int in_pos_w1 = (out_w + 1) * stride + offset;
@@ -1847,6 +1876,10 @@ __kernel void conv2d_1x1_mali_h1w2c1(
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
+      out_nh >= global_size_dim2) {
+    return;
+  }
 
   int out_w0 = 2 * out_w;
   int out_w1 = 2 * out_w + 1;
@@ -1970,6 +2003,10 @@ __kernel void conv2d_1x1_mali_h1w2c2(
   const int out_c = 2 * get_global_id(0);
   const int out_w = 2 * get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (get_global_id(0) >= (global_size_dim0 + 1) / 2 ||
+      get_global_id(1) >= global_size_dim1 || out_nh >= global_size_dim2) {
+    return;
+  }
 
   int pos_in_w0_x = out_w * stride + offset;
   int pos_in_w1_x = (out_w + 1) * stride + offset;
@@ -2146,6 +2183,11 @@ __kernel void conv2d_1x1_mali_h2w2c2(
   const int out_c = 2 * get_global_id(0);
   const int out_w = 2 * get_global_id(1);
   const int out_nh = 2 * get_global_id(2);
+  if (get_global_id(0) >= (global_size_dim0 + 1) / 2 ||
+      get_global_id(1) >= global_size_dim1 ||
+      get_global_id(2) >= global_size_dim2) {
+    return;
+  }
 
   int pos_in_w0_x = out_w * stride + offset;
   int pos_in_w1_x = (out_w + 1) * stride + offset;
