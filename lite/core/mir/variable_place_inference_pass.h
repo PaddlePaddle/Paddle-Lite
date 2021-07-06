@@ -94,6 +94,8 @@ class VariablePlaceInferencePass : public DebugPass {
     }
     if ((*a)->IsTensor() && b->IsTensor()) {
       *a = LiteType::GetTensorTy(target, precision, layout);
+    } else if ((*a)->IsTensor() && b->IsTensorList()) {
+      *a = LiteType::GetTensorTy(target, precision, layout);
     } else if ((*a)->IsTensorList() && b->IsTensorList()) {
       *a = LiteType::GetTensorListTy(target, precision, layout);
     }
