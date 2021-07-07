@@ -77,6 +77,7 @@ void sgemm_prepack(bool is_transB,
                    bool has_bias,
                    const operators::ActivationParam act_param,
                    ARMContext* ctx);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
