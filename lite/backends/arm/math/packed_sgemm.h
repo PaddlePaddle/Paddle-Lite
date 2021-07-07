@@ -93,7 +93,7 @@ void sgemm_prepack(bool is_transB,
                    bool has_bias,
                    const operators::ActivationParam act_param,
                    ARMContext* ctx);
-#undef X_BLOCK_COMPUTE
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

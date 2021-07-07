@@ -834,6 +834,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
     }
   }
 }
+#undef FMLA_N8X6
 #else
 void sgemm_prepacked_6x8_a35(bool is_transB,
                              int M,
