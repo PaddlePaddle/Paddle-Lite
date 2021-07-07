@@ -181,7 +181,8 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
                                     float abs_error) {
   CHECK(inst_tensor);
   CHECK(base_tensor);
-
+  std::cout << "inst_tensor->dims()" << inst_tensor->dims() << std::endl;
+  std::cout << "base_tensor->dims()" << base_tensor->dims() << std::endl;
   CHECK(ShapeEquals(inst_tensor->dims(), base_tensor->dims()));
 
   CHECK(inst_tensor->lod() == base_tensor->lod()) << "lod not match";

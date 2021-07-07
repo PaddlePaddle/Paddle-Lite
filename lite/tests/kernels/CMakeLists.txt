@@ -21,6 +21,7 @@ set(test_kernel_deps
 
 lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_conv_transpose_compute SRCS conv_transpose_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_deformable_conv_compute SRCS deformable_conv_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_scale_compute SRCS scale_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_pow_compute SRCS pow_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_shuffle_channel_compute SRCS shuffle_channel_compute_test.cc DEPS ${test_kernel_deps})

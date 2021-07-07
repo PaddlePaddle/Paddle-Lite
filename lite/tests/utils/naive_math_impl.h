@@ -751,7 +751,6 @@ void deformable_conv_basic(const Dtype1* in_data,
                                                     cur_width,
                                                     map_h,
                                                     map_w);
-
                     if (modulated) {
                       // use mask
                       const float* mask_ptr =

@@ -122,7 +122,8 @@ class OpDesc : public OpDescAPI {
     auto pair = std::make_pair(it, attr_it);
     CHECK(pair.second->second == OpDataTypeTrait<T>::AT)
         << "required type is " << OpDataTypeTrait<T>::ATN
-        << " not match the true type";
+        << " not match the true type"
+        << "-- names:" << name;
     return pair.first->second.get<T>();
   }
 
