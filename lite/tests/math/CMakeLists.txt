@@ -19,6 +19,7 @@ if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_MLU) AND (LITE
           if(${ANDROID_NDK_MAJOR} GREATER "17")
             lite_cc_test(conv_fp16_compute_test SRCS conv_fp16_compute_test.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
             lite_cc_test(fc_fp16_compute_test SRCS fc_fp16_compute_test.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
+            lite_cc_test(gemm_fp16_compute_test SRCS gemm_fp16_compute_test.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
             lite_cc_test(pool_fp16_compute_test SRCS pool_fp16_compute_test.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
             lite_cc_test(softmax_fp16_compute_test SRCS softmax_fp16_compute_test.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
           endif()

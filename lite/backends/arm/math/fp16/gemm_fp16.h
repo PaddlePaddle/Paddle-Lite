@@ -48,7 +48,7 @@ void prepackA_fp16(void* out,
 
 void prepackA_fp16(TensorLite* tout,
                    const TensorLite& tin,
-                   float alpha,
+                   float16_t alpha,
                    int m,
                    int k,
                    int group,

@@ -99,9 +99,9 @@ void prepackA_fp16(TensorLite *tout,
     lda = m;
   }
   for (int g = 0; g < group; ++g) {
-    const float *weights_group = tin.data<float>() + g * m * k;
-    float *weights_trans_ptr =
-        tout->mutable_data<float>() + g * group_size_round_up;
+    const float16_t *weights_group = tin.data<float16_t>() + g * m * k;
+    float16_t *weights_trans_ptr =
+        tout->mutable_data<float16_t>() + g * group_size_round_up;
     prepackA_fp16(weights_trans_ptr,
                   weights_group,
                   alpha,
@@ -181,11 +181,11 @@ void prepackA_8x16(float16_t *out,
                    const int k0,
                    const int kmax) {
   int x_len = kmax - k0;
-  uint16_t zerobuff[x_len];  // NOLINT
-  memset(zerobuff, 0, sizeof(uint16_t) * x_len);
+  float16_t zerobuff[x_len];  // NOLINT
+  memset(zerobuff, 0, sizeof(float16_t) * x_len);
 
-  uint16_t *dout = reinterpret_cast<uint16_t *>(out);
-  const uint16_t *inptr = reinterpret_cast<const uint16_t *>(in);
+  float16_t *dout = out;
+  const float16_t *inptr = in;
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
 
   int cnt = x_len >> 3;
@@ -195,26 +195,26 @@ void prepackA_8x16(float16_t *out,
   float16x8_t valpha = vdupq_n_f16(alpha);
 #pragma omp parallel for
   for (int y = m0; y < mmax; y += 8) {
-    uint16_t *outptr = dout + (y - m0) * x_len;
-    const uint16_t *inptr0 = inptr + y * ldin + k0;
-    const uint16_t *inptr1 = inptr0 + ldin;
-    const uint16_t *inptr2 = inptr1 + ldin;
-    const uint16_t *inptr3 = inptr2 + ldin;
-    const uint16_t *inptr4 = inptr3 + ldin;
-    const uint16_t *inptr5 = inptr4 + ldin;
-    const uint16_t *inptr6 = inptr5 + ldin;
-    const uint16_t *inptr7 = inptr6 + ldin;
+    float16_t *outptr = dout + (y - m0) * x_len;
+    const float16_t *inptr0 = inptr + y * ldin + k0;
+    const float16_t *inptr1 = inptr0 + ldin;
+    const float16_t *inptr2 = inptr1 + ldin;
+    const float16_t *inptr3 = inptr2 + ldin;
+    const float16_t *inptr4 = inptr3 + ldin;
+    const float16_t *inptr5 = inptr4 + ldin;
+    const float16_t *inptr6 = inptr5 + ldin;
+    const float16_t *inptr7 = inptr6 + ldin;
     if ((y + 7) >= mmax) {
-      ptr_acquire_a8<uint16_t>(zerobuff,
-                               inptr1,
-                               inptr2,
-                               inptr3,
-                               inptr4,
-                               inptr5,
-                               inptr6,
-                               inptr7,
-                               (y + 7),
-                               mmax);
+      ptr_acquire_a8<float16_t>(zerobuff,
+                                inptr1,
+                                inptr2,
+                                inptr3,
+                                inptr4,
+                                inptr5,
+                                inptr6,
+                                inptr7,
+                                (y + 7),
+                                mmax);
     }
     int cnt_col = cnt;
     // clang-format off
@@ -394,16 +394,15 @@ void prepackA_trans_8x16(float16_t *out,
                          const int mmax,
                          const int k0,
                          const int kmax) {
-  uint16_t *outptr = reinterpret_cast<uint16_t *>(out);
-  const uint16_t *inptr =
-      reinterpret_cast<const uint16_t *>(in) + k0 * ldin + m0;
+  float16_t *outptr = out;
+  const float16_t *inptr = in + k0 * ldin + m0;
 
   uint16_t mask_buffer[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   int x_len = mmax - m0;
   int y_len = kmax - k0;
   int cnt = x_len >> 3;
   uint16_t right_remain = x_len & 7;
-  int stride_out = 8 * y_len;
+  int stride_out = 16 * y_len;
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
 
   uint16x8_t vzero = vdupq_n_u16(0);
@@ -413,11 +412,11 @@ void prepackA_trans_8x16(float16_t *out,
 
 #pragma omp parallel for
   for (int y = 0; y < y_len - 3; y += 4) {
-    const uint16_t *ptr0 = inptr + y * ldin;
-    const uint16_t *ptr1 = ptr0 + ldin;
-    const uint16_t *ptr2 = ptr1 + ldin;
-    const uint16_t *ptr3 = ptr2 + ldin;
-    uint16_t *outptr_row_col = outptr + y * 8;
+    const float16_t *ptr0 = inptr + y * ldin;
+    const float16_t *ptr1 = ptr0 + ldin;
+    const float16_t *ptr2 = ptr1 + ldin;
+    const float16_t *ptr3 = ptr2 + ldin;
+    float16_t *outptr_row_col = outptr + y * 8;
     int cnt_col = cnt;
     asm volatile(
         "cmp %w[cnt], #1                            \n"
@@ -484,8 +483,8 @@ void prepackA_trans_8x16(float16_t *out,
   }
 #pragma omp parallel for
   for (int y = 4 * (y_len / 4); y < y_len; ++y) {
-    const uint16_t *ptr0 = inptr + y * ldin;
-    uint16_t *outptr_row_col = outptr + y * 8;
+    const float16_t *ptr0 = inptr + y * ldin;
+    float16_t *outptr_row_col = outptr + y * 8;
     int cnt_col = cnt;
     asm volatile(
         "cmp %w[cnt], #1                            \n"
@@ -551,9 +550,7 @@ void loadb(float16_t *out,
   int rem_cnt = right_remain >> 2;
   int rem_rem = right_remain & 3;
 
-  // uint16x4_t vzero = vdup_n_u16(0);
-  // uint16x4_t vmask = vclt_u16(vld1_u16(mask_buffer), vdup_n_u16(rem_rem));
-  int cnt_num = (x_len >= 16) ? 16 : 4;
+  int cnt_num = (x_len >= 16) ? 16 : (x_len >= 4 ? 4 : 1);
   int stride_out = cnt_num * y_len * 2;
   int stride = y_len << 3;  // 4 * y_len * 2
   // rem_cnt > 0 ? (16 - 4) : (16 - 1)
@@ -580,79 +577,59 @@ void loadb(float16_t *out,
     int rem_rem_rem = rem_rem;
     int temp = y_line ? stride_w * (y / 4) : 0;
     int temp2 = (y > 0 && rem_cnt > 0) ? stride_w2 * (y / 4) : 0;
-    asm volatile(
-        "cmp %w[cnt], #1                            \n"
-        "prfm   pldl1keep, [%[ptr0]]                \n"
-        "prfm   pldl1keep, [%[ptr1]]                \n"
-        "prfm   pldl1keep, [%[ptr2]]                \n"
-        "prfm   pldl1keep, [%[ptr3]]                \n"
-        "blt 1f                                     \n"
-        "0:                                         \n"
-        "ldp q0, q1, [%[ptr0]], #32                 \n"
-        "ldp q2, q3, [%[ptr1]], #32                 \n"
-        "ldp q4, q5, [%[ptr2]], #32                 \n"
-        "ldp q6, q7, [%[ptr3]], #32                 \n"
-        "subs %w[cnt], %w[cnt], #1                  \n"
-        "stp q0, q1, [%[outptr]]                    \n"
-        "stp q2, q3, [%[outptr], #32]               \n"
-        "stp q4, q5, [%[outptr], #64]               \n"
-        "stp q6, q7, [%[outptr], #96]               \n"
-        // outptr+= stride_out(16k)
-        "add %[outptr], %[outptr], %[stride_out]    \n"
-        "bne 0b                                     \n"
-        "1:                                         \n"
-        "cmp %w[right_remain], #1                   \n"
-        "blt 2f                                     \n"
-        // rem_cnt > 0
-        "cmp %w[rem_cnt], #1                        \n"
-        "sub %[outptr], %[outptr], %[temp]          \n"
-        "blt 3f                                     \n"
-        "4:                                         \n"
-        "ldr d0, [%[ptr0]], #8                      \n"
-        "ldr d1, [%[ptr1]], #8                      \n"
-        "ldr d2, [%[ptr2]], #8                      \n"
-        "ldr d3, [%[ptr3]], #8                      \n"
-        "subs %w[rem_cnt], %w[rem_cnt], #1          \n"
-        "str d0, [%[outptr]]                        \n"
-        "str d1, [%[outptr], #0x08]                 \n"
-        "str d2, [%[outptr], #0x10]                 \n"
-        "str d3, [%[outptr], #0x18]                 \n"
-        // outptr+= stride
-        "add %[outptr], %[outptr], %[stride]        \n"
-        "bne 4b                                     \n"
-        "sub %[outptr], %[outptr], %[temp2]         \n"
-        "3:                                         \n"
-        // rem_rem > 0
-        "cmp %w[rem_rem], #1                        \n"
-        "blt 2f                                     \n"
-        "5:                                         \n"
-        "ldr s0, [%[ptr0]], #2                      \n"
-        "ldr s1, [%[ptr1]], #2                      \n"
-        "ldr s2, [%[ptr2]], #2                      \n"
-        "ldr s3, [%[ptr3]], #2                      \n"
-        "subs %w[rem_rem], %w[rem_rem], #1          \n"
-        "str s0, [%[outptr]]                        \n"
-        "str s1, [%[outptr], #0x02]                 \n"
-        "str s2, [%[outptr], #0x04]                 \n"
-        "str s3, [%[outptr], #0x06]                 \n"
-        "add %[outptr], %[outptr], %[stride_k]      \n"
-        "bne 5b                                     \n"
-        "2:                                         \n"
-        : [ptr0] "+r"(ptr0),
-          [ptr1] "+r"(ptr1),
-          [ptr2] "+r"(ptr2),
-          [ptr3] "+r"(ptr3),
-          [outptr] "+r"(outptr_row_col),
-          [rem_cnt] "+r"(cnt_rem_num),
-          [rem_rem] "+r"(rem_rem_rem),
-          [cnt] "+r"(cnt_col)
-        : [right_remain] "r"(right_remain),
-          [stride_out] "r"(stride_out),
-          [stride] "r"(stride),
-          [stride_k] "r"(stride_k),
-          [temp2] "r"(temp2),
-          [temp] "r"(temp)
-        : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+    if (cnt > 0) {
+      for (int i = 0; i < cnt; i++) {
+        uint16x8_t v0 = vld1q_u16(ptr0);
+        uint16x8_t v01 = vld1q_u16(ptr0 + 8);
+        uint16x8_t v1 = vld1q_u16(ptr1);
+        uint16x8_t v11 = vld1q_u16(ptr1 + 8);
+        uint16x8_t v2 = vld1q_u16(ptr2);
+        uint16x8_t v21 = vld1q_u16(ptr2 + 8);
+        vst1q_u16(outptr_row_col, v0);
+        uint16x8_t v3 = vld1q_u16(ptr3);
+        vst1q_u16(outptr_row_col + 8, v01);
+        uint16x8_t v31 = vld1q_u16(ptr3 + 8);
+        vst1q_u16(outptr_row_col + 16, v1);
+        ptr0 += 16;
+        vst1q_u16(outptr_row_col + 24, v11);
+        ptr1 += 16;
+        vst1q_u16(outptr_row_col + 32, v2);
+        ptr2 += 16;
+        vst1q_u16(outptr_row_col + 40, v21);
+        ptr3 += 16;
+        vst1q_u16(outptr_row_col + 48, v3);
+        vst1q_u16(outptr_row_col + 56, v31);
+        outptr_row_col += (stride_out / 2);
+      }
+      outptr_row_col -= (temp / 2);
+    }
+    if (rem_cnt > 0) {
+      for (int i = 0; i < rem_cnt; i++) {
+        uint16x4_t v0 = vld1_u16(ptr0);
+        uint16x4_t v1 = vld1_u16(ptr1);
+        uint16x4_t v2 = vld1_u16(ptr2);
+        uint16x4_t v3 = vld1_u16(ptr3);
+        ptr0 += 4;
+        vst1_u16(outptr_row_col, v0);
+        ptr1 += 4;
+        vst1_u16(outptr_row_col + 4, v1);
+        ptr2 += 4;
+        vst1_u16(outptr_row_col + 8, v2);
+        ptr3 += 4;
+        vst1_u16(outptr_row_col + 12, v3);
+        outptr_row_col += (stride / 2);
+      }
+      outptr_row_col -= (temp2 / 2);
+    }
+    if (rem_rem > 0) {
+      for (int i = 0; i < rem_rem; i++) {
+        outptr_row_col[0] = *ptr0++;
+        outptr_row_col[1] = *ptr1++;
+        outptr_row_col[2] = *ptr2++;
+        outptr_row_col[3] = *ptr3++;
+        outptr_row_col += (stride_k / 2);
+      }
+    }
   }
 
 #pragma omp parallel for
@@ -669,55 +646,32 @@ void loadb(float16_t *out,
     // (y - cnt_y) * (4 - 1) * 2
     int temp2 =
         (y > 0 && rem_cnt > 0) ? (stride_w2 * (y / 4) + (y - cnt_y) * 6) : 0;
-    asm volatile(
-        "cmp %w[cnt], #1                            \n"
-        "prfm   pldl1keep, [%[ptr0]]                \n"
-        "blt 1f                                     \n"
-        "0:                                         \n"
-        "ldp q0, q1, [%[ptr0]], #32                 \n"
-        "prfm   pldl1keep, [%[ptr0]]                \n"
-        "subs %w[cnt], %w[cnt], #1                  \n"
-        "stp q0, q1, [%[outptr]]                    \n"
-        "add %[outptr], %[outptr], %[stride_out]    \n"
-        "bne 0b                                     \n"
-        "1:                                         \n"
-        "cmp %w[right_remain], #1                   \n"
-        "blt 2f                                     \n"
-        // rem_cnt > 0
-        "cmp %w[rem_cnt], #1                        \n"
-        "sub %[outptr], %[outptr], %[temp]          \n"
-        "blt 3f                                     \n"
-        "4:                                         \n"
-        "ldr d0, [%[ptr0]], #8                      \n"
-        "subs %w[rem_cnt], %w[rem_cnt], #1          \n"
-        "str d0, [%[outptr]]                        \n"
-        // outptr+= stride
-        "add %[outptr], %[outptr], %[stride]        \n"
-        "bne 4b                                     \n"
-        "sub %[outptr], %[outptr], %[temp2]         \n"
-        "3:                                         \n"
-        // rem_rem > 0
-        "cmp %w[rem_rem], #1                        \n"
-        "blt 2f                                     \n"
-        "5:                                         \n"
-        "ldr s0, [%[ptr0]], #2                      \n"
-        "subs %w[rem_rem], %w[rem_rem], #1          \n"
-        "str s0, [%[outptr]]                        \n"
-        "add %[outptr], %[outptr], %[stride_k]      \n"
-        "bne 5b                                     \n"
-        "2:                                         \n"
-        : [ptr0] "+r"(ptr0),
-          [outptr] "+r"(outptr_row_col),
-          [rem_cnt] "+r"(cnt_rem_num),
-          [rem_rem] "+r"(rem_rem_rem),
-          [cnt] "+r"(cnt_col)
-        : [right_remain] "r"(right_remain),
-          [stride_out] "r"(stride_out),
-          [stride] "r"(stride),
-          [stride_k] "r"(stride_k),
-          [temp2] "r"(temp2),
-          [temp] "r"(temp)
-        : "cc", "memory", "v0", "v1");
+    if (cnt > 0) {
+      for (int i = 0; i < cnt; i++) {
+        uint16x8_t v0 = vld1q_u16(ptr0);
+        uint16x8_t v1 = vld1q_u16(ptr0 + 8);
+        ptr0 += 16;
+        vst1q_u16(outptr_row_col, v0);
+        vst1q_u16(outptr_row_col + 8, v1);
+        outptr_row_col += (stride_out / 2);
+      }
+      outptr_row_col -= (temp / 2);
+    }
+    if (rem_cnt > 0) {
+      for (int i = 0; i < rem_cnt; i++) {
+        uint16x4_t v0 = vld1_u16(ptr0);
+        ptr0 += 4;
+        vst1_u16(outptr_row_col, v0);
+        outptr_row_col += (stride / 2);
+      }
+      outptr_row_col -= (temp2 / 2);
+    }
+    if (rem_rem > 0) {
+      for (int i = 0; i < rem_rem; i++) {
+        *outptr_row_col = *ptr0++;
+        outptr_row_col += (stride_k / 2);
+      }
+    }
   }
 }
 
@@ -833,7 +787,7 @@ void loadb_trans(float16_t *out,
         "prfm   pldl1keep, [%[inptr6]]        \n"
         "prfm   pldl1keep, [%[inptr7]]        \n"
         TRANS_C8
-        "sub %w[cnt], %w[cnt], #1             \n"
+        "subs %w[cnt], %w[cnt], #1            \n"
         "str q8, [%[outptr], #16]             \n"
         "str q12, [%[outptr], #48]            \n"
         "str q10, [%[outptr], #80]            \n"
@@ -843,7 +797,7 @@ void loadb_trans(float16_t *out,
         "str q11, [%[outptr], #208]           \n"
         "str q15, [%[outptr], #240]           \n"
         "add %[outptr], %[outptr], #256\n"
-        "bne 1b                               \n"
+        "bne 0b                               \n"
         "1:                                   \n"
         : [inptr0] "+r"(inptr0),
           [inptr1] "+r"(inptr1),
@@ -916,12 +870,12 @@ void loadb_trans(float16_t *out,
         "prfm   pldl1keep, [%[inptr1]]        \n"
         "prfm   pldl1keep, [%[inptr2]]        \n"
         "prfm   pldl1keep, [%[inptr3]]        \n"
-        "blt 1f                               \n"
-        "0:                                   \n"
         "ld1 {v0.8h}, [%[inptr0]], #16        \n"
         "ld1 {v1.8h}, [%[inptr1]], #16        \n"
         "ld1 {v2.8h}, [%[inptr2]], #16        \n"
         "ld1 {v3.8h}, [%[inptr3]], #16        \n"
+        "blt 1f                               \n"
+        "0:                                   \n"
         // a0b0a2b2a4b4a6b6
         "trn1 v8.8h, v0.8h, v1.8h             \n"
         "trn2 v9.8h, v0.8h, v1.8h             \n"
@@ -945,13 +899,17 @@ void loadb_trans(float16_t *out,
         "trn2 v11.2d, v13.2d, v15.2d          \n"
         "ld1 {v3.8h}, [%[inptr3]], #16        \n"
         "str q8, [%[outptr]]                  \n"
-        "sub %w[cnt], %w[cnt], #1             \n"
+        "subs %w[cnt], %w[cnt], #1            \n"
         "str q10, [%[outptr], #0x10]          \n"
         "str q9,  [%[outptr], #0x20]          \n"
         "str q11, [%[outptr], #0x30]          \n"
         "add %[outptr], %[outptr], #64        \n"
-        "bne 1b                               \n"
+        "bne 0b                               \n"
         "1:                                   \n"
+        "sub %[inptr0], %[inptr0], #16        \n"
+        "sub %[inptr1], %[inptr1], #16        \n"
+        "sub %[inptr2], %[inptr2], #16        \n"
+        "sub %[inptr3], %[inptr3], #16        \n"
         : [inptr0] "+r"(inptr0),
           [inptr1] "+r"(inptr1),
           [inptr2] "+r"(inptr2),
@@ -1184,7 +1142,7 @@ void gemm_prepack_8x16(bool is_transB,
                 act_param.Leaky_relu_alpha);
   }
 
-  float16x8_t valpha = vdupq_n_f16(local_alpha);
+  float16x8_t valpha = vdupq_n_f16(static_cast<float16_t>(local_alpha));
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
   X_BLOCK_COMPUTE(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
   float16x8_t vbeta = vdupq_n_f16(beta);
@@ -1290,7 +1248,7 @@ void gemm_prepack_8x16(bool is_transB,
               "fmla v10.4h, v2.4h, %[vbeta].4h    \n"
               "ldr d5, [%[c_ptr6]]                \n"
               "fmla v12.4h, v4.4h, %[vbeta].4h    \n"
-              "ldr d6, [%[c_ptr7]]                \n"
+              "ldr d7, [%[c_ptr7]]                \n"
               "fmla v14.4h, v6.4h, %[vbeta].4h    \n"
               "fmla v16.4h, v1.4h, %[vbeta].4h    \n"
               "fmla v18.4h, v3.4h, %[vbeta].4h    \n"
@@ -1426,7 +1384,7 @@ void gemm_prepack_8x16(bool is_transB,
               "fmla v10.4h, v2.4h, %[vbeta].4h    \n"
               "ldr d5, [%[c_ptr6]]                \n"
               "fmla v12.4h, v4.4h, %[vbeta].4h    \n"
-              "ldr d6, [%[c_ptr7]]                \n"
+              "ldr d7, [%[c_ptr7]]                \n"
               "fmla v14.4h, v6.4h, %[vbeta].4h    \n"
               "fmla v16.4h, v1.4h, %[vbeta].4h    \n"
               "fmla v18.4h, v3.4h, %[vbeta].4h    \n"
@@ -1460,6 +1418,7 @@ void gemm_prepack_8x16(bool is_transB,
               "b 6f                               \n"
               "3:                                 \n"
               // tail = 1
+              "sub %[a_ptr], %[a_ptr], #16        \n"
               "add %[b_ptr], %[b_ptr], #2         \n"
               "fmla v4.8h, v0.8h, v2.h[0]         \n"
               "6:                                 \n"

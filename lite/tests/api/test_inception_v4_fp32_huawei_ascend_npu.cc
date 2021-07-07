@@ -34,10 +34,17 @@ TEST(InceptionV4, test_inception_v4_fp32_huawei_ascend_npu) {
   // Use the full api with CxxConfig to generate the optimized model
   lite_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(FLAGS_model_dir);
+#if defined(LITE_WITH_ARM)
+  cxx_config.set_valid_places(
+      {lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+#else
   cxx_config.set_valid_places(
       {lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
        lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
        lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+#endif
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);

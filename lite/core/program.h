@@ -254,7 +254,8 @@ class LITE_API RuntimeProgram {
 #ifndef LITE_ON_TINY_PUBLISH
   // Update the ops and vars of all of blocks to the given program_desc
   // according to the instructions
-  void SaveToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
+  void SaveRuntimProgramIntoProgramDesc(
+      std::shared_ptr<cpp::ProgramDesc> program_desc);
 #endif
 
 #ifdef LITE_WITH_METAL

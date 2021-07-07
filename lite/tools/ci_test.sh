@@ -603,22 +603,45 @@ function huawei_ascend_npu_build_target() {
     mkdir -p $BUILD_DIRECTORY
     cd $BUILD_DIRECTORY
     prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
+    local archs=(${ARCH_LIST//,/ })
+    for arch in $archs; do 
+        if [ "${arch}" == "x86_64" ]; then
+            with_x86=ON
+            with_arm=OFF
+            with_light_weight_framework=OFF
+            huawei_ascend_npu_ddk_root="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
+        elif [ "${arch}" == "armv8" ]; then
+            with_arm=ON
+            with_x86=OFF
+            arm_arch=armv8
+            arm_target_os=armlinux
+            toolchain=gcc
+            with_light_weight_framework=ON
+            huawei_ascend_npu_ddk_root="/usr/local/Ascend/ascend-toolkit/latest/arm64-linux"
+        else
+            echo "$arch isn't supported by Ascend NPU DDK!"
+            exit 1
+        fi
 
-    cmake .. \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
-        -DWITH_PYTHON=OFF \
-        -DWITH_TESTING=ON \
-        -DLITE_WITH_ARM=OFF \
-        -DWITH_GPU=OFF \
-        -DWITH_MKLDNN=OFF \
-        -DLITE_WITH_X86=ON \
-        -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
-        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux" \
-        -DCMAKE_BUILD_TYPE=Release
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+        cmake .. \
+            -DLITE_WITH_ARM=$with_arm \
+            -DLITE_WITH_X86=$with_x86 \
+            -DARM_TARGET_ARCH_ABI=$arm_arch \
+            -DARM_TARGET_OS=$arm_target_os \
+            -DARM_TARGET_LANG=$toolchain \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$with_light_weight_framework \
+            -DWITH_LITE=ON \
+            -DWITH_PYTHON=OFF \
+            -DWITH_TESTING=ON \
+            -DWITH_GPU=OFF \
+            -DWITH_MKLDNN=OFF \
+            -DWITH_MKL=ON \
+            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
+            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$huawei_ascend_npu_ddk_root \
+            -DCMAKE_BUILD_TYPE=Release
+        make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+    done
 }
 
 function huawei_ascend_npu_build_and_test() {
@@ -941,7 +964,7 @@ function main() {
             UNIT_TEST_FILTER_TYPE="${i#*=}"
             shift
             ;;
-       --unit_test_log_level=*)
+        --unit_test_log_level=*)
             UNIT_TEST_LOG_LEVEL="${i#*=}"
             shift
             ;;
