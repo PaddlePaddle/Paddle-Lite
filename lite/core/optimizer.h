@@ -123,6 +123,7 @@ class Optimizer {
          "__xpu__graph_dedup_pass",
          "__xpu__resnet_fuse_pass",
          "__xpu__resnet_cbam_fuse_pass",
+         "__xpu__conv2d_affine_channel_fuse_pass",
          "__xpu__conv2d_fuse_pass",
          "__xpu__squeeze_excitation_fuse_pass",
          "__xpu__resblock_reduction_fuse_pass",

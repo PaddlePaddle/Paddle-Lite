@@ -89,6 +89,7 @@ USE_MIR_PASS(__xpu__multi_encoder_fuse_pass);
 USE_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass);
 USE_MIR_PASS(__xpu__fc_fuse_pass);
 USE_MIR_PASS(__xpu__mmdnn_fuse_pass);
+USE_MIR_PASS(__xpu__conv2d_affine_channel_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_fuse_pass);
 USE_MIR_PASS(__xpu__resblock_reduction_fuse_pass);
 USE_MIR_PASS(__xpu__resblock_normal_fuse_pass);
