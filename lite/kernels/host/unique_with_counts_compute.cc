@@ -27,7 +27,7 @@ void UniqueFunc_int32(const lite::Tensor* x,
                       lite::Tensor* out,
                       lite::Tensor* index,
                       lite::Tensor* count) {
-  const InT* src = x->template data<InT>();
+  const InT* in_data = x->template data<InT>();
   auto in_dim = x->dims();
   int32_t* index_data = index->mutable_data<int32_t>();
   std::unordered_map<InT, int64_t> dict;
@@ -53,7 +53,7 @@ void UniqueFunc_int32(const lite::Tensor* x,
 
   if (count != nullptr) {
     // Resize the count tensor dims to allocate the memory
-    count->Resize({uniq.size()});
+    count->Resize({static_cast<int64_t>(uniq.size())});
     int32_t* count_data = count->template mutable_data<int32_t>();
     // init count_data to 0
     memset(count_data, 0, uniq.size() * sizeof(int32_t));
@@ -62,8 +62,8 @@ void UniqueFunc_int32(const lite::Tensor* x,
       count_data[index] += static_cast<int32_t>(1);
     }
   }
-  out->Resize({uniq.size()});
-  auto out_data = out->tempalte mutable_data<InT>();
+  out->Resize({static_cast<int64_t>(uniq.size())});
+  auto out_data = out->mutable_data<InT>();
   std::memcpy(out_data, uniq.data(), uniq.size() * sizeof(InT));
 }
 
@@ -72,7 +72,7 @@ void UniqueFunc_int64(const lite::Tensor* x,
                       lite::Tensor* out,
                       lite::Tensor* index,
                       lite::Tensor* count) {
-  const InT* src = x->template data<InT>();
+  const InT* in_data = x->template data<InT>();
   auto in_dim = x->dims();
   int64_t* index_data = index->mutable_data<int64_t>();
   std::unordered_map<InT, int64_t> dict;
@@ -98,7 +98,7 @@ void UniqueFunc_int64(const lite::Tensor* x,
 
   if (count != nullptr) {
     // Resize the count tensor dims to allocate the memory
-    count->Resize({uniq.size()});
+    count->Resize({static_cast<int64_t>(uniq.size())});
     int64_t* count_data = count->template mutable_data<int64_t>();
     // init count_data to 0
     memset(count_data, 0, uniq.size() * sizeof(int64_t));
@@ -108,13 +108,13 @@ void UniqueFunc_int64(const lite::Tensor* x,
       count_data[index] += static_cast<int64_t>(1);
     }
   }
-  out->Resize({uniq.size()});
-  auto out_data = out->tempalte mutable_data<InT>();
+  out->Resize({static_cast<int64_t>(uniq.size())});
+  auto out_data = out->mutable_data<InT>();
   std::memcpy(out_data, uniq.data(), uniq.size() * sizeof(InT));
 }
 
 void UniqueWithCountsCompute::Run() {
-  auto& param = Param<operators::UnsqueezeParam>();
+  auto& param = Param<operators::UniqueWithCountsParam>();
   auto x = param.X;
   auto output = param.Out;
   auto index = param.Index;
@@ -184,33 +184,13 @@ REGISTER_LITE_KERNEL(unique_with_counts,
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-    .BindInput("Out",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-    .BindInput("Index",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Index",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
     .BindOutput("Count",
                 {LiteType::GetTensorTy(
                     TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(unique_with_counts,
-                     kHost,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::host::UniqueWithCountsCompute,
-                     def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-    .BindInput("Out",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
-    .BindInput("Index",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
-    .BindOutput("Count",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
     .Finalize();

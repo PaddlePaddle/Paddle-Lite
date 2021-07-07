@@ -31,7 +31,11 @@ void CumsumCompute<T, PType>::Run() {
 
   if (param.flatten || x_dims.size() == 1) {
     int64_t x_size = x->numel();
-    out_data[0] = x_data[0];
+    if (param.exclusive) {
+      out_data[0] = 0;
+    } else {
+      out_data[0] = x_data[0];
+    }
     for (int64_t i = 1; i < x_size; i++) {
       out_data[i] = x_data[i] + out_data[i - 1];
     }
@@ -47,6 +51,11 @@ void CumsumCompute<T, PType>::Run() {
         const T* src = x_data + step;
         T* dst = out_data + step;
         dst[0] = src[0];
+        if (param.exclusive) {
+          dst[0] = 0;
+        } else {
+          dst[0] = src[0];
+        }
         for (int64_t k = 1; k < count; k++) {
           dst[k * post] = src[k * post] + dst[(k - 1) * post];
         }
