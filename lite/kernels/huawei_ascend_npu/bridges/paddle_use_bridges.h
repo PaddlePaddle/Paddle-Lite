@@ -17,7 +17,7 @@
 // activation
 USE_SUBGRAPH_BRIDGE(sigmoid, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(relu, kHuaweiAscendNPU);
-USE_SUBGRAPH_BRIDGE(abs, kHuaweiAscendNPU);
+// USE_SUBGRAPH_BRIDGE(abs, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(tanh, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(relu6, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(leaky_relu, kHuaweiAscendNPU);

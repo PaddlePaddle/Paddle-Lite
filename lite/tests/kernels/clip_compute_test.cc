@@ -111,6 +111,9 @@ TEST(Clip, precision) {
   abs_err = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
   place = Place(TARGET(kARM));
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_err = 1e-2;  // Using fp16 in ASCEND_NPU
 #else
   return;
 #endif

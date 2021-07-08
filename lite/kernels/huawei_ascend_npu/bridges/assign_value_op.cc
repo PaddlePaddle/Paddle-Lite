@@ -55,7 +55,7 @@ int AssignValueConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     bool_values = op_info->GetAttr<std::vector<int>>("bool_values");
   }
 
-  // Clip node
+  // assign_value node
   auto out_name = op_info->Output("Out").front();
   if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
     graph->Add<int>(out_name, int32_values, shape_int64);

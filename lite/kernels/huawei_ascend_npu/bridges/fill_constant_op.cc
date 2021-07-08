@@ -30,35 +30,22 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Converting " + op_type + "...";
 
-  VarDescAPI::VarDataType dtype = op_info->HasAttr("dtype")
-                                      ? (static_cast<VarDescAPI::VarDataType>(
-                                            op_info->GetAttr<int>("dtype")))
-                                      : (VarDescAPI::VarDataType::FP32);
-
-  ge::DataType o_dtype = ge::DT_FLOAT;
-  PrecisionType p_type = PRECISION(kFloat);
-  CvtType(dtype, &o_dtype, &p_type);
   std::vector<int64_t> shape{};
+  float fp32_value{0.f};
 
-  float value =
-      op_info->HasAttr("value") ? op_info->GetAttr<float>("value") : 0.0f;
-
-  if (op_info->HasInput("ValueTensor") &&
-      !op_info->Input("ValueTensor").empty()) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Unsupported ValueTensor Input for " +
-                        op_type + "...";
-    return FAILED;
+  auto out_name = op_info->Output("Out").front();
+  std::shared_ptr<Node> out_shape_node{nullptr};
+  if (op_info->HasAttr("shape")) {
+    shape = op_info->GetAttr<std::vector<int64_t>>("shape");
+    out_shape_node = graph->Add<int64_t>(out_name + "/dims", shape);
   }
 
   if (op_info->HasInput("ShapeTensor") &&
       !op_info->Input("ShapeTensor").empty()) {
-    auto shape_tensor = scope->FindTensor("ShapeTensor");
-    auto shape_tensor_data = shape_tensor->data<int>();
-    for (int i = 0; i < shape_tensor->numel(); i++) {
-      shape.push_back(shape_tensor_data[i]);
-    }
-  } else if (op_info->HasAttr("shape")) {
-    shape = op_info->GetAttr<std::vector<int64_t>>("shape");
+    LOG(WARNING)
+        << "[HUAWEI_ASCEND_NPU] Unsupported ShapeTensorList Input for " +
+               op_type + "...";
+    return FAILED;
   }
 
   if (op_info->HasInput("ShapeTensorList") &&
@@ -69,14 +56,24 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     return FAILED;
   }
 
-  auto out_name = op_info->Output("Out").front();
-  auto out_shape_node = graph->Add<int64_t>(out_name + "/dims", shape);
+  std::shared_ptr<Node> value_node{nullptr};
+  fp32_value =
+      op_info->HasAttr("value") ? op_info->GetAttr<float>("value") : 0.0f;
+  if (op_info->HasInput("ValueTensor") &&
+      !op_info->Input("ValueTensor").empty()) {
+    auto value_tensor_name = op_info->Input("ValueTensor").front();
+    auto value_tensor = scope->FindMutableTensor(value_tensor_name);
+    value_node = graph->Add(value_tensor_name, *value_tensor);
+  } else {
+    value_node = graph->Add<float>(out_name + "/value", fp32_value);
+  }
 
-  auto fill_constant_node = graph->Add<ge::op::FillV2>(out_name, p_type);
-  auto fill_constant_op = fill_constant_node->data<ge::op::FillV2>();
+  auto fill_constant_node = graph->Add<ge::op::Fill>(out_name);
+  auto fill_constant_op = fill_constant_node->data<ge::op::Fill>();
   fill_constant_op->set_input_dims(*out_shape_node->data());
-  fill_constant_op->set_attr_value(value);
+  fill_constant_op->set_input_value(*value_node->data());
   INPUT_UPDATE(fill_constant_op, dims, out_shape_node);
+  INPUT_UPDATE(fill_constant_op, value, value_node);
   OUTPUT_UPDATE(fill_constant_op, y, fill_constant_node);
 
   return REBUILD_WHEN_SHAPE_CHANGED;

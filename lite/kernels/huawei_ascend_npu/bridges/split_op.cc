@@ -36,9 +36,21 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto sections = op_info->GetAttr<std::vector<int>>("sections");
   int32_t sections_num = static_cast<int32_t>(sections.size());
 
+  if (op_info->HasInput("AxisTensor") &&
+      !op_info->Input("AxisTensor").empty()) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] not support AxisTensor";
+    return FAILED;
+  }
+
+  if (op_info->HasInput("SectionsTensorList") &&
+      !op_info->Input("SectionsTensorList").empty()) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] not support SectionsTensorList";
+    return FAILED;
+  }
   // X node
   auto x_name = op_info->Input("X").front();
   auto x_tensor = scope->FindMutableTensor(x_name);
+  auto x_dims = x_tensor->dims();
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
@@ -46,37 +58,67 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     x_node = graph->Add(x_name, *x_tensor);
   }
 
+  if (axis < 0) {
+    axis += x_dims.size();
+  }
+
   // Split node
   auto out_names = op_info->Output("Out");
   std::shared_ptr<Node> split_node = nullptr;
   auto split_dim_node = graph->Add<int32_t>(x_name + "/split_dim", axis);
   if (num > 0) {
-    auto split_node = graph->Add<ge::op::Split>(op_type + "/" + x_name);
+    if (x_dims[axis] % num != 0) {
+      LOG(FATAL) << "[HUAWEI_ASCEND_NPU] num_split is need divisible by the "
+                    "dimension x_dims[axis]";
+      return FAILED;
+    }
+    split_node = graph->Add<ge::op::Split>(op_type + "/" + x_name);
     auto split_op = split_node->data<ge::op::Split>();
     split_op->set_input_x(*x_node->data());
     split_op->set_input_split_dim(*split_dim_node->data());
     split_op->set_attr_num_split(num);
     split_op->create_dynamic_output_y(num);
   } else {
-    auto split_node = graph->Add<ge::op::SplitV>(op_type + "/" + x_name);
+    if (x_dims[axis] % sections_num != 0) {
+      LOG(FATAL) << "[HUAWEI_ASCEND_NPU] num_split is need divisible by the "
+                    "dimension x_dims[axis]";
+      return FAILED;
+    }
+    split_node = graph->Add<ge::op::SplitV>(op_type + "/" + x_name);
     auto split_op = split_node->data<ge::op::SplitV>();
     auto size_splits_node =
         graph->Add<int32_t>(x_name + "/size_splits", sections);
     split_op->set_input_x(*x_node->data());
     split_op->set_input_size_splits(*size_splits_node->data());
+    split_op->set_input_split_dim(*split_dim_node->data());
+    split_op->set_attr_num_split(sections_num);
     split_op->set_attr_num_split(sections_num);
     split_op->create_dynamic_output_y(sections_num);
   }
 
-  int idx = 1;
+  std::vector<int> axis_transpose{};
+  for (int i = 0; i < x_tensor->dims().size(); i++) {
+    axis_transpose.push_back(i);
+  }
+
+  int idx = 0;
+  auto precision_type = x_tensor->precision();
   for (auto& out_name : out_names) {
-    auto zero_node =
-        graph->Add(out_name + "/zero" + paddle::lite::to_string(idx), 0);
-    auto add_node = graph->Add<ge::op::Add>(out_name);
-    auto add_op = add_node->data<ge::op::Add>();
-    add_op->set_input_x1_by_name(*split_node->data(),
-                                 ("y" + paddle::lite::to_string(idx)).c_str());
-    add_op->set_input_x2(*zero_node->data());
+    auto transpose_node =
+        graph->Add<ge::op::Transpose>(out_name, precision_type);
+    auto input_perm_node = graph->Add<int>(
+        out_name + "/perm" + paddle::lite::to_string(idx), axis_transpose);
+    auto transpose_op = transpose_node->data<ge::op::Transpose>();
+    transpose_op->set_input_x_by_name(
+        *split_node->data(), ("y" + paddle::lite::to_string(idx)).c_str());
+    transpose_op->set_input_perm(*input_perm_node->data());
+    // auto zero_node =
+    //     graph->Add(out_name + "/zero" + paddle::lite::to_string(idx), 0);
+    // auto add_node = graph->Add<ge::op::Add>(out_name);
+    // auto add_op = add_node->data<ge::op::Add>();
+    // add_op->set_input_x1_by_name(*split_node->data(), ("y" +
+    // paddle::lite::to_string(idx)).c_str());
+    // add_op->set_input_x2(*zero_node->data());
     idx++;
   }
 
