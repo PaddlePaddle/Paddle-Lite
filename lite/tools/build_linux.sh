@@ -234,6 +234,10 @@ function make_publish_so {
 
     if [ "$WITH_TINY_PUBLISH" = "OFF" ]; then
         prepare_thirdparty
+    else
+        if [ ! -d third-party ] ; then
+            git checkout third-party
+        fi
     fi
 
     build_dir=$workspace/build.lite.linux.$ARCH.$TOOLCHAIN
