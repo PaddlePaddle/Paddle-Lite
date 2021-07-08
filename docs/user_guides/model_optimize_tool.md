@@ -20,6 +20,16 @@ pip install paddlelite==2.9
     - [python脚本方法](../api_reference/python_api/opt)（支持`Window/Mac/Ubuntu`）
 
 
+#### 源码编译opt工具
+您也可以选择从源代码编译opt工具，使用编译指令
+```shell
+./lite/tools/build.sh build_optimize_tool
+```
+如果在arm64架构的MacOS下编译Opt工具失败，试着将上一条指令改为
+```shell
+arch -x86_64 ./lite/tools/build.sh build_optimize_tool
+```
+
 ## 合并x2paddle和opt功能的一键脚本
 
 **背景**：如果想用Paddle-Lite运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用opt将PaddlePaddle模型转化为Padde-Lite可支持格式。
