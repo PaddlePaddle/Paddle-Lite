@@ -111,7 +111,7 @@ void TanhCompute::Run() {
     x_tmp = std::min(x_tmp, 70.00008f);
     x_tmp = std::max(x_tmp, -70.00008f);
     output_data[i] = (std::exp(x_tmp) - std::exp(-x_tmp)) /
-                     (std::exp(x_tmp]) + std::exp(-x_tmp));
+                     (std::exp(x_tmp) + std::exp(-x_tmp));
   }
 }
 
