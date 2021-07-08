@@ -24,6 +24,13 @@
 namespace paddle {
 namespace lite {
 
+template <typename Type>
+static size_t FastTypeId() {
+  // Use a static variable to get a unique per-type address.
+  static Type dummy;
+  return reinterpret_cast<std::size_t>(&dummy);
+}
+
 // Ported from github:dmlc-core
 class Any {
  public:
@@ -58,7 +65,7 @@ class Any {
   inline bool valid() const;
   inline void clear();
   inline void swap(Any& other);
-  inline const std::type_info& type() const;
+  inline const size_t type() const;
 
   template <typename T, typename... Args>
   inline void construct(Args&&... args);
@@ -87,7 +94,7 @@ class Any {
   struct Type {
     void (*destroy)(Data* data);
     void (*create_from_data)(Data* dst, const Data& src);
-    const std::type_info* ptype_info;
+    size_t ptype_info;
   };
 
   template <typename T>
@@ -210,17 +217,17 @@ inline bool Any::empty() const { return type_ == nullptr; }
 
 inline bool Any::valid() const { return empty() == false; }
 
-inline const std::type_info& Any::type() const {
+inline const size_t Any::type() const {
   if (type_ != nullptr) {
-    return *(type_->ptype_info);
+    return type_->ptype_info;
   } else {
-    return typeid(void);
+    return 0;
   }
 }
 
 template <typename T>
 inline bool Any::is_type() const {
-  if ((type_ == nullptr) || (*(type_->ptype_info) != typeid(T))) {
+  if ((type_ == nullptr) || (type_->ptype_info != FastTypeId<T>())) {
     return false;
   }
   return true;
@@ -229,15 +236,15 @@ inline bool Any::is_type() const {
 template <typename T>
 inline void Any::check_type() const {
   CHECK_EQ((type_ == nullptr), false);
-  CHECK_EQ((*(type_->ptype_info) == typeid(T)), true)
-      << "Any struct is stored in the type " << type_->ptype_info->name()
-      << ", but trying to obtain the type " << typeid(T).name() << ".";
+  CHECK_EQ((type_->ptype_info == FastTypeId<T>()), true)
+      << "Any struct is stored in the type " << type_->ptype_info
+      << ", but trying to obtain the type " << FastTypeId<T>() << ".";
 }
 
 template <typename T>
 inline void Any::check_type_by_name() const {
   CHECK_EQ((type_ == nullptr), false);
-  CHECK_EQ(strcmp(type_->ptype_info->name(), typeid(T).name()), 0);
+  CHECK_EQ(type_->ptype_info, FastTypeId<T>());
 }
 
 template <typename T>
@@ -306,7 +313,7 @@ class Any::TypeInfo : public std::conditional<Any::data_on_stack<T>::value,
       type_.destroy = TypeInfo<T>::destroy;
     }
     type_.create_from_data = TypeInfo<T>::create_from_data;
-    type_.ptype_info = &typeid(T);
+    type_.ptype_info = FastTypeId<T>();
   }
 };
 
