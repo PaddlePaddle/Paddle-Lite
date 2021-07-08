@@ -125,8 +125,8 @@ void UniqueWithCountsCompute::Run() {
       index_type == PRECISION(kInt32) || index_type == PRECISION(kInt64);
   lite_api::PrecisionType type = x->precision();
   CHECK_EQ(index_type_match, true) << "Index holds the wrong type, it holds "
-                                   << static_cast<int>(type);
-  "but desires to be int32 or int64";
+                                   << static_cast<int>(type)
+                                   << "but desires to be int32 or int64";
   if (index_type == PRECISION(kInt32)) {
     switch (type) {
       case PRECISION(kFloat):
