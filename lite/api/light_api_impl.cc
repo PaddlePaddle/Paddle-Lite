@@ -48,9 +48,9 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   mode_ = config.power_mode();
   threads_ = config.threads();
 #ifdef LITE_USE_THREAD_POOL
-  int thread_num = ThreadPool::init(threads_);
+  int thread_num = ThreadPool::Init(threads_);
   if (thread_num > 1) {
-    ThreadPool::acquire_thread_pool();
+    ThreadPool::AcquireThreadPool();
   }
 #endif
 
@@ -117,7 +117,7 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
 
 LightPredictorImpl::~LightPredictorImpl() {
 #ifdef LITE_USE_THREAD_POOL
-  ThreadPool::release_thread_pool();
+  ThreadPool::ReleaseThreadPool();
 #endif
 }
 

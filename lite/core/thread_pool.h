@@ -31,12 +31,12 @@ class ThreadPool {
   typedef std::pair<std::function<void(int, int)>, int> TASK_BASIC;
   typedef std::tuple<std::function<void(int, int)>, int, int, int> TASK_COMMON;
 
-  static void enqueue(TASK_BASIC&& task);
-  static void enqueue(TASK_COMMON&& task);
-  static void acquire_thread_pool();
-  static void release_thread_pool();
-  static int init(int number);
-  static void destroy();
+  static void Enqueue(TASK_BASIC&& task);
+  static void Enqueue(TASK_COMMON&& task);
+  static void AcquireThreadPool();
+  static void ReleaseThreadPool();
+  static int Init(int number);
+  static void Destroy();
 
  private:
   static ThreadPool* gInstance;

@@ -21,7 +21,7 @@ namespace lite {
 
 ThreadPool* ThreadPool::gInstance = nullptr;
 static std::mutex gInitMutex;  // confirm thread-safe when use singleton mode
-int ThreadPool::init(int number) {
+int ThreadPool::Init(int number) {
   // Don't instantiate ThreadPool when compile ThreadPool and only use 1 thread
   if (number <= 1) {
     return 1;
@@ -32,7 +32,7 @@ int ThreadPool::init(int number) {
   }
   return number;
 }
-void ThreadPool::destroy() {
+void ThreadPool::Destroy() {
   std::lock_guard<std::mutex> _l(gInitMutex);
   if (nullptr != gInstance) {
     delete gInstance;
@@ -68,28 +68,28 @@ ThreadPool::~ThreadPool() {
   }
 }
 
-void ThreadPool::acquire_thread_pool() {
+void ThreadPool::AcquireThreadPool() {
   if (nullptr == gInstance) {
     return;
   }
-  LOG(INFO) << "ThreadPool::acquire_thread_pool()\n";
+  LOG(INFO) << "ThreadPool::AcquireThreadPool()\n";
   std::unique_lock<std::mutex> _l(gInstance->mutex_);
   while (!gInstance->ready_) gInstance->cv_.wait(_l);
   gInstance->ready_ = false;
   return;
 }
 
-void ThreadPool::release_thread_pool() {
+void ThreadPool::ReleaseThreadPool() {
   if (nullptr == gInstance) {
     return;
   }
-  LOG(INFO) << "ThreadPool::release_thread_pool()\n";
+  LOG(INFO) << "ThreadPool::ReleaseThreadPool()\n";
   std::unique_lock<std::mutex> _l(gInstance->mutex_);
   gInstance->ready_ = true;
   gInstance->cv_.notify_all();
 }
 
-void ThreadPool::enqueue(TASK_BASIC&& task) {
+void ThreadPool::Enqueue(TASK_BASIC&& task) {
   if (task.second <= 1 || (nullptr == gInstance)) {
     for (int i = 0; i < task.second; ++i) {
       task.first(i, 0);
@@ -127,7 +127,7 @@ void ThreadPool::enqueue(TASK_BASIC&& task) {
   } while (!complete);
 }
 
-void ThreadPool::enqueue(TASK_COMMON&& task) {
+void ThreadPool::Enqueue(TASK_COMMON&& task) {
   int end = std::get<1>(task);
   int start = std::get<2>(task);
   int step = std::get<3>(task);

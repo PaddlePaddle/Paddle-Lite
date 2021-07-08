@@ -14,6 +14,7 @@
 
 #include <arm_neon.h>
 #include "lite/backends/arm/math/conv_depthwise.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -1264,8 +1265,9 @@ void conv_depthwise_3x3s1p1_bias_no_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float *dout_ptr = dout_batch + c * size_out_channel;
 
       const float *din_ch_ptr = din_batch + c * size_in_channel;
@@ -1494,6 +1496,7 @@ void conv_depthwise_3x3s1p1_bias_no_relu(float *dout,
       }  //! end of processing mid rows
 #endif
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1559,8 +1562,9 @@ void conv_depthwise_3x3s1p1_bias_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float *dout_ptr = dout_batch + c * size_out_channel;
 
       const float *din_ch_ptr = din_batch + c * size_in_channel;
@@ -1791,6 +1795,7 @@ void conv_depthwise_3x3s1p1_bias_relu(float *dout,
       }  //! end of processing mid rows
 #endif
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1825,8 +1830,9 @@ void conv_depthwise_3x3s1p1_bias_s_no_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       float *dout_channel = dout_batch + i * size_out_channel;
       const float *din_channel = din_batch + i * size_in_channel;
       const float *weight_ptr = weights + i * 9;
@@ -1939,7 +1945,8 @@ void conv_depthwise_3x3s1p1_bias_s_no_relu(float *dout,
         he += 2;
       }  // end of processing heights
     }    // end of processing channels
-  }      // end of processing batchs
+    LITE_PARALLEL_END();
+  }  // end of processing batchs
 }
 void conv_depthwise_3x3s1p1_bias_s_relu(float *dout,
                                         const float *din,
@@ -1968,8 +1975,9 @@ void conv_depthwise_3x3s1p1_bias_s_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       float *dout_channel = dout_batch + i * size_out_channel;
       const float *din_channel = din_batch + i * size_in_channel;
       const float *weight_ptr = weights + i * 9;
@@ -2082,7 +2090,8 @@ void conv_depthwise_3x3s1p1_bias_s_relu(float *dout,
         he += 2;
       }  // end of processing heights
     }    // end of processing channels
-  }      // end of processing batchs
+    LITE_PARALLEL_END();
+  }  // end of processing batchs
 }
 
 /**
@@ -2140,8 +2149,9 @@ void conv_depthwise_3x3s1p0_bias_no_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float *dout_ptr = dout_batch + c * size_out_channel;
 
       const float *din_ch_ptr = din_batch + c * size_in_channel;
@@ -2368,6 +2378,7 @@ void conv_depthwise_3x3s1p0_bias_no_relu(float *dout,
       }  //! end of processing mid rows
 #endif
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -2422,8 +2433,9 @@ void conv_depthwise_3x3s1p0_bias_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float *dout_ptr = dout_batch + c * size_out_channel;
 
       const float *din_ch_ptr = din_batch + c * size_in_channel;
@@ -2650,6 +2662,7 @@ void conv_depthwise_3x3s1p0_bias_relu(float *dout,
       }  //! end of processing mid rows
 #endif
     }
+    LITE_PARALLEL_END();
   }
 }
 /**
@@ -2690,8 +2703,9 @@ void conv_depthwise_3x3s1p0_bias_s_no_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       float *dout_channel = dout_batch + i * size_out_channel;
       const float *din_channel = din_batch + i * size_in_channel;
       const float *weight_ptr = weights + i * 9;
@@ -2810,7 +2824,8 @@ void conv_depthwise_3x3s1p0_bias_s_no_relu(float *dout,
         }
       }  // end of processing heights
     }    // end of processing channels
-  }      // end of processing batchs
+    LITE_PARALLEL_END();
+  }  // end of processing batchs
 }
 
 void conv_depthwise_3x3s1p0_bias_s_relu(float *dout,
@@ -2847,8 +2862,9 @@ void conv_depthwise_3x3s1p0_bias_s_relu(float *dout,
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
     float *dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       float *dout_channel = dout_batch + i * size_out_channel;
       const float *din_channel = din_batch + i * size_in_channel;
       const float *weight_ptr = weights + i * 9;
@@ -2967,7 +2983,8 @@ void conv_depthwise_3x3s1p0_bias_s_relu(float *dout,
         }
       }  // end of processing heights
     }    // end of processing channels
-  }      // end of processing batchs
+    LITE_PARALLEL_END();
+  }  // end of processing batchs
 }
 }  // namespace math
 }  // namespace arm

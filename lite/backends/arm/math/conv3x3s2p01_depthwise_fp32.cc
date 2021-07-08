@@ -15,6 +15,7 @@
 #include <arm_neon.h>
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_depthwise.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -1402,8 +1403,9 @@ void conv_depthwise_3x3s2p1_bias_relu6(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -1606,6 +1608,7 @@ void conv_depthwise_3x3s2p1_bias_relu6(float* dout,
       }
 #endif
     }
+    LITE_PARALLEL_END();
   }
 }
 void conv_depthwise_3x3s2p1_bias_leakyRelu(float* dout,
@@ -1659,8 +1662,9 @@ void conv_depthwise_3x3s2p1_bias_leakyRelu(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -1863,6 +1867,7 @@ void conv_depthwise_3x3s2p1_bias_leakyRelu(float* dout,
       }
 #endif
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1903,8 +1908,9 @@ void conv_depthwise_3x3s2p1_bias_s_relu6(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -1996,6 +2002,7 @@ void conv_depthwise_3x3s2p1_bias_s_relu6(float* dout,
         he += 2;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 void conv_depthwise_3x3s2p1_bias_s_leakyRelu(float* dout,
@@ -2033,8 +2040,9 @@ void conv_depthwise_3x3s2p1_bias_s_leakyRelu(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2127,6 +2135,7 @@ void conv_depthwise_3x3s2p1_bias_s_leakyRelu(float* dout,
         he += 2;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 /**
@@ -2183,8 +2192,9 @@ void conv_depthwise_3x3s2p0_bias_relu6(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2381,6 +2391,7 @@ void conv_depthwise_3x3s2p0_bias_relu6(float* dout,
       }
 #endif
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -2434,8 +2445,9 @@ void conv_depthwise_3x3s2p0_bias_leakyRelu(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2632,6 +2644,7 @@ void conv_depthwise_3x3s2p0_bias_leakyRelu(float* dout,
       }
 #endif
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -2675,8 +2688,9 @@ void conv_depthwise_3x3s2p0_bias_s_relu6(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2776,6 +2790,7 @@ void conv_depthwise_3x3s2p0_bias_s_relu6(float* dout,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 void conv_depthwise_3x3s2p0_bias_s_leakyRelu(float* dout,
@@ -2815,8 +2830,9 @@ void conv_depthwise_3x3s2p0_bias_s_leakyRelu(float* dout,
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for
-    for (int i = 0; i < ch_in; ++i) {
+    // #pragma omp parallel for
+    //     for (int i = 0; i < ch_in; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, ch_in) {
       const float* din_channel = din_batch + i * size_in_channel;
       float* dout_channel = dout_batch + i * size_out_channel;
 
@@ -2915,6 +2931,7 @@ void conv_depthwise_3x3s2p0_bias_s_leakyRelu(float* dout,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 }  // namespace math

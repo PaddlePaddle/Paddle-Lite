@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include <arm_neon.h>
+#include "lite/core/parallel_defines.h"
 #ifdef __aarch64__
 #include "lite/backends/arm/math/dotprod/gemm_sdot.h"
 #else
@@ -3626,8 +3627,9 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
       packb_int8(b_pannel, B, N, 0, K, x0, xmax, zerobuf);
     }
 
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK_INT8_OTH) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (unsigned int y = 0; y < M; y += MBLOCK_INT8_OTH) {
+    LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_INT8_OTH) {
       Dtype out0[NBLOCK_INT8_OTH] = {0};
       Dtype out1[NBLOCK_INT8_OTH] = {0};
       Dtype out2[NBLOCK_INT8_OTH] = {0};
@@ -3727,6 +3729,7 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END();
   }
   free(zerobuf);
 }
@@ -3762,8 +3765,9 @@ void prepackA_m4k2x2_int8(int8_t* out,
   const int8_t* inptr = in + m0 * ldin + k0;
   uint8_t remain = static_cast<uint8_t>(x_len & (KBLOCK_INT8 - 1));
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len; y += MBLOCK_INT8_OTH) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len; y += MBLOCK_INT8_OTH) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 0, MBLOCK_INT8_OTH) {
     const int8_t* ptr0 = inptr + y * ldin;
     const int8_t* ptr1 = ptr0 + ldin;
     const int8_t* ptr2 = ptr1 + ldin;
@@ -3922,6 +3926,7 @@ void prepackA_m4k2x2_int8(int8_t* out,
         break;
     }
   }
+  LITE_PARALLEL_COMMON_END();
   free(zerobuff);
 }
 
@@ -3972,8 +3977,9 @@ void prepackA_m4k2x2_trans_int8(int8_t* out,
   memset(zerobuf, 0, xlen_roundup);
 
   const int8_t* inr = in + ldin * k0 + m0;
-#pragma omp parallel for
-  for (int y = 0; y < ylen; y += KBLOCK_INT8) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < ylen; y += KBLOCK_INT8) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, ylen, 0, KBLOCK_INT8) {
     const int8_t* ptr0 = inr + y * ldin;
     const int8_t* ptr1 = ptr0 + ldin;
     const int8_t* ptr2 = ptr1 + ldin;
@@ -4234,6 +4240,7 @@ void prepackA_m4k2x2_trans_int8(int8_t* out,
 #endif  // __aarch64__
     // clang-format on
   }
+  LITE_PARALLEL_COMMON_END();
   free(zerobuf);
 }
 
@@ -4290,8 +4297,9 @@ void packb_int8(int8_t* out,
 
   int8x16_t vzero = vdupq_n_s8(0);
   uint8x16_t vmask = vcltq_u8(vld1q_u8(mask_buffer), vdupq_n_u8(rem));
-#pragma omp parallel for
-  for (int y = 0; y < y_len; y += KBLOCK_INT8) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len; y += KBLOCK_INT8) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 0, KBLOCK_INT8) {
     const int8_t* ptr0 = inptr + y * ldin;
     const int8_t* ptr1 = ptr0 + ldin;
     const int8_t* ptr2 = ptr1 + ldin;
@@ -4485,6 +4493,7 @@ void packb_int8(int8_t* out,
 #endif  // __aarch64__
     // clang-format on
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 /************************************************************************/
@@ -4550,8 +4559,9 @@ void packb_trans_int8(int8_t* out,
   int8x16_t vzero = vdupq_n_s8(0);
   uint8x16_t vmask = vcltq_u8(vld1q_u8(mask_buffer), vdupq_n_u8(x_rem));
 
-#pragma omp parallel for
-  for (int y = 0; y < ncnt; y++) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < ncnt; y++) {
+  LITE_PARALLEL_BEGIN(y, tid, ncnt) {
     int idx = y * NUNROLL;
     const int8_t* ptr0 = inptr + idx * ldin;
     const int8_t* ptr1 = ptr0 + ldin;
@@ -4822,6 +4832,7 @@ void packb_trans_int8(int8_t* out,
 #endif  // __aarch64__
     // clang-format on
   }
+  LITE_PARALLEL_END();
 }
 
 #ifdef WITH_ARM_DOTPROD
@@ -4884,8 +4895,9 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
       // N X K
       packb_sdot_int8_n12_n8_n4_trans(b_pannel, B, K, 0, K, x0, xmax);
     }
-#pragma omp parallel for
-    for (unsigned int y = 0; y < M; y += MBLOCK_INT8_DOT) {
+    // #pragma omp parallel for
+    //     for (unsigned int y = 0; y < M; y += MBLOCK_INT8_DOT) {
+    LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_INT8_DOT) {
       unsigned int ymax = y + MBLOCK_INT8_DOT;
       ymax = (ymax > M) ? M : ymax;
       float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -5065,6 +5077,7 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END();
   }
 }
 
@@ -5084,8 +5097,9 @@ void prepackA_m8k4_int8(int8_t* out,
   int kup = ROUNDUP(x_len, KBLOCK_INT8);
   int stride = kup * 8;
   int remain = x_len % 4;
-#pragma omp parallel for
-  for (int y = m0; y < mmax; y += 8) {
+  // #pragma omp parallel for
+  //   for (int y = m0; y < mmax; y += 8) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, mmax, m0, 8) {
     int8_t* outptr = dout + stride * (y - m0) / 8;
     const int8_t* inptr_row[8];
     inptr_row[0] = inptr + y * ldin + k0;
@@ -5229,6 +5243,7 @@ void prepackA_m8k4_int8(int8_t* out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 void prepackA_m8k4_trans_int8(int8_t* out,
@@ -5249,8 +5264,9 @@ void prepackA_m8k4_trans_int8(int8_t* out,
   int8_t zerobuff[x_len];  // NOLINT
   memset(zerobuff, 0, sizeof(int8_t) * x_len);
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len; y += 4) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 0, 4) {
     const int8_t* inptr0 = inptr + y * ldin;
     const int8_t* inptr1 = inptr0 + ldin;
     const int8_t* inptr2 = inptr1 + ldin;
@@ -5340,6 +5356,7 @@ void prepackA_m8k4_trans_int8(int8_t* out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 void packb_sdot_int8_n12_n8_n4(int8_t* out,
@@ -5848,9 +5865,10 @@ void packb_sdot_int8(int8_t* out,
   // int stride_y = 48;
   int remain = x_len % 12;
 
-// data B is not transposed, transpose B to k * 12
-#pragma omp parallel for
-  for (int y = 0; y < y_len; y += 4) {
+  // data B is not transposed, transpose B to k * 12
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 0, 4) {
     // cope with row index exceed real size, set to zero
     const int8_t* inptr0 = inptr + y * ldin;
     const int8_t* inptr1 = inptr0 + ldin;
@@ -5962,6 +5980,7 @@ void packb_sdot_int8(int8_t* out,
       *out0++ = 0;
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 void packb_sdot_trans_int8(int8_t* out,
@@ -5985,8 +6004,9 @@ void packb_sdot_trans_int8(int8_t* out,
   int stride_out = kup;
 
   int remain = x_len % 8;
-#pragma omp parallel for
-  for (int y = 0; y < y_len; y += 12) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len; y += 12) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 0, 12) {
     const int8_t* inptr_row[12];
     inptr_row[0] = inptr + y * ldin;
     for (int i = 1; i < 12; i++) {
@@ -6142,6 +6162,7 @@ void packb_sdot_trans_int8(int8_t* out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 #else  // armv7
 
@@ -6160,8 +6181,9 @@ void prepackA_m6k4_int8(int8_t* out,
   int kup = ROUNDUP(x_len, KBLOCK_INT8);
   int stride = kup * 6;
   int remain = x_len % 4;
-#pragma omp parallel for
-  for (int y = m0; y < mmax; y += 6) {
+  // #pragma omp parallel for
+  //   for (int y = m0; y < mmax; y += 6) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, mmax, m0, 6) {
     int8_t* outptr = dout + stride * (y - m0) / 6;
     const int8_t* inptr_row[6];
     inptr_row[0] = inptr + y * ldin + k0;
@@ -6291,6 +6313,7 @@ void prepackA_m6k4_int8(int8_t* out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 void prepackA_m6k4_trans_int8(int8_t* out,
                               const int8_t* in,
@@ -6309,8 +6332,9 @@ void prepackA_m6k4_trans_int8(int8_t* out,
   int8_t zerobuff[x_len];  // NOLINT
   memset(zerobuff, 0, sizeof(int8_t) * x_len);
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len; y += 4) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 0, 4) {
     const int8_t* inptr0 = inptr + y * ldin;
     const int8_t* inptr1 = inptr0 + ldin;
     const int8_t* inptr2 = inptr1 + ldin;
@@ -6388,6 +6412,7 @@ void prepackA_m6k4_trans_int8(int8_t* out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 void packb_dot_int8(int8_t* out,
                     const int8_t* in,
@@ -6407,9 +6432,10 @@ void packb_dot_int8(int8_t* out,
   int stride_out = 8 * kup;
   int remain = x_len % 8;
 
-// data B is not transposed, transpose B to k * 8
-#pragma omp parallel for
-  for (int y = 0; y < y_len; y += 4) {
+  // data B is not transposed, transpose B to k * 8
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 0, 4) {
     // cope with row index exceed real size, set to zero
     const int8_t* inptr0 = inptr + y * ldin;
     const int8_t* inptr1 = inptr0 + ldin;
@@ -6485,6 +6511,7 @@ void packb_dot_int8(int8_t* out,
       *out0++ = 0;
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 void packb_dot_trans_int8(int8_t* out,
@@ -6509,8 +6536,9 @@ void packb_dot_trans_int8(int8_t* out,
 
   int remain = x_len % 8;
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len; y += 8) {
+  // #pragma omp parallel for
+  //   for (int y = 0; y < y_len; y += 8) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 0, 8) {
     const int8_t* inptr_row[8];
     inptr_row[0] = inptr + y * ldin;
     for (int i = 1; i < 8; i++) {
@@ -6611,6 +6639,7 @@ void packb_dot_trans_int8(int8_t* out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 template <typename Dtype>
@@ -6665,8 +6694,9 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
       // N X K
       packb_dot_trans_int8(b_pannel, B, K, 0, K, x0, xmax);
     }
-#pragma omp parallel for
-    for (unsigned int y = 0; y < M; y += MBLOCK_INT8_DOT) {
+    // #pragma omp parallel for
+    //     for (unsigned int y = 0; y < M; y += MBLOCK_INT8_DOT) {
+    LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_INT8_DOT) {
       unsigned int ymax = y + MBLOCK_INT8_DOT;
       if (ymax > M) {
         ymax = M;
@@ -6781,6 +6811,7 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END();
   }
 }
 #endif

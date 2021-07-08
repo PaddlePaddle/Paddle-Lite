@@ -17,6 +17,7 @@
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
@@ -517,9 +518,13 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
       int hs = h - padh;
       int he = hs + h_kernel + 2;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef ARM_WITH_OMP
+      // #pragma omp parallel for num_threads(threads)
+      //       for (int c = 0; c < chout; c += hout_c_block) {
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
+#ifdef LITE_USE_THREAD_POOL
+        int8_t* pre_din = tmp_din + tid * (pre_in_size + pre_out_size * 4);
+        int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
+#elif defined(ARM_WITH_OMP)
         int8_t* pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size * 4);
         int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
@@ -852,6 +857,7 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
                                           ptr_write,
                                           scale + c);
       }
+      LITE_PARALLEL_COMMON_END();
     }
   }
 }
@@ -945,8 +951,9 @@ void conv_depthwise_3x3s1p1_bias_int8_float(float* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
@@ -1360,6 +1367,7 @@ void conv_depthwise_3x3s1p1_bias_int8_float(float* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1413,8 +1421,9 @@ void conv_depthwise_3x3s1p1_bias_int8_int8(int8_t* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     int8_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
@@ -1951,6 +1960,7 @@ void conv_depthwise_3x3s1p1_bias_int8_int8(int8_t* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -2002,8 +2012,9 @@ void conv_depthwise_3x3s1p0_bias_int8_float(float* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
@@ -2319,6 +2330,7 @@ void conv_depthwise_3x3s1p0_bias_int8_float(float* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -2369,8 +2381,9 @@ void conv_depthwise_3x3s1p0_bias_int8_int8(int8_t* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     int8_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
@@ -2763,6 +2776,7 @@ void conv_depthwise_3x3s1p0_bias_int8_int8(int8_t* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -2813,8 +2827,9 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_float(float* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
@@ -3251,6 +3266,7 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_float(float* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -3301,8 +3317,7 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_float(float* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
@@ -5765,6 +5780,7 @@ void conv_depthwise_3x3s1p0_bias_relu6_int8_float(float* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -5814,8 +5830,7 @@ void conv_depthwise_3x3s1p0_bias_relu_int8_int8(int8_t* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     int8_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
@@ -6221,6 +6236,7 @@ void conv_depthwise_3x3s1p0_bias_relu_int8_int8(int8_t* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -6270,8 +6286,9 @@ void conv_depthwise_3x3s1p0_bias_relu6_int8_int8(int8_t* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     int8_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    // #pragma omp parallel for num_threads(threads)
+    //     for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
@@ -6693,6 +6710,7 @@ void conv_depthwise_3x3s1p0_bias_relu6_int8_int8(int8_t* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
