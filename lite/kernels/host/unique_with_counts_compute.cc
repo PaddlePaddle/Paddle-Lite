@@ -34,11 +34,6 @@ void UniqueFunc_int32(const lite::Tensor* x,
   std::vector<InT> uniq;
   int64_t j = 0;
 
-  CHECK_LE(x->numel(), std::pow(2, 31))
-      << "The num of Input(X) elements should be less then INT_MAX, "
-         "but received num is"
-      << x->numel();
-
   for (auto i = 0; i < x->numel(); i++) {
     auto it = dict.find(in_data[i]);
     if (it == dict.end()) {
