@@ -22,13 +22,12 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename T, PrecisionType Ptype>
-void ReduceSumCompute<T, Ptype>::Run() {
+void ReduceSumCompute::Run() {
   auto& param = this->template Param<operators::ReduceParam>();
-  auto* input = param.X->template data<T>();
+  auto* input = param.X->template data<float>();
   auto x_dims = param.X->dims();
   int x_rank = x_dims.size();
-  auto* Out = param.Out->template mutable_data<T>();
+  auto* Out = param.Out->template mutable_data<float>();
   std::vector<int> dim = param.dim;
   bool keep_dim = param.keep_dim;
   bool reduce_all = param.reduce_all;
@@ -104,16 +103,12 @@ void ReduceSumCompute<T, Ptype>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using reduce_sum_arm_int32 =
-    paddle::lite::kernels::arm::ReduceSumCompute<int, PRECISION(kInt32)>;
-using reduce_sum_arm_float =
-    paddle::lite::kernels::arm::ReduceSumCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(reduce_sum, kARM, kFloat, kNCHW, reduce_sum_arm_float, def)
+REGISTER_LITE_KERNEL(reduce_sum,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ReduceSumCompute,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(reduce_sum, kARM, kInt32, kNCHW, reduce_sum_arm_int32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
