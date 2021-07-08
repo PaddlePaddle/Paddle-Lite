@@ -2438,6 +2438,14 @@ struct FlipParam : ParamBase {
   std::vector<int> axis;
 };
 
+struct CosSimParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* x_norm{nullptr};
+  lite::Tensor* y_norm{nullptr};
+};
+
 struct WriteBackParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* y{};
