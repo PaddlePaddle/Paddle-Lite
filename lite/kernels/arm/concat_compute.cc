@@ -153,7 +153,7 @@ void ConcatCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     concat, kARM, kAny, kNCHW, paddle::lite::kernels::arm::ConcatCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("AxisTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})

@@ -171,7 +171,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt8,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeFp32ToInt8<DATALAYOUT(kNCHW)>,
     fp32_to_int8)
@@ -183,7 +183,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt32,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt32ToFp32<DATALAYOUT(kNCHW)>,
     int32_to_fp32)
@@ -195,7 +195,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt32,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt32ToInt64<DATALAYOUT(kNCHW)>,
     int32_to_int64)
@@ -207,7 +207,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt32,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeFp32ToInt32<DATALAYOUT(kNCHW)>,
     fp32_to_int32)
@@ -219,7 +219,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt64,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt64ToFp32<DATALAYOUT(kNCHW)>,
     int64_to_fp32)
@@ -231,7 +231,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt8,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt8ToFp32<DATALAYOUT(kNCHW)>,
     int8_to_fp32)
@@ -242,7 +242,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt64,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
     int64_to_int32)
@@ -259,7 +259,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib_once,
     kARM,
-    kInt8,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeFp32ToInt8<DATALAYOUT(kNCHW)>,
     fp32_to_int8)
@@ -271,7 +271,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib_once,
     kARM,
-    kInt8,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt8ToFp32<DATALAYOUT(kNCHW)>,
     int8_to_fp32)
@@ -282,7 +282,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib_once,
     kARM,
-    kInt64,
+    kFloat,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
     int64_to_int32)
