@@ -36,7 +36,11 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     int axis = softmax_param_->axis;
     axis = axis < 0 ? x_dims.size() + axis : axis;
     axis_ = 4 - x_dims.size() + axis;
-    if (axis_ == 3) {
+
+    if (x_dims.size() == 2 && axis == 1) {
+      onexone_flag_ = true;
+      kernel_func_name_ = "softmax_1x1";
+    } else if (axis_ == 3) {
       kernel_func_name_ = "softmax_width";
     } else if (axis_ == 2) {
       kernel_func_name_ = "softmax_height";
@@ -66,33 +70,6 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
-
-      // compute image shape
-      paddle::lite::CLImageConverterDefault default_convertor;
-      out_img_shape_ = default_convertor.InitImageDimInfoWith(out_dims);
-
-      // compute global work size
-      const std::vector<size_t>& default_work_size =
-          DefaultGlobalWorkSize(out_dims,
-                                DDim(std::vector<DDim::value_type>{
-                                    static_cast<int64_t>(out_img_shape_[0]),
-                                    static_cast<int64_t>(out_img_shape_[1])}));
-      int c_blk = default_work_size.data()[0];
-      int w = default_work_size.data()[1];
-      int bh = default_work_size.data()[2];
-      if (axis_ == 3) {
-        global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c_blk),
-                                        static_cast<cl::size_type>(bh),
-                                        static_cast<cl::size_type>(1)};
-      } else if (axis_ == 2) {
-        global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c_blk * w),
-                                        static_cast<cl::size_type>(out_dims[0]),
-                                        static_cast<cl::size_type>(1)};
-      } else {
-        global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c_blk),
-                                        static_cast<cl::size_type>(w),
-                                        static_cast<cl::size_type>(bh)};
-      }
     }
   }
 
@@ -142,7 +119,7 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                   kernel,
                                   cl::NullRange,
                                   global_work_size_,
-                                  cl::NullRange,
+                                  local_work_size_,
                                   nullptr,
                                   event_);
     CL_CHECK_FATAL(status);
@@ -151,10 +128,49 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
+    ch->global_work_size_ = global_work_size_;
+    ch->local_work_size_ = local_work_size_;
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
   }
 #endif
+
+  void SetGlobalLocal() {
+    if (onexone_flag_) {
+      local_work_size_ = cl::NDRange(32, 1, 1);
+      global_work_size_ =
+          cl::NDRange(ROUND_UP(UP_DIV(last_x_dims_[1], 4), local_work_size_[0]),
+                      last_x_dims_[0],
+                      1);
+    } else {
+      // compute image shape
+      paddle::lite::CLImageConverterDefault default_convertor;
+      out_img_shape_ = default_convertor.InitImageDimInfoWith(out_dims);
+
+      // compute global work size
+      const std::vector<size_t>& default_work_size =
+          DefaultGlobalWorkSize(out_dims,
+                                DDim(std::vector<DDim::value_type>{
+                                    static_cast<int64_t>(out_img_shape_[0]),
+                                    static_cast<int64_t>(out_img_shape_[1])}));
+      int c_blk = default_work_size.data()[0];
+      int w = default_work_size.data()[1];
+      int bh = default_work_size.data()[2];
+      if (axis_ == 3) {
+        global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c_blk),
+                                        static_cast<cl::size_type>(bh),
+                                        static_cast<cl::size_type>(1)};
+      } else if (axis_ == 2) {
+        global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c_blk * w),
+                                        static_cast<cl::size_type>(out_dims[0]),
+                                        static_cast<cl::size_type>(1)};
+      } else {
+        global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c_blk),
+                                        static_cast<cl::size_type>(w),
+                                        static_cast<cl::size_type>(bh)};
+      }
+    }
+  }
 
  private:
   std::string kernel_func_name_{"softmax_width"};
@@ -166,10 +182,12 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   int axis_{3};
+  bool onexone_flag_{false};
   DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_{cl::NullRange};
 };
 
 }  // namespace opencl
