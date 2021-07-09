@@ -458,12 +458,22 @@ void reduce_sum_w<int32_t>(const int32_t* src,
       din_ptr0 += 8;
       int32x4_t vs3 = vaddq_s32(vd0, vd1);
       din_ptr1 += 8;
-      int32x4_t vs00 = vpaddq_s32(vs0, vs1);
       din_ptr2 += 8;
+#ifdef __aarch64__
+      int32x4_t vs00 = vpaddq_s32(vs0, vs1);
       int32x4_t vs01 = vpaddq_s32(vs2, vs3);
       din_ptr3 += 8;
       int32x4_t vs = vpaddq_s32(vs00, vs01);
       vsum = vaddq_s32(vs, vsum);
+#else
+      int32x4_t vs;
+      vs[0] = vs0[0] + vs0[1] + vs0[2] + vs0[3];
+      vs[1] = vs1[0] + vs1[1] + vs1[2] + vs1[3];
+      vs[2] = vs2[0] + vs2[1] + vs2[2] + vs2[3];
+      vs[3] = vs3[0] + vs3[1] + vs3[2] + vs3[3];
+      din_ptr3 += 8;
+      vsum = vaddq_s32(vs, vsum);
+#endif
     }
     if (tmp > 3) {
       int32x4_t va0 = vld1q_s32(din_ptr0);
@@ -472,12 +482,23 @@ void reduce_sum_w<int32_t>(const int32_t* src,
       int32x4_t vd0 = vld1q_s32(din_ptr3);
       din_ptr0 += 4;
       din_ptr1 += 4;
+#ifdef __aarch64__
       int32x4_t vs00 = vpaddq_s32(va0, vb0);
       int32x4_t vs01 = vpaddq_s32(vc0, vd0);
       din_ptr2 += 4;
       din_ptr3 += 4;
       int32x4_t vs = vpaddq_s32(vs00, vs01);
       vsum = vaddq_s32(vs, vsum);
+#else
+      int32x4_t vs;
+      vs[0] = va0[0] + va0[1] + va0[2] + va0[3];
+      vs[1] = vb0[0] + vb0[1] + vb0[2] + vb0[3];
+      vs[2] = vc0[0] + vc0[1] + vc0[2] + vc0[3];
+      vs[3] = vd0[0] + vd0[1] + vd0[2] + vd0[3];
+      din_ptr2 += 4;
+      din_ptr3 += 4;
+      vsum = vaddq_s32(vs, vsum);
+#endif
       tmp -= 4;
     }
     for (int w = 0; w < tmp; w++) {
@@ -501,12 +522,23 @@ void reduce_sum_w<int32_t>(const int32_t* src,
       din_ptr1 += 4;
       int32x4_t va1 = vld1q_s32(din_ptr0);
       int32x4_t vb1 = vld1q_s32(din_ptr1);
+#ifdef __aarch64__
       int32x4_t vs0 = vpaddq_s32(va0, vb0);
       din_ptr0 += 4;
       int32x4_t vs1 = vpaddq_s32(va1, vb1);
       din_ptr1 += 4;
       int32x4_t vs00 = vpaddq_s32(vs0, vs1);
       vsum = vaddq_s32(vs00, vsum);
+#else
+      int32x4_t vs;
+      vs[0] = va0[0] + va0[1] + va0[2] + va0[3];
+      vs[1] = vb0[0] + vb0[1] + vb0[2] + vb0[3];
+      vs[2] = va1[0] + va1[1] + va1[2] + va1[3];
+      vs[3] = vb1[0] + vb1[1] + vb1[2] + vb1[3];
+      din_ptr0 += 4;
+      din_ptr1 += 4;
+      vsum = vaddq_s32(vs, vsum);
+#endif
     }
     int tmp = rem_w;
     if (tmp > 3) {
@@ -514,7 +546,15 @@ void reduce_sum_w<int32_t>(const int32_t* src,
       int32x4_t vb0 = vld1q_s32(din_ptr1);
       din_ptr0 += 4;
       din_ptr1 += 4;
-      int32x4_t vs00 = vpaddq_s32(va0, vb0);
+      int32x4_t vs00;
+#ifdef __aarch64__
+      vs00 = vpaddq_s32(va0, vb0);
+#else
+      vs00[0] = va0[0] + va0[1];
+      vs00[1] = va0[2] + va0[3];
+      vs00[2] = vb0[0] + vb0[1];
+      vs00[3] = vb0[2] + vb0[3];
+#endif
       tmp -= 4;
       vsum[0] += vs00[0];
       vsum[2] += vs00[1];
@@ -574,8 +614,15 @@ void reduce_sum_all<int32_t>(const int32_t* src, int32_t* dst, int all_size) {
     src += 16;
     int32x4_t vs0 = vaddq_s32(va0, va1);
     int32x4_t vs1 = vaddq_s32(va2, va3);
+#ifdef __aarch64__
     int32x4_t vs = vpaddq_s32(vs0, vs1);
     vsum = vaddq_s32(vsum, vs);
+#else
+    vsum[0] = vsum[0] + vs0[0] + vs0[1];
+    vsum[1] = vsum[1] + vs0[2] + vs0[3];
+    vsum[2] = vsum[2] + vs1[0] + vs1[1];
+    vsum[3] = vsum[3] + vs1[2] + vs1[3];
+#endif
   }
   for (int n = 0; n < cnt_rem; n++) {
     int32x4_t va0 = vld1q_s32(src);
