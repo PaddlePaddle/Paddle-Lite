@@ -25,10 +25,11 @@ pip install paddlelite==2.9
 ```shell
 ./lite/tools/build.sh build_optimize_tool
 ```
-如果在arm64架构的MacOS下编译Opt工具失败，试着将上一条指令改为
+如果在arm64架构的MacOS下编译opt工具失败，试着删除third-party目录并重新`git checkout third-party`，然后将上一条指令改为
 ```shell
 arch -x86_64 ./lite/tools/build.sh build_optimize_tool
 ```
+该命令会编译x86格式的opt工具，但是不会影响工具的正常使用
 
 ## 合并x2paddle和opt功能的一键脚本
 
