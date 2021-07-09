@@ -45,8 +45,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
 
     // convert weights from cpu to gpu
     auto w_cpu_tensor = std::unique_ptr<Tensor>(new Tensor);
-    auto w_gpu_tensor = std::unique_ptr<Tensor>(new Tensor);
-
+    w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     const auto w_dims = w_t->dims();
 
     VLOG(4) << "w_dims:" << w_dims;
@@ -67,34 +66,31 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     OI2IOO4I4(w_cpu, w_buffer_data, w_dims[0], w_dims[1]);
     VLOG(4) << "2";
 
-    auto* w_gpu_data = w_gpu_tensor->mutable_data(TARGET(kOpenCL),
-                                                  w_cpu_tensor->memory_size());
+    auto* w_gpu_data =
+        w_gpu_t_->mutable_data(TARGET(kOpenCL), w_cpu_tensor->memory_size());
     VLOG(4) << "3";
     TargetWrapperCL::MemcpySync(w_gpu_data,
                                 w_cpu_tensor->raw_data(),
                                 w_cpu_tensor->memory_size(),
                                 IoDirection::HtoD);
-    w_buf_ = GET_BUFFER_GPU(w_gpu_tensor);
+    w_buf_ = GET_BUFFER_GPU(w_gpu_t_);
     VLOG(4) << "4";
     // convert bias from cpu to gpu
     if (has_bias_) {
       auto bias_cpu_tensor = std::unique_ptr<Tensor>(new Tensor);
-      auto bias_gpu_tensor = std::unique_ptr<Tensor>(new Tensor);
+      bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
       CLImageConverterFolder bias_converter;
-
       const DDim& bias_image_dims =
           bias_converter.InitImageDimInfoWith(param.bias->dims());
       bias_cpu_tensor->Resize({1, bias_image_dims[0], bias_image_dims[1], 4});
       auto* bias_image_data = MUTABLE_DATA_CPU(bias_cpu_tensor);
       auto* bias_cpu = param.bias->mutable_data<float>();
       bias_converter.NCHWToImage(bias_cpu, bias_image_data, param.bias->dims());
-      MUTABLE_DATA_GPU(bias_gpu_tensor,
-                       bias_image_dims[0],
-                       bias_image_dims[1],
-                       bias_image_data);
+      MUTABLE_DATA_GPU(
+          bias_gpu_t_, bias_image_dims[0], bias_image_dims[1], bias_image_data);
 
       build_options_ += " -DBIASE_CH";
-      bias_img_ = DATA_GPU(bias_gpu_tensor);
+      bias_img_ = DATA_GPU(bias_gpu_t_);
     }
 
     if (param.activation_type == "relu") {
@@ -114,7 +110,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
 
       // convert alpha from cpu to gpu
       auto alpha_cpu_tensor = std::unique_ptr<Tensor>(new Tensor);
-      auto alpha_gpu_tensor = std::unique_ptr<Tensor>(new Tensor);
+      alpha_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
       CLImageConverterFolder alpha_converter;
       const DDim& alpha_image_dims =
           alpha_converter.InitImageDimInfoWith(param.Prelu_alpha->dims());
@@ -124,11 +120,11 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       auto* alpha_cpu = param.Prelu_alpha->mutable_data<float>();
       alpha_converter.NCHWToImage(
           alpha_cpu, alpha_image_data, param.Prelu_alpha->dims());
-      MUTABLE_DATA_GPU(alpha_gpu_tensor,
+      MUTABLE_DATA_GPU(alpha_gpu_t_,
                        alpha_image_dims[0],
                        alpha_image_dims[1],
                        alpha_image_data);
-      alpha_img_ = DATA_GPU(alpha_gpu_tensor);
+      alpha_img_ = DATA_GPU(alpha_gpu_t_);
     }
   }
 
@@ -221,8 +217,8 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
-    ch->global_work_size = global_work_size_;
-    ch->local_work_size = local_work_size_;
+    ch->global_work_size = ch->NDRangeToStr(global_work_size_);
+    ch->local_work_size = ch->NDRangeToStr(local_work_size_);
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
   }
@@ -272,21 +268,23 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
-  bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
+  bool first_epoch_for_reinit_{true};
+  bool has_bias_{false};
 
+  cl::Kernel kernel_;
   cl::NDRange global_work_size_;
   cl::NDRange local_work_size_;
 
-  cl::Kernel kernel_;
+  std::unique_ptr<Tensor> w_gpu_t_{nullptr};
+  std::unique_ptr<Tensor> bias_gpu_t_{nullptr};
+  std::unique_ptr<Tensor> alpha_gpu_t_{nullptr};
 
   cl::Image2D* x_img_{nullptr};
   cl::Image2D* out_img_{nullptr};
   const cl::Buffer* w_buf_{nullptr};
   cl::Image2D* bias_img_{nullptr};
   cl::Image2D* alpha_img_{nullptr};
-
-  bool has_bias_{false};
 };
 
 }  // namespace opencl
