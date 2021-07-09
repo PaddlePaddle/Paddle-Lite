@@ -488,6 +488,10 @@ void RuntimeProgram::Run() {
 #ifdef LITE_WITH_OPENCL
     // delegate flush judgement to specify target , it is too heavy for Inst
     inst.Flush(idx);
+
+    // save program kernel cache & tuned params
+    CLRuntime::Global()->SaveProgram();
+    CLRuntime::Global()->SaveTuned();
 #endif
 
 #ifdef LITE_WITH_PRECISION_PROFILE

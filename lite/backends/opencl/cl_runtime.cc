@@ -37,9 +37,6 @@ void CLRuntime::Flush(const int index) {
 }
 
 CLRuntime::~CLRuntime() {
-  SaveProgram();
-  SaveTuned();
-
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
 #endif
