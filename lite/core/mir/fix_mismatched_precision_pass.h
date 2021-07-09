@@ -26,15 +26,16 @@ Some op's inputs/outputs' precision is not correct due to unknown reasons.
 For example: multiclass_nms2's output(Index) should be int32, but it is int64 in
 specific models. We should update it to int32 by this pass.
 */
-class UpdatePrecisionPass : public ProgramPass {
+class FixMismatchedPrecisionPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
-  void UpdatePrecision(const std::unique_ptr<SSAGraph>& graph,
-                       const std::string target_op_type,
-                       const std::string target_arg_name,
-                       const lite_api::PrecisionType target_precision_type);
+  void FixMismatchedPrecision(
+      const std::unique_ptr<SSAGraph>& graph,
+      const std::string target_op_type,
+      const std::string target_arg_name,
+      const lite_api::PrecisionType target_precision_type);
 };
 
 }  // namespace mir

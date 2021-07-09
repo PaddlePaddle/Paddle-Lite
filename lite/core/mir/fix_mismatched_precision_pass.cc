@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/elimination/update_precision_pass.h"
+#include "lite/core/mir/fix_mismatched_precision_pass.h"
 #include <vector>
 #include "lite/core/mir/pass_registry.h"
 
@@ -20,11 +20,11 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-void UpdatePrecisionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  UpdatePrecision(graph, "multiclass_nms2", "Index", PRECISION(kInt32));
+void FixMismatchedPrecisionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  FixMismatchedPrecision(graph, "multiclass_nms2", "Index", PRECISION(kInt32));
 }
 
-void UpdatePrecisionPass::UpdatePrecision(
+void FixMismatchedPrecisionPass::FixMismatchedPrecision(
     const std::unique_ptr<SSAGraph>& graph,
     const std::string target_op_type,
     const std::string target_arg_name,
@@ -63,5 +63,6 @@ void UpdatePrecisionPass::UpdatePrecision(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(update_precision_pass, paddle::lite::mir::UpdatePrecisionPass)
-    .BindTargets({TARGET(kAny)});
+REGISTER_MIR_PASS(fix_mismatched_precision_pass,
+                  paddle::lite::mir::FixMismatchedPrecisionPass)
+    .BindTargets({TARGET(kXPU)});
