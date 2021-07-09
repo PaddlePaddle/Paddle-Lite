@@ -118,6 +118,10 @@ function make_armosx {
     then
         rm -rf $build_dir
     fi
+    if [ ! -d third-party ]; then
+        git checkout third-party
+    fi
+
     echo "building arm macos target into $build_dir"
     echo "target arch: $arch"
     mkdir -p ${build_dir}
@@ -166,6 +170,10 @@ function make_x86 {
 
   if [ ${BUILD_PYTHON} == "ON" ]; then
     BUILD_EXTRA=ON
+  fi
+
+  if [ ! -d third-party ]; then
+    git checkout third-party
   fi
 
   if [ -d $build_directory ]
@@ -226,7 +234,6 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  for arm macos:                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
-    echo -e "|     --arch: arm macos only support armv8                                                                                             |"
     echo -e "|     --build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
