@@ -39,9 +39,6 @@ void scatter<float>(const int64_t* indexs,
     int cnt = size >> 3;
     int rem = size & 7;
     for (int i = 0; i < index_size; i++) {
-      memset(dst + indexs[i] * size, 0, sizeof(float) * size);
-    }
-    for (int i = 0; i < index_size; i++) {
       const float* din = src + i * size;
       float* dout = dst + indexs[i] * size;
       for (int j = 0; j < cnt; j++) {
@@ -53,7 +50,7 @@ void scatter<float>(const int64_t* indexs,
         vb1 = vaddq_f32(va1, vb1);
         din += 8;
         vst1q_f32(dout, vb0);
-        vst1q_f32(dout + 4, vb0);
+        vst1q_f32(dout + 4, vb1);
         dout += 8;
       }
       for (int j = 0; j < rem; j++) {

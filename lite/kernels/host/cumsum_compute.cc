@@ -31,8 +31,6 @@ void CumsumCompute<T, PType>::Run() {
 
   if (param.flatten || x_dims.size() == 1) {
     int64_t x_size = x->numel();
-    int begin_ind = 1;
-    int end_ind = x_size;
     if (param.exclusive) {
       out_data[0] = 0;
       for (int64_t i = 0; i < x_size - 1; i++) {
