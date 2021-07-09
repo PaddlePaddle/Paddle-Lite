@@ -72,7 +72,7 @@ void sgemv_trans(const int M,
                  const float *bias,
                  bool flag_act,
                  lite_api::ActivationType act,
-                 const ARMContext *ctx,
+                 ARMContext *ctx,
                  float six,
                  float alpha);
 
@@ -87,7 +87,7 @@ bool sgemv(const float *A,
            const float *bias,
            bool flag_act,
            lite_api::ActivationType act,
-           const ARMContext *ctx,
+           ARMContext *ctx,
            float six,
            float alpha) {
   bool has_a53 = (ctx->arch() == kA53 || ctx->arch() == kA35);
@@ -123,7 +123,7 @@ void sgemv_trans(const int M,
                  const float *bias,
                  bool flag_act,
                  lite_api::ActivationType act,
-                 const ARMContext *ctx,
+                 ARMContext *ctx,
                  float six,
                  float alpha) {
   int m_cnt16 = M >> 4;
@@ -135,9 +135,19 @@ void sgemv_trans(const int M,
   int valid_block = std::max(4, (N / valid_ths + 3) / 4 * 4);
   valid_ths = (N + valid_block - 1) / valid_block;
   int block_cnt = valid_block / 4;
-  float *y_buf = new float[valid_ths * M];
-  float *zero_buf = new float[M];
-  float *x_buf = new float[valid_block * valid_ths];
+
+#ifdef LITE_WITH_IOS
+  ctx->ExtendWorkspace(sizeof(float) *
+                       (valid_ths * M + M + valid_block * valid_ths));
+  float *y_buf = ctx->workspace_data<float>();
+  float *zero_buf = y_buf + valid_ths * M;
+  float *x_buf = zero_buf + M;
+#else
+  float y_buf[valid_ths * M];            // NOLINT
+  float zero_buf[M];                     // NOLINT
+  float x_buf[valid_block * valid_ths];  // NOLINT
+#endif
+
   memset(x_buf, 0, valid_block * valid_ths * sizeof(float));
   memcpy(x_buf, x, N * sizeof(float));
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
