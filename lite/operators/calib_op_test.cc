@@ -57,6 +57,6 @@ TEST(calib_op_lite, TestARM) {
 }  // namespace paddle
 
 #ifdef LITE_WITH_ARM
-USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, fp32_to_int8);
-USE_LITE_KERNEL(calib, kARM, kInt8, kNCHW, int8_to_fp32);
+USE_LITE_KERNEL(calib, kARM, kFloat, kNCHW, fp32_to_int8);
+USE_LITE_KERNEL(calib, kARM, kFloat, kNCHW, int8_to_fp32);
 #endif
