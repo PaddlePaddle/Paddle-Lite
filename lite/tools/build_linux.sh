@@ -169,6 +169,10 @@ function make_tiny_publish_so {
 
     if [ "$is_tiny" = "OFF" ]; then
         prepare_thirdparty
+    else
+        if [ ! -d third-party ] ; then
+            git checkout third-party
+        fi
     fi
 
     build_dir=$workspace/build.lite.linux.$ARCH.$TOOLCHAIN
