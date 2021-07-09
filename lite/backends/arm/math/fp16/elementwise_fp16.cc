@@ -273,7 +273,7 @@ namespace fp16 {
           int stride = k << 5;                                              \
           const float16_t* dinx_ptr_1 = dinx_ptr + stride;                  \
           float16_t* dout_ptr_1 = dout_ptr + stride;                        \
-          float16x8_t val_y = vdupq_n_f16(diny_ptr[stride]);                \
+          float16x8_t val_y = vdupq_n_f16(diny_ptr[0]);                     \
           asm volatile(INIT_BROADCAST SIMPLE_COMPUTE_BROADCAST(f##op) STORE \
                        :                                                    \
                        : [dinx_ptr] "r"(dinx_ptr_1),                        \
@@ -298,7 +298,7 @@ namespace fp16 {
         if (rem_cnt > 0) {                                                  \
           const float16_t* dinx_ptr_1 = dinx_ptr + stride;                  \
           float16_t* dout_ptr_1 = dout_ptr + stride;                        \
-          float16x8_t val_y = vdupq_n_f16(diny_ptr[stride]);                \
+          float16x8_t val_y = vdupq_n_f16(diny_ptr[0]);                     \
           int cnt_num = rem_cnt;                                            \
           asm volatile(INIT_1_BROADCAST SIMPLE_COMPUTE_1_BROADCAST(f##op)   \
                            STORE_1                                          \
@@ -325,7 +325,7 @@ namespace fp16 {
           stride += (rem_cnt << 3);                                         \
           const float16_t* dinx_ptr_1 = dinx_ptr + stride;                  \
           float16_t* dout_ptr_1 = dout_ptr + stride;                        \
-          float16_t val = diny_ptr[stride];                                 \
+          float16_t val = diny_ptr[0];                                      \
           for (int i = 0; i < rem_rem; i++) {                               \
             *dout_ptr_1 = naive_##op(*dinx_ptr_1, val);                     \
             dinx_ptr_1++;                                                   \
@@ -357,7 +357,7 @@ namespace fp16 {
           int stride = k << 5;                                              \
           const float16_t* dinx_ptr_1 = dinx_ptr + stride;                  \
           float16_t* dout_ptr_1 = dout_ptr + stride;                        \
-          float16x8_t val_y = vdupq_n_f16(diny_ptr[stride]);                \
+          float16x8_t val_y = vdupq_n_f16(diny_ptr[0]);                     \
           asm volatile(INIT_BROADCAST SIMPLE_COMPUTE_BROADCAST(f##op)       \
                            RELU STORE                                       \
                        :                                                    \
@@ -384,7 +384,7 @@ namespace fp16 {
         if (rem_cnt > 0) {                                                  \
           const float16_t* dinx_ptr_1 = dinx_ptr + stride;                  \
           float16_t* dout_ptr_1 = dout_ptr + stride;                        \
-          float16x8_t val_y = vdupq_n_f16(diny_ptr[stride]);                \
+          float16x8_t val_y = vdupq_n_f16(diny_ptr[0]);                     \
           int cnt_num = rem_cnt;                                            \
           asm volatile(INIT_1_BROADCAST SIMPLE_COMPUTE_1_BROADCAST(f##op)   \
                            RELU_1 STORE_1                                   \
@@ -411,7 +411,7 @@ namespace fp16 {
           stride += (rem_cnt << 3);                                         \
           const float16_t* dinx_ptr_1 = dinx_ptr + stride;                  \
           float16_t* dout_ptr_1 = dout_ptr + stride;                        \
-          float16_t val = diny_ptr[stride];                                 \
+          float16_t val = diny_ptr[0];                                      \
           for (int i = 0; i < rem_rem; i++) {                               \
             float16_t tmp_val = naive_##op(*dinx_ptr_1, val);               \
             dinx_ptr_1++;                                                   \

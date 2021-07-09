@@ -161,13 +161,13 @@ void act_hard_sigmoid<float16_t>(const float16_t* din,
       "fcmlt v11.8h, v3.8h, %[vone_8].8h\n"
 
       "ldr q0, [%[din_ptr]], #16\n"
-      "bsl v8.16b, v4.16b, %[vzero_8].16b\n"
+      "bsl v8.16b, v4.16b, %[vone_8].16b\n"
       "ldr q1, [%[din_ptr]], #16\n"
       "ldr q2, [%[din_ptr]], #16\n"
-      "bsl v9.16b, v5.16b, %[vzero_8].16b\n"
-      "bsl v10.16b, v6.16b, %[vzero_8].16b\n"
+      "bsl v9.16b, v5.16b, %[vone_8].16b\n"
+      "bsl v10.16b, v6.16b, %[vone_8].16b\n"
       "ldr q3, [%[din_ptr]], #16\n"
-      "bsl v11.16b, v7.16b, %[vzero_8].16b\n"
+      "bsl v11.16b, v7.16b, %[vone_8].16b\n"
 
       "subs %w[cnt], %w[cnt], #1\n"
       "str q8, [%[dout_ptr]], #16\n"

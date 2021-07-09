@@ -295,8 +295,12 @@ void TestEltFuseAct(Place place, float abs_error) {
 #ifdef ENABLE_ARM_FP16
 void TestFp16EltDims(Place place, float abs_error, std::string test_operator) {
   TestElt<float16_t>(
+      place, abs_error, test_operator, {1, 40, 40, 40}, {1, 40, 40, 40}, 0);
+  TestElt<float16_t>(
       place, abs_error, test_operator, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
   TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4}, {2, 3, 4}, 0);
+  TestElt<float16_t>(
+      place, abs_error, test_operator, {1, 40, 40, 40}, {1, 40, 1, 1}, 0);
   TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4}, {2, 3}, 0);
   TestElt<float16_t>(place, abs_error, test_operator, {2, 3}, {2}, 0);
   TestElt<float16_t>(place, abs_error, test_operator, {2, 3, 4, 5}, {3, 4}, 1);
@@ -313,6 +317,13 @@ void TestFp16EltDims(Place place, float abs_error, std::string test_operator) {
 void TestFp16EltFuseAct(Place place,
                         float abs_error,
                         std::string test_operator) {
+  TestElt<float16_t>(place,
+                     abs_error,
+                     test_operator,
+                     {1, 40, 40, 40},
+                     {1, 40, 1, 1},
+                     0,
+                     "relu");
   TestElt<float16_t>(
       place, abs_error, test_operator, {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "relu");
   TestElt<float16_t>(
