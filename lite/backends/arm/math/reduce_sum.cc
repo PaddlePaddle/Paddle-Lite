@@ -638,13 +638,13 @@ void reduce_sum_all<int32_t>(const int32_t* src, int32_t* dst, int all_size) {
   dst[0] = vsum[0];
 }
 
-template <>
-void reduce_sum_c<float>(const float* src,
-                         float* dst,
-                         int num_in,
-                         int channel_in,
-                         int height_in,
-                         int width_in) {
+template <typename T>
+void reduce_sum_c(const T* src,
+                  T* dst,
+                  int num_in,
+                  int channel_in,
+                  int height_in,
+                  int width_in) {
   int hw_size = height_in * width_in;
   int chw_size = hw_size * channel_in;
   for (int n = 0; n < num_in; ++n) {
@@ -654,13 +654,13 @@ void reduce_sum_c<float>(const float* src,
   }
 }
 
-template <>
-void reduce_sum_h<float>(const float* src,
-                         float* dst,
-                         int num_in,
-                         int channel_in,
-                         int height_in,
-                         int width_in) {
+template <typename T>
+void reduce_sum_h(const T* src,
+                  T* dst,
+                  int num_in,
+                  int channel_in,
+                  int height_in,
+                  int width_in) {
   int nc_size = num_in * channel_in;
   int hw_size = height_in * width_in;
   for (int n = 0; n < nc_size; ++n) {
@@ -670,82 +670,9 @@ void reduce_sum_h<float>(const float* src,
   }
 }
 
-template <>
-void reduce_sum_nc<float>(const float* src,
-                          float* dst,
-                          int num_in,
-                          int channel_in,
-                          int height_in,
-                          int width_in) {
-  // reduce nc.
-  int num = num_in * channel_in;
-  int size = height_in * width_in;
-  reduce_sum_n(src, dst, num, size, 1, 1);
-}
-
-template <>
-void reduce_sum_ch<float>(const float* src,
-                          float* dst,
-                          int num_in,
-                          int channel_in,
-                          int height_in,
-                          int width_in) {
-  int ch_size = channel_in * height_in;
-  int chw_size = ch_size * width_in;
-  for (int n = 0; n < num_in; n++) {
-    reduce_sum_n<float>(src, dst, ch_size, 1, 1, width_in);
-    src += chw_size;
-    dst += width_in;
-  }
-}
-
-template <>
-void reduce_sum_hw<float>(const float* src,
-                          float* dst,
-                          int num_in,
-                          int channel_in,
-                          int height_in,
-                          int width_in) {
-  int hw_size = height_in * width_in;
-  int nc_size = num_in * channel_in;
-  reduce_sum_w(src, dst, nc_size, 1, 1, hw_size);
-}
-
-template <>
-void reduce_sum_c<int32_t>(const int32_t* src,
-                           int32_t* dst,
-                           int num_in,
-                           int channel_in,
-                           int height_in,
-                           int width_in) {
-  int hw_size = height_in * width_in;
-  int chw_size = hw_size * channel_in;
-  for (int n = 0; n < num_in; ++n) {
-    reduce_sum_n(src, dst, channel_in, 1, height_in, width_in);
-    src += chw_size;
-    dst += hw_size;
-  }
-}
-
-template <>
-void reduce_sum_h<int32_t>(const int32_t* src,
-                           int32_t* dst,
-                           int num_in,
-                           int channel_in,
-                           int height_in,
-                           int width_in) {
-  int nc_size = num_in * channel_in;
-  int hw_size = height_in * width_in;
-  for (int n = 0; n < nc_size; ++n) {
-    reduce_sum_n(src, dst, height_in, 1, 1, width_in);
-    src += hw_size;
-    dst += width_in;
-  }
-}
-
-template <>
-void reduce_sum_nc(const int32_t* src,
-                   int32_t* dst,
+template <typename T>
+void reduce_sum_nc(const T* src,
+                   T* dst,
                    int num_in,
                    int channel_in,
                    int height_in,
@@ -756,13 +683,13 @@ void reduce_sum_nc(const int32_t* src,
   reduce_sum_n(src, dst, num, size, 1, 1);
 }
 
-template <>
-void reduce_sum_ch<int32_t>(const int32_t* src,
-                            int32_t* dst,
-                            int num_in,
-                            int channel_in,
-                            int height_in,
-                            int width_in) {
+template <typename T>
+void reduce_sum_ch(const T* src,
+                   T* dst,
+                   int num_in,
+                   int channel_in,
+                   int height_in,
+                   int width_in) {
   int ch_size = channel_in * height_in;
   int chw_size = ch_size * width_in;
   for (int n = 0; n < num_in; n++) {
@@ -772,18 +699,77 @@ void reduce_sum_ch<int32_t>(const int32_t* src,
   }
 }
 
-template <>
-void reduce_sum_hw<int32_t>(const int32_t* src,
-                            int32_t* dst,
-                            int num_in,
-                            int channel_in,
-                            int height_in,
-                            int width_in) {
+template <typename T>
+void reduce_sum_hw(const T* src,
+                   T* dst,
+                   int num_in,
+                   int channel_in,
+                   int height_in,
+                   int width_in) {
   int hw_size = height_in * width_in;
   int nc_size = num_in * channel_in;
   reduce_sum_w(src, dst, nc_size, 1, 1, hw_size);
 }
-
+template void reduce_sum_c<float>(const float* src,
+                                  float* dst,
+                                  int num_in,
+                                  int channel_in,
+                                  int height_in,
+                                  int width_in);
+template void reduce_sum_c<int32_t>(const int32_t* src,
+                                    int32_t* dst,
+                                    int num_in,
+                                    int channel_in,
+                                    int height_in,
+                                    int width_in);
+template void reduce_sum_h<float>(const float* src,
+                                  float* dst,
+                                  int num_in,
+                                  int channel_in,
+                                  int height_in,
+                                  int width_in);
+template void reduce_sum_h<int32_t>(const int32_t* src,
+                                    int32_t* dst,
+                                    int num_in,
+                                    int channel_in,
+                                    int height_in,
+                                    int width_in);
+template void reduce_sum_nc<float>(const float* src,
+                                   float* dst,
+                                   int num_in,
+                                   int channel_in,
+                                   int height_in,
+                                   int width_in);
+template void reduce_sum_nc<int32_t>(const int32_t* src,
+                                     int32_t* dst,
+                                     int num_in,
+                                     int channel_in,
+                                     int height_in,
+                                     int width_in);
+template void reduce_sum_ch<float>(const float* src,
+                                   float* dst,
+                                   int num_in,
+                                   int channel_in,
+                                   int height_in,
+                                   int width_in);
+template void reduce_sum_ch<int32_t>(const int32_t* src,
+                                     int32_t* dst,
+                                     int num_in,
+                                     int channel_in,
+                                     int height_in,
+                                     int width_in);
+template void reduce_sum_hw<float>(const float* src,
+                                   float* dst,
+                                   int num_in,
+                                   int channel_in,
+                                   int height_in,
+                                   int width_in);
+template void reduce_sum_hw<int32_t>(const int32_t* src,
+                                     int32_t* dst,
+                                     int num_in,
+                                     int channel_in,
+                                     int height_in,
+                                     int width_in);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

@@ -29,22 +29,20 @@ void scatter<float>(const int64_t* indexs,
                     int num,
                     int size,
                     bool overwrite) {
-  for (int i = 0; i < num; i++) {
-    const float* din = src + indexs[i] * size;
-    memcpy(dst, din, sizeof(float) * size);
-    dst += size;
-  }
+  memset(reinterpret_cast<char*>(dst), 0, sizeof(float) * size * num);
   if (overwrite) {
-    for (int i = num; i < index_size; i++) {
-      const float* din = src + indexs[i] * size;
-      float* dout = dst + indexs[i] * size;
-      memcpy(dout, din, sizeof(float) * size);
+    for (int i = 0; i < index_size; i++) {
+      const float* din = src + i * size;
+      memcpy(dst + indexs[i] * size, din, sizeof(float) * size);
     }
   } else {
     int cnt = size >> 3;
     int rem = size & 7;
-    for (int i = num; i < index_size; i++) {
-      const float* din = src + indexs[i] * size;
+    for (int i = 0; i < index_size; i++) {
+      memset(dst + indexs[i] * size, 0, sizeof(float) * size);
+    }
+    for (int i = 0; i < index_size; i++) {
+      const float* din = src + i * size;
       float* dout = dst + indexs[i] * size;
       for (int j = 0; j < cnt; j++) {
         float32x4_t va0 = vld1q_f32(din);
