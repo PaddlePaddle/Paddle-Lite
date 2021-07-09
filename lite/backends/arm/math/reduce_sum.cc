@@ -441,7 +441,7 @@ void reduce_sum_w<int32_t>(const int32_t* src,
     const int32_t* din_ptr1 = din_ptr0 + width_in;
     const int32_t* din_ptr2 = din_ptr1 + width_in;
     const int32_t* din_ptr3 = din_ptr2 + width_in;
-    int32x4_t vsum = vdupq_n_f32(0.f);
+    int32x4_t vsum = vdupq_n_s32(0.f);
     int tmp = rem_w;
     for (int w = 0; w < cnt_w; w++) {
       int32x4_t va0 = vld1q_s32(din_ptr0);
@@ -493,7 +493,7 @@ void reduce_sum_w<int32_t>(const int32_t* src,
   if (rem_n > 1) {
     const int32_t* din_ptr0 = src + stride;
     const int32_t* din_ptr1 = din_ptr0 + width_in;
-    int32x4_t vsum = vdupq_n_f32(0.f);
+    int32x4_t vsum = vdupq_n_s32(0.f);
     for (int w = 0; w < cnt_w; w++) {
       int32x4_t va0 = vld1q_s32(din_ptr0);
       din_ptr0 += 4;
@@ -535,7 +535,7 @@ void reduce_sum_w<int32_t>(const int32_t* src,
   }
   for (int n = 0; n < rem_n; n++) {
     const int32_t* din_ptr0 = src + stride;
-    int32x4_t vsum = vdupq_n_f32(0.f);
+    int32x4_t vsum = vdupq_n_s32(0.f);
     for (int w = 0; w < cnt_w; w++) {
       int32x4_t va0 = vld1q_s32(din_ptr0);
       int32x4_t va1 = vld1q_s32(din_ptr0 + 4);
