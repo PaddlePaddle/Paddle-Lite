@@ -114,44 +114,35 @@ void UniqueWithCountsCompute::Run() {
   bool index_type_match =
       index_type == PRECISION(kInt32) || index_type == PRECISION(kInt64);
   lite_api::PrecisionType type = x->precision();
-  CHECK_EQ(index_type_match, true) << "Index holds the wrong type, it holds "
-                                   << static_cast<int>(type)
-                                   << "but desires to be int32 or int64";
-  if (index_type == PRECISION(kInt32)) {
+  VLOG(4) << "index_type: " << PrecisionToStr(index_type) << ", type: " << PrecisionToStr(type);
+
+  if (index_type == PRECISION(kInt64)) {
     switch (type) {
       case PRECISION(kFloat):
-        UniqueFunc_int32<float>(x, output, index, count);
+        UniqueFunc_int64<float>(x, output, index, count);
         break;
-#ifdef ENABLE_ARM_FP16
-      case PRECISION(kFP16):
-        UniqueFunc_int32<__fp16>(x, output, index, count);
-        break;
-#endif
       case PRECISION(kInt32):
-        UniqueFunc_int32<int32_t>(x, output, index, count);
+        UniqueFunc_int64<int32_t>(x, output, index, count);
         break;
       case PRECISION(kInt64):
-        UniqueFunc_int32<int64_t>(x, output, index, count);
+        UniqueFunc_int64<int64_t>(x, output, index, count);
         break;
       default:
         LOG(FATAL) << "unique_with_counts does not implement for the "
                    << "input type:" << static_cast<int>(type);
     }
   } else {
+    LOG(INFO) << "kint32";
     switch (type) {
       case PRECISION(kFloat):
-        UniqueFunc_int64<float>(x, output, index, count);
+        UniqueFunc_int32<float>(x, output, index, count);
         break;
-#ifdef ENABLE_ARM_FP16
-      case PRECISION(kFP16):
-        UniqueFunc_int64<__fp16>(x, output, index, count);
-        break;
-#endif
       case PRECISION(kInt32):
-        UniqueFunc_int64<int32_t>(x, output, index, count);
+        LOG(INFO) << "UniqueFunc_int32-int32";
+        UniqueFunc_int32<int32_t>(x, output, index, count);
         break;
       case PRECISION(kInt64):
-        UniqueFunc_int64<int64_t>(x, output, index, count);
+        UniqueFunc_int32<int64_t>(x, output, index, count);
         break;
       default:
         LOG(FATAL) << "unique_with_counts does not implement for the "

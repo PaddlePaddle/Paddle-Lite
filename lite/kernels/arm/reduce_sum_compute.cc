@@ -25,10 +25,10 @@ namespace arm {
 template <typename T, PrecisionType Ptype>
 void ReduceSumCompute<T, Ptype>::Run() {
   auto& param = this->template Param<operators::ReduceParam>();
-  auto* input = param.X->template data<T>();
-  auto x_dims = param.X->dims();
+  auto* input = param.x->template data<T>();
+  auto x_dims = param.x->dims();
   int x_rank = x_dims.size();
-  auto* Out = param.Out->template mutable_data<T>();
+  auto* Out = param.output->template mutable_data<T>();
   std::vector<int> dim = param.dim;
   bool keep_dim = param.keep_dim;
   bool reduce_all = param.reduce_all;
