@@ -11,6 +11,7 @@ add_kernel(activation_compute_x86 X86 basic SRCS activation_compute.cc DEPS ${li
 add_kernel(scale_compute_x86 X86 basic SRCS scale_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(cast_compute_x86 X86 basic SRCS cast_compute.cc DEPS ${lite_kernel_deps} fluid_data_type)
 add_kernel(slice_compute_x86 X86 basic SRCS slice_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(clip_compute_x86 X86 basic SRCS clip_compute.cc DEPS ${lite_kernel_deps})
 if(WITH_AVX AND AVX_FOUND)
   add_kernel(conv_depthwise_x86 X86 basic SRCS conv_depthwise.cc DEPS ${lite_kernel_deps} conv_utils conv_depthwise_pack8 conv_depthwise_pack4)
   add_kernel(conv_compute_x86 X86 basic SRCS conv_compute.cc DEPS ${lite_kernel_deps} blas im2col vol2col conv_depthwise_x86 conv_bias)
