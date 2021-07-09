@@ -9,7 +9,7 @@ NUM_PROC=4
 
 # model name and downloading url
 MODELS_URL=( "http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz" \  # mobilenet_v1 
-             "https://paddlelite-data.bj.bcebos.com/doc_models/ssd_mobilenet_v3_large.tar" \ #ssd_mobilenet_v3_large
+             "https://paddlelite-data.bj.bcebos.com/doc_models/ssd_mobilenet_v3_large.tar" \ # ssd_mobilenet_v3_large
            )
 
 
