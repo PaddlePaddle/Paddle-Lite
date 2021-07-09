@@ -1951,6 +1951,22 @@ struct OneHotParam : ParamBase {
   bool allow_out_of_range;
 };
 
+struct ArgsortParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Indices{};
+
+  int axis{-1};
+  bool descending{false};
+};
+
+struct UniqueWithCountsParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Index{};
+  lite::Tensor* Count{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

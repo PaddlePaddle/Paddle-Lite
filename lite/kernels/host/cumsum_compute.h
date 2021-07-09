@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,26 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-template <typename T, PrecisionType Ptype>
-class ReduceSumCompute : public KernelLite<TARGET(kARM), Ptype> {
+template <class T, PrecisionType PType>
+class CumsumCompute
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
  public:
+  using param_t = operators::CumsumParam;
+
   void Run() override;
 
-  virtual ~ReduceSumCompute() = default;
+  virtual ~CumsumCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

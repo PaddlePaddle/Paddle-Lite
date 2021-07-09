@@ -22,12 +22,13 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void ReduceSumCompute::Run() {
+template <typename T, PrecisionType Ptype>
+void ReduceSumCompute<T, Ptype>::Run() {
   auto& param = this->template Param<operators::ReduceParam>();
-  auto* input = param.x->template data<float>();
-  auto x_dims = param.x->dims();
+  auto* input = param.X->template data<T>();
+  auto x_dims = param.X->dims();
   int x_rank = x_dims.size();
-  auto* output = param.output->template mutable_data<float>();
+  auto* Out = param.Out->template mutable_data<T>();
   std::vector<int> dim = param.dim;
   bool keep_dim = param.keep_dim;
   bool reduce_all = param.reduce_all;
@@ -41,7 +42,7 @@ void ReduceSumCompute::Run() {
   }
 
   if (reduce_all) {
-    lite::arm::math::reduce_sum_all(input, output, x_dims.production());
+    lite::arm::math::reduce_sum_all(input, Out, x_dims.production());
   } else {
     int n_in = 1;
     int c_in = 1;
@@ -65,16 +66,16 @@ void ReduceSumCompute::Run() {
     if (dim.size() == 1) {
       switch (dim[0]) {
         case 0:
-          lite::arm::math::reduce_sum_n(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_sum_n(input, Out, n_in, c_in, h_in, w_in);
           break;
         case 1:
-          lite::arm::math::reduce_sum_c(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_sum_c(input, Out, n_in, c_in, h_in, w_in);
           break;
         case 2:
-          lite::arm::math::reduce_sum_h(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_sum_h(input, Out, n_in, c_in, h_in, w_in);
           break;
         case 3:
-          lite::arm::math::reduce_sum_w(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_sum_w(input, Out, n_in, c_in, h_in, w_in);
           break;
         default:
           LOG(FATAL) << "dim[0] is " << dim[0]
@@ -82,11 +83,11 @@ void ReduceSumCompute::Run() {
       }
     } else if (dim.size() == 2) {
       if (dim[0] == 0 && dim[1] == 1) {
-        lite::arm::math::reduce_sum_nc(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_sum_nc(input, Out, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 1 && dim[1] == 2) {
-        lite::arm::math::reduce_sum_ch(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_sum_ch(input, Out, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 2 && dim[1] == 3) {
-        lite::arm::math::reduce_sum_hw(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_sum_hw(input, Out, n_in, c_in, h_in, w_in);
       } else {
         LOG(FATAL)
             << "Only support the values of the dim are 0,1 1,2 or 2,3 for now.";
@@ -102,13 +103,17 @@ void ReduceSumCompute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+using reduce_sum_arm_int32 =
+    paddle::lite::kernels::arm::ReduceSumCompute<int, PRECISION(kFloat)>;
+using reduce_sum_arm_float =
+    paddle::lite::kernels::arm::ReduceSumCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    reduce_sum, kARM, kFloat, kNCHW, reduce_sum_arm_int32, def_int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
 
-REGISTER_LITE_KERNEL(reduce_sum,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::ReduceSumCompute,
-                     def)
+REGISTER_LITE_KERNEL(reduce_sum, kARM, kFloat, kNCHW, reduce_sum_arm_float, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
