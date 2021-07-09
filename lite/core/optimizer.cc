@@ -222,7 +222,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "variable_place_inference_pass",  // inference arg/var's
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
        "__fpga_kernel_place_correct_pass",
-       "opencl_kernel_place_correct_pass",
+       // "opencl_kernel_place_correct_pass",
        "mlu_postprocess_pass",
        // info(target/precision/layout/device)
        // using kernel info

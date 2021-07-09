@@ -31,44 +31,57 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-class FcCompute : public KernelLite<TARGET(kOpenCL),
-                                    PRECISION(kFP16),
-                                    DATALAYOUT(kImageDefault)> {
+class FcImageCompute : public KernelLite<TARGET(kOpenCL),
+                                         PRECISION(kFP16),
+                                         DATALAYOUT(kImageDefault)> {
  public:
   void PrepareForRun() override {
+    VLOG(4) << "0";
     auto& param = this->Param<operators::FcParam>();
     const auto w_t = param.w;
     const auto bias_t = param.bias;
     has_bias_ = (bias_t == nullptr) ? false : true;
+    VLOG(4) << "0.1";
 
     // convert weights from cpu to gpu
     auto w_cpu_tensor = std::unique_ptr<Tensor>(new Tensor);
     auto w_gpu_tensor = std::unique_ptr<Tensor>(new Tensor);
 
     const auto w_dims = w_t->dims();
+
+    VLOG(4) << "w_dims:" << w_dims;
+    VLOG(4) << "x_dims:" << param.input->dims();
+    VLOG(4) << "out_dims:" << param.output->dims();
+
     auto w_ext_dims = w_dims;
     w_ext_dims[0] = ROUND_UP(w_dims[0], 4);
     w_ext_dims[1] = ROUND_UP(w_dims[1], 4);
     w_cpu_tensor->Resize(w_ext_dims);
+    VLOG(4) << "0.2";
     auto* w_buffer_data = MUTABLE_DATA_CPU(w_cpu_tensor.get());
     size_t buf_size = w_cpu_tensor->memory_size();
 
+    VLOG(4) << "1";
+
     auto* w_cpu = param.w->mutable_data<float>();
     OI2IOO4I4(w_cpu, w_buffer_data, w_dims[0], w_dims[1]);
+    VLOG(4) << "2";
 
     auto* w_gpu_data = w_gpu_tensor->mutable_data(TARGET(kOpenCL),
                                                   w_cpu_tensor->memory_size());
+    VLOG(4) << "3";
     TargetWrapperCL::MemcpySync(w_gpu_data,
                                 w_cpu_tensor->raw_data(),
                                 w_cpu_tensor->memory_size(),
                                 IoDirection::HtoD);
     w_buf_ = GET_BUFFER_GPU(w_gpu_tensor);
-
+    VLOG(4) << "4";
     // convert bias from cpu to gpu
-    auto bias_cpu_tensor = std::unique_ptr<Tensor>(new Tensor);
-    auto bias_gpu_tensor = std::unique_ptr<Tensor>(new Tensor);
-    CLImageConverterFolder bias_converter;
     if (has_bias_) {
+      auto bias_cpu_tensor = std::unique_ptr<Tensor>(new Tensor);
+      auto bias_gpu_tensor = std::unique_ptr<Tensor>(new Tensor);
+      CLImageConverterFolder bias_converter;
+
       const DDim& bias_image_dims =
           bias_converter.InitImageDimInfoWith(param.bias->dims());
       bias_cpu_tensor->Resize({1, bias_image_dims[0], bias_image_dims[1], 4});
@@ -81,12 +94,8 @@ class FcCompute : public KernelLite<TARGET(kOpenCL),
                        bias_image_data);
 
       build_options_ += " -DBIASE_CH";
-    } else {
-      bias_cpu_tensor->Resize({1, 1, 1, 4});
-      auto* bias_image_data = DATA_GPU(bias_cpu_tensor);
-      MUTABLE_DATA_GPU(bias_gpu_tensor, 1, 1, bias_image_data);
+      bias_img_ = DATA_GPU(bias_gpu_tensor);
     }
-    bias_img_ = DATA_GPU(bias_gpu_tensor);
 
     if (param.activation_type == "relu") {
       build_options_ += " -DRELU";
@@ -289,8 +298,8 @@ REGISTER_LITE_KERNEL(fc,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::FcCompute,
-                     def)
+                     paddle::lite::kernels::opencl::FcImageCompute,
+                     image2d)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

@@ -197,14 +197,16 @@ __kernel void softmax_1x1(__read_only image2d_t input,
                           __write_only image2d_t output,
                           __private const float4 mask,
                           __private const int c_blks) {
-  int tid = get_local_id(0);
+  const int c_blk_idx = get_global_id(0);
+  const int b_idx = get_global_id(1);
+  const int tid = get_local_id(0);
 
   // Compute Max
-  float4 maxx4 = read_imagef(input, SAMPLER, (int2)(0, 0));
+  float4 maxx4 = read_imagef(input, SAMPLER, (int2)(0, b_idx));
   for (int s = tid; s < c_blks; s += 32) {  // as workgroup size is 32
     float4 mask_a = s == c_blks - 1 ? mask : (float4)(1.0f);
     float4 mask_b = (float4)(1.0f) - mask_a;
-    float4 src = read_imagef(input, SAMPLER, (int2)(s, 0));
+    float4 src = read_imagef(input, SAMPLER, (int2)(s, b_idx));
     src = src * mask_a + mask_b * src.x;  // mask_b can be removed
     maxx4 = max(maxx4, src);
   }
@@ -238,7 +240,8 @@ __kernel void softmax_1x1(__read_only image2d_t input,
   float sum = 0.0f;
   for (int s = tid; s < c_blks; s += 32) {
     float4 mask_temp = s == c_blks - 1 ? mask : (float4)(1.0f);
-    float4 src = read_imagef(input, SAMPLER, (int2)(s, 0)) - (float4)(maximum);
+    float4 src =
+        read_imagef(input, SAMPLER, (int2)(s, b_idx)) - (float4)(maximum);
     sum += dot(mask_temp, exp(src));
   }
   barrier(CLK_LOCAL_MEM_FENCE);
@@ -259,16 +262,15 @@ __kernel void softmax_1x1(__read_only image2d_t input,
   sum = tmpx1[0];
 
   // Compute Result
-  int dst_s = get_global_id(0);
-  if (dst_s < c_blks) {
-    float4 src =
-        read_imagef(input, SAMPLER, (int2)(dst_s, 0)) - (float4)(maximum);
+  if (c_blk_idx < c_blks) {
+    float4 src = read_imagef(input, SAMPLER, (int2)(c_blk_idx, b_idx)) -
+                 (float4)(maximum);
     // #ifdef CL_DTYPE_half
     //     CL_DTYPE4 res = convert_half4(exp(src) * sum);
     // #else
     //     CL_DTYPE4 res = exp(src) * sum;
     // #endif
     CL_DTYPE4 res = CONVERT_TYPE_TO(exp(src) * sum, CL_DTYPE4);
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(dst_s, 0), res);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(c_blk_idx, b_idx), res);
   }
 }
