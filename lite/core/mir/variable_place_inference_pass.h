@@ -245,7 +245,6 @@ class VariablePlaceInferencePass : public DebugPass {
       // Preprocessing for some special kernels
       if (InferQuantizedConcatOutputPrecision(node)) continue;
       if (InferQuantizedSubgraphOutputPrecision(node)) continue;
-      if (InferXPUIoCopyOutputPrecision(node)) continue;
       if (std::find(skiped_ops.begin(), skiped_ops.end(), op_type) ==
               skiped_ops.end() &&
           op_info->HasInput("X") && op_info->HasOutput("Out") &&
@@ -391,25 +390,6 @@ class VariablePlaceInferencePass : public DebugPass {
       skip = true;
     }
     return skip;
-  }
-
-  // Only for the io_copy kernel whose output argument precision is defined as
-  // PRECISION(kAny), infer the precision of the output data variables based on
-  // the input argument precision.
-  bool InferXPUIoCopyOutputPrecision(Node* op_node) {
-    const auto* inst = op_node->stmt();
-    if (inst->op_info()->Type() != "io_copy") return false;
-    if (inst->place().target != TARGET(kXPU)) return false;
-
-    CHECK_EQ(op_node->inlinks.size(), 1UL);
-    const auto* in_type = op_node->inlinks.front()->arg()->type;
-    CHECK_EQ(op_node->outlinks.size(), 1UL);
-    const auto out = op_node->outlinks.front();
-    const auto*& out_type = out->arg()->type;
-    out_type = LiteType::GetTensorTy(
-        out_type->target(), in_type->precision(), out_type->layout());
-    VLOG(4) << "update " << out->arg()->name << " to " << *out_type;
-    return true;
   }
 
  private:
