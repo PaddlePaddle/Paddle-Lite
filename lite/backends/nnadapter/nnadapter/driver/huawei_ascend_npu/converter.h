@@ -35,7 +35,7 @@ class Context {
  public:
   explicit Context(void* device, const char* properties);
   int GetFirstDeviceID() {
-    selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
+    return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
   }
   ~Context();
 
@@ -123,21 +123,21 @@ class Program {
 };
 
 // Set one of dynamic inputs of a ge::Operator and update its tensor desc
-#define SET_INPUT(dst, name, src)                       \
-  {                                                     \
-    auto value = src->op();                             \
-    auto tensor_desc = src->tensor_desc();              \
-    auto cmpt_name = src->component_name();             \
-    auto cmpt_index = src->component_index();           \
-    if (cmpt_name.empty()) {                            \
-      dst->set_input_##name(*value);                    \
-    } else {                                            \
-      if (cmpt_index >= 0) {                            \
-        cmpt_name += string_format("%d", cmpt_index);   \
-      }                                                 \
-      dst->set_input_##name(*value, cmpt_name.c_str()); \
-    }                                                   \
-    dst->update_input_desc_##name(*tensor_desc);        \
+#define SET_INPUT(dst, name, src)                                 \
+  {                                                               \
+    auto value = src->op();                                       \
+    auto tensor_desc = src->tensor_desc();                        \
+    auto cmpt_name = src->component_name();                       \
+    auto cmpt_index = src->component_index();                     \
+    if (cmpt_name.empty()) {                                      \
+      dst->set_input_##name(*value);                              \
+    } else {                                                      \
+      if (cmpt_index >= 0) {                                      \
+        cmpt_name += string_format("%d", cmpt_index);             \
+      }                                                           \
+      dst->set_input_##name##_by_name(*value, cmpt_name.c_str()); \
+    }                                                             \
+    dst->update_input_desc_##name(*tensor_desc);                  \
   }
 
 // Map one of dynamic outputs to a operand and update its tensor desc

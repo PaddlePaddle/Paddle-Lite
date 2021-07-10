@@ -64,6 +64,7 @@ template <typename T>
 ge::DataType GetGEDataType() {
   NNADAPTER_LOG(FATAL) << "Unable to convert " << typeid(T).name()
                        << " to ge::DataType";
+  return ge::DT_UNDEFINED;
 }
 template <>
 ge::DataType GetGEDataType<float>();

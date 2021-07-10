@@ -145,7 +145,6 @@ bool BuildOMModelToBuffer(
   auto output_count = output_operators.size();
   NNADAPTER_VLOG(3) << "input_count: " << input_count;
   NNADAPTER_VLOG(3) << "output_count: " << output_count;
-  NNADAPTER_CHECK_GE(input_count, 0);
   NNADAPTER_CHECK_GE(output_count, 1);
   if (input_count > 1) {
     for (size_t i = 0; i < input_count; i++) {

@@ -64,7 +64,7 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
     auto reshape_name = GetOperatorName(input_operand);
     auto reshape_op = std::make_shared<ge::op::Reshape>(reshape_name);
     auto shape_operator = AddInt32ConstantOperator(
-        std::vector<int32_t>({batch_size, input_size}));
+        std::vector<int32_t>({static_cast<int32_t>(batch_size), input_size}));
     SET_INPUT(reshape_op, x, input_operator);
     SET_INPUT(reshape_op, shape, shape_operator);
     input_operator = MAP_OUTPUT(reshape_op, y, input_operand);

@@ -26,4 +26,6 @@ if(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
   endif()
+  # Resolve the compilation error caused by the introduction of ACL GE header file
+  add_compile_options(-Wno-ignored-qualifiers)
 endif()

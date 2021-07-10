@@ -67,7 +67,7 @@ int Program::ConvertSplit(hal::Operation* operation) {
   SET_INPUT(split_op, x, input_operator);
   SET_INPUT(split_op, size_splits, split_operator);
   SET_INPUT(split_op, split_dim, axis_operator);
-  for (int i = 0; i < split_count; i++) {
+  for (uint32_t i = 0; i < split_count; i++) {
     MAP_DYNAMIC_OUTPUT(split_op, y, i, output_operands[i]);
   }
   return NNADAPTER_NO_ERROR;

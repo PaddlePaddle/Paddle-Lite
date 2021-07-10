@@ -251,9 +251,10 @@ std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
 std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
     const std::vector<int32_t>& values,
     const std::vector<int32_t>& dimensions) {
+  int num_values = values.size();
   return AddInt32ConstantOperator(
       &values[0],
-      dimensions.empty() ? std::vector<int32_t>({values.size()}) : dimensions);
+      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
 }
 
 std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
@@ -263,9 +264,10 @@ std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
 
 std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
     const std::vector<float>& values, const std::vector<int32_t>& dimensions) {
+  int num_values = values.size();
   return AddFloat32ConstantOperator(
       &values[0],
-      dimensions.empty() ? std::vector<int32_t>({values.size()}) : dimensions);
+      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
 }
 
 std::shared_ptr<Operator> Program::ConvertOperand(
@@ -301,7 +303,7 @@ std::shared_ptr<Operator> Program::ConvertOperand(
   }
   NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
                           "converted to ge::Operator!";
-  return nullptr;
+  return std::shared_ptr<Operator>(nullptr);
 }
 
 }  // namespace huawei_ascend_npu
