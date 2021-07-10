@@ -19,11 +19,30 @@
 namespace nnadapter {
 namespace rockchip_npu {
 
-int CreateContext(void** context) {
-  if (!context) {
+int OpenDevice(void** device) {
+  auto d = new Device();
+  if (!d) {
+    *device = nullptr;
+    NNADAPTER_LOG(FATAL) << "Failed to open device for rockchip_npu.";
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  *device = reinterpret_cast<void*>(d);
+  return NNADAPTER_NO_ERROR;
+}
+
+void CloseDevice(void* device) {
+  if (device) {
+    auto d = reinterpret_cast<Device*>(device);
+    delete d;
+  }
+}
+
+int CreateContext(void* device, const char* properties, void** context) {
+  if (!device || !context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  auto c = new Context();
+  auto d = reinterpret_cast<Device*>(device);
+  auto c = new Context(d, properties);
   if (!c) {
     *context = nullptr;
     NNADAPTER_LOG(FATAL) << "Failed to create context for rockchip_npu.";
@@ -91,6 +110,8 @@ NNADAPTER_EXPORT nnadapter::hal::Device NNADAPTER_AS_SYM2(
     .vendor = "Rockchip",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
+    .open_device = nnadapter::rockchip_npu::OpenDevice,
+    .close_device = nnadapter::rockchip_npu::CloseDevice,
     .create_context = nnadapter::rockchip_npu::CreateContext,
     .destroy_context = nnadapter::rockchip_npu::DestroyContext,
     .create_program = nnadapter::rockchip_npu::CreateProgram,

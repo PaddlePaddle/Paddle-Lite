@@ -153,8 +153,6 @@ std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places.emplace_back(TARGET(kNPU));
-    } else if (target_repr == "huawei_ascend_npu") {
-      valid_places.emplace_back(TARGET(kHuaweiAscendNPU));
     } else if (target_repr == "xpu") {
       valid_places.emplace_back(TARGET(kXPU));
     } else if (target_repr == "mlu") {
@@ -178,17 +176,22 @@ std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
       valid_places.emplace_back(TARGET(kNNAdapter));
       valid_places.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.emplace_back(target_repr);
+      nnadapter_device_names.emplace_back(target_repr);
     } else if (target_repr == "mediatek_apu") {
       valid_places.emplace_back(TARGET(kNNAdapter));
       valid_places.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.emplace_back(target_repr);
+      nnadapter_device_names.emplace_back(target_repr);
     } else if (target_repr == "huawei_kirin_npu") {
       valid_places.emplace_back(TARGET(kNNAdapter));
       valid_places.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
-      nnadapter_devices.emplace_back(target_repr);
+      nnadapter_device_names.emplace_back(target_repr);
+    } else if (target_repr == "huawei_ascend_npu") {
+      valid_places.emplace_back(TARGET(kNNAdapter));
+      valid_places.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.emplace_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -202,7 +205,7 @@ std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
          "command argument 'valid_targets'";
 
   return std::pair<std::vector<Place>, std::vector<std::string>>(
-      valid_places, nnadapter_devices);
+      valid_places, nnadapter_device_names);
 }
 
 void RunOptimize(const std::string& model_dir,

@@ -92,8 +92,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kX86));
     } else if (target_repr == "npu") {
       valid_places_.emplace_back(TARGET(kNPU));
-    } else if (target_repr == "huawei_ascend_npu") {
-      valid_places_.emplace_back(TARGET(kHuaweiAscendNPU));
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
     } else if (target_repr == "rknpu") {
@@ -115,17 +113,22 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.push_back(target_repr);
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "mediatek_apu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.push_back(target_repr);
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "huawei_kirin_npu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
-      nnadapter_devices.push_back(target_repr);
+      nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "huawei_ascend_npu") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -136,8 +139,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
   CHECK(!valid_places_.empty())
       << "At least one target should be set, should set the "
          "command argument 'valid_targets'";
-  if (!nnadapter_devices.empty()) {
-    opt_config_.set_nnadapter_devices(nnadapter_devices);
+  if (!nnadapter_device_names.empty()) {
+    opt_config_.set_nnadapter_device_names(nnadapter_device_names);
   }
 }
 

@@ -648,7 +648,7 @@ if(LITE_WITH_NNADAPTER)
       )
   add_dependencies(publish_inference publish_inference_nnadapter_library)
   # Build the NNAdapter drivers for all of the specified devices and copy it to the publish directory
-  foreach(driver_name ${nnadapter_driver})
+  foreach(driver_name ${NNADAPTER_DRIVERS})
     add_custom_target(publish_inference_nnadapter_driver_${driver_name}
       COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
       COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/driver/*/lib${driver_name}.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"

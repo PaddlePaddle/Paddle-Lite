@@ -15,6 +15,7 @@
 #pragma once
 
 #include <algorithm>
+#include <map>
 #include <string>
 #include <vector>
 #include "nnadapter.h"  // NOLINT
@@ -177,5 +178,11 @@ void Asymm2SymmData(const uint8_t* input_data,
 
 // Calculate a new axis according to the given permutation
 int32_t TransposeAxis(int32_t axis, const std::vector<int32_t>& permutation);
+
+// Parse and get the key value map from a string
+std::map<std::string, std::string> GetKeyValues(
+    const char* properties,
+    const std::string& delimiter = ";",
+    const std::string& assignment = "=");
 
 }  // namespace nnadapter

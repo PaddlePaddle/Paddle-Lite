@@ -41,7 +41,10 @@ int Program::ConvertTranspose(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to Neuron operands and operations
-  auto input_index = ConvertOperand(input_operand);
+  auto input_index = GetMappedIndex(input_operand);
+  if (input_index == INVALID_INDEX) {
+    input_index = ConvertOperand(input_operand);
+  }
   auto perm_index = AddInt32ConstantOperand(perm_data, perm_count);
   auto output_index = ConvertOperand(output_operand);
   std::vector<uint32_t> input_indexes = {input_index, perm_index};
