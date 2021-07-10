@@ -122,11 +122,6 @@ void UniqueWithCountsCompute::Run() {
       case PRECISION(kFloat):
         UniqueFunc_int32<float>(x, output, index, count);
         break;
-#ifdef ENABLE_ARM_FP16
-      case PRECISION(kFP16):
-        UniqueFunc_int32<__fp16>(x, output, index, count);
-        break;
-#endif
       case PRECISION(kInt32):
         UniqueFunc_int32<int32_t>(x, output, index, count);
         break;
@@ -142,11 +137,6 @@ void UniqueWithCountsCompute::Run() {
       case PRECISION(kFloat):
         UniqueFunc_int64<float>(x, output, index, count);
         break;
-#ifdef ENABLE_ARM_FP16
-      case PRECISION(kFP16):
-        UniqueFunc_int64<__fp16>(x, output, index, count);
-        break;
-#endif
       case PRECISION(kInt32):
         UniqueFunc_int64<int32_t>(x, output, index, count);
         break;
