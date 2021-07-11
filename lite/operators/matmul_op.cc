@@ -133,20 +133,19 @@ bool MatMulOpLite::InferShapeImpl() const {
 
 bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   AttachParam(&param_);
-  CHECK(!op_desc.Input("X").empty());
-  CHECK(!op_desc.Input("Y").empty());
-  CHECK(!op_desc.Output("Out").empty());
+  param_.X = scope->FindTensor(op_desc.Input("X").front());
+  param_.X = scope->FindTensor(op_desc.Input("Y").front());
+  param_.Out = scope->FindMutableTensor(op_desc.Input("Out").front());
 
-  auto X = op_desc.Input("X").front();
-  auto Y = op_desc.Input("Y").front();
-  auto Out = op_desc.Output("Out").front();
-
-  param_.X = GetVar<lite::Tensor>(scope, X);
-  param_.Y = GetVar<lite::Tensor>(scope, Y);
-  param_.Out = GetMutableVar<lite::Tensor>(scope, Out);
-  param_.transpose_X = op_desc.GetAttr<bool>("transpose_X");
-  param_.transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
-  param_.alpha = op_desc.GetAttr<float>("alpha");
+  if (op_desc.HasAttr("transpose_X")) {
+    param_.transpose_X = op_desc.GetAttr<bool>("transpose_X");
+  }
+  if (op_desc.HasAttr("transpose_Y")) {
+    param_.transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
+  }
+  if (op_desc.HasAttr("alpha")) {
+    param_.alpha = op_desc.GetAttr<float>("alpha");
+  }
 
   const OpInfo *op_info = dynamic_cast<const OpInfo *>(&op_desc);
   if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
@@ -169,3 +168,4 @@ bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace paddle
 
 REGISTER_LITE_OP(matmul, paddle::lite::operators::MatMulOpLite);
+REGISTER_LITE_OP(bmm, paddle::lite::operators::MatMulOpLite);
