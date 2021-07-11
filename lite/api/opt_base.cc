@@ -62,7 +62,7 @@ void OptBase::SetPassesInternal(
 void OptBase::SetValidPlaces(const std::string& valid_places) {
   valid_places_.clear();
   auto target_reprs = lite::Split(valid_places, ",");
-  std::vector<std::string> nnadapter_devices;
+  std::vector<std::string> nnadapter_device_names;
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
       if (enable_fp16_) {

@@ -94,7 +94,7 @@ void DisplayKernels() {
 std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
     bool enable_fp16) {
   std::vector<Place> valid_places;
-  std::vector<std::string> nnadapter_devices;
+  std::vector<std::string> nnadapter_device_names;
   auto target_reprs = lite::Split(FLAGS_valid_targets, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
