@@ -303,7 +303,7 @@ std::shared_ptr<Operator> Program::ConvertOperand(
   }
   NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
                           "converted to ge::Operator!";
-  return std::shared_ptr<Operator>(nullptr);
+  return nullptr;
 }
 
 }  // namespace huawei_ascend_npu

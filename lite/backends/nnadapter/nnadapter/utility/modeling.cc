@@ -544,6 +544,11 @@ NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
 
 NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
     hal::Model* model) {
+  NNADAPTER_VLOG(5) << "model total operands: " << model->operands.size();
+  NNADAPTER_VLOG(5) << "model input operands: " << model->input_operands.size();
+  NNADAPTER_VLOG(5) << "model output operands: "
+                    << model->output_operands.size();
+  NNADAPTER_VLOG(5) << "model total operations: " << model->operations.size();
   std::vector<hal::Operation*> operations;  // Operations in topological order
   std::vector<hal::Operation*> queue;
   // Use to find all of adjacent operations according to a given operand.
