@@ -23,30 +23,6 @@
 
 #include <assert.h>
 #include <time.h>
-
-// The windows environmental variable min/max should be unset to avoid confilcts
-// with std::max/std::min
-#if !defined(_WIN32)
-#include <sys/time.h>
-#include <sys/types.h>
-#else
-#define NOMINMAX  // msvc max/min macro conflict with std::min/max
-#include <windows.h>
-#undef min
-#undef max
-extern struct timeval;
-static int gettimeofday(struct timeval* tp, void* tzp) {
-  LARGE_INTEGER now, freq;
-  QueryPerformanceCounter(&now);
-  QueryPerformanceFrequency(&freq);
-  tp->tv_sec = now.QuadPart / freq.QuadPart;
-  tp->tv_usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
-  // uint64_t elapsed_time = sec * 1000000 + usec;
-
-  return (0);
-}
-#endif
-
 #include <cstdlib>
 #include <cstring>
 #include <string>
