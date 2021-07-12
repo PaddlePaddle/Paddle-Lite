@@ -25,8 +25,8 @@ namespace arm {
 void ReduceSumCompute::Run() {
   auto& param = this->template Param<operators::ReduceParam>();
   auto* input = param.X->template data<float>();
-  auto x_dims = param.X->dims();
-  int x_rank = x_dims.size();
+  auto x_vec = param.X->dims().Vectorize();
+  int x_rank = param.X->dims().size();
   auto* Out = param.Out->template mutable_data<float>();
   std::vector<int> dim = param.dim;
   bool keep_dim = param.keep_dim;
@@ -39,6 +39,19 @@ void ReduceSumCompute::Run() {
       }
     }
   }
+
+  for (;;)
+  {
+    if (x_vec.size()>=5 && x_vec[0]==1)
+    {
+      x_vec.erase(x_vec.begin());
+      for (auto & val:dim)
+        val--;
+    }
+    else
+      break;
+  }
+  auto x_dims = lite::DDim(x_vec);
 
   if (reduce_all) {
     lite::arm::math::reduce_sum_all(input, Out, x_dims.production());
