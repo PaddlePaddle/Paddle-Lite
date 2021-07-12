@@ -222,6 +222,7 @@ add_operator(__xpu__logit_op extra SRCS __xpu__logit_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__conv_pixel_shuffle_fuse_op extra SRCS __xpu__conv_pixel_shuffle_fuse_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc DEPS ${op_DEPS})
 
 # Only for FPGA
 add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc DEPS conv_op ${op_DEPS})
