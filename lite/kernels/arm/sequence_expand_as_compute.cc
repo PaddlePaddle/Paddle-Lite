@@ -19,14 +19,15 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
 void SequenceExpandAsCompute::Run() {
   auto& param = Param<operators::SequenceExpandAsParam>();
   auto* x = param.x;
   auto* y = param.y;
   auto* out = param.out;
-  auto x_lod = x->lod();
   auto y_lod = y->lod();
+  CHECK_EQ(y_lod.size(), 1u);
+  CHECK_GT(y_lod[0].size(), 1u);
+
   auto dims = x->dims();
   auto out_data = out->mutable_data<float>();
   auto x_data = x->data<float>();
@@ -35,8 +36,8 @@ void SequenceExpandAsCompute::Run() {
   std::vector<uint64_t> out_lod;
   out_lod.push_back(0);
   int sum = 0;
-  for (int i = 0; i < y_lod[0].size(); i++) {
-    int repeat_num = y_lod[0][i];
+  for (int i = 1; i < y_lod[0].size(); i++) {
+    int repeat_num = y_lod[0][i] - y_lod[0][i - 1];
     if (repeat_num == 0) {
       continue;
     } else {

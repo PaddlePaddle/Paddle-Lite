@@ -23,7 +23,7 @@ namespace arm {
 
 template <DataLayoutType DLType>
 class CalibComputeFp32ToInt8
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat), DLType> {
  public:
   using param_t = operators::CalibParam;
 
@@ -36,7 +36,7 @@ class CalibComputeFp32ToInt8
 
 template <DataLayoutType DLType>
 class CalibComputeInt64ToInt32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt64), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat), DLType> {
  public:
   using param_t = operators::CalibParam;
 
@@ -49,13 +49,65 @@ class CalibComputeInt64ToInt32
 
 template <DataLayoutType DLType>
 class CalibComputeInt8ToFp32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat), DLType> {
  public:
   using param_t = operators::CalibParam;
 
   void Run() override;
 
   ~CalibComputeInt8ToFp32() override{};
+
+ private:
+};
+
+template <DataLayoutType DLType>
+class CalibComputeInt32ToFp32
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat), DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeInt32ToFp32() override{};
+
+ private:
+};
+
+template <DataLayoutType DLType>
+class CalibComputeInt32ToInt64
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat), DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeInt32ToInt64() override{};
+
+ private:
+};
+
+template <DataLayoutType DLType>
+class CalibComputeFp32ToInt32
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat), DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeFp32ToInt32() override{};
+
+ private:
+};
+
+template <DataLayoutType DLType>
+class CalibComputeInt64ToFp32
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat), DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeInt64ToFp32() override{};
 
  private:
 };

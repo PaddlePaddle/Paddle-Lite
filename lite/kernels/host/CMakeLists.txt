@@ -28,6 +28,9 @@ add_kernel(activation_grad_compute_host Host train SRCS activation_grad_compute.
 add_kernel(pixel_shuffle_compute_host Host extra SRCS pixel_shuffle_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(one_hot_compute_host Host extra SRCS one_hot_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(uniform_random_compute_host Host extra SRCS uniform_random_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(argsort_compute_host Host extra SRCS argsort_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(cumsum_compute_host Host extra SRCS cumsum_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(unique_with_counts_compute  Host extra SRCS unique_with_counts_compute.cc DEPS ${lite_kernel_deps})
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)
