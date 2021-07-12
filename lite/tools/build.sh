@@ -87,7 +87,6 @@ function prepare_workspace {
 
 function prepare_opencl_source_code {
     local root_dir=$1
-    local build_dir=$2
     # in build directory
     # Prepare opencl_kernels_source.cc file
     GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
@@ -149,6 +148,11 @@ function make_tiny_publish_so {
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ ${WITH_OPENCL} == "ON" ]; then
+    build_dir=${build_dir}.opencl
+    prepare_opencl_source_code $cur_dir 
+  fi
+
   if [ -d $build_dir ]
   then
     rm -rf $build_dir
@@ -180,6 +184,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
+      -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
@@ -195,6 +200,9 @@ function make_tiny_publish_so {
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
+  if [ ${WITH_OPENCL} == "ON" ]; then
+    make opencl_clhpp -j$NUM_PROC
+  fi
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
@@ -219,7 +227,7 @@ function make_opencl {
   mkdir -p $build_dir
   cd $build_dir
   prepare_workspace $root_dir $build_dir
-  prepare_opencl_source_code $root_dir $build_dir
+  prepare_opencl_source_code $root_dir 
   # $1: ARM_TARGET_OS in "android" , "armlinux"
   # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
   # $3: ARM_TARGET_LANG in "gcc" "clang"
@@ -258,6 +266,10 @@ function make_full_publish_so {
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
 
+  if [ "${WITH_OPENCL}" == "ON" ]; then
+      prepare_opencl_source_code $workspace
+  fi
+
   if [ -d $build_directory ]
   then
     rm -rf $build_directory
@@ -292,6 +304,7 @@ function make_full_publish_so {
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
+      -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
@@ -308,6 +321,9 @@ function make_full_publish_so {
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
+  if [ "${WITH_OPENCL}" == "ON" ]; then
+    make opencl_clhpp -j$NUM_PROC
+  fi
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
@@ -456,7 +472,7 @@ function make_x86 {
   if [ ${WITH_OPENCL} == "ON" ]; then
     BUILD_EXTRA=ON
     build_directory=$BUILD_DIR/build.lite.x86.opencl
-    prepare_opencl_source_code $root_dir $build_directory
+    prepare_opencl_source_code $root_dir 
   fi
 
   if [ ${BUILD_PYTHON} == "ON" ]; then

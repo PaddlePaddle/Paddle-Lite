@@ -53,7 +53,7 @@ WITH_PROFILE=OFF
 # option of precision profile, default is OFF
 WITH_PRECISION_PROFILE=OFF
 # num of threads used during compiling..
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=30 #${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 
 
@@ -108,7 +108,6 @@ function prepare_workspace {
 # here we bundle all cl files into a cc file to bundle all opencl kernels into a single lib
 function prepare_opencl_source_code {
     local root_dir=$1
-    local build_dir=$2
     # in build directory
     # Prepare opencl_kernels_source.cc file
     GEN_CODE_PATH_OPENCL=$root_dir/lite/backends/opencl
@@ -180,7 +179,7 @@ function make_tiny_publish_so {
 
   # Step2. prepare third-party libs: opencl libs.
   if [ "${WITH_OPENCL}" == "ON" ]; then
-      prepare_opencl_source_code $workspace $build_dir
+      prepare_opencl_source_code $workspace 
   fi
 
   # Step3. apply cmake to generate makefiles.
@@ -251,7 +250,7 @@ function make_full_publish_so {
   prepare_workspace $workspace $build_directory
 
   if [ "${WITH_OPENCL}" == "ON" ]; then
-      prepare_opencl_source_code $workspace $build_dir
+      prepare_opencl_source_code $workspace 
   fi
 
   if [ "${WITH_STRIP}" == "ON" ]; then

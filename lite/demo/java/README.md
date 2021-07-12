@@ -53,7 +53,7 @@ Demo 除了代码，还需要准备 JNI .so 库（上节提到的`libpaddle_lite
 ```
 bash prepare_demo.bash armv8
 ```
-该脚本自动下载并解压缩模型文件，拷贝了 .jar 包进demo，还有生成的.so包进  `PaddlePredictor/app/src/main/jinLibs/架构文件夹下`，
+该脚本自动下载并解压缩模型文件，拷贝了 .jar 包进demo，还有生成的.so包进  `PaddlePredictor/app/src/main/jniLibs/架构文件夹下`，
 在我们这个例子里，armv8 就是架构文件夹。备注：这种方式构建的 demo 在 armv8 手机运行正常。如果要 demo 程序
 在别的手机架构（如 armv7）上也运行正常，需要添加别的架构。
 
@@ -64,7 +64,7 @@ bash prepare_demo.bash armv8
 ### 把 .so 动态库和 .jar 拷贝进安卓demo程序：
 
 把本文件夹下 demo/PaddlePredictor 载入到AndroidStudio。把上一步提到的`libpaddle_lite_jni.so`
-拷贝进 `PaddlePredictor/app/src/main/jinLibs/架构文件夹下` 比如文件夹arm8里要包含该 .so文件：
+拷贝进 `PaddlePredictor/app/src/main/jniLibs/架构文件夹下` 比如文件夹arm8里要包含该 .so文件：
 把上一步提到的 `PaddlePredictor.jar` 拷贝进 `PaddlePredictor/app/libs` 下
 
 ### 把demo使用到的模型文件拷贝进安卓程序：
