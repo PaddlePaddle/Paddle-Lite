@@ -28,8 +28,7 @@ rm -rf models_opt && mkdir models_opt
 for name in $models_names
 do
   ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/$name --record_tailoring_info=true
-  name_fp16 = $name + "_fp16"
-  ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/$name_fp16 --record_tailoring_info=true --enable_fp16=1
+  ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/($name + "_fp16") --record_tailoring_info=true --enable_fp16=1
 done
 
 
