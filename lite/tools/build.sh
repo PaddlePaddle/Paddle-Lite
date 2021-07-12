@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
                                -DWITH_LITE=ON \
