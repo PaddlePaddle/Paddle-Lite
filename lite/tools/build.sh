@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
                                -DWITH_LITE=ON \
@@ -10,6 +11,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
 readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
+
 
 # global variables
 CMAKE_EXTRA_OPTIONS=""
