@@ -249,7 +249,14 @@ class LITE_API RuntimeProgram {
 
   // Update the ops and vars of all of blocks to the given program_desc
   // according to the instructions
-  void SaveToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
+  void SaveRuntimProgramIntoProgramDesc(
+      std::shared_ptr<cpp::ProgramDesc> program_desc);
+
+#ifdef LITE_WITH_METAL
+  void ConfigMetalContext(std::string lib_path,
+                          bool use_mps = false,
+                          bool use_aggressive = false);
+#endif
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;

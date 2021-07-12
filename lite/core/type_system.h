@@ -90,6 +90,9 @@ class DataType {
     Tensor,
     // A tensor list, but all the elements should have the same type.
     TensorList,
+    // A vector of local scope, which size equals the step number of While Op.
+    // The i'th scope storages temporary variables generated in the i'th step.
+    StepScope,
     // ---------
     NumTypes,  // Must remains as last defined ID.
   };
@@ -101,6 +104,7 @@ class DataType {
   bool IsUnsupported() const { return id_ == ID::Unsupported; }
   bool IsTensor() const { return id_ == ID::Tensor; }
   bool IsTensorList() const { return id_ == ID::TensorList; }
+  bool IsStepScope() const { return id_ == ID::StepScope; }
   // Get number of types.
   int num_types() const { return static_cast<int>(ID::NumTypes); }
 
@@ -132,6 +136,8 @@ class Type : public DataType {
       PrecisionType precision = PRECISION(kFloat),
       DataLayoutType layout = DATALAYOUT(kNCHW),
       int device = 0);
+  /// Get a StepScope type.
+  static const Type* GetStepScopeTy();
   /// Get an Unsupported type.
   static const Type* GetUnsupportedTy();
   /// Get an Void type.
@@ -178,11 +184,7 @@ static bool TargetCompatibleTo(const Type& a, const Type& b) {
   };
   if (a.IsVoid() || b.IsVoid()) return true;
   if (a.IsTensor() || b.IsTensor() || a.IsTensorList() || b.IsTensorList()) {
-    if ((a.IsTensor() && b.IsTensor()) ||
-        (a.IsTensorList() && b.IsTensorList())) {
-      return is_host(a.target()) ? is_host(b.target())
-                                 : a.target() == b.target();
-    }
+    return is_host(a.target()) ? is_host(b.target()) : a.target() == b.target();
     return false;
   }
   return true;
@@ -206,6 +208,8 @@ static bool DataLayoutCompatible(const Type& a, const Type& b) {
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
   return a.IsVoid() ||  //
          (((a.IsTensor() && b.IsTensor()) ||
+           (a.IsTensorList() && b.IsTensor()) ||
+           (a.IsTensor() && b.IsTensorList()) ||
            (a.IsTensorList() && b.IsTensorList())) &&
           (a.precision() == b.precision() ||  //
            b.precision() == PRECISION(kAny) ||
