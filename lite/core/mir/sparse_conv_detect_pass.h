@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include "lite/core/mir/pass.h"
 #include "lite/core/op_registry.h"
 
@@ -38,6 +39,18 @@ class SparseConvDetectPass : public ProgramPass {
                           lite::Tensor* nonzero_output_tensor,
                           lite::Tensor* oc_nonzeros_tensor,
                           lite::Tensor* diffs_tensor);
+  // Add attribute that's named with 'attr_name' from op_info
+  void CopyAttrFromOpInfo(cpp::OpDesc* op_desc,
+                          OpInfo* op_info,
+                          const std::string& attr_name);
+  // Copy an input scale that's named with 'name' from op_info
+  void CopyInputScaleFromOpInfo(cpp::OpDesc* op_desc,
+                                OpInfo* op_info,
+                                const std::string& name);
+  // Copy an output scale that's named with 'name' from op_info
+  void CopyOutputScaleFromOpInfo(cpp::OpDesc* op_desc,
+                                 OpInfo* op_info,
+                                 const std::string& name);
 
  private:
   float thread_hold_{0.4f};

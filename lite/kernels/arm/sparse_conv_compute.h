@@ -14,6 +14,7 @@
 
 #pragma once
 #include <string>
+#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -43,6 +44,9 @@ class SparseConvCompute : public KernelLite<TARGET(kARM), Ptype> {
 
  private:
   using param_t = operators::SparseConvParam;
+  Tensor bias_;
+  bool flag_trans_bias_{false};
+  std::vector<float> w_scale_;
 };
 
 }  // namespace arm

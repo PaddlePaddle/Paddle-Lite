@@ -51,7 +51,7 @@ int SparseConvDetectPass::ComputeSparseWeight(
         if (first_nonzero) {
           first_ic = ic;
         } else {
-          const int diff = (ic - last_ic) * sizeof(float);
+          const int diff = (ic - last_ic) * sizeof(T);
           diffs[diff_index++] = diff * N;
         }
         first_nonzero = false;
@@ -61,7 +61,7 @@ int SparseConvDetectPass::ComputeSparseWeight(
     }
   }
   if (!first_nonzero) {
-    const int diff = (first_ic - last_ic) * sizeof(float);
+    const int diff = (first_ic - last_ic) * sizeof(T);
     diffs[diff_index++] = diff * N;
   }
   return first_ic;
@@ -105,6 +105,59 @@ template int SparseConvDetectPass::ComputeSparseZeros<float>(
 template int SparseConvDetectPass::ComputeSparseZeros<int8_t>(
     const lite::Tensor* weights, const int num);
 
+void SparseConvDetectPass::CopyAttrFromOpInfo(cpp::OpDesc* op_desc,
+                                              OpInfo* op_info,
+                                              const std::string& attr_name) {
+  auto attr_type = op_info->GetAttrType(attr_name);
+  switch (attr_type) {
+    case OpDescAPI::AttrType::INT:
+      op_desc->SetAttr(attr_name, op_info->GetAttr<int>(attr_name));
+      break;
+    case OpDescAPI::AttrType::FLOAT:
+      op_desc->SetAttr(attr_name, op_info->GetAttr<float>(attr_name));
+      break;
+    case OpDescAPI::AttrType::BOOLEAN:
+      op_desc->SetAttr(attr_name, op_info->GetAttr<bool>(attr_name));
+      break;
+    case OpDescAPI::AttrType::STRING:
+      op_desc->SetAttr(attr_name, op_info->GetAttr<std::string>(attr_name));
+      break;
+    case OpDescAPI::AttrType::FLOATS: {
+      op_desc->SetAttr(attr_name,
+                       op_info->GetAttr<std::vector<float>>(attr_name));
+    } break;
+    case OpDescAPI::AttrType::INTS: {
+      op_desc->SetAttr(attr_name,
+                       op_info->GetAttr<std::vector<int>>(attr_name));
+    } break;
+    case OpDescAPI::AttrType::STRINGS: {
+      op_desc->SetAttr(attr_name,
+                       op_info->GetAttr<std::vector<std::string>>(attr_name));
+    } break;
+    default:
+      LOG(FATAL) << ":Unknow type(" << static_cast<int>(attr_type) << ")";
+      break;
+  }
+}
+
+void SparseConvDetectPass::CopyInputScaleFromOpInfo(cpp::OpDesc* op_desc,
+                                                    OpInfo* op_info,
+                                                    const std::string& name) {
+  if (op_info->HasInputScale(name, true)) {
+    op_desc->SetAttr<std::vector<float>>(name,
+                                         op_info->GetInputScale(name, true));
+  }
+}
+
+void SparseConvDetectPass::CopyOutputScaleFromOpInfo(cpp::OpDesc* op_desc,
+                                                     OpInfo* op_info,
+                                                     const std::string& name) {
+  if (op_info->HasOutputScale(name, true)) {
+    op_desc->SetAttr<std::vector<float>>(name,
+                                         op_info->GetOutputScale(name, true));
+  }
+}
+
 void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
     if (node->IsStmt() && node->AsStmt().op_type() == "conv2d") {
@@ -126,8 +179,10 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       auto kw = weight_dims[3];
       auto im_size = x_dims[2] * x_dims[3];
       int weight_num = ch_out * ch_in * kh * kw;
-      if (w_tensor.precision() != PrecisionType::kFloat) {
-        VLOG(4) << "The sparse conv detect pass now only support fp32";
+      bool use_int8 = (w_tensor.precision() == PrecisionType::kInt8);
+      bool use_fp32 = (w_tensor.precision() == PrecisionType::kFloat);
+      if (!(use_int8 || use_fp32)) {
+        VLOG(4) << "The sparse conv detect pass now only support fp32 and int8";
         continue;
       }
       if (!(kw == 1 && kh == 1)) {
@@ -146,7 +201,12 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         VLOG(4) << "The paddings of the supported sparse conv must be 0";
         continue;
       }
-      int zero_num = ComputeSparseZeros<float>(&w_tensor, weight_num);
+      int zero_num;
+      if (use_fp32) {
+        zero_num = ComputeSparseZeros<float>(&w_tensor, weight_num);
+      } else if (use_int8) {
+        zero_num = ComputeSparseZeros<int8_t>(&w_tensor, weight_num);
+      }
       int nonzero_num = weight_num - zero_num;
       VLOG(4) << "zero_num: " << zero_num << "weight_num: " << weight_num;
       float sparse_zero_percent =
@@ -179,21 +239,36 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       nonzeros_output_t->Resize({nonzero_num});
       oc_nonzeros_t->Resize({ch_out});
       ic_diffs_t->Resize({nonzero_num});
-      int first_ic = ComputeSparseWeight<float>(&w_tensor,
-                                                ch_out,
-                                                ch_in,
-                                                im_size,
-                                                nonzero_num,
-                                                nonzeros_output_t,
-                                                oc_nonzeros_t,
-                                                ic_diffs_t);
+      int first_ic;
+      if (use_fp32) {
+        first_ic = ComputeSparseWeight<float>(&w_tensor,
+                                              ch_out,
+                                              ch_in,
+                                              im_size,
+                                              nonzero_num,
+                                              nonzeros_output_t,
+                                              oc_nonzeros_t,
+                                              ic_diffs_t);
+      } else if (use_int8) {
+        first_ic = ComputeSparseWeight<int8_t>(&w_tensor,
+                                               ch_out,
+                                               ch_in,
+                                               im_size,
+                                               nonzero_num,
+                                               nonzeros_output_t,
+                                               oc_nonzeros_t,
+                                               ic_diffs_t);
+      }
 
-      VLOG(4) << "zero_num: " << zero_num << " weight_num: " << weight_num
-              << " first_ic: " << first_ic;
+      LOG(INFO) << "zero_num: " << zero_num << " weight_num: " << weight_num
+                << " first_ic: " << first_ic;
       nonzeros_output_t->set_persistable(true);
       oc_nonzeros_t->set_persistable(true);
       ic_diffs_t->set_persistable(true);
-      nonzeros_output_t->set_precision(PRECISION(kFloat));
+      if (use_fp32)
+        nonzeros_output_t->set_precision(PRECISION(kFloat));
+      else if (use_int8)
+        nonzeros_output_t->set_precision(PRECISION(kInt8));
       oc_nonzeros_t->set_precision(PRECISION(kInt32));
       ic_diffs_t->set_precision(PRECISION(kInt32));
       auto sparse_conv2d_op = LiteOpRegistry::Global().Create("sparse_conv2d");
@@ -203,7 +278,6 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       op_desc.SetInput("NonZeroWeights", {nonzeros_output_name});
       op_desc.SetInput("OcNonZeros", {oc_nonzeros_name});
       op_desc.SetInput("Diffs", {ic_diffs_name});
-      op_desc.SetAttr<int>("first_ic", first_ic);
       bool has_bias = conv_op_desc->HasInput("Bias") &&
                       conv_op_desc->Input("Bias").size() > 0;
       if (has_bias) {
@@ -211,61 +285,27 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         op_desc.SetInput("Bias", {b});
       }
       op_desc.SetOutput("Output", {y});
-      auto conv_strides = conv_op_desc->GetAttr<std::vector<int>>("strides");
-      op_desc.SetAttr("strides", conv_strides);
-      auto conv_paddings = conv_op_desc->GetAttr<std::vector<int>>("paddings");
-      op_desc.SetAttr("paddings", conv_paddings);
-      auto conv_groups = conv_op_desc->GetAttr<int>("groups");
-      op_desc.SetAttr("groups", conv_groups);
-      auto conv_dilations =
-          conv_op_desc->GetAttr<std::vector<int>>("dilations");
-      op_desc.SetAttr("dilations", conv_dilations);
-
-      if (conv_op_desc->HasAttr("with_act")) {
-        auto with_act = conv_op_desc->GetAttr<bool>("with_act");
-        op_desc.SetAttr("with_act", with_act);
-        auto act_type = conv_op_desc->GetAttr<std::string>("act_type");
-        op_desc.SetAttr("act_type", act_type);
-        if (conv_op_desc->HasAttr("fuse_brelu_threshold")) {
-          auto fuse_brelu_threshold =
-              conv_op_desc->GetAttr<float>("fuse_brelu_threshold");
-          op_desc.SetAttr("fuse_brelu_threshold", fuse_brelu_threshold);
-        }
-        if (conv_op_desc->HasAttr("leaky_relu_alpha")) {
-          auto leaky_relu_alpha =
-              conv_op_desc->GetAttr<float>("leaky_relu_alpha");
-          op_desc.SetAttr("leaky_relu_alpha", leaky_relu_alpha);
-        }
-        if (conv_op_desc->HasAttr("hard_swish_threshold")) {
-          auto hard_swish_threshold =
-              conv_op_desc->GetAttr<float>("hard_swish_threshold");
-          op_desc.SetAttr("hard_swish_threshold", hard_swish_threshold);
-        }
-        if (conv_op_desc->HasAttr("hard_swish_scale")) {
-          auto hard_swish_scale =
-              conv_op_desc->GetAttr<float>("hard_swish_scale");
-          op_desc.SetAttr("hard_swish_scale", hard_swish_scale);
-        }
-        if (conv_op_desc->HasAttr("hard_swish_offset")) {
-          auto hard_swish_offset =
-              conv_op_desc->GetAttr<float>("hard_swish_offset");
-          op_desc.SetAttr("hard_swish_offset", hard_swish_offset);
-        }
-        if (conv_op_desc->HasAttr("slope")) {
-          auto slope = conv_op_desc->GetAttr<float>("slope");
-          op_desc.SetAttr("slope", slope);
-          LOG(INFO) << "hard sigmoid slope ...";
-        }
-        if (conv_op_desc->HasAttr("offset")) {
-          auto offset = conv_op_desc->GetAttr<float>("offset");
-          op_desc.SetAttr("offset", offset);
-          LOG(INFO) << "hard sigmoid offset ...";
-        }
-        if (conv_op_desc->HasAttr("prelu_mode")) {
-          auto prelu_mode = conv_op_desc->GetAttr<std::string>("prelu_mode");
-          op_desc.SetAttr("prelu_mode", prelu_mode);
+      if (use_int8) {
+        if (!(conv_op_desc->HasAttr("enable_int8")))
+          conv_op_desc->SetAttr<bool>("enable_int8", true);
+        else if (conv_op_desc->GetAttr<bool>("enable_int8") == false)
+          conv_op_desc->SetAttr<bool>("enable_int8", true);
+      }
+      // copy attributes
+      std::vector<std::string> attr_names = conv_op_desc->AttrNames();
+      for (size_t i = 0; i < attr_names.size(); i++) {
+        if (conv_op_desc->HasAttr(attr_names[i])) {
+          CopyAttrFromOpInfo(&op_desc, conv_op_desc, attr_names[i]);
         }
       }
+      // Copy inputs/outputs scales
+      if (conv_op_desc->HasAttr("enable_int8")) {
+        CopyInputScaleFromOpInfo(&op_desc, conv_op_desc, "Input0_scale");
+        CopyInputScaleFromOpInfo(&op_desc, conv_op_desc, "Filter0_scale");
+        CopyOutputScaleFromOpInfo(&op_desc, conv_op_desc, "Output0_scale");
+      }
+
+      op_desc.SetAttr<int>("first_ic", first_ic);
       sparse_conv2d_op->Attach(op_desc, node->stmt()->op()->scope());
       auto* sparse_op_node = graph->GraphCreateInstructNode(
           sparse_conv2d_op, graph->valid_places());
