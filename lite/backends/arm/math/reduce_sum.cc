@@ -22,6 +22,18 @@ namespace arm {
 namespace math {
 
 template <>
+void reduce_sum_onedim<float>(
+    const float* src, float* dst, int left, int right, int dim) {
+  for (int i = 0; i < left; i++)
+    for (int j = 0; j < right; j++) {
+      float temp = 0.0;
+      for (int k = 0; k < dim; k++)
+        temp += src[i * dim * right + k * right + j];
+      dst[i * right + j] = temp;
+    }
+}
+
+template <>
 void reduce_sum_n<float>(const float* src,
                          float* dst,
                          int num_in,

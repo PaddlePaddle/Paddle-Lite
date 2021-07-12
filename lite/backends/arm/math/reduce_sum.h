@@ -20,6 +20,9 @@ namespace arm {
 namespace math {
 
 template <typename T>
+void reduce_sum_onedim(const T* src, T* dst, int left, int right, int dim);
+
+template <typename T>
 void reduce_sum_n(const T* src,
                   T* dst,
                   int num_in,
