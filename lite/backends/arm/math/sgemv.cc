@@ -72,7 +72,7 @@ void sgemv_trans(const int M,
                  const float *bias,
                  bool flag_act,
                  lite_api::ActivationType act,
-                 ARMContext *ctx,
+                 const ARMContext *ctx,
                  float six,
                  float alpha);
 
@@ -87,7 +87,7 @@ bool sgemv(const float *A,
            const float *bias,
            bool flag_act,
            lite_api::ActivationType act,
-           ARMContext *ctx,
+           const ARMContext *ctx,
            float six,
            float alpha) {
   bool has_a53 = (ctx->arch() == kA53 || ctx->arch() == kA35);
@@ -123,7 +123,7 @@ void sgemv_trans(const int M,
                  const float *bias,
                  bool flag_act,
                  lite_api::ActivationType act,
-                 ARMContext *ctx,
+                 const ARMContext *ctx,
                  float six,
                  float alpha) {
   int m_cnt16 = M >> 4;
@@ -137,11 +137,12 @@ void sgemv_trans(const int M,
   int block_cnt = valid_block / 4;
 
 #ifdef LITE_WITH_IOS
-  ctx->ExtendWorkspace(sizeof(float) *
-                       (valid_ths * M + M + valid_block * valid_ths));
-  float *y_buf = ctx->workspace_data<float>();
-  float *zero_buf = y_buf + valid_ths * M;
-  float *x_buf = zero_buf + M;
+  float *y_buf = new float[valid_ths * M];
+  float *zero_buf = new float[M];
+  float *x_buf = new float[valid_block * valid_ths];
+  std::shared_ptr<float> y_buf_shared(y_buf);
+  std::shared_ptr<float> zero_buf_shared(zero_buf);
+  std::shared_ptr<float> x_buf_shared(x_buf);
 #else
   float y_buf[valid_ths * M];            // NOLINT
   float zero_buf[M];                     // NOLINT
