@@ -148,6 +148,11 @@ function make_tiny_publish_so {
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+
+  if [ ! -d third-party ]; then
+    git checkout third-party
+  fi
+
   if [ ${WITH_OPENCL} == "ON" ]; then
     build_dir=${build_dir}.opencl
     prepare_opencl_source_code $cur_dir 
