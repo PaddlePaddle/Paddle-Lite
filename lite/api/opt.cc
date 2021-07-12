@@ -214,7 +214,7 @@ void RunOptimize(const std::string& model_dir,
                  const std::string& optimize_out,
                  const std::string& optimize_out_type,
                  const std::vector<Place>& valid_places,
-                 const std::vector<std::string>& nnadapter_devices,
+                 const std::vector<std::string>& nnadapter_device_names,
                  bool record_tailoring_info,
                  bool quant_model,
                  const std::string& quant_type) {
@@ -228,8 +228,8 @@ void RunOptimize(const std::string& model_dir,
   config.set_model_file(model_file);
   config.set_param_file(param_file);
   config.set_valid_places(valid_places);
-  if (!nnadapter_devices.empty()) {
-    config.set_nnadapter_devices(nnadapter_devices);
+  if (!nnadapter_device_names.empty()) {
+    config.set_nnadapter_device_names(nnadapter_device_names);
   }
   config.set_quant_model(quant_model);
   if (quant_type == "QUANT_INT8") {
