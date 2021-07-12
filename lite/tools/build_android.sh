@@ -53,7 +53,7 @@ WITH_PROFILE=OFF
 # option of precision profile, default is OFF
 WITH_PRECISION_PROFILE=OFF
 # num of threads used during compiling..
-readonly NUM_PROC=30 #${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 
 
