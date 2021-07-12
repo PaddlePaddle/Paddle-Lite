@@ -206,6 +206,11 @@ class LITE_API RuntimeProgram {
       Scope* exec_scope,
       int block_idx = kRootBlockIdx);
   ~RuntimeProgram() {
+#ifdef LITE_WITH_OPENCL
+    // save program kernel cache & tuned params
+    CLRuntime::Global()->SaveProgram();
+    CLRuntime::Global()->SaveTuned();
+#endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_PROFILE
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch);
