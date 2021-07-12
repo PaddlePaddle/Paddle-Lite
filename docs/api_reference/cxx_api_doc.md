@@ -611,8 +611,6 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 返回类型：`void`
 
-
-
 ### `GetVersion()`
 
 用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
@@ -624,6 +622,21 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 返回：当前lib使用的代码版本信息
 
 返回类型：`std::string`
+
+### `TryShrinkMemory()`
+
+将模型运行过程创建的临时 `Tensor`全部释放，程序占用内存将明显降低
+注意：调用该接口后`Predictor`的输入输出数据也会被删除，如果想再次执行推理需要重新设置输入（调用`GetInput`接口获取输入`Tensor`，然后设置输入数据）
+
+参数：
+
+- `None`
+
+返回：调用成功返回`True`，调用失败返回`False`
+
+返回类型：`bool`
+
+
 
 ## TargetType
 

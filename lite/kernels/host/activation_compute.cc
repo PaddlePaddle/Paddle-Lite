@@ -107,8 +107,11 @@ void TanhCompute::Run() {
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
-    output_data[i] = (std::exp(x_data[i]) - std::exp(-x_data[i])) /
-                     (std::exp(x_data[i]) + std::exp(-x_data[i]));
+    float x_tmp = x_data[i];
+    x_tmp = std::min(x_tmp, 70.00008f);
+    x_tmp = std::max(x_tmp, -70.00008f);
+    output_data[i] = (std::exp(x_tmp) - std::exp(-x_tmp)) /
+                     (std::exp(x_tmp) + std::exp(-x_tmp));
   }
 }
 

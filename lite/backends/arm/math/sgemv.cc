@@ -103,8 +103,7 @@ bool sgemv(const float *A,
       } else if (act == lite_api::ActivationType::kLeakyRelu) {
         sgemv_leakey_relu(M, N, A, x, y, beta, is_bias, bias, alpha);
       } else {
-        LOG(FATAL)
-            << "sgemv no transA only support relu, relu6, leakey relu fusion";
+        LOG(FATAL) << "sgemv only support relu, relu6, leakey relu fusion";
       }
     } else {
       sgemv(M, N, A, x, y, beta, is_bias, has_a53, bias);

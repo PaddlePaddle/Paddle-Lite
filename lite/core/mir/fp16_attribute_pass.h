@@ -37,6 +37,7 @@ class FP16AttributePass : public ProgramPass {
  private:
   std::vector<std::string> fp16_ops_{"conv2d",
                                      "depthwise_conv2d",
+                                     "conv2d_transpose",
                                      "fc",
                                      "gru",
                                      "sequence_conv",

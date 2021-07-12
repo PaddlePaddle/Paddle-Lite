@@ -149,6 +149,10 @@ function make_tiny_publish_so {
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ ! -d third-party ]; then
+    git checkout third-party
+  fi
+
   if [ -d $build_dir ]
   then
     rm -rf $build_dir
