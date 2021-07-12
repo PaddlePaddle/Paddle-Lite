@@ -22,11 +22,11 @@ namespace kernels {
 namespace arm {
 
 void ReduceMeanCompute::Run() {
-  auto& param = Param<operators::ReduceMeanParam>();
-  const float* input = param.X->data<float>();
-  auto x_dims = param.X->dims();
+  auto& param = Param<operators::ReduceParam>();
+  const float* input = param.x->data<float>();
+  auto x_dims = param.x->dims();
   int x_rank = x_dims.size();
-  float* output = param.Out->mutable_data<float>();
+  float* output = param.output->mutable_data<float>();
   bool keep_dim = param.keep_dim;
   auto dim = param.dim;
 
@@ -37,10 +37,15 @@ void ReduceMeanCompute::Run() {
       }
     }
   }
-  int n_in = x_dims[0];
-  int c_in = x_dims[1];
-  int h_in = x_dims[2];
-  int w_in = x_dims[3];
+
+  size_t new_dims[] = {1, 1, 1, 1};
+  for (size_t j = 0; j < x_dims.size(); ++j) {
+    new_dims[j] = x_dims[j];
+  }
+  int n_in = new_dims[0];
+  int c_in = new_dims[1];
+  int h_in = new_dims[2];
+  int w_in = new_dims[3];
   if (dim.size() == 0) {
     lite::arm::math::reduce_mean_all(input, output, n_in, c_in, h_in, w_in);
   } else if (dim.size() == 1) {

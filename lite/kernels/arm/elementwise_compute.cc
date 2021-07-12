@@ -488,9 +488,9 @@ REGISTER_LITE_KERNEL(
 
 using elementwise_add_int32_t =
     paddle::lite::kernels::arm::ElementwiseAddCompute<int32_t,
-                                                      PRECISION(kInt32)>;
+                                                      PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(
-    elementwise_add, kARM, kInt32, kNCHW, elementwise_add_int32_t, def)
+    elementwise_add, kARM, kFloat, kNCHW, elementwise_add_int32_t, def_int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})

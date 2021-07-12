@@ -132,13 +132,11 @@ void UniqueWithCountsCompute::Run() {
                    << "input type:" << static_cast<int>(type);
     }
   } else {
-    LOG(INFO) << "kint32";
     switch (type) {
       case PRECISION(kFloat):
         UniqueFunc_int32<float>(x, output, index, count);
         break;
       case PRECISION(kInt32):
-        LOG(INFO) << "UniqueFunc_int32-int32";
         UniqueFunc_int32<int32_t>(x, output, index, count);
         break;
       case PRECISION(kInt64):
