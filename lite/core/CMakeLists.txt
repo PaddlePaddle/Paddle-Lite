@@ -134,6 +134,7 @@ execute_process(
     ${kernels_src_list}
     ${fake_kernels_src_list}
     ${ops_src_list}
+    ${subgraph_bridges_src_list}
     ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
     RESULT_VARIABLE result)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
