@@ -69,14 +69,13 @@ static void *dlopen(const char *filename, int flag) {
 }
 
 extern struct timeval;
-static int gettimeofday(struct timeval* tp, void* tzp) {
+static int gettimeofday(struct timeval *tp, void *tzp) {
   LARGE_INTEGER now, freq;
   QueryPerformanceCounter(&now);
   QueryPerformanceFrequency(&freq);
   tp->tv_sec = now.QuadPart / freq.QuadPart;
   tp->tv_usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
   // uint64_t elapsed_time = sec * 1000000 + usec;
-
   return (0);
 }
 
