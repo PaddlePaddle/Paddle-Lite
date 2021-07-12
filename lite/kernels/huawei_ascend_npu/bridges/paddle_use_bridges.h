@@ -63,3 +63,5 @@ USE_SUBGRAPH_BRIDGE(unsqueeze2, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(shape, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(reduce_mean, kHuaweiAscendNPU);
 // USE_SUBGRAPH_BRIDGE(prior_box, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(pow, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(log, kHuaweiAscendNPU);
