@@ -251,7 +251,6 @@ class LITE_API RuntimeProgram {
   // according to the instructions
   void SaveRuntimProgramIntoProgramDesc(
       std::shared_ptr<cpp::ProgramDesc> program_desc);
-#endif
 
 #ifdef LITE_WITH_METAL
   void ConfigMetalContext(std::string lib_path,

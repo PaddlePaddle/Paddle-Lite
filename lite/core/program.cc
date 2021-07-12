@@ -246,6 +246,7 @@ void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
     }
   }
 }
+#endif
 
 // Create runtime program from sub_block desc according to block_idx and
 // program_desc, which is used for while/conditional_block/subgraph op.
