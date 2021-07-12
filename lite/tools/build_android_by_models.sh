@@ -27,8 +27,12 @@ models_names=$(ls models)
 rm -rf models_opt && mkdir models_opt
 for name in $models_names
 do
+  if [ ${name} == "ssdlite_mobilenet_v3_large" ]; then
+    cp ./models/$name/__model__ ./models/$name/model
+    cp ./models/$name/__params__ ./models/$name/params
+  fi
   ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/$name --record_tailoring_info=true
-  ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/($name + "_fp16") --record_tailoring_info=true --enable_fp16=1
+  ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/$name"_fp16" --record_tailoring_info=true --enable_fp16=1
 done
 
 
