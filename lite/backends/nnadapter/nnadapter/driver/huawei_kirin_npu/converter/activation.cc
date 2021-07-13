@@ -14,6 +14,7 @@
 
 #include "driver/huawei_kirin_npu/converter.h"
 #include "utility/debug.h"
+#include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
@@ -32,22 +33,26 @@ int Program::ConvertActivation(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to HiAI operators
-  auto input_operator = ConvertOperand(input_operand);
-  auto act_operator = AddOperator<ge::op::Activation>(output_operand);
-  act_operator->set_input_x(*input_operator);
+  // Convert to GE operators
+  auto input_operator = GetMappedOperator(input_operand);
+  if (!input_operator) {
+    input_operator = ConvertOperand(input_operand);
+  }
+  auto act_name = GetOperatorName(output_operand);
+  auto act_op = std::make_shared<hiai::op::Activation>(act_name);
+  SET_INPUT(act_op, x, input_operator);
   switch (operation->type) {
     case NNADAPTER_SIGMOID:
-      act_operator->set_attr_mode(0);
+      act_op->set_attr_mode(0);
       break;
     case NNADAPTER_RELU:
-      act_operator->set_attr_mode(1);
+      act_op->set_attr_mode(1);
       break;
     case NNADAPTER_RELU6:
-      act_operator->set_attr_mode(3);
+      act_op->set_attr_mode(14);
       break;
     case NNADAPTER_TANH:
-      act_operator->set_attr_mode(2);
+      act_op->set_attr_mode(2);
       break;
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
@@ -55,6 +60,7 @@ int Program::ConvertActivation(hal::Operation* operation) {
                            << " is found.";
       break;
   }
+  MAP_OUTPUT(act_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

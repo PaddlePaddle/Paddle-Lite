@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(NNADAPTER_DEVICE_NAME imagination_nna)
-add_definitions(-DNNADAPTER_DEVICE_NAME=${NNADAPTER_DEVICE_NAME})
+set(DEVICE_NAME imagination_nna)
+add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
 
-set(NNADAPTER_DRIVER_NAME ${NNADAPTER_DRIVER_PREFIX}_${NNADAPTER_DEVICE_NAME})
-add_definitions(-DNNADAPTER_DRIVER_NAME=${NNADAPTER_DRIVER_NAME})
+set(DRIVER_NAME ${NNADAPTER_DRIVER_PREFIX}_${DEVICE_NAME})
+add_definitions(-DNNADAPTER_DRIVER_NAME=${DRIVER_NAME})
 
-set(NNADAPTER_DRIVER_SRCS driver.cc)
-set(NNADAPTER_DRIVER_DEPS ${nnadapter_utility} ${nnadapter_driver} ${${NNADAPTER_DEVICE_NAME}_deps})
+set(DRIVER_SRCS driver.cc)
+set(DRIVER_DEPS ${NNADAPTER_UTILITIES} ${${DEVICE_NAME}_deps})
 
-add_library(${NNADAPTER_DRIVER_NAME} SHARED ${NNADAPTER_DRIVER_SRCS})
-target_link_libraries(${NNADAPTER_DRIVER_NAME} "-Wl,--start-group" ${NNADAPTER_DRIVER_DEPS} "-Wl,--end-group")
-set(nnadapter_driver ${nnadapter_driver} ${NNADAPTER_DRIVER_NAME} CACHE INTERNAL "")
+add_library(${DRIVER_NAME} SHARED ${DRIVER_SRCS})
+target_link_libraries(${DRIVER_NAME} "-Wl,--start-group" ${DRIVER_DEPS} "-Wl,--end-group")
+set(NNADAPTER_DRIVERS ${NNADAPTER_DRIVERS} ${DRIVER_NAME} CACHE INTERNAL "")

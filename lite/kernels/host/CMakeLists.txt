@@ -93,6 +93,7 @@ add_kernel(argsort_compute_host Host extra SRCS argsort_compute.cc DEPS ${lite_k
 add_kernel(distribute_fpn_proposals_compute_host Host extra SRCS distribute_fpn_proposals_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(collect_fpn_proposals_compute_host Host extra SRCS collect_fpn_proposals_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(flip_compute_host Host extra SRCS flip_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(unique_with_counts_compute  Host extra SRCS unique_with_counts_compute.cc DEPS ${lite_kernel_deps})
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)

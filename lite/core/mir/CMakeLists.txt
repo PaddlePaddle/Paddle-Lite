@@ -32,6 +32,7 @@ lite_cc_library(mir_passes
       fusion/scale_activation_fuse_pass.cc
       fusion/fpga_concat_fuse_pass.cc
       fusion/inplace_fuse_pass.cc
+      fusion/__xpu__conv2d_affine_channel_fuse_pass.cc
       fusion/__xpu__resblock_reduction_fuse_pass.cc
       fusion/__xpu__concat_conv2d_fuse_pass.cc
       fusion/__xpu__resblock_normal_fuse_pass.cc
@@ -73,6 +74,7 @@ lite_cc_library(mir_passes
       elimination/remove_tf_redundant_ops_pass.cc
       elimination/remove_scale1_pass.cc
       elimination/ssd_boxes_calc_offline_pass.cc
+      fix_mismatched_precision_pass.cc
       adaptive_1x1_pool2d_convert_global_pass.cc
       elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.cc
       control_flow_op_shared_inputs_and_outputs_place_sync_pass.cc

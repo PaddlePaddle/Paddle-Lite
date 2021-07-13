@@ -94,7 +94,7 @@ void DisplayKernels() {
 std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
     bool enable_fp16) {
   std::vector<Place> valid_places;
-  std::vector<std::string> nnadapter_devices;
+  std::vector<std::string> nnadapter_device_names;
   auto target_reprs = lite::Split(FLAGS_valid_targets, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
@@ -153,8 +153,6 @@ std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places.emplace_back(TARGET(kNPU));
-    } else if (target_repr == "huawei_ascend_npu") {
-      valid_places.emplace_back(TARGET(kHuaweiAscendNPU));
     } else if (target_repr == "xpu") {
       valid_places.emplace_back(TARGET(kXPU));
     } else if (target_repr == "mlu") {
@@ -178,17 +176,22 @@ std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
       valid_places.emplace_back(TARGET(kNNAdapter));
       valid_places.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.emplace_back(target_repr);
+      nnadapter_device_names.emplace_back(target_repr);
     } else if (target_repr == "mediatek_apu") {
       valid_places.emplace_back(TARGET(kNNAdapter));
       valid_places.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.emplace_back(target_repr);
+      nnadapter_device_names.emplace_back(target_repr);
     } else if (target_repr == "huawei_kirin_npu") {
       valid_places.emplace_back(TARGET(kNNAdapter));
       valid_places.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
-      nnadapter_devices.emplace_back(target_repr);
+      nnadapter_device_names.emplace_back(target_repr);
+    } else if (target_repr == "huawei_ascend_npu") {
+      valid_places.emplace_back(TARGET(kNNAdapter));
+      valid_places.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.emplace_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -202,7 +205,7 @@ std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
          "command argument 'valid_targets'";
 
   return std::pair<std::vector<Place>, std::vector<std::string>>(
-      valid_places, nnadapter_devices);
+      valid_places, nnadapter_device_names);
 }
 
 void RunOptimize(const std::string& model_dir,
@@ -211,7 +214,7 @@ void RunOptimize(const std::string& model_dir,
                  const std::string& optimize_out,
                  const std::string& optimize_out_type,
                  const std::vector<Place>& valid_places,
-                 const std::vector<std::string>& nnadapter_devices,
+                 const std::vector<std::string>& nnadapter_device_names,
                  bool record_tailoring_info,
                  bool quant_model,
                  const std::string& quant_type) {
@@ -225,8 +228,8 @@ void RunOptimize(const std::string& model_dir,
   config.set_model_file(model_file);
   config.set_param_file(param_file);
   config.set_valid_places(valid_places);
-  if (!nnadapter_devices.empty()) {
-    config.set_nnadapter_devices(nnadapter_devices);
+  if (!nnadapter_device_names.empty()) {
+    config.set_nnadapter_device_names(nnadapter_device_names);
   }
   config.set_quant_model(quant_model);
   if (quant_type == "QUANT_INT8") {

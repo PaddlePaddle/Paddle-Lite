@@ -620,6 +620,22 @@ function(add_kernel TARGET device level)
     endif()
 endfunction()
 
+# file to record subgraph bridges for new hardware
+set(subgraph_bridges_src_list "${CMAKE_BINARY_DIR}/subgraph_bridges_src_list.txt")
+file(WRITE ${subgraph_bridges_src_list} "") # clean
+
+# add a subgraph bridge for some new hardware which support some op by subgraph
+# device: such as npu, rknpu, apu, huawei_ascend_npu, imagination_nna, nnadapter
+function(add_subgraph_bridge)
+  set(options "")
+  set(oneValueArgs "")
+  set(multiValueArgs SRCS)
+  cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  foreach(src ${args_SRCS})
+    file(APPEND ${subgraph_bridges_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+  endforeach()
+endfunction(add_subgraph_bridge)
+
 set(ops CACHE INTERNAL "ops")
 set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
 file(WRITE ${ops_src_list} "") # clean

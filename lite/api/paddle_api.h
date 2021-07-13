@@ -155,6 +155,9 @@ class LITE_API ConfigBase {
       subgraph_model_cache_buffers_{};
   // The selected NNAdapter devices to build and run the model.
   std::vector<std::string> nnadapter_device_names_{};
+  // The NNAdapter context properties for device configuration, model
+  // compilation and execution
+  std::string nnadapter_context_properties_{};
   // The directory to find and store the compiled NNAdapter models.
   std::string nnadapter_model_cache_dir_{""};
   // The buffers for loading the compiled NNAdapter models from memory.
@@ -211,18 +214,29 @@ class LITE_API ConfigBase {
     return subgraph_model_cache_buffers_;
   }
   // Check if the NNAdapter device is valid.
-  bool check_nnadapter_device(const std::string& nnadapter_device_name);
+  bool check_nnadapter_device_name(const std::string& nnadapter_device_name);
   // Choose the NNAdapter devices to build and run the model.
-  void set_nnadapter_devices(
+  void set_nnadapter_device_names(
       const std::vector<std::string>& nnadapter_device_names) {
     nnadapter_device_names_ = nnadapter_device_names;
   }
-  const std::vector<std::string>& nnadapter_devices() const {
+  const std::vector<std::string>& nnadapter_device_names() const {
     return nnadapter_device_names_;
+  }
+  // Set the context properties by key-value map for NNAdapter device
+  // configuration, model compilation and execution
+  // Such as "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0;"
+  void set_nnadapter_context_properties(
+      const std::string& nnadapter_context_properties) {
+    nnadapter_context_properties_ = nnadapter_context_properties;
+  }
+  const std::string& nnadapter_context_properties() const {
+    return nnadapter_context_properties_;
   }
   // Enable caching and set the directory to search and store the compiled
   // NNAdapter models in the file system.
-  void set_nnadapter_model_cache_dir(std::string nnadapter_model_cache_dir) {
+  void set_nnadapter_model_cache_dir(
+      const std::string& nnadapter_model_cache_dir) {
     nnadapter_model_cache_dir_ = nnadapter_model_cache_dir;
   }
   const std::string& nnadapter_model_cache_dir() const {
