@@ -70,8 +70,11 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to rknn tensors and operators
-  auto input_tensor = ConvertOperand(input_operand);
+  // Convert to rknpu tensors and operators
+  auto input_tensor = GetMappedTensor(input_operand);
+  if (!input_tensor) {
+    input_tensor = ConvertOperand(input_operand);
+  }
   auto output_tensor = ConvertOperand(output_operand);
   rk::nn::PoolAttr attr;
   attr.ksize[0] = filter_width;

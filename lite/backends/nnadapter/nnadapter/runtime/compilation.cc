@@ -25,7 +25,7 @@ Compilation::Compilation(Model* model,
                          uint32_t cache_length,
                          const char* cache_dir,
                          Context* context)
-    : model_(model), program_(nullptr), context_(context), completed_(false) {
+    : model_(model), context_(context), program_(nullptr), completed_(false) {
   cache_.cache_key = std::string(cache_key);
   cache_.cache_buffer = cache_buffer;
   cache_.cache_length = cache_length;

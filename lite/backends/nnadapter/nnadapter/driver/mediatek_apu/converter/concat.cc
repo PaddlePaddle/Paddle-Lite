@@ -45,7 +45,12 @@ int Program::ConvertConcat(hal::Operation* operation) {
   // Convert to Neuron operands and operations
   std::vector<uint32_t> input_indexes;
   for (int i = 0; i < input_count - 1; i++) {
-    input_indexes.push_back(ConvertOperand(input_operands[i]));
+    auto input_operand = input_operands[i];
+    auto input_index = GetMappedIndex(input_operand);
+    if (input_index == INVALID_INDEX) {
+      input_index = ConvertOperand(input_operand);
+    }
+    input_indexes.push_back(input_index);
   }
   auto axis_index = AddInt32ConstantOperand(axis);
   input_indexes.push_back(axis_index);

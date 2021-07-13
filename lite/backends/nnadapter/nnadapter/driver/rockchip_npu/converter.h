@@ -22,12 +22,19 @@
 namespace nnadapter {
 namespace rockchip_npu {
 
+class Device {
+ public:
+  Device() {}
+  ~Device() {}
+};
+
 class Context {
  public:
-  Context();
+  explicit Context(void* device, const char* properties);
   ~Context();
 
  private:
+  void* device_{nullptr};
   void* context_{nullptr};
 };
 
@@ -44,7 +51,11 @@ class Program {
 
  private:
   // Operand converters
-  std::shared_ptr<rk::nn::Tensor> ConvertOperand(hal::Operand* operand);
+  std::shared_ptr<rk::nn::Tensor> GetMappedTensor(hal::Operand* operand);
+  std::shared_ptr<rk::nn::Tensor> UpdateTensorMap(
+      hal::Operand* operand, std::shared_ptr<rk::nn::Tensor> tensor);
+  std::shared_ptr<rk::nn::Tensor> ConvertOperand(
+      hal::Operand* operand, std::vector<int32_t> dimensions = {});
 
   // Operation converters
   int ConvertConv2D(hal::Operation* operation);
@@ -59,8 +70,9 @@ class Program {
 
  private:
   Context* context_{nullptr};
-  // NNAdapter operand to rknn tensor
-  std::map<hal::Operand*, std::shared_ptr<rk::nn::Tensor>> tensors_;
+  // Map NNAdapter operand to rknpu tensor
+  std::map<hal::Operand*, std::vector<std::shared_ptr<rk::nn::Tensor>>>
+      tensors_;
   rk::nn::Graph* graph_{nullptr};
   rk::nn::Exection* execution_{nullptr};
   std::vector<rk::nn::InputInfo> input_info_;

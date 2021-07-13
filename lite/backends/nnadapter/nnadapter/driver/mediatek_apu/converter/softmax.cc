@@ -40,7 +40,10 @@ int Program::ConvertSoftmax(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to Neuron operands and operations
-  auto input_index = ConvertOperand(input_operand);
+  auto input_index = GetMappedIndex(input_operand);
+  if (input_index == INVALID_INDEX) {
+    input_index = ConvertOperand(input_operand);
+  }
   auto beta_index = AddFloat32ConstantOperand(1.0f);
   auto axis_index = AddInt32ConstantOperand(axis);
   auto output_index = ConvertOperand(output_operand);

@@ -63,7 +63,9 @@ typedef struct Device {
   const char* vendor;
   NNAdapterDeviceType type;
   int32_t version;
-  int (*create_context)(void** context);
+  int (*open_device)(void** device);
+  void (*close_device)(void* device);
+  int (*create_context)(void* device, const char* properties, void** context);
   void (*destroy_context)(void* context);
   int (*create_program)(void* context,
                         Model* model,

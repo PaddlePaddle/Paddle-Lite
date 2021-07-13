@@ -14,6 +14,7 @@
 
 #include "driver/huawei_kirin_npu/converter.h"
 #include "utility/debug.h"
+#include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
@@ -34,20 +35,20 @@ int Program::ConvertSoftmax(hal::Operation* operation) {
     axis += input_operand->type.dimension_count;
   }
   NNADAPTER_VLOG(5) << "axis=" << axis;
-  NNADAPTER_CHECK(!(axis == 2 && input_operand->type.dimension_count > 3 &&
-                    input_operand->type.dimensions[3] != 1))
-      << "Unsupported case: axis = " << axis
-      << " dims = " << DimensionsToString(input_operand->type.dimensions,
-                                          input_operand->type.dimension_count);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to HiAI operators
-  auto input_operator = ConvertOperand(input_operand);
-  auto softmax_operator = AddOperator<ge::op::Softmax>(output_operand);
-  softmax_operator->set_input_x(*input_operator);
-  softmax_operator->set_attr_axis(axis);
+  // Convert to GE operators
+  auto input_operator = GetMappedOperator(input_operand);
+  if (!input_operator) {
+    input_operator = ConvertOperand(input_operand);
+  }
+  auto softmax_name = GetOperatorName(output_operand);
+  auto softmax_op = std::make_shared<hiai::op::Softmax>(softmax_name);
+  softmax_op->set_attr_axis(axis);
+  SET_INPUT(softmax_op, x, input_operator);
+  MAP_OUTPUT(softmax_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

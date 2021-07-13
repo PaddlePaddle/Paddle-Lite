@@ -21,6 +21,7 @@
 namespace nnadapter {
 namespace rockchip_npu {
 
+// Convert NNAdapter types to rknpu types
 rk::nn::PrecisionType ConvertPrecision(
     NNAdapterOperandPrecisionCode input_precision);
 rk::nn::DataLayoutType ConvertDataLayout(
