@@ -173,6 +173,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
        "__xpu__resnet_cbam_fuse_pass",
+       "__xpu__conv2d_affine_channel_fuse_pass",
        "__xpu__conv2d_fuse_pass",
        "__xpu__squeeze_excitation_fuse_pass",
        "__xpu__resblock_reduction_fuse_pass",
@@ -196,6 +197,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__generate_sequence_fuse_pass",
        "__xpu__logit_fuse_pass",
        "__xpu__link_previous_out_max_pass",
+       "fix_mismatched_precision_pass",
        "ssd_boxes_calc_offline_pass",
        // Only for fully quantized model, infer the output scale and fix the
        // attribute 'enable_int8' for all of the quantized ops.

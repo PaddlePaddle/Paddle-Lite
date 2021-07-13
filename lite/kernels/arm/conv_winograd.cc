@@ -81,7 +81,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
     }
     last_function_ = 2;
   }
-  // last_function_ = -1;
+  last_function_ = -1;
 
   //! update trans weights impl
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
@@ -244,7 +244,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
       ws /= 576;
     }
   }
-  // last_function_ = -1;
+  last_function_ = -1;
 
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
   void* trans_tmp_ptr = malloc(sizeof(int32_t) * wino_iw * wino_iw * oc * ic);
@@ -363,7 +363,7 @@ void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {
     }
     last_function_ = 1;
   }
-  // last_function_ = -1;
+  last_function_ = -1;
 
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
   void* trans_tmp_ptr = malloc(sizeof(float16_t) * wino_iw * wino_iw * oc * ic);

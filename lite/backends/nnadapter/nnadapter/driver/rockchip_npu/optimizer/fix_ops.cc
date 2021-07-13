@@ -44,20 +44,7 @@ static void FixRELUDepthwiseConv2D(hal::Model* model,
     auto is_depthwise_mode =
         (group != 1 && output_operand->type.dimensions[1] == group);
     if (is_depthwise_mode) {
-      auto dummy_add_operand = AddOperand(model);
-      memcpy(&dummy_add_operand->type,
-             &output_operand->type,
-             sizeof(NNAdapterOperandType));
-      InsertOperand(model, output_operand, dummy_add_operand, true);
-      int8_t dummy_addend_value = 0;
-      auto dummy_addend_operand = AddQuant8ConstantOperand(
-          model, &dummy_addend_value, std::vector<int32_t>({1}), 0.0f);
-      auto dummy_fuse_code_operand = AddInt32ConstantOperand(model, 0);
-      auto dummy_add_operation = AddOperation(model);
-      dummy_add_operation->type = NNADAPTER_ADD;
-      dummy_add_operation->input_operands = {
-          output_operand, dummy_addend_operand, dummy_fuse_code_operand};
-      dummy_add_operation->output_operands = {dummy_add_operand};
+      AddDummyOperation(model, output_operand);
       break;
     }
   }

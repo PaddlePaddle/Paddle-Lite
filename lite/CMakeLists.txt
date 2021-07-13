@@ -50,14 +50,14 @@ if (WITH_TESTING)
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v2_relu.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "inception_v4_simple.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "inception_v4.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "squeezenet.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v3_small_x1_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v3_large_x1_0.tar.gz")
     if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 	    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v1_int16.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "resnet50.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "MobileNetV1_quant.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "transformer_with_mask_fp32.tar.gz")
-        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "squeezenet.tar.gz")
-        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v3_small_x1_0.tar.gz")
-        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v3_large_x1_0.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v1_int8_for_arm.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenetv1_int8_dygraph_for_arm.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v2_int8_for_arm.tar.gz")
@@ -375,7 +375,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 add_dependencies(publish_inference_cxx_lib bundle_light_api)
                 add_dependencies(publish_inference_cxx_lib test_model_bin)
                 add_dependencies(publish_inference_cxx_lib benchmark_bin)
-                if (ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux")
+                if (ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux" OR ARM_TARGET_OS STREQUAL "armmacos")
                     add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
                     add_dependencies(publish_inference paddle_light_api_shared)
                     add_custom_command(TARGET publish_inference_cxx_lib
@@ -402,7 +402,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             add_dependencies(tiny_publish_lib paddle_api_light_bundled)
             add_dependencies(publish_inference tiny_publish_lib)
         else()
-            if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
+            if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux") )
                 # compile cplus shared library, pack the cplus demo and lib into the publish directory.
                 add_custom_target(tiny_publish_cxx_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
@@ -429,6 +429,19 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                     add_dependencies(tiny_publish_cxx_static_lib paddle_api_light_bundled)
                     add_dependencies(publish_inference tiny_publish_cxx_static_lib)
                 endif()
+            elseif(ARM_TARGET_OS STREQUAL "armmacos")
+                add_custom_target(tiny_publish_cxx_lib ${TARGET}
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                    COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+                    COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.dylib" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                    COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                    COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/cv/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+                )
+                add_dependencies(tiny_publish_cxx_lib paddle_api_light_bundled)
+                add_dependencies(tiny_publish_cxx_lib paddle_light_api_shared)
+                add_dependencies(publish_inference tiny_publish_cxx_lib)
             endif()
         endif()
     endif()
@@ -635,7 +648,7 @@ if(LITE_WITH_NNADAPTER)
       )
   add_dependencies(publish_inference publish_inference_nnadapter_library)
   # Build the NNAdapter drivers for all of the specified devices and copy it to the publish directory
-  foreach(driver_name ${nnadapter_driver})
+  foreach(driver_name ${NNADAPTER_DRIVERS})
     add_custom_target(publish_inference_nnadapter_driver_${driver_name}
       COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
       COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/driver/*/lib${driver_name}.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"

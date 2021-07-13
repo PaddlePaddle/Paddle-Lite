@@ -77,6 +77,22 @@ void conv_compute_2x2_3x3_fp16(CONV_PARAM(float16_t));
 
 void conv_compute_4x4_3x3_fp16(CONV_PARAM(float16_t));
 
+template <typename Dtype>
+void col2im(const Dtype *data_col,
+            const int channels,
+            const int height,
+            const int width,
+            const int kernel_h,
+            const int kernel_w,
+            const int pad_h0,
+            const int pad_h1,
+            const int pad_w0,
+            const int pad_w1,
+            const int stride_h,
+            const int stride_w,
+            const int dilation_h,
+            const int dilation_w,
+            Dtype *data_im);
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

@@ -184,11 +184,7 @@ static bool TargetCompatibleTo(const Type& a, const Type& b) {
   };
   if (a.IsVoid() || b.IsVoid()) return true;
   if (a.IsTensor() || b.IsTensor() || a.IsTensorList() || b.IsTensorList()) {
-    if ((a.IsTensor() && b.IsTensor()) ||
-        (a.IsTensorList() && b.IsTensorList())) {
-      return is_host(a.target()) ? is_host(b.target())
-                                 : a.target() == b.target();
-    }
+    return is_host(a.target()) ? is_host(b.target()) : a.target() == b.target();
     return false;
   }
   return true;
@@ -212,6 +208,8 @@ static bool DataLayoutCompatible(const Type& a, const Type& b) {
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
   return a.IsVoid() ||  //
          (((a.IsTensor() && b.IsTensor()) ||
+           (a.IsTensorList() && b.IsTensor()) ||
+           (a.IsTensor() && b.IsTensorList()) ||
            (a.IsTensorList() && b.IsTensorList())) &&
           (a.precision() == b.precision() ||  //
            b.precision() == PRECISION(kAny) ||

@@ -62,7 +62,10 @@ class OpenCLKernelPlaceCorrectPass : public ProgramPass {
 
         const auto& tensor = var->Get<Tensor>();
         const auto dims = tensor.dims();
-        int axis = op_info->GetAttr<int>("axis");
+        int axis = -1;
+        if (op_info->HasAttr("axis")) {
+          axis = op_info->GetAttr<int>("axis");
+        }
         axis = axis >= 0 ? axis : axis + dims.size();
         VLOG(4) << "dims: " << dims << "\t dims[axis]: " << dims[axis];
 

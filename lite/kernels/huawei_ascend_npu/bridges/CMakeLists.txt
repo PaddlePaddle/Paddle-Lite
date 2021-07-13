@@ -1,3 +1,30 @@
+add_subgraph_bridge(SRCS act_op.cc
+                    argmax_op.cc
+                    batch_norm_op.cc
+                    cast_op.cc
+                    concat_op.cc
+                    conv_op.cc
+                    dropout_op.cc
+                    elementwise_ops.cc
+                    fc_op.cc
+                    flatten_op.cc
+                    gather_op.cc
+                    graph.cc
+                    interpolate_op.cc
+                    layer_norm_op.cc
+                    matmul_op.cc
+                    pool_op.cc
+                    prior_box_op.cc
+                    reduce_mean_op.cc
+                    reshape_op.cc
+                    scale_op.cc
+                    shape_op.cc
+                    slice_op.cc
+                    softmax_op.cc
+                    transpose_op.cc
+                    unsqueeze_op.cc
+                    utility.cc)
+
 if(NOT LITE_WITH_HUAWEI_ASCEND_NPU)
   return()
 endif()

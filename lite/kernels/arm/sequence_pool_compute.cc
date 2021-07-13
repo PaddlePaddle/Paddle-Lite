@@ -19,41 +19,45 @@ limitations under the License. */
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+template <PrecisionType Ptype, typename Dtype>
+void SequencePoolCompute<Ptype, Dtype>::PrepareForRun() {}
 
-void SequencePoolCompute::PrepareForRun() {}
-
-void SequencePoolCompute::Run() {
-  auto& param = Param<operators::SequencePoolParam>();
+template <PrecisionType Ptype, typename Dtype>
+void SequencePoolCompute<Ptype, Dtype>::Run() {
+  auto& param = this->template Param<operators::SequencePoolParam>();
   auto& output = param.Out;
-  const auto* din = param.X->data<float>();
-  float* dout = output->mutable_data<float>();
-  int64_t* max_index = param.MaxIndex->mutable_data<int64_t>();
+  const auto* din = param.X->template data<Dtype>();
+  Dtype* dout = output->template mutable_data<Dtype>();
+  int64_t* max_index = param.MaxIndex->template mutable_data<int64_t>();
   const auto pool_type = param.pool_type;
   const auto lod = param.X->lod()[0];
 
   int64_t width = param.X->numel() / param.X->dims()[0];
 
   if (pool_type == "SUM") {
-    lite::arm::math::seq_pool_sum(din, dout, lod, width);
+    lite::arm::math::seq_pool_sum<Dtype>(din, dout, lod, width);
   } else if (pool_type == "AVERAGE") {
-    lite::arm::math::seq_pool_average(din, dout, lod, width);
+    lite::arm::math::seq_pool_average<Dtype>(din, dout, lod, width);
   } else if (pool_type == "SQRT") {
-    lite::arm::math::seq_pool_sqrt(din, dout, lod, width);
+    lite::arm::math::seq_pool_sqrt<Dtype>(din, dout, lod, width);
   } else if (pool_type == "MAX") {
-    lite::arm::math::seq_pool_max(din, dout, max_index, lod, width);
+    lite::arm::math::seq_pool_max<Dtype>(din, dout, max_index, lod, width);
   } else if (pool_type == "MIN") {
-    lite::arm::math::seq_pool_min(din, dout, max_index, lod, width);
+    lite::arm::math::seq_pool_min<Dtype>(din, dout, max_index, lod, width);
   } else if (pool_type == "FIRST") {
-    lite::arm::math::seq_pool_first(din, dout, lod, width);
+    lite::arm::math::seq_pool_first<Dtype>(din, dout, lod, width);
   } else if (pool_type == "LAST") {
-    lite::arm::math::seq_pool_last(din, dout, lod, width);
+    lite::arm::math::seq_pool_last<Dtype>(din, dout, lod, width);
   } else {
-    LOG(ERROR) << " UNKNOWN sequence pool type";
+    LOG(ERROR) << " UNKNOWN sequence pool type" << pool_type;
   }
   int batch_size = lod.size() - 1;
   std::vector<uint64_t> offset_new(static_cast<uint64_t>(batch_size + 1));
@@ -68,14 +72,26 @@ void SequencePoolCompute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+typedef paddle::lite::kernels::arm::SequencePoolCompute<PRECISION(kFloat),
+                                                        float>
+    SeqPoolFp32;
 
-REGISTER_LITE_KERNEL(sequence_pool,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::SequencePoolCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("MaxIndex", {LiteType::GetTensorTy(TARGET(kARM))})
+#ifdef ENABLE_ARM_FP16
+typedef paddle::lite::kernels::arm::SequencePoolCompute<PRECISION(kFP16),
+                                                        float16_t>
+    SeqPoolFp16;
+
+REGISTER_LITE_KERNEL(sequence_pool, kARM, kFP16, kNCHW, SeqPoolFp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("MaxIndex",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
+
+REGISTER_LITE_KERNEL(sequence_pool, kARM, kFloat, kNCHW, SeqPoolFp32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("MaxIndex",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

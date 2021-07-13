@@ -15,9 +15,53 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace nnadapter {
 
 std::string string_format(const std::string fmt_str, ...);
+
+template <typename T = std::string>
+static T string_parse(const std::string& v) {
+  return v;
+}
+
+template <>
+int32_t string_parse<int32_t>(const std::string& v) {
+  return std::stoi(v);
+}
+
+template <>
+int64_t string_parse<int64_t>(const std::string& v) {
+  return std::stoll(v);
+}
+
+template <>
+float string_parse<float>(const std::string& v) {
+  return std::stof(v);
+}
+
+template <>
+double string_parse<double>(const std::string& v) {
+  return std::stod(v);
+}
+
+template <class T = std::string>
+static std::vector<T> string_split(const std::string& original,
+                                   const std::string& separator) {
+  std::vector<T> results;
+  std::string::size_type pos1, pos2;
+  pos2 = original.find(separator);
+  pos1 = 0;
+  while (std::string::npos != pos2) {
+    results.push_back(string_parse<T>(original.substr(pos1, pos2 - pos1)));
+    pos1 = pos2 + separator.size();
+    pos2 = original.find(separator, pos1);
+  }
+  if (pos1 != original.length()) {
+    results.push_back(string_parse<T>(original.substr(pos1)));
+  }
+  return results;
+}
 
 }  // namespace nnadapter
