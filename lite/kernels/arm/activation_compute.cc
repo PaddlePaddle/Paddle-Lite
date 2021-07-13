@@ -44,6 +44,30 @@ void ReluCompute<PRECISION(kFP16)>::Run() {
   lite::arm::math::fp16::act_relu<float16_t>(
       x_data, output_data, x_dims.production(), ctx.threads());
 }
+
+template <>
+void PReluCompute<PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float16_t>();
+  auto mode = param.Prelu_mode;
+  auto alpha_data = param.Prelu_alpha->data<float16_t>();
+  auto output_data = param.Out->mutable_data<float16_t>();
+
+  int outer_size = x_dims[0];
+  int channel_size = x_dims[1];
+  int inner_size = x_dims.count(2, x_dims.size());
+
+  lite::arm::math::fp16::act_prelu<float16_t>(x_data,
+                                              output_data,
+                                              outer_size,
+                                              channel_size,
+                                              inner_size,
+                                              mode,
+                                              alpha_data,
+                                              ctx.threads());
+}
 #endif
 
 void LeakyReluCompute::Run() {
@@ -57,7 +81,8 @@ void LeakyReluCompute::Run() {
       x_data, output_data, x_dims.production(), alpha, ctx.threads());
 }
 
-void PReluCompute::Run() {
+template <>
+void PReluCompute<PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
@@ -145,6 +170,17 @@ REGISTER_LITE_KERNEL(relu,
                      paddle::lite::kernels::arm::ReluCompute<PRECISION(kFP16)>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(prelu,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::arm::PReluCompute<PRECISION(kFP16)>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
 #endif  // ENABLE_ARM_FP16
