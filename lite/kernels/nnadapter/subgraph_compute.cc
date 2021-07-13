@@ -253,7 +253,8 @@ SubgraphEngine::SubgraphEngine(
           ctx, block_idx, program_desc, exec_scope, input_names, output_names) {
   int result;
   // Get the device names from the scope
-  auto device_names = ctx->As<NNAdapterContext>().NNAdapterDevices(exec_scope);
+  auto device_names =
+      ctx->As<NNAdapterContext>().NNAdapterDeviceNames(exec_scope);
   CHECK_GT(device_names.size(), 0) << "No device is specified.";
   // Get the specified devices and create a context for each device to build or
   // load the device-related program from the model or the cache files/buffers.
@@ -278,8 +279,12 @@ SubgraphEngine::SubgraphEngine(
     }
   }
   CHECK_GT(devices_.size(), 0) << "No device is found.";
+  // Get the context properties from the scope
+  auto context_properties =
+      ctx->As<NNAdapterContext>().NNAdapterContextProperties(exec_scope);
   // Create a context with multiple devices
-  NNAdapterContext_create_invoke(&devices_[0], devices_.size(), &context_);
+  NNAdapterContext_create_invoke(
+      &devices_[0], devices_.size(), context_properties.c_str(), &context_);
   // Get the model cache dir from the scope
   model_cache_dir_ =
       ctx_->As<NNAdapterContext>().NNAdapterModelCacheDir(exec_scope_);

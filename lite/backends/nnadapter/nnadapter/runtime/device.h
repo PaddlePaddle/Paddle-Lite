@@ -29,13 +29,19 @@ class Device {
   ~Device();
 
   bool IsValid() const { return device_ != nullptr; }
-  const char* GetName() const { return IsValid() ? device_->name : nullptr; }
-  const char* GetVendor() const {
-    return IsValid() ? device_->vendor : nullptr;
+  const char* GetName() const {
+    return IsValid() ? device_->second->name : nullptr;
   }
-  NNAdapterDeviceType GetType() const { return IsValid() ? device_->type : -1; }
-  int32_t GetVersion() const { return IsValid() ? device_->version : -1; }
-  int CreateContext(void** context);
+  const char* GetVendor() const {
+    return IsValid() ? device_->second->vendor : nullptr;
+  }
+  NNAdapterDeviceType GetType() const {
+    return IsValid() ? device_->second->type : -1;
+  }
+  int32_t GetVersion() const {
+    return IsValid() ? device_->second->version : -1;
+  }
+  int CreateContext(const char* properties, void** context);
   void DestroyContext(void* context);
   int CreateProgram(void* context,
                     hal::Model* model,
@@ -49,7 +55,7 @@ class Device {
                      hal::Argument* output_arguments);
 
  private:
-  hal::Device* device_{nullptr};
+  std::pair<void*, hal::Device*>* device_{nullptr};
   Device(const Device&) = delete;
   Device& operator=(const Device&) = delete;
 };
@@ -60,12 +66,12 @@ class DeviceManager {
   DeviceManager();
   ~DeviceManager();
   size_t Count();
-  hal::Device* At(int index);
-  hal::Device* Find(const char* name);
+  std::pair<void*, hal::Device*>* At(int index);
+  std::pair<void*, hal::Device*>* Find(const char* name);
 
  private:
   std::mutex mutex_;
-  std::vector<std::pair<void*, hal::Device*>> devices_;
+  std::vector<std::pair<void*, std::pair<void*, hal::Device*>>> devices_;
   DeviceManager(const DeviceManager&) = delete;
   DeviceManager& operator=(const DeviceManager&) = delete;
 };

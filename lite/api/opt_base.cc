@@ -62,7 +62,7 @@ void OptBase::SetPassesInternal(
 void OptBase::SetValidPlaces(const std::string& valid_places) {
   valid_places_.clear();
   auto target_reprs = lite::Split(valid_places, ",");
-  std::vector<std::string> nnadapter_devices;
+  std::vector<std::string> nnadapter_device_names;
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
       if (enable_fp16_) {
@@ -92,8 +92,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kX86));
     } else if (target_repr == "npu") {
       valid_places_.emplace_back(TARGET(kNPU));
-    } else if (target_repr == "huawei_ascend_npu") {
-      valid_places_.emplace_back(TARGET(kHuaweiAscendNPU));
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
     } else if (target_repr == "rknpu") {
@@ -115,17 +113,22 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.push_back(target_repr);
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "mediatek_apu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.push_back(target_repr);
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "huawei_kirin_npu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
-      nnadapter_devices.push_back(target_repr);
+      nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "huawei_ascend_npu") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -136,8 +139,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
   CHECK(!valid_places_.empty())
       << "At least one target should be set, should set the "
          "command argument 'valid_targets'";
-  if (!nnadapter_devices.empty()) {
-    opt_config_.set_nnadapter_devices(nnadapter_devices);
+  if (!nnadapter_device_names.empty()) {
+    opt_config_.set_nnadapter_device_names(nnadapter_device_names);
   }
 }
 
@@ -369,30 +372,31 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
                                 ? it->first.size()
                                 : maximum_optype_length;
   }
-  std::cout << std::setiosflags(std::ios::internal);
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << std::setw(maximum_optype_length) << "OP_name";
   for (size_t i = 0; i < lite_supported_targets.size(); i++) {
-    std::cout << std::setw(10) << lite_supported_targets[i].substr(1);
+    std::string i_th_substr = lite_supported_targets[i].substr(1);
+    std::cout << std::setw(i_th_substr.size() + 5) << i_th_substr;
   }
   std::cout << std::endl;
   // Print the name of supported ops and mark if it's supported by each target
   // print the support info of inputed ops: valid_ops
   for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
-    std::cout << std::setw(maximum_optype_length) << *op;
     // Check: If this kernel doesn't match any operator, we will skip it.
     if (supported_ops.find(*op) == supported_ops.end()) {
       continue;
     }
+    std::cout << std::setw(maximum_optype_length) << *op;
     // Print OP info.
     auto ops_valid_places = supported_ops.at(*op);
     for (size_t i = 0; i < lite_supported_targets.size(); i++) {
+      std::string i_th_substr = lite_supported_targets[i].substr(1);
       if (std::find(ops_valid_places.begin(),
                     ops_valid_places.end(),
                     lite_supported_targets[i]) != ops_valid_places.end()) {
-        std::cout << std::setw(10) << "Y";
+        std::cout << std::setw(i_th_substr.size() + 5) << "Y";
       } else {
-        std::cout << std::setw(10) << " ";
+        std::cout << std::setw(i_th_substr.size() + 5) << " ";
       }
     }
     std::cout << std::endl;

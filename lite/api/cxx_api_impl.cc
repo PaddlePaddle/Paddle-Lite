@@ -75,8 +75,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
     // Use scope to store the model-level configuration for the subgraph kernel
-    Context<TargetType::kNNAdapter>::SetNNAdapterDevices(
-        raw_predictor_->scope(), config.nnadapter_devices());
+    Context<TargetType::kNNAdapter>::SetNNAdapterDeviceNames(
+        raw_predictor_->scope(), config.nnadapter_device_names());
+    Context<TargetType::kNNAdapter>::SetNNAdapterContextProperties(
+        raw_predictor_->scope(), config.nnadapter_context_properties());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(
         raw_predictor_->scope(), config.nnadapter_model_cache_dir());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
