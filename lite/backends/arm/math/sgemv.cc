@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/sgemv.h"
 #include <arm_neon.h>
 #include <algorithm>
+#include <memory>
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -506,9 +507,6 @@ void sgemv_trans(const int M,
       memcpy(y, y_buf, M * sizeof(float));
     }
   }
-  delete zero_buf;
-  delete y_buf;
-  delete x_buf;
 }
 #else
 void sgemv_trans(const int M,
