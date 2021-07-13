@@ -77,15 +77,16 @@ TEST(Pow, precision) {
 // #ifdef LITE_WITH_X86
 //   Place place(TARGET(kX86));
 // #endif
-#ifdef LITE_WITH_ARM
-  float abs_error = 2e-4;
-  Place place(TARGET(kARM));
-  test_pow(place, abs_error);
-#endif
 
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
   float abs_error = 1e-1;
   Place place(TARGET(kHuaweiAscendNPU));
+  test_pow(place, abs_error);
+#endif
+
+#ifdef LITE_WITH_ARM
+  float abs_error = 2e-4;
+  Place place(TARGET(kARM));
   test_pow(place, abs_error);
 #endif
 }
