@@ -207,7 +207,12 @@ REGISTER_LITE_KERNEL(leaky_relu,
     .BindPaddleOpVersion("leaky_relu", 1)
     .Finalize();
 REGISTER_LITE_KERNEL(
-    prelu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PReluCompute, def)
+    prelu,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::PReluCompute<PRECISION(kFloat)>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("mode", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM))})

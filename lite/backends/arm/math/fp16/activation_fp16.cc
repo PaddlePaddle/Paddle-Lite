@@ -255,8 +255,8 @@ void act_prelu<float16_t>(const float16_t* din,
   int remain = inner_size & 31;
   int cnt_8 = remain >> 3;
   int rem_8 = remain & 7;
+  float16x8_t vzero = vdupq_n_f16(0.f);
   if (mode == "all" || mode == "channel") {
-    float16x8_t vzero = vdupq_n_f16(0.f);
     for (int n = 0; n < outer_size; n++) {
       const float16_t* data_in_batch = din + n * stride_size;
       float16_t* data_out_batch = dout + n * stride_size;
@@ -303,11 +303,10 @@ void act_prelu<float16_t>(const float16_t* din,
             "3: \n"
             "subs  %w[cnt_8], %w[cnt_8], #1\n"
             "fcmgt v4.8h,  v0.8h, %[vzero].8h\n"
-            "ins   v1.8h, v0.8h\n"
             "fmul  v8.8h,  v0.8h, %[vslope].8h\n"
+            "bif   v0.16b, v8.16b,  v4.16b\n"
+            "str   q0, [%[dout_ptr]], #16\n"
             "ldr   q0, [%[din_ptr]], #16\n"
-            "bif   v1.16b, v8.16b,  v4.16b\n"
-            "str   q1, [%[dout_ptr]], #16\n"
             "bne 3b\n"
             "1: \n"
             "sub %[din_ptr], %[din_ptr], #16\n"
@@ -315,7 +314,7 @@ void act_prelu<float16_t>(const float16_t* din,
               [dout_ptr] "+r"(data_out_c),
               [cnt] "+r"(cnt_cnt),
               [cnt_8] "+r"(cnt_8_cnt)
-            : [vzero] "w"(vzero), [vone_8] "w"(vone_8), [vslope] "w"(vslope)
+            : [vzero] "w"(vzero), [vslope] "w"(vslope)
             : "cc",
               "memory",
               "v0",
@@ -330,32 +329,6 @@ void act_prelu<float16_t>(const float16_t* din,
               "v9",
               "v10",
               "v11");
-/*
-for (int i = 0; i < cnt; ++i) {
-  float16x8_t vr0 = vld1q_f16(data_in_c);
-  float16x8_t vr1 = vld1q_f16(data_in_c + 8);
-  float16x8_t vr2 = vld1q_f16(data_in_c + 16);
-  float16x8_t vr3 = vld1q_f16(data_in_c + 24);
-  uint16x8_t vm0 = vcltq_f16(vr0, vzero);    // vr0 <= vzero
-  uint16x8_t vm1 = vcltq_f16(vr1, vzero);    // vr0 <= vzero
-  uint16x8_t vm2 = vcltq_f16(vr2, vzero);    // vr0 <= vzero
-  uint16x8_t vm3 = vcltq_f16(vr3, vzero);    // vr0 <= vzero
-  float16x8_t vo0 = vmulq_f16(vr0, vslope);  // vr0 * vslope
-  float16x8_t vo1 = vmulq_f16(vr1, vslope);  // vr0 * vslope
-  float16x8_t vo2 = vmulq_f16(vr2, vslope);  // vr0 * vslope
-  float16x8_t vo3 = vmulq_f16(vr3, vslope);  // vr0 * vslope
-  float16x8_t vos0 = vbslq_f16(vm0, vo0, vr0);
-  float16x8_t vos1 = vbslq_f16(vm1, vo1, vr1);
-  float16x8_t vos2 = vbslq_f16(vm2, vo2, vr2);
-  float16x8_t vos3 = vbslq_f16(vm3, vo3, vr3);
-  vst1q_f16(data_out_c, vos0);
-  vst1q_f16(data_out_c + 8, vos1);
-  vst1q_f16(data_out_c + 16, vos2);
-  vst1q_f16(data_out_c + 24, vos3);
-  data_in_c += 32;
-  data_out_c += 32;
-}
-*/
 #else
 #endif  // __aarch64__
         for (int i = rem_8; i > 0; i--) {
@@ -370,6 +343,7 @@ for (int i = 0; i < cnt; ++i) {
       const float16_t* data_in_batch = din + n * stride_size;
       const float16_t* data_alpha_batch = alpha_data + n * stride_size;
       float16_t* data_out_batch = dout + n * stride_size;
+#pragma omp parallel for
       for (int c = 0; c < channel_size; c++) {
         const float16_t* data_in_c = data_in_batch + c * inner_size;
         const float16_t* data_alpha_c = data_alpha_batch + c * inner_size;
@@ -413,11 +387,10 @@ for (int i = 0; i < cnt; ++i) {
             "subs  %w[cnt_8], %w[cnt_8], #1\n"
             "ldr   q8, [%[alpha_ptr]], #16\n"
             "fcmgt v4.8h,  v0.8h, %[vzero].8h\n"
-            "ins   v1.8h, v0.8h\n"
             "fmul  v9.8h,  v0.8h, v8.8h\n"
+            "bif   v0.16b, v9.16b,  v4.16b\n"
+            "str   q0, [%[dout_ptr]], #16\n"
             "ldr   q0, [%[din_ptr]], #16\n"
-            "bif   v1.16b, v9.16b,  v4.16b\n"
-            "str   q1, [%[dout_ptr]], #16\n"
             "bne 3b\n"
             "1: \n"
             "sub %[din_ptr], %[din_ptr], #16\n"
@@ -426,7 +399,7 @@ for (int i = 0; i < cnt; ++i) {
               [dout_ptr] "+r"(data_out_c),
               [cnt] "+r"(cnt_cnt),
               [cnt_8] "+r"(cnt_8_cnt)
-            : [vzero] "w"(vzero), [vone_8] "w"(vone_8), [vslope] "w"(vslope)
+            : [vzero] "w"(vzero)
             : "cc",
               "memory",
               "v0",

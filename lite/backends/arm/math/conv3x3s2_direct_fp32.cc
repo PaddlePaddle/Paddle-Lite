@@ -1722,7 +1722,6 @@ void conv_3x3s2_direct_fp32(const float* i_data,
   float* tmp_work_space = ctx->workspace_data<float>();
   float ptr_zero[win_round];  // NOLINT
   memset(ptr_zero, 0, sizeof(float) * win_round);
-  float ptr_write[wout_round];  // NOLINT
 
   //! l2_cache start
   float* pre_din = tmp_work_space;
@@ -2427,7 +2426,6 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
   float* tmp_work_space = ctx->workspace_data<float>();
   float ptr_zero[win_round];  // NOLINT
   memset(ptr_zero, 0, sizeof(float) * win_round);
-  float ptr_write[wout_round];  // NOLINT
 
   //! l2_cache start
   float* pre_din = tmp_work_space;
@@ -2459,7 +2457,7 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
     }
   }
   for (int n = 0; n < bs; ++n) {
-    const float* din_batch = i_data + n * in_channel * size_in_channel;
+    const float* din_batch = i_data + n * ic * size_in_channel;
     float* dout_batch = o_data + n * oc * size_out_channel;
     for (int h = 0; h < oh; h += hout_r_block) {
       int h_kernel = hout_r_block;
@@ -3013,7 +3011,6 @@ void conv_3x3s2_direct_fp32_c3_a53(const float* i_data,
   float* tmp_work_space = ctx->workspace_data<float>();
   float ptr_zero[win_round];  // NOLINT
   memset(ptr_zero, 0, sizeof(float) * win_round);
-  float ptr_write[wout_round];  // NOLINT
 
   //! l2_cache start
   float* pre_din = tmp_work_space;
@@ -3045,7 +3042,7 @@ void conv_3x3s2_direct_fp32_c3_a53(const float* i_data,
     }
   }
   for (int n = 0; n < bs; ++n) {
-    const float* din_batch = i_data + n * in_channel * size_in_channel;
+    const float* din_batch = i_data + n * ic * size_in_channel;
     float* dout_batch = o_data + n * oc * size_out_channel;
     for (int h = 0; h < oh; h += hout_r_block) {
       int h_kernel = hout_r_block;

@@ -39,7 +39,7 @@ void act_prelu(const T* din,
                int channel_size,
                int inner_size,
                std::string mode,
-               const float* alpha_data,
+               const T* alpha_data,
                int threads);
 }  // namespace fp16
 }  // namespace math
