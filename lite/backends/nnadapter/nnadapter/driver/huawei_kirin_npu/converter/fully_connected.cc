@@ -47,34 +47,46 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   // Fuse code
   auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
   NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
+  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to HiAI operators
+  // Convert to GE operators
   // Add input operator and reshape it to (batch_size, input_size, 1, 1)
-  auto input_operator = ConvertOperand(input_operand);
-  auto reshaped_input_operator = AddOperator<ge::op::Reshape>();
-  reshaped_input_operator->set_input_tensor(*input_operator);
-  reshaped_input_operator->set_attr_shape({batch_size, input_size, 1, 1});
-  reshaped_input_operator->set_attr_axis(0);
-  // Add weight operator and reshape to to (num_units, input_size, 1, 1)
-  auto weight_operator =
-      ConvertOperand(weight_operand, {num_units, input_size, 1, 1});
-  // Add bias operator and reshape to to (1, num_units, 1, 1)
-  auto bias_operator = ConvertOperand(bias_operand, {1, num_units, 1, 1});
-  // Add fc operator and reshape back to the origin dimension of output operand
-  auto fc_operator = AddOperator<ge::op::FullConnection>(output_operand);
-  fc_operator->set_input_x(*reshaped_input_operator);
-  fc_operator->set_input_w(*weight_operator);
-  fc_operator->set_input_b(*bias_operator);
-  auto reshaped_fc_operator = AddOperator<ge::op::Reshape>(output_operand);
-  reshaped_fc_operator->set_input_tensor(*fc_operator);
-  auto output_dimensions = ConvertDimensions(
-      output_operand->type.dimensions, output_operand->type.dimension_count);
-  reshaped_fc_operator->set_attr_shape(ge::AttrValue::LIST_INT(
-      output_dimensions.begin(), output_dimensions.end()));
-  reshaped_fc_operator->set_attr_axis(0);
+  auto input_operator = GetMappedOperator(input_operand);
+  if (!input_operator) {
+    input_operator = ConvertOperand(input_operand);
+  }
+  // Reshape the input operator to 2-D tensor {batch_size, input_size} if the
+  // dimension_count not equal 2
+  if (input_operand->type.dimension_count != 2) {
+    auto reshape_name = GetOperatorName(input_operand);
+    auto reshape_op = std::make_shared<hiai::op::Reshape>(reshape_name);
+    auto shape_operator = AddInt32ConstantOperator(
+        {static_cast<int32_t>(batch_size), input_size});
+    SET_INPUT(reshape_op, x, input_operator);
+    SET_INPUT(reshape_op, shape, shape_operator);
+    input_operator = MAP_OUTPUT(reshape_op, y, input_operand);
+  }
+  auto weight_operator = ConvertOperand(weight_operand);
+  auto bias_operator = ConvertOperand(bias_operand);
+  // Use MatMul instead of FullyConnection to avoid outputing the 4-D tensor
+  auto matmul_name = GetOperatorName(output_operand);
+  auto matmul_op = std::make_shared<hiai::op::MatMul>(matmul_name);
+  matmul_op->set_attr_transpose_x1(false);
+  matmul_op->set_attr_transpose_x2(
+      true);  // {num_units, input_size} -> {input_size, num_units}
+  SET_INPUT(matmul_op, x1, input_operator);
+  SET_INPUT(matmul_op, x2, weight_operator);
+  // SET_INPUT(matmul_op, bias, bias_operator);
+  auto matmul_operator = MAP_OUTPUT(matmul_op, y, output_operand);
+  // Add a Add operator to support bias(HiAI GE MatMul doesn't support bias)
+  auto add_name = GetOperatorName(output_operand);
+  auto add_op = std::make_shared<hiai::op::Add>(add_name);
+  SET_INPUT(add_op, x1, matmul_operator);
+  SET_INPUT(add_op, x2, bias_operator);
+  MAP_OUTPUT(add_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

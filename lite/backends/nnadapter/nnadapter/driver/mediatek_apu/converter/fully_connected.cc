@@ -52,7 +52,10 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to Neuron operands and operations
-  auto input_index = ConvertOperand(input_operand);
+  auto input_index = GetMappedIndex(input_operand);
+  if (input_index == INVALID_INDEX) {
+    input_index = ConvertOperand(input_operand);
+  }
   auto weight_index = ConvertOperand(weight_operand);
   auto bias_index = ConvertOperand(bias_operand);
   auto fuse_code_index = AddInt32ConstantOperand(ConvertFuseCode(fuse_code));

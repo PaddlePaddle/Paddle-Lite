@@ -1,0 +1,275 @@
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "driver/huawei_ascend_npu/model_client.h"
+#include <memory>
+#include <sstream>
+#include <string>
+#include "driver/huawei_ascend_npu/utility.h"
+#include "utility/logging.h"
+
+namespace nnadapter {
+namespace huawei_ascend_npu {
+
+AclModelClient::AclModelClient(int device_id) {
+  NNADAPTER_VLOG(5) << "Create a ACL model client(device_id=" << device_id
+                    << ")";
+  uint32_t device_count = 0;
+  ACL_CALL(aclrtGetDeviceCount(&device_count));
+  NNADAPTER_VLOG(3) << "device_count: " << device_count;
+  NNADAPTER_CHECK_GE(device_id, 0);
+  NNADAPTER_CHECK_LT(device_id, device_count);
+  ACL_CALL(aclrtSetDevice(device_id));
+  device_id_ = device_id;
+}
+
+AclModelClient::~AclModelClient() {
+  UnloadModel();
+  NNADAPTER_VLOG(5) << "Reset ACL device(device_id_=" << device_id_ << ")";
+  ACL_CALL(aclrtResetDevice(device_id_));
+}
+
+bool AclModelClient::LoadModel(const void* data, uint32_t size) {
+  if (model_desc_) {
+    NNADAPTER_LOG(WARNING) << "ACL model had been already loaded.";
+    return true;
+  }
+  ACL_CALL(aclmdlQuerySizeFromMem(
+      data, size, &model_memory_size_, &model_weight_size_));
+  ACL_CALL(aclrtMalloc(
+      &model_memory_ptr_, model_memory_size_, ACL_MEM_MALLOC_HUGE_FIRST));
+  ACL_CALL(aclrtMalloc(
+      &model_weight_ptr_, model_weight_size_, ACL_MEM_MALLOC_HUGE_FIRST));
+  ACL_CALL(aclmdlLoadFromMemWithMem(data,
+                                    size,
+                                    &model_id_,
+                                    model_memory_ptr_,
+                                    model_memory_size_,
+                                    model_weight_ptr_,
+                                    model_weight_size_));
+  auto model_desc = aclmdlCreateDesc();
+  if (!model_desc) {
+    NNADAPTER_LOG(ERROR) << "Failed to create ACL model description!";
+    return false;
+  }
+  ACL_CALL(aclmdlGetDesc(model_desc, model_id_));
+  model_desc_ = model_desc;
+  NNADAPTER_CHECK(CreateModelIODataset());
+  NNADAPTER_VLOG(3) << "Load a ACL model success.";
+  return true;
+}
+
+void AclModelClient::UnloadModel() {
+  if (!model_desc_) {
+    NNADAPTER_LOG(WARNING) << "No ACL model is loaded.";
+    return;
+  }
+  if (input_dataset_) {
+    DestroyDataset(&input_dataset_);
+  }
+  if (output_dataset_) {
+    DestroyDataset(&output_dataset_);
+  }
+  ACL_CALL(aclmdlUnload(model_id_));
+  if (model_memory_ptr_) {
+    ACL_CALL(aclrtFree(model_memory_ptr_));
+    model_memory_ptr_ = nullptr;
+    model_memory_size_ = 0;
+  }
+  if (model_weight_ptr_) {
+    ACL_CALL(aclrtFree(model_weight_ptr_));
+    model_weight_ptr_ = nullptr;
+    model_weight_size_ = 0;
+  }
+  ACL_CALL(aclmdlDestroyDesc(model_desc_));
+  model_desc_ = nullptr;
+  NNADAPTER_VLOG(5) << "Unload a ACL model success(model_id=" << model_id_
+                    << ")";
+}
+
+bool AclModelClient::GetModelIOTensorDim(
+    std::vector<ge::TensorDesc>* input_tensor_descs,
+    std::vector<ge::TensorDesc>* output_tensor_descs) {
+  if (!model_desc_) {
+    NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
+    return false;
+  }
+  NNADAPTER_CHECK(input_tensor_descs && output_tensor_descs);
+  input_tensor_descs->clear();
+  output_tensor_descs->clear();
+  auto input_count = aclmdlGetNumInputs(model_desc_);
+  NNADAPTER_VLOG(3) << "input_count: " << input_count;
+  for (size_t i = 0; i < input_count; i++) {
+    aclmdlIODims dims;
+    ACL_CALL(aclmdlGetInputDims(model_desc_, i, &dims));
+    auto data_type = aclmdlGetInputDataType(model_desc_, i);
+    auto format = aclmdlGetInputFormat(model_desc_, i);
+    std::string name(aclmdlGetInputNameByIndex(model_desc_, i));
+    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimensions(dims)),
+                                  ConvertACLFormat(format),
+                                  ConvertACLDataType(data_type));
+    ge_tensor_desc.SetName(name.c_str());
+    input_tensor_descs->push_back(ge_tensor_desc);
+  }
+  auto output_count = aclmdlGetNumOutputs(model_desc_);
+  NNADAPTER_VLOG(3) << "output_count: " << output_count;
+  for (size_t i = 0; i < output_count; i++) {
+    aclmdlIODims dims;
+    ACL_CALL(aclmdlGetOutputDims(model_desc_, i, &dims));
+    auto data_type = aclmdlGetOutputDataType(model_desc_, i);
+    auto format = aclmdlGetOutputFormat(model_desc_, i);
+    std::string name(aclmdlGetOutputNameByIndex(model_desc_, i));
+    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimensions(dims)),
+                                  ConvertACLFormat(format),
+                                  ConvertACLDataType(data_type));
+    ge_tensor_desc.SetName(name.c_str());
+    output_tensor_descs->push_back(ge_tensor_desc);
+  }
+  NNADAPTER_VLOG(5)
+      << "Get input and output dimensions from a ACL model success.";
+  return true;
+}
+
+bool AclModelClient::CreateModelIODataset() {
+  if (!model_desc_) {
+    NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
+    return false;
+  }
+  if (input_dataset_) {
+    DestroyDataset(&input_dataset_);
+  }
+  input_dataset_ = aclmdlCreateDataset();
+  NNADAPTER_CHECK(input_dataset_) << "Failed to create input dataset!";
+  auto input_count = aclmdlGetNumInputs(model_desc_);
+  NNADAPTER_VLOG(3) << "input_count: " << input_count;
+  for (uint32_t i = 0; i < input_count; i++) {
+    auto length = aclmdlGetInputSizeByIndex(model_desc_, i);
+    NNADAPTER_VLOG(5) << "The buffer length of model input tensor " << i << ":"
+                      << length;
+    void* device_ptr = nullptr;
+    ACL_CALL(aclrtMalloc(&device_ptr, length, ACL_MEM_MALLOC_NORMAL_ONLY));
+    auto data_buffer = aclCreateDataBuffer(device_ptr, length);
+    NNADAPTER_CHECK(data_buffer)
+        << "Failed to call aclCreateDataBuffer to create a data buffer!";
+    ACL_CALL(aclmdlAddDatasetBuffer(input_dataset_, data_buffer));
+  }
+  if (output_dataset_) {
+    DestroyDataset(&output_dataset_);
+  }
+  output_dataset_ = aclmdlCreateDataset();
+  NNADAPTER_CHECK(output_dataset_) << "Failed to create output dataset!";
+  auto output_count = aclmdlGetNumOutputs(model_desc_);
+  NNADAPTER_VLOG(3) << "output_count: " << output_count;
+  for (uint32_t i = 0; i < output_count; i++) {
+    auto length = aclmdlGetOutputSizeByIndex(model_desc_, i);
+    NNADAPTER_VLOG(5) << "The buffer length of model output tensor " << i << ":"
+                      << length;
+    void* device_ptr = nullptr;
+    ACL_CALL(aclrtMalloc(&device_ptr, length, ACL_MEM_MALLOC_NORMAL_ONLY));
+    auto data_buffer = aclCreateDataBuffer(device_ptr, length);
+    NNADAPTER_CHECK(data_buffer)
+        << "Failed to call aclCreateDataBuffer to create a data buffer!";
+    ACL_CALL(aclmdlAddDatasetBuffer(output_dataset_, data_buffer));
+  }
+  NNADAPTER_VLOG(5) << "Create input and output dataset success.";
+  return true;
+}
+
+void AclModelClient::DestroyDataset(aclmdlDataset** dataset) {
+  if (!dataset) {
+    NNADAPTER_LOG(WARNING) << "ACL dataset is not initialized!";
+    return;
+  }
+  auto buffer_count = aclmdlGetDatasetNumBuffers(*dataset);
+  for (size_t i = 0; i < buffer_count; i++) {
+    auto data_buffer = aclmdlGetDatasetBuffer(*dataset, i);
+    auto device_ptr = aclGetDataBufferAddr(data_buffer);
+    if (device_ptr) {
+      ACL_CALL(aclrtFree(device_ptr));
+    } else {
+      NNADAPTER_LOG(WARNING) << "The device buffer[" << i
+                             << "] from a ACL dataset is invalid!";
+    }
+    ACL_CALL(aclDestroyDataBuffer(data_buffer));
+  }
+  ACL_CALL(aclmdlDestroyDataset(*dataset));
+  *dataset = nullptr;
+  NNADAPTER_VLOG(5) << "Destroy a ACL dataset success.";
+}
+
+bool AclModelClient::Process(uint32_t input_count,
+                             hal::Argument* input_arguments,
+                             uint32_t output_count,
+                             hal::Argument* output_arguments) {
+  if (!model_desc_) {
+    NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
+    return false;
+  }
+  auto FindArgumentByIndex = [&](
+      hal::Argument* arguments, int index, uint32_t count) {
+    for (uint32_t i = 0; i < count; i++) {
+      if (arguments[i].index == index) {
+        return &arguments[i];
+      }
+    }
+    return static_cast<hal::Argument*>(nullptr);
+  };
+  NNADAPTER_CHECK(input_dataset_);
+  NNADAPTER_CHECK(output_dataset_);
+  NNADAPTER_CHECK_EQ(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
+  NNADAPTER_CHECK_EQ(output_count, aclmdlGetDatasetNumBuffers(output_dataset_));
+  // Copy the input data from host to device
+  for (uint32_t i = 0; i < input_count; i++) {
+    auto argument = FindArgumentByIndex(input_arguments, i, input_count);
+    NNADAPTER_CHECK(argument) << "Input argument " << i << " does not exist!";
+    auto data_buffer = aclmdlGetDatasetBuffer(input_dataset_, i);
+    auto length = aclGetDataBufferSizeV2(data_buffer);
+    NNADAPTER_CHECK_EQ(length, argument->length)
+        << "The buffer length of model input tensor " << i << "(" << length
+        << ") does not match the buffer length of input argument " << i << "("
+        << argument->length << ")";
+    auto device_ptr = aclGetDataBufferAddr(data_buffer);
+    NNADAPTER_CHECK(device_ptr);
+    auto host_ptr = reinterpret_cast<void*>(argument->buffer);
+    NNADAPTER_CHECK(host_ptr) << "The buffer of input argument " << i
+                              << " should not be nullptr!";
+    ACL_CALL(aclrtMemcpy(
+        device_ptr, length, host_ptr, length, ACL_MEMCPY_HOST_TO_DEVICE));
+  }
+  // Model execution
+  ACL_CALL(aclmdlExecute(model_id_, input_dataset_, output_dataset_));
+  // Copy the output data from device to host
+  for (uint32_t i = 0; i < output_count; i++) {
+    auto argument = FindArgumentByIndex(output_arguments, i, output_count);
+    NNADAPTER_CHECK(argument) << "Output argument " << i << " does not exist!";
+    auto data_buffer = aclmdlGetDatasetBuffer(output_dataset_, i);
+    auto length = aclGetDataBufferSizeV2(data_buffer);
+    NNADAPTER_CHECK_EQ(length, argument->length)
+        << "The buffer length of model output tensor " << i << "(" << length
+        << ") does not match the buffer length of output argument " << i << "("
+        << argument->length << ")";
+    auto device_ptr = aclGetDataBufferAddr(data_buffer);
+    NNADAPTER_CHECK(device_ptr);
+    auto host_ptr = reinterpret_cast<void*>(argument->buffer);
+    NNADAPTER_CHECK(host_ptr) << "The buffer of output argument " << i
+                              << " should not be nullptr!";
+    ACL_CALL(aclrtMemcpy(
+        host_ptr, length, device_ptr, length, ACL_MEMCPY_DEVICE_TO_HOST));
+  }
+  NNADAPTER_VLOG(5) << "Process a ACL model success.";
+  return true;
+}
+
+}  // namespace huawei_ascend_npu
+}  // namespace nnadapter
