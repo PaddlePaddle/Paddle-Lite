@@ -112,13 +112,6 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     transpose_op->set_input_x_by_name(
         *split_node->data(), ("y" + paddle::lite::to_string(idx)).c_str());
     transpose_op->set_input_perm(*input_perm_node->data());
-    // auto zero_node =
-    //     graph->Add(out_name + "/zero" + paddle::lite::to_string(idx), 0);
-    // auto add_node = graph->Add<ge::op::Add>(out_name);
-    // auto add_op = add_node->data<ge::op::Add>();
-    // add_op->set_input_x1_by_name(*split_node->data(), ("y" +
-    // paddle::lite::to_string(idx)).c_str());
-    // add_op->set_input_x2(*zero_node->data());
     idx++;
   }
 
