@@ -106,8 +106,8 @@ execute_process(
     ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
     "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
     ${LITE_BUILD_TAILOR}
-    RESULT_VARIABLE result
-    )
+    ${LITE_BUILD_EXTRA}
+    RESULT_VARIABLE result)
 
 #-------------------------------opt----------------------------------------------------------------
 # tricks to create headfiles for opt

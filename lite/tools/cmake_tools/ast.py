@@ -493,7 +493,20 @@ class RegisterLiteOpParser(SyntaxParser):
         super(RegisterLiteOpParser, self).__init__(str)
         self.ops = []
 
-    def parse(self):
+    def parse(self, with_extra):
+        extra_command = []
+        while self.cur_pos < len(self.str):
+            start = self.str.find("#ifdef LITE_BUILD_EXTRA", self.cur_pos)
+            if start != -1:
+                self.cur_pos = start
+                end = self.str.find("#endif  // LITE_BUILD_EXTRA", self.cur_pos)
+                if end != -1:
+                    extra_command += extra_command + list(range(start, end + 1))
+                    self.cur_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
+                else:
+                    break
+            else:
+                break
         while self.cur_pos < len(self.str):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
@@ -503,6 +516,10 @@ class RegisterLiteOpParser(SyntaxParser):
                     skip commented code
                     '''
                     self.cur_pos = start + 1
+                    continue
+                # if with_extra == "OFF", extra kernels will not be parsed
+                if with_extra != "ON" and start in extra_command:
+                    self.cur_pos = start + len(self.KEYWORD) -1
                     continue
                 self.cur_pos = start
                 self.ops.append(self.__parse_register())
