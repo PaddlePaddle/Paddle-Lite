@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "driver/huawei_kirin_npu/converter.h"
+#include <utility>
+#include "driver/huawei_kirin_npu/optimizer/fix_multiple_outputs_ops.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -21,7 +23,7 @@
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-Context::Context() {
+Context::Context(void* device, const char* properties) : device_(device) {
   // TODO(hong19860320) create the raw context from HiAI service
 }
 
@@ -31,38 +33,52 @@ Program::~Program() {}
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+  FixMultipleOutputsOps(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
-  // Convert a NNAdapter model to a HiAI IR graph
+  // Convert a NNAdapter model to a GE graph
+  operators_.clear();
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
     switch (operation->type) {
-      case NNADAPTER_CONV_2D:
-        ConvertConv2D(operation);
-        break;
-      case NNADAPTER_FULLY_CONNECTED:
-        ConvertFullyConnected(operation);
-        break;
-      case NNADAPTER_AVERAGE_POOL_2D:
-      case NNADAPTER_MAX_POOL_2D:
-        ConvertPool2D(operation);
-        break;
       case NNADAPTER_ADD:
       case NNADAPTER_SUB:
       case NNADAPTER_MUL:
       case NNADAPTER_DIV:
         ConvertElementwise(operation);
         break;
+      case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_MAX_POOL_2D:
+        ConvertPool2D(operation);
+        break;
+      case NNADAPTER_CONCAT:
+        ConvertConcat(operation);
+        break;
+      case NNADAPTER_CONV_2D:
+        ConvertConv2D(operation);
+        break;
+      case NNADAPTER_FULLY_CONNECTED:
+        ConvertFullyConnected(operation);
+        break;
+      case NNADAPTER_RELU:
+      case NNADAPTER_RELU6:
+      case NNADAPTER_SIGMOID:
+      case NNADAPTER_TANH:
+        ConvertActivation(operation);
+        break;
+      case NNADAPTER_RESHAPE:
+        ConvertReshape(operation);
+        break;
       case NNADAPTER_SOFTMAX:
         ConvertSoftmax(operation);
         break;
-      case NNADAPTER_SIGMOID:
-      case NNADAPTER_RELU:
-      case NNADAPTER_RELU6:
-      case NNADAPTER_TANH:
-        ConvertActivation(operation);
+      case NNADAPTER_SPLIT:
+        ConvertSplit(operation);
+        break;
+      case NNADAPTER_TRANSPOSE:
+        ConvertTranspose(operation);
         break;
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("
@@ -71,22 +87,22 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         break;
     }
   }
-  // Indentify the inputs and outputs
+  // Identify the inputs and outputs
   auto input_count = model->input_operands.size();
   std::vector<ge::Operator> input_operators(input_count);
   for (size_t i = 0; i < input_count; i++) {
     auto operand = model->input_operands[i];
     NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-    input_operators[i] = *operators_[operand].back();
+    input_operators[i] = *operators_[operand].back()->op();
   }
   auto output_count = model->output_operands.size();
   std::vector<ge::Operator> output_operators(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
     NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-    output_operators[i] = *operators_[operand].back();
+    output_operators[i] = *operators_[operand].back()->op();
   }
-  // Build a HiAI IR graph to a HiAI OM model, and serialize it into a buffer
+  // Build a GE graph to a HiAI OM model, and serialize it into a buffer
   std::vector<char> model_buffer;
   if (!BuildOMModelToBuffer(input_operators, output_operators, &model_buffer)) {
     NNADAPTER_LOG(FATAL)
@@ -96,7 +112,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   // Load a HiAI OM model from a buffer, and create a HiAI model manager
   // client(from HiAI service) for inference
   bool model_comp = true;
-  model_name_ = string_format("@0x%X", model);
+  model_name_ = string_format("0x%X.om", model);
   model_client_ = LoadOMModelFromBuffer(model_name_,
                                         &model_buffer,
                                         &model_comp,
@@ -179,35 +195,121 @@ int Program::Execute(uint32_t input_count,
   return NNADAPTER_NO_ERROR;
 }
 
-std::shared_ptr<ge::Operator> Program::ConvertOperand(
-    hal::Operand* operand, std::vector<int64_t> dimensions) {
-  if (operators_.find(operand) != operators_.end()) {
-    return operators_.at(operand).back();
+std::string Program::GetOperatorName(hal::Operand* operand) {
+  auto operand_id = OperandIdToString(operand);
+  auto index = 0;
+  auto it = operators_.find(operand);
+  if (it != operators_.end()) {
+    index = it->second.size();
   }
-  auto& type = operand->type;
-  auto is_constant_copy = type.lifetime == NNADAPTER_CONSTANT_COPY;
-  auto is_constant_reference = type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
-  auto is_constant = is_constant_copy || is_constant_reference;
-  auto shape =
-      ge::Shape(dimensions.empty()
-                    ? ConvertDimensions(type.dimensions, type.dimension_count)
-                    : dimensions);
-  auto layout = ConvertDataLayout(type.layout);
-  auto precision = ConvertPrecision(type.precision);
-  ge::TensorDesc desc(shape, layout, precision);
-  if (is_constant) {
-    ge::TensorPtr tensor = std::make_shared<ge::Tensor>();
-    tensor->SetTensorDesc(desc);
+  return operand_id + string_format("_%d", index);
+}
+
+std::shared_ptr<Operator> Program::GetMappedOperator(hal::Operand* operand) {
+  auto it = operators_.find(operand);
+  if (it != operators_.end()) {
+    return it->second.back();
+  }
+  return nullptr;
+}
+
+std::shared_ptr<Operator> Program::UpdateOperatorMap(
+    hal::Operand* operand, std::shared_ptr<Operator> op) {
+  auto it = operators_.find(operand);
+  if (it == operators_.end()) {
+    auto result = operators_.insert(
+        std::make_pair(operand, std::vector<std::shared_ptr<Operator>>()));
+    NNADAPTER_CHECK(result.second);
+    it = result.first;
+  }
+  it->second.push_back(op);
+  return op;
+}
+
+std::shared_ptr<Operator> Program::AddConstantOperator(
+    const void* values,
+    NNAdapterOperandPrecisionCode precision,
+    const std::vector<int32_t>& dimensions) {
+  NNADAPTER_CHECK(values)
+      << "The values of constant operator should not be nullptr.";
+  auto num_values = ProductionOfDimensions(dimensions);
+  auto shape = dimensions.size() > 0 ? ge::Shape(ConvertDimensions(dimensions))
+                                     : ge::Shape();
+  auto tensor_desc = std::make_shared<ge::TensorDesc>(
+      shape, ge::FORMAT_NCHW, ConvertPrecision(precision));
+  // Add anonymous constant operator
+  auto name = GetOperatorName(nullptr);
+  auto op = std::make_shared<hiai::op::Const>(name);
+  auto tensor = std::make_shared<ge::Tensor>();
+  tensor->SetTensorDesc(*tensor_desc);
+  tensor->SetData(reinterpret_cast<const uint8_t*>(values),
+                  num_values * OperandPrecisionLength(precision));
+  op->set_attr_value(tensor);
+  auto constant_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
+  UpdateOperatorMap(nullptr, constant_operator);
+  return constant_operator;
+}
+
+std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
+    const int32_t* values, const std::vector<int32_t>& dimensions) {
+  return AddConstantOperator(values, NNADAPTER_TENSOR_INT32, dimensions);
+}
+
+std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
+    const std::vector<int32_t>& values,
+    const std::vector<int32_t>& dimensions) {
+  int num_values = values.size();
+  return AddInt32ConstantOperator(
+      &values[0],
+      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
+}
+
+std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
+    const float* values, const std::vector<int32_t>& dimensions) {
+  return AddConstantOperator(values, NNADAPTER_TENSOR_FLOAT32, dimensions);
+}
+
+std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
+    const std::vector<float>& values, const std::vector<int32_t>& dimensions) {
+  int num_values = values.size();
+  return AddFloat32ConstantOperator(
+      &values[0],
+      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
+}
+
+std::shared_ptr<Operator> Program::ConvertOperand(
+    hal::Operand* operand, std::vector<int32_t> dimensions) {
+  if (dimensions.empty()) {
+    for (uint32_t i = 0; i < operand->type.dimension_count; i++) {
+      dimensions.push_back(operand->type.dimensions[i]);
+    }
+  }
+  auto shape = dimensions.size() > 0 ? ge::Shape(ConvertDimensions(dimensions))
+                                     : ge::Shape();
+  auto tensor_desc = std::make_shared<ge::TensorDesc>(
+      shape, ge::FORMAT_NCHW, ConvertPrecision(operand->type.precision));
+  auto name = GetOperatorName(operand);
+  if (IsConstantOperand(operand)) {
+    auto op = std::make_shared<hiai::op::Const>(name);
+    auto tensor = std::make_shared<ge::Tensor>();
+    tensor->SetTensorDesc(*tensor_desc);
     tensor->SetData(reinterpret_cast<const uint8_t*>(operand->buffer),
                     operand->length);
-    auto constant_operator = AddOperator<ge::op::Const>(operand);
-    constant_operator->set_attr_value(tensor);
+    op->set_attr_value(tensor);
+    auto constant_operator =
+        std::make_shared<Operator>(op, tensor_desc, "", -1);
+    UpdateOperatorMap(operand, constant_operator);
     return constant_operator;
+  } else if (IsModelInputOperand(operand)) {
+    auto op = std::make_shared<hiai::op::Data>(name);
+    op->update_input_desc_x(*tensor_desc);
+    auto data_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
+    UpdateOperatorMap(operand, data_operator);
+    return data_operator;
   }
-  // Only mapping the temporary operand
-  auto data_operator = AddOperator<ge::op::Data>(operand);
-  data_operator->update_input_desc_x(desc);
-  return data_operator;
+  NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
+                          "converted to ge::Operator!";
+  return nullptr;
 }
 
 }  // namespace huawei_kirin_npu

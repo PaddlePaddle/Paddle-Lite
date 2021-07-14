@@ -40,6 +40,9 @@ fi
 # 3. compiling functions
 ####################################################################################################
 function make_ios {
+    if [ ! -d third-party ]; then
+      git checkout third-party
+    fi
     local arch=$1
 
     if [ ${arch} == "armv8" ]; then

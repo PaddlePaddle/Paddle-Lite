@@ -157,7 +157,7 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   };
   // Filter the supported operators for the selected devices according to the
   // registered op bridges
-  std::vector<std::string> selected_devices;
+  std::vector<std::string> selected_device_names;
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
   Scope* scope = nullptr;
@@ -166,19 +166,20 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (scope) break;
   }
   CHECK(scope != nullptr);
-  selected_devices = Context<TargetType::kNNAdapter>::NNAdapterDevices(scope);
+  selected_device_names =
+      Context<TargetType::kNNAdapter>::NNAdapterDeviceNames(scope);
 #endif
   std::set<std::string> supported_ops;
-  std::vector<std::string> supported_devices;
+  std::vector<std::string> supported_device_names;
   std::string device_names;
-#define USE_SUBGRAPH_BRIDGE(op_type_, target_, device_names_)     \
-  device_names = device_names_;                                   \
-  device_names.erase(                                             \
-      std::remove(device_names.begin(), device_names.end(), ' '), \
-      device_names.end());                                        \
-  supported_devices = Split(device_names, ",");                   \
-  if (has_intersection(selected_devices, supported_devices)) {    \
-    supported_ops.insert(#op_type_);                              \
+#define USE_SUBGRAPH_BRIDGE(op_type_, target_, device_names_)            \
+  device_names = device_names_;                                          \
+  device_names.erase(                                                    \
+      std::remove(device_names.begin(), device_names.end(), ' '),        \
+      device_names.end());                                               \
+  supported_device_names = Split(device_names, ",");                     \
+  if (has_intersection(selected_device_names, supported_device_names)) { \
+    supported_ops.insert(#op_type_);                                     \
   }
 #include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE

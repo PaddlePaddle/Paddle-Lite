@@ -19,6 +19,33 @@
 namespace nnadapter {
 namespace mediatek_apu {
 
+int NeuronOperandDataTypeLength(int data_type) {
+  switch (data_type) {
+    case NEURON_BOOL:
+    case NEURON_TENSOR_BOOL8:
+    case NEURON_TENSOR_QUANT8_ASYMM:
+    case NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL:
+    case NEURON_TENSOR_QUANT8_SYMM:
+      return 1;
+    case NEURON_FLOAT16:
+    case NEURON_TENSOR_FLOAT16:
+    case NEURON_TENSOR_QUANT16_ASYMM:
+    case NEURON_TENSOR_QUANT16_SYMM:
+      return 2;
+    case NEURON_INT32:
+    case NEURON_UINT32:
+    case NEURON_FLOAT32:
+    case NEURON_TENSOR_INT32:
+    case NEURON_TENSOR_FLOAT32:
+      return 4;
+    default:
+      NNADAPTER_LOG(FATAL) << "Failed to get the length of Neuron data type("
+                           << data_type << ")!";
+      break;
+  }
+  return 0;
+}
+
 int ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
   int output_precision = 0;
   switch (input_precision) {
@@ -106,33 +133,6 @@ int32_t ConvertFuseCode(int32_t input_fuse_code) {
       break;
   }
   return output_fuse_code;
-}
-
-int PrecisionLength(int precision) {
-  switch (precision) {
-    case NEURON_BOOL:
-    case NEURON_TENSOR_BOOL8:
-    case NEURON_TENSOR_QUANT8_ASYMM:
-    case NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL:
-    case NEURON_TENSOR_QUANT8_SYMM:
-      return 1;
-    case NEURON_FLOAT16:
-    case NEURON_TENSOR_FLOAT16:
-    case NEURON_TENSOR_QUANT16_ASYMM:
-    case NEURON_TENSOR_QUANT16_SYMM:
-      return 2;
-    case NEURON_INT32:
-    case NEURON_UINT32:
-    case NEURON_FLOAT32:
-    case NEURON_TENSOR_INT32:
-    case NEURON_TENSOR_FLOAT32:
-      return 4;
-    default:
-      NNADAPTER_LOG(FATAL) << "Failed to get the length of type(" << precision
-                           << ")!";
-      break;
-  }
-  return 0;
 }
 
 }  // namespace mediatek_apu

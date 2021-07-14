@@ -1,3 +1,37 @@
+add_subgraph_bridge(SRCS act_enhance_op.cc
+                    act_op.cc
+                    assign_value_op.cc
+                    batch_norm_op.cc
+                    box_coder_op.cc
+                    cast_op.cc
+                    concat_op.cc
+                    conv_op.cc
+                    conv_transpose_op.cc
+                    density_prior_box_op.cc
+                    dropout_op.cc
+                    elementwise_ops.cc
+                    fill_constant_op.cc
+                    graph.cc
+                    im2sequence_op.cc
+                    interpolate_op.cc
+                    matmul_op.cc
+                    mul_op.cc
+                    multiclass_nms_op.cc
+                    norm_op.cc
+                    pool_op.cc
+                    prior_box_op.cc
+                    reduce_full_op.cc
+                    reshape_op.cc
+                    scale_op.cc
+                    shape_op.cc
+                    slice_op.cc
+                    softmax_op.cc
+                    split_op.cc
+                    squeeze_op.cc
+                    transpose_op.cc
+                    utility.cc
+                    yolo_box_op.cc)
+                    
 if(NOT LITE_WITH_BM)
   return()
 endif()

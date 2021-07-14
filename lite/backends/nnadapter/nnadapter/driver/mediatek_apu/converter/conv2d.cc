@@ -80,7 +80,10 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
 
   // Convert to Neuron operands and operations
-  auto input_index = ConvertOperand(input_operand);
+  auto input_index = GetMappedIndex(input_operand);
+  if (input_index == INVALID_INDEX) {
+    input_index = ConvertOperand(input_operand);
+  }
   bool is_per_channel = filter_operand->type.precision ==
                         NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
   NNADAPTER_CHECK(filter_operand->type.precision ==

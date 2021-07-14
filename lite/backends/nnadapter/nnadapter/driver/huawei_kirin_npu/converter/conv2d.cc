@@ -14,6 +14,7 @@
 
 #include "driver/huawei_kirin_npu/converter.h"
 #include "utility/debug.h"
+#include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
@@ -75,7 +76,11 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   bool is_depthwise_mode = (group != 1 && input_channel_size == group);
   NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
 
-  // Convert to HiAI operators
+  // Convert to GE operators
+  auto input_operator = GetMappedOperator(input_operand);
+  if (!input_operator) {
+    input_operator = ConvertOperand(input_operand);
+  }
   // Check depthwise mode, and decide whether use ConvolutionDepthwise
   bool use_depthwise_conv =
       false;  // Whether use ge::op::ConvolutionDepthwise ?
@@ -89,68 +94,53 @@ int Program::ConvertConv2D(hal::Operation* operation) {
                               "ConvolutionDepthwise, but may lead poor "
                               "performance.";
   }
-  auto input_operator = ConvertOperand(input_operand);
   auto filter_operator = ConvertOperand(filter_operand);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimension_count, 1);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimensions[0], output_channel_size);
-  // Limitations in HiAI, force to pad the dimension of bias to 4-D
-  std::vector<int64_t> bias_dimensions = {1, output_channel_size, 1, 1};
-  auto bias_operator = ConvertOperand(bias_operand, bias_dimensions);
-  std::shared_ptr<ge::Operator> conv_operator = nullptr;
+  auto bias_operator = ConvertOperand(bias_operand);
+  auto conv_name = GetOperatorName(output_operand);
+  std::shared_ptr<Operator> conv_operator = nullptr;
   if (use_depthwise_conv && is_depthwise_mode) {
-    auto depthwise_conv_operator =
-        AddOperator<ge::op::ConvolutionDepthwise>(output_operand);
-    depthwise_conv_operator->set_input_x(*input_operator);
-    depthwise_conv_operator->set_input_filter(*filter_operator);
-    depthwise_conv_operator->set_attr_mode(1);
-    depthwise_conv_operator->set_attr_algo(0);
-    depthwise_conv_operator->set_attr_format(0);    // NCHW
-    depthwise_conv_operator->set_attr_pad_mode(5);  // VALID
-    depthwise_conv_operator->set_attr_group(group);
-    depthwise_conv_operator->set_attr_pad(
+    auto depthwise_conv_op =
+        std::make_shared<hiai::op::ConvolutionDepthwise>(conv_name);
+    depthwise_conv_op->set_attr_pad_mode("SPECIFIC");
+    depthwise_conv_op->set_attr_pads(
         ge::AttrValue::LIST_INT({padding_height_bottom,
                                  padding_height_top,
                                  padding_width_right,
                                  padding_width_left}));
-    depthwise_conv_operator->set_attr_dilation(
+    depthwise_conv_op->set_attr_dilations(
         ge::AttrValue::LIST_INT({dilation_height, dilation_width}));
-    depthwise_conv_operator->set_attr_stride(
+    depthwise_conv_op->set_attr_strides(
         ge::AttrValue::LIST_INT({stride_height, stride_width}));
-    depthwise_conv_operator->set_attr_kernel(
-        ge::AttrValue::LIST_INT({filter_height, filter_width}));
-    // ConvolutionDepthwise doesn't support bias, so append Add operator to
-    // support bias
-    auto add_operator = AddOperator<ge::op::Add>(output_operand);
-    add_operator->set_input_x1(*depthwise_conv_operator);
-    add_operator->set_input_x2(*bias_operator);
-    conv_operator = add_operator;
+    SET_INPUT(depthwise_conv_op, x, input_operator);
+    SET_INPUT(depthwise_conv_op, filter, filter_operator);
+    SET_INPUT(depthwise_conv_op, bias, bias_operator);
+    conv_operator = MAP_OUTPUT(depthwise_conv_op, y, output_operand);
   } else {
-    auto normal_conv_operator =
-        AddOperator<ge::op::Convolution>(output_operand);
-    normal_conv_operator->set_input_x(*input_operator);
-    normal_conv_operator->set_input_w(*filter_operator);
-    normal_conv_operator->set_attr_mode(1);
-    normal_conv_operator->set_attr_pad_mode(0);  // NOTSET
-    normal_conv_operator->set_attr_group(group);
-    normal_conv_operator->set_attr_pad(
+    auto normal_conv_op = std::make_shared<hiai::op::Convolution>(conv_name);
+    normal_conv_op->set_attr_pad_mode("SPECIFIC");
+    normal_conv_op->set_attr_pads(
         ge::AttrValue::LIST_INT({padding_height_bottom,
                                  padding_height_top,
                                  padding_width_right,
                                  padding_width_left}));
-    normal_conv_operator->set_attr_dilation(
+    normal_conv_op->set_attr_dilations(
         ge::AttrValue::LIST_INT({dilation_height, dilation_width}));
-    normal_conv_operator->set_attr_stride(
+    normal_conv_op->set_attr_strides(
         ge::AttrValue::LIST_INT({stride_height, stride_width}));
-    normal_conv_operator->set_attr_kernel(
-        ge::AttrValue::LIST_INT({filter_height, filter_width}));
-    // Convolution only support bias with dimension {1, oc, 1, 1},
-    normal_conv_operator->set_input_b(*bias_operator);
-    conv_operator = normal_conv_operator;
+    normal_conv_op->set_attr_groups(group);
+    SET_INPUT(normal_conv_op, x, input_operator);
+    SET_INPUT(normal_conv_op, filter, filter_operator);
+    SET_INPUT(normal_conv_op, bias, bias_operator);
+    conv_operator = MAP_OUTPUT(normal_conv_op, y, output_operand);
   }
   if (fuse_code != NNADAPTER_FUSED_NONE) {
-    auto act_operator = AddOperator<ge::op::Activation>(output_operand);
-    act_operator->set_input_x(*conv_operator);
-    act_operator->set_attr_mode(ConvertFuseCode(fuse_code));
+    auto act_name = GetOperatorName(output_operand);
+    auto act_op = std::make_shared<hiai::op::Activation>(act_name);
+    act_op->set_attr_mode(ConvertFuseCode(fuse_code));
+    SET_INPUT(act_op, x, conv_operator);
+    MAP_OUTPUT(act_op, y, output_operand);
   }
   return NNADAPTER_NO_ERROR;
 }
