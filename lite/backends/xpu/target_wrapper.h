@@ -14,8 +14,12 @@
 
 #pragma once
 
-#include <memory>                                 // std::unique_ptr
-#include <mutex>                                  // NOLINT
+#include <algorithm>
+#include <map>
+#include <memory>  // std::unique_ptr
+#include <mutex>   // NOLINT
+#include <string>
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
 #include "lite/core/target_wrapper.h"             // TargetWrapper
 #include "lite/utils/cp_logging.h"                // CHECK_EQ
@@ -29,6 +33,43 @@
 
 namespace paddle {
 namespace lite {
+
+struct XPUL3CacheBlock {
+ public:
+  void clear() {
+    addr_ = nullptr;
+    size_ = 0;
+    in_use_ = false;
+    history_.clear();
+  }
+  void init(float proportion) {
+    proportion_ = proportion;
+    addr_ = nullptr;
+    size_ = 0;
+    in_use_ = false;
+    history_.clear();
+  }
+  void set(void* addr, size_t size) {
+    if (addr == nullptr || size == 0) {
+      LOG(FATAL) << "Set XPUL3CacheBlock Size as Zero";
+    }
+    addr_ = addr;
+    size_ = size;
+  }
+  void* data() { return addr_; }
+  size_t size() { return size_; }
+  float proportion() { return proportion_; }
+  void record(size_t size) { history_.push_back(size); }
+
+ private:
+  void* addr_{nullptr};
+  size_t size_{0};
+  float proportion_{0.0f};  // Proportion in total usable L3 Cache
+
+ public:
+  std::vector<size_t> history_;
+  bool in_use_{false};  // whether it is in used
+};
 
 // MAX(lod.size()) = 32
 const int XPU_MAX_LOD_SIZE = 32;
@@ -100,15 +141,26 @@ class TargetWrapper<TARGET(kXPU)> {
     XPU_CALL(xpu_set_device(dev_no));
   }
 
+  // multi encoder config
   static LITE_THREAD_LOCAL std::string multi_encoder_precision;  // NOLINT
-  static LITE_THREAD_LOCAL size_t local_l3_size;
+  static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
+  // conv autotune config
   static LITE_THREAD_LOCAL bool conv_autotune;
   static LITE_THREAD_LOCAL std::string conv_autotune_file;  // NOLINT
-  static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
-  static size_t shared_l3_size;
+  // l3 cache config
+  static LITE_THREAD_LOCAL size_t local_l3_size;  // model level l3 size
+  static size_t shared_l3_size;                   // model level l3 size
+  static LITE_THREAD_LOCAL size_t
+      inside_kernel_l3_size;  // kernel level l3 size
+  static LITE_THREAD_LOCAL std::map<std::string, XPUL3CacheBlock>
+      l3_block_dict;  // l3 cache block used between op layers
 
  private:
+  static void ScatterL3Cache(void* l3_ptr, size_t l3_size);
+  static void AutoTuneL3BlockSize();
+  static LITE_THREAD_LOCAL float l3_block_autotune_lr;
   static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
+  static LITE_THREAD_LOCAL void* local_l3_ptr_;
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
 };

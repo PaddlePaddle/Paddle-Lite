@@ -29,6 +29,7 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
   memory_size_ = other.memory_size_;
   precision_ = other.precision_;
   offset_ = other.offset_;
+  xpu_l3_cache_block_ = other.xpu_l3_cache_block_;
 }
 
 void TensorLite::CopyDataFrom(const TensorLite &other) {

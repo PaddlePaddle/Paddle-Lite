@@ -61,6 +61,7 @@ USE_MIR_PASS(type_precision_cast_pass);
 USE_MIR_PASS(type_layout_cast_pass);
 USE_MIR_PASS(type_layout_cast_preprocess_pass);
 USE_MIR_PASS(memory_optimize_pass);
+USE_MIR_PASS(xpu_memory_optimize_pass);
 USE_MIR_PASS(lite_inplace_fuse_pass);
 USE_MIR_PASS(multi_stream_analysis_pass);
 USE_MIR_PASS(elementwise_mul_constant_eliminate_pass)

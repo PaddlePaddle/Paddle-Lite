@@ -65,5 +65,5 @@ REGISTER_LITE_KERNEL(transpose2,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

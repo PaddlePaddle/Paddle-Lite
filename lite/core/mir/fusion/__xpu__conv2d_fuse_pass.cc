@@ -465,7 +465,7 @@ class XPUConv2dFuser : public FuseBase {
     }
     op_desc.SetOutput("Output", {output_name});
 
-    std::string max_output_name = output_name + "_max";
+    std::string max_output_name = output_name + "_xpu_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));

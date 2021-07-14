@@ -70,7 +70,7 @@ class XPULinkMaxFuser : public FuseBase {
     auto xpu_op = xpu_op_instruct->op();
 
     // try to find input_max
-    std::string max_input_name = matched.at("input")->arg()->name + "_max";
+    std::string max_input_name = matched.at("input")->arg()->name + "_xpu_max";
     auto* max_input_node = graph->RetrieveArgument(max_input_name);
     if (max_input_node != nullptr &&
         (!op_desc.HasAttr("has_input_max") ||

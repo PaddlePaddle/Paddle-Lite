@@ -38,7 +38,7 @@ namespace lite {
 
 // TODO(hong1986032) Support the following passes for the subblocks
 const std::set<std::string> kSubblockUnsupportedPasses(
-    {"memory_optimize_pass"});
+    {"memory_optimize_pass", "xpu_memory_optimize_pass"});
 
 /*
  * lite::Optimizer optimize a program. It utilize the mir passes to analysis the
