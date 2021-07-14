@@ -11,3 +11,4 @@ else()
 endif()
 
 lite_cc_library(nnadapter_wrapper SRCS nnadapter_wrapper.cc DEPS ${log_lib})
+add_dependencies(nnadapter_wrapper nnadapter ${NNADAPTER_DRIVERS})

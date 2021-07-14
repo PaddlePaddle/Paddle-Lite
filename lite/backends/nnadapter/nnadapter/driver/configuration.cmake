@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# The configuration of this file applies only to NNAdapter and its driver HALs.
+
 # Enable throwing exception when check failed in logging.cc
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -fasynchronous-unwind-tables -funwind-tables")
 
