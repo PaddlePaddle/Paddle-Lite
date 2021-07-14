@@ -30,3 +30,4 @@ REGISTER_LITE_OP(softsign, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(gelu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(hard_swish, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(reciprocal, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(mish, paddle::lite::operators::ActivationOp);

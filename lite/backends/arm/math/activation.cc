@@ -1018,7 +1018,20 @@ void act_gelu<float>(
     }
   }
 }
-
+template <>
+void mish(const float* din, float* dout, int size, float threshold) {
+  for (int i = 0; i < size; i++) {
+    float x = din[i];
+    float sp = 0.0f;
+    if (threshold > 0 && x > threshold)
+      sp = x;
+    else if (threshold > 0 && x < -threshold)
+      sp = expf(x);
+    else
+      sp = log1pf(expf(x));
+    dout[i] = x * std::tanh(sp);
+  }
+}
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
