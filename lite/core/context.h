@@ -319,7 +319,8 @@ class Context<TargetType::kNNAdapter> {
   }
 
 #ifdef LITE_WITH_NNADAPTER
-  static bool CheckNNAdapterDevice(const std::string& nnadapter_device_name) {
+  static bool CheckNNAdapterDeviceName(
+      const std::string& nnadapter_device_name) {
     NNAdapterDevice* device = nullptr;
     int result =
         NNAdapterDevice_acquire_invoke(nnadapter_device_name.c_str(), &device);
@@ -331,19 +332,34 @@ class Context<TargetType::kNNAdapter> {
   }
 #endif
 
-  static void SetNNAdapterDevices(
+  static void SetNNAdapterDeviceNames(
       Scope* scope, const std::vector<std::string>& nnadapter_device_names) {
-    auto var = scope->Var("NNADAPTER_DEVICES");
+    auto var = scope->Var("NNADAPTER_DEVICE_NAMES");
     CHECK(var);
     auto data = var->GetMutable<std::vector<std::string>>();
     CHECK(data);
     *data = nnadapter_device_names;
   }
 
-  static std::vector<std::string> NNAdapterDevices(Scope* scope) {
-    auto var = scope->FindVar("NNADAPTER_DEVICES");
+  static std::vector<std::string> NNAdapterDeviceNames(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_DEVICE_NAMES");
     if (!var) return std::vector<std::string>();
     return var->Get<std::vector<std::string>>();
+  }
+
+  static void SetNNAdapterContextProperties(
+      Scope* scope, const std::string& nnadapter_context_properties) {
+    auto var = scope->Var("NNADAPTER_CONTEXT_PROPERTIES");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = nnadapter_context_properties;
+  }
+
+  static std::string NNAdapterContextProperties(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_CONTEXT_PROPERTIES");
+    if (!var) return "";
+    return var->Get<std::string>();
   }
 };
 #endif

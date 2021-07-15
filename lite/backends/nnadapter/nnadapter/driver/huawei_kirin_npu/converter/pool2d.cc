@@ -14,6 +14,7 @@
 
 #include "driver/huawei_kirin_npu/converter.h"
 #include "utility/debug.h"
+#include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
@@ -63,42 +64,44 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   bool count_include_pad =
       *reinterpret_cast<int8_t*>(input_operands[11]->buffer);
   NNADAPTER_VLOG(5) << "count_include_pad=" << count_include_pad;
-  NNADAPTER_CHECK_EQ(count_include_pad, false)
-      << "rknpu_ddk doesn't suppport count_include_pad=true";
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to HiAI operators
-  auto input_operator = ConvertOperand(input_operand);
-  auto pool2d_operator = AddOperator<ge::op::Pooling>(output_operand);
-  pool2d_operator->set_input_x(*input_operator);
+  // Convert to GE operators
+  auto input_operator = GetMappedOperator(input_operand);
+  if (!input_operator) {
+    input_operator = ConvertOperand(input_operand);
+  }
+  auto pool2d_name = GetOperatorName(output_operand);
+  auto pool2d_op = std::make_shared<hiai::op::PoolingD>(pool2d_name);
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
-    pool2d_operator->set_attr_mode(1);
+    pool2d_op->set_attr_mode(1);
     NNADAPTER_CHECK(!count_include_pad) << "Only count_include_pad=false is "
                                            "supported for the pooling type "
-                                           "'avg' in HiAI";
+                                           "'avg' in GE";
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
-    pool2d_operator->set_attr_mode(0);
+    pool2d_op->set_attr_mode(0);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  pool2d_operator->set_attr_pad_mode(0);  // NOTSET
-  pool2d_operator->set_attr_global_pooling(global_pooling);
-  pool2d_operator->set_attr_window(
+  pool2d_op->set_attr_global_pooling(global_pooling);
+  pool2d_op->set_attr_window(
       ge::AttrValue::LIST_INT({filter_height, filter_width}));
-  pool2d_operator->set_attr_pad(ge::AttrValue::LIST_INT({padding_height_bottom,
-                                                         padding_height_top,
-                                                         padding_width_right,
-                                                         padding_width_left}));
-  pool2d_operator->set_attr_stride(
+  pool2d_op->set_attr_pad(ge::AttrValue::LIST_INT({padding_height_bottom,
+                                                   padding_height_top,
+                                                   padding_width_right,
+                                                   padding_width_left}));
+  pool2d_op->set_attr_stride(
       ge::AttrValue::LIST_INT({stride_height, stride_width}));
   if (ceil_mode) {
-    pool2d_operator->set_attr_ceil_mode(1);
-    pool2d_operator->set_attr_data_mode(0);
+    pool2d_op->set_attr_ceil_mode(1);
+    pool2d_op->set_attr_data_mode(0);
   }
+  SET_INPUT(pool2d_op, x, input_operator);
+  MAP_OUTPUT(pool2d_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <string>
 #include <utility>
 #include <vector>
 #include "runtime/device.h"
@@ -23,12 +24,14 @@ namespace runtime {
 
 class Context {
  public:
-  explicit Context(std::vector<Device*> devices);
+  explicit Context(std::vector<Device*> devices, const std::string& properties);
   ~Context();
   std::pair<void*, Device*> GetFirstDevice();
+  const char* GetProperties() { return properties_.c_str(); }
 
  private:
   std::vector<std::pair<void*, Device*>> contexts_;
+  std::string properties_;
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
 };

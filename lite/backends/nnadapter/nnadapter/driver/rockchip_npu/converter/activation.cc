@@ -33,8 +33,11 @@ int Program::ConvertActivation(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to rknn tensors and operators
-  auto input_tensor = ConvertOperand(input_operand);
+  // Convert to rknpu tensors and operators
+  auto input_tensor = GetMappedTensor(input_operand);
+  if (!input_tensor) {
+    input_tensor = ConvertOperand(input_operand);
+  }
   auto output_tensor = ConvertOperand(output_operand);
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {input_tensor};
   std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors = {output_tensor};

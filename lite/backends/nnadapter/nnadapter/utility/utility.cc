@@ -15,6 +15,7 @@
 #include "utility/utility.h"
 #include "utility/debug.h"
 #include "utility/micros.h"
+#include "utility/string.h"
 
 namespace nnadapter {
 
@@ -278,6 +279,23 @@ TransposeAxis(int32_t axis, const std::vector<int32_t>& permutation) {
   }
   NNADAPTER_CHECK_GE(new_axis, 0);
   return new_axis;
+}
+
+NNADAPTER_EXPORT std::map<std::string, std::string> GetKeyValues(
+    const char* properties,
+    const std::string& delimiter,
+    const std::string& assignment) {
+  std::map<std::string, std::string> key_values;
+  auto sections = string_split(properties, delimiter);
+  for (auto section : sections) {
+    auto tokens = string_split(section, assignment);
+    NNADAPTER_CHECK_EQ(tokens.size(), 2);
+    auto key = tokens[0];
+    auto value = tokens[1];
+    NNADAPTER_CHECK(!key.empty() && !value.empty());
+    key_values[key] = value;
+  }
+  return key_values;
 }
 
 }  // namespace nnadapter

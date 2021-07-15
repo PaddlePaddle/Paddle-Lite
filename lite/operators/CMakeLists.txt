@@ -135,6 +135,7 @@ add_operator(scatter extra SRCS scatter_op.cc DEPS ${op_DEPS})
 add_operator(matrix_nms_op_lite extra SRCS matrix_nms_op.cc DEPS ${op_DEPS})
 add_operator(sin_op extra SRCS sin_op.cc DEPS ${op_DEPS})
 add_operator(cos_op extra SRCS cos_op.cc DEPS ${op_DEPS})
+add_operator(cos_sim_op extra SRCS cos_sim_op.cc DEPS ${op_DEPS})
 add_operator(unstack_op extra SRCS unstack_op.cc DEPS ${op_DEPS})
 add_operator(pad3d_op extra SRCS pad3d_op.cc DEPS ${op_DEPS})
 add_operator(select_input_op extra SRCS select_input_op.cc DEPS ${op_DEPS})
@@ -186,6 +187,7 @@ add_operator(one_hot_op extra SRCS one_hot_op.cc DEPS ${op_DEPS})
 add_operator(one_hot_v2_op extra SRCS one_hot_v2_op.cc DEPS ${op_DEPS})
 add_operator(strided_slice_op extra SRCS strided_slice_op.cc DEPS ${op_DEPS})
 add_operator(where_op extra SRCS where_op.cc DEPS ${op_DEPS})
+add_operator(unique_with_counts_op extra SRCS unique_with_counts_op.cc DEPS ${op_DEPS})
 
 # for content-dnn specific
 add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc DEPS ${op_DEPS})
@@ -224,6 +226,7 @@ add_operator(__xpu__logit_op extra SRCS __xpu__logit_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__conv_pixel_shuffle_fuse_op extra SRCS __xpu__conv_pixel_shuffle_fuse_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc DEPS ${op_DEPS})
 
 # Only for FPGA
 add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc DEPS conv_op ${op_DEPS})
