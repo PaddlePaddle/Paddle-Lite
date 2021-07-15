@@ -41,8 +41,8 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_nnadapter) {
   valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kInt8)});
   valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kFloat)});
 #elif defined(LITE_WITH_X86)
-  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kInt8)};
-  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)};
+  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kInt8)});
+  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)});
 #else
   LOG(INFO) << "Unsupported host arch!";
   return;

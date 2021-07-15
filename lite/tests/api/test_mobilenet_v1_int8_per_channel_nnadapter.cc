@@ -29,7 +29,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(MobileNetV1, test_mobilenet_v1_int8_rockchip_apu) {
+TEST(MobileNetV1, test_mobilenet_v1_int8_per_channel_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -41,8 +41,8 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_rockchip_apu) {
   valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kInt8)});
   valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kFloat)});
 #elif defined(LITE_WITH_X86)
-  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kInt8)};
-  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)};
+  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kInt8)});
+  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)});
 #else
   LOG(INFO) << "Unsupported host arch!";
   return;

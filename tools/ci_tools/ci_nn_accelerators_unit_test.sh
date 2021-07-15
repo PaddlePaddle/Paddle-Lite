@@ -577,9 +577,7 @@ function huawei_kirin_npu_build_and_test() {
 
 # Huawei Ascend NPU
 function huawei_ascend_npu_build_and_test() {
-    cur_dir=$(pwd)
-    BUILD_DIRECTORY=$cur_dir/build.lite.huawei_ascend_npu.test
-
+    # Build and run all of unittests and model tests
     rm -rf $BUILD_DIR
     mkdir -p $BUILD_DIR
     cd $BUILD_DIR
@@ -618,11 +616,16 @@ function huawei_ascend_npu_build_and_test() {
             -DWITH_MKL=ON \
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_NNADAPTER=ON \
-            -DNNADAPTER_HUAWEI_ASCEND_NPU=ON \
+            -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=ON \
             -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="$sdk_root_dir" \
             -DCMAKE_BUILD_TYPE=Release
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
+        local nnadapter_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+        local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libnnadapter_driver_huawei_ascend_npu.so)
+        local nnadapter_lib_dir=${nnadapter_lib_path%/*}
+        local nnadapter_driver_lib_dir=${nnadapter_driver_lib_path%/*}
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_lib_dir:$nnadapter_driver_lib_dir"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/stub"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$sdk_root_dir/fwkacllib/lib64:$sdk_root_dir/acllib/lib64:$sdk_root_dir/atc/lib64:$sdk_root_dir/opp/op_proto/built-in"
@@ -631,7 +634,7 @@ function huawei_ascend_npu_build_and_test() {
         export ASCEND_AICPU_PATH="$sdk_root_dir"
         export ASCEND_OPP_PATH="$sdk_root_dir/opp"
         export TOOLCHAIN_HOME="$sdk_root_dir/toolkit"
-        export ASCEND_SLOG_PRINT_TO_STDOUT=1
+        export ASCEND_SLOG_PRINT_TO_STDOUT=0
         export ASCEND_GLOBAL_LOG_LEVEL=1
         export GLOG_v=$UNIT_TEST_LOG_LEVEL
         local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
@@ -645,11 +648,11 @@ function huawei_ascend_npu_build_and_test() {
                 fi
             done
             # black list
-            if [[ $is_matched -eq 1 && $unit_test_filter_type -eq 0 ]]; then
+            if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
                 continue
             fi
             # white list
-            if [[ $is_matched -eq 0 && $unit_test_filter_type -eq 1 ]]; then
+            if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
                 continue
             fi
             ctest -V -R ^$test_name$
@@ -910,15 +913,8 @@ function baidu_xpu_build_and_test() {
     if [[ -z "$with_xtcl" ]]; then
         with_xtcl=OFF
     fi
-    local unit_test_check_list=$2
-    local unit_test_filter_type=$3
-    local sdk_url=$4
-    local sdk_env=$5
 
-    # Build all of unittests and model tests
-    cur_dir=$(pwd)
-    BUILD_DIRECTORY=$cur_dir/build.lite.xpu.test
-
+    # Build and run all of unittests and model tests
     rm -rf $BUILD_DIR
     mkdir -p $BUILD_DIR
     cd $BUILD_DIR
@@ -937,8 +933,8 @@ function baidu_xpu_build_and_test() {
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
         -DLITE_WITH_LTO=OFF \
-        -DXPU_SDK_URL=$sdk_url \
-        -DXPU_SDK_ENV=$sdk_env \
+        -DXPU_SDK_URL=$XPU_SDK_URL \
+        -DXPU_SDK_ENV=$XPU_SDK_ENV \
         -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
         -DLITE_WITH_XTCL=$with_xtcl
 
@@ -948,7 +944,7 @@ function baidu_xpu_build_and_test() {
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     export GLOG_v=$UNIT_TEST_LOG_LEVEL
     export XPU_CONV_AUTOTUNE=5
-    local unit_test_check_items=(${unit_test_check_list//,/ })
+    local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
     for test_name in $(cat $TESTS_FILE); do
         local is_matched=0
         for unit_test_check_item in ${unit_test_check_items[@]}; do
@@ -959,11 +955,11 @@ function baidu_xpu_build_and_test() {
             fi
         done
         # black list
-        if [[ $is_matched -eq 1 && $unit_test_filter_type -eq 0 ]]; then
+        if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
             continue
         fi
         # white list
-        if [[ $is_matched -eq 0 && $unit_test_filter_type -eq 1 ]]; then
+        if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
             continue
         fi
         ctest -V -R ^$test_name$
@@ -1051,11 +1047,11 @@ function main() {
             shift
             ;;
         baidu_xpu_disable_xtcl_build_and_test)
-            baidu_xpu_build_and_test OFF $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV
+            baidu_xpu_build_and_test OFF
             shift
             ;;
         baidu_xpu_enable_xtcl_build_and_test)
-            baidu_xpu_build_and_test ON $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE $XPU_SDK_URL $XPU_SDK_ENV
+            baidu_xpu_build_and_test ON
             shift
             ;;
         *)
