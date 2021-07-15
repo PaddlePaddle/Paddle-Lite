@@ -47,7 +47,7 @@ macro (prepare_xpu_sdk sdk)
     extern_xpu_${sdk}
     ${EXTERNAL_PROJECT_LOG_ARGS}
     DOWNLOAD_DIR            ${XPU_DOWNLOAD_DIR}
-    DOWNLOAD_COMMAND        wget --no-check-certificate -c -q ${xpu_${sdk}_url} && tar xf ${sdk}-${XPU_SDK_ENV}.tar.gz
+    DOWNLOAD_COMMAND        wget --no-check-certificate -c ${xpu_${sdk}_url} && tar xvf ${sdk}-${XPU_SDK_ENV}.tar.gz
     CONFIGURE_COMMAND       ""
     BUILD_COMMAND           ""
     UPDATE_COMMAND          ""
