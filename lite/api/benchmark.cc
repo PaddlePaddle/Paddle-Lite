@@ -246,21 +246,21 @@ void Run(const std::string& model_path,
   // set input
   for (int i = 0; i < input_shapes.size(); i++) {
     auto input_shape = input_shapes[i];
-    auto input_tensor = predictor->GetInput(0);
+    auto input_tensor = predictor->GetInput(i);
     input_tensor->Resize(input_shape);
     auto input_data = input_tensor->mutable_data<float>();
     int64_t input_num = ShapeProduction(input_shape);
     if (input_data_path.empty()) {
-      for (int i = 0; i < input_num; ++i) {
-        input_data[i] = 1.f;
+      for (int j = 0; j < input_num; ++j) {
+        input_data[j] = 1.f;
       }
     } else {
       std::fstream fs(input_data_path);
       if (!fs.is_open()) {
         LOG(FATAL) << "open input image " << input_data_path << " error.";
       }
-      for (int i = 0; i < input_num; i++) {
-        fs >> input_data[i];
+      for (int j = 0; j < input_num; j++) {
+        fs >> input_data[j];
       }
     }
   }
