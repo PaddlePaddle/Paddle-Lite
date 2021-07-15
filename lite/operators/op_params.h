@@ -2172,6 +2172,19 @@ struct XPUConvPixelShuffleFuseParam : ParamBase {
   bool has_bias_1{false};
 };
 
+struct XPUDynamicLstmFuseParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* weight_0{nullptr};
+  const lite::Tensor* weight_1{nullptr};
+  const lite::Tensor* bias_0{nullptr};
+  const lite::Tensor* bias_1{nullptr};
+  const lite::Tensor* h0{nullptr};
+  const lite::Tensor* c0{nullptr};
+  lite::Tensor* hidden{nullptr};
+  bool has_h0{false};
+  bool is_reverse{false};
+};
+
 // For DeformableConvolution op
 struct DeformableConvParam : ParamBase {
   lite::Tensor* x{};
@@ -2443,6 +2456,12 @@ struct WriteBackParam : ParamBase {
   lite::Tensor* y{};
 };
 
+struct UniqueWithCountsParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Index{};
+  lite::Tensor* Count{};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

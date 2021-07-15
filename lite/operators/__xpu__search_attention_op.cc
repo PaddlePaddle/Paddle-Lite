@@ -48,9 +48,41 @@ bool XPUMmdnnSearchAttentionOp::AttachImpl(const cpp::OpDesc& op_desc,
   return true;
 }
 
+bool XPUMmdnnSearchAttention2Op::CheckShape() const { return true; }
+
+bool XPUMmdnnSearchAttention2Op::InferShapeImpl() const {
+  auto& x_dims = param_.X->dims();
+  param_.Out->Resize(x_dims);
+  param_.Out->set_lod(param_.X->lod());
+  return true;
+}
+
+bool XPUMmdnnSearchAttention2Op::AttachImpl(const cpp::OpDesc& op_desc,
+                                            lite::Scope* scope) {
+  auto x = op_desc.Input("X").front();
+  auto w = op_desc.Input("W").front();
+  auto b = op_desc.Input("b").front();
+  auto out = op_desc.Output("Out").front();
+
+  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
+  param_.W = scope->FindVar(w)->GetMutable<lite::Tensor>();
+  param_.b = scope->FindVar(b)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+
+  param_.W_max = op_desc.GetAttr<float>("W_max");
+  param_.pad_id = op_desc.GetAttr<int>("pad_id");
+  param_.alpha0 = op_desc.GetAttr<float>("alpha0");
+  param_.alpha1 = op_desc.GetAttr<float>("alpha1");
+  param_.mask = op_desc.GetAttr<float>("mask");
+  return true;
+}
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_OP(__xpu__mmdnn_search_attention,
                  paddle::lite::operators::XPUMmdnnSearchAttentionOp);
+
+REGISTER_LITE_OP(__xpu__mmdnn_search_attention2,
+                 paddle::lite::operators::XPUMmdnnSearchAttention2Op);

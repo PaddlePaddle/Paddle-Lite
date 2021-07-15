@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/sgemv.h"
 #include <arm_neon.h>
 #include <algorithm>
+#include <memory>
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -135,9 +136,20 @@ void sgemv_trans(const int M,
   int valid_block = std::max(4, (N / valid_ths + 3) / 4 * 4);
   valid_ths = (N + valid_block - 1) / valid_block;
   int block_cnt = valid_block / 4;
+
+#ifdef LITE_WITH_IOS
   float *y_buf = new float[valid_ths * M];
   float *zero_buf = new float[M];
   float *x_buf = new float[valid_block * valid_ths];
+  std::shared_ptr<float> y_buf_shared(y_buf);
+  std::shared_ptr<float> zero_buf_shared(zero_buf);
+  std::shared_ptr<float> x_buf_shared(x_buf);
+#else
+  float y_buf[valid_ths * M];            // NOLINT
+  float zero_buf[M];                     // NOLINT
+  float x_buf[valid_block * valid_ths];  // NOLINT
+#endif
+
   memset(x_buf, 0, valid_block * valid_ths * sizeof(float));
   memcpy(x_buf, x, N * sizeof(float));
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
@@ -495,9 +507,6 @@ void sgemv_trans(const int M,
       memcpy(y, y_buf, M * sizeof(float));
     }
   }
-  delete zero_buf;
-  delete y_buf;
-  delete x_buf;
 }
 #else
 void sgemv_trans(const int M,

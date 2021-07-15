@@ -73,9 +73,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       op_info->HasAttr("with_act") && op_info->GetAttr<bool>("with_act");
   std::string act_type =
       with_act ? op_info->GetAttr<std::string>("act_type") : "";
-  float leaky_relu_alpha = act_type == "leaky_relu"
-                               ? op_info->GetAttr<float>("leaky_relu_alpha")
-                               : 0.f;
   // Calculate paddings and strides
   CHECK_EQ(strides.size(), 2L);
   if (paddings.size() == 2L) {
@@ -96,7 +93,15 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       padding_algorithm,
                                       input_dims,
                                       filter_dims);
-  auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
+  auto fuse_relu =
+      op_info->HasAttr("fuse_relu") && op_info->GetAttr<bool>("fuse_relu");
+  if (fuse_relu) {
+    CHECK(!with_act || (with_act && act_type == "relu"))
+        << "There is a conflict between the attribute 'fuse_relu' and "
+           "'with_act'.";
+    with_act = true;
+    act_type = "relu";
+  }
   // Check depthwise mode
   bool is_depthwise_mode =
       (groups != 1 && input_channel_size == groups &&

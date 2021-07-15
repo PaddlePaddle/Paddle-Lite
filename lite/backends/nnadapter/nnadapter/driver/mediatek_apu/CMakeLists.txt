@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(NNADAPTER_DEVICE_NAME mediatek_apu)
-add_definitions(-DNNADAPTER_DEVICE_NAME=${NNADAPTER_DEVICE_NAME})
+set(DEVICE_NAME mediatek_apu)
+add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
 
-set(NNADAPTER_DRIVER_NAME ${NNADAPTER_DRIVER_PREFIX}_${NNADAPTER_DEVICE_NAME})
-add_definitions(-DNNADAPTER_DRIVER_NAME=${NNADAPTER_DRIVER_NAME})
+set(DRIVER_NAME ${NNADAPTER_DRIVER_PREFIX}_${DEVICE_NAME})
+add_definitions(-DNNADAPTER_DRIVER_NAME=${DRIVER_NAME})
 
 include(dependencies.cmake)
 
-aux_source_directory(./converter converter)
-aux_source_directory(./optimizer optimizer)
-set(NNADAPTER_DRIVER_SRCS neuron_adapter_wrapper.cc utility.cc ${optimizer} converter.cc ${converter} driver.cc)
-set(NNADAPTER_DRIVER_DEPS ${nnadapter_utility} nnadapter_optimizer_symm2asymm nnadapter_optimizer_nchw2nhwc ${${NNADAPTER_DEVICE_NAME}_deps})
+aux_source_directory(./converter CONVERTERS)
+aux_source_directory(./optimizer OPTIMIZERS)
+set(DRIVER_SRCS neuron_adapter_wrapper.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} converter.cc driver.cc)
+set(DRIVER_DEPS ${NNADAPTER_UTILITIES} nnadapter_optimizer_symm2asymm nnadapter_optimizer_nchw2nhwc ${${DEVICE_NAME}_deps})
 
-add_library(${NNADAPTER_DRIVER_NAME} SHARED ${NNADAPTER_DRIVER_SRCS})
-target_link_libraries(${NNADAPTER_DRIVER_NAME} "-Wl,--start-group" ${NNADAPTER_DRIVER_DEPS} "-Wl,--end-group")
-set(nnadapter_driver ${nnadapter_driver} ${NNADAPTER_DRIVER_NAME} CACHE INTERNAL "")
+add_library(${DRIVER_NAME} SHARED ${DRIVER_SRCS})
+target_link_libraries(${DRIVER_NAME} "-Wl,--start-group" ${DRIVER_DEPS} "-Wl,--end-group")
+set(NNADAPTER_DRIVERS ${NNADAPTER_DRIVERS} ${DRIVER_NAME} CACHE INTERNAL "")
