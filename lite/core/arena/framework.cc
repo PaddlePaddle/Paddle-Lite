@@ -38,17 +38,15 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"huawei_ascend_npu"});
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  ctx_->As<NNAdapterContext>()->SetNNAdapterDeviceNames(scope,
-                                                        {"huawei_kirin_npu"});
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"huawei_kirin_npu"});
 #elif defined(NNADAPTER_WITH_ROCKCHIP_NPU)
-  ctx_->As<NNAdapterContext>()->SetNNAdapterDeviceNames(scope,
-                                                        {"rockchip_npu"});
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"rockchip_npu"});
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
-  ctx_->As<NNAdapterContext>()->SetNNAdapterDeviceNames(scope,
-                                                        {"mediatek_apu"});
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"mediatek_apu"});
 #elif defined(NNADAPTER_WITH_IMAGINATION_NNA)
-  ctx_->As<NNAdapterContext>()->SetNNAdapterDeviceNames(scope,
-                                                        {"imagination_nna"});
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"imagination_nna"});
 #endif
   // Create a new block desc to wrap the original op desc
   auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
