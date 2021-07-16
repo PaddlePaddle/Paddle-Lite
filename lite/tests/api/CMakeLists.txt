@@ -32,6 +32,7 @@ function(lite_cc_test_with_model_and_data TARGET)
         BM_DEPS ${bm_kernels} ${bm_bridges}
         MLU_DEPS ${mlu_kernels} ${mlu_bridges}
         METAL_DEPS ${metal_kernels}
+        NNADAPTER_DEPS ${nnadapter_kernels}
         ARGS ${ARGS} SERIAL)
     if(DEFINED args_MODEL)
         add_dependencies(${TARGET} extern_lite_download_${args_MODEL}_tar_gz)
@@ -113,4 +114,10 @@ endif()
 
 if(LITE_WITH_METAL)
     lite_cc_test_with_model_and_data(test_mobilenet_v1_fp32_metal MODEL mobilenet_v1 DATA ILSVRC2012_500)
+endif()
+
+if(LITE_WITH_NNADAPTER)
+    lite_cc_test_with_model_and_data(test_mobilenet_v1_fp32_nnadapter MODEL mobilenet_v1 DATA ILSVRC2012_500)
+    lite_cc_test_with_model_and_data(test_mobilenet_v1_int8_per_layer_nnadapter MODEL mobilenet_v1_int8_per_layer DATA ILSVRC2012_500)
+    lite_cc_test_with_model_and_data(test_mobilenet_v1_int8_per_channel_nnadapter MODEL mobilenet_v1_int8_per_channel DATA ILSVRC2012_500)
 endif()

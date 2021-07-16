@@ -166,6 +166,7 @@ class TestCase {
 
  private:
   std::unique_ptr<KernelContext> ctx_;
+  std::shared_ptr<lite::OpLite> CreateSubgraphOp();
   void CreateInstruction();
 
   // Check shape

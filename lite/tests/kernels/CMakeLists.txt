@@ -17,6 +17,7 @@ set(test_kernel_deps
     ${imagination_nna_kernels}
     ${bm_kernels}
     ${opencl_kernels}
+    ${nnadapter_kernels}
 )
 
 lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
