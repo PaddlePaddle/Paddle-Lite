@@ -17,6 +17,7 @@
 // activation
 USE_SUBGRAPH_BRIDGE(sigmoid, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(relu, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(abs, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(tanh, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(relu6, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(leaky_relu, kHuaweiAscendNPU);
@@ -63,5 +64,10 @@ USE_SUBGRAPH_BRIDGE(unsqueeze2, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(shape, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(reduce_mean, kHuaweiAscendNPU);
 // USE_SUBGRAPH_BRIDGE(prior_box, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(fill_constant, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(clip, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(split, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(assign_value, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(norm, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(pow, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(log, kHuaweiAscendNPU);

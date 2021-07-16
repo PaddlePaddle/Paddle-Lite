@@ -13,16 +13,18 @@
 // limitations under the License.
 
 #include "runtime/context.h"
+#include <string>
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace runtime {
 
-Context::Context(std::vector<Device*> devices) {
+Context::Context(std::vector<Device*> devices, const std::string& properties)
+    : properties_(properties) {
   for (size_t i = 0; i < devices.size(); i++) {
     auto device = devices[i];
     void* context = nullptr;
-    device->CreateContext(&context);
+    device->CreateContext(properties_.c_str(), &context);
     contexts_.emplace_back(context, device);
   }
 }

@@ -42,10 +42,15 @@ int Program::ConvertConcat(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to rknn tensors and operators
+  // Convert to rknpu tensors and operators
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors;
   for (int i = 0; i < input_count - 1; i++) {
-    input_tensors.push_back(ConvertOperand(input_operands[i]));
+    auto input_operand = input_operands[i];
+    auto input_tensor = GetMappedTensor(input_operand);
+    if (!input_tensor) {
+      input_tensor = ConvertOperand(input_operand);
+    }
+    input_tensors.push_back(input_tensor);
   }
   auto output_tensor = ConvertOperand(output_operand);
   rk::nn::ConcatAttr attr;

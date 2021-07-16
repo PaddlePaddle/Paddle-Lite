@@ -166,6 +166,7 @@ if (WITH_TESTING)
       RKNPU_DEPS ${rknpu_kernels}
       BM_DEPS ${bm_kernels}
       MLU_DEPS ${mlu_kernels}
+      NNADAPTER_DEPS ${nnadapter_kernels}
       HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
       APU_DEPS ${apu_kernels})
 
@@ -379,7 +380,7 @@ if(WITH_TESTING)
 endif()
 
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
-    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${apu_kernels} ${fpga_kernels} ${intel_fpga_kernels})
+    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${apu_kernels} ${fpga_kernels} ${intel_fpga_kernels} ${nndapter_kernels})
 
     lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -505,7 +506,7 @@ endif()
 # TODO(Superjomn) support latter.
 if(NOT WITH_COVERAGE)
     lite_cc_test(test_light_api SRCS light_api_test.cc
-        DEPS light_api program mir_passes paddle_api_light
+        DEPS paddle_api_full paddle_api_light
         CL_DEPS ${opencl_kernels}
         METAL_DEPS ${metal_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -515,7 +516,7 @@ if(NOT WITH_COVERAGE)
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
     lite_cc_test(test_apis SRCS apis_test.cc
-        DEPS cxx_api light_api ${ops} paddle_api_light
+        DEPS paddle_api_full paddle_api_light
         CL_DEPS ${opencl_kernels}
         METAL_DEPS ${metal_kernels}
         X86_DEPS ${x86_kernels}

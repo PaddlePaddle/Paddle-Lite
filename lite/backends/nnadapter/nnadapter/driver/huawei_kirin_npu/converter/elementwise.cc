@@ -14,6 +14,7 @@
 
 #include "driver/huawei_kirin_npu/converter.h"
 #include "utility/debug.h"
+#include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
@@ -38,39 +39,42 @@ int Program::ConvertElementwise(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to HiAI operators
-  auto input0_operator = ConvertOperand(input0_operand);
-  auto input1_operator = ConvertOperand(input1_operand);
-  std::shared_ptr<ge::Operator> eltwise_operator = nullptr;
-  if (operation->type == NNADAPTER_ADD) {
-    auto add_operator = AddOperator<ge::op::Add>(output_operand);
-    add_operator->set_input_x1(*input0_operator);
-    add_operator->set_input_x2(*input1_operator);
-    eltwise_operator = add_operator;
-  } else if (operation->type == NNADAPTER_SUB) {
-    auto sub_operator = AddOperator<ge::op::Sub>(output_operand);
-    sub_operator->set_input_x1(*input0_operator);
-    sub_operator->set_input_x2(*input1_operator);
-    eltwise_operator = sub_operator;
-  } else if (operation->type == NNADAPTER_MUL) {
-    auto mul_operator = AddOperator<ge::op::Mul>(output_operand);
-    mul_operator->set_input_x(*input0_operator);
-    mul_operator->set_input_y(*input1_operator);
-    eltwise_operator = mul_operator;
-  } else if (operation->type == NNADAPTER_DIV) {
-    auto div_operator = AddOperator<ge::op::RealDiv>(output_operand);
-    div_operator->set_input_x1(*input0_operator);
-    div_operator->set_input_x2(*input1_operator);
-    eltwise_operator = div_operator;
-  } else {
-    NNADAPTER_LOG(FATAL) << "Unsupported element-wise operation type "
-                         << OperationTypeToString(operation->type)
-                         << " is found.";
+  // Convert to GE operators
+  auto input0_operator = GetMappedOperator(input0_operand);
+  if (!input0_operator) {
+    input0_operator = ConvertOperand(input0_operand);
+  }
+  auto input1_operator = GetMappedOperator(input1_operand);
+  if (!input1_operator) {
+    input1_operator = ConvertOperand(input1_operand);
+  }
+  auto eltwise_name = GetOperatorName(output_operand);
+  std::shared_ptr<Operator> eltwise_operator = nullptr;
+  switch (operation->type) {
+#define CONVERT_ELEMENTWISE(type, class_name)                               \
+  case NNADAPTER_##type: {                                                  \
+    auto eltwise_op = std::make_shared<hiai::op::class_name>(eltwise_name); \
+    SET_INPUT(eltwise_op, x1, input0_operator);                             \
+    SET_INPUT(eltwise_op, x2, input1_operator);                             \
+    eltwise_operator = MAP_OUTPUT(eltwise_op, y, output_operand);           \
+  } break;
+    CONVERT_ELEMENTWISE(ADD, Add);
+    CONVERT_ELEMENTWISE(SUB, Sub);
+    CONVERT_ELEMENTWISE(MUL, Mul);
+    CONVERT_ELEMENTWISE(DIV, RealDiv);
+#undef CONVERT_ELEMENTWISE
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported element-wise operation type "
+                           << OperationTypeToString(operation->type)
+                           << " is found.";
+      break;
   }
   if (fuse_code != NNADAPTER_FUSED_NONE) {
-    auto act_operator = AddOperator<ge::op::Activation>(output_operand);
-    act_operator->set_input_x(*eltwise_operator);
-    act_operator->set_attr_mode(ConvertFuseCode(fuse_code));
+    auto act_name = GetOperatorName(output_operand);
+    auto act_op = std::make_shared<hiai::op::Activation>(act_name);
+    act_op->set_attr_mode(ConvertFuseCode(fuse_code));
+    SET_INPUT(act_op, x, eltwise_operator);
+    MAP_OUTPUT(act_op, y, output_operand);
   }
   return NNADAPTER_NO_ERROR;
 }

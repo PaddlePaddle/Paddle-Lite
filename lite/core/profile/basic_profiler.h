@@ -173,7 +173,7 @@ class BasicProfiler {
     warmup_ = warmup_times * 2;
   }
 
-  ~BasicProfiler();
+  virtual ~BasicProfiler() = default;
 
  private:
   std::string name_;
