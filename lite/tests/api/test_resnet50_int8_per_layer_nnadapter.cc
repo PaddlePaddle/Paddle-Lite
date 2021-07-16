@@ -33,7 +33,7 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
-  float out_accuracy_threshold = 0.83f;
+  float out_accuracy_threshold = 1.0f;
   valid_places.push_back(lite_api::Place{TARGET(kNNAdapter), PRECISION(kInt8)});
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
@@ -49,8 +49,9 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
 #endif
 #if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
   nnadapter_device_names.emplace_back("rockchip_npu");
-  out_accuracy_threshold = 0.78f;
+  out_accuracy_threshold = 0.75f;
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
+  out_accuracy_threshold = 0.77f;
   nnadapter_device_names.emplace_back("mediatek_apu");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";

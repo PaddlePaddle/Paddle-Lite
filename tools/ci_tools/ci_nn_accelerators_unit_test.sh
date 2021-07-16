@@ -9,7 +9,7 @@ LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 readonly workspace=$PWD
 
-NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-1}
+NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 ROOT_DIR=$(pwd)
 BUILD_DIR=$(pwd)/build
 
