@@ -28,36 +28,66 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-inline std::vector<int> get_new_data_from_tensorlist(
-    const std::vector<lite::Tensor*>& list_new_data_tensor) {
-  // get tensor from
-  std::vector<int> vec_new_data;
-  for (size_t i = 0; i < list_new_data_tensor.size(); ++i) {
-    auto tensor = list_new_data_tensor[i];
-    CHECK_EQ(tensor->dims(), DDim({1})) << "shape of dim tensor should be [1]";
-    vec_new_data.push_back(static_cast<int32_t>(*tensor->data<int32_t>()));
+inline std::vector<int> GetIntDataFromTensorList(
+    const std::vector<lite::Tensor*>& list_tensor) {
+  std::vector<int> vec_data;
+  for (auto& tensor_i : list_tensor) {
+    CHECK_EQ(tensor_i->dims(), DDim({1}))
+        << "shape of dim tensor should be [1]";
+    auto precision = tensor_i->precision();
+    switch (precision) {
+      case PRECISION(kInt32): {
+        vec_data.push_back(*tensor_i->data<int>());
+        break;
+      }
+      case PRECISION(kInt64): {
+        vec_data.push_back(static_cast<int>(*tensor_i->data<int64_t>()));
+        break;
+      }
+      default: {
+        LOG(FATAL) << "unsupported data precision: "
+                   << lite_api::PrecisionToStr(precision);
+        break;
+      }
+    }
   }
-  return vec_new_data;
+  return vec_data;
 }
 
-inline std::vector<int> get_new_data_from_tensor(
-    const Tensor* new_data_tensor) {
-  std::vector<int> vec_new_data;
-  auto* new_data = new_data_tensor->data<int>();
-  vec_new_data =
-      std::vector<int>(new_data, new_data + new_data_tensor->numel());
-  return vec_new_data;
+inline std::vector<int> GetIntDataFromTensor(const Tensor* tensor) {
+  std::vector<int> vec_data;
+  auto precision = tensor->precision();
+  switch (precision) {
+    case PRECISION(kInt32): {
+      const int* data = tensor->data<int>();
+      vec_data = std::vector<int>(data, data + tensor->numel());
+      break;
+    }
+    case PRECISION(kInt64): {
+      const int64_t* data = tensor->data<int64_t>();
+      for (int64_t i = 0; i < tensor->numel(); i++) {
+        vec_data.push_back(static_cast<int>(data[i]));
+      }
+      break;
+    }
+    default: {
+      LOG(FATAL) << "unsupported data precision: "
+                 << lite_api::PrecisionToStr(precision);
+      break;
+    }
+  }
+  return vec_data;
 }
 
-template <size_t D>
+template <class T, size_t D>
 void slice_compute(const lite::Tensor* in,
                    lite::Tensor* out,
                    std::vector<int> axes,
                    std::vector<int> starts,
                    std::vector<int> ends,
                    std::vector<int> decrease_axis,
-                   lite::Tensor* StartsTensor,
-                   lite::Tensor* EndsTensor,
+                   const lite::Tensor* StartsTensor,
+                   const lite::Tensor* EndsTensor,
                    std::vector<lite::Tensor*> StartsTensorList,
                    std::vector<lite::Tensor*> EndsTensorList,
                    std::vector<int> infer_flags) {
@@ -73,16 +103,16 @@ void slice_compute(const lite::Tensor* in,
 
   if (need_infer) {
     if (StartsTensor) {
-      starts = get_new_data_from_tensor(StartsTensor);
+      starts = GetIntDataFromTensor(StartsTensor);
     } else if (StartsTensorList.size() > 0) {
-      starts = get_new_data_from_tensorlist(StartsTensorList);
+      starts = GetIntDataFromTensorList(StartsTensorList);
     }
     CHECK_EQ(starts.size(), axes.size())
         << "The size of starts must be equal to the size of axes.";
     if (EndsTensor) {
-      ends = get_new_data_from_tensor(EndsTensor);
+      ends = GetIntDataFromTensor(EndsTensor);
     } else if (EndsTensorList.size() > 0) {
-      ends = get_new_data_from_tensorlist(EndsTensorList);
+      ends = GetIntDataFromTensorList(EndsTensorList);
     }
     CHECK_EQ(ends.size(), axes.size())
         << "The size of ends must be equal to the size of axes.";
@@ -157,7 +187,7 @@ void slice_compute(const lite::Tensor* in,
     }
   }
 
-  out->mutable_data<float>();
+  out->mutable_data<T>();
 
   auto new_out_dims = out->dims();
   auto offsets = Eigen::array<int, D>();
@@ -176,107 +206,107 @@ void slice_compute(const lite::Tensor* in,
     offsets[axes[i]] = start;
   }
   auto in_t =
-      lite::fluid::EigenTensor<float, D, Eigen::RowMajor, Eigen::DenseIndex>::
-          From(*in, in->dims());
+      lite::fluid::EigenTensor<T, D, Eigen::RowMajor, Eigen::DenseIndex>::From(
+          *in, in->dims());
   auto out_t =
-      lite::fluid::EigenTensor<float, D, Eigen::RowMajor, Eigen::DenseIndex>::
-          From(*out, new_out_dims);
+      lite::fluid::EigenTensor<T, D, Eigen::RowMajor, Eigen::DenseIndex>::From(
+          *out, new_out_dims);
   out_t = in_t.slice(offsets, extents);
 
   out->Resize(out_dims);
 }
 
-template <typename T>
+template <class T>
 void slice_compute_(const lite::Tensor* Input,
                     lite::Tensor* Out,
                     std::vector<int> axes,
                     std::vector<int> starts,
                     std::vector<int> ends,
                     std::vector<int> decrease_axis,
-                    lite::Tensor* StartsTensor,
-                    lite::Tensor* EndsTensor,
+                    const lite::Tensor* StartsTensor,
+                    const lite::Tensor* EndsTensor,
                     std::vector<lite::Tensor*> StartsTensorList,
                     std::vector<lite::Tensor*> EndsTensorList,
                     std::vector<int> infer_flags) {
   int rank = Input->dims().size();
   switch (rank) {
     case 1:
-      slice_compute<1>(Input,
-                       Out,
-                       axes,
-                       starts,
-                       ends,
-                       decrease_axis,
-                       StartsTensor,
-                       EndsTensor,
-                       StartsTensorList,
-                       EndsTensorList,
-                       infer_flags);
+      slice_compute<T, 1>(Input,
+                          Out,
+                          axes,
+                          starts,
+                          ends,
+                          decrease_axis,
+                          StartsTensor,
+                          EndsTensor,
+                          StartsTensorList,
+                          EndsTensorList,
+                          infer_flags);
       break;
     case 2:
-      slice_compute<2>(Input,
-                       Out,
-                       axes,
-                       starts,
-                       ends,
-                       decrease_axis,
-                       StartsTensor,
-                       EndsTensor,
-                       StartsTensorList,
-                       EndsTensorList,
-                       infer_flags);
+      slice_compute<T, 2>(Input,
+                          Out,
+                          axes,
+                          starts,
+                          ends,
+                          decrease_axis,
+                          StartsTensor,
+                          EndsTensor,
+                          StartsTensorList,
+                          EndsTensorList,
+                          infer_flags);
       break;
     case 3:
-      slice_compute<3>(Input,
-                       Out,
-                       axes,
-                       starts,
-                       ends,
-                       decrease_axis,
-                       StartsTensor,
-                       EndsTensor,
-                       StartsTensorList,
-                       EndsTensorList,
-                       infer_flags);
+      slice_compute<T, 3>(Input,
+                          Out,
+                          axes,
+                          starts,
+                          ends,
+                          decrease_axis,
+                          StartsTensor,
+                          EndsTensor,
+                          StartsTensorList,
+                          EndsTensorList,
+                          infer_flags);
       break;
     case 4:
-      slice_compute<4>(Input,
-                       Out,
-                       axes,
-                       starts,
-                       ends,
-                       decrease_axis,
-                       StartsTensor,
-                       EndsTensor,
-                       StartsTensorList,
-                       EndsTensorList,
-                       infer_flags);
+      slice_compute<T, 4>(Input,
+                          Out,
+                          axes,
+                          starts,
+                          ends,
+                          decrease_axis,
+                          StartsTensor,
+                          EndsTensor,
+                          StartsTensorList,
+                          EndsTensorList,
+                          infer_flags);
       break;
     case 5:
-      slice_compute<5>(Input,
-                       Out,
-                       axes,
-                       starts,
-                       ends,
-                       decrease_axis,
-                       StartsTensor,
-                       EndsTensor,
-                       StartsTensorList,
-                       EndsTensorList,
-                       infer_flags);
+      slice_compute<T, 5>(Input,
+                          Out,
+                          axes,
+                          starts,
+                          ends,
+                          decrease_axis,
+                          StartsTensor,
+                          EndsTensor,
+                          StartsTensorList,
+                          EndsTensorList,
+                          infer_flags);
       break;
     case 6:
-      slice_compute<6>(Input,
-                       Out,
-                       axes,
-                       starts,
-                       ends,
-                       decrease_axis,
-                       StartsTensor,
-                       EndsTensor,
-                       StartsTensorList,
-                       EndsTensorList,
-                       infer_flags);
+      slice_compute<T, 6>(Input,
+                          Out,
+                          axes,
+                          starts,
+                          ends,
+                          decrease_axis,
+                          StartsTensor,
+                          EndsTensor,
+                          StartsTensorList,
+                          EndsTensorList,
+                          infer_flags);
       break;
   }
 }

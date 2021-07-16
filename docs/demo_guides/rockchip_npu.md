@@ -19,7 +19,36 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
 ### 已支持的Paddle模型
 
-- [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
+#### 模型
+- [MobileNetV1-int8全量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
+- [ResNet50-int8全量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/resnet50_int8_224_fluid.tar.gz)
+
+#### 性能
+- 测试环境
+  - 编译环境
+    - Ubuntu 16.04，GCC 5.4 for ARMLinux armhf and aarch64
+
+  - 硬件环境
+    - RK1808EVB/TB-RK1808S0 AI计算棒
+      - CPU：2 x Cortex-A35 1.6 GHz
+      - NPU：3 TOPs for INT8 / 300 GOPs for INT16 / 100 GFLOPs for FP16
+
+    - RV1109EVB
+      - CPU：2 x Cortex-A7 1.2 GHz
+      - NPU：1.2Tops，support INT8/ INT16
+
+- 测试方法
+  - warmup=10, repeats=30，统计平均时间，单位是ms
+  - 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
+  - 分类模型的输入图像维度是{1, 3, 224, 224}
+
+- 测试结果
+
+  |模型 |RK1808EVB||TB-RK1808S0 AI计算棒||RV1109EVB||
+  |---|---|---|---|---|---|---|
+  |  |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |
+  |MobileNetV1-int8|  266.623505|  6.139|  359.007996|  9.4335|  335.03993|  6.6995|
+  |ResNet50-int8|  1488.346999|  18.19899|  1983.601501|  23.5935|  1960.27252|  29.8895|
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -35,6 +64,15 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 - elementwise_sub
 - elementwise_mul
 - elementwise_div
+- transpose2
+- reshape2
+- sigmoid
+- scale
+- flatten
+- flatten2
+- pad2d
+
+可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/rknpu/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/rknpu/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
 ## 参考示例演示
 
@@ -61,6 +99,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
   - 需要依赖特定版本的firmware，请参照[rknpu_ddk](https://github.com/airockchip/rknpu_ddk)的说明对设备进行firmware的更新；
   - 由于RK1808 EVB在刷firmware后，只是一个纯净的Linux系统，无法像Ubuntu那样使用apt-get命令方便的安装软件，因此，示例程序和PaddleLite库的编译均采用交叉编译方式；
   - 将MicroUSB线插入到设备的MicroUSB OTG口，就可以使用Android的adb命令进行设备的交互，再也不用配置网络使用ssh或者通过串口的方式访问设备了，这个设计非常赞！
+  - **将rknpu_ddk的lib64目录下除librknpu_ddk.so之外的动态库都拷贝到设备的/usr/lib目录下，更新Rockchip NPU的系统库。**
 
 - TB-RK1808S0 AI计算棒
 
@@ -73,6 +112,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     $ rpm -qa | grep toybrick-server
     toybrick-server-1.4.1-2.rk1808.fc28.aarch64
     ```
+    - **将rknpu_ddk的lib64目录下除librknpu_ddk.so之外的动态库都拷贝到设备的/usr/lib目录下，更新Rockchip NPU的系统库。**
 
 - RV1126 EVB
 
@@ -83,7 +123,8 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     librknn_runtime version 1.5.1 (161f53f build: 2020-11-05 15:12:30 base: 1126)
     ```
 
-   - 同样的，示例程序和PaddleLite库的编译需要采用交叉编译方式，通过adb进行设备的交互和示例程序的运行。
+   - 示例程序和PaddleLite库的编译需要采用交叉编译方式，通过adb进行设备的交互和示例程序的运行。
+   - **将rknpu_ddk的lib目录下除librknpu_ddk.so之外的动态库都拷贝到设备的/usr/lib目录下，更新Rockchip NPU的系统库。**
    
 
 ### 准备交叉编译环境
@@ -109,12 +150,18 @@ Paddle Lite已支持Rockchip NPU的预测部署。
         - labels
           - synset_words.txt # 1000分类label文件
         - models
-          - mobilenet_v1_int8_224_for_cpu_fluid # Paddle fluid non-combined格式的、适用于ARM CPU的mobilenetv1量化模型
-          - mobilenet_v1_int8_224_for_rockchip_npu_fluid # Paddle fluid non-combined格式的、适用于Rockchip NPU的mobilenetv1全量化模型
+          - mobilenet_v1_int8_224_for_cpu_fluid # Paddle fluid non-combined格式的、适用于ARM CPU的MobileNetV1-int8量化模型
+          - mobilenet_v1_int8_224_for_rockchip_npu_fluid # Paddle fluid non-combined格式的、适用于Rockchip NPU的MobileNetV1-int8全量化模型
           - mobilenet_v1_int8_224_for_cpu
-            - model.nb # 已通过opt转好的、适合ARM CPU的mobilenetv1量化模型
+            - model.nb # 已通过opt转好的、适合ARM CPU的obileNetV1-int8量化模型
           - mobilenet_v1_int8_224_for_rockchip_npu
-            - model.nb # 已通过opt转好的、适合Rockchip NPU的mobilenetv1全量化模型
+            - model.nb # 已通过opt转好的、适合Rockchip NPU的MobileNetV1-int8全量化模型
+          - resnet50_int8_224_for_cpu_fluid # Paddle fluid non-combined格式的、适用于ARM CPU的ResNet50-int8量化模型
+          - resnet50_int8_224_for_rockchip_npu_fluid # Paddle fluid non-combined格式的、适用于Rockchip NPU的ResNet50-int8全量化模型
+          - resnet50_int8_224_for_cpu
+            - model.nb # 已通过opt转好的、适合ARM CPU的ResNet50-int8量化模型
+          - resnet50_int8_224_for_rockchip_npu
+            - model.nb # 已通过opt转好的、适合Rockchip NPU的ResNet50-int8全量化模型
       - shell
         - CMakeLists.txt # 示例程序CMake脚本
         - build
@@ -259,8 +306,61 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
 ### 更新模型
 
-- 通过Paddle Fluid训练，或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型量化-有校准数据训练后量化](../user_guides/post_quant_with_data)使用PaddleSlim对float32模型进行量化（注意：由于RK NPU只支持tensor-wise的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)；
+- 通过Paddle训练或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
+- 通过Paddle+PaddleSlim后量化方式，生成[MobileNetV1-int8全量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
+  - 下载[PaddleSlim-quant-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/tools/PaddleSlim-quant-demo.tar.gz)，解压后清单如下：
+    ```shell
+    - PaddleSlim-quant-demo
+      - image_classification_demo
+        - quant_post # 后量化
+          - quant_post_rockchip_npu.sh # Rockchip NPU 一键量化脚本
+          - README.md # 环境配置说明，涉及PaddlePaddle、PaddleSlim的版本选择、编译和安装步骤
+          - datasets # 量化所需要的校准数据集合
+            - ILSVRC2012_val_100 # 从ImageNet2012验证集挑选的100张图片
+          - inputs # 待量化的fp32模型
+            - mobilenet_v1
+            - resnet50
+          - outputs # 产出的全量化模型
+          - scripts # 后量化内置脚本
+    ```
+
+  - 查看README.md完成PaddlePaddle和PaddleSlim的安装
+  - 直接执行./quant_post_rockchip_npu.sh即可在outputs目录下生成MobileNetV1-int8全量化模型
+    ```shell
+    $ cd PaddleSlim-quant-demo/image_classification_demo/quant_post
+    $ ./quant_post_rockchip_npu.sh
+    ...
+    2021-01-20 14:02:45,671-INFO: Preparation stage ...
+    2021-01-20 14:02:47,205-INFO: Run batch: 0
+    2021-01-20 14:02:52,124-INFO: Run batch: 5
+    2021-01-20 14:02:56,072-INFO: Finish preparation stage, all batch:10
+    2021-01-20 14:02:56,079-INFO: Sampling stage ...
+    2021-01-20 14:03:08,759-INFO: Run batch: 0
+    2021-01-20 14:04:11,117-INFO: Run batch: 5
+    2021-01-20 14:05:00,945-INFO: Finish sampling stage, all batch: 10
+    2021-01-20 14:05:00,946-INFO: Calculate KL threshold ...
+    2021-01-20 14:05:33,664-INFO: Update the program ...
+    2021-01-20 14:05:34,400-INFO: The quantized model is saved in ../outputs/mobilenet_v1
+    post training quantization finish, and it takes 169.63866925239563.
+
+    --------start eval int8 model: mobilenet_v1-------------
+    grep: warning: GREP_OPTIONS is deprecated; please use an alias or script
+    -----------  Configuration Arguments -----------
+    batch_size: 20
+    class_dim: 1000
+    data_dir: ../dataset/ILSVRC2012_val_100
+    image_shape: 3,224,224
+    inference_model: ../outputs/mobilenet_v1
+    input_img_save_path: ./img_txt
+    save_input_img: False
+    test_samples: -1
+    use_gpu: 0
+    ------------------------------------------------
+    Testbatch 0, acc1 0.75, acc5 1.0, time 1.38 sec
+    End test: test_acc1 0.76, test_acc5 0.93
+    --------finish eval int8 model: mobilenet_v1-------------
+    ```
+
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成Rockchip NPU模型，仅需要将valid_targets设置为rknpu,arm即可。
 
   ```shell
@@ -288,26 +388,39 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
 - 编译并生成PaddleLite+RockchipNPU for armv8 and armv7的部署库
 
-  ```shell
-  For RK1808 EVB and TB-RK1808S0 AI计算棒
-  tiny_publish
-  $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
-  full_publish
-  $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
+  - For RK1808 EVB and TB-RK1808S0 AI计算棒
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
 
-  For RK1806/RV1126/RV1109 EVB
-  tiny_publish
-  $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
-  full_publish
-  $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
-  ```
+      将tiny_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
+      ```
 
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
-- 将tiny_publish模式下编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件；
-- 将编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/armhf/include目录；
-- 将tiny_publish模式下编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_full_api_shared.so文件。
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
+
+      将full_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件；
+      ```
+    将编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
+
+  - For RK1806/RV1126/RV1109 EVB
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
+
+      将tiny_publish模式下编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件；
+      ```
+
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
+
+      将full_publish模式下编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_full_api_shared.so文件。
+      ```
+    将编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/armhf/include目录；
+  
+- 替换头文件后需要重新编译示例程序
 
 ## 其它说明
 

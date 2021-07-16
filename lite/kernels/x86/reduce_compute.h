@@ -31,6 +31,13 @@ struct SumFunctor {
   }
 };
 
+struct ProdFunctor {
+  template <typename X, typename Y, typename Dim>
+  void operator()(X* x, Y* y, const Dim& dim) {
+    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->prod(dim);
+  }
+};
+
 struct MeanFunctor {
   template <typename X, typename Y, typename Dim>
   void operator()(X* x, Y* y, const Dim& dim) {
@@ -38,90 +45,56 @@ struct MeanFunctor {
   }
 };
 
+struct MaxFunctor {
+  template <typename X, typename Y, typename Dim>
+  void operator()(X* x, Y* y, const Dim& dim) {
+    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->maximum(dim);
+  }
+};
+
 #define HANDLE_DIM(NDIM, RDIM, FUNCTOR)                                \
   if (ndim == NDIM && rdim == RDIM) {                                  \
     paddle::lite::kernels::x86::                                       \
         ReduceFunctor<lite::TargetType::kX86, T, NDIM, RDIM, FUNCTOR>( \
-            *input, output, dims, keep_dim);                           \
+            *x, out, dims, keep_dim);                                  \
   }
 
-template <typename T>
-class ReduceSumCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+template <typename T, typename Functor>
+class ReduceCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::ReduceParam;
 
   void Run() override {
     auto& param = *param_.get_mutable<operators::ReduceParam>();
-    // auto& context = ctx_->As<X86Context>();
+    auto* x = param.X;
+    auto* out = param.Out;
+    out->template mutable_data<T>();
+    auto x_dims = x->dims();
+
+    const auto& dims = param.dim;
+    bool keep_dim = param.keep_dim;
     bool reduce_all = param.reduce_all;
-    auto* input = param.x;
-    auto* output = param.output;
-    param.output->template mutable_data<T>();
-
-    const auto& dims = param.dim;
-    bool keep_dim = param.keep_dim;
-    if (reduce_all) {
+    if (reduce_all || dims.empty() || x_dims.size() == 1 ||
+        x_dims.size() == dims.size()) {
       // Flatten and reduce 1-D tensor
-      auto x = lite::fluid::EigenVector<T>::Flatten(*input);
-      auto out = lite::fluid::EigenScalar<T>::From(output);
-      // auto& place = *platform::CPUDeviceContext().eigen_device();
+      auto x_e = lite::fluid::EigenVector<T>::Flatten(*x);
+      auto out_e = lite::fluid::EigenScalar<T>::From(out);
       auto reduce_dim = Eigen::array<int, 1>({{0}});
-      SumFunctor functor;
-      functor(&x, &out, reduce_dim);
+      Functor functor;
+      functor(&x_e, &out_e, reduce_dim);
     } else {
-      int ndim = input->dims().size();
+      int ndim = x_dims.size();
       int rdim = dims.size();
-      HANDLE_DIM(4, 3, SumFunctor);
-      HANDLE_DIM(4, 2, SumFunctor);
-      HANDLE_DIM(4, 1, SumFunctor);
-      HANDLE_DIM(3, 2, SumFunctor);
-      HANDLE_DIM(3, 1, SumFunctor);
-      HANDLE_DIM(2, 1, SumFunctor);
-      HANDLE_DIM(1, 1, SumFunctor);
+      HANDLE_DIM(4, 3, Functor);
+      HANDLE_DIM(4, 2, Functor);
+      HANDLE_DIM(4, 1, Functor);
+      HANDLE_DIM(3, 2, Functor);
+      HANDLE_DIM(3, 1, Functor);
+      HANDLE_DIM(2, 1, Functor);
     }
   }
 
-  virtual ~ReduceSumCompute() = default;
-};
-
-template <typename T>
-class ReduceMeanCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ReduceMeanParam;
-
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ReduceMeanParam>();
-    // auto& context = ctx_->As<X86Context>();
-    auto* input = param.X;
-    auto* output = param.Out;
-    param.Out->template mutable_data<T>();
-
-    const auto& dims = param.dim;
-    bool keep_dim = param.keep_dim;
-
-    if (dims.size() == 0) {
-      // Flatten and reduce 1-D tensor
-      auto x = lite::fluid::EigenVector<T>::Flatten(*input);
-      auto out = lite::fluid::EigenScalar<T>::From(output);
-      // auto& place = *platform::CPUDeviceContext().eigen_device();
-      auto reduce_dim = Eigen::array<int, 1>({{0}});
-      MeanFunctor functor;
-      functor(&x, &out, reduce_dim);
-    } else {
-      int ndim = input->dims().size();
-      int rdim = dims.size();
-      HANDLE_DIM(4, 3, MeanFunctor);
-      HANDLE_DIM(4, 2, MeanFunctor);
-      HANDLE_DIM(4, 1, MeanFunctor);
-      HANDLE_DIM(3, 2, MeanFunctor);
-      HANDLE_DIM(3, 1, MeanFunctor);
-      HANDLE_DIM(2, 2, MeanFunctor);
-      HANDLE_DIM(2, 1, MeanFunctor);
-      HANDLE_DIM(1, 1, MeanFunctor);
-    }
-  }
-
-  virtual ~ReduceMeanCompute() = default;
+  virtual ~ReduceCompute() = default;
 };
 
 }  // namespace x86

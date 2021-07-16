@@ -258,6 +258,7 @@ class MatrixNmsComputeTester : public arena::TestCase {
   std::string scores_ = "scores";
   std::string out_ = "out";
   std::string index_ = "index";
+  std::string rois_num_ = "rois_num";
   DDim bboxes_dims_{};
   DDim scores_dims_{};
   int background_label_{0};
@@ -299,6 +300,7 @@ class MatrixNmsComputeTester : public arena::TestCase {
     auto* scores = scope->FindTensor(scores_);
     auto* outs = scope->NewTensor(out_);
     auto* index = scope->NewTensor(index_);
+    auto* rois_num = scope->NewTensor(rois_num_);
 
     CHECK(outs);
     outs->set_precision(PRECISION(kFloat));
@@ -316,8 +318,10 @@ class MatrixNmsComputeTester : public arena::TestCase {
     std::vector<int64_t> offsets = {0};
     std::vector<float> detections;
     std::vector<int> indices;
+    std::vector<int> num_per_batch;
     detections.reserve(out_dim * num_boxes * batch_size);
     indices.reserve(num_boxes * batch_size);
+    num_per_batch.reserve(batch_size);
     for (int i = 0; i < batch_size; ++i) {
       scores_slice = scores->Slice<float>(i, i + 1);
       scores_slice.Resize({score_dims[1], score_dims[2]});
@@ -338,6 +342,7 @@ class MatrixNmsComputeTester : public arena::TestCase {
                                     use_gaussian_,
                                     gaussian_sigma_);
       offsets.push_back(offsets.back() + num_out);
+      num_per_batch.emplace_back(num_out);
     }
 
     int64_t num_kept = offsets.back();
@@ -352,6 +357,12 @@ class MatrixNmsComputeTester : public arena::TestCase {
       std::copy(indices.begin(), indices.end(), index->mutable_data<int>());
     }
 
+    if (rois_num != nullptr) {
+      rois_num->Resize({batch_size});
+      std::copy(num_per_batch.begin(),
+                num_per_batch.end(),
+                rois_num->mutable_data<int>());
+    }
     LoD lod;
     lod.emplace_back(std::vector<uint64_t>(offsets.begin(), offsets.end()));
     outs->set_lod(lod);
@@ -364,6 +375,9 @@ class MatrixNmsComputeTester : public arena::TestCase {
     op_desc->SetInput("Scores", {scores_});
     op_desc->SetOutput("Out", {out_});
     op_desc->SetOutput("Index", {index_});
+    if (op_desc->HasOutput("RoisNum")) {
+      op_desc->SetOutput("RoisNum", {rois_num_});
+    }
     op_desc->SetAttr("background_label", background_label_);
     op_desc->SetAttr("score_threshold", score_threshold_);
     op_desc->SetAttr("post_threshold", post_threshold_);

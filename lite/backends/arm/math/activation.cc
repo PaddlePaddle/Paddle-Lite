@@ -527,8 +527,11 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     for (int k = 0; k < neon_loop_cnt_dim4; ++k) {
-      exp_plus_vec = exp_ps(vld1q_f32(ptr_in_thread));
-      exp_minus_vec = exp_ps(vnegq_f32(vld1q_f32(ptr_in_thread)));
+      float32x4_t data = vld1q_f32(ptr_in_thread);
+      data = vminq_f32(data, vdupq_n_f32(70.00008f));
+      data = vmaxq_f32(data, vdupq_n_f32(-70.00008f));
+      exp_plus_vec = exp_ps(data);
+      exp_minus_vec = exp_ps(vnegq_f32(data));
       exp_sum_vec = vaddq_f32(exp_plus_vec, exp_minus_vec);
       exp_diff_vec = vsubq_f32(exp_plus_vec, exp_minus_vec);
       recip = div_ps(exp_diff_vec, exp_sum_vec);
@@ -681,7 +684,60 @@ void act_hard_sigmoid<float>(const float* din,
                              const float slope,
                              const float offset,
                              int threads) {
-  for (int64_t i = 0; i < size; ++i) {
+  int cnt_4 = size >> 4;
+  int remain_4 = size & 15;
+
+  float32x4_t vzero_4 = vdupq_n_f32(0.f);
+  float32x4_t vone_4 = vdupq_n_f32(1.f);
+
+  float32x4_t vslope_4 = vdupq_n_f32(slope);
+  float32x4_t voffset_4 = vdupq_n_f32(offset);
+  for (int64_t i = 0; i < cnt_4; ++i) {
+    float32x4_t vr0 = vld1q_f32(din);
+    float32x4_t vr1 = vld1q_f32(din + 4);
+    float32x4_t vr2 = vld1q_f32(din + 8);
+    float32x4_t vr3 = vld1q_f32(din + 12);
+
+    float32x4_t vres0 = vmulq_f32(vr0, vslope_4);  // vr0 * vslope
+    float32x4_t vres1 = vmulq_f32(vr1, vslope_4);  // vr1 * vslope
+    float32x4_t vres2 = vmulq_f32(vr2, vslope_4);  // vr2 * vslope
+    float32x4_t vres3 = vmulq_f32(vr3, vslope_4);  // vr3 * vslope
+
+    vres0 = vaddq_f32(vres0, voffset_4);  // vres0 += offset
+    vres1 = vaddq_f32(vres1, voffset_4);  // vres1 += offset
+    vres2 = vaddq_f32(vres2, voffset_4);  // vres2 += offset
+    vres3 = vaddq_f32(vres3, voffset_4);  // vres3 += offset
+
+    uint32x4_t vm_gt0_0 = vcgtq_f32(vres0, vzero_4);  // vres0 > zero
+    uint32x4_t vm_gt0_1 = vcgtq_f32(vres1, vzero_4);  // vres1 > zero
+    uint32x4_t vm_gt0_2 = vcgtq_f32(vres2, vzero_4);  // vres2 > zero
+    uint32x4_t vm_gt0_3 = vcgtq_f32(vres3, vzero_4);  // vres3 > zero
+
+    uint32x4_t vm_lt1_0 = vcltq_f32(vres0, vone_4);  // vres0 < 1
+    uint32x4_t vm_lt1_1 = vcltq_f32(vres1, vone_4);  // vres1 < 1
+    uint32x4_t vm_lt1_2 = vcltq_f32(vres2, vone_4);  // vres2 < 1
+    uint32x4_t vm_lt1_3 = vcltq_f32(vres3, vone_4);  // vres3 < 1
+
+    float32x4_t vos0 =
+        vbslq_f32(vm_gt0_0, vres0, vzero_4);  // vos0 = vres0 > 0? vres0: 0
+    float32x4_t vos1 = vbslq_f32(vm_gt0_1, vres1, vzero_4);
+    float32x4_t vos2 = vbslq_f32(vm_gt0_2, vres2, vzero_4);
+    float32x4_t vos3 = vbslq_f32(vm_gt0_3, vres3, vzero_4);
+
+    vos0 = vbslq_f32(vm_lt1_0, vos0, vone_4);  // vos0 = vos0 < 1? vres0: 1
+    vos1 = vbslq_f32(vm_lt1_1, vos1, vone_4);
+    vos2 = vbslq_f32(vm_lt1_2, vos2, vone_4);
+    vos3 = vbslq_f32(vm_lt1_3, vos3, vone_4);
+
+    vst1q_f32(dout, vos0);
+    vst1q_f32(dout + 4, vos1);
+    vst1q_f32(dout + 8, vos2);
+    vst1q_f32(dout + 12, vos3);
+
+    dout += 16;
+    din += 16;
+  }
+  for (int64_t i = 0; i < remain_4; ++i) {
     dout[0] = din[0] * slope + offset;
     dout[0] = dout[0] < 1.0f ? dout[0] : 1.0f;
     dout[0] = dout[0] > 0.0f ? dout[0] : 0.0f;
@@ -696,6 +752,17 @@ void act_rsqrt<float>(const float* din, float* dout, int size, int threads) {
   float* ptr_out = dout;
   for (int i = 0; i < size; ++i) {
     ptr_out[0] = 1.0 / sqrtf(ptr_in[0]);
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
+template <>
+void act_sqrt<float>(const float* din, float* dout, int size, int threads) {
+  const float* ptr_in = din;
+  float* ptr_out = dout;
+  for (int i = 0; i < size; ++i) {
+    ptr_out[0] = sqrtf(ptr_in[0]);
     ptr_in++;
     ptr_out++;
   }
@@ -720,11 +787,50 @@ void act_hard_swish<float>(const float* din,
                            float scale,
                            float offset,
                            int threads) {
+  int nums_per_thread = size / threads;
+  int remain = size - nums_per_thread * threads;
+  int neon_loop_cnt_dim4 = nums_per_thread >> 2;
+  int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
+
   const float* ptr_in = din;
   float* ptr_out = dout;
-  for (int i = 0; i < size; ++i) {
+  float scale_r = 1. / scale;
+  float32x4_t scale_v, offset_v, threshold_v, zero;
+  offset_v = vdupq_n_f32(offset);
+  scale_v = vdupq_n_f32(scale_r);
+  zero = vdupq_n_f32(0.);
+  threshold_v = vdupq_n_f32(threshold);
+
+#pragma omp parallel for
+  for (int i = 0; i < threads; i++) {
+    const float* ptr_in_thread = ptr_in + i * nums_per_thread;
+    float* ptr_out_thread = ptr_out + i * nums_per_thread;
+    for (int j = 0; j < neon_loop_cnt_dim4; j++) {
+      float32x4_t in = vld1q_f32(ptr_in_thread);
+      float32x4_t in_add_offset = vaddq_f32(in, offset_v);
+      float32x4_t tmp1 = vmaxq_f32(zero, in_add_offset);
+      float32x4_t tmp2 = vminq_f32(threshold_v, tmp1);
+      float32x4_t tmp3 = vmulq_f32(scale_v, in);
+      float32x4_t tmp4 = vmulq_f32(tmp2, tmp3);
+      vst1q_f32(ptr_out_thread, tmp4);
+      ptr_in_thread += 4;
+      ptr_out_thread += 4;
+    }
+
+    for (int j = 0; j < neon_loop_remain_dim4; j++) {
+      ptr_out_thread[0] =
+          std::min(std::max(0.f, ptr_in_thread[0] + offset), threshold) *
+          ptr_in_thread[0] * scale_r;
+      ptr_in_thread++;
+      ptr_out_thread++;
+    }
+  }
+
+  ptr_out = dout + threads * nums_per_thread;
+  ptr_in = din + threads * nums_per_thread;
+  for (int i = 0; i < remain; i++) {
     ptr_out[0] = std::min(std::max(0.f, ptr_in[0] + offset), threshold) *
-                 ptr_in[0] / scale;
+                 ptr_in[0] * scale_r;
     ptr_in++;
     ptr_out++;
   }
@@ -752,6 +858,42 @@ void act_abs<float>(const float* din, float* dout, int size, int threads) {
     dout++;
   }
 }
+
+template <typename T>
+void erf(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = std::erf(din[0]);
+    din++;
+    dout++;
+  }
+}
+
+template void erf<float>(const float* din, float* dout, int size, int threads);
+
+template <typename T>
+void sign(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = (dout[0] >= (T)0) - ((T)0 >= dout[0]);
+    din++;
+    dout++;
+  }
+}
+
+template void sign<float>(const float* din, float* dout, int size, int threads);
+
+template <typename T>
+void softplus(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = log((T)1. + exp(din[i]));
+    din++;
+    dout++;
+  }
+}
+
+template void softplus<float>(const float* din,
+                              float* dout,
+                              int size,
+                              int threads);
 
 template <>
 void act_thresholded_relu<float>(
@@ -848,6 +990,35 @@ void act_elu<float>(
     ptr_out++;
   }
 }
+
+// when using approximation
+// $out = \\frac{1}{2}x(1+tanh(\\sqrt{\\frac{2}{\\pi}}(x+0.044715x^{3}))$
+// or else
+// $out = \\frac{1 + erf(\\frac{x}{\\sqrt{2}})}{2} x$
+template <>
+void act_gelu<float>(
+    const float* din, float* dout, int size, bool approximate, int threads) {
+  if (approximate) {
+    const float pi = std::atan(1) * 4;
+    const float sqrt_2_div_pi = std::sqrt(2 / pi);
+    for (int i = 0; i < size; i++) {
+      float x = *din;
+      *dout = 0.5 * x *
+              (1 + std::tanh(sqrt_2_div_pi * (x + 0.044715 * std::pow(x, 3))));
+      ++din;
+      ++dout;
+    }
+  } else {
+    const float sqrt_2 = std::sqrt(2.0);
+    for (int i = 0; i < size; i++) {
+      float x = *din;
+      *dout = 0.5 * x * (1 + std::erf(x / sqrt_2));
+      ++din;
+      ++dout;
+    }
+  }
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

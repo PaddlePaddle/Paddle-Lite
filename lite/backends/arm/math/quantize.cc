@@ -21,25 +21,13 @@ namespace lite {
 namespace arm {
 namespace math {
 
-void QuantizeActvation(const float* input,
-                       int8_t* output,
-                       float* scale,
-                       int size,
-                       int bit_length) {
+float FindAbsMax(const float* input, int size) {
   auto abs_compare_func = [](float a, float b) {
     return (std::abs(a) < std::abs(b));
   };
-
   float abs_max_value =
       std::abs(*std::max_element(input, input + size, abs_compare_func));
-  float scale_value = abs_max_value / ((1 << (bit_length - 1)) - 1);
-
-  auto quant_func = [scale_value](float x) {
-    return static_cast<int8_t>(std::round(x / scale_value));
-  };
-
-  std::transform(input, input + size, output, quant_func);
-  *scale = scale_value;
+  return abs_max_value;
 }
 
 }  // namespace math

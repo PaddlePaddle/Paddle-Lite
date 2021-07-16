@@ -78,6 +78,8 @@ class SSAGraph : GraphBase {
   const std::vector<Place> &valid_places() const { return valid_places_; }
   void SetValidPlaces(const std::vector<Place> &x) { valid_places_ = x; }
 
+  int blockIdx() { return block_idx_; }
+
  private:
   mir::Node *Argument(const std::string &name);
   // Check the bidirectional connection.
@@ -107,6 +109,7 @@ class SSAGraph : GraphBase {
   std::list<mir::Node> node_storage_;
   std::map<std::string, mir::Node *> arguments_;
   std::vector<Place> valid_places_;
+  int block_idx_ = kRootBlockIdx;
 };
 
 // Remove the link between a -> b.

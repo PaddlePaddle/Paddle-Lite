@@ -70,6 +70,23 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   if (opdesc.HasAttr("normalized")) {
     param_.normalized = opdesc.GetAttr<bool>("normalized");
   }
+  auto input_arg_names = opdesc.InputArgumentNames();
+
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "RoisNum") !=
+      input_arg_names.end()) {
+    auto rois_num_name = opdesc.Input("RoisNum");
+    if (rois_num_name.size() > 0) {
+      param_.rois_num = GetVar<lite::Tensor>(scope, rois_num_name.front());
+    }
+  }
+
+  if (std::find(output_arg_names.begin(),
+                output_arg_names.end(),
+                "NmsRoisNum") != output_arg_names.end()) {
+    auto nms_rois_name = opdesc.Output("NmsRoisNum").front();
+    param_.nms_rois_num = GetMutableVar<lite::Tensor>(scope, nms_rois_name);
+  }
+
   return true;
 }
 
@@ -79,3 +96,4 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
 
 REGISTER_LITE_OP(multiclass_nms, paddle::lite::operators::MulticlassNmsOpLite);
 REGISTER_LITE_OP(multiclass_nms2, paddle::lite::operators::MulticlassNmsOpLite);
+REGISTER_LITE_OP(multiclass_nms3, paddle::lite::operators::MulticlassNmsOpLite);

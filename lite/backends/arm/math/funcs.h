@@ -21,10 +21,8 @@
 
 #include "lite/backends/arm/math/activation.h"
 #include "lite/backends/arm/math/affine_channel.h"
-#include "lite/backends/arm/math/anchor_generator.h"
 #include "lite/backends/arm/math/argmax.h"
 #include "lite/backends/arm/math/axpy.h"
-#include "lite/backends/arm/math/beam_search.h"
 #include "lite/backends/arm/math/box_coder.h"
 #include "lite/backends/arm/math/clip.h"
 #include "lite/backends/arm/math/col_im_transform.h"
@@ -40,7 +38,6 @@
 #include "lite/backends/arm/math/gemm_s8.h"
 #include "lite/backends/arm/math/gemv_arm_int8.h"
 #include "lite/backends/arm/math/im2sequence.h"
-#include "lite/backends/arm/math/increment.h"
 #include "lite/backends/arm/math/interpolate.h"
 #include "lite/backends/arm/math/layout.h"
 #include "lite/backends/arm/math/lrn.h"
@@ -51,10 +48,11 @@
 #include "lite/backends/arm/math/pad2d.h"
 #include "lite/backends/arm/math/pooling.h"
 #include "lite/backends/arm/math/power.h"
-#include "lite/backends/arm/math/prior_box.h"
 #include "lite/backends/arm/math/quantize.h"
 #include "lite/backends/arm/math/reduce_max.h"
+#include "lite/backends/arm/math/reduce_max_min.h"
 #include "lite/backends/arm/math/reduce_mean.h"
+#include "lite/backends/arm/math/reduce_min.h"
 #include "lite/backends/arm/math/reduce_prod.h"
 #include "lite/backends/arm/math/reduce_sum.h"
 #include "lite/backends/arm/math/scale.h"
@@ -62,16 +60,11 @@
 #include "lite/backends/arm/math/sequence_expand.h"
 #include "lite/backends/arm/math/sequence_pool.h"
 #include "lite/backends/arm/math/sequence_pool_grad.h"
-#include "lite/backends/arm/math/sequence_softmax.h"
 #include "lite/backends/arm/math/sgemm.h"
 #include "lite/backends/arm/math/sgemv.h"
-#include "lite/backends/arm/math/shuffle_channel.h"
 #include "lite/backends/arm/math/slice.h"
 #include "lite/backends/arm/math/softmax.h"
-#include "lite/backends/arm/math/split.h"
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
-#include "lite/backends/arm/math/topk.h"
-#include "lite/backends/arm/math/yolo_box.h"
 
 namespace paddle {
 namespace lite {
@@ -184,7 +177,6 @@ inline float32x4_t log_ps(float32x4_t x) {
 // exp() computed for 4 float at once
 inline float32x4_t exp_ps(float32x4_t x) {
   float32x4_t tmp, fx;
-
   float32x4_t one = vdupq_n_f32(1);
   x = vminq_f32(x, vdupq_n_f32(c_exp_hi));
   x = vmaxq_f32(x, vdupq_n_f32(c_exp_lo));
@@ -192,8 +184,16 @@ inline float32x4_t exp_ps(float32x4_t x) {
   // express exp(x) as exp(g + n*log(2))
   fx = vmlaq_f32(vdupq_n_f32(0.5f), x, vdupq_n_f32(c_cephes_LOG2EF));
 
-  // perform a floorf
+// perform a floorf
+#ifdef __aarch64__
   tmp = vcvtq_f32_s32(vcvtq_s32_f32(fx));
+#else
+  uint32x4_t vmask_1 = vcgeq_f32(fx, vdupq_n_f32(0.f));
+  float32x4_t voffset_1 =
+      vbslq_f32(vmask_1, vdupq_n_f32(0.5f), vdupq_n_f32(-0.5f));
+  float32x4_t fx_tmp_1 = vaddq_f32(fx, voffset_1);
+  tmp = vcvtq_f32_s32(vcvtq_s32_f32(fx_tmp_1));
+#endif
 
   // if greater, substract 1
   uint32x4_t mask = vcgtq_f32(tmp, fx);
@@ -238,11 +238,18 @@ inline float32x4_t exp_ps(float32x4_t x) {
 
   // build 2^n
   int32x4_t mm;
+#ifdef __aarch64__
   mm = vcvtq_s32_f32(fx);
+#else
+  uint32x4_t vmask_2 = vcgeq_f32(fx, vdupq_n_f32(0.f));
+  float32x4_t voffset_2 =
+      vbslq_f32(vmask_2, vdupq_n_f32(0.5f), vdupq_n_f32(-0.5f));
+  float32x4_t fx_tmp_2 = vaddq_f32(fx, voffset_2);
+  mm = vcvtq_s32_f32(fx_tmp_2);
+#endif
   mm = vaddq_s32(mm, vdupq_n_s32(0x7f));
   mm = vshlq_n_s32(mm, 23);
   float32x4_t pow2n = vreinterpretq_f32_s32(mm);
-
   y = vmulq_f32(y, pow2n);
   return y;
 }
@@ -358,7 +365,19 @@ inline float32x4_t div_ps(float32x4_t a, float32x4_t b) {
 
 inline float32x4_t pow_ps(float32x4_t a, float32x4_t b) {
   // pow(x, m) = exp(m * log(x))
-  return exp_ps(vmulq_f32(b, log_ps(a)));
+  float32x4_t vone = vdupq_n_f32(1.f);
+  // x < 0
+  for (int i = 0; i < 4; i++) {
+    if (a[i] < 0) {
+      a[i] = -a[i];
+      if (static_cast<int>(b[i]) % 2) {
+        vone[i] = -1.f;
+      }
+    }
+  }
+  float32x4_t vsum = exp_ps(vmulq_f32(b, log_ps(a)));
+  vsum = vmulq_f32(vsum, vone);
+  return vsum;
 }
 
 inline float32x4_t vpaddq_f32(float32x4_t a, float32x4_t b) {

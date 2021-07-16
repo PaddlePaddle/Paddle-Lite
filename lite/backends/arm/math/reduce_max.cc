@@ -88,9 +88,9 @@ void reduce_third_of_three<float>(
       dst[i * second_in + j] = src[i * second_in * third_in + j * second_in];
       for (int k = 0; k < third_in; k++) {
         dst[i * second_in + j] =
-            src[i * second_in * third_in + j * second_in + k] >
+            src[i * second_in * third_in + j * third_in + k] >
                     dst[i * second_in + j]
-                ? src[i * second_in * third_in + j * second_in + k]
+                ? src[i * second_in * third_in + j * third_in + k]
                 : dst[i * second_in + j];
       }
     }

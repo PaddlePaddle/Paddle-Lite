@@ -1,5 +1,5 @@
 #!/bin/bash
-set +ex
+set -e
 
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
@@ -11,8 +11,8 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
 
 readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
-
 # global variables
+CMAKE_EXTRA_OPTIONS=""
 BUILD_EXTRA=OFF
 BUILD_TRAIN=OFF
 BUILD_JAVA=ON
@@ -25,27 +25,37 @@ WITH_LOG=ON
 WITH_MKL=ON
 WITH_OPENCL=OFF
 WITH_STATIC_MKL=OFF
-WITH_AXV=ON
+WITH_AVX=ON
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
+WITH_PRECISION_PROFILE=OFF
 WITH_LTO=OFF
+BUILD_ARM82_FP16=OFF
+BUILD_ARM82_INT8_SDOT=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
 BUILD_XTCL=OFF
-XPU_SDK_ROOT="$(pwd)/xpu_sdk_lib/"
+XPU_SDK_ROOT=""
+XPU_SDK_URL=""
+XPU_SDK_ENV=""
 BUILD_APU=OFF
 APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host 
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
-HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
+HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
+# min android api level
+MIN_ANDROID_API_LEVEL_ARMV7=16
+MIN_ANDROID_API_LEVEL_ARMV8=21
+# android api level, which can also be set to a specific number 
+ANDROID_API_LEVEL="Default"
+CMAKE_API_LEVEL_OPTIONS=""
 
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
-
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 readonly workspace=$PWD
 
 function readlinkf() {
@@ -89,16 +99,33 @@ function prepare_opencl_source_code {
 }
 
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
             wget $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
     fi
+}
+
+function set_android_api_level {
+  # android api level for android version
+  if [ "${ARM_ABI}" == "armv7" ]; then
+      MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV7}
+  else
+      MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV8}
+  fi
+  if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
+      CMAKE_API_LEVEL_OPTIONS=""
+  elif [ ${ANDROID_API_LEVEL} -ge ${MIN_ANDROID_API_LEVEL} ]; then
+      CMAKE_API_LEVEL_OPTIONS="-DANDROID_NATIVE_API_LEVEL=${ANDROID_API_LEVEL}"
+  else
+      echo "Error: ANDROID_API_LEVEL should be no less than ${MIN_ANDROID_API_LEVEL} on ${ARM_ABI}."
+      exit 1
+  fi
 }
 
 function build_opt {
@@ -122,6 +149,10 @@ function make_tiny_publish_so {
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ ! -d third-party ]; then
+    git checkout third-party
+  fi
+
   if [ -d $build_dir ]
   then
     rm -rf $build_dir
@@ -133,9 +164,15 @@ function make_tiny_publish_so {
     BUILD_JAVA=OFF
   fi
   
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
+  fi
+
   cmake .. \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
+      ${CMAKE_EXTRA_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
@@ -152,10 +189,14 @@ function make_tiny_publish_so {
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DXPU_SDK_URL=$XPU_SDK_URL \
+      -DXPU_SDK_ENV=$XPU_SDK_ENV \
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -168,6 +209,10 @@ function make_opencl {
   local lang=$3
   #git submodule update --init --recursive
   prepare_thirdparty
+
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+  fi
 
   root_dir=$(pwd)
   build_dir=$root_dir/build.lite.${os}.${abi}.${lang}.opencl
@@ -183,6 +228,7 @@ function make_opencl {
   # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
   # $3: ARM_TARGET_LANG in "gcc" "clang"
   cmake .. \
+      ${CMAKE_API_LEVEL_OPTIONS} \
       -DLITE_WITH_OPENCL=ON \
       -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
@@ -227,16 +273,23 @@ function make_full_publish_so {
     BUILD_JAVA=OFF
   fi
 
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
+  fi
+
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
+      ${CMAKE_EXTRA_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
       -DLITE_WITH_LTO=${WITH_LTO} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -248,11 +301,15 @@ function make_full_publish_so {
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DXPU_SDK_URL=$XPU_SDK_URL \
+      -DXPU_SDK_ENV=$XPU_SDK_ENV \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_TRAIN=$BUILD_TRAIN \
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -273,15 +330,21 @@ function make_all_tests {
     rm -rf $build_dir
   fi
   mkdir -p $build_directory
+
   cd $build_directory
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
+  fi
  
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
+      ${CMAKE_EXTRA_OPTIONS} \
       -DWITH_TESTING=ON \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DLITE_WITH_LTO=${WITH_LTO} \
-      -DLITE_WITH_PRECISION_PROFILE=OFF \
+      -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_NPU=$BUILD_NPU \
@@ -289,10 +352,14 @@ function make_all_tests {
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+      -DXPU_SDK_URL=$XPU_SDK_URL \
+      -DXPU_SDK_ENV=$XPU_SDK_ENV \
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -370,7 +437,9 @@ function make_cuda {
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
-            -DXPU_SDK_ROOT=$XPU_SDK_ROOT
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+            -DXPU_SDK_URL=$XPU_SDK_URL \
+            -DXPU_SDK_ENV=$XPU_SDK_ENV
  
   make -j$NUM_PROC
   make publish_inference -j$NUM_PROC
@@ -410,10 +479,9 @@ function make_x86 {
   cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
             -DWITH_STATIC_MKL=${WITH_STATIC_MKL}  \
             -DWITH_TESTING=OFF \
-            -DWITH_AXV=${WITH_AXV} \
+            -DWITH_AVX=${WITH_AVX} \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
-            -DLITE_WITH_PROFILE=OFF \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
@@ -426,10 +494,13 @@ function make_x86 {
             -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_LTO=${WITH_LTO} \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+            -DXPU_SDK_URL=$XPU_SDK_URL \
+            -DXPU_SDK_ENV=$XPU_SDK_ENV \
             -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
             -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release \
@@ -464,6 +535,8 @@ function print_usage {
     echo -e "--with_log: (OFF|ON); controls whether to print log information, default is ON"
     echo -e "--with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
+    echo -e "--with_profile: (OFF|ON); controls whether to support time profile, default is OFF"
+    echo -e "--with_precision_profile: (OFF|ON); controls whether to support precision profile, default is OFF"
     echo -e "--build_train: (OFF|ON); controls whether to publish training operators and kernels, build_train is only for full_publish library now"
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
@@ -510,6 +583,10 @@ function main {
                 ANDROID_STL="${i#*=}"
                 shift
                 ;;
+            --android_api_level=*)
+                ANDROID_API_LEVEL="${i#*=}"
+                shift
+                ;;
             --build_extra=*)
                 BUILD_EXTRA="${i#*=}"
                 shift
@@ -533,7 +610,7 @@ function main {
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
-		;;
+                ;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 OPTMODEL_DIR=$(readlinkf $OPTMODEL_DIR)
@@ -556,7 +633,7 @@ function main {
                 shift
                 ;;
             --with_avx=*)
-                WITH_AXV="${i#*=}"
+                WITH_AVX="${i#*=}"
                 shift
                 ;;
             --with_exception=*)
@@ -574,8 +651,20 @@ function main {
                 WITH_PROFILE="${i#*=}"
                 shift
                 ;;
+            --with_precision_profile=*)
+                WITH_PRECISION_PROFILE="${i#*=}"
+                shift
+                ;;
             --with_lto=*)
                 WITH_LTO="${i#*=}"
+                shift
+                ;;
+            --build_arm82_fp16=*)
+                BUILD_ARM82_FP16="${i#*=}"
+                shift
+                ;;
+            --build_arm82_int8_sdot=*)
+                BUILD_ARM82_INT8_SDOT="${i#*=}"
                 shift
                 ;;
             --build_opencl=*)
@@ -599,7 +688,18 @@ function main {
                 shift
                 ;;
             --xpu_sdk_root=*)
-                XPU_SDK_ROOT="${i#*=}"
+                XPU_SDK_ROOT=${i#*=}
+                if [ -n "${XPU_SDK_ROOT}" ]; then
+                    XPU_SDK_ROOT=$(readlink -f ${XPU_SDK_ROOT})
+                fi
+                shift
+                ;;
+            --xpu_sdk_url=*)
+                XPU_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --xpu_sdk_env=*)
+                XPU_SDK_ENV="${i#*=}"
                 shift
                 ;;
             --python_executable=*)

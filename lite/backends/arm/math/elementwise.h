@@ -148,6 +148,20 @@ void elementwise_compute_basic(const operators::ElementwiseParam& param,
         }
       }
     }
+  } else if (elt_type == "min") {
+    for (int i = 0; i < batch; ++i) {
+      for (int j = 0; j < channels; ++j) {
+        int offset = (i * channels + j) * num;
+        const dtype* din_ptr = x_data + offset;
+        const dtype diny_data = y_data[j];
+        dtype* dout_ptr = out_data + offset;
+        for (int k = 0; k < num; ++k) {
+          *dout_ptr = std::min(*din_ptr, diny_data);
+          dout_ptr++;
+          din_ptr++;
+        }
+      }
+    }
   } else {
     LOG(FATAL) << "unsupported Elementwise type: " << elt_type;
   }
@@ -243,10 +257,31 @@ void elementwise_max_relu_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 
 template <typename T>
+void elementwise_min(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_min_relu(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_min_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
+void elementwise_min_relu_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
 void elementwise_div(const T* dinx, const T* diny, T* dout, int num);
 
 template <typename T>
 void elementwise_div_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
+template <typename T>
+void elementwise_floor_div(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_floor_div_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 
 template <typename T>

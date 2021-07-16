@@ -22,7 +22,7 @@ endfunction()
 function (lite_deps TARGET)
   set(options "")
   set(oneValueArgs "")
-  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS FPGA_DEPS BM_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS IMAGINATION_NNA_DEPS APU_DEPS CV_DEPS ARGS)
+  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS METAL_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS IMAGINATION_NNA_DEPS APU_DEPS NNADAPTER_DEPS CV_DEPS ARGS)
   cmake_parse_arguments(lite_deps "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   set(deps ${lite_deps_DEPS})
@@ -76,8 +76,20 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
+  if (LITE_WITH_METAL)
+    foreach(var ${lite_deps_METAL_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
   if (LITE_WITH_FPGA)
     foreach(var ${lite_deps_FPGA_DEPS})
+      set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+  
+  if (LITE_WITH_INTEL_FPGA)
+    foreach(var ${lite_deps_INTEL_FPGA_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -124,6 +136,12 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
+  if (LITE_WITH_NNADAPTER)
+    foreach(var ${lite_deps_NNADAPTER_DEPS})
+	    set(deps ${deps} ${var})
+    endforeach(var)
+  endif()
+
   if (LITE_WITH_HUAWEI_ASCEND_NPU)
     foreach(var ${lite_deps_HUAWEI_ASCEND_NPU_DEPS})
       set(deps ${deps} ${var})
@@ -155,7 +173,7 @@ file(WRITE ${offline_lib_registry_file} "") # clean
 function(lite_cc_library TARGET)
     set(options SHARED shared STATIC static MODULE module)
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS CV_DEPS PROFILE_DEPS LIGHT_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS CV_DEPS PROFILE_DEPS LIGHT_DEPS
       HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -165,12 +183,15 @@ function(lite_cc_library TARGET)
             X86_DEPS ${args_X86_DEPS}
             CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
+            METAL_DEPS ${args_METAL_DEPS}
             BM_DEPS ${args_BM_DEPS}
             IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+            NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
             RKNPU_DEPS ${args_RKNPU_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
             CV_DEPS ${args_CV_DEPS}
             FPGA_DEPS ${args_FPGA_DEPS}
+            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
             NPU_DEPS ${args_NPU_DEPS}
             APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
@@ -207,7 +228,7 @@ function(lite_cc_binary TARGET)
         set(options " -g ")
     endif()
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS PROFILE_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
       LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -217,14 +238,17 @@ function(lite_cc_binary TARGET)
             X86_DEPS ${args_X86_DEPS}
             CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
+            METAL_DEPS ${args_METAL_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
             FPGA_DEPS ${args_FPGA_DEPS}
+            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
             NPU_DEPS ${args_NPU_DEPS}
             APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
             RKNPU_DEPS ${args_RKNPU_DEPS}
             BM_DEPS ${args_BM_DEPS}
             IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+            NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
@@ -236,7 +260,7 @@ function(lite_cc_binary TARGET)
     if(NOT WIN32)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
     endif()
-    if (NOT APPLE)
+    if (NOT APPLE AND NOT WIN32)
         # strip binary target to reduce size
         if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             add_custom_command(TARGET ${TARGET} POST_BUILD
@@ -262,7 +286,8 @@ function(lite_cc_test TARGET)
     endif()
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS PROFILE_DEPS
+
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS
         ARGS
         COMPILE_LEVEL # (basic|extra)
@@ -280,14 +305,17 @@ function(lite_cc_test TARGET)
               X86_DEPS ${args_X86_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
+              METAL_DEPS ${args_METAL_DEPS}
               ARM_DEPS ${args_ARM_DEPS}
               FPGA_DEPS ${args_FPGA_DEPS}
+              INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
               NPU_DEPS ${args_NPU_DEPS}
               APU_DEPS ${args_APU_DEPS}
               XPU_DEPS ${args_XPU_DEPS}
               RKNPU_DEPS ${args_RKNPU_DEPS}
               BM_DEPS ${args_BM_DEPS}
               IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+              NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
               PROFILE_DEPS ${args_PROFILE_DEPS}
               LIGHT_DEPS ${args_LIGHT_DEPS}
               HVY_DEPS ${args_HVY_DEPS}
@@ -318,6 +346,7 @@ set(arm_kernels CACHE INTERNAL "arm kernels")
 set(x86_kernels CACHE INTERNAL "x86 kernels")
 set(cuda_kernels CACHE INTERNAL "cuda kernels")
 set(fpga_kernels CACHE INTERNAL "fpga kernels")
+set(intel_fpga_kernels CACHE INTERNAL "intel_fpga kernels")
 set(npu_kernels CACHE INTERNAL "npu kernels")
 set(apu_kernels CACHE INTERNAL "apu kernels")
 set(xpu_kernels CACHE INTERNAL "xpu kernels")
@@ -325,8 +354,10 @@ set(mlu_kernels CACHE INTERNAL "mlu kernels")
 set(huawei_ascend_npu_kernels CACHE INTERNAL "huawei_ascend_npu kernels")
 set(bm_kernels CACHE INTERNAL "bm kernels")
 set(imagination_nna_kernels CACHE INTERNAL "imagination_nna kernels")
+set(nnadapter_kernels CACHE INTERNAL "nnadapter kernels")
 set(rknpu_kernels CACHE INTERNAL "rknpu kernels")
 set(opencl_kernels CACHE INTERNAL "opencl kernels")
+set(metal_kernels CACHE INTERNAL "metal kernels")
 set(host_kernels CACHE INTERNAL "host kernels")
 
 set(kernels_src_list "${CMAKE_BINARY_DIR}/kernels_src_list.txt")
@@ -346,15 +377,22 @@ endif()
 function(add_kernel TARGET device level)
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS PROFILE_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if(LITE_BUILD_TAILOR)
       foreach(src ${args_SRCS})
-        list (FIND tailored_kernels_list ${src} _index)
-        if (${_index} EQUAL -1)
+        string(TOLOWER "${device}" device_name) # ARM => arm, Host => host
+        get_filename_component(filename ${src} NAME_WE) # conv_compute.cc => conv_compute
+        set(kernel_tailor_src_dir "${CMAKE_BINARY_DIR}/kernel_tailor_src_dir")
+        set(suffix "for_strip")
+        set(dst_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
+        if("${device}" STREQUAL "METAL")
+          set(dst_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.mm") # conv_compute_apple_metal_for_strip.mm
+        endif()
+        if(NOT EXISTS ${dst_file})
           return()
         endif()
       endforeach()
@@ -431,6 +469,15 @@ function(add_kernel TARGET device level)
         endif()
         set(fpga_kernels "${fpga_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
+    if ("${device}" STREQUAL "INTEL_FPGA")
+        if (NOT LITE_WITH_INTEL_FPGA)
+            foreach(src ${args_SRCS})
+                file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+            endforeach()
+            return()
+        endif()
+        set(intel_fpga_kernels "${intel_fpga_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
     if ("${device}" STREQUAL "BM")
         if (NOT LITE_WITH_BM)
             foreach(src ${args_SRCS})
@@ -467,6 +514,15 @@ function(add_kernel TARGET device level)
         endif()
         set(imagination_nna_kernels "${imagination_nna_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
+    if ("${device}" STREQUAL "NNADAPTER")
+        if (NOT LITE_WITH_NNADAPTER)
+            foreach(src ${args_SRCS})
+                file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+            endforeach()
+            return()
+        endif()
+        set(nnadapter_kernels "${nnadapter_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
 
     if ("${device}" STREQUAL "HUAWEI_ASCEND_NPU")
         if (NOT LITE_WITH_HUAWEI_ASCEND_NPU)
@@ -485,6 +541,16 @@ function(add_kernel TARGET device level)
             return()
         endif()
         set(opencl_kernels "${opencl_kernels};${TARGET}" CACHE INTERNAL "")
+    endif()
+
+    if ("${device}" STREQUAL "METAL")
+        if (NOT LITE_WITH_METAL)
+            foreach(src ${args_SRCS})
+                file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+            endforeach()
+            return()
+        endif()
+        set(metal_kernels "${metal_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
 
     if ("${device}" STREQUAL "CUDA")
@@ -507,13 +573,16 @@ function(add_kernel TARGET device level)
         file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
     endforeach()
 
-    lite_cc_library(${TARGET} SRCS ${args_SRCS}
+    if (NOT LITE_BUILD_TAILOR)
+      lite_cc_library(${TARGET} SRCS ${args_SRCS}
               DEPS ${args_DEPS}
               X86_DEPS ${args_X86_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
+              METAL_DEPS ${args_METAL_DEPS}
               ARM_DEPS ${args_ARM_DEPS}
               FPGA_DEPS ${args_FPGA_DEPS}
+              INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
               NPU_DEPS ${args_NPU_DEPS}
               APU_DEPS ${args_APU_DEPS}
               XPU_DEPS ${args_XPU_DEPS}
@@ -524,9 +593,48 @@ function(add_kernel TARGET device level)
               HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
               PROFILE_DEPS ${args_PROFILE_DEPS}
               LIGHT_DEPS ${args_LIGHT_DEPS}
+              HVY_DEPS ${args_HVY_DEPS})
+    else()
+      lite_cc_library(${TARGET} SRCS ${dst_file}
+              DEPS ${args_DEPS}
+              X86_DEPS ${args_X86_DEPS}
+              CUDA_DEPS ${args_CUDA_DEPS}
+              CL_DEPS ${args_CL_DEPS}
+              METAL_DEPS ${args_METAL_DEPS}
+              ARM_DEPS ${args_ARM_DEPS}
+              FPGA_DEPS ${args_FPGA_DEPS}
+              INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
+              NPU_DEPS ${args_NPU_DEPS}
+              APU_DEPS ${args_APU_DEPS}
+              XPU_DEPS ${args_XPU_DEPS}
+              RKNPU_DEPS ${args_RKNPU_DEPS}
+              BM_DEPS ${args_BM_DEPS}
+              MLU_DEPS ${args_MLU_DEPS}
+              IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+              NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
+              HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
+              PROFILE_DEPS ${args_PROFILE_DEPS}
+              LIGHT_DEPS ${args_LIGHT_DEPS}
               HVY_DEPS ${args_HVY_DEPS}
       )
+    endif()
 endfunction()
+
+# file to record subgraph bridges for new hardware
+set(subgraph_bridges_src_list "${CMAKE_BINARY_DIR}/subgraph_bridges_src_list.txt")
+file(WRITE ${subgraph_bridges_src_list} "") # clean
+
+# add a subgraph bridge for some new hardware which support some op by subgraph
+# device: such as npu, rknpu, apu, huawei_ascend_npu, imagination_nna, nnadapter
+function(add_subgraph_bridge)
+  set(options "")
+  set(oneValueArgs "")
+  set(multiValueArgs SRCS)
+  cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  foreach(src ${args_SRCS})
+    file(APPEND ${subgraph_bridges_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+  endforeach()
+endfunction(add_subgraph_bridge)
 
 set(ops CACHE INTERNAL "ops")
 set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
@@ -540,7 +648,7 @@ endif()
 function(add_operator TARGET level)
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS ARM_DEPS FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS PROFILE_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
         ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -570,8 +678,10 @@ function(add_operator TARGET level)
               X86_DEPS ${args_X86_DEPS}
               CUDA_DEPS ${args_CUDA_DEPS}
               CL_DEPS ${args_CL_DEPS}
+              METAL_DEPS ${args_METAL_DEPS}
               ARM_DEPS ${args_ARM_DEPS}
               FPGA_DEPS ${args_FPGA_DEPS}
+              INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
               NPU_DEPS ${args_NPU_DEPS}
               APU_DEPS ${args_APU_DEPS}
               XPU_DEPS ${args_XPU_DEPS}
@@ -579,6 +689,7 @@ function(add_operator TARGET level)
               BM_DEPS ${args_BM_DEPS}
               MLU_DEPS ${args_MLU_DEPS}
               IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+              NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
               HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
               PROFILE_DEPS ${args_PROFILE_DEPS}
               LIGHT_DEPS ${args_LIGHT_DEPS}
@@ -669,7 +780,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     return()
   endif()
 
-  if(NOT IOS)
+  if(NOT IOS AND NOT APPLE)
     file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
       "CREATE ${bundled_tgt_full_name}\n" )
 

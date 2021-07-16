@@ -21,6 +21,8 @@ limitations under the License. */
 #define MAX_VALUE FLT_MAX
 #define MIN_VALUE -FLT_MAX
 
+#define UP_DIV(x, y) (((x) + (y) - (1)) / (y))
+
 /////////////////////////////////
 // CL_DTYPE_float / CL_DTYPE_half
 /////////////////////////////////
@@ -51,6 +53,7 @@ limitations under the License. */
 #define GET_VEC_TYPE(type__, size__) type__##size__
 #define VECTORIZED_TYPE(type__, size__) GET_VEC_TYPE(type__, size__)
 #define CL_DTYPE4 VECTORIZED_TYPE(CL_DTYPE, 4)
+#define CL_DTYPE16 VECTORIZED_TYPE(CL_DTYPE, 16)
 #define CL_COMPUTE_DTYPE4 VECTORIZED_TYPE(CL_COMPUTE_DTYPE, 4)
 
 /////////////////////////////////
@@ -90,15 +93,14 @@ __constant sampler_t SAMPLER =
 /////////////////////////////////
 // activation / activation_type4
 /////////////////////////////////
-inline CL_DTYPE activation(CL_DTYPE in
-#ifdef PRELU
-                           ,
-                           CL_DTYPE prelu_alpha
-#endif
-                           ) {
+inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
   CL_DTYPE output = in;
 #ifdef PRELU
-  output = select(prelu_alpha * in, in, in >= (CL_DTYPE)0);
+#ifdef CL_DTYPE_half
+  output = select(prelu_alpha * in, in, (ushort)(isgreaterequal(in, 0)));
+#else
+  output = select(prelu_alpha * in, in, (uint)(isgreaterequal(in, 0)));
+#endif
 #endif
 
 #ifdef RELU
@@ -110,26 +112,32 @@ inline CL_DTYPE activation(CL_DTYPE in
 #endif
 
 #ifdef LEAKY_RELU
-#ifdef CL_DTYPE_float
-  output = select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in,
-                  in,
-                  (int)(isgreaterequal(in, 0)));  // NOLINT
-#endif
-
 #ifdef CL_DTYPE_half
   output = select(
       (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (ushort)(isgreaterequal(in, 0)));
+#else
+  output = select(
+      (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (uint)(isgreaterequal(in, 0)));
 #endif
 #endif
+
+#ifdef HARD_SWISH
+  output = fmin(fmax(in + (CL_DTYPE)ACT_OFFSET, (CL_DTYPE)0),
+                (CL_DTYPE)ACT_THRESHOLD) *
+           in / (CL_DTYPE)ACT_SCALE;
+#endif
+
+#ifdef HARD_SIGMOID
+  output =
+      clamp(in * (CL_DTYPE)HARD_SIGMOID_SLOPE + (CL_DTYPE)HARD_SIGMOID_OFFSET,
+            (CL_DTYPE)0.0,
+            (CL_DTYPE)1.0);
+#endif
+
   return output;
 }
 
-inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
-#ifdef PRELU
-                                  ,
-                                  CL_DTYPE4 prelu_alpha
-#endif
-                                  ) {
+inline CL_DTYPE4 activation_type4(CL_DTYPE4 in, CL_DTYPE4 prelu_alpha) {
   CL_DTYPE4 output = in;
 #ifdef PRELU
   output = select(prelu_alpha * in, in, isgreaterequal(in, (CL_DTYPE4)0));
@@ -147,12 +155,33 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 #ifdef LEAKY_RELU
   output = select(
       (CL_DTYPE4)(LEAKY_RELU_ALPHA)*in, in, isgreaterequal(in, (CL_DTYPE4)0));
-// same as bellow:
-// output = select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in,
-//                 in,
-//                 (ushort4)((in.x >= 0) << 15, (in.y >= 0) << 15, (in.z >= 0)
-//                 << 15, (in.w >= 0) << 15));
+#endif
+
+#ifdef HARD_SWISH
+  output = fmin(fmax(in + (CL_DTYPE4)ACT_OFFSET, (CL_DTYPE4)0),
+                (CL_DTYPE4)ACT_THRESHOLD) *
+           in / (CL_DTYPE4)ACT_SCALE;
+#endif
+
+#ifdef HARD_SIGMOID
+  output =
+      clamp(in * (CL_DTYPE4)HARD_SIGMOID_SLOPE + (CL_DTYPE4)HARD_SIGMOID_OFFSET,
+            (CL_DTYPE4)0.0,
+            (CL_DTYPE4)1.0);
 #endif
 
   return output;
+}
+
+// fuse scale for Elementwise ops
+inline CL_DTYPE4 fuse_scale(CL_DTYPE4 in,
+                            __private float scale,
+                            __private float bias,
+                            __private float alpha) {
+  CL_DTYPE4 out =
+      CONVERT_TYPE_TO(scale, CL_DTYPE) * in + CONVERT_TYPE_TO(bias, CL_DTYPE);
+#ifdef FUSE_SCALE_RELU6
+  out = clamp(out, (CL_DTYPE4)(0.f), (CL_DTYPE4)(/*alpha=*/6.f));
+#endif
+  return out;
 }

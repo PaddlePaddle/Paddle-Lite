@@ -31,14 +31,19 @@ class UnsqueezeComputeTester : public arena::TestCase {
   DDim dims_;
   // input_axes_flag_: 1 for axes, 2 for axes_tensor, 3 for axes_tensor_list
   int input_axes_flag_ = 1;
+  bool inplace_ = true;
 
  public:
   UnsqueezeComputeTester(const Place& place,
                          const std::string& alias,
                          const std::vector<int>& axes,
                          DDim dims,
-                         int input_axes_flag)
-      : TestCase(place, alias), dims_(dims), input_axes_flag_(input_axes_flag) {
+                         int input_axes_flag,
+                         bool inplace)
+      : TestCase(place, alias),
+        dims_(dims),
+        input_axes_flag_(input_axes_flag),
+        inplace_(inplace) {
     for (int v : axes) {
       axes_.push_back(v);
     }
@@ -94,6 +99,7 @@ class UnsqueezeComputeTester : public arena::TestCase {
     op_desc->SetType("unsqueeze");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
+    op_desc->SetAttr("inplace", inplace_);
     if (input_axes_flag_ == 1) {
       op_desc->SetAttr("axes", axes_);
     } else if (input_axes_flag_ == 2) {
@@ -138,13 +144,15 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
   std::string xshape_ = "XShape";
   std::vector<int> axes_;
   DDim dims_;
+  bool inplace_ = true;
 
  public:
   Unsqueeze2ComputeTester(const Place& place,
                           const std::string& alias,
                           const std::vector<int>& axes,
-                          DDim dims)
-      : TestCase(place, alias), axes_(axes), dims_(dims) {}
+                          DDim dims,
+                          bool inplace)
+      : TestCase(place, alias), axes_(axes), dims_(dims), inplace_(inplace) {}
 
   void RunBaseline(Scope* scope) override {
     const auto* input = scope->FindTensor(x_);
@@ -207,6 +215,7 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
     op_desc->SetOutput("Out", {out_});
     op_desc->SetOutput("XShape", {xshape_});
     op_desc->SetAttr("axes", axes_);
+    op_desc->SetAttr("inplace", inplace_);
   }
 
   void PrepareData() override {
@@ -224,14 +233,16 @@ void test_unsqueeze(Place place, float abs_error = 2e-5) {
                                 std::vector<int>({0, -2})}) {
     for (auto dims : std::vector<std::vector<int64_t>>{{3}, {3, 5}, {3, 5, 7}})
       for (int input_axes_flag : {1, 2, 3}) {
+        for (bool inplace : {true, false}) {
 #ifdef LITE_WITH_NPU
-        if (input_axes_flag != 1) continue;
-        if (dims.size() + axes.size() > 4) continue;
+          if (input_axes_flag != 1) continue;
+          if (dims.size() + axes.size() > 4) continue;
 #endif
-        std::unique_ptr<arena::TestCase> tester(new UnsqueezeComputeTester(
-            place, "def", axes, DDim(dims), input_axes_flag));
-        arena::Arena arena(std::move(tester), place, abs_error);
-        arena.TestPrecision();
+          std::unique_ptr<arena::TestCase> tester(new UnsqueezeComputeTester(
+              place, "def", axes, DDim(dims), input_axes_flag, inplace));
+          arena::Arena arena(std::move(tester), place, abs_error);
+          arena.TestPrecision();
+        }
       }
   }
 }
@@ -242,13 +253,15 @@ void test_unsqueeze2(Place place, float abs_error = 2e-5) {
                                 std::vector<int>({0, -2})}) {
     for (auto dims :
          std::vector<std::vector<int64_t>>{{3}, {3, 5}, {3, 5, 7}}) {
+      for (bool inplace : {true, false}) {
 #ifdef LITE_WITH_NPU
-      if (dims.size() + axes.size() > 4) continue;
+        if (dims.size() + axes.size() > 4) continue;
 #endif
-      std::unique_ptr<arena::TestCase> tester(
-          new Unsqueeze2ComputeTester(place, "def", axes, DDim(dims)));
-      arena::Arena arena(std::move(tester), place, abs_error);
-      arena.TestPrecision({"XShape"});
+        std::unique_ptr<arena::TestCase> tester(new Unsqueeze2ComputeTester(
+            place, "def", axes, DDim(dims), inplace));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision({"XShape"});
+      }
     }
   }
 }
@@ -259,6 +272,10 @@ TEST(unsqueeze, precision) {
 #ifdef LITE_WITH_NPU
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_OPENCL)
+  place = TARGET(kOpenCL);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #endif
@@ -271,6 +288,10 @@ TEST(unsqueeze2, precision) {
 #ifdef LITE_WITH_NPU
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_OPENCL)
+  place = TARGET(kOpenCL);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #endif

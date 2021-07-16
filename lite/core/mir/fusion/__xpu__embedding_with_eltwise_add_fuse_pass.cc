@@ -26,27 +26,28 @@ namespace fusion {
 
 class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
  public:
-  explicit XPUEmbeddingWithEltwiseAddFuser(int n_embedding)
-      : n_embedding_(n_embedding) {}
+  explicit XPUEmbeddingWithEltwiseAddFuser(
+      int n_embedding, const std::string& op_type = "lookup_table")
+      : n_embedding_(n_embedding), op_type_(op_type) {}
 
   void BuildPattern() override {
     auto* ids0 =
-        VarNode("ids0")->assert_is_op_input("lookup_table", "Ids")->AsInput();
+        VarNode("ids0")->assert_is_op_input(op_type_, "Ids")->AsInput();
     auto* table0 =
-        VarNode("table0")->assert_is_op_input("lookup_table", "W")->AsInput();
-    auto* embedding0 = OpNode("embedding0", "lookup_table");
+        VarNode("table0")->assert_is_op_input(op_type_, "W")->AsInput();
+    auto* embedding0 = OpNode("embedding0", op_type_);
     auto* embedding_out0 = VarNode("embedding_out0")
-                               ->assert_is_op_output("lookup_table", "Out")
+                               ->assert_is_op_output(op_type_, "Out")
                                ->assert_is_op_input("elementwise_add", "X")
                                ->AsIntermediate();
 
     auto* ids1 =
-        VarNode("ids1")->assert_is_op_input("lookup_table", "Ids")->AsInput();
+        VarNode("ids1")->assert_is_op_input(op_type_, "Ids")->AsInput();
     auto* table1 =
-        VarNode("table1")->assert_is_op_input("lookup_table", "W")->AsInput();
-    auto* embedding1 = OpNode("embedding1", "lookup_table")->AsIntermediate();
+        VarNode("table1")->assert_is_op_input(op_type_, "W")->AsInput();
+    auto* embedding1 = OpNode("embedding1", op_type_)->AsIntermediate();
     auto* embedding_out1 = VarNode("embedding_out1")
-                               ->assert_is_op_output("lookup_table", "Out")
+                               ->assert_is_op_output(op_type_, "Out")
                                ->assert_is_op_input("elementwise_add", "Y")
                                ->AsIntermediate();
 
@@ -70,16 +71,13 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
       auto embedding_out_name =
           paddle::lite::string_format("embedding_out%d", i);
 
-      auto* new_ids = VarNode(ids_name)
-                          ->assert_is_op_input("lookup_table", "Ids")
-                          ->AsInput();
-      auto* new_table = VarNode(table_name)
-                            ->assert_is_op_input("lookup_table", "W")
-                            ->AsInput();
-      auto* new_embedding =
-          OpNode(embedding_name, "lookup_table")->AsIntermediate();
+      auto* new_ids =
+          VarNode(ids_name)->assert_is_op_input(op_type_, "Ids")->AsInput();
+      auto* new_table =
+          VarNode(table_name)->assert_is_op_input(op_type_, "W")->AsInput();
+      auto* new_embedding = OpNode(embedding_name, op_type_)->AsIntermediate();
       auto* new_embedding_out = VarNode(embedding_out_name)
-                                    ->assert_is_op_output("lookup_table", "Out")
+                                    ->assert_is_op_output(op_type_, "Out")
                                     ->assert_is_op_input("elementwise_add", "Y")
                                     ->AsIntermediate();
 
@@ -141,6 +139,7 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
 
  private:
   int n_embedding_;
+  std::string op_type_;
 };
 
 }  // namespace fusion
@@ -149,9 +148,12 @@ class XPUEmbeddingWithEltwiseAddFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
+    std::vector<std::string> optypes{"lookup_table", "lookup_table_v2"};
     for (int n_embedding : {4, 3}) {
-      fusion::XPUEmbeddingWithEltwiseAddFuser fuser(n_embedding);
-      fuser(graph.get());
+      for (auto& op_type : optypes) {
+        fusion::XPUEmbeddingWithEltwiseAddFuser fuser(n_embedding, op_type);
+        fuser(graph.get());
+      }
     }
   }
 };

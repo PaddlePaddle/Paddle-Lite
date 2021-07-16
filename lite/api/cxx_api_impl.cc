@@ -72,6 +72,19 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     TargetWrapper<TARGET(kBM)>::SetDevice(device_id);
 #endif  // LITE_WITH_BM
 
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+    // Use scope to store the model-level configuration for the subgraph kernel
+    Context<TargetType::kNNAdapter>::SetNNAdapterDeviceNames(
+        raw_predictor_->scope(), config.nnadapter_device_names());
+    Context<TargetType::kNNAdapter>::SetNNAdapterContextProperties(
+        raw_predictor_->scope(), config.nnadapter_context_properties());
+    Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(
+        raw_predictor_->scope(), config.nnadapter_model_cache_dir());
+    Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
+        raw_predictor_->scope(), config.nnadapter_model_cache_buffers());
+#endif
+
     auto use_layout_preprocess_pass =
         config.model_dir().find("OPENCL_PRE_PRECESS");
     VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;
@@ -109,6 +122,15 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 
+#ifdef LITE_WITH_RKNPU
+  // Store the model-level configuration into scope for kernels, and use
+  // exe_scope to store the execution-level configuration
+  Context<TargetType::kRKNPU>::SetSubgraphModelCacheDir(
+      raw_predictor_->scope(), config.subgraph_model_cache_dir());
+  Context<TargetType::kRKNPU>::SetSubgraphModelCacheBuffers(
+      raw_predictor_->scope(), config.subgraph_model_cache_buffers());
+#endif
+
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
   Context<TargetType::kHuaweiAscendNPU>::SetHuaweiAscendDeviceID(
       config.get_device_id());
@@ -132,6 +154,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
           << real_num_threads;
 #endif
 
+#ifdef LITE_WITH_XPU
   auto preferred_inputs = config.preferred_inputs_for_warmup();
   for (auto &preferred_input : preferred_inputs) {
     auto &input_tensors = preferred_input.second;
@@ -176,6 +199,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     }
     Run();
   }
+#endif
 }
 
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
@@ -249,6 +273,10 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
                                           lite_api::LiteModelType model_type,
                                           bool record_info) {
   raw_predictor_->SaveModel(model_dir, model_type, record_info);
+}
+
+bool CxxPaddleApiImpl::TryShrinkMemory() {
+  return raw_predictor_->TryShrinkMemory();
 }
 
 }  // namespace lite

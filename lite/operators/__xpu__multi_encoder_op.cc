@@ -13,17 +13,55 @@
 // limitations under the License.
 
 #include "lite/operators/__xpu__multi_encoder_op.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-bool XPUMultiEncoderOp::CheckShape() const { return true; }
+bool XPUMultiEncoderOp::CheckShape() const {
+  CHECK_EQ(param_.input->dims().size(), 3UL);
+  return true;
+}
 
 bool XPUMultiEncoderOp::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
-  param_.output->Resize(input_shape);
+  auto batch_size = input_shape[0];
+  auto seq_len = input_shape[1];
+  auto head_num = input_shape[2];
+  auto slice_decrease_axis = param_.slice_decrease_axis;
+  if (param_.SeqLod && param_.SeqLod->data<int>()) {
+    batch_size = param_.SeqLod->numel() - 1;
+    seq_len = param_.PadSeqLen->data<int>()[0];
+  }
+  if ((param_.slice_starts.size() > 0 && param_.slice_starts[0] == 0) &&
+      (param_.slice_ends.size() > 0 && param_.slice_ends[0] == 1) &&
+      (param_.slice_axes.size() > 0 && param_.slice_axes[0] == 1)) {
+    DDim out_dims(std::vector<int64_t>({batch_size, 1, head_num}));
+    if (param_.slice_decrease_axis.size() > 0) {
+      std::vector<int64_t> new_out_shape;
+      for (size_t i = 0; i < slice_decrease_axis.size(); ++i) {
+        CHECK_EQ(out_dims[slice_decrease_axis[i]], 1)
+            << "xpu multiencoder with slice decrease dim should be 1";
+        out_dims[slice_decrease_axis[i]] = 0;
+      }
+      for (size_t i = 0; i < out_dims.size(); ++i) {
+        if (out_dims[i] != 0) {
+          new_out_shape.push_back(out_dims[i]);
+        }
+      }
+      if (new_out_shape.size() == 0) {
+        new_out_shape.push_back(1);
+      }
+      DDim new_dims;
+      new_dims.ConstructFrom(new_out_shape);
+      out_dims = new_dims;
+    }
+    param_.output->Resize(out_dims);
+  } else {
+    param_.output->Resize({batch_size, seq_len, head_num});
+  }
   return true;
 }
 
@@ -31,8 +69,6 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
                                    lite::Scope* scope) {
   param_.input = const_cast<lite::Tensor*>(
       &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
-  param_.mask = const_cast<lite::Tensor*>(
-      &scope->FindVar(op_desc.Input("Mask").front())->Get<lite::Tensor>());
   param_.fc_weight_max = const_cast<lite::Tensor*>(
       &scope->FindVar(op_desc.Input("FCWeightMax").front())
            ->Get<lite::Tensor>());
@@ -64,12 +100,61 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     param_.ln_bias.push_back(t);
   }
 
+  std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "SeqLod") !=
+      input_arg_names.end()) {
+    auto arguments = op_desc.Input("SeqLod");
+    if (arguments.size() > 0) {
+      auto arg_var = scope->FindVar(arguments.front());
+      if (arg_var != nullptr) {
+        param_.SeqLod = &(arg_var->Get<lite::Tensor>());
+      }
+    }
+  }
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "PadSeqLen") !=
+      input_arg_names.end()) {
+    auto arguments = op_desc.Input("PadSeqLen");
+    if (arguments.size() > 0) {
+      auto arg_var = scope->FindVar(arguments.front());
+      if (arg_var != nullptr) {
+        param_.PadSeqLen = &(arg_var->Get<lite::Tensor>());
+      }
+    }
+  }
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "Mask") !=
+      input_arg_names.end()) {
+    auto arguments = op_desc.Input("Mask");
+    if (arguments.size() > 0) {
+      auto arg_var = scope->FindVar(arguments.front());
+      if (arg_var != nullptr) {
+        param_.mask = &(arg_var->Get<lite::Tensor>());
+      }
+    }
+  }
+
   param_.n_layers = op_desc.GetAttr<int>("n_layers");
   param_.head_num = op_desc.GetAttr<int>("head_num");
   param_.size_per_head = op_desc.GetAttr<int>("size_per_head");
   param_.act_type = op_desc.GetAttr<std::string>("act_type");
   param_.precision = op_desc.GetAttr<std::string>("precision");
   param_.enable_qkv_fusion = op_desc.GetAttr<bool>("enable_qkv_fusion");
+  param_.norm_before = op_desc.GetAttr<bool>("norm_before");
+  param_.adaptive_seqlen = op_desc.GetAttr<bool>("adaptive_seqlen");
+
+  if (op_desc.HasAttr("slice_axes")) {
+    param_.slice_axes = op_desc.GetAttr<std::vector<int>>("slice_axes");
+  }
+  if (op_desc.HasAttr("slice_starts")) {
+    param_.slice_starts = op_desc.GetAttr<std::vector<int>>("slice_starts");
+  }
+  if (op_desc.HasAttr("slice_ends")) {
+    param_.slice_ends = op_desc.GetAttr<std::vector<int>>("slice_ends");
+  }
+  if (op_desc.HasAttr("slice_decrease_axis")) {
+    param_.slice_decrease_axis =
+        op_desc.GetAttr<std::vector<int>>("slice_decrease_axis");
+  }
+
   return true;
 }
 

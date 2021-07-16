@@ -35,8 +35,13 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_name = op_info->Output("Out").front();
   auto output = scope->FindMutableTensor(out_name);
   auto out_scale_name = "Out0_scale";
+  auto output_dims = output->dims();
+  auto output_dims_count = output_dims.size();
 
   auto axis = op_info->GetAttr<int>("axis");
+  if (axis == -1) {
+    axis = output_dims_count - 1;
+  }
   auto num = x_names.size();
 
   // for quantization
@@ -47,17 +52,16 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   DataLayoutType layout = DATALAYOUT(kNCHW);
   PrecisionType precision = PRECISION(kFloat);
 
-  if (op_info->HasAttr("enable_int8")) {
-    enable_int8 = op_info->GetAttr<bool>("enable_int8");
+  if (op_info->HasOutputScale(out_scale_name, true)) {
+    enable_int8 = true;
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(out_scale_name, true));
     output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
-
-    if (enable_int8) {
-      precision = PRECISION(kInt8);
-    }
+    precision = PRECISION(kInt8);
+  } else {
+    enable_int8 = false;
+    LOG(WARNING) << "[RK-NPU] the op is float-type " << op_type;
+    precision = PRECISION(kFloat);
   }
-
   // Traverse all of input nodes which are added into the new created concat
   // node
   std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;

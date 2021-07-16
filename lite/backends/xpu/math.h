@@ -114,6 +114,22 @@ static inline int ConvertFP32ToInt16(const void *input,
   return 0;
 }
 
+static inline int8_t fp32_to_int8(const float f, float max) {
+  int8_t v1 = fp32_to_intx<int8_t, 127>(f, max);
+  return v1;
+}
+
+static inline int ConvertFP32ToInt8(const void *input,
+                                    void *output,
+                                    float max_val,
+                                    int len) {
+  for (int i = 0; i < len; i++) {
+    static_cast<int8_t *>(output)[i] =
+        fp32_to_int8(static_cast<const float *>(input)[i], max_val);
+  }
+  return 0;
+}
+
 static inline float FindMaxAbs(const float *data, int len) {
   float max_f = 0.0f;
   for (int i = 0; i < len; ++i) {

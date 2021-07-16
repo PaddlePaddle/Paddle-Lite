@@ -15,7 +15,9 @@
 #include "lite/kernels/arm/cast_compute.h"
 #include <algorithm>
 #include "lite/backends/arm/math/funcs.h"
-
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -73,6 +75,16 @@ void CastCompute::Run() {
     const bool* x_data_end = x_data_begin + param.X->numel();
     float* out_data = param.Out->mutable_data<float>();
     std::transform(x_data_begin, x_data_end, out_data, TransOp<bool, float>);
+  } else if (param.in_dtype == 0 && param.out_dtype == 3) {  // bool->int64
+    const bool* x_data_begin = param.X->data<bool>();
+    const bool* x_data_end = x_data_begin + param.X->numel();
+    int64_t* out_data = param.Out->mutable_data<int64_t>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<bool, int64_t>);
+  } else if (param.in_dtype == 0 && param.out_dtype == 2) {  // bool->int32
+    const bool* x_data_begin = param.X->data<bool>();
+    const bool* x_data_end = x_data_begin + param.X->numel();
+    int32_t* out_data = param.Out->mutable_data<int32_t>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<bool, int32_t>);
   } else if (param.in_dtype == 3 && param.out_dtype == 5) {  // int64->fp32
     const int64_t* x_data_begin = param.X->data<int64_t>();
     const int64_t* x_data_end = x_data_begin + param.X->numel();
@@ -84,6 +96,11 @@ void CastCompute::Run() {
     int64_t* out_data = param.Out->mutable_data<int64_t>();
     std::transform(
         x_data_begin, x_data_end, out_data, TransOp<int32_t, int64_t>);
+  } else if (param.in_dtype == 5 && param.out_dtype == 2) {  // float32 -> INT32
+    const float* x_data_begin = param.X->data<float>();
+    const float* x_data_end = x_data_begin + param.X->numel();
+    int32_t* out_data = param.Out->mutable_data<int32_t>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<float, int32_t>);
   } else if (param.in_dtype == 5 &&
              param.out_dtype == 20) {  // float32 -> uint8
     const float* x_data_begin = param.X->data<float>();
@@ -91,6 +108,39 @@ void CastCompute::Run() {
     unsigned char* out_data = param.Out->mutable_data<unsigned char>();
     std::transform(
         x_data_begin, x_data_end, out_data, TransOp<float, unsigned char>);
+  } else if (param.in_dtype == 5 && param.out_dtype == 3) {  // float32 -> INT64
+    const float* x_data_begin = param.X->data<float>();
+    const float* x_data_end = x_data_begin + param.X->numel();
+    int64_t* out_data = param.Out->mutable_data<int64_t>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<float, int64_t>);
+  } else if (param.in_dtype == 0 && param.out_dtype == 2) {  // bool -> INT32
+    const bool* x_data_begin = param.X->data<bool>();
+    const bool* x_data_end = x_data_begin + param.X->numel();
+    int32_t* out_data = param.Out->mutable_data<int32_t>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<bool, int32_t>);
+  } else if (param.in_dtype == 2 && param.out_dtype == 0) {  // INT32 -> bool
+    const int32_t* x_data_begin = param.X->data<int32_t>();
+    const int32_t* x_data_end = x_data_begin + param.X->numel();
+    bool* out_data = param.Out->mutable_data<bool>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<int32_t, bool>);
+  } else if (param.in_dtype == 2 && param.out_dtype == 2) {  // INT32 -> bool
+    const int32_t* x_data_begin = param.X->data<int32_t>();
+    const int32_t* x_data_end = x_data_begin + param.X->numel();
+    int32_t* out_data = param.Out->mutable_data<int32_t>();
+    std::transform(
+        x_data_begin, x_data_end, out_data, TransOp<int32_t, int32_t>);
+#ifdef ENABLE_ARM_FP16
+  } else if (param.in_dtype == 4 &&
+             param.out_dtype == 5) {  // float16 -> float32
+    const float16_t* in_data = param.X->data<float16_t>();
+    float* out_data = param.Out->mutable_data<float>();
+    lite::arm::math::fp16::fp16_to_fp32(in_data, out_data, param.X->numel());
+  } else if (param.in_dtype == 5 &&
+             param.out_dtype == 4) {  // float32 -> float16
+    const float* in_data = param.X->data<float>();
+    float16_t* out_data = param.Out->mutable_data<float16_t>();
+    lite::arm::math::fp16::fp32_to_fp16(in_data, out_data, param.X->numel());
+#endif
   } else {
     LOG(FATAL) << "other has not been implemented transform with dtype"
                << param.in_dtype << " X, dtype" << param.out_dtype << " Out";
@@ -107,3 +157,11 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
+
+#ifdef LITE_BUILD_EXTRA
+REGISTER_LITE_KERNEL(
+    cast, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::CastCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .Finalize();
+#endif  // LITE_BUILD_EXTRA

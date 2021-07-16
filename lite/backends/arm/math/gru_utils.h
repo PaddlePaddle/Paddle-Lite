@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
+#include "lite/backends/arm/math/quantize.h"
 #include "lite/backends/arm/math/sgemm.h"
 
 namespace paddle {
@@ -23,12 +27,16 @@ namespace math {
 
 template <typename T>
 struct GRUMetaValue {
-  T* gate_weight;
-  T* state_weight;
-  T* gate_value;
-  T* reset_output_value;
-  T* output_value;
-  T* prev_out_value;
+  T* gate_weight;         // W_{uh}h_{t-1} and W_{rh}h_{t-1}
+  T* state_weight;        // W_{ch}
+  T* gate_value;          // update_gate u_{t}, reset_gate r_{t} and cell_gate
+                          // \hat{h_{t}}
+  T* reset_output_value;  // r_{t}\odot h_{t-1}
+  T* output_value;        // H_{t}
+  T* prev_out_value;      // H_{t-1}
+
+  int8_t* gate_weight_int8;   // int8_t W_{uh}h_{t-1} and W_{rh}h_{t-1}
+  int8_t* state_weight_int8;  // int8_t W_{ch}
 };
 
 template <typename Dtype>
@@ -385,6 +393,9 @@ struct GRUUnitFunctor {
                       ARMContext* ctx) {
     operators::ActivationParam act_param;
     act_param.has_active = false;
+
+    // Calculate W_{uh}h_{t-1} and W_{rh}h_{t-1}
+    // Get u_{t} and r_{t} before applying activation
     if (value.prev_out_value) {
       sgemm(false,
             false,
@@ -404,8 +415,12 @@ struct GRUUnitFunctor {
             act_param,
             ctx);
     }
+
+    // Get u_{t} and r_{t} after applying activation
+    // Get r_{t}\odot h_{t-1}, save it to value.reset_output_value
     gru_unit_reset_act(active_gate, value, frame_size, batch_size);
 
+    // Get W_{ch}(r_{t}\odot h_{t-1}), and it adds to cell_gate \hat{h_{t}}
     if (value.prev_out_value) {
       sgemm(false,
             false,
@@ -426,6 +441,117 @@ struct GRUUnitFunctor {
             ctx);
     }
 
+    // Apply activation to cell_gate \hat{h_{t}} and get final h_{t}
+    gru_unit_out_act(active_node, origin_mode, value, frame_size, batch_size);
+  }
+
+  static void quant_compute(GRUMetaValue<T> value,
+                            int frame_size,
+                            int batch_size,
+                            const lite_api::ActivationType active_node,
+                            const lite_api::ActivationType active_gate,
+                            bool origin_mode,
+                            std::vector<float> weight_scale,
+                            int bit_length,
+                            ARMContext* ctx) {
+    operators::ActivationParam act_param;
+    act_param.has_active = false;
+
+    // Calculate W_{uh}h_{t-1} and W_{rh}h_{t-1}
+    // Get u_{t} and r_{t} before applying activation
+    if (value.prev_out_value) {
+      // quantize h_{t-1}
+      int prev_out_size = batch_size * frame_size;
+      float prev_out_threshold =
+          lite::arm::math::FindAbsMax(value.prev_out_value, prev_out_size);
+      float prev_out_scale =
+          lite::arm::math::GetScale(prev_out_threshold, bit_length);
+      std::unique_ptr<int8_t[]> prev_out_value_int8(new int8_t[prev_out_size]);
+      lite::arm::math::QuantizeTensor(value.prev_out_value,
+                                      prev_out_value_int8.get(),
+                                      prev_out_size,
+                                      prev_out_scale);
+
+      // update scale
+      std::vector<float> scales(batch_size, weight_scale[0]);
+      for (auto&& x : scales) {
+        x *= prev_out_scale;
+      }
+
+      // gemm_s8
+      std::unique_ptr<float[]> out_data(new float[batch_size * frame_size * 2]);
+      lite::arm::math::gemm_s8(false,
+                               false,
+                               batch_size,
+                               frame_size * 2,
+                               frame_size,
+                               prev_out_value_int8.get(),
+                               value.gate_weight_int8,
+                               out_data.get(),
+                               nullptr,
+                               false,
+                               scales.data(),
+                               act_param,
+                               ctx);
+
+      for (int i = 0; i < batch_size; i++) {
+        float* dest = value.gate_value + i * frame_size * 3;
+        float* src = out_data.get() + i * frame_size * 2;
+        for (int j = 0; j < frame_size * 2; j++) {
+          dest[j] += src[j];
+        }
+      }
+    }
+
+    // Get u_{t} and r_{t} after applying activation
+    // Get r_{t}\odot h_{t-1}, save it to value.reset_output_value
+    gru_unit_reset_act(active_gate, value, frame_size, batch_size);
+
+    // Get W_{ch}(r_{t}\odot h_{t-1}), and it adds to cell_gate \hat{h_{t}}
+    if (value.prev_out_value) {
+      // quantize r_{t}\odot h_{t-1}
+      int reset_out_size = batch_size * frame_size;
+      float reset_out_threshold =
+          lite::arm::math::FindAbsMax(value.reset_output_value, reset_out_size);
+      float reset_out_scale =
+          lite::arm::math::GetScale(reset_out_threshold, bit_length);
+      std::unique_ptr<int8_t[]> reset_out_value_int8(
+          new int8_t[reset_out_size]);
+      lite::arm::math::QuantizeTensor(value.reset_output_value,
+                                      reset_out_value_int8.get(),
+                                      reset_out_size,
+                                      reset_out_scale);
+
+      std::vector<float> scales(batch_size, weight_scale[0]);
+      for (auto&& x : scales) {
+        x *= reset_out_scale;
+      }
+
+      std::unique_ptr<float[]> out_data(new float[batch_size * frame_size]);
+      lite::arm::math::gemm_s8(false,
+                               false,
+                               batch_size,
+                               frame_size,
+                               frame_size,
+                               reset_out_value_int8.get(),
+                               value.state_weight_int8,
+                               out_data.get(),
+                               nullptr,
+                               false,
+                               scales.data(),
+                               act_param,
+                               ctx);
+
+      for (int i = 0; i < batch_size; i++) {
+        float* dest = value.gate_value + frame_size * 2 + i * frame_size * 3;
+        float* src = out_data.get() + i * frame_size;
+        for (int j = 0; j < frame_size; j++) {
+          dest[j] += src[j];
+        }
+      }
+    }
+
+    // Apply activation to cell_gate \hat{h_{t}} and get final h_{t}
     gru_unit_out_act(active_node, origin_mode, value, frame_size, batch_size);
   }
 };

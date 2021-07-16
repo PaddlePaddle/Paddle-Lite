@@ -125,3 +125,4 @@ bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace paddle
 
 REGISTER_LITE_OP(batch_norm, paddle::lite::operators::BatchNormOp);
+REGISTER_LITE_OP(sync_batch_norm, paddle::lite::operators::BatchNormOp);

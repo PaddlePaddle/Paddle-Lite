@@ -19,155 +19,218 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
+inline void scale_compute_fp32(const float* din,
+                               float* dout,
+                               int cnt,
+                               int remain_cnt,
+                               int remain_rem,
+                               float32x4_t vscale,
+                               float32x4_t vbias) {
+#ifdef __aarch64__
+  asm volatile(
+      "cmp %w[cnt], #1                          \n"
+      "blt 0f                                   \n"
+      "1:                                       \n"
+      "ld1  {v4.4s}, [%[din]], #16              \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b  \n"
+      "ld1  {v5.4s}, [%[din]], #16              \n"
+      "and  v9.16b, %[vbias].16b, %[vbias].16b  \n"
+      "ld1  {v6.4s}, [%[din]], #16              \n"
+      "and  v10.16b, %[vbias].16b, %[vbias].16b \n"
+      "ld1  {v7.4s}, [%[din]], #16              \n"
+      "and  v11.16b, %[vbias].16b, %[vbias].16b \n"
 
+      "fmla v8.4s, v4.4s, %[vscale].4s          \n"
+      "fmla v9.4s, v5.4s, %[vscale].4s          \n"
+      "fmla v10.4s, v6.4s, %[vscale].4s         \n"
+      "fmla v11.4s, v7.4s, %[vscale].4s         \n"
+
+      "stp  q8, q9, [%[dout]], #32              \n"
+      "subs %w[cnt], %w[cnt],  #1               \n"
+      "stp  q10, q11, [%[dout]], #32            \n"
+      "bne    1b                                \n"
+      "0:                                       \n"
+      "cmp %w[remain_cnt], #1                   \n"
+      "blt 2f                                   \n"
+      "3:                                       \n"
+      "ld1  {v4.4s}, [%[din]], #16              \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b  \n"
+      "fmla v8.4s, v4.4s, %[vscale].4s          \n"
+      "subs %w[remain_cnt], %w[remain_cnt],  #1 \n"
+      "str q8, [%[dout]], #16                   \n"
+      "bne    3b                                \n"
+      "2:                                       \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_cnt)
+      : [vscale] "w"(vscale), [vbias] "w"(vbias)
+      : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
+#else
+  asm volatile(
+      "cmp %[cnt], #1                           \n"
+      "blt 0f                                   \n"
+      "1:                                     @ loop header \n"
+      "vld1.32  {d8-d11}, [%[din]]!           @ load din 0 \n"
+      "vand.32 q8, %q[vbias], %q[vbias]       @ out bias \n"
+      "vand.32 q9, %q[vbias], %q[vbias]       @ out bias \n"
+      "vld1.32  {d12-d15}, [%[din]]!          @ load din 0 \n"
+      "vand.32 q10, %q[vbias], %q[vbias]      @ out bias \n"
+      "vand.32 q11, %q[vbias], %q[vbias]      @ out bias \n"
+
+      "vmla.f32 q8, q4, %q[vscale]            @ mla \n"
+      "vmla.f32 q9, q5, %q[vscale]            @ mla \n"
+      "vmla.f32 q10, q6, %q[vscale]           @ mla \n"
+      "vmla.f32 q11, q7, %q[vscale]           @ mla \n"
+
+      "vst1.32  {d16-d19}, [%[dout]]!         @ store result, add pointer\n"
+      "subs %[cnt], #1                        @ loop count minus 1\n"
+      "vst1.32  {d20-d23}, [%[dout]]!         @ store result, add pointer\n"
+      "bne    1b                              @ jump to main loop start \n"
+      "0:                                       \n"
+      "cmp %[remain_cnt], #1                    \n"
+      "blt 2f                                   \n"
+      "3:                                       \n"
+      "vld1.32  {d8-d9}, [%[din]]!            @ load din 0 \n"
+      "vand.32 q8, %q[vbias], %q[vbias]       @ out bias \n"
+      "vmla.f32 q8, q4, %q[vscale]            @ mla \n"
+      "subs %[remain_cnt],  #1                  \n"
+      "vst1.32  {d16-d17}, [%[dout]]!           \n"
+      "bne    3b                                \n"
+      "2:                                       \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_cnt)
+      : [vscale] "w"(vscale), [vbias] "w"(vbias)
+      : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
+#endif
+  for (int i = 0; i < remain_rem; i++) {
+    *dout = *din * vscale[0] + vbias[0];
+    dout++;
+    din++;
+  }
+}
 template <>
 void scale<float>(
     const float* din, float* dout, int num, float scale, float bias) {
   int cnt = num >> 4;
-  int remain = num % 16;
+  int remain = num & 15;
+  int remain_cnt = remain >> 2;
+  int remain_rem = remain & 3;
   float32x4_t vscale = vdupq_n_f32(scale);
   float32x4_t vbias = vdupq_n_f32(bias);
-  if (cnt > 0) {
-#ifdef __aarch64__
-    asm volatile(
-        "1:                                       \n"
-        "ld1  {v4.4s}, [%[din]], #16              \n"
-        "and  v8.16b, %[vbias].16b, %[vbias].16b  \n"
-        "ld1  {v5.4s}, [%[din]], #16              \n"
-        "and  v9.16b, %[vbias].16b, %[vbias].16b  \n"
-        "ld1  {v6.4s}, [%[din]], #16              \n"
-        "and  v10.16b, %[vbias].16b, %[vbias].16b \n"
-        "ld1  {v7.4s}, [%[din]], #16              \n"
-        "and  v11.16b, %[vbias].16b, %[vbias].16b \n"
-
-        "fmla v8.4s, v4.4s, %[vscale].4s          \n"
-        "fmla v9.4s, v5.4s, %[vscale].4s          \n"
-        "fmla v10.4s, v6.4s, %[vscale].4s         \n"
-        "fmla v11.4s, v7.4s, %[vscale].4s         \n"
-
-        "stp  q8, q9, [%[dout]], #32              \n"
-        "subs %w[cnt], %w[cnt],  #1               \n"
-        "stp  q10, q11, [%[dout]], #32            \n"
-
-        "bne    1b                                \n"
-        "0:   \n"
-        : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
-        : [vscale] "w"(vscale), [vbias] "w"(vbias)
-        : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
-#else
-    asm volatile(
-        "1:                                      @ loop header \n"
-        "vld1.32  {d8-d11}, [%[din]]!           @ load din 0 \n"
-        "vand.32 q8, %q[vbias], %q[vbias]       @ out bias \n"
-        "vand.32 q9, %q[vbias], %q[vbias]       @ out bias \n"
-        "vld1.32  {d12-d15}, [%[din]]!          @ load din 0 \n"
-
-        "vand.32 q10, %q[vbias], %q[vbias]      @ out bias \n"
-        "vand.32 q11, %q[vbias], %q[vbias]      @ out bias \n"
-
-        "vmla.f32 q8, q4, %q[vscale]            @ mla \n"
-        "vmla.f32 q9, q5, %q[vscale]            @ mla \n"
-        "vmla.f32 q10, q6, %q[vscale]           @ mla \n"
-        "vmla.f32 q11, q7, %q[vscale]           @ mla \n"
-
-        "vst1.32  {d16-d19}, [%[dout]]!         @ store result, add pointer\n"
-        "subs %[cnt], #1                        @ loop count minus 1\n"
-        "vst1.32  {d20-d23}, [%[dout]]!         @ store result, add pointer\n"
-
-        "bne    1b                              @ jump to main loop start "
-        "2: \n"
-        : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
-        : [vscale] "w"(vscale), [vbias] "w"(vbias)
-        : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
-#endif
-  }
-  if (remain > 0) {
-    for (int i = 0; i < remain; i++) {
-      *dout = *din * scale + bias;
-      dout++;
-      din++;
-    }
-  }
+  scale_compute_fp32(din, dout, cnt, remain_cnt, remain_rem, vscale, vbias);
 }
 
 template <>
 void scale_relu<float>(
     const float* din, float* dout, int num, float scale, float bias) {
   int cnt = num >> 4;
-  int remain = num % 16;
+  int remain = num & 15;
+  int remain_cnt = remain >> 2;
+  int remain_rem = remain & 3;
   float32x4_t vscale = vdupq_n_f32(scale);
   float32x4_t vbias = vdupq_n_f32(bias);
   float32x4_t vzero = vdupq_n_f32(0.f);
-  if (cnt > 0) {
 #ifdef __aarch64__
-    asm volatile(
-        "1:                                      \n"
-        "ld1  {v4.4s}, [%[din]], #16             \n"
-        "and  v8.16b, %[vbias].16b, %[vbias].16b \n"
-        "ld1  {v5.4s}, [%[din]], #16             \n"
-        "and  v9.16b, %[vbias].16b, %[vbias].16b \n"
-        "ld1  {v6.4s}, [%[din]], #16             \n"
-        "and  v10.16b, %[vbias].16b, %[vbias].16b\n"
-        "ld1  {v7.4s}, [%[din]], #16             \n"
-        "and  v11.16b, %[vbias].16b, %[vbias].16b\n"
+  asm volatile(
+      "cmp %w[cnt], #1                          \n"
+      "blt 0f                                   \n"
+      "1:                                      \n"
+      "ld1  {v4.4s}, [%[din]], #16             \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b \n"
+      "ld1  {v5.4s}, [%[din]], #16             \n"
+      "and  v9.16b, %[vbias].16b, %[vbias].16b \n"
+      "ld1  {v6.4s}, [%[din]], #16             \n"
+      "and  v10.16b, %[vbias].16b, %[vbias].16b\n"
+      "ld1  {v7.4s}, [%[din]], #16             \n"
+      "and  v11.16b, %[vbias].16b, %[vbias].16b\n"
 
-        "fmla v8.4s, v4.4s, %[vscale].4s       \n"
-        "fmla v9.4s, v5.4s, %[vscale].4s       \n"
-        "fmla v10.4s, v6.4s, %[vscale].4s      \n"
-        "fmla v11.4s, v7.4s, %[vscale].4s      \n"
+      "fmla v8.4s, v4.4s, %[vscale].4s       \n"
+      "fmla v9.4s, v5.4s, %[vscale].4s       \n"
+      "fmla v10.4s, v6.4s, %[vscale].4s      \n"
+      "fmla v11.4s, v7.4s, %[vscale].4s      \n"
 
-        "fmax v8.4s, v8.4s, %[vzero].4s        \n"
-        "fmax v9.4s, v9.4s, %[vzero].4s        \n"
-        "fmax v10.4s, v10.4s, %[vzero].4s      \n"
-        "fmax v11.4s, v11.4s, %[vzero].4s      \n"
+      "fmax v8.4s, v8.4s, %[vzero].4s        \n"
+      "fmax v9.4s, v9.4s, %[vzero].4s        \n"
+      "fmax v10.4s, v10.4s, %[vzero].4s      \n"
+      "fmax v11.4s, v11.4s, %[vzero].4s      \n"
 
-        "stp  q8, q9, [%[dout]], #32           \n"
-        "subs %w[cnt], %w[cnt], #1             \n"
-        "stp  q10, q11, [%[dout]], #32         \n"
-        "bne    1b                             \n"
-        "0:   \n"
-        : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
-        : [vscale] "w"(vscale), [vbias] "w"(vbias), [vzero] "w"(vzero)
-        : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
+      "stp  q8, q9, [%[dout]], #32           \n"
+      "subs %w[cnt], %w[cnt], #1             \n"
+      "stp  q10, q11, [%[dout]], #32         \n"
+      "bne    1b                             \n"
+      "0:                                       \n"
+      "cmp %w[remain_cnt], #1                   \n"
+      "blt 2f                                   \n"
+      "3:                                       \n"
+      "ld1  {v4.4s}, [%[din]], #16              \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b  \n"
+      "fmla v8.4s, v4.4s, %[vscale].4s          \n"
+      "subs %w[remain_cnt], %w[remain_cnt],  #1 \n"
+      "fmax v8.4s, v8.4s, %[vzero].4s        \n"
+      "str q8, [%[dout]], #16                   \n"
+      "bne    3b                                \n"
+      "2:                                       \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_cnt)
+      : [vscale] "w"(vscale), [vbias] "w"(vbias), [vzero] "w"(vzero)
+      : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
 #else
-    asm volatile(
-        "1:                                     @ loop header \n"
-        "vld1.32  {d8-d11}, [%[din]]!           @ load din 0 \n"
-        "vand.32 q8, %q[vbias], %q[vbias]       @ out bias \n"
-        "vand.32 q9, %q[vbias], %q[vbias]       @ out bias \n"
-        "vld1.32  {d12-d15}, [%[din]]!          @ load din 0 \n"
+  asm volatile(
+      "cmp %[cnt], #1                           \n"
+      "blt 0f                                   \n"
+      "1:                                     @ loop header \n"
+      "vld1.32  {d8-d11}, [%[din]]!           @ load din 0 \n"
+      "vand.32 q8, %q[vbias], %q[vbias]       @ out bias \n"
+      "vand.32 q9, %q[vbias], %q[vbias]       @ out bias \n"
+      "vld1.32  {d12-d15}, [%[din]]!          @ load din 0 \n"
 
-        "vand.32 q10, %q[vbias], %q[vbias]      @ out bias \n"
-        "vand.32 q11, %q[vbias], %q[vbias]      @ out bias \n"
+      "vand.32 q10, %q[vbias], %q[vbias]      @ out bias \n"
+      "vand.32 q11, %q[vbias], %q[vbias]      @ out bias \n"
 
-        "vmla.f32 q8, q4, %q[vscale]            @ mla \n"
-        "vmla.f32 q9, q5, %q[vscale]            @ mla \n"
-        "vmla.f32 q10, q6, %q[vscale]           @ mla \n"
-        "vmla.f32 q11, q7, %q[vscale]           @ mla \n"
+      "vmla.f32 q8, q4, %q[vscale]            @ mla \n"
+      "vmla.f32 q9, q5, %q[vscale]            @ mla \n"
+      "vmla.f32 q10, q6, %q[vscale]           @ mla \n"
+      "vmla.f32 q11, q7, %q[vscale]           @ mla \n"
 
-        "vmax.f32 q8, q8, %q[vzero]             @ relu \n"
-        "vmax.f32 q9, q9, %q[vzero]             @ relu \n"
-        "vmax.f32 q10, q10, %q[vzero]           @ relu \n"
-        "vmax.f32 q11, q11, %q[vzero]           @ relu \n"
+      "vmax.f32 q8, q8, %q[vzero]             @ relu \n"
+      "vmax.f32 q9, q9, %q[vzero]             @ relu \n"
+      "vmax.f32 q10, q10, %q[vzero]           @ relu \n"
+      "vmax.f32 q11, q11, %q[vzero]           @ relu \n"
 
-        "vst1.32  {d16-d19}, [%[dout]]!         @ store result, add pointer\n"
-        "subs %[cnt], #1                        @ loop count minus 1\n"
-        "vst1.32  {d20-d23}, [%[dout]]!         @ store result, add pointer\n"
+      "vst1.32  {d16-d19}, [%[dout]]!         @ store result, add pointer\n"
+      "subs %[cnt], #1                        @ loop count minus 1\n"
+      "vst1.32  {d20-d23}, [%[dout]]!         @ store result, add pointer\n"
 
-        "bne    1b                              @ jump to main loop start "
-        "2: \n"
-        : [dout] "+r"(dout), [din] "+r"(din), [cnt] "+r"(cnt)
-        : [vscale] "w"(vscale), [vbias] "w"(vbias), [vzero] "w"(vzero)
-        : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
+      "bne    1b                              @ jump to main loop start \n"
+      "0:                                       \n"
+      "cmp %[remain_cnt], #1                   \n"
+      "blt 2f                                   \n"
+      "3:                                       \n"
+      "vld1.32  {d8-d9}, [%[din]]!            @ load din 0 \n"
+      "vand.32 q8, %q[vbias], %q[vbias]       @ out bias \n"
+      "vmla.f32 q8, q4, %q[vscale]            @ mla \n"
+      "subs %[remain_cnt],  #1                \n"
+      "vmax.f32 q8, q8, %q[vzero]             @ relu \n"
+      "vst1.32  {d16-d17}, [%[dout]]!           \n"
+      "bne    3b                                \n"
+      "2:                                       \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_cnt)
+      : [vscale] "w"(vscale), [vbias] "w"(vbias), [vzero] "w"(vzero)
+      : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
 #endif
-  }
-  if (remain > 0) {
-    for (int i = 0; i < remain; i++) {
-      *dout = *din * scale + bias;
-      *dout = *dout > 0.f ? *dout : 0.f;
-      dout++;
-      din++;
-    }
+  for (int i = 0; i < remain_rem; i++) {
+    *dout = *din * scale + bias;
+    *dout = *dout > 0.f ? *dout : 0.f;
+    dout++;
+    din++;
   }
 }
 
@@ -179,7 +242,7 @@ void scale_relu6<float>(const float* din,
                         float bias,
                         float alpha) {
   int cnt = num >> 4;
-  int remain = num % 16;
+  int remain = num & 15;
   float32x4_t vscale = vdupq_n_f32(scale);
   float32x4_t vbias = vdupq_n_f32(bias);
   float32x4_t vzero = vdupq_n_f32(0.f);
@@ -281,7 +344,7 @@ void scale_leaky_relu<float>(const float* din,
                              float bias,
                              float alpha) {
   int cnt = num >> 4;
-  int remain = num % 16;
+  int remain = num & 15;
   float32x4_t vscale = vdupq_n_f32(scale);
   float32x4_t vbias = vdupq_n_f32(bias);
   float32x4_t vzero = vdupq_n_f32(0.f);
@@ -604,6 +667,65 @@ void scale_leaky_relu<int>(
 }
 
 template <>
+void scale<int64_t>(
+    const int64_t* din, int64_t* dout, int num, int64_t scale, int64_t bias) {
+  const int64_t* din_ptr = din;
+  int64_t* dout_ptr = dout;
+  for (int i = 0; i < num; i++) {
+    *dout_ptr = *din_ptr * scale + bias;
+    dout_ptr++;
+    din_ptr++;
+  }
+}
+
+template <>
+void scale_relu<int64_t>(
+    const int64_t* din, int64_t* dout, int num, int64_t scale, int64_t bias) {
+  const int64_t* din_ptr = din;
+  int64_t* dout_ptr = dout;
+  for (int i = 0; i < num; i++) {
+    *dout_ptr = *din_ptr * scale + bias;
+    *dout_ptr = *dout_ptr > 0 ? *dout_ptr : 0;
+    dout_ptr++;
+    din_ptr++;
+  }
+}
+
+template <>
+void scale_relu6<int64_t>(const int64_t* din,
+                          int64_t* dout,
+                          int num,
+                          int64_t scale,
+                          int64_t bias,
+                          int64_t alpha) {
+  const int64_t* din_ptr = din;
+  int64_t* dout_ptr = dout;
+  for (int i = 0; i < num; i++) {
+    *dout_ptr = *din_ptr * scale + bias;
+    *dout_ptr = *dout_ptr > 0 ? (*dout_ptr > alpha ? alpha : *dout_ptr) : 0;
+    dout_ptr++;
+    din_ptr++;
+  }
+}
+
+template <>
+void scale_leaky_relu<int64_t>(const int64_t* din,
+                               int64_t* dout,
+                               int num,
+                               int64_t scale,
+                               int64_t bias,
+                               int64_t alpha) {
+  const int64_t* din_ptr = din;
+  int64_t* dout_ptr = dout;
+  for (int i = 0; i < num; i++) {
+    *dout_ptr = *din_ptr * scale + bias;
+    *dout_ptr = *dout_ptr > 0 ? *dout_ptr : (*dout_ptr) * alpha;
+    dout_ptr++;
+    din_ptr++;
+  }
+}
+
+template <>
 void scale<float>(const float* din,
                   float* dout,
                   int outer_dim,
@@ -612,7 +734,9 @@ void scale<float>(const float* din,
                   const float* scale_data,
                   const float* bias_data) {
   int cnt = inner_dim >> 4;
-  int remain = inner_dim % 16;
+  int remain = inner_dim & 15;
+  int remain_cnt = remain >> 2;
+  int remain_rem = remain & 3;
   int size = inner_dim * scale_dim;
   for (int n = 0; n < outer_dim; n++) {
     const float* din_ptr_n = din + n * size;
@@ -621,34 +745,10 @@ void scale<float>(const float* din,
     for (int i = 0; i < scale_dim; i++) {
       const float* din_ptr = din_ptr_n + i * inner_dim;
       float* dout_ptr = dout_ptr_n + i * inner_dim;
-      float scale = scale_data[i];
-      float32x4_t vscale = vdupq_n_f32(scale);
-      float bias = bias_data[i];
-      float32x4_t vbias = vdupq_n_f32(bias);
-      for (int j = 0; j < cnt; j++) {
-        float32x4_t din0 = vld1q_f32(din_ptr);
-        float32x4_t din1 = vld1q_f32(din_ptr + 4);
-        float32x4_t din2 = vld1q_f32(din_ptr + 8);
-        float32x4_t din3 = vld1q_f32(din_ptr + 12);
-
-        float32x4_t vsum1 = vmlaq_f32(vbias, din0, vscale);
-        float32x4_t vsum2 = vmlaq_f32(vbias, din1, vscale);
-        float32x4_t vsum3 = vmlaq_f32(vbias, din2, vscale);
-        float32x4_t vsum4 = vmlaq_f32(vbias, din3, vscale);
-
-        din_ptr += 16;
-        vst1q_f32(dout_ptr, vsum1);
-        vst1q_f32(dout_ptr + 4, vsum2);
-        vst1q_f32(dout_ptr + 8, vsum3);
-        vst1q_f32(dout_ptr + 12, vsum4);
-
-        dout_ptr += 16;
-      }
-      for (int j = 0; j < remain; j++) {
-        *dout_ptr = *din_ptr * scale + bias;
-        dout_ptr++;
-        din_ptr++;
-      }
+      float32x4_t vscale = vdupq_n_f32(scale_data[i]);
+      float32x4_t vbias = vdupq_n_f32(bias_data[i]);
+      scale_compute_fp32(
+          din_ptr, dout_ptr, cnt, remain_cnt, remain_rem, vscale, vbias);
     }
   }
 }
@@ -715,6 +815,349 @@ void scale<float>(const float* din,
     }
   }
 }
+
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 flaot16_t;
+
+inline void scale_compute_fp16(const flaot16_t* din,
+                               float16_t* dout,
+                               int cnt,
+                               int remain_cnt,
+                               int remain_rem,
+                               float16x8_t vscale,
+                               float16x8_t vbias) {
+#ifdef __aarch64__
+  asm volatile(
+      "cmp %w[cnt], #1                          \n"
+      "blt 0f                                   \n"
+      "1:                                       \n"
+      "ld1  {v4.8h}, [%[din]], #16              \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b  \n"
+      "ld1  {v5.8h}, [%[din]], #16              \n"
+      "and  v9.16b, %[vbias].16b, %[vbias].16b  \n"
+
+      "fmla v8.8h, v4.8h, %[vscale].8h          \n"
+      "fmla v9.8h, v5.8h, %[vscale].8h          \n"
+
+      "subs %w[cnt], %w[cnt],  #1               \n"
+      "stp  q8, q9, [%[dout]], #32              \n"
+      "bne    1b                                \n"
+      "0:                                       \n"
+      "cmp %w[remain_cnt], #1                   \n"
+      "blt 2f                                   \n"
+      "3:                                       \n"
+      "ld1  {v4.4h}, [%[din]], #8               \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b  \n"
+      "fmla v8.4h, v4.4h, %[vscale].4h          \n"
+      "subs %w[remain_cnt], %w[remain_cnt],  #1 \n"
+      "st1 {v8.4h}, [%[dout]], #8               \n"
+      "bne    3b                                \n"
+      "2:                                       \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_cnt)
+      : [vscale] "w"(vscale), [vbias] "w"(vbias)
+      : "cc", "memory", "v4", "v5", "v8", "v9");
+#endif
+  for (int j = 0; j < remain_rem; j++) {
+    *dout = *din * vscale[0] + vbias[0];
+    dout++;
+    din++;
+  }
+}
+
+template <>
+void scale<float16_t>(const flaot16_t* din,
+                      flaot16_t* dout,
+                      int outer_dim,
+                      int scale_dim,
+                      int inner_dim,
+                      const flaot16_t* scale_data,
+                      const flaot16_t* bias_data) {
+  int cnt = inner_dim >> 4;
+  int remain = inner_dim % 16;
+  int remain_num = remain >> 2;
+  int remain_rem = remain & 3;
+  int size = inner_dim * scale_dim;
+  for (int n = 0; n < outer_dim; n++) {
+    const flaot16_t* din_ptr_n = din + n * size;
+    flaot16_t* dout_ptr_n = dout + n * size;
+#pragma omp parallel for
+    for (int i = 0; i < scale_dim; i++) {
+      const flaot16_t* din_ptr = din_ptr_n + i * inner_dim;
+      flaot16_t* dout_ptr = dout_ptr_n + i * inner_dim;
+      float16x8_t vscale = vdupq_n_f16(scale_data[i]);
+      float16x8_t vbias = vdupq_n_f16(bias_data[i]);
+      scale_compute_fp16(
+          din_ptr, dout_ptr, cnt, remain_num, remain_rem, vscale, vbias);
+    }
+  }
+}
+
+template <>
+void scale<float16_t>(const float16_t* din,
+                      float16_t* dout,
+                      int outer_dim,
+                      int scale_dim,
+                      const float16_t* scale_data,
+                      const float16_t* bias_data) {
+  int cnt = scale_dim >> 4;
+  int remain = scale_dim % 16;
+  for (int n = 0; n < outer_dim; n++) {
+    const float16_t* din_ptr_n = din + n * scale_dim;
+    float16_t* dout_ptr_n = dout + n * scale_dim;
+#pragma omp parallel for
+    for (int i = 0; i < cnt; i++) {
+      int idx = i << 4;
+      const float16_t* din_ptr = din_ptr_n + idx;
+      const float16_t* scale_ptr = scale_data + idx;
+      const float16_t* bias_ptr = bias_data + idx;
+      float16_t* dout_ptr = dout_ptr_n + idx;
+
+      float16x8_t din0 = vld1q_f16(din_ptr);
+      float16x8_t vscale0 = vld1q_f16(scale_ptr);
+      float16x8_t vbias0 = vld1q_f16(bias_ptr);
+
+      float16x8_t din1 = vld1q_f16(din_ptr + 8);
+      float16x8_t vscale1 = vld1q_f16(scale_ptr + 8);
+      float16x8_t vbias1 = vld1q_f16(bias_ptr + 8);
+
+      float16x8_t vsum1 = vfmaq_f16(vbias0, din0, vscale0);
+      float16x8_t vsum2 = vfmaq_f16(vbias1, din1, vscale1);
+
+      vst1q_f16(dout_ptr, vsum1);
+      vst1q_f16(dout_ptr + 8, vsum2);
+    }
+    int idx = cnt << 4;
+    const float16_t* din_ptr = din_ptr_n + idx;
+    float16_t* dout_ptr = dout_ptr_n + idx;
+    const float16_t* scale_ptr = scale_data + idx;
+    const float16_t* bias_ptr = bias_data + idx;
+    for (int j = 0; j < remain; j++) {
+      *dout_ptr = *din_ptr * (*scale_ptr) + (*bias_ptr);
+      dout_ptr++;
+      din_ptr++;
+      scale_ptr++;
+      bias_ptr++;
+    }
+  }
+}
+
+template <>
+void scale<float16_t>(const float16_t* din,
+                      float16_t* dout,
+                      int num,
+                      float16_t scale,
+                      float16_t bias) {
+  int cnt = num >> 4;
+  int remain = num % 16;
+  int remain_num = remain >> 2;
+  int remain_rem = remain & 3;
+  float16x8_t vscale = vdupq_n_f16(scale);
+  float16x8_t vbias = vdupq_n_f16(bias);
+  scale_compute_fp16(din, dout, cnt, remain_num, remain_rem, vscale, vbias);
+}
+
+template <>
+void scale_relu<float16_t>(const float16_t* din,
+                           float16_t* dout,
+                           int num,
+                           float16_t scale,
+                           float16_t bias) {
+  int cnt = num >> 4;
+  int remain = num % 16;
+  int remain_num = remain >> 2;
+  int remain_rem = remain & 3;
+  float16x8_t vscale = vdupq_n_f16(scale);
+  float16x8_t vbias = vdupq_n_f16(bias);
+  float16x8_t vzero = vdupq_n_f16(0.f);
+#ifdef __aarch64__
+  asm volatile(
+      "cmp %w[cnt], #1                         \n"
+      "blt 0f                                  \n"
+      "1:                                      \n"
+      "ld1  {v4.8h}, [%[din]], #16             \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b \n"
+      "ld1  {v5.8h}, [%[din]], #16             \n"
+      "and  v9.16b, %[vbias].16b, %[vbias].16b \n"
+
+      "fmla v8.8h, v4.8h, %[vscale].8h         \n"
+      "fmla v9.8h, v5.8h, %[vscale].8h         \n"
+
+      "fmax v8.8h, v8.8h, %[vzero].8h          \n"
+      "fmax v9.8h, v9.8h, %[vzero].8h          \n"
+      "subs %w[cnt], %w[cnt], #1               \n"
+      "stp  q8, q9, [%[dout]], #32             \n"
+      "bne    1b                               \n"
+      "0:                                      \n"
+      "cmp %w[remain_cnt], #1                  \n"
+      "blt 2f                                  \n"
+      "3:                                      \n"
+      "ld1  {v4.4h}, [%[din]], #8              \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b \n"
+      "fmla v8.4h, v4.4h, %[vscale].4h         \n"
+      "subs %w[remain_cnt], %w[remain_cnt],  #1\n"
+      "fmax v8.4h, v8.4h, %[vzero].4h          \n"
+      "st1 {v8.4h}, [%[dout]], #8              \n"
+      "bne    3b                               \n"
+      "2:                                      \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_num)
+      : [vscale] "w"(vscale), [vbias] "w"(vbias), [vzero] "w"(vzero)
+      : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
+#else
+#endif
+  for (int i = 0; i < remain_rem; i++) {
+    *dout = *din * scale + bias;
+    *dout = *dout > 0.f ? *dout : 0.f;
+    dout++;
+    din++;
+  }
+}
+
+template <>
+void scale_relu6<float16_t>(const float16_t* din,
+                            float16_t* dout,
+                            int num,
+                            float16_t scale,
+                            float16_t bias,
+                            float16_t alpha) {
+  int cnt = num >> 4;
+  int remain = num % 16;
+  int remain_num = remain >> 2;
+  int remain_rem = remain & 3;
+  float16x8_t vscale = vdupq_n_f16(scale);
+  float16x8_t vbias = vdupq_n_f16(bias);
+  float16x8_t vzero = vdupq_n_f16(0.f);
+  float16x8_t valpha = vdupq_n_f16(alpha);
+#ifdef __aarch64__
+  asm volatile(
+      "cmp %w[cnt], #1                         \n"
+      "blt 0f                                  \n"
+      "1:                                      \n"
+      "ld1  {v4.8h}, [%[din]], #16             \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b \n"
+      "ld1  {v5.8h}, [%[din]], #16             \n"
+      "and  v9.16b, %[vbias].16b, %[vbias].16b \n"
+
+      "fmla v8.8h, v4.8h, %[vscale].8h         \n"
+      "fmla v9.8h, v5.8h, %[vscale].8h         \n"
+
+      "fmax v8.8h, v8.8h, %[vzero].8h          \n"
+      "fmax v9.8h, v9.8h, %[vzero].8h          \n"
+
+      "fmin v8.8h, v8.8h, %[valpha].8h         \n"
+      "fmin v9.8h, v9.8h, %[valpha].8h         \n"
+
+      "subs %w[cnt], %w[cnt], #1               \n"
+      "stp  q8, q9, [%[dout]], #32             \n"
+      "bne    1b                               \n"
+      "0:                                      \n"
+      "cmp %w[remain_cnt], #1                  \n"
+      "blt 2f                                  \n"
+      "3:                                      \n"
+      "ld1  {v4.4h}, [%[din]], #8              \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b \n"
+      "fmla v8.4h, v4.4h, %[vscale].4h         \n"
+      "subs %w[remain_cnt], %w[remain_cnt],  #1\n"
+      "fmax v8.4h, v8.4h, %[vzero].4h          \n"
+      "fmin v8.4h, v8.4h, %[valpha].4h         \n"
+      "st1 {v8.4h}, [%[dout]], #8              \n"
+      "bne    3b                               \n"
+      "2:                                      \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_num)
+      : [vscale] "w"(vscale),
+        [vbias] "w"(vbias),
+        [vzero] "w"(vzero),
+        [valpha] "w"(valpha)
+      : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
+#else
+#endif
+  for (int i = 0; i < remain_rem; i++) {
+    *dout = *din * scale + bias;
+    *dout = *dout > 0.f ? (*dout < alpha ? *dout : alpha) : 0.f;
+    dout++;
+    din++;
+  }
+}
+
+template <>
+void scale_leaky_relu<float16_t>(const float16_t* din,
+                                 float16_t* dout,
+                                 int num,
+                                 float16_t scale,
+                                 float16_t bias,
+                                 float16_t alpha) {
+  int cnt = num >> 4;
+  int remain = num % 16;
+  int remain_num = remain >> 2;
+  int remain_rem = remain & 3;
+  float16x8_t vscale = vdupq_n_f16(scale);
+  float16x8_t vbias = vdupq_n_f16(bias);
+  float16x8_t vzero = vdupq_n_f16(0.f);
+  float16x8_t valpha = vdupq_n_f16(alpha);
+#ifdef __aarch64__
+  asm volatile(
+      "cmp %w[cnt], #1                         \n"
+      "blt 0f                                  \n"
+      "1:                                      \n"
+      "ld1  {v4.8h}, [%[din]], #16             \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b \n"
+      "ld1  {v5.8h}, [%[din]], #16             \n"
+      "and  v9.16b, %[vbias].16b, %[vbias].16b \n"
+
+      "fmla v8.8h, v4.8h, %[vscale].8h         \n"
+      "fmla v9.8h, v5.8h, %[vscale].8h         \n"
+
+      "fcmge v10.8h, v8.8h, %[vzero].8h        \n"
+      "fmul v11.8h, v8.8h, %[valpha].8h        \n"
+      "fcmge v12.8h, v9.8h, %[vzero].8h        \n"
+      "fmul v13.8h, v9.8h, %[valpha].8h        \n"
+
+      "subs %w[cnt], %w[cnt], #1               \n"
+      "bif  v8.16b, v11.16b, v10.16b           \n"
+      "bif  v9.16b, v13.16b, v12.16b           \n"
+      "stp  q8, q9, [%[dout]], #32             \n"
+      "bne    1b                               \n"
+      "0:                                      \n"
+      "cmp %w[remain_cnt], #1                  \n"
+      "blt 2f                                  \n"
+      "3:                                      \n"
+      "ld1  {v4.4h}, [%[din]], #8              \n"
+      "and  v8.16b, %[vbias].16b, %[vbias].16b \n"
+      "fmla v8.4h, v4.4h, %[vscale].4h         \n"
+      "subs %w[remain_cnt], %w[remain_cnt],  #1\n"
+      "fcmge v10.4h, v8.4h, %[vzero].4h        \n"
+      "fmul v11.4h, v8.4h, %[valpha].4h        \n"
+      "bif  v8.16b, v11.16b, v10.16b           \n"
+      "st1 {v8.4h}, [%[dout]], #8              \n"
+      "bne    3b                               \n"
+      "2:                                      \n"
+      : [dout] "+r"(dout),
+        [din] "+r"(din),
+        [cnt] "+r"(cnt),
+        [remain_cnt] "+r"(remain_num)
+      : [vscale] "w"(vscale),
+        [vbias] "w"(vbias),
+        [vzero] "w"(vzero),
+        [valpha] "w"(valpha)
+      : "cc", "memory", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11");
+#else
+#endif
+  for (int i = 0; i < remain_rem; i++) {
+    *dout = *din * scale + bias;
+    *dout = *dout > 0.f ? *dout : (*dout * alpha);
+    dout++;
+    din++;
+  }
+}
+#endif
 
 }  // namespace math
 }  // namespace arm

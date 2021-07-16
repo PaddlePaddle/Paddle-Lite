@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType ptype>
+class ReluCompute : public KernelLite<TARGET(kARM), ptype> {
  public:
   using param_t = operators::ActivationParam;
 
@@ -40,16 +41,8 @@ class LeakyReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~LeakyReluCompute() = default;
 };
 
-class ReluClippedCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~ReluClippedCompute() = default;
-};
-
-class PReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType ptype>
+class PReluCompute : public KernelLite<TARGET(kARM), ptype> {
  public:
   using param_t = operators::ActivationParam;
 
@@ -76,15 +69,6 @@ class TanhCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~TanhCompute() = default;
 };
 
-class SwishCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~SwishCompute() = default;
-};
-
 class Relu6Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
@@ -92,87 +76,6 @@ class Relu6Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   void Run() override;
 
   virtual ~Relu6Compute() = default;
-};
-
-class LogCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~LogCompute() = default;
-};
-
-class ExpCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~ExpCompute() = default;
-};
-
-class FloorCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~FloorCompute() = default;
-};
-
-class HardSigmoidCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~HardSigmoidCompute() = default;
-};
-
-class RsqrtCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~RsqrtCompute() = default;
-};
-
-class SquareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~SquareCompute() = default;
-};
-
-class HardSwishCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~HardSwishCompute() = default;
-};
-
-class ReciprocalCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~ReciprocalCompute() = default;
-};
-
-class AbsCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~AbsCompute() = default;
 };
 
 class ThresholdedReluCompute

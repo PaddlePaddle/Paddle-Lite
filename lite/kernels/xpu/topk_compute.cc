@@ -31,20 +31,20 @@ void TopkCompute::Run() {
   int m = x_dims.production() / x_dims[dim_size - 1];
   int n = x_dims[dim_size - 1];
 
-  XPUScratchPadGuard indices_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      m * K * sizeof(int), false /* use_l3 */);
+  XPUScratchPadGuard indices_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(m * K * sizeof(int));
 
   int* indices_int32_device = reinterpret_cast<int*>(indices_xpu_guard_->addr_);
   int64_t* indices_int64_device =
       param.Indices->mutable_data<int64_t>(TARGET(kXPU));
 
-  int r = xdnn::topk(ctx.GetRawContext(),
-                     param.X->data<float>(),
-                     param.Out->mutable_data<float>(TARGET(kXPU)),
-                     indices_int32_device,
-                     m,
-                     n,
-                     K);
+  int r = xdnn::sorted_topk(ctx.GetRawContext(),
+                            param.X->data<float>(),
+                            param.Out->mutable_data<float>(TARGET(kXPU)),
+                            indices_int32_device,
+                            m,
+                            n,
+                            K);
   CHECK_EQ(r, 0);
 
   r = xdnn::cast<int, int64_t>(

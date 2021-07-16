@@ -20,6 +20,9 @@
 #include "lite/backends/arm/math/gemv_arm_int8.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -277,8 +280,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  scale_.data(),
                                  param.bias != nullptr,
                                  b_data,
-                                 flag_relu,
-                                 act,
+                                 act_param,
                                  &ctx);
     }
   }
@@ -336,13 +338,94 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                  scale_.data(),
                                  param.bias != nullptr,
                                  b_data,
-                                 flag_relu,
-                                 act,
+                                 act_param,
                                  &ctx);
     }
   }
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void fc_trans_weights<PRECISION(kFP16)>(const Tensor& tin, Tensor* tout) {
+  CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
+  int m = tin.dims()[0];
+  int n = tin.dims()[1];
+  tout->Resize({n, m});
+  auto* ptr_in = tin.data<float16_t>();
+  auto* ptr_out = tout->mutable_data<float16_t>();
+  naive_transpose(ptr_in, ptr_out, m, n);
+}
+
+template <>
+void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  ReInitWhenNeeded();
+}
+
+template <>
+void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<operators::FcParam>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+
+  auto* i_data = param.input->data<float16_t>();
+  auto* o_data = param.output->mutable_data<float16_t>();
+  auto* w_data =
+      flag_gemm_ ? param.w->data<float16_t>() : weights_.data<float16_t>();
+  const float16_t* b_data =
+      param.bias ? param.bias->data<float16_t>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float16_t>();
+  }
+  bool flag_act = false;
+  lite_api::ActivationType act;
+  if (param.activation_type == "relu") {
+    act = lite_api::ActivationType::kRelu;
+    flag_act = true;
+  }
+  if (flag_gemm_) {
+    operators::ActivationParam act_param;
+    act_param.has_active = false;
+    lite::arm::math::fp16::sgemm_fp16(false,
+                                      false,
+                                      m_,
+                                      n_,
+                                      k_,
+                                      1.f,
+                                      i_data,
+                                      k_,
+                                      w_data,
+                                      n_,
+                                      0.f,
+                                      o_data,
+                                      n_,
+                                      nullptr,
+                                      false,
+                                      act_param,
+                                      &ctx);
+    if (param.bias) {
+      CHECK_EQ(param.bias->numel(), n_);
+      lite::arm::math::fp16::fill_bias_fc(o_data, b_data, m_, n_, flag_act);
+    }
+  } else {
+    for (int i = 0; i < m_; ++i) {
+      auto* i_data_batch = i_data + i * k_;
+      auto* o_data_batch = o_data + i * n_;
+      lite::arm::math::fp16::gemv_fp16(w_data,
+                                       i_data_batch,
+                                       o_data_batch,
+                                       false,
+                                       n_,
+                                       k_,
+                                       0.f,
+                                       param.bias != nullptr,
+                                       b_data,
+                                       flag_act,
+                                       act,
+                                       &ctx);
+    }
+  }
+}
+
+#endif
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -358,10 +441,24 @@ typedef paddle::lite::kernels::arm::FcCompute<PRECISION(kInt8),
                                               PRECISION(kInt8)>
     FcCompute_int8_int8;
 
+#ifdef ENABLE_ARM_FP16
+typedef paddle::lite::kernels::arm::FcCompute<PRECISION(kFP16),
+                                              PRECISION(kFP16)>
+    FcCompute_FP16;
+REGISTER_LITE_KERNEL(fc, kARM, kFP16, kNCHW, FcCompute_FP16, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
+
 REGISTER_LITE_KERNEL(fc, kARM, kFloat, kNCHW, FcCompute_FP32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 

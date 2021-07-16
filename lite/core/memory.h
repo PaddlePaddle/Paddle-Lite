@@ -15,7 +15,10 @@
 #pragma once
 #include <algorithm>
 #include <string>
+#include <vector>
+
 #include "lite/api/paddle_place.h"
+#include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/logging.h"
 #include "lite/utils/macros.h"
@@ -39,6 +42,12 @@
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/target_wrapper.h"
 #endif  // LITE_WITH_XPU
+
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/metal_buffer.h"
+#include "lite/backends/metal/metal_image.h"
+#include "lite/backends/metal/target_wrapper.h"
+#endif  // LITE_WITH_METAL
 
 namespace paddle {
 namespace lite {
@@ -84,6 +93,11 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperCL::MemcpySync(dst, src, size, dir);
       break;
 #endif  // LITE_WITH_OPENCL
+#ifdef LITE_WITH_METAL
+    case TargetType::kMetal:
+      TargetWrapperMetal::MemcpySync(dst, src, size, dir);
+      break;
+#endif  // LITE_WITH_METAL
 #ifdef LITE_WITH_MLU
     case TARGET(kMLU):
       TargetWrapperMlu::MemcpySync(dst, src, size, dir);
@@ -131,6 +145,9 @@ class Buffer {
 #ifdef LITE_WITH_OPENCL
       cl_use_image2d_ = false;
 #endif
+#ifdef LITE_WITH_METAL
+      metal_use_image2d_ = false;
+#endif
     }
   }
 
@@ -146,8 +163,8 @@ class Buffer {
         cl_image2d_height_ < img_h_req || host_ptr != nullptr ||
         data_ == nullptr) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
-      cl_image2d_width_ = std::max(cl_image2d_width_, img_w_req);
-      cl_image2d_height_ = std::max(cl_image2d_height_, img_h_req);
+      cl_image2d_width_ = (std::max)(cl_image2d_width_, img_w_req);
+      cl_image2d_height_ = (std::max)(cl_image2d_height_, img_h_req);
       Free();
       data_ = TargetWrapperCL::MallocImage<T>(
           cl_image2d_width_, cl_image2d_height_, host_ptr);
@@ -159,12 +176,40 @@ class Buffer {
   }
 #endif
 
+#ifdef LITE_WITH_METAL
+  template <typename T>
+  void ResetLazyMetalImage(MetalContext* context,
+                           const DDim& dim,
+                           std::vector<int> transpose = {0, 2, 3, 1}) {
+    CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
+    Free();
+    dim_ = dim;
+    target_ = TARGET(kMetal);
+    metal_use_image2d_ = true;
+    space_ = sizeof(T) * dim.production();
+    data_ = TargetWrapperMetal::MallocImage<T>(context, dim, transpose);
+  }
+
+  template <typename T>
+  void ResetLazyMetalBuffer(MetalContext* context,
+                            size_t count,
+                            METAL_ACCESS_FLAG access) {
+    CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
+    Free();
+    target_ = TARGET(kMetal);
+    space_ = count * sizeof(T);
+    metal_use_image2d_ = false;
+    dim_ = DDimLite({static_cast<int64_t>(count)});
+  }
+#endif
+
   void Free() {
     if (space_ > 0 && own_data_) {
-      if (!cl_use_image2d_) {
+      if (!cl_use_image2d_ && !metal_use_image2d_) {
         TargetFree(target_, data_);
-      } else {
+      } else if (cl_use_image2d_) {
         TargetFree(target_, data_, "cl_use_image2d_");
+      } else if (metal_use_image2d_) {
       }
     }
     data_ = nullptr;
@@ -191,6 +236,15 @@ class Buffer {
   bool cl_use_image2d_{false};   // only used for OpenCL Image2D
   size_t cl_image2d_width_{0};   // only used for OpenCL Image2D
   size_t cl_image2d_height_{0};  // only used for OpenCL Image2D
+
+  bool metal_use_image2d_{false};  // only used for Metal Image2D
+  DDim dim_;
+
+  bool transpose_{false};
+  bool to_nhwc_{true};
+  bool pad_when_one_c_{false};
+  std::vector<int> image_transpose_;
+
   void* data_{nullptr};
   bool own_data_{true};
   TargetType target_{TargetType::kHost};

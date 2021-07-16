@@ -159,11 +159,14 @@ TEST(BatchNorm, precision) {
   LOG(INFO) << "test BatchNorm op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
+  abs_error = 3e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
 #else

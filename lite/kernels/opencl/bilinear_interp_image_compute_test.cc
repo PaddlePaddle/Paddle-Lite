@@ -70,6 +70,7 @@ void bilinear_interp_ref(const float* din,
         int ceil_h = floor_h + 1;
         floor_h = floor_h > 0 ? floor_h : 0;
         ceil_h = ceil_h > in_h - 1 ? in_h - 1 : ceil_h;
+        center_h = (center_h > 0) ? center_h : 0;
         float hs = center_h - floor_h;
         float he = 1.0 - hs;
         for (int w = 0; w < out_w; w++) {
@@ -79,12 +80,13 @@ void bilinear_interp_ref(const float* din,
           int ceil_w = floor_w + 1;
           floor_w = floor_w > 0 ? floor_w : 0;
           ceil_w = ceil_w > in_w - 1 ? in_w - 1 : ceil_w;
+          center_w = (center_w > 0) ? center_w : 0;
           float ws = center_w - floor_w;
           float we = 1.0 - ws;
-          float left_up = din_data_c[ceil_h * in_w + floor_w] * we * hs;
-          float left_down = din_data_c[floor_h * in_w + floor_w] * we * he;
-          float right_up = din_data_c[ceil_h * in_w + ceil_w] * ws * hs;
-          float right_down = din_data_c[floor_h * in_w + ceil_w] * ws * he;
+          float left_down = din_data_c[ceil_h * in_w + floor_w] * we * hs;
+          float left_up = din_data_c[floor_h * in_w + floor_w] * we * he;
+          float right_down = din_data_c[ceil_h * in_w + ceil_w] * ws * hs;
+          float right_up = din_data_c[floor_h * in_w + ceil_w] * ws * he;
           dout_data_c[h * out_w + w] =
               left_up + left_down + right_up + right_down;
         }

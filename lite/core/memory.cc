@@ -14,6 +14,11 @@
 
 #include "lite/core/memory.h"
 
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/target_wrapper.h"
+#include "lite/core/device_info.h"
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -55,6 +60,12 @@ void* TargetMalloc(TargetType target, size_t size) {
       data = TargetWrapperXPU::Malloc(size);
       break;
 #endif  // LITE_WITH_XPU
+#ifdef LITE_WITH_METAL
+    case TargetType::kMetal: {
+      data = TargetWrapperMetal::Malloc(size);
+      break;
+    }
+#endif  // LITE_WITH_METAL
     default:
       LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
   }
@@ -103,6 +114,15 @@ void TargetFree(TargetType target, void* data, std::string free_flag) {
       TargetWrapperXPU::Free(data);
       break;
 #endif  // LITE_WITH_XPU
+#ifdef LITE_WITH_METAL
+    case TargetType::kMetal:
+      if (free_flag == "metal_use_image2d_") {
+        TargetWrapperMetal::FreeImage(data);
+      } else {
+        TargetWrapperMetal::Free(data);
+      }
+      break;
+#endif
     default:
       LOG(FATAL) << "Unknown type";
   }
@@ -150,6 +170,11 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
       TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::DtoD);
       break;
 #endif  // LITE_WITH_OPENCL
+#ifdef LITE_WITH_Metal
+    case TargetType::kMetal:
+      TargetWrapperMetal::MemcpySync(dst, src, size, IoDirection::DtoD);
+      break;
+#endif
     default:
       LOG(FATAL) << "unsupported type";
   }

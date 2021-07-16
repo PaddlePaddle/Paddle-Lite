@@ -28,30 +28,25 @@ void SplitCompute::Run() {
   auto& dout = param.output;
   auto in_dim = param.x->dims();
   auto axis = param.axis;
-
   int height = 1;
   for (int i = 0; i < axis; i++) {
     height = height * in_dim[i];
   }
-
-  int n = 0;
+  int width = param.x->numel() / height;
   std::vector<float*> out_ptrs;
   std::vector<int> width_out;
-
   for (auto out : dout) {
-    n++;
     out->set_lod(param.x->lod());
     out_ptrs.push_back(out->mutable_data<float>(TARGET(kXPU)));
-    int out_strides = out->numel();
-    width_out.push_back(out_strides / height);
+    width_out.push_back(out->numel() / height);
   }
+  int r = xdnn::split<float>(ctx.GetRawContext(),
+                             param.x->data<float>(),
+                             out_ptrs,
+                             {height, width},
+                             width_out,
+                             1);
 
-  int r = xdnn::concat_grad(ctx.GetRawContext(),
-                            height,
-                            width_out.data(),
-                            n,
-                            out_ptrs.data(),
-                            param.x->data<float>());
   CHECK_EQ(r, 0);
 }
 

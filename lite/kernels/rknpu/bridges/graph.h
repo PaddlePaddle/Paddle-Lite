@@ -75,8 +75,10 @@ class Node {
 
 class Graph {
  public:
-  Graph();
-  ~Graph();
+  explicit Graph(rk::nn::Graph* graph) : graph_(graph) {
+    CHECK(graph_ != nullptr);
+  }
+  ~Graph() {}
 
  public:
   int Add(const std::string& name, std::shared_ptr<Node> node);
@@ -88,10 +90,6 @@ class Graph {
                             PrecisionType precision = PRECISION(kUnk),
                             DataLayoutType layout = DATALAYOUT(kNCHW),
                             const QuantizationInfo& qnt = QuantizationInfo());
-  std::shared_ptr<Node> Get(const std::string& name) {
-    CHECK(Has(name)) << "[RKNPU] Node " << name << " not found.";
-    return nodes_.at(name).back();
-  }
 
   std::shared_ptr<Node> Add(const std::string& name,
                             const Tensor& tensor,
@@ -116,15 +114,20 @@ class Graph {
     return Add(name, dims.Vectorize(), precision, layout, qnt);
   }
 
+  std::shared_ptr<Node> Get(std::string name) {
+    CHECK(Has(name)) << "[Rockchip NPU] Node " << name << " not found.";
+    return nodes_.at(name).back();
+  }
+
   bool Has(const std::string& name) {
     return nodes_.find(name) != nodes_.end();
   }
 
-  rk::nn::Graph* GetHandle() { return rgraph_; }
+  rk::nn::Graph* GetHandle() { return graph_; }
 
  private:
   std::map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
-  rk::nn::Graph* rgraph_;
+  rk::nn::Graph* graph_;
 };
 
 }  // namespace rknpu

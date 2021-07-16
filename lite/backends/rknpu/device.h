@@ -32,16 +32,13 @@ class Device {
   }
   Device() {}
 
-  // Build the RK IR graph to om model, return RK model exector to
-  // load om model and run inference.
+  // Build the RK IR graph, and create a RK model execution for inference
   std::unique_ptr<rk::nn::Exection> Build(
       std::string& model_name,                                   // NOLINT
-      rk::nn::Graph* rk_graph,                                   // NOLINT
+      rk::nn::Graph* graph,                                      // NOLINT
       std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes,  // NOLINT
       std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes  // NOLINT
       );                                                         // NOLINT
-
- private:
 };
 
 }  // namespace rknpu

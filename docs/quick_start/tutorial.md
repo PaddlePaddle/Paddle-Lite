@@ -7,20 +7,21 @@ Lite是一种轻量级、灵活性强、易于扩展的高性能的深度学习�
 
 **一. 准备模型**
 
-Paddle Lite框架直接支持模型结构为[PaddlePaddle](https://github.com/PaddlePaddle/Paddle)深度学习框架产出的模型格式。目前PaddlePaddle用于推理的模型是通过[save_inference_model](https://www.paddlepaddle.org.cn/documentation/docs/zh/api_cn/io_cn/save_inference_model_cn.html#save-inference-model)这个API保存下来的。
+Paddle-Lite框架直接支持模型结构为[PaddlePaddle](https://www.paddlepaddle.org.cn/)深度学习框架产出的模型格式。在PaddlePaddle静态图模式下，使用save_inference_model这个API保存预测模型，Paddle-Lite对此类预测模型已经做了充分支持。在PaddlePaddle动态图模式下，使用paddle.jit.save这个API保存预测模型，Paddle-Lite可以支持绝大部分此类预测模型了。
+
 如果您手中的模型是由诸如Caffe、Tensorflow、PyTorch等框架产出的，那么您可以使用 [X2Paddle](https://github.com/PaddlePaddle/X2Paddle) 工具将模型转换为PadddlePaddle格式。
 
 **二. 模型优化**
 
 Paddle Lite框架拥有优秀的加速、优化策略及实现，包含量化、子图融合、Kernel优选等优化手段。优化后的模型更轻量级，耗费资源更少，并且执行速度也更快。
-这些优化通过Paddle Lite提供的opt工具实现。opt工具还可以统计并打印出模型中的算子信息，并判断不同硬件平台下Paddle Lite的支持情况。您获取PaddlePaddle格式的模型之后，一般需要通该opt工具做模型优化。opt工具的下载和使用，请参考 [模型优化方法](https://paddle-lite.readthedocs.io/zh/latest/user_guides/model_optimize_tool.html)。
+这些优化通过Paddle Lite提供的opt工具实现。opt工具还可以统计并打印出模型中的算子信息，并判断不同硬件平台下Paddle Lite的支持情况。您获取PaddlePaddle格式的模型之后，一般需要通该opt工具做模型优化。opt工具的下载和使用，请参考 [模型优化方法](../user_guides/model_optimize_tool)。
 
 **注意**: 为了减少第三方库的依赖、提高Lite预测框架的通用性，在移动端使用Lite API您需要准备Naive Buffer存储格式的模型。
 
 **三. 下载或编译**
 
-Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，我们优先推荐您直接下载 [Paddle Lite预编译库](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html)。
-您也可以根据目标平台选择对应的[源码编译方法](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html#id2)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/`文件夹下，只需要 [准备环境](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_env.html) 和 [调用编译脚本](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html#id2) 两个步骤即可一键编译得到目标平台的Paddle Lite预测库。
+Paddle Lite提供了Android/iOS/ArmLinux/Windows/macOS/Ubuntu 平台的官方Release预测库下载，我们优先推荐您直接下载 [Paddle Lite预编译库](../quick_start/release_lib)。
+您也可以根据目标平台选择对应的[源码编译方法](../quick_start/release_lib)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/`文件夹下，只需要 [准备环境](../source_compile/compile_env) 和 [调用编译脚本](../quick_start/release_lib) 两个步骤即可一键编译得到目标平台的Paddle Lite预测库。
 
 **四. 开发应用程序**
 
@@ -34,22 +35,22 @@ Paddle Lite提供了C++、Java、Python三种API，只需简单五步即可完�
 
 Paddle Lite提供了C++、Java、Python三种API的完整使用示例和开发说明文档，您可以参考示例中的说明快速了解使用方法，并集成到您自己的项目中去。
 
-- [C++完整示例](cpp_demo.html)
-- [Java完整示例](java_demo.html)
-- [Python完整示例](python_demo.html)
+- [C++完整示例](cpp_demo)
+- [Java完整示例](java_demo)
+- [Python完整示例](python_demo)
 
 针对不同的硬件平台，Paddle Lite提供了各个平台的完整示例：
 
-- [Android示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/android_app_demo.html)
-- [iOS示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/ios_app_demo.html)
-- [ARMLinux示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/linux_arm_demo.html)
-- [X86示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/x86.html)
-- [OpenCL示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/opencl.html)
-- [FPGA示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/fpga.html)
-- [华为NPU示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/huawei_kirin_npu.html)
-- [百度XPU示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/baidu_xpu.html)
-- [瑞芯微NPU示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html)
-- [联发科APU示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/mediatek_apu.html)
+- [Android示例](../demo_guides/android_app_demo)
+- [iOS示例](../demo_guides/ios_app_demo)
+- [ARMLinux示例](../demo_guides/linux_arm_demo)
+- [X86示例](../demo_guides/x86)
+- [OpenCL示例](../demo_guides/opencl)
+- [FPGA示例](../demo_guides/fpga)
+- [华为NPU示例](../demo_guides/huawei_kirin_npu)
+- [百度XPU示例](../demo_guides/baidu_xpu)
+- [瑞芯微NPU示例](../demo_guides/rockchip_npu)
+- [联发科APU示例](../demo_guides/mediatek_apu)
 
 您也可以下载以下基于Paddle-Lite开发的预测APK程序，安装到Andriod平台上，先睹为快：
 

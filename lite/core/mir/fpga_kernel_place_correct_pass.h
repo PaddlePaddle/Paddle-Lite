@@ -30,7 +30,7 @@ namespace mir {
  * Correct the place of the variables in the SSAGrpah, it will inference the
  * variables' place by the kernels outputs them.
  */
-class KernelPlaceCorrectPass : public DebugPass {
+class FPGAKernelPlaceCorrectPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
@@ -79,7 +79,7 @@ class KernelPlaceCorrectPass : public DebugPass {
 
       auto in = x->inlinks.front();
       if (!in) {
-        break;
+        continue;
       }
       auto out = x->outlinks.front();
       auto p = in->AsArg().type->precision();
@@ -119,6 +119,13 @@ class KernelPlaceCorrectPass : public DebugPass {
       }
 
       if (inst.op_type() == "concat") {
+        if (p != PrecisionType::kFP16) {
+          UpdateTarget(inst, TargetType::kARM);
+          UpdateTensor(inst, in, out, TargetType::kARM);
+        }
+      }
+
+      if (inst.op_type() == "scale") {
         if (p != PrecisionType::kFP16) {
           UpdateTarget(inst, TargetType::kARM);
           UpdateTensor(inst, in, out, TargetType::kARM);

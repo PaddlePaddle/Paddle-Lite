@@ -41,8 +41,10 @@ DEFINE_int32(power_mode,
              "2 for POWER_FULL;"
              "3 for NO_BIND");
 DEFINE_int32(threads, 1, "threads num");
-DEFINE_int32(warmup, 0, "warmup times");
-DEFINE_int32(repeats, 1, "repeats times");
+DEFINE_int32(warmup, 10, "warmup times");
+DEFINE_int32(repeats, 100, "repeats times");
+DEFINE_bool(use_gpu, false, "use opencl backend");
+DEFINE_bool(print_output, false, "Print outputs to stdout");
 
 int64_t ShapeProduction(const shape_t& shape) {
   int64_t res = 1;
@@ -50,23 +52,30 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
-// 0. Enable OpenCL, if needed
-// Enable `DEMO_WITH_OPENCL` macro below, if user need use gpu(opencl)
-// #define DEMO_WITH_OPENCL
 void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_power_mode((paddle::lite_api::PowerMode)FLAGS_power_mode);
   config.set_threads(FLAGS_threads);
-#ifdef DEMO_WITH_OPENCL
-  std::vector<Place> valid_places{
-      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)},
-      Place{TARGET(kARM), PRECISION(kFloat)}};
-#else
-  std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
-#endif
+
+  std::vector<Place> valid_places;
+  if (FLAGS_use_gpu) {
+    valid_places.emplace_back(
+        Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
+    valid_places.emplace_back(
+        Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+    valid_places.emplace_back(
+        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
+    valid_places.emplace_back(
+        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
+    valid_places.emplace_back(
+        Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
+    valid_places.emplace_back(Place{TARGET(kARM)});
+  } else {
+    valid_places.emplace_back(Place{TARGET(kARM), PRECISION(kFloat)});
+  }
+
   if (FLAGS_prefer_int8_kernel) {
     valid_places.insert(valid_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
@@ -105,7 +114,7 @@ void RunModel() {
   std::unique_ptr<const Tensor> output_tensor(
       std::move(predictor->GetOutput(0)));
   std::cout << "Output shape " << output_tensor->shape()[1] << std::endl;
-  for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
+  for (int i = 0; i < ShapeProduction(output_tensor->shape()); i++) {
     std::cout << "Output[" << i << "]: " << output_tensor->data<float>()[i]
               << std::endl;
   }
@@ -114,10 +123,20 @@ void RunModel() {
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_model_dir == "" || FLAGS_optimized_model_dir == "") {
-    std::cerr << "[ERROR] usage: " << argv[0]
-              << " --model_dir=<your-model-directory>"
-              << " --optimized_model_dir=<your-optmized-model-directory> "
-              << " --prefer_int8_kernel=[true|false]\n";
+    std::cerr
+        << "[ERROR] usage: " << argv[0]
+        << " --model_dir=                 string  Path to PaddlePaddle model "
+           "file.\n"
+        << " --optimized_model_dir=       string  Path to optmized model "
+           "file.\n"
+        << " --prefer_int8_kernel=false   bool    Prefer to run model with "
+           "int8 kernels.\n"
+        << " --power_mode=3               int32   Core binding mode.\n"
+        << " --threads=1                  int32   Number of threads.\n"
+        << " --warmup=10                  int32   Number of warmups.\n"
+        << " --repeats=100                int32   Number of repeats.\n"
+        << " --use_gpu=false              bool    Use gpu or not.\n"
+        << " --print_out=false            bool    Print outputs to stdout.\n";
     exit(1);
   }
 

@@ -18,6 +18,7 @@ limitations under the License. */
 
 #include "lite/backends/fpga/KD/pe.hpp"
 #include "lite/backends/fpga/KD/pe_params.hpp"
+#include "lite/backends/fpga/KD/util.hpp"
 namespace paddle {
 namespace zynqmp {
 
@@ -53,36 +54,27 @@ class SplitPE : public PE {
     int64_t src_after = src_stride_numel[axis];
     int64_t dst_after = dst_stride_numel[axis];
 
-    // PADDLE_MOBILE_ENFORCE(src_stride_numel.size() == dst_stride_numel.size(),
-    //                       "src and dst tensor should have the same dims
-    //                       size.");
+    ENFORCE(src_stride_numel.size() == dst_stride_numel.size(),
+            "src and dst tensor should have the same dims size.");
 
     for (int64_t i = 0; i < axis; ++i) {
       if (i < axis) {
-        // PADDLE_MOBILE_ENFORCE(src_stride_numel[i] / src_stride_numel[axis] ==
-        //                           dst_stride_numel[i] /
-        //                           dst_stride_numel[axis],
-        //                       "src and dst should have the same elements "
-        //                       "except the specified axis.");
+        ENFORCE(src_stride_numel[i] / src_stride_numel[axis] ==
+                    dst_stride_numel[i] / dst_stride_numel[axis],
+                "src and dst should have the same elements except the "
+                "specified axis.");
       } else if (i == axis) {
         continue;
       } else {
-        // PADDLE_MOBILE_ENFORCE(src_stride_numel[i] == dst_stride_numel[i],
-        //                       "src and dst should have the same elements "
-        //                       "except the specified axis.");
+        ENFORCE(src_stride_numel[i] == dst_stride_numel[i],
+                "src and dst should have the same elements except the "
+                "specified axis.");
       }
     }
 
     for (int64_t i = 0; i < before; ++i) {
       memcpy(dst + i * dst_after, src + i * src_after, sizeof(T) * size);
     }
-  }
-
-  void split3D() {
-    int axis = param_.axis;
-    // float16* dst = param_.output->data<float16>();
-    // std::vector<int>& dst_dims = ;
-    // StridedNumelCopyWithAxis();
   }
 
   bool dispatch() {
@@ -111,11 +103,8 @@ class SplitPE : public PE {
     }
 
     std::vector<Tensor*> outputs = param_.outputs;
-
     int in_channel = input->shape().channel();
-    // int split_channel = input->shape().channel() / param_.num;
     int hw = input->shape().height() * input->shape().width();
-
     float16* in_data = input->data<float16>();
 
     for (int i = 0; i < hw; i++) {
@@ -134,6 +123,7 @@ class SplitPE : public PE {
       Tensor* out = outputs[n];
       out->flush();
       out->copyScaleFrom(input);
+      out->copyMaxFrom(input);
     }
     return true;
   }

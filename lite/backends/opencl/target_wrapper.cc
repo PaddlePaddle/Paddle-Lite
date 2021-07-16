@@ -14,6 +14,8 @@
 
 #include "lite/backends/opencl/target_wrapper.h"
 #include <algorithm>
+#include <map>
+#include <string>
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
@@ -36,7 +38,25 @@ static cl_channel_type GetCLChannelType(const PrecisionType type) {
   }
 }
 
+bool BufferValid(const size_t req_size) {
+  bool valid = true;
+  std::map<std::string, size_t> &dev_map = CLRuntime::Global()->GetDeviceInfo();
+  const size_t max_global_mem_size =
+      dev_map["CL_DEVICE_GLOBAL_MEM_SIZE_KB"] * 1000.;
+  if (req_size > max_global_mem_size) {
+    std::string log = "malloc buffer is out of max global mem size(byte):" +
+                      std::to_string(max_global_mem_size) +
+                      ", but required global mem size(byte):" +
+                      std::to_string(req_size);
+    std::cout << log << std::endl;
+    LOG(FATAL) << log;
+    valid = false;
+  }
+  return valid;
+}
+
 void *TargetWrapperCL::Malloc(size_t size) {
+  BufferValid(size);
   cl_int status;
   cl::Buffer *buffer = new cl::Buffer(CLRuntime::Global()->context(),
                                       CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR,
@@ -58,10 +78,34 @@ void TargetWrapperCL::Free(void *ptr) {
   }
 }
 
+bool ImageValid(const size_t req_img_w, const size_t req_img_h) {
+  bool valid = true;
+  std::map<std::string, size_t> &dev_map = CLRuntime::Global()->GetDeviceInfo();
+  auto support_img = dev_map["CL_DEVICE_IMAGE_SUPPORT"];
+  if (!support_img) {
+    LOG(FATAL) << "device does not support opencl image: " << support_img;
+    valid = false;
+  }
+  auto max_img_w = dev_map["CL_DEVICE_IMAGE2D_MAX_WIDTH"];
+  auto max_img_h = dev_map["CL_DEVICE_IMAGE2D_MAX_HEIGHT"];
+  if (req_img_w > max_img_w || req_img_h > max_img_h) {
+    std::string log = "malloc image is out of max image size(w,h):" +
+                      std::to_string(max_img_w) + "," +
+                      std::to_string(max_img_h) + ", need image size(w,h):" +
+                      std::to_string(req_img_w) + "," +
+                      std::to_string(req_img_h);
+    std::cout << log << std::endl;
+    LOG(FATAL) << log;
+    valid = false;
+  }
+  return valid;
+}
+
 template <>
 void *TargetWrapperCL::MallocImage<float>(const size_t cl_image2d_width,
                                           const size_t cl_image2d_height,
                                           void *host_ptr) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFloat)));
   cl_int status;
   cl::Image2D *cl_image = new cl::Image2D(
@@ -86,6 +130,7 @@ template <>  // use uint16_t represents half float
 void *TargetWrapperCL::MallocImage<uint16_t>(const size_t cl_image2d_width,
                                              const size_t cl_image2d_height,
                                              void *host_ptr) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFP16)));
   cl_int status;
   cl::Image2D *cl_image = new cl::Image2D(
@@ -110,6 +155,7 @@ template <>
 void *TargetWrapperCL::MallocImage<int32_t>(const size_t cl_image2d_width,
                                             const size_t cl_image2d_height,
                                             void *host_ptr) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kInt32)));
   cl_int status;
   cl::Image2D *cl_image = new cl::Image2D(
@@ -138,6 +184,7 @@ void TargetWrapperCL::FreeImage(void *image) {
 }
 
 void *TargetWrapperCL::Map(void *buffer, size_t offset, size_t size) {
+  BufferValid(size);
   cl::Buffer *cl_buffer = static_cast<cl::Buffer *>(buffer);
   cl_int status;
   void *mapped_ptr = CLRuntime::Global()->command_queue().enqueueMapBuffer(
@@ -161,6 +208,7 @@ void *TargetWrapperCL::MapImage(void *image,
                                 const size_t cl_image2d_height,
                                 size_t cl_image2d_row_pitch,
                                 size_t cl_image2d_slice_pitch) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
   cl::Image2D *cl_image = static_cast<cl::Image2D *>(image);
   cl::array<size_t, 3> origin = {0, 0, 0};
   cl::array<size_t, 3> region = {cl_image2d_width, cl_image2d_height, 1};
@@ -194,6 +242,7 @@ void TargetWrapperCL::MemcpySync(void *dst,
                                  const void *src,
                                  size_t size,
                                  IoDirection dir) {
+  BufferValid(size);
   cl_int status;
   auto stream = CLRuntime::Global()->command_queue();
   switch (dir) {
@@ -238,6 +287,7 @@ void TargetWrapperCL::MemcpyAsync(void *dst,
                                   size_t size,
                                   IoDirection dir,
                                   const stream_t &stream) {
+  BufferValid(size);
   cl_int status;
   switch (dir) {
     case IoDirection::DtoD:
@@ -282,6 +332,7 @@ void TargetWrapperCL::ImgcpySync(void *dst,
                                  const size_t cl_image2d_row_pitch,
                                  const size_t cl_image2d_slice_pitch,
                                  IoDirection dir) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
   cl::array<size_t, 3> origin = {0, 0, 0};
   cl::array<size_t, 3> region = {cl_image2d_width, cl_image2d_height, 1};
   cl_int status;
@@ -335,6 +386,7 @@ void TargetWrapperCL::ImgcpyAsync(void *dst,
                                   const size_t cl_image2d_slice_pitch,
                                   IoDirection dir,
                                   const stream_t &stream) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
   cl::array<size_t, 3> origin = {0, 0, 0};
   cl::array<size_t, 3> region = {cl_image2d_width, cl_image2d_height, 1};
   cl_int status;

@@ -23,8 +23,12 @@ namespace lite {
 
 class ReshapeComputeTester : public arena::TestCase {
  protected:
-  // common attributes for this op.
+// common attributes for this op.
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  std::string op_type_ = "reshape";
+#else
   std::string op_type_ = "reshape2";
+#endif
   std::string input_ = "x";
   std::string output_ = "out";
   std::string xshape_ = "xshape";
@@ -204,13 +208,16 @@ TEST(Reshape, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kHost);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+  abs_error = 1e-2;  // use fp16 in xpu
+  // TODO(shentanyue): enable later
+  return;
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif

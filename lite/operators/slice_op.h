@@ -38,6 +38,21 @@ class SliceOp : public OpLite {
 
   std::string DebugString() const override { return "slice"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.X->dims();
+    auto output_dims = param_.Out->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    std::string axes = "";
+    for (size_t i = 0; i < param_.axes.size(); ++i) {
+      axes += std::to_string(param_.axes[i]);
+      if (i != param_.axes.size() - 1) axes += "/";
+    }
+    ch->remark = "axes" + axes;
+  }
+#endif
+
  private:
   mutable SliceParam param_;
 };

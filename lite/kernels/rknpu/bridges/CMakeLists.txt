@@ -1,3 +1,20 @@
+add_subgraph_bridge(SRCS act_op.cc
+                    batch_norm_op.cc
+                    concat_op.cc
+                    conv_op.cc
+                    elementwise_ops.cc
+                    fc_op.cc
+                    flatten_op.cc
+                    graph.cc
+                    norm_op.cc
+                    pad2d_op.cc
+                    pool_op.cc
+                    reshape2_op.cc
+                    scale_op.cc
+                    softmax_op.cc
+                    transpose2_op.cc
+                    utility.cc)
+
 if(NOT LITE_WITH_RKNPU)
   return()
 endif()
@@ -15,7 +32,12 @@ lite_cc_library(subgraph_bridge_fc_op_rknpu SRCS fc_op.cc DEPS ${rknpu_subgraph_
 lite_cc_library(subgraph_bridge_batch_norm_op_rknpu SRCS batch_norm_op.cc DEPS ${rknpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_concat_op_rknpu SRCS concat_op.cc DEPS ${rknpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_elementwise_ops_rknpu SRCS elementwise_ops.cc DEPS ${rknpu_subgraph_bridge_deps})
-
+lite_cc_library(subgraph_bridge_pad2d_op_rknpu SRCS pad2d_op.cc DEPS ${rknpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_reshape2_op_rknpu SRCS reshape2_op.cc DEPS ${rknpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_transpose2_op_rknpu SRCS transpose2_op.cc DEPS ${rknpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_scale_ops_rknpu SRCS scale_op.cc DEPS ${rknpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_flatten_ops_rknpu SRCS flatten_op.cc DEPS ${rknpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_norm_ops_rknpu SRCS norm_op.cc DEPS ${rknpu_subgraph_bridge_deps})
 
 set(rknpu_subgraph_bridges
         subgraph_bridge_registry
@@ -29,6 +51,12 @@ set(rknpu_subgraph_bridges
         subgraph_bridge_batch_norm_op_rknpu
         subgraph_bridge_concat_op_rknpu
         subgraph_bridge_elementwise_ops_rknpu
+        subgraph_bridge_pad2d_op_rknpu
+        subgraph_bridge_reshape2_op_rknpu
+        subgraph_bridge_transpose2_op_rknpu
+        subgraph_bridge_scale_ops_rknpu
+        subgraph_bridge_flatten_ops_rknpu
+        subgraph_bridge_norm_ops_rknpu
         CACHE INTERNAL "rknpu_subgraph_bridges")
 
 message(STATUS "+++++ rknpu_subgraph_bridges: ${rknpu_subgraph_bridges}")

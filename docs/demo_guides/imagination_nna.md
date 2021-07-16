@@ -16,7 +16,31 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ### 已支持的Paddle模型
 
+#### 模型
 - [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)
+
+#### 性能
+- 测试环境
+  - 编译环境
+    - Ubuntu 18.04，GCC 5.4 for ARMLinux aarch64
+
+  - 硬件环境
+    - 紫光展锐虎贲T7510
+      - Roc1开发板
+      - CPU：4 x Cortex-A75 2.0 GHz + 4 x Cortex-A55 1.8 GHz
+      - NNA：4 TOPs @1.0GHz
+
+- 测试方法
+  - warmup=10，repeats=30，统计平均时间，单位是ms
+  - 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
+  - 分类模型的输入图像维度是{1，3，224，224}
+
+- 测试结果
+
+  |模型 |紫光展锐虎贲T7510||
+  |---|---|---|
+  |  |CPU(ms) | NPU(ms) |
+  |MobileNetV1-int8|  61.4|  18.02|
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -25,6 +49,8 @@ Paddle Lite已支持Imagination NNA的预测部署。
 - depthwise_conv2d
 - pool2d
 - fc
+
+可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/imagination_nna/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/imagination_nna/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
 ## 参考示例演示
 
@@ -36,7 +62,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ### 准备设备环境
 
-- 需要依赖特定版本的firmware，请联系Imagination相关研发同学；
+- 需要依赖特定版本的firmware，请联系Imagination相关研发同学 jason.wang@imgtec.com；
 - 确定能够通过SSH方式远程登录Roc 1开发板；
 - 由于Roc 1的ARM CPU能力较弱，示例程序和PaddleLite库的编译均采用交叉编译方式。
 
@@ -151,7 +177,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
 ### 更新模型
 
 - 通过Paddle Fluid训练，或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型量化-有校准数据训练后量化](../user_guides/post_quant_with_data)使用PaddleSlim对float32模型进行量化（注意：由于Imagination NNA只支持tensor-wise的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
+- 参考[模型量化-静态离线量化](../user_guides/quant_post_static)使用PaddleSlim对float32模型进行量化（注意：由于Imagination NNA只支持tensor-wise的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成Imagination NNA模型，仅需要将valid_targets设置为imagination_nna,arm即可。
 
   ```shell
@@ -179,17 +205,24 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 - 编译并生成PaddleLite+ImaginationNNA for armv8的部署库
 
-  ```shell
-  For Roc1
-  tiny_publish
-  $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_imagination_nna=ON --imagination_nna_sdk_root=./imagination_nna_sdk
-  full_publish
-  $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_imagination_nna=ON --imagination_nna_sdk_root=./imagination_nna_sdk full_publish
-  ```
+  - For Roc1
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_imagination_nna=ON --imagination_nna_sdk_root=./imagination_nna_sdk
 
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
-- 将tiny_publish模式下编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件。
+      将tiny_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
+      ```
+      
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_imagination_nna=ON --imagination_nna_sdk_root=./imagination_nna_sdk full_publish
+
+      将full_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件;
+      ```
+
+  - 将编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
+
+- 替换头文件后需要重新编译示例程序
 
 ## 其它说明
 

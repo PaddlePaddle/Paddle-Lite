@@ -12,40 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/norm_compute.h"
-#include "lite/backends/arm/math/funcs.h"
-
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
-
-void NormCompute::PrepareForRun() {}
-
-void NormCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto& param = this->Param<operators::NormParam>();
-
-  auto input_dims = param.X->dims();
-  int dim_size = param.X->dims().size();
-  auto axis = (param.axis < 0) ? param.axis + dim_size : param.axis;
-
-  const auto* x_data = param.X->data<float>();
-  auto* o_data = param.Out->mutable_data<float>();
-  int pre_n = input_dims.count(0, axis);
-  int post_n = input_dims.count(axis + 1, dim_size);
-  int n = input_dims[axis];
-  lite::arm::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data, &ctx);
-}
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+#include "lite/kernels/host/norm_compute.h"
 
 REGISTER_LITE_KERNEL(
-    norm, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::NormCompute, def)
+    norm, kARM, kFloat, kNCHW, paddle::lite::kernels::host::NormCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    p_norm, kARM, kFloat, kNCHW, paddle::lite::kernels::host::PNormCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();

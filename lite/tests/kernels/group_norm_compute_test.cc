@@ -34,7 +34,7 @@ class GroupNormComputeTest : public arena::TestCase {
   DDim dims_{{4, 5, 19, 19}};
   float epsilon_ = 1e-5f;
   int groups_ = 1;
-  int channels_ = dims_[1];
+  std::string data_layout_str_ = "NCHW";
 
  public:
   GroupNormComputeTest(const Place& place,
@@ -42,12 +42,12 @@ class GroupNormComputeTest : public arena::TestCase {
                        DDim dims,
                        float epsilon,
                        int groups,
-                       int channels)
+                       std::string data_layout_str)
       : TestCase(place, alias),
         dims_(dims),
         epsilon_(epsilon),
         groups_(groups),
-        channels_(channels) {}
+        data_layout_str_(data_layout_str) {}
 
   void RunBaseline(Scope* scope) override {
     auto x = scope->FindTensor(x_);
@@ -59,7 +59,7 @@ class GroupNormComputeTest : public arena::TestCase {
     CHECK(y);
     CHECK(saved_mean);
     CHECK(saved_variance);
-    DDim saved_dim({dims_[0] * groups_});
+    DDim saved_dim({dims_[0], groups_});
     y->Resize(dims_);
     saved_mean->Resize(saved_dim);
     saved_variance->Resize(saved_dim);
@@ -68,49 +68,82 @@ class GroupNormComputeTest : public arena::TestCase {
     auto scale_data = scale->data<float>();
     auto bias_data = bias->data<float>();
     auto y_data = y->mutable_data<float>();
-    auto saved_mean_data = saved_mean->mutable_data<float>();
-    auto saved_variance_data = saved_variance->mutable_data<float>();
+    auto mean_data = saved_mean->mutable_data<float>();
+    auto var_data = saved_variance->mutable_data<float>();
 
-    int n = x->dims()[0];
-    int ch_per_group = channels_ / groups_;
-    CHECK_EQ(x->dims()[1], channels_);
-    int spatial_size = ch_per_group * x->dims()[2] * x->dims()[3];
-    // compute mean
-    for (int i = 0; i < n * groups_; ++i) {
-      const float* x_ptr = x_data + i * spatial_size;
-      float sum = 0.f;
-      for (int j = 0; j < spatial_size; ++j) {
-        sum += x_ptr[j];
-      }
-      saved_mean_data[i] = sum / spatial_size;
-    }
-    // compute variance
-    for (int i = 0; i < n * groups_; ++i) {
-      const float* x_ptr = x_data + i * spatial_size;
-      float sum = 0.f;
-      for (int j = 0; j < spatial_size; ++j) {
-        sum +=
-            (x_ptr[j] - saved_mean_data[i]) * (x_ptr[j] - saved_mean_data[i]);
-      }
-      saved_variance_data[i] = 1.f / sqrtf(sum / spatial_size + epsilon_);
-    }
-    int in_size = x->dims()[2] * x->dims()[3];
-    // compute out
-    for (int i = 0; i < n * groups_; ++i) {
-      const float* x_ptr = x_data + i * spatial_size;
-      float* y_ptr = y_data + i * spatial_size;
-      int c_num = i % groups_;
-      for (int c = 0; c < ch_per_group; c++) {
-        int chin = c_num * ch_per_group + c;
-        float scale_val = scale_data[chin];
-        float bias_val = bias_data[chin];
-        const float* x_ch_ptr = x_ptr + c * in_size;
-        float* y_ch_ptr = y_ptr + c * in_size;
-        for (int j = 0; j < in_size; j++) {
-          y_ch_ptr[j] = scale_val * (x_ch_ptr[j] - saved_mean_data[i]) *
-                            saved_variance_data[i] +
-                        bias_val;
+    auto x_dims = x->dims();
+    int groups = groups_;
+    int channels =
+        (data_layout_str_ == "NCHW") ? x_dims[1] : x_dims[x_dims.size() - 1];
+    int group_size = (channels - 1) / groups + 1;
+    int imsize = (data_layout_str_ == "NCHW") ? (x_dims[2] * x_dims[3])
+                                              : (x_dims[1] * x_dims[2]);
+
+    auto* iter_x_data = x_data;
+    auto* iter_y_data = y_data;
+    for (int bid = 0; bid < x_dims[0]; bid++) {
+      for (int gid = 0; gid < groups; gid++) {
+        float x_mean = 0;
+        float x_var = 0;
+        int number =
+            std::min(group_size, static_cast<int>(channels - gid * group_size));
+        auto* tmp_x = iter_x_data;
+        auto* x_src_data = iter_x_data;
+        auto* tmp_y = iter_y_data;
+        auto* y_src_data = iter_y_data;
+
+        if (data_layout_str_ == "NCHW") {
+          for (int cid = 0; cid < number; cid++) {
+            for (int imid = 0; imid < imsize; imid++, iter_x_data++) {
+              x_mean += iter_x_data[0];
+              x_var += iter_x_data[0] * iter_x_data[0];
+            }
+          }
+        } else {
+          for (int cid = 0; cid < number; cid++) {
+            iter_x_data = tmp_x + cid;
+            for (int imid = 0; imid < imsize; imid++, iter_x_data += channels) {
+              x_mean += iter_x_data[0];
+              x_var += iter_x_data[0] * iter_x_data[0];
+            }
+          }
+          iter_x_data = tmp_x + group_size;
         }
+
+        x_mean /= number * imsize;
+        x_var /= number * imsize;
+        x_var = x_var - x_mean * x_mean;
+        float var_inv = 1.0 / std::sqrt(x_var + epsilon_);
+        mean_data[bid * groups + gid] = x_mean;
+        var_data[bid * groups + gid] = x_var;
+
+        if (data_layout_str_ == "NCHW") {
+          for (int cid = 0; cid < number; cid++) {
+            for (int imid = 0; imid < imsize; imid++, tmp_x++, iter_y_data++) {
+              float val = (tmp_x[0] - x_mean) * var_inv;
+              if (scale_data) val *= scale_data[gid * group_size + cid];
+              if (bias_data) val += bias_data[gid * group_size + cid];
+              iter_y_data[0] = val;
+            }
+          }
+        } else {
+          for (int cid = 0; cid < number; cid++) {
+            tmp_x = x_src_data + cid;
+            iter_y_data = y_src_data + cid;
+            for (int imid = 0; imid < imsize;
+                 imid++, tmp_x += channels, iter_y_data += channels) {
+              float val = (tmp_x[0] - x_mean) * var_inv;
+              if (scale_data) val *= scale_data[gid * group_size + cid];
+              if (bias_data) val += bias_data[gid * group_size + cid];
+              iter_y_data[0] = val;
+            }
+          }
+          iter_y_data = tmp_y + group_size;
+        }
+      }
+      if (data_layout_str_ == "NCHW") {
+        iter_x_data = x_data + (bid + 1) * channels * imsize;
+        iter_y_data = y_data + (bid + 1) * channels * imsize;
       }
     }
   }
@@ -121,11 +154,11 @@ class GroupNormComputeTest : public arena::TestCase {
     op_desc->SetInput("Bias", {bias_});
     op_desc->SetInput("Scale", {scale_});
     op_desc->SetOutput("Y", {y_});
-    op_desc->SetOutput("SavedMean", {saved_mean_});
-    op_desc->SetOutput("SavedVariance", {saved_variance_});
+    op_desc->SetOutput("Mean", {saved_mean_});
+    op_desc->SetOutput("Variance", {saved_variance_});
     op_desc->SetAttr("epsilon", epsilon_);
     op_desc->SetAttr("groups", groups_);
-    op_desc->SetAttr("channels", channels_);
+    op_desc->SetAttr("data_layout", data_layout_str_);
   }
 
   void PrepareData() override {
@@ -148,7 +181,7 @@ void TestGroupNorm(Place place,
                    float abs_error = 6e-5,
                    std::vector<std::string> ignored_outs = {}) {
   for (auto& n : {1, 3, 16}) {
-    for (auto& c : {1}) {
+    for (auto& c : {1, 2}) {
       for (auto& h : {1, 16, 33, 56}) {
         for (auto& w : {1, 17, 55}) {
           for (auto& groups : {1, 2, 4}) {
@@ -158,7 +191,7 @@ void TestGroupNorm(Place place,
             DDim dim_in({n, c, h, w});
             float epsilon = 1e-5f;
             std::unique_ptr<arena::TestCase> tester(new GroupNormComputeTest(
-                place, "def", dim_in, epsilon, groups, c));
+                place, "def", dim_in, epsilon, groups, "NCHW"));
 #ifdef LITE_WITH_ARM
             if (place == TARGET(kARM)) {
               auto& ctx = tester->context()->As<ARMContext>();
@@ -180,7 +213,7 @@ void TestGroupNorm(Place place,
 
 TEST(GroupNorm, precision) {
   Place place;
-  float abs_error = 6e-5;
+  float abs_error = 1e-3;
   std::vector<std::string> ignored_outs = {};
 #ifdef LITE_WITH_ARM
   place = TARGET(kARM);

@@ -19,26 +19,17 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kFloat, kFloat)
 
 template <>
 void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
+  CHECK_EQ(param.strides[0], 2);
+  CHECK_EQ(param.strides[1], 2);
   auto& ctx = this->ctx_->template As<ARMContext>();
   // extend workspace
-  if (param.strides[0] == 2) {
-    ctx.ExtendWorkspace(
-        lite::arm::math::conv3x3s2_direct_workspace_size(param, &ctx));
-  } else {
-    ctx.ExtendWorkspace(
-        lite::arm::math::conv3x3s1_direct_workspace_size(param, &ctx));
-  }
+  ctx.ExtendWorkspace(
+      lite::arm::math::conv3x3s2_direct_workspace_size(param, &ctx));
 
   const auto* i_data = param.x->data<float>();
   const auto* w_data = weights_.data<float>();
@@ -56,54 +47,19 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
-  if (param.strides[0] == 1) {
-    lite::arm::math::conv_3x3s1_direct_fp32(i_data,
-                                            o_data,
-                                            bs,
-                                            oc,
-                                            oh,
-                                            ow,
-                                            ic,
-                                            ih,
-                                            iw,
-                                            w_data,
-                                            b_data,
-                                            param,
-                                            &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s1_direct_fp32";
-#endif
-  } else {
-    lite::arm::math::conv_3x3s2_direct_fp32(i_data,
-                                            o_data,
-                                            bs,
-                                            oc,
-                                            oh,
-                                            ow,
-                                            ic,
-                                            ih,
-                                            iw,
-                                            w_data,
-                                            b_data,
-                                            param,
-                                            &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s2_direct_fp32";
-#endif
-  }
+
+  lite::arm::math::conv_3x3s2_direct_fp32(
+      i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
+  KERNEL_FUNC_NAME("conv_3x3s2_direct_fp32")
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kInt8, kFloat)
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
+  CHECK_EQ(param.strides[0], 2);
+  CHECK_EQ(param.strides[1], 2);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();
@@ -124,56 +80,31 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
-  if (param.strides[0] == 1) {
-    lite::arm::math::conv_3x3s1_direct_int8(i_data,
-                                            o_data,
-                                            bs,
-                                            oc,
-                                            oh,
-                                            ow,
-                                            ic,
-                                            ih,
-                                            iw,
-                                            w_data,
-                                            b_data,
-                                            param,
-                                            &ctx,
-                                            w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s1_direct_int8";
-#endif
-  } else {
-    lite::arm::math::conv_3x3s2_direct_int8(i_data,
-                                            o_data,
-                                            bs,
-                                            oc,
-                                            oh,
-                                            ow,
-                                            ic,
-                                            ih,
-                                            iw,
-                                            w_data,
-                                            b_data,
-                                            param,
-                                            &ctx,
-                                            w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s2_direct_int8";
-#endif
-  }
+
+  lite::arm::math::conv_3x3s2_direct_int8(i_data,
+                                          o_data,
+                                          bs,
+                                          oc,
+                                          oh,
+                                          ow,
+                                          ic,
+                                          ih,
+                                          iw,
+                                          w_data,
+                                          b_data,
+                                          param,
+                                          &ctx,
+                                          w_scale_.data());
+  KERNEL_FUNC_NAME("conv_3x3s2_direct_int8")
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kInt8, kInt8)
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& param = this->Param<param_t>();
+  CHECK_EQ(param.strides[0], 2);
+  CHECK_EQ(param.strides[1], 2);
   auto& ctx = this->ctx_->template As<ARMContext>();
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();
@@ -194,45 +125,87 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
-  if (param.strides[0] == 1) {
-    lite::arm::math::conv_3x3s1_direct_int8(i_data,
-                                            o_data,
-                                            bs,
-                                            oc,
-                                            oh,
-                                            ow,
-                                            ic,
-                                            ih,
-                                            iw,
-                                            w_data,
-                                            b_data,
-                                            param,
-                                            &ctx,
-                                            w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s1_direct_int8";
-#endif
-  } else {
-    lite::arm::math::conv_3x3s2_direct_int8(i_data,
-                                            o_data,
-                                            bs,
-                                            oc,
-                                            oh,
-                                            ow,
-                                            ic,
-                                            ih,
-                                            iw,
-                                            w_data,
-                                            b_data,
-                                            param,
-                                            &ctx,
-                                            w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s2_direct_int8";
-#endif
-  }
+
+  lite::arm::math::conv_3x3s2_direct_int8(i_data,
+                                          o_data,
+                                          bs,
+                                          oc,
+                                          oh,
+                                          ow,
+                                          ic,
+                                          ih,
+                                          iw,
+                                          w_data,
+                                          b_data,
+                                          param,
+                                          &ctx,
+                                          w_scale_.data());
+  KERNEL_FUNC_NAME("conv_3x3s2_direct_int8")
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  // extend workspace
+  if (param.strides[0] == 2) {
+    ctx.ExtendWorkspace(
+        lite::arm::math::fp16::conv3x3s2_direct_workspace_size(param, &ctx));
+  } else {
+    ctx.ExtendWorkspace(
+        lite::arm::math::fp16::conv3x3s1_direct_workspace_size(param, &ctx));
+  }
+  const auto* i_data = param.x->data<float16_t>();
+  const auto* w_data = weights_.data<float16_t>();
+  const auto* b_data = param.bias ? param.bias->data<float16_t>() : nullptr;
+  auto* o_data = param.output->mutable_data<float16_t>();
+
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];  // nchw
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+  if (param.strides[0] == 2) {
+    lite::arm::math::fp16::conv_3x3s2_direct_fp16(i_data,
+                                                  o_data,
+                                                  bs,
+                                                  oc,
+                                                  oh,
+                                                  ow,
+                                                  ic,
+                                                  ih,
+                                                  iw,
+                                                  w_data,
+                                                  b_data,
+                                                  param,
+                                                  &ctx);
+    KERNEL_FUNC_NAME("conv_3x3s2_direct_fp16")
+  } else {
+    lite::arm::math::fp16::conv_3x3s1_direct_fp16(i_data,
+                                                  o_data,
+                                                  bs,
+                                                  oc,
+                                                  oh,
+                                                  ow,
+                                                  ic,
+                                                  ih,
+                                                  iw,
+                                                  w_data,
+                                                  b_data,
+                                                  param,
+                                                  &ctx);
+    KERNEL_FUNC_NAME("conv_3x3s1_direct_fp16")
+  }
+}
+PROFILE_INFO(kFP16, kFP16)
+#endif
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

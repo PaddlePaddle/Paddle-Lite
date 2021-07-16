@@ -80,7 +80,7 @@ quant_post_static(executor=exe,
 
 快速开始请参考[文档](https://paddleslim.readthedocs.io/zh_CN/latest/quick_start/quant_post_static_tutorial.html)。
 
-API接口请参考[文档](https://paddleslim.readthedocs.io/zh_CN/latest/api_cn/quantization_api.html)。
+API接口请参考[文档](https://paddleslim.readthedocs.io/zh_CN/latest/api_cn/index.html)。
 
 Demo请参考[文档](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/quant/quant_post)。
 

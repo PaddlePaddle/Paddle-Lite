@@ -50,32 +50,81 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(out_type->precision() == PRECISION(kFloat));
   CHECK(out_type->layout() == DATALAYOUT(kNCHW));
 
+  auto x_scale_name = "X0_scale";
+  auto out_scale_name = "Out0_scale";
+  bool enable_int8 = false;
+  float input_scale = 1.0;
+  float output_scale = 1.0;
+  int bit_length = 8;
+  PrecisionType precision = PRECISION(kFloat);
+
+  if (op_info->HasInputScale(x_scale_name, true) &&
+      op_info->HasOutputScale(out_scale_name, true)) {
+    enable_int8 = true;
+    input_scale = op_info->GetInputScale(x_scale_name, true)[0];
+    bit_length = op_info->GetAttr<int>("bit_length");
+    output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
+    precision = PRECISION(kInt8);
+  } else {
+    enable_int8 = false;
+    LOG(WARNING) << "[RK-NPU] the op is float-type " << op_type;
+    precision = PRECISION(kFloat);
+  }
+
   for (size_t i = 0; i < x_dims.size(); i++) {
     i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
   }
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
-  CHECK_EQ(op_type, "relu");
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_var_name)) {
     x_node = graph->Get(x_var_name);
   } else {
-    x_node = graph->Add(x_var_name, *x, x_type->precision(), x_type->layout());
+    QuantizationInfo qnt;
+    qnt.enable_int8 = enable_int8;
+    if (enable_int8) {
+      qnt.scale.push_back(input_scale);
+      qnt.quant_bits = bit_length;
+    }
+    x_node = graph->Add(x_var_name, *x, precision, x_type->layout(), qnt);
   }
 
-  auto output_node = graph->Add(
-      output_var_name, *output, out_type->precision(), out_type->layout());
+  std::shared_ptr<Node> output_node = nullptr;
+  QuantizationInfo output_qnt;
+
+  output_qnt.enable_int8 = enable_int8;
+
+  if (enable_int8) {
+    output_qnt.quant_bits = bit_length;
+    output_qnt.scale.push_back(output_scale);
+    output->mutable_data<int8_t>();
+  }
+  output_node = graph->Add(
+      output_var_name, *output, precision, out_type->layout(), output_qnt);
+
   auto rGraph = graph->GetHandle();
   std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;
   std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;
 
   inputs.push_back(x_node->data());
   outputs.push_back(output_node->data());
-  auto relu =
-      rGraph->AddOperator(rk::nn::OperatorType::RELU, inputs, outputs, nullptr);
-
+  if (op_type == "relu") {
+    auto relu = rGraph->AddOperator(
+        rk::nn::OperatorType::RELU, inputs, outputs, nullptr);
+  } else if (op_type == "sigmoid") {
+    auto sigmoid = rGraph->AddOperator(
+        rk::nn::OperatorType::SIGMOID, inputs, outputs, nullptr);
+  } else if (op_type == "relu6") {
+    auto relu6 = rGraph->AddOperator(
+        rk::nn::OperatorType::RELU6, inputs, outputs, nullptr);
+  } else {
+    LOG(WARNING) << "[RK-NPU] only support relu and sigmod, "
+                    "but the activation type is "
+                 << op_type;
+    return FAILED;
+  }
   return SUCCESS;
 }
 
@@ -85,5 +134,11 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(relu,
+                         kRKNPU,
+                         paddle::lite::subgraph::rknpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(sigmoid,
+                         kRKNPU,
+                         paddle::lite::subgraph::rknpu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu6,
                          kRKNPU,
                          paddle::lite::subgraph::rknpu::ActConverter);

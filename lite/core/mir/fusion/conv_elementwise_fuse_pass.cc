@@ -28,29 +28,6 @@ void ConvElementwiseFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<bool> conv_has_bias_cases{true, false};
   std::vector<std::string> conv_type_cases{
       "conv2d", "depthwise_conv2d", "conv2d_transpose"};
-
-  auto has_target = [&](TargetType t) -> bool {
-    for (auto& p : graph->valid_places()) {
-      if (p.target == t) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  VLOG(3) << "has_target(TARGET(kX86)):" << has_target(TARGET(kX86));
-  VLOG(3) << "has_target(TARGET(kOpenCL)):" << has_target(TARGET(kOpenCL));
-  if (has_target(TARGET(kX86))) {
-    if (has_target(TARGET(kOpenCL))) {
-      VLOG(3) << "kX86 and kOpenCL continue to execute...";
-    } else {
-      LOG(INFO) << "  - Skip lite_conv_elementwise_fuse_pass because the "
-                   "target or kernel has target kX86 but does not have "
-                   "kOpenCL.";
-      return;
-    }
-  }
-
   // start fuse using params
   for (auto conv_has_bias : conv_has_bias_cases) {
     for (auto conv_type : conv_type_cases) {

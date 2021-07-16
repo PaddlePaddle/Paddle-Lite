@@ -18,6 +18,8 @@
 #include <iostream>
 #include <string>
 
+// The environment variables for the subgraph settings, use "SUBGRAPH_" as
+// prefix.
 // Specify the path of configuration file for the subgraph segmentation, an
 // example is shown as below:
 // op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
@@ -32,6 +34,17 @@
 // the analysis phase, it ensure the ops in the subblock can be converted to the
 // target device model online during the execution phase.
 #define SUBGRAPH_ONLINE_MODE "SUBGRAPH_ONLINE_MODE"
+
+// The environment variables for the quant model settings, use "QUANT_" as
+// prefix.
+// Apply the constraints for the quantized ops(such as concat) that the inputs
+// and outputs must have the same scale. Use the environment variable to specify
+// how to caculate the new scale, includes the following methods:
+// 0(default): The mean of the input and output scales.
+// 1: The maximum of the input and output scales.
+// 2: The minimum of the input and output scales.
+#define QUANT_INPUT_OUTPUT_SCALE_RESTRICT_METHOD \
+  "QUANT_INPUT_OUTPUT_SCALE_RESTRICT_METHOD"
 
 namespace paddle {
 namespace lite {

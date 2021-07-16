@@ -40,21 +40,140 @@ class TransposeComputeFloatImage
  public:
   using param_t = operators::TransposeParam;
 
-  void PrepareForRun() override {
-    auto& param = *param_.get_mutable<param_t>();
-    Tensor* const output = param.output;
-    const DDimLite& out_dims = output->dims();
-    if (out_dims.size() == 4) {
-      kernel_func_name_ = "transpose_4d";
-    } else {
-      kernel_func_name_ = "transpose";
+  std::vector<int> CalStrides(const DDim& dims) {
+    int dsize = dims.size();
+    std::vector<int> strides(dsize, 1);
+    for (int i = dsize - 2; i >= 0; i--) {
+      strides[i] = strides[i + 1] * dims[i + 1];
     }
+    return strides;
+  }
+
+  std::vector<int> CalIndex(const std::vector<int>& strides, int offset) {
+    int dsize = strides.size();
+    std::vector<int> index(dsize, 0);
+    for (int i = 0; i < dsize; i++) {
+      index[i] = offset / strides[i];
+      offset %= strides[i];
+    }
+    return index;
+  }
+
+  std::vector<int> TransIndex(const std::vector<int>& in_index,
+                              const std::vector<int>& axis) {
+    std::vector<int> out_index(in_index.size(), 0);
+    for (int i = 0; i < axis.size(); i++) {
+      out_index[i] = in_index[axis[i]];
+    }
+    return out_index;
+  }
+
+  int CalOffset(const std::vector<int>& strides,
+                const std::vector<int>& index) {
+    int offset = 0;
+    for (int i = 0; i < index.size(); i++) {
+      offset += strides[i] * index[i];
+    }
+    return offset;
+  }
+
+  void PrepareForRun() override {
+    transpose_param_ = param_.get_mutable<param_t>();
+    // axis: input
+    axis_ = transpose_param_->axis;
+    // x: input
+    auto x = transpose_param_->x;
+    x_tensor_dims_ = x->dims();
+    // output: output
+    auto output = transpose_param_->output;
+    output_tensor_dims_ = output->dims();
+    auto output_image_shape = InitImageDimInfoWith(output_tensor_dims_);
+    output_image_h_ = output_image_shape.at("height");
+    output_image_w_ = output_image_shape.at("width");
+
+    if (output_tensor_dims_.size() == 4) {
+      std::set<std::vector<int>> unsupported_cases{
+          std::vector<int>({0, 3, 1, 2})};
+      if (unsupported_cases.find(axis_) == unsupported_cases.end()) {
+        kernel_func_name_ = "transpose_4d";
+      } else {
+        kernel_func_name_ = "transpose_general_buffer";
+      }
+    } else if (output_tensor_dims_.size() == 2) {
+      kernel_func_name_ = "transpose_2d";
+    } else {
+      kernel_func_name_ = "transpose_general_buffer";
+    }
+
+    if (kernel_func_name_ == "transpose_general_buffer") {
+      build_options_ = "-DCL_DTYPE_float";
+      // create kernels of im2buf and buf2im
+      auto im2buf_kernels = KernelRegistry::Global().Create(
+          "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
+      auto buf2im_kernels =
+          KernelRegistry::Global().Create("layout",
+                                          TARGET(kOpenCL),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kImageDefault));
+
+      im2buf_kernel_ = std::move(im2buf_kernels.front());
+      buf2im_kernel_ = std::move(buf2im_kernels.front());
+
+      // calc output shape
+      std::vector<int64_t> new_output_tensor_shape(x_tensor_dims_.size(), 0);
+      for (size_t i = 0; i < x_tensor_dims_.size(); i++) {
+        new_output_tensor_shape[i] = x_tensor_dims_[axis_[i]];
+      }
+      output->Resize(new_output_tensor_shape);
+      output_tensor_dims_ = output->dims();
+      // calc in/out index of transpose
+      std::vector<int> x_tensor_strides = CalStrides(x_tensor_dims_);
+      std::vector<int> output_tensor_strides = CalStrides(output_tensor_dims_);
+      std::vector<int> output_tensor_idxs_vec(output->dims().production());
+      for (size_t i = 0; i < x_tensor_dims_.production(); i++) {
+        std::vector<int> x_tensor_index = CalIndex(x_tensor_strides, i);
+        std::vector<int> out_tensor_index = TransIndex(x_tensor_index, axis_);
+        output_tensor_idxs_vec[i] =
+            CalOffset(output_tensor_strides, out_tensor_index);
+      }
+
+      // copy output_tensor_idxs_vec data to gpu
+      output_tensor_idxs_t_ = std::unique_ptr<Tensor>(new Tensor);
+      output_tensor_idxs_t_->Resize(output_tensor_dims_);
+      output_tensor_idxs_data_ =
+          output_tensor_idxs_t_->mutable_data<int, cl::Buffer>(TARGET(kOpenCL));
+      TargetWrapperCL::MemcpySync(output_tensor_idxs_data_,
+                                  output_tensor_idxs_vec.data(),
+                                  output_tensor_idxs_t_->memory_size(),
+                                  IoDirection::HtoD);
+    }
+
+    if (output_tensor_dims_.size() == 4) {
+      output_tensor_c_ = output_tensor_dims_[1];
+      output_tensor_h_ = output_tensor_dims_[2];
+      output_tensor_w_ = output_tensor_dims_[3];
+      x_tensor_w_ = x_tensor_dims_[3];
+    } else if (output_tensor_dims_.size() == 3) {
+      output_tensor_c_ = output_tensor_dims_[0];
+      output_tensor_h_ = output_tensor_dims_[1];
+      output_tensor_w_ = output_tensor_dims_[2];
+      x_tensor_w_ = x_tensor_dims_[2];
+    } else if (output_tensor_dims_.size() == 2) {
+      output_tensor_c_ = 1;
+      output_tensor_h_ = output_tensor_dims_[0];
+      output_tensor_w_ = output_tensor_dims_[1];
+      x_tensor_w_ = x_tensor_dims_[1];
+    }
+
     auto& context = ctx_->As<OpenCLContext>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/transpose_kernel.cl",
                                     build_options_,
                                     time_stamp_);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
   }
 
 #ifdef LITE_WITH_PROFILE
@@ -65,291 +184,151 @@ class TransposeComputeFloatImage
   }
 #endif
 
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    const Tensor* const x = param.x;
-    const auto x_dims = x->dims();
-    const std::map<std::string, size_t>& input_image_shape =
-        InitImageDimInfoWith(x_dims);
-    const cl::Image2D* const x_image = x->data<half_t, cl::Image2D>();
-
-    Tensor* const output = param.output;
-    const DDimLite& out_dims = output->dims();
-    VLOG(4) << "out_dims= " << out_dims;
-    const std::map<std::string, size_t>& out_image_shape =
-        InitImageDimInfoWith(out_dims);
-    cl::Image2D* const out_image = output->mutable_data<half_t, cl::Image2D>(
-        out_image_shape.at("width"), out_image_shape.at("height"));
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "out_dims=   " << out_dims;
-#endif
-    const std::vector<size_t>& default_work_size = DefaultGlobalWorkSize(
-        out_dims,
-        DDim(std::vector<DDim::value_type>{
-            static_cast<int64_t>(out_image_shape.at("width")),
-            static_cast<int64_t>(out_image_shape.at("height"))}));
-
-    int out_C = 0, out_H = 0, out_W = 0, in_W = 0;
-    if (param.output->dims().size() == 4) {
-      out_C = out_dims[1];
-      out_H = out_dims[2];
-      out_W = out_dims[3];
-      in_W = x_dims[3];
-    } else if (param.output->dims().size() == 3) {
-      out_C = out_dims[0];
-      out_H = out_dims[1];
-      out_W = out_dims[2];
-      in_W = x_dims[2];
-    } else if (param.output->dims().size() == 2) {
-      out_C = 1;
-      out_H = out_dims[0];
-      out_W = out_dims[1];
-      in_W = x_dims[1];
+  void GetGlobalWorkSize() {
+    if (kernel_func_name_ == "transpose_4d" ||
+        kernel_func_name_ == "transpose_2d") {
+      const std::vector<size_t>& ws =
+          DefaultGlobalWorkSize(output_tensor_dims_,
+                                DDim(std::vector<DDim::value_type>{
+                                    static_cast<int64_t>(output_image_w_),
+                                    static_cast<int64_t>(output_image_h_)}));
+      global_work_size_ = cl::NDRange{static_cast<cl::size_type>(ws[0]),
+                                      static_cast<cl::size_type>(ws[1]),
+                                      static_cast<cl::size_type>(ws[2])};
+    } else if (kernel_func_name_ == "transpose_general_buffer") {
+      global_work_size_ =
+          cl::NDRange{static_cast<cl::size_type>(output_tensor_h_),
+                      static_cast<cl::size_type>(output_tensor_w_),
+                      static_cast<cl::size_type>(output_tensor_c_)};
+    } else {
+      LOG(FATAL) << "Unsupported get global work size for kernel function: "
+                 << kernel_func_name_;
     }
+  }
 
-#ifdef LITE_WITH_LOG
-    VLOG(4) << "out_C=" << out_C;
-    VLOG(4) << "out_H=" << out_H;
-    VLOG(4) << "out_W=" << out_W;
-    VLOG(4) << "in_W=" << in_W;
-    VLOG(4) << "default_work_size= " << default_work_size[0] << ", "
-            << default_work_size[1] << ", " << default_work_size[2];
-#endif
+  void Run() override {
+    auto* x_image = GET_DATA_GPU(transpose_param_->x);
+    auto* output_image = MUTABLE_DATA_GPU(
+        transpose_param_->output, output_image_w_, output_image_h_, nullptr);
 
     auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-
-#ifdef LITE_WITH_LOG
-    VLOG(4) << TargetToStr(x->target());
-    VLOG(4) << TargetToStr(param.output->target());
-#endif
-
-    int arg_idx = 0;
+    auto kernel = kernel_;
     cl_int status;
-    status = kernel.setArg(arg_idx, *x_image);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *out_image);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_C);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_H);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, out_W);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, in_W);
-    CL_CHECK_FATAL(status);
+    if (kernel_func_name_ == "transpose_4d" ||
+        kernel_func_name_ == "transpose_2d") {
+      status = kernel.setArg(0, *x_image);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(1, *output_image);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(2, output_tensor_c_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(3, output_tensor_h_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(4, output_tensor_w_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(5, x_tensor_w_);
+      CL_CHECK_FATAL(status);
 
-    auto global_work_size =
-        cl::NDRange{static_cast<size_t>(default_work_size.data()[0]),
-                    static_cast<size_t>(default_work_size.data()[1]),
-                    static_cast<size_t>(default_work_size.data()[2])};
+      GetGlobalWorkSize();
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size_,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
 
-    status = EnqueueNDRangeKernel(context,
-                                  kernel,
-                                  cl::NullRange,
-                                  global_work_size,
-                                  cl::NullRange,
-                                  nullptr,
-                                  event_);
-    CL_CHECK_FATAL(status);
+    } else if (kernel_func_name_ == "transpose_general_buffer") {
+      // do image layout transform: image to buffer
+      // create and set param, context to kernel im2buf
+      operators::LayoutParam im2buf_param;
+      std::shared_ptr<lite::Tensor> im2buf_out_t(new lite::Tensor);
+      im2buf_out_t->Resize(x_tensor_dims_);
+      auto im2buf_out_t_buffer_p =
+          im2buf_out_t->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      im2buf_param.x = transpose_param_->x;
+      im2buf_param.y = im2buf_out_t.get();
+      auto s = im2buf_kernel_->op_type();
+      im2buf_kernel_->SetParam(im2buf_param);
+
+      std::unique_ptr<KernelContext> im2buf_ctx(new KernelContext);
+      context.CopySharedTo(&(im2buf_ctx->As<OpenCLContext>()));
+      im2buf_kernel_->SetContext(std::move(im2buf_ctx));
+      im2buf_kernel_->Launch();
+
+      // create and set param, context to kernel buf2im
+      std::shared_ptr<lite::Tensor> buf2im_in_t(new lite::Tensor);
+      buf2im_in_t->Resize(transpose_param_->output->dims());
+      auto buf2im_in_t_buffer_p =
+          buf2im_in_t->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      operators::LayoutParam buf2im_param;
+      buf2im_param.x = buf2im_in_t.get();
+      buf2im_param.y = transpose_param_->output;
+      buf2im_kernel_->SetParam(buf2im_param);
+
+      std::unique_ptr<KernelContext> buf2im_ctx(new KernelContext);
+      context.CopySharedTo(&(buf2im_ctx->As<OpenCLContext>()));
+      buf2im_kernel_->SetContext(std::move(buf2im_ctx));
+
+      // set kernel args
+      status = kernel.setArg(0, *im2buf_out_t_buffer_p);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(1, *buf2im_in_t_buffer_p);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(2, *output_tensor_idxs_data_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(3, output_tensor_c_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(4, output_tensor_h_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(5, output_tensor_w_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(6, output_tensor_h_ * output_tensor_w_);
+      CL_CHECK_FATAL(status);
+
+      GetGlobalWorkSize();
+      auto& context = ctx_->As<OpenCLContext>();
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size_,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
+      // run kernel: buffer->image
+      buf2im_kernel_->Launch();
+    } else {
+      LOG(FATAL) << "Unsupported kernel function: " << kernel_func_name_;
+    }
   }
 
  private:
   std::string kernel_func_name_{"transpose"};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
-};
 
-// transpose2 operator
-class Transpose2ComputeFloatImage
-    : public KernelLite<TARGET(kOpenCL),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kImageDefault)> {
- public:
-  using param_t = operators::TransposeParam;
+  param_t* transpose_param_{nullptr};
+  std::unique_ptr<Tensor> output_tensor_idxs_t_{nullptr};
+  cl::Buffer* output_tensor_idxs_data_;
 
-  void PrepareForRun() override {}
+  std::vector<int> axis_;
+  DDim x_tensor_dims_{};
+  int x_tensor_w_{1};
+  DDim output_tensor_dims_{};
+  int output_tensor_c_{1};
+  int output_tensor_h_{1};
+  int output_tensor_w_{1};
+  int output_image_h_{1};
+  int output_image_w_{1};
 
-#ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {}
-#endif
+  cl::NDRange global_work_size_;
+  cl::Kernel kernel_;
 
-  bool IsShuffleChannel(const std::vector<int>& axis) {
-    bool is_shuffle_channel = true;
-    if (axis.size() > 2 && axis[0] == 0 && axis[1] == 2 && axis[2] == 1) {
-      for (int i = 3; i < axis.size(); ++i) {
-        if (axis[i] != i) {
-          is_shuffle_channel = false;
-          break;
-        }
-      }
-    } else {
-      return false;
-    }
-    return is_shuffle_channel;
-  }
-
-  template <typename Dtype>
-  void DeviceTensorToHostTensor(const Tensor* device_tensor,
-                                Tensor* host_tensor) {
-    host_tensor->Resize(device_tensor->dims());
-    Dtype* host_ptr = host_tensor->mutable_data<Dtype>();
-    CLRuntime::Global()->command_queue().finish();
-    CLImageConverterDefault default_converter;
-    auto device_tensor_image_dim =
-        default_converter.InitImageDimInfoWith(device_tensor->dims());
-    half_t* image_data = new half_t[device_tensor_image_dim.production() * 4];
-    TargetWrapperCL::ImgcpySync(image_data,
-                                device_tensor->data<half_t, cl::Image2D>(),
-                                device_tensor_image_dim[0],
-                                device_tensor_image_dim[1],
-                                0,
-                                0,
-                                IoDirection::DtoH);
-    default_converter.ImageToNCHW(
-        image_data, host_ptr, device_tensor_image_dim, host_tensor->dims());
-    delete[] image_data;
-  }
-
-  template <typename Dtype>
-  void HostTensorToDeviceTensor(const Tensor* host_tensor,
-                                Tensor* device_tensor) {
-    Dtype* host_ptr = const_cast<Dtype*>(host_tensor->data<Dtype>());
-    CLImageConverterDefault default_converter;
-    auto device_tensor_image_dim =
-        default_converter.InitImageDimInfoWith(device_tensor->dims());
-    device_tensor->mutable_data<half_t, cl::Image2D>(
-        device_tensor_image_dim[0], device_tensor_image_dim[1]);
-    half_t* image_data = new half_t[device_tensor->dims().production() * 4];
-    default_converter.NCHWToImage(host_ptr, image_data, device_tensor->dims());
-
-    TargetWrapperCL::ImgcpySync(
-        device_tensor->mutable_data<half_t, cl::Image2D>(),
-        image_data,
-        device_tensor_image_dim[0],
-        device_tensor_image_dim[1],
-        0,
-        0,
-        IoDirection::HtoD);
-
-    delete[] image_data;
-  }
-
-  template <typename Dtype>
-  void ShuffleChannelCompute(const operators::TransposeParam& param) {
-    const Tensor* input = param.x;
-    Tensor* input_tensor = new Tensor();
-    DeviceTensorToHostTensor<Dtype>(input, input_tensor);
-    Dtype* input_ptr = input_tensor->mutable_data<Dtype>();
-
-    Tensor* output = param.output;
-    Tensor* output_tensor = new Tensor();
-    output_tensor->Resize(output->dims());
-    Dtype* output_ptr = output_tensor->mutable_data<Dtype>();
-
-    // input and output's shape dimension must >= 2 && <= 6.
-    const DDim& in_dim = input->dims();
-    const DDim& out_dim = output->dims();
-    size_t offset = 1;
-    for (int i = 3; i < param.axis.size(); ++i) {
-      offset *= in_dim[i];
-    }
-#pragma omp parallel for collapse(3)
-    for (int batch = 0; batch < out_dim[0]; ++batch) {
-      for (int c1 = 0; c1 < out_dim[1]; ++c1) {
-        for (int c2 = 0; c2 < out_dim[2]; ++c2) {
-          size_t out_offset =
-              ((batch * out_dim[1] + c1) * out_dim[2] + c2) * offset;
-          size_t in_offset =
-              ((batch * in_dim[1] + c2) * in_dim[2] + c1) * offset;
-          memcpy(output_ptr + out_offset,
-                 input_ptr + in_offset,
-                 offset * sizeof(Dtype));
-        }
-      }
-    }
-    HostTensorToDeviceTensor<Dtype>(output_tensor, output);
-    delete input_tensor;
-    delete output_tensor;
-  }
-
-  template <typename Dtype>
-  void Transpose2Compute(const operators::TransposeParam& param) {
-    const Tensor* input = param.x;
-    Tensor* input_tensor = new Tensor();
-    DeviceTensorToHostTensor<Dtype>(input, input_tensor);
-    Dtype* input_ptr = input_tensor->mutable_data<Dtype>();
-
-    Tensor* output = param.output;
-    Tensor* output_tensor = new Tensor();
-    output_tensor->Resize(output->dims());
-    Dtype* output_ptr = output_tensor->mutable_data<Dtype>();
-
-    // input and output's shape dimension must >= 2 && <= 6.
-    const DDim& in_dim = input->dims();
-    const DDim& out_dim = output->dims();
-
-    // precompute inverted output dim and strides
-    size_t rout_dim[6], strides[6];
-    auto& axis = param.axis;
-    int permute = axis.size();  // permute must >=2 && <= 6.
-    for (int i = 0; i < permute; ++i) {
-      int k = permute - 1 - i;
-      strides[k] = 1;
-      for (int j = axis[i] + 1; j < permute; ++j) {
-        strides[k] *= in_dim[j];
-      }
-      rout_dim[k] = out_dim[i];
-    }
-
-    // unroll the first 2 dimensions
-    int reamin_dim = 1;
-    for (int i = 2; i < out_dim.size(); ++i) {
-      reamin_dim *= out_dim[i];
-    }
-
-#pragma omp parallel for collapse(2)
-    for (int batch = 0; batch < out_dim[0]; ++batch) {
-      for (int j = 0; j < out_dim[1]; ++j) {
-        size_t offset = batch * strides[permute - 1] + j * strides[permute - 2];
-        Dtype* out_ptr = output_ptr + (batch * out_dim[1] + j) * reamin_dim;
-        int indics[4] = {0, 0, 0, 0};
-        for (int k = 0; k < reamin_dim; ++k) {
-          out_ptr[k] = input_ptr[offset];
-          indics[0] += 1;
-          offset += strides[0];
-          for (int p = 0; p < permute - 3; ++p) {
-            if (indics[p] == rout_dim[p]) {
-              indics[p + 1] += 1;
-              indics[p] = 0;
-              offset += strides[p + 1];
-              offset -= rout_dim[p] * strides[p];
-            } else {
-              break;
-            }
-          }
-        }
-      }
-    }
-    HostTensorToDeviceTensor<Dtype>(output_tensor, output);
-    delete input_tensor;
-    delete output_tensor;
-  }
-
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    const std::vector<int> axis = param.axis;
-
-    bool shuffle_channel = IsShuffleChannel(axis);
-    if (shuffle_channel) {
-      ShuffleChannelCompute<float>(param);
-    } else {
-      Transpose2Compute<float>(param);
-    }
-  }
+  // transpose_general_buffer
+  std::unique_ptr<KernelBase> im2buf_kernel_;
+  std::unique_ptr<KernelBase> buf2im_kernel_;
 };
 
 }  // namespace opencl
@@ -377,7 +356,7 @@ REGISTER_LITE_KERNEL(transpose2,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::Transpose2ComputeFloatImage,
+                     paddle::lite::kernels::opencl::TransposeComputeFloatImage,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

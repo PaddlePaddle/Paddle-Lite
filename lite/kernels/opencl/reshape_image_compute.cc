@@ -67,7 +67,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
     const int64_t& input_image_width = input_image_shape.at("width");
     const int64_t& input_image_height = input_image_shape.at("height");
 
-    const cl::Image2D* const x_image = x->data<half_t, cl::Image2D>();
+    auto* x_image = GET_DATA_GPU(x);
 
     const std::vector<int>& shape_vct = param.shape_vct;
     Tensor* const output = param.output;
@@ -76,8 +76,10 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
     const std::map<std::string, size_t>& out_image_shape =
         InitImageDimInfoWith(out_dims);
-    cl::Image2D* const out_image = output->mutable_data<half_t, cl::Image2D>(
-        out_image_shape.at("width"), out_image_shape.at("height"));
+    auto* out_image = MUTABLE_DATA_GPU(output,
+                                       out_image_shape.at("width"),
+                                       out_image_shape.at("height"),
+                                       nullptr);
 #ifdef LITE_WITH_LOG
     VLOG(4) << "out_dims=   " << out_dims;
 #endif
@@ -199,8 +201,10 @@ REGISTER_LITE_KERNEL(reshape,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
-    .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("ShapeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -217,9 +221,12 @@ REGISTER_LITE_KERNEL(reshape2,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
-    .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("ShapeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("XShape",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -236,7 +243,8 @@ REGISTER_LITE_KERNEL(flatten,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
-    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -253,8 +261,10 @@ REGISTER_LITE_KERNEL(flatten2,
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
-    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Shape",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("XShape",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

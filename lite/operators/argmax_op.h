@@ -52,7 +52,7 @@ class ArgmaxOpLite : public OpLite {
       axis += input_dims.size();
     }
     int max_num = 1;
-    for (int64_t i = axis + 1; i < input_dims.size(); i++)
+    for (size_t i = axis + 1; i < input_dims.size(); i++)
       max_num *= input_dims[i];
     float gops = 1.0f;
     for (int i = 1; i <= max_num; i++) gops *= i;

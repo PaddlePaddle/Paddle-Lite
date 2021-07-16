@@ -31,8 +31,17 @@ CLWrapper *CLWrapper::Global() {
 }
 
 CLWrapper::CLWrapper() {
+  if (!is_first_init_ && !opencl_lib_found_) {
+    LOG(INFO) << "This isn't first init for CLWrapper, opencl library not "
+                 "found previously";
+    return;
+  }
   opencl_lib_found_ = InitHandle();
-  CHECK(opencl_lib_found_) << "Fail to initialize the OpenCL library!";
+  if (!opencl_lib_found_) {
+    LOG(INFO) << "Failed to find and initialize Opencl library";
+    return;
+  }
+  is_first_init_ = false;
   dlsym_success_ = InitFunctions();
 }
 
@@ -59,6 +68,9 @@ bool CLWrapper::InitHandle() {
     // Arm Mali with Android
     "/system/vendor/lib/egl/libGLES_mali.so",
     "/system/lib/egl/libGLES_mali.so",
+    // PowerVR Rogue with Android
+    "/system/vendor/lib/libPVROCL.so",
+    "/data/data/org.pocl.libs/files/lib/libpocl.so",
 #endif  // __aarch64__
 #elif defined(__linux__)
     "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
@@ -91,7 +103,10 @@ bool CLWrapper::InitHandle() {
 }
 
 bool CLWrapper::InitFunctions() {
-  CHECK(handle_ != nullptr) << "The library handle can't be null!";
+  if (handle_ == nullptr) {
+    LOG(ERROR) << "The library handle can't be null!";
+    return false;
+  }
   bool dlsym_success = true;
 
 #define PADDLE_DLSYM(cl_func)                                        \
@@ -159,6 +174,7 @@ bool CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clGetEventInfo);
   PADDLE_DLSYM(clGetEventProfilingInfo);
   PADDLE_DLSYM(clGetImageInfo);
+  PADDLE_DLSYM(clGetMemObjectInfo);
   PADDLE_DLSYM(clEnqueueCopyBuffer);
   PADDLE_DLSYM(clEnqueueWriteImage);
   PADDLE_DLSYM(clEnqueueCopyImage);
@@ -715,6 +731,16 @@ CL_API_ENTRY cl_int CL_API_CALL clGetImageInfo(cl_mem image,
     CL_API_SUFFIX__VERSION_1_0 {
   return paddle::lite::CLWrapper::Global()->clGetImageInfo()(
       image, param_name, param_value_size, param_value, param_value_size_ret);
+}
+
+CL_API_ENTRY cl_int CL_API_CALL clGetMemObjectInfo(cl_mem memobj,
+                                                   cl_mem_info param_name,
+                                                   size_t param_value_size,
+                                                   void *param_value,
+                                                   size_t *param_value_size_ret)
+    CL_API_SUFFIX__VERSION_1_0 {
+  return paddle::lite::CLWrapper::Global()->clGetMemObjectInfo()(
+      memobj, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL

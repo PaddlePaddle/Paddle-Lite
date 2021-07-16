@@ -57,7 +57,7 @@ static void GetBroadcastDimsArrays(const DDim &x_dims,
           y_dims_array[i] <= 1);
     if ((x_dims_array[i] > 1 || y_dims_array[i] > 1) ||
         (x_dims_array[i] == 1 && y_dims_array[i] == 1)) {
-      out_dims_array[i] = std::max(x_dims_array[i], y_dims_array[i]);
+      out_dims_array[i] = (std::max)(x_dims_array[i], y_dims_array[i]);
     } else {
       out_dims_array[i] = -1;
     }
@@ -78,7 +78,7 @@ bool CompareOp::InferShapeImpl() const {
   if (dim_x == dim_y) {
     param_.Out->Resize(dim_x);
   } else {
-    int max_dim = std::max(dim_x.size(), dim_y.size());
+    int max_dim = (std::max)(dim_x.size(), dim_y.size());
     int axis = std::abs(static_cast<int>(dim_x.size() - dim_y.size()));
     std::vector<int64_t> x_dims_array(max_dim);
     std::vector<int64_t> y_dims_array(max_dim);

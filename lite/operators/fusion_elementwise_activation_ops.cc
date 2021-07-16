@@ -101,6 +101,8 @@ REGISTER_LITE_OP(fusion_elementwise_mul_activation,
                  paddle::lite::operators::FusionElementwiseActivationOp);
 REGISTER_LITE_OP(fusion_elementwise_max_activation,
                  paddle::lite::operators::FusionElementwiseActivationOp);
+REGISTER_LITE_OP(fusion_elementwise_min_activation,
+                 paddle::lite::operators::FusionElementwiseActivationOp);
 REGISTER_LITE_OP(fusion_elementwise_div_activation,
                  paddle::lite::operators::FusionElementwiseActivationOp);
 

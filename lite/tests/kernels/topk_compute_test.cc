@@ -111,8 +111,8 @@ TEST(Topk, precision) {
   abs_error = 1e-3;  // Using fp16 in NPU
   // TODO(zhupengyang): enable later
   return;
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
 #else
   return;
 #endif

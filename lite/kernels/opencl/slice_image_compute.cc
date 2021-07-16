@@ -51,7 +51,7 @@ class SliceComputeImage2D : public KernelLite<TARGET(kOpenCL),
   void Run() override {
     const auto& param = *param_.get_mutable<param_t>();
     const auto& in_dims = param.X->dims();
-    auto* x_img = param.X->data<half_t, cl::Image2D>();
+    auto* x_img = GET_DATA_GPU(param.X);
     auto& out_dims = param.Out->dims();
 
     std::vector<int> axes = param.axes;
@@ -68,8 +68,10 @@ class SliceComputeImage2D : public KernelLite<TARGET(kOpenCL),
     int dim_w = in_dims[axis + 2];
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
-    auto* out_img = param.Out->mutable_data<half_t, cl::Image2D>(
-        out_image_shape["width"], out_image_shape["height"]);
+    auto* out_img = MUTABLE_DATA_GPU(param.Out,
+                                     out_image_shape["width"],
+                                     out_image_shape["height"],
+                                     nullptr);
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -135,10 +137,18 @@ REGISTER_LITE_KERNEL(slice,
                      kImageDefault,
                      paddle::lite::kernels::opencl::SliceComputeImage2D,
                      image2d)
-    .BindInput("X",
+    .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

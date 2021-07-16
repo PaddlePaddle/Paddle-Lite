@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 build_dir=build_fpga
 mkdir -p ${build_dir}

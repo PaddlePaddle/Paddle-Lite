@@ -58,6 +58,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto groups = op_info->GetAttr<int>("groups");
   std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
   auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
+  if (fuse_relu) {
+    VLOG(3) << "[RK-NPU] this Conv_op has RELU ";
+  }
   CHECK_EQ(strides.size(), 2L);
   CHECK_EQ(dilations.size(), 2L);
   // Check depthwise mode
@@ -73,17 +76,13 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   DataLayoutType layout = DATALAYOUT(kNCHW);
   PrecisionType precision = PRECISION(kFloat);
 
-  if (op_info->HasAttr("enable_int8")) {
-    enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    CHECK(op_info->HasInputScale(input_scale_name, true));
+  if (op_info->HasInputScale(input_scale_name, true) &&
+      op_info->HasOutputScale(output_scale_name, true)) {
+    enable_int8 = true;
     input_scale = op_info->GetInputScale(input_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(output_scale_name, true));
     output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
-
-    if (enable_int8) {
-      precision = PRECISION(kInt8);
-    }
+    precision = PRECISION(kInt8);
   }
 
   // // Input node

@@ -1,23 +1,34 @@
 # 测试方法
 
-本文将会介绍，在**Ubuntu:16.04交叉编译环境**下，用安卓手机在终端测试Paddle-Lite的性能，并介绍两种Benchmark方法：
+本文将会介绍在**Ubuntu:16.04交叉编译环境**下，用安卓手机在终端测试Paddle-Lite的性能，同时介绍使用PaddleLite快速测试新模型在安卓端的精度。
 
 1. **一键Benchmark**：适用于想快速获得常见模型性能的用户，下载预编译好的benchmark可执行文件；
 2. **逐步Benchmark**：将**一键Benchmark**流程拆解讲解。
+3. **测试模型的精度和性能**：使用PaddleLite快速测试单个模型在安卓端的精度。
 
 ## 环境准备
 
-1. 准备[adb](https://developer.android.com/studio/command-line/adb)等必备软件：
+1. 电脑准备安装[adb](https://developer.android.com/studio/command-line/adb)。
+
+Linux系统安装adb：
+
 ```shell
 sudo apt update
 sudo apt install -y wget adb
 ```
-2. 检查手机与电脑连接。安卓手机USB连上电脑，打开设置 -> 开启开发者模式 -> 开启USB调试 -> 允许（授权）当前电脑调试手机；
-3. 在电脑终端输入`adb devices`命令，查看当前连接到的设备：
+
+其他操作系统请自行安装adb。
+
+2. 检查手机与电脑连接。安卓手机USB连上电脑，打开设置 -> 开启开发者模式 -> 开启USB调试 -> 允许（授权）当前电脑调试手机。
+
+3. 在电脑终端输入`adb devices`命令，查看当前连接到的设备。
+
 ```shell
 adb devices
 ```
+
 命令成功执行，显示结果类似下面（序列码略有不同）：
+
 ```shell
 List of devices attached
 712QSDSEMMS7C   device
@@ -28,13 +39,10 @@ List of devices attached
 执行以下命令，完成Benchmark：
 
 ```shell
-# Test v2.6 branch
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_2.6/run_benchmark.sh
+# Test v2.9 branch
+wget -c https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/benchmark_2.9/run_benchmark.sh
 sh run_benchmark.sh
 
-# Test v2.3 branch
-wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_2.3/run_benchmark.sh
-sh run_benchmark.sh
 ```
 
 该`run_benchmark.sh`脚本会：
@@ -50,9 +58,17 @@ sh run_benchmark.sh
 
 ### 1. 编译benchmark可执行文件
 
-根据[源码编译](../user_guides/source_compile)准备编译环境，拉取PaddleLite最新特定分支代码，并在仓库根目录下，执行：
+根据[源码编译](../source_compile/compile_env)准备编译环境，建议使用Docker配置环境。
+
+拉取Paddle-Lite代码，切换到特定分支，然后在Paddle-Lite根目录下执行编译命令。
 
 ```shell
+# 拉取Paddle-Lite代码
+git clone https://github.com/PaddlePaddle/Paddle-Lite.git
+
+# 默认是develop分支，请拉取并切换到特定分支，比如切换到2.9分支
+git checkout -b release/v2.9 origin/release/v2.9
+
 ###########################################
 # Build benchmark_bin for android-armv7   #
 ###########################################
@@ -66,7 +82,7 @@ sh run_benchmark.sh
   --with_log=OFF \
   full_publish
 
-# `benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv7.gcc/lite/api/benchmark_bin
+# 编译好的`benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv7.gcc/lite/api/benchmark_bin
 
 ###########################################
 # Build benchmark_bin for android-armv8   #
@@ -81,7 +97,7 @@ sh run_benchmark.sh
   --with_log=OFF \
   full_publish
 
-# `benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv8.gcc/lite/api/benchmark_bin
+# 编译好的`benchmark_bin` 在: <paddle-lite-repo>/build.lite.android.armv8.gcc/lite/api/benchmark_bin
 ```
 
 > **注意**：为了避免在docker内部访问不到手机的问题，建议编译得到benchmark_bin后退出到docker外面，并且将benchmark_bin文件拷贝到一个临时目录。然后在该临时目录下，按照下面步骤下载模型、拷贝脚本、测试。
@@ -99,7 +115,7 @@ wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_0/bench
 tar zxvf benchmark_models.tgz
 ```
 
-如果测试其他模型，请将模型文件放到 `benchmark_models` 文件夹中。
+如果测试其他模型，请将模型文件放到 `benchmark_models` 文件夹中，同时保证模型的的权重是独立保存成不同文件。
 
 ### 3. benchmark.sh脚本
 
@@ -109,7 +125,7 @@ benchmark测试的执行脚本`benchmark.sh` 位于源码中的`/PaddleLite/lite
 
 从终端进入benchmark.sh、可执行文件（benchmark_bin_v7、benchmark_bin_v8）和模型文件（benchmark_models）所在文件夹。
 
-如果 `benchmark_models` 中所有模型文件都已经使用 `model_optimize_tool` 进行转换，则使用 benchmark.sh 脚本执行如下命令进行测试：
+如果 `benchmark_models` 中所有模型文件都已经使用 `opt`工具 进行转换，则使用 benchmark.sh 脚本执行如下命令进行测试：
 
 ```shell
 # Benchmark for android-armv7
@@ -119,7 +135,7 @@ sh benchmark.sh ./benchmark_bin_v7 ./benchmark_models result_armv7.txt
 sh benchmark.sh ./benchmark_bin_v8 ./benchmark_models result_armv8.txt
 ```
 
-如果 `benchmark_models` 中所有模型文件都没有使用 `model_optimize_tool` 进行转换，则执行下面的命令。`benchmark_bin` 会首先转换模型，然后加载模型进行测试。
+如果 `benchmark_models` 中所有模型文件都没有使用 `opt`工具 进行转换，则执行下面的命令。`benchmark_bin` 会首先转换模型，然后加载模型进行测试。
 
 ```shell
 # Benchmark for android-armv7
@@ -133,9 +149,9 @@ sh benchmark.sh ./benchmark_bin_v8 ./benchmark_models result_armv8.txt true
 
 **查看测试结果**
 
-在当前目录的`result_armv7.txt`和`result_armv8.txt`文件，查看测试结果。
+在当前目录的`result_armv7.txt`和`result_armv8.txt`文件，查看测试结果，举例如下。
 
-> 不同手机，不同版本，测试模型的性能数据不同。
+> 注意：不同手机，不同版本，测试模型的性能数据不同。
 
 ```shell
 run benchmark armv8
@@ -188,3 +204,17 @@ shufflenetv2                  min = 4.60600     max = 4.49400     average = 4.53
 squeezenet                    min = 8.27000     max = 8.10600     average = 8.19000
 --------------------------------------
 ```
+
+
+三. 测试模型的精度和性能
+
+Paddle-Lite的预测流程可以参考[文档](../quick_start/tutorial)，即是准备模型、模型优化、下载或编译预测库、开发应用程序。
+
+在准备模型阶段，请自行测试确保预测模型的精度。如果不确定模型精度准确，可以使用PaddlePaddle静态图模式下的load_inference_model（API使用方法请到Paddle官网搜索）加载，配置测试数据，使用executor执行，计算模型精度。
+
+在模型优化阶段，如果出现OP不支持、类型cast等错误，可以提Issue反馈给Paddle-Lite开发同学进行修复，或者参考开发者贡献文档自行修复。
+
+产出优化后的模型，通常可以下载预测库，开发应用程序了。
+
+在开发应用程序阶段，如果出现预测结果不对或者程序崩溃的情况，通常很难定位是Paddle-Lite预测框架的Bug还是开发程序中的错误。
+此时，建议大家剥离APP程序的代码，使用C++可执行文件直接测试Paddle-Lite执行模型预测的精度正确性。大家可以参考[C++ 完整示例](../quick_start/cpp_demo)，其中有些示例使用OpenCV处理输入输出图片，可以可视化查看模型预测结果的准确性。

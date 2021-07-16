@@ -122,6 +122,17 @@ void SqrtCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void RsqrtCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::rsqrt(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
 void PowCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -186,6 +197,17 @@ void LeakyReluCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void LogCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::log<float>(ctx.GetRawContext(),    /* context */
+                           param.X->data<float>(), /* x */
+                           param.Out->mutable_data<float>(TARGET(kXPU)), /* y */
+                           param.X->numel()); /* len */
+  CHECK_EQ(r, 0);
+}
+
 void SoftsignCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -194,6 +216,36 @@ void SoftsignCompute::Run() {
                          param.X->data<float>(),
                          param.Out->mutable_data<float>(TARGET(kXPU)),
                          param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
+void SwishCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+  auto beta = param.Swish_beta;
+  CHECK(std::abs(beta - 1.0f) < 1e-7);
+  int r = xdnn::swish(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
+void PReluCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+  auto x_dims = param.X->dims();
+  int outer_size = x_dims[0];
+  int channel_size = param.Prelu_alpha->numel();
+  int inner_size = x_dims.count(1, x_dims.size()) / channel_size;
+
+  int r = xdnn::prelu(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Prelu_alpha->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      outer_size,
+                      channel_size,
+                      inner_size);
   CHECK_EQ(r, 0);
 }
 
@@ -255,7 +307,19 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
+    rsqrt, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::RsqrtCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
     pow, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PowCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    log, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::LogCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
@@ -313,5 +377,19 @@ REGISTER_LITE_KERNEL(softsign,
                      paddle::lite::kernels::xpu::SoftsignCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    swish, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SwishCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("beta", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    prelu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PReluCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

@@ -66,6 +66,20 @@ bool InstanceNormOp::AttachImpl(const cpp::OpDesc& op_desc,
   AttachOutput(op_desc, scope, "SavedVariance", false, &param_.saved_variance);
   AttachOutput(op_desc, scope, "Y", false, &param_.out);
   param_.epsilon = op_desc.GetAttr<float>("epsilon");
+  if (op_desc.HasAttr("activation_type")) {
+    auto act_type = op_desc.GetAttr<std::string>("activation_type");
+    param_.activation_type = act_type;
+    if (act_type == "relu") {
+      param_.fuse_relu = true;
+    } else if (act_type == "relu6") {
+      param_.alpha = op_desc.GetAttr<float>("alpha");  // 6.f
+    } else if (act_type == "leaky_relu") {
+      param_.alpha = op_desc.GetAttr<float>("alpha");
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type
+                 << " fuse not support";
+    }
+  }
   return true;
 }
 

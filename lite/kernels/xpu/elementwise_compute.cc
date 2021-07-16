@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_lite.h"
@@ -26,298 +27,102 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-inline DDim TrimTrailingSingularDims(const DDim& dims) {
-  // Remove trailing dimensions of size 1 for y
-  auto actual_dims_size = dims.size();
-  for (; actual_dims_size != 0; --actual_dims_size) {
-    if (dims[actual_dims_size - 1] != 1) break;
+template <typename T>
+struct AddFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_add<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <typename T>
+struct SubFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_sub<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <typename T>
+struct MulFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_mul<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <typename T>
+struct DivFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_div<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <typename T>
+struct MaxFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_max<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <class T, class Functor>
+void ElementwiseCompute<T, Functor>::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  const Tensor* x = param.X;
+  const Tensor* y = param.Y;
+  if (x->dims().size() < y->dims().size()) {
+    std::swap(x, y);
   }
 
-  std::vector<int64_t> trim_dims;
-  trim_dims.resize(actual_dims_size);
-  for (int i = 0; i < actual_dims_size; ++i) {
-    trim_dims[i] = dims[i];
+  auto& x_dim = x->dims();
+  auto& y_dim = y->dims();
+  CHECK_LE(y_dim.size(), x_dim.size());
+
+  std::vector<int> x_shape(param.Out->dims().size(), 1);
+  std::vector<int> y_shape(param.Out->dims().size(), 1);
+  const int axis =
+      (param.axis == -1 ? static_cast<int>(x_dim.size() - y_dim.size())
+                        : param.axis);
+  for (size_t i = 0; i < x_dim.size(); i++) {
+    x_shape[i] = static_cast<int>(x_dim[i]);
   }
-  if (trim_dims.size() == 0) {
-    return DDim();
+  for (size_t i = 0; i < y_dim.size(); ++i) {
+    y_shape[i + axis] = static_cast<int>(y_dim[i]);
   }
-  DDim actual_dims = DDim(trim_dims);
-  return actual_dims;
-}
 
-inline void GetMidDims(const DDim& x_dims,
-                       const DDim& y_dims,
-                       const int axis,
-                       int* pre,
-                       int* n,
-                       int* post,
-                       int* mid_flag = NULL) {
-  *pre = 1;
-  *n = 1;
-  *post = 1;
-  if (mid_flag != NULL) {
-    *mid_flag = 0;
-    int mid = 0;
-    for (int i = 0; i < axis; ++i) {
-      (*pre) *= x_dims[i];
-    }
-    for (int i = 0; i < y_dims.size(); ++i) {
-      if (x_dims[i + axis] != y_dims[i]) {
-        // only support single y_dims[i] = 1 now.
-        CHECK_EQ(*mid_flag, 0) << "Broadcast support y_dims with single 1.";
-        CHECK_EQ(y_dims[i], 1) << "Broadcast dimension mismatch.";
-        // m*n*k m*1*k
-        for (int j = 0; j < i; ++j) {
-          (*pre) *= y_dims[j];
-        }
-        *n = std::max(x_dims[i + axis], y_dims[i]);
-        *mid_flag = 1;
-        mid = i;
-        break;
-      }
-      (*n) *= y_dims[i];
-    }
-    if (*mid_flag) {
-      for (int i = mid + 1; i < x_dims.size(); ++i) {
-        (*post) *= x_dims[i];
-      }
-    } else {
-      for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
-        (*post) *= x_dims[i];
-      }
-    }
-  } else {
-    for (int i = 0; i < axis; ++i) {
-      (*pre) *= x_dims[i];
-    }
+  Functor elt_func;
+  int ret = elt_func(ctx.GetRawContext(),
+                     x->template data<T>(),
+                     y->template data<T>(),
+                     param.Out->template mutable_data<T>(TARGET(kXPU)),
+                     x_shape,
+                     y_shape);
 
-    for (int i = 0; i < y_dims.size(); ++i) {
-      CHECK_EQ(x_dims[i + axis], y_dims[i]) << "Broadcast dimension mismatch.";
-      (*n) *= y_dims[i];
-    }
-
-    for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
-      (*post) *= x_dims[i];
-    }
-  }
-}
-
-void ElementwiseAddCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
-
-  auto& x_dims = param.X->dims();
-  auto& y_dims = param.Y->dims();
-  int axis = param.axis;
-
-  auto y_dims_untrimed = y_dims;
-  axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  auto y_dims_after_trailing = TrimTrailingSingularDims(y_dims_untrimed);
-  axis = (y_dims_after_trailing.size() == 0) ? x_dims.size() : axis;
-  int pre, n, post;
-  GetMidDims(x_dims, y_dims_after_trailing, axis, &pre, &n, &post);
-  int len = pre * n * post;
-  float* y_broadcast = nullptr;
-
-  if (post == 1) {
-    int r =
-        xdnn::matrix_vector_add(ctx.GetRawContext(),
-                                param.X->data<float>(),
-                                param.Y->data<float>(),
-                                param.Out->mutable_data<float>(TARGET(kXPU)),
-                                pre,
-                                n);
-    CHECK_EQ(r, 0);
-    return;
-  }
-  if (pre != 1 || post != 1) {
-    XPUScratchPadGuard y_broadcast_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(len * sizeof(float),
-                                           false /* use_l3 */);
-    y_broadcast = reinterpret_cast<float*>(y_broadcast_xpu_guard_->addr_);
-
-    int r = xdnn::broadcast_ew(ctx.GetRawContext(),
-                               param.Y->data<float>(),
-                               y_broadcast,
-                               pre,
-                               n,
-                               post,
-                               xdnn::ElementwiseOp::ASSIGN);
-    CHECK_EQ(r, 0);
-    r = xdnn::elementwise_add(
-        ctx.GetRawContext(),                          /* context */
-        param.X->data<float>(),                       /* x */
-        y_broadcast,                                  /* y */
-        param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-        len);
-    CHECK_EQ(r, 0);
-    return;
-  }
-  int r = xdnn::elementwise_add(
-      ctx.GetRawContext(),                          /* context */
-      param.X->data<float>(),                       /* x */
-      param.Y->data<float>(),                       /* y */
-      param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-      len);
-  CHECK_EQ(r, 0);
-}
-
-void ElementwiseMulCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
-
-  auto& x_dims = param.X->dims();
-  auto& y_dims = param.Y->dims();
-  int axis = param.axis;
-
-  auto y_dims_untrimed = y_dims;
-  axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  auto y_dims_after_trailing = TrimTrailingSingularDims(y_dims_untrimed);
-  axis = (y_dims_after_trailing.size() == 0) ? x_dims.size() : axis;
-  int pre, n, post;
-  GetMidDims(x_dims, y_dims_after_trailing, axis, &pre, &n, &post);
-  int len = pre * n * post;
-  float* y_broadcast = nullptr;
-
-  if (post == 1) {
-    int r =
-        xdnn::matrix_vector_mul(ctx.GetRawContext(),
-                                param.X->data<float>(),
-                                param.Y->data<float>(),
-                                param.Out->mutable_data<float>(TARGET(kXPU)),
-                                pre,
-                                n);
-    CHECK_EQ(r, 0);
-    return;
-  }
-  if (pre != 1 || post != 1) {
-    XPUScratchPadGuard y_broadcast_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(len * sizeof(float),
-                                           false /* use_l3 */);
-    y_broadcast = reinterpret_cast<float*>(y_broadcast_xpu_guard_->addr_);
-
-    int r = xdnn::broadcast_ew(ctx.GetRawContext(),
-                               param.Y->data<float>(),
-                               y_broadcast,
-                               pre,
-                               n,
-                               post,
-                               xdnn::ElementwiseOp::ASSIGN);
-    CHECK_EQ(r, 0);
-    r = xdnn::elementwise_mul(
-        ctx.GetRawContext(),                          /* context */
-        param.X->data<float>(),                       /* x */
-        y_broadcast,                                  /* y */
-        param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-        len);
-    CHECK_EQ(r, 0);
-    return;
-  }
-  int r = xdnn::elementwise_mul(
-      ctx.GetRawContext(),                          /* context */
-      param.X->data<float>(),                       /* x */
-      param.Y->data<float>(),                       /* y */
-      param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-      len);
-  CHECK_EQ(r, 0);
-}
-
-void ElementwiseSubCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
-
-  auto& x_dims = param.X->dims();
-  auto& y_dims = param.Y->dims();
-  int axis = param.axis;
-
-  auto y_dims_untrimed = y_dims;
-  axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  auto y_dims_after_trailing = TrimTrailingSingularDims(y_dims_untrimed);
-  axis = (y_dims_after_trailing.size() == 0) ? x_dims.size() : axis;
-  int pre, n, post;
-  GetMidDims(x_dims, y_dims_after_trailing, axis, &pre, &n, &post);
-  int len = pre * n * post;
-  float* y_broadcast = nullptr;
-
-  if (len != param.Y->numel()) {
-    XPUScratchPadGuard y_broadcast_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(len * sizeof(float),
-                                           false /* use_l3 */);
-    y_broadcast = reinterpret_cast<float*>(y_broadcast_xpu_guard_->addr_);
-
-    int r = xdnn::broadcast_ew(ctx.GetRawContext(),
-                               param.Y->data<float>(),
-                               y_broadcast,
-                               pre,
-                               n,
-                               post,
-                               xdnn::ElementwiseOp::ASSIGN);
-    CHECK_EQ(r, 0);
-    r = xdnn::elementwise_sub(
-        ctx.GetRawContext(),                          /* context */
-        param.X->data<float>(),                       /* x */
-        y_broadcast,                                  /* y */
-        param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-        len);
-    CHECK_EQ(r, 0);
-    return;
-  }
-  int r = xdnn::elementwise_sub(
-      ctx.GetRawContext(),                          /* context */
-      param.X->data<float>(),                       /* x */
-      param.Y->data<float>(),                       /* y */
-      param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-      len);
-  CHECK_EQ(r, 0);
-}
-
-void ElementwiseDivCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
-
-  auto& x_dims = param.X->dims();
-  auto& y_dims = param.Y->dims();
-  int axis = param.axis;
-
-  auto y_dims_untrimed = y_dims;
-  axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  auto y_dims_after_trailing = TrimTrailingSingularDims(y_dims_untrimed);
-  axis = (y_dims_after_trailing.size() == 0) ? x_dims.size() : axis;
-  int pre, n, post;
-  GetMidDims(x_dims, y_dims_after_trailing, axis, &pre, &n, &post);
-  int len = pre * n * post;
-  float* y_broadcast = nullptr;
-
-  if (len != param.Y->numel()) {
-    XPUScratchPadGuard y_broadcast_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(len * sizeof(float),
-                                           false /* use_l3 */);
-    y_broadcast = reinterpret_cast<float*>(y_broadcast_xpu_guard_->addr_);
-
-    int r = xdnn::broadcast_ew(ctx.GetRawContext(),
-                               param.Y->data<float>(),
-                               y_broadcast,
-                               pre,
-                               n,
-                               post,
-                               xdnn::ElementwiseOp::ASSIGN);
-    CHECK_EQ(r, 0);
-    r = xdnn::elementwise_div(
-        ctx.GetRawContext(),                          /* context */
-        param.X->data<float>(),                       /* x */
-        y_broadcast,                                  /* y */
-        param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-        len);
-    CHECK_EQ(r, 0);
-    return;
-  }
-  int r = xdnn::elementwise_div(
-      ctx.GetRawContext(),                          /* context */
-      param.X->data<float>(),                       /* x */
-      param.Y->data<float>(),                       /* y */
-      param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-      len);
-  CHECK_EQ(r, 0);
+  CHECK_EQ(ret, 0);
+  return;
 }
 
 }  // namespace xpu
@@ -325,46 +130,53 @@ void ElementwiseDivCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(elementwise_add,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ElementwiseAddCompute,
-                     def)
+namespace xpu = paddle::lite::kernels::xpu;
+using AddFloat32 = xpu::ElementwiseCompute<float, xpu::AddFunctor<float>>;
+using AddInt32 = xpu::ElementwiseCompute<int, xpu::AddFunctor<int>>;
+using SubFloat32 = xpu::ElementwiseCompute<float, xpu::SubFunctor<float>>;
+using MulFloat32 = xpu::ElementwiseCompute<float, xpu::MulFunctor<float>>;
+using DivFloat32 = xpu::ElementwiseCompute<float, xpu::DivFunctor<float>>;
+using MaxFloat32 = xpu::ElementwiseCompute<float, xpu::MaxFunctor<float>>;
+using MaxInt32 = xpu::ElementwiseCompute<int, xpu::MaxFunctor<int>>;
+
+REGISTER_LITE_KERNEL(elementwise_add, kXPU, kFloat, kNCHW, AddFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(elementwise_mul,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ElementwiseMulCompute,
-                     def)
+REGISTER_LITE_KERNEL(elementwise_add, kXPU, kFloat, kNCHW, AddInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_sub, kXPU, kFloat, kNCHW, SubFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(elementwise_sub,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ElementwiseSubCompute,
-                     def)
+REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kFloat, kNCHW, MulFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(elementwise_div,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ElementwiseDivCompute,
-                     def)
+REGISTER_LITE_KERNEL(elementwise_div, kXPU, kFloat, kNCHW, DivFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_max, kXPU, kFloat, kNCHW, MaxFloat32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_max, kXPU, kFloat, kNCHW, MaxInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();

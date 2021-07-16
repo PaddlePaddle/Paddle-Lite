@@ -31,36 +31,35 @@ void ConvBNFuser::BuildPattern() {
   auto* conv = OpNode("conv2d", conv_type_)->assert_is_op(conv_type_);
   auto* conv_out = VarNode("conv_out")
                        ->assert_is_op_output(conv_type_, "Output")
-                       ->assert_is_op_input("batch_norm", "X")
+                       ->assert_is_op_input(bn_type_, "X")
                        ->AsIntermediate();
 
   auto* bn_scale = VarNode("bn_scale")
-                       ->assert_is_op_input("batch_norm", "Scale")
+                       ->assert_is_op_input(bn_type_, "Scale")
                        ->AsIntermediate();
   auto* bn_bias =
-      VarNode("bn_bias")->assert_is_op_input("batch_norm", "Bias")->AsInput();
+      VarNode("bn_bias")->assert_is_op_input(bn_type_, "Bias")->AsInput();
   auto* bn_mean = VarNode("bn_mean")
-                      ->assert_is_op_input("batch_norm", "Mean")
+                      ->assert_is_op_input(bn_type_, "Mean")
                       ->AsIntermediate();
   auto* bn_var = VarNode("bn_variance")
-                     ->assert_is_op_input("batch_norm", "Variance")
+                     ->assert_is_op_input(bn_type_, "Variance")
                      ->AsIntermediate();
-  auto* bn =
-      OpNode("bn", "batch_norm")->assert_is_op("batch_norm")->AsIntermediate();
+  auto* bn = OpNode("bn", bn_type_)->assert_is_op(bn_type_)->AsIntermediate();
 
   auto* bn_out =
-      VarNode("bn_out")->assert_is_op_output("batch_norm", "Y")->AsOutput();
+      VarNode("bn_out")->assert_is_op_output(bn_type_, "Y")->AsOutput();
   auto* bn_mean_out = VarNode("bn_mean_out")
-                          ->assert_is_op_output("batch_norm", "MeanOut")
+                          ->assert_is_op_output(bn_type_, "MeanOut")
                           ->AsIntermediate();
   auto* bn_var_out = VarNode("bn_var_out")
-                         ->assert_is_op_output("batch_norm", "VarianceOut")
+                         ->assert_is_op_output(bn_type_, "VarianceOut")
                          ->AsIntermediate();
   auto* bn_saved_mean = VarNode("bn_saved_mean")
-                            ->assert_is_op_output("batch_norm", "SavedMean")
+                            ->assert_is_op_output(bn_type_, "SavedMean")
                             ->AsIntermediate();
   auto* bn_saved_var = VarNode("bn_saved_var")
-                           ->assert_is_op_output("batch_norm", "SavedVariance")
+                           ->assert_is_op_output(bn_type_, "SavedVariance")
                            ->AsIntermediate();
 
   if (conv_has_bias_) {
@@ -199,6 +198,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       conv_op_desc->SetAttr(scale_name, scale);
     }
   } else {
+#ifndef LITE_WITH_FPGA
     // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
     if (conv_type_ == "conv2d_transpose") {
@@ -221,6 +221,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
         }
       }
     }
+#endif
   }
 
   // compute new conv_bias
@@ -231,12 +232,23 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     auto conv_bias_d = conv_bias_t->data<float>();
     for (unsigned int i = 0; i < bn_bias_t->data_size();
          ++i) {  // bias_size == h == conv2d output channls
+                 // bn_bias_d[i] += alpha_data[i] * conv_bias_d[i];
+#ifndef LITE_WITH_FPGA
       bn_bias_d[i] += alpha_data[i] * conv_bias_d[i];
+#else
+      bn_bias_d[i] += conv_bias_d[i];
+#endif
     }
   }
   for (unsigned int i = 0; i < bn_bias_t->data_size(); ++i) {
     bn_bias_d[i] += beta_data[i];
   }
+
+#ifdef LITE_WITH_FPGA
+  for (unsigned int i = 0; i < bn_scale_t->data_size(); ++i) {
+    bn_scale_d[i] = alpha_data[i];
+  }
+#endif
 
   conv_op_desc->SetType(conv_type_);
   conv_op_desc->SetInput("Input", {matched.at("conv_input")->arg()->name});
@@ -244,6 +256,12 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   conv_op_desc->SetOutput("Output", {matched.at("bn_out")->arg()->name});
   conv_op_desc->SetInput("Bias",
                          {matched.at("bn_bias")->arg()->name});  // conv_bias
+#ifdef LITE_WITH_FPGA
+  conv_op_desc->SetInput("Scale",
+                         {matched.at("bn_scale")->arg()->name});  // conv_sias
+  IR_NODE_LINK_TO(matched.at("bn_scale"), matched.at("conv2d"));
+#endif
+
   auto update_conv_desc = *conv_instruct->mutable_op_info();
   conv_instruct->ResetOp(update_conv_desc, graph->valid_places());
 

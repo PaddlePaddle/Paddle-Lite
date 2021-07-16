@@ -14,15 +14,30 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
-void QuantizeActvation(
-    const float* input, int8_t* output, float* scale, int size, int bit_length);
+inline float GetScale(float threshold, int bit_length) {
+  return threshold / ((1 << (bit_length - 1)) - 1);
+}
+
+float FindAbsMax(const float* input, int size);
+
+template <typename T>
+void QuantizeTensor(const float* input, T* output, int size, float scale) {
+  auto quant_func = [scale](float x) {
+    return static_cast<T>(std::round(x / scale));
+  };
+  std::transform(input, input + size, output, quant_func);
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

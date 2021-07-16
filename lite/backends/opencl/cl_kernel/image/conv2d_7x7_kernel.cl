@@ -18,11 +18,16 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
                          __private const int input_width,  /* of one block */
                          __private const int input_height, /* of one block */
                          __private const int output_width,
-                         __private const int output_height) {
+                         __private const int output_height,
+                         __read_only image2d_t prelu_alpha) {
 
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
+  if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
+      out_nh >= global_size_dim2) {
+    return;
+  }
 
   int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
 
@@ -71,19 +76,17 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
                          in_pos_in_one_block.y + batch_index * input_height);
     for (int j = 0; j < 7; j++) {
       for (int k = 0; k < 7; k++) {
-        input = select(
+        input = SELECT(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           SAMPLER,
                           (int2)(pos_in.x + (j - 3) * dilation,
                                  pos_in.y + (k - 3) * dilation)),
             (CL_DTYPE4)(0.0f),
-            (ushort4)(
-                (in_pos_in_one_block.x + (j - 3) * dilation < 0 ||
-                 in_pos_in_one_block.y + (k - 3) * dilation < 0 ||
-                 in_pos_in_one_block.x + (j - 3) * dilation >= input_width ||
-                 in_pos_in_one_block.y + (k - 3) * dilation >= input_height)
-                << 15));
+            in_pos_in_one_block.x + (j - 3) * dilation < 0 ||
+                in_pos_in_one_block.y + (k - 3) * dilation < 0 ||
+                in_pos_in_one_block.x + (j - 3) * dilation >= input_width ||
+                in_pos_in_one_block.y + (k - 3) * dilation >= input_height);
         int filter_h = k;
         int filter_w = j;
         int filter_c = i;
@@ -123,7 +126,25 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
-  output = activation_type4(output);
+  CL_DTYPE4 alpha0;
+#ifdef PRELU_CH  //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
+//}
+#elif defined(PRELU_ELE)  //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos);
+//}
+#elif defined(PRELU_ALL)  //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0.y = alpha0.x;
+  alpha0.z = alpha0.x;
+  alpha0.w = alpha0.x;
+//}
+#endif
+  output = activation_type4(output, alpha0);
+
+#ifdef SCALE_ACTIVATION
+  output = fuse_scale(output, 1.f, 0.f, 0.f);
+#endif
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
 }

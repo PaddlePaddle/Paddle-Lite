@@ -291,7 +291,10 @@ class ReduceProdComputeTester : public arena::TestCase {
   void PrepareData() override {
     std::vector<float> data(x_dims_.production());
     for (int i = 0; i < x_dims_.production(); i++) {
-      data[i] = (i + 1) * 1.0;
+      data[i] = static_cast<float>(i + 1);
+      while (data[i] > 1.f) {
+        data[i] /= 10.f;
+      }
     }
     SetCommonTensor(input_, x_dims_, data.data());
   }
@@ -329,13 +332,18 @@ void test_reduce_prod(Place place) {
 }
 
 TEST(ReduceProd, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_reduce_prod(place);
+  Place place;
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
 #endif
+
+  test_reduce_prod(place);
 }
 
 }  // namespace lite

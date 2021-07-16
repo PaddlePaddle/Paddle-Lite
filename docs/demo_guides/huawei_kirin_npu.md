@@ -7,46 +7,129 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ### 已支持的芯片
 
-- Kirin 810/820/990/985/9000
+- Kirin 810/820/985/990/990 5G/9000E/9000
 
 ### 已支持的设备
 
-- Kirin 990：HUAWEI Mate 30系列, 荣耀 V20系列, nova 6系列，P40系列，Mate Xs
+- Kirin 9000：HUAWEI Mate 40pro系列
+- Kirin 9000E：HUAWEI Mate 40系列
+- Kirin 990 5G：HUAWEI Mate 30pro系列，P40pro系列
+- Kirin 990：HUAWEI Mate 30系列，荣耀 V20系列，nova 6系列，P40系列，Mate Xs
 - Kirin 985：HUAWEI nova 7 5G，nova 7 Pro 5G，荣耀 30
 - Kirin 820：HUAWEI nova 7 SE 5G，荣耀 30S
 - Kirin 810：HUAWEI nova 5系列，nova 6 SE，荣耀 9X系列，荣耀 Play4T Pro
 
 ### 已支持的Paddle模型
 
+#### 模型
 - [MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)
 - [MobileNetV2](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v2_fp32_224_fluid.tar.gz)
 - ResNet系列（例如[ResNet18](https://paddlelite-demo.bj.bcebos.com/models/resnet18_fp32_224_fluid.tar.gz)、[ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz)）
-- [SqueezeNet](https://paddlelite-demo.bj.bcebos.com/models/squeezenet_fp32_224_fluid.tar.gz)
+- [SqueezeNetV1](https://paddlelite-demo.bj.bcebos.com/models/squeezenet_fp32_224_fluid.tar.gz)
 - [MnasNet](https://paddlelite-demo.bj.bcebos.com/models/mnasnet_fp32_224_fluid.tar.gz)
-- [MobileNet-SSD](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) *
+- [SSD-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) *
 - YOLOv3系列（例如[YOLOv3-MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz)） *
 - [Transformer](https://github.com/PaddlePaddle/models/tree/release/1.8/PaddleNLP/machine_translation/transformer) *
 - CycleGAN
 - 百度内部业务模型（由于涉密，不方便透露具体细节）
 
+#### 性能
+- 测试环境
+  - 编译环境
+    - Ubuntu 16.04，NDK-r17c with GCC for Android arm64-v8a
+    - HIAI DDK 版本：v330
+
+  - 硬件环境
+    - Kirin 810
+      - HUAWEI Nova 5，Kirin 810
+      - CPU：2 x Cortex A76 2.27GHz + 6 x Cortex A55 1.88GHz
+      - NPU：Da Vinci架构，1 x Ascend D100 Lite
+
+    - Kirin 990
+      - HUAWEI Mate 30，Kirin 990
+      - CPU：2 x Cortex-A76 Based 2.86 GHz + 2 x Cortex-A76 Based 2.09 GHz + 4 x Cortex-A55 1.86 GHz
+      - NPU：Da Vinci架构，1  x Ascend Lite + 1 x Ascend Tiny
+
+    - Kirin 990 5G
+      - HUAWEI P40pro，Kirin 990 5G
+      - CPU：2 x Cortex-A76 Based 2.86GHz + 2 x Cortex-A76 Based 2.36GHz + 4 x Cortex-A55 1.95GHz
+      - NPU：Da Vinci架构，2 x Ascend Lite + 1 x Ascend Tiny
+
+- 测试方法
+  - warmup=10，repeats=30，统计平均时间，单位是ms
+  - 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
+  - 分类模型的输入图像维度是{1，3，224，224}，检测模型YOLOv3的维度是{1，3，300，300}
+
+- 测试结果
+
+  |模型 |Kirin 810||Kirin 990||Kirin 990 5G||
+  |---|---|---|---|---|---|---|
+  |  |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |
+  |MobileNetV1|  40.6692|  5.54013|  31.7788|  2.87613|  33.7056|  2.56747|
+  |MobileNetV2|  28.8675|  6.07687|  22.0599|  3.29|  21.915|  3.0198|
+  |SqueezeNetV1|  24.3369|  4.2882|  17.2335|  2.64507|  16.441|  1.99127|
+  |MobileNetV3_small_x1_0|  8.56147|  5.73127|  6.1622|  3.6188|  6.161|  3.07933|
+  |MobileNetV3_large_x1_0|  24.2411|  8.8436|  17.6282|  5.17007| 17.7403|  4.46753|
+  |ResNet50|  243.362|  18.2089|  188.278|  9.52347|  195.01|  7.22413|
+  |ResNet18|  83.4019|  8.95044|  59.1979|  4.4132|  60.6379|  3.2484|
+  |MnasNet|  26.0265|  5.67727|  19.3513|  2.9928|  19.674|  2.70053|
+  |Inception-v4|  424.817|  29.7705|  321.639|  17.4933|  344.484|  12.3104|
+  |SSD-MobileNetV1*|  -|  -|  65.67|  18.21|  71.8|  16.6|
+  |YOLOv3-MobileNetV3*|  65.3149|  36.2999|  45.7647|  22.9404|  46.8137|  24.4829|
+
 带*表示该模型的部分算子不支持华为Kirin NPU加速，而是采用ARM CPU+华为Kirin NPU异构计算方式获得支持。
 
 ### 已支持（或部分支持）的Paddle算子
 
-| | | | |
-|-|-|-|-|
-|sigmoid|relu|tanh|relu_clipped|
-|leaky_relu|softsign|hard_sigmoid|log|
-|sqrt|square|thresholded_relu|batch_norm|
-|less_than|concat|conv2d|depthwise_conv2d|
-|conv2d_transpose|dropout|elementwise_add|elementwise_sub|
-|elementwise_mul|elementwise_div|expand|fusion_elementwise_add_activation|
-|fusion_elementwise_sub_activation|fusion_elementwise_mul_activation|fusion_elementwise_div_activation|increment|
-|instance_norm (需要HiAI DDK330)|layer_norm (需要HiAI DDK330)|fc|bilinear_interp|
-|nearest_interp|matmul|mul|pad2d|
-|pool2d|reduce_mean|reshape|reshape2|
-|scale|shuffle_channel|softmax|split|
-|transpose|transpose2|unsqueeze|unsqueeze2|
+- sigmoid
+- relu
+- tanh
+- relu_clipped
+- relu6
+- leaky_relu
+- softsign
+- hard_sigmoid
+- log
+- sqrt
+- square
+- thresholded_relu
+- batch_norm
+- less_than
+- concat
+- conv2d
+- depthwise_conv2d
+- conv2d_transpose
+- dropout
+- elementwise_add
+- elementwise_sub
+- elementwise_mul
+- elementwise_div
+- expand
+- fusion_elementwise_add_activation
+- fusion_elementwise_sub_activation
+- fusion_elementwise_mul_activation
+- fusion_elementwise_div_activation
+- increment
+- instance_norm (需要HiAI DDK330)
+- fc
+- bilinear_interp
+- nearest_interp
+- layer_norm (需要HiAI DDK330)
+- matmul
+- mul
+- pad2d
+- pool2d
+- reduce_mean
+- reshape
+- reshape2
+- scale
+- shuffle_channel
+- softmax
+- split
+- transpose
+- transpose2
+- unsqueeze
+- unsqueeze2
 
 可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
@@ -239,28 +322,40 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 - 编译并生成PaddleLite+HuaweiKirinNPU for armv8 and armv7的部署库
 
-  ```shell
-  For armv8
-  tiny_publish
-  $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330
-  full_publish
-  $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330 full_publish
+  - For armv8
+    - tiny_publish编译
+      ```shell
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330
 
-  For armv7
-  tiny_publish
-  $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330
-  full_publish
-  $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330 full_publish
+      将tiny_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件；
+      ```
+    
+    - full_publish编译
+      ```shell
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330 full_publish
 
+      将full_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_full_api_shared.so文件；
+      ```
+    将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
+
+  - For armv7
+    - tiny_publish编译
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330
+
+      将tiny_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件；
+      ```
+    - full_publish编译
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330 full_publish
+
+      将full_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_full_api_shared.so文件。
+      ```
+    将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/include目录；
+  
   备注：由于HiAI DDK的so库均基于c++_shared构建，建议将android stl设置为c++_shared，更多选项还可以通过 "./lite/tools/build_android.sh help" 查看。
-  ```
-
-- 将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
-- 将tiny_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_full_api_shared.so文件；
-- 将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/include目录；
-- 将tiny_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_full_api_shared.so文件。
+  
+- 替换头文件后需要重新编译示例程序
 
 ## 如何支持CPU+华为Kirin NPU异构计算？
 

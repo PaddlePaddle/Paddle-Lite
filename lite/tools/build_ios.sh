@@ -1,5 +1,6 @@
 #!/bin/bash
 set +x
+set -e
 
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
@@ -39,6 +40,9 @@ fi
 # 3. compiling functions
 ####################################################################################################
 function make_ios {
+    if [ ! -d third-party ]; then
+      git checkout third-party
+    fi
     local arch=$1
 
     if [ ${arch} == "armv8" ]; then

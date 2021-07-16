@@ -46,6 +46,10 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   mode_ = config.power_mode();
   threads_ = config.threads();
 
+#ifdef LITE_WITH_METAL
+  raw_predictor_->ConfigMetalContext(config);
+#endif
+
 #ifdef LITE_WITH_NPU
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration
@@ -58,6 +62,28 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // exe_scope to store the execution-level configuration
   Context<TargetType::kAPU>::SetSubgraphModelCacheDir(
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
+#endif
+
+#ifdef LITE_WITH_RKNPU
+  // Store the model-level configuration into scope for kernels, and use
+  // exe_scope to store the execution-level configuration
+  Context<TargetType::kRKNPU>::SetSubgraphModelCacheDir(
+      raw_predictor_->scope(), config.subgraph_model_cache_dir());
+  Context<TargetType::kRKNPU>::SetSubgraphModelCacheBuffers(
+      raw_predictor_->scope(), config.subgraph_model_cache_buffers());
+#endif
+
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+  // Use scope to store the model-level configuration for the subgraph kernel
+  Context<TargetType::kNNAdapter>::SetNNAdapterDeviceNames(
+      raw_predictor_->scope(), config.nnadapter_device_names());
+  Context<TargetType::kNNAdapter>::SetNNAdapterContextProperties(
+      raw_predictor_->scope(), config.nnadapter_context_properties());
+  Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(
+      raw_predictor_->scope(), config.nnadapter_model_cache_dir());
+  Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
+      raw_predictor_->scope(), config.nnadapter_model_cache_buffers());
 #endif
 
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
@@ -129,6 +155,10 @@ std::vector<std::string> LightPredictorImpl::GetInputNames() {
 
 std::vector<std::string> LightPredictorImpl::GetOutputNames() {
   return raw_predictor_->GetOutputNames();
+}
+
+bool LightPredictorImpl::TryShrinkMemory() {
+  return raw_predictor_->TryShrinkMemory();
 }
 
 }  // namespace lite

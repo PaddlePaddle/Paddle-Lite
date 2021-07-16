@@ -17,14 +17,15 @@ import sys
 import logging
 from ast import RegisterLiteKernelParser
 
-if len(sys.argv) != 6:
-    print("Error: parse_kernel_registry.py requires four inputs!")
+if len(sys.argv) != 7:
+    print("Error: parse_kernel_registry.py requires six inputs!")
     exit(1)
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
 minkernels_list_path = sys.argv[3]
 tailored = sys.argv[4]
 with_extra = sys.argv[5]
+enable_arm_fp16 = sys.argv[6]
 
 out_lines = [
     '#pragma once',
@@ -42,10 +43,10 @@ with open(ops_list_path) as f:
         with open(path.strip()) as g:
             c = g.read()
             kernel_parser = RegisterLiteKernelParser(c)
-            kernel_parser.parse(with_extra)
+            kernel_parser.parse(with_extra, enable_arm_fp16)
 
             for k in kernel_parser.kernels:
-                  kernel = "%s, %s, %s, %s, %s" % (
+                  kernel = "%s,%s,%s,%s,%s" % (
                      k.op_type,
                      k.target,
                      k.precision,

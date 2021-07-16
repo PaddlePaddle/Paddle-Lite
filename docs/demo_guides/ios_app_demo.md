@@ -18,7 +18,7 @@
 
 ## iOS demo部署方法
 
-下面我们以**目标检测（object_detection_demo)**为例讲解如何部署iOS工程。
+下面我们以**目标检测(object_detection_demo)** 为例讲解如何部署iOS工程。
 
 **目的**：将基于Paddle-Lite预测库的iOS APP部署到苹果手机，实现物体检测。
 
@@ -37,7 +37,7 @@ sh download_dependencies.sh     # 2. 执行脚本下载依赖项 （需要联网
 
 下载完成后会出现提示： `Extract done `
 
-3、用Xcode打开`object_detection_demo/detection_demo.xcodeproj`文件，修改工程配置。
+3、用Xcode打开`ios-detection_demo/detection_demo.xcodeproj`文件，修改工程配置。
 依次修改 `General/Identity`和`Signing&Capabilities`属性，替换为自己的工程代号和团队名称。（必须修改，不然无法通过编译）
 
 ![Xcode1](https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/iOS/Xcode1.png)
@@ -90,7 +90,7 @@ ios-detection_demo/detection_demo/ViewController.mm
 
 ## 代码讲解 （如何使用Paddle-Lite C++ API 执行预测）
 
-IOS 示例基于C++ API 开发，调用Paddle-Lite C++ API包括以下五步。更详细的API 描述参考： [Paddle-Lite C++ API](https://paddle-lite.readthedocs.io/zh/latest/api_reference/cxx_api_doc.html)。
+IOS 示例基于C++ API 开发，调用Paddle-Lite C++ API包括以下五步。更详细的API 描述参考： [Paddle-Lite C++ API](../api_reference/cxx_api_doc)。
 
 ```c++
 #include <iostream>

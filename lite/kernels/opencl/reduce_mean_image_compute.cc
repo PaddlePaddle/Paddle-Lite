@@ -28,7 +28,7 @@ class ReduceMeanComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                                    PRECISION(kFP16),
                                                    DATALAYOUT(kImageDefault)> {
  public:
-  using param_t = operators::ReduceMeanParam;
+  using param_t = operators::ReduceParam;
 
   std::string doc() const override {
     return "Reduce_mean using cl::Image2D, kFP16";

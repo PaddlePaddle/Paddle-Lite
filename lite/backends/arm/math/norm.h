@@ -21,13 +21,6 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-void norm(const float* input,
-          const int pre_n,
-          const int n,
-          const int post_n,
-          const float epsilon,
-          float* out,
-          Context<TARGET(kARM)>* ctx);
 
 void matrix_norm_row(const float* x_data,
                      const float* scale_data,
@@ -38,6 +31,7 @@ void matrix_norm_row(const float* x_data,
                      float epsilon,
                      int batch_size,
                      int feature_size);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

@@ -74,15 +74,16 @@ class ConcateComputeTester : public arena::TestCase {
       x_vct.push_back(scope->FindTensor(name));
     }
 
+    int axis = axis_ < 0 ? axis_ + static_cast<int>(x_dims_.size()) : axis_;
     auto* out = scope->NewTensor(out_);
-    DDim output_dims = infer_shape(x_vct, axis_);
+    DDim output_dims = infer_shape(x_vct, axis);
     out->Resize(output_dims);
     auto* output_data = out->mutable_data<float>();
 
     int num = x_vct.size();
     int rows = 1;
     auto dim_0 = x_vct[0]->dims();
-    for (int i = 0; i < axis_; ++i) {
+    for (int i = 0; i < axis; ++i) {
       rows *= dim_0[i];
     }
     int out_rows = rows, out_cols = 0;
@@ -90,7 +91,7 @@ class ConcateComputeTester : public arena::TestCase {
     std::vector<int> input_cols(x_vct.size());
     for (int i = 0; i < num; ++i) {
       int input_i_numel = x_vct[i]->dims().size() == 0 ? 0 : 1;
-      for (int didx = 0; didx < x_vct[i]->dims().size(); ++didx) {
+      for (size_t didx = 0; didx < x_vct[i]->dims().size(); ++didx) {
         input_i_numel *= x_vct[i]->dims()[didx];
       }
       int t_cols = input_i_numel / rows;
@@ -135,21 +136,27 @@ class ConcateComputeTester : public arena::TestCase {
 
     if (is_use_axis_tensor_) {
       SetCommonTensor(axis_tensor_, DDim({1}), &axis_);
-      LOG(INFO) << "set axis tensor";
     }
   }
 };
 
 TEST(Concat, precision) {
-  LOG(INFO) << "test concat op, kARM";
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+  std::vector<int> axes{-1, 1, 2};
+  std::vector<bool> use_axis_tensor{false, true};
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+  use_axis_tensor = std::vector<bool>{false};
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
+  axes = std::vector<int>{1, 2};
+  use_axis_tensor = std::vector<bool>{false};
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+  axes = std::vector<int>{1, 2};
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -158,13 +165,8 @@ TEST(Concat, precision) {
   return;
 #endif
 
-  for (int axis : {1, 2}) {
-    for (bool is_use_axis_tensor : {false, true}) {
-#ifdef LITE_WITH_NPU
-      if (is_use_axis_tensor) continue;
-#endif
-      LOG(INFO) << "axis:" << axis
-                << ", is_use_axis_tensor:" << is_use_axis_tensor;
+  for (int axis : axes) {
+    for (bool is_use_axis_tensor : use_axis_tensor) {
       std::unique_ptr<arena::TestCase> tester(
           new ConcateComputeTester(place, "def", axis, is_use_axis_tensor));
       arena::Arena arena(std::move(tester), place, abs_error);

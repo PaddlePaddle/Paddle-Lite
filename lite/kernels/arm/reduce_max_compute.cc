@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/reduce_max_compute.h"
+
 #include <string>
+
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
@@ -22,7 +24,7 @@ namespace kernels {
 namespace arm {
 
 void ReduceMaxCompute::Run() {
-  auto& param = Param<operators::ReduceMaxParam>();
+  auto& param = Param<operators::ReduceParam>();
   const float* input = param.X->data<float>();
   auto x_dims = param.X->dims();
 
@@ -104,9 +106,36 @@ void ReduceMaxCompute::Run() {
     } else {
       LOG(FATAL) << "dim's size over than 2, which is not supported now!!";
     }
+  } else if (x_dims.size() == 2) {
+    int first_in = x_dims[0];
+    int second_in = x_dims[1];
+    if (dim.size() == 1) {
+      switch (dim[0]) {
+        case 0:
+          lite::arm::math::reduce_first_of_two<float>(
+              input,
+              output,
+              first_in,
+              second_in,
+              lite::arm::math::MaxMinType::kMax);
+          break;
+        case 1:
+          lite::arm::math::reduce_second_of_two<float>(
+              input,
+              output,
+              first_in,
+              second_in,
+              lite::arm::math::MaxMinType::kMax);
+          break;
+        default:
+          LOG(FATAL) << "error!!!";
+      }
+    } else {
+      LOG(FATAL) << "dim's size over than 1, which is not supported now!!";
+    }  // x_dims == 2 && dim.size() == 1
   } else {
-    LOG(FATAL) << "only support input with 3&4 dimensions now!!";
-  }
+    LOG(FATAL) << "only support input with 2&3&4 dimensions now!!";
+  }  // x_dims == 2
 }
 
 }  // namespace arm

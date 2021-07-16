@@ -60,8 +60,8 @@ void PriorBoxCompute::PrepareForRun() {
   prior_num += max_size.size();
 
   CHECK_LE(aspect_ratios_vec.size(), 16);
-  xpu_aspect_ratios_guard_ = TargetWrapperXPU::MallocScratchPad(
-      16 * sizeof(float), false /* use_l3 */);
+  xpu_aspect_ratios_guard_ =
+      TargetWrapperXPU::MallocScratchPad(16 * sizeof(float));
   XPU_CALL(xpu_memcpy(xpu_aspect_ratios_guard_->addr_,
                       aspect_ratios_vec.data(),
                       aspect_ratios_vec.size() * sizeof(float),
@@ -69,8 +69,7 @@ void PriorBoxCompute::PrepareForRun() {
   ar_num = aspect_ratios_vec.size();
 
   CHECK_LE(min_size.size(), 8);
-  xpu_min_sizes_guard_ =
-      TargetWrapperXPU::MallocScratchPad(8 * sizeof(float), false /* use_l3 */);
+  xpu_min_sizes_guard_ = TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
   XPU_CALL(xpu_memcpy(xpu_min_sizes_guard_->addr_,
                       min_size.data(),
                       min_size.size() * sizeof(float),
@@ -78,8 +77,7 @@ void PriorBoxCompute::PrepareForRun() {
   min_size_num = min_size.size();
 
   CHECK_LE(max_size.size(), 8);
-  xpu_max_sizes_guard_ =
-      TargetWrapperXPU::MallocScratchPad(8 * sizeof(float), false /* use_l3 */);
+  xpu_max_sizes_guard_ = TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
   XPU_CALL(xpu_memcpy(xpu_max_sizes_guard_->addr_,
                       max_size.data(),
                       max_size.size() * sizeof(float),
@@ -87,8 +85,7 @@ void PriorBoxCompute::PrepareForRun() {
   max_size_num = max_size.size();
 
   CHECK_EQ(variance.size(), 4);
-  variance_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false /* use_l3 */);
+  variance_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   XPU_CALL(xpu_memcpy(variance_xpu_guard_->addr_,
                       variance.data(),
                       variance.size() * sizeof(float),

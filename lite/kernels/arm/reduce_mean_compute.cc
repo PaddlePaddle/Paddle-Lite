@@ -22,7 +22,7 @@ namespace kernels {
 namespace arm {
 
 void ReduceMeanCompute::Run() {
-  auto& param = Param<operators::ReduceMeanParam>();
+  auto& param = Param<operators::ReduceParam>();
   const float* input = param.X->data<float>();
   auto x_dims = param.X->dims();
   int x_rank = x_dims.size();

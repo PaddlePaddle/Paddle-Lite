@@ -19,15 +19,15 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <typename T>
+template <typename Stype, typename Dtype>
 void OneHotKernelFunctor(const Tensor* in,
                          Tensor* out,
                          int depth,
                          bool allow_out_of_range = false) {
-  auto* p_in_data = in->data<int64_t>();
+  auto* p_in_data = in->data<Stype>();
   auto numel = in->numel();
-  auto* p_out_data = out->mutable_data<T>();
-  memset(p_out_data, 0, out->numel() * sizeof(T));
+  auto* p_out_data = out->mutable_data<Dtype>();
+  memset(p_out_data, 0, out->numel() * sizeof(Dtype));
   if (allow_out_of_range) {
     for (int i = 0; i < numel; ++i) {
       if (p_in_data[i] >= 0 && p_in_data[i] < depth) {
@@ -48,19 +48,41 @@ void OneHotKernelFunctor(const Tensor* in,
   }
 }
 
-void OneHotCompute::Run() {
+template <>
+void OneHotCompute<PRECISION(kInt32)>::Run() {
   auto& param = this->template Param<param_t>();
   switch (param.dtype) {
     case static_cast<int>(lite::core::FluidType::INT64):
-      OneHotKernelFunctor<int64_t>(
+      OneHotKernelFunctor<int32_t, int64_t>(
           param.X, param.Out, param.depth, param.allow_out_of_range);
       break;
     case static_cast<int>(lite::core::FluidType::INT32):
-      OneHotKernelFunctor<int32_t>(
+      OneHotKernelFunctor<int32_t, int32_t>(
           param.X, param.Out, param.depth, param.allow_out_of_range);
       break;
     case static_cast<int>(lite::core::FluidType::FP32):
-      OneHotKernelFunctor<float>(
+      OneHotKernelFunctor<int32_t, float>(
+          param.X, param.Out, param.depth, param.allow_out_of_range);
+      break;
+    default:
+      LOG(ERROR) << "Unsupported data type for one_hot op:" << param.dtype;
+  }
+}
+
+template <>
+void OneHotCompute<PRECISION(kInt64)>::Run() {
+  auto& param = this->template Param<param_t>();
+  switch (param.dtype) {
+    case static_cast<int>(lite::core::FluidType::INT64):
+      OneHotKernelFunctor<int64_t, int64_t>(
+          param.X, param.Out, param.depth, param.allow_out_of_range);
+      break;
+    case static_cast<int>(lite::core::FluidType::INT32):
+      OneHotKernelFunctor<int64_t, int32_t>(
+          param.X, param.Out, param.depth, param.allow_out_of_range);
+      break;
+    case static_cast<int>(lite::core::FluidType::FP32):
+      OneHotKernelFunctor<int64_t, float>(
           param.X, param.Out, param.depth, param.allow_out_of_range);
       break;
     default:
@@ -73,11 +95,45 @@ void OneHotCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    one_hot, kHost, kAny, kAny, paddle::lite::kernels::host::OneHotCompute, def)
+typedef paddle::lite::kernels::host::OneHotCompute<PRECISION(kInt64)>
+    one_hot_64;
+typedef paddle::lite::kernels::host::OneHotCompute<PRECISION(kInt32)>
+    one_hot_32;
+
+REGISTER_LITE_KERNEL(one_hot, kHost, kAny, kAny, one_hot_64, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("depth_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+REGISTER_LITE_KERNEL(one_hot_v2, kHost, kAny, kAny, one_hot_64, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("depth_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    one_hot_v2, kHost, kAny, kAny, one_hot_32, one_hot_v2_int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("depth_tensor",
                {LiteType::GetTensorTy(TARGET(kHost),

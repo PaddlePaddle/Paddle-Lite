@@ -4,6 +4,10 @@
 include(CheckCXXSourceRuns)
 include(CheckCXXSourceCompiles)
 
+if(IOS)
+return ()
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(FMA_FLAG "-mfma")
     set(MMX_FLAG "-mmmx")
@@ -113,6 +117,6 @@ int main()
 set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS_RETAINED})
 mark_as_advanced(MMX_FOUND SSE2_FOUND SSE3_FOUND AVX_FOUND AVX2_FOUND AVX512F_FOUND)
 
-if(WITH_AXV AND AVX_FOUND)
+if(WITH_AVX AND AVX_FOUND)
     add_definitions(-DLITE_WITH_AVX)
 endif()

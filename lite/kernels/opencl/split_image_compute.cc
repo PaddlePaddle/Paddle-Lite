@@ -85,7 +85,7 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto& outs = split_param_->output;
     axis_ = split_param_->axis;
     if (axis_ < 0) {
-      axis_ += x_dims.size() - 1;
+      axis_ += x_dims.size();
     }
 
     if (outs.size() != 2) {
@@ -132,13 +132,15 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
     const auto& x_dims = split_param_->x->dims();
     const int out0_dims_axis = split_param_->output[0]->dims()[axis_];
     const auto out_num = split_param_->output.size();
-    const auto* x_img = split_param_->x->data<half_t, cl::Image2D>();
+    const auto* x_img = GET_DATA_GPU(split_param_->x);
 
     std::vector<cl::Image2D*> out_img{out_num};
     for (auto i = 0; i < split_param_->output.size(); i++) {
       auto image_shape = InitImageDimInfoWith(split_param_->output[i]->dims());
-      out_img[i] = split_param_->output[i]->mutable_data<half_t, cl::Image2D>(
-          image_shape["width"], image_shape["height"]);
+      out_img[i] = MUTABLE_DATA_GPU(split_param_->output[i],
+                                    image_shape["width"],
+                                    image_shape["height"],
+                                    nullptr);
     }
 
     auto& context = ctx_->As<OpenCLContext>();

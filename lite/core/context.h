@@ -15,6 +15,10 @@
 #pragma once
 
 #include "lite/utils/any.h"
+
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/context.h"
+#endif
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/context.h"
 #endif
@@ -30,6 +34,9 @@
 #endif
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/xpu_header_sitter.h"
+#endif
+#ifdef LITE_WITH_NNADAPTER
+#include "lite/backends/nnadapter/nnadapter_wrapper.h"
 #endif
 
 #include <map>
@@ -65,6 +72,9 @@ using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
 using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
 using ImaginationNNAContext = Context<TargetType::kImaginationNNA>;
+using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
+using NNAdapterContext = Context<TargetType::kNNAdapter>;
+using MTLContext = Context<TargetType::kMetal>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -186,6 +196,57 @@ class Context<TargetType::kRKNPU> {
 
   RKNPUContext& operator=(const RKNPUContext& ctx) {}
   std::string name() const { return "RKNPUContext"; }
+
+  static void SetSubgraphModelCacheDir(Scope* scope,
+                                       std::string subgraph_model_cache_dir) {
+    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_model_cache_dir;
+  }
+
+  static std::string SubgraphModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+
+  static void SetSubgraphModelCacheBuffers(
+      Scope* scope,
+      const std::map<std::string,
+                     std::pair<std::vector<char>, std::vector<char>>>&
+          subgraph_model_cache_buffers) {
+    for (auto& subgraph_model_cache_buffer : subgraph_model_cache_buffers) {
+      auto& key = subgraph_model_cache_buffer.first;
+      auto var = scope->Var("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
+      CHECK(var);
+      auto data =
+          var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
+      CHECK(data);
+      *data = subgraph_model_cache_buffer.second;
+    }
+  }
+
+  static bool SubgraphModelCacheBuffers(Scope* scope,
+                                        const std::string& key,
+                                        std::vector<char>* cfg,
+                                        std::vector<char>* bin) {
+    CHECK(cfg);
+    CHECK(bin);
+    cfg->clear();
+    bin->clear();
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
+    if (!var) return false;
+    auto data =
+        var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
+    *cfg = data->first;
+    *bin = data->second;
+    // Reset to reduce memory consumption
+    std::vector<char>().swap(data->first);
+    std::vector<char>().swap(data->second);
+    return true;
+  }
 };
 #endif
 
@@ -199,6 +260,107 @@ class Context<TargetType::kImaginationNNA> {
   void CopySharedTo(ImaginationNNAContext* ctx) {}
 
   std::string name() const { return "ImaginationNNAContext"; }
+};
+#endif
+
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+template <>
+class Context<TargetType::kNNAdapter> {
+ public:
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(NNAdapterContext* ctx) {}
+
+  std::string name() const { return "NNAdapterContext"; }
+
+  static void SetNNAdapterModelCacheDir(
+      Scope* scope, const std::string& nnadapter_model_cache_dir) {
+    auto var = scope->Var("NNADAPTER_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = nnadapter_model_cache_dir;
+  }
+
+  static std::string NNAdapterModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterModelCacheBuffers(
+      Scope* scope,
+      const std::map<std::string, std::vector<char>>&
+          nnadapter_model_cache_buffers) {
+    for (const auto& nnadapter_model_cache_buffer :
+         nnadapter_model_cache_buffers) {
+      auto& key = nnadapter_model_cache_buffer.first;
+      auto var = scope->Var("NNADAPTER_MODEL_CACHE_BUFFERS_" + key);
+      CHECK(var);
+      auto data = var->GetMutable<std::vector<char>>();
+      CHECK(data);
+      *data = nnadapter_model_cache_buffer.second;
+    }
+  }
+
+  static bool NNAdapterModelCacheBuffers(Scope* scope,
+                                         const std::string& key,
+                                         std::vector<char>* buffer) {
+    CHECK(buffer);
+    buffer->clear();
+    auto var = scope->FindVar("NNADAPTER_MODEL_CACHE_BUFFERS_" + key);
+    if (!var) return false;
+    auto data = var->GetMutable<std::vector<char>>();
+    *buffer = *data;
+    // Reset to reduce memory consumption
+    std::vector<char>().swap(*data);
+    return true;
+  }
+
+#ifdef LITE_WITH_NNADAPTER
+  static bool CheckNNAdapterDeviceName(
+      const std::string& nnadapter_device_name) {
+    NNAdapterDevice* device = nullptr;
+    int result =
+        NNAdapterDevice_acquire_invoke(nnadapter_device_name.c_str(), &device);
+    bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
+    if (found) {
+      NNAdapterDevice_release_invoke(device);
+    }
+    return found;
+  }
+#endif
+
+  static void SetNNAdapterDeviceNames(
+      Scope* scope, const std::vector<std::string>& nnadapter_device_names) {
+    auto var = scope->Var("NNADAPTER_DEVICE_NAMES");
+    CHECK(var);
+    auto data = var->GetMutable<std::vector<std::string>>();
+    CHECK(data);
+    *data = nnadapter_device_names;
+  }
+
+  static std::vector<std::string> NNAdapterDeviceNames(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_DEVICE_NAMES");
+    if (!var) return std::vector<std::string>();
+    return var->Get<std::vector<std::string>>();
+  }
+
+  static void SetNNAdapterContextProperties(
+      Scope* scope, const std::string& nnadapter_context_properties) {
+    auto var = scope->Var("NNADAPTER_CONTEXT_PROPERTIES");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = nnadapter_context_properties;
+  }
+
+  static std::string NNAdapterContextProperties(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_CONTEXT_PROPERTIES");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
 };
 #endif
 
@@ -273,6 +435,21 @@ class Context<TargetType::kFPGA> {
   void CopySharedTo(FPGAContext* ctx) {}
 
   std::string name() const { return "FPGAContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_INTEL_FPGA
+// TODO(xbeu): add needed implementation to context
+template <>
+class Context<TargetType::kIntelFPGA> {
+ public:
+  void InitOnce() {}
+
+  IntelFPGAContext& operator=(const IntelFPGAContext& ctx) {}
+
+  void CopySharedTo(IntelFPGAContext* ctx) {}
+
+  std::string name() const { return "IntelFPGAContext"; }
 };
 #endif
 
@@ -399,6 +576,25 @@ class Context<TargetType::kOpenCL> {
 };
 #endif
 
+#ifdef LITE_WITH_METAL
+template <>
+class Context<TargetType::kMetal> {
+ public:
+  void InitOnce() { context_ = std::make_shared<MetalContext>(); }
+
+  void CopySharedTo(MTLContext* ctx) {
+    if (ctx && context_) {
+      ctx->context_ = context_;
+    }
+  }
+
+  MetalContext* context() { return context_.get(); }
+
+ private:
+  std::shared_ptr<MetalContext> context_{nullptr};
+};
+#endif
+
 // Context for running a kernel.
 // Holds the necessary resource and information.
 class KernelContext {
@@ -490,10 +686,23 @@ class ContextScheduler {
             &ctx->As<OpenCLContext>());
         break;
 #endif
+#ifdef LITE_WITH_METAL
+      case TARGET(kMetal):
+        kernel_contexts_[TargetType::kMetal].As<MTLContext>().CopySharedTo(
+            &ctx->As<MTLContext>());
+        break;
+#endif
 #ifdef LITE_WITH_FPGA
       case TARGET(kFPGA):
         kernel_contexts_[TargetType::kFPGA].As<FPGAContext>().CopySharedTo(
             &ctx->As<FPGAContext>());
+        break;
+#endif
+#ifdef LITE_WITH_INTEL_FPGA
+      case TARGET(kIntelFPGA):
+        kernel_contexts_[TargetType::kIntelFPGA]
+            .As<IntelFPGAContext>()
+            .CopySharedTo(&ctx->As<IntelFPGAContext>());
         break;
 #endif
 #ifdef LITE_WITH_BM
@@ -518,6 +727,14 @@ class ContextScheduler {
             &context);
         LOG(INFO) << "New Context for MLU";
       } break;
+#endif
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+      case TARGET(kNNAdapter):
+        kernel_contexts_[TargetType::kNNAdapter]
+            .As<NNAdapterContext>()
+            .CopySharedTo(&ctx->As<NNAdapterContext>());
+        break;
 #endif
       default:
 #if (!defined LITE_ON_MODEL_OPTIMIZE_TOOL) && (!defined LITE_WITH_PYTHON)
@@ -548,8 +765,14 @@ class ContextScheduler {
 #ifdef LITE_WITH_OPENCL
     InitContext<TargetType::kOpenCL, OpenCLContext>();
 #endif
+#ifdef LITE_WITH_METAL
+    InitContext<TargetType::kMetal, MTLContext>();
+#endif
 #ifdef LITE_WITH_FPGA
     InitContext<TargetType::kFPGA, FPGAContext>();
+#endif
+#ifdef LITE_WITH_INTEL_FPGA
+    InitContext<TargetType::kIntelFPGA, IntelFPGAContext>();
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
@@ -574,6 +797,10 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_IMAGINATION_NNA
     InitContext<TargetType::kImaginationNNA, ImaginationNNAContext>();
+#endif
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+    InitContext<TargetType::kNNAdapter, NNAdapterContext>();
 #endif
   }
 

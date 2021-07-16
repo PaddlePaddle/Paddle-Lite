@@ -14,6 +14,7 @@
 
 #include "lite/api/paddle_place.h"
 #include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/tensor_util.hpp"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
@@ -99,8 +100,34 @@ void TransHwcToChw(Tensor* dest, const Tensor* src) {
   }
 }
 void TransChwToHwc(Tensor* dest, const Tensor* src) {
-  std::cout << "chw to hwc \n";
-  exit(-1);
+  int num = 1;
+  if (dest->dims().size() > 0) {
+    num = dest->dims()[0];
+  }
+  int channel = 1;
+  if (dest->dims().size() > 1) {
+    channel = dest->dims()[1];
+  }
+  int height = 1;
+  if (dest->dims().size() > 2) {
+    height = dest->dims()[2];
+  }
+  int width = 1;
+  if (dest->dims().size() > 3) {
+    width = dest->dims()[3];
+  }
+
+  if (src->ZynqTensor()->dataType() == zynqmp::FP32) {
+    float* chw = const_cast<float*>(src->data<float>());
+    float* hwc = dest->mutable_data<float>();
+    convert_to_hwc<float>(chw, hwc, num, channel, height, width);
+  }
+
+  if (src->ZynqTensor()->dataType() == zynqmp::FP16) {
+    float16* chw = const_cast<float16*>(src->data<float16>());
+    float16* hwc = dest->mutable_data<float16>();
+    convert_to_hwc<float16>(chw, hwc, num, channel, height, width);
+  }
 }
 
 class TransHwcToChwCompute
@@ -112,6 +139,7 @@ class TransHwcToChwCompute
     TransHwcToChw(param.y, param.x);
     param.y->ZynqTensor()->flush();
     param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+    param.y->ZynqTensor()->copyMaxFrom(param.x->ZynqTensor());
 
     auto out_lod = param.y->mutable_lod();
     *out_lod = param.x->lod();

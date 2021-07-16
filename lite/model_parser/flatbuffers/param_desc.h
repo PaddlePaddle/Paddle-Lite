@@ -34,6 +34,10 @@ class ParamDescView : public ParamDescReadAPI {
  public:
   explicit ParamDescView(model_parser::Buffer* buf) {
     CHECK(buf) << "The pointer in buf can not be nullptr";
+    flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf->data()),
+                                   buf->size());
+    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::ParamDesc>(nullptr))
+        << "Param verification failed.";
     desc_ =
         flatbuffers::GetRoot<paddle::lite::fbs::proto::ParamDesc>(buf->data());
     Init();
@@ -92,6 +96,11 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
   }
 
   void InitParams() {
+    flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf_.data()),
+                                   buf_.size());
+    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::CombinedParamsDesc>(
+        nullptr))
+        << "CombinedParamsDesc verification failed.";
     desc_ = proto::GetCombinedParamsDesc(buf_.data());
     CHECK(desc_);
     CHECK(desc_->params());
@@ -153,7 +162,7 @@ class ParamDesc : public ParamDescAPI {
 
   size_t byte_size() const override { return lod_tensor_->data.size(); }
 
-  void SetData(const void* data, size_t byte_size) {
+  void SetData(const void* data, size_t byte_size) override {
     lod_tensor_->data.resize(byte_size);
     model_parser::memcpy(lod_tensor_->data.data(), data, byte_size);
   }

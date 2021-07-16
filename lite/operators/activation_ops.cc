@@ -38,45 +38,36 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.X = scope->FindVar(x_name)->GetMutable<lite::Tensor>();
 
   if (opdesc.Type() == "relu") {
-    // relu
     param_.active_type = lite_api::ActivationType::kRelu;
   } else if (opdesc.Type() == "leaky_relu") {
-    // leaky_relu
     param_.Leaky_relu_alpha = opdesc.GetAttr<float>("alpha");
     param_.active_type = lite_api::ActivationType::kLeakyRelu;
   } else if (opdesc.Type() == "relu_clipped") {
-    // relu_clipped
     param_.Relu_clipped_coef = opdesc.GetAttr<float>("Relu_clipped_coef");
   } else if (opdesc.Type() == "prelu") {
-    // prelu
     param_.Prelu_mode = opdesc.GetAttr<std::string>("mode");
     auto prelu_alpha_name = opdesc.Input("Alpha").front();
     param_.Prelu_alpha =
         scope->FindVar(prelu_alpha_name)->GetMutable<lite::Tensor>();
     param_.active_type = lite_api::ActivationType::kPRelu;
   } else if (opdesc.Type() == "swish") {
-    // swish
     param_.Swish_beta = opdesc.GetAttr<float>("beta");
     param_.active_type = lite_api::ActivationType::kSwish;
   } else if (opdesc.Type() == "hard_sigmoid") {
-    // hard_sigomid
     param_.active_type = lite_api::ActivationType::kHardSigmoid;
     param_.hard_sigmoid_slope = opdesc.GetAttr<float>("slope");
     param_.hard_sigmoid_offset = opdesc.GetAttr<float>("offset");
   } else if (opdesc.Type() == "sigmoid") {
-    // sigmoid
     param_.active_type = lite_api::ActivationType::kSigmoid;
   } else if (opdesc.Type() == "tanh") {
-    // tanh
     param_.active_type = lite_api::ActivationType::kTanh;
   } else if (opdesc.Type() == "exp") {
-    // exp
     param_.active_type = lite_api::ActivationType::kExp;
+  } else if (opdesc.Type() == "log") {
+    param_.active_type = lite_api::ActivationType::kLog;
   } else if (opdesc.Type() == "abs") {
-    // abs
     param_.active_type = lite_api::ActivationType::kAbs;
   } else if (opdesc.Type() == "hard_swish") {
-    // hard_swish
     param_.active_type = lite_api::ActivationType::kHardSwish;
     param_.hard_swish_threshold = opdesc.GetAttr<float>("threshold");
     param_.hard_swish_scale = opdesc.GetAttr<float>("scale");
@@ -92,6 +83,17 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   } else if (opdesc.Type() == "relu6") {
     param_.active_type = lite_api::ActivationType::kRelu6;
     param_.threshold = opdesc.GetAttr<float>("threshold");
+  } else if (opdesc.Type() == "gelu") {
+    param_.active_type = lite_api::ActivationType::kGelu;
+    if (opdesc.HasAttr("approximate")) {
+      param_.gelu_approximate = opdesc.GetAttr<bool>("approximate");
+    }
+  } else if (opdesc.Type() == "erf") {
+    param_.active_type = lite_api::ActivationType::kErf;
+  } else if (opdesc.Type() == "sign") {
+    param_.active_type = lite_api::ActivationType::kSign;
+  } else if (opdesc.Type() == "softplus") {
+    param_.active_type = lite_api::ActivationType::kSoftPlus;
   }
 
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
@@ -113,3 +115,5 @@ REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(thresholded_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(elu, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(erf, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(softplus, paddle::lite::operators::ActivationOp);

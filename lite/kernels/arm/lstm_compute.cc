@@ -103,9 +103,9 @@ void LSTMComputeRun(const operators::LstmParam& param,
   auto batch_starts = batch_gate->lod()[0];
   size_t num_batch = batch_starts.size() - 1;
 
-  std::string gate_act = param.gate_activation;
-  std::string cell_act = param.cell_activation;
-  std::string cand_act = param.candidate_activation;
+  lite_api::ActivationType gate_act = param.gate_activation;
+  lite_api::ActivationType cell_act = param.cell_activation;
+  lite_api::ActivationType cand_act = param.candidate_activation;
 
   int matrix_width = batch_gate->numel() / in_dims[0];
   for (size_t n = 0; n < num_batch; n++) {
@@ -135,13 +135,15 @@ void LSTMComputeRun(const operators::LstmParam& param,
       if (enable_int8) {
         // quantize Ht-1
         int pre_hidden_size = M * K;
-        float pre_hidden_scale{};
+        float threshold =
+            lite::arm::math::FindAbsMax(pre_hidden_t, pre_hidden_size);
+        float pre_hidden_scale =
+            lite::arm::math::GetScale(threshold, bit_length);
         std::unique_ptr<int8_t[]> pre_hidden_int8(new int8_t[pre_hidden_size]);
-        lite::arm::math::QuantizeActvation(pre_hidden_t,
-                                           pre_hidden_int8.get(),
-                                           &pre_hidden_scale,
-                                           pre_hidden_size,
-                                           bit_length);
+        lite::arm::math::QuantizeTensor(pre_hidden_t,
+                                        pre_hidden_int8.get(),
+                                        pre_hidden_size,
+                                        pre_hidden_scale);
         // update scales
         std::vector<float> scales(M, weight_scale[0]);
         for (auto&& x : scales) {

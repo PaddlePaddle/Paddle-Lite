@@ -75,6 +75,8 @@ class ElementwiseAddImageCompute
   cl::Kernel kernel_;
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  std::unique_ptr<Tensor> y_weights_image_{
+      nullptr};  // when param->Y from model weights
 };
 
 }  // namespace opencl

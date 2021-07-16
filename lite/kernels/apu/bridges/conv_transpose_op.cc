@@ -35,9 +35,6 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   int neuron_errCode;
   VLOG(3) << "[APU] Converting [" << op_type << "]";
 
-  CHECK(op_info->HasAttr("enable_int8") &&
-        op_info->GetAttr<bool>("enable_int8"));
-
   // Get input, output and op attributes
   auto input_name = op_info->Input("Input").front();
   auto input_scale_name = "Input0_scale";
@@ -53,6 +50,10 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
 
   auto output_name = op_info->Output("Output").front();
   auto output_scale_name = "Output0_scale";
+
+  CHECK(op_info->HasInputScale(input_scale_name, true) &&
+        op_info->HasInputScale(filter_scale_name, true) &&
+        op_info->HasOutputScale(output_scale_name, true));
 
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   CHECK_EQ(strides.size(), 2L);
@@ -121,11 +122,8 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   }
   output_dims.push_back(filter_dims[1]);
 
-  CHECK(op_info->HasInputScale(input_scale_name, true));
   auto input_scale = op_info->GetInputScale(input_scale_name, true)[0];
-  CHECK(op_info->HasInputScale(filter_scale_name, true));
   auto filter_scale = op_info->GetInputScale(filter_scale_name, true);
-  CHECK(op_info->HasOutputScale(output_scale_name, true));
   auto output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
 
   VLOG(3) << "strides.size(): " << strides.size() << " ,groups: " << groups

@@ -14,13 +14,17 @@
 
 #include "lite/kernels/arm/softmax_compute.h"
 #include "lite/backends/arm/math/funcs.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-void SoftmaxCompute::Run() {
+template <>
+void SoftmaxCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = Param<operators::SoftmaxParam>();
   const float* din = param.x->data<float>();
   float* dout = param.output->mutable_data<float>();
@@ -64,17 +68,65 @@ void SoftmaxCompute::Run() {
   }
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void SoftmaxCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = Param<operators::SoftmaxParam>();
+  const float16_t* din = param.x->data<float16_t>();
+  float16_t* dout = param.output->mutable_data<float16_t>();
+  auto x_dims = param.x->dims();
+  auto x_rank = x_dims.size();
+  int axis = param.axis;
+  if (axis < 0) {
+    axis += x_rank;
+  }
+  int outer_num = x_dims.Slice(0, axis).production();
+  int inner_num = x_dims.Slice(axis + 1, x_rank).production();
+  int axis_size = x_dims[axis];
+  if (inner_num == 1) {
+    if (axis_size >= 8) {
+      lite::arm::math::fp16::softmax_inner1_large_axis_fp16(
+          din, dout, outer_num, axis_size);
+    } else {
+      lite::arm::math::fp16::softmax_inner1_small_axis_fp16(
+          din, dout, outer_num, axis_size);
+    }
+  } else {
+    int compute_size = outer_num * inner_num;
+    if (axis_size == 4 && inner_num % 8 == 0) {
+      lite::arm::math::fp16::softmax_inner8_axis4_fp16(
+          din, dout, axis_size, inner_num, outer_num);
+    } else {
+      if (inner_num % 8 == 0) {
+        lite::arm::math::fp16::softmax_inner8_axis1_fp16(
+            din, dout, axis_size, inner_num, outer_num);
+      } else {
+        lite::arm::math::fp16::softmax_basic_fp16(
+            din, dout, axis_size, inner_num, outer_num);
+      }
+    }
+  }
+}
+#endif  // ENABLE_ARM_FP16
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(softmax,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::SoftmaxCompute,
-                     def)
+#ifdef ENABLE_ARM_FP16
+typedef paddle::lite::kernels::arm::SoftmaxCompute<PRECISION(kFP16),
+                                                   PRECISION(kFP16)>
+    SoftmaxFp16;
+REGISTER_LITE_KERNEL(softmax, kARM, kFP16, kNCHW, SoftmaxFp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
+
+typedef paddle::lite::kernels::arm::SoftmaxCompute<PRECISION(kFloat),
+                                                   PRECISION(kFloat)>
+    SoftmaxFp32;
+REGISTER_LITE_KERNEL(softmax, kARM, kFloat, kNCHW, SoftmaxFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

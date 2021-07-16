@@ -38,6 +38,7 @@ bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.scale = op_desc.GetAttr<float>("scale");
   param_.bias = op_desc.GetAttr<float>("bias");
   param_.bias_after_scale = op_desc.GetAttr<bool>("bias_after_scale");
+  param_.alpha = 6.f;  // default value for placeholder of element+scale pass
   if (op_desc.HasAttr("activation_type")) {
     auto act_type = op_desc.GetAttr<std::string>("activation_type");
     param_.activation_type = act_type;
@@ -50,6 +51,12 @@ bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
     } else {
       CHECK(false)
           << "The fused conv only supports fuse with relu and leaky relu";
+    }
+
+    if (op_desc.HasAttr("fuse_scaleact")) {
+      param_.fuse_scaleact = op_desc.GetAttr<bool>("fuse_scaleact");
+      param_.scale1 = op_desc.GetAttr<float>("scale1");
+      param_.bias1 = op_desc.GetAttr<float>("bias1");
     }
   }
   CHECK(param_.x);

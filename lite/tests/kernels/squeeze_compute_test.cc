@@ -27,13 +27,15 @@ class SqueezeComputeTester : public arena::TestCase {
   std::string out_ = "Out";
   std::vector<int> axes_;
   DDim dims_;
+  bool inplace_ = true;
 
  public:
   SqueezeComputeTester(const Place& place,
                        const std::string& alias,
                        const std::vector<int>& axes,
-                       DDim dims)
-      : TestCase(place, alias), axes_(axes), dims_(dims) {}
+                       DDim dims,
+                       bool inplace)
+      : TestCase(place, alias), axes_(axes), dims_(dims), inplace_(inplace) {}
 
   void RunBaseline(Scope* scope) override {
     const auto* input = scope->FindTensor(x_);
@@ -89,6 +91,7 @@ class SqueezeComputeTester : public arena::TestCase {
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
     op_desc->SetAttr("axes", axes_);
+    op_desc->SetAttr("inplace", inplace_);
   }
 
   void PrepareData() override {
@@ -108,13 +111,15 @@ class Squeeze2ComputeTester : public arena::TestCase {
   std::string xshape_ = "XShape";
   std::vector<int> axes_;
   DDim dims_;
+  bool inplace_ = true;
 
  public:
   Squeeze2ComputeTester(const Place& place,
                         const std::string& alias,
                         const std::vector<int>& axes,
-                        DDim dims)
-      : TestCase(place, alias), axes_(axes), dims_(dims) {}
+                        DDim dims,
+                        bool inplace)
+      : TestCase(place, alias), axes_(axes), dims_(dims), inplace_(inplace) {}
 
   void RunBaseline(Scope* scope) override {
     const auto* input = scope->FindTensor(x_);
@@ -178,6 +183,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
     op_desc->SetOutput("Out", {out_});
     op_desc->SetOutput("XShape", {xshape_});
     op_desc->SetAttr("axes", axes_);
+    op_desc->SetAttr("inplace", inplace_);
   }
 
   void PrepareData() override {
@@ -197,10 +203,12 @@ void test_squeeze(Place place) {
       for (int C : {3}) {
         for (int H : {1}) {
           for (int W : {5}) {
-            std::unique_ptr<arena::TestCase> tester(new SqueezeComputeTester(
-                place, "def", axes, DDim({N, C, H, W})));
-            arena::Arena arena(std::move(tester), place, 2e-5);
-            arena.TestPrecision();
+            for (bool inplace : {true, false}) {
+              std::unique_ptr<arena::TestCase> tester(new SqueezeComputeTester(
+                  place, "def", axes, DDim({N, C, H, W}), inplace));
+              arena::Arena arena(std::move(tester), place, 2e-5);
+              arena.TestPrecision();
+            }
           }
         }
       }
@@ -216,10 +224,12 @@ void test_squeeze2(Place place) {
       for (int C : {3}) {
         for (int H : {1}) {
           for (int W : {5}) {
-            std::unique_ptr<arena::TestCase> tester(new Squeeze2ComputeTester(
-                place, "def", axes, DDim({N, C, H, W})));
-            arena::Arena arena(std::move(tester), place, 2e-5);
-            arena.TestPrecision({"XShape"});
+            for (bool inplace : {true, false}) {
+              std::unique_ptr<arena::TestCase> tester(new Squeeze2ComputeTester(
+                  place, "def", axes, DDim({N, C, H, W}), inplace));
+              arena::Arena arena(std::move(tester), place, 2e-5);
+              arena.TestPrecision({"XShape"});
+            }
           }
         }
       }
@@ -228,17 +238,29 @@ void test_squeeze2(Place place) {
 }
 
 TEST(squeeze, precision) {
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  Place place(TARGET(kHost));
-#endif
+#if defined(LITE_WITH_OPENCL)
+  Place place(TARGET(kOpenCL));
   test_squeeze(place);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  Place place(TARGET(kXPU));
+  test_squeeze(place);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  Place place(TARGET(kHost));
+  test_squeeze(place);
+#endif
 }
 
 TEST(squeeze2, precision) {
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  Place place(TARGET(kHost));
-#endif
+#if defined(LITE_WITH_OPENCL)
+  Place place(TARGET(kOpenCL));
   test_squeeze2(place);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  Place place(TARGET(kXPU));
+  test_squeeze2(place);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  Place place(TARGET(kHost));
+  test_squeeze2(place);
+#endif
 }
 
 }  // namespace lite

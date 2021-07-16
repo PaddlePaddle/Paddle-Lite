@@ -53,6 +53,18 @@ void fill_bias_act(Dtype* tensor,
                    int channel_size,
                    bool flag_bias,
                    const operators::ActivationParam* act_param);
+
+// Implemet: data type trans(int32->fp32/int8_t), then add bias and do act
+// process
+template <typename Dtype>
+void fill_bias_act_calib(Dtype* dout,
+                         const int32_t* din,
+                         const float* bias,
+                         const float* scale,
+                         int channel,
+                         int channel_size,
+                         bool flag_bias,
+                         const operators::ActivationParam* act_param);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

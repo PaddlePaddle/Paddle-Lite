@@ -27,10 +27,6 @@ class CalibComputeFp32ToFP16
   using param_t = operators::CalibParam;
 
   void Run() override;
-
-  ~CalibComputeFp32ToFP16() override{};
-
- private:
 };
 
 class CalibComputeFP16ToFp32
@@ -39,10 +35,6 @@ class CalibComputeFP16ToFp32
   using param_t = operators::CalibParam;
 
   void Run() override;
-
-  ~CalibComputeFP16ToFp32() override{};
-
- private:
 };
 
 class CalibComputeFloat2Int
@@ -51,10 +43,14 @@ class CalibComputeFloat2Int
   using param_t = operators::CalibParam;
 
   void Run() override;
+};
 
-  ~CalibComputeFloat2Int() override{};
+class CalibComputeInt64ToFloat
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::CalibParam;
 
- private:
+  void Run() override;
 };
 
 }  // namespace fpga

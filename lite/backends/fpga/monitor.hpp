@@ -38,9 +38,28 @@ class Monitor {
 
   void preRun(Instruction& inst) {  // NOLINT
     auto op = const_cast<OpLite*>(inst.op());
+    auto op_info = op->op_info();
     auto op_type = op->Type();
 
     VLOG(4) << "Running op:" << op_type << " on " << inst.kernel()->name();
+    auto in_args = op_info->input_names();
+
+    for (auto name : in_args) {
+      VLOG(4) << "\n in_tensor:" << name;
+      std::string path = "data/" + name + ".txt";
+      std::ifstream infile(path);
+      if (infile.good()) {
+        auto* var = op->scope()->FindVar(name);
+        if (var->IsType<lite::Tensor>()) {
+          lite::Tensor* tensor =
+              const_cast<lite::Tensor*>(&var->Get<lite::Tensor>());
+          if (tensor->ZynqTensor() != nullptr) {
+            tensor->ZynqTensor()->readHalfFromFile(path);
+            tensor->ZynqTensor()->flush();
+          }
+        }
+      }
+    }
   }
 
   void postRun(Instruction& inst) {  // NOLINT

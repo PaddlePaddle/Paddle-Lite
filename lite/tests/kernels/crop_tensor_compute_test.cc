@@ -31,10 +31,10 @@ void slice_ref(const T* input,
   std::vector<int> real_starts(in_dims.size(), 0);
   std::vector<int> real_ends(in_dims.size(), 0);
   std::vector<int> real_step(in_dims.size(), 0);
-  for (int i = 0; i < in_dims.size(); i++) {
+  for (size_t i = 0; i < in_dims.size(); i++) {
     real_ends[i] = in_dims[i];
   }
-  for (int i = 0; i < axes.size(); i++) {
+  for (size_t i = 0; i < axes.size(); i++) {
     int dim_value = in_dims[axes[i]];
     if (dim_value > 0) {
       int start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
@@ -49,11 +49,11 @@ void slice_ref(const T* input,
   }
   const int LEN = in_dims.size();
   std::vector<int> dst_step(LEN);
-  for (int i = 0; i < in_dims.size(); ++i) {
+  for (size_t i = 0; i < in_dims.size(); ++i) {
     dst_step[i] = 1;
   }
   std::vector<int> src_step(LEN);
-  for (int i = 0; i < in_dims.size(); ++i) {
+  for (size_t i = 0; i < in_dims.size(); ++i) {
     src_step[i] = 1;
   }
   int out_num = out_dims[in_dims.size() - 1];
@@ -66,7 +66,7 @@ void slice_ref(const T* input,
   for (int dst_id = 0; dst_id < out_num; dst_id++) {
     int src_id = 0;
     int index_id = dst_id;
-    for (int j = 0; j < out_dims.size(); j++) {
+    for (size_t j = 0; j < out_dims.size(); j++) {
       int cur_id = index_id / dst_step[j];
       index_id = index_id % dst_step[j];
       src_id += (cur_id + real_starts[j]) * src_step[j];
@@ -183,17 +183,21 @@ class CropTensorComputeTester : public arena::TestCase {
 
 template <class T = float>
 void TestCropTensor(Place place, float abs_error = 1e-5) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  place.precision = lite_api::PrecisionTypeTrait<float>::Type();
+  std::string alias = "def";
+  if (lite_api::PrecisionTypeTrait<T>::Type() == PrecisionType::kInt32) {
+    alias = "int32_precision";
+  }
 
   // test 1D
   std::unique_ptr<arena::TestCase> tester_1d(
-      new CropTensorComputeTester<T>(place, "def", {1}, {3}, DDim({4})));
+      new CropTensorComputeTester<T>(place, alias, {1}, {3}, DDim({4})));
   arena::Arena arena_1d(std::move(tester_1d), place, abs_error);
   arena_1d.TestPrecision();
 
   // test 4D
   std::unique_ptr<arena::TestCase> tester_4d(new CropTensorComputeTester<T>(
-      place, "def", {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5})));
+      place, alias, {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5})));
   arena::Arena arena_4d(std::move(tester_4d), place, abs_error);
   arena_4d.TestPrecision();
 }

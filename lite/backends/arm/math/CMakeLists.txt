@@ -61,6 +61,13 @@ if(ARM_MATH_LIB_DIR AND EXISTS "${ARM_MATH_LIB_DIR}")
   endif()
 endif()
 
+if(LITE_WITH_ARM82_FP16)
+  if(${ANDROID_NDK_MAJOR})
+    if(${ANDROID_NDK_MAJOR} GREATER "17")
+      add_subdirectory(fp16)
+    endif()
+  endif()
+endif()
 
 if (NOT HAS_ARM_MATH_LIB_DIR)
   # TODO(xxx): seperate them and do not deps proto, eigen3
@@ -73,7 +80,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       gemm_s8.cc
       sgemv.cc
       gemv_arm_int8.cc
-      conv3x3s1_direct_fp32.cc
       conv3x3s2_direct_fp32.cc
       conv3x3s1p01_depthwise_fp32_relu.cc
       conv3x3s2p01_depthwise_fp32_relu.cc
@@ -81,7 +87,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv3x3s2p01_depthwise_fp32.cc
       conv3x3s1px_depthwise_fp32.cc
       conv3x3s2px_depthwise_fp32.cc
-      conv3x3s1_direct_int8.cc
       conv3x3s2_direct_int8.cc
       conv3x3s1_depthwise_int8.cc
       conv3x3s2_depthwise_int8.cc
@@ -103,10 +108,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       concat.cc
       type_trans.cc
       box_coder.cc
-      split.cc
-      shuffle_channel.cc
       activation.cc
-      yolo_box.cc
       dropout.cc
       power.cc
       interpolate.cc
@@ -116,22 +118,18 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       col_im_transform.cc
       conv_transpose_depthwise.cc
       im2sequence.cc
-      prior_box.cc
-      sequence_softmax.cc
       norm.cc
-      topk.cc
-      increment.cc
       pad2d.cc
       negative.cc
-      beam_search.cc
       reduce_max.cc
+      reduce_min.cc
+      reduce_max_min.cc
       sequence_pool.cc
       sequence_pool_grad.cc
       sequence_expand.cc
       slice.cc
       reduce_mean.cc
       affine_channel.cc
-      anchor_generator.cc
       split_merge_lod_tenosr.cc
       reduce_prod.cc
       reduce_sum.cc
@@ -141,4 +139,12 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       scatter.cc
       quantize.cc
       DEPS ${lite_kernel_deps} context tensor)
+      if (LITE_WITH_ARM82_FP16)
+        if(${ANDROID_NDK_MAJOR})
+          if(${ANDROID_NDK_MAJOR} GREATER "17")
+            add_dependencies(math_arm math_arm_fp16)
+            target_link_libraries(math_arm math_arm_fp16)
+          endif()
+        endif()
+      endif()
 endif()

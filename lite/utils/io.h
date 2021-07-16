@@ -38,6 +38,10 @@ static bool IsFileExists(const std::string& path) {
 
 // ARM mobile not support mkdir in C++
 static void MkDirRecur(const std::string& path) {
+  if (IsFileExists(path)) {
+    LOG(INFO) << "Directory [" << path << "] exists!";
+    return;
+  }
 #ifndef LITE_WITH_ARM
 
 #ifdef _WIN32
@@ -139,6 +143,26 @@ static bool ReadFile(const std::string& filename, std::vector<char>* contents) {
   return true;
 }
 
+template <typename T>
+static bool ReadFile(const std::string& filename, std::vector<T>* contents) {
+  FILE* fp = fopen(filename.c_str(), "rb");
+  if (!fp) return false;
+  fseek(fp, 0, SEEK_END);
+  size_t size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  contents->clear();
+  contents->resize(size);
+  size_t offset = 0;
+  T* ptr = reinterpret_cast<T*>(&(contents->at(0)));
+  while (offset < size) {
+    size_t already_read = fread(ptr, 1, size - offset, fp);
+    offset += already_read;
+    ptr += already_read;
+  }
+  fclose(fp);
+  return true;
+}
+
 static bool WriteFile(const std::string& filename,
                       const std::vector<char>& contents) {
   FILE* fp = fopen(filename.c_str(), "wb");
@@ -146,6 +170,23 @@ static bool WriteFile(const std::string& filename,
   size_t size = contents.size();
   size_t offset = 0;
   const char* ptr = reinterpret_cast<const char*>(&(contents.at(0)));
+  while (offset < size) {
+    size_t already_written = fwrite(ptr, 1, size - offset, fp);
+    offset += already_written;
+    ptr += already_written;
+  }
+  fclose(fp);
+  return true;
+}
+
+template <typename T>
+static bool WriteFile(const std::string& filename,
+                      const std::vector<T>& contents) {
+  FILE* fp = fopen(filename.c_str(), "wb");
+  if (!fp) return false;
+  size_t size = contents.size();
+  size_t offset = 0;
+  const T* ptr = reinterpret_cast<const T*>(&(contents.at(0)));
   while (offset < size) {
     size_t already_written = fwrite(ptr, 1, size - offset, fp);
     offset += already_written;

@@ -39,7 +39,7 @@ class ShapeComputeTester : public arena::TestCase {
     int64_t sz = input->dims().size();
     out->Resize(DDim({sz}));
     auto* out_data = out->mutable_data<int>();
-    for (int i = 0; i < input->dims().size(); ++i) {
+    for (size_t i = 0; i < input->dims().size(); ++i) {
       out_data[i] = input->dims()[i];
     }
   }
@@ -76,10 +76,12 @@ void test_shape(Place place, float abs_error) {
 TEST(shape, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny));
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;
-#elif defined(LITE_WITH_ARM)
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;

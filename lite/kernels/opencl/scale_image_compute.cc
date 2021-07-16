@@ -12,19 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vector>
-#include "lite/backends/opencl/cl_half.h"
-#include "lite/backends/opencl/cl_include.h"
-#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/replace_stl/stream.h"
-#include "lite/utils/string.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
-#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -41,6 +33,18 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
+    scale_param_ = param_.get_mutable<param_t>();
+    if (scale_param_->activation_type == "") {
+      kernel_func_name_ = "scale";
+    } else if (scale_param_->activation_type == "relu6") {
+      kernel_func_name_ = "scale_relu6";
+    } else {
+      LOG(FATAL) << "Unsupported activation type: "
+                 << scale_param_->activation_type;
+    }
+    if (scale_param_->fuse_scaleact) {
+      kernel_func_name_ = "scaleacts";
+    }
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/scale_kernel.cl",
                                     build_options_,
@@ -77,11 +81,17 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
-    auto* x_img = DATA_GPU(scale_param_->x);
+    auto* x_img = GET_DATA_GPU(scale_param_->x);
     auto* out_img = MUTABLE_DATA_GPU(
         scale_param_->output, out_img_shape_[0], out_img_shape_[1], nullptr);
     const float scale = scale_param_->scale;
-    const float bias = scale_param_->bias;
+    float bias = scale_param_->bias;
+    if (!scale_param_->bias_after_scale) {
+      bias *= scale;
+    }
+    const float alpha = scale_param_->alpha;
+    const float scale1 = scale_param_->scale1;
+    const float bias1 = scale_param_->bias1;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -96,6 +106,14 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(3, bias);
     CL_CHECK_FATAL(status);
+    status = kernel.setArg(4, alpha);
+    CL_CHECK_FATAL(status);
+    if (kernel_func_name_ == "scaleacts") {
+      status = kernel.setArg(5, scale1);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(6, bias1);
+      CL_CHECK_FATAL(status);
+    }
 
     status = EnqueueNDRangeKernel(context,
                                   kernel,
@@ -140,7 +158,7 @@ REGISTER_LITE_KERNEL(scale,
                      kFP16,
                      kImageDefault,
                      paddle::lite::kernels::opencl::ScaleComputeImage2D,
-                     image2d)
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

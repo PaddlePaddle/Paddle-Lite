@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void XPUSequencePoolCompute::PrepareForRun() {
-  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  lod_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
   lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
@@ -34,21 +34,8 @@ void XPUSequencePoolCompute::Run() {
 
   auto* in = param.X;
   auto* out = param.Out;
+  float pad_value = param.pad_value;
   std::string pool_type_str = param.pool_type;
-
-  auto dims = in->dims();
-  auto lod = in->lod();
-  dims[0] = lod[0].size() - 1;
-
-  xdnn::Pooling_t pool_type = xdnn::Pooling_t::MAX_WITHOUT_INDEX;
-  if (pool_type_str == "MAX") {
-  } else if (pool_type_str == "SUM") {
-    pool_type = xdnn::Pooling_t::SUM;
-  } else if (pool_type_str == "LAST") {
-    pool_type = xdnn::Pooling_t::LAST;
-  } else {
-    CHECK(false);
-  }
 
   int num_seq = out->dims()[0];
   int dim = out->numel() / num_seq;
@@ -62,16 +49,48 @@ void XPUSequencePoolCompute::Run() {
                       lod_cpu.get(),
                       in_lod.size() * sizeof(int),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  int r = 0;
+  if (pool_type_str == "MAX") {
+    r = xdnn::sequence_max_pool<float, int>(
+        ctx.GetRawContext(),
+        in->data<float>(),
+        lod_xpu,
+        out->mutable_data<float>(TARGET(kXPU)),
+        num_seq,
+        dim,
+        pad_value,
+        nullptr);
+  } else if (pool_type_str == "SUM") {
+    r = xdnn::sequence_sum_pool<float, int>(
+        ctx.GetRawContext(),
+        in->data<float>(),
+        lod_xpu,
+        out->mutable_data<float>(TARGET(kXPU)),
+        num_seq,
+        dim,
+        pad_value);
+  } else if (pool_type_str == "LAST") {
+    r = xdnn::sequence_last_pool<float, int>(
+        ctx.GetRawContext(),
+        in->data<float>(),
+        lod_xpu,
+        out->mutable_data<float>(TARGET(kXPU)),
+        num_seq,
+        dim,
+        pad_value);
+  } else if (pool_type_str == "FIRST") {
+    r = xdnn::sequence_first_pool<float, int>(
+        ctx.GetRawContext(),
+        in->data<float>(),
+        lod_xpu,
+        out->mutable_data<float>(TARGET(kXPU)),
+        num_seq,
+        dim,
+        pad_value);
+  } else {
+    CHECK(false) << " unsupported pool_type_str: " << pool_type_str;
+  }
 
-  int r =
-      xdnn::sequence_pooling_forward(ctx.GetRawContext(),
-                                     pool_type,
-                                     num_seq,
-                                     lod_xpu,
-                                     dim,
-                                     in->data<float>(),
-                                     nullptr /* index */,
-                                     out->mutable_data<float>(TARGET(kXPU)));
   CHECK_EQ(r, 0);
 }
 

@@ -47,6 +47,7 @@ class LITE_API OptBase {
   void SetModelDir(const std::string &model_dir_path);
   void SetModelFile(const std::string &model_path);
   void SetParamFile(const std::string &param_path);
+  void EnableFloat16() { enable_fp16_ = true; }
   void SetValidPlaces(const std::string &valid_places);
   void SetOptimizeOut(const std::string &lite_out_name);
   void RecordModelInfo(bool record_strip_info = true);
@@ -69,6 +70,7 @@ class LITE_API OptBase {
   // 1. help info
   // 1.1 Print help info for opt python api
   void PrintHelpInfo();
+  std::string OptVersion() { return lite::version(); }
   // 1.2 Print help info for executable opt bin
   void PrintExecutableBinHelpInfo();
   // 2. PrintOpsInfo
@@ -81,6 +83,7 @@ class LITE_API OptBase {
   void CheckIfModelSupported(bool print_ops_info = true);
 
  private:
+  bool enable_fp16_{false};
   CxxConfig opt_config_;
   // valid places for the optimized_model
   std::vector<Place> valid_places_;

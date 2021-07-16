@@ -35,6 +35,10 @@ enum ImageFormat {
   GRAY,
   NV21 = 11,
   NV12,
+  YUV420SP,
+  YUV420P,
+  YUV422,
+  YUV444
 };
 // flip enum
 enum FlipParam {

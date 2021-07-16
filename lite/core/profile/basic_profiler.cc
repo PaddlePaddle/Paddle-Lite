@@ -108,8 +108,8 @@ void BasicTimer::Log(TimerInfo* timer_info, uint64_t timespan) {
   CHECK(timer_info);
   timer_info->count_++;
   timer_info->total_ += timespan;
-  timer_info->max_ = std::max(timer_info->max_, timespan);
-  timer_info->min_ = std::min(timer_info->min_, timespan);
+  timer_info->max_ = (std::max)(timer_info->max_, timespan);
+  timer_info->min_ = (std::min)(timer_info->min_, timespan);
 }
 
 std::string BasicTimer::basic_repr_header() {
@@ -185,8 +185,8 @@ std::string BasicProfiler<TimerT>::summary_repr() const {
 
     total += kernel_timer.total_;
     op_timer.total_ += kernel_timer.total_;
-    op_timer.max_ = std::max(kernel_timer.max_, op_timer.max_);
-    op_timer.min_ = std::min(kernel_timer.min_, op_timer.min_);
+    op_timer.max_ = (std::max)(kernel_timer.max_, op_timer.max_);
+    op_timer.min_ = (std::min)(kernel_timer.min_, op_timer.min_);
     op_timer.count_ += kernel_timer.count_;
   }
 

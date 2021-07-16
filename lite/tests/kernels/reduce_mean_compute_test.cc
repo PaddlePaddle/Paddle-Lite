@@ -236,7 +236,7 @@ class ReduceMeanComputeTester : public arena::TestCase {
         out_dims.push_back(1);
       }
     } else {
-      for (int i = 0; i < x_dims_.size(); i++) {
+      for (size_t i = 0; i < x_dims_.size(); i++) {
         out_dims.push_back(x_dims_[i]);
       }
       if (keep_dim_) {
@@ -250,6 +250,9 @@ class ReduceMeanComputeTester : public arena::TestCase {
         }
         out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
                        out_dims.end());
+      }
+      if (!keep_dim_ && out_dims.empty()) {
+        out_dims.push_back(1);
       }
       out->Resize(DDim(out_dims));
     }
@@ -352,6 +355,7 @@ void test_reduce_mean(Place place, float abs_err) {
                 // get the padded dims of output tensor in framework.cc
                 keep_dim = true;
 #endif
+
                 std::unique_ptr<arena::TestCase> tester(
                     new ReduceMeanComputeTester(
                         place, "def", dim, keep_dim, x_dims));
@@ -378,6 +382,9 @@ TEST(ReduceMean, precision) {
 #ifdef LITE_WITH_OPENCL
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_err = 2e-2;  // opencl fp16 torlerance
+#endif
+#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = Place(TARGET(kXPU));
 #endif
   test_reduce_mean(place, abs_err);
 }

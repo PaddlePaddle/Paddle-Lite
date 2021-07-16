@@ -52,10 +52,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(filter_dims.size(), 4L);
   CHECK_EQ(output_dims[0], bs);
   CHECK_EQ(output_dims[1], oc);
-  auto strides = op_info->GetAttr<std::vector<int>>("strides");
-  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
+  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
-  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
   bool with_act =
       op_info->HasAttr("with_act") && op_info->GetAttr<bool>("with_act");
   std::string act_type =
@@ -96,6 +96,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       filter_dims);
 
   // Check Restrictions: HxW(input) == HxW(filter) if output feature h*w = 1*1
+  /*
   if (output_dims[2] == 1) {
     int input_h = input_dims[2] + paddings[0] + paddings[1];
     int filter_h = (filter_dims[2] - 1) * dilations[0] + 1;
@@ -130,7 +131,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                     "is: "
                  << oc << ", groups is: " << groups;
     return FAILED;
-  }
+  }*/
 
   // Filter node
   std::shared_ptr<Node> filter_node = nullptr;
@@ -253,6 +254,12 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       auto act_op = act_node->data<ge::op::LeakyRelu>();
       act_op->set_input_x(*conv_node->data());
       act_op->set_attr_negative_slope(leaky_relu_alpha);
+      INPUT_UPDATE(act_op, x, conv_node);
+      OUTPUT_UPDATE(act_op, y, act_node);
+    } else if (act_type == "relu6") {
+      auto act_node = graph->Add<ge::op::Relu6>(output_name);
+      auto act_op = act_node->data<ge::op::Relu6>();
+      act_op->set_input_x(*conv_node->data());
       INPUT_UPDATE(act_op, x, conv_node);
       OUTPUT_UPDATE(act_op, y, act_node);
     } else {

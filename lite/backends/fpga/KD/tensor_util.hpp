@@ -21,5 +21,7 @@ limitations under the License. */
 namespace paddle {
 namespace zynqmp {
 float find_max(const Tensor& tensor);
+void hwc_to_chw(Tensor* src, Tensor* dst);
+void chw_to_hwc(Tensor* src, Tensor* dst);
 }  // namespace zynqmp
 }  // namespace paddle

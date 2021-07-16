@@ -9,7 +9,7 @@ opt是 x86 平台上的可执行文件，需要在PC端运行：支持Linux终�
 ```bash
  ./opt
 ```
-> **注意：** 如果您是通过[准备opt](https://paddle-lite.readthedocs.io/zh/latest/user_guides/model_optimize_tool.html#id1)页面中，"方法二：下载opt可执行文件" 中提供的链接下载得到的opt可执行文件，请先通过`chmod +x ./opt`命令为下载的opt文件添加可执行权限。
+> **注意：** 如果您是通过[准备opt](../model_optimize_tool)页面中，"方法二：下载opt可执行文件" 中提供的链接下载得到的opt可执行文件，请先通过`chmod +x ./opt`命令为下载的opt文件添加可执行权限。
 
 ![](https://paddlelite-data.bj.bcebos.com/doc_images/1.png)
 
@@ -68,7 +68,7 @@ PaddlePaddle模型有两种保存格式：
 | --optimize_out_type | 输出模型类型，目前支持两种类型：protobuf和naive_buffer，其中naive_buffer是一种更轻量级的序列化/反序列化实现。若您需要在mobile端执行模型预测，请将此选项设置为naive_buffer。默认为protobuf。 |
 | --optimize_out      | 优化模型的输出路径。                                         |
 | --valid_targets     | 指定模型可执行的backend，默认为arm。目前可支持x86、x86_opencl、arm、opencl、npu，可以同时指定多个backend(以空格分隔)，Model Optimize Tool将会自动选择最佳方式。如果需要支持华为NPU（Kirin 810/990 Soc搭载的达芬奇架构NPU），应当设置为"npu,arm"。 |
-| --record_tailoring_info | 当使用 [根据模型裁剪库文件](./library_tailoring.html) 功能时，则设置该选项为true，以记录优化后模型含有的kernel和OP信息，默认为false。 |
+| --record_tailoring_info | 当使用 [根据模型裁剪库文件](../../source_compile/library_tailoring.html) 功能时，则设置该选项为true，以记录优化后模型含有的kernel和OP信息，默认为false。 |
 | --quant_model       | 设置是否使用opt中的动态离线量化功能。 |
 | --quant_type        | 指定opt中动态离线量化功能的量化类型，可以设置为QUANT_INT8和QUANT_INT16，即分别量化为int8和int16。量化为int8对模型精度有一点影响，模型体积大概减小4倍。量化为int16对模型精度基本没有影响，模型体积大概减小2倍。|
 

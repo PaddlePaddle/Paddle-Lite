@@ -27,55 +27,6 @@ namespace lite {
 namespace subgraph {
 namespace rknpu {
 
-rk::nn::PrecisionType ToRknpuPrecisionType(PrecisionType precision) {
-  rk::nn::PrecisionType t = rk::nn::PrecisionType::UNKNOWN;
-
-  switch (precision) {
-    case PrecisionType::kFloat:
-      t = rk::nn::PrecisionType::FLOAT32;
-      break;
-    case PrecisionType::kFP16:
-      t = rk::nn::PrecisionType::FLOAT16;
-      break;
-    case PrecisionType::kInt16:
-      t = rk::nn::PrecisionType::INT16;
-      break;
-    case PrecisionType::kInt32:
-      t = rk::nn::PrecisionType::INT32;
-      break;
-    case PrecisionType::kInt64:
-      t = rk::nn::PrecisionType::INT64;
-      break;
-    case PrecisionType::kInt8:
-      t = rk::nn::PrecisionType::INT8;
-      break;
-    case PrecisionType::kBool:
-      t = rk::nn::PrecisionType::BOOL8;
-      break;
-    default:
-      break;
-  }
-
-  return t;
-}
-
-rk::nn::DataLayoutType ToRknpuDataLayoutType(DataLayoutType layout) {
-  rk::nn::DataLayoutType t = rk::nn::DataLayoutType::UNKNOWN;
-
-  switch (layout) {
-    case DataLayoutType::kNCHW:
-      t = rk::nn::DataLayoutType::NCHW;
-      break;
-    case DataLayoutType::kNHWC:
-      t = rk::nn::DataLayoutType::NHWC;
-      break;
-    default:
-      break;
-  }
-
-  return t;
-}
-
 bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
                  const std::string& argname) {
@@ -93,6 +44,107 @@ bool HasInputArg(const OpInfo* op_info,
     return false;
   }
 }
+
+rk::nn::PrecisionType CvtPrecisionType(PrecisionType itype) {
+  rk::nn::PrecisionType otype = rk::nn::PrecisionType::UNKNOWN;
+  switch (itype) {
+    case PrecisionType::kFloat:
+      otype = rk::nn::PrecisionType::FLOAT32;
+      break;
+    case PrecisionType::kFP16:
+      otype = rk::nn::PrecisionType::FLOAT16;
+      break;
+    case PrecisionType::kInt16:
+      otype = rk::nn::PrecisionType::INT16;
+      break;
+    case PrecisionType::kInt32:
+      otype = rk::nn::PrecisionType::INT32;
+      break;
+    case PrecisionType::kInt64:
+      otype = rk::nn::PrecisionType::INT64;
+      break;
+    case PrecisionType::kInt8:
+      otype = rk::nn::PrecisionType::INT8;
+      break;
+    case PrecisionType::kBool:
+      otype = rk::nn::PrecisionType::BOOL8;
+      break;
+    default:
+      LOG(FATAL) << "[Rockchip NPU] Can not convert precision type("
+                 << PrecisionToStr(itype) << ") from Lite to Rockchip NPU";
+      break;
+  }
+  return otype;
+}
+
+rk::nn::DataLayoutType CvtDataLayoutType(DataLayoutType itype) {
+  rk::nn::DataLayoutType otype = rk::nn::DataLayoutType::UNKNOWN;
+  switch (itype) {
+    case DataLayoutType::kNCHW:
+      otype = rk::nn::DataLayoutType::NCHW;
+      break;
+    case DataLayoutType::kNHWC:
+      otype = rk::nn::DataLayoutType::NHWC;
+      break;
+    default:
+      LOG(WARNING) << "[Rockchip NPU] Can not convert data layout type("
+                   << DataLayoutToStr(itype) << ") from Lite to Rockchip NPU";
+      break;
+  }
+  return otype;
+}
+
+std::vector<int32_t> CvtShape(const std::vector<int64_t>& in_shape) {
+  std::vector<int32_t> out_shape;
+  for (size_t i = 0; i < in_shape.size(); i++) {
+    out_shape.push_back(static_cast<int32_t>(in_shape[i]));
+  }
+  return out_shape;
+}
+
+std::vector<int32_t> CvtShape(const DDim& in_dims) {
+  return CvtShape(in_dims.Vectorize());
+}
+
+std::shared_ptr<rk::nn::Tensor> CvtTensor(rk::nn::Graph* graph,
+                                          const std::string& name,
+                                          const std::vector<int64_t>& shape,
+                                          const std::vector<float>& scales,
+                                          void* data,
+                                          PrecisionType precision,
+                                          DataLayoutType layout) {
+  CHECK(!name.empty()) << "[Rockchip NPU] The name of RKNPU tensor is empty!";
+  auto attr = std::make_shared<rk::nn::TensorAttr>();
+  attr->name = name;
+  attr->role =
+      data == nullptr ? rk::nn::TensorRole::VAR : rk::nn::TensorRole::CONST;
+  attr->dims = CvtShape(shape);
+  attr->precision = CvtPrecisionType(precision);
+  attr->layout = CvtDataLayoutType(layout);
+  switch (precision) {
+    case PrecisionType::kInt8:
+      attr->qntBits = 8;
+      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
+      attr->qntParamSymmetric.scale = scales;
+      break;
+    case PrecisionType::kInt32:
+      attr->qntBits = 32;
+      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
+      attr->qntParamSymmetric.scale = scales;
+      break;
+    default:
+      // in RKNPU some const node such as batchnorm's scale, mean is float32
+      // const node such as conv's bias is int8
+      LOG(WARNING) << "[Rockchip NPU] Can not convert precision type("
+                   << PrecisionToStr(precision)
+                   << ") from Lite to Rockchip NPU";
+      break;
+  }
+  auto tensor = graph->CreateTensor(attr, data);
+  CHECK(tensor != nullptr);
+  return tensor;
+}
+
 }  // namespace rknpu
 }  // namespace subgraph
 }  // namespace lite

@@ -101,6 +101,20 @@ bool GRUOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     param_.origin_mode = op_desc.GetAttr<bool>("origin_mode");
   }
 
+  // For int8
+  const OpInfo* op_info = dynamic_cast<const OpInfo*>(&op_desc);
+  if (op_info != nullptr && op_info->HasAttr("enable_int8") &&
+      op_info->GetAttr<bool>("enable_int8")) {
+    param_.enable_int8 = true;
+    param_.bit_length = op_desc.GetAttr<int>("bit_length");
+    std::string weight_scale_name = "Weight0_scale";
+    if (!op_info->HasInputScale(weight_scale_name, true)) {
+      LOG(FATAL)
+          << "Param Error: the quantized gru op should have weight scale";
+    }
+    param_.weight_scale = op_info->GetInputScale(weight_scale_name, true);
+  }
+
   return true;
 }
 

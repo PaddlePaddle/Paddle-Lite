@@ -48,7 +48,23 @@ void CalibComputeFloat2Int::Run() {
   auto& param = this->Param<operators::CalibParam>();
   const auto* din = param.input->data<float>();
   auto* dout = param.output->mutable_data<int>();
-  // param.output->ZynqTensor()->copyFrom(param.input->ZynqTensor());
+
+  for (int i = 0; i < param.input->numel(); i++) {
+    dout[i] = static_cast<float>(din[i]);
+  }
+  auto out_lod = param.output->mutable_lod();
+  *out_lod = param.input->lod();
+  return;
+}
+
+void CalibComputeInt64ToFloat::Run() {
+  auto& param = this->Param<operators::CalibParam>();
+  const auto* din = param.input->data<int64_t>();
+  auto* dout = param.output->mutable_data<float>();
+  for (int i = 0; i < param.input->numel(); i++) {
+    dout[i] = static_cast<float>(din[i]);
+  }
+
   auto out_lod = param.output->mutable_lod();
   *out_lod = param.input->lod();
   return;
@@ -75,7 +91,39 @@ REGISTER_LITE_KERNEL(calib,
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(calib_once,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::CalibComputeFp32ToFP16,
+                     fp32_to_fp16_fpga)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(calib,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::CalibComputeFloat2Int,
+                     float_2_int_fpga)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(calib_once,
                      kFPGA,
                      kFP16,
                      kNHWC,
@@ -111,22 +159,6 @@ REGISTER_LITE_KERNEL(calib_once,
                      kFPGA,
                      kFP16,
                      kNHWC,
-                     paddle::lite::kernels::fpga::CalibComputeFp32ToFP16,
-                     fp32_to_fp16_fpga)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kNCHW))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(calib_once,
-                     kFPGA,
-                     kFP16,
-                     kNHWC,
                      paddle::lite::kernels::fpga::CalibComputeFP16ToFp32,
                      fp16_to_fp32_fpga)
     .BindInput("Input",
@@ -137,4 +169,36 @@ REGISTER_LITE_KERNEL(calib_once,
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(calib,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::CalibComputeInt64ToFloat,
+                     int64_2_float_fpga)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(calib_once,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::CalibComputeInt64ToFloat,
+                     int64_2_float_fpga)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
     .Finalize();

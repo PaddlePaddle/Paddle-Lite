@@ -29,11 +29,16 @@ using lite_api::ActivationType;
 
 void ConvCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
+
+  if (param.enable_int8) {
+    input_max_ = zynqmp::float_to_half(127 * param.input_scale);
+  }
   param.output->mutable_data<float16>();
   int pad_h = (*param.paddings)[0];
   int pad_w = (*param.paddings)[2];
+  // add jump write support
 
-  zynqmp::ActiveType active_type = zynqmp::TYPE_NONE;
+  zynqmp::ActivationType active_type = zynqmp::TYPE_NONE;
   float leaky_relu_factor = 0;
 
   switch (param.activation_param.active_type) {
@@ -69,7 +74,6 @@ void ConvCompute::PrepareForRun() {
   if (param.x->ZynqTensor()->shape().channel() != 1 &&
       param.groups == param.x->ZynqTensor()->shape().channel()) {
     zynqmp::DepthwiseConvParam& conv_param = dw_conv_pe_.param();
-
     conv_param.input = param.x->ZynqTensor();
     conv_param.output = param.output->ZynqTensor();
     conv_param.filter = param.filter->ZynqTensor();
@@ -82,14 +86,27 @@ void ConvCompute::PrepareForRun() {
     if (param.bias != nullptr) {
       conv_param.bias()->copyFrom(param.bias->ZynqTensor());
     }
+    if (param.scale != nullptr) {
+      conv_param.scale()->copyFrom(param.scale->ZynqTensor());
+    }
 
     conv_param.activeParam.type = active_type;
     conv_param.activeParam.leaky_relu_factor = leaky_relu_factor;
-
     dw_conv_pe_.init();
     dw_conv_pe_.apply();
   } else {
     zynqmp::ConvParam& conv_param = conv_pe_.param();
+    // pass jump write info to pe params
+    auto stride_info_ = param.stride_info_;
+    if (stride_info_.wd_enable_) {
+      conv_param.fuse_idx = stride_info_.fuse_idx_;
+      conv_param.wd_enable = stride_info_.wd_enable_;
+      conv_param.original_out_channel = stride_info_.original_out_channel_;
+      conv_param.wd_offset = stride_info_.wd_offset_;
+      conv_param.start_idx = stride_info_.start_idx_;
+      conv_param.end_idx = stride_info_.end_idx_;
+    }
+
     conv_param.input = param.x->ZynqTensor();
     conv_param.output = param.output->ZynqTensor();
     conv_param.filter = param.filter->ZynqTensor();
@@ -102,10 +119,12 @@ void ConvCompute::PrepareForRun() {
     if (param.bias != nullptr) {
       conv_param.bias()->copyFrom(param.bias->ZynqTensor());
     }
+    if (param.scale != nullptr) {
+      conv_param.scale()->copyFrom(param.scale->ZynqTensor());
+    }
 
     conv_param.activeParam.type = active_type;
     conv_param.activeParam.leaky_relu_factor = leaky_relu_factor;
-
     conv_pe_.init();
     conv_pe_.apply();
   }
@@ -113,6 +132,10 @@ void ConvCompute::PrepareForRun() {
 
 void ConvCompute::Run() {
   auto& param = this->Param<param_t>();
+  if (param.enable_int8) {
+    // param.x->ZynqTensor()->max()[0] = input_max_;
+  }
+
   if (param.x->ZynqTensor()->shape().channel() != 1 &&
       param.groups == param.x->ZynqTensor()->shape().channel()) {
     dw_conv_pe_.dispatch();
@@ -133,6 +156,25 @@ void ConvCompute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(fpga_conv2d,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::ConvCompute,
+                     def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .BindPaddleOpVersion("fpga_conv2d", 1)
+    .Finalize();
 
 REGISTER_LITE_KERNEL(
     conv2d, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::ConvCompute, def)

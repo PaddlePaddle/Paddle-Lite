@@ -110,7 +110,7 @@ class MMDNNIdInfo {
                      ub_idx_sorted_32_size;
 
     // TODO(miaotianxiang): use l3?
-    l3_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(total_size, false);
+    l3_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(total_size);
     l3_buffer_ = reinterpret_cast<char*>(l3_buffer_guard_->addr_);
     cpu_buffer_guard_.reset(new char[total_size]);
     cpu_buffer_ = cpu_buffer_guard_.get();
@@ -187,17 +187,14 @@ class MMDNNFcOp {
     act_type_ = act_type;
 
     weight_ = weight;
-    weight_max_guard_ =
-        TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
+    weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
     weight_max_ = reinterpret_cast<float*>(weight_max_guard_->addr_);
     FillMax(weight_max, weight_max_);
 
     bias_ = bias;
 
-    in_max_guard_ =
-        TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
-    out_max_guard_ =
-        TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
+    in_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    out_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
     in_max_ = reinterpret_cast<float*>(in_max_guard_->addr_);
     out_max = reinterpret_cast<float*>(in_max_guard_->addr_);
   }
@@ -227,25 +224,23 @@ class MMDNNFcOp {
       CHECK_EQ(r, 0);
       in_max_by_caller = in_max_;
     }
-    r = xdnn::gemm_int16_maxptr<float, int16_t, float>(ctx,
-                                                       false,
-                                                       true,
-                                                       m,
-                                                       n_,
-                                                       k_,
-                                                       1.0f,
-                                                       in,
-                                                       k_,
-                                                       weight_,
-                                                       k_,
-                                                       0.0f,
-                                                       out,
-                                                       n_,
-                                                       bias_,
-                                                       act_type_,
-                                                       in_max_by_caller,
-                                                       weight_max_,
-                                                       out_max);
+
+    r = xdnn::fc_int16(ctx,
+                       false,
+                       true,
+                       m,
+                       n_,
+                       k_,
+                       1.0f,
+                       in,
+                       in_max_by_caller,
+                       weight_,
+                       weight_max_,
+                       0.0f,
+                       out,
+                       out_max,
+                       bias_,
+                       act_type_);
     CHECK_EQ(r, 0);
   }
 };
@@ -306,11 +301,10 @@ class MMDNNGrnnOp {
     dense_h2h_max_[1] = wh_maxs[1];
     dense_h2h_max_[2] = wh_maxs[2];
 
-    input_max_guard_ =
-        TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
+    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
     input_max_ = reinterpret_cast<float*>(input_max_guard_->addr_);
     hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
-        5 * std::max(cap_e_, cap_h_) * max_cap_l_ * sizeof(float), false);
+        5 * std::max(cap_e_, cap_h_) * max_cap_l_ * sizeof(float));
     hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
   }
 
@@ -413,8 +407,7 @@ class MMDNNAttentionOp {
     hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
         (upper_bound_batch * (upper_bound_seqlen * dim_ +
                               upper_bound_seqlen * upper_bound_seqlen)) *
-            sizeof(float),
-        false);
+        sizeof(float));
     hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
   }
 
@@ -545,34 +538,33 @@ class MMDNNMatchConvTopk {
         (upper_bound_batch * upper_bound_seqlen * dim_t_ * dim_in_ +
          upper_bound_batch * upper_bound_seqlen * upper_bound_seqlen *
              (dim_t_ + out_channel_) * 2) *
-            sizeof(float),
-        false);
+        sizeof(float));
     hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
 
     left_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
-        (upper_bound_batch + 1) * sizeof(int), false);
+        (upper_bound_batch + 1) * sizeof(int));
     left_lod_32_ = reinterpret_cast<int*>(left_lod_32_guard_->addr_);
     right_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
-        (upper_bound_batch + 1) * sizeof(int), false);
+        (upper_bound_batch + 1) * sizeof(int));
     right_lod_32_ = reinterpret_cast<int*>(right_lod_32_guard_->addr_);
     match_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
-        (upper_bound_batch + 1) * sizeof(int), false);
+        (upper_bound_batch + 1) * sizeof(int));
     match_lod_32_ = reinterpret_cast<int*>(match_lod_32_guard_->addr_);
     conv_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
-        (upper_bound_batch + 1) * sizeof(int), false);
+        (upper_bound_batch + 1) * sizeof(int));
     conv_lod_32_ = reinterpret_cast<int*>(conv_lod_32_guard_->addr_);
     topk_offset_32_guard_ = TargetWrapperXPU::MallocScratchPad(
-        (upper_bound_batch + 1) * sizeof(int), false);
+        (upper_bound_batch + 1) * sizeof(int));
     topk_offset_32_ = reinterpret_cast<int*>(topk_offset_32_guard_->addr_);
     topks_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(topks_.size() * sizeof(int), false);
+        TargetWrapperXPU::MallocScratchPad(topks_.size() * sizeof(int));
     topks_xpu_ = reinterpret_cast<int*>(topks_xpu_guard_->addr_);
     XPU_CALL(xpu_memcpy(topks_xpu_,
                         topks_.data(),
                         topks_.size() * sizeof(int),
                         XPUMemcpyKind::XPU_HOST_TO_DEVICE));
     useless_topk_pos_guard_ =
-        TargetWrapperXPU::MallocScratchPad(4 * sizeof(int), false);
+        TargetWrapperXPU::MallocScratchPad(4 * sizeof(int));
     useless_topk_pos_ = reinterpret_cast<int*>(useless_topk_pos_guard_->addr_);
   }
 
@@ -787,7 +779,7 @@ class MMDNNBidEmbGrnnAtt {
               upper_bound_seqlen);
 
     hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
-        4 * max_cap_l * cap_h_ * sizeof(float), false);
+        4 * max_cap_l * cap_h_ * sizeof(float));
     hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
   }
 
@@ -1022,8 +1014,8 @@ class MMDNNMergeAll {
     int hbm_total_len = max_cap_l * cap_e_ * 2 + max_cap_l * cap_h_ * 2 +
                         upper_bound_batch * (2 * cap_h_ + fc0_k_ + fc0_n_ +
                                              fc1_k_ + fc1_n_ + fc2_n_);
-    hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
-        hbm_total_len * sizeof(float), false);
+    hbm_buffer_guard_ =
+        TargetWrapperXPU::MallocScratchPad(hbm_total_len * sizeof(float));
     hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
   }
 
@@ -1191,10 +1183,8 @@ void XPUMmdnnBidEmbGrnnAttCompute::Run() {
                   param.att_pool_out,
                   param.concat_3in1_out,
                   param.emb_fw_out,
-                  reinterpret_cast<float*>(
-                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
-                      xpu_ctx->used_l3_size),
-                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+                  reinterpret_cast<float*>(xpu_ctx->_l3_mgr.get_ptr()),
+                  xpu_ctx->_l3_mgr.get_size());
 }
 
 class XPUMmdnnBidEmbGrnnAttCompute2
@@ -1247,10 +1237,8 @@ void XPUMmdnnBidEmbGrnnAttCompute2::Run() {
                   param.att_pool_out,
                   param.concat_3in1_out,
                   param.emb_fw_out,
-                  reinterpret_cast<float*>(
-                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
-                      xpu_ctx->used_l3_size),
-                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+                  reinterpret_cast<float*>(xpu_ctx->_l3_mgr.get_ptr()),
+                  xpu_ctx->_l3_mgr.get_size());
 
   int num = param.id0->numel();
   int embed_dim = param.emb_tbl->dims()[1];
@@ -1306,10 +1294,8 @@ void XPUMmdnnBidEmbAttCompute::Run() {
                   id_,
                   param.att_pool_out,
                   param.emb_fw_out,
-                  reinterpret_cast<float*>(
-                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
-                      xpu_ctx->used_l3_size),
-                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+                  reinterpret_cast<float*>(xpu_ctx->_l3_mgr.get_ptr()),
+                  xpu_ctx->_l3_mgr.get_size());
 }
 
 class XPUMmdnnMatchConvTopkCompute
@@ -1350,10 +1336,8 @@ void XPUMmdnnMatchConvTopkCompute::Run() {
                   param.input_x,
                   param.input_y,
                   param.topk_out,
-                  reinterpret_cast<float*>(
-                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
-                      xpu_ctx->used_l3_size),
-                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+                  reinterpret_cast<float*>(xpu_ctx->_l3_mgr.get_ptr()),
+                  xpu_ctx->_l3_mgr.get_size());
 }
 
 class XPUMmdnnMergeAllCompute
@@ -1407,10 +1391,8 @@ void XPUMmdnnMergeAllCompute::Run() {
                   param.concat_topk_x,
                   param.concat_7in1_x,
                   param.out,
-                  reinterpret_cast<float*>(
-                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
-                      xpu_ctx->used_l3_size),
-                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+                  reinterpret_cast<float*>(xpu_ctx->_l3_mgr.get_ptr()),
+                  xpu_ctx->_l3_mgr.get_size());
 }
 
 }  // namespace xpu

@@ -46,10 +46,23 @@ int8_t* format_filter(float* data_in,
 
 void convert_to_hwn(int16_t** data_in, int num, int height, int width);
 size_t align_element_n(int16_t** data_in, int num, int height, int width);
-// void quantize_to_fp16(float** data_in, int num, int height, int width,
-//                       float* scale_ptr);
+void quantize_to_fp16(
+    float** data_in, int num, int height, int width, float* scale_ptr);
+int16_t* quantize_to_int16(float* data_in,
+                           int num,
+                           int height,
+                           int width,
+                           float* scale_ptr,
+                           float quant_scale);
 size_t format_dwconv_filter(
     float** data_in, int num, int height, int width, float* scale_ptr);
+int16_t* format_dwconv_filter(float* data_in,
+                              int num,
+                              int height,
+                              int width,
+                              float* scale_ptr,
+                              int& mem_size,  // NOLINT
+                              float quant_scale);
 
 }  // namespace filter
 }  // namespace zynqmp

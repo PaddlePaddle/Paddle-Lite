@@ -51,8 +51,7 @@ int StackConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Stack node
   graph->Add(y_name,
-             graph->builder_.CreateStack(
-                 xtcl::network::TupleNode::make(x_nodes), axis));
+             graph->builder_.CreateStack(xtcl::network::Tuple(x_nodes), axis));
   return SUCCESS;
 }
 

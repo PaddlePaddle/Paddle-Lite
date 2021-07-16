@@ -33,9 +33,15 @@ Paddle Lite支持移动端GPU和Nvidia端上GPU设备，支持列表如下：
   Nvida tegra系列: tx1, tx2, nano, xavier
 
 ## FPGA
-Paddle Lite支持FPGA，支持列表如下：
+Paddle Lite支持 **百度 FPGA**，支持列表如下：
 - 百度Edgeboard系列：ZU9, ZU5, ZU3
 
+Paddle Lite支持 **英特尔 (Intel) FPGA**，支持列表如下：
+- 支持芯片：英特尔FPGA Cyclone V系列芯片
+- 支持设备：
+  - 海运捷讯C5MB（英特尔FPGA Cyclone V）开发板
+  - 海运捷讯C5CB（英特尔FPGA Cyclone V）开发板
+  - 海运捷讯C5TB（英特尔FPGA Cyclone V）开发板
 ## 百度 (Baidu) XPU
 Paddle Lite支持百度XPU，支持列表如下：
 - 百度昆仑818-100芯片

@@ -159,28 +159,27 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
   $ git checkout <release-version-tag>
   ```
 
-- 下载xpu_toolchain for amd64 or arm64(FT-2000+/64)；
+- 编译publish so for amd64 or arm64(FT-2000+/64)；
 
   ```shell
-  $ wget <URL_to_download_xpu_toolchain>
-  $ tar -xvf output.tar.gz
-  $ mv output xpu_toolchain
+  $ # For amd64，如果报找不到cxx11::符号的编译错误，请将gcc切换到4.8版本。
+  $ ./lite/tools/build_linux.sh --arch=x86 --with_baidu_xpu=ON
+
+  $ # For arm64(FT-2000+/64)。arm环境下需要设置环境变量CC和CXX，分别指定C编译器和C++编译器的路径
+  $ export CC=<path_to_your_c_compiler>
+  $ export CXX=<path_to_your_c++_compiler>
+  $ ./lite/tools/build_linux.sh --arch=armv8 --with_baidu_xpu=ON
   ```
 
-- 编译full_publish for amd64 or arm64(FT-2000+/64)；
-
+- 替换库文件和头文件
   ```shell
-  For amd64，如果报找不到cxx11::符号的编译错误，请将gcc切换到4.8版本。
-  $ ./lite/tools/build.sh --build_xpu=ON --xpu_sdk_root=./xpu_toolchain --build_extra=ON x86
-
-  For arm64(FT-2000+/64)
-  $ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build_extra=ON --build_xpu=ON --xpu_sdk_root=./xpu_toolchain --with_log=ON full_publish
+  cd PaddleLite-linux-demo/image_classification_demo/shell
+  ./update_libs.sh <lite_inference_dir> <demo_libs_dir>
+  # For amd64，lite_inference_dir一般为编译生成的build.lite.linux.x86.gcc.baidu_xpu/inference_lite_lib，demo_libs_dir为PaddleLite-linux-demolibs/PaddleLite/amd64
+  # For arm64，lite_inference_dir一般为编译生成的build.lite.linux.armv8.gcc.baidu_xpu/inference_lite_lib.armlinux.armv8.xpu，demo_libs_dir为PaddleLite-linux-demolibs/PaddleLite/amd64
   ```
 
-- 将编译生成的build.lite.x86/inference_lite_lib/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/amd64/include目录；
-- 将编译生成的build.lite.x86/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/amd64/lib/libpaddle_full_api_shared.so文件；
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.xpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.xpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件。
+  备注：替换头文件后需要重新编译示例程序
 
 ## 其它说明
 

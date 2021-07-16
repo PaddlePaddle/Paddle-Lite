@@ -1,0 +1,18 @@
+namespace paddle.lite.fbs.opencl.proto.Cache_;
+
+table BinaryVector {
+  data:[ubyte];
+}
+
+table BinaryPair {
+  key:string (required, key);
+  value:[paddle.lite.fbs.opencl.proto.Cache_.BinaryVector];
+}
+
+namespace paddle.lite.fbs.opencl.proto;
+
+table Cache {
+  binary_map:[paddle.lite.fbs.opencl.proto.Cache_.BinaryPair] (required);
+}
+
+root_type paddle.lite.fbs.opencl.proto.Cache;

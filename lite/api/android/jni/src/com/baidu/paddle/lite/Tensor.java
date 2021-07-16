@@ -21,7 +21,7 @@ public class Tensor {
 
     /**
      * Java doesn't have pointer. To maintain the life cycle of underneath C++
-     * PaddlePredictor object, we use a long value to maintain it.
+     * Tensor object, we use a long value to maintain it.
      */
     private long cppTensorPointer;
 

@@ -59,25 +59,32 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   DataLayoutType layout = DATALAYOUT(kNCHW);
   PrecisionType precision = PRECISION(kFloat);
 
-  if (op_info->HasAttr("enable_int8")) {
-    enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    CHECK(op_info->HasInputScale(x_scale_name, true));
+  if (op_info->HasInputScale(x_scale_name, true) &&
+      op_info->HasOutputScale(y_scale_name, true)) {
+    enable_int8 = true;
     input_scale = op_info->GetInputScale(x_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(y_scale_name, true));
     output_scale = op_info->GetOutputScale(y_scale_name, true)[0];
-
-    if (enable_int8) {
-      precision = PRECISION(kInt8);
-    }
+    precision = PRECISION(kInt8);
+  } else {
+    enable_int8 = false;
+    LOG(WARNING) << "[RK-NPU] the op is float-type " << op_type;
+    precision = PRECISION(kFloat);
   }
-
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    x_node = graph->Add(x_name, *x);
+    // x_node = graph->Add(x_name, *x);
+    QuantizationInfo qnt;
+    qnt.enable_int8 = enable_int8;
+
+    if (enable_int8) {
+      qnt.scale.push_back(input_scale);
+      qnt.quant_bits = bit_length;
+    }
+    x_node = graph->Add(x_name, *x, precision, layout, qnt);
   }
 
   // Scale, Bias, Mean, Variance node

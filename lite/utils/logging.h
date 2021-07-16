@@ -23,6 +23,9 @@
 
 #include <assert.h>
 #include <time.h>
+
+// The windows environmental variable min/max should be unset to avoid confilcts
+// with std::max/std::min
 #if !defined(_WIN32)
 #include <sys/time.h>
 #include <sys/types.h>
@@ -33,21 +36,12 @@
 #undef max
 extern struct timeval;
 static int gettimeofday(struct timeval* tp, void* tzp) {
-  time_t clock;
-  struct tm tm;
-  SYSTEMTIME wtm;
-
-  GetLocalTime(&wtm);
-  tm.tm_year = wtm.wYear - 1900;
-  tm.tm_mon = wtm.wMonth - 1;
-  tm.tm_mday = wtm.wDay;
-  tm.tm_hour = wtm.wHour;
-  tm.tm_min = wtm.wMinute;
-  tm.tm_sec = wtm.wSecond;
-  tm.tm_isdst = -1;
-  clock = mktime(&tm);
-  tp->tv_sec = clock;
-  tp->tv_usec = wtm.wMilliseconds * 1000;
+  LARGE_INTEGER now, freq;
+  QueryPerformanceCounter(&now);
+  QueryPerformanceFrequency(&freq);
+  tp->tv_sec = now.QuadPart / freq.QuadPart;
+  tp->tv_usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
+  // uint64_t elapsed_time = sec * 1000000 + usec;
 
   return (0);
 }
@@ -59,6 +53,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
 
+// ANDROID_LOG SYSTEM
 #if defined(LITE_WITH_LOG) && defined(LITE_WITH_ANDROID)
 #include <android/log.h>
 // Android log macors
@@ -71,9 +66,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
   __android_log_print(ANDROID_LOG_FATAL, ANDROID_LOG_TAG, "%s", msg)
 #endif
 
-// NOLINTFILE()
-
-// LOG()
+// LOG SYSTEM
 #ifndef LITE_WITH_LOG
 #define LOG(status) LOG_##status
 #define LOG_INFO paddle::lite::Voidify()
@@ -82,7 +75,15 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #define LOG_FATAL paddle::lite::VoidifyFatal()
 #else
 #define LOG(status) LOG_##status.stream()
+
+#if defined LITE_ON_MODEL_OPTIMIZE_TOOL || defined LITE_WITH_PYTHON
+// In opt tool, all LOG(INFO) will be replaced by VLOG(1),
+// so that the message will not be printed by default.
+#define LOG_INFO paddle::lite::VLogMessage(__FILE__, __FUNCTION__, __LINE__, 1)
+#else
 #define LOG_INFO paddle::lite::LogMessage(__FILE__, __FUNCTION__, __LINE__, "I")
+#endif
+
 #define LOG_ERROR LOG_INFO
 #define LOG_WARNING \
   paddle::lite::LogMessage(__FILE__, __FUNCTION__, __LINE__, "W")
@@ -93,19 +94,23 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #ifndef LITE_WITH_LOG
 #define VLOG(level) paddle::lite::Voidify()
 #else
-// VLOG()
+// VLOG SYSTEM
 #define VLOG(level) \
   paddle::lite::VLogMessage(__FILE__, __FUNCTION__, __LINE__, level).stream()
 #endif
 
-// CHECK()
-// clang-format off
+// CHECK SYSTEM
 #ifndef LITE_WITH_LOG
-#define CHECK(x) if (!(x)) paddle::lite::VoidifyFatal()
+#define CHECK(x) \
+  if (!(x)) paddle::lite::VoidifyFatal()
 #define _CHECK_BINARY(x, cmp, y) CHECK(x cmp y)
 #else
-#define CHECK(x) if (!(x)) paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() << "Check failed: " #x << ": " // NOLINT(*)
-#define _CHECK_BINARY(x, cmp, y) CHECK((x cmp y)) << (x) << "!" #cmp << (y) << " " // NOLINT(*)
+#define CHECK(x)                                                           \
+  if (!(x))                                                                \
+  paddle::lite::LogMessageFatal(__FILE__, __FUNCTION__, __LINE__).stream() \
+      << "Check failed: " #x << ": "  // NOLINT(*)
+#define _CHECK_BINARY(x, cmp, y) \
+  CHECK((x cmp y)) << (x) << "!" #cmp << (y) << " "  // NOLINT(*)
 #endif
 
 // clang-format on

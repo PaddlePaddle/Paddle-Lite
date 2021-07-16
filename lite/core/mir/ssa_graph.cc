@@ -157,6 +157,7 @@ void SSAGraph::Build(const Program &program,
                      int block_idx) {
   CHECK(node_storage_.empty());
 
+  block_idx_ = block_idx;
   auto weights = program.weights();
   auto is_weight = [&](const std::string &name) -> bool {
     auto it = std::find(weights.begin(), weights.end(), name);

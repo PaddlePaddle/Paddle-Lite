@@ -120,6 +120,9 @@ opt.set_valid_places("arm,opencl")
 
 - `quant_type(str)`-支持设置为`QUANT_INT16`和`QUANT_INT8`
 
+### `enable_fp16()`
+
+启用`Float16 训练后量化`。将模型中权重数据量化为`Float16`对模型精度有一点影响，运行耗时和内存占用几乎降低一半。
 
 ### `run()`
 

@@ -51,6 +51,7 @@ void interpolate(lite::Tensor* X,
                  int out_width,
                  float scale,
                  bool with_align,
+                 int align_mode,
                  std::string interpolate_type);
 
 } /* namespace math */

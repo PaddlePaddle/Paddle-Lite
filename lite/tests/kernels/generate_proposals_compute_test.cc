@@ -13,9 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-
 #include <fstream>
-
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
@@ -678,7 +676,6 @@ class GenerateProposalsComputeTester : public arena::TestCase {
     }
 
     // ImInfo
-
     {
       DDim dims = DDim({3});
       std::vector<float> data{64, 64, 8};
@@ -689,25 +686,19 @@ class GenerateProposalsComputeTester : public arena::TestCase {
 };
 
 TEST(GenerateProposals, precision) {
-  // The unit test for generate_proposals needs the params,
-  // which is obtained by runing model by paddle.
-  LOG(INFO) << "test generate proposals op";
-#ifdef LITE_WITH_ARM
-  {
-    Place place(TARGET(kARM));
-    std::unique_ptr<arena::TestCase> tester(
-        new GenerateProposalsComputeTester(place, "def", true));
-    arena::Arena arena(std::move(tester), place, 2e-5);
-    EXPECT_TRUE(arena.TestPrecision());
-  }
-  {
-    Place place(TARGET(kARM));
-    std::unique_ptr<arena::TestCase> tester(
-        new GenerateProposalsComputeTester(place, "def", false));
-    arena::Arena arena(std::move(tester), place, 2e-5);
-    EXPECT_TRUE(arena.TestPrecision());
-  }
+  Place place;
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  for (bool test_v18_api : {true, false}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new GenerateProposalsComputeTester(place, "def", test_v18_api));
+    arena::Arena arena(std::move(tester), place, 2e-5);
+    arena.TestPrecision();
+  }
 }
 
 }  // namespace lite

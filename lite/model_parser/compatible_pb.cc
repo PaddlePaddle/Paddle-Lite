@@ -49,6 +49,7 @@ namespace lite {
       if (type == VarDataType::LOD_TENSOR ||                       \
           type == VarDataType::SELECTED_ROWS ||                    \
           type == VarDataType::LOD_TENSOR_ARRAY) {                 \
+        any_desc->SetDataType(cpp_desc.GetDataType());             \
         any_desc->SetShape(cpp_desc.GetShape());                   \
       }                                                            \
     }                                                              \
@@ -68,6 +69,7 @@ void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
     }
     if (type == VarDataType::LOD_TENSOR || type == VarDataType::SELECTED_ROWS ||
         type == VarDataType::LOD_TENSOR_ARRAY) {
+      cpp_desc->SetDataType(any_desc.GetDataType());
       cpp_desc->SetShape(any_desc.GetShape());
     }
   }
@@ -96,14 +98,6 @@ void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
   cpp_desc->SetName(any_desc.Name());
   cpp_desc->SetType(any_desc.GetType());
   cpp_desc->SetPersistable(any_desc.Persistable());
-  // todo : SetDataType function is commented out temporarily
-  // because of Compatibility issues. The Compatibility issue
-  // should be fixed later and the code below should be applied
-  // later. @DannyIsFunny
-  /*  if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
-      cpp_desc->SetDataType(any_desc.GetDataType());
-      cpp_desc->SetShape(any_desc.GetShape());
-    }*/
 }
 #endif
 /// For OpDesc transform

@@ -5,14 +5,15 @@
 ## 前述：Pass是什么？
 
 **CxxPredictor加载模型后，在执行预测前会先优化模型。模型优化过程是通过Pass实现的。**
-具体调用关系如下：
-![图片](https://user-images.githubusercontent.com/45189361/69638690-20d21880-1096-11ea-8169-1d2c7e1a1609.png)
 
- - `CreatePredictor(CxxConfig)`函数调用了Predictor->Build(CxxConfig)
-   - CxxPredictor的构建过程（Build）分为两步：
-     - Predictor->LoadModel()          加载模型文件到program中
-     - Predicotr->optimizer_.Run()    对Program中的原始图形结构进行优化
-          - 对图结构的优化是通过调用 `Pass->Apply(const std::unique_ptr<SSAGraph>& graph)`方法实现的。
+具体调用关系如下：
+![](https://user-images.githubusercontent.com/45189361/69638690-20d21880-1096-11ea-8169-1d2c7e1a1609.png)
+
+- `CreatePredictor(CxxConfig)`函数调用了Predictor->Build(CxxConfig)
+  - CxxPredictor的构建过程（Build）分为两步：
+    - Predictor->LoadModel()          加载模型文件到program中
+    - Predicotr->optimizer_.Run()    对Program中的原始图形结构进行优化
+        - 对图结构的优化是通过调用 `Pass->Apply(const std::unique_ptr<SSAGraph>& graph)`方法实现的。
 
 
 **每一类Pass定义了一种优化过程**，包括：原模型中的kernel选取、OP融合、冗余OP去除、子图创建、内存优化、类型推导、类型转换等。
@@ -23,11 +24,12 @@
 ## Pass的实现与接口 ：Pass基类、PassManager和Pass注册
 
 ### 1、Pass基类：`paddle::lite::mir::Pass`
+
 ```c++
 class Pass {
  public:
   // Pass的类型，Pass按照作用的不同可以分为三种
-  enum class Kind {   //种类的作用不太清楚
+  enum class Kind {
     // 1. 修改模型中的图拓扑结构的Pass
     kProgramWise = 0,
     // 2. 不修改图结构，修改状态的Pass
@@ -68,13 +70,17 @@ class DebugPass : public Pass {
 };
 ```
 **代码位置**：`lite/core/mir/pass.h`
+
 **主要类成员**：
-  `const Kind kind_` : Pass类型。pass 有三种基本基本类型 ：修改图结构的`ProgramPass`、修改状态量的`StmtPass`和Debug过程采集信息与控制可视化的`DebugPass`。  
-  `std::string name_` ：pass 的名称
-  `std::set<TargetType> bound_targets_` : Pass运行的硬件平台，optimizer.Run()优化过程会根据硬件平台选择匹配的Pass。------根据硬件平台自动选择需要的pass
-  `std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_` : Pass 绑定的kernel   (what's this used for)
-**主要接口**： 
-  `Pass::Apply(const std::unique_ptr& graph)` : Pass优化过程的具体操作，是新注册Pass需要实现的接口。输入为`SSAGraph`型指针，是对模型结构的拓扑表示。
+
+- `const Kind kind_` : Pass类型。pass 有三种基本基本类型 ：修改图结构的`ProgramPass`、修改状态量的`StmtPass`和Debug过程采集信息与控制可视化的`DebugPass`。
+- `std::string name_` ：pass 的名称
+- `std::set<TargetType> bound_targets_` : Pass运行的硬件平台，optimizer.Run()优化过程会根据硬件平台选择匹配的Pass。
+- `std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_` : Pass 绑定的kernel   (what's this used for)
+
+**主要接口**：
+
+- `Pass::Apply(const std::unique_ptr& graph)` : Pass优化过程的具体操作，是新注册Pass需要实现的接口。输入为`SSAGraph`型指针，是对模型结构的拓扑表示。
 
 ### 2、Pass管理 `paddle::lite::mir::PassManager` 
 
@@ -102,30 +108,40 @@ class PassManager {
 
 ```
 **代码位置**：`lite/core/mir/pass_manager.h`
+
 **主要类成员**：
-`std::list:unique_ptr> passes_;`  : List类型，存储了所有已注册Pass。
-`std::map<std::string, mir::Pass*> pass_map_; `  :   Map类型，存储了所有"Pass名称-Pass类"键对，用于根据名称查找Pass。
+
+- `std::list:unique_ptr> passes_;`  : List类型，存储了所有已注册Pass。
+- `std::map<std::string, mir::Pass*> pass_map_; `  :   Map类型，存储了所有"Pass名称-Pass类"键对，用于根据名称查找Pass。
 
 **主要接口**：
- `static PassManager& Global()` 返回PassManager全局静态变量,该变量存储了所有已注册的Pass
-` bool AddNewPass(const std::string& name, Pass* pass)` 添加新的Pass到PassManager中
+
+- `static PassManager& Global()` 返回PassManager全局静态变量,该变量存储了所有已注册的Pass
+- ` bool AddNewPass(const std::string& name, Pass* pass)` 添加新的Pass到PassManager中
 
 
 ### 3、 Pass 注册 `paddle::lite::mir::PassRegistry`
+
 **代码位置**：`lite/core/mir/pass_registry.h`
+
 **主要接口**：
-`REGISTER_MIR_PASS(name__, class__)` ：宏定义函数，用于注册Pass。注册Pass过程实现的是 `PassManager::Global().AddNewPass(name__, class__)`，将新注册Pass添加到全局变量`PassManager`中。
+
+- `REGISTER_MIR_PASS(name__, class__)` ：宏定义函数，用于注册Pass。注册Pass过程实现的是 - `PassManager::Global().AddNewPass(name__, class__)`，将新注册Pass添加到全局变量`PassManager`中。
 
 
 
 ## Pass的一般注册流程与使用方法
 
 ### 1. Pass 注册流程
+
 在`lite/core/mir`或其子目录下继承`Pass基类`，实现`Pass::Apply`接口，并使用宏`REGISTER_MIR_PASS(name__, class__)`将Pass注册到`PassManager`即完成了新Pass注册。
 
-**以新建 **`new_demo_pass`**为例**，具体流程如下：
+以新建 `new_demo_pass`为例，具体流程如下：
+
 （1）在`lite/core/mir`路径下新建`example_pass.cc` 和 `new_demo_pass.h` 文件
+
 （2）在`example_pass.h` 文件中继承Pass基类（ProgramPass、StmtPass或DebugPass）定义自己的Pass类。
+
 ```c++
 #include "lite/core/mir/pass.h"
 
@@ -140,7 +156,9 @@ class ExamplePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 ```
+
 （3）在`example_pass.cc` 文件中实现`ExamplePass::Apply()`接口，并注册`ExamplePass`
+
 ```c++
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/example_pass.h"
@@ -172,6 +190,7 @@ lite_cc_library(mir_passes
 ### 2. Pass使用流程
 
 将Pass注册到PassManager后不会自动生效。需要在`optimizer->run()` 函数中添加该Pass才会在模型优化过程中调用。
+
 （1）在`paddle_use_passes.h`文件中调用该Pass
 
 ```cmake
@@ -179,6 +198,7 @@ lite_cc_library(mir_passes
     ...
 USE_MIR_PASS(new_demo_pass);  //调用 new_demo_pass
 ```
+
 （2）要想在优化模型时调用该Pass，需要在`optimizer->run()`函数中手动添加调用。
 
 修改`lite/core/optimizer.h`文件，添加`new_demo_pass`到`Optimizer::Run()`函数；
@@ -195,7 +215,9 @@ USE_MIR_PASS(new_demo_pass);  //调用 new_demo_pass
     ...
  }      
 ```
+
 （3）只有CxxPredictor才会在模型加载后根据Pass优化模型。
+
 ```c++
  ...
 #include "paddle_use_passes.h"   // 引用Pass优化模型
@@ -236,7 +258,9 @@ mul和elementwise_add的原有参数映射到FC的参数上：
 
 ### `fc_fuse_pass`的注册方法
 #### 1、创建FcFuser
+
 （1）在`lite/core/mir/fusion`路径下新建`fc_fuser.cc` 和 `fc_fuser.h` 文件
+
 （2）在`fc_fuser.h` 文件中继承`FuseBase`定义自己的Fuser类。
 
 ```c++
@@ -354,6 +378,7 @@ void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 #### 2、注册fc_fuse_pass
 
 （1）在`lite/core/mir/fusion`路径下新建`fc_fuse_pass.cc` 和 `fc_fuse_pass.h` 文件
+
 （2）在`fc_fuse_pass.h` 文件中，继承`ProgramPass`定义`FcFusePass`。
 
 ```c++
@@ -366,7 +391,9 @@ class FcFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override; namespace mir namespace lite namespace paddle
 ```
+
 （3）在`fc_fuse_pass.cc` 文件中实现`FcFusePass::Apply()`接口，并注册`FcFusePass`
+
 ```c++
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/example_pass.h"
@@ -398,6 +425,7 @@ set(mir_fusers
 ```
 
 （5）修改`lite/core/mir/CMakeLists.txt`文件，将`fc_fuse_pass.cc` 编译到`mir_pass`库
+
 ```cmake
 lite_cc_library(mir_passes
   SRCS
@@ -413,7 +441,9 @@ lite_cc_library(mir_passes
 ```c++
 USE_MIR_PASS(lite_fc_fuse_pass);
 ```
+
 （2）  在`lite/core/optimizer.h`文件的`Optimizer::Run()`函数中添加新注册的pass
+
 ```C++
 class Optimizer {
  public:
@@ -433,4 +463,5 @@ class Optimizer {
     exec_scope_ = program.exec_scope();
   }
 ```
+
 （3） 以上修改完成后，在CreatePredictor（CxxConfig）创建CxxPredictor时，模型优化过程会调用`lite_fc_fuse_pass `，扫描`mul + element_wise add`结构并替换为等效的Fc_OP。

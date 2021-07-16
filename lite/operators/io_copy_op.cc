@@ -20,29 +20,59 @@ namespace lite {
 namespace operators {
 
 bool IoCopyOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.y);
+  CHECK(param_.x != nullptr || param_.x_array != nullptr);
+  if (param_.x != nullptr) {
+    CHECK(param_.y != nullptr);
+  }
+  if (param_.x_array != nullptr) {
+    CHECK(param_.y_array != nullptr);
+  }
   return true;
 }
+
 bool IoCopyOp::InferShapeImpl() const {
-  param_.y->Resize(param_.x->dims());
-  param_.y->set_lod(param_.x->lod());
-  param_.y->set_precision(param_.x->precision());
-  param_.y->set_persistable(param_.x->persistable());
+  if (param_.x != nullptr) {
+    param_.y->Resize(param_.x->dims());
+    param_.y->set_lod(param_.x->lod());
+    param_.y->set_precision(param_.x->precision());
+    param_.y->set_persistable(param_.x->persistable());
+  }
+  if (param_.x_array != nullptr) {
+    param_.y_array->resize(param_.x_array->size());
+    for (size_t i = 0; i < param_.x_array->size(); i++) {
+      param_.y_array->at(i).Resize(param_.x_array->at(i).dims());
+      param_.y_array->at(i).set_lod(param_.x_array->at(i).lod());
+      param_.y_array->at(i).set_precision(param_.x_array->at(i).precision());
+      param_.y_array->at(i).set_persistable(
+          param_.x_array->at(i).persistable());
+    }
+  }
   return true;
 }
+
 bool IoCopyOp::Run() { return OpLite::Run(); }
+
 bool IoCopyOp::AttachImpl(const cpp::OpDesc &opdesc,
                           paddle::lite::Scope *scope) {
-  auto x = opdesc.Input("Input").front();
-  auto out = opdesc.Output("Out").front();
-  param_.x = GetTensor(scope, x);
-  param_.y = GetMutableTensor(scope, out);
+  if (opdesc.HasInput("Input")) {
+    param_.x = scope->FindTensor(opdesc.Input("Input").front());
+  }
+  if (opdesc.HasInput("InputArray")) {
+    param_.x_array = scope->FindTensorList(opdesc.Input("InputArray").front());
+  }
+  if (opdesc.HasOutput("Out")) {
+    param_.y = scope->FindMutableTensor(opdesc.Output("Out").front());
+  }
+  if (opdesc.HasOutput("OutArray")) {
+    param_.y_array =
+        scope->FindMutableTensorList(opdesc.Output("OutArray").front());
+  }
   if (opdesc.HasAttr("process_type")) {
     param_.process_type = opdesc.GetAttr<int>("process_type");
   }
   return true;
 }
+
 std::string IoCopyOp::DebugString() const { return "io_copy_op"; }
 
 }  // namespace operators

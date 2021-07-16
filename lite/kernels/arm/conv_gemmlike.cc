@@ -86,13 +86,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   }
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kFloat, kFloat);
 
 template <>
 void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
@@ -124,25 +118,15 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   if (flag_1x1gemm_) {
     lite::arm::math::conv1x1s1_gemm(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv1x1s1_gemm";
-#endif
+    KERNEL_FUNC_NAME("conv1x1s1_gemm_fp32")
   } else {
     lite::arm::math::conv_im2col_gemm(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_im2col_gemm";
-#endif
+    KERNEL_FUNC_NAME("conv_im2col_gemm_fp32")
   }
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kInt8, kFloat);
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
@@ -186,9 +170,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                          param,
                                          &ctx,
                                          w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv1x1s1_gemm_int8";
-#endif
+    KERNEL_FUNC_NAME("conv1x1s1_gemm_int8")
   } else {
     lite::arm::math::conv_im2col_gemm_int8(din,
                                            dout,
@@ -204,19 +186,11 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                            param,
                                            &ctx,
                                            w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_im2col_gemm_int8";
-#endif
+    KERNEL_FUNC_NAME("conv_im2col_gemm_int8")
   }
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kInt8, kInt8)
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
@@ -260,9 +234,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                          param,
                                          &ctx,
                                          w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv1x1s1_gemm_int8";
-#endif
+    KERNEL_FUNC_NAME("conv1x1s1_gemm_int8")
   } else {
     lite::arm::math::conv_im2col_gemm_int8(din,
                                            dout,
@@ -278,12 +250,56 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                            param,
                                            &ctx,
                                            w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_im2col_gemm_int8";
-#endif
+    KERNEL_FUNC_NAME("conv_im2col_gemm_int8")
   }
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  ReInitWhenNeeded();
+}
+
+template <>
+void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  ctx.ExtendWorkspace(workspace_size_);
+  auto weights = param.filter->data<float16_t>();
+  if (flag_trans_weights_) {
+    weights = weights_.data<float16_t>();
+  }
+  const float16_t* bias = param.bias ? param.bias->data<float16_t>() : nullptr;
+  if (flag_trans_bias_) {
+    bias = bias_.data<float16_t>();
+  }
+  auto din = param.x->data<float16_t>();
+  auto dout = param.output->mutable_data<float16_t>();
+
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];  // nchw
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+  if (flag_1x1gemm_) {
+    lite::arm::math::fp16::conv1x1s1_gemm_fp16(
+        din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
+    KERNEL_FUNC_NAME("conv1x1s1_gemm_fp16")
+  } else {
+    lite::arm::math::fp16::conv_im2col_gemm_fp16(
+        din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
+    KERNEL_FUNC_NAME("conv_im2col_gemm_fp16")
+  }
+}
+
+PROFILE_INFO(kFP16, kFP16)
+#endif
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

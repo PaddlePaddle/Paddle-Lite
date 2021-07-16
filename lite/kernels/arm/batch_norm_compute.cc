@@ -22,8 +22,9 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void BatchNormCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+template <typename T, PrecisionType PType>
+void BatchNormCompute<T, PType>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
   auto x_dims = param.x->dims();
   bool global_stats = param.is_test || param.use_global_stats;
   if (global_stats) {
@@ -32,9 +33,6 @@ void BatchNormCompute::PrepareForRun() {
       case DATALAYOUT(kNCHW):
         channel_size = x_dims[1];
         break;
-      // case DATALAYOUT(kNHWC):
-      //   channel_size = x_dims[x_dims.size() - 1];
-      //   break;
       default:
         LOG(FATAL) << "Unknown storage order: "
                    << DataLayoutToStr(param.data_layout);
@@ -42,12 +40,12 @@ void BatchNormCompute::PrepareForRun() {
     }
     new_scale.Resize({channel_size});
     new_bias.Resize({channel_size});
-    auto* scale_data = param.scale->mutable_data<float>();
-    auto* bias_data = param.bias->mutable_data<float>();
-    auto* mean_data = param.mean->mutable_data<float>();
-    auto* variance_data = param.variance->mutable_data<float>();
-    auto* new_scale_data = new_scale.mutable_data<float>();
-    auto* new_bias_data = new_bias.mutable_data<float>();
+    auto* scale_data = param.scale->template data<float>();
+    auto* bias_data = param.bias->template data<float>();
+    auto* mean_data = param.mean->template data<float>();
+    auto* variance_data = param.variance->template data<float>();
+    auto* new_scale_data = new_scale.mutable_data<T>();
+    auto* new_bias_data = new_bias.mutable_data<T>();
     for (int c = 0; c < channel_size; c++) {
       float inv_scale = 1.f / (std::sqrt(variance_data[c] + param.epsilon));
       new_bias_data[c] =
@@ -57,15 +55,16 @@ void BatchNormCompute::PrepareForRun() {
   }
 }
 
-void BatchNormCompute::Run() {
-  auto& param = this->Param<param_t>();
+template <typename T, PrecisionType PType>
+void BatchNormCompute<T, PType>::Run() {
+  auto& param = this->template Param<param_t>();
   auto x_dims = param.x->dims();
-  auto x_data = param.x->mutable_data<float>();
-  auto y_data = param.y->mutable_data<float>();
+  auto x_data = param.x->template data<T>();
+  auto y_data = param.y->template mutable_data<T>();
   bool global_stats = param.is_test || param.use_global_stats;
   if (global_stats) {
-    auto* new_scale_data = new_scale.mutable_data<float>();
-    auto* new_bias_data = new_bias.mutable_data<float>();
+    auto* new_scale_data = new_scale.data<T>();
+    auto* new_bias_data = new_bias.data<T>();
     int64_t outer_size = 0;
     int64_t channel_size = 0;
     int64_t inner_size = 0;
@@ -82,20 +81,11 @@ void BatchNormCompute::Run() {
                                new_scale_data,
                                new_bias_data);
         break;
-      // case DATALAYOUT(kNHWC):
-      //   outer_size = x_dims.Slice(0, x_dims.size() - 1).production();
-      //   channel_size = x_dims[x_dims.size() - 1];
-      //   lite::arm::math::scale(x_data, y_data, outer_size, channel_size,
-      //                          new_scale_data, new_bias_data);
-      //   break;
       default:
         LOG(FATAL) << "Unknown storage order: "
                    << DataLayoutToStr(param.data_layout);
         break;
     }
-  } else {
-    // TODO(hong19860320) calculate mean_out, variance_out, saved_mean and
-    // saved_variance
   }
 }
 
@@ -104,12 +94,28 @@ void BatchNormCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(batch_norm,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::BatchNormCompute,
-                     def)
+#ifdef ENABLE_ARM_FP16
+typedef paddle::lite::kernels::arm::BatchNormCompute<float16_t,
+                                                     PRECISION(kFP16)>
+    BnFp16;
+REGISTER_LITE_KERNEL(batch_norm, kARM, kFP16, kNCHW, BnFp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Mean", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Variance", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("ReserveSpace", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("VarianceOut", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
+
+typedef paddle::lite::kernels::arm::BatchNormCompute<float, PRECISION(kFloat)>
+    BnFp32;
+REGISTER_LITE_KERNEL(batch_norm, kARM, kFloat, kNCHW, BnFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -117,6 +123,21 @@ REGISTER_LITE_KERNEL(batch_norm,
     .BindInput("Variance", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("ReserveSpace", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("VarianceOut", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(sync_batch_norm, kARM, kFloat, kNCHW, BnFp32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Mean", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Variance", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("ReserveSpace", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("VarianceOut", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kARM))})

@@ -14,6 +14,7 @@
 
 #pragma once
 #include <string>
+#include <vector>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/conv_transpose_op.h"
@@ -22,9 +23,8 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-class Conv2DTransposeCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType Otype>
+class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   using param_t = operators::ConvParam;
 
@@ -39,12 +39,27 @@ class Conv2DTransposeCompute
       paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
   }
-  std::string kernel_func_name_{"NotImplForConvTranspose"};
+  std::string kernel_func_name_{"ConvTranspose"};
+#define PROFILE_INFO(dtype1, dtype2)                                        \
+  template <>                                                               \
+  void Conv2DTransposeCompute<PRECISION(dtype1), PRECISION(dtype2)>::       \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
+  }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
+
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
 
  protected:
   int workspace_size_{0};
   bool depthwise_{false};
+  bool flag_trans_bias_{false};
+  std::vector<float> w_scale_;
+  Tensor bias_;
 };
 
 }  // namespace arm

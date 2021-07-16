@@ -18,8 +18,10 @@ lite_cc_test(test_gen_code SRCS gen_code_test.cc
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
         RKNPU_DEPS ${rknpu_kernels}
         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+        NNADAPTER_DEPS ${nnadapter_kernels}
         XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kernels}
+        METAL_DEPS ${metal_kernels}
         FPGA_DEPS ${fpga_kernels}
         EXCLUDE_COMPILE_DEPS "ON"
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
@@ -49,8 +51,10 @@ lite_cc_test(test_generated_code SRCS generated_code_test.cc DEPS __generated_co
     HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
     RKNPU_DEPS ${rknpu_kernels}
     IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+    NNADAPTER_DEPS ${nnadapter_kernels}
     XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
+    METAL_DEPS ${metal_kernels}
     FPGA_DEPS ${fpga_kernels}
     EXCLUDE_COMPILE_DEPS "ON"
 )

@@ -22,9 +22,18 @@
 #endif
 #include <time.h>
 #include <cmath>
+#include <fstream>
+#include <memory>
+#include <string>
+#include <vector>
+#include "lite/api/cxx_api.h"
+#include "lite/utils/cp_logging.h"
 
 // for eval
 DEFINE_string(model_dir, "", "model dir");
+#ifdef LITE_WITH_METAL
+DEFINE_string(metal_dir, "", "metal lib dir");
+#endif
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
 DEFINE_int32(power_mode,
@@ -72,6 +81,50 @@ double compute_standard_deviation(const T* in,
   }
   variance /= length;
   return sqrt(variance);
+}
+
+void ReadTxtFile(const std::string& file_path, float* dest, int num) {
+  CHECK(!file_path.empty());
+  CHECK(dest != nullptr);
+  std::ifstream ifs(file_path);
+  if (!ifs.is_open()) {
+    LOG(FATAL) << "open file error:" << file_path;
+  }
+  for (int i = 0; i < num; i++) {
+    ifs >> dest[i];
+  }
+  ifs.close();
+}
+
+template <typename T>
+T ShapeProduction(const std::vector<T>& shape) {
+  T num = 1;
+  for (auto i : shape) {
+    num *= i;
+  }
+  return num;
+}
+
+template <class T>
+void FillTensor(
+    const std::shared_ptr<paddle::lite_api::PaddlePredictor>& predictor,
+    int tensor_id,
+    const std::vector<int64_t>& tensor_shape,
+    const std::vector<T>& tensor_value,
+    const std::vector<std::vector<uint64_t>> tensor_lod = {}) {
+  auto tensor_x = predictor->GetInput(tensor_id);
+  tensor_x->Resize(tensor_shape);
+  int64_t tensor_size = 1;
+  for (size_t i = 0; i < tensor_shape.size(); i++) {
+    tensor_size *= tensor_shape[i];
+  }
+  CHECK_EQ(static_cast<size_t>(tensor_size), tensor_value.size());
+  memcpy(tensor_x->mutable_data<T>(),
+         tensor_value.data(),
+         sizeof(T) * tensor_size);
+  if (!tensor_lod.empty()) {
+    tensor_x->SetLoD(tensor_lod);
+  }
 }
 
 }  // namespace lite

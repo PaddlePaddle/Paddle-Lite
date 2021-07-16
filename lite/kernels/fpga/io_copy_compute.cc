@@ -30,6 +30,7 @@ void copy_properties(operators::IoCopyParam& param) {  // NOLINT
   auto out_lod = param.y->mutable_lod();
   *out_lod = param.x->lod();
   param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+  param.y->ZynqTensor()->copyMaxFrom(param.x->ZynqTensor());
 }
 
 /*
@@ -115,6 +116,11 @@ void hwc_to_chw(float* chw_data,
                 int channel,
                 int height,
                 int width) {
+  if (channel == 1 || width == 1) {
+    memcpy(chw_data, hwc_data, num * channel * height * width * sizeof(float));
+    return;
+  }
+
   int chw = channel * height * width;
   int wc = width * channel;
   int wh = width * height;
@@ -138,7 +144,6 @@ class IoCopyFpgaToHostCHWCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) ||
           param.x->target() == TARGET(kFPGA));
-
     param.x->ZynqTensor()->syncToDevice();
     if (param.x->ZynqTensor()->dataType() == zynqmp::INT32) {
       param.y->mutable_data<int32_t>();
@@ -166,22 +171,7 @@ class IoCopyFpgaToHostCHWCompute
 
       hwc.ZynqTensor()->copyFrom(&tempTensor);
     } else {
-      float16* in_data = param.x->ZynqTensor()->data<float16>();
-      param.x->ZynqTensor()->flush();
-      float max = 0;
-
-      for (int i = 0; i < param.x->dims().production(); i++) {
-        float value = zynqmp::half_to_float(in_data[i]);
-        hwc_data[i] = value;
-        if (value < 0) {
-          value = -value;
-        }
-        if (value > max) {
-          max = value;
-        }
-      }
-      param.x->ZynqTensor()->scale()[0] = max / 127;
-      param.x->ZynqTensor()->scale()[1] = 127 / max;
+      hwc.ZynqTensor()->copyFrom(param.x->ZynqTensor());
     }
 
     int num = 1;
@@ -200,9 +190,6 @@ class IoCopyFpgaToHostCHWCompute
 
     param.y->ZynqTensor()->flush();
     copy_properties(param);
-
-    param.x->ZynqTensor()->invalidate();
-    param.x->ZynqTensor()->flush();
   }
   std::string doc() const override { return "Copy IO from FPGA to HOST"; }
 };
@@ -244,6 +231,22 @@ REGISTER_LITE_KERNEL(io_copy,
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(io_copy_once,
+                     kFPGA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
+                     host_float_chw_to_device_fp16_hwc)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
                      kAny,
@@ -260,12 +263,12 @@ REGISTER_LITE_KERNEL(io_copy,
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(calib,
+REGISTER_LITE_KERNEL(io_copy_once,
                      kFPGA,
                      kAny,
                      kAny,
                      paddle::lite::kernels::fpga::IoCopyFpgaToHostCHWCompute,
-                     device_to_host_chw_calib)
+                     device_to_host_chw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kAny),
@@ -277,6 +280,22 @@ REGISTER_LITE_KERNEL(calib,
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
+                     kFPGA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCHWCompute,
+                     device_to_host_hwc_chw)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy_once,
                      kFPGA,
                      kAny,
                      kAny,

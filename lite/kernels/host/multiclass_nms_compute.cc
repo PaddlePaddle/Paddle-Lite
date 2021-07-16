@@ -16,83 +16,22 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include "lite/backends/host/math/nms_util.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
 
-template <class T>
-bool SortScorePairDescend(const std::pair<float, T>& pair1,
-                          const std::pair<float, T>& pair2) {
-  return pair1.first > pair2.first;
-}
-
-template <class T>
-static void GetMaxScoreIndex(const std::vector<T>& scores,
-                             const T threshold,
-                             int top_k,
-                             std::vector<std::pair<T, int>>* sorted_indices) {
-  for (size_t i = 0; i < scores.size(); ++i) {
-    if (scores[i] > threshold) {
-      sorted_indices->push_back(std::make_pair(scores[i], i));
-    }
+inline std::vector<uint64_t> GetNmsLodFromRoisNum(const Tensor* rois_num) {
+  std::vector<uint64_t> rois_lod;
+  auto* rois_num_data = rois_num->data<int>();
+  rois_lod.push_back(static_cast<uint64_t>(0));
+  for (int i = 0; i < rois_num->numel(); ++i) {
+    rois_lod.push_back(rois_lod.back() +
+                       static_cast<uint64_t>(rois_num_data[i]));
   }
-  // Sort the score pair according to the scores in descending order
-  std::stable_sort(sorted_indices->begin(),
-                   sorted_indices->end(),
-                   SortScorePairDescend<int>);
-  // Keep top_k scores if needed.
-  if (top_k > -1 && top_k < static_cast<int>(sorted_indices->size())) {
-    sorted_indices->resize(top_k);
-  }
-}
-
-template <class T>
-static T BBoxArea(const T* box, const bool normalized) {
-  if (box[2] < box[0] || box[3] < box[1]) {
-    // If coordinate values are is invalid
-    // (e.g. xmax < xmin or ymax < ymin), return 0.
-    return static_cast<T>(0.);
-  } else {
-    const T w = box[2] - box[0];
-    const T h = box[3] - box[1];
-    if (normalized) {
-      return w * h;
-    } else {
-      // If coordinate values are not within range [0, 1].
-      return (w + 1) * (h + 1);
-    }
-  }
-}
-
-template <class T>
-static T JaccardOverlap(const T* box1, const T* box2, const bool normalized) {
-  if (box2[0] > box1[2] || box2[2] < box1[0] || box2[1] > box1[3] ||
-      box2[3] < box1[1]) {
-    return static_cast<T>(0.);
-  } else {
-    const T inter_xmin = (std::max)(box1[0], box2[0]);
-    const T inter_ymin = (std::max)(box1[1], box2[1]);
-    const T inter_xmax = (std::min)(box1[2], box2[2]);
-    const T inter_ymax = (std::min)(box1[3], box2[3]);
-    T norm = normalized ? static_cast<T>(0.) : static_cast<T>(1.);
-    T inter_w = inter_xmax - inter_xmin + norm;
-    T inter_h = inter_ymax - inter_ymin + norm;
-    const T inter_area = inter_w * inter_h;
-    const T bbox1_area = BBoxArea<T>(box1, normalized);
-    const T bbox2_area = BBoxArea<T>(box2, normalized);
-    return inter_area / (bbox1_area + bbox2_area - inter_area);
-  }
-}
-
-template <class T>
-T PolyIoU(const T* box1,
-          const T* box2,
-          const size_t box_size,
-          const bool normalized) {
-  LOG(FATAL) << "PolyIoU not implement.";
-  return *box1;
+  return rois_lod;
 }
 
 template <class T>
@@ -136,7 +75,8 @@ void NMSFast(const Tensor& bbox,
   std::vector<T> scores_data(num_boxes);
   std::copy_n(scores.data<T>(), num_boxes, scores_data.begin());
   std::vector<std::pair<T, int>> sorted_indices;
-  GetMaxScoreIndex(scores_data, score_threshold, top_k, &sorted_indices);
+  lite::host::math::GetMaxScoreIndex(
+      scores_data, score_threshold, top_k, &sorted_indices);
 
   selected_indices->clear();
   T adaptive_threshold = nms_threshold;
@@ -151,17 +91,19 @@ void NMSFast(const Tensor& bbox,
         T overlap = T(0.);
         // 4: [xmin ymin xmax ymax]
         if (box_size == 4) {
-          overlap = JaccardOverlap<T>(bbox_data + idx * box_size,
-                                      bbox_data + kept_idx * box_size,
-                                      normalized);
+          overlap = lite::host::math::JaccardOverlap<T>(
+              bbox_data + idx * box_size,
+              bbox_data + kept_idx * box_size,
+              normalized);
         }
         // 8: [x1 y1 x2 y2 x3 y3 x4 y4] or 16, 24, 32
         if (box_size == 8 || box_size == 16 || box_size == 24 ||
             box_size == 32) {
-          overlap = PolyIoU<T>(bbox_data + idx * box_size,
-                               bbox_data + kept_idx * box_size,
-                               box_size,
-                               normalized);
+          overlap =
+              lite::host::math::PolyIoU<T>(bbox_data + idx * box_size,
+                                           bbox_data + kept_idx * box_size,
+                                           box_size,
+                                           normalized);
         }
         keep = overlap <= adaptive_threshold;
       } else {
@@ -244,9 +186,10 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
       }
     }
     // Keep top k results per image.
-    std::stable_sort(score_index_pairs.begin(),
-                     score_index_pairs.end(),
-                     SortScorePairDescend<std::pair<int, int>>);
+    std::stable_sort(
+        score_index_pairs.begin(),
+        score_index_pairs.end(),
+        lite::host::math::SortScorePairDescend<std::pair<int, int>>);
     score_index_pairs.resize(keep_top_k);
 
     // Store the new indices.
@@ -330,6 +273,9 @@ void MulticlassNmsCompute::Run() {
   auto* index = param.index;
   auto score_dims = scores->dims();
   auto score_size = score_dims.size();
+  auto has_roissum = param.rois_num != nullptr;
+  auto return_rois_num = param.nms_rois_num != nullptr;
+  auto rois_num = param.rois_num;
 
   std::vector<std::map<int, std::vector<int>>> all_indices;
   std::vector<uint64_t> batch_starts = {0};
@@ -338,7 +284,12 @@ void MulticlassNmsCompute::Run() {
   int64_t out_dim = box_dim + 2;
   int num_nmsed_out = 0;
   Tensor boxes_slice, scores_slice;
-  int n = score_size == 3 ? batch_size : boxes->lod().back().size() - 1;
+  int n;
+  if (has_roissum) {
+    n = score_size == 3 ? batch_size : rois_num->numel();
+  } else {
+    n = score_size == 3 ? batch_size : boxes->lod().back().size() - 1;
+  }
   for (int i = 0; i < n; ++i) {
     if (score_size == 3) {
       scores_slice = scores->Slice<float>(i, i + 1);
@@ -346,7 +297,12 @@ void MulticlassNmsCompute::Run() {
       boxes_slice = boxes->Slice<float>(i, i + 1);
       boxes_slice.Resize({score_dims[2], box_dim});
     } else {
-      auto boxes_lod = boxes->lod().back();
+      std::vector<uint64_t> boxes_lod;
+      if (has_roissum) {
+        boxes_lod = GetNmsLodFromRoisNum(rois_num);
+      } else {
+        boxes_lod = boxes->lod().back();
+      }
       scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
       boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
     }
@@ -383,7 +339,12 @@ void MulticlassNmsCompute::Run() {
           offset = i * score_dims[2];
         }
       } else {
-        auto boxes_lod = boxes->lod().back();
+        std::vector<uint64_t> boxes_lod;
+        if (has_roissum) {
+          boxes_lod = GetNmsLodFromRoisNum(rois_num);
+        } else {
+          boxes_lod = boxes->lod().back();
+        }
         scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
         boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
         if (return_index) {
@@ -408,6 +369,16 @@ void MulticlassNmsCompute::Run() {
                                 offset);
       }
     }
+  }
+
+  if (return_rois_num) {
+    auto* nms_rois_num = param.nms_rois_num;
+    nms_rois_num->mutable_data<int>();
+    int* num_data = nms_rois_num->mutable_data<int>();
+    for (int i = 1; i <= n; i++) {
+      num_data[i - 1] = batch_starts[i] - batch_starts[i - 1];
+    }
+    nms_rois_num->Resize({n});
   }
 
   LoD lod;
@@ -443,5 +414,22 @@ REGISTER_LITE_KERNEL(multiclass_nms2,
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Index",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(multiclass_nms3,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::MulticlassNmsCompute,
+                     def)
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("RoisNum",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Index",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("NmsRoisNum",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();

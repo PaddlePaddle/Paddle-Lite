@@ -4,6 +4,8 @@
 
 其中包含的 feature 为最小集合，按最终发布的版本为准。
 
+以下计划按时间排序，最新的计划在末尾
+
 
 ## 2.0.0-beta1-prerelease
 
@@ -30,3 +32,31 @@
 ## 2.6
 
 [v2.6 project](https://github.com/PaddlePaddle/Paddle-Lite/milestones/v2.6)
+
+## 2.7
+[v2.7 project](https://github.com/PaddlePaddle/Paddle-Lite/milestones/v2.7)
+
+## 2.8
+- 框架升级
+    - opt 工具功能增强：+量化模型压缩功能
+    - 版本间的兼容性增减：+算子版本控制方法
+    - 编译系统优化：减少编译耗时
+    - 文档易用性增强
+- 硬件平台增强：昆仑 XPU、RK NPU、ARM OPENCL
+- 性能增强：ARM模型性能提升
+- 支持Paddle2.0： 支持更多Paddle2.0模型和算子
+
+## 2.9 (目前最新版本)
+
+- ARM CPU
+  - 支持 FP16 执行
+  
+- OpenCL 性能增强
+
+## 2.9.1 (in plan)
+- ARM CPU FP32  和 Int8 在重点模型上性能优化
+- OpenCL 重点模型，高低端硬件性能优化
+- 库体积进一步压缩，根据模型裁剪算子效果会更明显
+
+## 2.10 (in plan)
+- FP16 支持执行时，根据芯片能力决定是否切换回 FP32 执行

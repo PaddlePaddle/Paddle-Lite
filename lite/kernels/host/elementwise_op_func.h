@@ -45,8 +45,18 @@ T naive_max(T a, T b) {
 }
 
 template <class T>
+T naive_min(T a, T b) {
+  return a > b ? a : b;
+}
+
+template <class T>
 T naive_div(T a, T b) {
   return a / b;
+}
+
+template <class T>
+T naive_floor_div(T a, T b) {
+  return static_cast<T>(std::trunc(a / b));
 }
 
 template <class T>

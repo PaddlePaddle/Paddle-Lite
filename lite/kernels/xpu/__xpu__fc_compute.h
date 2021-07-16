@@ -25,9 +25,18 @@ class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::XPUFcParam;
 
+  void PrepareForRun() override;
+
   virtual void Run();
 
   virtual ~XPUFcCompute() = default;
+
+ private:
+  XPUScratchPadGuard quant_weight_guard_;
+  XPUScratchPadGuard weight_max_guard_;
+  // TODO(weihaoji): remove cpu w_max after xpu fc wrapper refactor
+  float w_max;
+  XPUScratchPadGuard input_max_guard_;
 };
 
 }  // namespace xpu

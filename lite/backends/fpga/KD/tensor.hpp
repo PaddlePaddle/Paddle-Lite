@@ -25,21 +25,16 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+#include "lite/utils/logging.h"
+
 #include "lite/backends/fpga/KD/dl_engine.hpp"
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 #include "lite/backends/fpga/KD/shape.hpp"
+#include "lite/backends/fpga/KD/types.hpp"
 
 namespace paddle {
 namespace zynqmp {
-
-enum DataType : int {
-  FP32 = 0,
-  FP16 = 1,
-  INT8 = 2,
-  INT32 = 3,
-  INT64 = 4,
-};
 
 enum DataSyncStatus : int {
   Synched = 0,
@@ -48,24 +43,6 @@ enum DataSyncStatus : int {
 };
 
 typedef uint16_t float16;
-
-inline int CellSize(DataType type) {
-  switch (type) {
-    case FP32:
-      return sizeof(float);
-    case FP16:
-      return sizeof(float16);
-    case INT32:
-      return sizeof(int32_t);
-    case INT8:
-      return sizeof(int8_t);
-    case INT64:
-      return sizeof(int64_t);
-    default:
-      return 0;
-  }
-  return 0;
-}
 
 class PlaceHolder {
  public:
@@ -83,6 +60,7 @@ class PlaceHolder {
   ~PlaceHolder() { fpga_free(data_); }
 
   float scale_[2];
+  float16 max_[1];
 
  private:
   void* data_ = nullptr;
@@ -152,6 +130,8 @@ class Tensor {
 
   float* scale() { return placeHolder_->scale_; }
 
+  float16* max() { return placeHolder_->max_; }
+
   void alignImage(Tensor* dst = nullptr, bool copy = false) {
     if (shape_->shouldAlign()) {
       int cell_size = CellSize(this->dataType_);
@@ -192,12 +172,17 @@ class Tensor {
     }
     if (dst != nullptr) {
       dst->copyScaleFrom(this);
+      dst->copyMaxFrom(this);
     }
   }
 
   inline void copyScaleFrom(Tensor* src) {
     placeHolder_->scale_[0] = src->placeHolder_->scale_[0];
     placeHolder_->scale_[1] = src->placeHolder_->scale_[1];
+  }
+
+  inline void copyMaxFrom(Tensor* src) {
+    placeHolder_->max_[0] = src->placeHolder_->max_[0];
   }
 
   void unalignImage(Tensor* dst = nullptr, bool copy = false) {
@@ -265,9 +250,13 @@ class Tensor {
       src->syncToCPU();
       memcpy(data<void>(), src->data<void>(), memorySize());
       copyScaleFrom(src);
+      copyMaxFrom(src);
       flush();
       return;
     }
+
+    int count = src->aligned_ ? src->shape().alignedElementCount()
+                              : src->shape().numel();
     BypassArgs args;
     args.input_data_type =
         src->dataType_ == FP32 ? DATA_TYPE_FP32 : DATA_TYPE_FP16;
@@ -275,17 +264,18 @@ class Tensor {
     args.input_layout_type = LAYOUT_HWC;
     args.output_layout_type = LAYOUT_HWC;
     args.image = {.address = src->data<void>(),
-                  .scale_address = src->scale(),
-                  .channels = (uint32_t)src->shape().numel(),
+                  .scale_address = src->max(),
+                  .channels = static_cast<uint32_t>(count),
                   .width = 1,
                   .height = 1,
                   .pad_width = 0u,
                   .pad_height = 0u};
     args.output = {
-        .address = data<void>(), .scale_address = scale(),
+        .address = data<void>(), .scale_address = max(),
     };
     src->syncToDevice();
-    size_t aligned_remainder = src->shape().numel() % 16;
+
+    size_t aligned_remainder = count % 16;
     if (aligned_remainder > 0) {
       size_t dtype_size = CellSize(src->dataType_);
       void* dst = src->data<char>() + src->shape().numel() * dtype_size;
@@ -296,6 +286,10 @@ class Tensor {
     this->invalidate();
     perform_bypass(args);
     this->invalidate();
+
+    if (dataType_ == FP32) {
+      copyMaxFrom(src);
+    }
   }
 
   void flush() { fpga_flush(placeHolder_->data(), placeHolder_->memorySize()); }
@@ -352,7 +346,7 @@ class Tensor {
 
   void saveToFile() {
     std::string path = dimsFileName();
-    // saveToFile(path);
+    saveToFile(path);
   }
 
   void saveToFile(std::string prefix, bool with_shape) {
@@ -391,8 +385,8 @@ class Tensor {
 
     std::ofstream ofs;
     ofs.open(path);
-    ofs << "type:" << dataType_ << " scale: " << scale()[0] << " id:" << id_
-        << std::endl;
+    ofs << "type:" << dataType_ << " max: " << half_to_float(max()[0])
+        << "scale: " << scale()[0] << " id:" << id_ << std::endl;
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
       switch (dataType_) {
@@ -404,6 +398,9 @@ class Tensor {
           break;
         case INT8:
           value = t->data<int8_t>()[i];
+          break;
+        case INT16:
+          value = t->data<int16_t>()[i];
           break;
         case INT32:
           value = data<int32_t>()[i];
@@ -422,12 +419,57 @@ class Tensor {
 
   void releaseData() { placeHolder_.reset(); }
 
+  void readHalfFromFile(std::string path) {
+    std::ifstream file_stream;
+    file_stream.open(path);
+    if (!file_stream) {
+      VLOG(4) << "open file error for " << path;
+      return;
+    }
+
+    int num = shape_->numel();
+    invalidate();
+    float max = 0.0f;
+    float16* data = mutableData<float16>();
+    for (int i = 0; i < num; ++i) {
+      float value = 0;
+      file_stream >> value;
+      max = std::max(std::abs(value), max);
+      data[i] = float_to_half(value);
+    }
+    flush();
+    placeHolder_->max_[0] = float_to_half(max);
+  }
+
+  void readFloatFromFile(std::string path) {
+    std::ifstream file_stream;
+    file_stream.open(path);
+    if (!file_stream) {
+      VLOG(4) << "open file error for " << path;
+      return;
+    }
+    int num = shape_->numel();
+    invalidate();
+    float max = 0.0f;
+    float* data = mutableData<float>();
+    for (int i = 0; i < num; ++i) {
+      float value = 0;
+      file_stream >> value;
+      max = std::max(std::abs(value), max);
+      data[i] = value;
+    }
+    flush();
+    placeHolder_->max_[0] = float_to_half(max);
+  }
+
   void readFromFile(std::string path) {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
+      VLOG(4) << "open file error for " << path;
       return;
     }
+
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;

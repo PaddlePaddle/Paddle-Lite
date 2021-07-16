@@ -69,11 +69,17 @@ class ActivationOp : public OpLite {
       case lite_api::ActivationType::kExp:
         ch->macs = param_.X->numel();
         break;
+      case lite_api::ActivationType::kLog:
+        ch->macs = param_.X->numel();
+        break;
       case lite_api::ActivationType::kAbs:
         ch->macs = param_.X->numel();
         break;
       case lite_api::ActivationType::kHardSwish:
         ch->macs = param_.X->numel() * 5.0;
+        break;
+      case lite_api::ActivationType::kHardSigmoid:
+        ch->macs = param_.X->numel() * 4.0;
         break;
       case lite_api::ActivationType::kReciprocal:
         ch->macs = param_.X->numel();
@@ -84,6 +90,15 @@ class ActivationOp : public OpLite {
         ch->macs = param_.X->numel();
         break;
       case lite_api::ActivationType::kElu:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kGelu:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kErf:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kSign:
         ch->macs = param_.X->numel();
         break;
       default:

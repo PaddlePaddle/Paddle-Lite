@@ -20,7 +20,7 @@
 // 3. use glog in other cases.
 
 #if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
-    defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
+    defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON)
 #include "lite/utils/logging.h"
 #else
 #ifndef LITE_WITH_LOG
@@ -28,4 +28,65 @@
 #else
 #include <glog/logging.h>
 #endif
+#endif
+
+// LOG System on opt tool:
+//   OPT_LOG  :  print normal message onto the terminal screen.
+//   OPT_LOG_ERROR : print error message onto the terminal screen.
+//   OPT_LOG_FATAL : print error message onto the terminal screen and abort
+//   current process.
+//   OPT_LOG_DEBUG : print message if in debug mode (environmental val
+//   GLOG_v=1).
+// note: OPT_LOG_SYSTEM is only applicable when LITE_WITH_MODEL_OPTIMIZE_TOOL is
+// defined,
+//       otherwise, these commands will be replaced by corresponding glog
+//       command
+//       OPT_LOG--->LOG(INFO) , OPT_LOG_ERROR--->LOG(ERROR),
+//       OPT_LOG_FATAL--->LOG(FATAL)
+
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON)
+// OPT_LOG SYSTEM
+#define OPT_LOG paddle::lite::OptPrinter()
+#define OPT_LOG_ERROR paddle::lite::OptErrorPrinter()
+#define OPT_LOG_FATAL paddle::lite::OptFatalPrinter()
+#define OPT_LOG_DEBUG VLOG(1)
+#include <iostream>
+namespace paddle {
+namespace lite {
+
+class OptPrinter {
+ public:
+  ~OptPrinter() { std::cout << std::endl; }
+  template <typename T>
+  OptPrinter& operator<<(const T& obj) {
+    std::cout << obj;
+    return *this;
+  }
+};
+class OptErrorPrinter {
+ public:
+  virtual ~OptErrorPrinter() { std::cerr << std::endl; }
+  template <typename T>
+  OptErrorPrinter& operator<<(const T& obj) {
+    std::cerr << obj;
+    return *this;
+  }
+};
+class OptFatalPrinter : public OptErrorPrinter {
+ public:
+  ~OptFatalPrinter() override {
+    std::cerr << std::endl;
+    abort();
+  }
+};
+}  // namespace lite
+}  // namespace paddle
+#else
+//  If LITE_WITH_MODEL_OPTIMIZE_TOOL is not defined, OPT_LOG commands
+//  will be replaced by corresponding glog commands: OPT_LOG--->LOG(INFO) ,
+//  OPT_LOG_ERROR--->LOG(ERROR), OPT_LOG_FATAL--->LOG(FATAL)
+#define OPT_LOG LOG(INFO)
+#define OPT_LOG_ERROR LOG(ERROR)
+#define OPT_LOG_FATAL LOG(FATAL)
+#define OPT_LOG_DEBUG VLOG(1)
 #endif

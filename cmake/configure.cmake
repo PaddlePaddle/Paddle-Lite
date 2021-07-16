@@ -37,10 +37,31 @@ endif()
 if(WIN32)
   # windows header option for all targets.
   add_definitions(-D_XKEYCHECK_H)
+  add_definitions(/openmp)
   
   if (NOT MSVC)
     message(FATAL "Windows build only support msvc. Which was binded by the nvcc compiler of NVIDIA.")
   endif(NOT MSVC)
+
+  # set the generator platform for ninja
+  if(${CMAKE_GENERATOR} MATCHES "Ninja")
+      if (NOT ARCH)
+          set(ARCH i386)
+      endif()
+
+      if (NOT DEFINED CMAKE_GENERATOR_PLATFORM)
+          if(ARCH STREQUAL "amd64")
+              set(CMAKE_GENERATOR_PLATFORM "x64")
+          elseif(ARCH STREQUAL "arm")
+              set(CMAKE_GENERATOR_PLATFORM "ARM")
+          elseif(ARCH STREQUAL "arm64")
+              set(CMAKE_GENERATOR_PLATFORM "ARM64")
+          else()
+              set(CMAKE_GENERATOR_PLATFORM "Win32")
+          endif()
+      endif()
+  endif()
+  
 endif(WIN32)
 
 if(LITE_WITH_CUDA)
@@ -90,6 +111,7 @@ if (WITH_MKLML AND MKLML_IOMP_LIB)
     set(CMAKE_CXX_CREATE_SHARED_LIBRARY_FORBIDDEN_FLAGS ${OPENMP_FLAGS})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OPENMP_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_FLAGS}")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SIMD_FLAG}")
@@ -167,8 +189,17 @@ if (LITE_WITH_OPENCL)
     add_definitions("-DLITE_WITH_OPENCL")
 endif()
 
+if (LITE_WITH_METAL)
+    add_definitions("-DLITE_WITH_METAL")
+endif()
+
+
 if (LITE_WITH_FPGA)
 add_definitions("-DLITE_WITH_FPGA")
+endif()
+
+if (LITE_WITH_INTEL_FPGA)
+add_definitions("-DLITE_WITH_INTEL_FPGA")
 endif()
 
 if (LITE_WITH_BM)
@@ -185,6 +216,10 @@ endif()
 
 if (LITE_WITH_HUAWEI_ASCEND_NPU)
 add_definitions("-DLITE_WITH_HUAWEI_ASCEND_NPU")
+endif()
+
+if (LITE_WITH_NNADAPTER)
+  add_definitions(-DLITE_WITH_NNADAPTER)
 endif()
 
 if (LITE_WITH_PROFILE)
@@ -230,3 +265,7 @@ endif(LITE_BUILD_EXTRA)
 if (LITE_WITH_PYTHON)
   add_definitions("-DLITE_WITH_PYTHON")
 endif(LITE_WITH_PYTHON)
+
+if (LITE_WITH_ARM82_FP16)
+  add_definitions("-DLITE_WITH_ARM82_FP16")
+endif(LITE_WITH_ARM82_FP16)

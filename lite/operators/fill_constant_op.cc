@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/fill_constant_op.h"
+
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -72,6 +73,8 @@ bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     auto shape_tensor_name = opdesc.Input("ShapeTensor").front();
     param_.shape_tensor = GetMutableVar<lite::Tensor>(scope, shape_tensor_name);
   }
+
+  param_.shape_tensor_list.clear();
   if (opdesc.HasInput("ShapeTensorList") &&
       !opdesc.Input("ShapeTensorList").empty()) {
     for (auto shape_tensor_name : opdesc.Input("ShapeTensorList")) {

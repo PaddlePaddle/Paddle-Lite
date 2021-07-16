@@ -31,9 +31,6 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[APU] Converting [" + op_type + "]";
 
-  CHECK(op_info->HasAttr("enable_int8") &&
-        op_info->GetAttr<bool>("enable_int8"));
-
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
@@ -44,15 +41,16 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
 
+  CHECK(op_info->HasInputScale(x_scale_name, true) &&
+        op_info->HasOutputScale(out_scale_name, true));
+
   // Check output shape
   auto axis = op_info->GetAttr<int>("axis");
   if (axis < 0) {
     axis += x_rank;
   }
 
-  CHECK(op_info->HasInputScale(x_scale_name, true));
   auto input_scale = op_info->GetInputScale(x_scale_name, true)[0];
-  CHECK(op_info->HasOutputScale(out_scale_name, true));
   auto out_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   // Check output scale

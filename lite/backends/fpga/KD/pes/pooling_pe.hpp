@@ -34,10 +34,10 @@ class PoolingPE : public PE {
   void apply() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
-
     uint32_t k_height = 1;
     uint32_t k_width = 1;
 
+    int input_c = input->shape().channel();
     if (param_.globalPooling) {
       k_width = input->shape().width();
       k_height = input->shape().height();
@@ -48,32 +48,99 @@ class PoolingPE : public PE {
       k_width = param_.kernelSize[1];
     }
 
+    int dynamic_range = (1 << 12) - 1;  // int13 max value, pow(2,12)-1
+    float16 dynamic_range_fp16 = float_to_half(dynamic_range * 1.0);
+    float inv_dynamic_range = 1.0 / dynamic_range;
+    float kernel_reciprocal =
+        (param_.type == PoolingType::MAX) ? 1.0 : (1.0 / (k_width * k_height));
+
+    uint32_t pool_limit = 2 * get_pool_cap();
+    use_cpu_ = align_to_x(k_width * input_c, IMAGE_ALIGNMENT) >
+               IMAGE_ALIGNMENT * pool_limit;
+    divide_pool_ = align_to_x(k_width * input_c, IMAGE_ALIGNMENT) * k_height >
+                   IMAGE_ALIGNMENT * pool_limit;
+    align_channel_ = (param_.paddings[0] * input_c) % IMAGE_ALIGNMENT != 0;
+
     PoolingArgs args = {0};
     args.mode = param_.type;
-    if (param_.globalPooling) {
-      args.kernel_reciprocal = fp32_2_fp16(1.0f);
-    } else {
-      args.kernel_reciprocal = fp32_2_fp16(1.0f / (k_width * k_height));
-    }
-    args.image.address = input->data<float16>();
     args.image.channels = input->shape().channel();
-    args.image.height = input->shape().height();
-    args.image.width = input->shape().width();
     args.image.pad_height = param_.paddings[0];
     args.image.pad_width = param_.paddings[1];
-    args.image.scale_address = input->scale();
-    args.output.address = output->mutableData<float16>();
-    args.output.scale_address = output->scale();
-    args.kernel.height = k_height;
-    args.kernel.width = k_width;
+    args.image.scale_address = input->max();
+    args.output.scale_address = output->max();
     args.kernel.stride_h = param_.strides[0];
     args.kernel.stride_w = param_.strides[1];
-    args.out_height = output->shape().height();
-    args.out_width = output->shape().width();
-    param_.poolingArgs = args;
 
-    use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
-               (k_width > 255 || k_height > 255);
+    args.quant.dynamic_range =
+        *(reinterpret_cast<uint16_t*>(&dynamic_range_fp16));
+    args.quant.inv_dynamic_range =
+        *(reinterpret_cast<uint32_t*>(&inv_dynamic_range));
+    args.inplace.active_param.type = param_.activeParam.type;
+    args.inplace.active_param.leaky_relu_factor =
+        float_to_half(param_.activeParam.leaky_relu_factor);
+
+    // global pool cases: BRAM can't contain one kernel
+    if (divide_pool_) {
+      float kw_reciprocal = 1.0 / k_width;
+      float kh_reciprocal = 1.0 / k_height;
+
+      Shape tmp_shape(NHWC, {1, input->shape().height(), 1, input_c});
+      float16* mid_data = mid_out_.mutableData<float16>(FP16, tmp_shape);
+      args.kernel_reciprocal = *(reinterpret_cast<uint32_t*>(&kw_reciprocal));
+      args.image.width = input->shape().width();
+      args.image.height = input->shape().height();
+      args.kernel.height = 1;
+      args.kernel.width = k_width;
+      args.out_height = input->shape().height();
+      args.out_width = 1;
+      args.image.address = input->data<float16>();
+      args.output.address = mid_out_.data<void>();
+      args.output.scale_address = mid_out_.max();
+      param_.poolingArgs = args;
+
+      args.kernel_reciprocal = *(reinterpret_cast<uint32_t*>(&kh_reciprocal));
+      args.image.width = 1;
+      args.image.height = input->shape().height();
+      args.kernel.height = k_height;
+      args.kernel.width = 1;
+      args.out_height = 1;
+      args.out_width = 1;
+      args.image.address = mid_data;
+      args.output.address = output->mutableData<float16>();
+      args.image.scale_address = mid_out_.max();
+      args.output.scale_address = output->max();
+      param_divide_.poolingArgs = args;
+    } else {
+      args.kernel_reciprocal =
+          *(reinterpret_cast<uint32_t*>(&kernel_reciprocal));
+      args.image.width = input->shape().width();
+      args.image.height = input->shape().height();
+      args.kernel.height = k_height;
+      args.kernel.width = k_width;
+      args.image.address = input->data<float16>();
+      args.output.address = output->mutableData<float16>();
+      args.out_height = output->shape().height();
+      args.out_width = output->shape().width();
+
+      if (align_channel_) {
+        int align_c = align_to_x(input_c, IMAGE_ALIGNMENT);
+
+        Shape in_shape(
+            NHWC,
+            {1, input->shape().height(), input->shape().width(), align_c});
+        Shape out_shape(
+            NHWC,
+            {1, output->shape().height(), output->shape().width(), align_c});
+        float16* tmp_in = input_tmp_.mutableData<float16>(FP16, in_shape);
+        float16* tmp_out = output_tmp_.mutableData<float16>(FP16, out_shape);
+
+        args.image.channels = align_c;
+        args.image.address = tmp_in;
+        args.output.address = tmp_out;
+      }
+
+      param_.poolingArgs = args;
+    }
   }
 
   void compute() {
@@ -82,7 +149,6 @@ class PoolingPE : public PE {
     input->syncToCPU();
 
     Tensor float_input;
-    // Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
@@ -134,110 +200,66 @@ class PoolingPE : public PE {
         }
       }
     }
-    output->scale()[0] = max / 127.0f;
-    output->scale()[1] = 127.0f / max;
-    output->flush();
-  }
-
-  void cpu_compute1() {
-    Tensor* input = param_.input;
-    Tensor* output = param_.output;
-    input->syncToCPU();
-
-    Tensor float_input;
-    float_input.mutableData<float>(FP32, input->shape());
-    float_input.copyFrom(input);
-    float16* data_out = output->data<float16>();
-
-    int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
-
-    float scale_max = 0;
-    for (int i = 0; i < output->shape().channel(); i++) {
-      float sum = 0;
-      for (int j = 0; j < kernel_hw; j++) {
-        float value = half_to_float(input->data<float16>()[i * kernel_hw + j]);
-        sum += value;
-      }
-      float value = sum / kernel_hw;
-      data_out[i] = float_to_half(value);
-      scale_max = std::max(scale_max, std::abs(value));
-    }
-    output->scale()[0] = scale_max / 127.0f;
-    output->scale()[1] = 127.0f / scale_max;
-    output->flush();
-  }
-
-  void cpu_compute() {
-    Tensor* input = param_.input;
-    Tensor* output = param_.output;
-    input->syncToCPU();
-
-    Tensor float_input;
-    float* float_input_data =
-        float_input.mutableData<float>(FP32, input->shape());
-    float_input.copyFrom(input);
-
-    float16* data_out = output->data<float16>();
-
-    int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
-
-    float scale_max = 0;
-    for (int i = 0; i < output->shape().channel(); i++) {
-      float sum = 0;
-      for (int j = 0; j < kernel_hw; j++) {
-        sum += float_input_data[i * kernel_hw + j];
-      }
-      float value = sum / kernel_hw;
-      data_out[i] = float_to_half(value);
-      scale_max = std::max(scale_max, std::abs(value));
-    }
-    output->scale()[0] = scale_max / 127.0f;
-    output->scale()[1] = 127.0f / scale_max;
+    output->max()[0] = float_to_half(max);
     output->flush();
   }
 
   bool dispatch() {
     if (use_cpu_) {
-      // cpu_compute();
       compute();
       return true;
     }
-    if (param_.globalPooling) {
-      inplace_.relu_enable = false;
-      inplace_.leaky_relu_enable = false;
-      inplace_.relu6_enable = false;
-      inplace_.sigmoid_enable = false;
-      inplace_.global_pool_en = true;
-      config_inplace(inplace_);
+    int ret = 0;
+    param_.input->syncToDevice();
 
-      int kernel_height = param_.kernelSize[1];
-      int kernel_width = param_.kernelSize[0];
-      globalPoolArgs.global_pool_factor =
-          float_to_half(1.0f / (kernel_height * kernel_width));
-      config_global_pool(globalPoolArgs);
-    }
-    int ret = (compute_fpga_pool(param_.poolingArgs) == 0);
-    if (param_.globalPooling) {
-      inplace_.relu_enable = false;
-      inplace_.leaky_relu_enable = false;
-      inplace_.relu6_enable = false;
-      inplace_.sigmoid_enable = false;
-      inplace_.global_pool_en = false;
-      config_inplace(inplace_);
-      globalPoolArgs.global_pool_factor = float_to_half(0);
-      config_global_pool(globalPoolArgs);
+    int channel = param_.input->shape().channel();
+    int in_h = param_.input->shape().height();
+    int in_w = param_.input->shape().width();
+    int out_h = param_.output->shape().height();
+    int out_w = param_.output->shape().width();
+    int align_c = align_to_x(channel, IMAGE_ALIGNMENT);
+
+    if (align_channel_) {
+      float16* tmp_in = input_tmp_.data<float16>();
+      float16* in_data = param_.input->data<float16>();
+      for (int hw = 0; hw < in_h * in_w; hw++) {
+        memcpy(tmp_in + hw * align_c,
+               in_data + hw * channel,
+               channel * sizeof(float16));
+      }
+      input_tmp_.flush();
     }
 
-    return ret;
+    ret = compute_fpga_pool(param_.poolingArgs);
+
+    if (align_channel_) {
+      float16* tmp_out = output_tmp_.data<float16>();
+      float16* out_data = param_.output->data<float16>();
+      output_tmp_.invalidate();
+      for (int hw = 0; hw < out_h * out_w; hw++) {
+        memcpy(out_data + hw * channel,
+               tmp_out + hw * align_c,
+               channel * sizeof(float16));
+      }
+    }
+
+    if (ret == 0 && divide_pool_) {
+      ret = compute_fpga_pool(param_divide_.poolingArgs);
+    }
+    return ret == 0;
   }
 
   PoolingParam& param() { return param_; }
 
  private:
   PoolingParam param_;
-  bool use_cpu_;
-  InplaceArgs inplace_ = {0};
-  GlobalPoolArgs globalPoolArgs;
+  PoolingParam param_divide_;
+  Tensor mid_out_;
+  Tensor input_tmp_;
+  Tensor output_tmp_;
+  bool use_cpu_ = false;
+  bool divide_pool_ = false;
+  bool align_channel_ = false;
 };
 
 }  // namespace zynqmp

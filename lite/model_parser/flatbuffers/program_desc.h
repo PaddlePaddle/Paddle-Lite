@@ -33,6 +33,9 @@ namespace fbs {
 class ProgramDescView : public ProgramDescAPI {
  public:
   ProgramDescView() = default;
+
+  ProgramDescView(const ProgramDescView&) = delete;
+
   explicit ProgramDescView(model_parser::Buffer&& buf) {
     Init(std::forward<model_parser::Buffer>(buf));
   }
@@ -44,10 +47,14 @@ class ProgramDescView : public ProgramDescAPI {
   }
 
   void InitProgramDesc() {
+    flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf_.data()),
+                                   buf_.size());
+    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::ProgramDesc>(nullptr))
+        << "Program verification failed.";
     desc_ = proto::GetProgramDesc(buf_.data());
     blocks_.resize(desc_->blocks()->size());
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {
-      blocks_[idx] = BlockDescView(desc_->blocks()->Get(idx));
+      blocks_[idx].reset(new BlockDescView(desc_->blocks()->Get(idx)));
     }
   }
 
@@ -73,7 +80,9 @@ class ProgramDescView : public ProgramDescAPI {
     return nullptr;
   }
 
-  const std::vector<BlockDescView>& GetBlocks() const { return blocks_; }
+  const std::vector<std::unique_ptr<BlockDescView>>& GetBlocks() const {
+    return blocks_;
+  }
 
   bool HasVersion() const override { return desc_->version() != nullptr; }
 
@@ -96,17 +105,15 @@ class ProgramDescView : public ProgramDescAPI {
  private:
   proto::ProgramDesc const* desc_;
   model_parser::Buffer buf_;
-  std::vector<BlockDescView> blocks_;
-
- private:
-  ProgramDescView& operator=(const ProgramDescView&) = delete;
-  ProgramDescView(const ProgramDescView&) = delete;
+  std::vector<std::unique_ptr<BlockDescView>> blocks_;
 };
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
+
+  ProgramDesc(const ProgramDesc&) = delete;
 
   explicit ProgramDesc(const model_parser::Buffer& buf) {
     const auto* raw_buf = proto::GetProgramDesc(buf.data());

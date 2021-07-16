@@ -30,56 +30,6 @@ namespace arm {
 namespace math {
 
 /**
- * \brief neon implementation to add bias
- * @param tensor
- * @param bias
- * @param channel
- * @param channel_size
- */
-void fill_bias(float* tensor,
-               const float* bias,
-               int channel,
-               int channel_size) {
-  if (tensor == nullptr) {
-    return;
-  }
-  float* data = tensor;
-
-  for (int j = 0; j < channel; ++j) {
-    float32x4_t vdata = vdupq_n_f32(bias[j]);
-    int i = 0;
-    for (; i < channel_size - 3; i += 4) {
-      vst1q_f32(data + i, vdata);
-    }
-    for (; i < channel_size; i++) {
-      data[i] = bias[j];
-    }
-    data += channel_size;
-  }
-}
-
-void fill_bias_int8(int* tensor,
-                    const int* bias,
-                    int channel,
-                    int channel_size) {
-  if (tensor == nullptr) {
-    return;
-  }
-  int* data = tensor;
-  for (int j = 0; j < channel; ++j) {
-    int32x4_t vdata = vdupq_n_s32(bias[j]);
-    int i = 0;
-    for (; i < channel_size - 3; i += 4) {
-      vst1q_s32(data + i, vdata);
-    }
-    for (; i < channel_size; i++) {
-      data[i] = bias[j];
-    }
-    data += channel_size;
-  }
-}
-
-/**
  * \brief inline funcs used in im2col
  * @param a
  * @param b
@@ -722,11 +672,8 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   scale_group,
                   flag_bias,
                   bias_group,
-                  act_param.has_active,
-                  act_param.active_type,
-                  ctx,
-                  act_param.Relu_clipped_coef,
-                  act_param.Leaky_relu_alpha);
+                  act_param,
+                  ctx);
       } else if (m == 1) {
         float bias_ptr[n];   // NOLINT
         float scale_ptr[n];  // NOLINT
@@ -735,7 +682,9 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
             bias_ptr[i] = bias_group[0];
           }
         }
-        memset(scale_ptr, scale_group[0], sizeof(float) * n);
+        for (int i = 0; i < n; i++) {
+          scale_ptr[i] = scale_group[0];
+        }
         gemv_int8(din_group,
                   weights_group,
                   dout_group,
@@ -745,11 +694,8 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   scale_ptr,
                   flag_bias,
                   bias_ptr,
-                  act_param.has_active,
-                  act_param.active_type,
-                  ctx,
-                  act_param.Relu_clipped_coef,
-                  act_param.Leaky_relu_alpha);
+                  act_param,
+                  ctx);
       } else {
         gemm_prepack_int8(weights_group,
                           din_group,
@@ -1009,11 +955,8 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   scale_group,
                   flag_bias,
                   bias_group,
-                  act_param.has_active,
-                  act_param.active_type,
-                  ctx,
-                  act_param.Relu_clipped_coef,
-                  act_param.Leaky_relu_alpha);
+                  act_param,
+                  ctx);
       } else if (m == 1) {
         float bias_ptr[n];   // NOLINT
         float scale_ptr[n];  // NOLINT
@@ -1022,8 +965,10 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
             bias_ptr[i] = bias_group[0];
           }
         }
-        memset(scale_ptr, scale_group[0], sizeof(float) * n);
-        gemv_int8(din_group,
+        for (int i = 0; i < n; i++) {
+          scale_ptr[i] = scale_group[0];
+        }
+        gemv_int8(dB,
                   weights_group,
                   dout_group,
                   true,
@@ -1032,11 +977,8 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   scale_ptr,
                   flag_bias,
                   bias_ptr,
-                  act_param.has_active,
-                  act_param.active_type,
-                  ctx,
-                  act_param.Relu_clipped_coef,
-                  act_param.Leaky_relu_alpha);
+                  act_param,
+                  ctx);
       } else {
         gemm_prepack_int8(weights_group,
                           dB,
@@ -1279,7 +1221,7 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
       alpha[3] = local_alpha;
     }
   }
-  bool support_act_type = flag_act <= 1;
+  bool support_act_type = flag_act <= 2;
   bool support_pad_type =
       (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
       (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
@@ -1390,7 +1332,7 @@ void conv_depthwise_3x3_int8_int8(const void* din,
       alpha[3] = local_alpha;
     }
   }
-  bool support_act_type = flag_act <= 1;
+  bool support_act_type = flag_act <= 2;
   bool support_pad_type =
       (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
       (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);

@@ -16,10 +16,12 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
 
+template <class T>
 class ExpandAsComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -55,8 +57,8 @@ class ExpandAsComputeTester : public arena::TestCase {
       out_shape[i] *= expand_times_[i];
     }
     out->Resize(out_shape);
-    float* out_data = out->mutable_data<float>();
-    const float* input_data = input->data<float>();
+    T* out_data = out->template mutable_data<T>();
+    const T* input_data = input->template data<T>();
     std::vector<int> in_stride(in_shape.size(), 1),
         out_stride(out_shape.size(), 1);
     for (int i = in_shape.size() - 2; i >= 0; --i) {
@@ -65,7 +67,7 @@ class ExpandAsComputeTester : public arena::TestCase {
     for (int i = out_shape.size() - 2; i >= 0; --i) {
       out_stride[i] = out_shape[i + 1] * out_stride[i + 1];
     }
-    for (size_t out_id = 0; out_id < out_shape.production(); ++out_id) {
+    for (int out_id = 0; out_id < out_shape.production(); ++out_id) {
       int in_id = 0;
       for (int i = expand_times_.size() - 1; i >= 0; --i) {
         int in_j = (out_id / out_stride[i]) % in_shape[i];
@@ -78,30 +80,49 @@ class ExpandAsComputeTester : public arena::TestCase {
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("expand_as");
     op_desc->SetInput("X", {x_});
-    op_desc->SetInput("Target", {target_});
+    op_desc->SetInput("target_tensor", {target_});
     op_desc->SetOutput("Out", {out_});
   }
 
   void PrepareData() override {
-    std::vector<float> in_data(dims_.production());
-    std::vector<float> target_data(target_dims_.production());
-    for (int i = 0; i < dims_.production(); ++i) {
-      in_data[i] = i;
-    }
-    for (int i = 0; i < target_dims_.production(); ++i) {
-      target_data[i] = i;
-    }
+    std::vector<T> in_data(dims_.production());
+    fill_data_rand(in_data.data(),
+                   static_cast<T>(-10),
+                   static_cast<T>(10),
+                   dims_.production());
     SetCommonTensor(x_, dims_, in_data.data());
+
+    std::vector<T> target_data(target_dims_.production());
+    fill_data_rand(target_data.data(),
+                   static_cast<T>(-10),
+                   static_cast<T>(10),
+                   target_dims_.production());
     SetCommonTensor(target_, target_dims_, target_data.data());
+    return;
   }
 };
 
+template <class T>
 void test_expand_as_3dim(Place place, float abs_error) {
+  auto precision = lite_api::PrecisionTypeTrait<T>::Type();
+  std::string alias("def");
+  switch (precision) {
+    case lite_api::PrecisionType::kFloat:
+      alias = std::string("def");
+      break;
+    case lite_api::PrecisionType::kInt64:
+      alias = std::string("int64");
+      break;
+    default:
+      LOG(FATAL) << "unsupported precision: "
+                 << lite_api::PrecisionToStr(precision);
+  }
+
   for (int C : {3}) {
     for (int H : {2}) {
       for (int W : {4}) {
-        std::unique_ptr<arena::TestCase> tester(new ExpandAsComputeTester(
-            place, "def", DDim({C, H, W}), DDim({C * 2, H * 3, W * 1})));
+        std::unique_ptr<arena::TestCase> tester(new ExpandAsComputeTester<T>(
+            place, alias, DDim({C, H, W}), DDim({C * 2, H * 3, W * 1})));
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
       }
@@ -109,16 +130,31 @@ void test_expand_as_3dim(Place place, float abs_error) {
   }
 }
 
+template <class T>
 void test_expand_as_4dim(Place place, float abs_error) {
+  auto precision = lite_api::PrecisionTypeTrait<T>::Type();
+  std::string alias("def");
+  switch (precision) {
+    case lite_api::PrecisionType::kFloat:
+      alias = std::string("def");
+      break;
+    case lite_api::PrecisionType::kInt64:
+      alias = std::string("int64");
+      break;
+    default:
+      LOG(FATAL) << "unsupported precision: "
+                 << lite_api::PrecisionToStr(precision);
+  }
+
   for (int N : {2}) {
     for (int C : {3}) {
       for (int H : {2}) {
         for (int W : {4}) {
           std::unique_ptr<arena::TestCase> tester(
-              new ExpandAsComputeTester(place,
-                                        "def",
-                                        DDim({N, C, H, W}),
-                                        DDim({N * 2, C * 3, H * 1, W * 4})));
+              new ExpandAsComputeTester<T>(place,
+                                           alias,
+                                           DDim({N, C, H, W}),
+                                           DDim({N * 2, C * 3, H * 1, W * 4})));
           arena::Arena arena(std::move(tester), place, abs_error);
           arena.TestPrecision();
         }
@@ -130,19 +166,17 @@ void test_expand_as_4dim(Place place, float abs_error) {
 TEST(ExpandAs, precision) {
   float abs_error = 1e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kHost);
-#elif defined(LITE_WITH_X86)
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;
 #endif
 
-  test_expand_as_3dim(place, abs_error);
-  test_expand_as_4dim(place, abs_error);
+  test_expand_as_3dim<float>(place, abs_error);
+  test_expand_as_4dim<float>(place, abs_error);
+
+  test_expand_as_3dim<int64_t>(place, abs_error);
+  test_expand_as_4dim<int64_t>(place, abs_error);
 }
 
 }  // namespace lite

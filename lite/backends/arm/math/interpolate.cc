@@ -70,7 +70,8 @@ void bilinear_interp(const float* src,
                      int h_out,
                      float scale_x,
                      float scale_y,
-                     bool with_align) {
+                     bool with_align,
+                     int align_mode) {
   int* buf = new int[w_out + h_out + w_out * 2 + h_out * 2];
 
   int* xofs = buf;
@@ -109,7 +110,7 @@ void bilinear_interp(const float* src,
     scale_y = static_cast<float>(h_in) / h_out;
     // calculate x axis coordinate
     for (int dx = 0; dx < w_out; dx++) {
-      fx = scale_x * (dx + 0.5f) - 0.5f;
+      fx = align_mode ? scale_x * dx : scale_x * (dx + 0.5f) - 0.5f;
       fx = fx < 0 ? 0.f : fx;
       sx = static_cast<int>(fx);
       fx -= sx;
@@ -119,7 +120,7 @@ void bilinear_interp(const float* src,
     }
     // calculate y axis coordinate
     for (int dy = 0; dy < h_out; dy++) {
-      fy = scale_y * (dy + 0.5f) - 0.5f;
+      fy = align_mode ? scale_y * dy : scale_y * (dy + 0.5f) - 0.5f;
       fy = fy < 0 ? 0.f : fy;
       sy = static_cast<int>(fy);
       fy -= sy;
@@ -507,6 +508,7 @@ void interpolate(lite::Tensor* X,
                  int out_width,
                  float scale,
                  bool with_align,
+                 int align_mode,
                  std::string interpolate_type) {
   int in_h = X->dims()[2];
   int in_w = X->dims()[3];
@@ -562,7 +564,8 @@ void interpolate(lite::Tensor* X,
                       out_h,
                       1.f / width_scale,
                       1.f / height_scale,
-                      with_align);
+                      with_align,
+                      align_mode);
     }
   } else if ("Nearest" == interpolate_type) {
 #pragma omp parallel for

@@ -62,6 +62,7 @@ bool XPUFcOp::InferShapeImpl() const {
   }
   output_dims[in_num_col_dims] = w_dims_1;
   param_.output->Resize(output_dims);
+  param_.output_max->Resize({4});
 
   // share LoD
   param_.output->set_lod(param_.input->lod());
@@ -70,12 +71,27 @@ bool XPUFcOp::InferShapeImpl() const {
 }
 
 bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  auto input = op_desc.Input("Input").front();
-  auto W = op_desc.Input("W").front();
-  auto out = op_desc.Output("Out").front();
+  AttachParam(&param_);
+  CHECK(scope->FindVar(op_desc.Input("Input").front()));
+  CHECK(scope->FindVar(op_desc.Input("Filter").front()));
+  CHECK(scope->FindVar(op_desc.Output("Output").front()));
+  CHECK(scope->FindVar(op_desc.Output("OutputMax").front()));
 
-  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  param_.w = scope->FindVar(W)->GetMutable<lite::Tensor>();
+  param_.input =
+      scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
+  param_.w =
+      scope->FindVar(op_desc.Input("Filter").front())->GetMutable<Tensor>();
+  param_.output =
+      scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
+  param_.output_max =
+      scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
+
+  param_.act_type = op_desc.GetAttr<int>("act_type");
+  param_.act_param = op_desc.GetAttr<float>("act_param");
+  param_.has_bias = op_desc.GetAttr<bool>("has_bias");
+  param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
+
+  // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=
       input_arg_names.end()) {
@@ -87,21 +103,15 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       }
     }
   }
-  CHECK(scope->FindVar(out));
-  param_.output = scope->FindVar(out)->GetMutable<lite::Tensor>();
-  param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
-  param_.w_max = op_desc.GetAttr<float>("w_max");
-
-  if (op_desc.HasAttr("activation_type")) {
-    param_.activation_type = op_desc.GetAttr<std::string>("activation_type");
-  }
-  if (op_desc.HasAttr("transpose_w")) {
-    param_.transpose_w = op_desc.GetAttr<bool>("transpose_w");
+  if (op_desc.HasAttr("has_input_max") &&
+      op_desc.GetAttr<bool>("has_input_max")) {
+    CHECK(scope->FindVar(op_desc.Input("InputMax").front()));
+    param_.input_max =
+        scope->FindVar(op_desc.Input("InputMax").front())->GetMutable<Tensor>();
   }
   if (op_desc.HasAttr("precision")) {
     param_.precision = op_desc.GetAttr<std::string>("precision");
   }
-
   return true;
 }
 

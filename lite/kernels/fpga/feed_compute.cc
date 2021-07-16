@@ -31,12 +31,22 @@ void FeedCompute::PrepareForRun() {
   param.out->Resize(x.dims());
 
   auto in_type = x.ZynqTensor()->dataType();
-  if (in_type == zynqmp::FP32 || in_type == zynqmp::FP16) {
-    param.out->mutable_data<float16>();
+
+  switch (in_type) {
+    case zynqmp::FP32:
+    case zynqmp::FP16:
+      param.out->mutable_data<float16>();
+      break;
+    case zynqmp::INT32:
+      param.out->mutable_data<int32_t>();
+      break;
+    case zynqmp::INT64:
+      param.out->mutable_data<int64_t>();
+      break;
+    default:
+      throw "type not supported!";
   }
-  if (in_type == zynqmp::INT32) {
-    param.out->mutable_data<int32_t>();
-  }
+
   // ====================================================
   zynqmp::InputParam& feed_param = pe_.param();
   feed_param.input = x.ZynqTensor();

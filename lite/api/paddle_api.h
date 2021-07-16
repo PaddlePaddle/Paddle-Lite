@@ -111,6 +111,9 @@ class LITE_API PaddlePredictor {
   // Get output names
   virtual std::vector<std::string> GetParamNames();
 
+  /// Release all tmp tensor to compress the size of the memory pool.
+  virtual bool TryShrinkMemory() = 0;
+
   // Get Input by name
   virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;
 
@@ -142,11 +145,29 @@ class LITE_API ConfigBase {
   PowerMode mode_{LITE_POWER_NO_BIND};
   // gpu opencl
   CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
+  std::string opencl_bin_path_{""};
+  std::string opencl_bin_name_{""};
   CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
-  // to save subgraph model for npu/xpu/...
+  // Where to cache the npu/xpu/rknpu/apu offline model to the binary files
   std::string subgraph_model_cache_dir_{""};
+  // Set the cached npu/xpu/rknpu/apu offline model from the buffers
+  std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
+      subgraph_model_cache_buffers_{};
+  // The selected NNAdapter devices to build and run the model.
+  std::vector<std::string> nnadapter_device_names_{};
+  // The NNAdapter context properties for device configuration, model
+  // compilation and execution
+  std::string nnadapter_context_properties_{};
+  // The directory to find and store the compiled NNAdapter models.
+  std::string nnadapter_model_cache_dir_{""};
+  // The buffers for loading the compiled NNAdapter models from memory.
+  std::map<std::string, std::vector<char>> nnadapter_model_cache_buffers_{};
   int device_id_{0};
   int x86_math_num_threads_ = 1;
+
+  std::string metal_path_;
+  bool metal_use_mps_;
+  bool metal_use_aggressive_;
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -159,8 +180,23 @@ class LITE_API ConfigBase {
   // set Power_mode
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
+  /// \brief Set path and file name of generated OpenCL compiled kernel binary.
+  ///
+  /// If you use GPU of specific soc, using OpenCL binary will speed up the
+  /// initialization.
+  ///
+  /// \param path  Path that OpenCL compiled kernel binay file stores in. Make
+  /// sure the path exist and you have Read&Write permission.
+  /// \param name  File name of OpenCL compiled kernel binay.
+  /// \return void
+  void set_opencl_binary_path_name(const std::string& path,
+                                   const std::string& name);
   // set GPU opencl tune
-  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE);
+  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
+                       const std::string& path = "",
+                       const std::string& name = "",
+                       size_t lws_repeats = 4);
+
   // set GPU opencl precision
   void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
   // set subgraph_model_dir
@@ -170,12 +206,63 @@ class LITE_API ConfigBase {
   const std::string& subgraph_model_cache_dir() const {
     return subgraph_model_cache_dir_;
   }
+  void set_subgraph_model_cache_buffers(const std::string& key,
+                                        const std::vector<char>& cfg,
+                                        const std::vector<char>& bin);
+  const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>&
+  subgraph_model_cache_buffers() const {
+    return subgraph_model_cache_buffers_;
+  }
+  // Check if the NNAdapter device is valid.
+  bool check_nnadapter_device_name(const std::string& nnadapter_device_name);
+  // Choose the NNAdapter devices to build and run the model.
+  void set_nnadapter_device_names(
+      const std::vector<std::string>& nnadapter_device_names) {
+    nnadapter_device_names_ = nnadapter_device_names;
+  }
+  const std::vector<std::string>& nnadapter_device_names() const {
+    return nnadapter_device_names_;
+  }
+  // Set the context properties by key-value map for NNAdapter device
+  // configuration, model compilation and execution
+  // Such as "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0;"
+  void set_nnadapter_context_properties(
+      const std::string& nnadapter_context_properties) {
+    nnadapter_context_properties_ = nnadapter_context_properties;
+  }
+  const std::string& nnadapter_context_properties() const {
+    return nnadapter_context_properties_;
+  }
+  // Enable caching and set the directory to search and store the compiled
+  // NNAdapter models in the file system.
+  void set_nnadapter_model_cache_dir(
+      const std::string& nnadapter_model_cache_dir) {
+    nnadapter_model_cache_dir_ = nnadapter_model_cache_dir;
+  }
+  const std::string& nnadapter_model_cache_dir() const {
+    return nnadapter_model_cache_dir_;
+  }
+  // Set the buffers for loading the compiled NNAdapter models from memory.
+  void set_nnadapter_model_cache_buffers(const std::string& key,
+                                         const std::vector<char>& buffer);
+  const std::map<std::string, std::vector<char>>&
+  nnadapter_model_cache_buffers() const {
+    return nnadapter_model_cache_buffers_;
+  }
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
   int get_device_id() const { return device_id_; }
   // set x86_math_num_threads
   void set_x86_math_num_threads(int threads);
   int x86_math_num_threads() const;
+
+  void set_metal_lib_path(const std::string& path);
+  void set_metal_use_mps(bool flag);
+  void set_metal_use_aggressive(bool flag);
+
+  std::string metal_lib_path() const { return metal_path_; }
+  bool metal_use_mps() const { return metal_use_mps_; }
+  bool metal_use_aggressive() const { return metal_use_aggressive_; }
 };
 
 class LITE_API CxxModelBuffer {
@@ -283,12 +370,22 @@ class LITE_API CxxConfig : public ConfigBase {
 
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
+  // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+  void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
+
+  void set_xpu_conv_autotune(bool autotune = true,
+                             const std::string& autotune_file = "");
+
   // XPU only, specify the target device ID for the current thread.
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
+
+  // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
+  void set_xpu_multi_encoder_method(const std::string& precision = "int16",
+                                    bool adaptive_seqlen = false);
 
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when

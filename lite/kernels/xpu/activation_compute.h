@@ -101,6 +101,15 @@ class SqrtCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~SqrtCompute() = default;
 };
 
+class RsqrtCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~RsqrtCompute() = default;
+};
+
 class PowCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::PowParam;
@@ -108,6 +117,15 @@ class PowCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual void Run();
 
   virtual ~PowCompute() = default;
+};
+
+class LogCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~LogCompute() = default;
 };
 
 class SignCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
@@ -153,6 +171,24 @@ class SoftsignCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual void Run();
 
   virtual ~SoftsignCompute() = default;
+};
+
+class SwishCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~SwishCompute() = default;
+};
+
+class PReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~PReluCompute() = default;
 };
 
 }  // namespace xpu

@@ -13,7 +13,12 @@ limitations under the License. */
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/backends/opencl/utils/cache.h"
+#include "lite/core/target_wrapper.h"
+#include "lite/core/version.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/io.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -24,7 +29,17 @@ CLRuntime* CLRuntime::Global() {
   return &cl_runtime_;
 }
 
+void CLRuntime::Flush(const int index) {
+  if (is_cl_runtime_initialized_ && gpu_type_ == GpuType::ARM_MALI &&
+      index % opencl_flush_period_ == 0) {
+    command_queue_->flush();
+  }
+}
+
 CLRuntime::~CLRuntime() {
+  SaveProgram();
+  SaveTuned();
+
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
 #endif
@@ -46,7 +61,7 @@ CLRuntime::~CLRuntime() {
 
 bool CLRuntime::Init() {
 #ifdef LITE_WITH_LOG
-  VLOG(3) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
+  VLOG(6) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
 #endif
   if (is_cl_runtime_initialized_) {
     return true;
@@ -104,7 +119,8 @@ cl::Platform& CLRuntime::platform() {
 
 cl::Context& CLRuntime::context() {
   if (context_ == nullptr) {
-    LOG(FATAL) << "context_ create failed. ";
+    LOG(FATAL) << "context_ create failed, check whether context create "
+                  "successfully in CreateContext!";
   }
   return *context_;
 }
@@ -116,36 +132,20 @@ cl::Device& CLRuntime::device() {
   return *device_;
 }
 
+std::map<std::string, std::unique_ptr<cl::Program>>& CLRuntime::program_map() {
+  return programs_;
+}
+
 cl::CommandQueue& CLRuntime::command_queue() {
   if (command_queue_ == nullptr) {
-    LOG(FATAL) << "command_queue_ create failed. ";
+    LOG(FATAL) << "command_queue_ create failed, check whether command queue "
+                  "create successfully in CreateCommandQueue!";
   }
   return *command_queue_;
 }
 
-std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
-    const cl::Context& context, std::string file_name) {
-  auto cl_file = opencl_kernels_files.find(file_name);
-  std::string content(cl_file->second.begin(), cl_file->second.end());
-  cl::Program::Sources sources;
-  sources.push_back(content);
-  auto prog =
-      std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
-  VLOG(4) << "OpenCL kernel file name: " << file_name;
-  VLOG(4) << "Program source size: " << content.size();
-  CL_CHECK_FATAL_SOLID(status_);
-  return std::move(prog);
-}
-
-std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
-    const cl::Context& context) {
-  auto event =
-      std::unique_ptr<cl::UserEvent>(new cl::UserEvent(context, &status_));
-  CL_CHECK_FATAL_SOLID(status_);
-  return std::move(event);
-}
-
-bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
+cl::Program& CLRuntime::GetProgram(const std::string& file_name,
+                                   const std::string& options) {
   /* -I +CLRuntime::Global()->cl_path() + "/cl_kernel"*/
   std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
   if (build_option.find("CL_DTYPE_") == std::string::npos) {
@@ -156,10 +156,215 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
     }
   }
 #ifdef LITE_WITH_LOG
-  VLOG(4) << "precision_:" << precision_;
+  VLOG(4) << "precision_: " << CLPrecisionTypeToStr(precision_);
   VLOG(4) << "OpenCL build_option: " << build_option;
 #endif
-  status_ = program->build({*device_}, build_option.c_str());
+
+  STL::stringstream program_key_ss;
+  program_key_ss << file_name << build_option;
+  std::string program_key = program_key_ss.str();
+
+  // Build flow: cache -> precompiled binary -> source
+  bool ret = CheckFromCache(program_key);
+  if (!ret) {
+    ret = CheckFromPrecompiledBinary(program_key, build_option);
+    if (!ret) {
+      ret = CheckFromSource(file_name, program_key, build_option);
+    }
+  }
+
+  if (ret) {
+    return *(programs_[program_key]);
+  } else {
+    LOG(FATAL) << "GetProgram failed, program_key: " << program_key;
+  }
+}
+
+bool CLRuntime::CheckFromCache(const std::string& program_key) {
+  auto iter = programs_.find(program_key);
+  if (iter != programs_.end()) {
+#ifdef LITE_WITH_LOG
+    VLOG(3) << " --- program -> " << program_key
+            << " has been built in cache --- ";
+#endif
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
+                                           const std::string& build_option) {
+  bool ret = false;
+  bool delete_bin_flag = false;
+  auto path_name = GetBinaryPathName();
+  if (path_name.size() != 2) return ret;
+
+  // find binary
+  std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
+  auto remove_file = [](const std::string& bin_file) {
+    if (remove(bin_file.c_str()) != 0) {
+      LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary["
+                 << bin_file << "]!";
+    } else {
+      LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
+                << "] has been deleted!";
+    }
+  };
+
+  if (programs_.empty()) {
+    // check whether binary exist
+    if (!IsFileExists(bin_file)) {
+      LOG(WARNING)
+          << "There is no precompiled OpenCL binary[" << bin_file
+          << "] in the given OpenCL binary path. "
+             "Also please make sure the storage directory exist "
+             "and you have Write&Read permission. Jump to build program "
+             "from source.";
+    } else {
+      LOG(INFO) << "Load opencl kernel bin file: " << bin_file;
+      bool success = Deserialize(bin_file, &programs_precompiled_binary_);
+      CHECK(success) << "Deserialize failed!";
+
+      VLOG(3) << "sn_key: " << sn_key_;
+      VLOG(3) << "map size: " << programs_precompiled_binary_.size();
+      for (auto& ins : programs_precompiled_binary_) {
+        std::string prog_key = ins.first;
+        VLOG(3) << "\t map key: " << prog_key
+                << "\t map value size: " << ins.second[0].size();
+      }
+
+      // check if the binary file is illegal and valid
+      auto sn_iter = programs_precompiled_binary_.find(sn_key_);
+      if (sn_iter == programs_precompiled_binary_.end()) {
+        LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
+                     << "] is illegal!";
+        delete_bin_flag = true;
+        // Jump to build from source
+      } else if (host::memcmp(((sn_iter->second)[0]).data(),
+                              GetSN(build_option).data(),
+                              GetSN(build_option).length())) {
+        std::string sn_str(reinterpret_cast<char*>((sn_iter->second)[0].data()),
+                           (sn_iter->second)[0].size());
+        LOG(INFO) << "\nSN required: " << GetSN(build_option)
+                  << "\tsize: " << GetSN(build_option).length()
+                  << "\nSN in bin file: " << sn_str
+                  << "\tsize: " << ((sn_iter->second)[0]).size();
+        LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
+                     << "] is invalid!";
+        delete_bin_flag = true;
+        // Jump to build from source
+      } else {
+#ifdef LITE_WITH_LOG
+        VLOG(3) << " --- begin read all precompiled programs from binary --- ";
+#endif
+        // loop all programs of the binary file
+        cl_int status{CL_SUCCESS};
+        for (auto& ins : programs_precompiled_binary_) {
+          std::string prog_key = ins.first;
+          if (prog_key == sn_key_) continue;  // skip sn_key
+
+          cl::Program program(
+              context(), {device()}, ins.second, nullptr, &status);
+          CL_CHECK_FATAL_SOLID(status);
+          auto pos_start = prog_key.find_first_of("-D");
+          std::string options = prog_key.substr(pos_start);
+          BuildProgram(&program, options);
+
+          std::unique_ptr<cl::Program> ptr(new cl::Program(program));
+          programs_[prog_key] = std::move(ptr);
+        }
+
+        auto it = programs_.find(program_key);
+        if (it != programs_.end()) {
+          VLOG(3) << " --- program -> " << program_key
+                  << " has been built in binary --- ";
+          gotten_bin_flag_ = true;
+          ret = true;
+        } else {
+          delete_bin_flag = true;
+          // Jump to build from source
+        }
+      }
+    }
+
+    if (delete_bin_flag) {
+      remove_file(bin_file);
+      programs_precompiled_binary_.clear();
+      programs_.clear();
+    }
+  } else if (gotten_bin_flag_) {
+    // This case happened when model has updated. Bin file should be updated
+    // accordingly.
+    delete_bin_flag = true;
+    gotten_bin_flag_ = false;
+    remove_file(bin_file);
+  }
+
+  return ret;
+}
+
+bool CLRuntime::CheckFromSource(const std::string& file_name,
+                                const std::string& program_key,
+                                const std::string& build_option) {
+  auto ptr = CreateProgramFromSource(context(), file_name);
+  auto program = ptr.get();
+#ifdef LITE_WITH_LOG
+  VLOG(3) << " --- begin build program from source -> " << program_key
+          << " --- ";
+#endif
+  BuildProgram(program, build_option);
+
+  // Keep built program binary
+  if (binary_path_name_.size() == 2) {
+    cl_int status{CL_SUCCESS};
+    // 1. Query binary (PTX file) size
+    size_t bin_size;
+    status = program->getInfo(CL_PROGRAM_BINARY_SIZES, &bin_size);
+    CL_CHECK_FATAL_SOLID(status);
+    // 2. Read binary (PTX file) to memory buffer
+    cl::Program::Binaries binary;
+    binary.resize(1);
+    binary[0].resize(bin_size);
+    auto buf = binary[0].data();
+    status = program->getInfo(CL_PROGRAM_BINARIES, &buf);
+    CL_CHECK_FATAL_SOLID(status);
+    programs_precompiled_binary_[program_key] = binary;
+#ifdef LITE_WITH_LOG
+    VLOG(3) << " --- binary size: " << bin_size << " ---";
+#endif
+    if (programs_precompiled_binary_.find(sn_key_) ==
+        programs_precompiled_binary_.end()) {
+      // add identifier
+      std::string sn = GetSN(build_option);
+      std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
+      programs_precompiled_binary_[sn_key_] = {sn_info};
+    }
+  }
+
+  programs_[program_key] = std::move(ptr);
+
+  return true;
+}
+
+std::unique_ptr<cl::Program> CLRuntime::CreateProgramFromSource(
+    const cl::Context& context, std::string file_name) {
+  auto cl_file = opencl_kernels_files.find(file_name);
+  std::string content(cl_file->second.begin(), cl_file->second.end());
+  cl::Program::Sources sources;
+  sources.push_back(content);
+  auto prog =
+      std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
+#ifdef LITE_WITH_LOG
+  VLOG(4) << "OpenCL kernel file name: " << file_name;
+  VLOG(4) << "Program source size: " << content.size();
+#endif
+  CL_CHECK_FATAL_SOLID(status_);
+  return std::move(prog);
+}
+
+bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
+  status_ = program->build({device()}, options.c_str());
   CL_CHECK_ERROR(status_);
 
   if (status_ != CL_SUCCESS) {
@@ -174,18 +379,189 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   return true;
 }
 
+void CLRuntime::SaveProgram() {
+  if (binary_path_name_.empty()) return;
+  std::string binary_file =
+      binary_path_name_.at(0) + "/" + binary_path_name_.at(1);
+  if (IsFileExists(binary_file)) {
+    LOG(INFO) << "OpenCL Program existed:" << binary_file;
+  } else {
+    bool ret = Serialize(binary_file, programs_precompiled_binary_);
+    CHECK(ret) << "Serialize failed for opencl binary_file:" << binary_file;
+#ifdef LITE_WITH_LOG
+    if (programs_precompiled_binary_.find(sn_key_) !=
+        programs_precompiled_binary_.end()) {
+      std::string sn_str(reinterpret_cast<char*>(
+                             programs_precompiled_binary_[sn_key_][0].data()),
+                         programs_precompiled_binary_[sn_key_][0].size());
+      LOG(INFO) << "SN stored: " << sn_str;
+    }
+    LOG(INFO) << "Programs have been serialized to disk successfully. File: "
+              << binary_file;
+#endif
+  }
+}
+
+void CLRuntime::SaveTuned() {
+  if (tuned_path_name_.empty() || auto_tune() == lite_api::CL_TUNE_NONE) return;
+  std::string tuned_file =
+      tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
+  if (tuned_file == "/") {
+    LOG(INFO) << "invalid tuned_file:" << tuned_file;
+  } else if (IsFileExists(tuned_file)) {
+    LOG(INFO) << "OpenCL Tuned file existed:" << tuned_file;
+  } else {
+    bool ret = Serialize(tuned_file, tuned_lwss_map_);
+    CHECK(ret) << "Serialize failed for opencl tuned_file:" << tuned_file;
+    LOG(INFO) << "Tuned file have been serialized to disk successfully: "
+              << tuned_file;
+  }
+}
+
+// binary
+bool CLRuntime::Serialize(
+    const std::string file_name,
+    const std::map<std::string, cl::Program::Binaries>& map_data) {
+  fbs::opencl::Cache cache{map_data};
+  std::vector<uint8_t> buffer;
+  cache.CopyDataToBuffer(&buffer);
+
+  WriteFile<uint8_t>(file_name, buffer);
+  return true;
+}
+
+bool CLRuntime::Deserialize(
+    const std::string file_name,
+    std::map<std::string, cl::Program::Binaries>* map_ptr) {
+  std::vector<uint8_t> buffer;
+  ReadFile<uint8_t>(file_name, &buffer);
+
+  fbs::opencl::Cache cache{buffer};
+  *map_ptr = cache.GetBinaryMap();
+  return true;
+}
+
+// tuned param
+bool CLRuntime::Serialize(const std::string file_name,
+                          const std::map<std::string, cl::NDRange>& map_data) {
+  std::map<std::string, std::vector<int>> map_data_cpy;
+  for (auto& kv : map_data) {
+#ifdef LITE_WITH_LOG
+    VLOG(3) << std::to_string(static_cast<int>(kv.second[0])) << ","
+            << std::to_string(static_cast<int>(kv.second[1])) << ","
+            << std::to_string(static_cast<int>(kv.second[2]));
+#endif
+    map_data_cpy.insert(std::pair<std::string, std::vector<int>>(
+        kv.first,
+        {static_cast<int>(kv.second[0]),
+         static_cast<int>(kv.second[1]),
+         static_cast<int>(kv.second[2])}));
+  }
+
+  fbs::opencl::TuneCache cache{map_data_cpy};
+  std::vector<int> buffer;
+  cache.CopyDataToBuffer(&buffer);
+
+  WriteFile<int>(file_name, buffer);
+  return true;
+}
+
+bool CLRuntime::Deserialize(const std::string file_name,
+                            std::map<std::string, cl::NDRange>* map_ptr) {
+  std::vector<int> buffer;
+  ReadFile<int>(file_name, &buffer);
+
+  fbs::opencl::TuneCache cache{buffer};
+  std::map<std::string, std::vector<int>> tmp_map = cache.GetBinaryMap();
+  for (auto& kv : tmp_map) {
+    cl::NDRange range{static_cast<cl::size_type>(kv.second[0]),
+                      static_cast<cl::size_type>(kv.second[1]),
+                      static_cast<cl::size_type>(kv.second[2])};
+#ifdef LITE_WITH_LOG
+    VLOG(3) << std::to_string(kv.second[0]) << ","
+            << std::to_string(kv.second[1]) << ","
+            << std::to_string(kv.second[2]);
+#endif
+    map_ptr->insert(std::pair<std::string, cl::NDRange>(kv.first, range));
+  }
+  return true;
+}
+
+std::string CLRuntime::GetSN(const std::string options) {
+  // Identifier info(Serial Number) for each binary file: lite version,
+  // build options, platform info, device version, driver version
+  STL::stringstream sn_ss;
+
+  const std::string aarch =
+#if defined(__aarch64__)
+      "android_armv8";
+#else
+      "android_armv7";
+#endif
+#if defined(_WIN64)
+  "win64";
+#elif defined(_WIN32)
+  "win32";
+#endif
+
+  const std::string aarch_info = aarch + "; ";
+  const std::string lite_version = lite::version() + "; ";
+  const std::string platform_info =
+      platform_->getInfo<CL_PLATFORM_NAME>() + ", " +
+      platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";
+  const std::string device_version =
+      device_->getInfo<CL_DEVICE_VERSION>() + "; ";
+  const std::string driver_version =
+      device_->getInfo<CL_DRIVER_VERSION>() + "; ";
+  const std::string place_holder{"place_holder"};
+  sn_ss << aarch_info << lite_version << options << platform_info
+        << device_version << driver_version << place_holder;
+  return sn_ss.str();
+}
+
+std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
+    const cl::Context& context) {
+  auto event =
+      std::unique_ptr<cl::UserEvent>(new cl::UserEvent(context, &status_));
+  CL_CHECK_FATAL_SOLID(status_);
+  return std::move(event);
+}
+
 bool CLRuntime::InitializePlatform() {
   std::vector<cl::Platform> all_platforms;
   status_ = cl::Platform::get(&all_platforms);
   // has return status do not exit here when release
   CL_CHECK_ERROR(status_);
   if (all_platforms.empty()) {
-    LOG(FATAL) << "No OpenCL platform found!";
+    LOG(ERROR) << "No OpenCL platform found!";
     return false;
   }
   platform_ = std::make_shared<cl::Platform>();
   *platform_ = all_platforms[0];
+  const std::string extensions = platform_->getInfo<CL_PLATFORM_EXTENSIONS>();
+  LOG(INFO) << "Platform extension: " << extensions;
   return true;
+}
+
+OpenCLVersion CLRuntime::ParseDeviceVersion(const std::string& device_version) {
+  // OpenCL Device version string format:
+  // OpenCL<space><major_version.minor_version><space>
+  // <vendor-specific information>
+  auto words = Split<std::string>(device_version, std::string{" "});
+  if (words[1] == "2.1") {
+    return OpenCLVersion::CL_VER_2_1;
+  } else if (words[1] == "2.0") {
+    return OpenCLVersion::CL_VER_2_0;
+  } else if (words[1] == "1.2") {
+    return OpenCLVersion::CL_VER_1_2;
+  } else if (words[1] == "1.1") {
+    return OpenCLVersion::CL_VER_1_1;
+  } else if (words[1] == "1.0") {
+    return OpenCLVersion::CL_VER_1_0;
+  } else {
+    LOG(ERROR) << "Do not support OpenCL version: " << words[1];
+    return OpenCLVersion::CL_VER_UNKNOWN;
+  }
 }
 
 GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
@@ -213,12 +589,13 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
 }
 
 bool CLRuntime::InitializeDevice() {
-  VLOG(3) << "device_info_.size():" << device_info_.size();
-  for (auto i : device_info_) {
-    VLOG(3) << ">>> " << i.first << " " << i.second;
-  }
+  // initialized without valid opencl device
   if (device_info_.size() > 0 && device_info_.size() <= 2) {
     return false;
+  }
+  // initialized with valid opencl device
+  if (device_info_.size() > 2) {
+    return true;
   }
   device_info_["PLACEHOLDER"] = 1;
   // ===================== BASIC =====================
@@ -268,8 +645,14 @@ bool CLRuntime::InitializeDevice() {
     }
     return t_str;
   };
-  const std::string device_version = device_->getInfo<CL_DEVICE_VERSION>();
-  LOG(INFO) << "device_version:" << device_version;
+
+  auto device_version = device_->getInfo<CL_DEVICE_VERSION>();
+  LOG(INFO) << "CL_DEVICE_VERSION:" << device_version;
+  auto opencl_version = ParseDeviceVersion(device_version);
+  if (opencl_version == OpenCLVersion::CL_VER_UNKNOWN) {
+    LOG(ERROR) << "Parse device version[" << device_version << "] failed!";
+  }
+  device_info_["CL_DEVICE_VERSION"] = opencl_version;
 
   LOG(INFO) << "device_type:" << device_type_to_str(device_type);
   device_info_["CL_DEVICE_TYPE"] = device_type;
@@ -352,19 +735,19 @@ bool CLRuntime::InitializeDevice() {
   if (image_support) {
     LOG(INFO) << "The chosen device supports image processing.";
     device_info_["CL_DEVICE_IMAGE_SUPPORT"] = 1;
+
+    auto image2d_max_height = device_->getInfo<CL_DEVICE_IMAGE2D_MAX_HEIGHT>();
+    LOG(INFO) << "CL_DEVICE_IMAGE2D_MAX_HEIGHT:" << image2d_max_height;
+    device_info_["CL_DEVICE_IMAGE2D_MAX_HEIGHT"] = image2d_max_height;
+
+    auto image2d_max_width = device_->getInfo<CL_DEVICE_IMAGE2D_MAX_WIDTH>();
+    LOG(INFO) << "CL_DEVICE_IMAGE2D_MAX_WIDTH:" << image2d_max_width;
+    device_info_["CL_DEVICE_IMAGE2D_MAX_WIDTH"] = image2d_max_width;
   } else {
-    LOG(INFO) << "The chosen device doesn't support image processing!";
+    LOG(ERROR) << "The chosen device doesn't support image processing!";
     device_info_["CL_DEVICE_IMAGE_SUPPORT"] = 0;
     return false;
   }
-
-  auto image2d_max_height = device_->getInfo<CL_DEVICE_IMAGE2D_MAX_HEIGHT>();
-  LOG(INFO) << "CL_DEVICE_IMAGE2D_MAX_HEIGHT:" << image2d_max_height;
-  device_info_["CL_DEVICE_IMAGE2D_MAX_HEIGHT"] = image2d_max_height;
-
-  auto image2d_max_width = device_->getInfo<CL_DEVICE_IMAGE2D_MAX_WIDTH>();
-  LOG(INFO) << "CL_DEVICE_IMAGE2D_MAX_WIDTH:" << image2d_max_width;
-  device_info_["CL_DEVICE_IMAGE2D_MAX_WIDTH"] = image2d_max_width;
 
   // ===================== OTHERS / EXTENSION / VERSION =====================
   // CL_DEVICE_EXTENSIONS
@@ -386,6 +769,13 @@ bool CLRuntime::InitializeDevice() {
   auto driver_version = device_->getInfo<CL_DRIVER_VERSION>();
   LOG(INFO) << "CL_DRIVER_VERSION:" << driver_version;
 
+#ifdef LITE_WITH_LOG
+  VLOG(3) << "device_info_.size():" << device_info_.size();
+  for (auto i : device_info_) {
+    VLOG(3) << ">>> " << i.first << " " << i.second;
+  }
+#endif
+
   return true;
 }
 
@@ -400,7 +790,10 @@ void CLRuntime::GetAdrenoContextProperties(
     std::vector<cl_context_properties>* properties,
     GPUPerfMode gpu_perf_mode,
     GPUPriorityLevel gpu_priority_level) {
-  CHECK(properties) << "cl_context_properties is nullptr";
+  if (properties == nullptr) {
+    LOG(ERROR) << "cl_context_properties is nullptr";
+    return;
+  }
   properties->reserve(5);
   switch (gpu_perf_mode) {
     case GPUPerfMode::PERF_LOW:
@@ -444,22 +837,85 @@ void CLRuntime::GetAdrenoContextProperties(
   properties->push_back(0);
 }
 
+uint64_t CLRuntime::GetMaxWorkGroupSize(const cl::Kernel& kernel) {
+  uint64_t max_workgroup_size = 0;
+  int ret = kernel.getWorkGroupInfo(
+      *device_, CL_KERNEL_WORK_GROUP_SIZE, &max_workgroup_size);
+  if (ret != 0) max_workgroup_size = 0;
+  return max_workgroup_size;
+}
+
+void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
+                              const std::string& path,
+                              const std::string& name,
+                              size_t lws_repeats) {
+  auto_tune_ = tune_mode;
+  auto device_name = CLRuntime::Global()->device().getInfo<CL_DEVICE_NAME>();
+  if (device_name.find("Mali-T860") != std::string::npos) {
+    auto_tune_ = lite_api::CL_TUNE_NONE;
+  }
+  lws_repeats_ = lws_repeats;
+  if (tuned_path_name_.empty()) {
+    tuned_path_name_.push_back(path);
+    tuned_path_name_.push_back(name);
+  }
+  const std::string tuned_file = path + "/" + name;
+  LOG(INFO) << "tuned_file.size():" << tuned_file.size()
+            << ", tuned_file:" << tuned_file;
+  if (tuned_file.size() > 2 && IsFileExists(tuned_file) &&
+      auto_tune() != lite_api::CL_TUNE_NONE) {
+    LOG(INFO) << "Load tuned file: " << tuned_file;
+    bool status = Deserialize(tuned_file, &tuned_lwss_map_);
+    if (!status) {
+      LOG(ERROR) << "failed to deserialize tuned_file:" << tuned_file;
+    }
+  } else {
+    LOG(INFO) << "Not found tuned file:" << tuned_file;
+  }
+  command_queue_ = CreateCommandQueue(context());
+}
+
+bool CLRuntime::HasTunedLocalWorkSizeMap(const std::string& key,
+                                         cl::NDRange* lws) {
+  bool has = false;
+  auto it = tuned_lwss_map_.find(key);
+  if (it != tuned_lwss_map_.end()) {
+    *lws = it->second;
+    has = true;
+  }
+  return has;
+}
+
+void CLRuntime::SetTunedLocalWorkSizeMap(const std::string& key,
+                                         const cl::NDRange lws) {
+  auto it = tuned_lwss_map_.find(key);
+  if (it != tuned_lwss_map_.end()) {
+    auto lws_old = it->second;
+    LOG(FATAL) << "===> found lws_old with same key, please add more detailed "
+                  "info to key <==="
+               << "\n lws_old:" << lws_old[0] << "," << lws_old[1] << ","
+               << lws_old[2] << "\n lws_new:" << lws[0] << "," << lws[1] << ","
+               << lws[2];
+  }
+  tuned_lwss_map_.insert(std::pair<std::string, cl::NDRange>(key, lws));
+}
+
 double CLRuntime::GetCommandTime(const cl::Event& event) {
-  command_queue().finish();
+  event.wait();
   auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
   return (stop_nanos - start_nanos) / 1000000.0;
 }
 
 double CLRuntime::GetQueuedTime(const cl::Event& event) {
-  command_queue().finish();
+  event.wait();
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) /
          1000000.0;
 }
 
 double CLRuntime::GetSubmitTime(const cl::Event& event) {
-  command_queue().finish();
+  event.wait();
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) /
          1000000.0;

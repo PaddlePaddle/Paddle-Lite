@@ -170,15 +170,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   }
 };
 
-TEST(Argmax, precision) {
-  // #ifdef LITE_WITH_X86
-  //  Place place(TARGET(kX86));
-  // #endif
-  LOG(INFO) << "test argmax op";
-#ifdef LITE_WITH_ARM
-  LOG(INFO) << "test argmax arm";
-  Place place(TARGET(kARM));
-
+void TestArgmax(const Place& place) {
   for (int axis : {0, 1, 2, 3}) {
     // attribute: keepdims
     for (bool keepdims : {false, true}) {
@@ -204,7 +196,19 @@ TEST(Argmax, precision) {
       }
     }
   }
+}
+
+TEST(Argmax, precision) {
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  TestArgmax(place);
 }
 
 }  // namespace lite

@@ -55,7 +55,12 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
     const auto& in_dims = param.x->dims();
     const auto& out_dims = param.output->dims();
     auto* x_img = GET_DATA_GPU(param.x);
-    const float dropout_prob = param.dropout_prob;
+    float dropout_prob;
+    if (param.dropout_implementation == "upscale_in_train") {
+      dropout_prob = 0.0f;
+    } else {
+      dropout_prob = param.dropout_prob;
+    }
 
     int input_dims[4] = {1, 1, 1, 1};
     for (int i = 0; i < in_dims.size(); i++) {

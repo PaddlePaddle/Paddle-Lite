@@ -89,7 +89,7 @@ docker rm <container-name>
 - gcc、g++、git、make、wget、python、adb
 - Java environment
 - cmake（建议使用3.10或以上版本）
-- Android NDK (建议ndk-r17c)
+- Android NDK (支持ndk-r17c及之后的所有ndk版本, 注意从ndk-r18开始，ndk交叉编译工具只支持clang, 不支持gcc)
 
 安装软件部分以 Ubuntu 为例，其他 Linux 发行版类似。
 
@@ -111,13 +111,20 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 
 # 4. Download Android NDK for linux-x86_64
 #     Note: Skip this step if NDK installed
-#     recommand android-ndk-r17c-darwin-x86_64
+#     support android-ndk-r17c-linux-x86_64 and other later version such as ndk-r18b or ndk-r20b 
 #     ref: https://developer.android.com/ndk/downloads
 cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
 cd /opt && unzip /tmp/android-ndk-r17c-linux-x86_64.zip
 
 # 5. Add environment ${NDK_ROOT} to `~/.bashrc` 
 echo "export NDK_ROOT=/opt/android-ndk-r17c" >> ~/.bashrc
+source ~/.bashrc
+
+# Note: To other ndk version, the step is similar to the above.
+# Take android-ndk-r20b-linux-x86_64 as example:
+cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r20b-linux-x86_64.zip
+cd /opt && unzip /tmp/android-ndk-r20b-linux-x86_64.zip
+echo "export NDK_ROOT=/opt/android-ndk-r20b" >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -164,7 +171,7 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 ```shell
 # 1. Install basic software
 apt update
-apt-get install -y --no-install-recomends \
+apt-get install -y --no-install-recommends \
   gcc g++ make wget python unzip patchelf python-dev
 
 # 2. install cmake 3.10 or above
@@ -185,8 +192,9 @@ sudo make install
 交叉编译环境要求
 - gcc、git、make、curl、unzip、java
 - cmake（Android编译请使用3.10版本，IOS编译请使用3.15版本）
-- 编译Android: Android NDK (建议ndk-r17c)
+- 编译Android: Android NDK (支持ndk-r17c及之后的所有ndk版本)
 - 编译IOS: XCode(Version 10.1)
+- 编译Arm MacOS:XCode (Version >=12.2beta)
 
 ```bash
 # 1. Install basic software
@@ -199,7 +207,7 @@ brew install  curl gcc git make unzip wget
 #     tar zxf ./cmake-3.10.2-Darwin-x86_64.tar.gz
 #     mv cmake-3.10.2-Darwin-x86_64/CMake.app/Contents/ ./3.10.2
 #     ln -s /usr/local/Cellar/cmake/3.10.2/bin/cmake /usr/local/bin/cmake
-# （2）在mac环境编译 Paddle-Lite 的IOS版本，需要安装cmake 3.15
+# （2）在mac环境编译 Paddle-Lite 的IOS和Arm MacOS版本，需要安装cmake 3.15
 #     mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/
 #     cd /usr/local/Cellar/cmake/
 #     wget https://cmake.org/files/v3.15/cmake-3.15.2-Darwin-x86_64.tar.gz
@@ -230,7 +238,7 @@ brew cask install java
 
 ## 4. Windows开发环境
 
-编译环境需求，目前Windows暂不支持GPU编译，仅支持[X86平台](../demo_guides/x86.html#windows)预测库编译。
+编译环境需求，目前Windows仅支持[X86平台](../demo_guides/x86.html#windows)预测库编译。
 
 - Windows 10 专业版
 - *Python 版本 2.7/3.5.1+ (64 bit)*
