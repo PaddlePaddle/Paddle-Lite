@@ -45,8 +45,9 @@ void ReduceSumCompute<T, Ptype>::Run() {
     if (x_vec.size() >= 5 && x_vec[0] == 1) {
       x_vec.erase(x_vec.begin());
       for (auto& val : dim) val--;
-    } else
+    } else {
       break;
+    }
   }
   auto x_dims = lite::DDim(x_vec);
 

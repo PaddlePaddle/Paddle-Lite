@@ -44,7 +44,8 @@ enum activation_type_test {
   THRESHOLDED_RELU,
   ELU,
   SOFTSIGN,
-  HARD_SIGMOID
+  HARD_SIGMOID,
+  ABS
 };
 
 template <class T = float>
@@ -270,6 +271,12 @@ class ActivationComputeTester : public arena::TestCase {
           } else if (tmp >= 1.f) {
             output_data[i] = 1.f;
           }
+        }
+        break;
+      }
+      case ABS: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = std::fabs(x_data[i]);
         }
         break;
       }
@@ -966,6 +973,32 @@ TEST(Activation_softsign, precision) {
             DDim(dims),
             "relu",
             RELU,
+            abs_error);
+  }
+}
+
+TEST(Activation_abs, precision) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "abs",
+            ABS,
             abs_error);
   }
 }

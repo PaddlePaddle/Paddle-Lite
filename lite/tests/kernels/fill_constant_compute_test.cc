@@ -196,6 +196,9 @@ TEST(fill_constant, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // use fp16
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
@@ -204,8 +207,10 @@ TEST(fill_constant, precision) {
 
   TestFillConstantShape(place, abs_error);
   TestFillConstantValue(place, abs_error);
+#if !defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   TestFillConstantShapeTensor(place, abs_error);
   TestFillConstantShapeTensorList(place, abs_error);
+#endif
 }
 
 }  // namespace lite
