@@ -51,8 +51,8 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
   nnadapter_device_names.emplace_back("rockchip_npu");
   out_accuracy_threshold = 0.75f;
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
-  out_accuracy_threshold = 0.77f;
   nnadapter_device_names.emplace_back("mediatek_apu");
+  out_accuracy_threshold = 0.77f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
