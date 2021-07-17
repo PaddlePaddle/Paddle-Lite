@@ -127,7 +127,7 @@ bool XPUConvPixelShuffleOp::InferShapeImpl() const {
 
 bool XPUConvPixelShuffleOp::AttachImpl(const cpp::OpDesc& op_desc,
                                        lite::Scope* scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter_0").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter_1").front()));

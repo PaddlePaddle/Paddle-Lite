@@ -45,7 +45,7 @@ bool XPUSoftmaxTopkOp::InferShapeImpl() const {
 
 bool XPUSoftmaxTopkOp::AttachImpl(const cpp::OpDesc &opdesc,
                                   lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   param_.x = scope->FindTensor(opdesc.Input("X").front());
   param_.output = scope->FindMutableTensor(opdesc.Output("Out").front());
   param_.indices = scope->FindMutableTensor(opdesc.Output("Indices").front());

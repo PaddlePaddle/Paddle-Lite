@@ -42,7 +42,7 @@ bool SelectInputOpLite::InferShapeImpl() const {
 
 bool SelectInputOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                    lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   auto inputs = op_desc.Input("X");
   auto mask = op_desc.Input("Mask").front();
   auto out = op_desc.Output("Out").front();

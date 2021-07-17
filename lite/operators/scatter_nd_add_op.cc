@@ -49,7 +49,7 @@ bool ScatterNdAddOp::InferShapeImpl() const {
 
 bool ScatterNdAddOp::AttachImpl(const cpp::OpDesc &op_desc,
                                 lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   auto x = op_desc.Input("X").front();
   auto indexs = op_desc.Input("Index").front();
   auto updates = op_desc.Input("Updates").front();

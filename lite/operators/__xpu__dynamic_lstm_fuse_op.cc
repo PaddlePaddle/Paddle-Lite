@@ -91,7 +91,7 @@ bool XPUDynamicLstmOp::InferShapeImpl() const {
 
 bool XPUDynamicLstmOp::AttachImpl(const cpp::OpDesc& op_desc,
                                   lite::Scope* scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Weight_0").front()));
   CHECK(scope->FindVar(op_desc.Input("Weight_1").front()));

@@ -34,7 +34,7 @@ bool UniqueWithCountsOp::InferShapeImpl() const {
 
 bool UniqueWithCountsOp::AttachImpl(const cpp::OpDesc &opdesc,
                                     lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   param_.Index = scope->FindMutableTensor(opdesc.Output("Index").front());

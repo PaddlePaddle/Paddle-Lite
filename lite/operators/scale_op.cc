@@ -30,7 +30,7 @@ bool ScaleOp::InferShapeImpl() const {
 }
 
 bool ScaleOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   auto x = op_desc.Input("X").front();
   auto output = op_desc.Output("Out").front();
   param_.x = scope->FindVar(x)->GetMutable<Tensor>();

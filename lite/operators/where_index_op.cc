@@ -33,7 +33,7 @@ bool WhereIndexdOp::InferShapeImpl() const {
 }
 
 bool WhereIndexdOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   auto input = opdesc.Input("Condition").front();
   auto output = opdesc.Output("Out").front();
   CHECK(scope->FindVar(input));

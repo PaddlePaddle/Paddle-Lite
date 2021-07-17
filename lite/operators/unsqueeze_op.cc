@@ -89,7 +89,7 @@ bool UnsqueezeOp::InferShapeImpl() const {
 }
 
 bool UnsqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
 

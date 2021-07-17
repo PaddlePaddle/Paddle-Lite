@@ -82,7 +82,7 @@ bool SplitOp::InferShapeImpl() const {
 }
 
 bool SplitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   param_.axis = opdesc.GetAttr<int>("axis");
   param_.num = opdesc.GetAttr<int>("num");
   param_.sections = opdesc.GetAttr<std::vector<int>>("sections");

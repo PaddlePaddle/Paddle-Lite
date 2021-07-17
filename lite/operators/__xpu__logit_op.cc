@@ -35,7 +35,7 @@ bool XPULogitOp::InferShapeImpl() const {
 }
 
 bool XPULogitOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   CHECK(scope->FindVar(opdesc.Input("X").front()));
   CHECK(scope->FindVar(opdesc.Output("Out").front()));
   param_.input = scope->FindTensor(opdesc.Input("X").front());

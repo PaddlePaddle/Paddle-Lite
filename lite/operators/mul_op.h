@@ -38,7 +38,7 @@ class MulOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override {
-    AttachParam(&param_);
+    // AttachParam(&param_);
 
     CHECK(!op_desc.Input("X").empty());
     CHECK(!op_desc.Input("Y").empty());

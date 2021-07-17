@@ -48,7 +48,7 @@ bool UnbindOp::InferShapeImpl() const {
 }
 
 bool UnbindOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   param_.axis = opdesc.GetAttr<int>("axis");
   auto input = opdesc.Input("X").front();
   auto outs = opdesc.Output("Out");

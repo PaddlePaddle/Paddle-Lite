@@ -36,7 +36,7 @@ bool XPUBlockFuseOp::InferShapeImpl() const {
 
 bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
                                 lite::Scope* scope) {
-  AttachParam(&param_);
+  // AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Output("Output").front()));
   CHECK(scope->FindVar(op_desc.Output("OutputMax").front()));
