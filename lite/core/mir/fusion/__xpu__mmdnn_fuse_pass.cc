@@ -326,6 +326,197 @@ class XPUMmdnnSearchAttentionFuser : public FuseBase {
   }
 };
 
+class XPUMmdnnSearchAttentionFuser2 : public FuseBase {
+ public:
+  void BuildPattern() override {
+    auto* input =
+        VarNode("input")->assert_is_op_input("sequence_pad", "X")->AsInput();
+    auto* assign_value = VarNode("assign_value")
+                             ->assert_is_op_input("sequence_pad", "PadValue")
+                             ->AsInput();
+
+    auto* sequence_pad = OpNode("sequence_pad", "sequence_pad");
+    auto* sequence_pad_out = VarNode("sequence_pad_out")
+                                 ->assert_is_op_output("sequence_pad", "Out")
+                                 ->AsIntermediate();
+    auto* sequence_pad_length =
+        VarNode("sequence_pad_length")
+            ->assert_is_op_output("sequence_pad", "Length")
+            ->AsIntermediate();
+
+    auto* mul_weight =
+        VarNode("mul_weight")->assert_is_op_input("mul", "Y")->AsInput();
+    auto* mul = OpNode("mul", "mul")->AsIntermediate();
+    auto* mul_out =
+        VarNode("mul_out")->assert_is_op_output("mul", "Out")->AsIntermediate();
+
+    auto* elementwise_add_0_bias =
+        VarNode("elementwise_add_0_bias")
+            ->assert_is_op_input("elementwise_add", "Y")
+            ->AsInput();
+    auto* elementwise_add_0 =
+        OpNode("elementwise_add_0", "elementwise_add")->AsIntermediate();
+    auto* elementwise_add_0_out =
+        VarNode("elementwise_add_0_out")
+            ->assert_is_op_output("elementwise_add", "Out")
+            ->AsIntermediate();
+
+    auto* matmul_0 = OpNode("matmul_0", "matmul")->AsIntermediate();
+    auto* matmul_0_out = VarNode("matmul_0_out")
+                             ->assert_is_op_output("matmul", "Out")
+                             ->AsIntermediate();
+
+    auto* transpose2_0 = OpNode("transpose2_0", "transpose2")->AsIntermediate();
+    auto* transpose2_0_out = VarNode("transpose2_0_out")
+                                 ->assert_is_op_output("transpose2", "Out")
+                                 ->AsIntermediate();
+    auto* transpose2_0_xshape =
+        VarNode("transpose2_0_xshape")
+            ->assert_is_op_output("transpose2", "XShape")
+            ->AsIntermediate();
+
+    auto* sequence_mask =
+        OpNode("sequence_mask", "sequence_mask")->AsIntermediate();
+    auto* sequence_mask_out = VarNode("sequence_mask_out")
+                                  ->assert_is_op_output("sequence_mask", "Y")
+                                  ->AsIntermediate();
+
+    auto* scale = OpNode("scale", "scale")->AsIntermediate();
+    auto* scale_out = VarNode("scale_out")
+                          ->assert_is_op_output("scale", "Out")
+                          ->AsIntermediate();
+
+    auto* elementwise_add_1 =
+        OpNode("elementwise_add_1", "elementwise_add")->AsIntermediate();
+    auto* elementwise_add_1_out =
+        VarNode("elementwise_add_1_out")
+            ->assert_is_op_output("elementwise_add", "Out")
+            ->AsIntermediate();
+
+    auto* transpose2_1 = OpNode("transpose2_1", "transpose2")->AsIntermediate();
+    auto* transpose2_1_out = VarNode("transpose2_1_out")
+                                 ->assert_is_op_output("transpose2", "Out")
+                                 ->AsIntermediate();
+    auto* transpose2_1_xshape =
+        VarNode("transpose2_1_xshape")
+            ->assert_is_op_output("transpose2", "XShape")
+            ->AsIntermediate();
+
+    auto* softmax = OpNode("softmax", "softmax")->AsIntermediate();
+    auto* softmax_out = VarNode("softmax_out")
+                            ->assert_is_op_output("softmax", "Out")
+                            ->AsIntermediate();
+
+    auto* matmul_1 = OpNode("matmul_1", "matmul")->AsIntermediate();
+    auto* matmul_1_out = VarNode("matmul_1_out")
+                             ->assert_is_op_output("matmul", "Out")
+                             ->AsIntermediate();
+
+    auto* sequence_unpad =
+        OpNode("sequence_unpad", "sequence_unpad")->AsIntermediate();
+    auto* output = VarNode("output")
+                       ->assert_is_op_output("sequence_unpad", "Out")
+                       ->AsOutput();
+
+    *input >> *sequence_pad;
+    *assign_value >> *sequence_pad;
+    *sequence_pad >> *sequence_pad_out;
+    *sequence_pad >> *sequence_pad_length;
+
+    *sequence_pad_out >> *mul;
+    *mul_weight >> *mul;
+    *mul >> *mul_out;
+
+    *mul_out >> *elementwise_add_0;
+    *elementwise_add_0_bias >> *elementwise_add_0;
+    *elementwise_add_0 >> *elementwise_add_0_out;
+
+    *sequence_pad_out >> *matmul_0;
+    *elementwise_add_0_out >> *matmul_0;
+    *matmul_0 >> *matmul_0_out;
+
+    *matmul_0_out >> *transpose2_0;
+    *transpose2_0 >> *transpose2_0_out;
+    *transpose2_0 >> *transpose2_0_xshape;
+
+    *sequence_pad_length >> *sequence_mask >> *sequence_mask_out;
+    *sequence_mask_out >> *scale >> *scale_out;
+
+    *transpose2_0_out >> *elementwise_add_1;
+    *scale_out >> *elementwise_add_1;
+    *elementwise_add_1 >> *elementwise_add_1_out;
+
+    *elementwise_add_1_out >> *transpose2_1;
+    *transpose2_1 >> *transpose2_1_out;
+    *transpose2_1 >> *transpose2_1_xshape;
+
+    *transpose2_1_out >> *softmax >> *softmax_out;
+
+    *sequence_pad_out >> *matmul_1;
+    *softmax_out >> *matmul_1;
+    *matmul_1 >> *matmul_1_out;
+
+    *sequence_pad_length >> *sequence_unpad;
+    *matmul_1_out >> *sequence_unpad;
+    *sequence_unpad >> *output;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    cpp::OpDesc op_desc;
+    op_desc.SetType("__xpu__mmdnn_search_attention2");
+    op_desc.SetInput("X", {matched.at("input")->arg()->name});
+    op_desc.SetInput("W", {matched.at("mul_weight")->arg()->name});
+    op_desc.SetInput("b", {matched.at("elementwise_add_0_bias")->arg()->name});
+    op_desc.SetOutput("Out", {matched.at("output")->arg()->name});
+
+    auto* new_stmt = matched.at("sequence_pad")->stmt();
+    auto* scope = new_stmt->op()->scope();
+
+    auto assign_value_name = matched.at("assign_value")->arg()->name;
+    auto* assign_value_tensor = scope->FindMutableTensor(assign_value_name);
+    op_desc.SetAttr<int>(
+        "pad_id",
+        static_cast<int>(assign_value_tensor->mutable_data<float>()[0]));
+    auto* matmul_0_op_info = matched.at("matmul_0")->stmt()->op_info();
+    op_desc.SetAttr<float>("alpha0", matmul_0_op_info->GetAttr<float>("alpha"));
+    auto* matmul_1_op_info = matched.at("matmul_1")->stmt()->op_info();
+    op_desc.SetAttr<float>("alpha1", matmul_1_op_info->GetAttr<float>("alpha"));
+    auto* mask_op_info = matched.at("scale")->stmt()->op_info();
+    op_desc.SetAttr<float>("mask",
+                           mask_op_info->GetAttr<float>("scale") *
+                               mask_op_info->GetAttr<float>("bias"));
+
+    auto w_name = matched.at("mul_weight")->arg()->name;
+    auto* w_t = scope->FindMutableTensor(w_name);
+    auto w_dims = w_t->dims();
+    int w_len = w_t->numel();
+    float* w_on_host = w_t->mutable_data<float>();
+
+    float max_f = paddle::lite::xpu::math::FindMaxAbs(w_on_host, w_len);
+    std::unique_ptr<int16_t[]> w_int16(new int16_t[w_len]);
+    std::unique_ptr<int16_t[]> w_trans_int16(new int16_t[w_len]);
+    paddle::lite::xpu::math::ConvertFP32ToInt16(
+        w_on_host, w_int16.get(), max_f, w_len);
+    paddle::lite::xpu::math::Transpose(
+        w_int16.get(), w_trans_int16.get(), w_dims[0], w_dims[1]);
+    memcpy(w_on_host, w_trans_int16.get(), w_len * sizeof(int16_t));
+    op_desc.SetAttr<float>("W_max", max_f);
+
+    auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());
+    new_op->Attach(op_desc, scope);
+    new_op->SetValidPlaces(new_stmt->op()->valid_places());
+    auto kernels = new_op->CreateKernels(new_op->valid_places());
+    new_stmt->SetOp(new_op);
+    new_stmt->SetKernels(std::move(kernels));
+
+    RemoveDirectedLink(matched.at("assign_value"), matched.at("sequence_pad"));
+    DirectedLink(matched.at("mul_weight"), matched.at("sequence_pad"));
+    DirectedLink(matched.at("elementwise_add_0_bias"),
+                 matched.at("sequence_pad"));
+    IR_OP_VAR_LINK(matched.at("sequence_pad"), matched.at("output"));
+  }
+};
+
 // 4 inputs
 // ========
 //
@@ -1617,6 +1808,8 @@ class XPUMmdnnFusePass : public ProgramPass {
     float_2_fix(graph.get());
     fusion::XPUMmdnnSearchAttentionFuser search_att_fuser;
     search_att_fuser(graph.get());
+    fusion::XPUMmdnnSearchAttentionFuser2 search_att_fuser2;
+    search_att_fuser2(graph.get());
     fusion::XPUMmdnnMatchConvTopkFuser match_conv_topk_fuser;
     match_conv_topk_fuser(graph.get());
     fusion::XPUMmdnnMatchConvTopkFuser2 match_conv_topk_fuser2;

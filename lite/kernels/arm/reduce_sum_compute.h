@@ -23,7 +23,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ReduceSumCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType Ptype>
+class ReduceSumCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   void Run() override;
 

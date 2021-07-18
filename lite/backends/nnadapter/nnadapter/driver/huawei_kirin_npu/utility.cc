@@ -14,7 +14,6 @@
 
 #include "driver/huawei_kirin_npu/utility.h"
 #include "utility/debug.h"
-#include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
@@ -44,7 +43,8 @@ std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
   NNADAPTER_VLOG(3) << "freq_level: " << freq_level
                     << " framework_type: " << framework_type
                     << " model_type: " << model_type
-                    << " device_type: " << device_type;
+                    << " device_type: " << device_type
+                    << " model_name: " << model_name;
   auto model_desc = std::make_shared<hiai::AiModelDescription>(
       model_name, freq_level, framework_type, model_type, device_type);
   model_desc->SetModelBuffer(
@@ -114,7 +114,7 @@ std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
         << "Failed to call AiModelMngerClient to load a HiAI OM model!";
     return nullptr;
   }
-  NNADAPTER_VLOG(3) << "Load successed.";
+  NNADAPTER_VLOG(3) << "Load a HiAI OM model success.";
   return model_client;
 }
 
@@ -148,8 +148,117 @@ bool BuildOMModelToBuffer(
          reinterpret_cast<void*>(om_buffer.data),
          om_buffer.length);
   ir_build.ReleaseModelBuff(om_buffer);
-  NNADAPTER_VLOG(3) << "Build succeeded.";
+  NNADAPTER_VLOG(3) << "Build a HiAI OM model success.";
   return true;
+}
+
+const std::string GEDataTypeToString(ge::DataType data_type) {
+  static const std::vector<std::string> datatype2strings{"DT_FLOAT=0",
+                                                         "DT_FLOAT16=1",
+                                                         "DT_INT8=2",
+                                                         "DT_INT32=3",
+                                                         "DT_UINT8=4",
+                                                         "Unknown=5",
+                                                         "DT_INT16=6",
+                                                         "DT_UINT16=7",
+                                                         "DT_UINT32=8",
+                                                         "DT_INT64=9",
+                                                         "DT_UINT64=10",
+                                                         "DT_DOUBLE=11",
+                                                         "DT_BOOL=12",
+                                                         "DT_STRING=13"};
+  auto index = static_cast<int>(data_type);
+  NNADAPTER_CHECK_LT(index, datatype2strings.size());
+  return datatype2strings[index];
+}
+
+const std::string GEFormatToString(ge::Format format) {
+  static const std::vector<std::string> format2strings = {
+      "FORMAT_NCHW = 0",
+      "FORMAT_NHWC = 1",
+      "FORMAT_ND = 2",
+      "FORMAT_NC1HWC0 = 3",
+      "FORMAT_FRACTAL_Z = 4",
+      "FORMAT_NC1C0HWPAD = 5",
+      "FORMAT_NHWC1C0 = 6",
+      "FORMAT_FSR_NCHW = 7",
+      "FORMAT_FRACTAL_DECONV = 8",
+      "FORMAT_C1HWNC0 = 9",
+      "FORMAT_FRACTAL_DECONV_TRANSPOSE = 10",
+      "FORMAT_FRACTAL_DECONV_SP_STRIDE_TRANS = 11",
+      "FORMAT_NC1HWC0_C04 = 12",
+      "FORMAT_FRACTAL_Z_C04 = 13",
+      "FORMAT_CHWN = 14",
+      "FORMAT_FRACTAL_DECONV_SP_STRIDE8_TRANS = 15",
+      "FORMAT_HWCN = 16",
+      "FORMAT_NC1KHKWHWC0 = 17",
+      "FORMAT_BN_WEIGHT = 18",
+      "FORMAT_FILTER_HWCK = 19",
+      "FORMAT_HASHTABLE_LOOKUP_LOOKUPS = 20",
+      "FORMAT_HASHTABLE_LOOKUP_KEYS = 21",
+      "FORMAT_HASHTABLE_LOOKUP_VALUE = 22",
+      "FORMAT_HASHTABLE_LOOKUP_OUTPUT = 23",
+      "FORMAT_HASHTABLE_LOOKUP_HITS = 24"};
+  auto index = static_cast<int>(format);
+  NNADAPTER_CHECK_LT(index, format2strings.size());
+  return format2strings[index];
+}
+
+const std::string GEShapeToString(ge::Shape shape) {
+  std::stringstream ss;
+  size_t dim_count = shape.GetDimNum();
+  if (dim_count == 0) {
+    ss << "{}";
+    return ss.str();
+  }
+  ss << "{";
+  for (size_t i = 0; i < dim_count - 1; i++) {
+    ss << shape.GetDim(i) << ",";
+  }
+  ss << shape.GetDim(dim_count - 1);
+  ss << "}";
+  return ss.str();
+}
+
+int64_t ProductionOfGEShape(ge::Shape shape) {
+  int64_t production = 1;
+  size_t dim_count = shape.GetDimNum();
+  for (size_t i = 0; i < dim_count; i++) {
+    auto dimension = shape.GetDim(i);
+    NNADAPTER_CHECK_GT(dimension, 0);
+    production *= dimension;
+  }
+  return production;
+}
+
+template <>
+ge::DataType GetGEDataType<float>() {
+  return ge::DT_FLOAT;
+}
+
+template <>
+ge::DataType GetGEDataType<int8_t>() {
+  return ge::DT_INT8;
+}
+
+template <>
+ge::DataType GetGEDataType<int16_t>() {
+  return ge::DT_INT16;
+}
+
+template <>
+ge::DataType GetGEDataType<int32_t>() {
+  return ge::DT_INT32;
+}
+
+template <>
+ge::DataType GetGEDataType<int64_t>() {
+  return ge::DT_INT64;
+}
+
+template <>
+ge::DataType GetGEDataType<bool>() {
+  return ge::DT_BOOL;
 }
 
 ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
@@ -198,7 +307,7 @@ ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
           << OperandPrecisionCodeToString(input_precision)
-          << ") to HiAI ge::DataType !";
+          << ") to ge::DataType !";
       break;
   }
   return output_precision;
@@ -216,28 +325,29 @@ ge::Format ConvertDataLayout(NNAdapterOperandLayoutCode input_layout) {
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand layout code("
-          << OperandLayoutCodeToString(input_layout)
-          << ") to HiAI ge::Format !";
+          << OperandLayoutCodeToString(input_layout) << ") to ge::Format !";
       break;
   }
   return output_layout;
 }
 
-std::vector<int64_t> ConvertDimensions(int32_t* input_dimensions,
+std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
                                        uint32_t input_dimensions_count) {
-  std::vector<int64_t> output_dimensions(input_dimensions_count);
+  std::vector<int64_t> output_dimensions;
   for (uint32_t i = 0; i < input_dimensions_count; i++) {
-    output_dimensions[i] = input_dimensions[i];
+    output_dimensions.push_back(input_dimensions[i]);
   }
   return output_dimensions;
+}
+
+std::vector<int64_t> ConvertDimensions(
+    const std::vector<int32_t>& input_dimensions) {
+  return ConvertDimensions(&input_dimensions[0], input_dimensions.size());
 }
 
 int32_t ConvertFuseCode(int32_t input_fuse_code) {
   int output_act_mode;
   switch (input_fuse_code) {
-    case NNADAPTER_FUSED_NONE:
-      output_act_mode = -1;
-      break;
     case NNADAPTER_FUSED_RELU:
       output_act_mode = 1;
       break;
@@ -250,7 +360,7 @@ int32_t ConvertFuseCode(int32_t input_fuse_code) {
     default:
       NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter fuse code("
                            << input_fuse_code
-                           << ") to a HiAI activation operator!";
+                           << ") to a GE activation operator!";
       break;
   }
   return output_act_mode;

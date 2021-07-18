@@ -72,7 +72,10 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to Neuron operands and operations
-  auto input_index = ConvertOperand(input_operand);
+  auto input_index = GetMappedIndex(input_operand);
+  if (input_index == INVALID_INDEX) {
+    input_index = ConvertOperand(input_operand);
+  }
   auto padding_width_left_index = AddInt32ConstantOperand(padding_width_left);
   auto padding_width_right_index = AddInt32ConstantOperand(padding_width_right);
   auto padding_height_top_index = AddInt32ConstantOperand(padding_height_top);

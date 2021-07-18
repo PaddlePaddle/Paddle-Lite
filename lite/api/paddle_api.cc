@@ -400,11 +400,11 @@ void ConfigBase::set_subgraph_model_cache_buffers(
       std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
 }
 
-bool ConfigBase::check_nnadapter_device(
+bool ConfigBase::check_nnadapter_device_name(
     const std::string &nnadapter_device_name) {
   bool found = false;
 #ifdef LITE_WITH_NNADAPTER
-  found = lite::Context<TargetType::kNNAdapter>::CheckNNAdapterDevice(
+  found = lite::Context<TargetType::kNNAdapter>::CheckNNAdapterDeviceName(
       nnadapter_device_name);
 #else
   LOG(WARNING) << "The invoking of the function 'check_nnadapter_device' is "

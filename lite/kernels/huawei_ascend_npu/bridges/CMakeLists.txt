@@ -1,3 +1,30 @@
+add_subgraph_bridge(SRCS act_op.cc
+                    argmax_op.cc
+                    batch_norm_op.cc
+                    cast_op.cc
+                    concat_op.cc
+                    conv_op.cc
+                    dropout_op.cc
+                    elementwise_ops.cc
+                    fc_op.cc
+                    flatten_op.cc
+                    gather_op.cc
+                    graph.cc
+                    interpolate_op.cc
+                    layer_norm_op.cc
+                    matmul_op.cc
+                    pool_op.cc
+                    prior_box_op.cc
+                    reduce_mean_op.cc
+                    reshape_op.cc
+                    scale_op.cc
+                    shape_op.cc
+                    slice_op.cc
+                    softmax_op.cc
+                    transpose_op.cc
+                    unsqueeze_op.cc
+                    utility.cc)
+
 if(NOT LITE_WITH_HUAWEI_ASCEND_NPU)
   return()
 endif()
@@ -31,6 +58,11 @@ lite_cc_library(subgraph_bridge_argmax_op_huawei_ascend_npu SRCS argmax_op.cc DE
 lite_cc_library(subgraph_bridge_shape_op_huawei_ascend_npu SRCS shape_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_unsqueeze_op_huawei_ascend_npu SRCS unsqueeze_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_reduce_mean_op_huawei_ascend_npu SRCS reduce_mean_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_clip_op_huawei_ascend_npu SRCS clip_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_fill_constant_op_huawei_ascend_npu SRCS fill_constant_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_split_op_huawei_ascend_npu SRCS split_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_assign_value_op_huawei_ascend_npu SRCS assign_value_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_norm_op_huawei_ascend_npu SRCS norm_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 set(huawei_ascend_npu_subgraph_bridges
         subgraph_bridge_registry
         subgraph_bridge_graph_huawei_ascend_npu
@@ -58,4 +90,9 @@ set(huawei_ascend_npu_subgraph_bridges
         subgraph_bridge_shape_op_huawei_ascend_npu
         subgraph_bridge_unsqueeze_op_huawei_ascend_npu
         subgraph_bridge_reduce_mean_op_huawei_ascend_npu
+        subgraph_bridge_clip_op_huawei_ascend_npu
+        subgraph_bridge_fill_constant_op_huawei_ascend_npu
+        subgraph_bridge_split_op_huawei_ascend_npu
+        subgraph_bridge_assign_value_op_huawei_ascend_npu
+        subgraph_bridge_norm_op_huawei_ascend_npu
         CACHE INTERNAL "huawei_ascend_npu_subgraph_bridges")

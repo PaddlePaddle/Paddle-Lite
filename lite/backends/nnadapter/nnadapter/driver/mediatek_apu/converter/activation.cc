@@ -34,7 +34,10 @@ int Program::ConvertActivation(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to Neuron operands and operations
-  auto input_index = ConvertOperand(input_operand);
+  auto input_index = GetMappedIndex(input_operand);
+  if (input_index == INVALID_INDEX) {
+    input_index = ConvertOperand(input_operand);
+  }
   auto output_index = ConvertOperand(output_operand);
   NeuronOperationType op_type;
   if (operation->type == NNADAPTER_SIGMOID) {

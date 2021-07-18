@@ -41,7 +41,8 @@ class LeakyReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~LeakyReluCompute() = default;
 };
 
-class PReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType ptype>
+class PReluCompute : public KernelLite<TARGET(kARM), ptype> {
  public:
   using param_t = operators::ActivationParam;
 

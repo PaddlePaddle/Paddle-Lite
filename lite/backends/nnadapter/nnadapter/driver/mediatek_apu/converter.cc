@@ -14,6 +14,7 @@
 
 #include "driver/mediatek_apu/converter.h"
 #include <algorithm>
+#include <utility>
 #include "driver/mediatek_apu/optimizer/propagate_quant_params.h"
 #include "driver/mediatek_apu/optimizer/resolve_op_liminations.h"
 #include "driver/mediatek_apu/optimizer/update_bias_quant_params_and_values.h"
@@ -27,7 +28,7 @@
 namespace nnadapter {
 namespace mediatek_apu {
 
-Context::Context() {
+Context::Context(void* device, const char* properties) : device_(device) {
   // TODO(hong19860320) create the raw context from NeuronAdapter
 }
 
@@ -126,7 +127,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_CHECK(operand_indexes_.find(operand) != operand_indexes_.end())
         << "No Neuron operand found for input operand @0x" << std::hex
         << reinterpret_cast<int64_t>(operand);
-    auto index = operand_indexes_[operand];
+    auto index = operand_indexes_[operand].back();
+    NNADAPTER_CHECK_NE(index, INVALID_INDEX);
     NNADAPTER_VLOG(5) << "Found a Neuron operand " << index
                       << " for input operand @0x" << std::hex
                       << reinterpret_cast<int64_t>(operand);
@@ -143,7 +145,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_CHECK(operand_indexes_.find(operand) != operand_indexes_.end())
         << "No Neuron operand found for output operand @0x" << std::hex
         << reinterpret_cast<int64_t>(operand);
-    auto index = operand_indexes_[operand];
+    auto index = operand_indexes_[operand].back();
+    NNADAPTER_CHECK_NE(index, INVALID_INDEX);
     NNADAPTER_VLOG(5) << "Found a Neuron operand " << index
                       << " for output operand @0x" << std::hex
                       << reinterpret_cast<int64_t>(operand);
@@ -235,6 +238,26 @@ int Program::Execute(uint32_t input_count,
   return NNADAPTER_NO_ERROR;
 }
 
+uint32_t Program::GetMappedIndex(hal::Operand* operand) {
+  auto it = operand_indexes_.find(operand);
+  if (it != operand_indexes_.end()) {
+    return it->second.back();
+  }
+  return INVALID_INDEX;
+}
+
+uint32_t Program::UpdateIndexMap(hal::Operand* operand, uint32_t index) {
+  auto it = operand_indexes_.find(operand);
+  if (it == operand_indexes_.end()) {
+    auto result = operand_indexes_.insert(
+        std::make_pair(operand, std::vector<uint32_t>()));
+    NNADAPTER_CHECK(result.second);
+    it = result.first;
+  }
+  it->second.push_back(index);
+  return index;
+}
+
 uint32_t Program::AddOperand(int32_t* dimensions,
                              uint32_t dimension_count,
                              int precision,
@@ -286,7 +309,7 @@ uint32_t Program::AddOperand(int32_t* dimensions,
   auto index = operand_index_++;
   if (buffer) {
     // Constant operand
-    auto length = PrecisionLength(precision) *
+    auto length = NeuronOperandDataTypeLength(precision) *
                   ProductionOfDimensions(dimensions, dimension_count);
     NNADAPTER_CHECK_EQ(
         NeuronModel_setOperandValue_invoke(model_, index, buffer, length),
@@ -438,41 +461,42 @@ uint32_t Program::AddQuant8VariableOperand(int32_t* dimensions,
                     0);
 }
 
-uint32_t Program::ConvertOperand(hal::Operand* operand) {
-  if (operand_indexes_.find(operand) != operand_indexes_.end()) {
-    return operand_indexes_.at(operand);
-  }
+uint32_t Program::ConvertOperand(hal::Operand* operand,
+                                 std::vector<int32_t> dimensions) {
   auto& type = operand->type;
   auto buffer = operand->buffer;
+  if (dimensions.empty()) {
+    for (uint32_t i = 0; i < type.dimension_count; i++) {
+      dimensions.push_back(type.dimensions[i]);
+    }
+  }
   auto is_constant_copy = type.lifetime == NNADAPTER_CONSTANT_COPY;
   auto is_constant_reference = type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
   auto is_constant = is_constant_copy || is_constant_reference;
-  uint32_t index = 0xFFFFFFFF;
+  uint32_t index = INVALID_INDEX;
   switch (type.precision) {
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER: {
       if (is_constant) {
         index =
             AddQuant8ConstantOperand(reinterpret_cast<uint8_t*>(buffer),
-                                     type.dimensions,
-                                     type.dimension_count,
+                                     &dimensions[0],
+                                     dimensions.size(),
                                      type.asymm_per_layer_params.scale,
                                      type.asymm_per_layer_params.zero_point);
       } else {
         index =
-            AddQuant8VariableOperand(type.dimensions,
-                                     type.dimension_count,
+            AddQuant8VariableOperand(&dimensions[0],
+                                     dimensions.size(),
                                      type.asymm_per_layer_params.scale,
                                      type.asymm_per_layer_params.zero_point);
-        // Only mapping the temporary operand
-        operand_indexes_[operand] = index;
       }
     } break;
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL: {
       NNADAPTER_CHECK(is_constant);
       index =
           AddQuant8ConstantOperand(reinterpret_cast<int8_t*>(buffer),
-                                   type.dimensions,
-                                   type.dimension_count,
+                                   &dimensions[0],
+                                   dimensions.size(),
                                    type.symm_per_channel_params.scales,
                                    type.symm_per_channel_params.scale_count,
                                    type.symm_per_channel_params.channel_dim);
@@ -483,13 +507,13 @@ uint32_t Program::ConvertOperand(hal::Operand* operand) {
       NNADAPTER_CHECK(is_constant);
       if (type.precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER) {
         index = AddQuant32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
-                                          type.dimensions,
-                                          type.dimension_count,
+                                          &dimensions[0],
+                                          dimensions.size(),
                                           type.symm_per_layer_params.scale);
       } else {
         index = AddInt32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
-                                        type.dimensions,
-                                        type.dimension_count);
+                                        &dimensions[0],
+                                        dimensions.size());
       }
     } break;
     default:
@@ -498,7 +522,8 @@ uint32_t Program::ConvertOperand(hal::Operand* operand) {
                            << " for the conversion of Neuron operands.";
       break;
   }
-  NNADAPTER_CHECK_NE(index, 0xFFFFFFFF);
+  NNADAPTER_CHECK_NE(index, INVALID_INDEX);
+  UpdateIndexMap(operand, index);
   return index;
 }
 

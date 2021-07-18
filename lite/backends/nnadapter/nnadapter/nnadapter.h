@@ -514,6 +514,28 @@ typedef enum {
   NNADAPTER_SOFTMAX = 14,
 
   /**
+   * Split a tensor into a list of tensors along the given dimension.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, A NNADAPTER_INT32 scalar. It represents the dimension along
+   * which axis to split. It should be in range [-R, R), where R is the rank of
+   * input, negative value works the same way as axis+R.
+   * * 2: split, An 1-D NNADAPTER_TENSOR_INT32, each of values indicates the
+   * length of each output. Sum of the values must be equal to the dimension at
+   * 'axis' specified.
+   *
+   * Outputs:
+   * * 0 ~ n-1: output0 ~ outputn-1, The results with the same type as the
+   * input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_SPLIT = 15,
+
+  /**
    * Performs element-wise binary subtraction(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -530,7 +552,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SUB = 15,
+  NNADAPTER_SUB = 16,
 
   /**
    * Applies the hyperbolic tangent activation to the input tensor element-wise.
@@ -547,7 +569,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_TANH = 16,
+  NNADAPTER_TANH = 17,
 
   /**
    * Transposes the input according to the perm, similar to numpy.transpose
@@ -568,7 +590,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_TRANSPOSE = 17,
+  NNADAPTER_TRANSPOSE = 18,
 } NNAdapterOperationCode;
 
 /**
@@ -785,6 +807,7 @@ int NNAdapterDevice_getVersion(const NNAdapterDevice* device, int32_t* version);
  */
 int NNAdapterContext_create(NNAdapterDevice** devices,
                             uint32_t num_devices,
+                            const char* properties,
                             NNAdapterContext** context);
 /**
  * Release the context.

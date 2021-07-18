@@ -40,8 +40,14 @@ int Program::ConvertElementwise(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to Neuron operands and operations
-  auto input0_index = ConvertOperand(input0_operand);
-  auto input1_index = ConvertOperand(input1_operand);
+  auto input0_index = GetMappedIndex(input0_operand);
+  if (input0_index == INVALID_INDEX) {
+    input0_index = ConvertOperand(input0_operand);
+  }
+  auto input1_index = GetMappedIndex(input1_operand);
+  if (input1_index == INVALID_INDEX) {
+    input1_index = ConvertOperand(input1_operand);
+  }
   auto fuse_code_index = AddInt32ConstantOperand(ConvertFuseCode(fuse_code));
   auto output_index = ConvertOperand(output_operand);
   NeuronOperationType op_type;
