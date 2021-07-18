@@ -169,6 +169,17 @@ class SoftPlusCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   virtual ~SoftPlusCompute() = default;
 };
+
+template <typename T>
+class MishCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~MishCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

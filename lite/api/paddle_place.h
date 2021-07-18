@@ -138,6 +138,7 @@ enum class ActivationType : int {
   kErf = 19,
   kSign = 20,
   kSoftPlus = 21,
+  kMish,
   NUM = 22,
 };
 

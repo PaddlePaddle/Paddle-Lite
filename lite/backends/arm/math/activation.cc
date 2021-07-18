@@ -1018,7 +1018,93 @@ void act_gelu<float>(
     }
   }
 }
+template <>
+void mish(const float* din, float* dout, int size, float threshold) {
+  int cnt = size >> 4;
+  int remain = size & 15;
+  float32x4_t vthreshold = vdupq_n_f32(threshold);
+  float32x4_t vone = vdupq_n_f32(1.f);
+  float32x4_t minus_vthreshold = vdupq_n_f32(-threshold);
+  for (int64_t i = 0; i < cnt; i++) {
+    float32x4_t vx0 = vld1q_f32(din);
+    float32x4_t vx4 = vld1q_f32(din + 4);
+    float32x4_t vx8 = vld1q_f32(din + 8);
+    float32x4_t vx12 = vld1q_f32(din + 12);
 
+    uint32x4_t gt_0 = vcgtq_f32(vx0, vthreshold);
+    uint32x4_t gt_4 = vcgtq_f32(vx4, vthreshold);
+    uint32x4_t gt_8 = vcgtq_f32(vx8, vthreshold);
+    uint32x4_t gt_12 = vcgtq_f32(vx12, vthreshold);
+
+    uint32x4_t lt_0 = vcltq_f32(vx0, minus_vthreshold);
+    uint32x4_t lt_4 = vcltq_f32(vx4, minus_vthreshold);
+    uint32x4_t lt_8 = vcltq_f32(vx8, minus_vthreshold);
+    uint32x4_t lt_12 = vcltq_f32(vx12, minus_vthreshold);
+
+    float32x4_t vleftx0 = exp_ps(vx0);  // e^x
+    float32x4_t vleftx4 = exp_ps(vx4);
+    float32x4_t vleftx8 = exp_ps(vx8);
+    float32x4_t vleftx12 = exp_ps(vx12);
+
+    float32x4_t vmiddlex0 = log_ps(vaddq_f32(vleftx0, vone));  // ln(1+e^x)
+    float32x4_t vmiddlex4 = log_ps(vaddq_f32(vleftx4, vone));
+    float32x4_t vmiddlex8 = log_ps(vaddq_f32(vleftx8, vone));
+    float32x4_t vmiddlex12 = log_ps(vaddq_f32(vleftx12, vone));
+
+    float32x4_t sp0 = vbslq_f32(gt_0, vx0, vmiddlex0);
+    float32x4_t sp4 = vbslq_f32(gt_4, vx4, vmiddlex4);
+    float32x4_t sp8 = vbslq_f32(gt_8, vx8, vmiddlex8);
+    float32x4_t sp12 = vbslq_f32(gt_12, vx12, vmiddlex12);
+
+    sp0 = vbslq_f32(lt_0, vleftx0, sp0);
+    sp4 = vbslq_f32(lt_4, vleftx4, sp4);
+    sp8 = vbslq_f32(lt_8, vleftx8, sp8);
+    sp12 = vbslq_f32(lt_12, vleftx12, sp12);
+
+    float32x4_t exp_sp0 = exp_ps(sp0);
+    float32x4_t exp_sp4 = exp_ps(sp4);
+    float32x4_t exp_sp8 = exp_ps(sp8);
+    float32x4_t exp_sp12 = exp_ps(sp12);
+
+    float32x4_t exp_minussp0 = exp_ps(vnegq_f32(sp0));
+    float32x4_t exp_minussp4 = exp_ps(vnegq_f32(sp4));
+    float32x4_t exp_minussp8 = exp_ps(vnegq_f32(sp8));
+    float32x4_t exp_minussp12 = exp_ps(vnegq_f32(sp12));
+
+    float32x4_t exp_sum0 = vaddq_f32(exp_sp0, exp_minussp0);
+    float32x4_t exp_sum4 = vaddq_f32(exp_sp4, exp_minussp4);
+    float32x4_t exp_sum8 = vaddq_f32(exp_sp8, exp_minussp8);
+    float32x4_t exp_sum12 = vaddq_f32(exp_sp12, exp_minussp12);
+
+    float32x4_t exp_diff0 = vsubq_f32(exp_sp0, exp_minussp0);
+    float32x4_t exp_diff4 = vsubq_f32(exp_sp4, exp_minussp4);
+    float32x4_t exp_diff8 = vsubq_f32(exp_sp8, exp_minussp8);
+    float32x4_t exp_diff12 = vsubq_f32(exp_sp12, exp_minussp12);
+
+    float32x4_t res0 = vmulq_f32(vx0, div_ps(exp_diff0, exp_sum0));
+    float32x4_t res4 = vmulq_f32(vx4, div_ps(exp_diff4, exp_sum4));
+    float32x4_t res8 = vmulq_f32(vx8, div_ps(exp_diff8, exp_sum8));
+    float32x4_t res12 = vmulq_f32(vx12, div_ps(exp_diff12, exp_sum12));
+
+    vst1q_f32(dout, res0);
+    vst1q_f32(dout + 4, res4);
+    vst1q_f32(dout + 8, res8);
+    vst1q_f32(dout + 12, res12);
+    dout += 16;
+    din += 16;
+  }
+  for (int i = 0; i < remain; i++) {
+    float x = din[i];
+    float sp = 0.0f;
+    if (threshold > 0 && x > threshold)
+      sp = x;
+    else if (threshold > 0 && x < -threshold)
+      sp = expf(x);
+    else
+      sp = log1pf(expf(x));
+    dout[i] = x * std::tanh(sp);
+  }
+}
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

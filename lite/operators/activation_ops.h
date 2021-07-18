@@ -100,6 +100,8 @@ class ActivationOp : public OpLite {
         break;
       case lite_api::ActivationType::kSign:
         ch->macs = param_.X->numel();
+      case lite_api::ActivationType::kMish:
+        ch->macs = param_.X->numel();
         break;
       default:
         LOG(FATAL) << "This Type of Activation:"
