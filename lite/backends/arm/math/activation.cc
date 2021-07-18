@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/activation.h"
 #include <algorithm>
 #include <string>
+
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
