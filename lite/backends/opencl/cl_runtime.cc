@@ -24,7 +24,7 @@ namespace paddle {
 namespace lite {
 
 CLRuntime* CLRuntime::Global() {
-  thread_local static CLRuntime cl_runtime_;
+  thread_local CLRuntime cl_runtime_;
   cl_runtime_.Init();
   return &cl_runtime_;
 }
