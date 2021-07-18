@@ -585,7 +585,7 @@ function huawei_ascend_npu_build_and_test() {
     local archs=(${ARCH_LIST//,/ })
     for arch in $archs; do 
         sdk_root_dir="/usr/local/Ascend/ascend-toolkit/latest"
-        if [ "${arch}" == "x86_64" ]; then
+        if [ "${arch}" == "x86" ]; then
             with_x86=ON
             with_arm=OFF
             with_light_weight_framework=OFF
