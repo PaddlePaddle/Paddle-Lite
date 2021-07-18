@@ -216,7 +216,10 @@ class CLRuntime {
 
  private:
   CLRuntime() { Init(); }
-
+  CLRuntime(const CLRuntime&) = delete;
+  CLRuntime(const CLRuntime&&) = delete;
+  CLRuntime& operator=(const CLRuntime&) = delete;
+  CLRuntime& operator=(const CLRuntime&&) = delete;
   ~CLRuntime();
 
   bool InitializePlatform();
