@@ -1041,7 +1041,7 @@ void mish(const float* din, float* dout, int size, float threshold) {
     uint32x4_t lt_8 = vcltq_f32(vx8, minus_vthreshold);
     uint32x4_t lt_12 = vcltq_f32(vx12, minus_vthreshold);
 
-    float32x4_t data0 = vminq_f32(vx0, vdupq_n_f32(70.00008f));//e^x
+    float32x4_t data0 = vminq_f32(vx0, vdupq_n_f32(70.00008f));  // e^x
     float32x4_t data4 = vminq_f32(vx4, vdupq_n_f32(70.00008f));
     float32x4_t data8 = vminq_f32(vx8, vdupq_n_f32(70.00008f));
     float32x4_t data12 = vminq_f32(vx12, vdupq_n_f32(70.00008f));
@@ -1050,7 +1050,7 @@ void mish(const float* din, float* dout, int size, float threshold) {
     data8 = vmaxq_f32(data8, vdupq_n_f32(-70.00008f));
     data12 = vmaxq_f32(data12, vdupq_n_f32(-70.00008f));
 
-    float32x4_t vleftx0 = exp_ps(data0);  
+    float32x4_t vleftx0 = exp_ps(data0);
     float32x4_t vleftx4 = exp_ps(data4);
     float32x4_t vleftx8 = exp_ps(data8);
     float32x4_t vleftx12 = exp_ps(data12);
