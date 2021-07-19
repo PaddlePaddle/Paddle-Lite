@@ -114,6 +114,8 @@ TEST(Clip, precision) {
   abs_err = 1e-2;  // Using fp16 in ASCEND_NPU
 #elif defined(LITE_WITH_ARM)
   place = Place(TARGET(kARM));
+#elif defined(LITE_WITH_X86)
+  place = Place(TARGET(kX86));
 #else
   return;
 #endif
