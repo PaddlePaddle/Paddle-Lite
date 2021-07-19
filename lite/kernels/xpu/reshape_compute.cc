@@ -29,6 +29,7 @@ void ReshapeCompute<T>::Run() {
   auto x = param.x;
   auto output = param.output;
   auto output_dims = output->dims();
+  if (output_dims.production() == 0) return;
 
   if (param.inplace) {
     output->ShareDataWith(*x);

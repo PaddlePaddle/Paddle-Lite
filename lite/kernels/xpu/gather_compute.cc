@@ -29,6 +29,7 @@ void GatherCompute::Run() {
   auto x = param.X;
   auto index = param.Index;
   auto out = param.Out;
+  if (out->numel() == 0) return;
   int axis = 0;
   if (param.Axis != nullptr) {
     CHECK(param.Axis->precision() == PRECISION(kInt32))
