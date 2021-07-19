@@ -63,6 +63,8 @@ lite_cc_library(subgraph_bridge_fill_constant_op_huawei_ascend_npu SRCS fill_con
 lite_cc_library(subgraph_bridge_split_op_huawei_ascend_npu SRCS split_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_assign_value_op_huawei_ascend_npu SRCS assign_value_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_norm_op_huawei_ascend_npu SRCS norm_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_pow_op_huawei_ascend_npu SRCS pow_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_log_op_huawei_ascend_npu SRCS log_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 set(huawei_ascend_npu_subgraph_bridges
         subgraph_bridge_registry
         subgraph_bridge_graph_huawei_ascend_npu
@@ -95,4 +97,6 @@ set(huawei_ascend_npu_subgraph_bridges
         subgraph_bridge_split_op_huawei_ascend_npu
         subgraph_bridge_assign_value_op_huawei_ascend_npu
         subgraph_bridge_norm_op_huawei_ascend_npu
+        subgraph_bridge_pow_op_huawei_ascend_npu
+        subgraph_bridge_log_op_huawei_ascend_npu
         CACHE INTERNAL "huawei_ascend_npu_subgraph_bridges")
