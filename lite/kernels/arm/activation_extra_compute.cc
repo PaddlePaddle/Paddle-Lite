@@ -221,6 +221,16 @@ void SoftPlusCompute<T>::Run() {
 }
 template class SoftPlusCompute<float>;
 
+template <typename T>
+void MishCompute<T>::Run() {
+  auto& param = this->Param<param_t>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->template data<T>();
+  auto output_data = param.Out->template mutable_data<T>();
+  float threshold = param.threshold;
+  lite::arm::math::mish<T>(x_data, output_data, x_dims.production(), threshold);
+}
+template class MishCompute<float>;
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -339,4 +349,10 @@ using float_softplus = paddle::lite::kernels::arm::SoftPlusCompute<float>;
 REGISTER_LITE_KERNEL(softplus, kARM, kAny, kNCHW, float_softplus, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .Finalize();
+
+using float_mish = paddle::lite::kernels::arm::MishCompute<float>;
+REGISTER_LITE_KERNEL(mish, kARM, kFloat, kNCHW, float_mish, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
