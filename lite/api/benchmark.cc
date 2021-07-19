@@ -229,7 +229,19 @@ void Run(const std::string& model_path,
          const std::vector<std::vector<int64_t>>& input_shapes) {
   int threads = FLAGS_threads;
   int power_mode = FLAGS_power_mode;
-  std::string input_data_path = FLAGS_input_data_path;
+  std::vector<std::string> input_data_path =
+      paddle::lite_api::split_string(FLAGS_input_data_path);
+  if (!input_data_path.empty() &&
+      input_data_path.size() != input_shapes.size()) {
+    LOG(FATAL) << "Error: the input_data_path's size is not consistent with "
+                  "input_shape's size , input_data_path contains "
+               << input_data_path.size()
+               << "input  data paths, while input_shape contains "
+               << input_shapes.size()
+               << " input shape. (members in input_data_path and input_shape "
+                  "sholud be split by :)";
+  }
+
   int warmup = FLAGS_warmup;
   int repeats = FLAGS_repeats;
   std::string result_path = FLAGS_result_path;
@@ -255,11 +267,11 @@ void Run(const std::string& model_path,
         input_data[j] = 1.f;
       }
     } else {
-      std::fstream fs(input_data_path);
-      if (!fs.is_open()) {
-        LOG(FATAL) << "open input image " << input_data_path << " error.";
-      }
       for (int j = 0; j < input_num; j++) {
+        std::fstream fs(input_data_path[j]);
+        if (!fs.is_open()) {
+          LOG(FATAL) << "open input image " << input_data_path[j] << " error.";
+        }
         fs >> input_data[j];
       }
     }
@@ -311,7 +323,7 @@ void Run(const std::string& model_path,
   LOG(INFO) << "model_name: " << model_name;
   LOG(INFO) << "threads: " << threads;
   LOG(INFO) << "power_mode: " << power_mode;
-  LOG(INFO) << "input_data_path: " << input_data_path;
+  LOG(INFO) << "input_data_path: " << FLAGS_input_data_path;
   LOG(INFO) << "input_shape: " << Vector2Str(input_shapes);
   LOG(INFO) << "warmup: " << warmup;
   LOG(INFO) << "repeats: " << repeats;
