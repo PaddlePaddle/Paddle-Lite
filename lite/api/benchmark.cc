@@ -234,12 +234,12 @@ void Run(const std::string& model_path,
   if (!input_data_path.empty() &&
       input_data_path.size() != input_shapes.size()) {
     LOG(FATAL) << "Error: the input_data_path's size is not consistent with "
-                  "input_shape's size , input_data_path contains "
+                  "input_shape's size , the input_data_path contains "
                << input_data_path.size()
-               << "input  data paths, while input_shape contains "
+               << " input data path, while input_shape contains "
                << input_shapes.size()
                << " input shape. (members in input_data_path and input_shape "
-                  "sholud be split by :)";
+                  "sholud be separated by :)";
   }
 
   int warmup = FLAGS_warmup;
