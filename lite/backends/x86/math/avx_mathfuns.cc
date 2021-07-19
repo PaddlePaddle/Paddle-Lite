@@ -41,14 +41,13 @@
 
   (this is the zlib license)
 */
-#include "lite/backends/x86/math/detail/avx_mathfuns.h"
+#include "lite/backends/x86/math/avx_mathfuns.h"
 
 #ifdef __AVX__
 namespace paddle {
 namespace lite {
 namespace x86 {
 namespace math {
-namespace detail {
 
 #define _PI32AVX_CONST(Name, Val)                                 \
   static const ALIGN32_BEG int _pi32avx_##Name[4] ALIGN32_END = { \
@@ -750,7 +749,6 @@ void sincos256_ps(v8sf x, v8sf *s, v8sf *c) {
   *c = _mm256_xor_ps(xmm2, sign_bit_cos);
 }
 #endif
-}  // namespace detail
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

@@ -15,7 +15,7 @@
 #include "lite/backends/x86/math/power.h"
 #include <immintrin.h>
 #include <cmath>
-#include "lite/backends/x86/math/detail/avx_mathfuns.h"
+#include "lite/backends/x86/math/avx_mathfuns.h"
 
 namespace paddle {
 namespace lite {
@@ -65,8 +65,8 @@ void power<float>(const float* din,
       __m256 vsum1 = _mm256_mul_ps(vin1, vscale_256);
       __m256 vres0 = _mm256_add_ps(vsum0, vshift_256);
       __m256 vres1 = _mm256_add_ps(vsum1, vshift_256);
-      vres0 = detail::pow256_ps(vres0, vfactor_256);
-      vres1 = detail::pow256_ps(vres1, vfactor_256);
+      vres0 = pow256_ps(vres0, vfactor_256);
+      vres1 = pow256_ps(vres1, vfactor_256);
       _mm256_storeu_ps(ptr_out, vres0);
       _mm256_storeu_ps(ptr_out + 8, vres1);
 #else
