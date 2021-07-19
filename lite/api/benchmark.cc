@@ -84,12 +84,17 @@ inline double GetCurrentUS() {
 }
 
 template <class T>
-std::string Vector2Str(const std::vector<T>& input) {
+std::string Vector2Str(const std::vector<std::vector<T>>& inputs) {
   std::stringstream ss;
-  for (int i = 0; i < input.size() - 1; i++) {
-    ss << input[i] << ",";
+  for (int j = 0; j < inputs.size(); j++) {
+    auto input = inputs[j];
+    for (int i = 0; i < input.size() - 1; i++) {
+      ss << input[i] << ",";
+    }
+    ss << input.back();
+    ss << ";";
   }
-  ss << input.back();
+
   return ss.str();
 }
 
@@ -100,6 +105,22 @@ T ShapeProduction(const std::vector<T>& shape) {
     num *= i;
   }
   return num;
+}
+
+std::vector<int64_t> get_shape(const std::string& str_shape) {
+  std::vector<int64_t> shape;
+  std::string tmp_str = str_shape;
+  while (!tmp_str.empty()) {
+    int dim = atoi(tmp_str.data());
+    shape.push_back(dim);
+    size_t next_offset = tmp_str.find(",");
+    if (next_offset == std::string::npos) {
+      break;
+    } else {
+      tmp_str = tmp_str.substr(next_offset + 1);
+    }
+  }
+  return shape;
 }
 
 std::vector<int64_t> GetInputShape(const std::string& str_shape) {
@@ -116,6 +137,21 @@ std::vector<int64_t> GetInputShape(const std::string& str_shape) {
     }
   }
   return shape;
+}
+
+std::vector<std::string> split_string(const std::string& str_in) {
+  std::vector<std::string> str_out;
+  std::string tmp_str = str_in;
+  while (!tmp_str.empty()) {
+    size_t next_offset = tmp_str.find(":");
+    str_out.push_back(tmp_str.substr(0, next_offset));
+    if (next_offset == std::string::npos) {
+      break;
+    } else {
+      tmp_str = tmp_str.substr(next_offset + 1);
+    }
+  }
+  return str_out;
 }
 
 void PrintUsage() {
@@ -190,10 +226,22 @@ void OutputOptModel(const std::string& save_optimized_model_dir) {
 
 void Run(const std::string& model_path,
          const std::string& model_name,
-         const std::vector<int64_t>& input_shape) {
+         const std::vector<std::vector<int64_t>>& input_shapes) {
   int threads = FLAGS_threads;
   int power_mode = FLAGS_power_mode;
-  std::string input_data_path = FLAGS_input_data_path;
+  std::vector<std::string> input_data_path =
+      paddle::lite_api::split_string(FLAGS_input_data_path);
+  if (!input_data_path.empty() &&
+      input_data_path.size() != input_shapes.size()) {
+    LOG(FATAL) << "Error: the input_data_path's size is not consistent with "
+                  "input_shape's size , the input_data_path contains "
+               << input_data_path.size()
+               << " input data path, while input_shape contains "
+               << input_shapes.size()
+               << " input shape. (members in input_data_path and input_shape "
+                  "sholud be separated by :)";
+  }
+
   int warmup = FLAGS_warmup;
   int repeats = FLAGS_repeats;
   std::string result_path = FLAGS_result_path;
@@ -208,21 +256,24 @@ void Run(const std::string& model_path,
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   // set input
-  auto input_tensor = predictor->GetInput(0);
-  input_tensor->Resize(input_shape);
-  auto input_data = input_tensor->mutable_data<float>();
-  int64_t input_num = ShapeProduction(input_shape);
-  if (input_data_path.empty()) {
-    for (int i = 0; i < input_num; ++i) {
-      input_data[i] = 1.f;
-    }
-  } else {
-    std::fstream fs(input_data_path);
-    if (!fs.is_open()) {
-      LOG(FATAL) << "open input image " << input_data_path << " error.";
-    }
-    for (int i = 0; i < input_num; i++) {
-      fs >> input_data[i];
+  for (int i = 0; i < input_shapes.size(); i++) {
+    auto input_shape = input_shapes[i];
+    auto input_tensor = predictor->GetInput(i);
+    input_tensor->Resize(input_shape);
+    auto input_data = input_tensor->mutable_data<float>();
+    int64_t input_num = ShapeProduction(input_shape);
+    if (input_data_path.empty()) {
+      for (int j = 0; j < input_num; ++j) {
+        input_data[j] = 1.f;
+      }
+    } else {
+      for (int j = 0; j < input_num; j++) {
+        std::fstream fs(input_data_path[j]);
+        if (!fs.is_open()) {
+          LOG(FATAL) << "open input image " << input_data_path[j] << " error.";
+        }
+        fs >> input_data[j];
+      }
     }
   }
 
@@ -272,8 +323,8 @@ void Run(const std::string& model_path,
   LOG(INFO) << "model_name: " << model_name;
   LOG(INFO) << "threads: " << threads;
   LOG(INFO) << "power_mode: " << power_mode;
-  LOG(INFO) << "input_data_path: " << input_data_path;
-  LOG(INFO) << "input_shape: " << Vector2Str(input_shape);
+  LOG(INFO) << "input_data_path: " << FLAGS_input_data_path;
+  LOG(INFO) << "input_shape: " << Vector2Str(input_shapes);
   LOG(INFO) << "warmup: " << warmup;
   LOG(INFO) << "repeats: " << repeats;
   LOG(INFO) << "result_path: " << result_path;
@@ -296,8 +347,14 @@ int main(int argc, char** argv) {
   }
 
   // Get input shape
-  std::vector<int64_t> input_shape =
-      paddle::lite_api::GetInputShape(FLAGS_input_shape);
+  std::string raw_input_shapes = FLAGS_input_shape;
+  std::cout << "raw_input_shapes: " << raw_input_shapes << std::endl;
+  std::vector<std::string> str_input_shapes =
+      paddle::lite_api::split_string(raw_input_shapes);
+  std::vector<std::vector<int64_t>> input_shapes;
+  for (size_t i = 0; i < str_input_shapes.size(); ++i) {
+    input_shapes.push_back(paddle::lite_api::get_shape(str_input_shapes[i]));
+  }
 
   // Get model_name and run_model_path
   std::string model_name;
@@ -320,7 +377,7 @@ int main(int argc, char** argv) {
   }
 
   // Run test
-  paddle::lite_api::Run(run_model_path, model_name, input_shape);
+  paddle::lite_api::Run(run_model_path, model_name, input_shapes);
 
   return 0;
 }
