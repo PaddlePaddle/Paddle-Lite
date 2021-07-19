@@ -74,13 +74,14 @@ void test_pow(Place place) {
 }
 
 TEST(Pow, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_X86)
+  Place place(TARGET(kX86));
+#elif defined(LITE_WITH_ARM)
   Place place(TARGET(kARM));
-  test_pow(place);
+#else
+  return;
 #endif
+  test_pow(place);
 }
 
 }  // namespace lite

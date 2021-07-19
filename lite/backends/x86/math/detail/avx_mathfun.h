@@ -318,6 +318,23 @@ v8sf exp256_ps(v8sf x) {
   return y;
 }
 
+inline v8sf pow256_ps(v8sf a, v8sf b) {
+  // pow(x, m) = exp(m * log(x))
+  v8sf vone = _mm256_set1_ps(1.f);
+  // x < 0
+  for (int i = 0; i < 8; i++) {
+    if (a[i] < 0) {
+      a[i] = -a[i];
+      if (static_cast<int>(b[i]) % 2) {
+        vone[i] = -1.f;
+      }
+    }
+  }
+  v8sf vsum = exp256_ps(_mm256_mul_ps(b, log256_ps(a)));
+  vsum = _mm256_mul_ps(vsum, vone);
+  return vsum;
+}
+
 _PS256_CONST(minus_cephes_DP1, -0.78515625);
 _PS256_CONST(minus_cephes_DP2, -2.4187564849853515625e-4);
 _PS256_CONST(minus_cephes_DP3, -3.77489497744594108e-8);

@@ -24,6 +24,8 @@ namespace math {
 namespace detail {
 
 __m256 Exp(__m256 a) { return exp256_ps(a); }
+__m256 Log(__m256 a) { return log256_ps(a); }
+__m256 Pow(__m256 a, __m256 b) { return pow256_ps(a, b); }
 
 namespace forward {
 namespace avx {
