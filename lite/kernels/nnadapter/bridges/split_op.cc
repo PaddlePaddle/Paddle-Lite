@@ -51,7 +51,7 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     num = out_names.size();
   }
-  auto sections = op_info->GetAttr<std::vector<int>>("sections");
+  std::vector<int> sections = op_info->GetAttr<std::vector<int>>("sections");
   if (sections.size() > 0) {
     CHECK_EQ(sections.size(), num) << "The size of sections should be equal to "
                                       "the number of output tensors.";

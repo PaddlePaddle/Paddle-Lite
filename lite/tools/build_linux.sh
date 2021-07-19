@@ -42,7 +42,7 @@ NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from ht
 NNADAPTER_WITH_IMAGINATION_NNA=OFF
 NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 NNADAPTER_WITH_HUAWEI_ASCEND_NPU=OFF
-NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 WITH_BAIDU_XPU_XTCL=OFF
@@ -271,7 +271,6 @@ function make_publish_so {
         ${CMAKE_COMMON_OPTIONS} \
         ${cmake_mutable_options}
 
-    exit 0
     if [ "${WITH_OPENCL}" = "ON" ]; then
         make opencl_clhpp -j$NUM_PROC 
     fi

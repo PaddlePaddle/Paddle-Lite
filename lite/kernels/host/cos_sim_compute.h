@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/operators/reduce_ops.h"
 
-REGISTER_LITE_OP(reduce_sum, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_prod, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_max, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_all, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_any, paddle::lite::operators::ReduceOp);
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+template <typename T>
+class CosSimCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::CosSimParam;
+
+  void Run() override;
+
+  virtual ~CosSimCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
