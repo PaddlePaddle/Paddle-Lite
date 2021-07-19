@@ -15,11 +15,8 @@
 #include "lite/backends/arm/math/sgemv.h"
 #include <arm_neon.h>
 #include <algorithm>
-<<<<<<< 4ebe434732a20097698ee2d56412a51c1649938d
 #include <memory>
-=======
 #include "lite/core/parallel_defines.h"
->>>>>>> [thread_pool] add thread pool code,test=develop
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -164,8 +161,7 @@ void sgemv_trans(const int M,
   } else {
     memset(y_buf, 0, valid_ths * M * sizeof(float));
   }
-  // #pragma omp parallel for
-  //   for (int t = 0; t < valid_ths; ++t) {
+
   LITE_PARALLEL_BEGIN(t, tid, valid_ths) {
     float *block_y = y_buf + t * M;
     const float *block_x = x_buf + t * valid_block;
@@ -346,8 +342,6 @@ void sgemv_trans(const int M,
   //! do reduction
   int rdc_ths = valid_ths >> 1;
   while (rdc_ths > 0) {
-    // #pragma omp parallel for
-    //     for (int t = 0; t < rdc_ths; ++t) {
     LITE_PARALLEL_BEGIN(t, tid, rdc_ths) {
       float *y0 = y_buf + t * M;
       for (int i = t + rdc_ths; i < valid_ths; i += rdc_ths) {
@@ -548,8 +542,6 @@ void sgemv_trans(const int M,
   } else {
     memset(y_buf, 0, valid_ths * M * sizeof(float));
   }
-  // #pragma omp parallel for
-  //   for (int t = 0; t < valid_ths; ++t) {
   LITE_PARALLEL_BEGIN(t, tid, valid_ths) {
     float *block_y = y_buf + t * M;
     const float *block_x = x + t * valid_block;
@@ -680,8 +672,6 @@ void sgemv_trans(const int M,
   //! do reduction
   int rdc_ths = valid_ths >> 1;
   while (rdc_ths > 0) {
-    // #pragma omp parallel for
-    //     for (int t = 0; t < rdc_ths; ++t) {
     LITE_PARALLEL_BEGIN(t, tid, rdc_ths) {
       float *y0 = y_buf + t * M;
       for (int i = t + rdc_ths; i < valid_ths; i += rdc_ths) {
@@ -1696,8 +1686,6 @@ void sgemv(const int M,
 
   if (has_a53) {
     if (has_beta) {
-      // #pragma omp parallel for
-      //       for (int j = 0; j < out_cnt; j++) {
       LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(
@@ -1705,8 +1693,6 @@ void sgemv(const int M,
       }
       LITE_PARALLEL_END();
       //! deal with remains
-      // #pragma omp parallel for
-      //       for (int j = out_cnt * 8; j < M; ++j) {
       LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
         REMAIN
         asm volatile(
@@ -1714,16 +1700,12 @@ void sgemv(const int M,
       }
       LITE_PARALLEL_COMMON_END();
     } else {
-      // #pragma omp parallel for
-      //       for (int j = 0; j < out_cnt; j++) {
       LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8 MAIN_ASM);
       }
       LITE_PARALLEL_END();
       //! deal with remains
-      // #pragma omp parallel for
-      //       for (int j = out_cnt * 8; j < M; ++j) {
       LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
         REMAIN
         asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1 REMAIN_ASM);
@@ -1732,16 +1714,12 @@ void sgemv(const int M,
     }
   } else {
     if (has_beta) {
-      // #pragma omp parallel for
-      //       for (int j = 0; j < out_cnt; j++) {
       LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_BETA MAIN_ASM);
       }
       LITE_PARALLEL_END();
       //! deal with remains
-      // #pragma omp parallel for
-      //       for (int j = out_cnt * 8; j < M; ++j) {
       LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
         REMAIN
         asm volatile(
@@ -1749,16 +1727,12 @@ void sgemv(const int M,
       }
       LITE_PARALLEL_COMMON_END();
     } else {
-      // #pragma omp parallel for
-      //       for (int j = 0; j < out_cnt; j++) {
       LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8 MAIN_ASM);
       }
       LITE_PARALLEL_END();
       //! deal with remains
-      // #pragma omp parallel for
-      //       for (int j = out_cnt * 8; j < M; ++j) {
       LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
         REMAIN
         asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1 REMAIN_ASM);
@@ -1768,8 +1742,6 @@ void sgemv(const int M,
   }
 #else   // __aarch64__
   int out_cnt = M >> 2;
-  // #pragma omp parallel for
-  //   for (int j = 0; j < out_cnt; j++) {
   LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 4;
     float *ptr_out = data_out + out_idx;
@@ -1833,8 +1805,6 @@ void sgemv(const int M,
   }
   LITE_PARALLEL_END();
   //! deal with remains
-  // #pragma omp parallel for
-  //   for (int j = out_cnt * 4; j < M; ++j) {
   LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 4), 1) {
     float *ptr_out = data_out + j;
     const float *ptr_in = data_in;
@@ -1888,8 +1858,6 @@ void sgemv_relu(const int M,
   int out_cnt = M >> 3;
   if (has_a53) {
     if (has_beta) {
-      // #pragma omp parallel for
-      //       for (int j = 0; j < out_cnt; j++) {
       LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(
@@ -1897,8 +1865,6 @@ void sgemv_relu(const int M,
       }
       LITE_PARALLEL_END();
       //! deal with remains
-      // #pragma omp parallel for
-      //       for (int j = out_cnt * 8; j < M; ++j) {
       LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
         REMAIN
         asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU_BETA
@@ -1906,8 +1872,6 @@ void sgemv_relu(const int M,
       }
       LITE_PARALLEL_COMMON_END();
     } else {
-      // #pragma omp parallel for
-      //       for (int j = 0; j < out_cnt; j++) {
       LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(
@@ -1915,8 +1879,6 @@ void sgemv_relu(const int M,
       }
       LITE_PARALLEL_END();
       //! deal with remains
-      // #pragma omp parallel for
-      //       for (int j = out_cnt * 8; j < M; ++j) {
       LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
         REMAIN
         asm volatile(
@@ -1926,8 +1888,6 @@ void sgemv_relu(const int M,
     }
   } else {
     if (has_beta) {
-      // #pragma omp parallel for
-      //       for (int j = 0; j < out_cnt; j++) {
       LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(
@@ -1935,8 +1895,6 @@ void sgemv_relu(const int M,
       }
       LITE_PARALLEL_END();
       //! deal with remains
-      // #pragma omp parallel for
-      //       for (int j = out_cnt * 8; j < M; ++j) {
       LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
         REMAIN
         asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU_BETA
@@ -1944,8 +1902,6 @@ void sgemv_relu(const int M,
       }
       LITE_PARALLEL_COMMON_END();
     } else {
-      // #pragma omp parallel for
-      //       for (int j = 0; j < out_cnt; j++) {
       LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
         MAIN_LOOP
         asm volatile(
@@ -1953,8 +1909,6 @@ void sgemv_relu(const int M,
       }
       LITE_PARALLEL_END();
       //! deal with remains
-      // #pragma omp parallel for
-      //       for (int j = out_cnt * 8; j < M; ++j) {
       LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
         REMAIN
         asm volatile(
@@ -1965,8 +1919,6 @@ void sgemv_relu(const int M,
   }
 #else   // __aarch64__
   int out_cnt = M >> 2;
-  // #pragma omp parallel for
-  //   for (int j = 0; j < out_cnt; j++) {
   LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 4;
     float *ptr_out = data_out + out_idx;
@@ -2030,8 +1982,6 @@ void sgemv_relu(const int M,
   }
   LITE_PARALLEL_END();
   //! deal with remains
-  // #pragma omp parallel for
-  //   for (int j = out_cnt * 4; j < M; ++j) {
   LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 4), 1) {
     float *ptr_out = data_out + j;
     const float *ptr_in = data_in;
@@ -2085,8 +2035,6 @@ void sgemv_relu6(const int M,
 
 #ifdef __aarch64__
   int out_cnt = M >> 3;
-  // #pragma omp parallel for
-  //   for (int j = 0; j < out_cnt; j++) {
   LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     MAIN_LOOP
     // clang-format off
@@ -2133,8 +2081,6 @@ void sgemv_relu6(const int M,
   }
   LITE_PARALLEL_END();
   //! deal with remains
-  // #pragma omp parallel for
-  //   for (int j = out_cnt * 8; j < M; ++j) {
   LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
     REMAIN
     if (has_beta) {
@@ -2163,8 +2109,6 @@ void sgemv_relu6(const int M,
   LITE_PARALLEL_COMMON_END();
 #else   // __aarch64__
   int out_cnt = M >> 2;
-  // #pragma omp parallel for
-  //   for (int j = 0; j < out_cnt; j++) {
   LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 4;
     float *ptr_out = data_out + out_idx;
@@ -2230,8 +2174,6 @@ void sgemv_relu6(const int M,
   }
   LITE_PARALLEL_END();
   //! deal with remains
-  // #pragma omp parallel for
-  //   for (int j = out_cnt * 4; j < M; ++j) {
   LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 4), 1) {
     float *ptr_out = data_out + j;
     const float *ptr_in = data_in;
@@ -2286,8 +2228,6 @@ void sgemv_leakey_relu(const int M,
   float32x4_t vbeta = vdupq_n_f32(beta);
 #ifdef __aarch64__
   int out_cnt = M >> 3;
-  // #pragma omp parallel for
-  //   for (int j = 0; j < out_cnt; j++) {
   LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     MAIN_LOOP
     // clang-format off
@@ -2334,8 +2274,6 @@ void sgemv_leakey_relu(const int M,
   }
   LITE_PARALLEL_END();
   //! deal with remains
-  // #pragma omp parallel for
-  //   for (int j = out_cnt * 8; j < M; ++j) {
   LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 8), 1) {
     REMAIN
     if (has_beta) {
@@ -2364,8 +2302,6 @@ void sgemv_leakey_relu(const int M,
   LITE_PARALLEL_COMMON_END();
 #else   // __aarch64__
   int out_cnt = M >> 2;
-  // #pragma omp parallel for
-  //   for (int j = 0; j < out_cnt; j++) {
   LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 4;
     float *ptr_out = data_out + out_idx;
@@ -2431,8 +2367,6 @@ void sgemv_leakey_relu(const int M,
   }
   LITE_PARALLEL_END();
   //! deal with remains
-  // #pragma omp parallel for
-  //   for (int j = out_cnt * 4; j < M; ++j) {
   LITE_PARALLEL_COMMON_BEGIN(j, tid, M, (out_cnt * 4), 1) {
     float *ptr_out = data_out + j;
     const float *ptr_in = data_in;

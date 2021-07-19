@@ -27,8 +27,6 @@ void dropout_down<float>(const float* din, float* dout, int num, float prob) {
   int cnt = num >> 4;
   int remain = num % 16;
   float32x4_t vscale = vdupq_n_f32(scale);
-  // #pragma omp parallel for
-  //   for (int i = 0; i < cnt; i++) {
   LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* din_ptr = din + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -64,8 +62,6 @@ template <>
 void dropout_up<float>(const float* din, float* dout, int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-  // #pragma omp parallel for
-  //   for (int i = 0; i < cnt; i++) {
   LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* din_ptr = din + (i << 4);
     float* dout_ptr = dout + (i << 4);

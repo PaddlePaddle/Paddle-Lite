@@ -69,7 +69,7 @@ void transpose_mat(const float* din,
   for (int i = 0; i < num; ++i) {
     float* ptr_out = dout + i * size_in;
     const float* ptr_in = din + i * size_in;
-LITE_PARALLEL_BEGIN(h, tid, nh) {
+    LITE_PARALLEL_BEGIN(h, tid, nh) {
       const float* ptr_din_row = ptr_in + h * size_w;
       int tmp_h = h * 4;
       for (int w = 0; w < nw; w++) {
@@ -557,10 +557,7 @@ void TransposeCompute_(const std::vector<int>& axis,
     reamin_dim *= out_dim[i];
   }
 
-  // #pragma omp parallel for collapse(2)
   for (int batch = 0; batch < out_dim[0]; ++batch) {
-    // #pragma omp parallel for collapse(2)
-    // for (int j = 0; j < out_dim[1]; ++j) {
     LITE_PARALLEL_BEGIN(j, tid, out_dim[1]) {
       size_t offset = batch * strides[permute - 1] + j * strides[permute - 2];
       Dtype* out_ptr = output_ptr + (batch * out_dim[1] + j) * reamin_dim;

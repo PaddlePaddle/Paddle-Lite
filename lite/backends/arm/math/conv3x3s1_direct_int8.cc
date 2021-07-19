@@ -142,8 +142,6 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                         hin,
                         ptr_zero);
 
-      // #pragma omp parallel for num_threads(threads)
-      //       for (int c = 0; c < chout; c += hout_c_block) {
       LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
 #ifdef LITE_USE_THREAD_POOL
         int32_t* pre_out =

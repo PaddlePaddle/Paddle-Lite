@@ -29,8 +29,6 @@ void softmax_basic<float>(const float* din,
                           const int inner_num,
                           const int outer_num) {
   int compute_size = inner_num * outer_num;
-  // #pragma omp parallel for
-  //   for (int i = 0; i < compute_size; ++i) {
   LITE_PARALLEL_BEGIN(i, tid, compute_size) {
     int idx_inner = i % inner_num;
     int idx_outer = (i / inner_num) * axis_size;
@@ -75,8 +73,6 @@ void softmax_inner8_axis4<float>(const float* din,
   int remain = compute_size % 8;
   float32x4_t vone = vdupq_n_f32(1.0f);
 
-  // #pragma omp parallel for
-  //   for (int c = 0; c < cmp_cnt; ++c) {
   LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
     int i = c * 8;
     int idx_inner = i % inner_num;
@@ -246,8 +242,6 @@ void softmax_inner4_axis4<float>(const float* din,
   int remain = compute_size % 4;
   float32x4_t vone = vdupq_n_f32(1.0f);
 
-  // #pragma omp parallel for
-  //   for (int c = 0; c < cmp_cnt; ++c) {
   LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
     int i = c * 4;
     int idx_inner = i % inner_num;
@@ -338,8 +332,6 @@ void softmax_inner8<float>(const float* din,
                            const int outer_num) {
   int compute_size = inner_num * outer_num;
   int cmp_cnt = compute_size >> 3;
-  // #pragma omp parallel for
-  //   for (int c = 0; c < cmp_cnt; ++c) {
   LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
     int i = c * 8;
     int idx_inner = i % inner_num;
@@ -439,8 +431,6 @@ void softmax_inner4<float>(const float* din,
                            const int outer_num) {
   int compute_size = inner_num * outer_num;
   int cmp_cnt = compute_size >> 2;
-  // #pragma omp parallel for
-  //   for (int c = 0; c < cmp_cnt; ++c) {
   LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
     int i = c * 4;
     int idx_inner = i % inner_num;
@@ -524,8 +514,6 @@ void softmax_inner1_large_axis<float>(const float* din,
                                       float* dout,
                                       const int outer_size,
                                       const int axis_size) {
-  // #pragma omp parallel for
-  //   for (int i = 0; i < outer_size; ++i) {
   LITE_PARALLEL_BEGIN(i, tid, outer_size) {
     const float* din_ptr = din + i * axis_size;
     float* dout_ptr = dout + i * axis_size;
@@ -599,8 +587,6 @@ void softmax_inner1_small_axis<float>(const float* din,
                                       float* dout,
                                       const int outer_size,
                                       const int axis_size) {
-  // #pragma omp parallel for
-  //   for (int i = 0; i < outer_size; ++i) {
   LITE_PARALLEL_BEGIN(i, tid, outer_size) {
     const float* din_ptr = din + i * axis_size;
     float* dout_ptr = dout + i * axis_size;

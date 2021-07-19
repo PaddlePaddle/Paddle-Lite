@@ -40,8 +40,6 @@ void axpy_kernel_fp32(const float* scale,
     const float* scale_ptr = scale + n * channel;
     const float* bias_ptr = bias + n * in_channel;
     float* dout_ptr = dout + n * in_channel;
-    // #pragma omp parallel for
-    // for (int c = 0; c < channel; c++) {
     LITE_PARALLEL_BEGIN(c, tid, channel) {
       const float* din_ch_ptr = din_ptr + c * size;
       const float* bias_ch_ptr = bias_ptr + c * size;
@@ -125,8 +123,6 @@ void axpy_kernel_int8(const int8_t* scale,
     const int8_t* scale_ptr = scale + n * channel;
     const int8_t* bias_ptr = bias + n * in_channel;
     int8_t* dout_ptr = dout + n * in_channel;
-    // #pragma omp parallel for
-    //     for (int c = 0; c < channel; c++) {
     LITE_PARALLEL_BEGIN(c, tid, channel) {
       const int8_t* din_ch_ptr = din_ptr + c * size;
       const int8_t* bias_ch_ptr = bias_ptr + c * size;

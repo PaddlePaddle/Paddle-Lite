@@ -16,7 +16,6 @@
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/core/context.h"
-#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
@@ -807,12 +806,9 @@ void conv_depthwise_5x5s2_fp32(const float* i_data,
   for (int n = 0; n < bs; ++n) {
     const float* din_batch = i_data + n * ic * size_in_channel;
     float* dout_batch = o_data + n * oc * size_out_channel;
-    // #pragma omp parallel for num_threads(threads)
-    //     for (int c = 0; c < oc; c += out_c_block) {
-    LITE_PARALLEL_COMMON_BEGIN(c, tid, oc, 0, out_c_block) {
-#ifdef LITE_USE_THREAD_POOL
-      float* pre_din = ptr_write + ow_round + tid * prein_size;
-#elif defined(ARM_WITH_OMP)
+#pragma omp parallel for num_threads(threads)
+    for (int c = 0; c < oc; c += out_c_block) {
+#ifdef ARM_WITH_OMP
       float* pre_din = ptr_write + ow_round + omp_get_thread_num() * prein_size;
 #else
       float* pre_din = ptr_write + ow_round;
@@ -941,7 +937,6 @@ void conv_depthwise_5x5s2_fp32(const float* i_data,
         }
       }
     }
-    LITE_PARALLEL_COMMON_END();
   }
 }
 

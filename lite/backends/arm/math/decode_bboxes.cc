@@ -109,8 +109,7 @@ void decode_bbox_corner_variance_kernel<float>(const int batch_num,
   for (int n = 0; n < batch_num; ++n) {
     const float* ptr_loc_batch = loc_data + n * len_batch;
     float* ptr_bbox_batch = bbox_data + n * len_batch;
-    // #pragma omp parallel for
-    //     for (int i = 0; i < cnt; ++i) {
+
     LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 16;
       const float* ptr_loc = ptr_loc_batch + idx;
@@ -133,8 +132,7 @@ void decode_bbox_corner_variance_kernel<float>(const int batch_num,
       vst1q_f32(ptr_bbox + 12, vaddq_f32(vloc4, vprior4));
     }
     LITE_PARALLEL_END();
-    // #pragma omp parallel for
-    //     for (int i = cnt * 4; i < num_priors; i++) {
+
     LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 4, 1) {
       int idx = i * 4;
       float32x4_t vloc = vld1q_f32(ptr_loc_batch + idx);
@@ -168,8 +166,6 @@ void decode_bbox_corner_no_variance_kernel<float>(const int batch_num,
     const float* ptr_loc_batch = loc_data + n * len_batch;
     float* ptr_bbox_batch = bbox_data + n * len_batch;
 
-    // #pragma omp parallel for
-    //     for (int i = 0; i < cnt; ++i) {
     LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 16;
       const float* ptr_loc = ptr_loc_batch + idx;
@@ -243,8 +239,6 @@ void decode_bbox_center_variance_kernel<float>(const int batch_num,
     const float* ptr_loc_batch = loc_data + n * len_batch;
     float* ptr_bbox_batch = bbox_data + n * len_batch;
 
-    // #pragma omp parallel for
-    //     for (int i = 0; i < cnt; ++i) {
     LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 16;
       const float* ptr_loc = ptr_loc_batch + idx;
@@ -279,8 +273,7 @@ void decode_bbox_center_variance_kernel<float>(const int batch_num,
       vst4q_f32(ptr_bbox, vloc);
     }
     LITE_PARALLEL_END();
-    // #pragma omp parallel for
-    //     for (int i = cnt * 4; i < num_priors; i++) {
+
     LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 4, 1) {
       int idx = i * 4;
       float p_xmin = prior_data[idx];
@@ -341,8 +334,6 @@ void decode_bbox_center_no_variance_kernel<float>(const int batch_num,
     const float* ptr_loc_batch = loc_data + n * len_batch;
     float* ptr_bbox_batch = bbox_data + n * len_batch;
 
-    // #pragma omp parallel for
-    //     for (int i = 0; i < cnt; ++i) {
     LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 16;
 
@@ -385,8 +376,7 @@ void decode_bbox_center_no_variance_kernel<float>(const int batch_num,
       vst4q_f32(ptr_bbox, vloc);
     }
     LITE_PARALLEL_END();
-    // #pragma omp parallel for
-    //     for (int i = cnt * 4; i < num_priors; i++) {
+
     LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 4, 1) {
       int idx = i * 4;
       float p_xmin = prior_data[idx];
@@ -448,8 +438,6 @@ void decode_bbox_corner_size_variance_kernel<float>(
     const float* ptr_loc_batch = loc_data + n * len_batch;
     float* ptr_bbox_batch = bbox_data + n * len_batch;
 
-    // #pragma omp parallel for
-    //     for (int i = 0; i < cnt; ++i) {
     LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 16;
 
@@ -478,8 +466,7 @@ void decode_bbox_corner_size_variance_kernel<float>(
       vst4q_f32(ptr_bbox, vbbx);
     }
     LITE_PARALLEL_END();
-    // #pragma omp parallel for
-    //     for (int i = cnt * 4; i < num_priors; i++) {
+
     LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 4, 1) {
       int idx = i * 4;
       float p_xmin = prior_data[idx];
@@ -525,8 +512,6 @@ void decode_bbox_corner_size_no_variance_kernel<float>(
     const float* ptr_loc_batch = loc_data + n * len_batch;
     float* ptr_bbox_batch = bbox_data + n * len_batch;
 
-    // #pragma omp parallel for
-    //     for (int i = 0; i < cnt; ++i) {
     LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 16;
 
@@ -561,8 +546,7 @@ void decode_bbox_corner_size_no_variance_kernel<float>(
       vst4q_f32(ptr_bbox, vbbx);
     }
     LITE_PARALLEL_END();
-    // #pragma omp parallel for
-    //     for (int i = cnt * 4; i < num_priors; i++) {
+
     LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 4, 1) {
       int idx = i * 4;
       float p_xmin = prior_data[idx];

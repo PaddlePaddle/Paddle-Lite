@@ -272,8 +272,6 @@ void GridSamplerCompute::Run() {
       int32_t* coor_n = ctx.workspace_data<int>() + i * spatial_size * 4;
       float* dis_n = reinterpret_cast<float*>(coor_n) + coor_size * 4;
       uint32_t* bound_n = reinterpret_cast<uint32_t*>(dis_n) + coor_size * 4;
-      // #pragma omp parallel for
-      //       for (int j = 0; j < c; ++j) {
       LITE_PARALLEL_BEGIN(j, tid, c) {
         int32_t* coor_ptr = coor_n;
         float* dis_ptr = dis_n;

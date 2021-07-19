@@ -206,8 +206,6 @@ void mean_grad<float>(const float* out_grad, float* in_grad, int size) {
   int loop = size >> 2;
   int remain = size & 3;
 
-  // #pragma omp parallel for
-  //   for (int i = 0; i < loop; ++i) {
   LITE_PARALLEL_BEGIN(i, tid, loop) {
     vst1q_f32(in_grad, grad_v);
     in_grad += 4;

@@ -35,8 +35,6 @@ void SGDCompute::Run() {
   auto parameter_out_data = parameter_output->mutable_data<float>();
 
   int element_num = dims.production();
-  // #pragma omp parallel for
-  //   for (int i = 0; i < element_num; i++) {
   LITE_PARALLEL_BEGIN(i, tid, element_num) {
     parameter_out_data[i] = parameter_data[i] - lr * grad_data[i];
   }

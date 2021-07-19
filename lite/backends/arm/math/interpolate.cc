@@ -555,8 +555,6 @@ void interpolate(lite::Tensor* X,
   int spatial_out = out_h * out_w;
 
   if ("Bilinear" == interpolate_type) {
-    // #pragma omp parallel for
-    //     for (int i = 0; i < count; ++i) {
     LITE_PARALLEL_BEGIN(i, tid, count) {
       bilinear_interp(din + spatial_in * i,
                       in_w,
@@ -571,8 +569,6 @@ void interpolate(lite::Tensor* X,
     }
     LITE_PARALLEL_END();
   } else if ("Nearest" == interpolate_type) {
-    // #pragma omp parallel for
-    //     for (int i = 0; i < count; ++i) {
     LITE_PARALLEL_BEGIN(i, tid, count) {
       nearest_interp(din + spatial_in * i,
                      in_w,

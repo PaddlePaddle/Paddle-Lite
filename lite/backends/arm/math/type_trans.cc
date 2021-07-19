@@ -41,8 +41,6 @@ void fp32_to_int8(const float* din,
   int cnt = inner_size / 16;
   int remain = inner_size & 15;
   int64_t loop_size = outer_size * axis_size;
-  // #pragma omp parallel for
-  //   for (int j = 0; j < loop_size; ++j) {
   LITE_PARALLEL_BEGIN(j, tid, loop_size) {
     float inv_scale = 1.f / scale[j % axis_size];
     float32x4_t vzero = vdupq_n_f32(0.f);
@@ -199,8 +197,6 @@ void fp32_to_int16(const float* din,
   int remain = inner_size & 7;
   int64_t loop_size = outer_size * axis_size;
 
-  // #pragma omp parallel for
-  //   for (int j = 0; j < loop_size; ++j) {
   LITE_PARALLEL_BEGIN(j, tid, loop_size) {
     float inv_scale = 1.f / scale[j % axis_size];
     float32x4_t vzero = vdupq_n_f32(0.f);
@@ -279,8 +275,6 @@ void int8_to_fp32(const int8_t* in,
   int cnt = inner_size / 16;
   int remain = inner_size & 15;
   int64_t loop_size = axis_size * outer_size;
-  // #pragma omp parallel for
-  //   for (int64_t n = 0; n < loop_size; ++n) {
   LITE_PARALLEL_BEGIN(n, tid, loop_size) {
     float in_scale = scale[n % axis_size];
     const signed char* din_c = in + n * inner_size;
@@ -386,8 +380,6 @@ void int16_to_fp32(const int16_t* in,
   int cnt = inner_size / 16;
   int remain = inner_size & 15;
   int64_t loop_size = axis_size * outer_size;
-  // #pragma omp parallel for
-  //   for (int64_t n = 0; n < loop_size; ++n) {
   LITE_PARALLEL_BEGIN(n, tid, loop_size) {
     float in_scale = scale[n % axis_size];
     const int16_t* din_c = in + n * inner_size;
@@ -486,8 +478,6 @@ void int32_to_fp32(const int* din,
   int cnt = inner_size / 16;
   int remain = inner_size & 15;
   int64_t loop_size = axis_size * outer_size;
-  // #pragma omp parallel for
-  //   for (int64_t n = 0; n < loop_size; ++n) {
   LITE_PARALLEL_BEGIN(n, tid, loop_size) {
     float in_scale = scale[n % axis_size];
     const int* din_c = din + n * inner_size;
@@ -587,8 +577,6 @@ void int32_to_int8(const int* din,
   int cnt = inner_size / 16;
   int remain = inner_size & 15;
   int64_t loop_size = outer_size * axis_size;
-  // #pragma omp parallel for
-  //   for (int64_t n = 0; n < loop_size; ++n) {
   LITE_PARALLEL_BEGIN(n, tid, loop_size) {
     float in_scale = scale[n % axis_size];
     const int* din_c = din + n * inner_size;
@@ -805,8 +793,6 @@ std::vector<float> get_tensor_scale_n(const float* in_data,
                                       int64_t inner_size,
                                       float scale_factor) {
   std::vector<float> scale_out(axis_size);
-  // #pragma omp parallel for
-  //   for (int c = 0; c < axis_size; ++c) {              // num
   LITE_PARALLEL_BEGIN(c, tid, axis_size) {
     const float* ptr_in = in_data + c * inner_size;  // channel*width*height
     scale_out[c] = compute_max_kernel(ptr_in, inner_size) / scale_factor;
@@ -822,8 +808,6 @@ std::vector<float> get_tensor_scale_chw(const float* in_data,
                                         float scale_factor) {
   std::vector<float> scale_out(axis_size);
   int64_t inner_size_with_axis = axis_size * inner_size;
-  // #pragma omp parallel for
-  //   for (int c = 0; c < axis_size; ++c) {
   LITE_PARALLEL_BEGIN(c, tid, axis_size) {
     const float* din = in_data + c * inner_size;
     float max_val = 0.f;

@@ -54,8 +54,6 @@ void GroupNormCompute::Run() {
   int remain = spatial_size % 16;
   float* std_vec = new float[param.saved_variance->numel()];
   // compute saved_mean and saved_variance
-  // #pragma omp parallel for
-  //   for (int n = 0; n < ngroup; ++n) {
   LITE_PARALLEL_BEGIN(n, tid, ngroup) {
     const float* in_p = in + n * spatial_size;
     float sum_spatial = 0.f;
@@ -121,8 +119,6 @@ void GroupNormCompute::Run() {
   cnt = in_size >> 4;
   remain = in_size % 16;
   // compute Group_norm result: out = scale * (in - mean) / std + bias
-  // #pragma omp parallel for
-  //   for (int i = 0; i < ngroup; ++i) {
   LITE_PARALLEL_BEGIN(i, tid, ngroup) {
     const float* in_p = in + i * spatial_size;
     float* out_p = out + i * spatial_size;

@@ -107,7 +107,6 @@ if(ARM_TARGET_LANG STREQUAL "clang")
     elseif(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
         set(triple arm-v7a-linux-android)
         set(ANDROID_ARM_NEON TRUE)
-        #set(LITE_WITH_OPENMP OFF CACHE STRING "Due to libomp's bug(For ARM64, it has been fixed by https://reviews.llvm.org/D19879, but still exists on ARM32), disable OpenMP on armv7 when cross-compiling using Clang" FORCE)
         if(ANDROID_STL_TYPE MATCHES "^c\\+\\+_")
             # Use CMAKE_CXX_STANDARD_LIBRARIES_INIT to ensure libunwind and libc++ is linked in the right order
             set(CMAKE_CXX_STANDARD_LIBRARIES_INIT "${CMAKE_CXX_STANDARD_LIBRARIES_INIT} ${ANDROID_NDK}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ARCH_ABI}/libunwind.a")

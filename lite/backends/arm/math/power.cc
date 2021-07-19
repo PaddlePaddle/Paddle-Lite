@@ -48,8 +48,6 @@ void power<float>(const float* din,
   float32x4_t vscale = vdupq_n_f32(scale_);
   float32x4_t vshift = vdupq_n_f32(shift_);
   float32x4_t vpower = vdupq_n_f32(factor_);
-  // #pragma omp parallel for
-  //   for (int nums = 0; nums < cnt; ++nums) {
   LITE_PARALLEL_BEGIN(nums, tid, cnt) {
     float32x4_t vr0 = vld1q_f32(ptr_in);
     ptr_in += 4;

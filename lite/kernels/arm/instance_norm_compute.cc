@@ -44,8 +44,6 @@ void InstanceNormCompute::Run() {
   int width = param.x->dims()[3];
   int spatial_size = height * width;
   // compute saved_mean and saved_variance
-  // #pragma omp parallel for
-  //   for (int i = 0; i < nc; ++i) {
   LITE_PARALLEL_BEGIN(i, tid, nc) {
     const float* in_p = in + i * spatial_size;
     float sum_spatial = 0.f;
@@ -124,8 +122,6 @@ void InstanceNormCompute::Run() {
   }
   LITE_PARALLEL_END();
   // compute instance_norm result: out = scale * (in - mean) / std + bias
-  // #pragma omp parallel for
-  //   for (int i = 0; i < nc; ++i) {
   LITE_PARALLEL_BEGIN(i, tid, nc) {
     const float* in_p = in + i * spatial_size;
     float* out_p = out + i * spatial_size;

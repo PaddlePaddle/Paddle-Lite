@@ -17,7 +17,6 @@
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
-#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
@@ -107,13 +106,9 @@ void conv_depthwise_5x5s1_int8(Dtype* dout,
       int hs = h - padh;
       int he = hs + h_kernel + 4;
 
-      // #pragma omp parallel for num_threads(threads)
-      //       for (int c = 0; c < chout; c += hout_c_block) {
-      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
-#ifdef LITE_USE_THREAD_POOL
-        int8_t* pre_din = tmp_din + tid * (pre_in_size + pre_out_size * 4);
-        int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
-#elif defined(ARM_WITH_OMP)
+#pragma omp parallel for num_threads(threads)
+      for (int c = 0; c < chout; c += hout_c_block) {
+#ifdef ARM_WITH_OMP
         int8_t* pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size * 4);
         int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
@@ -739,7 +734,6 @@ void conv_depthwise_5x5s1_int8(Dtype* dout,
                                           ptr_write,
                                           scale + c);
       }
-      LITE_PARALLEL_COMMON_END();
     }
   }
 }
