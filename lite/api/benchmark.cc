@@ -13,13 +13,7 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
-#if !defined(_WIN32)
-#include <sys/time.h>
-#else
-#include "lite/backends/x86/port.h"
-#endif
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
-#include <time.h>
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
@@ -31,6 +25,7 @@
 #include "lite/core/device_info.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
+#include "lite/utils/timer.h"
 
 DEFINE_string(optimized_model_path,
               "",
@@ -76,12 +71,6 @@ DEFINE_bool(show_output, false, "Wether to show the output in shell.");
 
 namespace paddle {
 namespace lite_api {
-
-inline double GetCurrentUS() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
-}
 
 template <class T>
 std::string Vector2Str(const std::vector<T>& input) {
@@ -233,11 +222,12 @@ void Run(const std::string& model_path,
 
   // run
   std::vector<float> perf_vct;
+  lite::Timer timer;
   for (int i = 0; i < repeats; ++i) {
-    auto start = GetCurrentUS();
+    auto start = timer.Start();
     predictor->Run();
-    auto end = GetCurrentUS();
-    perf_vct.push_back((end - start) / 1000.0);
+    float elapsed_time_ms = timer.Stop();
+    perf_vct.push_back(elapsed_time_ms);
   }
 
   std::stable_sort(perf_vct.begin(), perf_vct.end());
