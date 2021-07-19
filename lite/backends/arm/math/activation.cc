@@ -1041,10 +1041,19 @@ void mish(const float* din, float* dout, int size, float threshold) {
     uint32x4_t lt_8 = vcltq_f32(vx8, minus_vthreshold);
     uint32x4_t lt_12 = vcltq_f32(vx12, minus_vthreshold);
 
-    float32x4_t vleftx0 = exp_ps(vx0);  // e^x
-    float32x4_t vleftx4 = exp_ps(vx4);
-    float32x4_t vleftx8 = exp_ps(vx8);
-    float32x4_t vleftx12 = exp_ps(vx12);
+    float32x4_t data0 = vminq_f32(vx0, vdupq_n_f32(70.00008f));//e^x
+    float32x4_t data4 = vminq_f32(vx4, vdupq_n_f32(70.00008f));
+    float32x4_t data8 = vminq_f32(vx8, vdupq_n_f32(70.00008f));
+    float32x4_t data12 = vminq_f32(vx12, vdupq_n_f32(70.00008f));
+    data0 = vmaxq_f32(data0, vdupq_n_f32(-70.00008f));
+    data4 = vmaxq_f32(data4, vdupq_n_f32(-70.00008f));
+    data8 = vmaxq_f32(data8, vdupq_n_f32(-70.00008f));
+    data12 = vmaxq_f32(data12, vdupq_n_f32(-70.00008f));
+
+    float32x4_t vleftx0 = exp_ps(data0);  
+    float32x4_t vleftx4 = exp_ps(data4);
+    float32x4_t vleftx8 = exp_ps(data8);
+    float32x4_t vleftx12 = exp_ps(data12);
 
     float32x4_t vmiddlex0 = log_ps(vaddq_f32(vleftx0, vone));  // ln(1+e^x)
     float32x4_t vmiddlex4 = log_ps(vaddq_f32(vleftx4, vone));
@@ -1060,6 +1069,15 @@ void mish(const float* din, float* dout, int size, float threshold) {
     sp4 = vbslq_f32(lt_4, vleftx4, sp4);
     sp8 = vbslq_f32(lt_8, vleftx8, sp8);
     sp12 = vbslq_f32(lt_12, vleftx12, sp12);
+
+    sp0 = vminq_f32(sp0, vdupq_n_f32(70.00008f));
+    sp4 = vminq_f32(sp4, vdupq_n_f32(70.00008f));
+    sp8 = vminq_f32(sp8, vdupq_n_f32(70.00008f));
+    sp12 = vminq_f32(sp12, vdupq_n_f32(70.00008f));
+    sp0 = vmaxq_f32(sp0, vdupq_n_f32(-70.00008f));
+    sp4 = vmaxq_f32(sp4, vdupq_n_f32(-70.00008f));
+    sp8 = vmaxq_f32(sp8, vdupq_n_f32(-70.00008f));
+    sp12 = vmaxq_f32(sp12, vdupq_n_f32(-70.00008f));
 
     float32x4_t exp_sp0 = exp_ps(sp0);
     float32x4_t exp_sp4 = exp_ps(sp4);
