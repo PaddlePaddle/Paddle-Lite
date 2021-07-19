@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+//  Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,15 +41,14 @@
 
   (this is the zlib license)
 */
-#pragma once
-#include "lite/backends/x86/cpu_info.h"
+#include "lite/backends/x86/math/detail/avx_mathfuns.h"
 
+#ifdef __AVX__
 namespace paddle {
 namespace lite {
-/* __m128 is ugly to write */
-typedef __m256 v8sf;   // vector of 8 float (avx)
-typedef __m256i v8si;  // vector of 8 int   (avx)
-typedef __m128i v4si;  // vector of 8 int   (avx)
+namespace x86 {
+namespace math {
+namespace detail {
 
 #define _PI32AVX_CONST(Name, Val)                                 \
   static const ALIGN32_BEG int _pi32avx_##Name[4] ALIGN32_END = { \
@@ -318,7 +317,7 @@ v8sf exp256_ps(v8sf x) {
   return y;
 }
 
-inline v8sf pow256_ps(v8sf a, v8sf b) {
+v8sf pow256_ps(v8sf a, v8sf b) {
   // pow(x, m) = exp(m * log(x))
   v8sf vone = _mm256_set1_ps(1.f);
   // x < 0
@@ -750,6 +749,9 @@ void sincos256_ps(v8sf x, v8sf *s, v8sf *c) {
   *s = _mm256_xor_ps(xmm1, sign_bit_sin);
   *c = _mm256_xor_ps(xmm2, sign_bit_cos);
 }
-
+#endif
+}  // namespace detail
+}  // namespace math
+}  // namespace x86
 }  // namespace lite
 }  // namespace paddle

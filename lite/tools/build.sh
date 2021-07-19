@@ -514,6 +514,74 @@ function make_x86 {
   cd -
 }
 
+function make_x86_tests {
+  prepare_thirdparty
+
+  root_dir=$(pwd)
+  build_directory=$BUILD_DIR/build.lite.x86_tests
+
+  if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
+    export CXX=g++ # Huawei Ascend NPU need g++
+    build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
+  fi
+  
+  if [ ${WITH_OPENCL} == "ON" ]; then
+    BUILD_EXTRA=ON
+    build_directory=$BUILD_DIR/build.lite.x86.opencl
+    prepare_opencl_source_code $root_dir $build_directory
+  fi
+
+  if [ ${BUILD_PYTHON} == "ON" ]; then
+    BUILD_EXTRA=ON
+  fi
+
+  if [ -d $build_directory ]
+  then
+    rm -rf $build_directory
+  fi
+  mkdir -p $build_directory
+  cd $build_directory
+
+  prepare_workspace $root_dir $build_directory
+
+  cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
+            -DWITH_STATIC_MKL=${WITH_STATIC_MKL}  \
+            -DWITH_TESTING=ON \
+            -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
+            -DWITH_AVX=${WITH_AVX} \
+            -DWITH_MKLDNN=OFF   \
+            -DLITE_WITH_X86=ON  \
+            -DWITH_LITE=OFF \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+            -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_OPENCL=${WITH_OPENCL} \
+            -DWITH_GPU=OFF \
+            -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
+            -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
+            -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
+            -DLITE_OPTMODEL_DIR=${OPTMODEL_DIR} \
+            -DLITE_WITH_LOG=${WITH_LOG} \
+            -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
+            -DLITE_WITH_LTO=${WITH_LTO} \
+            -DLITE_WITH_XPU=$BUILD_XPU \
+            -DLITE_WITH_XTCL=$BUILD_XTCL \
+            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+            -DXPU_SDK_URL=$XPU_SDK_URL \
+            -DXPU_SDK_ENV=$XPU_SDK_ENV \
+            -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
+            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DPY_VERSION=$PY_VERSION \
+            $PYTHON_EXECUTABLE_OPTION
+
+  if [ ${WITH_OPENCL} == "ON" ]; then
+    make opencl_clhpp -j$NUM_PROC
+  fi
+  make lite_compile_deps -j$NUM_PROC
+  cd -
+}
+
 function print_usage {
     set +x
     echo -e "\nUSAGE:"
@@ -770,6 +838,10 @@ function main {
                make_x86
                shift
                ;;
+            test_x86)
+               make_x86_tests
+               shift
+               ;; 
             *)
                 # unknown option
                 print_usage

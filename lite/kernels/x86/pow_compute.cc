@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/pow_compute.h"
-#include "lite/backends/x86/math/funcs.h"
 
 namespace paddle {
 namespace lite {
@@ -21,6 +20,7 @@ namespace kernels {
 namespace x86 {
 
 void PowCompute::Run() {
+  LOG(INFO) << "PowCompute";
   auto& param = Param<operators::PowParam>();
   const float* x_data = param.X->data<float>();
   float* output_data = param.Out->mutable_data<float>();
@@ -32,14 +32,13 @@ void PowCompute::Run() {
   lite::x86::math::power(
       x_data, output_data, x_dims.production(), scale, shift, power);
 }
-
-} /* namespace x86 */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace x86
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 REGISTER_LITE_KERNEL(
     pow, kX86, kFloat, kNCHW, paddle::lite::kernels::x86::PowCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

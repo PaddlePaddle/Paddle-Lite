@@ -11,28 +11,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #pragma once
-#include <algorithm>
+
+#include "lite/backends/x86/math/power.h"
 #include "lite/core/kernel.h"
-#include "lite/operators/pow_op.h"
-#ifdef LITE_WITH_PROFILE
-#include <string>
-#include "lite/core/profile/profiler.h"
-#endif
+#include "lite/core/op_registry.h"
+#include "lite/core/types.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
 
-template <typename T>
 class PowCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::PowParam;
-
   void Run() override;
-
   virtual ~PowCompute() = default;
 
 #ifdef LITE_WITH_PROFILE

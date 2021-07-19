@@ -26,7 +26,7 @@ class PowComputeTester : public arena::TestCase {
   std::string input_ = "X";
   std::string output_ = "Out";
   float factor_ = 0.;
-  DDim dims_{{5, 2}};
+  DDim dims_{{5, 8}};
 
  public:
   PowComputeTester(const Place& place, const std::string& alias, float factor)
@@ -57,7 +57,7 @@ class PowComputeTester : public arena::TestCase {
     std::vector<float> data(dims_.production());
 
     for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.01;
+      data[i] = (i + 1) * 1.01;
     }
 
     SetCommonTensor(input_, dims_, data.data());

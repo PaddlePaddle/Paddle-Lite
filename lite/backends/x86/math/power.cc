@@ -15,6 +15,7 @@
 #include "lite/backends/x86/math/power.h"
 #include <immintrin.h>
 #include <cmath>
+#include "lite/backends/x86/math/detail/avx_mathfuns.h"
 
 namespace paddle {
 namespace lite {
@@ -44,6 +45,11 @@ void power<float>(const float* din,
   if (fabsf(shift_ - 0.f) < 1e-6f) {
     _do_shift = false;
   }
+#ifdef __AVX__
+  __m256 vscale_256 = _mm256_set1_ps(scale_);
+  __m256 vshift_256 = _mm256_set1_ps(shift_);
+  __m256 vfactor_256 = _mm256_set1_ps(factor_);
+#endif
   __m128 vscale = _mm_set1_ps(scale_);
   __m128 vshift = _mm_set1_ps(shift_);
   __m128 vfactor = _mm_set1_ps(factor_);
@@ -51,6 +57,19 @@ void power<float>(const float* din,
   const float* ptr_in = din;
   if (_do_power) {
     for (int i = 0; i < cnt; i++) {
+#ifdef __AVX__
+      __m256 vin0 = _mm256_loadu_ps(ptr_in);
+      __m256 vin1 = _mm256_loadu_ps(ptr_in + 8);
+      ptr_in += 16;
+      __m256 vsum0 = _mm256_mul_ps(vin0, vscale_256);
+      __m256 vsum1 = _mm256_mul_ps(vin1, vscale_256);
+      __m256 vres0 = _mm256_add_ps(vsum0, vshift_256);
+      __m256 vres1 = _mm256_add_ps(vsum1, vshift_256);
+      vres0 = detail::pow256_ps(vres0, vfactor_256);
+      vres1 = detail::pow256_ps(vres1, vfactor_256);
+      _mm256_storeu_ps(ptr_out, vres0);
+      _mm256_storeu_ps(ptr_out + 8, vres1);
+#else
       __m128 vin0 = _mm_loadu_ps(ptr_in);
       __m128 vin1 = _mm_loadu_ps(ptr_in + 4);
       __m128 vin2 = _mm_loadu_ps(ptr_in + 8);
@@ -75,6 +94,7 @@ void power<float>(const float* din,
       _mm_storeu_ps(ptr_out + 4, vres1);
       _mm_storeu_ps(ptr_out + 8, vres2);
       _mm_storeu_ps(ptr_out + 12, vres3);
+#endif
       ptr_out += 16;
     }
     for (int i = 0; i < rem_cnt; i++) {
@@ -95,6 +115,18 @@ void power<float>(const float* din,
     }
   } else {
     for (int i = 0; i < cnt; i++) {
+#ifdef __AVX__
+      __m256 vin0 = _mm256_loadu_ps(ptr_in);
+      __m256 vin1 = _mm256_loadu_ps(ptr_in + 8);
+      ptr_in += 16;
+      __m256 vsum0 = _mm256_mul_ps(vin0, vscale_256);
+      __m256 vsum1 = _mm256_mul_ps(vin1, vscale_256);
+      __m256 vres0 = _mm256_add_ps(vsum0, vshift_256);
+      __m256 vres1 = _mm256_add_ps(vsum1, vshift_256);
+      _mm256_storeu_ps(ptr_out, vres0);
+      _mm256_storeu_ps(ptr_out + 8, vres1);
+      ptr_out += 16;
+#else
       __m128 vin0 = _mm_loadu_ps(ptr_in);
       __m128 vin1 = _mm_loadu_ps(ptr_in + 4);
       __m128 vin2 = _mm_loadu_ps(ptr_in + 8);
@@ -114,6 +146,7 @@ void power<float>(const float* din,
       _mm_storeu_ps(ptr_out + 8, vres2);
       _mm_storeu_ps(ptr_out + 12, vres3);
       ptr_out += 16;
+#endif
     }
     for (int i = 0; i < rem_cnt; i++) {
       __m128 vin0 = _mm_loadu_ps(ptr_in);
