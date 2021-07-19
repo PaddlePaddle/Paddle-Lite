@@ -7,15 +7,15 @@
 | 类别 | 类别细分 | 模型 | 支持平台 |
 |-|-|:-|:-|
 | CV | 分类 | [MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz) | ARM，X86，NPU，RKNPU，APU，XPU |
-| CV | 分类 | [MobileNetV2](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v2_fp32_224_fluid.tar.gz) | ARM，X86，NPU，XPU|
-| CV | 分类 | [ResNet18](https://paddlelite-demo.bj.bcebos.com/models/resnet18_fp32_224_fluid.tar.gz) | ARM，NPU， RKNPU，XPU|
-| CV | 分类 | [ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz) | ARM，X86，NPU，XPU， RKNPU |
+| CV | 分类 | [MobileNetV2](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v2_fp32_224_fluid.tar.gz) | ARM，X86，NPU，XPU |
+| CV | 分类 | [ResNet18](https://paddlelite-demo.bj.bcebos.com/models/resnet18_fp32_224_fluid.tar.gz) | ARM，NPU，RKNPU，XPU |
+| CV | 分类 | [ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz) | ARM，X86，NPU，RKNPU，XPU |
 | CV | 分类 | [MnasNet](https://paddlelite-demo.bj.bcebos.com/models/mnasnet_fp32_224_fluid.tar.gz) | ARM，NPU |
-| CV | 分类 | [EfficientNet*](https://github.com/PaddlePaddle/PaddleClas) | ARM，XPU |
+| CV | 分类 | [EfficientNetB0](https://paddlelite-demo.bj.bcebos.com/models/EfficientNetB0.tar.gz) | ARM，XPU |
 | CV | 分类 | [SqueezeNet](https://paddlelite-demo.bj.bcebos.com/models/squeezenet_fp32_224_fluid.tar.gz) | ARM，NPU，XPU |
-| CV | 分类 | [ShufflenetV2*](https://github.com/PaddlePaddle/PaddleClas) | ARM，XPU |
+| CV | 分类 | [ShufflenetV2](https://paddlelite-demo.bj.bcebos.com/models/shufflenetv2.tar.gz) | ARM，XPU |
 | CV | 分类 | [ShuffleNet](https://paddlepaddle-inference-banchmark.bj.bcebos.com/shufflenet_inference.tar.gz) | ARM |
-| CV | 分类 | [InceptionV4](https://paddle-inference-dist.bj.bcebos.com/inception_v4_simple.tar.gz) | ARM，X86，NPU，XPU |
+| CV | 分类 | [InceptionV4](https://paddlelite-demo.bj.bcebos.com/models/inceptionv4.tar.gz) | ARM，X86，NPU，XPU |
 | CV | 分类 | [VGG16](https://paddlepaddle-inference-banchmark.bj.bcebos.com/VGG16_inference.tar) | ARM，XPU |
 | CV | 分类 | [VGG19](https://paddlepaddle-inference-banchmark.bj.bcebos.com/VGG19_inference.tar) | XPU|
 | CV | 分类 | [GoogleNet](https://paddlepaddle-inference-banchmark.bj.bcebos.com/GoogleNet_inference.tar) | ARM，X86，XPU |
