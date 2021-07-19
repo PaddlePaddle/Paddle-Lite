@@ -9,7 +9,7 @@ LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 readonly workspace=$PWD
 
-NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-1}
+NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 ROOT_DIR=$(pwd)
 BUILD_DIR=$(pwd)/build
 
@@ -585,7 +585,7 @@ function huawei_ascend_npu_build_and_test() {
     local archs=(${ARCH_LIST//,/ })
     for arch in $archs; do 
         sdk_root_dir="/usr/local/Ascend/ascend-toolkit/latest"
-        if [ "${arch}" == "x86_64" ]; then
+        if [ "${arch}" == "x86" ]; then
             with_x86=ON
             with_arm=OFF
             with_light_weight_framework=OFF
