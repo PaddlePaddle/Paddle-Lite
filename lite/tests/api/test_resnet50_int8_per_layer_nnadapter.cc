@@ -29,7 +29,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(MobileNetV1, test_mobilenet_v1_int8_per_channel_nnadapter) {
+TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -47,9 +47,12 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_channel_nnadapter) {
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
-#if defined(NNADAPTER_WITH_MEDIATEK_APU)
-  nnadapter_device_names.push_back("mediatek_apu");
-  out_accuracy_threshold = 0.79f;
+#if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
+  nnadapter_device_names.emplace_back("rockchip_npu");
+  out_accuracy_threshold = 0.75f;
+#elif defined(NNADAPTER_WITH_MEDIATEK_APU)
+  nnadapter_device_names.emplace_back("mediatek_apu");
+  out_accuracy_threshold = 0.77f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
