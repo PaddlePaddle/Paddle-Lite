@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if defined(_MSC_VER)
-#include "lite/backends/x86/port.h"
-#else
-#include <sys/time.h>
-#endif
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/utils/timer.h"
 
 #undef LITE_WITH_LOG
 
@@ -28,20 +24,15 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-inline double GetCurrentUS() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
-}
-
 // Host to OpenCL memory.
 float CopyFromHostSync(void* target, const void* source, size_t size) {
 #ifdef LITE_WITH_PROFILE
-  auto h2d_copy_start = GetCurrentUS();
+  lite::Timer timer;
+  timer.Start();
 #endif
   TargetWrapperCL::MemcpySync(target, source, size, IoDirection::HtoD);
 #ifdef LITE_WITH_PROFILE
-  auto h2d_duration = (GetCurrentUS() - h2d_copy_start) / 1000.0;
+  auto h2d_duration = timer.Stop();
   return h2d_duration;
 #else
   return 0.0;
@@ -51,12 +42,13 @@ float CopyFromHostSync(void* target, const void* source, size_t size) {
 // Device to Host memory.
 float CopyToHostSync(void* target, const void* source, size_t size) {
 #ifdef LITE_WITH_PROFILE
-  auto d2h_copy_start = GetCurrentUS();
+  lite::Timer timer;
+  timer.Start();
 #endif
   CLRuntime::Global()->command_queue().finish();
   TargetWrapperCL::MemcpySync(target, source, size, IoDirection::DtoH);
 #ifdef LITE_WITH_PROFILE
-  auto d2h_duration = (GetCurrentUS() - d2h_copy_start) / 1000.0;
+  auto d2h_duration = timer.Stop();
   return d2h_duration;
 #else
   return 0.0;
@@ -67,12 +59,13 @@ float CopyFromDeviceToDeviceSync(void* target,
                                  const void* source,
                                  size_t size) {
 #ifdef LITE_WITH_PROFILE
-  auto d2h_copy_start = GetCurrentUS();
+  lite::Timer timer;
+  timer.Start();
 #endif
   CLRuntime::Global()->command_queue().finish();
   TargetWrapperCL::MemcpySync(target, source, size, IoDirection::DtoD);
 #ifdef LITE_WITH_PROFILE
-  auto d2h_duration = (GetCurrentUS() - d2h_copy_start) / 1000.0;
+  auto d2h_duration = timer.Stop();
   return d2h_duration;
 #else
   return 0.0;

@@ -14,14 +14,10 @@
 
 #pragma once
 
+#include <chrono>  // NOLINT(build/c++11)
 #include <map>
 #include <string>
 #include <vector>
-#if defined(_MSC_VER)
-#include "lite/backends/x86/port.h"
-#else
-#include <sys/time.h>
-#endif
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
 
@@ -80,9 +76,10 @@ static std::vector<size_t> DefaultGlobalWorkSize(const DDim& tensor_dim,
 }
 
 static const std::string GetTimeStamp() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return std::to_string(time.tv_usec);
+  uint64_t usec = std::chrono::duration_cast<std::chrono::microseconds>(
+                      std::chrono::system_clock::now().time_since_epoch())
+                      .count();
+  return std::to_string(usec);
 }
 
 }  // namespace opencl
