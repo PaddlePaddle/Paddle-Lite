@@ -33,7 +33,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 
   return (0);
 }
-#endif
+#endif // !_WIN32
 
 TEST(timer, basic) {
   auto GetCurrentUS = []() -> float {
