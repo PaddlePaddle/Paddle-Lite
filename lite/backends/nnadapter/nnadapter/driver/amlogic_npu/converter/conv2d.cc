@@ -81,7 +81,16 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   if (!input_tensor) {
     input_tensor = ConvertOperand(input_operand);
   }
-  auto filter_tensor = ConvertOperand(filter_operand);
+  std::shared_ptr<aml::nn::Tensor> filter_tensor = nullptr;
+  if (is_depthwise_mode) {
+    filter_tensor = ConvertOperand(filter_operand,
+                                   {filter_channel_size,
+                                    output_channel_size,
+                                    filter_height,
+                                    filter_width});
+  } else {
+    filter_tensor = ConvertOperand(filter_operand);
+  }
   auto bias_tensor = ConvertOperand(bias_operand);
   auto output_tensor = ConvertOperand(output_operand);
   aml::nn::Conv2DAttr attr;
@@ -100,11 +109,7 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   attr.dilation[1] = dilation_height;
   attr.pad_type = aml::nn::PadType::AUTO;
   // fuse RELU ?
-  if (fuse_code == NNADAPTER_FUSED_NONE) {
-    attr.has_relu = false;
-  } else if (fuse_code == NNADAPTER_FUSED_RELU) {
-    attr.has_relu = true;
-  } else {
+  if (fuse_code != NNADAPTER_FUSED_NONE) {
     NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
                          << ") is found.";
   }

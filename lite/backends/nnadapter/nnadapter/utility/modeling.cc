@@ -513,7 +513,7 @@ NNADAPTER_EXPORT hal::Operand* AddReshapeOperation(hal::Model* model,
 
 NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
                                                  hal::Operand* input_operand) {
-  // Insert a new operand before output_operand
+  // Insert a new operand after input_operand
   auto output_operand = AddOperand(model);
   memcpy(&output_operand->type,
          &input_operand->type,
@@ -539,6 +539,23 @@ NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
   dummy_add_operation->input_operands = {
       input_operand, zero_operand, fuse_code_operand};
   dummy_add_operation->output_operands = {output_operand};
+  return output_operand;
+}
+
+NNADAPTER_EXPORT hal::Operand* AddUnaryOperation(
+    hal::Model* model,
+    hal::Operand* input_operand,
+    NNAdapterOperationType operation_type) {
+  // Insert a new operand after input_operand
+  auto output_operand = AddOperand(model);
+  memcpy(&output_operand->type,
+         &input_operand->type,
+         sizeof(NNAdapterOperandType));
+  InsertOperand(model, input_operand, output_operand, true);
+  auto unary_operation = AddOperation(model);
+  unary_operation->type = operation_type;
+  unary_operation->input_operands = {input_operand};
+  unary_operation->output_operands = {output_operand};
   return output_operand;
 }
 

@@ -16,6 +16,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 #include "driver/amlogic_npu/utility.h"
 
@@ -51,6 +52,7 @@ class Program {
 
  private:
   // Operand converters
+  std::string GetTensorName(hal::Operand* operand);
   std::shared_ptr<aml::nn::Tensor> GetMappedTensor(hal::Operand* operand);
   std::shared_ptr<aml::nn::Tensor> UpdateTensorMap(
       hal::Operand* operand, std::shared_ptr<aml::nn::Tensor> tensor);

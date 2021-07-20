@@ -183,6 +183,16 @@ int Program::Execute(uint32_t input_count,
   return NNADAPTER_NO_ERROR;
 }
 
+std::string Program::GetTensorName(hal::Operand* operand) {
+  auto operand_id = OperandIdToString(operand);
+  auto index = 0;
+  auto it = tensors_.find(operand);
+  if (it != tensors_.end()) {
+    index = it->second.size();
+  }
+  return operand_id + string_format("_%d", index);
+}
+
 std::shared_ptr<rk::nn::Tensor> Program::GetMappedTensor(
     hal::Operand* operand) {
   auto it = tensors_.find(operand);
@@ -213,7 +223,7 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
     }
   }
   auto attr = std::make_shared<rk::nn::TensorAttr>();
-  attr->name = string_format("0x%X", operand);
+  attr->name = GetTensorName(operand);
   attr->role = !IsConstantOperand(operand) ? rk::nn::TensorRole::VAR
                                            : rk::nn::TensorRole::CONST;
   attr->dims = ConvertDimensions(&dimensions[0], dimensions.size());

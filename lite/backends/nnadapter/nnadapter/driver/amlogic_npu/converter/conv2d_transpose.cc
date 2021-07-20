@@ -81,7 +81,16 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   if (!input_tensor) {
     input_tensor = ConvertOperand(input_operand);
   }
-  auto filter_tensor = ConvertOperand(filter_operand);
+  std::shared_ptr<aml::nn::Tensor> filter_tensor = nullptr;
+  if (is_depthwise_mode) {
+    filter_tensor = ConvertOperand(filter_operand,
+                                   {filter_channel_size,
+                                    output_channel_size,
+                                    filter_height,
+                                    filter_width});
+  } else {
+    filter_tensor = ConvertOperand(filter_operand);
+  }
   auto bias_tensor = ConvertOperand(bias_operand);
   auto output_tensor = ConvertOperand(output_operand);
   aml::nn::Conv2DAttr attr;
@@ -94,8 +103,8 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   attr.pad[2] = padding_height_top;
   attr.pad[3] = padding_height_bottom;
   attr.group = group;
-  attr.multiplier = is_depthwise_mode ? output_channel_size / group : 0;
-  attr.weights = output_channel_size;
+  attr.multiplier = 0;
+  attr.weights = filter_channel_size;
   attr.dilation[0] = dilation_width;
   attr.dilation[1] = dilation_height;
   attr.pad_type = aml::nn::PadType::AUTO;

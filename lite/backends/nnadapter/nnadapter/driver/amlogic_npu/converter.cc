@@ -190,6 +190,16 @@ int Program::Execute(uint32_t input_count,
   return NNADAPTER_NO_ERROR;
 }
 
+std::string Program::GetTensorName(hal::Operand* operand) {
+  auto operand_id = OperandIdToString(operand);
+  auto index = 0;
+  auto it = tensors_.find(operand);
+  if (it != tensors_.end()) {
+    index = it->second.size();
+  }
+  return operand_id + string_format("_%d", index);
+}
+
 std::shared_ptr<aml::nn::Tensor> Program::GetMappedTensor(
     hal::Operand* operand) {
   auto it = tensors_.find(operand);
@@ -220,7 +230,7 @@ std::shared_ptr<aml::nn::Tensor> Program::ConvertOperand(
     }
   }
   auto attr = std::make_shared<aml::nn::TensorAttr>();
-  attr->name = string_format("0x%X", operand);
+  attr->name = GetTensorName(operand);
   attr->role = !IsConstantOperand(operand) ? aml::nn::TensorRole::VAR
                                            : aml::nn::TensorRole::CONST;
   attr->dims = ConvertDimensions(&dimensions[0], dimensions.size());
@@ -239,12 +249,10 @@ std::shared_ptr<aml::nn::Tensor> Program::ConvertOperand(
       break;
     case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
       attr->qntBits = 32;
-      attr->qntType = aml::nn::QuantizationType::AFFINE_ASYMMETRIC;
-      attr->qntParamAffineAsymmetric.scale.resize(1);
-      attr->qntParamAffineAsymmetric.scale[0] =
+      attr->qntType = aml::nn::QuantizationType::SYMMETRIC;
+      attr->qntParamSymmetric.scale.resize(1);
+      attr->qntParamSymmetric.scale[0] =
           operand->type.symm_per_layer_params.scale;
-      attr->qntParamAffineAsymmetric.zero_point.resize(1);
-      attr->qntParamAffineAsymmetric.zero_point[0] = 0;
       break;
     default:
       NNADAPTER_LOG(FATAL) << "Can not convert an operand@0x" << std::hex

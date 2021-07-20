@@ -192,6 +192,11 @@ std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
       valid_places.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_device_names.emplace_back(target_repr);
+    } else if (target_repr == "amlogic_npu") {
+      valid_places.emplace_back(TARGET(kNNAdapter));
+      valid_places.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
+      nnadapter_device_names.emplace_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -361,6 +366,7 @@ void PrintHelpInfo() {
       "        "
       "`--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
       "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "amlogic_npu"
       "mediatek_apu|huawei_kirin_npu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
@@ -374,13 +380,13 @@ void PrintHelpInfo() {
       "        `--print_supported_ops=true  "
       "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
       "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
-      "mediatek_apu|huawei_kirin_npu)"
+      "mediatek_apu|huawei_kirin_npu|amlogic_npu)"
       "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
       "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
       "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
-      "mediatek_apu|huawei_kirin_npu)"
+      "mediatek_apu|huawei_kirin_npu|amlogic_npu)"
       "`"
       "  Display operators in the input model\n"
       "  How to print detailed information: export GLOG_v=1 \n";
