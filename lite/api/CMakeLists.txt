@@ -99,7 +99,7 @@ else()
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
     add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
-    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers)
+    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers gflags)
     if (IOS)
         # only sttaic lib is produced for IOS platform.
         add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
@@ -134,7 +134,10 @@ else()
             # Need to add IMG IMAGINATION_NNA runtime libs (libimgdnn.so, libnnasession.so) dependency
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
-
+        if(LITE_WITH_PROFILE)
+            target_link_libraries(paddle_light_api_shared gflags lite_profiler) 
+        endif()
+        
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
         if (LITE_WITH_JAVA)
           add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
