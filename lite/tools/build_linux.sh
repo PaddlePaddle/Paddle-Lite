@@ -271,10 +271,6 @@ function make_publish_so {
         ${CMAKE_COMMON_OPTIONS} \
         ${cmake_mutable_options}
 
-    if [ "${WITH_OPENCL}" = "ON" ]; then
-        make opencl_clhpp -j$NUM_PROC 
-    fi
-
     make publish_inference -j$NUM_PROC
     cd - > /dev/null
 }

@@ -180,15 +180,9 @@ if "%BUILD_FOR_CI%"=="ON" (
     msbuild /m:%cores% /p:Configuration=Release lite\api\opt.vcxproj
 ) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
-    if "%WITH_OPENCL%"=="ON" (
-        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj
-    )
     msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
 ) else (
     call "%vcvarsall_dir%" x86
-    if "%WITH_OPENCL%"=="ON" (
-        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj
-    )
     msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
 )
 goto:eof
