@@ -271,7 +271,7 @@ goto:eof
 goto:eof
 
 :set_vcvarsall_dir
-SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat   =======>"
+SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as %vcvarsall_dir%   =======>"
 set tmp_var=!vcvarsall_dir!
 call:remove_space
 set vcvarsall_dir=!tmp_var!
