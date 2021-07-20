@@ -318,18 +318,7 @@ v8sf exp256_ps(v8sf x) {
 
 v8sf pow256_ps(v8sf a, v8sf b) {
   // pow(x, m) = exp(m * log(x))
-  v8sf vone = _mm256_set1_ps(1.f);
-  // x < 0
-  for (int i = 0; i < 8; i++) {
-    if (a[i] < 0) {
-      a[i] = -a[i];
-      if (static_cast<int>(b[i]) % 2) {
-        vone[i] = -1.f;
-      }
-    }
-  }
   v8sf vsum = exp256_ps(_mm256_mul_ps(b, log256_ps(a)));
-  vsum = _mm256_mul_ps(vsum, vone);
   return vsum;
 }
 

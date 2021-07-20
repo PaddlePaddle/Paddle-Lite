@@ -52,7 +52,6 @@ void power<float>(const float* din,
 #endif
   __m128 vscale = _mm_set1_ps(scale_);
   __m128 vshift = _mm_set1_ps(shift_);
-  __m128 vfactor = _mm_set1_ps(factor_);
   float* ptr_out = dout;
   const float* ptr_in = din;
   if (_do_power) {
