@@ -34,9 +34,6 @@ void InverseCompute<T>::Run() {
   lite::Tensor* output = param.Output;
 
   lite::arm::math::inverse_func<T>(input, output);
-#ifdef LITE_WITH_PROFILE
-  kernel_func_name_ = "inverse_func";
-#endif
   return;
 }
 
