@@ -12,12 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/operators/reduce_ops.h"
 
-REGISTER_LITE_OP(reduce_sum, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_prod, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_max, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_min, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_all, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_any, paddle::lite::operators::ReduceOp);
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace x86 {
+
+class GroupNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::GroupNormParam;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  virtual ~GroupNormCompute() = default;
+
+ private:
+};
+
+}  // namespace x86
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
