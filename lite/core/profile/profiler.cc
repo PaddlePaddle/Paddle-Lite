@@ -122,19 +122,19 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
   using std::left;
   using std::fixed;
   using std::setprecision;
-  STL::stringstream ss;
+  std::stringstream ss;
   std::string title;
   // Title.
   if (concise) {
     ss << "Timing cycle = " << units_.front().Timer(type)->LapTimes().Size()
-       << std::endl;
+       << "\n";
     ss << "===== Concise " << TypeStr.find(type)->second
        << " Profiler Summary: " << name_ << ", Exclude " << w
-       << " warm-ups =====" << std::endl;
+       << " warm-ups =====" << "\n";
   } else {
     ss << "===== Detailed " << TypeStr.find(type)->second
        << " Profiler Summary: " << name_ << ", Exclude " << w
-       << " warm-ups =====" << std::endl;
+       << " warm-ups =====" << "\n";
   }
   ss << setw(20) << left << "OperatorType"
      << " " << setw(30) << left << "KerneAttr(Place)"
@@ -169,7 +169,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
        << " " << setw(12) << left << "LocalWorkSize";
   }
 #endif
-  ss << std::endl;
+  ss << "\n";
 
   // Profile information.
   if (concise) {
@@ -248,7 +248,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << item.second.cl_max
          << " " << left << fixed << setprecision(2) << cl_percent << "%   ";
 #endif
-      ss << std::endl;
+      ss << "\n";
       // clang-format on
     }
   } else {
@@ -310,7 +310,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << unit.Character().global_work_size << " " << setw(12) << left
          << fixed << unit.Character().local_work_size;
 #endif
-      ss << std::endl;
+      ss << "\n";
     }
   }
   return ss.str();

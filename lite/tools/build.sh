@@ -145,6 +145,10 @@ function make_tiny_publish_so {
   local lang=$3
   local android_stl=$4
 
+  if [ ${WITH_PROFILE}=="ON" ]; then
+    prepare_thirdparty
+  fi
+
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
   if [ ! -d third-party ]; then
@@ -172,7 +176,7 @@ function make_tiny_publish_so {
       ${CMAKE_COMMON_OPTIONS} \
       ${CMAKE_EXTRA_OPTIONS} \
       -DWITH_TESTING=OFF \
-      -DLITE_WITH_JAVA=$BUILD_JAVA \
+      -DLITE_WITH_JAVA=OFF \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -193,8 +197,10 @@ function make_tiny_publish_so {
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
-      -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
+      -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang} \
+      -DLITE_WITH_PROFILE=${WITH_PROFILE}
 
+  exit 0
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }

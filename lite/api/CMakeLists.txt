@@ -134,7 +134,10 @@ else()
             # Need to add IMG IMAGINATION_NNA runtime libs (libimgdnn.so, libnnasession.so) dependency
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
-
+        if(LITE_WITH_PROFILE)
+            target_link_libraries(paddle_light_api_shared gflags lite_profiler) 
+        endif()
+        
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
         if (LITE_WITH_JAVA)
           add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)

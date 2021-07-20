@@ -146,6 +146,10 @@ if (NOT LITE_ON_TINY_PUBLISH)
   add_subdirectory(arena)
 endif()
 
+if(LITE_ON_TINY_PUBLISH AND LITE_WITH_PROFILE)
+  add_subdirectory (profile)
+endif()
+
 if (LITE_WITH_XCODE)
   add_subdirectory(profile)
 endif()
