@@ -16,10 +16,7 @@
 #include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/operators/inverse_op.h"
-#ifdef LITE_WITH_PROFILE
-#include <string>
-#include "lite/core/profile/profiler.h"
-#endif
+
 
 namespace paddle {
 namespace lite {
