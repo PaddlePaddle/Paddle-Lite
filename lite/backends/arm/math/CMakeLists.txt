@@ -113,6 +113,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       power.cc
       interpolate.cc
       argmax.cc
+      inverse.cc
       axpy.cc
       fill_bias_relu.cc
       col_im_transform.cc

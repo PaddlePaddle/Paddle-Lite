@@ -22,6 +22,7 @@
 #include "lite/backends/arm/math/activation.h"
 #include "lite/backends/arm/math/affine_channel.h"
 #include "lite/backends/arm/math/argmax.h"
+#include "lite/backends/arm/math/inverse.h"
 #include "lite/backends/arm/math/axpy.h"
 #include "lite/backends/arm/math/box_coder.h"
 #include "lite/backends/arm/math/clip.h"
