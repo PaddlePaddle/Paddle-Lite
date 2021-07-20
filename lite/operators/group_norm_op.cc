@@ -42,21 +42,25 @@ bool GroupNormOp::CheckShape() const {
   if (param_.scale != nullptr) {
     auto scale_dims = param_.scale->dims();
     CHECK_EQ(scale_dims.size(), 1UL) << "Input Scale must have 1 dimensions.";
-    CHECK_EQ(scale_dims[0], param_.channels) << "The Input(Scale)'s first dimension size of Op(group_norm) must be " 
-                                             << "equal to the number of channels";
+    CHECK_EQ(scale_dims[0], param_.channels)
+        << "The Input(Scale)'s first dimension size of Op(group_norm) must be "
+        << "equal to the number of channels";
   }
   if (param_.bias != nullptr) {
     auto bias_dims = param_.bias->dims();
     CHECK_EQ(bias_dims.size(), 1UL) << "Input Bias must have 1 dimensions.";
-    CHECK_EQ(bias_dims[0], param_.channels) << "The Input(Bias)'s first dimension size of Op(group_norm) must be "
-                                            << "equal to the number of channels";
+    CHECK_EQ(bias_dims[0], param_.channels)
+        << "The Input(Bias)'s first dimension size of Op(group_norm) must be "
+        << "equal to the number of channels";
   }
 
   CHECK_GT(param_.epsilon, 0.f) << "epsilon should be greater than 0.f";
   CHECK_GE(param_.groups, 1) << "groups should be greater than 1";
-  CHECK_LE(param_.groups, param_.channels) << "groups should be less than channels";
+  CHECK_LE(param_.groups, param_.channels)
+      << "groups should be less than channels";
   // The channels should be divisible by groups
-  CHECK_EQ(param_.channels % param_.groups, 0) << "The channels should be divisible by groups";
+  CHECK_EQ(param_.channels % param_.groups, 0)
+      << "The channels should be divisible by groups";
   return true;
 }
 
@@ -89,7 +93,8 @@ bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     param_.saved_variance = scope->FindVar(op_desc.Output("Variance").front())
                                 ->GetMutable<Tensor>();
   }
-  param_.out = scope->FindVar(op_desc.Output("Y").front())->GetMutable<Tensor>();
+  param_.out =
+      scope->FindVar(op_desc.Output("Y").front())->GetMutable<Tensor>();
   if (op_desc.HasAttr("data_layout")) {
     param_.data_layout_str = op_desc.GetAttr<std::string>("data_layout");
   }

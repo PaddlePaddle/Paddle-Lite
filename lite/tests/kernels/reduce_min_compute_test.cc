@@ -21,11 +21,11 @@ namespace paddle {
 namespace lite {
 
 void reduce_min_n(const float* src,
-              float* dst,
-              int num_in,
-              int channel_in,
-              int height_in,
-              int width_in) {
+                  float* dst,
+                  int num_in,
+                  int channel_in,
+                  int height_in,
+                  int width_in) {
   int hw_size = height_in * width_in;
   int chw_size = channel_in * hw_size;
   int data_index, src_index;
@@ -45,11 +45,11 @@ void reduce_min_n(const float* src,
 }
 
 void reduce_min_c(const float* src,
-              float* dst,
-              int num_in,
-              int channel_in,
-              int height_in,
-              int width_in) {
+                  float* dst,
+                  int num_in,
+                  int channel_in,
+                  int height_in,
+                  int width_in) {
   int hw_size = height_in * width_in;
   int chw_size = hw_size * channel_in;
   int data_index, src_index0, src_index;
@@ -70,11 +70,11 @@ void reduce_min_c(const float* src,
 }
 
 void reduce_min_h(const float* src,
-              float* dst,
-              int num_in,
-              int channel_in,
-              int height_in,
-              int width_in) {
+                  float* dst,
+                  int num_in,
+                  int channel_in,
+                  int height_in,
+                  int width_in) {
   int cw_size = channel_in * width_in;
   int chw_size = cw_size * height_in;
   int hw_size = height_in * width_in;
@@ -96,11 +96,11 @@ void reduce_min_h(const float* src,
 }
 
 void reduce_min_w(const float* src,
-              float* dst,
-              int num_in,
-              int channel_in,
-              int height_in,
-              int width_in) {
+                  float* dst,
+                  int num_in,
+                  int channel_in,
+                  int height_in,
+                  int width_in) {
   int ch_size = channel_in * height_in;
   int hw_size = height_in * width_in;
   int chw_size = ch_size * width_in;
@@ -122,11 +122,11 @@ void reduce_min_w(const float* src,
 }
 
 void reduce_min_all(const float* src,
-                float* dst,
-                int num_in,
-                int channel_in,
-                int height_in,
-                int width_in) {
+                    float* dst,
+                    int num_in,
+                    int channel_in,
+                    int height_in,
+                    int width_in) {
   float min = src[0];
   int src_index;
   int n_id, c_id;
@@ -146,11 +146,11 @@ void reduce_min_all(const float* src,
 }
 
 void reduce_min_nc(const float* src,
-               float* dst,
-               int num_in,
-               int channel_in,
-               int height_in,
-               int width_in) {
+                   float* dst,
+                   int num_in,
+                   int channel_in,
+                   int height_in,
+                   int width_in) {
   // reduce n first.
   DDimLite ddimA({1, channel_in, height_in, width_in});
   lite::Tensor tensor_tmp;
@@ -161,11 +161,11 @@ void reduce_min_nc(const float* src,
 }
 
 void reduce_min_ch(const float* src,
-               float* dst,
-               int num_in,
-               int channel_in,
-               int height_in,
-               int width_in) {
+                   float* dst,
+                   int num_in,
+                   int channel_in,
+                   int height_in,
+                   int width_in) {
   // reduce c first
   DDimLite ddimA({num_in, 1, height_in, width_in});
   lite::Tensor tensor_tmp;
@@ -176,11 +176,11 @@ void reduce_min_ch(const float* src,
 }
 
 void reduce_min_hw(const float* src,
-               float* dst,
-               int num_in,
-               int channel_in,
-               int height_in,
-               int width_in) {
+                   float* dst,
+                   int num_in,
+                   int channel_in,
+                   int height_in,
+                   int width_in) {
   // reduce h first
   DDimLite ddimA({num_in, channel_in, 1, width_in});
   lite::Tensor tensor_tmp;
@@ -197,7 +197,7 @@ void reduce_min_first_of_three(
       dst[i * third_in + j] = src[i * third_in + j];
       for (int k = 1; k < first_in; k++) {
         dst[i * third_in + j] =
-            src[k * second_in * third_in + i * third_in + j] < 
+            src[k * second_in * third_in + i * third_in + j] <
                     dst[i * third_in + j]
                 ? src[k * second_in * third_in + i * third_in + j]
                 : dst[i * third_in + j];
@@ -213,7 +213,7 @@ void reduce_min_second_of_three(
       dst[i * third_in + j] = src[i * second_in * third_in + j];
       for (int k = 1; k < second_in; k++) {
         dst[i * third_in + j] =
-            src[i * second_in * third_in + third_in * k + j] < 
+            src[i * second_in * third_in + third_in * k + j] <
                     dst[i * third_in + j]
                 ? src[i * second_in * third_in + third_in * k + j]
                 : dst[i * third_in + j];

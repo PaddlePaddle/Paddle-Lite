@@ -14,9 +14,8 @@
 
 #include "lite/backends/x86/math/group_norm.h"
 #include <immintrin.h>
-#include <cmath>
 #include <stdio.h>
-#include <iostream>
+#include <cmath>
 
 namespace paddle {
 namespace lite {
@@ -37,25 +36,31 @@ void group_norm(const float* in,
                 float* saved_variance) {
   int nb = n;
   int spatial_size = height * width;
-  int group_size = (c - 1) / groups + 1; // equal to instance_norm if the groups value equals to c
+  int group_size = (c - 1) / groups +
+                   1;  // equal to instance_norm if the groups value equals to c
 
 // compute saved_mean and saved_variance
 #pragma omp parallel for
   for (int i = 0; i < nb; i++) {
-    for(int gid = 0; gid < groups; gid++) {
+    for (int gid = 0; gid < groups; gid++) {
       float sum_spatial = 0.f;
       float summ_spatial = 0.f;
-      const float* in_data = in + (i * groups + gid) * group_size * spatial_size; // input offset
-      float* out_data = out + (i * groups + gid) * group_size * spatial_size; // output offset
-      int number = (group_size > (c - gid * group_size)) ? (c - gid * group_size): group_size;
+      const float* in_data =
+          in + (i * groups + gid) * group_size * spatial_size;  // input offset
+      float* out_data =
+          out +
+          (i * groups + gid) * group_size * spatial_size;  // output offset
+      int number = (group_size > (c - gid * group_size))
+                       ? (c - gid * group_size)
+                       : group_size;
 
       // for each group
-      for(int nid = 0; nid < number; nid++) {
+      for (int nid = 0; nid < number; nid++) {
         const float* in_p = in_data + nid * spatial_size;
-        // for each image size w x h 
+        // for each image size w x h
         for (int h = 0; h < height; ++h) {
           int w = width;
-    
+
           __m128 sum0 = _mm_set1_ps(0.f);
           __m128 sum1 = _mm_set1_ps(0.f);
           __m128 sum2 = _mm_set1_ps(0.f);
@@ -80,7 +85,7 @@ void group_norm(const float* in,
             square_sum1 = _mm_fmadd_ps(in1, in1, square_sum1);
             square_sum2 = _mm_fmadd_ps(in2, in2, square_sum2);
             square_sum3 = _mm_fmadd_ps(in3, in3, square_sum3);
-    
+
             in_p += 16;
           }
           for (; w > 7; w -= 8) {
@@ -110,10 +115,10 @@ void group_norm(const float* in,
           sum2 = _mm_add_ps(sum2, sum3);
           square_sum0 = _mm_add_ps(square_sum0, square_sum1);
           square_sum2 = _mm_add_ps(square_sum2, square_sum3);
-        
+
           sum0 = _mm_add_ps(sum0, sum2);
           square_sum0 = _mm_add_ps(square_sum0, square_sum2);
-        
+
           __m128 r = _mm_hadd_ps(sum0, square_sum0);
           r = _mm_hadd_ps(r, r);
           float buf[4];
@@ -125,31 +130,34 @@ void group_norm(const float* in,
           summ_spatial += summ;
         }
       }
-    
+
       float mean = sum_spatial / (number * spatial_size);
       // float x_var = summ_spatial / (number * spatial_size);
       // float variance = summ_spatial / (number * spatial_size) - mean * mean;
       // the flolowing code has higher precision than above comment code
-      float variance = (summ_spatial - mean * mean * spatial_size * number) / (number * spatial_size);
+      float variance = (summ_spatial - mean * mean * spatial_size * number) /
+                       (number * spatial_size);
       float std = 1.f / sqrtf(variance + epsilon);
-  
+
       saved_mean[i * groups + gid] = mean;
       saved_variance[i * groups + gid] = std;
 
       // compute each group_norm result: out = scale * (in - mean) / std + bias
-      for(int nid = 0; nid < number; nid++) {
+      for (int nid = 0; nid < number; nid++) {
         const float* in_p = in_data + nid * spatial_size;
         float* out_p = out_data + nid * spatial_size;
 
         int j = spatial_size;
-        const float sstd_val = scale == nullptr ? std : scale[gid * group_size + nid] * std;
-        const float bias_val = bias == nullptr ? 0. : bias[gid * group_size + nid];
+        const float sstd_val =
+            scale == nullptr ? std : scale[gid * group_size + nid] * std;
+        const float bias_val =
+            bias == nullptr ? 0. : bias[gid * group_size + nid];
         const float mean_val = mean;
         const __m128 vsstd = _mm_set1_ps(sstd_val);
         const __m128 vbias = _mm_set1_ps(bias_val);
         const __m128 vmean = _mm_set1_ps(mean_val);
         __m128 in0, in1, submean0, submean1, out0, out1;
-    
+
         for (; j > 7; j -= 8) {
           in0 = _mm_loadu_ps(in_p);
           in1 = _mm_loadu_ps(in_p + 4);
@@ -157,10 +165,10 @@ void group_norm(const float* in,
           submean1 = _mm_sub_ps(in1, vmean);
           out0 = _mm_fmadd_ps(submean0, vsstd, vbias);
           out1 = _mm_fmadd_ps(submean1, vsstd, vbias);
-    
+
           _mm_storeu_ps(out_p, out0);
           _mm_storeu_ps(out_p + 4, out1);
-    
+
           in_p += 8;
           out_p += 8;
         }
@@ -168,9 +176,9 @@ void group_norm(const float* in,
           in0 = _mm_loadu_ps(in_p);
           submean0 = _mm_sub_ps(in0, vmean);
           out0 = _mm_fmadd_ps(submean0, vsstd, vbias);
-    
+
           _mm_storeu_ps(out_p, out0);
-    
+
           in_p += 4;
           out_p += 4;
         }

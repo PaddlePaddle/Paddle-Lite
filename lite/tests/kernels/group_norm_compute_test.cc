@@ -38,11 +38,11 @@ class GroupNormComputeTest : public arena::TestCase {
 
  public:
   GroupNormComputeTest(const Place& place,
-                          const std::string& alias,
-                          DDim dims,
-                          float epsilon,
-                          int groups,
-                          bool has_scale_bias)
+                       const std::string& alias,
+                       DDim dims,
+                       float epsilon,
+                       int groups,
+                       bool has_scale_bias)
       : TestCase(place, alias),
         dims_(dims),
         epsilon_(epsilon),
@@ -153,8 +153,8 @@ class GroupNormComputeTest : public arena::TestCase {
 };
 
 void TestGroupNorm(Place place,
-                      float abs_error = 6e-5,
-                      std::vector<std::string> ignored_outs = {}) {
+                   float abs_error = 6e-5,
+                   std::vector<std::string> ignored_outs = {}) {
   for (auto& n : {1, 3, 16}) {
     for (auto& c : {1, 4, 16}) {
       for (auto& h : {1, 16, 33, 56}) {
@@ -162,8 +162,10 @@ void TestGroupNorm(Place place,
           for (auto& has_scale_bias : {true, false}) {
             DDim dim_in({n, c, h, w});
             float epsilon = 1e-3f;
-            for(auto &groups: {1,2,4,8}) {
-              if(c % groups != 0) { continue; }
+            for (auto& groups : {1, 2, 4, 8}) {
+              if (c % groups != 0) {
+                continue;
+              }
               std::unique_ptr<arena::TestCase> tester(new GroupNormComputeTest(
                   place, "def", dim_in, epsilon, groups, has_scale_bias));
 #ifdef LITE_WITH_ARM
