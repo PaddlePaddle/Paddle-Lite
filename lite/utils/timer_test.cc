@@ -18,22 +18,55 @@
 namespace paddle {
 namespace lite {
 
+#if !defined(_WIN32)
+#include <sys/time.h>
+#include <sys/types.h>
+#else
+extern struct timeval;
+static int gettimeofday(struct timeval* tp, void* tzp) {
+  LARGE_INTEGER now, freq;
+  QueryPerformanceCounter(&now);
+  QueryPerformanceFrequency(&freq);
+  tp->tv_sec = now.QuadPart / freq.QuadPart;
+  tp->tv_usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
+  // uint64_t elapsed_time = sec * 1000000 + usec;
+
+  return (0);
+}
+#endif
+
 TEST(timer, basic) {
+  auto GetCurrentUS = []() -> float {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return 1e+6 * time.tv_sec + time.tv_usec;
+  };
+
+  const float scale = 0.1f;
   paddle::lite::Timer timer;
-  for (float i = 0.f; i < 100.f; i += 10.f) {
+  for (float ms = 0.f; ms < 1000.f; ms += 25.f) {
     timer.Start();
-    timer.SleepInMs(i);
+    timer.SleepInMs(ms);
     float elapsed_time_ms = timer.Stop();
     timer.Print();
-    EXPECT_EQ(elapsed_time_ms, i);
+    EXPECT_NEAR(elapsed_time_ms, ms, ms * scale);
+
+    auto start = GetCurrentUS();
+    timer.SleepInMs(ms);
+    auto end = GetCurrentUS();
+    float base = (end - start) * 1e-3;
+    LOG(INFO) << "Base time: " << ms
+              << "  gettimeofday: " << base
+              << "  Timer: " << elapsed_time_ms;
+    EXPECT_NEAR(elapsed_time_ms, base, base * scale);
   }
 
-  const float ms = 1000.f;
+  const float ms = 123.f;
   timer.Start();
   timer.SleepInMs(ms);
   float elapsed_time_ms = timer.Stop();
   timer.Print();
-  EXPECT_EQ(elapsed_time_ms, ms);
+  EXPECT_NEAR(elapsed_time_ms, ms, ms * scale);
 }
 
 }  // namespace lite
