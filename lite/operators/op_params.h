@@ -929,7 +929,6 @@ struct Index_selectParam : ParamBase {
   lite::Tensor* Out{};
 };
 
-
 ///----------------------- axpy operators ----------------------
 struct AxpyParam : ParamBase {
   lite::Tensor* Scale{};
