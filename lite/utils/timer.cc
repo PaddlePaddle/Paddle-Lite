@@ -26,7 +26,7 @@ namespace lite {
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 
-Timer::Timer(const std::string timer_info = "benchmark") {
+Timer::Timer(const std::string timer_info) {
   timer_info_ = timer_info;
   Reset();
 }
