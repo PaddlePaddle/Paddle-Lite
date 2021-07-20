@@ -25,14 +25,15 @@ TEST(timer, basic) {
     timer.SleepInMs(i);
     float elapsed_time_ms = timer.Stop();
     timer.Print();
-    CHECK_EQ(elapsed_time_ms, i);
+    EXPECT_EQ(elapsed_time_ms, i);
   }
 
-  const float ms = 1000.f timer.Start();
+  const float ms = 1000.f;
+  timer.Start();
   timer.SleepInMs(ms);
   float elapsed_time_ms = timer.Stop();
   timer.Print();
-  CHECK_EQ(elapsed_time_ms, ms);
+  EXPECT_EQ(elapsed_time_ms, ms);
 }
 
 }  // namespace lite
