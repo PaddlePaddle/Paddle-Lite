@@ -38,4 +38,4 @@ endif()
 
 # timer
 lite_cc_library(timer SRCS timer.cc DEPS ${utils_DEPS})
-lite_cc_test(test_timer SRCS timer_test.cc DEPS ${utils_DEPS})
+lite_cc_test(test_timer SRCS timer_test.cc DEPS ${utils_DEPS} timer)
