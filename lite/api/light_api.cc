@@ -305,7 +305,8 @@ void LightPredictor::WeightFP32ToFP16() {
                                     "gru",
                                     "sequence_conv",
                                     "elementwise_add",
-                                    "elementwise_mul"};
+                                    "elementwise_mul",
+                                    "prelu"};
   for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
     auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
     for (size_t k = 0; k < block->OpsSize(); ++k) {

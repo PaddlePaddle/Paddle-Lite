@@ -170,3 +170,7 @@ REGISTER_SUBGRAPH_BRIDGE(
     kHuaweiAscendNPU,
     paddle::lite::subgraph::huawei_ascend_npu::ActConverter<
         ge::op::HardSigmoid>);
+REGISTER_SUBGRAPH_BRIDGE(
+    abs,
+    kHuaweiAscendNPU,
+    paddle::lite::subgraph::huawei_ascend_npu::ActConverter<ge::op::Abs>);

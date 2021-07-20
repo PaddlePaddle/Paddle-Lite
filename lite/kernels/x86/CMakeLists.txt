@@ -41,6 +41,7 @@ add_kernel(sequence_conv_compute_x86 X86 basic SRCS sequence_conv_compute.cc DEP
 
 add_kernel(gather_compute_x86 X86 extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} fluid_data_type)
 add_kernel(grid_sampler_compute_x86 X86 extra SRCS grid_sampler_compute.cc DEPS ${lite_kernel_deps} math_function)
+add_kernel(clip_compute_x86 X86 extra SRCS clip_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(mul_compute_x86 X86 basic SRCS mul_compute.cc DEPS ${lite_kernel_deps} blas)
 add_kernel(concat_compute_x86 X86 basic SRCS concat_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_pool_compute_x86 X86 basic SRCS sequence_pool_compute.cc DEPS ${lite_kernel_deps} sequence_pooling)

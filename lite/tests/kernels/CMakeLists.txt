@@ -17,6 +17,7 @@ set(test_kernel_deps
     ${imagination_nna_kernels}
     ${bm_kernels}
     ${opencl_kernels}
+    ${nnadapter_kernels}
 )
 
 lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
@@ -87,6 +88,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_sequence_mask SRCS sequence_mask_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_sequence_reverse SRCS sequence_reverse_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_correlation SRCS correlation_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_cos_sim SRCS cos_sim_test.cc DEPS ${test_kernel_deps})
     #lite_cc_test(test_kernel_sequence_pool_compute SRCS sequence_pool_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_sequence_conv_compute SRCS sequence_conv_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_unsqueeze_compute SRCS unsqueeze_compute_test.cc DEPS ${test_kernel_deps})
