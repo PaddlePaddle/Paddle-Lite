@@ -19,6 +19,7 @@ __kernel void abs_fun(__global const CL_DTYPE* x_data,
                       __global CL_DTYPE* out_data) {
   const int index = get_global_id(0);
   if (index < count) {
-    out_data[index] = (x_data[index] >= 0) ? x_data[index] : (-1 * x_data[index]);
+    out_data[index] =
+        (x_data[index] >= 0) ? x_data[index] : (-1 * x_data[index]);
   }
 }

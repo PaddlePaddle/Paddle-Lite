@@ -23,9 +23,7 @@ namespace paddle {
 namespace lite {
 
 template <typename dtype>
-void abs_compute_ref(const dtype *x_data,
-                      const DDim &x_dim,
-                      dtype *out_data) {
+void abs_compute_ref(const dtype *x_data, const DDim &x_dim, dtype *out_data) {
   // abs
   for (int i = 0; i < x_dim.production(); ++i) {
     out_data[i] = (x_data[i] >= 0) ? x_data[i] : (-1 * x_data[i]);

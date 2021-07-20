@@ -36,10 +36,8 @@ class AbsCompute
   std::string doc() const override { return "Abs using cl::Buffer, kFloat"; }
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "buffer/abs_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+    context.cl_context()->AddKernel(
+        kernel_func_name_, "buffer/abs_kernel.cl", build_options_, time_stamp_);
   }
 
   void Run() override {
@@ -97,12 +95,8 @@ class AbsCompute
 }  // namespace paddle
 
 // Abs
-REGISTER_LITE_KERNEL(abs,
-                     kOpenCL,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::opencl::AbsCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    abs, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::AbsCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();
