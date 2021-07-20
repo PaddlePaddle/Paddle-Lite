@@ -81,9 +81,8 @@ TEST(Pow, precision) {
   abs_error = 1e-1;
   place = TARGET(kHuaweiAscendNPU);
 #elif defined(LITE_WITH_X86)
-  Place place(TARGET(kX86));
+  place = TARGET(kX86);
 #elif defined(LITE_WITH_ARM)
-  abs_error = 2e-4;
   place = TARGET(kARM);
 #else
   return;
