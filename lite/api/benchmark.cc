@@ -224,7 +224,7 @@ void Run(const std::string& model_path,
   std::vector<float> perf_vct;
   lite::Timer timer;
   for (int i = 0; i < repeats; ++i) {
-    auto start = timer.Start();
+    timer.Start();
     predictor->Run();
     float elapsed_time_ms = timer.Stop();
     perf_vct.push_back(elapsed_time_ms);
