@@ -65,7 +65,7 @@ class Timer {
     snprintf(
         avg_str, sizeof(avg_str), "%6.3f", sum_ / static_cast<float>(count_));
     LOG(INFO) << string_format(
-        "%-45s time cost: min = %-8s ms | max = %-8s ms | avg = %-8s ms \n",
+        "%10s time cost: min = %8s ms | max = %8s ms | avg = %8s ms \n",
         timer_info_.c_str(),
         min_str,
         max_str,

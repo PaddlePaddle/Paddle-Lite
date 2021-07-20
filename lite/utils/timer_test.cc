@@ -36,7 +36,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #endif // !_WIN32
 
 TEST(timer, basic) {
-  auto GetCurrentUS = []() -> float {
+  auto GetCurrentUS = []() -> double {
     struct timeval time;
     gettimeofday(&time, NULL);
     return 1e+6 * time.tv_sec + time.tv_usec;
@@ -44,7 +44,7 @@ TEST(timer, basic) {
 
   const float scale = 0.1f;
   paddle::lite::Timer timer;
-  for (float ms = 0.f; ms < 1000.f; ms += 25.f) {
+  for (float ms = 0.f; ms < 100.f; ms += 25.f) {
     timer.Start();
     timer.SleepInMs(ms);
     float elapsed_time_ms = timer.Stop();
