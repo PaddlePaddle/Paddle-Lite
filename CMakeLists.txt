@@ -104,7 +104,7 @@ lite_option(LITE_WITH_XTCL      "Enable XPU via XTCL"  OFF IF LITE_WITH_XPU)
 lite_option(LITE_WITH_BM        "Enable BM in lite mode"   OFF)
 lite_option(LITE_WITH_APU       "Enable APU in lite mode"  OFF)
 lite_option(LITE_WITH_TRAIN     "Enable training operators and kernels in lite" OFF)
-lite_option(LITE_WITH_OPENMP    "Enable OpenMP in lite framework" OFF)
+lite_option(LITE_WITH_OPENMP    "Enable OpenMP in lite framework" ON)
 lite_option(LITE_WITH_OPENCL    "Enable OpenCL support in lite" OFF)
 lite_option(LITE_WITH_METAL     "Enable Metal support in lite" OFF)
 lite_option(LITE_WITH_FPGA      "Enable FPGA support in lite" OFF)
@@ -209,6 +209,11 @@ else()
             COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/tune_cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
             )
+endif()
+
+# for opencl
+if (LITE_WITH_OPENCL)
+    include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
 endif()
 
 # for mobile
