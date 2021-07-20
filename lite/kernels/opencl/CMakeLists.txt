@@ -143,6 +143,7 @@ add_kernel(slice_opencl_buffer OPENCL basic SRCS slice_buffer_compute.cc DEPS ${
 add_kernel(yolo_box_opencl_buffer OPENCL basic SRCS yolo_box_buffer_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
 add_kernel(squeeze_unsqueeze_opencl_buffer OPENCL basic SRCS squeeze_unsqueeze_buffer_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(abs_opencl_buffer OPENCL basic SRCS abs_buffer_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 
@@ -151,6 +152,9 @@ add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc DEPS 
 ######################
 # buffer kernel test #
 ######################
+lite_cc_test(test_abs_buffer_opencl SRCS abs_buffer_compute_test.cc
+             DEPS abs_opencl_buffer op_registry program context)
+
 #lite_cc_test(test_activation_buffer_opencl SRCS activation_buffer_compute_test.cc
 #             DEPS activation_opencl op_registry program context)
 
