@@ -964,26 +964,26 @@ function amlogic_npu_build_target() {
     local sdk_root_dir=$4
 
     # Build all of tests
-#    rm -rf $BUILD_DIR
-#    mkdir -p $BUILD_DIR
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
     cd $BUILD_DIR
     prepare_workspace $ROOT_DIR $BUILD_DIR
-#    cmake .. \
-#        -DWITH_GPU=OFF \
-#        -DWITH_MKL=OFF \
-#        -DWITH_LITE=ON \
-#        -DLITE_WITH_CUDA=OFF \
-#        -DLITE_WITH_X86=OFF \
-#        -DLITE_WITH_ARM=ON \
-#        -DWITH_ARM_DOTPROD=ON \
-#        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-#        -DWITH_TESTING=ON \
-#        -DLITE_BUILD_EXTRA=ON \
-#        -DLITE_WITH_TRAIN=ON \
-#        -DLITE_WITH_NNADAPTER=ON \
-#        -DNNADAPTER_WITH_AMLOGIC_NPU=ON \
-#        -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT="$sdk_root_dir" \
-#        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DWITH_ARM_DOTPROD=ON \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DNNADAPTER_WITH_AMLOGIC_NPU=ON \
+        -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT="$sdk_root_dir" \
+        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
