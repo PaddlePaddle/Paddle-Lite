@@ -13,12 +13,13 @@
 // limitations under the License.
 
 #pragma once
+#include <float.h>
 #include <chrono>  // NOLINT(build/c++11)
 #include <cmath>
 #include <string>
 #include <thread>  // NOLINT(build/c++11)
 #include "lite/utils/cp_logging.h"
-#include "lite/utils/macros.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -63,7 +64,7 @@ class Timer {
     char avg_str[16];
     snprintf(
         avg_str, sizeof(avg_str), "%6.3f", sum_ / static_cast<float>(count_));
-    LOG(INFO) << lite::string_format(
+    LOG(INFO) << string_format(
         "time cost: min = %-8s ms | max = %-8s ms | avg = %-8s ms \n",
         timer_info_.c_str(),
         min_str,
