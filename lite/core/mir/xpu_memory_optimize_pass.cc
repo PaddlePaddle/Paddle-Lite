@@ -76,33 +76,22 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
       "cast",
       "expand",
       "io_copy_once",
+      "scale",
   };
 
-  auto insert_invalid_op_nodes_for_specific_target = [&](
-      std::set<std::string> op_node_set, TargetType specific_target) {
-    std::set<std::string> invalid_op_nodes_opencl = {
-        "layout", "fc", "yolo_box", "shape", "slice"};
-    for (auto& op_node : graph->StmtTopologicalOrder()) {
-      if (!op_node->IsStmt()) continue;
-      TargetType op_target_type = op_node->AsStmt().place().target;
-      if (op_target_type == specific_target &&
-          specific_target == TARGET(kOpenCL)) {
-        invalid_op_nodes.insert(invalid_op_nodes_opencl.begin(),
-                                invalid_op_nodes_opencl.end());
-        break;
-      }
-      // else if // you can add more targets
-    }
-  };
-
-  if (has_x86_opencl()) {
-    LOG(INFO) << "skip x86 opencl target for reuse memory pass";
-    return;
-  }
+  auto insert_invalid_op_nodes_for_specific_target =
+      [&](std::set<std::string> op_node_set) {
+        for (auto& op_node : graph->StmtTopologicalOrder()) {
+          if (!op_node->IsStmt()) continue;
+          TargetType op_target_type = op_node->AsStmt().place().target;
+          if (op_target_type != TARGET(kXPU)) {
+            invalid_op_nodes.insert(op_node->AsStmt().op_info()->Type());
+          }
+        }
+      };
 
   VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
-  insert_invalid_op_nodes_for_specific_target(invalid_op_nodes,
-                                              TARGET(kOpenCL));
+  insert_invalid_op_nodes_for_specific_target(invalid_op_nodes);
   VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
 
   // Collect the invalid input and output variables that will not be reused.
@@ -131,6 +120,8 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
              std::pair<std::set<std::string>, std::set<std::string>>>
         inplace_op_nodes = {{"reshape", {{"X"}, {"Out"}}},
                             {"reshape2", {{"X"}, {"Out"}}},
+                            {"flatten", {{"X"}, {"Out"}}},
+                            {"flatten2", {{"X"}, {"Out"}}},
                             {"squeeze", {{"X"}, {"Out"}}},
                             {"squeeze2", {{"X"}, {"Out"}}},
                             {"unsqueeze", {{"X"}, {"Out"}}},
@@ -393,12 +384,12 @@ void XPUMemoryOptimizePass::PerformReusePlan(
 }
 
 void XPUMemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  const char* xpu_mem_optimize = std::getenv("XPU_MEMORY_OPTIMIZE");
-  if (xpu_mem_optimize == nullptr || std::strlen(xpu_mem_optimize) != 1 ||
-      std::isdigit(*xpu_mem_optimize) == 0 ||
-      std::atoi(xpu_mem_optimize) <= 0) {
-    return;
-  }
+  // const char* xpu_mem_optimize = std::getenv("XPU_MEMORY_OPTIMIZE");
+  // if (xpu_mem_optimize == nullptr || std::strlen(xpu_mem_optimize) != 1 ||
+  //    std::isdigit(*xpu_mem_optimize) == 0 ||
+  //    std::atoi(xpu_mem_optimize) <= 0) {
+  //  return;
+  //}
   // Memory optimization.
   // We will perform the following operation:
   // 1. Collect all var's lifetime, then classify them according to the device.

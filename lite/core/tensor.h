@@ -84,10 +84,14 @@ class TensorLite {
     } else {
       xpu_l3_cache_block_->record(memory_size_);
       if (memory_size_ <= xpu_l3_cache_block_->size()) {
+        VLOG(4) << "TRUE, Acquire Size is " << memory_size_ << ", L3 Size is "
+                << xpu_l3_cache_block_->size();
         xpu_l3_cache_block_->in_use_ = true;
         return reinterpret_cast<R *>(
             static_cast<char *>(xpu_l3_cache_block_->data()) + offset_);
       } else {
+        VLOG(4) << "False, Acquire Size is " << memory_size_ << ", L3 Size is "
+                << xpu_l3_cache_block_->size();
         xpu_l3_cache_block_->in_use_ = false;
         return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
                                      offset_);

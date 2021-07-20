@@ -154,7 +154,7 @@ void TargetWrapperXPU::FreeL3Cache() {
   }
   if (local_l3_size != 0 || TargetWrapperXPU::IsSharedL3Created()) {
     if (TargetWrapperXPU::l3_block_autotune_lr >= 0.25) {
-      TargetWrapperXPU::l3_block_autotune_lr *= 0.8;
+      TargetWrapperXPU::l3_block_autotune_lr *= 0.9;
       TargetWrapperXPU::AutoTuneL3BlockSize();
     }
     for (auto it = l3_block_dict.begin(); it != l3_block_dict.end(); ++it) {
@@ -290,8 +290,9 @@ LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
 LITE_THREAD_LOCAL bool TargetWrapperXPU::multi_encoder_adaptive_seqlen{false};
 // conv autotune config
-LITE_THREAD_LOCAL bool TargetWrapperXPU::conv_autotune{false};
-LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;  // NOLINT
+LITE_THREAD_LOCAL bool TargetWrapperXPU::conv_autotune{true};
+LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file{
+    "/opt/xpu_conv_autotune"};  // NOLINT
 // l3 cache config
 LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{0xfffc00};
 LITE_THREAD_LOCAL void* TargetWrapperXPU::local_l3_ptr_{nullptr};

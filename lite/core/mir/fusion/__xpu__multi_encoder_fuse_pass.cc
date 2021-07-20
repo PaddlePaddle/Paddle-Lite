@@ -885,6 +885,7 @@ class XPUMultiEncoderFuser {
     max_filter_tensor->set_persistable(true);
     op_desc.SetInput("FCWeightMax", {max_name});
     op_desc.SetAttr<int>("xpu_l3_size", 14680064);
+    // op_desc.SetAttr<int>("xpu_l3_size", 8388608);
 
     auto multi_encoder_op = LiteOpRegistry::Global().Create(op_desc.Type());
     multi_encoder_op->Attach(op_desc, scope);

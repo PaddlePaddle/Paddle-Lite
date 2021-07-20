@@ -22,6 +22,12 @@ namespace paddle {
 namespace lite {
 
 void TensorLite::ShareDataWith(const TensorLite &other) {
+#ifdef LITE_WITH_XPU
+  if (target_ == TargetType::kXPU && xpu_l3_cache_block_ != nullptr) {
+    LOG(FATAL)
+        << "Invalid Method(ShareDataWith) When Using XPU Memory Optimization";
+  }
+#endif
   buffer_ = other.buffer_;
   dims_ = other.dims_;
   target_ = other.target_;
@@ -29,10 +35,15 @@ void TensorLite::ShareDataWith(const TensorLite &other) {
   memory_size_ = other.memory_size_;
   precision_ = other.precision_;
   offset_ = other.offset_;
-  xpu_l3_cache_block_ = other.xpu_l3_cache_block_;
 }
 
 void TensorLite::CopyDataFrom(const TensorLite &other) {
+#ifdef LITE_WITH_XPU
+  if (target_ == TargetType::kXPU && xpu_l3_cache_block_ != nullptr) {
+    LOG(FATAL)
+        << "Invalid Method(CopyDataFrom) When Using XPU Memory Optimization";
+  }
+#endif
   dims_ = other.dims_;
   target_ = other.target_;
   lod_ = other.lod_;
