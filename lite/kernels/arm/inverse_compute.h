@@ -17,7 +17,6 @@
 #include "lite/core/kernel.h"
 #include "lite/operators/inverse_op.h"
 
-
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -31,8 +30,6 @@ class InverseCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   void Run() override;
 
   virtual ~InverseCompute() = default;
-
-
 };
 
 }  // namespace arm
