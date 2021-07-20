@@ -35,13 +35,7 @@ class InverseCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 
   virtual ~InverseCompute() = default;
 
-#ifdef LITE_WITH_PROFILE
-  virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
-  }
-  std::string kernel_func_name_{"NotImplForInverse"};
-#endif
+
 };
 
 }  // namespace arm
