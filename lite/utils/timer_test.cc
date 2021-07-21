@@ -43,7 +43,7 @@ TEST(timer, basic) {
   };
 
   paddle::lite::Timer timer;
-  for (float base = 0.f; base < 100.f; base += 25.f) {
+  for (float base = 10.f; base < 100.f; base += 25.f) {
     timer.Start();
     timer.SleepInMs(base);
     float duration_ms = timer.Stop();
@@ -55,7 +55,7 @@ TEST(timer, basic) {
     float t = (end - start) * 1e-3;
     LOG(INFO) << "Base time: " << base << "  gettimeofday: " << t
               << "  Timer: " << duration_ms;
-    EXPECT_EQ(static_cast<int>(duration_ms), static_cast<int>(t));
+    EXPECT_NEAR(duration_ms, t, t * 0.1);
   }
 }
 
