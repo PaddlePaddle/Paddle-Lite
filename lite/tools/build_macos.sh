@@ -208,9 +208,6 @@ function make_x86 {
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
 
-  if [ ${WITH_OPENCL} == "ON" ]; then
-    make opencl_clhpp -j$NUM_PROC
-  fi
   make publish_inference -j$NUM_PROC
   cd -
 }
