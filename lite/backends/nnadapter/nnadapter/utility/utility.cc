@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "utility/utility.h"
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#include <arm_neon.h>
+#endif
 #include "utility/debug.h"
 #include "utility/micros.h"
 #include "utility/string.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 
@@ -251,9 +254,23 @@ NNADAPTER_EXPORT void Symm2AsymmData(const int8_t* input_data,
                                      size_t input_data_count,
                                      int32_t zero_point,
                                      uint8_t* output_data) {
-  for (size_t i = 0; i < input_data_count; i++) {
-    output_data[i] = static_cast<uint8_t>(std::min(
-        std::max(static_cast<int16_t>(input_data[i]) + zero_point, 0), 255));
+  int i = 0;
+  int size = input_data_count;
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  int16x8_t vzp_s16x8 = vdupq_n_s16(zero_point);
+  for (; i < size - 7; i += 8) {
+    int8x8_t vin_s8x8 = vld1_s8(input_data);
+    int16x8_t vin_s16x8 = vmovl_s8(vin_s8x8);
+    int16x8_t vout_s16x8 = vqaddq_s16(vin_s16x8, vzp_s16x8);
+    uint8x8_t vout_u8x8 = vqmovun_s16(vout_s16x8);
+    vst1_u8(output_data, vout_u8x8);
+    input_data += 8;
+    output_data += 8;
+  }
+#endif
+  for (; i < size; i++) {
+    *(output_data++) = static_cast<uint8_t>(std::min(
+        std::max(static_cast<int16_t>(*(input_data++)) + zero_point, 0), 255));
   }
 }
 
@@ -261,9 +278,24 @@ NNADAPTER_EXPORT void Asymm2SymmData(const uint8_t* input_data,
                                      size_t input_data_count,
                                      int32_t zero_point,
                                      int8_t* output_data) {
-  for (size_t i = 0; i < input_data_count; i++) {
-    output_data[i] = static_cast<int8_t>(std::min(
-        std::max(static_cast<int16_t>(input_data[i]) - zero_point, -128), 127));
+  int i = 0;
+  int size = input_data_count;
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  int16x8_t vzp_s16x8 = vdupq_n_s16(zero_point);
+  for (; i < size - 7; i += 8) {
+    uint8x8_t vin_u8x8 = vld1_u8(input_data);
+    int16x8_t vin_s16x8 = vreinterpretq_s16_u16(vmovl_u8(vin_u8x8));
+    int16x8_t vout_s16x8 = vqsubq_s16(vin_s16x8, vzp_s16x8);
+    int8x8_t vout_s8x8 = vqmovn_s16(vout_s16x8);
+    vst1_s8(output_data, vout_s8x8);
+    input_data += 8;
+    output_data += 8;
+  }
+#endif
+  for (; i < size; i++) {
+    *(output_data++) = static_cast<int8_t>(std::min(
+        std::max(static_cast<int16_t>(*(input_data++)) - zero_point, -128),
+        127));
   }
 }
 
