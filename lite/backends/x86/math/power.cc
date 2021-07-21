@@ -84,15 +84,11 @@ void power<float>(const float* din,
 
       ptr_in += 16;
       for (int j = 0; j < 4; j++) {
-        vres0[j] = std::pow(vres0[j], factor_);
-        vres1[j] = std::pow(vres1[j], factor_);
-        vres2[j] = std::pow(vres2[j], factor_);
-        vres3[j] = std::pow(vres3[j], factor_);
+        ptr_out[j] = std::powf(vres0[j], factor_);
+        ptr_out[j + 4] = std::powf(vres1[j], factor_);
+        ptr_out[j + 8] = std::powf(vres2[j], factor_);
+        ptr_out[j + 12] = std::powf(vres3[j], factor_);
       }
-      _mm_storeu_ps(ptr_out, vres0);
-      _mm_storeu_ps(ptr_out + 4, vres1);
-      _mm_storeu_ps(ptr_out + 8, vres2);
-      _mm_storeu_ps(ptr_out + 12, vres3);
 #endif
       ptr_out += 16;
     }
