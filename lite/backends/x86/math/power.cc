@@ -98,9 +98,8 @@ void power<float>(const float* din,
       __m128 vsum0 = _mm_mul_ps(vin0, vscale);
       __m128 vres0 = _mm_add_ps(vsum0, vshift);
       for (int j = 0; j < 4; j++) {
-        vres0[j] = std::pow(vres0[j], factor_);
+        ptr_out[j] = std::powf(vres0[j], factor_);
       }
-      _mm_storeu_ps(ptr_out, vres0);
       ptr_out += 4;
     }
     for (int i = 0; i < rem_rem; i++) {
