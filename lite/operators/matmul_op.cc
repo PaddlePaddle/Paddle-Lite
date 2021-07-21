@@ -148,7 +148,7 @@ bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
   param_.alpha = op_desc.GetAttr<float>("alpha");
 
-  const OpInfo *op_info = dynamic_cast<const OpInfo *>(&op_desc);
+  const OpInfo *op_info = static_cast<const OpInfo *>(&op_desc);
   if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
     param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
     auto input_scale_name = "X0_scale";

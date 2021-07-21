@@ -19,9 +19,9 @@
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
+#include "lite/utils/any.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
-
 // This is an equivalent implementation of boost::any. We implement this to
 // avoid including the whole boost library and keep the inference library small.
 // These code references https://gist.github.com/shoooe/9202235
@@ -45,19 +45,19 @@ struct variant_helper;
 template <typename F, typename... Ts>
 struct variant_helper<F, Ts...> {
   inline static void destroy(size_t id, void* data) {
-    if (id == typeid(F).hash_code())
+    if (id == FastTypeId<F>())
       reinterpret_cast<F*>(data)->~F();
     else
       variant_helper<Ts...>::destroy(id, data);
   }
   inline static void move(size_t old_t, void* old_v, void* new_v) {
-    if (old_t == typeid(F).hash_code())
+    if (old_t == FastTypeId<F>())
       new (new_v) F(std::move(*reinterpret_cast<F*>(old_v)));
     else
       variant_helper<Ts...>::move(old_t, old_v, new_v);
   }
   inline static void copy(size_t old_t, const void* old_v, void* new_v) {
-    if (old_t == typeid(F).hash_code())
+    if (old_t == FastTypeId<F>())
       new (new_v) F(*reinterpret_cast<const F*>(old_v));
     else
       variant_helper<Ts...>::copy(old_t, old_v, new_v);
@@ -77,7 +77,7 @@ struct variant {
   static const size_t data_align = static_max<alignof(Ts)...>::value;
   using data_t = typename std::aligned_storage<data_size, data_align>::type;
   using helper_t = variant_helper<Ts...>;
-  static inline size_t invalid_type() { return typeid(void).hash_code(); }
+  static inline size_t invalid_type() { return 0; }
   size_t type_id;
   data_t data;
 
@@ -97,7 +97,7 @@ struct variant {
   }
   template <typename T>
   bool is() {
-    return (type_id == typeid(T).hash_code());
+    return (type_id == FastTypeId<T>());
   }
 
   size_t type() { return type_id; }
@@ -109,22 +109,22 @@ struct variant {
     // First we destroy the current contents
     helper_t::destroy(type_id, &data);
     new (&data) T(std::forward<Args>(args)...);
-    type_id = typeid(T).hash_code();
+    type_id = FastTypeId<T>();
   }
   template <typename T>
   const T& get() const {
     // It is a dynamic_cast-like behaviour
-    if (type_id == typeid(T).hash_code()) {
+    if (type_id == FastTypeId<T>()) {
       return *reinterpret_cast<const T*>(&data);
     } else {
 #ifdef LITE_ON_TINY_PUBLISH
       LOG(FATAL) << "unmatched type, store as " << type_id
-                 << " , but want to get " << typeid(T).name();
+                 << " , but want to get " << FastTypeId<T>();
 #else
       throw std::invalid_argument(
           string_format("unmatched type, store as %d, but want to get %s",
                         type_id,
-                        typeid(T).name()));
+                        FastTypeId<T>()));
 #endif
     }
     return *reinterpret_cast<const T*>(&data);
@@ -134,7 +134,7 @@ struct variant {
   const T get_if() const {
     static_assert(std::is_pointer<T>::value,
                   "Use get_if, make sure T is pointer");
-    if (type_id == typeid(T).hash_code()) {
+    if (type_id == FastTypeId<T>()) {
       return *reinterpret_cast<const T*>(&data);
     } else {
       return nullptr;
@@ -144,12 +144,12 @@ struct variant {
   template <typename T>
   T* get_mutable() {
     // It is a dynamic_cast-like behaviour
-    if (type_id == typeid(T).hash_code()) {
+    if (type_id == FastTypeId<T>()) {
       return reinterpret_cast<T*>(&data);
     } else {
 #ifdef LITE_ON_TINY_PUBLISH
       LOG(ERROR) << "unmatched type get, should be " << type_id << " but get "
-                 << typeid(T).name();
+                 << FastTypeId<T>();
 #else
       throw std::invalid_argument("unmatched type");
 #endif
