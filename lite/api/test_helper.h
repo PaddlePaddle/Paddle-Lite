@@ -19,7 +19,7 @@
 #include <sys/time.h>
 #else
 #include "lite/backends/x86/port.h"
-#endif
+#endif  // !_WIN32
 #include <time.h>
 #include <cmath>
 #include <fstream>
@@ -50,6 +50,20 @@ DEFINE_bool(int8, false, "is run int8");
 
 namespace paddle {
 namespace lite {
+
+#if defined(_WIN32)
+extern struct timeval;
+static int gettimeofday(struct timeval* tp, void* tzp) {
+  LARGE_INTEGER now, freq;
+  QueryPerformanceCounter(&now);
+  QueryPerformanceFrequency(&freq);
+  tp->tv_sec = now.QuadPart / freq.QuadPart;
+  tp->tv_usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
+  // uint64_t duration_us = sec * 1000000 + usec;
+
+  return (0);
+}
+#endif  // _WIN32
 
 inline double GetCurrentUS() {
   struct timeval time;

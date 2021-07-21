@@ -14,12 +14,12 @@
 
 #pragma once
 
-#include <chrono>  // NOLINT(build/c++11)
 #include <map>
 #include <string>
 #include <vector>
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/timer.h"
 
 namespace paddle {
 namespace lite {
@@ -76,9 +76,7 @@ static std::vector<size_t> DefaultGlobalWorkSize(const DDim& tensor_dim,
 }
 
 static const std::string GetTimeStamp() {
-  uint64_t usec = std::chrono::duration_cast<std::chrono::microseconds>(
-                      std::chrono::system_clock::now().time_since_epoch())
-                      .count();
+  uint64_t usec = lite::Timer::GetCurrentUS();
   return std::to_string(usec);
 }
 

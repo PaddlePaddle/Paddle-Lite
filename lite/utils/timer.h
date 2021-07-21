@@ -47,7 +47,14 @@ class Timer {
     return ms_delta;
   }
 
-  void SleepInMs(const float ms) {
+  static uint64_t GetCurrentUS() {
+    uint64_t usec = std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::system_clock::now().time_since_epoch())
+                        .count();
+    return usec;
+  }
+
+  static void SleepInMs(const float ms) {
     if (ms <= 0.f) {
       return;
     }
