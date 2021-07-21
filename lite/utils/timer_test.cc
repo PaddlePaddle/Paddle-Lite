@@ -48,7 +48,6 @@ TEST(timer, basic) {
     timer.SleepInMs(base);
     float duration_ms = timer.Stop();
     timer.Print();
-    EXPECT_EQ(static_cast<int>(duration_ms), static_cast<int>(base));
 
     auto start = GetCurrentUS();
     timer.SleepInMs(base);
@@ -56,6 +55,7 @@ TEST(timer, basic) {
     float t = (end - start) * 1e-3;
     LOG(INFO) << "Base time: " << base << "  gettimeofday: " << t
               << "  Timer: " << duration_ms;
+    EXPECT_EQ(static_cast<int>(duration_ms), static_cast<int>(t));
   }
 }
 
