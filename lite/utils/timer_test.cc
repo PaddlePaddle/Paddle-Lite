@@ -29,11 +29,11 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
   QueryPerformanceFrequency(&freq);
   tp->tv_sec = now.QuadPart / freq.QuadPart;
   tp->tv_usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
-  // uint64_t elapsed_time = sec * 1000000 + usec;
+  // uint64_t duration_us = sec * 1000000 + usec;
 
   return (0);
 }
-#endif // !_WIN32
+#endif  // !_WIN32
 
 TEST(timer, basic) {
   auto GetCurrentUS = []() -> double {
@@ -42,31 +42,21 @@ TEST(timer, basic) {
     return 1e+6 * time.tv_sec + time.tv_usec;
   };
 
-  const float scale = 0.1f;
   paddle::lite::Timer timer;
-  for (float ms = 0.f; ms < 100.f; ms += 25.f) {
+  for (float base = 0.f; base < 100.f; base += 25.f) {
     timer.Start();
-    timer.SleepInMs(ms);
-    float elapsed_time_ms = timer.Stop();
+    timer.SleepInMs(base);
+    float duration_ms = timer.Stop();
     timer.Print();
-    EXPECT_NEAR(elapsed_time_ms, ms, ms * scale);
+    EXPECT_EQ(static_cast<int>(duration_ms), static_cast<int>(base));
 
     auto start = GetCurrentUS();
-    timer.SleepInMs(ms);
+    timer.SleepInMs(base);
     auto end = GetCurrentUS();
-    float base = (end - start) * 1e-3;
-    LOG(INFO) << "Base time: " << ms
-              << "  gettimeofday: " << base
-              << "  Timer: " << elapsed_time_ms;
-    EXPECT_NEAR(elapsed_time_ms, base, base * scale);
+    float t = (end - start) * 1e-3;
+    LOG(INFO) << "Base time: " << base << "  gettimeofday: " << t
+              << "  Timer: " << duration_ms;
   }
-
-  const float ms = 123.f;
-  timer.Start();
-  timer.SleepInMs(ms);
-  float elapsed_time_ms = timer.Stop();
-  timer.Print();
-  EXPECT_NEAR(elapsed_time_ms, ms, ms * scale);
 }
 
 }  // namespace lite

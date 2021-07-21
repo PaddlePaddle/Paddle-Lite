@@ -27,12 +27,12 @@ namespace lite {
 // thread-safe timer impl
 class Timer {
  public:
-  explicit Timer(const std::string timer_info = "benchmark") {
+  explicit Timer(const std::string timer_info = "") {
     timer_info_ = timer_info;
     Reset();
   }
 
-  void Start() { Reset(); }
+  void Start() { start_ = std::chrono::system_clock::now(); }
 
   float Stop() {
     stop_ = std::chrono::system_clock::now();
@@ -65,7 +65,7 @@ class Timer {
     snprintf(
         avg_str, sizeof(avg_str), "%6.3f", sum_ / static_cast<float>(count_));
     LOG(INFO) << string_format(
-        "%10s time cost: min = %8s ms | max = %8s ms | avg = %8s ms \n",
+        "%s time cost: min = %8s ms | max = %8s ms | avg = %8s ms",
         timer_info_.c_str(),
         min_str,
         max_str,

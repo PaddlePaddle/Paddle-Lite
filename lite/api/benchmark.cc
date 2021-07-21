@@ -226,8 +226,8 @@ void Run(const std::string& model_path,
   for (int i = 0; i < repeats; ++i) {
     timer.Start();
     predictor->Run();
-    float elapsed_time_ms = timer.Stop();
-    perf_vct.push_back(elapsed_time_ms);
+    float duration_ms = timer.Stop();
+    perf_vct.push_back(duration_ms);
   }
 
   std::stable_sort(perf_vct.begin(), perf_vct.end());
