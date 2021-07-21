@@ -198,7 +198,8 @@ void CompareCompute<PType, CompareFunctor>::Run() {
       axis = x_dims.size();
     }
     int outer_num, mid_num, inner_num;
-    int is_run_common_broadcast, axis_trim = 0;
+    int is_run_common_broadcast = 0;
+    int axis_trim = 0;
     auto y_dims_trimed = trim_trailing_singular_dims(y_dims);
     axis_trim = (y_dims_trimed.size() == 0) ? x_dims.size() : axis;
     get_mid_dims(x_dims,
