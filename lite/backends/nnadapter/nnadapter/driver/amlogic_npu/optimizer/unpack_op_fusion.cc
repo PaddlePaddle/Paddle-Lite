@@ -23,15 +23,10 @@
 namespace nnadapter {
 namespace amlogic_npu {
 
-static void UnpackConv2D(hal::Model* model, hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 13);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  auto fuse_code = reinterpret_cast<int32_t*>(input_operands[10]->buffer);
-  auto output_operand = output_operands[0];
+static void UnpackActivations(hal::Model* model,
+                              hal::Operand* output_operand,
+                              hal::Operand* fuse_code_operand) {
+  auto fuse_code = reinterpret_cast<int32_t*>(fuse_code_operand->buffer);
   // Unpack fused activations
   if (*fuse_code != NNADAPTER_FUSED_NONE) {
     switch (*fuse_code) {
@@ -55,9 +50,12 @@ void UnpackOpFusion(hal::Model* model) {
   for (auto operation : operations) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
+    auto& input_operands = operation->input_operands;
+    auto& output_operands = operation->output_operands;
     switch (operation->type) {
       case NNADAPTER_CONV_2D:
-        UnpackConv2D(model, operation);
+      case NNADAPTER_CONV_2D_TRANSPOSE:
+        UnpackActivations(model, output_operands[0], input_operands[10]);
         break;
       default:
         break;

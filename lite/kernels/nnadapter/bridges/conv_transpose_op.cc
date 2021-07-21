@@ -57,13 +57,12 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output_dims = output->dims();
   auto batch_size = input_dims[0];
   auto input_channel_size = input_dims[1];
-  auto output_channel_size = filter_dims[0];
-  auto filter_channel_size = filter_dims[1];
+  auto output_channel_size = filter_dims[1];
   CHECK_EQ(input_dims.size(), 4L);
   CHECK_EQ(output_dims.size(), 4L);
   CHECK_EQ(filter_dims.size(), 4L);
   CHECK_EQ(output_dims[0], batch_size);
-  CHECK_EQ(output_dims[1], output_channel_size);
+  CHECK_EQ(filter_dims[0], input_channel_size);
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
@@ -73,6 +72,14 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       op_info->HasAttr("with_act") && op_info->GetAttr<bool>("with_act");
   std::string act_type =
       with_act ? op_info->GetAttr<std::string>("act_type") : "";
+  std::vector<int> output_size;
+  if (op_info->HasAttr("output_size")) {
+    output_size = op_info->GetAttr<std::vector<int>>("output_size");
+  }
+  std::vector<int> output_padding;
+  if (op_info->HasAttr("output_padding")) {
+    output_padding = op_info->GetAttr<std::vector<int>>("output_padding");
+  }
   // Calculate paddings and strides
   CHECK_EQ(strides.size(), 2L);
   if (paddings.size() == 2L) {
@@ -102,11 +109,19 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     with_act = true;
     act_type = "relu";
   }
-  // Check depthwise mode
-  bool is_depthwise_mode =
-      (groups != 1 && input_channel_size == groups &&
-       filter_channel_size == 1 && output_channel_size % groups == 0);
-  VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
+  // Caculate output_padding according to output_size, kernel_size, dilations,
+  // strides and paddings
+  if (!output_size.empty()) {
+    CHECK_EQ(output_size.size(), 2);
+    output_padding.resize(2);
+    for (size_t i = 0; i < 2; i++) {
+      int kernel_ext = dilations[i] * (filter_dims[i + 2] - 1) + 1;
+      int out_size = (input_dims[i + 2] - 1) * strides[i] + kernel_ext -
+                     paddings[i * 2] - paddings[i * 2 + 1];
+      CHECK_GE(output_size[i], out_size);
+      output_padding[i] = output_size[i] - out_size;
+    }
+  }
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -205,15 +220,19 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto dilation_height_operand =
       converter->AddInt32ConstantOperand(dilations[0]);
   auto group_operand = converter->AddInt32ConstantOperand(groups);
+  auto output_padding_width_operand = converter->AddInt32ConstantOperand(
+      output_padding.size() == 2 ? output_padding[1] : 0);
+  auto output_padding_height_operand = converter->AddInt32ConstantOperand(
+      output_padding.size() == 2 ? output_padding[0] : 0);
 
   // Fuse code operand
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
-    fuse_code_value = 1;
+    fuse_code_value = NNADAPTER_FUSED_RELU;
   } else if (act_type == "relu1") {
-    fuse_code_value = 2;
+    fuse_code_value = NNADAPTER_FUSED_RELU1;
   } else if (act_type == "relu6") {
-    fuse_code_value = 3;
+    fuse_code_value = NNADAPTER_FUSED_RELU6;
   } else if (!act_type.empty()) {
     LOG(WARNING) << "Unsupported activation type: " << act_type;
     return FAILED;
@@ -230,7 +249,7 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         converter->AddFloat32VariableOperand(output_dims, output_name);
   }
 
-  // Conv2D operation
+  // Conv2D transpose operation
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand,
       filter_operand,
@@ -244,7 +263,9 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       group_operand,
       fuse_code_operand,
       dilation_width_operand,
-      dilation_height_operand};
+      dilation_height_operand,
+      output_padding_width_operand,
+      output_padding_height_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   auto conv2d_transpose_operation =
       converter->AddOperation(NNADAPTER_CONV_2D_TRANSPOSE);

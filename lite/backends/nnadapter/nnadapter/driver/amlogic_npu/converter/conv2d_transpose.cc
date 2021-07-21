@@ -24,7 +24,7 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 13);
+  NNADAPTER_CHECK_EQ(input_count, 15);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
@@ -69,6 +69,18 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
       *reinterpret_cast<int32_t*>(input_operands[12]->buffer);
   NNADAPTER_VLOG(5) << "dilations=[" << dilation_width << "," << dilation_height
                     << "]";
+  // Output paddings
+  auto output_padding_width =
+      *reinterpret_cast<int32_t*>(input_operands[13]->buffer);
+  auto output_padding_height =
+      *reinterpret_cast<int32_t*>(input_operands[14]->buffer);
+  NNADAPTER_VLOG(5) << "output_padding=[" << output_padding_width << ","
+                    << output_padding_height << "]";
+  NNADAPTER_CHECK_EQ(output_padding_width, 0)
+      << "amlnpu_ddk doesn't support output_padding_width != 0";
+  NNADAPTER_CHECK_EQ(output_padding_height, 0)
+      << "amlnpu_ddk doesn't support output_padding_height != 0";
+
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
@@ -109,11 +121,7 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   attr.dilation[1] = dilation_height;
   attr.pad_type = aml::nn::PadType::AUTO;
   // fuse RELU ?
-  if (fuse_code == NNADAPTER_FUSED_NONE) {
-    attr.has_relu = false;
-  } else if (fuse_code == NNADAPTER_FUSED_RELU) {
-    attr.has_relu = true;
-  } else {
+  if (fuse_code != NNADAPTER_FUSED_NONE) {
     NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
                          << ") is found.";
   }

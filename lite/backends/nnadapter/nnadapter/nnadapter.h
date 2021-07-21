@@ -266,9 +266,9 @@ typedef enum {
   NNADAPTER_CONV_2D = 3,
 
   /**
-   * Performs a normal or depthwise 2-D convolution operation.
-   * The CONV_2D op computes a 2-D convolution based on the input, filter,
-   * strides, paddings, dilations, groups and etc.
+   * Performs the transpose of 2-D convolution operation(also called
+   * deconvolution) based on the input, filter, strides, paddings, dilations,
+   * groups and etc.
    *
    * Inputs:
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
@@ -277,15 +277,10 @@ typedef enum {
    * H_in, W_in].
    * * 1: filter, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor.
-   *      1) For a normal convolution, the filter's shape is [C_out, C_in,
-   * filter_height, filter_width], where C_out and C_in is the number of the
-   * channels of output and input, filter_height and filter_width is the
-   * filter's kernel size in the 'H' and 'W' dimension.
-   *      2) For a depthwise convolution, the filter's shape is [C_out, 1,
-   * filter_height, filter_width], where C_out is the number of the channels of
-   * output, filter_height and filter_width is the filter's kernel size in the
-   * 'H' and 'W' dimension.
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor. The filter's shape
+   * is [C_out, C_in, filter_height, filter_width], where C_out and C_in is the
+   * number of the channels of output and input, filter_height and filter_width
+   * is the filter's kernel size in the 'H' and 'W' dimension.
    * * 2: bias, A 1-D tensor with shape [C_out].
    *      1) If input's type is NNADAPTER_TENSOR_FLOAT16 or
    * NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
@@ -302,23 +297,26 @@ typedef enum {
    * * 7: stride_width, A NNADAPTER_INT32 scalar.
    * * 8: stride_height, A NNADAPTER_INT32 scalar.
    * * 9: group, A NNADAPTER_INT32 scalar.
-   *      1) For a normal convolution, group must be 1.
-   *      2) For a depthwise convolution, the formula should be satisfied:
-   * group=C_out=C_in.
    * * 10: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
    * * 11: dilation_width, A NNADAPTER_INT32 scalar. Defaults to 1.
    * * 12: dilation_height, A NNADAPTER_INT32 scalar. Defaults to 1.
+   * * 13: output_padding_width, A NNADAPTER_INT32 scalar, specifying the
+   * additional size added to one side(along width dimension) of the output
+   * shape. Defaults to 0.
+   * * 14: output_padding_height, A NNADAPTER_INT32 scalar, specifying the
+   * additional size added to one side(along height dimension) of the output
+   * shape. Defaults to 0.
    *
    * Outputs:
    * * 0: output, The output 4-D tensor with shape [N, C_out, H_out, W_out], its
    * type is the same as input.
-   *      H_out = (H_in + padding_height_top + padding_height_bottom -
-   * (dilation_height * (filter_height
-   *              - 1) + 1)) / stride_height + 1
-   *      W_out = (W_in + padding_width_left + padding_width_right -
-   * (dilation_width * (filter_width - 1)
-   *              + 1)) / stride_width + 1
+   *      H_out = (H_in - 1) * stride_height - padding_height_top -
+   * padding_height_bottom + (dilation_height * (filter_height - 1)) + 1 +
+   * output_padding_height
+   *      W_out = (W_in - 1) * stride_width - padding_width_left -
+   * padding_width_right + (dilation_width * (filter_width - 1) + 1)) + 1 +
+   * output_padding_width
    *
    * Available since version 1.
    */

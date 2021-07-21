@@ -219,7 +219,6 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_CONV_2D:
-      case NNADAPTER_CONV_2D_TRANSPOSE:
         input_args = {"input",
                       "filter",
                       "bias",
@@ -233,6 +232,24 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "fuse_code",
                       "dilation_width",
                       "dilation_height"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CONV_2D_TRANSPOSE:
+        input_args = {"input",
+                      "filter",
+                      "bias",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "group",
+                      "fuse_code",
+                      "dilation_width",
+                      "dilation_height",
+                      "output_padding_width",
+                      "output_padding_height"};
         output_args = {"output"};
         break;
       case NNADAPTER_FULLY_CONNECTED:
