@@ -21,7 +21,7 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-void InplaceFuser::BuildPattern() { auto* inplace = OpNode("inplace", type_); }
+void InplaceFuser::BuildPattern() { OpNode("inplace", type_); }
 
 void InplaceFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto out_var_nodes = matched.at("inplace")->outlinks;
