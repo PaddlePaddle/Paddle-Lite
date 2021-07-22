@@ -31,7 +31,7 @@ void InverseCompute<T>::Run() {
   lite::Tensor* input = param.Input;
   lite::Tensor* output = param.Output;
 
-  lite::arm::math::inverse_func<T>(input, output);
+  lite::host::math::inverse_func<T>(input, output);
   return;
 }
 
@@ -44,7 +44,7 @@ REGISTER_LITE_KERNEL(inverse,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::InverseCompute<float>,
+                     paddle::lite::kernels::host::InverseCompute<float>,
                      fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
