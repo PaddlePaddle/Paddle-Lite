@@ -20,12 +20,6 @@ namespace x86 {
 namespace math {
 
 template <typename T>
-/*void clip(const T* din,
-           T* dout,
-           const int num,
-           float max_,
-           float min_);
-*/
 void clip(const T* din, T* dout, const int num, float max_, float min_);
 
 } /* namespace math */

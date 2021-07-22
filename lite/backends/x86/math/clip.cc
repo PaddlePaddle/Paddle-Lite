@@ -72,7 +72,7 @@ void clip<float> (const float* din,
       ptr_out += 4;
     }
     for (int i = 0; i < rem_rem; i++) {
-      float tmp = ptr_in[0] > min_ ? ptr_in[i] : min_;
+      float tmp = ptr_in[0] > min_ ? ptr_in[0] : min_;
       ptr_out[0] = tmp < max_ ? tmp : max_;      
       ptr_in++;
       ptr_out++;      
