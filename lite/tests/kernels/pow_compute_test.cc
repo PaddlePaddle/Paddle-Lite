@@ -64,23 +64,29 @@ class PowComputeTester : public arena::TestCase {
   }
 };
 
-void test_pow(Place place) {
+void test_pow(Place place, float abs_error) {
   for (float factor : {1., 1.2, 1.6}) {
     std::unique_ptr<arena::TestCase> tester(
         new PowComputeTester(place, "def", factor));
-    arena::Arena arena(std::move(tester), place, 2e-4);
+    arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
 }
 
 TEST(Pow, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_pow(place);
+  float abs_error = 2e-4;
+  Place place;
+
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+  abs_error = 1e-1;
+  place = TARGET(kHuaweiAscendNPU);
+#elif defined(LITE_WITH_ARM)
+  abs_error = 2e-4;
+  place = TARGET(kARM);
+#else
+  return;
 #endif
+  test_pow(place, abs_error);
 }
 
 }  // namespace lite

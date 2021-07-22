@@ -212,7 +212,7 @@ template <class T = float>
 void TestSplitNum(Place place,
                   float abs_error,
                   const std::string& alias = "def") {
-  for (int num : {3, 4}) {
+  for (int num : {3, 2}) {
     TestSplit<T>(place, abs_error, alias, DDim{{2, 3, 4, 6}}, -1, num);
   }
 }
@@ -263,5 +263,18 @@ TEST(split_x86, precision) {
 }
 #endif
 
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+TEST(split_ascend_npu_test, precision) {
+  Place place = TARGET(kHuaweiAscendNPU);
+  float abs_error = 1e-2;
+
+  TestSplitBase<float>(place, abs_error);
+  TestSplitBase<int>(place, abs_error);
+  TestSplitBase<int64_t>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+}
+#endif
 }  // namespace lite
 }  // namespace paddle

@@ -119,6 +119,8 @@ bool InsertOperand(hal::Model* model,
                    bool after);
 // Check if it is a constant operand
 bool IsConstantOperand(hal::Operand* operand);
+bool IsModelInputOperand(hal::Operand* operand);
+bool IsModelOutputOperand(hal::Operand* operand);
 // Find the operations that consumes the operand
 std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
                                                  hal::Operand* operand);
@@ -135,6 +137,13 @@ hal::Operand* AddTransposeOperation(hal::Model* model,
 hal::Operand* AddReshapeOperation(hal::Model* model,
                                   hal::Operand* input_operand,
                                   std::vector<int32_t> shape);
+// Add a dummy add operation, set 'input_operand' as its input operand, create a
+// output operand with the same dimensions, and the addend is a zero operand
+hal::Operand* AddDummyOperation(hal::Model* model, hal::Operand* input_operand);
+// Add a unary operation which has only one input and output operand.
+hal::Operand* AddUnaryOperation(hal::Model* model,
+                                hal::Operand* input_operand,
+                                NNAdapterOperationType operation_type);
 
 // Sort the operations of the specified model in topological order
 std::vector<hal::Operation*> SortOperationsInTopologicalOrder(

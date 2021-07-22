@@ -42,7 +42,8 @@ class FP16AttributePass : public ProgramPass {
                                      "gru",
                                      "sequence_conv",
                                      "elementwise_add",
-                                     "elementwise_mul"};
+                                     "elementwise_mul",
+                                     "prelu"};
 };
 
 }  // namespace mir

@@ -22,12 +22,21 @@
 namespace nnadapter {
 namespace mediatek_apu {
 
+const uint32_t INVALID_INDEX = 0xFFFFFFFF;
+
+class Device {
+ public:
+  Device() {}
+  ~Device() {}
+};
+
 class Context {
  public:
-  Context();
+  explicit Context(void* device, const char* properties);
   ~Context();
 
  private:
+  void* device_{nullptr};
   void* context_{nullptr};
 };
 
@@ -44,6 +53,8 @@ class Program {
 
  private:
   // Operand converters
+  uint32_t GetMappedIndex(hal::Operand* operand);
+  uint32_t UpdateIndexMap(hal::Operand* operand, uint32_t index);
   uint32_t AddOperand(int32_t* dimensions,
                       uint32_t dimension_count,
                       int precision,
@@ -89,9 +100,12 @@ class Program {
                                     uint32_t dimension_count,
                                     float quant_scale,
                                     int32_t zero_point);
+  // Convert a constant and model input operand and map to a Neuron operand
+  // index
+  uint32_t ConvertOperand(hal::Operand* operand,
+                          std::vector<int32_t> dimensions = {});
 
   // Operation converters
-  uint32_t ConvertOperand(hal::Operand* operand);
   int ConvertConv2D(hal::Operation* operation);
   int ConvertFullyConnected(hal::Operation* operation);
   int ConvertPool2D(hal::Operation* operation);
@@ -104,8 +118,8 @@ class Program {
 
  private:
   Context* context_{nullptr};
-  // NNAdapter operand to the index of Neuron operand
-  std::map<hal::Operand*, uint32_t> operand_indexes_;
+  // Map NNAdapter operand to Neuron operand index
+  std::map<hal::Operand*, std::vector<uint32_t>> operand_indexes_;
   uint32_t operand_index_{0};
   std::vector<void*> operand_buffers_;
   NeuronModel* model_{nullptr};

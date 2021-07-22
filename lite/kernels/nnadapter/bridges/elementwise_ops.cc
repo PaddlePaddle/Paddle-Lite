@@ -38,6 +38,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+  int x_rank = x_dims.size();
+  auto x_persistable = x->persistable();
   auto y_name = op_info->Input("Y").front();
   auto y_scale_name = "Y0_scale";
   auto has_y_scale = op_info->HasInputScale(y_scale_name, true);
@@ -45,6 +47,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_y_scale ? op_info->GetInputScale(y_scale_name, true)[0] : 0.f;
   auto y = scope->FindMutableTensor(y_name);
   auto y_dims = y->dims();
+  int y_rank = y_dims.size();
+  auto y_persistable = y->persistable();
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -53,8 +57,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
   auto axis = op_info->GetAttr<int>("axis");
-  if (axis < 0) {
-    axis = x_dims.size() - y_dims.size();
+  if (axis == -1) {
+    axis = std::abs(x_rank - y_rank);
   }
   auto act_type = op_info->HasAttr("act_type")
                       ? op_info->GetAttr<std::string>("act_type")
@@ -62,31 +66,45 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Check whether the two dimensions are compatiable(Numpy-style broadcasting
   // https://numpy.org/doc/stable/user/basics.broadcasting.html).
   // Fill the dimension of Y with 1
-  std::vector<int64_t> y_shape(x_dims.size(), 1);
-  for (int i = axis; i < x_dims.size(); i++) {
-    if (i < axis + y_dims.size()) {
-      if (x_dims[i] != y_dims[i - axis] && x_dims[i] != 1 &&
-          y_dims[i - axis] != 1) {
-        LOG(ERROR) << "Incompatible broadcasting at " << i << " with axis "
-                   << axis << ", expect " << x_dims[i] << " but received "
-                   << y_dims[i - axis] << ".";
-        return FAILED;
-      } else {
-        y_shape[i] = y_dims[i];
-      }
+  int max_rank = x_rank > y_rank ? x_rank : y_rank;
+  std::vector<int64_t> x_shape(max_rank, 1);
+  std::vector<int64_t> y_shape(max_rank, 1);
+  if (x_rank > y_rank) {
+    for (int i = 0; i < y_rank; i++) {
+      y_shape[i + axis] = y_dims[i];
     }
+    y_dims = DDim(y_shape);
+  } else {
+    for (int i = 0; i < x_rank; i++) {
+      x_shape[i + axis] = x_dims[i];
+    }
+    x_dims = DDim(x_shape);
   }
+  bool matched = true;
+  for (int i = 0; i < max_rank; i++) {
+    matched &= (x_dims[i] == y_dims[i] || x_dims[i] == 1 || y_dims[i] == 1);
+  }
+  CHECK(matched) << "Incompatible broadcasting for x " << x->dims().repr()
+                 << " y " << y->dims().repr();
 
   // Input0 operand
   NNAdapterOperand* input0_operand = nullptr;
   if (converter->HasOperand(x_name)) {
     input0_operand = converter->GetOperand(x_name);
+    // TODO(hong19860320) Add a NNADAPTER_RESHAPE operation if x_dims is changed
   } else {
     if (has_x_scale) {
       input0_operand =
-          converter->AddQuant8VariableOperand(x_dims, x_scale, x_name);
+          x_persistable
+              ? converter->AddQuant8ConstantOperand(
+                    reinterpret_cast<int8_t*>(x->raw_data()), x_dims, x_scale)
+              : converter->AddQuant8VariableOperand(x_dims, x_scale, x_name);
     } else {
-      input0_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
+      input0_operand =
+          x_persistable
+              ? converter->AddFloat32ConstantOperand(
+                    reinterpret_cast<float*>(x->raw_data()), x_dims)
+              : converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
 
@@ -94,24 +112,31 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NNAdapterOperand* input1_operand = nullptr;
   if (converter->HasOperand(y_name)) {
     input1_operand = converter->GetOperand(y_name);
+    // TODO(hong19860320) Add a NNADAPTER_RESHAPE operation if y_dims is changed
   } else {
     if (has_y_scale) {
       input1_operand =
-          converter->AddQuant8VariableOperand(DDim(y_shape), y_scale, y_name);
+          y_persistable
+              ? converter->AddQuant8ConstantOperand(
+                    reinterpret_cast<int8_t*>(y->raw_data()), y_dims, y_scale)
+              : converter->AddQuant8VariableOperand(y_dims, y_scale, y_name);
     } else {
       input1_operand =
-          converter->AddFloat32VariableOperand(DDim(y_shape), y_name);
+          y_persistable
+              ? converter->AddFloat32ConstantOperand(
+                    reinterpret_cast<float*>(y->raw_data()), y_dims)
+              : converter->AddFloat32VariableOperand(y_dims, y_name);
     }
   }
 
   // Fuse code operand
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
-    fuse_code_value = 1;
+    fuse_code_value = NNADAPTER_FUSED_RELU;
   } else if (act_type == "relu1") {
-    fuse_code_value = 2;
+    fuse_code_value = NNADAPTER_FUSED_RELU1;
   } else if (act_type == "relu6") {
-    fuse_code_value = 3;
+    fuse_code_value = NNADAPTER_FUSED_RELU6;
   } else if (!act_type.empty()) {
     LOG(WARNING) << "Unsupported activation type: " << act_type;
     return FAILED;

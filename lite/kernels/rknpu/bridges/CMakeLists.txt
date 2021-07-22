@@ -1,3 +1,20 @@
+add_subgraph_bridge(SRCS act_op.cc
+                    batch_norm_op.cc
+                    concat_op.cc
+                    conv_op.cc
+                    elementwise_ops.cc
+                    fc_op.cc
+                    flatten_op.cc
+                    graph.cc
+                    norm_op.cc
+                    pad2d_op.cc
+                    pool_op.cc
+                    reshape2_op.cc
+                    scale_op.cc
+                    softmax_op.cc
+                    transpose2_op.cc
+                    utility.cc)
+
 if(NOT LITE_WITH_RKNPU)
   return()
 endif()

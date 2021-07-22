@@ -69,6 +69,7 @@ REGISTER_LITE_KERNEL(conv2d,
                      paddle::lite::kernels::x86::Conv2dCompute<float>,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("SecondInput", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kX86))})

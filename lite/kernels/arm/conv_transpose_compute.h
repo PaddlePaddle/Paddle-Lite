@@ -42,7 +42,7 @@ class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
   std::string kernel_func_name_{"ConvTranspose"};
 #define PROFILE_INFO(dtype1, dtype2)                                        \
   template <>                                                               \
-  void WinogradConv<PRECISION(dtype1), PRECISION(dtype2)>::                 \
+  void Conv2DTransposeCompute<PRECISION(dtype1), PRECISION(dtype2)>::       \
       SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
     ch->kernel_func_name = kernel_func_name_;                               \
   }

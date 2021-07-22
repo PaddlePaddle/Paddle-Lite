@@ -1,3 +1,14 @@
+add_subgraph_bridge(SRCS act_op.cc
+                    concat_op.cc
+                    conv_op.cc
+                    conv_transpose_op.cc
+                    elementwise_ops.cc
+                    fc_op.cc
+                    graph.cc
+                    pool_op.cc
+                    softmax_op.cc
+                    utility.cc)
+
 if(NOT LITE_WITH_APU)
   return()
 endif()

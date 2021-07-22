@@ -76,8 +76,11 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   bool is_depthwise_mode = (group != 1 && input_channel_size == group);
   NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
 
-  // Convert to rknn tensors and operators
-  auto input_tensor = ConvertOperand(input_operand);
+  // Convert to rknpu tensors and operators
+  auto input_tensor = GetMappedTensor(input_operand);
+  if (!input_tensor) {
+    input_tensor = ConvertOperand(input_operand);
+  }
   auto filter_tensor = ConvertOperand(filter_operand);
   auto bias_tensor = ConvertOperand(bias_operand);
   auto output_tensor = ConvertOperand(output_operand);

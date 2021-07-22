@@ -149,6 +149,10 @@ function make_tiny_publish_so {
 
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  if [ ! -d third-party ]; then
+    git checkout third-party
+  fi
+
   if [ -d $build_dir ]
   then
     rm -rf $build_dir
@@ -242,7 +246,6 @@ function make_opencl {
       -DLITE_WITH_CV=$BUILD_CV \
       -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 
-    make opencl_clhpp -j$NUM_PROC
     make publish_inference -j$NUM_PROC
 }
 
@@ -503,9 +506,6 @@ function make_x86 {
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
 
-  if [ ${WITH_OPENCL} == "ON" ]; then
-    make opencl_clhpp -j$NUM_PROC
-  fi
   make publish_inference -j$NUM_PROC
   cd -
 }

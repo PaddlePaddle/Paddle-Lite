@@ -164,6 +164,11 @@ function set_android_api_level {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
+
+  if [ ! -d third-party ]; then
+     git checkout third-party
+  fi
+
   # Step1. Create directory for compiling.
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
@@ -225,10 +230,7 @@ function make_tiny_publish_so {
       ${cmake_mutable_options}  \
       -DLITE_ON_TINY_PUBLISH=ON
 
-  # Step4. Compile libs: cxx_lib, java_lib, opencl_lib
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC
-  fi
+  # Step4. Compile libs: cxx_lib, java_lib
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
@@ -295,11 +297,6 @@ function make_full_publish_so {
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
       ${cmake_mutable_options}
-
-  # todo: third_party of opencl should be moved into git submodule and cmake later
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC
-  fi
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
