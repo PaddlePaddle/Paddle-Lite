@@ -140,13 +140,26 @@ class CastCompute
 }  // namespace lite
 }  // namespace paddle
 
-// Cast
+// Cast float to int32
 REGISTER_LITE_KERNEL(cast,
                      kOpenCL,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::opencl::CastCompute,
-                     def)
+                     float_to_int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kInt32))})
+    .Finalize();
+
+// Cast int32 to float
+REGISTER_LITE_KERNEL(cast,
+                     kOpenCL,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::opencl::CastCompute,
+                     int32_to_float)
+    .BindOutput("X",
+                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kInt32))})
+    .BindInput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();

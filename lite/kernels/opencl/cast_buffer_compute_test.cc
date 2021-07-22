@@ -145,4 +145,5 @@ TEST(opencl_cast_int32_to_fp32_buffer, compute) {
 }  // namespace paddle
 
 // cast buffer
-USE_LITE_KERNEL(cast, kOpenCL, kFloat, kNCHW, def);
+USE_LITE_KERNEL(cast, kOpenCL, kFloat, kNCHW, float_to_int32);
+USE_LITE_KERNEL(cast, kOpenCL, kFloat, kNCHW, int32_to_float);
