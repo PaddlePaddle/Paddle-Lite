@@ -15,18 +15,21 @@
 
 from __future__ import print_function
 import sys
+import os
 import logging
 from ast import RegisterLiteKernelParser
 from ast import RegisterLiteOpParser
+from ast import RegisterSubgraphBridgeParser
+from ast import RegisterNNadapterBridgeParser
 
-if len(sys.argv) != 5:
-    print("Error: record_supported_kernel_op.py requires four inputs!")
+if len(sys.argv) != 6:
+    print("Error: record_supported_kernel_op.py requires five inputs!")
     sys.exit(1)
 kernels_list_path = sys.argv[1]
 faked_kernels_list_path = sys.argv[2]
 ops_list_path = sys.argv[3]
-kernel_op_map_dest_path = sys.argv[4]
-
+subgraph_bridge_list_path = sys.argv[4]
+kernel_op_map_dest_path = sys.argv[5]
 
 out_lines = [
 '''
@@ -104,7 +107,37 @@ with open(faked_kernels_list_path) as f:
                 if hasattr(TargetType, k.target):
                     index = getattr(TargetType, k.target)
                     valid_ops[index].append(k.op_type)
-
+# record op_info of subgraph bridge into `valid_ops` according to different target type
+with open(subgraph_bridge_list_path) as f:
+    paths = set([path for path in f])
+    for path in paths:
+        with open(path.strip()) as g:
+            c = g.read()
+            kernel_parser = RegisterSubgraphBridgeParser(c)
+            kernel_parser.parse()
+            for k in kernel_parser.subgraph_bridge:
+                if hasattr(TargetType, k.target):
+                    index = getattr(TargetType, k.target)
+                    valid_ops[index].append(k.op_type)
+# record op_info of NNadapter into `valid_ops` according to different target type
+NNadapter_bridges_path = os.path.abspath('..')+"/lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
+with open(NNadapter_bridges_path) as f:
+        path = NNadapter_bridges_path
+        with open(path.strip()) as g:
+            c = g.read()
+            kernel_parser = RegisterNNadapterBridgeParser(c)
+            kernel_parser.parse()
+            for k in kernel_parser.subgraph_bridge:
+                if k.target == "rockchip_npu":
+                    k.target = "kNPU"
+                else:
+                    if k.target == "huawei_kirin_npu":
+                        k.target = "kRKNPU"
+                    else:
+                        k.target = "kAPU"
+                if hasattr(TargetType, k.target):
+                    index = getattr(TargetType, k.target)
+                    valid_ops[index].append(k.op_type)
 
 # clear the repeated ops
 for target in valid_targets:
@@ -117,7 +150,7 @@ with open(ops_list_path) as f:
     for path in paths:
         str_info = open(path.strip()).read()
         op_parser = RegisterLiteOpParser(str_info)
-        ops = op_parser.parse()
+        ops = op_parser.parse("ON")
         for op in ops:
             if "_grad" in op:
                 continue

@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(nnadapter_driver CACHE INTERNAL "")
+set(NNADAPTER_DRIVERS CACHE INTERNAL "")
 
 if(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   add_subdirectory(huawei_kirin_npu)
+endif()
+
+if(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  add_subdirectory(huawei_ascend_npu)
 endif()
 
 if(NNADAPTER_WITH_MEDIATEK_APU)
@@ -28,4 +32,8 @@ endif()
 
 if(NNADAPTER_WITH_IMAGINATION_NNA)
   add_subdirectory(imagination_nna)
+endif()
+
+if(NNADAPTER_WITH_AMLOGIC_NPU)
+  add_subdirectory(amlogic_npu)
 endif()

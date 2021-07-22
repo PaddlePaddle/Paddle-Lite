@@ -207,7 +207,6 @@ function build_opencl {
     prepare_opencl_source_code $cur_dir $build_dir
 
     cmake_opencl ${os} ${abi} ${lang}
-    make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
 }
 

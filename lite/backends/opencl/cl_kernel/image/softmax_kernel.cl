@@ -95,13 +95,9 @@ __kernel void softmax_channel(__read_only image2d_t input,
   const int width_idx = get_global_id(1);
   const int bh_idx = get_global_id(2);
 
-  CL_DTYPE4 input_data =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(width_idx, bh_idx));
-  CL_DTYPE max_value = input_data.x;
-  max_value = max(max_value, input_data.y);
-  max_value = max(max_value, input_data.z);
-  max_value = max(max_value, input_data.w);
-  for (int i = 1; i < global_size_dim0 - 1; ++i) {
+  CL_DTYPE4 input_data;
+  CL_DTYPE max_value = (CL_DTYPE)(MIN_VALUE);
+  for (int i = 0; i < global_size_dim0 - 1; ++i) {
     input_data =
         READ_IMG_TYPE(CL_DTYPE_CHAR,
                       input,

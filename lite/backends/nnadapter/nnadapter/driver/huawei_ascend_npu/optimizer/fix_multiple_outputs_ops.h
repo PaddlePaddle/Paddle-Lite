@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/op_registry.h"
-#include "lite/operators/reduce_ops.h"
+#pragma once
 
-REGISTER_LITE_OP(reduce_sum, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_prod, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_max, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_all, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_any, paddle::lite::operators::ReduceOp);
+#include "core/hal/types.h"
+
+namespace nnadapter {
+namespace huawei_ascend_npu {
+
+void FixMultipleOutputsOps(hal::Model* model);
+
+}  // namespace huawei_ascend_npu
+}  // namespace nnadapter

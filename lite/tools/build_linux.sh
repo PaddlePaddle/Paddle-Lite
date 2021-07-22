@@ -41,6 +41,10 @@ NNADAPTER_WITH_ROCKCHIP_NPU=OFF
 NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
 NNADAPTER_WITH_IMAGINATION_NNA=OFF
 NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
+NNADAPTER_WITH_HUAWEI_ASCEND_NPU=OFF
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
+NNADAPTER_WITH_AMLOGIC_NPU=OFF
+NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 WITH_BAIDU_XPU_XTCL=OFF
@@ -152,9 +156,13 @@ function init_cmake_mutable_options {
                         -DIMAGINATION_NNA_SDK_ROOT=$IMAGINATION_NNA_SDK_ROOT \
                         -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
                         -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
-                        -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT
+                        -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_IMAGINATION_NNA=$NNADAPTER_WITH_IMAGINATION_NNA \
                         -DNNADAPTER_IMAGINATION_NNA_SDK_ROOT=$NNADAPTER_IMAGINATION_NNA_SDK_ROOT \
+                        -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=$NNADAPTER_WITH_HUAWEI_ASCEND_NPU \
+                        -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT \
+                        -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
+                        -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -234,6 +242,10 @@ function make_publish_so {
 
     if [ "$WITH_TINY_PUBLISH" = "OFF" ]; then
         prepare_thirdparty
+    else
+        if [ ! -d third-party ] ; then
+            git checkout third-party
+        fi
     fi
 
     build_dir=$workspace/build.lite.linux.$ARCH.$TOOLCHAIN
@@ -262,10 +274,6 @@ function make_publish_so {
     cmake $workspace \
         ${CMAKE_COMMON_OPTIONS} \
         ${cmake_mutable_options}
-
-    if [ "${WITH_OPENCL}" = "ON" ]; then
-        make opencl_clhpp -j$NUM_PROC 
-    fi
 
     make publish_inference -j$NUM_PROC
     cd - > /dev/null
@@ -456,6 +464,22 @@ function main {
                 ;;
             --nnadapter_imagination_nna_sdk_root=*)
                 NNADAPTER_IMAGINATION_NNA_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+             --nnadapter_with_huawei_ascend_npu=*)
+                NNADAPTER_WITH_HUAWEI_ASCEND_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_huawei_ascend_npu_sdk_root=*)
+                NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_amlogic_npu=*)
+                NNADAPTER_WITH_AMLOGIC_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_amlogic_npu_sdk_root=*)
+                NNADAPTER_AMLOGIC_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.

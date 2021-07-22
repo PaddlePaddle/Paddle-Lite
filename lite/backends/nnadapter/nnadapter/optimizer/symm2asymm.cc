@@ -88,6 +88,15 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
     auto input_count = input_operands.size();
     auto output_count = output_operands.size();
     switch (operation->type) {
+      case NNADAPTER_ADD:
+      case NNADAPTER_DIV:
+      case NNADAPTER_FULLY_CONNECTED:
+      case NNADAPTER_MUL:
+      case NNADAPTER_SUB: {
+        ConvertOperandSymmToAsymm(input_operands[0], 128);
+        ConvertOperandSymmToAsymm(input_operands[1], 128);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
+      } break;
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_RELU:
@@ -101,33 +110,33 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
         ConvertOperandSymmToAsymm(output_operands[0], 128);
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);
       } break;
+      case NNADAPTER_CONCAT: {
+        NNADAPTER_CHECK_GE(input_count, 2);
+        for (int i = 0; i < input_count - 1; i++) {
+          ConvertOperandSymmToAsymm(input_operands[i], 128);
+        }
+        NNADAPTER_CHECK_EQ(output_count, 1);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
+      } break;
+      case NNADAPTER_CONV_2D:
+      case NNADAPTER_CONV_2D_TRANSPOSE: {
+        ConvertOperandSymmToAsymm(input_operands[0], 128);
+        ConvertOperandSymmToAsymm(input_operands[1], 128);
+        ConvertOperandSymmToAsymm(input_operands[2], 128);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
+      } break;
       case NNADAPTER_SIGMOID:
       case NNADAPTER_SOFTMAX: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         // The zeroPoint of the output of softmax and sigmoid must be 0.
         ConvertOperandSymmToAsymm(output_operands[0], 0);
       } break;
-      case NNADAPTER_ADD:
-      case NNADAPTER_DIV:
-      case NNADAPTER_FULLY_CONNECTED:
-      case NNADAPTER_MUL:
-      case NNADAPTER_SUB: {
+      case NNADAPTER_SPLIT: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
-        ConvertOperandSymmToAsymm(input_operands[1], 128);
-        ConvertOperandSymmToAsymm(output_operands[0], 128);
-      } break;
-      case NNADAPTER_CONV_2D: {
-        ConvertOperandSymmToAsymm(input_operands[0], 128);
-        ConvertOperandSymmToAsymm(input_operands[1], 128);
-        ConvertOperandSymmToAsymm(input_operands[2], 128);
-        ConvertOperandSymmToAsymm(output_operands[0], 128);
-      } break;
-      case NNADAPTER_CONCAT: {
-        NNADAPTER_CHECK_GE(input_count, 2);
-        for (int i = 0; i < input_count - 1; i++) {
-          ConvertOperandSymmToAsymm(input_operands[i], 128);
+        NNADAPTER_CHECK_GE(output_count, 1);
+        for (uint32_t i = 0; i < output_count; i++) {
+          ConvertOperandSymmToAsymm(output_operands[i], 128);
         }
-        ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       default:
         NNADAPTER_LOG(FATAL)

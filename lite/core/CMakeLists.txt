@@ -12,6 +12,7 @@ lite_cc_library (target_wrapper SRCS target_wrapper.cc
   INTEL_FPGA_DEPS intel_fpga_target_wrapper
   BM_DEPS target_wrapper_bm
   MLU_DEPS target_wrapper_mlu
+  NNADAPTER_DEPS nnadapter_wrapper
 )
 
 lite_cc_library (memory SRCS memory.cc DEPS target_wrapper)
@@ -36,14 +37,12 @@ if (LITE_WITH_ARM)
   lite_cc_library (context SRCS context.cc
     DEPS tensor any device_info target_wrapper
     CL_DEPS cl_context
-    NNADAPTER_DEPS nnadapter_wrapper
   )
 elseif (LITE_WITH_X86)
   lite_cc_library (context SRCS context.cc
     DEPS tensor any device_info target_wrapper eigen3
     CL_DEPS cl_context
     CUDA_DEPS cuda_context
-    NNADAPTER_DEPS nnadapter_wrapper
   )
 elseif (LITE_WITH_SW)
   lite_cc_library (context SRCS context.cc
@@ -106,8 +105,8 @@ execute_process(
     ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
     "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
     ${LITE_BUILD_TAILOR}
-    RESULT_VARIABLE result
-    )
+    ${LITE_BUILD_EXTRA}
+    RESULT_VARIABLE result)
 
 #-------------------------------opt----------------------------------------------------------------
 # tricks to create headfiles for opt
@@ -134,6 +133,7 @@ execute_process(
     ${kernels_src_list}
     ${fake_kernels_src_list}
     ${ops_src_list}
+    ${subgraph_bridges_src_list}
     ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
     RESULT_VARIABLE result)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
