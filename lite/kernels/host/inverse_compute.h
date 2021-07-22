@@ -23,7 +23,7 @@ namespace kernels {
 namespace arm {
 
 template <typename T>
-class InverseCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class InverseCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::InverseParam;
 

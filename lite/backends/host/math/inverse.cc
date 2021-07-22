@@ -12,14 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/inverse.h"
-#include <algorithm>
-#include <functional>
-#include <limits>
-#include <memory>
-#include <utility>
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/host/math/inverse.h"
+#include <cmath>
+
 
 namespace paddle {
 namespace lite {

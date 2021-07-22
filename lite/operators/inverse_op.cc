@@ -27,7 +27,7 @@ bool InverseOpLite::CheckShape() const {
   auto input_dims = param_.Input->dims();
 
   int64_t input_rank = input_dims.size();
-  CHECK_OR_FALSE(input_rank > 2);
+  CHECK_OR_FALSE(input_rank >= 2);
   if (input_dims[input_rank - 2] > 0 && input_dims[input_rank - 1] > 0)
     CHECK_OR_FALSE(input_dims[input_rank - 2] == input_dims[input_rank - 1]);
   return true;

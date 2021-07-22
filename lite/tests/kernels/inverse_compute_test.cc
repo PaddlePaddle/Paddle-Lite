@@ -146,7 +146,9 @@ void TestInverse(const Place& place) {
 TEST(Inverse, precision) {
   Place place;
 #if defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
+  place = TARGET(kHost);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif

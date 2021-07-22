@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/inverse_compute.h"
+#include "lite/kernels/host/inverse_compute.h"
 #include <string>
 #include <vector>
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/host/math/inverse.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
@@ -41,14 +41,14 @@ void InverseCompute<T>::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(inverse,
-                     kARM,
+                     kHost,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::arm::InverseCompute<float>,
                      fp32)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindOutput("Output",
-                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindPaddleOpVersion("inverse", 1)
     .Finalize();
