@@ -28,9 +28,10 @@ void ReshapeCompute<T>::Run() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto x = param.x;
   auto output = param.output;
+  auto output_dims = output->dims();
+  if (output_dims.production() == 0) return;
 
   if (param.inplace) {
-    auto output_dims = output->dims();
     auto output_lod = output->lod();
     output->ShareDataWith(*x);
     output->Resize(output_dims);
