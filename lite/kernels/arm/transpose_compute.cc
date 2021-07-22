@@ -17,6 +17,7 @@
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
 
@@ -68,8 +69,7 @@ void transpose_mat(const float* din,
   for (int i = 0; i < num; ++i) {
     float* ptr_out = dout + i * size_in;
     const float* ptr_in = din + i * size_in;
-#pragma omp parallel for
-    for (int h = 0; h < nh; h++) {
+    LITE_PARALLEL_BEGIN(h, tid, nh) {
       const float* ptr_din_row = ptr_in + h * size_w;
       int tmp_h = h * 4;
       for (int w = 0; w < nw; w++) {
@@ -122,6 +122,7 @@ void transpose_mat(const float* din,
         ptr_din_row += 4;
       }
     }
+    LITE_PARALLEL_END();
     // remian
     for (int h = 0; h < height; h++) {
       for (int w = nw * 4; w < width; w++) {
@@ -556,9 +557,8 @@ void TransposeCompute_(const std::vector<int>& axis,
     reamin_dim *= out_dim[i];
   }
 
-#pragma omp parallel for collapse(2)
   for (int batch = 0; batch < out_dim[0]; ++batch) {
-    for (int j = 0; j < out_dim[1]; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, out_dim[1]) {
       size_t offset = batch * strides[permute - 1] + j * strides[permute - 2];
       Dtype* out_ptr = output_ptr + (batch * out_dim[1] + j) * reamin_dim;
       int indics[4] = {0, 0, 0, 0};
@@ -578,6 +578,7 @@ void TransposeCompute_(const std::vector<int>& axis,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 // Transpose

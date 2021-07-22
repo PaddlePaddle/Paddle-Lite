@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/packed_sgemm_c4.h"
+#include "lite/core/parallel_defines.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
 #endif
@@ -158,9 +159,12 @@ void conv_compute_6x6_3x3(const float* input,
 
     const float* weight_ptr = weight;
     const float* bias_ptr = bias;
-#pragma omp parallel for num_threads(threads)
-    for (int tbi = 0; tbi < block_count; ++tbi) {
-#ifdef ARM_WITH_OMP
+    LITE_PARALLEL_BEGIN(tbi, tid, block_count) {
+#ifdef LITE_USE_THREAD_POOL
+      float* tmp_data = g_tmp_data + tid * tmp_data_thread_stride;
+      float* trans_tmp_data = g_trans_tmp_data + tid * 256;
+      float* trans_remain_tmp_data = g_trans_remain_tmp_data + tid * 256;
+#elif defined(ARM_WITH_OMP)
       float* tmp_data =
           g_tmp_data + omp_get_thread_num() * tmp_data_thread_stride;
       float* trans_tmp_data = g_trans_tmp_data + omp_get_thread_num() * 256;
@@ -364,7 +368,8 @@ void conv_compute_6x6_3x3(const float* input,
       }
       //*/
     }  // for block_count
-  }    // for num
+    LITE_PARALLEL_END();
+  }  // for num
 }  // conv_compute
 
 // F(4,3)
@@ -443,9 +448,12 @@ void conv_compute_4x4_3x3(const float* input,
     float* output_ptr = output + ni * out_n_stride;
     const float* weight_ptr = weight;
     const float* bias_ptr = bias;
-#pragma omp parallel for num_threads(threads)
-    for (int tbi = 0; tbi < block_count; ++tbi) {
-#ifdef ARM_WITH_OMP
+    LITE_PARALLEL_BEGIN(tbi, tid, block_count) {
+#ifdef LITE_USE_THREAD_POOL
+      float* tmp_data = g_tmp_data + tid * tmp_data_thread_stride;
+      float* trans_tmp_data = g_trans_tmp_data + tid * 144;
+      float* trans_remain_tmp_data = g_trans_remain_tmp_data + tid * 144;
+#elif defined(ARM_WITH_OMP)
       float* tmp_data =
           g_tmp_data + omp_get_thread_num() * tmp_data_thread_stride;
       float* trans_tmp_data = g_trans_tmp_data + omp_get_thread_num() * 144;
@@ -648,7 +656,8 @@ void conv_compute_4x4_3x3(const float* input,
       }
       //*/
     }  // for block_count
-  }    // for num
+    LITE_PARALLEL_END();
+  }  // for num
 }  // conv_compute
 
 // F(2,3)
@@ -728,9 +737,12 @@ void conv_compute_2x2_3x3(const float* input,
 
     const float* weight_ptr = weight;
     const float* bias_ptr = bias;
-#pragma omp parallel for num_threads(threads)
-    for (int tbi = 0; tbi < block_count; ++tbi) {
-#ifdef ARM_WITH_OMP
+    LITE_PARALLEL_BEGIN(tbi, tid, block_count) {
+#ifdef LITE_USE_THREAD_POOL
+      float* tmp_data = g_tmp_data + tid * tmp_data_thread_stride;
+      float* trans_tmp_data = g_trans_tmp_data + tid * 64;
+      float* trans_remain_tmp_data = g_trans_remain_tmp_data + tid * 64;
+#elif defined(ARM_WITH_OMP)
       float* tmp_data =
           g_tmp_data + omp_get_thread_num() * tmp_data_thread_stride;
       float* trans_tmp_data = g_trans_tmp_data + omp_get_thread_num() * 64;
@@ -913,7 +925,8 @@ void conv_compute_2x2_3x3(const float* input,
       }
       //*/
     }  // for block_count
-  }    // for num
+    LITE_PARALLEL_END();
+  }  // for num
 }  // conv_compute
 
 void conv_compute_2x2_3x3_small(const float* input,
@@ -1060,14 +1073,14 @@ void conv_compute_2x2_3x3_small(const float* input,
       float* dst_temp_data = tmp_data + tile_block * ic_4 * 64;
       float* b_ptr = tmp_data;
       int w_gi_stride = ic_4 * oc_4 * 16;
-#pragma omp parallel for num_threads(threads)
-      for (int gi = 0; gi < 16; ++gi) {
+      LITE_PARALLEL_BEGIN(gi, tid, 16) {
         float* origin_C = dst_temp_data + gi * c_gi_stride;
         float* origin_B = b_ptr + gi * b_gi_stride;
         const float* origin_A = weight + gi * w_gi_stride;
         sgemm_prepack_c4_small(
             oc_4 * 4, tile_count, ic_4 * 4, origin_A, origin_B, origin_C, ctx);
       }
+      LITE_PARALLEL_END();
       //*/
       //*
       // output trans

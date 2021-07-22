@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/box_coder.h"
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -38,8 +39,7 @@ void decode_bbox_center_variance_kernel(const int batch_num,
     const float* ptr_loc_batch = loc_data + n * len_batch;
     float* ptr_bbox_batch = bbox_data + n * len_batch;
 
-#pragma omp parallel for
-    for (int i = 0; i < cnt; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 16;
       const float* ptr_loc = ptr_loc_batch + idx;
       const float* ptr_prior = prior_data + idx;
@@ -72,8 +72,9 @@ void decode_bbox_center_variance_kernel(const int batch_num,
 
       vst4q_f32(ptr_bbox, vloc);
     }
-#pragma omp parallel for
-    for (int i = cnt * 4; i < num_priors; i++) {
+    LITE_PARALLEL_END();
+
+    LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 4, 1) {
       int idx = i * 4;
       float p_xmin = prior_data[idx];
       float p_ymin = prior_data[idx + 1];
@@ -101,6 +102,7 @@ void decode_bbox_center_variance_kernel(const int batch_num,
       ptr_bbox_batch[idx + 2] = decode_bbox_center_x + decode_bbox_width / 2.f;
       ptr_bbox_batch[idx + 3] = decode_bbox_center_y + decode_bbox_height / 2.f;
     }
+    LITE_PARALLEL_COMMON_END();
   }
 }
 
@@ -125,8 +127,7 @@ void decode_bbox_center_kernel(const int batch_num,
     const float* ptr_loc_batch = loc_data + n * len_batch;
     float* ptr_bbox_batch = bbox_data + n * len_batch;
 
-#pragma omp parallel for
-    for (int i = 0; i < cnt; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 16;
       int var_idx = idx, prior_idx = idx;
       if (axis == 1) {
@@ -198,9 +199,9 @@ void decode_bbox_center_kernel(const int batch_num,
 
       vst4q_f32(ptr_bbox, vloc);
     }
+    LITE_PARALLEL_END();
 
-#pragma omp parallel for
-    for (int i = cnt * 4; i < num_priors; i++) {
+    LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 4, 1) {
       int idx = i * 4;
       int var_idx = idx, prior_idx = idx;
       if (axis == 1) {
@@ -242,6 +243,7 @@ void decode_bbox_center_kernel(const int batch_num,
       ptr_bbox_batch[idx + 3] =
           decode_bbox_center_y + decode_bbox_height / 2.f - norm_value;
     }
+    LITE_PARALLEL_COMMON_END();
   }
 }
 

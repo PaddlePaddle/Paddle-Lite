@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/pixel_shuffle.h"
 #include <arm_neon.h>
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -35,9 +36,7 @@ void pixel_shuffle_scale2_fp32(const float* input,
   const int cnt = win >> 2;
   const int remain = win - (cnt << 2);
 
-#pragma omp parallel for
-  // batch * out_channel loop
-  for (int nc = 0; nc < num * chout; nc++) {
+  LITE_PARALLEL_BEGIN(nc, tid, num * chout) {
     const float* inptr = input + nc * feat_size_out;
     float* outptr = output + nc * feat_size_out;
 
@@ -72,6 +71,7 @@ void pixel_shuffle_scale2_fp32(const float* input,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void pixel_shuffle_scale3_fp32(const float* input,
@@ -89,9 +89,7 @@ void pixel_shuffle_scale3_fp32(const float* input,
   const int cnt = win >> 2;
   const int remain = win - (cnt << 2);
 
-#pragma omp parallel for
-  // batch * out_channel loop
-  for (int nc = 0; nc < num * chout; nc++) {
+  LITE_PARALLEL_BEGIN(nc, tid, num * chout) {
     const float* inptr = input + nc * feat_size_out;
     float* outptr = output + nc * feat_size_out;
 
@@ -131,6 +129,7 @@ void pixel_shuffle_scale3_fp32(const float* input,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void pixel_shuffle_scale4_fp32(const float* input,
@@ -148,9 +147,7 @@ void pixel_shuffle_scale4_fp32(const float* input,
   const int cnt = win >> 2;
   const int remain = win - (cnt << 2);
 
-#pragma omp parallel for
-  // batch * out_channel loop
-  for (int nc = 0; nc < num * chout; nc++) {
+  LITE_PARALLEL_BEGIN(nc, tid, num * chout) {
     const float* inptr = input + nc * feat_size_out;
     float* outptr = output + nc * feat_size_out;
 
@@ -195,6 +192,7 @@ void pixel_shuffle_scale4_fp32(const float* input,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void pixel_shuffle_native_fp32(const float* input,
@@ -206,8 +204,7 @@ void pixel_shuffle_native_fp32(const float* input,
                                const int hout,
                                const int wout,
                                const int upscale_factor) {
-#pragma omp parallel for
-  for (int nc = 0; nc < num * chout; nc++) {
+  LITE_PARALLEL_BEGIN(nc, tid, num * chout) {
     const float* inptr = input + nc * hout * wout;
     float* outptr_nc = output + nc * hout * wout;
 
@@ -225,6 +222,7 @@ void pixel_shuffle_native_fp32(const float* input,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 }  // namespace math

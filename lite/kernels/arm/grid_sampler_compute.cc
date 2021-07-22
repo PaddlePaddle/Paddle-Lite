@@ -16,6 +16,7 @@
 #include <string>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/core/type_system.h"
 
 namespace paddle {
@@ -271,8 +272,7 @@ void GridSamplerCompute::Run() {
       int32_t* coor_n = ctx.workspace_data<int>() + i * spatial_size * 4;
       float* dis_n = reinterpret_cast<float*>(coor_n) + coor_size * 4;
       uint32_t* bound_n = reinterpret_cast<uint32_t*>(dis_n) + coor_size * 4;
-#pragma omp parallel for
-      for (int j = 0; j < c; ++j) {
+      LITE_PARALLEL_BEGIN(j, tid, c) {
         int32_t* coor_ptr = coor_n;
         float* dis_ptr = dis_n;
         uint32_t* bound_ptr = bound_n;
@@ -309,6 +309,7 @@ void GridSamplerCompute::Run() {
               ds * (in_wn * de + in_en * dw) + dn * (in_ws * de + in_es * dw);
         }
       }
+      LITE_PARALLEL_END();
     }
   } else if (mode == "nearest") {
     auto out_h = param.grid->dims()[1];

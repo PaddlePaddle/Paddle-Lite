@@ -19,6 +19,7 @@
 #include "lite/backends/arm/math/elementwise_common_broadcast_config.h"
 #include "lite/backends/arm/math/elementwise_naive_impl.h"
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -43,8 +44,7 @@ void elementwise_add<float>(const float* dinx,
                             int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -69,6 +69,7 @@ void elementwise_add<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -101,8 +102,7 @@ void elementwise_add_relu<float>(const float* dinx,
   int cnt = num >> 4;
   int remain = num % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -133,6 +133,7 @@ void elementwise_add_relu<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -166,8 +167,8 @@ void elementwise_add_tanh<float>(const float* dinx,
   int cnt = num >> 4;
   int remain = num % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -202,6 +203,7 @@ void elementwise_add_tanh<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -223,9 +225,8 @@ void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const auto* dinx_ptr = dinx + offset;
       const auto* diny_ptr = diny + j;
@@ -236,6 +237,7 @@ void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
                       ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
           dinx_ptr, diny_ptr, dout_ptr, num);
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -246,9 +248,8 @@ void elementwise_add_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -302,6 +303,7 @@ void elementwise_add_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -312,9 +314,8 @@ void elementwise_add_broadcast<int64_t>(const int64_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -325,6 +326,7 @@ void elementwise_add_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -336,9 +338,8 @@ void elementwise_add_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -404,6 +405,7 @@ void elementwise_add_relu_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -414,9 +416,8 @@ void elementwise_add_relu_broadcast<int64_t>(const int64_t* dinx,
                                              int batch,
                                              int channels,
                                              int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -428,6 +429,7 @@ void elementwise_add_relu_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -437,8 +439,7 @@ void elementwise_add_grad<float>(const float* dout_grad,
                                  int num) {
   int cnt = num >> 4;
   int remain = num & 0x0f;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* out_data = dout_grad + 16 * i;
     float* x_data = x_grad + 16 * i;
     float32x4_t din0 = vld1q_f32(out_data);
@@ -450,6 +451,7 @@ void elementwise_add_grad<float>(const float* dout_grad,
     vst1q_f32(x_data + 8, din2);
     vst1q_f32(x_data + 12, din3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* out_data = dout_grad + 16 * cnt;
     float* x_data = x_grad + 16 * cnt;
@@ -472,8 +474,7 @@ void elementwise_add_grad_broadcast<float>(const float* dout_grad,
   }
   if (y_grad != nullptr) {
     memset(y_grad, 0, n * sizeof(float));
-#pragma omp parallel for
-    for (int i = 0; i < pre; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, pre) {
       for (int j = 0; j < n; ++j) {
         float sum = 0;
         int cnt = post >> 2;
@@ -495,6 +496,7 @@ void elementwise_add_grad_broadcast<float>(const float* dout_grad,
         y_grad[j] += sum;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -526,8 +528,7 @@ void elementwise_sub<float>(const float* dinx,
                             int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -552,6 +553,7 @@ void elementwise_sub<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -573,8 +575,8 @@ void elementwise_sub_relu<float>(const float* dinx,
   int cnt = num >> 4;
   int remain = num % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -605,6 +607,7 @@ void elementwise_sub_relu<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -626,9 +629,8 @@ void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const auto* dinx_ptr = dinx + offset;
       const auto* diny_ptr = diny + j;
@@ -639,6 +641,7 @@ void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
                       ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
           dinx_ptr, diny_ptr, dout_ptr, num);
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -649,9 +652,8 @@ void elementwise_sub_broadcast<int64_t>(const int64_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -662,6 +664,7 @@ void elementwise_sub_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -672,9 +675,8 @@ void elementwise_sub_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -728,6 +730,7 @@ void elementwise_sub_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -739,9 +742,8 @@ void elementwise_sub_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -807,6 +809,7 @@ void elementwise_sub_relu_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 // we assume the formula is x-y
@@ -822,8 +825,7 @@ void elementwise_sub_grad<float>(const float* dout_grad,
     int cnt = num >> 4;
     int remain = num & 0x0f;
     float32x4_t minus = vdupq_n_f32(-1);
-#pragma omp parallel for
-    for (int i = 0; i < cnt; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, cnt) {
       const float* out_data = dout_grad + 16 * i;
       float* y_data = y_grad + 16 * i;
       float32x4_t din0 = vld1q_f32(out_data);
@@ -839,6 +841,7 @@ void elementwise_sub_grad<float>(const float* dout_grad,
       vst1q_f32(y_data + 8, din2);
       vst1q_f32(y_data + 12, din3);
     }
+    LITE_PARALLEL_END();
     if (remain > 0) {
       const float* out_data = dout_grad + 16 * cnt;
       float* y_data = y_grad + 16 * cnt;
@@ -862,8 +865,7 @@ void elementwise_sub_grad_broadcast<float>(const float* dout_grad,
   }
   if (y_grad != nullptr) {
     memset(y_grad, 0, n * sizeof(float));
-#pragma omp parallel for
-    for (int i = 0; i < pre; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, pre) {
       for (int j = 0; j < n; ++j) {
         float sum = 0;
         int cnt = post << 2;
@@ -885,6 +887,7 @@ void elementwise_sub_grad_broadcast<float>(const float* dout_grad,
         y_grad[j] += sum;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -895,8 +898,7 @@ void elementwise_mul<float>(const float* dinx,
                             int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -921,6 +923,7 @@ void elementwise_mul<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -941,8 +944,7 @@ void elementwise_mul<int>(const int* dinx,
                           int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const int* dinx_ptr = dinx + (i << 4);
     const int* diny_ptr = diny + (i << 4);
     int* dout_ptr = dout + (i << 4);
@@ -967,6 +969,7 @@ void elementwise_mul<int>(const int* dinx,
     vst1q_s32(dout_ptr + 8, dinx2);
     vst1q_s32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const int* dinx_ptr = dinx + (cnt << 4);
     const int* diny_ptr = diny + (cnt << 4);
@@ -998,8 +1001,7 @@ void elementwise_mul_relu<float>(const float* dinx,
   int cnt = num >> 4;
   int remain = num % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < cnt; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -1030,6 +1032,7 @@ void elementwise_mul_relu<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -1062,9 +1065,8 @@ void elementwise_mul_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1119,6 +1121,7 @@ void elementwise_mul_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1129,9 +1132,8 @@ void elementwise_mul_broadcast<int>(const int* dinx,
                                     int batch,
                                     int channels,
                                     int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const int* din_ptr = dinx + offset;
       const int diny_data = diny[j];
@@ -1186,6 +1188,7 @@ void elementwise_mul_broadcast<int>(const int* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1196,9 +1199,8 @@ void elementwise_mul_broadcast<int64_t>(const int64_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -1209,6 +1211,7 @@ void elementwise_mul_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1220,9 +1223,8 @@ void elementwise_mul_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1288,6 +1290,7 @@ void elementwise_mul_relu_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1298,9 +1301,8 @@ void elementwise_mul_relu_broadcast<int64_t>(const int64_t* dinx,
                                              int batch,
                                              int channels,
                                              int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -1312,6 +1314,7 @@ void elementwise_mul_relu_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1322,8 +1325,7 @@ void elementwise_max<float>(const float* dinx,
                             int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -1348,6 +1350,7 @@ void elementwise_max<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -1366,8 +1369,7 @@ void elementwise_max_relu<float>(const float* dinx,
   int cnt = num >> 4;
   int remain = num % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < cnt; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -1398,6 +1400,7 @@ void elementwise_max_relu<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -1416,9 +1419,8 @@ void elementwise_max_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1473,6 +1475,7 @@ void elementwise_max_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1484,9 +1487,8 @@ void elementwise_max_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1552,6 +1554,7 @@ void elementwise_max_relu_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1562,8 +1565,7 @@ void elementwise_min<float>(const float* dinx,
                             int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -1588,6 +1590,7 @@ void elementwise_min<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -1606,8 +1609,7 @@ void elementwise_min_relu<float>(const float* dinx,
   int cnt = num >> 4;
   int remain = num % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < cnt; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -1638,6 +1640,7 @@ void elementwise_min_relu<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -1656,9 +1659,8 @@ void elementwise_min_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1713,6 +1715,7 @@ void elementwise_min_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1724,9 +1727,8 @@ void elementwise_min_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1792,6 +1794,7 @@ void elementwise_min_relu_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1823,8 +1826,7 @@ void elementwise_div<float>(const float* dinx,
                             int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -1855,6 +1857,7 @@ void elementwise_div<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -1908,9 +1911,8 @@ void elementwise_div_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1980,6 +1982,7 @@ void elementwise_div_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -2046,8 +2049,7 @@ void elementwise_div_relu<float>(const float* dinx,
   int cnt = num >> 4;
   int remain = num % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < cnt; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* dinx_ptr = dinx + (i << 4);
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
@@ -2084,6 +2086,7 @@ void elementwise_div_relu<float>(const float* dinx,
     vst1q_f32(dout_ptr + 8, dinx2);
     vst1q_f32(dout_ptr + 12, dinx3);
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const float* dinx_ptr = dinx + (cnt << 4);
     const float* diny_ptr = diny + (cnt << 4);
@@ -2105,9 +2108,8 @@ void elementwise_div_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -2188,15 +2190,15 @@ void elementwise_div_relu_broadcast<float>(const float* dinx,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
 template <typename T>
 void elementwise_mod_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num) {
-#pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, channels) {
       int offset = (i * channels + j) * num;
       const T* din_ptr = dinx + offset;
       const T diny_data = diny[j];
@@ -2222,6 +2224,7 @@ void elementwise_mod_broadcast(
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -2229,8 +2232,7 @@ template <typename T>
 void elementwise_mod(const T* dinx, const T* diny, T* dout, int num) {
   int cnt = num >> 2;
   int remain = num % 4;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const T* dinx_ptr = dinx + (i << 2);
     const T* diny_ptr = diny + (i << 2);
     T* dout_ptr = dout + (i << 2);
@@ -2250,6 +2252,7 @@ void elementwise_mod(const T* dinx, const T* diny, T* dout, int num) {
     dout_ptr[2] = dinx2 % diny2;
     dout_ptr[3] = dinx3 % diny3;
   }
+  LITE_PARALLEL_END();
   if (remain > 0) {
     const T* dinx_ptr = dinx + (cnt << 2);
     const T* diny_ptr = diny + (cnt << 2);

@@ -16,6 +16,7 @@
 #include <arm_neon.h>
 #include <cmath>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -34,9 +35,8 @@ void matrix_norm_row(const float* x_data,
                      int feature_size) {
   int cnt = feature_size >> 4;
   int remain = feature_size & 0xf;
-#pragma omp parallel for
 
-  for (int bi = 0; bi < batch_size; ++bi) {
+  LITE_PARALLEL_BEGIN(bi, tid, batch_size) {
     int offset = bi * feature_size;
     const float* x_ptr = x_data + offset;
     float mean = 0.f;
@@ -158,6 +158,7 @@ void matrix_norm_row(const float* x_data,
       ++x_ptr;
     }
   }  // for bi
+  LITE_PARALLEL_END();
 }
 
 }  // namespace math

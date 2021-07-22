@@ -17,6 +17,7 @@
 #include <limits>
 #include <memory>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -38,8 +39,8 @@ void pad_constant(const float* din,
   int w_in = w - pad_left - pad_right;
   int spatial_size_out = w * h;
   int spatial_size_in = h_in * w_in;
-#pragma omp parallel for
-  for (int s = 0; s < n * c; ++s) {
+
+  LITE_PARALLEL_BEGIN(s, tid, n * c) {
     const float* din_s = din + s * spatial_size_in;
     float* dout_s = dout + s * spatial_size_out;
     int top_loop = (w * pad_top) >> 3;
@@ -129,6 +130,7 @@ void pad_constant(const float* din,
       *dout_s++ = pad_value;
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void pad_edge(const float* din,
@@ -146,8 +148,8 @@ void pad_edge(const float* din,
   int w_in = w - pad_left - pad_right;
   int spatial_size_out = w * h;
   int spatial_size_in = h_in * w_in;
-#pragma omp parallel for
-  for (int s = 0; s < n * c; ++s) {
+
+  LITE_PARALLEL_BEGIN(s, tid, n * c) {
     const float* din_s = din + s * spatial_size_in;
     float* dout_s = dout + s * spatial_size_out;
 
@@ -205,6 +207,7 @@ void pad_edge(const float* din,
       dout_top += w;
     }
   }
+  LITE_PARALLEL_END();
 }
 
 void pad_reflect(const float* din,
@@ -222,8 +225,8 @@ void pad_reflect(const float* din,
   int w_in = w - pad_left - pad_right;
   int spatial_size_out = w * h;
   int spatial_size_in = h_in * w_in;
-#pragma omp parallel for
-  for (int s = 0; s < n * c; ++s) {
+
+  LITE_PARALLEL_BEGIN(s, tid, n * c) {
     const float* din_s = din + s * spatial_size_in;
     float* dout_s = dout + s * spatial_size_out;
 
@@ -340,6 +343,7 @@ void pad_reflect(const float* din,
       dout_top_reflect -= w;
     }
   }
+  LITE_PARALLEL_END();
 }
 
 // void pad2d_func(const lite::Tensor *input,lite::Tensor *output)

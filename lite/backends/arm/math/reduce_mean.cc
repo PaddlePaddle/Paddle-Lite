@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "lite/backends/arm/math/reduce_mean.h"
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -205,11 +206,11 @@ void mean_grad<float>(const float* out_grad, float* in_grad, int size) {
   int loop = size >> 2;
   int remain = size & 3;
 
-#pragma omp parallel for
-  for (int i = 0; i < loop; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, loop) {
     vst1q_f32(in_grad, grad_v);
     in_grad += 4;
   }
+  LITE_PARALLEL_END();
   for (int i = 0; i < remain; ++i) {
     in_grad[i] = grad;
   }

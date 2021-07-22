@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -205,9 +206,8 @@ void NCHW2NHWC<float>(int N, int C, int size, const float* X, float* Y) {
   for (int n = 0; n < N; n++) {
     const float* din = X + n * sum;
     float* dout = Y + n * sum;
-    int s = 0;
-#pragma omp parallel for
-    for (s = 0; s < size - 3; s += 4) {
+    int s_cnt = size / 4;
+    LITE_PARALLEL_COMMON_BEGIN(s, tid, (size - 3), 0, 4) {
       const float* din0_ptr = din + s;
       const float* din1_ptr = din0_ptr + size;
       const float* din2_ptr = din1_ptr + size;
@@ -271,8 +271,9 @@ void NCHW2NHWC<float>(int N, int C, int size, const float* X, float* Y) {
         din0_ptr += size;
       }
     }
+    LITE_PARALLEL_COMMON_END();
     // remain size
-    for (; s < size; s++) {
+    for (int s = s_cnt * 4; s < size; s++) {
       const float* din0_ptr = din + s;
       const float* din1_ptr = din0_ptr + size;
       const float* din2_ptr = din1_ptr + size;
@@ -305,9 +306,8 @@ void NCHW2NHWC<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
   for (int n = 0; n < N; n++) {
     const int8_t* din = X + n * sum;
     int8_t* dout = Y + n * sum;
-    int s = 0;
-#pragma omp parallel for
-    for (s = 0; s < size - 7; s += 8) {
+    int s_cnt = size / 8;
+    LITE_PARALLEL_COMMON_BEGIN(s, tid, (size - 7), 0, 8) {
       const int8_t* din0_ptr = din + s;
       const int8_t* din1_ptr = din0_ptr + size;
       const int8_t* din2_ptr = din1_ptr + size;
@@ -394,8 +394,9 @@ void NCHW2NHWC<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
         *out7_ptr = *ptr++;
       }
     }
+    LITE_PARALLEL_COMMON_END();
     // remain size
-    for (; s < size; s++) {
+    for (int s = s_cnt * 8; s < size; s++) {
       const int8_t* din0_ptr = din + s;
       const int8_t* din1_ptr = din0_ptr + size;
       const int8_t* din2_ptr = din1_ptr + size;
@@ -440,9 +441,8 @@ void NHWC2NCHW<float>(int N, int C, int size, const float* X, float* Y) {
   for (int n = 0; n < N; n++) {
     const float* din = X + n * sum;
     float* dout = Y + n * sum;
-    int s = 0;
-#pragma omp parallel for
-    for (s = 0; s < C - 3; s += 4) {
+    int s_cnt = C / 4;
+    LITE_PARALLEL_COMMON_BEGIN(s, tid, (C - 3), 0, 4) {
       const float* din0_ptr = din + s;
       const float* din1_ptr = din0_ptr + C;
       const float* din2_ptr = din1_ptr + C;
@@ -508,8 +508,9 @@ void NHWC2NCHW<float>(int N, int C, int size, const float* X, float* Y) {
         din0_ptr += C;
       }
     }
+    LITE_PARALLEL_COMMON_END();
     // remain size
-    for (; s < C; s++) {
+    for (int s = s_cnt * 4; s < C; s++) {
       const float* din0_ptr = din + s;
       const float* din1_ptr = din0_ptr + C;
       const float* din2_ptr = din1_ptr + C;
@@ -542,9 +543,8 @@ void NHWC2NCHW<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
   for (int n = 0; n < N; n++) {
     const int8_t* din = X + n * sum;
     int8_t* dout = Y + n * sum;
-    int s = 0;
-#pragma omp parallel for
-    for (s = 0; s < C - 7; s += 8) {
+    int s_cnt = C / 8;
+    LITE_PARALLEL_COMMON_BEGIN(s, tid, (C - 7), 0, 8) {
       const int8_t* din0_ptr = din + s;
       const int8_t* din1_ptr = din0_ptr + C;
       const int8_t* din2_ptr = din1_ptr + C;
@@ -634,8 +634,9 @@ void NHWC2NCHW<int8_t>(int N, int C, int size, const int8_t* X, int8_t* Y) {
         din0_ptr += C;
       }
     }
+    LITE_PARALLEL_COMMON_END();
     // remain size
-    for (; s < C; s++) {
+    for (int s = s_cnt * 8; s < C; s++) {
       const int8_t* din0_ptr = din + s;
       const int8_t* din1_ptr = din0_ptr + C;
       const int8_t* din2_ptr = din1_ptr + C;
