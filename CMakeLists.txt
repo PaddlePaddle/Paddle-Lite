@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(functions)
+
+set(ARM_TARGET_LANG clang)
+set(ARM_TARGET_ARCH_ABI armv8)
+set(ARM_TARGET_OS android)
+set(ANDROID_STL_TYPE "c++_static")
+#include(cross_compiling/android)
+include(system)
+include(cross_compiling/preproject)
+
 set(CMAKE_CXX_FLAGS "-std=c++11")
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR})
 add_definitions("-DLITE_ON_TINY_PUBLISH")
