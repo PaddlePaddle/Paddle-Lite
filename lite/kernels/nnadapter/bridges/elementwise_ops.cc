@@ -132,11 +132,11 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Fuse code operand
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
-    fuse_code_value = 1;
+    fuse_code_value = NNADAPTER_FUSED_RELU;
   } else if (act_type == "relu1") {
-    fuse_code_value = 2;
+    fuse_code_value = NNADAPTER_FUSED_RELU1;
   } else if (act_type == "relu6") {
-    fuse_code_value = 3;
+    fuse_code_value = NNADAPTER_FUSED_RELU6;
   } else if (!act_type.empty()) {
     LOG(WARNING) << "Unsupported activation type: " << act_type;
     return FAILED;

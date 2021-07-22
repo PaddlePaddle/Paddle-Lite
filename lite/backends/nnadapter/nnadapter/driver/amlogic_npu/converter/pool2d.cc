@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/rockchip_npu/converter.h"
+#include "driver/amlogic_npu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace rockchip_npu {
+namespace amlogic_npu {
 
 int Program::ConvertPool2D(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
@@ -65,18 +65,18 @@ int Program::ConvertPool2D(hal::Operation* operation) {
       *reinterpret_cast<int8_t*>(input_operands[11]->buffer);
   NNADAPTER_VLOG(5) << "count_include_pad=" << count_include_pad;
   NNADAPTER_CHECK_EQ(count_include_pad, false)
-      << "rknpu_ddk doesn't support count_include_pad=true";
+      << "amlnpu_ddk doesn't support count_include_pad=true";
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to rknpu tensors and operators
+  // Convert to amlnpu tensors and operators
   auto input_tensor = GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = ConvertOperand(input_operand);
   }
   auto output_tensor = ConvertOperand(output_operand);
-  rk::nn::PoolAttr attr;
+  aml::nn::PoolAttr attr;
   attr.ksize[0] = filter_width;
   attr.ksize[1] = filter_height;
   attr.stride[0] = stride_width;
@@ -85,26 +85,27 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   attr.pad[1] = padding_width_right;
   attr.pad[2] = padding_height_top;
   attr.pad[3] = padding_height_bottom;
-  attr.pad_type = rk::nn::PadType::AUTO;
+  attr.pad_type = aml::nn::PadType::AUTO;
   attr.global_pooling = false;  // TODO(hong19860320) fix the order of kernel
                                 // when global_pooling=true in rknpu_ddk
-  attr.round_type = ceil_mode ? rk::nn::RoundType::ROUND_CEIL
-                              : rk::nn::RoundType::ROUND_FLOOR;
-  std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {input_tensor};
-  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors = {output_tensor};
+  attr.round_type = ceil_mode ? aml::nn::RoundType::ROUND_CEIL
+                              : aml::nn::RoundType::ROUND_FLOOR;
+  std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {input_tensor};
+  std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
+      output_tensor};
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
-    attr.pool_type = rk::nn::PoolType::POOLING_AVG;
+    attr.pool_type = aml::nn::PoolType::POOLING_AVG;
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
-    attr.pool_type = rk::nn::PoolType::POOLING_MAX;
+    attr.pool_type = aml::nn::PoolType::POOLING_MAX;
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
   graph_->AddOperator(
-      rk::nn::OperatorType::POOL, input_tensors, output_tensors, &attr);
+      aml::nn::OperatorType::POOL, input_tensors, output_tensors, &attr);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace rockchip_npu
+}  // namespace amlogic_npu
 }  // namespace nnadapter

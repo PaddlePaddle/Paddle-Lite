@@ -18,10 +18,10 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "driver/rockchip_npu/utility.h"
+#include "driver/amlogic_npu/utility.h"
 
 namespace nnadapter {
-namespace rockchip_npu {
+namespace amlogic_npu {
 
 class Device {
  public:
@@ -53,35 +53,36 @@ class Program {
  private:
   // Operand converters
   std::string GetTensorName(hal::Operand* operand);
-  std::shared_ptr<rk::nn::Tensor> GetMappedTensor(hal::Operand* operand);
-  std::shared_ptr<rk::nn::Tensor> UpdateTensorMap(
-      hal::Operand* operand, std::shared_ptr<rk::nn::Tensor> tensor);
-  std::shared_ptr<rk::nn::Tensor> ConvertOperand(
+  std::shared_ptr<aml::nn::Tensor> GetMappedTensor(hal::Operand* operand);
+  std::shared_ptr<aml::nn::Tensor> UpdateTensorMap(
+      hal::Operand* operand, std::shared_ptr<aml::nn::Tensor> tensor);
+  std::shared_ptr<aml::nn::Tensor> ConvertOperand(
       hal::Operand* operand, std::vector<int32_t> dimensions = {});
 
   // Operation converters
+  int ConvertActivation(hal::Operation* operation);
+  int ConvertConcat(hal::Operation* operation);
   int ConvertConv2D(hal::Operation* operation);
+  int ConvertConv2DTranspose(hal::Operation* operation);
+  int ConvertElementwise(hal::Operation* operation);
   int ConvertFullyConnected(hal::Operation* operation);
   int ConvertPool2D(hal::Operation* operation);
-  int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
-  int ConvertActivation(hal::Operation* operation);
   int ConvertReshape(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);
-  int ConvertConcat(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};
-  // Map NNAdapter operand to rknpu tensor
-  std::map<hal::Operand*, std::vector<std::shared_ptr<rk::nn::Tensor>>>
+  // Map NNAdapter operand to amlnpu tensor
+  std::map<hal::Operand*, std::vector<std::shared_ptr<aml::nn::Tensor>>>
       tensors_;
-  rk::nn::Graph* graph_{nullptr};
-  rk::nn::Exection* execution_{nullptr};
-  std::vector<rk::nn::InputInfo> input_info_;
-  std::vector<rk::nn::OutputInfo> output_info_;
+  aml::nn::Graph* graph_{nullptr};
+  aml::nn::Exection* execution_{nullptr};
+  std::vector<aml::nn::InputInfo> input_info_;
+  std::vector<aml::nn::OutputInfo> output_info_;
   std::vector<int32_t> input_zero_points_;
   std::vector<int32_t> output_zero_points_;
 };
 
-}  // namespace rockchip_npu
+}  // namespace amlogic_npu
 }  // namespace nnadapter
