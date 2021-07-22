@@ -167,7 +167,7 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
                              int is_relu,
                              ARMContext *ctx);
 // for kA53
-void sgemm_prepacked_6x8_a35(bool is_transB,
+void sgemm_prepacked_4x8_a35(bool is_transB,
                              int M,
                              int N,
                              int K,
@@ -246,7 +246,7 @@ void prepackA(float *out,
     }
   }
 #else
-  if (ctx->arch() == kA73 || mmax <= 4) {
+  if (ctx->arch() == kA73 || ctx->arch() == kA35 || mmax <= 4) {
     if (is_trans) {
       prepackA_trans_4x8(out, in, alpha, ldin, m0, mmax, k0, kmax);
     } else {
@@ -278,7 +278,7 @@ void prepackA(TensorLite *tout,
     hblock = 8;
   }
 #else
-  if (ctx->arch() == kA73 || m <= 4) {
+  if (ctx->arch() == kA73 || ctx->arch() == kA35 || m <= 4) {
     hblock = 4;
   } else {
     hblock = 6;
@@ -403,6 +403,21 @@ void sgemm_prepack(bool is_transB,
                         has_bias,
                         act_param,
                         ctx);
+  } else if (ctx->arch() == kA53) {
+    sgemm_prepacked_4x8_a35(is_transB,
+                            M,
+                            N,
+                            K,
+                            A_packed,
+                            B,
+                            ldb,
+                            beta,
+                            C,
+                            ldc,
+                            bias,
+                            has_bias,
+                            act_param,
+                            ctx);
   } else if (ctx->arch() == kA53 || ctx->arch() == kA35) {
     auto act_type = act_param.active_type;
     bool has_act = act_param.has_active;
@@ -413,20 +428,6 @@ void sgemm_prepack(bool is_transB,
     bool a53_sgemm = act_flag && !has_beta;
     if (a53_sgemm && ctx->arch() == kA53) {
       sgemm_prepacked_6x8_a53(is_transB,
-                              M,
-                              N,
-                              K,
-                              A_packed,
-                              B,
-                              ldb,
-                              C,
-                              ldc,
-                              bias,
-                              has_bias,
-                              static_cast<int>(has_act),
-                              ctx);
-    } else if (a53_sgemm && ctx->arch() == kA35) {
-      sgemm_prepacked_6x8_a35(is_transB,
                               M,
                               N,
                               K,

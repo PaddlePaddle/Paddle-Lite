@@ -836,34 +836,55 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
 }
 #undef FMLA_N8X6
 #else
-void sgemm_prepacked_6x8_a35(bool is_transB,
+void sgemm_prepacked_4x8_a35(bool is_transB,
                              int M,
                              int N,
                              int K,
                              const float* A_packed,
                              const float* B,
                              int ldb,
+                             float beta,
                              float* C,
                              int ldc,
                              const float* bias,
                              bool has_bias,
-                             int is_relu,
+                             const operators::ActivationParam act_param,
                              ARMContext* ctx) {
   size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   auto* workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
-  X_BLOCK_COMPUTE((l2_cache * 9 / 10), MBLOCK_OTH, NBLOCK, M, N, K)
-
-  int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
-  int tail_pre = (K & (KBLOCK - 1));
-  if (tail_pre == 0) {
-    tail_pre = KBLOCK;
+  auto act_type = act_param.active_type;
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
   }
+  X_BLOCK_COMPUTE(l2_cache, MBLOCK_A73, NBLOCK, M, N, K)
+  int k_num = 2;
 
-  //! merge tail_pre and flag_act
-  tail_pre = (tail_pre << 2 | is_relu);
+  int k_pre = ((K + k_num - 1) / k_num) - 1;
+  int tail_pre = (K & (k_num - 1));
+
   bool flag_p_remain = false;
   int remain = 0;
+
+  int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
 
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
@@ -884,57 +905,46 @@ void sgemm_prepacked_6x8_a35(bool is_transB,
       loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
 #pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK_OTH) {
-      unsigned int ymax = y + MBLOCK_OTH;
+    for (unsigned int y = 0; y < M; y += MBLOCK_A73) {
+      unsigned int ymax = y + MBLOCK_A73;
       if (ymax > M) {
         ymax = M;
-      }
-      float* c_ptr0 = C + y * ldc + x0;
-      float* c_ptr1 = c_ptr0 + ldc;
-      float* c_ptr2 = c_ptr1 + ldc;
-      float* c_ptr3 = c_ptr2 + ldc;
-      float* c_ptr4 = c_ptr3 + ldc;
-      float* c_ptr5 = c_ptr4 + ldc;
-
-      float* pout0 = c_ptr0;
-      float* pout1 = c_ptr1;
-      float* pout2 = c_ptr2;
-      float* pout3 = c_ptr3;
-      float* pout4 = c_ptr4;
-      float* pout5 = c_ptr5;
-
-      float bias_local[6] = {0};
-      if (has_bias) {
-        bias_local[0] = bias[y];
-        bias_local[1] = bias[y + 1];
-        bias_local[2] = bias[y + 2];
-        bias_local[3] = bias[y + 3];
-        bias_local[4] = bias[y + 4];
-        bias_local[5] = bias[y + 5];
       }
 
       float cout0[NBLOCK];
       float cout1[NBLOCK];
       float cout2[NBLOCK];
       float cout3[NBLOCK];
-      float cout4[NBLOCK];
-      float cout5[NBLOCK];
+
+      float bias_local[4] = {0};
+      if (has_bias) {
+        bias_local[0] = bias[y];
+        bias_local[1] = bias[y + 1];
+        bias_local[2] = bias[y + 2];
+        bias_local[3] = bias[y + 3];
+      }
+
+      float* c_ptr0 = C + y * ldc + x0;
+      float* c_ptr1 = c_ptr0 + ldc;
+      float* c_ptr2 = c_ptr1 + ldc;
+      float* c_ptr3 = c_ptr2 + ldc;
+
+      float* pout0 = c_ptr0;
+      float* pout1 = c_ptr1;
+      float* pout2 = c_ptr2;
+      float* pout3 = c_ptr3;
 
       const float* a_ptr_l = A_packed + y * K;
       const float* b_ptr = b_pannel;
       for (int xb = 0; xb < bblocks; xb++) {
-        if ((y + 5) >= ymax) {
-          switch ((y + 5) - ymax) {
-            case 4:
-              c_ptr1 = cout1;
-            case 3:
-              c_ptr2 = cout2;
+        if ((y + 3) >= ymax) {
+          switch ((y + 3) - ymax) {
             case 2:
-              c_ptr3 = cout3;
+              c_ptr1 = cout1;
             case 1:
-              c_ptr4 = cout4;
+              c_ptr2 = cout1;
             case 0:
-              c_ptr5 = cout5;
+              c_ptr3 = cout1;
             default:
               break;
           }
@@ -944,557 +954,306 @@ void sgemm_prepacked_6x8_a35(bool is_transB,
           pout1 = c_ptr1;
           pout2 = c_ptr2;
           pout3 = c_ptr3;
-          pout4 = c_ptr4;
-          pout5 = c_ptr5;
 
           c_ptr0 = cout0;
           c_ptr1 = cout1;
           c_ptr2 = cout2;
           c_ptr3 = cout3;
-          c_ptr4 = cout4;
-          c_ptr5 = cout5;
+
+          if (has_beta) {
+            for (int i = 0; i < remain; ++i) {
+              cout0[i] = pout0[i];
+              cout1[i] = pout1[i];
+              cout2[i] = pout2[i];
+              cout3[i] = pout3[i];
+            }
+          }
         }
         const float* a_ptr = a_ptr_l;
         int tails = tail_pre;
         int k = k_pre;
-
         // clang-format off
-         asm volatile(
-             // sgemm 6x8 for a53
-             "vld1.32  {d2-d4},  [%[bias_ptr]]   \n"   /* load bias0-5 to d2-d4 */
-             "pld [%[a_ptr]]                         @ preload a\n"
-             "vdup.i32 q12, d4[0]                    @ out40=0\n"
-             "pld [%[b_ptr]]                         @ preload b\n"
-             "vdup.i32 q13, d4[0]                    @ out41=0\n"
-             "pld [%[a_ptr], #64]                    @ preload a\n"
-             "vdup.i32 q14, d4[1]                    @ out50=0\n"
-             "pld [%[b_ptr], #64]                    @ preload b\n"
-             "vdup.i32 q15, d4[1]                    @ out51=0\n"
-             "pld [%[a_ptr], #128]                   @ preload a\n"
-             "vdup.i32 q4, d2[0]                 \n"   /*  set out00 to bias0   */
-             // "vld1.32	{d0-d1},  [%[a_ptr] :64]  \n"   /* load a00-a30 to d0,d1 */
-             // "vld1r    d0, [%[a_ptr]]!           \n"
-             "vld1.32  {d0[0]}, [%[a_ptr]]!      \n"
-             "vdup.i32	q5, d2[0]                 \n"   /*  set out01 to bias0   */
-             "vld1.32	{d4-d5},  [%[b_ptr] :128] \n"   /* load b00-b03 to d4,d5 */
-             "vdup.i32	q6, d2[1]                 \n"   /*  set out10 to bias1   */
-             // "vld1r    d1, [%[a_ptr]]!\n"
-             "vld1.32  {d1[0]}, [%[a_ptr]]!      \n"
-             "vdup.i32	q7, d2[1]                 \n"   /*  set out11 to bias1   */
-             // "ldr  r1, [%[a_ptr], #0x14]         \n"   /*    load a50 to r1     */
-             "vdup.i32	q8, d3[0]                 \n"   /*  set out20 to bias2   */
-             "pld [%[a_ptr], #0x80]              \n"   /*    pre load apanel    */
-             "vdup.i32	q9, d3[0]                 \n"   /*  set out21 to bias2   */
-             // "vld1r    d2, [%[a_ptr]]!\n"
-             "vld1.32  {d2[0]}, [%[a_ptr]]!      \n"
-             "pld [%[b_ptr], #0x80]              \n"   /*    pre load bpanel    */
-             "vdup.i32	q10, d3[1]                \n"   /*  set out30 to bias3   */
-             "pld [%[a_ptr], #0xc0]              \n"   /*    pre load apanel    */
-             "vdup.i32	q11, d3[1]                \n"   /*  set out31 to bias3   */
-             "pld [%[b_ptr], #0xc0]              \n"   /*    pre load bpanel    */
-             "cmp  %[k], #0                      \n"   /*      check k loop     */
-             "beq  6f                            \n"   /*   k==0, branch to 6   */
-             "1:\n"
-             /* Unroll 0 */
-             "vldr d6, [%[b_ptr], #0x10]         \n"
-             "vmla.f32 d8, d4, d0[0]             \n"
-             "vmla.f32 d9, d5, d0[0]             \n"
-             "ldr  r0, [%[b_ptr], #0x18]         \n"
-             "vmla.f32 d12, d4, d1[0]            \n"
-             "vmla.f32 d13, d5, d1[0]            \n"
-             "ldr  r1, [%[b_ptr], #0x1C]         \n"
-             "vmla.f32  d16, d4, d2[0]           \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!      \n"
-             "vmla.f32  d17, d5, d2[0]           \n"
+        asm volatile(
+            "pld [%[a_ptr]]                         @ preload a, 64byte\n"
+            "vld1.32    {d6-d7}, [%[bias_ptr]]      @ load bias\n"
+            "pld [%[b_ptr]]                         @ preload b\n"
+            "vldr d0, [%[a_ptr]]                    \n"
+            "vdup.32    q8, d6[0]                   @ add bias to out00\n"
+            "vldr d4, [%[b_ptr]]                    \n"
+            "vdup.32    q9, d6[0]                   @ add bias to out01\n"
+            "vldr d1, [%[a_ptr], #0x08]             \n"
+            "vdup.32    q10, d6[1]                  @ add bias to out10\n"
+            "vldr d5, [%[b_ptr], #0x08]             \n"
+            "vdup.32    q11, d6[1]                  @ add bias to out11\n"
+            "pld [%[a_ptr], #64]                    @ preload a\n"
+            "vdup.32    q12, d7[0]                  @ add bias to out20\n"
+            "pld [%[b_ptr], #64]                    @ preload b\n"
+            "vdup.32    q13, d7[0]                  @ add bias to out21\n"
+            "pld [%[a_ptr], #128]                   @ preload a\n"
+            "cmp %[beta], #0\n"                     //  check beta == 0
+            "vdup.32    q14, d7[1]                  @ add bias to out30\n"
+            "pld [%[b_ptr], #128]                   @ preload b\n"
+            "vdup.32    q15, d7[1]                  @ add bias to out31\n"
+            "pld [%[b_ptr], #192]                   @ preload b\n"
+            "beq    11f\n"
+            // process beta
+            "vdup.32    q4, %[beta]\n"
+            "vld1.32    {d0-d3}, [%[c_ptr0]]\n"
+            "vld1.32    {d4-d7}, [%[c_ptr1]]\n"
+            "vmla.f32   q8, q0, q4\n"           
+            "vmla.f32   q9, q1, q4\n"          
+            "vld1.32    {d0-d3}, [%[c_ptr2]]\n"
+            "vmla.f32   q10, q2, q4\n"          
+            "vmla.f32   q11, q3, q4\n"         
+            "vld1.32    {d4-d7}, [%[c_ptr3]]\n" 
+            "vmla.f32   q12, q0, q4\n"         
+            "vmla.f32   q13, q1, q4\n"         
+            "vmla.f32   q14, q2, q4\n"        
+            "vmla.f32   q15, q3, q4\n"
+            "vld1.32	{d0-d1}, [%[a_ptr] :128]   @ load a0~a3\n"
+            "vld1.32   {d4-d5}, [%[b_ptr] :128]  @ load b1\n"
+            "11: \n"                            /* check loop count */
+            // "cmp %[k], #0                         @ check k==0 \n"
+            // "beq 0f                               @ jump to tail\n"
+            "cbz %[k], 0f                         @ jump to tail\n"
+            "1:                                   @ main loop for k\n"
+            /* Unroll 0*/
+            "vldr d6, [%[b_ptr], #0x10]           \n"
+            "vmla.f32	d16, d4, d0[0]              @ out0 += b1 * a0\n"
+            "vmla.f32	d17, d5, d0[0]              @ out0 += b1 * a0\n"
+            "ldr  r0, [%[b_ptr], #0x18]           \n"
+            "vmla.f32	d20, d4, d0[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d21, d5, d0[1]              @ out1 += b1 * a1\n"
+            "ldr  r1, [%[b_ptr], #0x1c]           \n"
+            "vmla.f32	d24, d4, d1[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d25, d5, d1[0]              @ out2 += b1 * a2\n"
+            "vldr d2, [%[a_ptr], #0x10]           \n"
+            "vmov d7, r0, r1                      \n"
+            "vmla.f32	d28, d4, d1[1]              @ out3 += b1 * a3\n"
+            "ldr  r0, [%[a_ptr], #0x18]           \n"
+            "vmla.f32	d29, d5, d1[1]              @ out3 += b1 * a3\n"
 
-             "vmla.f32 d10, d6, d0[0]            \n"
-             "vmov d7, r0, r1                    \n"
-             "vmla.f32 d14, d6, d1[0]            \n"
-             "vld1.32  {d1[1]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d18, d6, d2[0]            \n"
-             "vmla.f32 d15, d7, d0[0]            \n"
-             "vmla.f32 d17, d7, d1[0]            \n"
-             "vld1.32  {d2[1]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d19, d7, d2[0]            \n"
+            "vmla.f32	d18, d6, d0[0]              @ out0 += b1 * a0\n"
+            "ldr  r1, [%[a_ptr], #0x1c]           \n"
+            "vmla.f32	d19, d7, d0[0]              @ out0 += b1 * a0\n"
+            "vmla.f32	d22, d6, d0[1]              @ out1 += b1 * a1\n"
+            "vldr d8, [%[b_ptr], #0x20]           \n"
+            "vmov d3, r0, r1                      \n"
+            "vmla.f32	d23, d7, d0[1]              @ out1 += b1 * a1\n"
+            "ldr  r0, [%[b_ptr], #0x28]           \n"
+            "vmla.f32	d26, d6, d1[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d27, d7, d1[0]              @ out2 += b1 * a2\n"
+            "ldr  r1, [%[b_ptr], #0x2c]           \n"
+            "vmla.f32	d30, d6, d1[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d31, d7, d1[1]              @ out3 += b1 * a3\n"
+            "vldr d10, [%[b_ptr], #0x30]          \n"
+            "vmov d9, r0, r1                      \n"
+            /* Unroll 1 */
+            "vmla.f32	d16, d8, d2[0]              @ out0 += b1 * a0\n"
+            "ldr  r0, [%[b_ptr], #0x38]           \n"
+            "vmla.f32	d17, d9, d2[0]              @ out0 += b1 * a0\n"
+            "vmla.f32	d20, d8, d2[1]              @ out1 += b1 * a1\n"
+            "ldr  r1, [%[b_ptr], #0x3c]           \n"
+            "vmla.f32	d21, d9, d2[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d24, d8, d3[0]              @ out2 += b1 * a2\n"
+            "vldr d0, [%[a_ptr], #0x20]           \n"
+            "vmov d11, r0, r1                     \n"
+            "vmla.f32	d25, d9, d3[0]              @ out2 += b1 * a2\n"
+            "ldr  r0, [%[a_ptr], #0x28]           \n"
+            "vmla.f32	d28, d8, d3[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d29, d9, d3[1]              @ out3 += b1 * a3\n"
+            "ldr  r1, [%[a_ptr], #0x2c]           \n"
 
-             "vmla.f32 d20, d4, d0[1]            \n"
-             "vmla.f32 d24, d4, d1[1]            \n"
-             "vld1.32  {d0[0]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d28, d4, d2[1]            \n"
-             "vldr d4, [%[b_ptr], #0x20]         \n"
+            "vmla.f32	d18, d10, d2[0]             @ out0 += b1 * a0\n"
+            "vmla.f32	d19, d11, d2[0]             @ out0 += b1 * a0\n"
+            "vldr d4, [%[b_ptr], #0x40]           \n"
+            "vmov d1, r0, r1                      \n"
+            "vmla.f32	d22, d10, d2[1]             @ out1 += b1 * a1\n"
+            "ldr  r0, [%[b_ptr], #0x48]           \n"
+            "vmla.f32	d23, d11, d2[1]             @ out1 += b1 * a1\n"
+            "vmla.f32	d26, d10, d3[0]             @ out2 += b1 * a2\n"
+            "ldr  r1, [%[b_ptr], #0x4c]           \n"
+            "subs		%[k], %[k], #1                @ k--\n"
+            "vmla.f32	d27, d11, d3[0]             @ out2 += b1 * a2\n"
+            "vmla.f32	d30, d10, d3[1]             @ out3 += b1 * a3\n"
+            "add  %[b_ptr], %[b_ptr], #0x40       \n"
+            "vmov d5, r0, r1                      \n"
+            "vmla.f32	d31, d11, d3[1]             @ out3 += b1 * a3\n"
+            "add  %[a_ptr], %[a_ptr], #0x20       \n"
+            "bne		1b                            @ jump to main loop\n"
+            "0:                                   @ process tail\n"
+            // "cmp		%[tails], #1                @ tail--\n"
+            // "beq		3f                            @ jump to tail = 1\n"
+            "cbnz %[tails], 3f                    @ jump to tail\n"
+            /* Unroll 0*/
+            "vldr d6, [%[b_ptr], #0x10]           \n"
+            "vmla.f32	d16, d4, d0[0]              @ out0 += b1 * a0\n"
+            "vmla.f32	d17, d5, d0[0]              @ out0 += b1 * a0\n"
+            "ldr  r0, [%[b_ptr], #0x18]           \n"
+            "vmla.f32	d20, d4, d0[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d21, d5, d0[1]              @ out1 += b1 * a1\n"
+            "ldr  r1, [%[b_ptr], #0x1c]           \n"
+            "vmla.f32	d24, d4, d1[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d25, d5, d1[0]              @ out2 += b1 * a2\n"
+            "vldr d2, [%[a_ptr], #0x10]           \n"
+            "vmov d7, r0, r1                      \n"
+            "vmla.f32	d28, d4, d1[1]              @ out3 += b1 * a3\n"
+            "ldr  r0, [%[a_ptr], #0x18]           \n"
+            "vmla.f32	d29, d5, d1[1]              @ out3 += b1 * a3\n"
 
-             "vmla.f32 d21, d5, d0[1]            \n"
-             "ldr  r0, [%[b_ptr], #0x28]         \n"
-             "vmla.f32 d25, d5, d1[1]            \n"
-             "vmla.f32 d29, d5, d2[1]            \n"
-             "ldr  r1, [%[b_ptr], #0x2C]         \n"
+            "vmla.f32	d18, d6, d0[0]              @ out0 += b1 * a0\n"
+            "ldr  r1, [%[a_ptr], #0x1c]           \n"
+            "vmla.f32	d19, d7, d0[0]              @ out0 += b1 * a0\n"
+            "vmla.f32	d22, d6, d0[1]              @ out1 += b1 * a1\n"
+            "vldr d8, [%[b_ptr], #0x20]           \n"
+            "vmov d3, r0, r1                      \n"
+            "vmla.f32	d23, d7, d0[1]              @ out1 += b1 * a1\n"
+            "ldr  r0, [%[b_ptr], #0x28]           \n"
+            "vmla.f32	d26, d6, d1[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d27, d7, d1[0]              @ out2 += b1 * a2\n"
+            "ldr  r1, [%[b_ptr], #0x2c]           \n"
+            "vmla.f32	d30, d6, d1[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d31, d7, d1[1]              @ out3 += b1 * a3\n"
+            "vldr d10, [%[b_ptr], #0x30]          \n"
+            "vmov d9, r0, r1                      \n"
+            /* Unroll 1 */
+            "vmla.f32	d16, d8, d2[0]              @ out0 += b1 * a0\n"
+            "ldr  r0, [%[b_ptr], #0x38]           \n"
+            "vmla.f32	d17, d9, d2[0]              @ out0 += b1 * a0\n"
+            "vmla.f32	d20, d8, d2[1]              @ out1 += b1 * a1\n"
+            "ldr  r1, [%[b_ptr], #0x3c]           \n"
+            "vmla.f32	d21, d9, d2[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d24, d8, d3[0]              @ out2 += b1 * a2\n"
+            "vmov d11, r0, r1                     \n"
+            "vmla.f32	d25, d9, d3[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d28, d8, d3[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d29, d9, d3[1]              @ out3 += b1 * a3\n"
 
-             "vmla.f32 d22, d6, d0[1]            \n"
-             "vld1.32  {d1[0]}, [%[a_ptr]]!      \n"
-             "vmov d5, r0, r1                    \n"
-             "vmla.f32 d26, d6, d1[1]            \n"
-             "vmla.f32 d30, d6, d2[1]            \n"
-             "vld1.32  {d2[0]}, [%[a_ptr]]!      \n"
+            "vmla.f32	d18, d10, d2[0]             @ out0 += b1 * a0\n"
+            "vmla.f32	d19, d11, d2[0]             @ out0 += b1 * a0\n"
+            "vmla.f32	d22, d10, d2[1]             @ out1 += b1 * a1\n"
+            "vmla.f32	d23, d11, d2[1]             @ out1 += b1 * a1\n"
+            "vmla.f32	d26, d10, d3[0]             @ out2 += b1 * a2\n"
+            "vmla.f32	d27, d11, d3[0]             @ out2 += b1 * a2\n"
+            "vmla.f32	d30, d10, d3[1]             @ out3 += b1 * a3\n"
+            "add  %[b_ptr], %[b_ptr], #0x40       \n"
+            "vmov d5, r0, r1                      \n"
+            "vmla.f32	d31, d11, d3[1]             @ out3 += b1 * a3\n"
+            "add  %[a_ptr], %[a_ptr], #0x20       \n"
+            "b		2f\n"
+            /* tails==1 final tail */
+            "3:                                   @ tail=1\n"
+            "vldr d6, [%[b_ptr], #0x10]           \n"
+            "vmla.f32	d16, d4, d0[0]              @ out0 += b1 * a0\n"
+            "vmla.f32	d17, d5, d0[0]              @ out0 += b1 * a0\n"
+            "ldr  r0, [%[b_ptr], #0x18]           \n"
+            "vmla.f32	d20, d4, d0[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d21, d5, d0[1]              @ out1 += b1 * a1\n"
+            "ldr  r1, [%[b_ptr], #0x1c]           \n"
+            "vmla.f32	d24, d4, d1[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d25, d5, d1[0]              @ out2 += b1 * a2\n"
+            "vmov d7, r0, r1                      \n"
+            "add  %[b_ptr], %[b_ptr], #0x20       \n"
+            "vmla.f32	d28, d4, d1[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d29, d5, d1[1]              @ out3 += b1 * a3\n"
+            "add  %[a_ptr], %[a_ptr], #0x10       \n"
 
-             "vmla.f32 d23, d7, d0[1]            \n"
-             "vldr d6, [%[b_ptr], #0x30]         \n"
-             "vmla.f32 d27, d7, d1[1]            \n"
-             "ldr  r0, [%[b_ptr], #0x38]         \n"
-             "vmla.f32 d31, d7, d2[1]            \n"
-             "pld [%[a_ptr], #0x100]             \n"
+            "vmla.f32	d18, d6, d0[0]              @ out0 += b1 * a0\n"
+            "vmla.f32	d19, d7, d0[0]              @ out0 += b1 * a0\n"
+            "vmla.f32	d22, d6, d0[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d23, d7, d0[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d26, d6, d1[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d27, d7, d1[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d30, d6, d1[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d31, d7, d1[1]              @ out3 += b1 * a3\n"
+            "2:                                   @ check relu\n"
+            //!   relu
+            "cmp        %[flag_act], #1           @ check if has relu\n"
+            "bne        6f                        @ jump if not relu \n"
+            "vmov.u32   q0, #0                    @ for relu\n"
+            "vmax.f32   q8, q8, q0                @ for relu\n"
+            "vmax.f32   q9, q9, q0                @ for relu\n"
+            "vmax.f32   q10, q10, q0              @ for relu\n"
+            "vmax.f32   q11, q11, q0              @ for relu\n"
+            "vmax.f32   q12, q12, q0              @ for relu\n"
+            "vmax.f32   q13, q13, q0              @ for relu\n"
+            "vmax.f32   q14, q14, q0              @ for relu\n"
+            "vmax.f32   q15, q15, q0              @ for relu\n"
+            "b          10f                       @ relu end\n"
+            "6:                                   @ no relu \n"
+            "cmp        %[flag_act], #0           @ check no act\n"
+            "beq        10f                       @ no act end  \n"
+            //!   relu6
+            "cmp        %[flag_act], #2           @ check if has relu6\n"
+            "bne        7f                        @ jump if no relu6 \n"
+            "vmov.u32   q0, #0                    @ for relu6\n"
+            "vld1.f32   {d2-d3}, [%[alpha]]       @ load relu6 alpha\n"
+            "vmax.f32   q8, q8, q0                @ for relu6\n"
+            "vmax.f32   q9, q9, q0                @ for relu6\n"
+            "vmax.f32   q10, q10, q0              @ for relu6\n"
+            "vmax.f32   q11, q11, q0              @ for relu6\n"
+            "vmax.f32   q12, q12, q0              @ for relu6\n"
+            "vmax.f32   q13, q13, q0              @ for relu6\n"
+            "vmax.f32   q14, q14, q0              @ for relu6\n"
+            "vmax.f32   q15, q15, q0              @ for relu6\n"
 
-             /* Unroll 1 */
-             "vmla.f32 d8,  d4, d0[0]             \n"
-             "ldr  r1, [%[b_ptr], #0x3C]          \n"
-             "vmla.f32 d12, d4, d1[0]             \n"
-             "vmla.f32 d16, d4, d2[0]             \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!       \n"
-             "vmov d7, r0, r1                     \n"
-             "vmla.f32 d9,  d5, d0[0]             \n"
-             "pld [%[b_ptr], #0x100]              \n"
-             "vmla.f32 d13, d5, d1[0]             \n"
-             "vmla.f32 d15, d5, d2[0]             \n"
-
-             "vld1.32  {d1[1]}, [%[a_ptr]]!       \n"
-             "vmla.f32 d10, d6, d0[0]             \n"
-             "vmla.f32 d14, d6, d1[0]             \n"
-             "vmla.f32 d18, d6, d2[0]             \n"
-
-             "vld1.32  {d2[1]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d11, d7, d0[0]            \n"
-             "vmla.f32 d15, d7, d1[0]            \n"
-             "vmla.f32 d19, d7, d2[0]            \n"
-             "vld1.32  {d0[0]}, [%[a_ptr]]!      \n"
-
-             "vmla.f32 d20,  d4, d0[1]            \n"
-             "vmla.f32 d24,  d4, d1[1]            \n"
-             "vmla.f32 d28,  d4, d2[1]            \n"
-             "vldr d4, [%[b_ptr], #0x40]          \n"
-             "vmla.f32 d21,  d5, d0[1]            \n"
-             "ldr  r0, [%[b_ptr], #0x48]          \n"
-             "vmla.f32 d25,  d5, d1[1]            \n"
-             "ldr  r1, [%[b_ptr], #0x4C]          \n"
-             "vmla.f32 d29,  d5, d2[1]            \n"
-             "vmov d5, r0, r1                     \n"
-
-             "vmla.f32 d22,  d6, d0[1]             \n"
-             "vld1.32  {d1[0]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d26,  d6, d1[1]             \n"
-             "vmla.f32 d30,  d6, d2[1]             \n"
-             "vldr d6, [%[b_ptr], #0x50]           \n"
-             "vmla.f32 d23,  d7, d0[1]             \n"
-             "vld1.32  {d2[0]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d27,  d7, d1[1]             \n"
-             "ldr  r0, [%[b_ptr], #0x58]           \n"
-             "vmla.f32 d31,  d7, d2[1]             \n"
-
-             /* Unroll 2 */
-             "vmla.f32 d8,   d4, d0[0]             \n"
-             "ldr  r1, [%[b_ptr], #0x5C]           \n"
-             "vmla.f32 d12,  d4, d1[0]             \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!        \n"
-             "vmov d7, r0, r1                      \n"
-             "vmla.f32 d16,  d4, d2[0]             \n"
-             "vmla.f32 d9,   d5, d0[0]             \n"
-             "vmla.f32 d13,  d5, d1[0]             \n"
-             "vld1.32  {d1[1]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d17,  d5, d2[0]             \n"
-
-             "vmla.f32 d10,  d6, d0[0]             \n"
-             "vmla.f32 d14,  d6, d1[0]             \n"
-             "vmla.f32 d18,  d6, d2[0]             \n"
-             "vld1.32  {d2[1]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d11,  d7, d0[0]             \n"
-             "vmla.f32 d15,  d7, d1[0]             \n"
-             "vmla.f32 d19,  d7, d2[0]             \n"
-
-             "pld [%[a_ptr], #0x140]               \n"
-             "vmla.f32 d20,  d4, d0[1]             \n"
-             "vmla.f32 d24,  d4, d1[1]             \n"
-             "vmla.f32 d28,  d4, d2[1]             \n"
-             "vld1.32  {d0[0]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d21,  d5, d0[1]             \n"
-             "vldr d4, [%[b_ptr], #0x60]           \n"
-             "vmla.f32 d25,  d5, d1[1]             \n"
-             "ldr  r1, [%[b_ptr], #0x68]           \n"
-             "vmla.f32 d29,  d5, d2[1]             \n"
-             "ldr  r0, [%[b_ptr], #0x6C]           \n"
-
-             "vmla.f32 d22,  d6, d0[1]             \n"
-             "vld1.32  {d1[0]}, [%[a_ptr]]!        \n"
-             "vmov d5, r0, r1                      \n"
-             "vmla.f32 d26,  d6, d1[1]             \n"
-             "vld1.32  {d2[0]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d30,  d6, d2[1]             \n"
-             "vldr d6, [%[b_ptr], #0x70]           \n"
-             "vmla.f32 d23,  d7, d0[1]             \n"
-             "vmla.f32 d27,  d7, d1[1]             \n"
-             "ldr  r0, [%[b_ptr], #0x78]           \n"
-             "vmla.f32 d31,  d7, d2[1]             \n"
-
-             /* Unroll 3 */
-             "vmla.f32 d8,   d4, d0[0]             \n"
-             "ldr  r1, [%[b_ptr], #0x7C]           \n"
-             "vmla.f32 d12,  d4, d1[0]             \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!        \n"
-             "vmov d7, r0, r1                      \n"
-             "vmla.f32 d16,  d4, d2[0]             \n"
-             "vmla.f32 d9,   d5, d0[0]             \n"
-             "vmla.f32 d13,  d5, d1[0]             \n"
-             "vld1.32  {d1[1]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d17,  d5, d2[0]             \n"
-
-             "vmla.f32 d10,  d6, d0[0]             \n"
-             "vmla.f32 d14,  d6, d1[0]             \n"
-             "vld1.32  {d2[1]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d18,  d6, d2[0]             \n"
-             "vmla.f32 d11,  d7, d0[0]             \n"
-             "vmla.f32 d15,  d7, d1[0]             \n"
-             "vmla.f32 d19,  d7, d2[0]             \n"
-             "add  %[b_ptr], %[b_ptr], #0x80       \n" /*      bptr += 108      */
-
-             "vmla.f32 d20,  d4, d0[1]             \n"
-             "vmla.f32 d24,  d4, d1[1]             \n"
-             "pld [%[b_ptr], #0xC0]                \n" /*    pre load bpanel    */
-             "vmla.f32 d28,  d4, d2[1]             \n"
-             "vld1.32  {d0[0]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d21,  d5, d0[1]             \n"
-             "vldr d4, [%[b_ptr], #0x00]           \n"
-             "vmla.f32 d25,  d5, d1[1]             \n"
-             "ldr  r1, [%[b_ptr], #0x08]           \n"
-             "vmla.f32 d29,  d5, d2[1]             \n"
-             "ldr  r0, [%[b_ptr], #0x0C]           \n"
-
-             "vmla.f32 d22,  d6, d0[1]             \n"
-             "vld1.32  {d1[0]}, [%[a_ptr]]!        \n"
-             "vmov d5, r0, r1                      \n"
-             "vmla.f32 d26,  d6, d1[1]             \n"
-             "vmla.f32 d30,  d6, d2[1]             \n"
-             /*      loop k -= 1      */
-             "subs %[k], %[k], #1                  \n"
-             "vld1.32  {d2[0]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d23,  d7, d0[1]             \n"
-             "vmla.f32 d27,  d7, d1[1]             \n"
-             "vmla.f32 d31,  d7, d2[1]             \n"
-             "bne  1b                            \n"   /*    branch to k loop   */
-             "6:\n"
-             "sub  %[tails], %[tails], #4        \n"   /*       tail -= 4       */
-             "cmp  %[tails], #4                  \n"   /*     cmp tail with 4   */
-             "blt  3f                            \n"   /*   branch to tail == 1 */
-             /* Tail Unroll 0 */
-             "vldr d6, [%[b_ptr], #0x10]         \n"
-             "vmla.f32 d8, d4, d0[0]             \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d9, d5, d0[0]             \n"
-             "ldr  r0, [%[b_ptr], #0x18]         \n"
-             "vmla.f32 d12, d4, d1[0]            \n"
-             "vmla.f32 d13, d5, d1[0]            \n"
-             "ldr  r1, [%[b_ptr], #0x1C]         \n"
-             "vmla.f32  d16, d4, d2[0]           \n"
-             "vmla.f32  d17, d5, d2[0]           \n"
-             "vld1.32  {d1[1]}, [%[a_ptr]]!      \n"
-             "vmov d7, r0, r1                    \n"
-
-             "vmla.f32 d10, d6, d0[0]            \n"
-             "vmla.f32 d14, d6, d1[0]            \n"
-             "vmla.f32 d18, d6, d2[0]            \n"
-             "vld1.32  {d2[1]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d15, d7, d0[0]            \n"
-             "vmla.f32 d17, d7, d1[0]            \n"
-             "vmla.f32 d19, d7, d2[0]            \n"
-
-             "vmla.f32 d20, d4, d0[1]            \n"
-             "vmla.f32 d24, d4, d1[1]            \n"
-             "vmla.f32 d28, d4, d2[1]            \n"
-             "vldr d4, [%[b_ptr], #0x20]         \n"
-             "vmla.f32 d21, d5, d0[1]            \n"
-             "ldr  r0, [%[b_ptr], #0x28]         \n"
-             "vmla.f32 d25, d5, d1[1]            \n"
-             "vld1.32  {d0[0]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d29, d5, d2[1]            \n"
-             "ldr  r1, [%[b_ptr], #0x2C]         \n"
-             "sub  %[tails], %[tails], #4        \n"
-
-             "vmla.f32 d22, d6, d0[1]            \n"
-             "vld1.32  {d1[0]}, [%[a_ptr]]!      \n"
-             "vmov d5, r0, r1                    \n"
-             "vmla.f32 d26, d6, d1[1]            \n"
-             "vmla.f32 d30, d6, d2[1]            \n"
-             "cmp  %[tails], #4                  \n"
-             "vldr d6, [%[b_ptr], #0x30]         \n"
-             "vmla.f32 d23, d7, d0[1]            \n"
-             "vmla.f32 d27, d7, d1[1]            \n"
-             "vld1.32  {d2[0]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d31, d7, d2[1]            \n"
-             "vldr d7, [%[b_ptr], #0x38]         \n"
-             "blt  4f                            \n"
-
-             /* Tail Unroll 1 */
-             "vmla.f32 d8,  d4, d0[0]             \n"
-             "vmla.f32 d12, d4, d1[0]             \n"
-             "vmla.f32 d16, d4, d2[0]             \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!       \n"
-             "vmla.f32 d9,  d5, d0[0]             \n"
-             "vmla.f32 d13, d5, d1[0]             \n"
-             "vmla.f32 d15, d5, d2[0]             \n"
-
-             "vld1.32  {d1[1]}, [%[a_ptr]]!       \n"
-             "vmla.f32 d10, d6, d0[0]             \n"
-             "vmla.f32 d14, d6, d1[0]             \n"
-             "vmla.f32 d18, d6, d2[0]             \n"
-
-             "vld1.32  {d2[1]}, [%[a_ptr]]!       \n"
-             "vmla.f32 d11, d7, d0[0]             \n"
-             "vmla.f32 d15, d7, d1[0]             \n"
-             "vmla.f32 d19, d7, d2[0]             \n"
-
-             "vld1.32  {d0[0]}, [%[a_ptr]]!       \n"
-             "vmla.f32 d20,  d4, d0[1]            \n"
-             "vmla.f32 d24,  d4, d1[1]            \n"
-             "vmla.f32 d28,  d4, d2[1]            \n"
-             "vldr d4, [%[b_ptr], #0x40]          \n"
-             "vmla.f32 d21,  d5, d0[1]            \n"
-             "ldr  r0, [%[b_ptr], #0x48]          \n"
-             "vmla.f32 d25,  d5, d1[1]            \n"
-             "ldr  r1, [%[b_ptr], #0x4C]          \n"
-             "vmla.f32 d29,  d5, d2[1]            \n"
-             "vmov d5, r0, r1                     \n"
-             "sub  %[tails], %[tails], #4         \n"
-
-             "vld1.32  {d1[0]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d22,  d6, d0[1]             \n"
-             "vmla.f32 d26,  d6, d1[1]             \n"
-             "vmla.f32 d30,  d6, d2[1]             \n"
-             "vldr d6, [%[b_ptr], #0x50]           \n"
-             "cmp  %[tails], #4                    \n"
-             "vmla.f32 d23,  d7, d0[1]             \n"
-             "vmla.f32 d27,  d7, d1[1]             \n"
-             "vld1.32  {d2[0]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d31,  d7, d2[1]             \n"
-             "vldr d7, [%[b_ptr], #0x58]           \n"
-             "blt  5f                              \n"
-             /* Tail Unroll 2 */
-             "sub  %[tails], %[tails], #4          \n"
-             "vmla.f32 d8,   d4, d0[0]             \n"
-             "vmla.f32 d12,  d4, d1[0]             \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!        \n"
-             "vmla.f32 d16,  d4, d2[0]             \n"
-             "vmla.f32 d9,   d5, d0[0]             \n"
-             "vmla.f32 d13,  d5, d1[0]             \n"
-             "vmla.f32 d17,  d5, d2[0]             \n"
-             "vld1.32  {d1[1]}, [%[a_ptr]]!        \n"
-
-             "vmla.f32 d10,  d6, d0[0]                \n"
-             "vmla.f32 d14,  d6, d1[0]                \n"
-             "vmla.f32 d18,  d6, d2[0]                \n"
-             "vld1.32  {d2[1]}, [%[a_ptr]]!           \n"
-             "vmla.f32 d11,  d7, d0[0]                \n"
-             "vmla.f32 d15,  d7, d1[0]                \n"
-             "vmla.f32 d19,  d7, d2[0]                \n"
-
-             "vld1.32  {d0[0]}, [%[a_ptr]]!           \n"
-             "vmla.f32 d20,  d4, d0[1]                \n"
-             "vmla.f32 d24,  d4, d1[1]                \n"
-             "vmla.f32 d28,  d4, d2[1]                \n"
-             "vmla.f32 d21,  d5, d0[1]                \n"
-             "vldr d4, [%[b_ptr], #0x60]              \n"
-             "vmla.f32 d25,  d5, d1[1]                \n"
-             "ldr  r1, [%[b_ptr], #0x68]              \n"
-             "vmla.f32 d29,  d5, d2[1]                \n"
-             "ldr  r0, [%[b_ptr], #0x6C]              \n"
-
-             "vmla.f32 d22,  d6, d0[1]                \n"
-             "vld1.32  {d1[0]}, [%[a_ptr]]!           \n"
-             "vmov d5, r0, r1                         \n"
-             "vmla.f32 d26,  d6, d1[1]                \n"
-             "vmla.f32 d30,  d6, d2[1]                \n"
-             "vldr d6, [%[b_ptr], #0x70]              \n"
-             "vmla.f32 d23,  d7, d0[1]                \n"
-             "vld1.32  {d2[0]}, [%[a_ptr]]!           \n"
-             "vmla.f32 d27,  d7, d1[1]                \n"
-             "ldr  r0, [%[b_ptr], #0x78]              \n"
-             "vmla.f32 d31,  d7, d2[1]                \n"
-
-             /* Tail Unroll 3 */
-             "vmla.f32 d8,   d4, d0[0]                \n"
-             "ldr  r1, [%[b_ptr], #0x7C]              \n"
-             "vmla.f32 d12,  d4, d1[0]                \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!           \n"
-             "vmov d7, r0, r1                         \n"
-             "vmla.f32 d16,  d4, d2[0]                \n"
-             "vmla.f32 d9,   d5, d0[0]                \n"
-             "vmla.f32 d13,  d5, d1[0]                \n"
-             "vmla.f32 d17,  d5, d2[0]                \n"
-             "vld1.32  {d1[1]}, [%[a_ptr]]!           \n"
-
-             "vmla.f32 d10,  d6, d0[0]                \n"
-             "vmla.f32 d14,  d6, d1[0]                \n"
-             "vmla.f32 d18,  d6, d2[0]                \n"
-             "vld1.32  {d2[1]}, [%[a_ptr]]!           \n"
-             "vmla.f32 d11,  d7, d0[0]                \n"
-             "vmla.f32 d15,  d7, d1[0]                \n"
-             "vmla.f32 d19,  d7, d2[0]                \n"
-             "add  %[b_ptr], %[b_ptr], #0x80          \n"
-
-             "vmla.f32 d20,  d4, d0[1]                \n"
-             "vmla.f32 d24,  d4, d1[1]                \n"
-             "vmla.f32 d28,  d4, d2[1]                \n"
-             "vmla.f32 d21,  d5, d0[1]                \n"
-             "vmla.f32 d25,  d5, d1[1]                \n"
-             "vmla.f32 d29,  d5, d2[1]                \n"
-
-             "vmla.f32 d22,  d6, d0[1]                \n"
-             "vmla.f32 d26,  d6, d1[1]                \n"
-             "vmla.f32 d30,  d6, d2[1]                \n"
-             "vmla.f32 d23,  d7, d0[1]                \n"
-             "vmla.f32 d27,  d7, d1[1]                \n"
-             "vmla.f32 d31,  d7, d2[1]                \n"
-             "b  2f                                   \n"   /*  branch to check relu */
-             /* tails==1 final tail */
-             "3:\n"
-             "vldr d6, [%[b_ptr], #0x10]         \n"
-             "vmla.f32 d8, d4, d0[0]             \n"
-             "vmla.f32 d9, d5, d0[0]             \n"
-             "ldr  r0, [%[b_ptr], #0x18]         \n"
-             "vmla.f32 d12, d4, d1[0]            \n"
-             "vmla.f32 d13, d5, d1[0]            \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!      \n"
-             "vmla.f32  d16, d4, d2[0]           \n"
-             "ldr  r1, [%[b_ptr], #0x1C]         \n"
-             "vmla.f32  d17, d5, d2[0]           \n"
-             "add  %[b_ptr], %[b_ptr], #0x20     \n"
-             "vmov d7, r0, r1                    \n"
-
-             "vld1.32  {d1[1]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d10, d6, d0[0]            \n"
-             "vmla.f32 d14, d6, d1[0]            \n"
-             "vmla.f32 d18, d6, d2[0]            \n"
-             "vld1.32  {d2[1]}, [%[a_ptr]]!      \n"
-             "vmla.f32 d15, d7, d0[0]            \n"
-             "vmla.f32 d17, d7, d1[0]            \n"
-             "vmla.f32 d19, d7, d2[0]            \n"
-
-             "vmla.f32 d20, d4, d0[1]               \n"
-             "vmla.f32 d24, d4, d1[1]               \n"
-             "vmla.f32 d28, d4, d2[1]               \n"
-             "vmla.f32 d21, d5, d0[1]               \n"
-             "vmla.f32 d25, d5, d1[1]               \n"
-             "vmla.f32 d29, d5, d2[1]               \n"
-
-             "vmla.f32 d22, d6, d0[1]               \n"
-             "vmla.f32 d26, d6, d1[1]               \n"
-             "vmla.f32 d30, d6, d2[1]               \n"
-             "vmla.f32 d23, d7, d0[1]               \n"
-             "vmla.f32 d27, d7, d1[1]               \n"
-             "vmla.f32 d31, d7, d2[1]               \n"
-             "b  2f                                 \n"   /*  branch to check relu */
-             /* tails==2 final tail */
-             "4:\n"
-             "add  %[b_ptr], %[b_ptr], #0x40         \n"
-             "vmla.f32 d8,  d4, d0[0]                \n"
-             "vmla.f32 d12, d4, d1[0]                \n"
-             "vmla.f32 d16, d4, d2[0]                \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!          \n"
-             "vmla.f32 d9,  d5, d0[0]                \n"
-             "vmla.f32 d13, d5, d1[0]                \n"
-             "vmla.f32 d15, d5, d2[0]                \n"
-
-             "vld1.32  {d1[1]}, [%[a_ptr]]!          \n"
-             "vmla.f32 d10, d6, d0[0]                \n"
-             "vmla.f32 d14, d6, d1[0]                \n"
-             "vmla.f32 d18, d6, d2[0]                \n"
-
-             "vld1.32  {d2[1]}, [%[a_ptr]]!          \n"
-             "vmla.f32 d11, d7, d0[0]                \n"
-             "vmla.f32 d15, d7, d1[0]                \n"
-             "vmla.f32 d19, d7, d2[0]                \n"
-
-             "vmla.f32 d20,  d4, d0[1]                \n"
-             "vmla.f32 d24,  d4, d1[1]                \n"
-             "vmla.f32 d28,  d4, d2[1]                \n"
-             "vmla.f32 d21,  d5, d0[1]                \n"
-             "vmla.f32 d25,  d5, d1[1]                \n"
-             "vmla.f32 d29,  d5, d2[1]                \n"
-             "vmov d5, r0, r1                         \n"
-
-             "vmla.f32 d22,  d6, d0[1]                \n"
-             "vmla.f32 d26,  d6, d1[1]                \n"
-             "vmla.f32 d30,  d6, d2[1]                \n"
-             "vmla.f32 d23,  d7, d0[1]                \n"
-             "vmla.f32 d27,  d7, d1[1]                \n"
-             "vmla.f32 d31,  d7, d2[1]                \n"
-             "b  2f                                   \n"   /*  branch to check relu */
-             /* tails==3 final tail */
-             "5:\n"
-             "add  %[b_ptr], %[b_ptr], #0x60          \n"
-             "vmla.f32 d8,   d4, d0[0]                \n"
-             "vmla.f32 d12,  d4, d1[0]                \n"
-             "vld1.32  {d0[1]}, [%[a_ptr]]!           \n"
-             "vmla.f32 d16,  d4, d2[0]                \n"
-             "vmla.f32 d9,   d5, d0[0]                \n"
-             "vmla.f32 d13,  d5, d1[0]                \n"
-             "vmla.f32 d17,  d5, d2[0]                \n"
-
-             "vld1.32  {d1[1]}, [%[a_ptr]]!           \n"
-             "vmla.f32 d10,  d6, d0[0]                \n"
-             "vmla.f32 d14,  d6, d1[0]                \n"
-             "vmla.f32 d18,  d6, d2[0]                \n"
-             "vld1.32  {d2[1]}, [%[a_ptr]]!           \n"
-             "vmla.f32 d11,  d7, d0[0]                \n"
-             "vmla.f32 d15,  d7, d1[0]                \n"
-             "vmla.f32 d19,  d7, d2[0]                \n"
-
-             "vmla.f32 d20,  d4, d0[1]                \n"
-             "vmla.f32 d24,  d4, d1[1]                \n"
-             "vmla.f32 d28,  d4, d2[1]                \n"
-             "vmla.f32 d21,  d5, d0[1]                \n"
-             "vmla.f32 d25,  d5, d1[1]                \n"
-             "vmla.f32 d29,  d5, d2[1]                \n"
-
-             "vmla.f32 d22,  d6, d0[1]                \n"
-             "vmla.f32 d26,  d6, d1[1]                \n"
-             "vmla.f32 d30,  d6, d2[1]                \n"
-             "vmla.f32 d23,  d7, d0[1]                \n"
-             "vmla.f32 d27,  d7, d1[1]                \n"
-             "vmla.f32 d31,  d7, d2[1]                \n"
-             /* relu */
-             "2:\n"
-             "cmp %[tails], #1                   \n"   /*    cmp tail is relu   */
-             "bne 0f                             \n"   /* no relu branch to end */
-             "vmov.i32 q0,  #0                   \n"   /*     mov 0.f to q0     */
-             "vmax.f32 q4,  q4,  q0              \n"   /*      out00 relu       */
-             "vmax.f32 q5,  q5,  q0              \n"   /*      out01 relu       */
-             "vmax.f32 q6,  q6,  q0              \n"   /*      out10 relu       */
-             "vmax.f32 q7,  q7,  q0              \n"   /*      out11 relu       */
-             "vmax.f32 q8,  q8,  q0              \n"   /*      out20 relu       */
-             "vmax.f32 q9,  q9,  q0              \n"   /*      out21 relu       */
-             "vmax.f32 q10, q10, q0              \n"   /*      out30 relu       */
-             "vmax.f32 q11, q11, q0              \n"   /*      out31 relu       */
-             "vmax.f32 q12, q12, q0              \n"   /*      out40 relu       */
-             "vmax.f32 q13, q13, q0              \n"   /*      out41 relu       */
-             "vmax.f32 q14, q14, q0              \n"   /*      out50 relu       */
-             "vmax.f32 q15, q15, q0              \n"   /*      out51 relu       */
-             "0:\n"
-             "vst1.32  {d8-d11},   [%[c_ptr0]]!  \n"   /*  store out0 to cptr0  */
-             "vst1.32  {d12-d15},  [%[c_ptr1]]!  \n"   /*  store out1 to cptr1  */
-             "vst1.32  {d16-d19},  [%[c_ptr2]]!  \n"   /*  store out2 to cptr2  */
-             "vst1.32  {d20-d23},  [%[c_ptr3]]!  \n"   /*  store out3 to cptr3  */
-             "vst1.32  {d24-d27},  [%[c_ptr4]]!  \n"   /*  store out4 to cptr4  */
-             "vst1.32  {d28-d31},  [%[c_ptr5]]!  \n"   /*  store out5 to cptr5  */
-             : [a_ptr] "+r"(a_ptr),
-               [b_ptr] "+r"(b_ptr),
-               [c_ptr0] "+r"(c_ptr0),
-               [c_ptr1] "+r"(c_ptr1),
-               [c_ptr2] "+r"(c_ptr2),
-               [c_ptr3] "+r"(c_ptr3),
-               [c_ptr4] "+r"(c_ptr4),
-               [c_ptr5] "+r"(c_ptr5),
-               [k] "+r"(k),
-               [tails] "+r"(tails)
-             : [bias_ptr] "r"(bias_local)
-             : "r0", "r1", "q0","q1","q2","q3","q4",
-               "q5","q6","q7","q8","q9","q10","q11",
-               "q12","q13","q14","q15","cc","memory");
+            "vmin.f32   q8, q8, q1                @ for relu6\n"
+            "vmin.f32   q9, q9, q1                @ for relu6\n"
+            "vmin.f32   q10, q10, q1              @ for relu6\n"
+            "vmin.f32   q11, q11, q1              @ for relu6\n"
+            "vmin.f32   q12, q12, q1              @ for relu6\n"
+            "vmin.f32   q13, q13, q1              @ for relu6\n"
+            "vmin.f32   q14, q14, q1              @ for relu6\n"
+            "vmin.f32   q15, q15, q1              @ for relu6\n"
+            "b          10f                       @ relu6 end \n"
+            //! leakey relu
+            "7:                                   @ otherwise is leakey relu\n"
+            "vmov.u32   q0,   #0                  @ for leakey relu \n"
+            "vld1.f32   {d2-d3}, [%[alpha]]       @ load leakey relu alpha\n"
+            "vcge.f32   q2, q8, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q8, q1                @ vmulq_f32 \n"
+            "vbif       q8, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q9, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q9, q1                @ vmulq_f32 \n"
+            "vbif       q9, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q10, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q10, q1               @ vmulq_f32 \n"
+            "vbif       q10, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q11, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q11, q1               @ vmulq_f32 \n"
+            "vbif       q11, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q12, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q12, q1               @ vmulq_f32 \n"
+            "vbif       q12, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q13, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q13, q1               @ vmulq_f32 \n"
+            "vbif       q13, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q14, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q14, q1               @ vmulq_f32 \n"
+            "vbif       q14, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q15, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q15, q1               @ vmulq_f32 \n"
+            "vbif       q15, q3, q2               @ choose    \n"
+            "10:                                  @ act end  \n"
+            "vst1.32    {d16-d19},  [%[c_ptr0]]!    @ store r0\n"
+            "vst1.32    {d20-d23},  [%[c_ptr1]]!    @ store r1\n"
+            "vst1.32    {d24-d27},  [%[c_ptr2]]!    @ store r2\n"
+            "vst1.32    {d28-d31},  [%[c_ptr3]]!    @ store r3\n"
+            : [a_ptr] "+r"(a_ptr),
+              [b_ptr] "+r"(b_ptr),
+              [c_ptr0] "+r"(c_ptr0),
+              [c_ptr1] "+r"(c_ptr1),
+              [c_ptr2] "+r"(c_ptr2),
+              [c_ptr3] "+r"(c_ptr3),
+              [k] "+r"(k),
+              [tails] "+r"(tails)
+            : [bias_ptr] "r"(bias_local),
+              [beta] "r"(beta),
+              [alpha] "r"(alpha),
+              [flag_act] "r"(flag_act)
+            : "r0", "r1", "q0","q1","q2","q3",
+              "q4","q5","q6","q7","q8","q9","q10",
+              "q11","q12","q13","q14","q15","cc","memory");
         // clang-format on
         if (flag_p_remain && (xb == bblocks - 1)) {
           for (int i = 0; i < remain; ++i) {
@@ -1502,8 +1261,6 @@ void sgemm_prepacked_6x8_a35(bool is_transB,
             *pout1++ = cout1[i];
             *pout2++ = cout2[i];
             *pout3++ = cout3[i];
-            *pout4++ = cout4[i];
-            *pout5++ = cout5[i];
           }
         }
       }
