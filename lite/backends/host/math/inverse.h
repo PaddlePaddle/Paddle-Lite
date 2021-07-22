@@ -22,13 +22,13 @@
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
 
 template <typename InType>
 void inverse_func(const lite::Tensor* input, lite::Tensor* output);
 
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
