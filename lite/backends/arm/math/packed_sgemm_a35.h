@@ -836,6 +836,752 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
 }
 #undef FMLA_N8X6
 #else
+void sgemm_prepacked_6x8_a35(bool is_transB,
+                             int M,
+                             int N,
+                             int K,
+                             const float* A_packed,
+                             const float* B,
+                             int ldb,
+                             float beta,
+                             float* C,
+                             int ldc,
+                             const float* bias,
+                             bool has_bias,
+                             const operators::ActivationParam act_param,
+                             ARMContext* ctx) {
+  size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
+  auto* workspace = ctx->workspace_data<float>();
+  int threads = ctx->threads();
+  auto act_type = act_param.active_type;
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
+  //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
+  X_BLOCK_COMPUTE(l2_cache, MBLOCK_OTH, NBLOCK, M, N, K)
+
+  int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
+  int tail_pre = (K & (KBLOCK - 1));
+  if (tail_pre == 0) {
+    tail_pre = KBLOCK;
+  }
+
+  bool flag_p_remain = false;
+  int remain = 0;
+
+  int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  //! merge tail_pre and flag_act
+  tail_pre = (tail_pre << 2 | flag_act);
+
+  //! apanel is pre_compute outside gemm
+  for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
+    unsigned int xmax = x0 + x_block;
+    if (xmax > N) {
+      xmax = N;
+    }
+    int bblocks = (xmax - x0 + NBLOCK - 1) / NBLOCK;
+    remain = xmax - x0 - (bblocks - 1) * NBLOCK;
+    if (remain > 0) {
+      flag_p_remain = true;
+    }
+    //! load bpanel
+    auto b_pannel = static_cast<float*>(workspace);
+    if (is_transB) {
+      loadb_trans(b_pannel, B, ldb, 0, K, x0, xmax);
+    } else {
+      loadb(b_pannel, B, ldb, 0, K, x0, xmax);
+    }
+#pragma omp parallel for num_threads(threads)
+    for (unsigned int y = 0; y < M; y += MBLOCK_OTH) {
+      unsigned int ymax = y + MBLOCK_OTH;
+      if (ymax > M) {
+        ymax = M;
+      }
+      float* c_ptr0 = C + y * ldc + x0;
+      float* c_ptr1 = c_ptr0 + ldc;
+      float* c_ptr2 = c_ptr1 + ldc;
+      float* c_ptr3 = c_ptr2 + ldc;
+      float* c_ptr4 = c_ptr3 + ldc;
+      float* c_ptr5 = c_ptr4 + ldc;
+
+      float* pout0 = c_ptr0;
+      float* pout1 = c_ptr1;
+      float* pout2 = c_ptr2;
+      float* pout3 = c_ptr3;
+      float* pout4 = c_ptr4;
+      float* pout5 = c_ptr5;
+
+      float bias_local[6] = {0};
+      if (has_bias) {
+        bias_local[0] = bias[y];
+        bias_local[1] = bias[y + 1];
+        bias_local[2] = bias[y + 2];
+        bias_local[3] = bias[y + 3];
+        bias_local[4] = bias[y + 4];
+        bias_local[5] = bias[y + 5];
+      }
+
+      float cout0[NBLOCK];
+      float cout1[NBLOCK];
+      float cout2[NBLOCK];
+      float cout3[NBLOCK];
+      float cout4[NBLOCK];
+      float cout5[NBLOCK];
+
+      const float* a_ptr_l = A_packed + y * K;
+      const float* b_ptr = b_pannel;
+      for (int xb = 0; xb < bblocks; xb++) {
+        if ((y + 5) >= ymax) {
+          switch ((y + 5) - ymax) {
+            case 4:
+              c_ptr1 = cout1;
+            case 3:
+              c_ptr2 = cout2;
+            case 2:
+              c_ptr3 = cout3;
+            case 1:
+              c_ptr4 = cout4;
+            case 0:
+              c_ptr5 = cout5;
+            default:
+              break;
+          }
+        }
+        if (flag_p_remain && (xb == bblocks - 1)) {
+          pout0 = c_ptr0;
+          pout1 = c_ptr1;
+          pout2 = c_ptr2;
+          pout3 = c_ptr3;
+          pout4 = c_ptr4;
+          pout5 = c_ptr5;
+
+          c_ptr0 = cout0;
+          c_ptr1 = cout1;
+          c_ptr2 = cout2;
+          c_ptr3 = cout3;
+          c_ptr4 = cout4;
+          c_ptr5 = cout5;
+          if (has_beta) {
+            for (int i = 0; i < remain; ++i) {
+              cout0[i] = pout0[i];
+              cout1[i] = pout1[i];
+              cout2[i] = pout2[i];
+              cout3[i] = pout3[i];
+              cout4[i] = pout4[i];
+              cout5[i] = pout5[i];
+            }
+          }
+        }
+        const float* a_ptr = a_ptr_l;
+        int tails = tail_pre;
+        int k = k_pre;
+        // clang-format off
+        asm volatile(
+            // sgemm 6x8
+            "pld [%[a_ptr]]                       @ preload a\n"
+            "vld1.32	{d2-d4}, [%[bias_ptr]]      @ load bias 6 elements\n"
+            "pld [%[b_ptr]]                         @ preload b\n"
+            // "vld1.32  {d0},    [%[a_ptr] :64]!    \n"
+            "vldr     d0, [%[a_ptr]]\n"
+            "vdup.i32	q12,d4[0]                   @ out40=0\n"
+            // "vld1.32  {d1},    [%[a_ptr] :64]!    \n"
+            "vldr     d1, [%[a_ptr], #0x08]\n"
+            "vdup.i32	q13,d4[0]                   @ out41=0\n"
+            "pld [%[a_ptr], #64]                    @ preload a\n"
+            "vdup.i32	q14,d4[1]                   @ out50=0\n"
+            "pld [%[b_ptr], #64]                    @ preload b\n"
+            "vdup.i32	q15,d4[1]                   @ out51=0\n"
+            "pld [%[a_ptr], #128]                   @ preload a\n"
+            // "vld1.32  {d4},    [%[b_ptr] :64]!   \n"
+            "vldr     d4, [%[b_ptr]]\n"
+            "vdup.i32	q4, d2[0]                   @ out00=0\n"
+            "pld [%[b_ptr], #128]                   @ preload b\n"
+            // "vld1.32  {d5},    [%[b_ptr] :64]!   \n"
+            "vldr     d5, [%[b_ptr], #0x08]\n"
+            "vdup.i32	q5, d2[0]                   @ out01=0\n"
+            "vdup.i32	q6, d2[1]                   @ out10=0\n"
+            "pld [%[a_ptr], #192]                   @ preload a\n"
+            "vdup.i32	q7, d2[1]                   @ out11=0\n"
+            "pld [%[b_ptr], #192]                   @ preload a\n"
+            "vdup.i32	q8, d3[0]                   @ out20=0\n"
+            "pld [%[a_ptr], #256]                   @ preload a\n"
+            "vdup.i32	q9, d3[0]                   @ out21=0\n"
+            // "cmp %[beta], #0\n"
+            "pld [%[b_ptr], #256]                   @ preload a\n"
+            "vdup.i32	q10,d3[1]                   @ out30=0\n"
+            "pld [%[b_ptr], #320]                   @ preload b\n"
+            "vdup.i32	q11,d3[1]                   @ out31=0\n"
+            "pld [%[b_ptr], #384]                   @ preload b\n"
+            "b 11f\n"
+            // "beq    11f\n" /* check beta == 0? */
+            /* process beta */
+            // "vdup.32    q3, %[beta]\n"          /* beta to vector */
+            "vld1.32    {d0-d3}, [%[c_ptr0]]\n" /* load output r0 */
+            "vmla.f32   q4, q0, q3\n"           /* cr00 += beta * c_r00 */
+            "vmla.f32   q5, q1, q3\n"           /* cr01 += beta * c_r01 */
+            "vld1.32    {d0-d3}, [%[c_ptr1]]\n" /* load output r1 */
+            "vmla.f32   q6, q0, q3\n"           /* cr10 += beta * c_r10 */
+            "vmla.f32   q7, q1, q3\n"           /* cr11 += beta * c_r11 */
+            "vld1.32    {d0-d3}, [%[c_ptr2]]\n" /* load output r2 */
+            "vmla.f32   q8, q0, q3\n"           /* cr20 += beta * c_r20 */
+            "vmla.f32   q9, q1, q3\n"           /* cr21 += beta * c_r21 */
+            "vld1.32    {d0-d3}, [%[c_ptr3]]\n" /* load output r3 */
+            "vmla.f32   q10, q0, q3\n"          /* cr30 += beta * c_r30 */
+            "vmla.f32   q11, q1, q3\n"          /* cr31 += beta * c_r31 */
+            "vld1.32    {d0-d3}, [%[c_ptr4]]\n" /* load output r4 */
+            "vmla.f32   q12, q0, q3\n"          /* cr40 += beta * c_r40 */
+            "vmla.f32   q13, q1, q3\n"          /* cr41 += beta * c_r41 */
+            "vld1.32    {d0-d3}, [%[c_ptr5]]\n" /* load output r5 */
+            "vmla.f32   q14, q0, q3\n"          /* cr50 += beta * c_r50 */
+            "vmla.f32   q15, q1, q3\n"          /* cr51 += beta * c_r51 */
+            "vld1.32	{d0-d1}, [%[a_ptr] :64]!    @ load a0~a3\n"
+            "vld1.32	{d4-d5}, [%[b_ptr] :64]!   @ load b1\n"
+            "11: \n"                            /* check loop count */
+            "cmp %[k], #0                     @ check k == 0\n"
+            "beq 0f                                 @ jump to tail\n"
+            "1:                                     @ main loop for k\n"
+            /* Unroll 0*/
+            // "vld1.32  {d2},  [%[a_ptr] :64]!      \n"
+            "vldr     d2, [%[a_ptr], #0x10]\n"
+            "vmla.f32	d8, d4, d0[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d9, d5, d0[0]               @ out0 += b1 * a0\n"
+            // "vld1.32	{d6},  [%[b_ptr] :64]!      @ load b2\n"
+            "vldr     d6, [%[b_ptr], #0x10]\n"
+            "vmla.f32	d12, d4, d0[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d13, d5, d0[1]              @ out1 += b1 * a1\n"
+            "ldr      r0, [%[b_ptr], #0x18]\n"
+            "vmla.f32	d16, d4, d1[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d17, d5, d1[0]              @ out2 += b1 * a2\n"
+            "ldr      r1, [%[b_ptr], #0x1c]\n"
+            // "vld1.32	{d7},  [%[b_ptr] :64]!      @ load b2\n"
+            "vmla.f32	d20, d4, d1[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d21, d5, d1[1]              @ out3 += b1 * a3\n"
+            "vmov     d7, r0, r1\n"
+            "ldr      r0, [%[a_ptr], #0x18]\n"
+            "vmla.f32	d24, d4, d2[0]              @ out4 += b1 * a4\n"
+            // "vld1.32  {d3},  [%[a_ptr] :64]!      \n"
+            "ldr      r1, [%[a_ptr], #0x1c]\n"
+            "vmla.f32	d25, d5, d2[0]              @ out4 += b1 * a4\n"
+            "vmla.f32 d28, d4, d2[1]              @ out5 += b1 * a5\n"
+            "vmov     d3, r0, r1\n"
+            "vldr     d4, [%[b_ptr], #0x20]\n"
+            "vmla.f32	d29, d5, d2[1]              @ out5 += b1 * a5\n"
+            // "vld1.32	{d4-d5}, [%[b_ptr] :128]!   @ load b1\n"
+            // "vld1.32  {d4},  [%[b_ptr] :64]!      \n"
+            "ldr      r0, [%[b_ptr], #0x28]\n"
+            "vmla.f32	d10, d6, d0[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	d11, d7, d0[0]               @ out6 += b2 * a0\n"
+            "ldr      r1, [%[b_ptr], #0x2c]\n"
+            "vmla.f32	d14, d6, d0[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	d15, d7, d0[1]               @ out7 += b2 * a1\n"
+            // "vld1.32  {d5},  [%[b_ptr] :64]!     \n"
+            "vmov     d5, r0, r1\n"
+            "vldr     d0, [%[a_ptr], #0x20]\n"
+            "vmla.f32	d18, d6, d1[0]               @ out8 += b2 * a2\n"
+            "ldr      r0, [%[a_ptr], #0x28]\n"
+            "vmla.f32	d19, d7, d1[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	d22, d6, d1[1]              @ out9 += b2 * a3\n"
+            "ldr      r1, [%[a_ptr], #0x2c]\n"
+            "vmla.f32	d23, d7, d1[1]              @ out9 += b2 * a3\n"
+            // "vld1.32  {d0},  [%[a_ptr] :64]!      \n"
+            // "vld1.32	{d0-d1}, [%[a_ptr] :64]!    @ load a2~a5\n"
+            "vmla.f32	d26, d6, d2[0]              @ out10 += b2 * a4\n"
+            "vmov     d1, r0, r1\n"
+            "vmla.f32	d27, d7, d2[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d30, d6, d2[1]              @ out11 += b2 * a5\n"
+            "vmla.f32	d31, d7, d2[1]              @ out11 += b2 * a5\n"
+            // "vld1.32  {d1},  [%[a_ptr] :64]!      \n"
+            // "vld1.32	{d6-d7}, [%[b_ptr] :128]!   @ load b2\n"
+            /* Unroll 1 */
+            "vldr     d6, [%[b_ptr], #0x30]\n"
+            "vmla.f32	d8, d4, d3[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d9, d5, d3[0]               @ out0 += b1 * a0\n"
+            // "vld1.32  {d6},  [%[b_ptr] :64]!      \n"
+            "ldr      r0, [%[b_ptr], #0x38]\n"
+            "vmla.f32	d12, d4, d3[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d13, d5, d3[1]              @ out1 += b1 * a1\n"
+            "ldr      r1, [%[b_ptr], #0x3c]\n"
+            "pld [%[a_ptr], #256]                 @ preload a\n"
+            "vmla.f32	d16, d4, d0[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d17, d5, d0[0]              @ out2 += b1 * a2\n"
+            // "vld1.32  {d7},  [%[b_ptr] :64]!      \n"
+            "vmov     d7, r0, r1\n"
+            "vmla.f32	d20, d4, d0[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d21, d5, d0[1]              @ out3 += b1 * a3\n"
+            "pld [%[b_ptr], #320]                 \n"
+            "vmla.f32	d24, d4, d1[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d25, d5, d1[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d28, d4, d1[1]              @ out5 += b1 * a5\n"
+            "vmla.f32	d29, d5, d1[1]              @ out5 += b1 * a5\n"
+            // "vld1.32	{d4-d5}, [%[b_ptr] :128]!   @ load b1\n"
+            "vldr     d4, [%[b_ptr], #0x40]\n"
+            // "vld1.32  {d4},  [%[b_ptr] :64]!      \n"
+            "vmla.f32	d10, d6, d3[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	d11, d7, d3[0]               @ out6 += b2 * a0\n"
+            "ldr      r0, [%[b_ptr], #0x48]\n"
+            "vmla.f32	d14, d6, d3[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	d15, d7, d3[1]               @ out7 += b2 * a1\n"
+            "ldr      r1, [%[b_ptr], #0x4c]\n"
+            // "vld1.32  {d5},  [%[b_ptr] :64]!      \n"
+            // "vld1.32	{d2-d3}, [%[a_ptr] :64]!    @ load a0~a3\n"
+            "vmla.f32	d18, d6, d0[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	d19, d7, d0[0]               @ out8 += b2 * a2\n"
+            "vldr     d2, [%[a_ptr], #0x30]\n"
+            "vmov     d5, r0, r1\n"
+            // "vld1.32  {d2},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d22, d6, d0[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	d23, d7, d0[1]              @ out9 += b2 * a3\n"
+            "ldr      r0, [%[a_ptr], #0x38]\n"
+            "vmla.f32	d26, d6, d1[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d27, d7, d1[0]              @ out10 += b2 * a4\n"
+            "ldr      r1, [%[a_ptr], #0x3c]\n"
+            // "vld1.32  {d3},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d30, d6, d1[1]              @ out11 += b2 * a5\n"
+            "vmla.f32	d31, d7, d1[1]              @ out11 += b2 * a5\n"
+            "vldr     d0, [%[a_ptr], #0x40]\n"
+            "vmov     d3, r0, r1\n"
+            // "vld1.32	{d0-d1}, [%[a_ptr] :64]!    @ load a4, a5, a0, a1\n"
+            /* Unroll 2 */
+            "vmla.f32	d8, d4, d2[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d9, d5, d2[0]               @ out0 += b1 * a0\n"
+            "ldr      r0, [%[a_ptr], #0x48]\n"
+            // "vld1.32  {d0},  [%[a_ptr] :64]!     \n"
+            // "vld1.32	{d6-d7}, [%[b_ptr] :128]!   @ load b2\n"
+            "vmla.f32	d12, d4, d2[1]               @ out1 += b1 * a1\n"
+            "vmla.f32	d13, d5, d2[1]               @ out1 += b1 * a1\n"
+            "ldr      r1, [%[a_ptr], #0x4c]\n"
+            // "vld1.32  {d6},  [%[b_ptr] :64]!      \n"
+            "vmla.f32	d16, d4, d3[0]               @ out2 += b1 * a2\n"
+            "vmla.f32	d17, d5, d3[0]               @ out2 += b1 * a2\n"
+            "vldr     d6, [%[b_ptr], #0x50]\n"
+            "vmov     d1, r0, r1\n"
+            // "vld1.32  {d1},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d20, d4, d3[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d21, d5, d3[1]              @ out3 += b1 * a3\n"
+            "ldr      r0, [%[b_ptr], #0x58]\n"
+            // "vld1.32  {d7},  [%[b_ptr] :64]!      \n"
+            "vmla.f32	d24, d4, d0[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d25, d5, d0[0]              @ out4 += b1 * a4\n"
+            "ldr      r1, [%[b_ptr], #0x5c]\n"
+            "pld [%[a_ptr], #320]                 @ preload\n"
+            "vmla.f32	d28, d4, d0[1]              @ out5 += b1 * a5\n"
+            "vmla.f32	d29, d5, d0[1]              @ out5 += b1 * a5\n"
+            "vldr     d4, [%[b_ptr], #0x60]\n"
+            "vmov     d7, r0, r1\n"
+            // "vld1.32	{d4-d5}, [%[b_ptr] :128]!   @ load b1\n"
+            "vmla.f32	d10, d6, d2[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	d11, d7, d2[0]               @ out6 += b2 * a0\n"
+            // "vld1.32  {d4},  [%[b_ptr] :64]!      \n"
+            "ldr      r0, [%[b_ptr], #0x68]\n"
+            "vmla.f32	d14, d6, d2[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	d15, d7, d2[1]               @ out7 += b2 * a1\n"
+            "ldr      r1, [%[b_ptr], #0x6c]\n"
+            "pld [%[b_ptr], #384]                 \n"
+            "vmla.f32	d18, d6, d3[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	d19, d7, d3[0]               @ out8 += b2 * a2\n"
+            // "vld1.32  {d5},  [%[b_ptr] :64]!      \n"
+            "vldr     d2, [%[a_ptr], #0x50]\n"
+            "vmov     d5, r0, r1\n"
+            "vmla.f32	d22, d6, d3[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	d23, d7, d3[1]              @ out9 += b2 * a3\n"
+            // "vld1.32	{d2-d3}, [%[a_ptr] :64]!    @ load a2~a5\n"
+            "ldr      r0, [%[a_ptr], #0x58]\n"
+            // "vld1.32  {d2},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d26, d6, d0[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d27, d7, d0[0]              @ out10 += b2 * a4\n"
+            "ldr      r1, [%[a_ptr], #0x5c]\n"
+            "vmla.f32	d30, d6, d0[1]              @ out11 += b2 * a5\n"
+            "vmla.f32	d31, d7, d0[1]              @ out11 += b2 * a5\n"
+            // "vld1.32  {d3},  [%[a_ptr] :64]!     \n"
+            // "vld1.32	{d6-d7}, [%[b_ptr] :128]!   @ load b2\n"
+            "vmov    d3, r0, r1\n"
+            "vldr    d6, [%[b_ptr], #0x70]\n"
+            /* Unroll 3 */
+            "add     %[a_ptr], %[a_ptr], #0x60\n"
+            "vmla.f32	d8, d4, d1[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d9, d5, d1[0]               @ out0 += b1 * a0\n"
+            // "vld1.32  {d6},  [%[b_ptr] :64]!      \n"
+            "ldr      r0, [%[b_ptr], #0x78]\n"
+            "vmla.f32	d12, d4, d1[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d13, d5, d1[1]              @ out1 += b1 * a1\n"
+            "ldr      r0, [%[b_ptr], #0x7c]\n"
+            "vmla.f32	d16, d4, d2[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d17, d5, d2[0]              @ out2 += b1 * a2\n"
+            // "vld1.32  {d7},  [%[b_ptr] :64]!      \n"
+            "vmov     d7, r0, r1\n"
+            "add     %[b_ptr], %[b_ptr], #0x80\n"
+            "vmla.f32	d20, d4, d2[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d21, d5, d2[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d24, d4, d3[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d25, d5, d3[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d28, d4, d3[1]              @ out5 += b1 * a5\n"
+            "vmla.f32	d29, d5, d3[1]              @ out5 += b1 * a5\n"
+            // "vld1.32	{d4-d5}, [%[b_ptr] :128]!   @ load b1\n"
+            // "vld1.32  {d4},  [%[b_ptr] :64]!      \n"
+            "vldr     d4, [%[b_ptr], #0x00]\n"
+            "vmla.f32	d10, d6, d1[0]              @ out6 += b2 * a0\n"
+            "vmla.f32	d11, d7, d1[0]              @ out6 += b2 * a0\n"
+            "ldr      r0, [%[b_ptr], #0x08]\n"
+            "vmla.f32	d14, d6, d1[1]              @ out7 += b2 * a1\n"
+            "vmla.f32	d15, d7, d1[1]              @ out7 += b2 * a1\n"
+            "ldr      r1, [%[b_ptr], #0x0c]\n"
+            // "vld1.32	{d0-d1}, [%[a_ptr] :64]!    @ load a0~a3\n"
+            // "vld1.32  {d0},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d18, d6, d2[0]              @ out8 += b2 * a2\n"
+            "vmla.f32	d19, d7, d2[0]              @ out8 += b2 * a2\n"
+            "vldr     d0, [%[a_ptr], #0x00]\n"
+            "vmov     d5, r0, r1\n"
+            // "vld1.32  {d5},  [%[b_ptr] :64]!      \n"
+            "vmla.f32	d22, d6, d2[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	d23, d7, d2[1]              @ out9 += b2 * a3\n"
+            "ldr      r0, [%[a_ptr], #0x08]\n"
+            // "vld1.32  {d1},  [%[a_ptr] :64]!     \n"
+            "subs		%[k], %[k], #1                @ k--\n"
+            "vmla.f32	d26, d6, d3[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d27, d7, d3[0]              @ out10 += b2 * a4\n"
+            "ldr      r1, [%[a_ptr], #0x0c]\n"
+            "vmla.f32	d30, d6, d3[1]              @ out11 += b2 * a5\n"
+            "vmla.f32	d31, d7, d3[1]              @ out11 += b2 * a5\n"
+            "vmov     d1, r0, r1\n"
+            "bne		1b                            @ jump to main loop\n"
+            "0:                                   @ process tail\n"
+            "sub		%[tails], %[tails], #4        @ tail--\n"
+            "add     %[a_ptr], %[a_ptr], #0x10\n"
+            "add     %[b_ptr], %[b_ptr], #0x10\n"
+            "cmp    %[tails], #4                  @ cmp with act bits\n"
+            "blt		3f                            @ jump to tail = 1\n"
+            /* Unroll 0*/
+            // "vld1.32	{d6-d7}, [%[b_ptr] :128]!   @ load b2\n"
+            "vld1.32  {d6},  [%[b_ptr] :64]!      \n"
+            "vmla.f32	d8, d4, d0[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d9, d5, d0[0]               @ out0 += b1 * a0\n"
+            // "vld1.32	{d2-d3}, [%[a_ptr] :64]!    @ load a4,5, a0, a1\n"
+            "vld1.32  {d2},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d12, d4, d0[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d13, d5, d0[1]              @ out1 += b1 * a1\n"
+            "vld1.32  {d7},  [%[b_ptr] :64]!      \n"
+            "vmla.f32	d16, d4, d1[0]              @ out2 += b1 * a2\n"
+            "vmla.f32	d17, d5, d1[0]              @ out2 += b1 * a2\n"
+            "vld1.32  {d3},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d20, d4, d1[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d21, d5, d1[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d24, d4, d2[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d25, d5, d2[0]              @ out4 += b1 * a4\n"
+            "sub		%[tails], %[tails], #4        @ tail--\n"
+            "vmla.f32	d28, d4, d2[1]              @ out5 += b1 * a5\n"
+            "vmla.f32	d29, d5, d2[1]              @ out5 += b1 * a5\n"
+            // "vld1.32	{d4-d5}, [%[b_ptr] :128]!   @ load b1\n"
+            "vld1.32  {d4},  [%[b_ptr] :64]!       \n"
+            "cmp    %[tails], #4                  @ cmp with act bits\n"
+            "vmla.f32	d10, d6, d0[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	d11, d7, d0[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	d14, d6, d0[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	d15, d7, d0[1]               @ out7 += b2 * a1\n"
+            "vld1.32  {d5},  [%[b_ptr] :64]!       \n"
+            "vmla.f32	d18, d6, d1[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	d19, d7, d1[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	d22, d6, d1[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	d23, d7, d1[1]              @ out9 += b2 * a3\n"
+            // "vld1.32	{d0-d1}, [%[a_ptr] :64]!    @ load a2~a5\n"
+            "vld1.32  {d0},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d26, d6, d2[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d27, d7, d2[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d30, d6, d2[1]              @ out11 += b2 * a5\n"
+            "vmla.f32	d31, d7, d2[1]              @ out11 += b2 * a5\n"
+            // "vld1.32  {d6},  [%[b_ptr] :64]!       \n"
+            "vld1.32  {d1},  [%[a_ptr] :64]!     \n"
+            "vld1.32	{d6-d7}, [%[b_ptr] :128]!   @ load b2\n"
+            // "vld1.32  {d7},  [%[b_ptr] :64]!       \n"
+            "blt		4f                            @ jump to tail==2\n"
+            /* Unroll 1*/
+            "vmla.f32	d8, d4, d3[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d9, d5, d3[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d12, d4, d3[1]               @ out1 += b1 * a1\n"
+            "vmla.f32	d13, d5, d3[1]               @ out1 += b1 * a1\n"
+            "sub		%[tails], %[tails], #4        @ tail--\n"
+            "vmla.f32	d16, d4, d0[0]               @ out2 += b1 * a2\n"
+            "vmla.f32	d17, d5, d0[0]               @ out2 += b1 * a2\n"
+            "vmla.f32	d20, d4, d0[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d21, d5, d0[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d24, d4, d1[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d25, d5, d1[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d28, d4, d1[1]              @ out5 += b1 * a5\n"
+            "vmla.f32	d29, d5, d1[1]              @ out5 += b1 * a5\n"
+            // "vld1.32	{d4-d5}, [%[b_ptr] :128]!   @ load b1\n"
+            "vld1.32  {d4},  [%[b_ptr] :64]!       \n"
+            "cmp    %[tails],  #4                 @ cmp with act bits\n"
+            "vmla.f32	d10, d6, d3[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	d11, d7, d3[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	d14, d6, d3[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	d15, d7, d3[1]               @ out7 += b2 * a1\n"
+            "vld1.32  {d5},  [%[b_ptr] :64]!       \n"
+            // "vld1.32	{d2-d3}, [%[a_ptr] :64]!    @ load a0~a3\n"
+            "vld1.32  {d2},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d18, d6, d0[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	d19, d7, d0[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	d22, d6, d0[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	d23, d7, d0[1]              @ out9 += b2 * a3\n"
+            "vld1.32  {d3},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d26, d6, d1[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d27, d7, d1[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d30, d6, d1[1]              @ out11 += b2 * a5\n"
+            "vmla.f32	d31, d7, d1[1]              @ out11 += b2 * a5\n"
+            "vld1.32	{d6-d7}, [%[b_ptr] :128]!   @ load b2\n"
+            // "vld1.32  {d6},  [%[b_ptr] :64]!       \n"
+            // "vld1.32  {d7},  [%[b_ptr] :64]!       \n"
+            "blt		5f                            @ jump to tail==3\n"
+            /* Unroll 2 */
+            "sub		%[tails], %[tails], #4        @ tail--\n"
+            // "vld1.32	{d0-d1}, [%[a_ptr] :64]!    @ load a4,a5, a0,a1\n"
+            "vld1.32  {d0},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d8, d4, d2[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d9, d5, d2[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d12, d4, d2[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d13, d5, d2[1]              @ out1 += b1 * a1\n"
+            "vld1.32  {d1},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d16, d4, d3[0]               @ out2 += b1 * a2\n"
+            "vmla.f32	d17, d5, d3[0]               @ out2 += b1 * a2\n"
+            "vmla.f32	d20, d4, d3[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d21, d5, d3[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	d24, d4, d0[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d25, d5, d0[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	d28, d4, d0[1]              @ out5 += b1 * a5\n"
+            "vmla.f32	d29, d5, d0[1]              @ out5 += b1 * a5\n"
+            // "vld1.32	{d4-d5}, [%[b_ptr] :128]!   @ load b1\n"
+            "vld1.32  {d4},  [%[b_ptr] :64]!       \n"
+            "vmla.f32	d10, d6, d2[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	d11, d7, d2[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	d14, d6, d2[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	d15, d7, d2[1]               @ out7 += b2 * a1\n"
+            "vld1.32  {d5},  [%[b_ptr] :64]!       \n"
+            "vmla.f32	d18, d6, d3[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	d19, d7, d3[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	d22, d6, d3[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	d23, d7, d3[1]              @ out9 += b2 * a3\n"
+            // "vld1.32	{d2-d3}, [%[a_ptr] :64]!    @ load a2~a5\n"
+            "vld1.32  {d2},  [%[a_ptr] :64]!     \n"
+            "vmla.f32	d26, d6, d0[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d27, d7, d0[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	d30, d6, d0[1]              @ out11 += b2 * a5\n"
+            "vmla.f32	d31, d7, d0[1]              @ out11 += b2 * a5\n"
+            "vld1.32  {d3},  [%[a_ptr] :64]!     \n"
+            // "vld1.32	{d6-d7}, [%[b_ptr] :128]!   @ load b2\n"
+            /* Unroll 3*/
+            "vmla.f32	d8, d4, d1[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	d9, d5, d1[0]               @ out0 += b1 * a0\n"
+            "vld1.32  {d6},  [%[b_ptr] :64]!       \n"
+            "vmla.f32	d12, d4, d1[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	d13, d5, d1[1]              @ out1 += b1 * a1\n"
+            "vmla.f32	q8, q2, d2[0]               @ out2 += b1 * a2\n"
+            "vmla.f32	q10, q2, d2[1]              @ out3 += b1 * a3\n"
+            "vld1.32  {d7},  [%[b_ptr] :64]!       \n"
+            "vmla.f32	q12, q2, d3[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	q14, q2, d3[1]              @ out5  += b1 * a5\n"
+            "vmla.f32	q5, q3, d1[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	q7, q3, d1[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	q9, q3, d2[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	q11, q3, d2[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	q13, q3, d3[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	q15, q3, d3[1]              @ out11 += b2 * a5\n"
+            "b		2f\n"
+            /* tails==1 final tail*/
+            "3:                                     @ tail=1\n"
+            "vmla.f32	q4, q2, d0[0]               @ out0 += b1 * a0\n"
+            "vld1.32	{d2}, [%[a_ptr] :64]!       @ load a4,a5\n"
+            "vmla.f32	q6, q2, d0[1]               @ out1 += b1 * a1\n"
+            "vld1.32	{d6-d7}, [%[b_ptr] :128]!   @ load b2\n"
+            // "vld1.32  {d6},  [%[b_ptr] :64]!       \n"
+            // "vld1.32  {d7},  [%[b_ptr] :64]!       \n"
+            "vmla.f32	q8, q2, d1[0]               @ out2 += b1 * a2\n"
+            "vmla.f32	q10, q2, d1[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	q12, q2, d2[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	q14, q2, d2[1]              @ out5 += b1 * a5\n"
+            "vmla.f32	q5, q3, d0[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	q7, q3, d0[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	q9, q3, d1[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	q11, q3, d1[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	q13, q3, d2[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	q15, q3, d2[1]              @ out11 += b2 * a5\n"
+            "b		2f                              @ jump to end\n"
+            /* tails==2 final tail*/
+            "4:                                     @ tail == 2\n"
+            "vmla.f32	q4, q2, d3[0]               @ out0 += b1 * a0\n"
+            "vmla.f32	q6, q2, d3[1]               @ out1 += b1 * a1\n"
+            "vmla.f32	q8, q2, d0[0]               @ out2 += b1 * a2\n"
+            "vmla.f32	q10, q2, d0[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	q12, q2, d1[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	q14, q2, d1[1]              @ out5 += b1 * a5\n"
+            "vmla.f32	q5, q3, d3[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	q7, q3, d3[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	q9, q3, d0[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	q11, q3, d0[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	q13, q3, d1[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	q15, q3, d1[1]              @ out11 += b2 * a5\n"
+            "b		2f                              @ jump to end\n"
+            /* tails==3 final tail*/
+            "5:                                     @ tail=3\n"
+            "vmla.f32	q4, q2, d2[0]               @ out0 += b1 * a0\n"
+            "vld1.32	{d0}, [%[a_ptr] :64]!       @ load a4,a5\n"
+            "vmla.f32	q6, q2, d2[1]               @ out1 += b1 * a1\n"
+            "vmla.f32	q8, q2, d3[0]               @ out2 += b1 * a2\n"
+            "vmla.f32	q10, q2, d3[1]              @ out3 += b1 * a3\n"
+            "vmla.f32	q12, q2, d0[0]              @ out4 += b1 * a4\n"
+            "vmla.f32	q14, q2, d0[1]              @ out5 += b1 * a5\n"
+            "vmla.f32	q5, q3, d2[0]               @ out6 += b2 * a0\n"
+            "vmla.f32	q7, q3, d2[1]               @ out7 += b2 * a1\n"
+            "vmla.f32	q9, q3, d3[0]               @ out8 += b2 * a2\n"
+            "vmla.f32	q11, q3, d3[1]              @ out9 += b2 * a3\n"
+            "vmla.f32	q13, q3, d0[0]              @ out10 += b2 * a4\n"
+            "vmla.f32	q15, q3, d0[1]              @ out11 += b2 * a5\n"
+            "2:                                   @ check activation\n"
+            //!   relu
+            "cmp        %[tails], #1              @ check if has relu\n"
+            "bne        6f                        @ jump if not relu \n"
+            "vmov.u32   q0, #0                    @ for relu\n"
+            "vmax.f32   q4, q4, q0                @ for relu\n"
+            "vmax.f32   q5, q5, q0                @ for relu\n"
+            "vmax.f32   q6, q6, q0                @ for relu\n"
+            "vmax.f32   q7, q7, q0                @ for relu\n"
+            "vmax.f32   q8, q8, q0                @ for relu\n"
+            "vmax.f32   q9, q9, q0                @ for relu\n"
+            "vmax.f32   q10, q10, q0              @ for relu\n"
+            "vmax.f32   q11, q11, q0              @ for relu\n"
+            "vmax.f32   q12, q12, q0              @ for relu\n"
+            "vmax.f32   q13, q13, q0              @ for relu\n"
+            "vmax.f32   q14, q14, q0              @ for relu\n"
+            "vmax.f32   q15, q15, q0              @ for relu\n"
+            "b          10f                       @ relu end\n"
+            "6:                                   @ no relu \n"
+            "cmp        %[tails], #0              @ check no act\n"
+            "beq        10f                       @ no act end  \n"
+            //!   relu6
+            "cmp        %[tails], #2              @ check if has relu6\n"
+            "bne        7f                        @ jump if no relu6 \n"
+            "vmov.u32   q0, #0                    @ for relu6\n"
+            "vmax.f32   q4, q4, q0                @ for relu6\n"
+            "vmax.f32   q5, q5, q0                @ for relu6\n"
+            "vmax.f32   q6, q6, q0                @ for relu6\n"
+            "vmax.f32   q7, q7, q0                @ for relu6\n"
+            "vmax.f32   q8, q8, q0                @ for relu6\n"
+            "vmax.f32   q9, q9, q0                @ for relu6\n"
+            // "vld1.f32   {d2-d3}, [%[alpha]]       @ load relu6 alpha\n"
+            "vmax.f32   q10, q10, q0              @ for relu6\n"
+            "vmax.f32   q11, q11, q0              @ for relu6\n"
+            "vmax.f32   q12, q12, q0              @ for relu6\n"
+            "vmax.f32   q13, q13, q0              @ for relu6\n"
+            "vmax.f32   q14, q14, q0              @ for relu6\n"
+            "vmax.f32   q15, q15, q0              @ for relu6\n"
+
+            "vmin.f32   q4, q4, q1                @ for relu6\n"
+            "vmin.f32   q5, q5, q1                @ for relu6\n"
+            "vmin.f32   q6, q6, q1                @ for relu6\n"
+            "vmin.f32   q7, q7, q1                @ for relu6\n"
+            "vmin.f32   q8, q8, q1                @ for relu6\n"
+            "vmin.f32   q9, q9, q1                @ for relu6\n"
+            "vmin.f32   q10, q10, q1              @ for relu6\n"
+            "vmin.f32   q11, q11, q1              @ for relu6\n"
+            "vmin.f32   q12, q12, q1              @ for relu6\n"
+            "vmin.f32   q13, q13, q1              @ for relu6\n"
+            "vmin.f32   q14, q14, q1              @ for relu6\n"
+            "vmin.f32   q15, q15, q1              @ for relu6\n"
+            "b          10f                       @ relu6 end \n"
+            //! leakey relu
+            "7:                                   @ otherwise is leakey relu\n"
+            "vmov.u32   q0,   #0                  @ for leakey relu \n"
+            // "vld1.f32   {d2-d3}, [%[alpha]]       @ load leakey relu alpha\n"
+            "vcge.f32   q2, q4, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q4, q1                @ vmulq_f32 \n"
+            "vbif       q4, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q5, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q5, q1                @ vmulq_f32 \n"
+            "vbif       q5, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q6, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q6, q1                @ vmulq_f32 \n"
+            "vbif       q6, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q7, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q7, q1                @ vmulq_f32 \n"
+            "vbif       q7, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q8, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q8, q1                @ vmulq_f32 \n"
+            "vbif       q8, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q9, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q9, q1                @ vmulq_f32 \n"
+            "vbif       q9, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q10, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q10, q1               @ vmulq_f32 \n"
+            "vbif       q10, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q11, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q11, q1               @ vmulq_f32 \n"
+            "vbif       q11, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q12, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q12, q1               @ vmulq_f32 \n"
+            "vbif       q12, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q13, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q13, q1               @ vmulq_f32 \n"
+            "vbif       q13, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q14, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q14, q1               @ vmulq_f32 \n"
+            "vbif       q14, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q15, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q15, q1               @ vmulq_f32 \n"
+            "vbif       q15, q3, q2               @ choose    \n"
+            "10:                                  @ act end  \n"
+            "vst1.32    {d8-d11},   [%[c_ptr0]]!    @ store r0\n"
+            "vst1.32    {d12-d15},  [%[c_ptr1]]!    @ store r1\n"
+            "vst1.32    {d16-d19},  [%[c_ptr2]]!    @ store r2\n"
+            "vst1.32    {d20-d23},  [%[c_ptr3]]!    @ store r3\n"
+            "vst1.32    {d24-d27},  [%[c_ptr4]]!    @ store r4\n"
+            "vst1.32    {d28-d31},  [%[c_ptr5]]!    @ store r5\n"
+            : [a_ptr] "+r"(a_ptr),
+              [b_ptr] "+r"(b_ptr),
+              [c_ptr0] "+r"(c_ptr0),
+              [c_ptr1] "+r"(c_ptr1),
+              [c_ptr2] "+r"(c_ptr2),
+              [c_ptr3] "+r"(c_ptr3),
+              [c_ptr4] "+r"(c_ptr4),
+              [c_ptr5] "+r"(c_ptr5),
+              [k] "+r"(k),
+              [tails] "+r"(tails)
+            : [bias_ptr] "r"(bias_local)
+              // [beta] "r"(beta),
+              // [alpha] "r" (alpha)
+            : "r0", "r1", "q0","q1","q2","q3","q4",
+              "q5","q6","q7","q8","q9","q10","q11",
+              "q12","q13","q14","q15","cc","memory");
+        // clang-format on
+
+        if (flag_p_remain && (xb == bblocks - 1)) {
+          for (int i = 0; i < remain; ++i) {
+            *pout0++ = cout0[i];
+            *pout1++ = cout1[i];
+            *pout2++ = cout2[i];
+            *pout3++ = cout3[i];
+            *pout4++ = cout4[i];
+            *pout5++ = cout5[i];
+          }
+        }
+      }
+    }
+  }
+}
 void sgemm_prepacked_4x8_a35(bool is_transB,
                              int M,
                              int N,
@@ -880,9 +1626,14 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
 
   int k_pre = ((K + k_num - 1) / k_num) - 1;
   int tail_pre = (K & (k_num - 1));
+  if (tail_pre == 0) {
+    tail_pre = k_num;
+  }
 
   bool flag_p_remain = false;
   int remain = 0;
+  //! merge tail_pre and flag_act
+  tail_pre = (tail_pre << 2 | flag_act);
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
 
@@ -960,14 +1711,14 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
           c_ptr2 = cout2;
           c_ptr3 = cout3;
 
-          if (has_beta) {
-            for (int i = 0; i < remain; ++i) {
-              cout0[i] = pout0[i];
-              cout1[i] = pout1[i];
-              cout2[i] = pout2[i];
-              cout3[i] = pout3[i];
-            }
-          }
+          // if (has_beta) {
+          //   for (int i = 0; i < remain; ++i) {
+          //     cout0[i] = pout0[i];
+          //     cout1[i] = pout1[i];
+          //     cout2[i] = pout2[i];
+          //     cout3[i] = pout3[i];
+          //   }
+          // }
         }
         const float* a_ptr = a_ptr_l;
         int tails = tail_pre;
@@ -990,32 +1741,31 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "pld [%[b_ptr], #64]                    @ preload b\n"
             "vdup.32    q13, d7[0]                  @ add bias to out21\n"
             "pld [%[a_ptr], #128]                   @ preload a\n"
-            "cmp %[beta], #0\n"                     //  check beta == 0
+            // "cmp %[beta], #0\n"                     //  check beta == 0
             "vdup.32    q14, d7[1]                  @ add bias to out30\n"
             "pld [%[b_ptr], #128]                   @ preload b\n"
             "vdup.32    q15, d7[1]                  @ add bias to out31\n"
             "pld [%[b_ptr], #192]                   @ preload b\n"
-            "beq    11f\n"
+            // "beq    11f\n"
             // process beta
-            "vdup.32    q4, %[beta]\n"
-            "vld1.32    {d0-d3}, [%[c_ptr0]]\n"
-            "vld1.32    {d4-d7}, [%[c_ptr1]]\n"
-            "vmla.f32   q8, q0, q4\n"           
-            "vmla.f32   q9, q1, q4\n"          
-            "vld1.32    {d0-d3}, [%[c_ptr2]]\n"
-            "vmla.f32   q10, q2, q4\n"          
-            "vmla.f32   q11, q3, q4\n"         
-            "vld1.32    {d4-d7}, [%[c_ptr3]]\n" 
-            "vmla.f32   q12, q0, q4\n"         
-            "vmla.f32   q13, q1, q4\n"         
-            "vmla.f32   q14, q2, q4\n"        
-            "vmla.f32   q15, q3, q4\n"
-            "vld1.32	{d0-d1}, [%[a_ptr] :128]   @ load a0~a3\n"
-            "vld1.32   {d4-d5}, [%[b_ptr] :128]  @ load b1\n"
+            // "vdup.32    q4, %[beta]\n"
+            // "vld1.32    {d0-d3}, [%[c_ptr0]]\n"
+            // "vld1.32    {d4-d7}, [%[c_ptr1]]\n"
+            // "vmla.f32   q8, q0, q4\n"           
+            // "vmla.f32   q9, q1, q4\n"          
+            // "vld1.32    {d0-d3}, [%[c_ptr2]]\n"
+            // "vmla.f32   q10, q2, q4\n"          
+            // "vmla.f32   q11, q3, q4\n"         
+            // "vld1.32    {d4-d7}, [%[c_ptr3]]\n" 
+            // "vmla.f32   q12, q0, q4\n"         
+            // "vmla.f32   q13, q1, q4\n"         
+            // "vmla.f32   q14, q2, q4\n"        
+            // "vmla.f32   q15, q3, q4\n"
+            // "vld1.32	{d0-d1}, [%[a_ptr] :128]   @ load a0~a3\n"
+            // "vld1.32   {d4-d5}, [%[b_ptr] :128]  @ load b1\n"
             "11: \n"                            /* check loop count */
-            // "cmp %[k], #0                         @ check k==0 \n"
-            // "beq 0f                               @ jump to tail\n"
-            "cbz %[k], 0f                         @ jump to tail\n"
+            "cmp %[k], #0                         @ check k==0 \n"
+            "beq 0f                               @ jump to tail\n"
             "1:                                   @ main loop for k\n"
             /* Unroll 0*/
             "vldr d6, [%[b_ptr], #0x10]           \n"
@@ -1054,6 +1804,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32	d17, d9, d2[0]              @ out0 += b1 * a0\n"
             "vmla.f32	d20, d8, d2[1]              @ out1 += b1 * a1\n"
             "ldr  r1, [%[b_ptr], #0x3c]           \n"
+            "pld [%[a_ptr], #128]                   @ preload b\n"
             "vmla.f32	d21, d9, d2[1]              @ out1 += b1 * a1\n"
             "vmla.f32	d24, d8, d3[0]              @ out2 += b1 * a2\n"
             "vldr d0, [%[a_ptr], #0x20]           \n"
@@ -1063,6 +1814,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32	d28, d8, d3[1]              @ out3 += b1 * a3\n"
             "vmla.f32	d29, d9, d3[1]              @ out3 += b1 * a3\n"
             "ldr  r1, [%[a_ptr], #0x2c]           \n"
+            "pld [%[b_ptr], #192]                   @ preload b\n"
 
             "vmla.f32	d18, d10, d2[0]             @ out0 += b1 * a0\n"
             "vmla.f32	d19, d11, d2[0]             @ out0 += b1 * a0\n"
@@ -1082,9 +1834,9 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "add  %[a_ptr], %[a_ptr], #0x20       \n"
             "bne		1b                            @ jump to main loop\n"
             "0:                                   @ process tail\n"
-            // "cmp		%[tails], #1                @ tail--\n"
-            // "beq		3f                            @ jump to tail = 1\n"
-            "cbnz %[tails], 3f                    @ jump to tail\n"
+            "sub		%[tails], %[tails], #4        @ tail--\n"
+            "cmp    %[tails], #4                  @ cmp with act bits\n"
+            "blt		3f                            @ jump to tail = 1\n"
             /* Unroll 0*/
             "vldr d6, [%[b_ptr], #0x10]           \n"
             "vmla.f32	d16, d4, d0[0]              @ out0 += b1 * a0\n"
@@ -1128,6 +1880,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32	d25, d9, d3[0]              @ out2 += b1 * a2\n"
             "vmla.f32	d28, d8, d3[1]              @ out3 += b1 * a3\n"
             "vmla.f32	d29, d9, d3[1]              @ out3 += b1 * a3\n"
+            "sub		%[tails], %[tails], #4        @ tail--\n"
 
             "vmla.f32	d18, d10, d2[0]             @ out0 += b1 * a0\n"
             "vmla.f32	d19, d11, d2[0]             @ out0 += b1 * a0\n"
@@ -1137,14 +1890,13 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32	d27, d11, d3[0]             @ out2 += b1 * a2\n"
             "vmla.f32	d30, d10, d3[1]             @ out3 += b1 * a3\n"
             "add  %[b_ptr], %[b_ptr], #0x40       \n"
-            "vmov d5, r0, r1                      \n"
             "vmla.f32	d31, d11, d3[1]             @ out3 += b1 * a3\n"
             "add  %[a_ptr], %[a_ptr], #0x20       \n"
             "b		2f\n"
             /* tails==1 final tail */
             "3:                                   @ tail=1\n"
-            "vldr d6, [%[b_ptr], #0x10]           \n"
             "vmla.f32	d16, d4, d0[0]              @ out0 += b1 * a0\n"
+            "vldr     d6, [%[b_ptr], #0x10]\n"
             "vmla.f32	d17, d5, d0[0]              @ out0 += b1 * a0\n"
             "ldr  r0, [%[b_ptr], #0x18]           \n"
             "vmla.f32	d20, d4, d0[1]              @ out1 += b1 * a1\n"
@@ -1153,13 +1905,13 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32	d24, d4, d1[0]              @ out2 += b1 * a2\n"
             "vmla.f32	d25, d5, d1[0]              @ out2 += b1 * a2\n"
             "vmov d7, r0, r1                      \n"
-            "add  %[b_ptr], %[b_ptr], #0x20       \n"
             "vmla.f32	d28, d4, d1[1]              @ out3 += b1 * a3\n"
             "vmla.f32	d29, d5, d1[1]              @ out3 += b1 * a3\n"
             "add  %[a_ptr], %[a_ptr], #0x10       \n"
 
             "vmla.f32	d18, d6, d0[0]              @ out0 += b1 * a0\n"
             "vmla.f32	d19, d7, d0[0]              @ out0 += b1 * a0\n"
+            "add  %[b_ptr], %[b_ptr], #0x20       \n"
             "vmla.f32	d22, d6, d0[1]              @ out1 += b1 * a1\n"
             "vmla.f32	d23, d7, d0[1]              @ out1 += b1 * a1\n"
             "vmla.f32	d26, d6, d1[0]              @ out2 += b1 * a2\n"
@@ -1168,7 +1920,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32	d31, d7, d1[1]              @ out3 += b1 * a3\n"
             "2:                                   @ check relu\n"
             //!   relu
-            "cmp        %[flag_act], #1           @ check if has relu\n"
+            "cmp        %[tails], #1              @ check if has relu\n"
             "bne        6f                        @ jump if not relu \n"
             "vmov.u32   q0, #0                    @ for relu\n"
             "vmax.f32   q8, q8, q0                @ for relu\n"
@@ -1181,10 +1933,10 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmax.f32   q15, q15, q0              @ for relu\n"
             "b          10f                       @ relu end\n"
             "6:                                   @ no relu \n"
-            "cmp        %[flag_act], #0           @ check no act\n"
+            "cmp        %[tails], #0              @ check no act\n"
             "beq        10f                       @ no act end  \n"
             //!   relu6
-            "cmp        %[flag_act], #2           @ check if has relu6\n"
+            "cmp        %[tails], #2              @ check if has relu6\n"
             "bne        7f                        @ jump if no relu6 \n"
             "vmov.u32   q0, #0                    @ for relu6\n"
             "vld1.f32   {d2-d3}, [%[alpha]]       @ load relu6 alpha\n"
@@ -1239,6 +1991,14 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vst1.32    {d20-d23},  [%[c_ptr1]]!    @ store r1\n"
             "vst1.32    {d24-d27},  [%[c_ptr2]]!    @ store r2\n"
             "vst1.32    {d28-d31},  [%[c_ptr3]]!    @ store r3\n"
+            // "vst1.32    {d16-d17},  [%[c_ptr0]]!    @ store r0\n"
+            // "vst1.32    {d20-d21},  [%[c_ptr1]]!    @ store r1\n"
+            // "vst1.32    {d24-d25},  [%[c_ptr2]]!    @ store r2\n"
+            // "vst1.32    {d28-d29},  [%[c_ptr3]]!    @ store r3\n"
+            // "vst1.32    {d18-d19},  [%[c_ptr0]]!    @ store r0\n"
+            // "vst1.32    {d22-d23},  [%[c_ptr1]]!    @ store r1\n"
+            // "vst1.32    {d26-d27},  [%[c_ptr2]]!    @ store r2\n"
+            // "vst1.32    {d30-d31},  [%[c_ptr3]]!    @ store r3\n"
             : [a_ptr] "+r"(a_ptr),
               [b_ptr] "+r"(b_ptr),
               [c_ptr0] "+r"(c_ptr0),
@@ -1249,8 +2009,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
               [beta] "r"(beta),
-              [alpha] "r"(alpha),
-              [flag_act] "r"(flag_act)
+              [alpha] "r"(alpha)
             : "r0", "r1", "q0","q1","q2","q3",
               "q4","q5","q6","q7","q8","q9","q10",
               "q11","q12","q13","q14","q15","cc","memory");
