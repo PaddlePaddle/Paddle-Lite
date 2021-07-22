@@ -140,6 +140,7 @@ class CLRuntime {
   lite_api::CLPrecisionType get_precision() { return precision_; }
 
   void SetBinaryPathName(const std::string& path, const std::string& name) {
+    binary_path_name_.clear();
     binary_path_name_.push_back(path);
     binary_path_name_.push_back(name);
   }
@@ -215,7 +216,10 @@ class CLRuntime {
 
  private:
   CLRuntime() { Init(); }
-
+  CLRuntime(const CLRuntime&) = delete;
+  CLRuntime(const CLRuntime&&) = delete;
+  CLRuntime& operator=(const CLRuntime&) = delete;
+  CLRuntime& operator=(const CLRuntime&&) = delete;
   ~CLRuntime();
 
   bool InitializePlatform();

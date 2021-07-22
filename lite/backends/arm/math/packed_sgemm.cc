@@ -4575,16 +4575,19 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
   alpha[1] = local_alpha;
   alpha[2] = local_alpha;
   alpha[3] = local_alpha;
+  const int k_num = 2;
   X_BLOCK_COMPUTE((l2_cache * 9 / 10), MBLOCK, NBLOCK, M, N, K)
 
   // unroll 2 loop
-  int tail_pre = (K & (KBLOCK - 1));
-  int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
+  int tail_pre = (K & (k_num - 1));
+  int k_pre = ((K + k_num - 1) / k_num) - 1;
+  int tail_pre_4 = (K & (KBLOCK - 1));
+  int k_pre_4 = ((K + KBLOCK - 1) / KBLOCK) - 1;
 
   bool flag_p_remain = false;
   int remain = 0;
-  if (tail_pre == 0) {
-    tail_pre = KBLOCK;
+  if (tail_pre_4 == 0) {
+    tail_pre_4 = KBLOCK;
   }
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
@@ -4681,8 +4684,8 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
           int rem_rem = remain & 3;
           for (int i = 0; i < cnt_rem; i++) {
             const float *a_ptr = a_ptr_l;
-            int tail = tail_pre;
-            int k = k_pre;
+            int tail = tail_pre_4;
+            int k = k_pre_4;
             // clang-format off 8x4
             asm volatile(
                 INIT_4_A53
@@ -4976,8 +4979,8 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
           }
           for (int i = 0; i < rem_rem; i++) {
             const float *a_ptr = a_ptr_l;
-            int tail = tail_pre;
-            int k = k_pre;
+            int tail = tail_pre_4;
+            int k = k_pre_4;
             // clang-format off 8x1
             asm volatile(
                 INIT_4_A53
@@ -5241,201 +5244,106 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
             "fmla 	v8.4s ,  v4.4s,  v0.s[0]\n" // out0 = b0 * a00[0], b0 =q4
             "ldr x20, [%[b_ptr], #0x28]\n"
             "fmla  	v11.4s ,  v4.4s,  v0.s[1]\n" // out1 = b0 * a00[1], b0 =q4
+            "fmla	v14.4s,  v4.4s,  v0.s[2]\n"   // out2 = b0 * a00[2], b0 =q4
             "ldr d2, [%[a_ptr], #0x20]\n"
             "ins v6.d[1], x20\n"
-            "fmla	v14.4s,  v4.4s,  v0.s[2]\n"   // out2 = b0 * a00[2], b0 =q4
-            "ldr x20, [%[a_ptr], #0x28]\n"
             "fmla	v17.4s,  v4.4s,  v0.s[3]\n"   // out3 = b0 * a00[3], b0 =q4
+            "ldr x20, [%[a_ptr], #0x28]\n"
             "fmla 	v20.4s,  v4.4s,  v1.s[0]\n" // out4 = b0 * a01[0], b0 =q4
+            "fmla	v23.4s,  v4.4s,  v1.s[1]\n"   // out5 = b0 * a01[1], b0 =q4
             "ldr d3, [%[a_ptr], #0x30]\n"
             "ins v2.d[1], x20\n"
-            "fmla	v23.4s,  v4.4s,  v1.s[1]\n"   // out5 = b0 * a01[1], b0 =q4
-            "ldr x20, [%[a_ptr], #0x38]\n"
             "fmla	v26.4s,  v4.4s,  v1.s[2]\n"   // out6 = b0 * a01[2], b0 =q4
+            "ldr x20, [%[a_ptr], #0x38]\n"
             "fmla	v29.4s,  v4.4s,  v1.s[3]\n"   // out7 = b0 * a01[3], b0 =q4
-            "ldr d7, [%[b_ptr], #0x30]\n"
-            "ins v3.d[1], x20\n"
 
             "fmla	v9.4s,  v5.4s,  v0.s[0]\n"  // out8 = b1 * a00[0], b1 =q5
-            "ldr x20, [%[b_ptr], #0x38]\n"
+            "ldr d4, [%[b_ptr], #0x30]\n"
+            "ins v3.d[1], x20\n"
             "fmla	v12.4s,  v5.4s,  v0.s[1]\n" // out9 = b1 * a00[1], b1 =q5
+            "ldr x20, [%[b_ptr], #0x38]\n"
             "fmla	v15.4s,  v5.4s,  v0.s[2]\n" // out10 = b1 * a00[2], b1 =q5
-            "ldr d4, [%[b_ptr], #0x40]\n"
-            "ins v7.d[1], x20\n"
             "fmla	v18.4s,  v5.4s,  v0.s[3]\n" // out11 = b1 * a00[3], b1 =q5
-            "ldr x20, [%[b_ptr], #0x48]\n"
+            "prfm   pldl1keep, [%[a_ptr], #320]\n"
+            "ins v4.d[1], x20\n"
             "fmla	v21.4s,  v5.4s,  v1.s[0]\n" // out12 = b1 * a01[0], b1 =q5
             "fmla	v24.4s,  v5.4s,  v1.s[1]\n" // out13 = b1 * a01[1], b1 =q5
-            "ins v4.d[1], x20\n"
             "fmla	v27.4s,  v5.4s,  v1.s[2]\n" // out14 = b1 * a01[2], b1 =q5
+            "prfm   pldl1keep, [%[b_ptr], #448]\n"
+            "nop\n"
             "fmla	v30.4s,  v5.4s,  v1.s[3]\n" // out15 = b1 * a01[3], b1 =q5
             
-            "ldr d5, [%[b_ptr], #0x50]\n"
             "fmla	v10.4s,  v6.4s,  v0.s[0]\n" // out16 = b2 * a00[0], b2 =q6
             "fmla	v13.4s,  v6.4s,  v0.s[1]\n" // out17 = b2 * a00[1], b2 =q6
-            "ldr x20, [%[b_ptr], #0x58]\n"
-            "fmla	v16.4s,  v6.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q6
-            "fmla	v19.4s,  v6.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q6
+            "ldr d5, [%[b_ptr], #0x40]\n"
             "nop\n"
-            "ins v5.d[1], x20\n"
+            "fmla	v16.4s,  v6.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q6
+            "ldr x20, [%[b_ptr], #0x48]\n"
+            "fmla	v19.4s,  v6.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q6
           
             "fmla	v22.4s,  v6.4s,  v1.s[0]\n" // out20 = b2 * a00[0], b2 =q6
+            "prfm   pldl1keep, [%[b_ptr], #512]\n"
+            "ins v5.d[1], x20\n"
             "fmla	v25.4s,  v6.4s,  v1.s[1]\n" // out21 = b2 * a00[1], b2 =q6
             "fmla	v28.4s,  v6.4s,  v1.s[2]\n" // out22 = b2 * a00[2], b2 =q6
-            "nop\n"
             "fmla	v31.4s,  v6.4s,  v1.s[3]\n" // out23 = b2 * a00[3], b2 =q6
 
             // unrool 1
-            "ldr d6, [%[b_ptr], #0x60]\n"
+            "ldr d6, [%[b_ptr], #0x50]\n"
             "nop\n"
-            "fmla 	v8.4s ,  v7.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q7
-            "ldr x20, [%[b_ptr], #0x68]\n"
-            "fmla	v11.4s ,  v7.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q7
-            "fmla	v14.4s,  v7.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q7
+            "fmla 	v8.4s ,  v4.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q7
+            "ldr x20, [%[b_ptr], #0x58]\n"
+            "fmla	v11.4s ,  v4.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q7
+            "subs	%w[k], %w[k], #1\n"         // loop count - 1
+            "fmla	v14.4s,  v4.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q7
             "ldr d0, [%[a_ptr], #0x40]\n"
             "ins v6.d[1], x20\n"
-            "fmla	v17.4s,  v7.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q7
+            "fmla	v17.4s,  v4.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q7
             "ldr x20, [%[a_ptr], #0x48]\n"
-            "fmla 	v20.4s,  v7.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q7
-            "fmla   v23.4s,  v7.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 = q7
+            "fmla 	v20.4s,  v4.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q7
+            "fmla   v23.4s,  v4.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 = q7
             "ldr d1, [%[a_ptr], #0x50]\n"
             "ins v0.d[1], x20\n"
-            "fmla	v26.4s,  v7.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q7
+            "fmla	v26.4s,  v4.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q7
             "ldr x20, [%[a_ptr], #0x58]\n"
-            "fmla	v29.4s,  v7.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q7
+            "fmla	v29.4s,  v4.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q7
 
-            "fmla	v9.4s,  v4.4s,  v2.s[0]\n"  // out8 = b0 * a10[0], b1 =q4
-            "ldr d7, [%[b_ptr], #0x70]\n"
+            "fmla	v9.4s,  v5.4s,  v2.s[0]\n"  // out8 = b0 * a10[0], b1 =q4
+            "ldr d4, [%[b_ptr], #0x60]\n"
             "ins v1.d[1], x20\n"
-            "fmla	v12.4s,  v4.4s,  v2.s[1]\n" // out9 = b0 * a10[1], b1 =q4
+            "fmla	v12.4s,  v5.4s,  v2.s[1]\n" // out9 = b0 * a10[1], b1 =q4
+            "ldr x20, [%[b_ptr], #0x68]\n"
+            "fmla	v15.4s,  v5.4s,  v2.s[2]\n" // out10 = b1 * a10[2], b1 =q4
+            "fmla	v18.4s,  v5.4s,  v2.s[3]\n" // out11 = b1 * a10[3], b1 =q4
+            "nop\n"
+            "ins v4.d[1], x20\n"
+            "fmla	v21.4s,  v5.4s,  v3.s[0]\n" // out12 = b1 * a10[0], b1 =q4
+            "fmla	v24.4s,  v5.4s,  v3.s[1]\n" // out13 = b1 * a10[1], b1 =q4
+            "fmla	v27.4s,  v5.4s,  v3.s[2]\n" // out14 = b1 * a10[2], b1 =q4
+            "nop\n""nop\n"
+            "fmla	v30.4s,  v5.4s,  v3.s[3]\n" // out15 = b1 * a10[3], b1 =q4
+
+            "fmla	v10.4s,  v6.4s,  v2.s[0]\n" // out16 = b2 * a10[0], b2 =q5
+            "fmla	v13.4s,  v6.4s,  v2.s[1]\n" // out17 = b2 * a10[0], b2 =q5
+            "ldr d5, [%[b_ptr], #0x70]\n"
+            "nop\n"
+            "fmla	v16.4s,  v6.4s,  v2.s[2]\n" // out18 = b2 * a10[0], b2 =q5
             "ldr x20, [%[b_ptr], #0x78]\n"
-            "fmla	v15.4s,  v4.4s,  v2.s[2]\n" // out10 = b1 * a10[2], b1 =q4
-            "fmla	v18.4s,  v4.4s,  v2.s[3]\n" // out11 = b1 * a10[3], b1 =q4
-            "nop\n"
-            "ins v7.d[1], x20\n"
-            "fmla	v21.4s,  v4.4s,  v3.s[0]\n" // out12 = b1 * a10[0], b1 =q4
-            "fmla	v24.4s,  v4.4s,  v3.s[1]\n" // out13 = b1 * a10[1], b1 =q4
-            "fmla	v27.4s,  v4.4s,  v3.s[2]\n" // out14 = b1 * a10[2], b1 =q4
-            "nop\n""nop\n"
-            "fmla	v30.4s,  v4.4s,  v3.s[3]\n" // out15 = b1 * a10[3], b1 =q4
-
-            "fmla	v10.4s,  v5.4s,  v2.s[0]\n" // out16 = b2 * a10[0], b2 =q5
-            "fmla	v13.4s,  v5.4s,  v2.s[1]\n" // out17 = b2 * a10[0], b2 =q5
-            "ldr d4, [%[b_ptr], #0x80]\n"
-            "nop\n"
-            "fmla	v16.4s,  v5.4s,  v2.s[2]\n" // out18 = b2 * a10[0], b2 =q5
-            "ldr x20, [%[b_ptr], #0x88]\n"
-            "fmla	v19.4s,  v5.4s,  v2.s[3]\n" // out19 = b2 * a10[0], b2 =q5
-            "fmla	v22.4s,  v5.4s,  v3.s[0]\n" // out20 = b2 * a10[0], b2 =q5
-            "ldr d2, [%[a_ptr], #0x60]\n"
-            "ins v4.d[1], x20\n"
-            "fmla	v25.4s,  v5.4s,  v3.s[1]\n" // out21 = b2 * a10[0], b2 =q5
-            "ldr x20, [%[a_ptr], #0x68]\n"
-            "fmla	v28.4s,  v5.4s,  v3.s[2]\n" // out22 = b2 * a10[0], b2 =q5
-            "fmla	v31.4s,  v5.4s,  v3.s[3]\n" // out23 = b2 * a10[0], b2 =q5
-            "ldr d5, [%[b_ptr], #0x90]\n"
-            "ins v2.d[1], x20\n"
-            // unrool 2
-            "fmla 	v8.4s ,  v6.4s,  v0.s[0]\n" // out0 = b0 * a00[0], b0 =q6
-            "ldr x20, [%[b_ptr], #0x98]\n"
-            "fmla  	v11.4s ,  v6.4s,  v0.s[1]\n" // out1 = b0 * a00[1], b0 =q6
-            "fmla	v14.4s,  v6.4s,  v0.s[2]\n"    // out2 = b0 * a00[2], b0 =q6
-            "ldr d3, [%[a_ptr], #0x70]\n"
-            "ins v5.d[1], x20\n"
-            "fmla	v17.4s,  v6.4s,  v0.s[3]\n"    // out3 = b0 * a00[3], b0 =q6
-            "ldr x20, [%[a_ptr], #0x78]\n"
-            "fmla 	v20.4s,  v6.4s,  v1.s[0]\n"  // out4 = b0 * a01[0], b0 =q6
-            "fmla	v23.4s,  v6.4s,  v1.s[1]\n"    // out5 = b0 * a01[1], b0 =q6
-            "prfm   pldl1keep, [%[a_ptr], #320]\n"
-            "ins v3.d[1], x20\n"
-            "fmla	v26.4s,  v6.4s,  v1.s[2]\n"    // out6 = b0 * a01[2], b0 =q6
-            "fmla	v29.4s,  v6.4s,  v1.s[3]\n"    // out7 = b0 * a01[3], b0 =q6
-
-            "ldr d6, [%[b_ptr], #0xa0]\n"
-            "nop\n"
-            "fmla	v9.4s,  v7.4s,  v0.s[0]\n"     // out8 = b1 * a00[0], b1 =q7
-            "ldr x20, [%[b_ptr], #0xa8]\n"
-            "fmla	v12.4s,  v7.4s,  v0.s[1]\n"    // out9 = b1 * a00[1], b1 =q7
-            "fmla	v15.4s,  v7.4s,  v0.s[2]\n" // out10 = b1 * a00[2], b1 =q7
-            "nop\n"
-            "prfm   pldl1keep, [%[b_ptr], #448]\n"
-            "ins v6.d[1], x20\n"
-            "fmla	v18.4s,  v7.4s,  v0.s[3]\n" // out11 = b1 * a00[3], b1 =q7
-            "fmla	v21.4s,  v7.4s,  v1.s[0]\n" // out12 = b1 * a01[0], b1 =q7
-            "fmla	v24.4s,  v7.4s,  v1.s[1]\n" // out13 = b1 * a01[1], b1 =q7
-            "nop\n""nop\n"
-            "fmla	v27.4s,  v7.4s,  v1.s[2]\n" // out14 = b1 * a01[2], b1 =q7
-            "fmla	v30.4s,  v7.4s,  v1.s[3]\n" // out15 = b1 * a01[3], b1 =q7
-
-            "fmla	v10.4s,  v4.4s,  v0.s[0]\n" // out16 = b2 * a00[0], b2 =q4
-            "ldr d7, [%[b_ptr], #0xb0]\n"
-            "nop\n"
-            "fmla	v13.4s,  v4.4s,  v0.s[1]\n" // out17 = b2 * a00[1], b2 =q4
-            "ldr x20, [%[b_ptr], #0xb8]\n"
-            "fmla	v16.4s,  v4.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q4
-            "fmla	v19.4s,  v4.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q4
-            "ldr d0,  [%[a_ptr], #0x80]\n"
-            "ins v7.d[1], x20\n"
-            "fmla	v22.4s,  v4.4s,  v1.s[0]\n" // out20 = b2 * a00[0], b2 =q4
-            "ldr x20,  [%[a_ptr], #0x88]\n"
-            "fmla	v25.4s,  v4.4s,  v1.s[1]\n" // out21 = b2 * a00[1], b2 =q4
-            "fmla	v28.4s,  v4.4s,  v1.s[2]\n" // out22 = b2 * a00[2], b2 =q4
-            "prfm   pldl1keep, [%[b_ptr], #512]\n"
-            "ins v0.d[1], x20\n"
-            "fmla	v31.4s,  v4.4s,  v1.s[3]\n" // out23 = b2 * a00[3], b2 =q4
-            // unrool 3
-            "ldr d4, [%[b_ptr], #0xc0]\n"
-            "nop\n"
-            "fmla 	v8.4s ,  v5.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q5
-            "ldr x20, [%[b_ptr], #0xc8]\n"
-            "fmla	v11.4s ,  v5.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q5
-            "fmla	v14.4s,  v5.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q5
-            "ldr d1, [%[a_ptr], #0x90]\n"
-            "ins v4.d[1], x20\n"
-            "fmla	v17.4s,  v5.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q5
-            "ldr x20, [%[a_ptr], #0x98]\n"
-            "fmla 	v20.4s,  v5.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q5
-            "fmla   v23.4s,  v5.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 =q5
-            "nop\n"
-            "ins v1.d[1], x20\n"
-            "fmla	v26.4s,  v5.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q5
-            "fmla	v29.4s,  v5.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q5
-            
-            "fmla	v9.4s,  v6.4s,  v2.s[0]\n"    // out8 = b0 * a10[0], b1 =q6
-            "nop\n""nop\n"
-            "fmla	v12.4s,  v6.4s,  v2.s[1]\n"   // out9 = b0 * a10[1], b1 =q6
-            "fmla	v15.4s,  v6.4s,  v2.s[2]\n" // out10 = b1 * a10[2], b1 =q6
-            "fmla	v18.4s,  v6.4s,  v2.s[3]\n" // out11 = b1 * a10[3], b1 =q6
-
-            "ldr d5, [%[b_ptr], #0xd0]\n"
-            "nop\n"
-            "fmla	v21.4s,  v6.4s,  v3.s[0]\n" // out12 = b1 * a10[0], b1 =q6
-            "ldr x20, [%[b_ptr], #0xd8]\n"
-            "fmla	v24.4s,  v6.4s,  v3.s[1]\n" // out13 = b1 * a10[1], b1 =q6
-            "fmla	v27.4s,  v6.4s,  v3.s[2]\n" // out14 = b1 * a10[2], b1 =q6
-            "add %[a_ptr], %[a_ptr], #0x80\n"
-            "fmla	v30.4s,  v6.4s,  v3.s[3]\n" // out15 = b1 * a10[3], b1 =q6
-            "add %[b_ptr], %[b_ptr], #0xc0\n"
-            "fmla	v10.4s,  v7.4s,  v2.s[0]\n" // out16 = b2 * a10[0], b2 =q7
+            "fmla	v19.4s,  v6.4s,  v2.s[3]\n" // out19 = b2 * a10[0], b2 =q5
+            "add	%[a_ptr], %[a_ptr], #0x40\n"
+            "fmla	v22.4s,  v6.4s,  v3.s[0]\n" // out20 = b2 * a10[0], b2 =q5
+            "add	%[b_ptr], %[b_ptr], #0x60\n"
             "nop\n"
             "ins v5.d[1], x20\n"
-            "fmla	v13.4s,  v7.4s,  v2.s[1]\n" // out17 = b2 * a10[0], b2 =q7
-            "fmla	v16.4s,  v7.4s,  v2.s[2]\n" // out18 = b2 * a10[0], b2 =q7
-            "fmla	v19.4s,  v7.4s,  v2.s[3]\n" // out19 = b2 * a10[0], b2 =q7
-            "nop\n"
-            "fmla	v22.4s,  v7.4s,  v3.s[0]\n" // out20 = b2 * a10[0], b2 =q7
-            "subs	%w[k], %w[k], #1\n"         // loop count - 1
-            "fmla	v25.4s,  v7.4s,  v3.s[1]\n" // out21 = b2 * a10[0], b2 =q7
-            "fmla	v28.4s,  v7.4s,  v3.s[2]\n" // out22 = b2 * a10[0], b2 =q7
-            "nop\n"
-            "fmla	v31.4s,  v7.4s,  v3.s[3]\n" // out23 = b2 * a10[0], b2 =q7
+            "fmla	v25.4s,  v6.4s,  v3.s[1]\n" // out21 = b2 * a10[0], b2 =q5
+            "fmla	v28.4s,  v6.4s,  v3.s[2]\n" // out22 = b2 * a10[0], b2 =q5
+            "fmla	v31.4s,  v6.4s,  v3.s[3]\n" // out23 = b2 * a10[0], b2 =q5 
             "bne	1b\n"
             "2:\n"                            // process tail
-            "subs		%w[tail], %w[tail], #1\n" // tail--
-            "beq		3f\n"                     //jump to tail = 1
-            // final unrool 0
-            // unrool 0, tail > 1
+            "cbnz	%w[tail], 3f\n"            //jump to tail = 1
+            // final tail == 2
             "ldr d6, [%[b_ptr], #0x20]\n"
+            "nop \n"
             "fmla 	v8.4s ,  v4.4s,  v0.s[0]\n"  // out0 = b0 * a00[0], b0 =q4
             "fmla  	v11.4s ,  v4.4s,  v0.s[1]\n" // out1 = b0 * a00[1], b0 =q4
             "ldr x20, [%[b_ptr], #0x28]\n"
@@ -5447,155 +5355,72 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
             "ldr x20, [%[a_ptr], #0x28]\n"
             "fmla	v23.4s,  v4.4s,  v1.s[1]\n"    // out5 = b0 * a01[1], b0 =q4
             "fmla	v26.4s,  v4.4s,  v1.s[2]\n"    // out6 = b0 * a01[2], b0 =q4
-            "ldr d7, [%[b_ptr], #0x30]\n"
+            "ldr d3, [%[a_ptr], #0x30]\n"
             "ins v2.d[1], x20\n"
             "fmla	v29.4s,  v4.4s,  v1.s[3]\n"    // out7 = b0 * a01[3], b0 =q4
-            "subs	%w[tail], %w[tail], #1\n"      // tail--
-            "fmla	v9.4s,  v5.4s,  v0.s[0]\n"     // out8 = b1 * a00[0], b1 =q5
-            "ldr x20, [%[b_ptr], #0x38]\n"
-            "fmla	v12.4s,  v5.4s,  v0.s[1]\n"    // out9 = b1 * a00[1], b1 =q5
-            "fmla	v15.4s,  v5.4s,  v0.s[2]\n" // out10 = b1 * a00[2], b1 =q5
-            "ldr d3, [%[a_ptr], #0x30]\n"
-            "ins v7.d[1], x20\n"
-            "fmla	v18.4s,  v5.4s,  v0.s[3]\n" // out11 = b1 * a00[3], b1 =q5
             "ldr x20, [%[a_ptr], #0x38]\n"
-            "fmla	v21.4s,  v5.4s,  v1.s[0]\n" // out12 = b1 * a01[0], b1 =q5
-            "fmla	v24.4s,  v5.4s,  v1.s[1]\n" // out13 = b1 * a01[1], b1 =q5
-            "ldr d4, [%[b_ptr], #0x40]\n"
+            "fmla	v9.4s,  v5.4s,  v0.s[0]\n"     // out8 = b1 * a00[0], b1 =q5
+            "fmla	v12.4s,  v5.4s,  v0.s[1]\n"    // out9 = b1 * a00[1], b1 =q5
+            "ldr d4, [%[b_ptr], #0x30]\n"
             "ins v3.d[1], x20\n"
-            "fmla	v27.4s,  v5.4s,  v1.s[2]\n" // out14 = b1 * a01[2], b1 =q5
-            "ldr x20, [%[b_ptr], #0x48]\n"
-            "fmla	v30.4s,  v5.4s,  v1.s[3]\n" // out15 = b1 * a01[3], b1 =q5
-            "fmla	v10.4s,  v6.4s,  v0.s[0]\n" // out16 = b2 * a00[0], b2 =q6
-            "ldr d5, [%[b_ptr], #0x50]\n"
+            "fmla	v15.4s,  v5.4s,  v0.s[2]\n" // out10 = b1 * a00[2], b1 =q5
+            "ldr x20, [%[b_ptr], #0x38]\n"
+            "fmla	v18.4s,  v5.4s,  v0.s[3]\n" // out11 = b1 * a00[3], b1 =q5
+            "fmla	v21.4s,  v5.4s,  v1.s[0]\n" // out12 = b1 * a01[0], b1 =q5
             "ins v4.d[1], x20\n"
-            "fmla	v13.4s,  v6.4s,  v0.s[1]\n" // out17 = b2 * a00[1], b2 =q6
-            "ldr x20, [%[b_ptr], #0x58]\n"
-            "fmla	v16.4s,  v6.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q6
-            "fmla	v19.4s,  v6.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q6
+
+            "fmla	v24.4s,  v5.4s,  v1.s[1]\n" // out13 = b1 * a01[1], b1 =q5
+            "fmla	v27.4s,  v5.4s,  v1.s[2]\n" // out14 = b1 * a01[2], b1 =q5
+            "fmla	v30.4s,  v5.4s,  v1.s[3]\n" // out15 = b1 * a01[3], b1 =q5
             "nop\n"
-            "ins v5.d[1], x20\n"
+
+            "fmla	v10.4s,  v6.4s,  v0.s[0]\n" // out16 = b2 * a00[0], b2 =q6
+            "fmla	v13.4s,  v6.4s,  v0.s[1]\n" // out17 = b2 * a00[1], b2 =q6
+            "fmla	v16.4s,  v6.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q6
+            "ldr d5, [%[b_ptr], #0x40]\n"
+            "nop\n"
+            "fmla	v19.4s,  v6.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q6
+            "ldr x20, [%[b_ptr], #0x48]\n"
             "fmla	v22.4s,  v6.4s,  v1.s[0]\n" // out20 = b2 * a00[0], b2 =q6
             "fmla	v25.4s,  v6.4s,  v1.s[1]\n" // out21 = b2 * a00[1], b2 =q6
+            "ins v5.d[1], x20\n"
             "fmla	v28.4s,  v6.4s,  v1.s[2]\n" // out22 = b2 * a00[2], b2 =q6
             "fmla	v31.4s,  v6.4s,  v1.s[3]\n" // out23 = b2 * a00[3], b2 =q6
-            "beq		4f\n"                     //jump to tail = 2
-            // unrool 1, tail > 2
-            "ldr d0, [%[a_ptr], #0x40]\n"
+
+            // unroll 1
+            "ldr d6, [%[b_ptr], #0x50]\n"
             "nop\n"
-            "fmla 	v8.4s ,  v7.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q7
-            "ldr x20, [%[a_ptr], #0x48]\n"
-            "fmla	v11.4s ,  v7.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q7
-            "fmla	v14.4s,  v7.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q7
-            "ldr d1, [%[a_ptr], #0x50]\n"
-            "ins v0.d[1], x20\n"
-            "fmla	v17.4s,  v7.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q7
-            "ldr x20, [%[a_ptr], #0x58]\n"
-            "fmla 	v20.4s,  v7.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q7
-            "fmla   v23.4s,  v7.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 =q7
-            "ldr d6, [%[b_ptr], #0x60]\n"
-            "ins v1.d[1], x20\n"
-            "fmla	v26.4s,  v7.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q7
-            "ldr x20, [%[b_ptr], #0x68]\n"
-            "fmla	v29.4s,  v7.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q7
-            "fmla	v9.4s,  v4.4s,  v2.s[0]\n"    // out8 = b0 * a10[0], b1 =q4
-            "ldr d7, [%[b_ptr], #0x70]\n"
+            "fmla v8.4s,  v4.4s, v2.s[0]\n"
+            "ldr x20, [%[b_ptr], #0x58]\n"
+            "fmla v11.4s, v4.4s, v2.s[1]\n"
+            "fmla v14.4s, v4.4s, v2.s[2]\n"
             "ins v6.d[1], x20\n"
-            "fmla	v12.4s,  v4.4s,  v2.s[1]\n"   // out9 = b0 * a10[1], b1 =q4
-            "ldr x20, [%[b_ptr], #0x78]\n"
-            "fmla	v15.4s,  v4.4s,  v2.s[2]\n"   // out10 = b1 * a10[2], b1 =q4
-            "fmla	v18.4s,  v4.4s,  v2.s[3]\n"   // out11 = b1 * a10[3], b1 =q4
-            "nop\n"
-            "ins v7.d[1], x20\n"
-            "fmla	v21.4s,  v4.4s,  v3.s[0]\n"   // out12 = b1 * a10[0], b1 =q4
-            "fmla	v24.4s,  v4.4s,  v3.s[1]\n"   // out13 = b1 * a10[1], b1 =q4
-            "fmla	v27.4s,  v4.4s,  v3.s[2]\n"   // out14 = b1 * a10[2], b1 =q4
-            "nop\n"
-            "fmla	v30.4s,  v4.4s,  v3.s[3]\n"   // out15 = b1 * a10[3], b1 =q4
-            "subs	%w[tail], %w[tail], #1\n"     // tail--
-            "fmla	v10.4s,  v5.4s,  v2.s[0]\n"   // out16 = b2 * a10[0], b2 =q5
-            "fmla	v13.4s,  v5.4s,  v2.s[1]\n"   // out17 = b2 * a10[0], b2 =q5
-            "fmla	v16.4s,  v5.4s,  v2.s[2]\n"   // out18 = b2 * a10[0], b2 =q5
-            "nop\n""nop\n"
-            "fmla	v19.4s,  v5.4s,  v2.s[3]\n"   // out19 = b2 * a10[0], b2 =q5
-            "fmla	v22.4s,  v5.4s,  v3.s[0]\n"   // out20 = b2 * a10[0], b2 =q5
-            "fmla	v25.4s,  v5.4s,  v3.s[1]\n"   // out21 = b2 * a10[0], b2 =q5
-            "nop\n"
-            "fmla	v28.4s,  v5.4s,  v3.s[2]\n"   // out22 = b2 * a10[0], b2 =q5
-            "fmla	v31.4s,  v5.4s,  v3.s[3]\n"   // out23 = b2 * a10[0], b2 =q5
-            "beq		5f\n"                       //jump to tail = 3
-            // unrool 2, tail = 4
-            "ldr d4, [%[b_ptr], #0x80]\n"
-            "nop\n"
-            "fmla 	v8.4s ,  v6.4s,  v0.s[0]\n"  // out0 = b0 * a00[0], b0 =q6
-            "ldr x20, [%[b_ptr], #0x88]\n"
-            "fmla  	v11.4s ,  v6.4s,  v0.s[1]\n" // out1 = b0 * a00[1], b0 =q6
-            "fmla	v14.4s,  v6.4s,  v0.s[2]\n"    // out2 = b0 * a00[2], b0 =q6
-            "ldr d2, [%[a_ptr], #0x60]\n"
-            "ins v4.d[1], x20\n"
-            "fmla	v17.4s,  v6.4s,  v0.s[3]\n"    // out3 = b0 * a00[3], b0 =q6
-            "ldr x20, [%[a_ptr], #0x68]\n"
-            "fmla 	v20.4s,  v6.4s,  v1.s[0]\n"  // out4 = b0 * a01[0], b0 =q6
-            "fmla	v23.4s,  v6.4s,  v1.s[1]\n"    // out5 = b0 * a01[1], b0 =q6
-            "ldr d5, [%[b_ptr], #0x90]\n"
-            "ins v2.d[1], x20\n"
-            "fmla	v26.4s,  v6.4s,  v1.s[2]\n"    // out6 = b0 * a01[2], b0 =q6
-            "ldr x20, [%[b_ptr], #0x98]\n"
-            "fmla	v29.4s,  v6.4s,  v1.s[3]\n"    // out7 = b0 * a01[3], b0 =q6
-            "fmla	v9.4s,  v7.4s,  v0.s[0]\n"     // out8 = b1 * a00[0], b1 =q7
-            "ldr d3, [%[a_ptr], #0x70]\n"
-            "ins v5.d[1], x20\n"
-            "fmla	v12.4s,  v7.4s,  v0.s[1]\n"    // out9 = b1 * a00[1], b1 =q7
-            "ldr x20, [%[a_ptr], #0x78]\n"
-            "fmla	v15.4s,  v7.4s,  v0.s[2]\n" // out10 = b1 * a00[2], b1 =q7
-            "fmla	v18.4s,  v7.4s,  v0.s[3]\n" // out11 = b1 * a00[3], b1 =q7
-            "ldr d6, [%[b_ptr], #0xa0]\n"
-            "ins v3.d[1], x20\n"
-            "fmla	v21.4s,  v7.4s,  v1.s[0]\n" // out12 = b1 * a01[0], b1 =q7
-            "ldr x20, [%[b_ptr], #0xa8]\n"
-            "fmla	v24.4s,  v7.4s,  v1.s[1]\n" // out13 = b1 * a01[1], b1 =q7
-            "fmla	v27.4s,  v7.4s,  v1.s[2]\n" // out14 = b1 * a01[2], b1 =q7
-            "ins v6.d[1], x20\n"
-            "add %[a_ptr], %[a_ptr], #0x80\n"
-            "fmla	v30.4s,  v7.4s,  v1.s[3]\n" // out15 = b1 * a01[3], b1 =q7
-            "ldr d7, [%[b_ptr], #0xb0]\n"
-            "fmla	v10.4s,  v4.4s,  v0.s[0]\n" // out16 = b2 * a00[0], b2 =q4
-            "fmla	v13.4s,  v4.4s,  v0.s[1]\n" // out17 = b2 * a00[1], b2 =q4
-            "ldr x20, [%[b_ptr], #0xb8]\n"
-            "fmla	v16.4s,  v4.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q4
-            "fmla	v19.4s,  v4.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q4
-            "ins v7.d[1], x20\n"
-            "add %[b_ptr], %[b_ptr], #0xc0\n"
-            "fmla	v22.4s,  v4.4s,  v1.s[0]\n" // out20 = b2 * a00[0], b2 =q4
-            "fmla	v25.4s,  v4.4s,  v1.s[1]\n" // out21 = b2 * a00[1], b2 =q4
-            "fmla	v28.4s,  v4.4s,  v1.s[2]\n" // out22 = b2 * a00[2], b2 =q4
-            "fmla	v31.4s,  v4.4s,  v1.s[3]\n" // out23 = b2 * a00[3], b2 =q4
-            // unrool 3, tail = 4
-            "fmla 	v8.4s ,  v5.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q5
-            "fmla	v11.4s ,  v5.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q5
-            "fmla	v14.4s,  v5.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q5
-            "fmla	v17.4s,  v5.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q5
-            "fmla 	v20.4s,  v5.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q5
-            "fmla   v23.4s,  v5.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 =q5
-            "fmla	v26.4s,  v5.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q5
-            "fmla	v29.4s,  v5.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q5
-            "fmla	v9.4s,  v6.4s,  v2.s[0]\n"    // out8 = b0 * a10[0], b1 =q6
-            "fmla	v12.4s,  v6.4s,  v2.s[1]\n"   // out9 = b1 * a10[1], b1 =q6
-            "fmla	v15.4s,  v6.4s,  v2.s[2]\n"   // out10 = b1 * a10[2], b1 =q6
-            "fmla	v18.4s,  v6.4s,  v2.s[3]\n"   // out11 = b1 * a10[3], b1 =q6
-            "fmla	v21.4s,  v6.4s,  v3.s[0]\n"   // out12 = b1 * a10[0], b1 =q6
-            "fmla	v24.4s,  v6.4s,  v3.s[1]\n"   // out13 = b1 * a10[1], b1 =q6
-            "fmla	v27.4s,  v6.4s,  v3.s[2]\n"   // out14 = b1 * a10[2], b1 =q6
-            "fmla	v30.4s,  v6.4s,  v3.s[3]\n"   // out15 = b1 * a10[3], b1 =q6
-            "fmla	v10.4s,  v7.4s,  v2.s[0]\n"   // out16 = b2 * a10[0], b2 =q7
-            "fmla	v13.4s,  v7.4s,  v2.s[1]\n"   // out17 = b2 * a10[0], b2 =q7
-            "fmla	v16.4s,  v7.4s,  v2.s[2]\n"   // out18 = b2 * a10[0], b2 =q7
-            "fmla	v19.4s,  v7.4s,  v2.s[3]\n"   // out19 = b2 * a10[0], b2 =q7
-            "fmla	v22.4s,  v7.4s,  v3.s[0]\n"   // out20 = b2 * a10[0], b2 =q7
-            "fmla	v25.4s,  v7.4s,  v3.s[1]\n"   // out21 = b2 * a10[0], b2 =q7
-            "fmla	v28.4s,  v7.4s,  v3.s[2]\n"   // out22 = b2 * a10[0], b2 =q7
-            "fmla	v31.4s,  v7.4s,  v3.s[3]\n"   // out23 = b2 * a10[0], b2 =q7
-            "b		11f\n"
+            "fmla v17.4s, v4.4s, v2.s[3]\n"
+            "fmla v20.4s, v4.4s, v3.s[0]\n"
+            "fmla v23.4s, v4.4s, v3.s[1]\n"
+            "fmla v26.4s, v4.4s, v3.s[2]\n"
+            "fmla v29.4s, v4.4s, v3.s[3]\n"
+
+            "fmla v9.4s,  v5.4s, v2.s[0]\n"
+            "fmla v12.4s, v5.4s, v2.s[1]\n"
+            "fmla v15.4s, v5.4s, v2.s[2]\n"
+            "fmla v18.4s, v5.4s, v2.s[3]\n"
+            "fmla v21.4s, v5.4s, v3.s[0]\n"
+            "fmla v24.4s, v5.4s, v3.s[1]\n"
+            "fmla v27.4s, v5.4s, v3.s[2]\n"
+            "fmla v30.4s, v5.4s, v3.s[3]\n"
+
+            "fmla v10.4s, v6.4s, v2.s[0]\n"
+            "fmla v13.4s, v6.4s, v2.s[1]\n"
+            "fmla v16.4s, v6.4s, v2.s[2]\n"
+            "fmla v19.4s, v6.4s, v2.s[3]\n"
+            "fmla v22.4s, v6.4s, v3.s[0]\n"
+            "fmla v25.4s, v6.4s, v3.s[1]\n"
+            "fmla v28.4s, v6.4s, v3.s[2]\n"
+            "add	%[a_ptr], %[a_ptr], #0x40\n"
+            "fmla v31.4s, v6.4s, v3.s[3]\n"
+            "add	%[b_ptr], %[b_ptr], #0x60\n"
+            "b 11f\n"
             // tails==1 final tail
             "3: \n"                            // tail=1
             "ldr	d6, [%[b_ptr], #0x20]\n"       // load b2 to q6
@@ -5627,69 +5452,6 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
             "fmla	v25.4s,  v6.4s,  v1.s[1]\n"  // out21 = b2 * a10[0], b2 =q7
             "fmla	v28.4s,  v6.4s,  v1.s[2]\n"  // out22 = b2 * a10[0], b2 =q7
             "fmla	v31.4s,  v6.4s,  v1.s[3]\n"  // out23 = b2 * a10[0], b2 =q7
-            "b		11f\n"
-            // tails==2 final tail
-            "4:\n"                              // tail = 2
-            "add %[a_ptr], %[a_ptr], #0x40\n"
-            "fmla 	v8.4s ,  v7.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q5
-            "fmla	v11.4s ,  v7.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q5
-            "add %[b_ptr], %[b_ptr], #0x60\n"
-            "fmla	v14.4s,  v7.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q5
-            "fmla	v17.4s,  v7.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q5
-            "fmla 	v20.4s,  v7.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q5
-            "fmla   v23.4s,  v7.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 = q5
-            "fmla	v26.4s,  v7.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q5
-            "fmla	v29.4s,  v7.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q5
-            "fmla	v9.4s,  v4.4s,  v2.s[0]\n"    // out8 = b0 * a10[0], b1 =q6
-            "fmla	v12.4s,  v4.4s,  v2.s[1]\n"   // out9 = b1 * a10[1], b1 =q6
-            "fmla	v15.4s,  v4.4s,  v2.s[2]\n"   // out10 = b1 * a10[2], b1 =q6
-            "fmla	v18.4s,  v4.4s,  v2.s[3]\n"   // out11 = b1 * a10[3], b1 =q6
-            "fmla	v21.4s,  v4.4s,  v3.s[0]\n"   // out12 = b1 * a10[0], b1 =q6
-            "fmla	v24.4s,  v4.4s,  v3.s[1]\n"   // out13 = b1 * a10[1], b1 =q6
-            "fmla	v27.4s,  v4.4s,  v3.s[2]\n"   // out14 = b1 * a10[2], b1 =q6
-            "fmla	v30.4s,  v4.4s,  v3.s[3]\n"   // out15 = b1 * a10[3], b1 =q6
-            "fmla	v10.4s,  v5.4s,  v2.s[0]\n"   // out16 = b2 * a10[0], b2 =q7
-            "fmla	v13.4s,  v5.4s,  v2.s[1]\n"   // out17 = b2 * a10[0], b2 =q7
-            "fmla	v16.4s,  v5.4s,  v2.s[2]\n"   // out18 = b2 * a10[0], b2 =q7
-            "fmla	v19.4s,  v5.4s,  v2.s[3]\n"   // out19 = b2 * a10[0], b2 =q7
-            "fmla	v22.4s,  v5.4s,  v3.s[0]\n"   // out20 = b2 * a10[0], b2 =q7
-            "fmla	v25.4s,  v5.4s,  v3.s[1]\n"   // out21 = b2 * a10[0], b2 =q7
-            "fmla	v28.4s,  v5.4s,  v3.s[2]\n"   // out22 = b2 * a10[0], b2 =q7
-            "fmla	v31.4s,  v5.4s,  v3.s[3]\n"   // out23 = b2 * a10[0], b2 =q7
-            "b		11f\n"
-            // tails==3 final tail
-            "5:\n"                              // tail = 3
-            "ldr	d4, [%[b_ptr], #0x80]\n"        // load b2, b0 to q4
-            "nop\n"
-            "fmla 	v8.4s ,  v6.4s,  v0.s[0]\n" // out0 = b0 * a10[0], b0 =q5
-            "fmla	v11.4s ,  v6.4s,  v0.s[1]\n"  // out1 = b0 * a10[1], b0 =q5
-            "ldr x20, [%[b_ptr], #0x88]\n"
-            "fmla	v14.4s,  v6.4s,  v0.s[2]\n"   // out2 = b0 * a10[2], b0 =q5
-            "fmla	v17.4s,  v6.4s,  v0.s[3]\n"   // out3 = b0 * a10[3], b0 =q5
-            "add %[a_ptr], %[a_ptr], #0x60\n"
-            "ins v4.d[1], x20\n"
-            "fmla 	v20.4s,  v6.4s,  v1.s[0]\n" // out4 = b0 * a11[0], b0 =q5
-            "fmla   v23.4s,  v6.4s,  v1.s[1]\n" // out5 = b0 * a11[1], b0 = q5
-            "add %[b_ptr], %[b_ptr], #0x90\n"
-            "fmla	v26.4s,  v6.4s,  v1.s[2]\n"   // out6 = b0 * a11[2], b0 =q5
-            "fmla	v29.4s,  v6.4s,  v1.s[3]\n"   // out7 = b0 * a11[3], b0 =q5
-            "fmla	v9.4s,  v7.4s,  v0.s[0]\n"    // out8 = b0 * a10[0], b1 =q6
-            "fmla	v12.4s,  v7.4s,  v0.s[1]\n"   // out9 = b1 * a10[1], b1 =q6
-            "fmla	v15.4s,  v7.4s,  v0.s[2]\n"   // out10 = b1 * a10[2], b1 =q6
-            "fmla	v18.4s,  v7.4s,  v0.s[3]\n"   // out11 = b1 * a10[3], b1 =q6
-            "fmla	v21.4s,  v7.4s,  v1.s[0]\n"   // out12 = b1 * a10[0], b1 =q6
-            "fmla	v24.4s,  v7.4s,  v1.s[1]\n"   // out13 = b1 * a10[1], b1 =q6
-            "fmla	v27.4s,  v7.4s,  v1.s[2]\n"   // out14 = b1 * a10[2], b1 =q6
-            "fmla	v30.4s,  v7.4s,  v1.s[3]\n"   // out15 = b1 * a10[3], b1 =q6
-            "fmla	v10.4s,  v4.4s,  v0.s[0]\n"   // out16 = b2 * a10[0], b2 =q7
-            "fmla	v13.4s,  v4.4s,  v0.s[1]\n"   // out17 = b2 * a10[0], b2 =q7
-            "fmla	v16.4s,  v4.4s,  v0.s[2]\n"   // out18 = b2 * a10[0], b2 =q7
-            "fmla	v19.4s,  v4.4s,  v0.s[3]\n"   // out19 = b2 * a10[0], b2 =q7
-            "fmla	v22.4s,  v4.4s,  v1.s[0]\n"   // out20 = b2 * a10[0], b2 =q7
-            "fmla	v25.4s,  v4.4s,  v1.s[1]\n"   // out21 = b2 * a10[0], b2 =q7
-            "fmla	v28.4s,  v4.4s,  v1.s[2]\n"   // out22 = b2 * a10[0], b2 =q7
-            "fmla	v31.4s,  v4.4s,  v1.s[3]\n"   // out23 = b2 * a10[0], b2 =q7
-
             "11:                           \n"   // check activation
             "cmp    %w[flag_act],   #1     \n"   // check if has relu
             "bne    12f                    \n"   // jump if no relu

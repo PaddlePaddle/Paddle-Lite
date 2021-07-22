@@ -16,6 +16,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 #include "driver/rockchip_npu/utility.h"
 
@@ -51,6 +52,7 @@ class Program {
 
  private:
   // Operand converters
+  std::string GetTensorName(hal::Operand* operand);
   std::shared_ptr<rk::nn::Tensor> GetMappedTensor(hal::Operand* operand);
   std::shared_ptr<rk::nn::Tensor> UpdateTensorMap(
       hal::Operand* operand, std::shared_ptr<rk::nn::Tensor> tensor);

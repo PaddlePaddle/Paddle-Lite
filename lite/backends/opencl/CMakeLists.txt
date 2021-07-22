@@ -15,5 +15,3 @@ lite_cc_library(cl_image SRCS cl_image.cc DEPS tensor cl_image_converter cl_runt
 lite_cc_library(cl_caller SRCS cl_caller.cc  DEPS cl_context cl_image)
 lite_cc_library(cl_target_wrapper SRCS target_wrapper.cc DEPS cl_runtime)
 lite_cc_test(test_cl_functions SRCS cl_functions_test.cc DEPS cl_context cl_image cl_caller cl_wrapper cl_target_wrapper)
-
-add_dependencies(cl_wrapper opencl_clhpp)
