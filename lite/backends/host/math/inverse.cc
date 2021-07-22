@@ -15,7 +15,6 @@
 #include "lite/backends/host/math/inverse.h"
 #include <cmath>
 
-
 namespace paddle {
 namespace lite {
 namespace arm {
