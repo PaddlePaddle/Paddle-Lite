@@ -23,7 +23,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <typename T>
 void InverseCompute<T>::Run() {
@@ -35,7 +35,7 @@ void InverseCompute<T>::Run() {
   return;
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

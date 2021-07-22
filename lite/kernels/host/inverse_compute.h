@@ -20,7 +20,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <typename T>
 class InverseCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
@@ -32,7 +32,7 @@ class InverseCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
   virtual ~InverseCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
