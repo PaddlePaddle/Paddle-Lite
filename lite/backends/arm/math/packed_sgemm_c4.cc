@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/packed_sgemm_c4.h"
 #include <arm_neon.h>
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -42,8 +43,7 @@ void loadb_c4(float* out,
   const int kloop = k_round >> 2;
   in += xstart * 4;
   if (xloop > 0) {
-#pragma omp parallel for
-    for (int i = 0; i < kloop; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, kloop) {
       float* out_ptr = out + 4 * NBLOCK_C4 * i;
       const float* in_ptr = in + i * 4 * n;
       for (int j = 0; j < xloop; ++j) {
@@ -77,12 +77,12 @@ void loadb_c4(float* out,
 #endif  // __aarch674__
       }
     }
+    LITE_PARALLEL_END();
   }
   float* out_remain4 = out + xloop * k_round * NBLOCK_C4;
   const float* in_remain4 = in + xloop * NBLOCK_C4 * 4;
   if (remain4) {
-#pragma omp parallel for
-    for (int i = 0; i < kloop; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, kloop) {
       float* out_ptr = out_remain4 + 4 * 4 * i;
       const float* in_ptr = in_remain4 + i * 4 * n;
 #ifdef __aarch64__
@@ -105,12 +105,12 @@ void loadb_c4(float* out,
           : "q0", "q1", "q2", "q3");
 #endif  // __aarch64__
     }
+    LITE_PARALLEL_END();
   }
   float* out_remain1 = out_remain4 + remain4 * k_round * 4;
   const float* in_remain1 = in_remain4 + remain4 * 4 * 4;
   if (remain1) {
-#pragma omp parallel for
-    for (int i = 0; i < kloop; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, kloop) {
       float* out_ptr = out_remain1 + 4 * remain1 * i;
       const float* in_ptr = in_remain1 + i * 4 * n;
       for (int j = 0; j < remain1; ++j) {
@@ -120,6 +120,7 @@ void loadb_c4(float* out,
         out_ptr += 4;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -178,8 +179,7 @@ void sgemm_prepack_c4_common(int M,
     loadb_c4(bchunk, B, x_start, x_end, k_round, N);
     float* cchunk = c + n * bchunk_w * 4;
     int has_remain = (n == bchunk_loop - 1) && flag_remain;
-#pragma omp parallel for num_threads(threads)
-    for (int h = 0; h < h_loop; ++h) {
+    LITE_PARALLEL_BEGIN(h, tid, h_loop) {
       float* bias_h = bias_buf + h * 4;
 #ifdef __aarch64__
       float32x4_t vzero = vdupq_n_f32(0.f);
@@ -693,6 +693,7 @@ void sgemm_prepack_c4_common(int M,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 void sgemm_prepack_c4_small(int M,
