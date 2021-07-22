@@ -19,7 +19,7 @@ WITH_STATIC_LIB=OFF
 WITH_CV=OFF
 # controls whether to print log information, default is ON.
 WITH_LOG=ON
-# controls whether to throw the exception when error occurs, default is OFF 
+# controls whether to throw the exception when error occurs, default is OFF
 WITH_EXCEPTION=OFF
 # options of striping lib according to input model.
 WITH_STRIP=OFF
@@ -31,13 +31,13 @@ WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
 # options of compiling imagination NNA lib
 WITH_IMAGINATION_NNA=OFF
-IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk" 
+IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 BAIDU_XPU_SDK_ROOT=""
 # options of compiling intel fpga.
 WITH_INTEL_FPGA=OFF
-INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk" 
+INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
 # options of adding training ops
 WITH_TRAIN=OFF
 # num of threads used during compiling..
@@ -125,7 +125,7 @@ function prepare_opencl_source_code {
     OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
     mkdir -p ${GEN_CODE_PATH_OPENCL}
     touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
-    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc 
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
 }
 
 # 3.3 prepare third_party libraries for compiling
@@ -200,10 +200,6 @@ function make_tiny_publish_so {
        ${CMAKE_COMMON_OPTIONS} \
        ${cmake_mutable_options} \
        -DLITE_ON_TINY_PUBLISH=$is_tiny
-
-    if [ "${WITH_OPENCL}" = "ON" ]; then
-       make opencl_clhpp -j$NUM_PROC 
-    fi
 
     make publish_inference -j$NUM_PROC
     cd - > /dev/null
