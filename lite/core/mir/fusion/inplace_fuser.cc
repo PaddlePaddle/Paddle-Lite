@@ -21,36 +21,22 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-void InplaceFuser::BuildPattern() {
-  auto* x = VarNode("x");
-  auto* inplace = OpNode("inplace", type_);
-  auto* inplace_out = VarNode("Out");
-  auto* out1 = OpNode("out1");
-
-  *x >> *inplace >> *inplace_out >> *out1;
-}
+void InplaceFuser::BuildPattern() { auto* inplace = OpNode("inplace", type_); }
 
 void InplaceFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
-  auto op_desc = const_cast<OpInfo*>(matched.at("inplace")->stmt()->op_info());
-  op_desc->SetAttr<bool>("inplace", true);
-}
-
-void Inplace2OutFuser::BuildPattern() {
-  auto* x = VarNode("x");
-  auto* inplace =
-      OpNode("inplace", type_)->assert_op_attr<bool>("inplace", true);
-  auto* inplace_out = VarNode("Out");
-  auto* out1 = OpNode("out1");
-  auto* out2 = OpNode("out2");
-
-  *x >> *inplace >> *inplace_out >> *out1;
-  *inplace_out >> *out2;
-}
-
-void Inplace2OutFuser::InsertNewNode(SSAGraph* graph,
-                                     const key2nodes_t& matched) {
-  auto op_desc = const_cast<OpInfo*>(matched.at("inplace")->stmt()->op_info());
-  op_desc->SetAttr<bool>("inplace", false);
+  auto out_var_nodes = matched.at("inplace")->outlinks;
+  bool inplace = true;
+  for (auto& out_var_node : out_var_nodes) {
+    if (out_var_node->outlinks.size() > 1) {
+      inplace = false;
+    }
+  }
+  auto* stmt = matched.at("inplace")->stmt();
+  auto op = stmt->op();
+  cpp::OpDesc* op_desc = op->mutable_op_info();
+  op_desc->SetAttr<bool>("inplace", inplace);
+  stmt->op()->Attach(*op_desc, op->scope());
+  stmt->op()->AttachKernel(&(stmt->picked_kernel()));
 }
 
 }  // namespace fusion

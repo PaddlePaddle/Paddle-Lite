@@ -28,11 +28,13 @@ void ReshapeCompute<T>::Run() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto x = param.x;
   auto output = param.output;
-  auto output_dims = output->dims();
 
   if (param.inplace) {
+    auto output_dims = output->dims();
+    auto output_lod = output->lod();
     output->ShareDataWith(*x);
     output->Resize(output_dims);
+    output->set_lod(output_lod);
   } else {
     int r = xdnn::copy<T>(ctx.GetRawContext(),
                           x->template data<T>(),

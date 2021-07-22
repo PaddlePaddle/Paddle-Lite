@@ -23,16 +23,17 @@ namespace lite {
 namespace mir {
 
 void InplaceFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::vector<std::string> inplace_type_cases{
-      "reshape", "reshape2", "squeeze", "squeeze2", "unsqueeze", "unsqueeze2"};
-  for (auto type_ : inplace_type_cases) {
-    fusion::InplaceFuser inplace_fuser(type_);
+  std::vector<std::string> inplace_type_cases{"reshape",
+                                              "reshape2",
+                                              "flatten",
+                                              "flatten2",
+                                              "squeeze",
+                                              "squeeze2",
+                                              "unsqueeze",
+                                              "unsqueeze2"};
+  for (auto type : inplace_type_cases) {
+    fusion::InplaceFuser inplace_fuser(type);
     inplace_fuser(graph.get());
-  }
-
-  for (auto type_ : inplace_type_cases) {
-    fusion::Inplace2OutFuser inplace2Out_fuser(type_);
-    inplace2Out_fuser(graph.get());
   }
 }
 
