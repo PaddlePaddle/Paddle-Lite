@@ -39,7 +39,6 @@
 #include "lite/backends/arm/math/gemv_arm_int8.h"
 #include "lite/backends/arm/math/im2sequence.h"
 #include "lite/backends/arm/math/interpolate.h"
-#include "lite/backends/arm/math/inverse.h"
 #include "lite/backends/arm/math/layout.h"
 #include "lite/backends/arm/math/lrn.h"
 #include "lite/backends/arm/math/negative.h"
