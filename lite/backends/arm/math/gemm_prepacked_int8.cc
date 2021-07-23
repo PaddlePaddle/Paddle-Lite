@@ -4890,14 +4890,16 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
       ymax = (ymax > M) ? M : ymax;
       float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
       if (is_bias) {
-        for (int i = 0; i < 8; i++) {
-          bias_local[i] = bias[y + i];
+        int j = 0;
+        for (int i = y; i < ymax && j < 8; i++, j++) {
+          bias_local[j] = bias[i];
         }
       }
       float32_t scale_local[8];
       if (scale) {
-        for (int i = 0; i < 8; i++) {
-          scale_local[i] = scale[y + i];
+        int j = 0;
+        for (int i = y; i < ymax && j < 8; i++, j++) {
+          scale_local[j] = scale[i];
         }
       }
       Dtype cout0[NBLOCK_INT8_DOT];
@@ -6674,21 +6676,17 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
 
       float32_t bias_local[6] = {0, 0, 0, 0, 0, 0};
       if (is_bias) {
-        bias_local[0] = bias[y];
-        bias_local[1] = bias[y + 1];
-        bias_local[2] = bias[y + 2];
-        bias_local[3] = bias[y + 3];
-        bias_local[4] = bias[y + 4];
-        bias_local[5] = bias[y + 5];
+        int j = 0;
+        for (int i = y; i < ymax && j < 6; i++, j++) {
+          bias_local[j] = bias[i];
+        }
       }
       float32_t scale_local[6];
       if (scale) {
-        scale_local[0] = scale[y];
-        scale_local[1] = scale[y + 1];
-        scale_local[2] = scale[y + 2];
-        scale_local[3] = scale[y + 3];
-        scale_local[4] = scale[y + 4];
-        scale_local[5] = scale[y + 5];
+        int j = 0;
+        for (int i = y; i < ymax && j < 6; i++, j++) {
+          scale_local[j] = scale[i];
+        }
       }
 
       Dtype cout0[NBLOCK_INT8_DOT];
