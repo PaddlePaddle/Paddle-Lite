@@ -229,6 +229,12 @@ struct UnstackParam : ParamBase {
   int num{1};
 };
 
+// For Abs Op
+struct AbsParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
 // For Power Op
 struct PowerParam : ParamBase {
   const lite::Tensor* X{};
