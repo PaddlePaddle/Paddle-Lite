@@ -14,8 +14,8 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void elementwise_mul(__global image2d_t input,
-                              __global image2d_t bias,
+__kernel void elementwise_mul(__read_only image2d_t input,
+                              __read_only image2d_t bias,
                               __write_only image2d_t outputImage) {
   int x = get_global_id(0);
   int y = get_global_id(1);
@@ -36,8 +36,8 @@ __kernel void elementwise_mul(__global image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
-__kernel void channel_mul(__global image2d_t input,
-                          __global image2d_t bias,
+__kernel void channel_mul(__read_only image2d_t input,
+                          __read_only image2d_t bias,
                           __write_only image2d_t outputImage,
                           int w) {
   int x = get_global_id(0);
@@ -87,8 +87,8 @@ __kernel void channel_mul_d1(__read_only image2d_t input,
 
 // etc : 1 1 1 72
 // run time Y  [value,0,0,0] * 72
-__kernel void channel_mul_d2(__global image2d_t input,
-                             __global image2d_t bias,
+__kernel void channel_mul_d2(__read_only image2d_t input,
+                             __read_only image2d_t bias,
                              __write_only image2d_t outputImage,
                              int w) {
   int x = get_global_id(0);
@@ -152,8 +152,8 @@ __kernel void channel_mul_d2(__global image2d_t input,
 }
 
 // c 1 1
-__kernel void channel_mul_d3(__global image2d_t input,
-                             __global image2d_t bias,
+__kernel void channel_mul_d3(__read_only image2d_t input,
+                             __read_only image2d_t bias,
                              __write_only image2d_t outputImage,
                              int w) {
   int x = get_global_id(0);
@@ -179,9 +179,10 @@ __kernel void channel_mul_d3(__global image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
-__kernel void channel_mul_d4(__global image2d_t input,
-__global image2d_t bias,
-                          __write_only image2d_t outputImage, int w) {
+__kernel void channel_mul_d4(__read_only image2d_t input,
+                             __read_only image2d_t bias,
+                             __write_only image2d_t outputImage,
+                             int w) {
   int x = get_global_id(0);
   int y = get_global_id(1);
 
