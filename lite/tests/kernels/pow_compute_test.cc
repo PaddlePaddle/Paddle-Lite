@@ -26,7 +26,7 @@ class PowComputeTester : public arena::TestCase {
   std::string input_ = "X";
   std::string output_ = "Out";
   float factor_ = 0.;
-  DDim dims_{{5, 2}};
+  DDim dims_{{5, 8}};
 
  public:
   PowComputeTester(const Place& place, const std::string& alias, float factor)
@@ -57,7 +57,7 @@ class PowComputeTester : public arena::TestCase {
     std::vector<float> data(dims_.production());
 
     for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.01;
+      data[i] = (i + 1) * 1.01;
     }
 
     SetCommonTensor(input_, dims_, data.data());
@@ -80,8 +80,9 @@ TEST(Pow, precision) {
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
   abs_error = 1e-1;
   place = TARGET(kHuaweiAscendNPU);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #elif defined(LITE_WITH_ARM)
-  abs_error = 2e-4;
   place = TARGET(kARM);
 #else
   return;
