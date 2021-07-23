@@ -22,6 +22,8 @@ namespace mir {
 
 void FixMismatchedPrecisionPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   FixMismatchedPrecision(graph, "multiclass_nms2", "Index", PRECISION(kInt32));
+  FixMismatchedPrecision(
+      graph, "crf_decoding", "ViterbiPath", PRECISION(kInt64));
 }
 
 void FixMismatchedPrecisionPass::FixMismatchedPrecision(

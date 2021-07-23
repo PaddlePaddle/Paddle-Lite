@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/host/reshape_compute.h"
-#include <vector>
-#include "lite/operators/reshape_op.h"
 
 namespace paddle {
 namespace lite {
@@ -26,12 +24,14 @@ void ReshapeCompute::Run() {
   auto x = param.x;
   auto output = param.output;
   auto output_dims = output->dims();
+  auto output_lod = output->lod();
   if (param.inplace) {
     output->ShareDataWith(*x);
   } else {
     output->CopyDataFrom(*x);
   }
   output->Resize(output_dims);
+  output->set_lod(output_lod);
 }
 
 }  // namespace host

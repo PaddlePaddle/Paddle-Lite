@@ -34,16 +34,6 @@ class InplaceFuser : public FuseBase {
   std::string type_;
 };
 
-class Inplace2OutFuser : public FuseBase {
- public:
-  explicit Inplace2OutFuser(const std::string& type) : type_(type) {}
-
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
-
- private:
-  std::string type_;
-};
 }  // namespace fusion
 }  // namespace mir
 }  // namespace lite
