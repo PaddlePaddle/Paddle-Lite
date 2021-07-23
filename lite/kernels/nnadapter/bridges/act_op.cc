@@ -108,9 +108,6 @@ REGISTER_SUBGRAPH_BRIDGE(relu6,
 REGISTER_SUBGRAPH_BRIDGE(tanh,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(hard_sigmoid,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);
