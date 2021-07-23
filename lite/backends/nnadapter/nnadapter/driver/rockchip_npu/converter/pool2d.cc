@@ -65,13 +65,16 @@ int Program::ConvertPool2D(hal::Operation* operation) {
       *reinterpret_cast<int8_t*>(input_operands[11]->buffer);
   NNADAPTER_VLOG(5) << "count_include_pad=" << count_include_pad;
   NNADAPTER_CHECK_EQ(count_include_pad, false)
-      << "rknpu_ddk doesn't suppport count_include_pad=true";
+      << "rknpu_ddk doesn't support count_include_pad=true";
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to rknn tensors and operators
-  auto input_tensor = ConvertOperand(input_operand);
+  // Convert to rknpu tensors and operators
+  auto input_tensor = GetMappedTensor(input_operand);
+  if (!input_tensor) {
+    input_tensor = ConvertOperand(input_operand);
+  }
   auto output_tensor = ConvertOperand(output_operand);
   rk::nn::PoolAttr attr;
   attr.ksize[0] = filter_width;

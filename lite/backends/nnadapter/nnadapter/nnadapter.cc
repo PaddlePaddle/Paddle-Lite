@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nnadapter.h"  // NOLINT
+#include <string>
 #include <vector>
 #include "runtime/compilation.h"
 #include "runtime/context.h"
@@ -113,6 +114,7 @@ NNADAPTER_EXPORT int NNAdapterDevice_getVersion(const NNAdapterDevice* device,
 
 NNADAPTER_EXPORT int NNAdapterContext_create(NNAdapterDevice** devices,
                                              uint32_t num_devices,
+                                             const char* properties,
                                              NNAdapterContext** context) {
   if (!devices || !num_devices || !context) {
     return NNADAPTER_INVALID_PARAMETER;
@@ -121,7 +123,7 @@ NNADAPTER_EXPORT int NNAdapterContext_create(NNAdapterDevice** devices,
   for (uint32_t i = 0; i < num_devices; i++) {
     ds.push_back(reinterpret_cast<nnadapter::runtime::Device*>(devices[i]));
   }
-  auto x = new nnadapter::runtime::Context(ds);
+  auto x = new nnadapter::runtime::Context(ds, std::string(properties));
   if (x == nullptr) {
     *context = nullptr;
     return NNADAPTER_OUT_OF_MEMORY;

@@ -183,44 +183,6 @@ add_operator(one_hot_v2_op extra SRCS one_hot_v2_op.cc)
 add_operator(strided_slice_op extra SRCS strided_slice_op.cc)
 add_operator(where_op extra SRCS where_op.cc)
 
-# for content-dnn specific
-add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc)
-add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc)
-add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_op.cc)
-add_operator(search_fc_op basic SRCS search_fc_op.cc)
-add_operator(lstm_op extra SRCS lstm_op.cc)
-add_operator(topk_pooling_op extra SRCS topk_pooling_op.cc)
-# for deformable-convNet
-add_operator(deformable_conv_op extra SRCS deformable_conv_op.cc)
-
-# 4. training op
-add_operator(mean_op extra SRCS mean_op.cc)
-
-add_operator(mean_grad_op train SRCS mean_grad_op.cc)
-add_operator(activation_grad_ops train SRCS activation_grad_ops.cc)
-add_operator(elementwise_grad_op train SRCS elementwise_grad_ops.cc)
-add_operator(mul_grad_op train SRCS mul_grad_op.cc)
-add_operator(sgd_op train SRCS sgd_op.cc)
-add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc)
-
-# Only for XPU
-add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc)
-add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc)
-add_operator(__xpu__block_fuse_op extra SRCS __xpu__block_fuse_op.cc)
-add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc)
-add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc)
-add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc)
-add_operator(__xpu__resnet_cbam_op extra SRCS __xpu__resnet_cbam_op.cc)
-add_operator(__xpu__search_attention_op extra SRCS __xpu__search_attention_op.cc)
-add_operator(__xpu__mmdnn_op extra SRCS __xpu__mmdnn_op.cc)
-add_operator(__xpu__conv2d_op extra SRCS __xpu__conv2d_op.cc)
-add_operator(__xpu__sfa_head_op extra SRCS __xpu__sfa_head_op.cc)
-add_operator(__xpu__generate_sequence_op extra SRCS __xpu__generate_sequence_op.cc)
-add_operator(__xpu__logit_op extra SRCS __xpu__logit_op.cc)
-add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_op.cc)
-add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
-add_operator(__xpu__conv_pixel_shuffle_fuse_op extra SRCS __xpu__conv_pixel_shuffle_fuse_op.cc)
-
 # Only for FPGA
 add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc)
 #message(STATUS   ${ops_src_list})

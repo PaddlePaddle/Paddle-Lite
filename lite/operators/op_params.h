@@ -915,6 +915,12 @@ struct ArgmaxParam : ParamBase {
   bool keepdims{false};
 };
 
+///----------------------- inverse operators ----------------------
+struct InverseParam : ParamBase {
+  lite::Tensor* Input{};
+  lite::Tensor* Output{};
+};
+
 ///----------------------- axpy operators ----------------------
 struct AxpyParam : ParamBase {
   lite::Tensor* Scale{};
@@ -2172,6 +2178,19 @@ struct XPUConvPixelShuffleFuseParam : ParamBase {
   bool has_bias_1{false};
 };
 
+struct XPUDynamicLstmFuseParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* weight_0{nullptr};
+  const lite::Tensor* weight_1{nullptr};
+  const lite::Tensor* bias_0{nullptr};
+  const lite::Tensor* bias_1{nullptr};
+  const lite::Tensor* h0{nullptr};
+  const lite::Tensor* c0{nullptr};
+  lite::Tensor* hidden{nullptr};
+  bool has_h0{false};
+  bool is_reverse{false};
+};
+
 // For DeformableConvolution op
 struct DeformableConvParam : ParamBase {
   lite::Tensor* x{};
@@ -2279,11 +2298,11 @@ using SinParam = TrigonometricParam;
 using CosParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* out{};
-  lite::Tensor* xshape;
-  int start_axis;
-  int stop_axis;
+  const lite::Tensor* x{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* xshape{nullptr};
+  int start_axis{1};
+  int stop_axis{1};
 };
 
 struct LoDArrayLengthParam : ParamBase {
@@ -2438,11 +2457,25 @@ struct FlipParam : ParamBase {
   std::vector<int> axis;
 };
 
+struct CosSimParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* x_norm{nullptr};
+  lite::Tensor* y_norm{nullptr};
+};
+
 struct WriteBackParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* y{};
 };
 
+struct UniqueWithCountsParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Index{};
+  lite::Tensor* Count{};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -27,8 +27,8 @@
 namespace nnadapter {
 namespace rockchip_npu {
 
-Context::Context() {
-  // TODO(hong19860320) create the raw context from rknpu ddk driver
+Context::Context(void* device, const char* properties) : device_(device) {
+  // TODO(hong19860320) create the raw context from rknpu_ddk
 }
 
 Context::~Context() {}
@@ -110,7 +110,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   for (size_t i = 0; i < input_count; i++) {
     auto operand = model->input_operands[i];
     NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
-    input_tensors[i] = tensors_[operand];
+    input_tensors[i] = tensors_[operand].back();
+    NNADAPTER_CHECK(input_tensors[i]);
     // Initialize the input info for the execution
     input_info_[i].index = i;
     input_info_[i].buf = nullptr;
@@ -127,7 +128,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
     NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
-    output_tensors[i] = tensors_[operand];
+    output_tensors[i] = tensors_[operand].back();
+    NNADAPTER_CHECK(output_tensors[i]);
     // Initialize the output info for the execution
     output_info_[i].index = i;
     output_info_[i].buf = nullptr;
@@ -181,16 +183,50 @@ int Program::Execute(uint32_t input_count,
   return NNADAPTER_NO_ERROR;
 }
 
-std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(hal::Operand* operand) {
-  if (tensors_.find(operand) != tensors_.end()) {
-    return tensors_.at(operand);
+std::string Program::GetTensorName(hal::Operand* operand) {
+  auto operand_id = OperandIdToString(operand);
+  auto index = 0;
+  auto it = tensors_.find(operand);
+  if (it != tensors_.end()) {
+    index = it->second.size();
+  }
+  return operand_id + string_format("_%d", index);
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::GetMappedTensor(
+    hal::Operand* operand) {
+  auto it = tensors_.find(operand);
+  if (it != tensors_.end()) {
+    return it->second.back();
+  }
+  return nullptr;
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::UpdateTensorMap(
+    hal::Operand* operand, std::shared_ptr<rk::nn::Tensor> tensor) {
+  auto it = tensors_.find(operand);
+  if (it == tensors_.end()) {
+    auto result = tensors_.insert(std::make_pair(
+        operand, std::vector<std::shared_ptr<rk::nn::Tensor>>()));
+    NNADAPTER_CHECK(result.second);
+    it = result.first;
+  }
+  it->second.push_back(tensor);
+  return tensor;
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
+    hal::Operand* operand, std::vector<int32_t> dimensions) {
+  if (dimensions.empty()) {
+    for (uint32_t i = 0; i < operand->type.dimension_count; i++) {
+      dimensions.push_back(operand->type.dimensions[i]);
+    }
   }
   auto attr = std::make_shared<rk::nn::TensorAttr>();
-  attr->name = string_format("0x%X", operand);
-  attr->role = operand->buffer == nullptr ? rk::nn::TensorRole::VAR
-                                          : rk::nn::TensorRole::CONST;
-  attr->dims = ConvertDimensions(operand->type.dimensions,
-                                 operand->type.dimension_count);
+  attr->name = GetTensorName(operand);
+  attr->role = !IsConstantOperand(operand) ? rk::nn::TensorRole::VAR
+                                           : rk::nn::TensorRole::CONST;
+  attr->dims = ConvertDimensions(&dimensions[0], dimensions.size());
   attr->precision = ConvertPrecision(operand->type.precision);
   attr->layout = ConvertDataLayout(operand->type.layout);
   switch (operand->type.precision) {
@@ -224,7 +260,7 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(hal::Operand* operand) {
   auto tensor = graph_->CreateTensor(attr, operand->buffer);
   NNADAPTER_CHECK(tensor);
   // Use to find the tensor based on the pointer of operand
-  tensors_[operand] = tensor;
+  UpdateTensorMap(operand, tensor);
   return tensor;
 }
 

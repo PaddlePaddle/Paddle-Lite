@@ -19,6 +19,7 @@ repos:
     -   id: detect-private-key
         files: (?!.*third_party)^.*$|(?!.*book)^.*$
     -   id: end-of-file-fixer
+        exclude: ^(third-party/)
 -   repo: local
     hooks:
     -   id: clang-format-with-version-check

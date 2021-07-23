@@ -230,10 +230,7 @@ function make_tiny_publish_so {
       ${cmake_mutable_options}  \
       -DLITE_ON_TINY_PUBLISH=ON
 
-  # Step4. Compile libs: cxx_lib, java_lib, opencl_lib
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC
-  fi
+  # Step4. Compile libs: cxx_lib, java_lib
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
@@ -300,11 +297,6 @@ function make_full_publish_so {
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
       ${cmake_mutable_options}
-
-  # todo: third_party of opencl should be moved into git submodule and cmake later
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC
-  fi
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null

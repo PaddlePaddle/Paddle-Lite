@@ -57,8 +57,8 @@ static hal::Operand* AddOperand(hal::Model* model,
       // Symmetric per-channel quantization
       NNADAPTER_CHECK(
           !zero_point &&
-              precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
-          precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL);
+          (precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
+           precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL));
       operand->type.symm_per_channel_params.scales = quant_scales;
       operand->type.symm_per_channel_params.scale_count = quant_scale_count;
       operand->type.symm_per_channel_params.channel_dim = quant_channel_dim;
@@ -437,6 +437,14 @@ NNADAPTER_EXPORT bool IsConstantOperand(hal::Operand* operand) {
          operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
 }
 
+NNADAPTER_EXPORT bool IsModelInputOperand(hal::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_MODEL_INPUT;
+}
+
+NNADAPTER_EXPORT bool IsModelOutputOperand(hal::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_MODEL_OUTPUT;
+}
+
 std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
                                                  hal::Operand* operand) {
   std::vector<hal::Operation*> consumers;
@@ -503,8 +511,61 @@ NNADAPTER_EXPORT hal::Operand* AddReshapeOperation(hal::Model* model,
   return output_operand;
 }
 
+NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
+                                                 hal::Operand* input_operand) {
+  // Insert a new operand after input_operand
+  auto output_operand = AddOperand(model);
+  memcpy(&output_operand->type,
+         &input_operand->type,
+         sizeof(NNAdapterOperandType));
+  InsertOperand(model, input_operand, output_operand, true);
+  // Add a zero addend operand
+  auto zero_operand = AddOperand(model);
+  memcpy(
+      &zero_operand->type, &input_operand->type, sizeof(NNAdapterOperandType));
+  zero_operand->type.dimension_count = 1;
+  zero_operand->type.dimensions[0] = 1;
+  zero_operand->length = OperandPrecisionLength(zero_operand->type.precision);
+  zero_operand->buffer = malloc(zero_operand->length);
+  NNADAPTER_CHECK(zero_operand->buffer != nullptr)
+      << "Failed to allocate " << zero_operand->length
+      << " bytes for the buffer of an operand, out of memory!";
+  memset(zero_operand->buffer, 0, zero_operand->length);
+  zero_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
+  // Insert a new ADD operation between a new operand and output_operand
+  auto dummy_add_operation = AddOperation(model);
+  dummy_add_operation->type = NNADAPTER_ADD;
+  dummy_add_operation->input_operands = {
+      input_operand, zero_operand, fuse_code_operand};
+  dummy_add_operation->output_operands = {output_operand};
+  return output_operand;
+}
+
+NNADAPTER_EXPORT hal::Operand* AddUnaryOperation(
+    hal::Model* model,
+    hal::Operand* input_operand,
+    NNAdapterOperationType operation_type) {
+  // Insert a new operand after input_operand
+  auto output_operand = AddOperand(model);
+  memcpy(&output_operand->type,
+         &input_operand->type,
+         sizeof(NNAdapterOperandType));
+  InsertOperand(model, input_operand, output_operand, true);
+  auto unary_operation = AddOperation(model);
+  unary_operation->type = operation_type;
+  unary_operation->input_operands = {input_operand};
+  unary_operation->output_operands = {output_operand};
+  return output_operand;
+}
+
 NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
     hal::Model* model) {
+  NNADAPTER_VLOG(5) << "model total operands: " << model->operands.size();
+  NNADAPTER_VLOG(5) << "model input operands: " << model->input_operands.size();
+  NNADAPTER_VLOG(5) << "model output operands: "
+                    << model->output_operands.size();
+  NNADAPTER_VLOG(5) << "model total operations: " << model->operations.size();
   std::vector<hal::Operation*> operations;  // Operations in topological order
   std::vector<hal::Operation*> queue;
   // Use to find all of adjacent operations according to a given operand.
