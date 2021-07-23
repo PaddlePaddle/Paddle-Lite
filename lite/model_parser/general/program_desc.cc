@@ -26,6 +26,9 @@ void ProgramDesc::CopyFrom(const ProgramDesc& other) {
   for (const auto& block : other.blocks()) {
     blocks_.emplace_back(new BlockDesc(*block));
   }
+  if (other.HasOpVersionMap()) {
+    op_version_map_.SetOpVersionMap(op_version_map_.GetOpVersionMap());
+  }
 }
 
 template <>
