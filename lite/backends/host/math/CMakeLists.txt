@@ -11,6 +11,7 @@ lite_cc_library(math_host SRCS
     stack.cc
     reduce.cc
     argmax.cc
+    inverse.cc
     topk.cc
     yolo_box.cc
     DEPS context)

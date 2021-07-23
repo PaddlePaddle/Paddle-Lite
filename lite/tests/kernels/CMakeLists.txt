@@ -33,6 +33,7 @@ lite_cc_test(test_kernel_decode_bboxes_compute SRCS decode_bboxes_compute_test.c
 lite_cc_test(test_kernel_box_coder_compute SRCS box_coder_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_activation_compute SRCS activation_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_argmax_compute SRCS argmax_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_inverse_compute SRCS inverse_compute_test.cc DEPS arena_framework ${test_kernel_deps})
 lite_cc_test(test_kernel_axpy_compute SRCS axpy_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_norm_compute SRCS norm_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_cast_compute SRCS cast_compute_test.cc DEPS ${test_kernel_deps})

@@ -915,6 +915,12 @@ struct ArgmaxParam : ParamBase {
   bool keepdims{false};
 };
 
+///----------------------- inverse operators ----------------------
+struct InverseParam : ParamBase {
+  lite::Tensor* Input{};
+  lite::Tensor* Output{};
+};
+
 ///----------------------- axpy operators ----------------------
 struct AxpyParam : ParamBase {
   lite::Tensor* Scale{};
