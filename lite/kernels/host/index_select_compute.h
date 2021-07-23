@@ -30,7 +30,6 @@ class Index_selectCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
   void Run() override;
 
   virtual ~Index_selectCompute() = default;
-
 };
 
 }  // namespace host

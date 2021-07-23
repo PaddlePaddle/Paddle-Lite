@@ -26,8 +26,7 @@ bool Index_selectOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.Out);
   CHECK_OR_FALSE(param_.dim >= static_cast<int>(-(param_.X)->dims().size()));
   CHECK_OR_FALSE(param_.dim < static_cast<int>((param_.X)->dims().size()));
-  for (auto val : param_.Index->dims().Vectorize())
-  {
+  for (auto val : param_.Index->dims().Vectorize()) {
     CHECK_OR_FALSE(val >= 0);
     CHECK_OR_FALSE(val < (param_.X)->dims()[param_.dim]);
   }
@@ -37,24 +36,24 @@ bool Index_selectOpLite::CheckShape() const {
 bool Index_selectOpLite::InferShapeImpl() const {
   auto x_dims = param_.X->dims();
   int x_rank = x_dims.size();
-  
-  if(param_.dim < 0)
-    param_.dim += x_rank;
+
+  if (param_.dim < 0) param_.dim += x_rank;
   int dim = param_.dim;
-  
+
   std::vector<int64_t> out_dims;
   for (int64_t i = 0; i < dim; i++) out_dims.push_back(x_dims[i]);
   out_dims.push_back(param_.Index->dims()[0]);
   for (int64_t i = dim + 1; i < x_rank; i++) out_dims.push_back(x_dims[i]);
-  
+
   // Set output dims
   param_.Out->Resize(lite::DDim(out_dims));
-  
+
   return true;
 }
 
 // TODO(Superjomn) replace framework::OpDesc with a lite one.
-bool Index_selectOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool Index_selectOpLite::AttachImpl(const cpp::OpDesc &op_desc,
+                                    lite::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto index = op_desc.Input("Index").front();
   auto out = op_desc.Output("Out").front();

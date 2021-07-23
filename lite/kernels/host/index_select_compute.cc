@@ -25,7 +25,7 @@ namespace kernels {
 namespace host {
 
 template <typename T>
-void Index_selectCompute <T>::Run() {
+void Index_selectCompute<T>::Run() {
   auto& param = Param<operators::Index_selectParam>();
   lite::Tensor* input = param.X;
   lite::Tensor* index = param.Index;
@@ -38,15 +38,16 @@ void Index_selectCompute <T>::Run() {
   int left = input_ddim.count(0, param.dim);
   int middle = input_ddim[param.dim];
   int right = input_ddim.count(param.dim + 1, input_ddim.size());
-    
-  const T *in_ptr = input->data<T>();
-  const int64_t *index_ptr = index->data<int64_t>();
-  T *out_ptr = output->mutable_data<T>();
+
+  const T* in_ptr = input->data<T>();
+  const int64_t* index_ptr = index->data<int64_t>();
+  T* out_ptr = output->mutable_data<T>();
 
   for (int i = 0; i < left; i++)
     for (int k = 0; k < index_ddim.production(); k++)
       for (int j = 0; j < right; j++)
-        out_ptr[i * index_ddim.production() *right + k*right + j] = in_ptr[i * middle * right + index_ptr[k] * right +j];
+        out_ptr[i * index_ddim.production() * right + k * right + j] =
+            in_ptr[i * middle * right + index_ptr[k] * right + j];
 
   return;
 }
@@ -62,12 +63,12 @@ REGISTER_LITE_KERNEL(index_select,
                      kNCHW,
                      paddle::lite::kernels::host::Index_selectCompute<float>,
                      fp32)
-    .BindInput("X",     {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
-    .BindOutput("Out",  {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindInput("Index", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindPaddleOpVersion("index_select", 1)
     .Finalize();
-
 
 #ifdef LITE_BUILD_EXTRA
 
@@ -77,9 +78,10 @@ REGISTER_LITE_KERNEL(index_select,
                      kNCHW,
                      paddle::lite::kernels::host::Index_selectCompute<int32_t>,
                      int32)
-    .BindInput("X",     {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out",  {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindInput("Index", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindPaddleOpVersion("index_select", 1)
     .Finalize();
 
@@ -89,9 +91,10 @@ REGISTER_LITE_KERNEL(index_select,
                      kNCHW,
                      paddle::lite::kernels::host::Index_selectCompute<int16_t>,
                      int16)
-    .BindInput("X",     {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt16))})
-    .BindOutput("Out",  {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindInput("Index", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindPaddleOpVersion("index_select", 1)
     .Finalize();
 
@@ -101,9 +104,10 @@ REGISTER_LITE_KERNEL(index_select,
                      kNCHW,
                      paddle::lite::kernels::host::Index_selectCompute<int8_t>,
                      int8)
-    .BindInput("X",     {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})
-    .BindOutput("Out",  {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindInput("Index", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindPaddleOpVersion("index_select", 1)
     .Finalize();
 

@@ -26,13 +26,18 @@ class Index_selectComputeTester : public arena::TestCase {
   std::string index_ = "index";
   std::string output_ = "out";
   std::string alias_ = "fp32";
-  int dim_ = 0;            // the axis we choose
-  DDim dims_{{5, 5, 5, 5}}; // input tensor dim
-  DDim indexdims_{{3}}; // the index index tensor's  dim 
+  int dim_ = 0;              // the axis we choose
+  DDim dims_{{5, 5, 5, 5}};  // input tensor dim
+  DDim indexdims_{{3}};      // the index index tensor's  dim
 
  public:
-  Index_selectComputeTester(
-      const Place& place, const std::string& alias, int n, int c, int h, int w,int dim)
+  Index_selectComputeTester(const Place& place,
+                            const std::string& alias,
+                            int n,
+                            int c,
+                            int h,
+                            int w,
+                            int dim)
       : TestCase(place, alias), alias_(alias) {
     dims_ = DDim(std::vector<int64_t>({n, c, h, w}));
     dim_ = dim;
@@ -48,7 +53,7 @@ class Index_selectComputeTester : public arena::TestCase {
     for (int64_t i = dim_ + 1; i < 4; i++) output_shape.push_back(nchw[i]);
     DDim output_dims(output_shape);
     out->Resize(output_dims);
-    
+
     auto* output_data = out->mutable_data<indtype>();
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<indtype>();
@@ -61,10 +66,10 @@ class Index_selectComputeTester : public arena::TestCase {
     int right = x_ddim.count(dim_ + 1, x_ddim.size());
 
     for (int i = 0; i < left; i++)
-        for (int j = 0; j < right; j++)
-            for (int k = 0; k < indexdims_[0]; k++)
-                output_data[i * indexdims_[0] *right + k*right + j] = x_data[i * middle * right + index_data[k] * right +j];
-
+      for (int j = 0; j < right; j++)
+        for (int k = 0; k < indexdims_[0]; k++)
+          output_data[i * indexdims_[0] * right + k * right + j] =
+              x_data[i * middle * right + index_data[k] * right + j];
   }
 
   void RunBaseline(Scope* scope) override {
@@ -81,13 +86,12 @@ class Index_selectComputeTester : public arena::TestCase {
     op_desc->SetAttr("dim", dim_);
   }
   void PrepareData() override {
-    
     std::vector<int64_t> index_data(indexdims_.production());
     for (int i = 0; i < indexdims_.production(); i++) {
-        index_data[i] = (i * 997)%dims_[dim_];
+      index_data[i] = (i * 997) % dims_[dim_];
     }
     SetCommonTensor(index_, indexdims_, index_data.data());
-    
+
     if (alias_ == "fp32") {
       std::vector<float> input_data(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
@@ -104,15 +108,14 @@ void TestIndex_select(const Place& place) {
     for (int c : {5}) {
       for (int h : {5}) {
         for (int w : {5}) {
-          for (int dim :{0,1,2,3})
-          {
-          std::vector<std::string> alias_vec{"fp32"};
-          for (std::string alias : alias_vec) {
-            std::unique_ptr<arena::TestCase> tester(
-                new Index_selectComputeTester(place, alias, n, c, h, w, dim));
-            arena::Arena arena(std::move(tester), place, 0.00001);
-            arena.TestPrecision();
-          }
+          for (int dim : {0, 1, 2, 3}) {
+            std::vector<std::string> alias_vec{"fp32"};
+            for (std::string alias : alias_vec) {
+              std::unique_ptr<arena::TestCase> tester(
+                  new Index_selectComputeTester(place, alias, n, c, h, w, dim));
+              arena::Arena arena(std::move(tester), place, 0.00001);
+              arena.TestPrecision();
+            }
           }
         }
       }
