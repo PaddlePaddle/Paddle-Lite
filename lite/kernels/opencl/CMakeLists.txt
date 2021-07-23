@@ -125,6 +125,7 @@ lite_cc_test(test_trigonometric_image_opencl SRCS trigonometric_image_compute_te
 # buffer kernel      #
 ######################
 # basic
+add_kernel(cast_opencl_buffer OPENCL basic SRCS cast_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(activation_opencl_buffer OPENCL basic SRCS activation_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(conv_opencl_buffer OPENCL basic SRCS conv_buffer_compute.cc DEPS ${cl_kernel_deps})
 #add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_buffer_compute.cc DEPS ${cl_kernel_deps})
@@ -180,3 +181,6 @@ lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
 
 lite_cc_test(test_io_copy_buffer_opencl SRCS io_copy_buffer_compute_test.cc
              DEPS io_copy_opencl_buffer op_registry program context)
+
+lite_cc_test(test_cast_buffer_opencl SRCS cast_buffer_compute_test.cc
+             DEPS cast_opencl_buffer op_registry program context)
