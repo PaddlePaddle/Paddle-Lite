@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,14 +25,10 @@ namespace operators {
 
 bool GroupNormOp::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.scale);
-  CHECK_OR_FALSE(param_.bias);
   CHECK_OR_FALSE(param_.out);
   CHECK_OR_FALSE(param_.saved_mean);
   CHECK_OR_FALSE(param_.saved_variance);
   auto x_dims = param_.x->dims();
-  auto scale_dims = param_.scale->dims();
-  auto bias_dims = param_.bias->dims();
   if (param_.channels == -1) {
     param_.channels = (param_.data_layout_str == "NCHW")
                           ? x_dims[1]
@@ -42,19 +38,29 @@ bool GroupNormOp::CheckShape() const {
   CHECK_EQ(param_.data_layout_str, "NCHW") << "data_layout must be NCHW";
   CHECK(x_dims.size() >= 2 && x_dims.size() <= 5)
       << "Input X must have 2 to 5 dimensions.";
-  CHECK_EQ(scale_dims.size(), 1UL) << "Input Scale must have 1 dimensions.";
-  CHECK_EQ(bias_dims.size(), 1UL) << "Input Bias must have 1 dimensions.";
+
+  if (param_.scale != nullptr) {
+    auto scale_dims = param_.scale->dims();
+    CHECK_EQ(scale_dims.size(), 1UL) << "Input Scale must have 1 dimensions.";
+    CHECK_EQ(scale_dims[0], param_.channels)
+        << "The Input(Scale)'s first dimension size of Op(group_norm) must be "
+        << "equal to the number of channels";
+  }
+  if (param_.bias != nullptr) {
+    auto bias_dims = param_.bias->dims();
+    CHECK_EQ(bias_dims.size(), 1UL) << "Input Bias must have 1 dimensions.";
+    CHECK_EQ(bias_dims[0], param_.channels)
+        << "The Input(Bias)'s first dimension size of Op(group_norm) must be "
+        << "equal to the number of channels";
+  }
+
   CHECK_GT(param_.epsilon, 0.f) << "epsilon should be greater than 0.f";
-  CHECK_LT(param_.epsilon, 0.01f) << "epsilon should be less than 0.01f";
+  CHECK_GE(param_.groups, 1) << "groups should be greater than 1";
   CHECK_LE(param_.groups, param_.channels)
       << "groups should be less than channels";
-  CHECK_GE(param_.groups, 1) << "groups should be greater than 1";
-  CHECK_EQ(param_.channels, scale_dims[0])
-      << "The Input(Scale)'s first dimension size of Op(group_norm) must be "
-         "equal to the number of channels";
-  CHECK_EQ(param_.channels, bias_dims[0])
-      << "The Input(Bias)'s first dimension size of Op(group_norm) must be "
-         "equal to the number of channels";
+  // The channels should be divisible by groups
+  CHECK_EQ(param_.channels % param_.groups, 0)
+      << "The channels should be divisible by groups";
   return true;
 }
 
@@ -68,11 +74,10 @@ bool GroupNormOp::InferShapeImpl() const {
 }
 
 bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
-  param_.scale =
-      scope->FindVar(op_desc.Input("Scale").front())->GetMutable<Tensor>();
-  param_.bias =
-      scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();
+  AttachInput(op_desc, scope, "X", false /*is_dispensable*/, &param_.x);
+  AttachInput(op_desc, scope, "Scale", true, &param_.scale);
+  AttachInput(op_desc, scope, "Bias", true, &param_.bias);
+
   if (op_desc.HasOutput("SavedMean")) {
     param_.saved_mean = scope->FindVar(op_desc.Output("SavedMean").front())
                             ->GetMutable<Tensor>();
