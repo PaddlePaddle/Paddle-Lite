@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "lite/backends/x86/math/clip.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/operators/clip_op.h"
@@ -47,10 +48,7 @@ class ClipCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     float* out_ptr = out->mutable_data<float>();
     int64_t num = x->numel();
 
-    for (int i = 0; i < num; i++) {
-      float tmp = x_ptr[i] > min ? x_ptr[i] : min;
-      out_ptr[i] = tmp < max ? tmp : max;
-    }
+    lite::x86::math::clip(x_ptr, out_ptr, num, max, min);
   }
 
   virtual ~ClipCompute() = default;
