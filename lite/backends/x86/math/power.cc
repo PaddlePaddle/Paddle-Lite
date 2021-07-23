@@ -84,10 +84,13 @@ void power<float>(const float* din,
 
       ptr_in += 16;
       for (int j = 0; j < 4; j++) {
-        ptr_out[j] = std::pow(vres0[j], factor_);
-        ptr_out[j + 4] = std::pow(vres1[j], factor_);
-        ptr_out[j + 8] = std::pow(vres2[j], factor_);
-        ptr_out[j + 12] = std::pow(vres3[j], factor_);
+        ptr_out[j] = std::pow((reinterpret_cast<float*>(&vres0))[j], factor_);
+        ptr_out[j + 4] =
+            std::pow((reinterpret_cast<float*>(&vres1))[j], factor_);
+        ptr_out[j + 8] =
+            std::pow((reinterpret_cast<float*>(&vres2))[j], factor_);
+        ptr_out[j + 12] =
+            std::pow((reinterpret_cast<float*>(&vres3))[j], factor_);
       }
 #endif
       ptr_out += 16;
@@ -98,7 +101,7 @@ void power<float>(const float* din,
       __m128 vsum0 = _mm_mul_ps(vin0, vscale);
       __m128 vres0 = _mm_add_ps(vsum0, vshift);
       for (int j = 0; j < 4; j++) {
-        ptr_out[j] = std::pow(vres0[j], factor_);
+        ptr_out[j] = std::pow((reinterpret_cast<float*>(&vres0))[j], factor_);
       }
       ptr_out += 4;
     }
