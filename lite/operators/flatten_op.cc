@@ -41,17 +41,13 @@ static std::vector<int64_t> GetOutputShape(const DDim in_dims,
 }
 
 bool FlattenOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.output);
+  CHECK(param_.x);
+  CHECK(param_.output);
   return true;
 }
 
 bool FlattenOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
-
-  auto out_lod = param_.output->mutable_lod();
-  *out_lod = param_.x->lod();
-
   int64_t outer = 1, inner = 1;
   for (size_t i = 0; i < x_dims.size(); ++i) {
     if (i < axis_) {
@@ -65,97 +61,80 @@ bool FlattenOp::InferShapeImpl() const {
   out_shape[1] = inner;
 
   param_.output->Resize(out_shape);
-
+  if (x_dims[0] == out_shape[0]) {
+    param_.output->set_lod(param_.x->lod());
+  }
   return true;
 }
 
 bool FlattenOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  auto x_var = scope->FindVar(opdesc.Input("X").front());
-  auto output_var = scope->FindVar(opdesc.Output("Out").front());
-  CHECK(x_var);
-  CHECK(output_var);
-  param_.x = const_cast<lite::Tensor *>(&(x_var->Get<lite::Tensor>()));
-  param_.output = output_var->GetMutable<lite::Tensor>();
+  param_.x = scope->FindTensor(opdesc.Input("X").front());
+  param_.output = scope->FindMutableTensor(opdesc.Output("Out").front());
   axis_ = opdesc.GetAttr<int>("axis");
-
-  param_.inplace = false;
-
-  CHECK(param_.x) << "Input(X) of FlattenOp should not be null.";
-  CHECK(param_.output) << "Output(Out) of FlattenOp should not be null.";
-  CHECK_GE(axis_, 0) << "Flatten op axis should >=0.";
+  CHECK_GE(axis_, 0) << "Flatten op axis should greater than or equal to 0.";
+  if (opdesc.HasAttr("inplace")) {
+    param_.inplace = opdesc.GetAttr<bool>("inplace");
+  }
   return true;
 }
 
 bool Flatten2Op::CheckShape() const {
   FlattenOp::CheckShape();
-  CHECK_OR_FALSE(param_.xshape);
+  CHECK(param_.xshape);
   return true;
 }
 
 bool Flatten2Op::InferShapeImpl() const {
   FlattenOp::InferShapeImpl();
-  auto x_dims = param_.x->dims();
-  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
-  for (size_t i = 0; i < x_dims.size(); i++) {
-    xshape_dims[i + 1] = x_dims[i];
-  }
-  param_.xshape->Resize(DDim(xshape_dims));
+  auto x_shape = param_.x->dims().Vectorize();
+  x_shape.insert(x_shape.begin(), 0);
+  param_.xshape->Resize(x_shape);
   return true;
 }
 
 bool Flatten2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   FlattenOp::AttachImpl(opdesc, scope);
-  auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
-  CHECK(xshape_var);
-  param_.xshape = xshape_var->GetMutable<lite::Tensor>();
-  CHECK(param_.xshape) << "Output(XShape) of FlattenOp should not be null.";
+  param_.xshape = scope->FindMutableTensor(opdesc.Output("XShape").front());
   return true;
 }
 
 bool FlattenContiguousRangeOp::AttachImpl(const cpp::OpDesc &opdesc,
                                           lite::Scope *scope) {
-  auto x_var = scope->FindVar(opdesc.Input("X").front());
-  param_.x = x_var->GetMutable<lite::Tensor>();
-  auto out_var = scope->FindVar(opdesc.Output("Out").front());
-  param_.out = out_var->GetMutable<lite::Tensor>();
-  auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
-  param_.xshape = xshape_var->GetMutable<lite::Tensor>();
+  param_.x = scope->FindTensor(opdesc.Input("X").front());
+  param_.out = scope->FindMutableTensor(opdesc.Output("Out").front());
+  param_.xshape = scope->FindMutableTensor(opdesc.Output("XShape").front());
   param_.start_axis = opdesc.GetAttr<int>("start_axis");
   param_.stop_axis = opdesc.GetAttr<int>("stop_axis");
   return true;
 }
 
 bool FlattenContiguousRangeOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.out);
-  CHECK_OR_FALSE(param_.xshape);
+  CHECK(param_.x);
+  CHECK(param_.out);
+  CHECK(param_.xshape);
   return true;
 }
 
 bool FlattenContiguousRangeOp::InferShapeImpl() const {
   int start_axis = param_.start_axis;
   int stop_axis = param_.stop_axis;
-  auto in_dims = param_.x->dims();
-  int in_dims_size = in_dims.size();
-  if (start_axis < 0) start_axis += in_dims_size;
-  if (stop_axis < 0) stop_axis += in_dims_size;
+  auto x_dims = param_.x->dims();
+  int x_dims_size = x_dims.size();
+  if (start_axis < 0) start_axis += x_dims_size;
+  if (stop_axis < 0) stop_axis += x_dims_size;
   CHECK_OR_FALSE(start_axis <= stop_axis);
 
   std::vector<int64_t> out_shape =
-      GetOutputShape(in_dims, start_axis, stop_axis);
-  param_.out->Resize(DDim(out_shape));
-  if (in_dims[0] == out_shape[0]) {
+      GetOutputShape(x_dims, start_axis, stop_axis);
+  param_.out->Resize(out_shape);
+  if (x_dims[0] == out_shape[0]) {
     param_.out->set_lod(param_.x->lod());
   }
 
-  std::vector<int64_t> xshape_dims(in_dims.size() + 1);
-  xshape_dims[0] = 0;
-  for (int i = 0; i < in_dims.size(); ++i) {
-    xshape_dims[i + 1] = in_dims[i];
-  }
-  param_.xshape->Resize(DDim(xshape_dims));
+  auto x_shape = x_dims.Vectorize();
+  x_shape.insert(x_shape.begin(), 0);
+  param_.xshape->Resize(x_shape);
   param_.xshape->set_lod(param_.x->lod());
-
   return true;
 }
 

@@ -34,16 +34,8 @@ static void UnpackConv2D(hal::Model* model, hal::Operation* operation) {
   auto output_operand = output_operands[0];
   // Unpack RELU6
   if (*fuse_code == NNADAPTER_FUSED_RELU6) {
+    AddUnaryOperation(model, output_operand, NNADAPTER_RELU6);
     *fuse_code = NNADAPTER_FUSED_NONE;
-    auto act_operand = AddOperand(model);
-    memcpy(&act_operand->type,
-           &output_operand->type,
-           sizeof(NNAdapterOperandType));
-    InsertOperand(model, output_operand, act_operand, true);
-    auto act_operation = AddOperation(model);
-    act_operation->type = NNADAPTER_RELU6;
-    act_operation->input_operands = {output_operand};
-    act_operation->output_operands = {act_operand};
   }
 }
 

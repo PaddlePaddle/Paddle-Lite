@@ -234,6 +234,24 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "dilation_height"};
         output_args = {"output"};
         break;
+      case NNADAPTER_CONV_2D_TRANSPOSE:
+        input_args = {"input",
+                      "filter",
+                      "bias",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "group",
+                      "fuse_code",
+                      "dilation_width",
+                      "dilation_height",
+                      "output_padding_width",
+                      "output_padding_height"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_FULLY_CONNECTED:
         input_args = {"input", "weight", "bias", "fuse_code"};
         output_args = {"output"};
@@ -383,6 +401,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
+    NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);

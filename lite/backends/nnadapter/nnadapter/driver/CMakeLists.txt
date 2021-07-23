@@ -33,3 +33,7 @@ endif()
 if(NNADAPTER_WITH_IMAGINATION_NNA)
   add_subdirectory(imagination_nna)
 endif()
+
+if(NNADAPTER_WITH_AMLOGIC_NPU)
+  add_subdirectory(amlogic_npu)
+endif()

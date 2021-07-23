@@ -12,11 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/op_registry.h"
-#include "lite/operators/reduce_ops.h"
+#pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/operators/inverse_op.h"
 
-REGISTER_LITE_OP(reduce_sum, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_prod, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_max, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_all, paddle::lite::operators::ReduceOp);
-REGISTER_LITE_OP(reduce_any, paddle::lite::operators::ReduceOp);
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+template <typename T>
+class InverseCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::InverseParam;
+
+  void Run() override;
+
+  virtual ~InverseCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

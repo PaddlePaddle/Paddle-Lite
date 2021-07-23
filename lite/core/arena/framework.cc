@@ -21,47 +21,73 @@ namespace paddle {
 namespace lite {
 namespace arena {
 
-void TestCase::CreateInstruction() {
-  std::shared_ptr<lite::OpLite> op = nullptr;
+std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
   static const std::set<TargetType> subgraph_op_supported_targets(
-      {TARGET(kNPU), TARGET(kXPU), TARGET(kHuaweiAscendNPU)});
-  bool enable_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
+      {TARGET(kNPU),
+       TARGET(kXPU),
+       TARGET(kHuaweiAscendNPU),
+       TARGET(kNNAdapter)});
+  bool create_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
                             subgraph_op_supported_targets.end();
 #if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
-  enable_subgraph_op = false;  // Use XPU kernel directly if XTCL is disabled.
+  create_subgraph_op = false;  // Use XPU kernel directly if XTCL is disabled.
 #endif
-  if (enable_subgraph_op) {
-    // Create a new block desc to wrap the original op desc
-    auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
-    int sub_block_idx = 0;
-    auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
-    sub_block_desc->ClearOps();
-    sub_block_desc->ClearVars();
-    auto sub_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
-    *sub_op_desc = *op_desc_;
-    // Add the block desc into the subgraph op which used to replace the
-    // original op
-    op_desc_.reset(new cpp::OpDesc());
-    op_desc_->SetType("subgraph");
-    op_desc_->SetAttr<int32_t>("sub_block", sub_block_idx);
-    auto in_names = sub_op_desc->input_vars();
-    auto out_names = sub_op_desc->output_vars();
-    op_desc_->SetInput("Inputs", in_names);
-    op_desc_->SetOutput("Outputs", out_names);
-    // filter only data op (not const op by persisiable)
-    std::vector<std::string> in_data_names;
-    for (auto name : in_names) {
-      if (!(inst_scope_->FindTensor(name)->persistable())) {
-        in_data_names.push_back(name);
-      }
+  if (!create_subgraph_op) return nullptr;
+  auto scope = inst_scope_.get();
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"huawei_ascend_npu"});
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"huawei_kirin_npu"});
+#elif defined(NNADAPTER_WITH_ROCKCHIP_NPU)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"rockchip_npu"});
+#elif defined(NNADAPTER_WITH_MEDIATEK_APU)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"mediatek_apu"});
+#elif defined(NNADAPTER_WITH_IMAGINATION_NNA)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"imagination_nna"});
+#elif defined(NNADAPTER_WITH_AMLOGIC_NPU)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"amlogic_npu"});
+#endif
+  // Create a new block desc to wrap the original op desc
+  auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
+  int sub_block_idx = 0;
+  auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
+  sub_block_desc->ClearOps();
+  sub_block_desc->ClearVars();
+  auto sub_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
+  *sub_op_desc = *op_desc_;
+  // Add the block desc into the subgraph op which used to replace the
+  // original op
+  op_desc_.reset(new cpp::OpDesc());
+  op_desc_->SetType("subgraph");
+  op_desc_->SetAttr<int32_t>("sub_block", sub_block_idx);
+  auto in_names = sub_op_desc->input_vars();
+  auto out_names = sub_op_desc->output_vars();
+  op_desc_->SetInput("Inputs", in_names);
+  op_desc_->SetOutput("Outputs", out_names);
+  // Filter the data variables only(NOT the constants)
+  std::vector<std::string> in_data_names;
+  for (auto name : in_names) {
+    if (!(scope->FindTensor(name)->persistable())) {
+      in_data_names.push_back(name);
     }
-    op_desc_->SetAttr<std::vector<std::string>>("input_data_names",
-                                                in_data_names);
-    op_desc_->SetAttr<std::vector<std::string>>("output_data_names", out_names);
-    op = LiteOpRegistry::Global().Create(op_desc().Type());
-    static_cast<operators::SubgraphOp*>(op.get())->SetProgramDesc(
-        sub_program_desc);
-  } else {
+  }
+  op_desc_->SetAttr<std::vector<std::string>>("input_data_names",
+                                              in_data_names);
+  op_desc_->SetAttr<std::vector<std::string>>("output_data_names", out_names);
+  auto op = LiteOpRegistry::Global().Create(op_desc().Type());
+  static_cast<operators::SubgraphOp*>(op.get())->SetProgramDesc(
+      sub_program_desc);
+  return op;
+}
+
+void TestCase::CreateInstruction() {
+  // Create a subgraph op to encapsulate the operator to be tested if target
+  // device is kNNAdapter etc.
+  auto op = CreateSubgraphOp();
+  if (!op) {
     op = LiteOpRegistry::Global().Create(op_desc().Type());
   }
   CHECK(op) << "no op for " << op_desc().Type();

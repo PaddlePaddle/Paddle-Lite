@@ -180,15 +180,9 @@ if "%BUILD_FOR_CI%"=="ON" (
     msbuild /m:%cores% /p:Configuration=Release lite\api\opt.vcxproj
 ) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
-    if "%WITH_OPENCL%"=="ON" (
-        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj
-    )
     msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
 ) else (
     call "%vcvarsall_dir%" x86
-    if "%WITH_OPENCL%"=="ON" (
-        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj
-    )
     msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
 )
 goto:eof
@@ -277,7 +271,7 @@ goto:eof
 goto:eof
 
 :set_vcvarsall_dir
-SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat   =======>"
+SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as %vcvarsall_dir%   =======>"
 set tmp_var=!vcvarsall_dir!
 call:remove_space
 set vcvarsall_dir=!tmp_var!

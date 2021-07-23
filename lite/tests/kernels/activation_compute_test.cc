@@ -44,7 +44,8 @@ enum activation_type_test {
   THRESHOLDED_RELU,
   ELU,
   SOFTSIGN,
-  HARD_SIGMOID
+  HARD_SIGMOID,
+  ABS
 };
 
 template <class T = float>
@@ -273,6 +274,12 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case ABS: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = std::fabs(x_data[i]);
+        }
+        break;
+      }
       default:
         LOG(FATAL) << "the type of activation " << act_type_ << " is unknow.";
     }
@@ -408,7 +415,16 @@ void TestActPerformance(const Place& place,
 TEST(Activation_relu, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
@@ -539,7 +555,16 @@ TEST(Activation_prelu, precision) {
 TEST(Activation_sigmoid, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
@@ -572,7 +597,16 @@ TEST(Activation_sigmoid, precision) {
 TEST(Activation_tanh, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
@@ -634,7 +668,16 @@ TEST(Activation_swish, precision) {
 TEST(Activation_relu6, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
@@ -670,6 +713,9 @@ TEST(Activation_log, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -930,6 +976,32 @@ TEST(Activation_softsign, precision) {
             DDim(dims),
             "relu",
             RELU,
+            abs_error);
+  }
+}
+
+TEST(Activation_abs, precision) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "abs",
+            ABS,
             abs_error);
   }
 }

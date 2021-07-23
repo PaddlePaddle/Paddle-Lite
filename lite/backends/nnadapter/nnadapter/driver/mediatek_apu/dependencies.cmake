@@ -27,9 +27,4 @@ if(NOT MEDIATEK_APU_SDK_INC)
   message(FATAL_ERROR "Missing NeuronAdapter.h in ${NNADAPTER_MEDIATEK_APU_SDK_ROOT}/include")
 endif()
 
-if(CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7-a")
-else()
-  message(FATAL_ERROR "${CMAKE_SYSTEM_PROCESSOR} isn't supported by MediaTek APU SDK.")
-endif()
-
 include_directories("${NNADAPTER_MEDIATEK_APU_SDK_ROOT}/include")

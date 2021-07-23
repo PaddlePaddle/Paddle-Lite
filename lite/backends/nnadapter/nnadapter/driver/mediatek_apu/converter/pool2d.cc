@@ -66,7 +66,7 @@ int Program::ConvertPool2D(hal::Operation* operation) {
       *reinterpret_cast<int8_t*>(input_operands[11]->buffer);
   NNADAPTER_VLOG(5) << "count_include_pad=" << count_include_pad;
   NNADAPTER_CHECK_EQ(count_include_pad, false)
-      << "Neuron Aadapter doesn't suppport count_include_pad=true";
+      << "Neuron Aadapter doesn't support count_include_pad=true";
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
