@@ -44,7 +44,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "0.1";
 
     // convert weights from cpu to gpu
-    auto w_cpu_tensor = std::unique_ptr<Tensor>(new Tensor);
+    auto w_cpu_t = std::unique_ptr<Tensor>(new Tensor);
     w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     const auto w_dims = w_t->dims();
 
@@ -55,23 +55,23 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     auto w_ext_dims = w_dims;
     w_ext_dims[0] = ROUND_UP(w_dims[0], 4);
     w_ext_dims[1] = ROUND_UP(w_dims[1], 4);
-    w_cpu_tensor->Resize(w_ext_dims);
+    w_cpu_t->Resize(w_ext_dims);
     VLOG(4) << "0.2";
-    auto* w_buffer_data = MUTABLE_DATA_CPU(w_cpu_tensor.get());
-    size_t buf_size = w_cpu_tensor->memory_size();
+    auto* w_buffer_data = MUTABLE_DATA_CPU(w_cpu_t.get());
+    size_t buf_size = w_cpu_t->memory_size();
 
     VLOG(4) << "1";
 
     auto* w_cpu = param.w->mutable_data<float>();
-    OI2IOO4I4(w_cpu, w_buffer_data, w_dims[0], w_dims[1]);
+    OI2OIO4I4(w_cpu, w_buffer_data, w_dims[0], w_dims[1]);
     VLOG(4) << "2";
 
     auto* w_gpu_data =
-        w_gpu_t_->mutable_data(TARGET(kOpenCL), w_cpu_tensor->memory_size());
+        w_gpu_t_->mutable_data(TARGET(kOpenCL), w_cpu_t->memory_size());
     VLOG(4) << "3";
     TargetWrapperCL::MemcpySync(w_gpu_data,
-                                w_cpu_tensor->raw_data(),
-                                w_cpu_tensor->memory_size(),
+                                w_cpu_t->raw_data(),
+                                w_cpu_t->memory_size(),
                                 IoDirection::HtoD);
     w_buf_ = GET_BUFFER_GPU(w_gpu_t_);
     VLOG(4) << "4";
@@ -174,10 +174,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     auto& param = this->Param<operators::FcParam>();
 
     x_img_ = DATA_GPU(param.input);
-    out_img_ = MUTABLE_DATA_GPU(param.output,
-                                UP_DIV(param.output->dims()[1], 4),
-                                param.output->dims()[0],
-                                nullptr);
+    out_img_ = MUTABLE_DATA_GPU(param.output, UP_DIV(n_, 4), m_, nullptr);
 
     auto& kernel = kernel_;
     cl_int status;
@@ -196,6 +193,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       status = kernel.setArg(arg_idx++, *alpha_img_);
       CL_CHECK_FATAL(status);
     }
+    // todo: m_
     status = kernel.setArg(arg_idx++, k_blks_);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, n_blks_);
@@ -225,37 +223,56 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
   void SetGlobalLocalWorkSize() {
-    local_work_size_ = cl::NDRange(32, 4);
+    local_work_size_ = cl::NDRange(32, 4, 1);
     global_work_size_ = cl::NDRange(
-        ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]), local_work_size_[1]);
+        ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]), local_work_size_[1], m_);
   }
 
-  void OI2IOO4I4(void* src, void* dst, size_t O, size_t I) {
+  // Change the travelsal order of the weight matrix in the following way:
+  // The matrix is segmented to blocks of 4x4. If (any) dimension of the matrix
+  // size is not divisible by 4, then pad with zeros. Each block is stored
+  // contigously. The 16 elements within a block are ordered as 4 elements of
+  // the first row, 4 elems of the second, etc. Blocks then traversed as
+  // rows first, columns last. As an example, an 8x8 matrix would be traversed
+  // as below.
+  //
+  //  |  0  1  2  3 16 17 18 19 |
+  //  |  4  5  6  7 20 21 22 23 |
+  //  |  8  9 10 11 24 25 25 27 |
+  //  | 12 13 14 15 28 29 30 31 |
+  //  | 32 33 34 35 48 49 50 51 |
+  //  | 36 37 38 39 52 53 54 55 |
+  //  | 40 41 42 43 56 57 58 69 |
+  //  | 44 45 46 47 60 61 62 63 |
+  //
+  // The benefit of doing this is that reading contigous 16 elements gives a 4x4
+  // block of the matrix, where the first 4 elements is the first row of the
+  // block, second 4 elements is the second row of the block, etc. Subsequent
+  // blocks contain elements of the same 4 columns.
+  void OI2OIO4I4(void* src, void* dst, size_t O, size_t I) {
     bool fp16_support =
         CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
-    size_t padded_I = ROUND_UP(I, 4);
-    size_t padded_O = ROUND_UP(O, 4);
 
     float* dst_fp32 = static_cast<float*>(dst);
     half_t* dst_fp16 = static_cast<half_t*>(dst);
-    float* p_src = static_cast<float*>(src);
+    float* src_fp32 = static_cast<float*>(src);
 
-    for (int block_y = 0; 4 * block_y < padded_O; block_y++) {
-      for (int y_in_block = 0; y_in_block < 4; y_in_block++) {
-        for (int block_x = 0; 4 * block_x < padded_I; block_x++) {
-          for (int x_in_block = 0; x_in_block < 4; x_in_block++) {
-            int y = 4 * block_y + y_in_block;
-            int x = 4 * block_x + x_in_block;
-            // Consider destination as an array with extents
-            // [padded_src_channels/4][padded_dst_channels/4][4][4]
-            int dst_index = block_x * padded_O * 4 + block_y * 16 +
-                            x_in_block * 4 + y_in_block;
-            if (x < I && y < O) {
-              fp16_support ? dst_fp16[dst_index] = Float2Half(p_src[I * y + x])
-                           : dst_fp32[dst_index] = p_src[I * y + x];
+    size_t i_blocks = UP_DIV(I, 4);
+    size_t o_blocks = UP_DIV(O, 4);
+    size_t dst_index = 0;
+    for (size_t block_y = 0; block_y < o_blocks; block_y++) {
+      for (size_t block_x = 0; block_x < i_blocks; block_x++) {
+        for (size_t y_in_block = 0; y_in_block < 4; y_in_block++) {
+          const int y = block_y * 4 + y_in_block;
+          for (size_t x_in_block = 0; x_in_block < 4; x_in_block++) {
+            const int x = block_x * 4 + x_in_block;
+            if (y < O && x < I) {
+              fp16_support
+                  ? dst_fp16[dst_index++] = Float2Half(src_fp32[y * I + x])
+                  : dst_fp32[dst_index++] = src_fp32[y * I + x];
             } else {
-              fp16_support ? dst_fp16[dst_index] = Float2Half(0.f)
-                           : dst_fp32[dst_index] = 0.f;
+              fp16_support ? dst_fp16[dst_index++] = Float2Half(0.f)
+                           : dst_fp32[dst_index++] = 0.f;
             }
           }
         }

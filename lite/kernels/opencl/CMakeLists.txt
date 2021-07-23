@@ -122,6 +122,9 @@ lite_cc_test(test_box_coder_image_opencl SRCS box_coder_image_compute_test.cc
 lite_cc_test(test_trigonometric_image_opencl SRCS trigonometric_image_compute_test.cc
              DEPS trigonometric_opencl_image op_registry program context)
 
+lite_cc_test(test_fc_image_opencl SRCS fc_image_compute_test.cc
+             DEPS fc_opencl_image op_registry program context)
+
 ######################
 # buffer kernel      #
 ######################
