@@ -22,8 +22,8 @@
 
 #define FP32_RELATIVE_DIFF (1e-3)
 #define FP32_ABS_DIFF (5e-4)
-#define FP16_RELATIVE_DIFF (5e-2)
-#define FP16_ABS_DIFF (5e-2)
+#define FP16_RELATIVE_DIFF (6e-2)
+#define FP16_ABS_DIFF (6e-2)
 
 // #define PRINT_RESULT
 
@@ -84,9 +84,9 @@ void test(const lite_api::CLPrecisionType p,
   context->As<OpenCLContext>().InitOnce();
   CLRuntime::Global()->set_precision(p);
   const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
-  LOG(INFO) << "Start Test Precision=" << lite_api::CLPrecisionTypeToStr(p)
-            << " bias_flag=" << bias_flag << " m=" << m << " n=" << n
-            << " k=" << k;
+  LOG(INFO) << "\n\t[  START  ] Test Precision="
+            << lite_api::CLPrecisionTypeToStr(p) << " bias_flag=" << bias_flag
+            << " m=" << m << " n=" << n << " k=" << k;
 
   auto kernels = KernelRegistry::Global().Create(
       "fc", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
@@ -129,10 +129,9 @@ void test(const lite_api::CLPrecisionType p,
   CLImageConverterDefault* default_converter = new CLImageConverterDefault();
   DDim x_image_shape = default_converter->InitImageDimInfoWith(x_ext_dim);
   DDim out_image_shape = default_converter->InitImageDimInfoWith(out_ext_dim);
-  LOG(INFO) << "x_image_shape = " << x_image_shape[0] << " "
-            << x_image_shape[1];
-  LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
-            << out_image_shape[1];
+  VLOG(4) << "x_image_shape = " << x_image_shape[0] << " " << x_image_shape[1];
+  VLOG(4) << "out_image_shape = " << out_image_shape[0] << " "
+          << out_image_shape[1];
 
   const size_t dtype_size = fp16_flag ? sizeof(half_t) : sizeof(float);
   std::vector<char> x_image_data(x_image_shape.production() * 4 * dtype_size);
@@ -189,7 +188,7 @@ void test(const lite_api::CLPrecisionType p,
   PrintData("gpu_out", static_cast<float*>(out_from_gpu.data()), m, n);
 #endif
 
-  LOG(INFO) << "output_data vs output_ref_data";
+  VLOG(4) << "output_data vs output_ref_data";
   auto relative_diff_thres =
       fp16_flag ? FP16_RELATIVE_DIFF : FP32_RELATIVE_DIFF;
   auto abs_diff_thres = fp16_flag ? FP16_ABS_DIFF : FP32_ABS_DIFF;
@@ -223,7 +222,7 @@ TEST(fc, compute_basic) {
   for (auto precision_type : {lite_api::CLPrecisionType::CL_PRECISION_FP32,
                               lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
     for (bool bias_flag : {false, true}) {
-      for (auto m = 1; m <= 1; m++) {
+      for (auto m = 1; m <= 2; m++) {
         for (auto n = 1; n <= 9; n += 2) {
           for (auto k = 1; k <= 9; k += 2) {
             test(precision_type, bias_flag, m, n, k);
@@ -231,7 +230,7 @@ TEST(fc, compute_basic) {
         }
       }
 
-      // special case, such as large n or k
+      // Special case, such as large n or k
       test(precision_type, bias_flag, 1, 1000, 1024);
     }
   }

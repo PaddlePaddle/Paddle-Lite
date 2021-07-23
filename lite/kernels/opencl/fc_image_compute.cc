@@ -48,10 +48,6 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     const auto w_dims = w_t->dims();
 
-    VLOG(4) << "w_dims:" << w_dims;
-    VLOG(4) << "x_dims:" << param.input->dims();
-    VLOG(4) << "out_dims:" << param.output->dims();
-
     auto w_ext_dims = w_dims;
     w_ext_dims[0] = ROUND_UP(w_dims[0], 4);
     w_ext_dims[1] = ROUND_UP(w_dims[1], 4);
@@ -154,7 +150,10 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
       VLOG(4) << "x_dims:" << x_dims;
       VLOG(4) << "w_dims:" << w_dims;
-      VLOG(4) << "m_: " << m_ << " n_: " << n_ << " k_: " << k_;
+      if (has_bias_) {
+        VLOG(4) << "bias_dims:" << param.bias->dims();
+      }
+      VLOG(4) << "M:" << m_ << " N:" << n_ << " K:" << k_;
 #endif
 
       auto& context = ctx_->As<OpenCLContext>();
@@ -193,7 +192,8 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       status = kernel.setArg(arg_idx++, *alpha_img_);
       CL_CHECK_FATAL(status);
     }
-    // todo: m_
+    status = kernel.setArg(arg_idx++, m_);
+    CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, k_blks_);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, n_blks_);
