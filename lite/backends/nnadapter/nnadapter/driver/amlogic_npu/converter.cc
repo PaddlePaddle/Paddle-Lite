@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/rockchip_npu/converter.h"
+#include "driver/amlogic_npu/converter.h"
 #include <algorithm>
 #include <vector>
-#include "driver/rockchip_npu/optimizer/fix_ops.h"
-#include "driver/rockchip_npu/optimizer/unpack_op_fusion.h"
+#include "driver/amlogic_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -25,7 +24,7 @@
 #include "utility/utility.h"
 
 namespace nnadapter {
-namespace rockchip_npu {
+namespace amlogic_npu {
 
 Context::Context(void* device, const char* properties) : device_(device) {
   // TODO(hong19860320) create the raw context from rknpu_ddk
@@ -46,12 +45,11 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   UnpackOpFusion(model);
-  FixOps(model);
   ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
-  // Convert a NNAdapter model to a rknpu graph
+  // Convert a NNAdapter model to a amlnpu graph
   tensors_.clear();
-  graph_ = new rk::nn::Graph();
+  graph_ = new aml::nn::Graph();
   if (!graph_) {
     return NNADAPTER_OUT_OF_MEMORY;
   }
@@ -61,8 +59,21 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
     switch (operation->type) {
+      case NNADAPTER_ADD:
+      case NNADAPTER_SUB:
+      case NNADAPTER_MUL:
+      case NNADAPTER_DIV:
+        ConvertElementwise(operation);
+        break;
+      case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_MAX_POOL_2D:
+        ConvertPool2D(operation);
+        break;
       case NNADAPTER_CONV_2D:
         ConvertConv2D(operation);
+        break;
+      case NNADAPTER_CONV_2D_TRANSPOSE:
+        ConvertConv2DTranspose(operation);
         break;
       case NNADAPTER_CONCAT:
         ConvertConcat(operation);
@@ -70,24 +81,15 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       case NNADAPTER_FULLY_CONNECTED:
         ConvertFullyConnected(operation);
         break;
-      case NNADAPTER_AVERAGE_POOL_2D:
-      case NNADAPTER_MAX_POOL_2D:
-        ConvertPool2D(operation);
-        break;
-      case NNADAPTER_ADD:
-      case NNADAPTER_SUB:
-      case NNADAPTER_MUL:
-      case NNADAPTER_DIV:
-        ConvertElementwise(operation);
+      case NNADAPTER_HARD_SIGMOID:
+      case NNADAPTER_RELU:
+      case NNADAPTER_RELU6:
+      case NNADAPTER_SIGMOID:
+      case NNADAPTER_TANH:
+        ConvertActivation(operation);
         break;
       case NNADAPTER_SOFTMAX:
         ConvertSoftmax(operation);
-        break;
-      case NNADAPTER_SIGMOID:
-      case NNADAPTER_RELU:
-      case NNADAPTER_RELU6:
-      case NNADAPTER_TANH:
-        ConvertActivation(operation);
         break;
       case NNADAPTER_RESHAPE:
         ConvertReshape(operation);
@@ -104,7 +106,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   }
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
-  std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors(input_count);
+  std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors(input_count);
   input_info_.resize(input_count);
   input_zero_points_.resize(input_count);
   for (size_t i = 0; i < input_count; i++) {
@@ -117,12 +119,14 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     input_info_[i].buf = nullptr;
     input_info_[i].size = 0;
     input_info_[i].pass_through = false;
-    input_info_[i].type = ConvertPrecision(operand->type.precision);
-    input_info_[i].layout = ConvertDataLayout(operand->type.layout);
+    input_info_[i].type =
+        static_cast<int>(ConvertPrecision(operand->type.precision));
+    input_info_[i].layout =
+        static_cast<int>(ConvertDataLayout(operand->type.layout));
     input_zero_points_[i] = operand->type.asymm_per_layer_params.zero_point;
   }
   auto output_count = model->output_operands.size();
-  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors(output_count);
+  std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors(output_count);
   output_info_.resize(output_count);
   output_zero_points_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
@@ -135,13 +139,15 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     output_info_[i].buf = nullptr;
     output_info_[i].size = 0;
     output_info_[i].want_float = false;
-    output_info_[i].type = ConvertPrecision(operand->type.precision);
-    output_info_[i].layout = ConvertDataLayout(operand->type.layout);
+    output_info_[i].type =
+        static_cast<int>(ConvertPrecision(operand->type.precision));
+    output_info_[i].layout =
+        static_cast<int>(ConvertDataLayout(operand->type.layout));
     output_zero_points_[i] = operand->type.asymm_per_layer_params.zero_point;
   }
   graph_->SetInputsOutputs(input_tensors, output_tensors);
   // Create an execution to build the graph to the device-related program.
-  execution_ = new rk::nn::Exection(graph_);
+  execution_ = new aml::nn::Exection(graph_);
   execution_->Build();
   return NNADAPTER_NO_ERROR;
 }
@@ -168,9 +174,10 @@ int Program::Execute(uint32_t input_count,
     output_info_[argument.index].buf = argument.buffer;
     output_info_[argument.index].size = argument.length;
   }
-  NNADAPTER_CHECK_EQ(execution_->SetInputs(input_info_), rk::nn::RK_SUCCESS);
-  NNADAPTER_CHECK_EQ(execution_->Run(), rk::nn::RK_SUCCESS);
-  NNADAPTER_CHECK_EQ(execution_->GetOutputs(output_info_), rk::nn::RK_SUCCESS);
+  NNADAPTER_CHECK_EQ(execution_->SetInputs(input_info_), aml::nn::AML_SUCCESS);
+  NNADAPTER_CHECK_EQ(execution_->Run(), aml::nn::AML_SUCCESS);
+  NNADAPTER_CHECK_EQ(execution_->GetOutputs(output_info_),
+                     aml::nn::AML_SUCCESS);
   for (uint32_t i = 0; i < output_count; i++) {
     auto& argument = output_arguments[i];
     auto buffer = reinterpret_cast<int8_t*>(argument.buffer);
@@ -193,7 +200,7 @@ std::string Program::GetTensorName(hal::Operand* operand) {
   return operand_id + string_format("_%d", index);
 }
 
-std::shared_ptr<rk::nn::Tensor> Program::GetMappedTensor(
+std::shared_ptr<aml::nn::Tensor> Program::GetMappedTensor(
     hal::Operand* operand) {
   auto it = tensors_.find(operand);
   if (it != tensors_.end()) {
@@ -202,12 +209,12 @@ std::shared_ptr<rk::nn::Tensor> Program::GetMappedTensor(
   return nullptr;
 }
 
-std::shared_ptr<rk::nn::Tensor> Program::UpdateTensorMap(
-    hal::Operand* operand, std::shared_ptr<rk::nn::Tensor> tensor) {
+std::shared_ptr<aml::nn::Tensor> Program::UpdateTensorMap(
+    hal::Operand* operand, std::shared_ptr<aml::nn::Tensor> tensor) {
   auto it = tensors_.find(operand);
   if (it == tensors_.end()) {
     auto result = tensors_.insert(std::make_pair(
-        operand, std::vector<std::shared_ptr<rk::nn::Tensor>>()));
+        operand, std::vector<std::shared_ptr<aml::nn::Tensor>>()));
     NNADAPTER_CHECK(result.second);
     it = result.first;
   }
@@ -215,24 +222,24 @@ std::shared_ptr<rk::nn::Tensor> Program::UpdateTensorMap(
   return tensor;
 }
 
-std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
+std::shared_ptr<aml::nn::Tensor> Program::ConvertOperand(
     hal::Operand* operand, std::vector<int32_t> dimensions) {
   if (dimensions.empty()) {
     for (uint32_t i = 0; i < operand->type.dimension_count; i++) {
       dimensions.push_back(operand->type.dimensions[i]);
     }
   }
-  auto attr = std::make_shared<rk::nn::TensorAttr>();
+  auto attr = std::make_shared<aml::nn::TensorAttr>();
   attr->name = GetTensorName(operand);
-  attr->role = !IsConstantOperand(operand) ? rk::nn::TensorRole::VAR
-                                           : rk::nn::TensorRole::CONST;
+  attr->role = !IsConstantOperand(operand) ? aml::nn::TensorRole::VAR
+                                           : aml::nn::TensorRole::CONST;
   attr->dims = ConvertDimensions(&dimensions[0], dimensions.size());
   attr->precision = ConvertPrecision(operand->type.precision);
   attr->layout = ConvertDataLayout(operand->type.layout);
   switch (operand->type.precision) {
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
       attr->qntBits = 8;
-      attr->qntType = rk::nn::QuantizationType::AFFINE_ASYMMETRIC;
+      attr->qntType = aml::nn::QuantizationType::AFFINE_ASYMMETRIC;
       attr->qntParamAffineAsymmetric.scale.resize(1);
       attr->qntParamAffineAsymmetric.scale[0] =
           operand->type.asymm_per_layer_params.scale;
@@ -242,27 +249,28 @@ std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
       break;
     case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
       attr->qntBits = 32;
-      attr->qntType = rk::nn::QuantizationType::AFFINE_ASYMMETRIC;
-      attr->qntParamAffineAsymmetric.scale.resize(1);
-      attr->qntParamAffineAsymmetric.scale[0] =
+      attr->qntType = aml::nn::QuantizationType::SYMMETRIC;
+      attr->qntParamSymmetric.scale.resize(1);
+      attr->qntParamSymmetric.scale[0] =
           operand->type.symm_per_layer_params.scale;
-      attr->qntParamAffineAsymmetric.zero_point.resize(1);
-      attr->qntParamAffineAsymmetric.zero_point[0] = 0;
       break;
     default:
       NNADAPTER_LOG(FATAL) << "Can not convert an operand@0x" << std::hex
                            << operand << " with precision="
                            << OperandPrecisionCodeToString(
                                   operand->type.precision)
-                           << " to rk::nn::Tensor !";
+                           << " to aml::nn::Tensor !";
       break;
   }
-  auto tensor = graph_->CreateTensor(attr, operand->buffer);
+  auto tensor = graph_->CreateTensor(
+      attr,
+      operand->buffer,
+      IsModelInputOperand(operand) || IsModelOutputOperand(operand));
   NNADAPTER_CHECK(tensor);
   // Use to find the tensor based on the pointer of operand
   UpdateTensorMap(operand, tensor);
   return tensor;
 }
 
-}  // namespace rockchip_npu
+}  // namespace amlogic_npu
 }  // namespace nnadapter

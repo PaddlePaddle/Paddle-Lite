@@ -53,6 +53,9 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_nnadapter) {
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.emplace_back("mediatek_apu");
   out_accuracy_threshold = 0.83f;
+#elif defined(NNADAPTER_WITH_AMLOGIC_NPU)
+  nnadapter_device_names.emplace_back("amlogic_npu");
+  out_accuracy_threshold = 0.78f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

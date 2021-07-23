@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,15 +14,12 @@
 
 #pragma once
 
-namespace paddle {
-namespace lite {
-namespace x86 {
-namespace math {
+#include "core/hal/types.h"
 
-template <typename T>
-void clip(const T* din, T* dout, const int num, float max_, float min_);
+namespace nnadapter {
+namespace amlogic_npu {
 
-} /* namespace math */
-} /* namespace x86 */
-} /* namespace lite */
-} /* namespace paddle */
+void UnpackOpFusion(hal::Model* model);
+
+}  // namespace amlogic_npu
+}  // namespace nnadapter

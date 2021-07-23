@@ -12,17 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/utils/timer.h"
 
 namespace paddle {
-namespace lite {
-namespace x86 {
-namespace math {
-
-template <typename T>
-void clip(const T* din, T* dout, const int num, float max_, float min_);
-
-} /* namespace math */
-} /* namespace x86 */
-} /* namespace lite */
-} /* namespace paddle */
+namespace lite {}  // namespace lite
+}  // namespace paddle
