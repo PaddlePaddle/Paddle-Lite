@@ -32,8 +32,10 @@ void ReshapeCompute<T>::Run() {
   if (output_dims.production() == 0) return;
 
   if (param.inplace) {
+    auto output_lod = output->lod();
     output->ShareDataWith(*x);
     output->Resize(output_dims);
+    output->set_lod(output_lod);
   } else {
     int r = xdnn::copy<T>(ctx.GetRawContext(),
                           x->template data<T>(),
