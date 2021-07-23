@@ -450,6 +450,28 @@ struct ActivationGradParam : ParamBase {
   const lite::Tensor* Out_grad{};
 };
 
+struct SparseConvParam : ParamBase {
+  const lite::Tensor* x{};
+  const lite::Tensor* nonzero_weights{};
+  const lite::Tensor* diffs{};
+  const lite::Tensor* oc_nonzeros{};
+  const lite::Tensor* bias{nullptr};
+  lite::Tensor* output{};
+  int first_ic{0};
+  std::vector<int> strides{1, 1};
+  std::shared_ptr<std::vector<int>> paddings;
+  int groups{1};
+  std::shared_ptr<std::vector<int>> dilations;
+  // for activation
+  bool fuse_relu{false};
+  ActivationParam activation_param;
+  bool enable_int8{false};
+  float input_scale{1.0f};
+  std::vector<float> weight_scale{};
+  float output_scale{1.0f};
+  int bit_length{8};
+};
+
 // For Convolution op
 struct ConvParam : ParamBase {
   lite::Tensor* x{};
