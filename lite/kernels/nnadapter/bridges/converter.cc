@@ -154,6 +154,12 @@ NNAdapterOperand* Converter::AddFloat32VariableOperand(
                     name);
 }
 
+NNAdapterOperand* Converter::AddInt32VariableOperand(const DDim& dimensions,
+                                                     const std::string& name) {
+  return AddOperand(
+      dimensions, NNADAPTER_TENSOR_INT32, nullptr, 0, 0, nullptr, false, name);
+}
+
 NNAdapterOperation* Converter::AddOperation(NNAdapterOperationType type) {
   NNAdapterOperation* operation = nullptr;
   NNAdapterModel_addOperation_invoke(model_, type, &operation);

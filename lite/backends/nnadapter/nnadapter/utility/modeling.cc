@@ -575,7 +575,10 @@ NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
   for (auto& operation : model->operations) {
     uint32_t count = 0;
     for (auto operand : operation.input_operands) {
-      auto lifetime = operand->type.lifetime;
+      NNAdapterOperandLifetimeCode lifetime{NNADAPTER_CONSTANT_COPY};
+      if (operand != nullptr) {
+        lifetime = operand->type.lifetime;
+      }
       if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||
           lifetime == NNADAPTER_MODEL_OUTPUT) {
         count++;

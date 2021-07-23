@@ -648,6 +648,49 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_TRANSPOSE = 19,
+
+  /**
+   * Resizes the input tensor using the nearest interpolation.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
+   * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the target shape
+   * of output exclude dim_N and dim_C.
+   * * 2: scales, a NNADAPTER_TENSOR_FLOAT32 tensor. It indicates the scale of
+   * the output's shape exclude dim_N and dim_C.
+   * * 3: align_corners. A NNADAPTER_BOOL scalar.  If True, the centers of the 4
+   * corner pixels of the input and output tensors are aligned, preserving the
+   * values at the corner pixels.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same type as input.
+   */
+  NNADAPTER_RESIZE_NEAREST = 20,
+
+  /**
+   * Resizes the input tensor using the linear interpolation.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
+   * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the target shape
+   * of output exclude dim_N and dim_C.
+   * * 2: scales, a NNADAPTER_TENSOR_FLOAT32 tensor. It indicates the scale of
+   * the output's shape exclude dim_N and dim_C.
+   * * 3: align_corners, NNADAPTER_BOOL scalar. If True, the centers of the 4
+   * corner pixels of the input and output tensors are aligned, preserving the
+   * values at the corner pixels.
+   * * 4: align_mode, a NNADAPTER_INT32 scalar, optional for linear
+   * interpolation. It can be ‘0’ for src_idx = scale_factor*(dst_indx+0.5)-0.5
+   * , can be ‘1’ for src_idx = scale_factor*dst_index.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same type as input.
+   */
+  NNADAPTER_RESIZE_LINEAR = 21,
 } NNAdapterOperationCode;
 
 /**

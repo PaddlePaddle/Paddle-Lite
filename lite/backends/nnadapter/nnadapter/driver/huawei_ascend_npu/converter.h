@@ -114,6 +114,8 @@ class Program {
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);
   int ConvertSplit(hal::Operation* operation);
+  int ConvertResizeNearest(hal::Operation* operation);
+  int ConvertResizeLinear(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};

@@ -76,6 +76,8 @@ class Converter {
                                              const std::string& name = "");
   NNAdapterOperand* AddFloat32VariableOperand(const DDim& dimensions,
                                               const std::string& name = "");
+  NNAdapterOperand* AddInt32VariableOperand(const DDim& dimensions,
+                                            const std::string& name = "");
 
   // NNAdapter operation
   NNAdapterOperation* AddOperation(NNAdapterOperationType type);

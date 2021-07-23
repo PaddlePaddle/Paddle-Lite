@@ -111,6 +111,12 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);
         break;
+      case NNADAPTER_RESIZE_NEAREST:
+        ConvertResizeNearest(operation);
+        break;
+      case NNADAPTER_RESIZE_LINEAR:
+        ConvertResizeLinear(operation);
+        break;
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("
                              << OperationTypeToString(operation->type)

@@ -158,7 +158,10 @@ class Dot {
 NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
 #define APPEND_OPERAND_NODE(mode)                                           \
   auto operand_id = OperandIdToString(operand);                             \
-  auto operand_label = OperandValueToString(operand);                       \
+  std::string operand_label("nullptr");                                     \
+  if (operand != nullptr) {                                                 \
+    operand_label = OperandValueToString(operand);                          \
+  }                                                                         \
   if (!visited_operands.count(operand)) {                                   \
     dot.AddNode(operand_id, {}, operand_label);                             \
     visited_operands.insert(operand);                                       \
@@ -284,8 +287,18 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "perm"};
         output_args = {"output"};
         break;
-      default:
+      case NNADAPTER_RESIZE_NEAREST:
+        input_args = {"input", "shape", "scales", "align_corners"};
+        output_args = {"output"};
         break;
+      case NNADAPTER_RESIZE_LINEAR:
+        input_args = {
+            "input", "shape", "scales", "align_corners", "align_mode"};
+        output_args = {"output"};
+        break;
+      default:
+        NNADAPTER_LOG(ERROR) << "unsupported op: "
+                             << static_cast<int>(operation->type);
     }
     for (size_t i = 0; i < input_count; i++) {
       auto* operand = input_operands[i];
@@ -417,6 +430,8 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SUB);
     NNADAPTER_TYPE_TO_STRING(TANH);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
+    NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
+    NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
     default:
       name = "UNKNOWN";
       break;
