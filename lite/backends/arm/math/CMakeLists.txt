@@ -1,10 +1,6 @@
-if(NOT (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM))
-    return()
-endif()
-
-if(NOT (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM))
-  return()
-endif()
+#if(NOT (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM))
+#  return()
+#endif()
 
 set(script_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../tools/)
 message(STATUS "generating arm dotprod code")
@@ -61,90 +57,10 @@ if(ARM_MATH_LIB_DIR AND EXISTS "${ARM_MATH_LIB_DIR}")
   endif()
 endif()
 
-if(LITE_WITH_ARM82_FP16)
-  if(${ANDROID_NDK_MAJOR})
-    if(${ANDROID_NDK_MAJOR} GREATER "17")
-      add_subdirectory(fp16)
-    endif()
-  endif()
-endif()
-
-if (NOT HAS_ARM_MATH_LIB_DIR)
-  # TODO(xxx): seperate them and do not deps proto, eigen3
-  cc_library(math_arm SRCS
-      funcs.cc
-      packed_sgemm.cc
-      packed_sgemm_c4.cc
-      sgemm.cc
-      gemm_prepacked_int8.cc
-      gemm_s8.cc
-      sgemv.cc
-      gemv_arm_int8.cc
-      conv3x3s2_direct_fp32.cc
-      conv3x3s1p01_depthwise_fp32_relu.cc
-      conv3x3s2p01_depthwise_fp32_relu.cc
-      conv3x3s1p01_depthwise_fp32.cc
-      conv3x3s2p01_depthwise_fp32.cc
-      conv3x3s1px_depthwise_fp32.cc
-      conv3x3s2px_depthwise_fp32.cc
-      conv3x3s2_direct_int8.cc
-      conv3x3s1_depthwise_int8.cc
-      conv3x3s2_depthwise_int8.cc
-      conv5x5s1_depthwise_int8.cc
-      conv5x5s1_depthwise_fp32.cc
-      conv5x5s2_depthwise_int8.cc
-      conv5x5s2_depthwise_fp32.cc
-      conv3x3_winograd_fp32_c4.cc
-      conv3x3_winograd_int8.cc
-      conv_winograd_3x3.cc
-      conv_impl.cc
-      softmax.cc
-      scale.cc
-      pooling.cc
-      elementwise.cc
-      layout.cc
-      lrn.cc
-      decode_bboxes.cc
-      concat.cc
-      type_trans.cc
-      box_coder.cc
-      activation.cc
-      dropout.cc
-      power.cc
-      interpolate.cc
-      argmax.cc
-      axpy.cc
-      fill_bias_relu.cc
-      col_im_transform.cc
-      conv_transpose_depthwise.cc
-      im2sequence.cc
-      norm.cc
-      pad2d.cc
-      negative.cc
-      reduce_max.cc
-      reduce_min.cc
-      reduce_max_min.cc
-      sequence_pool.cc
-      sequence_pool_grad.cc
-      sequence_expand.cc
-      slice.cc
-      reduce_mean.cc
-      affine_channel.cc
-      split_merge_lod_tenosr.cc
-      reduce_prod.cc
-      reduce_sum.cc
-      lstm.cc
-      clip.cc
-      pixel_shuffle.cc
-      scatter.cc
-      quantize.cc
-      DEPS ${lite_kernel_deps} context tensor)
-      if (LITE_WITH_ARM82_FP16)
-        if(${ANDROID_NDK_MAJOR})
-          if(${ANDROID_NDK_MAJOR} GREATER "17")
-            add_dependencies(math_arm math_arm_fp16)
-            target_link_libraries(math_arm math_arm_fp16)
-          endif()
-        endif()
-      endif()
+file(GLOB FP16_MATH_SRC ${CMAKE_CURRENT_SOURCE_DIR}/fp16/*.cc)
+file(GLOB COMMON_MATH_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
+if(LITE_WITH_ARM82_FP16 AND ${ANDROID_NDK_MAJOR} AND ${ANDROID_NDK_MAJOR} GREATER "17")
+  add_library(arm_math OBJECT ${COMMON_MATH_SRC} ${FP16_MATH_SRC})
+else()
+  add_library(arm_math OBJECT ${COMMON_MATH_SRC})
 endif()

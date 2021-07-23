@@ -1,5 +1,2 @@
-lite_cc_library(target_wrapper_host SRCS target_wrapper.cc)
-
-add_subdirectory(math)
- 
- 
+FILE(GLOB HOST_MATH_SRC ${CMAKE_CURRENT_SOURCE_DIR}/math/*.cc)
+add_library(host_math OBJECT ${HOST_MATH_SRC} target_wrapper.cc)

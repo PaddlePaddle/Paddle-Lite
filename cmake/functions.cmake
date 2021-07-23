@@ -1,6 +1,13 @@
 # add a kernel for some specific device
 # device: one of (Host, ARM, X86, NPU, MLU, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, BM, RKNPU IMAGINATION_NNA)
 # level: one of (basic, extra)
+set(kernels_src_list "${CMAKE_BINARY_DIR}/kernels_src_list.txt")
+file(WRITE ${kernels_src_list} "") # clean
+
+# file to record faked kernels for opt python lib
+set(fake_kernels_src_list "${CMAKE_BINARY_DIR}/fake_kernels_src_list.txt")
+file(WRITE ${fake_kernels_src_list} "") # clean
+
 set(KERNELS_SRC CACHE INTERNAL "kernels")
 function(add_kernel TARGET device level)
     set(options "")

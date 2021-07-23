@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/model_parser/compatibility.h"
-
-#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/core/type_system.h"
+#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/model_parser/cpp_desc.h"
 #include "lite/model_parser/naive_buffer/block_desc.h"
 #include "lite/model_parser/naive_buffer/op_desc.h"
