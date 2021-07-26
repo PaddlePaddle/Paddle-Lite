@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer.h"
+#include "lite/core/optimizer/optimizer.h"
 #include <fstream>
 #include "lite/core/optimizer/mir/static_kernel_pick_pass.h"
 #include "lite/core/optimizer/mir/type_target_cast_pass.h"

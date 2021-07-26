@@ -19,7 +19,7 @@ import logging
 from ast import RegisterLiteOpParser
 
 if len(sys.argv) != 6:
-    print("Error: parse_op_registry.py requires four inputs!")
+    print("Error: parse_op_registry.py requires five inputs!")
     exit(1)
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]

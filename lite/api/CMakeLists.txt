@@ -4,3 +4,5 @@ set(FILL_API_SRC cxx_api.cc cxx_api_impl.cc)
 
 add_library(api OBJECT ${LIGHT_API_SRC})
 add_library(full_api OBJECT ${FILL_API_SRC})
+add_dependencies(api ${THIRD_PARTY_DEPS})
+add_dependencies(full_api ${THIRD_PARTY_DEPS}) 
