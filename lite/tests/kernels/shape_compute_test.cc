@@ -76,7 +76,16 @@ void test_shape(Place place, float abs_error) {
 TEST(shape, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_OPENCL)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny));
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);

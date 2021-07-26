@@ -97,6 +97,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_TANH:
+      case NNADAPTER_ABS:
         ConvertActivation(operation);
         break;
       case NNADAPTER_RESHAPE:
@@ -110,6 +111,18 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         break;
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);
+        break;
+      case NNADAPTER_CAST:
+        ConvertCast(operation);
+        break;
+      case NNADAPTER_SHAPE:
+        ConvertShape(operation);
+        break;
+      case NNADAPTER_ASSIGN:
+        ConvertAssign(operation);
+        break;
+      case NNADAPTER_LP_NORMALIZATION:
+        ConvertNorm(operation);
         break;
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("

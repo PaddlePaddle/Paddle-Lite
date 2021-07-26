@@ -244,6 +244,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_TANH:
+      case NNADAPTER_ABS:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -264,6 +265,22 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_TRANSPOSE:
         input_args = {"input", "perm"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CAST:
+        input_args = {"input", "dtype"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SHAPE:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_ASSIGN:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_LP_NORMALIZATION:
+        input_args = {"input", "axis", "p"};
         output_args = {"output"};
         break;
       default:
@@ -398,6 +415,10 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SUB);
     NNADAPTER_TYPE_TO_STRING(TANH);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
+    NNADAPTER_TYPE_TO_STRING(CAST)
+    NNADAPTER_TYPE_TO_STRING(ASSIGN)
+    NNADAPTER_TYPE_TO_STRING(SHAPE)
+    NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION)
     default:
       name = "UNKNOWN";
       break;

@@ -591,6 +591,11 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_TRANSPOSE = 18,
+  NNADAPTER_CAST = 19,
+  NNADAPTER_ABS = 20,
+  NNADAPTER_ASSIGN = 21,
+  NNADAPTER_LP_NORMALIZATION = 22,
+  NNADAPTER_SHAPE = 23,
 } NNAdapterOperationCode;
 
 /**
