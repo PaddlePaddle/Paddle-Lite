@@ -72,6 +72,7 @@ add_kernel(matmul_compute_x86 X86 basic SRCS matmul_compute.cc DEPS ${lite_kerne
 add_kernel(box_coder_compute_x86 X86 basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} box_coder)
 add_kernel(density_prior_box_compute_x86 X86 basic SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps} prior_box)
 add_kernel(interpolate_compute_x86 X86 basic SRCS interpolate_compute.cc DEPS ${lite_kernel_deps} interpolate)
+add_kernel(pow_compute_x86 X86 extra SRCS pow_compute.cc DEPS ${lite_kernel_deps} power)
 
 lite_cc_test(test_conv2d_compute_x86 SRCS conv_compute_test.cc DEPS conv_compute_x86)
 lite_cc_test(test_mul_compute_x86 SRCS mul_compute_test.cc DEPS mul_compute_x86)

@@ -118,7 +118,8 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
         NNADAPTER_CHECK_EQ(output_count, 1);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
-      case NNADAPTER_CONV_2D: {
+      case NNADAPTER_CONV_2D:
+      case NNADAPTER_CONV_2D_TRANSPOSE: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         ConvertOperandSymmToAsymm(input_operands[1], 128);
         ConvertOperandSymmToAsymm(input_operands[2], 128);

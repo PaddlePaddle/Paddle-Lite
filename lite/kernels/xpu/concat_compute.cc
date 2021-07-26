@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/concat_compute.h"
+#include <algorithm>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
@@ -39,7 +40,7 @@ void ConcatCompute<InType>::Run() {
     if (ins[i]->numel() > 0) {
       xdims_list.push_back(std::vector<int>());
       for (int j = 0; j < ins[i]->dims().size(); j++) {
-        xdims_list[i].push_back(ins[i]->dims()[j]);
+        xdims_list.back().push_back(ins[i]->dims()[j]);
       }
       if (sizeof(InType) == 8) {
         xdims_list[i].back() = xdims_list[i].back() * 2;
@@ -48,7 +49,7 @@ void ConcatCompute<InType>::Run() {
           reinterpret_cast<const float*>(ins[i]->template data<InType>()));
     }
   }
-  if (x_list.size() > 0) {
+  if (x_list.size() > 1) {
     int r = xdnn::concat<float>(
         ctx.GetRawContext(),
         x_list,
@@ -56,6 +57,13 @@ void ConcatCompute<InType>::Run() {
             out->template mutable_data<InType>(TARGET(kXPU))),
         xdims_list,
         axis);
+
+    CHECK_EQ(r, 0);
+  } else if (x_list.size() == 1) {
+    int r = xdnn::copy<InType>(ctx.GetRawContext(),
+                               reinterpret_cast<const InType*>(x_list[0]),
+                               out->template mutable_data<InType>(TARGET(kXPU)),
+                               out->numel());
 
     CHECK_EQ(r, 0);
   }
