@@ -921,6 +921,14 @@ struct InverseParam : ParamBase {
   lite::Tensor* Output{};
 };
 
+///----------------------- index_select operators ----------------------
+struct Index_selectParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Index{};
+  lite::Tensor* Out{};
+  int dim{0};
+};
+
 ///----------------------- axpy operators ----------------------
 struct AxpyParam : ParamBase {
   lite::Tensor* Scale{};
