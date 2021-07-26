@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/reshape2_matmul_fuser.h"
+#include "lite/core/optimizer/mir/fusion/reshape2_matmul_fuser.h"
 #include <cmath>
 #include <memory>
 #include <vector>

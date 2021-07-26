@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/elimination/ssd_boxes_calc_offline_pass.h"
+#include "lite/core/optimizer/mir/elimination/ssd_boxes_calc_offline_pass.h"
 #include <algorithm>
 #include <cmath>
 #include <memory>
 #include <set>
 #include <vector>
-#include "lite/core/mir/pass.h"
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/pattern_matcher.h"
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {

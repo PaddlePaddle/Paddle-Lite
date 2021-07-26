@@ -17,7 +17,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {

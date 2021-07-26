@@ -69,7 +69,7 @@ class DebugPass : public Pass {
   DebugPass() : Pass(Kind::kDebug) {}
 };
 ```
-**代码位置**：`lite/core/mir/pass.h`
+**代码位置**：`lite/core/optimizer/mir/pass.h`
 
 **主要类成员**：
 
@@ -107,7 +107,7 @@ class PassManager {
  }
 
 ```
-**代码位置**：`lite/core/mir/pass_manager.h`
+**代码位置**：`lite/core/optimizer/mir/pass_manager.h`
 
 **主要类成员**：
 
@@ -122,7 +122,7 @@ class PassManager {
 
 ### 3、 Pass 注册 `paddle::lite::mir::PassRegistry`
 
-**代码位置**：`lite/core/mir/pass_registry.h`
+**代码位置**：`lite/core/optimizer/mir/pass_registry.h`
 
 **主要接口**：
 
@@ -134,16 +134,16 @@ class PassManager {
 
 ### 1. Pass 注册流程
 
-在`lite/core/mir`或其子目录下继承`Pass基类`，实现`Pass::Apply`接口，并使用宏`REGISTER_MIR_PASS(name__, class__)`将Pass注册到`PassManager`即完成了新Pass注册。
+在`lite/core/optimizer/mir`或其子目录下继承`Pass基类`，实现`Pass::Apply`接口，并使用宏`REGISTER_MIR_PASS(name__, class__)`将Pass注册到`PassManager`即完成了新Pass注册。
 
 以新建 `new_demo_pass`为例，具体流程如下：
 
-（1）在`lite/core/mir`路径下新建`example_pass.cc` 和 `new_demo_pass.h` 文件
+（1）在`lite/core/optimizer/mir`路径下新建`example_pass.cc` 和 `new_demo_pass.h` 文件
 
 （2）在`example_pass.h` 文件中继承Pass基类（ProgramPass、StmtPass或DebugPass）定义自己的Pass类。
 
 ```c++
-#include "lite/core/mir/pass.h"
+#include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
 namespace lite {
@@ -160,8 +160,8 @@ class ExamplePass : public ProgramPass {
 （3）在`example_pass.cc` 文件中实现`ExamplePass::Apply()`接口，并注册`ExamplePass`
 
 ```c++
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/example_pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/example_pass.h"
 
 namespace paddle {
 namespace lite {
@@ -177,7 +177,7 @@ REGISTER_MIR_PASS(example_pass, paddle::lite::mir::ExamplePass)
     // .BindKernel("conv2d");     //Pass绑定的 kernel
 ```
 
-（4）修改`lite/core/mir/CMakeLists.txt`文件，将`example_pass.cc` 编译到`mir_passes`库中
+（4）修改`lite/core/optimizer/mir/CMakeLists.txt`文件，将`example_pass.cc` 编译到`mir_passes`库中
 
 ```cmake
 lite_cc_library(mir_passes
@@ -259,12 +259,12 @@ mul和elementwise_add的原有参数映射到FC的参数上：
 ### `fc_fuse_pass`的注册方法
 #### 1、创建FcFuser
 
-（1）在`lite/core/mir/fusion`路径下新建`fc_fuser.cc` 和 `fc_fuser.h` 文件
+（1）在`lite/core/optimizer/mir/fusion`路径下新建`fc_fuser.cc` 和 `fc_fuser.h` 文件
 
 （2）在`fc_fuser.h` 文件中继承`FuseBase`定义自己的Fuser类。
 
 ```c++
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
@@ -377,12 +377,12 @@ void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 
 #### 2、注册fc_fuse_pass
 
-（1）在`lite/core/mir/fusion`路径下新建`fc_fuse_pass.cc` 和 `fc_fuse_pass.h` 文件
+（1）在`lite/core/optimizer/mir/fusion`路径下新建`fc_fuse_pass.cc` 和 `fc_fuse_pass.h` 文件
 
 （2）在`fc_fuse_pass.h` 文件中，继承`ProgramPass`定义`FcFusePass`。
 
 ```c++
-#include "lite/core/mir/pass.h"
+#include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
 namespace lite {
@@ -395,8 +395,8 @@ class FcFusePass : public ProgramPass {
 （3）在`fc_fuse_pass.cc` 文件中实现`FcFusePass::Apply()`接口，并注册`FcFusePass`
 
 ```c++
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/example_pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/example_pass.h"
 
 namespace paddle {
 namespace lite {
@@ -411,7 +411,7 @@ REGISTER_MIR_PASS(lite_fc_fuse_pass, paddle::lite::mir::FcFusePass)
     .BindKernel("fc");            // FcFusePass 绑定 fc_kernel
 ```
 
-（4）修改`lite/core/mir/fusion/CMakeLists.txt`文件，将`fc_fuser.cc` 编译到`mir_fusers`库
+（4）修改`lite/core/optimizer/mir/fusion/CMakeLists.txt`文件，将`fc_fuser.cc` 编译到`mir_fusers`库
 
 ```cmake
 lite_cc_library(fuse_fc
@@ -424,7 +424,7 @@ set(mir_fusers
     CACHE INTERNAL "fusers")
 ```
 
-（5）修改`lite/core/mir/CMakeLists.txt`文件，将`fc_fuse_pass.cc` 编译到`mir_pass`库
+（5）修改`lite/core/optimizer/mir/CMakeLists.txt`文件，将`fc_fuse_pass.cc` 编译到`mir_pass`库
 
 ```cmake
 lite_cc_library(mir_passes

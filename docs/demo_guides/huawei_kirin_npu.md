@@ -298,7 +298,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
     ...
     [I  8/12  6:56:25.460 ...elease/Paddle-Lite/lite/core/optimizer.h:229 RunPasses] == Running pass: memory_optimize_pass
     [I  8/12  6:56:25.460 ...elease/Paddle-Lite/lite/core/optimizer.h:242 RunPasses]    - Skip memory_optimize_pass because the target or kernel does not match.
-    [I  8/12  6:56:25.461 ...te/lite/core/mir/generate_program_pass.h:37 GenProgram] insts.size 1
+    [I  8/12  6:56:25.461 ...te/lite/core/optimizer/mir/generate_program_pass.h:37 GenProgram] insts.size 1
     [I  8/12  6:56:25.683 ...e-Lite/lite/model_parser/model_parser.cc:593 SaveModelNaive] Save naive buffer model in 'opt_model.nb' successfully
 
   替换自带的华为Kirin NPU模型
@@ -486,18 +486,18 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
         --optimize_out=opt_model \
         --valid_targets=npu,arm
       ...
-      [4  8/12 14:12:50.559 ...e/Paddle-Lite/lite/core/mir/ssa_graph.cc:27 CheckBidirectionalConnection] node count 398
-      [4  8/12 14:12:50.560 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
-      [4  8/12 14:12:50.560 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
-      [4  8/12 14:12:50.560 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/12 14:12:50.560 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
-      [4  8/12 14:12:50.561 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
-      [4  8/12 14:12:50.561 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
-      [4  8/12 14:12:50.561 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/12 14:12:50.561 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/12 14:12:50.561 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement multiclass_nms host/float/NCHW
-      [4  8/12 14:12:50.561 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement fetch host/any/any
-      [I  8/12 14:12:50.561 ...te/lite/core/mir/generate_program_pass.h:37 GenProgram] insts.size 1
+      [4  8/12 14:12:50.559 ...e/Paddle-Lite/lite/core/optimizer/mir/ssa_graph.cc:27 CheckBidirectionalConnection] node count 398
+      [4  8/12 14:12:50.560 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
+      [4  8/12 14:12:50.560 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
+      [4  8/12 14:12:50.560 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
+      [4  8/12 14:12:50.560 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
+      [4  8/12 14:12:50.561 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
+      [4  8/12 14:12:50.561 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
+      [4  8/12 14:12:50.561 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
+      [4  8/12 14:12:50.561 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
+      [4  8/12 14:12:50.561 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement multiclass_nms host/float/NCHW
+      [4  8/12 14:12:50.561 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement fetch host/any/any
+      [I  8/12 14:12:50.561 ...te/lite/core/optimizer/mir/generate_program_pass.h:37 GenProgram] insts.size 1
       [4  8/12 14:12:50.836 ...e-Lite/lite/model_parser/model_parser.cc:308 SaveModelPb] Save protobuf model in 'opt_model' successfully
 
     注意：为了方便查看优化后的模型，上述命令将`optimize_out_type`参数设置为protobuf，执行成功后将opt_model目录下的model文件复制为__model__并拖入Netron页面进行可视化。
@@ -522,21 +522,21 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
         --optimize_out=opt_model \
         --valid_targets=npu,arm
       ...
-      [4  8/12 14:15:37.609 ...e/Paddle-Lite/lite/core/mir/ssa_graph.cc:27 CheckBidirectionalConnection] node count 401
-      [4  8/12 14:15:37.610 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
-      [4  8/12 14:15:37.610 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
-      [4  8/12 14:15:37.610 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/12 14:15:37.610 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
-      [4  8/12 14:15:37.610 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/float/NCHW
-      [4  8/12 14:15:37.610 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
-      [4  8/12 14:15:37.610 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/float/NCHW
-      [4  8/12 14:15:37.611 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
-      [4  8/12 14:15:37.611 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/float/NCHW
-      [4  8/12 14:15:37.611 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement concat arm/any/NCHW
-      [4  8/12 14:15:37.611 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement concat arm/any/NCHW
-      [4  8/12 14:15:37.611 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement multiclass_nms host/float/NCHW
-      [4  8/12 14:15:37.611 ...e/lite/core/mir/generate_program_pass.cc:46 Apply] Statement fetch host/any/any
-      [I  8/12 14:15:37.611 ...te/lite/core/mir/generate_program_pass.h:37 GenProgram] insts.size 1
+      [4  8/12 14:15:37.609 ...e/Paddle-Lite/lite/core/optimizer/mir/ssa_graph.cc:27 CheckBidirectionalConnection] node count 401
+      [4  8/12 14:15:37.610 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
+      [4  8/12 14:15:37.610 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
+      [4  8/12 14:15:37.610 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
+      [4  8/12 14:15:37.610 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
+      [4  8/12 14:15:37.610 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/float/NCHW
+      [4  8/12 14:15:37.610 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
+      [4  8/12 14:15:37.610 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/float/NCHW
+      [4  8/12 14:15:37.611 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement yolo_box arm/float/NCHW
+      [4  8/12 14:15:37.611 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/float/NCHW
+      [4  8/12 14:15:37.611 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement concat arm/any/NCHW
+      [4  8/12 14:15:37.611 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement concat arm/any/NCHW
+      [4  8/12 14:15:37.611 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement multiclass_nms host/float/NCHW
+      [4  8/12 14:15:37.611 ...e/lite/core/optimizer/mir/generate_program_pass.cc:46 Apply] Statement fetch host/any/any
+      [I  8/12 14:15:37.611 ...te/lite/core/optimizer/mir/generate_program_pass.h:37 GenProgram] insts.size 1
       [4  8/12 14:15:37.998 ...e-Lite/lite/model_parser/model_parser.cc:308 SaveModelPb] Save protobuf model in 'opt_model'' successfully
     ```
 

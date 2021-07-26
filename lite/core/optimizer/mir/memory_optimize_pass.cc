@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/memory_optimize_pass.h"
+#include "lite/core/optimizer/mir/memory_optimize_pass.h"
 #include <memory>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/graph_visualize_pass.h"
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/type_system.h"
 
 namespace paddle {

@@ -14,8 +14,8 @@
 
 #include "lite/core/optimizer.h"
 #include <fstream>
-#include "lite/core/mir/static_kernel_pick_pass.h"
-#include "lite/core/mir/type_target_cast_pass.h"
+#include "lite/core/optimizer/mir/static_kernel_pick_pass.h"
+#include "lite/core/optimizer/mir/type_target_cast_pass.h"
 #include "lite/model_parser/model_parser.h"
 #include "lite/utils/all.h"
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/transpose_softmax_transpose_fuser.h"
+#include "lite/core/optimizer/mir/fusion/transpose_softmax_transpose_fuser.h"
 #include <memory>
 #include <vector>
 

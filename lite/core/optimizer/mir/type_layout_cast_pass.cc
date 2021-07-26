@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/type_layout_cast_pass.h"
+#include "lite/core/optimizer/mir/type_layout_cast_pass.h"
 #include <list>
 #include <memory>
 #include <string>
