@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "lite/core/kernel.h"
-#include "lite/core/mir/pass.h"
+#include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
 namespace lite {

@@ -15,5 +15,23 @@ add_subdirectory(kernels)
 add_subdirectory(backends)
 
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lite/api/)
+# tiny_publish results
 add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:core> $<TARGET_OBJECTS:model_parser> $<TARGET_OBJECTS:utils> $<TARGET_OBJECTS:operators> $<TARGET_OBJECTS:kernels> $<TARGET_OBJECTS:host_math> $<TARGET_OBJECTS:arm_math>  $<TARGET_OBJECTS:api>)
 add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:core> $<TARGET_OBJECTS:model_parser> $<TARGET_OBJECTS:utils> $<TARGET_OBJECTS:operators> $<TARGET_OBJECTS:kernels> $<TARGET_OBJECTS:host_math> $<TARGET_OBJECTS:arm_math> $<TARGET_OBJECTS:api>)
+
+
+# full_publish results
+add_library(paddle_full_api_shared $<TARGET_OBJECTS:full_api> $<TARGET_OBJECTS:model_parser_pb>)
+target_link_libraries(paddle_full_api_shared paddle_light_api_shared)
+
+
+add_library(paddle_api_full_bundled STATIC $<TARGET_OBJECTS:full_api>  $<TARGET_OBJECTS:model_parser_pb>)
+
+target_link_libraries(paddle_api_full_bundled paddle_api_light_bundled)
+
+add_executable(test_model_bin  api/tools/model_test.cc)
+add_dependencies(test_model_bin paddle_full_api_shared)
+target_link_libraries(test_model_bin paddle_full_api_shared)
+add_executable(benchmark_bin api/tools/benchmark.cc)
+add_dependencies(benchmark_bin paddle_full_api_shared)
+target_link_libraries(benchmark_bin paddle_full_api_shared)

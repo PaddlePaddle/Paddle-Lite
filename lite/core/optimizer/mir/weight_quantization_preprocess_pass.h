@@ -14,8 +14,8 @@
 
 #pragma once
 #include <memory>
-#include "lite/core/mir/pass.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {

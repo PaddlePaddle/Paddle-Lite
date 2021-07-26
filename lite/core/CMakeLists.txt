@@ -6,3 +6,7 @@ FILE(GLOB TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test/*.cc ${CMAKE_CURRENT_SOURCE_
 configure_file(version.h.in version.h)
 
 add_library(core OBJECT ${BASE_SRC})
+
+if(NOT LITE_ON_TINY_PUBLISH)
+  proto_library(framework_proto SRCS framework.proto)
+endif()

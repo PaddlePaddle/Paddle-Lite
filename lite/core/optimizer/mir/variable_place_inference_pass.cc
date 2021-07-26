@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/variable_place_inference_pass.h"
+#include "lite/core/optimizer/mir/variable_place_inference_pass.h"
 #include <memory>
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {

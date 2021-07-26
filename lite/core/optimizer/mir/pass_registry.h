@@ -18,7 +18,7 @@
 #include <string>
 #include "lite/api/paddle_lite_factory_helper.h"
 #include "lite/api/paddle_place.h"
-#include "lite/core/mir/pass_manager.h"
+#include "lite/core/optimizer/mir/optimizer/pass_manager.h"
 
 namespace paddle {
 namespace lite {

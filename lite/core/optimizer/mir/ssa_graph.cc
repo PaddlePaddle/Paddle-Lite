@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/ssa_graph.h"
+#include "lite/core/optimizer/mir/ssa_graph.h"
 #include <algorithm>
 #include <map>
 #include <memory>

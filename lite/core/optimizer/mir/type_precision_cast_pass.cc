@@ -18,8 +18,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/graph_visualize_pass.h"
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/operators/subgraph_op.h"
 
 namespace paddle {

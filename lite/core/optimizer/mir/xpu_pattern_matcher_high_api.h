@@ -17,8 +17,8 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "lite/core/mir/pattern_matcher_high_api.h"
-#include "lite/core/mir/xpu_pattern_matcher.h"
+#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
+#include "lite/core/optimizer/mir/xpu_pattern_matcher.h"
 
 namespace paddle {
 namespace lite {
