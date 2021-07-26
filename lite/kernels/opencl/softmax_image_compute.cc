@@ -76,10 +76,7 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     auto x_dims = softmax_param_->x->dims();
-    int input_dims[4] = {1, 1, 1, 1};
-    for (int i = 0; i < x_dims.size(); i++) {
-      input_dims[4 - x_dims.size() + i] = x_dims[i];
-    }
+    auto extend_in_dims = ExtendInputDims(x_dims);
     auto* x_img = GET_DATA_GPU(softmax_param_->x);
     auto* out_img = MUTABLE_DATA_GPU(
         softmax_param_->output, out_img_shape_[0], out_img_shape_[1], nullptr);
@@ -94,26 +91,26 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(1, *out_img);
     CL_CHECK_FATAL(status);
     if (onexone_flag_) {
-      auto mask_v = GetChannelMask(input_dims[1]);
+      auto mask_v = GetChannelMask(extend_in_dims[1]);
       cl_float4 mask = {mask_v[0], mask_v[1], mask_v[2], mask_v[3]};
       status = kernel.setArg(2, mask);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(3, UP_DIV(input_dims[1], 4));
+      status = kernel.setArg(3, UP_DIV(static_cast<int>(extend_in_dims[1]), 4));
       CL_CHECK_FATAL(status);
     } else if (axis_ == 3 || axis_ == 2) {
-      status = kernel.setArg(2, input_dims[0]);
+      status = kernel.setArg(2, static_cast<int>(extend_in_dims[0]));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(3, input_dims[1]);
+      status = kernel.setArg(3, static_cast<int>(extend_in_dims[1]));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(4, input_dims[2]);
+      status = kernel.setArg(4, static_cast<int>(extend_in_dims[2]));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(5, input_dims[3]);
+      status = kernel.setArg(5, static_cast<int>(extend_in_dims[3]));
       CL_CHECK_FATAL(status);
     } else {
       int c_blk = global_work_size_[0];
       int w = global_work_size_[1];
-      int c_remain = c_blk * 4 - input_dims[1];
-      status = kernel.setArg(2, input_dims[1]);
+      int c_remain = c_blk * 4 - extend_in_dims[1];
+      status = kernel.setArg(2, static_cast<int>(extend_in_dims[1]));
       CL_CHECK_FATAL(status);
       status = kernel.setArg(3, c_remain);
       CL_CHECK_FATAL(status);
@@ -145,19 +142,16 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void SetGlobalLocal() {
     lite::CLImageConverterDefault default_convertor;
-    if (onexone_flag_) {
-      const DDim x_dims_tmp = DDim(std::vector<DDim::value_type>{
-          last_x_dims_[0], last_x_dims_[1], 1, 1});
-      out_img_shape_ = default_convertor.InitImageDimInfoWith(x_dims_tmp);
+    const auto extend_dims = ExtendInputDims(last_x_dims_);
+    out_img_shape_ = default_convertor.InitImageDimInfoWith(extend_dims);
 
+    if (onexone_flag_) {
       local_work_size_ = cl::NDRange(32, 1, 1);
       global_work_size_ =
           cl::NDRange(ROUND_UP(UP_DIV(last_x_dims_[1], 4), local_work_size_[0]),
                       last_x_dims_[0],
                       1);
     } else {
-      out_img_shape_ = default_convertor.InitImageDimInfoWith(last_x_dims_);
-
       // compute global work size
       const std::vector<size_t>& default_work_size =
           DefaultGlobalWorkSize(last_x_dims_,
@@ -184,7 +178,7 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     }
   }
 
-  std::vector<float> GetChannelMask(int channels) {
+  const std::vector<float> GetChannelMask(int channels) {
     std::vector<float> mask{0.0f, 0.0f, 0.0f, 0.0f};
     const int reminder = channels % 4 == 0 ? 4 : channels % 4;
     for (int i = 0; i < reminder; ++i) {
@@ -193,8 +187,21 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     return mask;
   }
 
+  const DDim ExtendInputDims(const DDim& in_dims) {
+    auto extend_dims = std::vector<int64_t>{1, 1, 1, 1};
+    if (onexone_flag_) {
+      extend_dims[0] = in_dims[0];
+      extend_dims[1] = in_dims[1];
+    } else {
+      for (int i = 0; i < in_dims.size(); i++) {
+        extend_dims[4 - in_dims.size() + i] = in_dims[i];
+      }
+    }
+    return DDim(extend_dims);
+  }
+
  private:
-  std::string kernel_func_name_{"softmax_width"};
+  std::string kernel_func_name_{""};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
@@ -202,12 +209,11 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
   cl::Kernel kernel_;
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
-  int axis_{3};
+  int axis_;
   bool onexone_flag_{false};
   DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
-  cl::NDRange global_work_size_ = cl::NDRange{
-      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange global_work_size_;
   cl::NDRange local_work_size_{cl::NullRange};
 };
 

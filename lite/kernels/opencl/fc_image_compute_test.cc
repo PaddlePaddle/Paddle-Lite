@@ -20,10 +20,10 @@
 #include "lite/kernels/opencl/test_helper.h"
 #include "lite/tests/utils/fill_data.h"
 
-#define FP32_RELATIVE_DIFF (1e-3)
 #define FP32_ABS_DIFF (5e-4)
-#define FP16_RELATIVE_DIFF (6e-2)
+#define FP32_RELATIVE_DIFF (1e-3)
 #define FP16_ABS_DIFF (6e-2)
+#define FP16_RELATIVE_DIFF (6e-2)
 
 // #define PRINT_RESULT
 
@@ -93,7 +93,7 @@ void test(const lite_api::CLPrecisionType p,
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
-  lite::Tensor x, w, bias, out, out_ref;
+  lite::Tensor x, w, bias, out;
   operators::FcParam param;
   param.input = &x;
   param.w = &w;
@@ -117,12 +117,12 @@ void test(const lite_api::CLPrecisionType p,
   x.Resize(x_dim);
   w.Resize(w_dim);
   out.Resize(out_dim);
-  out_ref.Resize(out_dim);
 
   std::vector<float> x_source(x_dim.production());
   std::vector<float> w_source(w_dim.production());
   std::vector<float> bias_source;
-  std::vector<float> out_from_gpu(out_dim.production());
+  std::vector<float> out_ref(out_dim.production());
+  std::vector<float> out_gpu(out_dim.production());
   fill_data_rand(x_source.data(), -1.f, 1.f, x_source.size());
   fill_data_rand(w_source.data(), -1.f, 1.f, w_source.size());
 
@@ -166,10 +166,9 @@ void test(const lite_api::CLPrecisionType p,
                               cl_image2d_slice_pitch,
                               IoDirection::DtoH);
   default_converter->ImageToNCHW(
-      out_image_data.data(), out_from_gpu.data(), out_image_shape, out_ext_dim);
+      out_image_data.data(), out_gpu.data(), out_image_shape, out_ext_dim);
 
   // run cpu ref
-  auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
   gemm_bias<float>(x_source.data(),
                    m,
                    k,
@@ -177,15 +176,15 @@ void test(const lite_api::CLPrecisionType p,
                    k,
                    n,
                    bias_source.data(),
-                   out_ref_data);
+                   out_ref.data());
 #ifdef PRINT_RESULT
   PrintData("x", static_cast<float*>(x_source.data()), m, k);
   PrintData("w", static_cast<float*>(w_source.data()), k, n);
   if (bias_flag) {
     PrintData("bias", static_cast<float*>(bias_source.data()), 1, n);
   }
-  PrintData("out_ref_data", static_cast<float*>(out_ref_data), m, n);
-  PrintData("gpu_out", static_cast<float*>(out_from_gpu.data()), m, n);
+  PrintData("out_ref", static_cast<float*>(out_ref), m, n);
+  PrintData("gpu_out", static_cast<float*>(out_gpu.data()), m, n);
 #endif
 
   VLOG(4) << "output_data vs output_ref_data";
@@ -194,17 +193,16 @@ void test(const lite_api::CLPrecisionType p,
   auto abs_diff_thres = fp16_flag ? FP16_ABS_DIFF : FP32_ABS_DIFF;
   uint32_t diff_cnt = 0;
   for (int i = 0; i < out_dim.production(); i++) {
-    auto relative_diff =
-        COMPUTE_RELATIVE_DIFF(out_from_gpu[i], out_ref_data[i]);
-    auto abs_diff = COMPUTE_ABS_DIFF(out_from_gpu[i], out_ref_data[i]);
+    auto relative_diff = COMPUTE_RELATIVE_DIFF(out_gpu[i], out_ref[i]);
+    auto abs_diff = COMPUTE_ABS_DIFF(out_gpu[i], out_ref[i]);
     EXPECT_FALSE(relative_diff > relative_diff_thres &&
                  abs_diff > abs_diff_thres);
     if (relative_diff > relative_diff_thres && abs_diff > abs_diff_thres) {
       LOG(WARNING) << lite_api::CLPrecisionTypeToStr(p) << "   err idx: " << i
                    << " abs_diff: " << abs_diff
                    << "\t relative_diff: " << relative_diff
-                   << "\t out_ins: " << out_from_gpu[i]
-                   << "\t out_ref: " << out_ref_data[i];
+                   << "\t out_ins: " << out_gpu[i]
+                   << "\t out_ref: " << out_ref[i];
       diff_cnt++;
     }
   }
@@ -219,9 +217,10 @@ void test(const lite_api::CLPrecisionType p,
 }
 
 TEST(fc, compute_basic) {
-  for (auto precision_type : {lite_api::CLPrecisionType::CL_PRECISION_FP32,
-                              lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
-    for (bool bias_flag : {false, true}) {
+  for (const auto precision_type :
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
+    for (const bool bias_flag : {false, true}) {
       for (auto m = 1; m <= 2; m++) {
         for (auto n = 1; n <= 9; n += 2) {
           for (auto k = 1; k <= 9; k += 2) {

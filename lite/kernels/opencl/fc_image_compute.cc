@@ -36,12 +36,10 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
                                          DATALAYOUT(kImageDefault)> {
  public:
   void PrepareForRun() override {
-    VLOG(4) << "0";
     auto& param = this->Param<operators::FcParam>();
     const auto w_t = param.w;
     const auto bias_t = param.bias;
     has_bias_ = (bias_t == nullptr) ? false : true;
-    VLOG(4) << "0.1";
 
     // convert weights from cpu to gpu
     auto w_cpu_t = std::unique_ptr<Tensor>(new Tensor);
@@ -52,25 +50,20 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     w_ext_dims[0] = ROUND_UP(w_dims[0], 4);
     w_ext_dims[1] = ROUND_UP(w_dims[1], 4);
     w_cpu_t->Resize(w_ext_dims);
-    VLOG(4) << "0.2";
     auto* w_buffer_data = MUTABLE_DATA_CPU(w_cpu_t.get());
     size_t buf_size = w_cpu_t->memory_size();
 
-    VLOG(4) << "1";
-
     auto* w_cpu = param.w->mutable_data<float>();
     OI2OIO4I4(w_cpu, w_buffer_data, w_dims[0], w_dims[1]);
-    VLOG(4) << "2";
 
     auto* w_gpu_data =
         w_gpu_t_->mutable_data(TARGET(kOpenCL), w_cpu_t->memory_size());
-    VLOG(4) << "3";
     TargetWrapperCL::MemcpySync(w_gpu_data,
                                 w_cpu_t->raw_data(),
                                 w_cpu_t->memory_size(),
                                 IoDirection::HtoD);
     w_buf_ = GET_BUFFER_GPU(w_gpu_t_);
-    VLOG(4) << "4";
+
     // convert bias from cpu to gpu
     if (has_bias_) {
       auto bias_cpu_tensor = std::unique_ptr<Tensor>(new Tensor);
