@@ -23,6 +23,7 @@ add_kernel(yolo_box_compute_host Host basic SRCS yolo_box_compute.cc)
 add_kernel(write_back_compute_host Host basic SRCS write_back_compute.cc)
 
 # extra kernels
+add_kernel(reverse_compute_host Host extra SRCS reverse_compute.cc)
 add_kernel(deformable_conv_compute_host Host extra SRCS deformable_conv_compute.cc)
 add_kernel(reduce_compute_host Host extra SRCS reduce_compute.cc)
 add_kernel(generate_proposals_compute_host Host extra SRCS generate_proposals_compute.cc)

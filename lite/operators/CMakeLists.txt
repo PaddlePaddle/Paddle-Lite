@@ -67,6 +67,7 @@ add_operator(group_norm_op extra SRCS group_norm_op.cc)
 add_operator(norm_op extra SRCS norm_op.cc)
 
 # 3.extra ops
+add_operator(reverse_op extra SRCS reverse_op.cc)
 add_operator(activation_extra_ops extra SRCS activation_extra_ops.cc)
 add_operator(reduce_extra_ops extra SRCS reduce_extra_ops.cc)
 add_operator(search_group_padding extra SRCS search_group_padding_op.cc)
