@@ -148,6 +148,7 @@ add_operator(linspace_op extra SRCS linspace_op.cc)
 add_operator(roi_perspective_transform_op extra SRCS roi_perspective_transform_op.cc)
 add_operator(argsort_op extra SRCS argsort_op.cc)
 add_operator(flip_op extra SRCS flip_op.cc)
+add_operator(index_select_op extra SRCS index_select_op.cc)
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc)
@@ -185,6 +186,4 @@ add_operator(where_op extra SRCS where_op.cc)
 
 # Only for FPGA
 add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc)
-#message(STATUS   ${ops_src_list})
-#message(STATUS ${OPS_SRC})
 add_library(operators OBJECT ${OPS_SRC} op_params.cc)
