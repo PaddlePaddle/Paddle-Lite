@@ -7,7 +7,7 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_S
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third-party/flatbuffers/pre-build/)
 
 
-set(THIRD_PARTY_DEPS framework_proto)
+set(THIRD_PARTY_DEPS framework_proto op_list_h kernel_list_h)
 
 
 add_subdirectory(core)
