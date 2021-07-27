@@ -427,7 +427,7 @@ void sgemm_prepack(bool is_transB,
         (has_act == true && act_type == lite_api::ActivationType::kRelu);
     bool has_beta = fabsf(beta) > 1e-8f ? true : false;
     bool a53_sgemm = act_flag && !has_beta;
-    if (a53_sgemm && ctx->arch() == kA53) {
+    if (a53_sgemm) {
       sgemm_prepacked_6x8_a53(is_transB,
                               M,
                               N,
@@ -3308,17 +3308,6 @@ void loadb_trans(
 }
 
 #endif  // __aarch64__
-
-#define X_BLOCK_COMPUTE(l2_cache, MBLOCK, NBLOCK, M, N, K)                  \
-  int x_block = (l2_cache - (MBLOCK * K)) / (sizeof(float) * (K + MBLOCK)); \
-  x_block /= NBLOCK;                                                        \
-  /*x_block = (x_block == 0) ? 1 : x_block;   */                            \
-  x_block *= NBLOCK;                                                        \
-  int x_num = (N + (x_block - 1)) / x_block;                                \
-  x_block = (N + x_num - 1) / x_num;                                        \
-  x_block = (x_block + NBLOCK - 1) / NBLOCK;                                \
-  x_block *= NBLOCK;                                                        \
-  x_block = x_block < NBLOCK ? NBLOCK : x_block;
 
 #ifdef __aarch64__
 #define INIT_4                                   \
