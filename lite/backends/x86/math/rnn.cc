@@ -38,14 +38,12 @@ void vector_dot(
 #endif
 
   int i = 0;
-  if(nullptr == v2)
-  {
+  if (nullptr == v2) {
     i = 0;
-    
-    // in_out * v1
+
+// in_out * v1
 #if defined(__AVX__)
-    for(; i + 7 < size; i += 8)
-    {
+    for (; i + 7 < size; i += 8) {
       vec_in = _mm256_loadu_ps(in + i);
       vec_v1 = _mm256_loadu_ps(v1 + i);
       _mm256_storeu_ps(out + i, _mm256_mul_ps(vec_in, vec_v1));
@@ -53,98 +51,83 @@ void vector_dot(
     _mm256_zeroupper();
 #endif
 #if defined(__SSE4_2__)
-    for(; i + 3 < size; i += 4)
-    {
+    for (; i + 3 < size; i += 4) {
       vec_in_128 = _mm_loadu_ps(in + i);
       vec_v1_128 = _mm_loadu_ps(v1 + i);
       _mm_storeu_ps(out + i, _mm_mul_ps(vec_in_128, vec_v1_128));
     }
 #endif
-    for(; i < size; i++)
-    {
+    for (; i < size; i++) {
       out[i] = in[i] * v1[i];
     }
   } else {
     i = 0;
 
-    // in_out + v1 * v2
+// in_out + v1 * v2
 #if defined(__AVX__) && defined(__FMA__)
-    for(; i + 7 < size; i += 8)
-    {
+    for (; i + 7 < size; i += 8) {
       vec_in = _mm256_loadu_ps(in + i);
       vec_v1 = _mm256_loadu_ps(v1 + i);
       vec_v2 = _mm256_loadu_ps(v2 + i);
       _mm256_storeu_ps(out + i, _mm256_fmadd_ps(vec_v2, vec_v1, vec_in));
     }
-    for(; i + 3 < size; i += 4)
-    {
+    for (; i + 3 < size; i += 4) {
       vec_in_128 = _mm_loadu_ps(in + i);
       vec_v1_128 = _mm_loadu_ps(v1 + i);
       vec_v2_128 = _mm_loadu_ps(v2 + i);
       _mm_storeu_ps(out + i, _mm_fmadd_ps(vec_v2_128, vec_v1_128, vec_in_128));
     }
 #endif
-    for(; i < size; i++)
-    {
+    for (; i < size; i++) {
       out[i] = in[i] + v1[i] * v2[i];
     }
   }
 }
 
 template <>
-void act_relu<float>(const float* din, float* dout, int size, int threads)
-{
+void act_relu<float>(const float* din, float* dout, int size, int threads) {
   int i = 0;
 
 #ifdef __AVX__
-  for(; i + 7 < size; i += 8)
-  {
-     __m256 a = _mm256_loadu_ps(din + i);
+  for (; i + 7 < size; i += 8) {
+    __m256 a = _mm256_loadu_ps(din + i);
     _mm256_storeu_ps(dout + i, avx::Relu(a));
   }
 #endif
-  for(; i < size; i++)
-  {
+  for (; i < size; i++) {
     dout[i] = Relu<float>(din[i]);
   }
 }
 
 template <>
-void act_sigmoid<float>(const float* din, float* dout, int size, int threads)
-{
+void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
   int i = 0;
-  
+
 #ifdef __AVX__
-  for(; i + 7 < size; i += 8)
-  {
+  for (; i + 7 < size; i += 8) {
     __m256 a = _mm256_loadu_ps(din + i);
     _mm256_storeu_ps(dout + i, avx::Sigmoid(a));
   }
 #endif
-  for(; i < size; i++)
-  {
+  for (; i < size; i++) {
     dout[i] = Sigmoid<float>(din[i]);
   }
 }
 
 template <>
-void act_tanh<float>(const float* din, float* dout, int size, int threads)
-{
+void act_tanh<float>(const float* din, float* dout, int size, int threads) {
   int i = 0;
- 
+
 #ifdef __AVX__
-  for(; i + 7 < size; i += 8)
-  {
+  for (; i + 7 < size; i += 8) {
     __m256 a = _mm256_loadu_ps(din + i);
     _mm256_storeu_ps(dout + i, avx::Tanh(a));
   }
 #endif
-  for(; i < size; i++)
-  {
+  for (; i < size; i++) {
     dout[i] = Tanh<float>(din[i]);
   }
 }
-
 
 }  // namespace math
 }  // namespace x86

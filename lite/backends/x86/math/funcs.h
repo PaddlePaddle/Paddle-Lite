@@ -20,7 +20,7 @@ namespace x86 {
 namespace math {
 
 void fill_bias_fc(
-    float *out, const float *bias, int num, int channel, bool flag_relu) ;
+    float *out, const float *bias, int num, int channel, bool flag_relu);
 
 }  // namespace math
 }  // namespace x86
