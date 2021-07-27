@@ -33,8 +33,11 @@ struct LstmMetaValue {
   T* check_og;
 };
 
-void vector_dot(
-    float* out, const float* in, const float* v1, int size, const float* v2 = nullptr);
+void vector_dot(float* out,
+                const float* in,
+                const float* v1,
+                int size,
+                const float* v2 = nullptr);
 
 template <typename T>
 void act_relu(const T* din, T* dout, int size, int threads);
@@ -44,7 +47,6 @@ void act_sigmoid(const T* din, T* dout, int size, int threads);
 
 template <typename T>
 void act_tanh(const T* din, T* dout, int size, int threads);
-
 
 template <typename T>
 void activation(
@@ -109,7 +111,7 @@ struct RnnLstmUnitFunctor {
       T* value_og = value_in + frame_size;
       T* state = value.state_value;
       T* state_act = value.state_active_value;
-     
+
       T* check_i = value.check_ig ? value.check_ig : zero_ptr;
       T* check_f = value.check_fg ? value.check_fg : zero_ptr;
       T* check_o = value.check_og ? value.check_og : zero_ptr;

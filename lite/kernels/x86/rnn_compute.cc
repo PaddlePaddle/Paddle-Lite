@@ -17,12 +17,12 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "lite/kernels/x86/rnn_compute.h"
 #include "lite/backends/host/math/split.h"
-#include "lite/backends/x86/math/concat_and_split.h"
 #include "lite/backends/x86/math/blas.h"
+#include "lite/backends/x86/math/concat_and_split.h"
 #include "lite/backends/x86/math/funcs.h"
 #include "lite/backends/x86/math/rnn.h"
+#include "lite/kernels/x86/rnn_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -97,7 +97,7 @@ void preprocess(X86Context* ctx,
   DDim gate_dim;
   gate_dim.ConstructFrom(cache_input_dim);
   cache_input->Resize(gate_dim);
-  
+
   auto* i_data = input->data<float>();
   auto* w_data = weight.data<float>();
   auto* o_data = cache_input->mutable_data<float>();
@@ -110,19 +110,8 @@ void preprocess(X86Context* ctx,
   int n = weight_input_dims[0];
 
   paddle::lite::x86::math::Blas<lite::TargetType::kX86> matmul(*ctx);
-  matmul.GEMM<float>(false, 
-                      true, 
-                      m, 
-                      n, 
-                      k, 
-                      1.f, 
-                      i_data, 
-                      k, 
-                      w_data, 
-                      k, 
-                      0.f, 
-                      o_data, 
-                      n);
+  matmul.GEMM<float>(
+      false, true, m, n, k, 1.f, i_data, k, w_data, k, 0.f, o_data, n);
   lite::x86::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n, flag_act);
   lite::x86::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n, flag_act);
 }
@@ -151,19 +140,8 @@ void cell(X86Context* ctx,
   auto tmp_data = tmp_gate.mutable_data<float>();
 
   paddle::lite::x86::math::Blas<lite::TargetType::kX86> matmul(*ctx);
-  matmul.GEMM<float>(false,
-               true,
-               m,
-               n,
-               k,
-               1.f,
-               h_data,
-               k,
-               w_data,
-               k,
-               0.f,
-               tmp_data,
-               n);
+  matmul.GEMM<float>(
+      false, true, m, n, k, 1.f, h_data, k, w_data, k, 0.f, tmp_data, n);
   for (int i = 0; i < input->dims()[0] * input->dims()[1]; i++) {
     tmp_data[i] += i_data[i];
   }
@@ -240,20 +218,20 @@ void runLSTMLayer(X86Context* ctx,
   std::vector<Tensor> input_tensors, output_tensors;
   std::vector<Tensor *> input_tensors_t, output_tensors_t;
   std::vector<int> stride1, stride2;
-  input_tensors.resize(gate_value->dims()[0]);    //time_step
+  input_tensors.resize(gate_value->dims()[0]);  // time_step
   output_tensors.resize(output->dims()[0]);
 
-  //alloc input
+  // alloc input
   for (int i = 0; i < gate_value->dims()[0]; i++) {
     stride1.push_back(1);
-    int dim1 = gate_value->dims()[1];  //batch
-    int dim2 = gate_value->dims()[2];  //hidden
+    int dim1 = gate_value->dims()[1];  // batch
+    int dim2 = gate_value->dims()[2];  // hidden
     DDimLite dims(std::vector<int64_t>{dim1, dim2});
     input_tensors[i].Resize(dims);
     input_tensors_t.push_back(&input_tensors[i]);
   }
 
-  //alloc output
+  // alloc output
   for (int i = 0; i < output->dims()[0]; i++) {
     stride2.push_back(1);
     int dim1 = output->dims()[1];
@@ -263,7 +241,8 @@ void runLSTMLayer(X86Context* ctx,
     output_tensors_t.push_back(&output_tensors[i]);
   }
 
-  lite::host::math::split(gate_value->data<float>(), input_tensors_t, 0, stride1);
+  lite::host::math::split(
+      gate_value->data<float>(), input_tensors_t, 0, stride1);
   lite::host::math::split(output->data<float>(), output_tensors_t, 0, stride2);
   auto sd = output->mutable_data<float>();
 
@@ -302,7 +281,6 @@ void runLSTMLayer(X86Context* ctx,
   last_c_holder = &(*last_c_ptr)[layer_idx];
   init_c_temp_holder = &init_c[layer_idx];
 
-
   for (int i = 0; i < time_step; i++) {
     bool in_mask = (reverse_flag * i) >= mask_min_length;
     if (i > 0) {
@@ -315,7 +293,7 @@ void runLSTMLayer(X86Context* ctx,
       SwapPoniter(&init_c_holder, &last_c_holder);
       init_c_temp_holder = init_c_holder;
     }
-    
+
     // LSTMCELL
     cell(ctx,
          &input_tensors[i],
@@ -455,7 +433,8 @@ void RnnCompute::Run() {
       RUN_LSTM_LAYER(i, &output_vec[0], true, 0);
       RUN_LSTM_LAYER(i, &output_vec[1], true, 1);
 
-      paddle::lite::x86::math::ConcatFunctor<lite::TargetType::kX86, float> concat_x86;
+      paddle::lite::x86::math::ConcatFunctor<lite::TargetType::kX86, float>
+          concat_x86;
       concat_x86(ctx, output_vec, 2, output);
     } else {
       RUN_LSTM_LAYER(i, output_holder, false, 0);

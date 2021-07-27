@@ -18,7 +18,6 @@
 #include <xmmintrin.h>
 #endif
 
-
 namespace paddle {
 namespace lite {
 namespace x86 {
@@ -38,14 +37,13 @@ void fill_bias_fc(
 #endif
   int i = 0;
 
-  if(flag_relu){
-    for(int j = 0; j < num; j++){
+  if (flag_relu) {
+    for (int j = 0; j < num; j++) {
       float *ptr = out + j * channel;
       const float *pbias = bias;
       i = 0;
 #ifdef __AVX__
-      for(; i + 7 < channel; i += 8)
-      {
+      for (; i + 7 < channel; i += 8) {
         vec_bias = _mm256_loadu_ps(pbias + i);
         vec_data = _mm256_loadu_ps(ptr + i);
         vec_data = _mm256_max_ps(_mm256_add_ps(vec_bias, vec_data), vec_zero);
@@ -54,28 +52,26 @@ void fill_bias_fc(
       _mm256_zeroupper();
 #endif
 #ifdef __SSE4_2__
-      for(; i + 3 < channel; i += 4)
-      {
+      for (; i + 3 < channel; i += 4) {
         vec_bias_128 = _mm_loadu_ps(pbias + i);
         vec_data_128 = _mm_loadu_ps(ptr + i);
-        vec_data_128 = _mm_max_ps(_mm_add_ps(vec_bias_128, vec_data_128), vec_zero_128);
+        vec_data_128 =
+            _mm_max_ps(_mm_add_ps(vec_bias_128, vec_data_128), vec_zero_128);
         _mm_storeu_ps(ptr + i, vec_data_128);
       }
 #endif
-      for(; i < channel; i++)
-      {
+      for (; i < channel; i++) {
         float tmp = pbias[i] + ptr[i];
-        *(ptr + i) = tmp > 0.f ? tmp : 0.f;                 
+        *(ptr + i) = tmp > 0.f ? tmp : 0.f;
       }
     }
   } else {
-    for(int j = 0; j < num; j++){
+    for (int j = 0; j < num; j++) {
       float *ptr = out + j * channel;
       const float *pbias = bias;
       i = 0;
 #ifdef __AVX__
-      for(; i + 7 < channel; i += 8)
-      {
+      for (; i + 7 < channel; i += 8) {
         vec_bias = _mm256_loadu_ps(pbias + i);
         vec_data = _mm256_loadu_ps(ptr + i);
         _mm256_storeu_ps(ptr + i, _mm256_add_ps(vec_data, vec_bias));
@@ -83,16 +79,14 @@ void fill_bias_fc(
       _mm256_zeroupper();
 #endif
 #ifdef __SSE4_2__
-      for(; i + 3 < channel; i += 4)
-      {
+      for (; i + 3 < channel; i += 4) {
         vec_bias_128 = _mm_loadu_ps(pbias + i);
         vec_data_128 = _mm_loadu_ps(ptr + i);
         _mm_storeu_ps(ptr + i, _mm_add_ps(vec_data_128, vec_bias_128));
       }
 #endif
-      for(; i < channel; i++)
-      {
-        *(ptr + i) = pbias[i] + ptr[i];                    
+      for (; i < channel; i++) {
+        *(ptr + i) = pbias[i] + ptr[i];
       }
     }
   }
