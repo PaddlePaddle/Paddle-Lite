@@ -32,8 +32,8 @@ class ReverseComputeTester : public arena::TestCase {
  public:
   ReverseComputeTester(const Place& place,
                        const std::string& alias,
-                       std::vector<int> axis_,
-                       Ddim dims)
+                       std::vector<int> axis,
+                       DDim dims)
       : TestCase(place, alias), alias_(alias), axis_(axis), dims_(dims) {}
 
   template <typename indtype>
