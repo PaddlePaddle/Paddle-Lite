@@ -26,6 +26,18 @@ __kernel void relu(__read_only image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
+__kernel void abs_act(__read_only image2d_t input,
+                      __write_only image2d_t output,
+                      __private const float threshold,
+                      __private const float scale) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+  in = fabs((CL_DTYPE4)(in));
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
 __kernel void relu6(__read_only image2d_t input,
                     __write_only image2d_t output,
                     __private const float threshold,
