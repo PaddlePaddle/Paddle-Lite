@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "lite/backends/x86/math/clip.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/operators/clip_op.h"
@@ -23,6 +24,7 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
+template <typename T>
 class ClipCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
   using param_t = operators::ClipParam;
@@ -33,24 +35,21 @@ class ClipCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     lite::Tensor* min_tensor = param.min_tensor;
     lite::Tensor* max_tensor = param.max_tensor;
     lite::Tensor* out = param.out;
-    float min = param.min;
-    float max = param.max;
+    T min = param.min;
+    T max = param.max;
 
     if (min_tensor != nullptr) {
-      min = min_tensor->data<float>()[0];
+      min = min_tensor->data<T>()[0];
     }
     if (max_tensor != nullptr) {
-      max = max_tensor->data<float>()[0];
+      max = max_tensor->data<T>()[0];
     }
 
-    const float* x_ptr = x->data<float>();
-    float* out_ptr = out->mutable_data<float>();
+    const T* x_ptr = x->data<T>();
+    T* out_ptr = out->mutable_data<T>();
     int64_t num = x->numel();
 
-    for (int i = 0; i < num; i++) {
-      float tmp = x_ptr[i] > min ? x_ptr[i] : min;
-      out_ptr[i] = tmp < max ? tmp : max;
-    }
+    lite::x86::math::clip(x_ptr, out_ptr, num, max, min);
   }
 
   virtual ~ClipCompute() = default;
