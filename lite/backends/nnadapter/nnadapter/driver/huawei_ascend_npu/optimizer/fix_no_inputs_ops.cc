@@ -29,20 +29,15 @@ void FixNoInputsOps(hal::Model* model) {
   for (auto operation : operations) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
-    auto& output_operands = operation->output_operands;
-    auto output_count = output_operands.size();
-    switch (operation->type) {
-      case NNADAPTER_SPLIT: {
-        for (uint32_t i = 0; i < output_count; i++) {
-          auto output_operand = output_operands[i];
-          if (IsModelOutputOperand(output_operand)) {
-            AddDummyOperation(model, output_operand);
-          }
-        }
-      } break;
-      default:
-        break;
-    }
+    // auto& output_operands = operation->output_operands;
+    NNADAPTER_VLOG(5) << "[fix] type:" << operation->type;
+    // auto output_count = output_operands.size();
+    // if (operation->type == nullptr) {
+    //   auto output_operand = output_operands[0];
+    //   if (IsConstantOperand(output_operand)) {
+    //     AddDummyOperation(model, output_operand);
+    //   }
+    // }
   }
 }
 

@@ -283,6 +283,25 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "axis", "p"};
         output_args = {"output"};
         break;
+      case NNADAPTER_DEFORMABLE_CONV:
+        input_args = {"input",
+                      "offset",
+                      "mask",
+                      "filter",
+                      "bias",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "group",
+                      "deformable_groups",
+                      "fuse_code",
+                      "dilation_width",
+                      "dilation_height"};
+        output_args = {"output"};
+        break;
       default:
         break;
     }
@@ -419,6 +438,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(ASSIGN)
     NNADAPTER_TYPE_TO_STRING(SHAPE)
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION)
+    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV)
     default:
       name = "UNKNOWN";
       break;

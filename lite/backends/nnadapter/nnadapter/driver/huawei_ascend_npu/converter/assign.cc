@@ -26,7 +26,6 @@ int Program::ConvertAssign(hal::Operation* operation) {
   auto output_count = output_operands.size();
   NNADAPTER_CHECK_EQ(input_count, 1);
   NNADAPTER_CHECK_EQ(output_count, 1);
-
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
@@ -40,12 +39,11 @@ int Program::ConvertAssign(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
+
   auto assign_name = GetOperatorName(output_operand);
-  auto assign_op = std::make_shared<ge::op::Assign>(assign_name);
-  SET_INPUT(assign_op, ref, input_operator);
-  SET_INPUT(assign_op, value, input_operator);
-  assign_op->set_attr_use_locking(false);
-  MAP_OUTPUT(assign_op, ref, output_operand);
+  auto assign_op = std::make_shared<ge::op::Identity>(assign_name);
+  SET_INPUT(assign_op, x, input_operator);
+  MAP_OUTPUT(assign_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

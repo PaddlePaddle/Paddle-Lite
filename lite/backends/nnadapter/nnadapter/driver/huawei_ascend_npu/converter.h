@@ -118,6 +118,7 @@ class Program {
   int ConvertShape(hal::Operation* operation);
   int ConvertAssign(hal::Operation* operation);
   int ConvertNorm(hal::Operation* operation);
+  int ConvertDeformableConv(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};
