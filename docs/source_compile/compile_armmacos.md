@@ -1,4 +1,4 @@
-# 源码编译 (Arm MacOS)
+# 源码编译 (Arm64 MacOS)
 
 **注意：** 以下编译方法只适用于**develop(commit id:647845) 以及release/v2.9.1** 及之后版本
 
@@ -6,7 +6,7 @@
 
 # 编译 Paddle-Lite Arm MacOs 预测库 (armv8)
 
-/lite/tools/build_macos.sh arm64
+./lite/tools/build_macos.sh arm64
 
 **提示：** 编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在 git clone 完 Paddle-Lite 仓库代码后，手动删除本地仓库根目录下的 third-party 目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从 git repo 同步第三方库代码的时间。
 
@@ -38,7 +38,7 @@ inference_lite_lib.armmacos.armv8
 - 打印 help 信息：
 
 ```shell
-./lite/tools/build_ios.sh help
+./lite/tools/build_macos.sh help
 ```
 
 - 其他可选编译命令(Arm Macos M1 芯片只支持 Armv8,不支持 Armv7）：

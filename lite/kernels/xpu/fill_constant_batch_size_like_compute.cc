@@ -26,6 +26,7 @@ void FillConstantBatchSizeLikeCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   int write_size = param.out->numel();
+  if (write_size == 0) return;
   int r = 0;
   switch (param.dtype) {
     case 1: {

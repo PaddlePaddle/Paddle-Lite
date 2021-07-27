@@ -915,6 +915,27 @@ struct ArgmaxParam : ParamBase {
   bool keepdims{false};
 };
 
+///----------------------- inverse operators ----------------------
+struct InverseParam : ParamBase {
+  lite::Tensor* Input{};
+  lite::Tensor* Output{};
+};
+
+///----------------------- index_select operators ----------------------
+struct Index_selectParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Index{};
+  lite::Tensor* Out{};
+  int dim{0};
+};
+
+///----------------------- reverse operators ----------------------
+struct ReverseParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> Axis;
+};
+
 ///----------------------- axpy operators ----------------------
 struct AxpyParam : ParamBase {
   lite::Tensor* Scale{};
@@ -2292,11 +2313,11 @@ using SinParam = TrigonometricParam;
 using CosParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* out{};
-  lite::Tensor* xshape;
-  int start_axis;
-  int stop_axis;
+  const lite::Tensor* x{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* xshape{nullptr};
+  int start_axis{1};
+  int stop_axis{1};
 };
 
 struct LoDArrayLengthParam : ParamBase {
