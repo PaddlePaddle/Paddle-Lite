@@ -929,6 +929,13 @@ struct Index_selectParam : ParamBase {
   int dim{0};
 };
 
+///----------------------- reverse operators ----------------------
+struct ReverseParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> Axis;
+};
+
 ///----------------------- axpy operators ----------------------
 struct AxpyParam : ParamBase {
   lite::Tensor* Scale{};

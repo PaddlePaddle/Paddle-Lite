@@ -23,7 +23,6 @@ set(test_kernel_deps
 lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_conv_transpose_compute SRCS conv_transpose_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_scale_compute SRCS scale_compute_test.cc DEPS ${test_kernel_deps})
-lite_cc_test(test_kernel_pow_compute SRCS pow_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_shuffle_channel_compute SRCS shuffle_channel_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_yolo_box_compute SRCS yolo_box_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_fc_compute SRCS fc_compute_test.cc DEPS ${test_kernel_deps})
@@ -34,6 +33,7 @@ lite_cc_test(test_kernel_box_coder_compute SRCS box_coder_compute_test.cc DEPS $
 lite_cc_test(test_kernel_activation_compute SRCS activation_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_argmax_compute SRCS argmax_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_inverse_compute SRCS inverse_compute_test.cc DEPS arena_framework ${test_kernel_deps})
+lite_cc_test(test_kernel_reverse_compute SRCS reverse_compute_test.cc DEPS arena_framework ${test_kernel_deps})
 lite_cc_test(test_kernel_index_select_compute SRCS index_select_compute_test.cc DEPS arena_framework ${test_kernel_deps})
 lite_cc_test(test_kernel_axpy_compute SRCS axpy_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_norm_compute SRCS norm_compute_test.cc DEPS ${test_kernel_deps})
@@ -133,6 +133,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_tril_triu_compute SRCS tril_triu_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_pad3d_compute SRCS pad3d_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_select_input_compute SRCS select_input_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_pow_compute SRCS pow_compute_test.cc DEPS ${test_kernel_deps})
     # lite_cc_test(test_kernel_tensor_array_to_tensor_compute SRCS tensor_array_to_tensor_compute_test.cc DEPS arena_framework ${test_kernel_deps})
     # TODO: fix tensor_array_to_tensor unittest
     
