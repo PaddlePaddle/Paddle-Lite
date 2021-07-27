@@ -64,10 +64,16 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       if (converter->HasOperand(one_shape_name)) {
         one_shape_operand = converter->GetOperand(one_shape_name);
       } else {
-        one_shape_operand =
-            converter->AddInt32VariableOperand(DDim({1}), one_shape_name);
-        shape_operands.push_back(one_shape_operand);
+        auto* one_shape_tensor = scope->FindMutableTensor(one_shape_name);
+        if (one_shape_tensor->persistable()) {
+          one_shape_operand = converter->AddInt32ConstantOperand(
+              one_shape_tensor->mutable_data<int32_t>(), DDim({1}));
+        } else {
+          one_shape_operand =
+              converter->AddInt32VariableOperand(DDim({1}), one_shape_name);
+        }
       }
+      shape_operands.push_back(one_shape_operand);
     }
 
     // concat axis
@@ -90,8 +96,15 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     if (converter->HasOperand(shape_name)) {
       shape_operand = converter->GetOperand(shape_name);
     } else {
-      shape_operand = converter->AddInt32VariableOperand(
-          scope->FindTensor(shape_name)->dims(), shape_name);
+      auto* outsize_tensor = scope->FindMutableTensor(shape_name);
+      auto outsize_dims = outsize_tensor->dims();
+      if (outsize_tensor->persistable()) {
+        shape_operand = converter->AddInt32ConstantOperand(
+            outsize_tensor->mutable_data<int32_t>(), outsize_dims);
+      } else {
+        shape_operand =
+            converter->AddInt32VariableOperand(outsize_dims, shape_name);
+      }
     }
   } else if (op_info->HasAttr("out_h") && op_info->HasAttr("out_w")) {
     int out_h = op_info->GetAttr<int>("out_h");
@@ -120,8 +133,14 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       if (converter->HasOperand(scales_name)) {
         scale_operand = converter->GetOperand(scales_name);
       } else {
-        scale_operand =
-            converter->AddFloat32VariableOperand(DDim({1}), scales_name);
+        auto* scale_tensor = scope->FindMutableTensor(scales_name);
+        if (scale_tensor->persistable()) {
+          scale_operand = converter->AddFloat32ConstantOperand(
+              scale_tensor->mutable_data<float>(), DDim({1}));
+        } else {
+          scale_operand =
+              converter->AddFloat32VariableOperand(DDim({1}), scales_name);
+        }
       }
       auto axis_operand = converter->AddInt32ConstantOperand(0);
       std::vector<NNAdapterOperand*> input_operands{
@@ -136,8 +155,15 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       if (converter->HasOperand(scales_name)) {
         scales_operand = converter->GetOperand(scales_name);
       } else {
-        scales_operand = converter->AddFloat32VariableOperand(
-            scope->FindTensor(scales_name)->dims(), scales_name);
+        auto* scales_tensor = scope->FindMutableTensor(scales_name);
+        auto scales_dims = scales_tensor->dims();
+        if (scales_tensor->persistable()) {
+          scales_operand = converter->AddFloat32ConstantOperand(
+              scales_tensor->mutable_data<float>(), scales_dims);
+        } else {
+          scales_operand =
+              converter->AddFloat32VariableOperand(scales_dims, scales_name);
+        }
       }
     }
   } else if (op_info->HasAttr("scale")) {
@@ -145,25 +171,13 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                   ops_has_one_scale.end(),
                   op_type) != ops_has_one_scale.end()) {
       auto scale = op_info->GetAttr<float>("scale");
-      if (scale > 1e-5f) {
-        std::vector<float> scales{scale, scale};
-        scales_operand = converter->AddFloat32ConstantOperand(
-            &(scales.at(0)), DDim({static_cast<int64_t>(scales.size())}));
-      } else {
-        VLOG(5) << op_type << " attr scale is invalid.";
-      }
+      std::vector<float> scales{scale, scale};
+      scales_operand = converter->AddFloat32ConstantOperand(
+          &(scales.at(0)), DDim({static_cast<int64_t>(scales.size())}));
     } else {
-      auto scales = op_info->GetAttr<std::vector<float>>("scale");
-      bool is_valid = true;
-      for (auto scale : scales) {
-        is_valid = is_valid && scale > 1e-5f;
-      }
-      if (is_valid) {
-        scales_operand = converter->AddFloat32ConstantOperand(
-            &(scales.at(0)), DDim({static_cast<int64_t>(scales.size())}));
-      } else {
-        VLOG(5) << op_type << " attr scale is invalid.";
-      }
+      std::vector<float> scales = op_info->GetAttr<std::vector<float>>("scale");
+      scales_operand = converter->AddFloat32ConstantOperand(
+          &(scales.at(0)), DDim({static_cast<int64_t>(scales.size())}));
     }
   } else {
     VLOG(5) << op_type << " doesn't have 'Scale' or 'scale'.";
