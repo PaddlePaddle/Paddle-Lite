@@ -193,11 +193,7 @@ TEST(GroupNorm, precision) {
   Place place;
   float abs_error = 3e-3;
   std::vector<std::string> ignored_outs = {};
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-  ignored_outs = {"saved_mean", "saved_variance"};
-#elif defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
