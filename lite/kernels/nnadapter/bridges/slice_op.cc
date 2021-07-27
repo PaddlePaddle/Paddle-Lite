@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -30,17 +30,15 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
 
-  std::vector<NNAdapterOperand*> input_operands{};
-  std::vector<NNAdapterOperand*> output_operands{};
-
   // Get input and output vars and op attributes
-  auto x_name = op_info->Input("X").front();
-  auto x_scale_name = "X0_scale";
+  auto x_name = op_info->Input("Input").front();
+  auto x_scale_name = "Input0_scale";
   auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
   auto x_scale =
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -48,6 +46,18 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
+
+  auto axes = op_info->GetAttr<std::vector<int>>("axes");
+  auto starts = op_info->GetAttr<std::vector<int>>("starts");
+  auto ends_ori = op_info->GetAttr<std::vector<int>>("ends");
+
+  // paddle model: ends[i] maybe is bigger than x_dims[axes[i]], so it needs to
+  // update.
+  int axes_size = static_cast<int>(axes.size());
+  std::vector<int> ends(axes_size, 0);
+  for (int i = 0; i < axes_size; i++) {
+    ends[i] = ends_ori[i] > x_dims[axes[i]] ? x_dims[axes[i]] : ends_ori[i];
+  }
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -61,14 +71,19 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-  input_operands.push_back(input_operand);
 
-  if (op_type == "leaky_relu") {
-    auto alpha = op_info->GetAttr<float>("alpha");
-    NNAdapterOperand* alpha_operand =
-        converter->AddFloat32ConstantOperand(alpha);
-    input_operands.push_back(alpha_operand);
-  }
+  // axes operand
+  NNAdapterOperand* axes_operand = converter->AddInt32ConstantOperand(
+      &axes[0], DDim({static_cast<int64_t>(axes.size())}));
+
+  // starts operand
+  NNAdapterOperand* starts_operand = converter->AddInt32ConstantOperand(
+      &starts[0], DDim({static_cast<int64_t>(starts.size())}));
+
+  // ends operand
+  NNAdapterOperand* ends_operand = converter->AddInt32ConstantOperand(
+      &ends[0], DDim({static_cast<int64_t>(ends.size())}));
+
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -77,28 +92,15 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
-  output_operands.push_back(output_operand);
 
-  // Activation operation
-  NNAdapterOperation* activation_operation = nullptr;
-  if (op_type == "sigmoid") {
-    activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
-  } else if (op_type == "relu") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU);
-  } else if (op_type == "relu6") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU6);
-  } else if (op_type == "tanh") {
-    activation_operation = converter->AddOperation(NNADAPTER_TANH);
-  } else if (op_type == "log") {
-    activation_operation = converter->AddOperation(NNADAPTER_LOG);
-  } else if (op_type == "leaky_relu") {
-    activation_operation = converter->AddOperation(NNADAPTER_LEAKY_RELU);
-  } else {
-    LOG(WARNING) << "Unsupported activation type: " << op_type;
-    return FAILED;
-  }
-  converter->SetOperation(
-      activation_operation, &input_operands, &output_operands);
+  // slice operation
+  std::vector<NNAdapterOperand*> input_operands = {
+      input_operand, axes_operand, starts_operand, ends_operand};
+  std::vector<NNAdapterOperand*> output_operands = {output_operand};
+  NNAdapterOperation* slice_operation =
+      converter->AddOperation(NNADAPTER_SLICE);
+
+  converter->SetOperation(slice_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -107,21 +109,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu,
+REGISTER_SUBGRAPH_BRIDGE(slice,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(sigmoid,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu6,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(log,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+                         paddle::lite::subgraph::nnadapter::SliceConverter);

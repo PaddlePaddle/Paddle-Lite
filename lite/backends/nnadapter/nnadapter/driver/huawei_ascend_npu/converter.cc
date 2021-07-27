@@ -97,7 +97,11 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_TANH:
+      case NNADAPTER_LOG:
         ConvertActivation(operation);
+        break;
+      case NNADAPTER_LEAKY_RELU:
+        ConvertLeakyRelu(operation);
         break;
       case NNADAPTER_RESHAPE:
         ConvertReshape(operation);
@@ -110,6 +114,18 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         break;
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);
+        break;
+      case NNADAPTER_POW:
+        ConvertPow(operation);
+        break;
+      case NNADAPTER_BATCH_NORMALIZATION:
+        ConvertBatchNormalization(operation);
+        break;
+      case NNADAPTER_CLIP:
+        ConvertClip(operation);
+        break;
+      case NNADAPTER_SLICE:
+        ConvertSlice(operation);
         break;
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("

@@ -114,6 +114,11 @@ class Program {
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);
   int ConvertSplit(hal::Operation* operation);
+  int ConvertPow(hal::Operation* operation);
+  int ConvertBatchNormalization(hal::Operation* operation);
+  int ConvertClip(hal::Operation* operation);
+  int ConvertLeakyRelu(hal::Operation* operation);
+  int ConvertSlice(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};

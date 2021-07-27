@@ -20,6 +20,10 @@ lite_cc_library(subgraph_bridge_concat_op_nnadapter SRCS concat_op.cc DEPS ${nna
 lite_cc_library(subgraph_bridge_flatten_op_nnadapter SRCS flatten_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_split_op_nnadapter SRCS split_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_conv_transpose_op_nnadapter SRCS conv_transpose_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_pow_op_nnadapter SRCS pow_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_batch_normalization_op_nnadapter SRCS batch_normalization_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_clip_op_nnadapter SRCS clip_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_slice_op_nnadapter SRCS slice_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
         subgraph_bridge_registry
@@ -38,6 +42,10 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_flatten_op_nnadapter
         subgraph_bridge_split_op_nnadapter
         subgraph_bridge_conv_transpose_op_nnadapter
+        subgraph_bridge_pow_op_nnadapter
+        subgraph_bridge_batch_normalization_op_nnadapter
+        subgraph_bridge_clip_op_nnadapter
+        subgraph_bridge_slice_op_nnadapter
         CACHE INTERNAL "nnadapter_subgraph_bridges")
 
 message(STATUS "+++++ nnadapter_subgraph_bridges: ${nnadapter_subgraph_bridges}")

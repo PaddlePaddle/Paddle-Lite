@@ -50,6 +50,7 @@ int Program::ConvertActivation(hal::Operation* operation) {
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
     CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
     CONVERT_UNARY_ACTIVATION(TANH, Tanh);
+    CONVERT_UNARY_ACTIVATION(LOG, Log);
 #undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
@@ -57,6 +58,38 @@ int Program::ConvertActivation(hal::Operation* operation) {
                            << " is found.";
       break;
   }
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::ConvertLeakyRelu(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  // Input
+  auto input_operand = input_operands[0];
+  NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
+
+  auto alpha_operand = input_operands[1];
+  NNADAPTER_VLOG(5) << "alpha_operand: " << OperandToString(alpha_operand);
+  float alpha = *reinterpret_cast<float*>(alpha_operand->buffer);
+  // Output
+  auto output_operand = output_operands[0];
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+
+  // Convert to GE operators
+  auto input_operator = GetMappedOperator(input_operand);
+  if (!input_operator) {
+    input_operator = ConvertOperand(input_operand);
+  }
+  auto act_name = GetOperatorName(output_operand);
+  auto act_op = std::make_shared<ge::op::LeakyRelu>(act_name);
+  act_op->set_attr_negative_slope(alpha);
+  SET_INPUT(act_op, x, input_operator);
+  MAP_OUTPUT(act_op, y, output_operand);
+
   return NNADAPTER_NO_ERROR;
 }
 

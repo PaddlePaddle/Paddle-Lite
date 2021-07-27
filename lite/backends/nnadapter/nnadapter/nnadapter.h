@@ -648,6 +648,137 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_TRANSPOSE = 19,
+
+  /**
+   * Clip all elements in input into the range [ min, max ].
+   * The output is calculated using this formula:
+   *     output = MIN(MAX(input, min), max)
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: min, A scalar with the same type as input
+   * * 2: max, A scalar with the same type as input
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_CLIP = 20,
+
+  /**
+   * Applies Batch Normalization over a 4D input (a mini-batch of 2D inputs with
+   * additional channel dimension) as described in the paper Batch
+   * Normalization: Accelerating Deep Network Training by Reducing Internal
+   * Covariate Shift .
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
+   * * 1: scale, A 1-D tensor with shape [C]. 1) If input's type is
+   * NNADAPTER_TENSOR_FLOAT16 or NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
+   * * 2: bias, A 1-D tensor with shape [C]. 1) If input's type is
+   * NNADAPTER_TENSOR_FLOAT16 or NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
+   * * 3: mean, A 1-D tensor with shape [C]. 1) If input's type is
+   * NNADAPTER_TENSOR_FLOAT16 or NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
+   * * 4: var, A 1-D tensor with shape [C]. 1) If input's type is
+   * NNADAPTER_TENSOR_FLOAT16 or NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
+   * * 5: epsilon, A NNADAPTER_FLOAT32 scalar. Defaults to 1e-5. The small value
+   * added to the variance to prevent division by zero.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_BATCH_NORMALIZATION = 21,
+
+  /**
+   * Applies the Leaky ReLU activation to the input tensor element-wise. The
+   * output is calculated using this formula: output = input, if input >=0
+   * output = alpha * input, if input < 0
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: alpha, A NNADAPTER_FLOAT32 scalar.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_LEAKY_RELU = 22,
+
+  /**
+   * Applies the log activation to the input tensor element-wise. The output is
+   * calculated using this formula: output = log(input)
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_LOG = 23,
+
+  /**
+   * Performs element-wise binary pow(with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html). The output is
+   * calculated using this formula: output = input0^input1
+   *
+   * Inputs:
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT32 tensor.
+   * * 1: input1, A NNADAPTER_TENSOR_FLOAT32 tensor.
+   *
+   * Outputs:
+   * * 0: output, The result with the same type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_POW = 24,
+
+  /**
+   * This operator produces a slice of input along multiple axes. Slice uses
+   * axes, starts and ends attributes to specify the start and end dimension for
+   * each axis in the list of axes and Slice uses this information to slice the
+   * input data tensor. If a negative value is passed to starts or ends such as
+   * −i, it represents the reverse position of the axis i−1 (here 0 is the
+   * initial position). If the value passed to starts or ends is greater than n
+   * (the number of elements in this dimension), it represents n. For slicing to
+   * the end of a dimension with unknown size, it is recommended to pass in
+   * INT_MAX. The size of axes must be equal to starts and ends.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, A NNADAPTER_TENSOR_INT32 tensor that `starts` and `ends` apply
+   * to. It's optional. If not present, will be treated as [0, 1, ...,
+   * len(`starts`) - 1].
+   * * 2: starts, starts indices of corresponding axis in `axes`, A
+   * NNADAPTER_TENSOR_INT32 tensor.
+   * * 3: ends, ends indices of corresponding axis in `axes`, A
+   * NNADAPTER_TENSOR_INT32 tensor.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_SLICE = 25,
 } NNAdapterOperationCode;
 
 /**

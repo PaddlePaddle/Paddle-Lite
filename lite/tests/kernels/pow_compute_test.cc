@@ -76,8 +76,14 @@ void test_pow(Place place, float abs_error) {
 TEST(Pow, precision) {
   float abs_error = 2e-4;
   Place place;
-
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-1;
+#else
+  return；
+#endif
+#elif LITE_WITH_HUAWEI_ASCEND_NPU
   abs_error = 1e-1;
   place = TARGET(kHuaweiAscendNPU);
 #elif defined(LITE_WITH_X86)
