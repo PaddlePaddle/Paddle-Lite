@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/packed_sgemm.h"
 #include <arm_neon.h>
 #include "lite/backends/arm/math/conv_block_utils.h"
+#include "lite/backends/arm/math/packed_sgemm_a35.h"
 
 namespace paddle {
 namespace lite {
@@ -173,11 +174,12 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
                              const float *A_packed,
                              const float *B,
                              int ldb,
+                             float beta,
                              float *C,
                              int ldc,
                              const float *bias,
                              bool has_bias,
-                             int is_relu,
+                             const operators::ActivationParam act_param,
                              ARMContext *ctx);
 #endif  // __aarch64__
 
@@ -3310,7 +3312,7 @@ void loadb_trans(
 #define X_BLOCK_COMPUTE(l2_cache, MBLOCK, NBLOCK, M, N, K)                  \
   int x_block = (l2_cache - (MBLOCK * K)) / (sizeof(float) * (K + MBLOCK)); \
   x_block /= NBLOCK;                                                        \
-  x_block = (x_block == 0) ? 1 : x_block;                                   \
+  /*x_block = (x_block == 0) ? 1 : x_block;   */                            \
   x_block *= NBLOCK;                                                        \
   int x_num = (N + (x_block - 1)) / x_block;                                \
   x_block = (N + x_num - 1) / x_num;                                        \
