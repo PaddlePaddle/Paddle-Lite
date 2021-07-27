@@ -129,6 +129,11 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "amlogic_npu") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -278,7 +283,7 @@ void OptBase::PrintHelpInfo() {
       "        "
       "`set_valid_places(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|rknpu|apu|"
       "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu)`"
+      "huawei_kirin_npu|amlogic_npu)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
@@ -340,7 +345,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
       "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
       "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu)`"
+      "kirin_npu|amlogic_npu)`"
       "  Display operators in the input model\n";
   OPT_LOG << "paddlelite opt version:" << opt_version;
   OPT_LOG << help_info;

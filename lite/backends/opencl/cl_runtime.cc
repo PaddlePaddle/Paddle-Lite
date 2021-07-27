@@ -24,7 +24,7 @@ namespace paddle {
 namespace lite {
 
 CLRuntime* CLRuntime::Global() {
-  static CLRuntime cl_runtime_;
+  thread_local CLRuntime cl_runtime_;
   cl_runtime_.Init();
   return &cl_runtime_;
 }
@@ -37,9 +37,6 @@ void CLRuntime::Flush(const int index) {
 }
 
 CLRuntime::~CLRuntime() {
-  SaveProgram();
-  SaveTuned();
-
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
 #endif
@@ -406,9 +403,7 @@ void CLRuntime::SaveTuned() {
   if (tuned_path_name_.empty() || auto_tune() == lite_api::CL_TUNE_NONE) return;
   std::string tuned_file =
       tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
-  if (tuned_file == "/") {
-    LOG(INFO) << "invalid tuned_file:" << tuned_file;
-  } else if (IsFileExists(tuned_file)) {
+  if (IsFileExists(tuned_file)) {
     LOG(INFO) << "OpenCL Tuned file existed:" << tuned_file;
   } else {
     bool ret = Serialize(tuned_file, tuned_lwss_map_);
@@ -855,15 +850,14 @@ void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
     auto_tune_ = lite_api::CL_TUNE_NONE;
   }
   lws_repeats_ = lws_repeats;
-  if (tuned_path_name_.empty()) {
-    tuned_path_name_.push_back(path);
-    tuned_path_name_.push_back(name);
-  }
-  const std::string tuned_file = path + "/" + name;
-  LOG(INFO) << "tuned_file.size():" << tuned_file.size()
-            << ", tuned_file:" << tuned_file;
-  if (tuned_file.size() > 2 && IsFileExists(tuned_file) &&
-      auto_tune() != lite_api::CL_TUNE_NONE) {
+
+  tuned_path_name_.clear();
+  tuned_path_name_.push_back(path);
+  tuned_path_name_.push_back(name);
+  const std::string tuned_file =
+      tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
+  LOG(INFO) << "tuned_file:" << tuned_file;
+  if (IsFileExists(tuned_file) && auto_tune() != lite_api::CL_TUNE_NONE) {
     LOG(INFO) << "Load tuned file: " << tuned_file;
     bool status = Deserialize(tuned_file, &tuned_lwss_map_);
     if (!status) {
@@ -872,7 +866,6 @@ void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
   } else {
     LOG(INFO) << "Not found tuned file:" << tuned_file;
   }
-  command_queue_ = CreateCommandQueue(context());
 }
 
 bool CLRuntime::HasTunedLocalWorkSizeMap(const std::string& key,
