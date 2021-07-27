@@ -140,7 +140,7 @@ void group_norm(const float* in,
       float std = 1.f / sqrtf(variance + epsilon);
 
       saved_mean[i * groups + gid] = mean;
-      saved_variance[i * groups + gid] = std;
+      saved_variance[i * groups + gid] = variance;
 
       // compute each group_norm result: out = scale * (in - mean) / std + bias
       for (int nid = 0; nid < number; nid++) {

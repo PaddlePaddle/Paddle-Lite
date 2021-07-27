@@ -107,7 +107,7 @@ class GroupNormComputeTest : public arena::TestCase {
         x_var = (x_var - x_mean * x_mean * imsize * number) / (number * imsize);
         float var_inv = 1.0 / sqrt(x_var + epsilon);
         saved_mean_data[bid * groups + gid] = x_mean;
-        saved_variance_data[bid * groups + gid] = var_inv;
+        saved_variance_data[bid * groups + gid] = x_var;
 
         for (int cid = 0; cid < number; cid++) {
           for (int imid = 0; imid < imsize; imid++, tmp_x++, iter_y_data++) {
