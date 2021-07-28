@@ -12,13 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/clip_compute.h"
+#pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/operators/index_select_op.h"
 
-REGISTER_LITE_KERNEL(
-    clip, kX86, kFloat, kNCHW, paddle::lite::kernels::x86::ClipCompute<float>, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Min", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Max", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindPaddleOpVersion("clip", 1)
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+template <typename T>
+class Index_selectCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+ public:
+  using param_t = operators::Index_selectParam;
+
+  void Run() override;
+
+  virtual ~Index_selectCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

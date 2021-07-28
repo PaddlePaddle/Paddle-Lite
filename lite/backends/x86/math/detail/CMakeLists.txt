@@ -1,1 +1,1 @@
-cc_library(activation_functions SRCS avx_functions.cc)
+cc_library(activation_functions SRCS activation_functions.cc DEPS avx_mathfuns)

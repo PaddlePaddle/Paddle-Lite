@@ -12,13 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/clip_compute.h"
+#pragma once
 
-REGISTER_LITE_KERNEL(
-    clip, kX86, kFloat, kNCHW, paddle::lite::kernels::x86::ClipCompute<float>, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Min", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Max", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindPaddleOpVersion("clip", 1)
-    .Finalize();
+#include <algorithm>
+#include <string>
+#include <vector>
+#include "lite/operators/op_params.h"
+#include "lite/utils/cp_logging.h"
+
+namespace paddle {
+namespace lite {
+namespace host {
+namespace math {
+
+template <typename T>
+void reverse_func(const lite::Tensor* input,
+                  std::vector<int>& axis,
+                  lite::Tensor* output);
+
+}  // namespace math
+}  // namespace host
+}  // namespace lite
+}  // namespace paddle
