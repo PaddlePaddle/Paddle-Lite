@@ -53,9 +53,8 @@ int Program::ConvertResizeLinear(hal::Operation* operation) {
   }
   int align_mode = reinterpret_cast<int32_t*>(align_mode_operand->buffer)[0];
   if (align_mode == 0 && !align_corners) {
-    NNADAPTER_LOG(WARNING) << "[HUAWEI_ASCEND_NPU] align_mode = 0 && "
-                              "align_corners = false isn't supported in Huawei "
-                              "Ascend NPU DDK";
+    NNADAPTER_LOG(WARNING) << "align_mode = 0 && align_corners = false isn't "
+                              "supported in Huawei Ascend NPU DDK";
     return NNADAPTER_INVALID_PARAMETER;
   }
 
@@ -79,10 +78,10 @@ int Program::ConvertResizeLinear(hal::Operation* operation) {
     }
     SET_INPUT(resize_linear_op, size, shape_operator);
   } else if (scales_operand != nullptr) {
-    NNADAPTER_LOG(WARNING) << "not support scales now.";
+    NNADAPTER_LOG(WARNING) << "Not support scales now.";
     return NNADAPTER_INVALID_PARAMETER;
   } else {
-    NNADAPTER_LOG(WARNING) << "either shape_operand or scales_operand should "
+    NNADAPTER_LOG(WARNING) << "Either shape_operand or scales_operand should "
                               "be set.";
     return NNADAPTER_INVALID_PARAMETER;
   }

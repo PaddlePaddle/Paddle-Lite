@@ -67,10 +67,10 @@ int Program::ConvertResizeNearest(hal::Operation* operation) {
     }
     SET_INPUT(resize_nearest_op, size, shape_operator);
   } else if (scales_operand != nullptr) {
-    NNADAPTER_LOG(WARNING) << "not support scales now.";
+    NNADAPTER_LOG(WARNING) << "Not support scales now.";
     return NNADAPTER_INVALID_PARAMETER;
   } else {
-    NNADAPTER_LOG(WARNING) << "either shape_operand or scales_operand should "
+    NNADAPTER_LOG(WARNING) << "Either shape_operand or scales_operand should "
                               "be set.";
     return NNADAPTER_INVALID_PARAMETER;
   }
