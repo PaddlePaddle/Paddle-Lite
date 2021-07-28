@@ -33,10 +33,14 @@ namespace nnadapter {
 // 1. the sorted variable input names
 // 2. the shapes of the origin input tensors
 // 3. the sorted variable output names
-std::string KeyGenerator(const std::vector<std::string>& input_names,
+std::string KeyGenerator(const std::vector<std::string>& device_names,
+                         const std::vector<std::string>& input_names,
                          const std::vector<std::string>& output_names,
                          const std::vector<std::vector<int64_t>>& input_dims) {
   std::ostringstream os;
+  for (auto device_name : device_names) {
+    os << device_name;
+  }
   CHECK_EQ(input_names.size(), input_dims.size());
   for (int i = 0; i < input_names.size(); i++) {
     os << input_names[i];
@@ -323,8 +327,15 @@ SubgraphEngine::~SubgraphEngine() {
 bool SubgraphEngine::BuildDeviceProgram() {
   // Check if the compiled device program exists
   if (!device_programs_.count(origin_idims_)) {
+    // Get the valid device names
+    std::vector<std::string> device_names;
+    for (auto* device : devices_) {
+      const char* name = nullptr;
+      NNAdapterDevice_getName_invoke(device, &name);
+      device_names.push_back(name);
+    }
     std::string model_cache_key =
-        KeyGenerator(input_names_, output_names_, origin_idims_);
+        KeyGenerator(device_names, input_names_, output_names_, origin_idims_);
     auto device_program =
         std::make_shared<DeviceProgram>(model_cache_key, context_);
     // Load the compiled device program from the buffers which are stored as the

@@ -16,6 +16,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 #include "driver/mediatek_apu/utility.h"
 
@@ -52,6 +53,11 @@ class Program {
               hal::Argument* output_arguments);
 
  private:
+  void Clear();
+  // Build from source model or cache buffer
+  int BuildFromModel(hal::Model* model);
+  int BuildFromCache(hal::Cache* cache);
+
   // Operand converters
   uint32_t GetMappedIndex(hal::Operand* operand);
   uint32_t UpdateIndexMap(hal::Operand* operand, uint32_t index);
@@ -127,6 +133,8 @@ class Program {
   NeuronExecution* execution_{nullptr};
   std::vector<int32_t> input_zero_points_;
   std::vector<int32_t> output_zero_points_;
+  std::string dump_graph_path_;
+  std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };
 
 }  // namespace mediatek_apu

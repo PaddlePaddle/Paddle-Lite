@@ -42,6 +42,8 @@ void Program::Clear() {
   output_info_.clear();
   input_zero_points_.clear();
   output_zero_points_.clear();
+  dump_graph_path_ = "";
+  dump_graph_buffer_ = nullptr;
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
@@ -131,6 +133,7 @@ int Program::BuildFromModel(hal::Model* model) {
     input_zero_points_.resize(input_count);
     for (size_t i = 0; i < input_count; i++) {
       auto operand = model->input_operands[i];
+      const auto& type = operand->type;
       NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
       input_tensors[i] = tensors_[operand].back();
       NNADAPTER_CHECK(input_tensors[i]);
@@ -139,9 +142,11 @@ int Program::BuildFromModel(hal::Model* model) {
       input_info_[i].buf = nullptr;
       input_info_[i].size = 0;
       input_info_[i].pass_through = false;
-      input_info_[i].type = ConvertPrecision(operand->type.precision);
-      input_info_[i].layout = ConvertDataLayout(operand->type.layout);
-      input_zero_points_[i] = operand->type.asymm_per_layer_params.zero_point;
+      input_info_[i].type = ConvertPrecision(type.precision);
+      input_info_[i].layout = ConvertDataLayout(type.layout);
+      input_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
+                                  ? type.asymm_per_layer_params.zero_point
+                                  : 0;
     }
   }
   auto output_count = model->output_operands.size();
@@ -153,6 +158,7 @@ int Program::BuildFromModel(hal::Model* model) {
   output_zero_points_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
+    const auto& type = operand->type;
     NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
     output_tensors[i] = tensors_[operand].back();
     NNADAPTER_CHECK(output_tensors[i]);
@@ -161,9 +167,11 @@ int Program::BuildFromModel(hal::Model* model) {
     output_info_[i].buf = nullptr;
     output_info_[i].size = 0;
     output_info_[i].want_float = false;
-    output_info_[i].type = ConvertPrecision(operand->type.precision);
-    output_info_[i].layout = ConvertDataLayout(operand->type.layout);
-    output_zero_points_[i] = operand->type.asymm_per_layer_params.zero_point;
+    output_info_[i].type = ConvertPrecision(type.precision);
+    output_info_[i].layout = ConvertDataLayout(type.layout);
+    output_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
+                                 ? type.asymm_per_layer_params.zero_point
+                                 : 0;
   }
   graph_->SetInputsOutputs(input_tensors, output_tensors);
   // Create an execution to build the graph to the device-related program.
@@ -280,6 +288,9 @@ int Program::Execute(uint32_t input_count,
     if (ReadFile(dump_graph_path_, dump_graph_buffer_)) {
       NNADAPTER_LOG(INFO) << "Read the dump graph file " << dump_graph_path_
                           << " success.";
+    } else {
+      NNADAPTER_LOG(INFO) << "Failed to read the dump graph file "
+                          << dump_graph_path_ << "!";
     }
     dump_graph_path_ = "";
   }
