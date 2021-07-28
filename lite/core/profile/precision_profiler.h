@@ -362,8 +362,7 @@ class PrecisionProfiler {
                                       cl_image2d_slice_pitch,
                                       IoDirection::DtoH);
           // TODO(zhaoyang-star): Tensor shape padding mode will change from
-          // high-dim padding
-          // to low-dim padding to fit image2d.
+          // high-dim padding to low-dim padding to fit image2d.
           // ImageConverter will be changed.
           default_convertor.ImageToNCHW(
               in_data_v, real_out_v.data(), image_shape, in->dims());

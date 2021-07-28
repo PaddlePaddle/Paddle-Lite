@@ -225,8 +225,7 @@ class LayoutComputeImageDefaultToBufferChw
     } else if (x_dims.size() < 5) {
       // mainly for fc and softmax_1x1
       // TODO(zhaoyang-star): Tensor shape padding mode will change from
-      // high-dim padding to
-      // low-dim padding to fit image2d.
+      // high-dim padding to low-dim padding to fit image2d.
       // ImageConverter will be changed.
       if (x_dims.size() == 2) {
         for (int j = 0; j < x_dims.size(); ++j) {
