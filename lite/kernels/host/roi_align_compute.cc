@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/roi_align_compute.h"
+#include "lite/kernels/host/roi_align_compute.h"
+#include <cmath>
 #include <string>
 #include <vector>
-#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
@@ -23,7 +23,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 static constexpr int kROISize = 4;
 
 template <class T>
@@ -112,7 +112,6 @@ void RoiAlignCompute::Run() {
   int sampling_ratio = param.sampling_ratio;
 
   auto in_dims = in->dims();
-  int batch_size = in_dims[0];
   int channels = in_dims[1];
   int height = in_dims[2];
   int width = in_dims[3];
@@ -237,23 +236,23 @@ void RoiAlignCompute::Run() {
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(roi_align,
-                     kARM,
+                     kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::RoiAlignCompute,
+                     paddle::lite::kernels::host::RoiAlignCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("ROIs", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("ROIs", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("RoisLod",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("RoisNum",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindPaddleOpVersion("roi_align", 1)
     .Finalize();

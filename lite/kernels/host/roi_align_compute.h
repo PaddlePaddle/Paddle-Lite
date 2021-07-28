@@ -15,23 +15,23 @@
 #pragma once
 #include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/operators/box_clip_op.h"
+#include "lite/operators/roi_align_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class BoxClipCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class RoiAlignCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::BoxClipParam;
+  using param_t = operators::RoiAlignParam;
 
   void Run() override;
 
-  virtual ~BoxClipCompute() = default;
+  virtual ~RoiAlignCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
