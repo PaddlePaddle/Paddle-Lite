@@ -346,18 +346,11 @@ template class Env<TARGET(kCUDA)>;
 #endif
 
 #ifdef LITE_WITH_X86
-enum class SSEType {
-  NONE = 0,
-  SSE = 1,
-  SSE2 = 2,
-  SSE3 = 3,
-  SSE4_1 = 4,
-  SSE4_2 = 5
-};
+enum class SSEType { NONE, SSE, SSE2, SSE3, SSE4_1, SSE4_2 };
 
-enum class AVXType { NONE = 0, AVX = 1, AVX2 = 2, VNNI = 3 };
+enum class AVXType { NONE, AVX, AVX2, VNNI};
 
-enum class FMAType { NONE = 0, FMA = 1 };
+enum class FMAType { NONE, FMA};
 
 SSEType device_sse_level();
 AVXType device_avx_level();
