@@ -201,9 +201,8 @@ __kernel void softmax_1x1(__read_only image2d_t input,
   float4 maxx4 = read_imagef(input, SAMPLER, (int2)(0, b_idx));
   for (int s = tid; s < c_blks; s += 32) {  // as workgroup size is 32
     float4 mask_a = s == c_blks - 1 ? mask : (float4)(1.0f);
-    float4 mask_b = (float4)(1.0f) - mask_a;
     float4 src = read_imagef(input, SAMPLER, (int2)(s, b_idx));
-    src = src * mask_a + mask_b * src.x;  // mask_b can be removed
+    src = src * mask_a;
     maxx4 = max(maxx4, src);
   }
   float maximum = max(maxx4.x, maxx4.y);
@@ -261,11 +260,6 @@ __kernel void softmax_1x1(__read_only image2d_t input,
   if (c_blk_idx < c_blks) {
     float4 src = read_imagef(input, SAMPLER, (int2)(c_blk_idx, b_idx)) -
                  (float4)(maximum);
-    // #ifdef CL_DTYPE_half
-    //     CL_DTYPE4 res = convert_half4(exp(src) * sum);
-    // #else
-    //     CL_DTYPE4 res = exp(src) * sum;
-    // #endif
     CL_DTYPE4 res = CONVERT_TYPE_TO(exp(src) * sum, CL_DTYPE4);
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(c_blk_idx, b_idx), res);
   }
