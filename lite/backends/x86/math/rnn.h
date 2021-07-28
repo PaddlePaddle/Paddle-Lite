@@ -100,11 +100,12 @@ struct RnnLstmUnitFunctor {
                       lite_api::ActivationType cell_act,
                       lite_api::ActivationType cand_act,
                       int threads) {
-    for (int b = 0; b < batch_size; ++b) {
-      const int temp_len = frame_size;
-      float zero_ptr[temp_len];  // NOLINT
-      memset(zero_ptr, 0, sizeof(float) * temp_len);
+    const int temp_len = frame_size;
+    auto zero_ptr = static_cast<float*>(
+        TargetMalloc(TARGET(kX86), temp_len * sizeof(float)));
+    memset(zero_ptr, 0, sizeof(float) * temp_len);
 
+    for (int b = 0; b < batch_size; ++b) {
       T* value_ig = value.gate_value;
       T* value_fg = value_ig + frame_size;
       T* value_in = value_fg + frame_size;
@@ -150,6 +151,8 @@ struct RnnLstmUnitFunctor {
         value.prev_state_value += frame_size;
       }
     }
+
+    TargetFree(TARGET(kX86), zero_ptr);
   }
 };
 
