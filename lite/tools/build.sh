@@ -571,9 +571,6 @@ function make_x86_tests {
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
 
-  if [ ${WITH_OPENCL} == "ON" ]; then
-    make opencl_clhpp -j$NUM_PROC
-  fi
   make lite_compile_deps -j$NUM_PROC
   cd -
 }
