@@ -52,7 +52,7 @@ class Program {
 
  private:
   void Clear();
-  // Build from source model or cache buffer
+  // Build from model or cache
   int BuildFromModel(hal::Model* model);
   int BuildFromCache(hal::Cache* cache);
 
