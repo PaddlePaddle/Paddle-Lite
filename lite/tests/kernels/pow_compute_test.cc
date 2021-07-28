@@ -57,7 +57,7 @@ class PowComputeTester : public arena::TestCase {
     std::vector<float> data(dims_.production());
 
     for (int i = 0; i < dims_.production(); i++) {
-      data[i] = (i + 1) * 1.01;
+      data[i] = (i + 1) * 0.1;
     }
 
     SetCommonTensor(input_, dims_, data.data());
@@ -81,7 +81,7 @@ TEST(Pow, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-1;
 #else
-  return；
+  return;
 #endif
 #elif LITE_WITH_HUAWEI_ASCEND_NPU
   abs_error = 1e-1;
