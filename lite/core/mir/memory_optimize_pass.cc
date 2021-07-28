@@ -128,6 +128,8 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
              std::pair<std::set<std::string>, std::set<std::string>>>
         inplace_op_nodes = {{"reshape", {{"X"}, {"Out"}}},
                             {"reshape2", {{"X"}, {"Out"}}},
+                            {"flatten", {{"X"}, {"Out"}}},
+                            {"flatten2", {{"X"}, {"Out"}}},
                             {"squeeze", {{"X"}, {"Out"}}},
                             {"squeeze2", {{"X"}, {"Out"}}},
                             {"unsqueeze", {{"X"}, {"Out"}}},

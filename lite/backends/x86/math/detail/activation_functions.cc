@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,15 +15,13 @@ limitations under the License. */
 #ifdef __AVX__
 
 #include "lite/backends/x86/math/detail/activation_functions.h"
-#include "lite/backends/x86/math/detail/avx_mathfun.h"
+#include "lite/backends/x86/math/avx_mathfuns.h"
 
 namespace paddle {
 namespace lite {
 namespace x86 {
 namespace math {
 namespace detail {
-
-__m256 Exp(__m256 a) { return exp256_ps(a); }
 
 namespace forward {
 namespace avx {
@@ -38,7 +36,7 @@ __m256 Sigmoid(const __m256 a) {
   __m256 tmp = _mm256_max_ps(a, min);
   tmp = _mm256_min_ps(tmp, max);
   tmp = _mm256_sub_ps(_mm256_set1_ps(0.0f), tmp);
-  tmp = Exp(tmp);
+  tmp = lite::x86::math::exp256_ps(tmp);
   tmp = _mm256_add_ps(_mm256_set1_ps(1.0f), tmp);
   tmp = _mm256_div_ps(_mm256_set1_ps(1.0f), tmp);
   return tmp;
@@ -48,7 +46,7 @@ __m256 Tanh(const __m256 a) {
   __m256 max = _mm256_set1_ps(EXP_MAX_INPUT);
   __m256 tmp = _mm256_mul_ps(_mm256_set1_ps(-2.0f), a);
   tmp = _mm256_min_ps(tmp, max);
-  tmp = Exp(tmp);
+  tmp = lite::x86::math::exp256_ps(tmp);
   return _mm256_sub_ps(_mm256_div_ps(_mm256_set1_ps(2.0f),
                                      _mm256_add_ps(_mm256_set1_ps(1.0f), tmp)),
                        _mm256_set1_ps(1.0f));
