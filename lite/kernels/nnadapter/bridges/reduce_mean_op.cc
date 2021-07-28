@@ -61,7 +61,7 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // axes operand
-  auto dim = op_info->GetAttr<std::vector<int>>("dim");
+  std::vector<int> dim = op_info->GetAttr<std::vector<int>>("dim");
   NNAdapterOperand* axes_operand = converter->AddInt32ConstantOperand(
       &dim[0], DDim({static_cast<int64_t>(dim.size())}));
 

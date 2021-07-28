@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -31,8 +31,8 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "Converting " << op_type << " ...";
 
   // Get input and output vars and op attributes
-  auto x_name = op_info->Input("Input").front();
-  auto x_scale_name = "Input0_scale";
+  auto x_name = op_info->Input("X").front();
+  auto x_scale_name = "X0_scale";
   auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
   auto x_scale =
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
@@ -47,19 +47,7 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
-  std::vector<int> axes = op_info->GetAttr<std::vector<int>>("axes");
-  std::vector<int> starts = op_info->GetAttr<std::vector<int>>("starts");
-  std::vector<int> ends_ori = op_info->GetAttr<std::vector<int>>("ends");
-
-  // paddle model: ends[i] maybe is bigger than x_dims[axes[i]], so it needs to
-  // update.
-  int axes_size = static_cast<int>(axes.size());
-  std::vector<int> ends(axes_size, 0);
-  for (int i = 0; i < axes_size; i++) {
-    ends[i] = ends_ori[i] > x_dims[axes[i]] ? x_dims[axes[i]] : ends_ori[i];
-  }
-
-  // Input operand
+  // Input0 operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
     input_operand = converter->GetOperand(x_name);
@@ -72,17 +60,21 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  // axes operand
-  NNAdapterOperand* axes_operand = converter->AddInt32ConstantOperand(
-      &axes[0], DDim({static_cast<int64_t>(axes.size())}));
+  auto dropout_implementation =
+      op_info->GetAttr<std::string>("dropout_implementation");
+  auto scale = 1 - op_info->GetAttr<float>("dropout_prob");
+  if (dropout_implementation == "upscale_in_train") {
+    scale = 1.f;
+    return FAILED;
+  }
 
-  // starts operand
-  NNAdapterOperand* starts_operand = converter->AddInt32ConstantOperand(
-      &starts[0], DDim({static_cast<int64_t>(starts.size())}));
+  // prob operand
+  NNAdapterOperand* prob_operand = converter->AddFloat32ConstantOperand(
+      &scale, DDim({static_cast<int64_t>(1)}));
 
-  // ends operand
-  NNAdapterOperand* ends_operand = converter->AddInt32ConstantOperand(
-      &ends[0], DDim({static_cast<int64_t>(ends.size())}));
+  // Fuse code operand
+  auto fuse_code_operand =
+      converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
 
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
@@ -93,14 +85,13 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
-  // slice operation
+  // Mul operation
   std::vector<NNAdapterOperand*> input_operands = {
-      input_operand, axes_operand, starts_operand, ends_operand};
+      input_operand, prob_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* slice_operation =
-      converter->AddOperation(NNADAPTER_SLICE);
+  NNAdapterOperation* mul_operation = converter->AddOperation(NNADAPTER_MUL);
 
-  converter->SetOperation(slice_operation, &input_operands, &output_operands);
+  converter->SetOperation(mul_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -109,6 +100,6 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(slice,
+REGISTER_SUBGRAPH_BRIDGE(dropout,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::SliceConverter);
+                         paddle::lite::subgraph::nnadapter::DropoutConverter);
