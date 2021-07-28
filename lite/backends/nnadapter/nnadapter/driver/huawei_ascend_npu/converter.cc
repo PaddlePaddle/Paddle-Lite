@@ -127,6 +127,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       case NNADAPTER_SLICE:
         ConvertSlice(operation);
         break;
+      case NNADAPTER_REDUCE_MEAN:
+        ConvertReduceMean(operation);
+        break;
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("
                              << OperationTypeToString(operation->type)

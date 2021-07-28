@@ -724,7 +724,7 @@ TEST(Activation_log, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
 #else
-  return；
+  return;
 #endif
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);

@@ -122,3 +122,4 @@ USE_SUBGRAPH_BRIDGE(batch_norm, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(clip, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(leaky_relu, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(slice, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(reduce_mean, kNNAdapter, "huawei_ascend_npu");

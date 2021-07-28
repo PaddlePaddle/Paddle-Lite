@@ -119,6 +119,7 @@ class Program {
   int ConvertClip(hal::Operation* operation);
   int ConvertLeakyRelu(hal::Operation* operation);
   int ConvertSlice(hal::Operation* operation);
+  int ConvertReduceMean(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};

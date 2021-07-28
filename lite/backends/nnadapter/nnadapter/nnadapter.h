@@ -779,6 +779,30 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_SLICE = 25,
+
+  /**
+  * Computes the mean of the input’s elements along axis. If axis has no
+  * data, mean is calculated over all elements of input.
+  * If keepdims equal 0, then the resulted tensor have the reduced dimension
+  * pruned.
+  *
+  * Inputs:
+  * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+  * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+  * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+  * * 1: axes, a NNADAPTER_TENSOR_INT32 tensor. It indicating the dimensions to
+  * perform mean calculations. It should be in range [-R, R), where R is the
+  * rank of input, negative value works the same way as axis+ndim(input). If
+  * axis has no data, mean is calculated over all elements of input.
+  * * 2: keepdim, A NNADAPTER_BOOL8 scalar. Keep the reduced dimension or not,
+  * default 1 mean keep reduced dimension.
+  *
+  * Outputs:
+  * * 0: output, A tensor with the same type as input.
+  *
+  * Available since version 1.
+  */
+  NNADAPTER_REDUCE_MEAN = 26,
 } NNAdapterOperationCode;
 
 /**
