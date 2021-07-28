@@ -247,9 +247,9 @@ TEST(Deformable_conv1, precision) {
   float abs_error = 2e-5;
   Place place;
 #if defined(LITE_WITH_NNADAPTER)
-  place = TARGET(kHost);
+  place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
+  abs_error = 2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #else

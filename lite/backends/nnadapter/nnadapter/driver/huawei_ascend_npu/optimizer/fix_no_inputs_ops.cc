@@ -24,20 +24,13 @@ namespace nnadapter {
 namespace huawei_ascend_npu {
 
 void FixNoInputsOps(hal::Model* model) {
+  // TODO(shentanyue) e.g.fix assign_value op
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
-    // auto& output_operands = operation->output_operands;
     NNADAPTER_VLOG(5) << "[fix] type:" << operation->type;
-    // auto output_count = output_operands.size();
-    // if (operation->type == nullptr) {
-    //   auto output_operand = output_operands[0];
-    //   if (IsConstantOperand(output_operand)) {
-    //     AddDummyOperation(model, output_operand);
-    //   }
-    // }
   }
 }
 
