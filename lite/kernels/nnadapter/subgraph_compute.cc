@@ -64,7 +64,28 @@ DeviceProgram::~DeviceProgram() {
 
 bool DeviceProgram::LoadFromCache(std::vector<char>* model_cache_buffer,
                                   const std::string& model_cache_dir) {
-  return false;
+  CHECK(!model_cache_key_.empty());
+  // Compiling the model to the hardware-related programs from cached model
+  // buffer
+  int result = NNAdapterCompilation_create_invoke(nullptr,
+                                                  model_cache_key_.c_str(),
+                                                  model_cache_buffer->data(),
+                                                  model_cache_buffer->size(),
+                                                  model_cache_dir.c_str(),
+                                                  context_,
+                                                  &compilation_);
+  if (result != NNADAPTER_NO_ERROR) {
+    LOG(WARNING)
+        << "Failed to create a compilation from the model cache buffer ("
+        << result << ") !";
+    return false;
+  }
+  result = NNAdapterCompilation_finish_invoke(compilation_);
+  if (result != NNADAPTER_NO_ERROR) {
+    LOG(WARNING) << "Build model failed(" << result << ") !";
+    return false;
+  }
+  return true;
 }
 
 bool DeviceProgram::BuildAndCacheToFiles(
@@ -136,8 +157,9 @@ bool DeviceProgram::BuildAndCacheToFiles(
   if (result != NNADAPTER_NO_ERROR) {
     NNAdapterModel_destroy_invoke(model_);
     model_ = nullptr;
-    LOG(WARNING) << "Create a compilation for building model failed(" << result
-                 << ") !";
+    LOG(WARNING)
+        << "Failed to create a compilation by compiling the source model ("
+        << result << ") !";
     return false;
   }
   result = NNAdapterCompilation_finish_invoke(compilation_);
