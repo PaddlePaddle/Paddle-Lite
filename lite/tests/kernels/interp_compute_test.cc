@@ -536,6 +536,7 @@ TEST(Interp_nnadapter_huawei_ascend_npu, precision) {
   float abs_error = 1e-2;
 
   TestInterpOuthw(place, abs_error);
+  TestInterpSizetensor(place, abs_error);
   TestInterpOutsize(place, abs_error);
   TestInterpAlignCorners(place, abs_error);
 }

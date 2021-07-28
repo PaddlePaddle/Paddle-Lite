@@ -73,7 +73,10 @@ int Program::ConvertResizeLinear(hal::Operation* operation) {
   }
   SET_INPUT(resize_linear_op, x, input_operator);
   if (shape_operand != nullptr) {
-    auto shape_operator = ConvertOperand(shape_operand);
+    auto shape_operator = GetMappedOperator(shape_operand);
+    if (shape_operator == nullptr) {
+      shape_operator = ConvertOperand(shape_operand);
+    }
     SET_INPUT(resize_linear_op, size, shape_operator);
   } else if (scales_operand != nullptr) {
     NNADAPTER_LOG(WARNING) << "not support scales now.";
