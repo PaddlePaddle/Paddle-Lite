@@ -1,1 +1,5 @@
-cc_library(activation_functions SRCS activation_functions.cc DEPS avx_mathfuns)
+if (WITH_AVX AND AVX_FOUND)
+  cc_library(activation_functions SRCS activation_functions.cc DEPS avx_mathfuns)
+else()
+  cc_library(activation_functions SRCS activation_functions.cc)
+endif()
