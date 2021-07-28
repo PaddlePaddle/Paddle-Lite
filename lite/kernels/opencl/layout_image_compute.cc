@@ -223,8 +223,19 @@ class LayoutComputeImageDefaultToBufferChw
         new_dims[4 - x_dims.size() + j] = x_dims[j];
       }
     } else if (x_dims.size() < 5) {
-      for (int j = 0; j < x_dims.size(); ++j) {
-        new_dims[4 - x_dims.size() + j] = x_dims[j];
+      // mainly for fc and softmax_1x1
+      // TODO(zhaoyang-star): Tensor shape padding mode will change from
+      // high-dim padding to
+      // low-dim padding to fit image2d.
+      // ImageConverter will be changed.
+      if (x_dims.size() == 2) {
+        for (int j = 0; j < x_dims.size(); ++j) {
+          new_dims[j] = x_dims[j];
+        }
+      } else {
+        for (int j = 0; j < x_dims.size(); ++j) {
+          new_dims[4 - x_dims.size() + j] = x_dims[j];
+        }
       }
     } else {
       LOG(FATAL) << "unsupported layout tensor dims size, the dims size is: "
