@@ -361,7 +361,7 @@ function make_all_tests {
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make lite_compile_deps -j$NUM_PROC
+  make test_mobilenetv1 -j4
   cd - > /dev/null
 }
 
