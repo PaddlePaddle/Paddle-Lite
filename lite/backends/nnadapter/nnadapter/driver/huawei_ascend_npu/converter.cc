@@ -166,216 +166,212 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
                                << ") is found.";
           break;
       }
-      // Identify the inputs and outputs
-      auto input_count = model->input_operands.size();
-      NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-      std::vector<ge::Operator> input_operators;
-      if (input_count > 0) {
-        input_operators.resize(input_count);
-        input_sizes.resize(input_count);
-        for (size_t i = 0; i < input_count; i++) {
-          auto operand = model->input_operands[i];
-          NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-          input_operators[i] = *operators_[operand].back()->op();
-          input_sizes[i] = ProductionOfDimensions(
-              operand->type.dimensions, operand->type.dimension_count);
-        }
-      }
-      auto output_count = model->output_operands.size();
-      NNADAPTER_VLOG(3) << "Model output count: " << output_count;
-      NNADAPTER_CHECK_GT(output_count, 0);
-      std::vector<ge::Operator> output_operators(output_count);
-      output_sizes.resize(output_count);
-      for (size_t i = 0; i < output_count; i++) {
-        auto operand = model->output_operands[i];
+    }
+    // Identify the inputs and outputs
+    auto input_count = model->input_operands.size();
+    NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+    std::vector<ge::Operator> input_operators;
+    if (input_count > 0) {
+      input_operators.resize(input_count);
+      input_sizes.resize(input_count);
+      for (size_t i = 0; i < input_count; i++) {
+        auto operand = model->input_operands[i];
         NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
-        output_operators[i] = *operators_[operand].back()->op();
-        output_sizes[i] = ProductionOfDimensions(operand->type.dimensions,
-                                                 operand->type.dimension_count);
-      }
-      if (cache->key && cache->dir) {
-        model_buffer = &cache->buffer;
-      } else {
-        model_buffer = &model_content;
-      }
-      // Build a GE graph to a CANN OM model, and serialize it into a buffer
-      if (!BuildOMModelToBuffer(
-              input_operators, output_operators, model_buffer)) {
-        NNADAPTER_LOG(FATAL) << "Failed to build a CANN OM model and serialize "
-                                "it into a buffer!";
-        return NNADAPTER_DEVICE_INTERNAL_ERROR;
-      } else {
-        NNADAPTER_VLOG(3)
-            << "Build a CANN OM model and serialize it into a buffer success.";
+        input_operators[i] = *operators_[operand].back()->op();
+        input_sizes[i] = ProductionOfDimensions(operand->type.dimensions,
+                                                operand->type.dimension_count);
       }
     }
-    NNADAPTER_CHECK(model_buffer);
-    // Load a CANN OM model from a buffer, and create a CANN model manager
-    // client(from CANN service) for inference
-    model_client_ =
-        LoadOMModelFromBuffer(*model_buffer, context_->GetFirstDeviceID());
-    if (!model_client_) {
-      NNADAPTER_LOG(FATAL) << "Failed to load a CANN OM model from a buffer!";
-      return NNADAPTER_DEVICE_INTERNAL_ERROR;
-    }
-    // Initialize the CANN input and output tensors
-    std::vector<ge::TensorDesc> input_tensor_descs, output_tensor_descs;
-    if (!model_client_->GetModelIOTensorDim(&input_tensor_descs,
-                                            &output_tensor_descs)) {
-      NNADAPTER_LOG(FATAL) << "Failed to call GetModelIOTensorDim to get the "
-                              "description of input and output tensors!";
-      return NNADAPTER_DEVICE_INTERNAL_ERROR;
-    }
-    auto input_count = input_sizes.size();
-    auto output_count = output_sizes.size();
-    NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
-    NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
-    for (size_t i = 0; i < input_count; i++) {
-      auto shape = input_tensor_descs[i].GetShape();
-      NNADAPTER_VLOG(3) << "CANN input tensors[" << i
-                        << "]: " << GEShapeToString(shape);
-      NNADAPTER_CHECK_EQ(input_sizes[i], ProductionOfGEShape(shape));
-    }
+    auto output_count = model->output_operands.size();
+    NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+    NNADAPTER_CHECK_GT(output_count, 0);
+    std::vector<ge::Operator> output_operators(output_count);
+    output_sizes.resize(output_count);
     for (size_t i = 0; i < output_count; i++) {
-      auto shape = output_tensor_descs[i].GetShape();
-      NNADAPTER_VLOG(3) << "CANN output tensors[" << i
-                        << "]: " << GEShapeToString(shape);
-      NNADAPTER_CHECK_EQ(output_sizes[i], ProductionOfGEShape(shape));
+      auto operand = model->output_operands[i];
+      NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
+      output_operators[i] = *operators_[operand].back()->op();
+      output_sizes[i] = ProductionOfDimensions(operand->type.dimensions,
+                                               operand->type.dimension_count);
     }
-    NNADAPTER_VLOG(3) << "Build success.";
-    return NNADAPTER_NO_ERROR;
-  }
-
-  int Program::Execute(uint32_t input_count,
-                       hal::Argument * input_arguments,
-                       uint32_t output_count,
-                       hal::Argument * output_arguments) {
-    NNADAPTER_CHECK(model_client_->Process(
-        input_count, input_arguments, output_count, output_arguments));
-    return NNADAPTER_NO_ERROR;
-  }
-
-  std::string Program::GetOperatorName(hal::Operand * operand) {
-    auto operand_id = OperandIdToString(operand);
-    auto index = 0;
-    auto it = operators_.find(operand);
-    if (it != operators_.end()) {
-      index = it->second.size();
+    if (cache->key && cache->dir) {
+      model_buffer = &cache->buffer;
+    } else {
+      model_buffer = &model_content;
     }
-    return operand_id + string_format("_%d", index);
-  }
-
-  std::shared_ptr<Operator> Program::GetMappedOperator(hal::Operand * operand) {
-    auto it = operators_.find(operand);
-    if (it != operators_.end()) {
-      return it->second.back();
+    // Build a GE graph to a CANN OM model, and serialize it into a buffer
+    if (!BuildOMModelToBuffer(
+            input_operators, output_operators, model_buffer)) {
+      NNADAPTER_LOG(FATAL)
+          << "Failed to build a CANN OM model and serialize it into a buffer!";
+      return NNADAPTER_DEVICE_INTERNAL_ERROR;
+    } else {
+      NNADAPTER_VLOG(3)
+          << "Build a CANN OM model and serialize it into a buffer success.";
     }
-    return nullptr;
   }
+  NNADAPTER_CHECK(model_buffer);
+  // Load a CANN OM model from a buffer, and create a CANN model manager
+  // client(from CANN service) for inference
+  model_client_ =
+      LoadOMModelFromBuffer(*model_buffer, context_->GetFirstDeviceID());
+  if (!model_client_) {
+    NNADAPTER_LOG(FATAL) << "Failed to load a CANN OM model from a buffer!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  // Initialize the CANN input and output tensors
+  std::vector<ge::TensorDesc> input_tensor_descs, output_tensor_descs;
+  if (!model_client_->GetModelIOTensorDim(&input_tensor_descs,
+                                          &output_tensor_descs)) {
+    NNADAPTER_LOG(FATAL) << "Failed to call GetModelIOTensorDim to get the "
+                            "description of input and output tensors!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  auto input_count = input_sizes.size();
+  auto output_count = output_sizes.size();
+  NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
+  NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
+  for (size_t i = 0; i < input_count; i++) {
+    auto shape = input_tensor_descs[i].GetShape();
+    NNADAPTER_VLOG(3) << "CANN input tensors[" << i
+                      << "]: " << GEShapeToString(shape);
+    NNADAPTER_CHECK_EQ(input_sizes[i], ProductionOfGEShape(shape));
+  }
+  for (size_t i = 0; i < output_count; i++) {
+    auto shape = output_tensor_descs[i].GetShape();
+    NNADAPTER_VLOG(3) << "CANN output tensors[" << i
+                      << "]: " << GEShapeToString(shape);
+    NNADAPTER_CHECK_EQ(output_sizes[i], ProductionOfGEShape(shape));
+  }
+  NNADAPTER_VLOG(3) << "Build success.";
+  return NNADAPTER_NO_ERROR;
+}
 
-  std::shared_ptr<Operator> Program::UpdateOperatorMap(
-      hal::Operand * operand, std::shared_ptr<Operator> op) {
-    auto it = operators_.find(operand);
-    if (it == operators_.end()) {
-      auto result = operators_.insert(
-          std::make_pair(operand, std::vector<std::shared_ptr<Operator>>()));
-      NNADAPTER_CHECK(result.second);
-      it = result.first;
+int Program::Execute(uint32_t input_count,
+                     hal::Argument* input_arguments,
+                     uint32_t output_count,
+                     hal::Argument* output_arguments) {
+  NNADAPTER_CHECK(model_client_->Process(
+      input_count, input_arguments, output_count, output_arguments));
+  return NNADAPTER_NO_ERROR;
+}
+
+std::string Program::GetOperatorName(hal::Operand* operand) {
+  auto operand_id = OperandIdToString(operand);
+  auto index = 0;
+  auto it = operators_.find(operand);
+  if (it != operators_.end()) {
+    index = it->second.size();
+  }
+  return operand_id + string_format("_%d", index);
+}
+
+std::shared_ptr<Operator> Program::GetMappedOperator(hal::Operand* operand) {
+  auto it = operators_.find(operand);
+  if (it != operators_.end()) {
+    return it->second.back();
+  }
+  return nullptr;
+}
+
+std::shared_ptr<Operator> Program::UpdateOperatorMap(
+    hal::Operand* operand, std::shared_ptr<Operator> op) {
+  auto it = operators_.find(operand);
+  if (it == operators_.end()) {
+    auto result = operators_.insert(
+        std::make_pair(operand, std::vector<std::shared_ptr<Operator>>()));
+    NNADAPTER_CHECK(result.second);
+    it = result.first;
+  }
+  it->second.push_back(op);
+  return op;
+}
+
+std::shared_ptr<Operator> Program::AddConstantOperator(
+    const void* values,
+    NNAdapterOperandPrecisionCode precision,
+    const std::vector<int32_t>& dimensions) {
+  NNADAPTER_CHECK(values)
+      << "The values of constant operator should not be nullptr.";
+  auto num_values = ProductionOfDimensions(dimensions);
+  auto shape = dimensions.size() > 0 ? ge::Shape(ConvertDimensions(dimensions))
+                                     : ge::Shape();
+  auto tensor_desc = std::make_shared<ge::TensorDesc>(
+      shape, ge::FORMAT_NCHW, ConvertPrecision(precision));
+  // Add anonymous constant operator
+  auto name = GetOperatorName(nullptr);
+  auto op = std::make_shared<ge::op::Const>();
+  auto tensor = std::make_shared<ge::Tensor>();
+  tensor->SetTensorDesc(*tensor_desc);
+  tensor->SetData(reinterpret_cast<const uint8_t*>(values),
+                  num_values * OperandPrecisionLength(precision));
+  op->set_attr_value(*tensor);
+  auto constant_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
+  UpdateOperatorMap(nullptr, constant_operator);
+  return constant_operator;
+}
+
+std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
+    const int32_t* values, const std::vector<int32_t>& dimensions) {
+  return AddConstantOperator(values, NNADAPTER_TENSOR_INT32, dimensions);
+}
+
+std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
+    const std::vector<int32_t>& values,
+    const std::vector<int32_t>& dimensions) {
+  int num_values = values.size();
+  return AddInt32ConstantOperator(
+      &values[0],
+      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
+}
+
+std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
+    const float* values, const std::vector<int32_t>& dimensions) {
+  return AddConstantOperator(values, NNADAPTER_TENSOR_FLOAT32, dimensions);
+}
+
+std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
+    const std::vector<float>& values, const std::vector<int32_t>& dimensions) {
+  int num_values = values.size();
+  return AddFloat32ConstantOperator(
+      &values[0],
+      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
+}
+
+std::shared_ptr<Operator> Program::ConvertOperand(
+    hal::Operand* operand, std::vector<int32_t> dimensions) {
+  if (dimensions.empty()) {
+    for (uint32_t i = 0; i < operand->type.dimension_count; i++) {
+      dimensions.push_back(operand->type.dimensions[i]);
     }
-    it->second.push_back(op);
-    return op;
   }
-
-  std::shared_ptr<Operator> Program::AddConstantOperator(
-      const void* values,
-      NNAdapterOperandPrecisionCode precision,
-      const std::vector<int32_t>& dimensions) {
-    NNADAPTER_CHECK(values)
-        << "The values of constant operator should not be nullptr.";
-    auto num_values = ProductionOfDimensions(dimensions);
-    auto shape = dimensions.size() > 0
-                     ? ge::Shape(ConvertDimensions(dimensions))
-                     : ge::Shape();
-    auto tensor_desc = std::make_shared<ge::TensorDesc>(
-        shape, ge::FORMAT_NCHW, ConvertPrecision(precision));
-    // Add anonymous constant operator
-    auto name = GetOperatorName(nullptr);
-    auto op = std::make_shared<ge::op::Const>();
+  auto shape = dimensions.size() > 0 ? ge::Shape(ConvertDimensions(dimensions))
+                                     : ge::Shape();
+  auto tensor_desc = std::make_shared<ge::TensorDesc>(
+      shape, ge::FORMAT_NCHW, ConvertPrecision(operand->type.precision));
+  auto name = GetOperatorName(operand);
+  if (IsConstantOperand(operand)) {
+    auto op = std::make_shared<ge::op::Const>(name);
     auto tensor = std::make_shared<ge::Tensor>();
     tensor->SetTensorDesc(*tensor_desc);
-    tensor->SetData(reinterpret_cast<const uint8_t*>(values),
-                    num_values * OperandPrecisionLength(precision));
+    tensor->SetData(reinterpret_cast<const uint8_t*>(operand->buffer),
+                    operand->length);
     op->set_attr_value(*tensor);
     auto constant_operator =
         std::make_shared<Operator>(op, tensor_desc, "", -1);
-    UpdateOperatorMap(nullptr, constant_operator);
+    UpdateOperatorMap(operand, constant_operator);
     return constant_operator;
+  } else if (IsModelInputOperand(operand)) {
+    auto op = std::make_shared<ge::op::Data>(name);
+    op->update_input_desc_x(*tensor_desc);
+    op->update_output_desc_y(*tensor_desc);
+    auto data_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
+    UpdateOperatorMap(operand, data_operator);
+    return data_operator;
   }
-
-  std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
-      const int32_t* values, const std::vector<int32_t>& dimensions) {
-    return AddConstantOperator(values, NNADAPTER_TENSOR_INT32, dimensions);
-  }
-
-  std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
-      const std::vector<int32_t>& values,
-      const std::vector<int32_t>& dimensions) {
-    int num_values = values.size();
-    return AddInt32ConstantOperator(
-        &values[0],
-        dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
-  }
-
-  std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
-      const float* values, const std::vector<int32_t>& dimensions) {
-    return AddConstantOperator(values, NNADAPTER_TENSOR_FLOAT32, dimensions);
-  }
-
-  std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
-      const std::vector<float>& values,
-      const std::vector<int32_t>& dimensions) {
-    int num_values = values.size();
-    return AddFloat32ConstantOperator(
-        &values[0],
-        dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
-  }
-
-  std::shared_ptr<Operator> Program::ConvertOperand(
-      hal::Operand * operand, std::vector<int32_t> dimensions) {
-    if (dimensions.empty()) {
-      for (uint32_t i = 0; i < operand->type.dimension_count; i++) {
-        dimensions.push_back(operand->type.dimensions[i]);
-      }
-    }
-    auto shape = dimensions.size() > 0
-                     ? ge::Shape(ConvertDimensions(dimensions))
-                     : ge::Shape();
-    auto tensor_desc = std::make_shared<ge::TensorDesc>(
-        shape, ge::FORMAT_NCHW, ConvertPrecision(operand->type.precision));
-    auto name = GetOperatorName(operand);
-    if (IsConstantOperand(operand)) {
-      auto op = std::make_shared<ge::op::Const>(name);
-      auto tensor = std::make_shared<ge::Tensor>();
-      tensor->SetTensorDesc(*tensor_desc);
-      tensor->SetData(reinterpret_cast<const uint8_t*>(operand->buffer),
-                      operand->length);
-      op->set_attr_value(*tensor);
-      auto constant_operator =
-          std::make_shared<Operator>(op, tensor_desc, "", -1);
-      UpdateOperatorMap(operand, constant_operator);
-      return constant_operator;
-    } else if (IsModelInputOperand(operand)) {
-      auto op = std::make_shared<ge::op::Data>(name);
-      op->update_input_desc_x(*tensor_desc);
-      op->update_output_desc_y(*tensor_desc);
-      auto data_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
-      UpdateOperatorMap(operand, data_operator);
-      return data_operator;
-    }
-    NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
-                            "converted to ge::Operator!";
-    return nullptr;
-  }
+  NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
+                          "converted to ge::Operator!";
+  return nullptr;
 }
 
 }  // namespace huawei_ascend_npu
