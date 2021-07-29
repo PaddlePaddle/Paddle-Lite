@@ -37,40 +37,6 @@ int Program::ConvertCast(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "dtype1: " << input_operands[1]->buffer;
   NNADAPTER_VLOG(5) << "dtype2: " << dtype;
   ge::DataType otype = ConvertPrecision(dtype);
-  // ge::DataType otype = ge::DT_FLOAT;
-  // switch (dtype) {
-  //   case 0:  // NNADAPTER_BOOL8
-  //     otype = ge::DT_BOOL;
-  //     NNADAPTER_VLOG(5) << "dtype=BOOL";
-  //     break;
-  //   case 1:  // NNADAPTER_INT8
-  //     otype = ge::DT_INT8;
-  //     NNADAPTER_VLOG(5) << "dtype=INT8";
-  //     break;
-  //   case 3:  // NNADAPTER_INT16
-  //     otype = ge::DT_INT16;
-  //     NNADAPTER_VLOG(5) << "dtype=INT16";
-  //     break;
-  //   case 6:  // NNADAPTER_INT32
-  //     otype = ge::DT_INT32;
-  //     NNADAPTER_VLOG(5) << "dtype=INT32";
-  //     break;
-  //   case 7:  // NNADAPTER_INT64
-  //     otype = ge::DT_INT64;
-  //     NNADAPTER_VLOG(5) << "dtype=INT64";
-  //     break;
-  //   case 9:  // NNADAPTER_FLOAT16
-  //     otype = ge::DT_FLOAT16;
-  //     NNADAPTER_VLOG(5) << "dtype=FLOAT16";
-  //     break;
-  //   case 10:  // NNADAPTER_FLOAT32
-  //     otype = ge::DT_FLOAT;
-  //     NNADAPTER_VLOG(5) << "dtype=FLOAT32";
-  //     break;
-  //   default:
-  //     NNADAPTER_VLOG(5) << "unsupported data type: " << dtype;
-  //     break;
-  // }
 
   // Output
   auto output_operand = output_operands[0];

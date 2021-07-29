@@ -143,11 +143,11 @@ class NNAdapterWrapper final {
   void* library_{nullptr};
 };
 
-inline int NNAdapter_getVersion(uint32_t* version) {
+inline int NNAdapter_getVersion_invoke(uint32_t* version) {
   return NNAdapterWrapper::Global().NNAdapter_getVersion(version);
 }
 
-inline int NNAdapter_getDeviceCount(uint32_t* numDevices) {
+inline int NNAdapter_getDeviceCount_invoke(uint32_t* numDevices) {
   return NNAdapterWrapper::Global().NNAdapter_getDeviceCount(numDevices);
 }
 

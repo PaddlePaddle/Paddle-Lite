@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int DeformableConv2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int DeformableConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -299,4 +299,4 @@ int DeformableConv2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     deformable_conv,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::DeformableConv2dConverter);
+    paddle::lite::subgraph::nnadapter::DeformableConvConverter);

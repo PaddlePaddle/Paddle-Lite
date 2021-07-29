@@ -636,7 +636,43 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 返回类型：`bool`
 
+代码示例：
 
+```c++
+//MobileNetV1
+
+// Status1. Predictor is created, memory usage is 22M
+MobileConfig config;
+config.set_model_dir("./mobilenet_v1");
+auto predictor = lite_api::CreatePaddlePredictor(config);
+
+/* Feed model's inputs */
+Tensor input_tensor = predictor->GetInput(0);
+input_tensor->Resize({1, 3, 224, 224});
+auto* data = input_tensor->mutable_data<float>();
+for (int i = 0; i < 1*3*224*224; ++i) {
+  data[i] = 1;
+}
+
+
+// Status2. Predictor has inference successfully, memory usage is 44M
+predictor->Run();
+
+// Status3. Release memory that used by intermediate tensors and ArmL3Cache, memory usage is reduced to 37M
+//       warning: inputs and outputs tensors data will be null after this API is applied
+predictor->TryShrinkMemory();
+
+
+// Warning: if you want to rerun this model, you need to feed model inputs again
+input_tensor = predictor->GetInput(0);
+input_tensor->Resize({1, 3, 224, 224});
+auto* data = input_tensor->mutable_data<float>();
+for (int i = 0; i < 1*3*224*224; ++i) {
+  data[i] = 1;
+}
+predictor->Run();
+
+```
 
 ## TargetType
 

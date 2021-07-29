@@ -118,7 +118,7 @@ const std::string ATCErrorToString(uint32_t error) {
 }
 
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
-    const std::vector<char>& model_buffer, int device_id) {
+    const std::vector<uint8_t>& model_buffer, int device_id) {
   if (model_buffer.size() == 0) {
     NNADAPTER_LOG(ERROR) << "model_buffer size should not be 0!";
     return nullptr;
@@ -137,7 +137,7 @@ std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<char>* model_buffer) {
+    std::vector<uint8_t>* model_buffer) {
   // Convert the CANN IR graph to the CANN om model
   ge::Graph ir_graph("graph");
   // Set input operator attr index if node size > 1
