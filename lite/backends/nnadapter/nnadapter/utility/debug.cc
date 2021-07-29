@@ -298,7 +298,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_LP_NORMALIZATION:
-        input_args = {"input", "axis", "p"};
+        input_args = {"input", "axis", "p", "epsilon"};
         output_args = {"output"};
         break;
       case NNADAPTER_DEFORMABLE_CONV_2D:

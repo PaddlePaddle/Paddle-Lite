@@ -529,8 +529,6 @@ typedef enum {
   /**
    * Applies the Lp Normalization to the input tensor element-wise.
    * The output is calculated using this formula:
-   * output = sum(abs(input)), if p = 1
-   * output = sqrt(sum(input^2)), if p = 2
    *
    * Inputs:
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
@@ -543,6 +541,8 @@ typedef enum {
    * * 2: p, A NNADAPTER_INT32 scalar. The exponent value in the norm
    * formulation,
    * only 1 or 2 are supported. Defaults to 2.
+   * * 3: epsilon, A NNADAPTER_FLOAT32 scalar,
+   * specifying the lower limit of normalization
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.

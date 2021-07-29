@@ -48,10 +48,12 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_dims = out->dims();
 
   auto axis = op_info->GetAttr<int>("axis");
+  auto epsilon = op_info->GetAttr<float>("epsilon");
 
   // Norm type is 2
   auto p_operand = converter->AddInt32ConstantOperand(2);
   auto axis_operand = converter->AddInt32ConstantOperand(axis);
+  auto epsilon_operand = converter->AddFloat32ConstantOperand(epsilon);
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -77,7 +79,7 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Norm operation
   std::vector<NNAdapterOperand*> input_operands = {
-      input_operand, axis_operand, p_operand};
+      input_operand, axis_operand, p_operand, epsilon_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   auto lp_normalization_operation =
       converter->AddOperation(NNADAPTER_LP_NORMALIZATION);

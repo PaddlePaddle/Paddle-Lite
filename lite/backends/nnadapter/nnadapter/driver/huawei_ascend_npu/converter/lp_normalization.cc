@@ -24,7 +24,7 @@ int Program::ConvertLpNormalization(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_EQ(input_count, 4);
   NNADAPTER_CHECK_EQ(output_count, 1);
 
   // Input
@@ -38,6 +38,7 @@ int Program::ConvertLpNormalization(hal::Operation* operation) {
   // attr
   auto axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
   auto p = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
+  auto epsilon = *reinterpret_cast<float*>(input_operands[3]->buffer);
 
   // Convert to GE operators
   NNADAPTER_VLOG(5) << "p: " << p;
@@ -49,6 +50,7 @@ int Program::ConvertLpNormalization(hal::Operation* operation) {
     auto l2_norm_name = GetOperatorName(output_operand);
     auto l2_norm_op = std::make_shared<ge::op::L2Normalize>(l2_norm_name);
     l2_norm_op->set_attr_axis(ge::Operator::OpListInt({axis}));
+    l2_norm_op->set_attr_eps(epsilon);
     SET_INPUT(l2_norm_op, x, input_operator);
     MAP_OUTPUT(l2_norm_op, y, output_operand);
     return NNADAPTER_NO_ERROR;
