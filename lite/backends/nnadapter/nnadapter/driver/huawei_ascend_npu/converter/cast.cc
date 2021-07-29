@@ -30,12 +30,11 @@ int Program::ConvertCast(hal::Operation* operation) {
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
 
-  // dtype
+  // Dtype
   NNAdapterOperandPrecisionCode dtype =
       *reinterpret_cast<NNAdapterOperandPrecisionCode*>(
           input_operands[1]->buffer);
-  NNADAPTER_VLOG(5) << "dtype1: " << input_operands[1]->buffer;
-  NNADAPTER_VLOG(5) << "dtype2: " << dtype;
+  NNADAPTER_VLOG(5) << "dtype: " << dtype;
   ge::DataType otype = ConvertPrecision(dtype);
 
   // Output

@@ -35,13 +35,20 @@ int Program::ConvertLpNormalization(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // attr
+  // Axis
   auto axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  NNADAPTER_VLOG(5) << "axis: " << axis;
+
+  // P
   auto p = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
+  NNADAPTER_VLOG(5) << "p: " << p;
+  NNADAPTER_CHECK_EQ(p, 2) << "Only supports P=2 yet!";
+
+  // Epsilon
   auto epsilon = *reinterpret_cast<float*>(input_operands[3]->buffer);
+  NNADAPTER_VLOG(5) << "epsilon: " << epsilon;
 
   // Convert to GE operators
-  NNADAPTER_VLOG(5) << "p: " << p;
   if (p == 2) {
     auto input_operator = GetMappedOperator(input_operand);
     if (!input_operator) {

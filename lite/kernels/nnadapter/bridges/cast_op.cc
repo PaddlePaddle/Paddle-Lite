@@ -22,8 +22,9 @@ namespace subgraph {
 namespace nnadapter {
 
 // Tensor Precision
-NNAdapterOperandPrecisionCode GetPrecisionCode(int dtype_code) {
-  NNAdapterOperandPrecisionCode precision_code = NNADAPTER_FLOAT32;
+NNAdapterOperandPrecisionCode FluidDataType2NNAdapterTensorPrecisionCode(
+    int dtype_code) {
+  NNAdapterOperandPrecisionCode precision_code = NNADAPTER_TENSOR_FLOAT32;
   switch (dtype_code) {
     case 0:  // BOOL = 0;
       precision_code = NNADAPTER_TENSOR_BOOL8;
@@ -53,7 +54,45 @@ NNAdapterOperandPrecisionCode GetPrecisionCode(int dtype_code) {
       precision_code = NNADAPTER_TENSOR_INT8;
       break;
     default:
-      LOG(FATAL) << "unsupported data type: " << dtype_code;
+      LOG(FATAL) << "Unsupported data type: " << dtype_code;
+      break;
+  }
+  return precision_code;
+}
+
+NNAdapterOperandPrecisionCode FluidDataType2NNAdapterScalarPrecisionCode(
+    int dtype_code) {
+  NNAdapterOperandPrecisionCode precision_code = NNADAPTER_FLOAT32;
+  switch (dtype_code) {
+    case 0:                              // BOOL = 0;
+      precision_code = NNADAPTER_BOOL8;  // NNADAPTER_BOOL8 = 0
+      break;
+    case 1:                              // INT16 = 1
+      precision_code = NNADAPTER_INT16;  // NNADAPTER_INT16 = 3
+      break;
+    case 2:                              // INT32 = 2
+      precision_code = NNADAPTER_INT32;  // NNADAPTER_INT32 = 6
+      break;
+    case 3:                              // INT64 = 3
+      precision_code = NNADAPTER_INT64;  // NNADAPTER_INT64 = 7
+      break;
+    case 4:                                // FP16 = 4
+      precision_code = NNADAPTER_FLOAT16;  // NNADAPTER_FLOAT16 = 9
+      break;
+    case 5:                                // FP32 = 5
+      precision_code = NNADAPTER_FLOAT32;  // NNADAPTER_FLOAT32 = 10
+      break;
+    case 6:                                // FP64 = 6
+      precision_code = NNADAPTER_FLOAT64;  // NNADAPTER_FLOAT64 = 11
+      break;
+    case 20:                             // UINT8 = 20
+      precision_code = NNADAPTER_UINT8;  // NNADAPTER_UINT8 = 2
+      break;
+    case 21:                            // INT8 = 21
+      precision_code = NNADAPTER_INT8;  // NNADAPTER_INT8 = 1
+      break;
+    default:
+      LOG(FATAL) << "Unsupported data type: " << dtype_code;
       break;
   }
   return precision_code;
@@ -91,8 +130,10 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_dtype = op_info->GetAttr<int>("out_dtype");
 
   // Input&Output dtype
-  NNAdapterOperandPrecisionCode itype = GetPrecisionCode(in_dtype);
-  NNAdapterOperandPrecisionCode otype = GetPrecisionCode(out_dtype);
+  NNAdapterOperandPrecisionCode itype =
+      FluidDataType2NNAdapterTensorPrecisionCode(in_dtype);
+  NNAdapterOperandPrecisionCode otype =
+      FluidDataType2NNAdapterTensorPrecisionCode(out_dtype);
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -107,41 +148,8 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  // scalar dtype operand
-  int32_t dtype = NNADAPTER_FLOAT32;
-  switch (out_dtype) {
-    case 0:                     // BOOL = 0;
-      dtype = NNADAPTER_BOOL8;  // 0
-      break;
-    case 1:                     // INT16 = 1
-      dtype = NNADAPTER_INT16;  // 3
-      break;
-    case 2:                     // INT32 = 2
-      dtype = NNADAPTER_INT32;  // 6
-      break;
-    case 3:                     // INT64 = 3
-      dtype = NNADAPTER_INT64;  // 7
-      break;
-    case 4:                       // FP16 = 4
-      dtype = NNADAPTER_FLOAT16;  // 9
-      break;
-    case 5:                       // FP32 = 5
-      dtype = NNADAPTER_FLOAT32;  // 10
-      break;
-    case 6:                       // FP64 = 6
-      dtype = NNADAPTER_FLOAT64;  // 11
-      break;
-    case 20:                    // UINT8 = 20
-      dtype = NNADAPTER_UINT8;  // 2
-      break;
-    case 21:                   // INT8 = 21
-      dtype = NNADAPTER_INT8;  // 1
-      break;
-    default:
-      LOG(FATAL) << "unsupported data type: " << out_dtype;
-      break;
-  }
-
+  // Dtype operand
+  int32_t dtype = FluidDataType2NNAdapterScalarPrecisionCode(out_dtype);
   auto dtype_operand = converter->AddInt32ConstantOperand(dtype);
 
   // Output operand

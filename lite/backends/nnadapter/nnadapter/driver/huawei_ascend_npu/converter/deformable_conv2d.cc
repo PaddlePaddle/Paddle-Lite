@@ -18,7 +18,22 @@
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
-// TODO(shentanyue) Precision issues to be fixed
+/**
+ * fuse deformable_offset and conv2d as deformable_conv2d
+ *
+ * [input] [offsets]  [mask]
+ *    \             \ /
+ *     \             |
+ *      \          concat
+ *       \         /
+ *        \       /
+ * deformable_offset(input) [filter]  [bias]
+ *                       \     |     /
+ *                           \   /
+ *                           conv2d
+ *                             |
+ *                      deformable_conv2d
+ */
 int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -29,7 +44,6 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // auto input_channel_size = input_operand->type.dimensions[1];
   // Offset
   auto offset_operand = input_operands[1];
   NNADAPTER_VLOG(5) << "offset: " << OperandToString(offset_operand);
@@ -39,8 +53,6 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   // Filter
   auto filter_operand = input_operands[3];
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);
-  // auto output_channel_size = filter_operand->type.dimensions[0];
-  // auto filter_channel_size = filter_operand->type.dimensions[1];
   auto filter_height = filter_operand->type.dimensions[2];
   auto filter_width = filter_operand->type.dimensions[3];
   // Bias
@@ -110,17 +122,35 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   std::shared_ptr<Operator> concat_operator =
       MAP_OUTPUT(concat_op, y, output_operand);
 
-  // create deformable_offsets node
+  /**
+   * Create deformable_offsets operator
+   *
+   * deformable_offset args:
+   *   tensor:
+   *      x:          use input_operand
+   *      offsets:    use concat_operator output
+   *   attrs:
+   *      [ksize]:                {filter_height, filter_width}
+   *      [strides]:              {1, 1, stride_height, stride_width}
+   *      [paddings]:             {padding_height_top,
+   *                               padding_height_bottom,
+   *                               padding_width_left,
+   *                               padding_width_right}
+   *      [dilations]:            {1, 1, dilation_height, dilation_width}
+   *      [data_format]:          NCHW
+   *      [deformable_groups]:    deformable_groups
+   *      [modulated]:            true
+   */
   auto deformable_offsets_name = GetOperatorName(output_operand);
   auto deformable_offsets_op =
       std::make_shared<ge::op::DeformableOffsets>(deformable_offsets_name);
   deformable_offsets_op->set_attr_strides(
       ge::Operator::OpListInt({1, 1, stride_height, stride_width}));
   deformable_offsets_op->set_attr_pads(
-      ge::Operator::OpListInt({padding_width_left,
-                               padding_width_right,
-                               padding_height_top,
-                               padding_height_bottom}));
+      ge::Operator::OpListInt({padding_height_top,
+                               padding_height_bottom,
+                               padding_width_left,
+                               padding_width_right}));
   deformable_offsets_op->set_attr_ksize(
       ge::Operator::OpListInt({filter_height, filter_width}));
   deformable_offsets_op->set_attr_dilations(
@@ -133,8 +163,19 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   std::shared_ptr<Operator> deformable_offsets_operator =
       MAP_OUTPUT(deformable_offsets_op, y, output_operand);
 
-  // add reshape node to reshape output
-  // add conv2d
+  /** Create deformable_offsets operator
+   *
+   * conv2d args:
+   *   tensor:
+   *      x:              use deformable_offsets operator output
+   *      filter:         use filter operator
+   *      bias:           use bias operator
+   *   attrs:
+   *      [strides]:      {1, 1, filter_height, filter_width}
+   *      [pads]:         defualt:{0, 0, 0, 0}
+   *      [dilations]:    defualt:{1, 1, 1, 1}
+   *      [data_format]:  NCHW
+   */
   auto conv_name = GetOperatorName(output_operand);
   auto filter_operator = ConvertOperand(filter_operand);
   auto bias_operator = ConvertOperand(bias_operand);
@@ -150,7 +191,7 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   std::shared_ptr<Operator> conv_operator =
       MAP_OUTPUT(conv_op, y, output_operand);
 
-  // fuse activations
+  // Fuse activations
   auto act_name = GetOperatorName(output_operand);
   switch (fuse_code) {
 #define CONVERT_UNARY_ACTIVATION(type, class_name)                \

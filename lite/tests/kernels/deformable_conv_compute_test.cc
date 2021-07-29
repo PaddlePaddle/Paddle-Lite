@@ -242,7 +242,7 @@ void TestConvKsize(Place place, float abs_error = 2e-5) {
   }
 }
 
-TEST(Deformable_conv1, precision) {
+TEST(Deformable_conv, precision) {
   std::cout << "start..." << std::endl;
   float abs_error = 2e-5;
   Place place;

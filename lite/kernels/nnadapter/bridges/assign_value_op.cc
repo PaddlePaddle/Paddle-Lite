@@ -66,8 +66,7 @@ int AssignValueConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     values_operand = converter->AddInt32ConstantOperand(
         &bool_values[0], DDim({static_cast<int>(shape_data.size())}));
   } else {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Unsupported dtype for assign_value_op:"
-                 << dtype;
+    LOG(WARNING) << "Unsupported dtype for assign_value_op: " << dtype;
     return FAILED;
   }
   CHECK(values_operand);
