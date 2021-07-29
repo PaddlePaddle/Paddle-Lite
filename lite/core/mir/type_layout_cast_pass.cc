@@ -35,7 +35,7 @@ void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
     nodes.push_back(node);
   }
-
+  std::map<std::string, Node*> copied_nodes;
   VLOG(4) << "nodes.size():" << nodes.size();
   for (auto& node : nodes) {
     VLOG(4) << "!node->IsStmt():" << !node->IsStmt();
@@ -45,15 +45,17 @@ void TypeLayoutTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
             << node->AsStmt().op_type() << " inlinks.size():" << inlinks.size()
             << " ================";
     for (auto* in : inlinks) {
-      ComplementInputs(graph.get(), node, in);
+      ComplementInputs(graph.get(), node, in, &copied_nodes);
     }
   }
   VLOG(4) << "\n" << Visualize(graph.get());
 }
 
-void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
-                                               Node* inst_node,
-                                               Node* in) {
+void TypeLayoutTransformPass::ComplementInputs(
+    SSAGraph* graph,
+    Node* inst_node,
+    Node* in,
+    std::map<std::string, Node*>* copied_nodes) {
   // If this input is out of date.
   if (inst_node->inlinks.end() ==
       std::find(inst_node->inlinks.begin(), inst_node->inlinks.end(), in))
@@ -100,6 +102,7 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
                   in,
                   graph,
                   inst_node,
+                  copied_nodes,
                   graph->valid_places());
   }
 }
@@ -110,6 +113,7 @@ void TypeLayoutTransformPass::AddLayoutInst(
     Node* in,
     SSAGraph* graph,
     Node* inst_node,
+    std::map<std::string, Node*>* copied_nodes,
     const std::vector<Place>& valid_places) {
   CHECK(!valid_places.empty()) << "valid_place should be set";
 
@@ -117,102 +121,131 @@ void TypeLayoutTransformPass::AddLayoutInst(
   // auto node_id = [&] { return graph->nodes().size(); };
   auto layout_output_name =
       string_format("%s/layout_trans", in->AsArg().name.c_str());
-  auto* layout_output_arg = graph->NewArgumentNode(layout_output_name);
-  layout_output_arg->AsArg().type =
-      LiteType::GetTensorTy(from.target(), from.precision(), to.layout());
+  if (copied_nodes->count(in->AsArg().name)) {
+    // Remove the old link
+    RemoveDirectedLink(in, inst_node);
 
-  auto* layout_inst = graph->NewInstructNode();
+    // Update the original instruction OpDesc.
+    // Update its input to the layout_output_name
+    // Add new link, newarg->inst
+    DirectedLink(copied_nodes->at(in->AsArg().name),
+                 inst_node);  // [io_copy kernel]'s output -> [current kernel]
 
-  bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
-  std::string layout_type = in_persist ? "layout_once" : "layout";
-  // create Op and kernels.
-  auto layout_op = LiteOpRegistry::Global().Create(layout_type);
-  CHECK(layout_op) << "create op [" << layout_op << "] failed";
-  layout_output_arg->AsArg().is_persist = in_persist;
-  // Create the new var manually.
-  inst_node->AsStmt().op()->scope()->Var(layout_output_name);
+    // reset opdesc and update kernel information
+    UpdateInputs(
+        inst_node->AsStmt().op().get(), in->AsArg().name, layout_output_name);
+    auto original_selected_kernel =
+        std::move(inst_node->AsStmt().kernels().front());
+    auto update_op_info = *inst_node->AsStmt().op_info();
+    // ResetOp() will change the Stmt op_info_ value,
+    // after that the old op_info_ value will be nullified.
+    // So, we can't pass `*inst_node->AsStmt().op_info()` into ResetOp.
+    // `update_op_info` is the copy of `*inst_node->AsStmt().op_info().
+    // Whenever update the op_info of a stmt, we should call its ResetOp().
+    inst_node->AsStmt().ResetOp(update_op_info, graph->valid_places());
+    inst_node->AsStmt().kernels().clear();
+    inst_node->AsStmt().kernels().emplace_back(
+        std::move(original_selected_kernel));
+  } else {
+    auto* layout_output_arg = graph->NewArgumentNode(layout_output_name);
+    layout_output_arg->AsArg().type =
+        LiteType::GetTensorTy(from.target(), from.precision(), to.layout());
 
-  // Create IoCopy Instruction.
-  cpp::OpDesc op_desc;
-  op_desc.SetType(layout_type);
-  op_desc.SetInput("Input", {in->AsArg().name});
-  op_desc.SetOutput("Out", {layout_output_name});
+    auto* layout_inst = graph->NewInstructNode();
 
-  layout_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
-  auto kernels = layout_op->CreateKernels(valid_places);
-  std::vector<std::unique_ptr<KernelBase>> selected_kernels;
-  bool is_found = false;
-  for (auto& kernel : kernels) {
-    const Type* in_arg_ty = kernel->GetInputDeclType("Input");
-    const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+    bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
+    std::string layout_type = in_persist ? "layout_once" : "layout";
+    // create Op and kernels.
+    auto layout_op = LiteOpRegistry::Global().Create(layout_type);
+    CHECK(layout_op) << "create op [" << layout_op << "] failed";
+    layout_output_arg->AsArg().is_persist = in_persist;
+    // Create the new var manually.
+    inst_node->AsStmt().op()->scope()->Var(layout_output_name);
 
-    // layout kernel choose
-    //   must ignore [layout check] for layout of kernels's input and output
-    // note: replace LITE_WITH_OPENCL macro with judge input and output target
-    // of layout_trans
-    if ((in_arg_ty->target() == TARGET(kOpenCL) ||
-         out_arg_ty->target() == TARGET(kOpenCL)) &&  // judge OpenCL first
-        (TargetCompatibleTo(*in_arg_ty, from) &&
-         /* skip precision check: PrecisionCompatibleTo(*in_arg_ty, from) &&*/
-         DeviceCompatibleTo(*in_arg_ty, from) &&
-         out_arg_ty->layout() == to.layout())) {
-      is_found = true;
-    } else if (TypeCompatible(*in_arg_ty, from) &&
-               out_arg_ty->layout() == to.layout()) {
-      is_found = true;
+    // Create IoCopy Instruction.
+    cpp::OpDesc op_desc;
+    op_desc.SetType(layout_type);
+    op_desc.SetInput("Input", {in->AsArg().name});
+    op_desc.SetOutput("Out", {layout_output_name});
+
+    layout_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
+    auto kernels = layout_op->CreateKernels(valid_places);
+    std::vector<std::unique_ptr<KernelBase>> selected_kernels;
+    bool is_found = false;
+    for (auto& kernel : kernels) {
+      const Type* in_arg_ty = kernel->GetInputDeclType("Input");
+      const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
+
+      // layout kernel choose
+      //   must ignore [layout check] for layout of kernels's input and output
+      // note: replace LITE_WITH_OPENCL macro with judge input and output target
+      // of layout_trans
+      if ((in_arg_ty->target() == TARGET(kOpenCL) ||
+           out_arg_ty->target() == TARGET(kOpenCL)) &&  // judge OpenCL first
+          (TargetCompatibleTo(*in_arg_ty, from) &&
+           /* skip precision check: PrecisionCompatibleTo(*in_arg_ty, from) &&*/
+           DeviceCompatibleTo(*in_arg_ty, from) &&
+           out_arg_ty->layout() == to.layout())) {
+        is_found = true;
+      } else if (TypeCompatible(*in_arg_ty, from) &&
+                 out_arg_ty->layout() == to.layout()) {
+        is_found = true;
+      }
+      if (is_found) {
+        selected_kernels.emplace_back(std::move(kernel));
+        // we pick the kernel
+        layout_inst->AsStmt(
+            layout_type, std::move(selected_kernels), layout_op);
+        (*copied_nodes)[in->AsArg().name] = layout_output_arg;
+        break;
+      }
     }
-    if (is_found) {
-      selected_kernels.emplace_back(std::move(kernel));
-      // we pick the kernel
-      layout_inst->AsStmt(layout_type, std::move(selected_kernels), layout_op);
-      break;
+
+    CHECK(is_found) << "Can't find a layout kernel for layout op: " << from
+                    << ":" << in->AsArg().name << "->" << to << ":"
+                    << inst_node->AsStmt().op_info()->Type();
+    VLOG(4) << "========= final picked layout kernel ========= ";
+    VLOG(4) << "[info]:" << layout_inst->AsStmt().picked_kernel().name();
+    VLOG(4) << "[summary]:" << layout_inst->AsStmt().picked_kernel().summary()
+            << "\n";
+
+    // Remove the old link
+    RemoveDirectedLink(in, inst_node);
+
+    // Update the original instruction OpDesc.
+    // Update its input to the layout_output_name
+    // Add new link, var -> new_inst, new_inst->newarg, newarg->inst
+    DirectedLink(in, layout_inst);
+    DirectedLink(layout_inst, layout_output_arg);
+    DirectedLink(layout_output_arg, inst_node);
+
+    // reset opdesc and update kernel information
+    UpdateInputs(
+        inst_node->AsStmt().op().get(), in->AsArg().name, layout_output_name);
+    auto original_selected_kernel =
+        std::move(inst_node->AsStmt().kernels().front());
+    auto update_op_info = *inst_node->AsStmt().op_info();
+    // ResetOp() will change the Stmt op_info_ value,
+    // after that the old op_info_ value will be nullified.
+    // So, we can't pass `*inst_node->AsStmt().op_info()` into ResetOp.
+    // `update_op_info` is the copy of `*inst_node->AsStmt().op_info().
+    // Whenever update the op_info of a stmt, we should call its ResetOp().
+    inst_node->AsStmt().ResetOp(update_op_info, graph->valid_places());
+    inst_node->AsStmt().kernels().clear();
+    inst_node->AsStmt().kernels().emplace_back(
+        std::move(original_selected_kernel));
+
+    std::string tmp;
+    if (inst_node->AsStmt().op_info()->GetInputArgname("a", &tmp)) {
+      CHECK(false) << "get old a " << tmp;
     }
+
+    for (auto& kernel : inst_node->AsStmt().kernels()) {
+      inst_node->AsStmt().op()->AttachKernel(kernel.get());
+    }
+
+    graph->CheckValid();
   }
-
-  CHECK(is_found) << "Can't find a layout kernel for layout op: " << from << ":"
-                  << in->AsArg().name << "->" << to << ":"
-                  << inst_node->AsStmt().op_info()->Type();
-  VLOG(4) << "========= final picked layout kernel ========= ";
-  VLOG(4) << "[info]:" << layout_inst->AsStmt().picked_kernel().name();
-  VLOG(4) << "[summary]:" << layout_inst->AsStmt().picked_kernel().summary()
-          << "\n";
-
-  // Remove the old link
-  RemoveDirectedLink(in, inst_node);
-
-  // Update the original instruction OpDesc.
-  // Update its input to the layout_output_name
-  // Add new link, var -> new_inst, new_inst->newarg, newarg->inst
-  DirectedLink(in, layout_inst);
-  DirectedLink(layout_inst, layout_output_arg);
-  DirectedLink(layout_output_arg, inst_node);
-
-  // reset opdesc and update kernel information
-  UpdateInputs(
-      inst_node->AsStmt().op().get(), in->AsArg().name, layout_output_name);
-  auto original_selected_kernel =
-      std::move(inst_node->AsStmt().kernels().front());
-  auto update_op_info = *inst_node->AsStmt().op_info();
-  // ResetOp() will change the Stmt op_info_ value,
-  // after that the old op_info_ value will be nullified.
-  // So, we can't pass `*inst_node->AsStmt().op_info()` into ResetOp.
-  // `update_op_info` is the copy of `*inst_node->AsStmt().op_info().
-  // Whenever update the op_info of a stmt, we should call its ResetOp().
-  inst_node->AsStmt().ResetOp(update_op_info, graph->valid_places());
-  inst_node->AsStmt().kernels().clear();
-  inst_node->AsStmt().kernels().emplace_back(
-      std::move(original_selected_kernel));
-
-  std::string tmp;
-  if (inst_node->AsStmt().op_info()->GetInputArgname("a", &tmp)) {
-    CHECK(false) << "get old a " << tmp;
-  }
-
-  for (auto& kernel : inst_node->AsStmt().kernels()) {
-    inst_node->AsStmt().op()->AttachKernel(kernel.get());
-  }
-
-  graph->CheckValid();
 }
 
 void TypeLayoutTransformPass::SetValidPlaces(
