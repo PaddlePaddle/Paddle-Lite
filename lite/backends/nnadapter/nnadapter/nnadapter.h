@@ -123,7 +123,23 @@ typedef enum {
  * Available since version 1.
  */
 typedef enum {
+  /**
+   * Applies the abs activation to the input tensor element-wise.
+   * The output is calculated using this formula:
+   * output = abs(input)
+   *
+   * Inputs:
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, The result with the same type as two inputs.
+   *
+   * Available since version 1.
+   */
   NNADAPTER_ABS = 0,
+
   /**
    * Performs element-wise binary addition(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
@@ -419,7 +435,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_DEFORMABLE_CONV = 8,
+  NNADAPTER_DEFORMABLE_CONV_2D = 8,
 
   /**
    * Performs element-wise binary division(with Numpy-style broadcasting

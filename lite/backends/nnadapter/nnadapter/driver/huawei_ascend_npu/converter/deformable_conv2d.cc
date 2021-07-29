@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 // TODO(shentanyue) Precision issues to be fixed
-int Program::ConvertDeformableConv(hal::Operation* operation) {
+int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();

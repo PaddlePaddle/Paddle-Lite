@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int DeformableConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int DeformableConv2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -285,7 +285,7 @@ int DeformableConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       dilation_height_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   auto deformable_conv2d_operation =
-      converter->AddOperation(NNADAPTER_DEFORMABLE_CONV);
+      converter->AddOperation(NNADAPTER_DEFORMABLE_CONV_2D);
   converter->SetOperation(
       deformable_conv2d_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
@@ -299,4 +299,4 @@ int DeformableConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 REGISTER_SUBGRAPH_BRIDGE(
     deformable_conv,
     kNNAdapter,
-    paddle::lite::subgraph::nnadapter::DeformableConvConverter);
+    paddle::lite::subgraph::nnadapter::DeformableConv2dConverter);

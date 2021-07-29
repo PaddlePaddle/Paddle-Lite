@@ -122,10 +122,10 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         ConvertAssign(operation);
         break;
       case NNADAPTER_LP_NORMALIZATION:
-        ConvertNorm(operation);
+        ConvertLpNormalization(operation);
         break;
-      case NNADAPTER_DEFORMABLE_CONV:
-        ConvertDeformableConv(operation);
+      case NNADAPTER_DEFORMABLE_CONV_2D:
+        ConvertDeformableConv2d(operation);
         break;
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("

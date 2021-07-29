@@ -29,16 +29,10 @@ int AssignValueConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   VLOG(3) << "Converting " << op_type << " ...";
 
-  // Shape Operand
+  // Shape
   std::vector<int> shape_data = op_info->GetAttr<std::vector<int>>("shape");
-  auto shape_operand = converter->AddInt32ConstantOperand(
-      &shape_data[0], DDim({static_cast<int64_t>(shape_data.size())}));
-  CHECK(shape_operand);
-
-  // Dtype Operand
+  // Dtype
   auto dtype = op_info->GetAttr<int>("dtype");
-  auto dtype_operand = converter->AddInt32ConstantOperand(dtype);
-  CHECK(dtype_operand);
 
   // Value Operand
   std::vector<float> fp32_values{};

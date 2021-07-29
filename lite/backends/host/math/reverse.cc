@@ -37,7 +37,7 @@ int cal(int i, int a, int b) {
 
 template <typename T>
 void reverse_func(const lite::Tensor *input,
-                  const std::vector<int> &axis,
+                  std::vector<int> axis,
                   lite::Tensor *output) {
   std::sort(axis.begin(), axis.end());
   auto input_ddim = input->dims();
@@ -62,7 +62,7 @@ void reverse_func(const lite::Tensor *input,
 }
 
 template void reverse_func<float>(const lite::Tensor *input,
-                                  const std::vector<int> &axis,
+                                  std::vector<int> axis,
                                   lite::Tensor *output);
 }  // namespace math
 }  // namespace host

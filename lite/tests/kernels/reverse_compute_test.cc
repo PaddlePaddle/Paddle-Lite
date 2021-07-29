@@ -32,7 +32,7 @@ class ReverseComputeTester : public arena::TestCase {
  public:
   ReverseComputeTester(const Place& place,
                        const std::string& alias,
-                       const std::vector<int>& axis,
+                       std::vector<int> axis,
                        int n,
                        int c,
                        int h,

@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int LpNormalizationConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -91,6 +91,7 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(norm,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::NormConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    norm,
+    kNNAdapter,
+    paddle::lite::subgraph::nnadapter::LpNormalizationConverter);
