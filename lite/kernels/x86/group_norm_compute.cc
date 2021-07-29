@@ -43,7 +43,6 @@ void GroupNormCompute::Run() {
   int c = param.x->dims()[1];
   int height = param.x->dims()[2];
   int width = param.x->dims()[3];
-  LOG(WARNING) << "GroupNormCompute";
 
   lite::x86::math::group_norm(in,
                               out,
