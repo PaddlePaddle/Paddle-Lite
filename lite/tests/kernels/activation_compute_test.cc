@@ -45,7 +45,8 @@ enum activation_type_test {
   ELU,
   SOFTSIGN,
   HARD_SIGMOID,
-  ABS
+  ABS,
+  MISH
 };
 
 template <class T = float>
@@ -280,6 +281,20 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case MISH: {
+        for (int i = 0; i < dims_.production(); i++) {
+          float x = x_data[i];
+          float sp = 0.0f;
+          if (threshold_ > 0 && x > threshold_)
+            sp = x;
+          else if (threshold_ > 0 && x < -threshold_)
+            sp = std::exp(x);
+          else
+            sp = std::log1p(std::exp(x));
+          output_data[i] = x * std::tanh(sp);
+        }
+        break;
+      }
       default:
         LOG(FATAL) << "the type of activation " << act_type_ << " is unknow.";
     }
@@ -322,6 +337,9 @@ class ActivationComputeTester : public arena::TestCase {
     if (act_type_ == HARD_SIGMOID) {
       op_desc->SetAttr("slope", hard_sigmoid_slope_);
       op_desc->SetAttr("offset", hard_sigmoid_slope_);
+    }
+    if (act_type_ == MISH) {
+      op_desc->SetAttr("threshold", threshold_);
     }
   }
 
@@ -857,6 +875,32 @@ TEST(Activation_gelu, precision) {
             DDim(dims),
             "gelu",
             GELU,
+            abs_error);
+  }
+}
+
+TEST(Activation_mish, precision) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    TestAct(place,
+            "def",
+            0.0,
+            0.,
+            "all",
+            0.,
+            0.0,
+            DDim(dims),
+            "mish",
+            MISH,
             abs_error);
   }
 }
