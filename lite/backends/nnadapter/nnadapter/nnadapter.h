@@ -647,7 +647,41 @@ typedef enum {
    *
    * Available since version 1.
    */
+
   NNADAPTER_TRANSPOSE = 19,
+
+  /**
+   * Remove dimensions of input which size is 1
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_UNSQUEEZE = 20,
+
+  /**
+ * Remove dimensions of input which size is 1
+ *
+ * Inputs:
+ * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+ * * 1: XShape, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+ *
+ * Outputs:
+ * * 0: output, A tensor with the same shape and type as input.
+ *
+ * Available since version 1.
+ */
+  NNADAPTER_UNSQUEEZE2 = 21,
 } NNAdapterOperationCode;
 
 /**

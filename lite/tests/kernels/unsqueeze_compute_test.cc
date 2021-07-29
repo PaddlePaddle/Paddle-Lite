@@ -269,7 +269,16 @@ void test_unsqueeze2(Place place, float abs_error = 2e-5) {
 TEST(unsqueeze, precision) {
   Place place;
   float abs_error = 2e-5;
-#ifdef LITE_WITH_NPU
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
@@ -278,6 +287,8 @@ TEST(unsqueeze, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
+#else
+  return;
 #endif
   test_unsqueeze(place, abs_error);
 }
@@ -285,7 +296,16 @@ TEST(unsqueeze, precision) {
 TEST(unsqueeze2, precision) {
   Place place;
   float abs_error = 2e-5;
-#ifdef LITE_WITH_NPU
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
@@ -294,6 +314,8 @@ TEST(unsqueeze2, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
+#else
+  return;
 #endif
 
   test_unsqueeze2(place, abs_error);
