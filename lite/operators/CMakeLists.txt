@@ -71,6 +71,7 @@ add_operator(group_norm_op extra SRCS group_norm_op.cc DEPS ${op_DEPS})
 add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
 
 # 3.extra ops
+add_operator(reverse_op extra SRCS reverse_op.cc DEPS ${op_DEPS})
 add_operator(inverse_op extra SRCS inverse_op.cc DEPS ${op_DEPS})
 add_operator(search_group_padding extra SRCS search_group_padding_op.cc DEPS ${op_DEPS})
 add_operator(lrn_op_lite extra SRCS lrn_op.cc DEPS ${op_DEPS})
@@ -152,6 +153,7 @@ add_operator(linspace_op extra SRCS linspace_op.cc DEPS ${op_DEPS})
 add_operator(roi_perspective_transform_op extra SRCS roi_perspective_transform_op.cc DEPS ${op_DEPS})
 add_operator(argsort_op extra SRCS argsort_op.cc DEPS ${op_DEPS})
 add_operator(flip_op extra SRCS flip_op.cc DEPS ${op_DEPS})
+add_operator(index_select_op extra SRCS index_select_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})

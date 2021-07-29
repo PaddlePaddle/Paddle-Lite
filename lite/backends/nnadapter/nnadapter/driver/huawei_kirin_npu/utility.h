@@ -28,7 +28,7 @@ namespace huawei_kirin_npu {
 // Build and load OM model to/from memory
 std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
     const std::string& model_name,
-    std::vector<char>* model_buffer,
+    std::vector<uint8_t>* model_buffer,
     bool* model_comp,
     int freq_level,
     int framework_type,
@@ -37,7 +37,7 @@ std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<char>* model_buffer);
+    std::vector<uint8_t>* model_buffer);
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);
