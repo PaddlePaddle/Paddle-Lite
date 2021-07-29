@@ -545,13 +545,9 @@ class Context<TargetType::kX86> {
 
   std::string name() const { return "X86Context"; }
 
-  SSEType sse_level() {
-    return device_sse_level();
-  }  // 0:not support 1:SSE 2:SSE2 3:SSE3 4:SSE4_1 5:SSE4_2
-  AVXType avx_level() {
-    return device_avx_level();
-  }  // 0:not support 1:AVX 2:AVX2 3:AVX512
-  FMAType fma_level() { return device_fma_level(); }  // 0:not support 1:FMA3
+  SSEType sse_level() { return device_sse_level(); }  
+  AVXType avx_level() { return device_avx_level(); }
+  FMAType fma_level() { return device_fma_level(); }
 
  private:
   // overall information

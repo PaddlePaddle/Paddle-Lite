@@ -1413,39 +1413,39 @@ bool feature_detect_avx_fma(int ftr) {
 
 SSEType device_sse_level() {
   if (bit(cpuid.ecx, 20))
-    return SSEType::SSE4_2;
+    return SSEType::ISA_SSE4_2;
   else if (bit(cpuid.ecx, 19))
-    return SSEType::SSE4_1;
+    return SSEType::ISA_SSE4_1;
   else if (bit(cpuid.ecx, 0))
-    return SSEType::SSE3;
+    return SSEType::ISA_SSE3;
   else if (bit(cpuid.edx, 26))
-    return SSEType::SSE2;
+    return SSEType::ISA_SSE2;
   else if (bit(cpuid.edx, 25))
-    return SSEType::SSE;
+    return SSEType::ISA_SSE;
   else
-    return SSEType::NONE;
+    return SSEType::SSE_NONE;
 }
 
 AVXType device_avx_level() {
 #ifdef LITE_WITH_AVX
   if (feature_detect_vnni())
-    return AVXType::VNNI;
+    return AVXType::ISA_VNNI;
   else if (feature_detect_avx2())
-    return AVXType::AVX2;
+    return AVXType::ISA_AVX2;
   else if (feature_detect_avx_fma(28))
-    return AVXType::AVX;
+    return AVXType::ISA_AVX;
   else
 #endif
-    return AVXType::NONE;
+    return AVXType::AVX_NONE;
 }
 
 FMAType device_fma_level() {
 #ifdef LITE_WITH_AVX
   if (feature_detect_avx_fma(12))
-    return FMAType::FMA;
+    return FMAType::ISA_FMA;
   else
 #endif
-    return FMAType::NONE;
+    return FMAType::FMA_NONE;
 }
 
 #endif
