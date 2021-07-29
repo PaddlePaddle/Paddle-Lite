@@ -80,6 +80,7 @@ class Program {
               hal::Argument* output_arguments);
 
  private:
+  void Clear();
   // Operand converters
   std::string GetOperatorName(hal::Operand* operand);
   std::shared_ptr<Operator> GetMappedOperator(hal::Operand* operand);

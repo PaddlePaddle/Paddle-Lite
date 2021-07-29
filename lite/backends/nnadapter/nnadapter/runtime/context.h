@@ -24,13 +24,18 @@ namespace runtime {
 
 class Context {
  public:
+  typedef struct {
+    void* context;
+    Device* device;
+  } DeviceContext;
   explicit Context(std::vector<Device*> devices, const std::string& properties);
   ~Context();
-  std::pair<void*, Device*> GetFirstDevice();
+  DeviceContext* GetDeviceContext(const char* name);
+  DeviceContext* GetDeviceContext(int index);
   const char* GetProperties() { return properties_.c_str(); }
 
  private:
-  std::vector<std::pair<void*, Device*>> contexts_;
+  std::vector<DeviceContext> device_contexts_;
   std::string properties_;
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
