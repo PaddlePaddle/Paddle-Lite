@@ -387,7 +387,7 @@ void ElementwiseSubActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
     act_supported = true;
     elementwise_compute_template<operators::FusionElementwiseActivationParam,
                                  float16_t,
-                                 OprandSwapable::YES,
+                                 OprandSwapable::NO,
                                  arm_math::NullNeonConfig>(
         this,
         lite::arm::math::fp16::elementwise_sub_relu_broadcast<float16_t>,
@@ -404,14 +404,10 @@ void ElementwiseSubActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
 
 template <>
 void ElementwiseSubCompute<float16_t, PRECISION(kFP16)>::Run() {
-  using NeonConfig = arm_math::MergeConfig<
-      arm_math::SubConfig<float16_t>,
-      arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, float16_t>>;
-
   elementwise_compute_template<operators::ElementwiseParam,
                                float16_t,
-                               OprandSwapable::YES,
-                               NeonConfig>(
+                               OprandSwapable::NO,
+                               arm_math::NullNeonConfig>(
       this,
 
       lite::arm::math::fp16::elementwise_sub_broadcast<float16_t>,
@@ -429,7 +425,7 @@ void ElementwiseDivActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
     act_supported = true;
     elementwise_compute_template<operators::FusionElementwiseActivationParam,
                                  float16_t,
-                                 OprandSwapable::YES,
+                                 OprandSwapable::NO,
                                  arm_math::NullNeonConfig>(
         this,
         lite::arm::math::fp16::elementwise_div_relu_broadcast<float16_t>,
@@ -446,14 +442,10 @@ void ElementwiseDivActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
 
 template <>
 void ElementwiseDivCompute<float16_t, PRECISION(kFP16)>::Run() {
-  using NeonConfig = arm_math::MergeConfig<
-      arm_math::DivConfig<float16_t>,
-      arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, float16_t>>;
-
   elementwise_compute_template<operators::ElementwiseParam,
                                float16_t,
-                               OprandSwapable::YES,
-                               NeonConfig>(
+                               OprandSwapable::NO,
+                               arm_math::NullNeonConfig>(
       this,
 
       lite::arm::math::fp16::elementwise_div_broadcast<float16_t>,

@@ -76,4 +76,22 @@ REGISTER_LITE_KERNEL(reduce_max, kX86, kFloat, kNCHW, ReduceMaxInt64, int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
+using ReduceMinFloat32 = x86::ReduceCompute<float, x86::MinFunctor>;
+REGISTER_LITE_KERNEL(reduce_min, kX86, kFloat, kNCHW, ReduceMinFloat32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+
+using ReduceMinInt32 = x86::ReduceCompute<int, x86::MinFunctor>;
+REGISTER_LITE_KERNEL(reduce_min, kX86, kFloat, kNCHW, ReduceMinInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .Finalize();
+
+using ReduceMinInt64 = x86::ReduceCompute<int64_t, x86::MinFunctor>;
+REGISTER_LITE_KERNEL(reduce_min, kX86, kFloat, kNCHW, ReduceMinInt64, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .Finalize();
 #endif  // LITE_BUILD_EXTRA

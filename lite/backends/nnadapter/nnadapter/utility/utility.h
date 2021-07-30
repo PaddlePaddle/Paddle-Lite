@@ -185,4 +185,13 @@ std::map<std::string, std::string> GetKeyValues(
     const std::string& delimiter = ";",
     const std::string& assignment = "=");
 
+// A naive implementation of CRC32C
+uint32_t CRC32C(const uint8_t* buffer, size_t size);
+
+// Read a file and output the data into an uint8_t array
+bool ReadFile(const std::string& path, std::vector<uint8_t>* buffer);
+
+// Write an uint8_t array to a file
+bool WriteFile(const std::string& path, const std::vector<uint8_t>& buffer);
+
 }  // namespace nnadapter
