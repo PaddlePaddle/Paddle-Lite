@@ -234,18 +234,17 @@ void TypeLayoutTransformPass::AddLayoutInst(
     inst_node->AsStmt().kernels().clear();
     inst_node->AsStmt().kernels().emplace_back(
         std::move(original_selected_kernel));
-
-    std::string tmp;
-    if (inst_node->AsStmt().op_info()->GetInputArgname("a", &tmp)) {
-      CHECK(false) << "get old a " << tmp;
-    }
-
-    for (auto& kernel : inst_node->AsStmt().kernels()) {
-      inst_node->AsStmt().op()->AttachKernel(kernel.get());
-    }
-
-    graph->CheckValid();
   }
+  std::string tmp;
+  if (inst_node->AsStmt().op_info()->GetInputArgname("a", &tmp)) {
+    CHECK(false) << "get old a " << tmp;
+  }
+
+  for (auto& kernel : inst_node->AsStmt().kernels()) {
+    inst_node->AsStmt().op()->AttachKernel(kernel.get());
+  }
+
+  graph->CheckValid();
 }
 
 void TypeLayoutTransformPass::SetValidPlaces(
