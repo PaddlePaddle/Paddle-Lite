@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -30,7 +30,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
 
-  // Get input and output vars and op attributes
+  // Get input and output
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
   auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
@@ -38,6 +38,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -45,6 +46,14 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
+
+  auto axis = op_info->GetAttr<int>("axis");
+  auto epsilon = op_info->GetAttr<float>("epsilon");
+
+  // Norm type is 2
+  auto p_operand = converter->AddInt32ConstantOperand(2);
+  auto axis_operand = converter->AddInt32ConstantOperand(axis);
+  auto epsilon_operand = converter->AddFloat32ConstantOperand(epsilon);
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -68,26 +77,14 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
-  // Activation operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand};
+  // Norm operation
+  std::vector<NNAdapterOperand*> input_operands = {
+      input_operand, axis_operand, p_operand, epsilon_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* activation_operation = nullptr;
-  if (op_type == "sigmoid") {
-    activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
-  } else if (op_type == "relu") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU);
-  } else if (op_type == "relu6") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU6);
-  } else if (op_type == "tanh") {
-    activation_operation = converter->AddOperation(NNADAPTER_TANH);
-  } else if (op_type == "abs") {
-    activation_operation = converter->AddOperation(NNADAPTER_ABS);
-  } else {
-    LOG(WARNING) << "Unsupported activation type: " << op_type;
-    return FAILED;
-  }
+  auto lp_normalization_operation =
+      converter->AddOperation(NNADAPTER_LP_NORMALIZATION);
   converter->SetOperation(
-      activation_operation, &input_operands, &output_operands);
+      lp_normalization_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -96,18 +93,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu,
+REGISTER_SUBGRAPH_BRIDGE(norm,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(sigmoid,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu6,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(abs,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+                         paddle::lite::subgraph::nnadapter::NormConverter);

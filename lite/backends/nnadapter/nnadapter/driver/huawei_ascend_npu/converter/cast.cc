@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,16 +19,24 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertActivation(hal::Operation* operation) {
+int Program::ConvertCast(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 1);
+  NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
+
+  // Dtype
+  NNAdapterOperandPrecisionCode dtype =
+      *reinterpret_cast<NNAdapterOperandPrecisionCode*>(
+          input_operands[1]->buffer);
+  NNADAPTER_VLOG(5) << "dtype: " << dtype;
+  ge::DataType otype = ConvertPrecision(dtype);
+
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
@@ -38,26 +46,11 @@ int Program::ConvertActivation(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-  auto act_name = GetOperatorName(output_operand);
-  switch (operation->type) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                \
-  case NNADAPTER_##type: {                                        \
-    auto act_op = std::make_shared<ge::op::class_name>(act_name); \
-    SET_INPUT(act_op, x, input_operator);                         \
-    MAP_OUTPUT(act_op, y, output_operand);                        \
-  } break;
-    CONVERT_UNARY_ACTIVATION(SIGMOID, Sigmoid);
-    CONVERT_UNARY_ACTIVATION(RELU, Relu);
-    CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
-    CONVERT_UNARY_ACTIVATION(TANH, Tanh);
-    CONVERT_UNARY_ACTIVATION(ABS, Abs);
-#undef CONVERT_UNARY_ACTIVATION
-    default:
-      NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
-                           << OperationTypeToString(operation->type)
-                           << " is found.";
-      break;
-  }
+  auto cast_name = GetOperatorName(output_operand);
+  auto cast_op = std::make_shared<ge::op::Cast>(cast_name);
+  cast_op->set_attr_dst_type(otype);
+  SET_INPUT(cast_op, x, input_operator);
+  MAP_OUTPUT(cast_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

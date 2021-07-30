@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,23 +14,13 @@
 
 #pragma once
 
-#include <algorithm>
-#include <string>
-#include <vector>
-#include "lite/operators/op_params.h"
-#include "lite/utils/cp_logging.h"
+#include "core/hal/types.h"
 
-namespace paddle {
-namespace lite {
-namespace host {
-namespace math {
+namespace nnadapter {
+namespace huawei_ascend_npu {
 
-template <typename T>
-void reverse_func(const lite::Tensor* input,
-                  std::vector<int> axis,
-                  lite::Tensor* output);
+// todo (shentanyue)  e.g.fix assign_value op unit test
+void FixNoInputsOps(hal::Model* model);
 
-}  // namespace math
-}  // namespace host
-}  // namespace lite
-}  // namespace paddle
+}  // namespace huawei_ascend_npu
+}  // namespace nnadapter
