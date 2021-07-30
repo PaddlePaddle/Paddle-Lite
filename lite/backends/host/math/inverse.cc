@@ -78,7 +78,7 @@ void UpperInverse(T *U, int n) {
 
 template <typename T>
 void MatMul(T *U_1, T *L_1, T *P, int n, T *out) {
-  T *temp_array = reinterpret_cast<T *>(malloc(sizeof(T) * n * n));
+  T *temp_array = reinterpret_cast<T *>(TargetMalloc(sizeof(T) * n * n));
   for (int i = 0; i < n; i++)
     for (int j = 0; j < n; j++) {
       T temp = 0;
@@ -91,7 +91,7 @@ void MatMul(T *U_1, T *L_1, T *P, int n, T *out) {
       for (int k = 0; k < n; k++) temp += temp_array[i * n + k] * P[k * n + j];
       out[i * n + j] = temp;
     }
-  free(temp_array);
+  TargetFree(temp_array);
 }
 
 template <typename InType>
@@ -104,9 +104,9 @@ void inverse_func(const lite::Tensor *input, lite::Tensor *output) {
   const InType *in_ptr = input->data<InType>();
   InType *out_ptr = output->mutable_data<InType>();
 
-  InType *L = reinterpret_cast<InType *>(malloc(sizeof(InType) * n * n));
-  InType *U = reinterpret_cast<InType *>(malloc(sizeof(InType) * n * n));
-  InType *P = reinterpret_cast<InType *>(malloc(sizeof(InType) * n * n));
+  InType *L = reinterpret_cast<InType *>(TargetMalloc(sizeof(InType) * n * n));
+  InType *U = reinterpret_cast<InType *>(TargetMalloc(sizeof(InType) * n * n));
+  InType *P = reinterpret_cast<InType *>(TargetMalloc(sizeof(InType) * n * n));
 
   for (int i = 0; i < batch_size; i++) {
     memset(P, 0, sizeof(InType) * n * n);
@@ -118,9 +118,9 @@ void inverse_func(const lite::Tensor *input, lite::Tensor *output) {
     UpperInverse(U, n);
     MatMul(U, L, P, n, out_ptr + i * n * n);
   }
-  free(L);
-  free(U);
-  free(P);
+  TargetFree(L);
+  TargetFree(U);
+  TargetFree(P);
 }
 
 template void inverse_func<float>(const lite::Tensor *input,
