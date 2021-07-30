@@ -13,25 +13,28 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/operators/box_clip_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace x86 {
 
-class BoxClipCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class GroupNormCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
-  using param_t = operators::BoxClipParam;
+  using param_t = operators::GroupNormParam;
+
+  void PrepareForRun() override;
 
   void Run() override;
 
-  virtual ~BoxClipCompute() = default;
+  virtual ~GroupNormCompute() = default;
+
+ private:
 };
 
-}  // namespace arm
+}  // namespace x86
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
