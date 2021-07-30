@@ -42,10 +42,10 @@ cat ./models_opt/$dir_name/.tailored_ops_source_list >> ./model_info/tailored_op
 cp -f ./models_opt/$dir_name.nb optimized_model
 done
 
-sort -n ./model_info/tailored_kernels_list | uniq > ./model_info/.tailored_kernels_list
-sort -n ./model_info/tailored_kernels_source_list | uniq > ./model_info/.tailored_kernels_source_list
-sort -n ./model_info/tailored_ops_list | uniq > ./model_info/.tailored_ops_list
-sort -n ./model_info/tailored_ops_source_list | uniq > ./model_info/.tailored_ops_source_list
+cp ./model_info/tailored_kernels_list ./model_info/.tailored_kernels_list
+cp ./model_info/tailored_kernels_source_list ./model_info/.tailored_kernels_source_list
+cp ./model_info/tailored_ops_list ./model_info/.tailored_ops_list
+cp ./model_info/tailored_ops_source_list ./model_info/.tailored_ops_source_list
 
 rm -rf $(ls ./models_opt | grep -v .nb)
 
