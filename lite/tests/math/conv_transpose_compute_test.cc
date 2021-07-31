@@ -17,12 +17,17 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
+#include "lite/tests/utils/fill_data.h"
 #include "lite/tests/utils/naive_math_impl.h"
+#include "lite/tests/utils/print_info.h"
 #include "lite/tests/utils/tensor_utils.h"
 
 #ifdef LITE_WITH_ARM
 #include "lite/kernels/arm/conv_transpose_compute.h"
 #endif  // LITE_WITH_ARM
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 DEFINE_int32(power_mode,
              3,
@@ -260,8 +265,209 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
   delete param.output;
   delete param.bias;
 }
+#ifdef ENABLE_ARM_FP16
+void test_conv_transpose_fp16(const std::vector<DDim>& input_dims,
+                              const DDim& weight_dim,
+                              int group,
+                              const std::vector<int>& strides,
+                              const std::vector<int>& pads,
+                              const std::vector<int>& dilas,
+                              bool flag_bias,
+                              bool flag_relu,
+                              const std::vector<int>& thread_num,
+                              const std::vector<int>& power_mode) {
+#ifdef LITE_WITH_ARM
+  paddle::lite::DeviceInfo::Init();
+#endif
+  ConvParam param;
+  param.x = new Tensor;
+  param.x->set_precision(PRECISION(kFP16));
+  param.filter = new Tensor;
+  param.filter->Resize(weight_dim);
+  param.filter->set_precision(PRECISION(kFP16));
+  if (flag_bias) {
+    param.bias = new Tensor;
+    param.bias->Resize({weight_dim[1] * group});
+    param.bias->set_precision(PRECISION(kFP16));
+  }
+  param.strides = strides;
+  param.paddings = std::make_shared<std::vector<int>>(pads);
+  param.dilations = std::make_shared<std::vector<int>>(dilas);
+  param.fuse_relu = flag_relu;
+  param.groups = group;
+
+  param.output = new Tensor;
+  param.output->set_precision(PRECISION(kFP16));
+
+  auto weight_fp16 = param.filter->mutable_data<float16_t>();
+
+  // fill_data_rand<float16_t>(weight_fp16, -1.f, 1.f, param.filter->numel());
+  fill_data_const<float16_t>(weight_fp16, 1.f, param.filter->numel());
+  if (flag_bias) {
+    auto bias_fp16 = param.bias->mutable_data<float16_t>();
+    // fill_data_rand<float16_t>(bias_fp16, -1.f, 1.f, param.filter->numel());
+    fill_data_const<float16_t>(bias_fp16, 1.f, param.bias->numel());
+  }
+  if (flag_relu) {
+    ActivationParam act_param;
+    act_param.has_active = true;
+    act_param.active_type =
+        (paddle::lite_api::ActivationType)1;  // 2-relu6 4-leakyrelu
+    param.activation_param = act_param;
+  }
+  Tensor tmp_weights;
+  tmp_weights.Resize(weight_dim);
+  tmp_weights.CopyDataFrom(*param.filter);
+  auto wptr = tmp_weights.data<float16_t>();
+  auto bias_ptr = flag_bias ? param.bias->data<float16_t>() : nullptr;
+
+  for (auto& cls : power_mode) {
+    for (auto& th : thread_num) {
+      paddle::lite::kernels::arm::Conv2DTransposeCompute<PRECISION(kFP16),
+                                                         PRECISION(kFP16)>
+          conv_t;
+      std::unique_ptr<paddle::lite::KernelContext> ctx1(
+          new paddle::lite::KernelContext);
+      auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+      ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+      conv_t.SetParam(param);
+      conv_t.SetContext(std::move(ctx1));
+      for (auto& dim_in : input_dims) {
+        CHECK_EQ(weight_dim[0], dim_in[1])
+            << "input channel must equal to weights channel";
+        DDim dim_out = compute_out_dim(dim_in, param);
+        if (dim_out[2] < 1 || dim_out[3] < 1) {
+          continue;
+        }
+        param.x->Resize(dim_in);
+        param.output->Resize(dim_out);
+        param.filter->CopyDataFrom(tmp_weights);
+        // prepare for run
+        conv_t.PrepareForRun();
+        auto din_fp16 = param.x->mutable_data<float16_t>();
+        // fill_data_rand<float16_t>(bias_fp16, -1.f, 1.f, param.x->numel());
+        fill_data_const<float16_t>(din_fp16, 1.f, param.x->numel());
+
+        Tensor tout_basic;
+        if (FLAGS_check_result) {
+          tout_basic.set_precision(PRECISION(kFP16));
+          tout_basic.Resize(dim_out);
+          auto dout_basic_fp16 = tout_basic.mutable_data<float16_t>();
+          fill_data_const<float16_t>(
+              dout_basic_fp16, 1.f, dim_out.production());
+          deconv_basic<float16_t, float16_t>(din_fp16,
+                                             dout_basic_fp16,
+                                             dim_in[0],
+                                             dim_out[1],
+                                             dim_out[2],
+                                             dim_out[3],
+                                             dim_in[1],
+                                             dim_in[2],
+                                             dim_in[3],
+                                             wptr,
+                                             bias_ptr,
+                                             group,
+                                             weight_dim[3],
+                                             weight_dim[2],
+                                             strides[1],
+                                             strides[0],
+                                             dilas[1],
+                                             dilas[0],
+                                             pads[2],
+                                             pads[3],
+                                             pads[0],
+                                             pads[1],
+                                             flag_bias,
+                                             flag_relu);
+        }
+        /// warm up
+        for (int i = 0; i < FLAGS_warmup; ++i) {
+          conv_t.Launch();
+        }
+        /// compute
+        Timer t0;
+        for (int i = 0; i < FLAGS_repeats; ++i) {
+          t0.Start();
+          conv_t.Launch();
+          t0.Stop();
+        }
+
+        float gops =
+            2.f * tmp_weights.numel() * dim_in[0] * dim_in[2] * dim_in[3];
+        LOG(INFO) << "conv fp16: input shape: " << dim_in << ", output shape"
+                  << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
+                  << ", min time: " << t0.LapTimes().Min()
+                  << ", total GOPS: " << 1e-9 * gops
+                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
+
+        if (FLAGS_check_result) {
+          double max_ratio = 0;
+          double max_diff = 0;
+          auto basic_ptr = tout_basic.data<float16_t>();
+          auto saber_ptr = param.output->data<float16_t>();
+          Tensor tdiff;
+          tdiff.Resize(tout_basic.dims());
+          tdiff.set_precision(PRECISION(kFP16));
+          auto ptr = tdiff.mutable_data<float16_t>();
+          data_diff(basic_ptr,
+                    saber_ptr,
+                    ptr,
+                    tout_basic.numel(),
+                    max_ratio,
+                    max_diff);
+          print_diff_info(max_diff, max_ratio);
+          if (std::abs(max_ratio) > 1e-3f) {
+            if (max_diff > 1e-1f) {
+              int64_t size = tout_basic.numel();
+              int64_t width = tout_basic.dims()[3];
+              print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
+              LOG(FATAL) << "test fp16 conv: input: " << dim_in
+                         << ", output: " << dim_out
+                         << ", weight dim: " << weight_dim
+                         << ", pad: " << pads[0] << ", " << pads[1] << ", "
+                         << pads[2] << ", " << pads[3]
+                         << ", stride: " << strides[0] << ", " << strides[1]
+                         << ", dila_: " << dilas[0] << ", " << dilas[1]
+                         << ", bias: " << (flag_bias ? "true" : "false")
+                         << ", relu: " << (flag_relu ? "true" : "false")
+                         << ", threads: " << th << ", power_mode: " << cls
+                         << " failed!!\n";
+            }
+          }
+        }
+        LOG(INFO) << "test fp16 conv: input: " << dim_in
+                  << ", output: " << dim_out << ", weight dim: " << weight_dim
+                  << ", pad: " << pads[0] << ", " << pads[1] << ", " << pads[2]
+                  << ", " << pads[3] << ", stride: " << strides[0] << ", "
+                  << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
+                  << ", bias: " << (flag_bias ? "true" : "false")
+                  << ", relu: " << (flag_relu ? "true" : "false")
+                  << ", threads: " << th << ", power_mode: " << cls
+                  << " successed!!\n";
+      }
+    }
+  }
+
+  delete param.x;
+  delete param.filter;
+  delete param.output;
+  delete param.bias;
+}
+#endif
 #else
 void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
+                              const DDim& weight_dim,
+                              int group,
+                              const std::vector<int>& strides,
+                              const std::vector<int>& pads,
+                              const std::vector<int>& dilas,
+                              bool flag_bias,
+                              bool flag_relu,
+                              const std::vector<int>& thread_num,
+                              const std::vector<int>& power_mode) {}
+
+void test_conv_transpose_fp16(const std::vector<DDim>& input_dims,
                               const DDim& weight_dim,
                               int group,
                               const std::vector<int>& strides,
@@ -326,7 +532,79 @@ TEST(TestConvRand, test_conv_transpose_rand) {
   }
 }
 #endif  /// random param conv
-
+#ifdef ENABLE_ARM_FP16
+TEST(TestConvRand, test_conv_transpose_fp16_rand) {
+  if (FLAGS_basic_test) {
+    for (auto& cin : {1, 3, 8, 16}) {
+      for (auto& cout : {1, 5, 8, 16}) {
+        for (auto& g : {1, 2}) {
+          for (auto& kw : {1, 2, 3}) {
+            for (auto& kh : {1, 2, 3}) {
+              for (auto& stride : {1, 2}) {
+                for (auto& pad_h0 : {0, 1, 2}) {
+                  for (auto& pad_h1 : {0, 1, 2}) {
+                    for (auto& pad_w0 : {0, 1, 2}) {
+                      for (auto& pad_w1 : {0, 1, 2}) {
+                        for (auto& dila : {1, 2}) {
+                          for (auto& flag_bias : {false, true}) {
+                            for (auto& flag_relu : {false, true}) {
+                              if (cin % g != 0 || cout % g != 0) {
+                                continue;
+                              }
+                              std::vector<DDim> dims;
+                              DDim weights_dim({cin, cout / g, kh, kw});
+                              for (auto& batch : {1, 2}) {
+                                for (auto& h : {1, 3, 19, 32, 28}) {
+                                  dims.push_back(DDim({batch, cin, h, h}));
+                                }
+                              }
+                              test_conv_transpose_fp16(
+                                  dims,
+                                  weights_dim,
+                                  g,
+                                  {stride, stride},
+                                  {pad_h0, pad_h1, pad_w0, pad_w1},
+                                  {dila, dila},
+                                  flag_bias,
+                                  flag_relu,
+                                  {1, 4},
+                                  {FLAGS_power_mode});
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+TEST(TestConvCustom, test_conv_transpose_fp16_custom_size) {
+  CHECK_EQ(FLAGS_in_channel % FLAGS_group, 0)
+      << "input channel must be divided by group";
+  CHECK_EQ(FLAGS_out_channel % FLAGS_group, 0)
+      << "num_output must be divided by group";
+  test_conv_transpose_fp16(
+      {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
+      DDim({FLAGS_in_channel,
+            FLAGS_out_channel / FLAGS_group,
+            FLAGS_kernel_h,
+            FLAGS_kernel_w}),
+      FLAGS_group,
+      {FLAGS_stride_h, FLAGS_stride_w},
+      {FLAGS_pad_h, FLAGS_pad_h, FLAGS_pad_w, FLAGS_pad_w},
+      {FLAGS_dila_h, FLAGS_dila_w},
+      FLAGS_flag_bias,
+      FLAGS_flag_relu,
+      {FLAGS_threads},
+      {FLAGS_power_mode});
+}
+#endif
 #if 1  /// custom
 TEST(TestConvCustom, test_conv_transpose_fp32_custom_size) {
   CHECK_EQ(FLAGS_in_channel % FLAGS_group, 0)

@@ -38,6 +38,12 @@ HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://
 # options of compiling APU lib.
 WITH_MEDIATEK_APU=OFF
 MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
+# options of compiling NNAdapter lib
+WITH_NNADAPTER=OFF
+NNADAPTER_WITH_HUAWEI_KIRIN_NPU=OFF
+NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/hiai_ddk_lib_330"
+NNADAPTER_WITH_MEDIATEK_APU=OFF
+NNADAPTER_MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
 # options of adding training ops
@@ -158,6 +164,11 @@ function set_android_api_level {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
+
+  if [ ! -d third-party ]; then
+     git checkout third-party
+  fi
+
   # Step1. Create directory for compiling.
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
@@ -202,6 +213,11 @@ function make_tiny_publish_so {
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
+      -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
+      -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
+      -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
+      -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -214,10 +230,7 @@ function make_tiny_publish_so {
       ${cmake_mutable_options}  \
       -DLITE_ON_TINY_PUBLISH=ON
 
-  # Step4. Compile libs: cxx_lib, java_lib, opencl_lib
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC
-  fi
+  # Step4. Compile libs: cxx_lib, java_lib
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
@@ -266,6 +279,11 @@ function make_full_publish_so {
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
+      -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
+      -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
+      -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
+      -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -279,11 +297,6 @@ function make_full_publish_so {
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
       ${cmake_mutable_options}
-
-  # todo: third_party of opencl should be moved into git submodule and cmake later
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC
-  fi
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
@@ -446,6 +459,27 @@ function main {
                 ;;
             --mediatek_apu_sdk_root=*)
                 MEDIATEK_APU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on nnadapter.
+            --with_nnadapter=*)
+                WITH_NNADAPTER="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_huawei_kirin_npu=*)
+                NNADAPTER_WITH_HUAWEI_KIRIN_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_huawei_kirin_npu_sdk_root=*)
+                NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_mediatek_apu=*)
+                NNADAPTER_WITH_MEDIATEK_APU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_mediatek_apu_sdk_root=*)
+                NNADAPTER_MEDIATEK_APU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling result contains both light_api and cxx_api lib.

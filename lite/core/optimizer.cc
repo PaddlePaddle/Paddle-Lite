@@ -168,10 +168,12 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_fc_prelu_fuse_pass",                     //
        "lite_elementwise_activation_fuse_pass",
        "lite_conv_scale_fuse_pass",
+       "lite_conv_elementwise_tree_fuse_pass",
        "identity_dropout_eliminate_pass",
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
        "__xpu__resnet_cbam_fuse_pass",
+       "__xpu__conv2d_affine_channel_fuse_pass",
        "__xpu__conv2d_fuse_pass",
        "__xpu__squeeze_excitation_fuse_pass",
        "__xpu__resblock_reduction_fuse_pass",
@@ -195,13 +197,17 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__generate_sequence_fuse_pass",
        "__xpu__logit_fuse_pass",
        "__xpu__link_previous_out_max_pass",
+       "fix_mismatched_precision_pass",
+       "__xpu__dynamic_lstm_fuse_pass",
        "ssd_boxes_calc_offline_pass",
        // Only for fully quantized model, infer the output scale and fix the
        // attribute 'enable_int8' for all of the quantized ops.
        "quantized_op_attributes_inference_pass",
+       "quantization_parameters_propagation_pass",
        // Apply the constraints for the quantized ops(such as concat) that the
        // inputs and outputs must have the same scale.
        "restrict_quantized_op_with_same_input_output_scale_pass",
+       "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
        "huawei_ascend_npu_subgraph_pass",
        "imagination_nna_subgraph_pass",
@@ -210,6 +216,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "apu_subgraph_pass",
        "rknpu_subgraph_pass",
        "mlu_subgraph_pass",
+       "fpga_concat_fuse_pass",
        "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
        "static_kernel_pick_pass",  // pick original kernel from graph
 
@@ -217,7 +224,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "variable_place_inference_pass",  // inference arg/var's
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
        "__fpga_kernel_place_correct_pass",
-       "opencl_kernel_place_correct_pass",
+       // "opencl_kernel_place_correct_pass", // uncommit this pass
        "mlu_postprocess_pass",
        // info(target/precision/layout/device)
        // using kernel info

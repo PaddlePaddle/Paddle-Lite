@@ -31,6 +31,28 @@ void transpose_mat(const Dtype* din,
                    const int num,
                    const int width,
                    const int height);
+#define INIT_PTR_4(dtype, ptr_out, size_h)            \
+  dtype* data_out_ptr = ptr_out + w * size_h + tmp_h; \
+  const dtype* din0 = ptr_din_row;                    \
+  const dtype* din1 = din0 + width;                   \
+  const dtype* din2 = din1 + width;                   \
+  const dtype* din3 = din2 + width;                   \
+  dtype* dout0 = data_out_ptr;                        \
+  dtype* dout1 = dout0 + height;                      \
+  dtype* dout2 = dout1 + height;                      \
+  dtype* dout3 = dout2 + height;
+
+#define INIT_PTR_A4(dtype)          \
+  const dtype* din4 = din3 + width; \
+  const dtype* din5 = din4 + width; \
+  const dtype* din6 = din5 + width; \
+  const dtype* din7 = din6 + width;
+
+#define INIT_PTR_B4(dtype)       \
+  dtype* dout4 = dout3 + height; \
+  dtype* dout5 = dout4 + height; \
+  dtype* dout6 = dout5 + height; \
+  dtype* dout7 = dout6 + height;
 
 void transpose_mat(const float* din,
                    float* dout,
@@ -40,24 +62,18 @@ void transpose_mat(const float* din,
   int nw = width >> 2;
   int nh = height >> 2;
   int size_in = width * height;
+  int size_w = width << 2;
+  int size_h = height << 2;
 
   for (int i = 0; i < num; ++i) {
     float* ptr_out = dout + i * size_in;
     const float* ptr_in = din + i * size_in;
 #pragma omp parallel for
     for (int h = 0; h < nh; h++) {
-      const float* ptr_din_row = ptr_in + h * 4 * width;
+      const float* ptr_din_row = ptr_in + h * size_w;
+      int tmp_h = h * 4;
       for (int w = 0; w < nw; w++) {
-        float* data_out_ptr = ptr_out + w * 4 * height + h * 4;
-        const float* din0 = ptr_din_row;
-        const float* din1 = din0 + width;
-        const float* din2 = din1 + width;
-        const float* din3 = din2 + width;
-
-        float* dout0 = data_out_ptr;
-        float* dout1 = dout0 + height;
-        float* dout2 = dout1 + height;
-        float* dout3 = dout2 + height;
+        INIT_PTR_4(float, ptr_out, size_h)
 #ifdef __aarch64__
         float32x4_t vr0 = vld1q_f32(din0);
         float32x4_t vr1 = vld1q_f32(din1);
@@ -123,6 +139,328 @@ void transpose_mat(const float* din,
     }
   }
 }
+
+#ifdef ENABLE_ARM_FP16
+void transpose_mat(const lite_api::float16_t* din,
+                   lite_api::float16_t* dout,
+                   const int num,
+                   const int width,
+                   const int height) {
+  int nw = width >> 3;
+  int nh = height >> 3;
+  int size_in = width * height;
+  int size_w = width << 3;
+  int size_h = height << 3;
+  int remain_w = (width & 7);
+  int remain_ww = remain_w >> 2;
+  int remain_ww_rem = remain_w & 3;
+  int size_wh = nw * size_h;
+  for (int i = 0; i < num; ++i) {
+    lite_api::float16_t* ptr_out = dout + i * size_in;
+    const lite_api::float16_t* ptr_in = din + i * size_in;
+#pragma omp parallel for
+    for (int h = 0; h < nh; h++) {
+      const lite_api::float16_t* ptr_din_row = ptr_in + h * size_w;
+      int tmp_h = h << 3;
+      for (int w = 0; w < nw; w++) {
+        INIT_PTR_4(lite_api::float16_t, ptr_out, size_h)
+        INIT_PTR_A4(lite_api::float16_t)
+        INIT_PTR_B4(lite_api::float16_t)
+#ifdef __aarch64__
+        asm volatile(
+            "ldr q0, [%[din0]], #16\n"
+            "ldr q1, [%[din1]], #16\n"
+            "ldr q2, [%[din2]], #16\n"
+            "ldr q3, [%[din3]], #16\n"
+            "ldr q4, [%[din4]], #16\n"
+            "ldr q5, [%[din5]], #16\n"
+            // a0b0a2b2a4b4a6b6
+            "trn1 v8.8h, v0.8h, v1.8h\n"
+            // a1b1a3b3a5b5a7b7
+            "trn2 v9.8h, v0.8h, v1.8h\n"
+            "ldr q6, [%[din6]], #16\n"
+            "trn1 v10.8h, v2.8h, v3.8h\n"
+            "trn2 v11.8h, v2.8h, v3.8h\n"
+            "ldr q7, [%[din7]], #16\n"
+            "trn1 v12.8h, v4.8h, v5.8h\n"
+            "trn2 v13.8h, v4.8h, v5.8h\n"
+
+            // a0b0c0d0a4b4c4d4
+            "trn1 v0.4s, v8.4s, v10.4s\n"
+            // a2b2c2d2a6b6c6d6
+            "trn2 v1.4s, v8.4s, v10.4s\n"
+            "trn1 v14.8h, v6.8h, v7.8h\n"
+            "trn2 v15.8h, v6.8h, v7.8h\n"
+            // a1b1c1d1a5b5c5d5
+            "trn1 v2.4s, v9.4s, v11.4s\n"
+            // a3b3c3d3a7b7c7d7
+            "trn2 v3.4s, v9.4s, v11.4s\n"
+
+            // e0f0g0h0a4b4c4d4
+            "trn1 v4.4s, v12.4s, v14.4s\n"
+            "trn2 v5.4s, v12.4s, v14.4s\n"
+
+            // e1f1g1h1a5b5c5d5
+            "trn1 v6.4s, v13.4s, v15.4s\n"
+            "trn2 v7.4s, v13.4s, v15.4s\n"
+
+            "trn1 v8.2d, v0.2d, v4.2d\n"   // 0
+            "trn2 v9.2d, v0.2d, v4.2d\n"   // 4
+            "trn1 v10.2d, v1.2d, v5.2d\n"  // 2
+            "trn2 v11.2d, v1.2d, v5.2d\n"  // 6
+            "trn1 v12.2d, v2.2d, v6.2d\n"  // 1
+            "str q8, [%[dout0]], #16\n"
+            "trn2 v13.2d, v2.2d, v6.2d\n"  // 3
+            "str q9, [%[dout4]], #16\n"
+            "trn1 v14.2d, v3.2d, v7.2d\n"  // 5
+            "str q10, [%[dout2]], #16\n"
+            "trn2 v15.2d, v3.2d, v7.2d\n"  // 7
+            "str q11, [%[dout6]], #16\n"
+            "str q12, [%[dout1]], #16\n"
+            "str q13, [%[dout3]], #16\n"
+            "str q14, [%[dout5]], #16\n"
+            "str q15, [%[dout7]], #16\n"
+            : [din0] "+r"(din0),
+              [din1] "+r"(din1),
+              [din2] "+r"(din2),
+              [din3] "+r"(din3),
+              [din4] "+r"(din4),
+              [din5] "+r"(din5),
+              [din6] "+r"(din6),
+              [din7] "+r"(din7),
+              [dout0] "+r"(dout0),
+              [dout1] "+r"(dout1),
+              [dout2] "+r"(dout2),
+              [dout3] "+r"(dout3),
+              [dout4] "+r"(dout4),
+              [dout5] "+r"(dout5),
+              [dout6] "+r"(dout6),
+              [dout7] "+r"(dout7)
+            :
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15");
+#else
+        asm volatile(
+            "vld1.16 {d0-d1}, [%[din0]]!\n"
+            "vld1.16 {d2-d3}, [%[din1]]!\n"
+            "vld1.16 {d4-d5}, [%[din2]]!\n"
+            "vld1.16 {d6-d7}, [%[din3]]!\n"
+            "vld1.16 {d8-d9}, [%[din4]]!\n"
+            "vld1.16 {d10-d11}, [%[din5]]!\n"
+            // q0 =a0b0a2b2a4b4a6b6 q1 = a1b1a3b3a5b5a7b7
+            "vtrn.16 q0, q1\n"
+            "vld1.16 {d12-d13}, [%[din6]]!\n"
+
+            "vtrn.16 q2, q3\n"
+            "vld1.16 {d14-d15}, [%[din7]]!\n"
+
+            "vtrn.16 q4, q5\n"
+            "vtrn.16 q6, q7\n"
+
+            // q0 = a0b0c0d0a4b4c4d4, q2 = a2b2c2d2a6b6c6d6
+            "vtrn.32 q0, q2\n"
+            "vtrn.32 q1, q3\n"
+            "vtrn.32 q4, q6\n"
+            "vtrn.32 q5, q7\n"
+
+            // q0 = a0b0c0d0e0f0g0h0, q4 = a4b4c4d4e4f4g4h4
+            "vtrn.64 q0, q4\n"
+            "vtrn.64 q1, q5\n"
+            "vtrn.64 q2, q6\n"
+            "vtrn.64 q3, q7\n"
+
+            "vst1.16 {d0-d1}, [%[dout0]]!\n"
+            "vst1.16 {d8-d9}, [%[dout4]]!\n"
+            "vst1.16 {d2-d3}, [%[dout1]]!\n"
+            "vst1.16 {d10-d11}, [%[dout5]]!\n"
+            "vst1.16 {d4-d5}, [%[dout2]]!\n"
+            "vst1.16 {d12-d13}, [%[dout6]]!\n"
+            "vst1.16 {d6-d7}, [%[dout3]]!\n"
+            "vst1.16 {d14-d15}, [%[dout7]]!\n"
+            : [din0] "+r"(din0),
+              [din1] "+r"(din1),
+              [din2] "+r"(din2),
+              [din3] "+r"(din3),
+              [din4] "+r"(din4),
+              [din5] "+r"(din5),
+              [din6] "+r"(din6),
+              [din7] "+r"(din7),
+              [dout0] "+r"(dout0),
+              [dout1] "+r"(dout1),
+              [dout2] "+r"(dout2),
+              [dout3] "+r"(dout3),
+              [dout4] "+r"(dout4),
+              [dout5] "+r"(dout5),
+              [dout6] "+r"(dout6),
+              [dout7] "+r"(dout7)
+            :
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+#endif
+        ptr_din_row += 8;
+      }
+      lite_api::float16_t* data_out_ptr0 = ptr_out + size_wh;
+      for (int w = 0; w < remain_ww; w++) {
+        INIT_PTR_4(lite_api::float16_t, data_out_ptr0, (4 * height))
+        INIT_PTR_A4(lite_api::float16_t)
+#ifdef __aarch64__
+        asm volatile(
+            "ldr d0, [%[din0]], #8\n"
+            "ldr d1, [%[din1]], #8\n"
+            "ldr d2, [%[din2]], #8\n"
+            "ldr d3, [%[din3]], #8\n"
+            "ldr d4, [%[din4]], #8\n"
+            "ldr d5, [%[din5]], #8\n"
+            // a0b0a2b2
+            "trn1 v8.4h, v0.4h, v1.4h\n"
+            // a1b1a3b3
+            "trn2 v9.4h, v0.4h, v1.4h\n"
+            "ldr d6, [%[din6]], #8\n"
+            "trn1 v10.4h, v2.4h, v3.4h\n"
+            "trn2 v11.4h, v2.4h, v3.4h\n"
+            "ldr d7, [%[din7]], #8\n"
+            "trn1 v12.4h, v4.4h, v5.4h\n"
+            "trn2 v13.4h, v4.4h, v5.4h\n"
+
+            // a0b0c0d0
+            "trn1 v0.2s, v8.2s, v10.2s\n"
+            // a2b2c2d2
+            "trn2 v1.2s, v8.2s, v10.2s\n"
+            "trn1 v14.4h, v6.4h, v7.4h\n"
+            "trn2 v15.4h, v6.4h, v7.4h\n"
+            // a1b1c1d1
+            "trn1 v2.2s, v9.2s, v11.2s\n"
+            // a3b3c3d3
+            "trn2 v3.2s, v9.2s, v11.2s\n"
+
+            // e0f0g0h0
+            "trn1 v4.2s, v12.2s, v14.2s\n"
+            "trn2 v5.2s, v12.2s, v14.2s\n"
+            // e1f1g1h1
+            "trn1 v6.2s, v13.2s, v15.2s\n"
+            "trn2 v7.2s, v13.2s, v15.2s\n"
+
+            "str d0, [%[dout0]], #8\n"
+            "str d1, [%[dout2]], #8\n"
+            "str d2, [%[dout1]], #8\n"
+            "str d3, [%[dout3]], #8\n"
+            "str d4, [%[dout0]], #8\n"
+            "str d5, [%[dout2]], #8\n"
+            "str d6, [%[dout1]], #8\n"
+            "str d7, [%[dout3]], #8\n"
+            : [din0] "+r"(din0),
+              [din1] "+r"(din1),
+              [din2] "+r"(din2),
+              [din3] "+r"(din3),
+              [din4] "+r"(din4),
+              [din5] "+r"(din5),
+              [din6] "+r"(din6),
+              [din7] "+r"(din7),
+              [dout0] "+r"(dout0),
+              [dout1] "+r"(dout1),
+              [dout2] "+r"(dout2),
+              [dout3] "+r"(dout3)
+            :
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15");
+#else
+        asm volatile(
+            "vld1.16 {d0}, [%[din0]]!\n"
+            "vld1.16 {d2}, [%[din1]]!\n"
+            "vld1.16 {d4}, [%[din2]]!\n"
+            "vld1.16 {d6}, [%[din3]]!\n"
+            "vld1.16 {d8}, [%[din4]]!\n"
+            "vld1.16 {d10}, [%[din5]]!\n"
+            // q0 =a0b0a2b2 q1 = a1b1a3b3
+            "vtrn.16 d0, d2\n"
+            "vld1.16 {d12}, [%[din6]]!\n"
+
+            "vtrn.16 d4, d6\n"
+            "vld1.16 {d14}, [%[din7]]!\n"
+
+            "vtrn.16 d8, d10\n"
+            "vtrn.16 d12, d14\n"
+
+            // q0 = a0b0c0d0, q2 = a2b2c2d2
+            "vtrn.32 d0, d4\n"
+            "vtrn.32 d2, d6\n"
+            "vtrn.32 d8, d12\n"
+            "vtrn.32 d10, d14\n"
+
+            "vst1.16 {d0}, [%[dout0]]!\n"
+            "vst1.16 {d4}, [%[dout2]]!\n"
+            "vst1.16 {d2}, [%[dout1]]!\n"
+            "vst1.16 {d6}, [%[dout3]]!\n"
+            "vst1.16 {d8}, [%[dout0]]!\n"
+            "vst1.16 {d12}, [%[dout2]]!\n"
+            "vst1.16 {d10}, [%[dout1]]!\n"
+            "vst1.16 {d14}, [%[dout3]]!\n"
+            : [din0] "+r"(din0),
+              [din1] "+r"(din1),
+              [din2] "+r"(din2),
+              [din3] "+r"(din3),
+              [din4] "+r"(din4),
+              [din5] "+r"(din5),
+              [din6] "+r"(din6),
+              [din7] "+r"(din7),
+              [dout0] "+r"(dout0),
+              [dout1] "+r"(dout1),
+              [dout2] "+r"(dout2),
+              [dout3] "+r"(dout3)
+            :
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+#endif
+        ptr_din_row += 4;
+      }
+      lite_api::float16_t* data_out_ptr1 =
+          data_out_ptr0 + remain_ww * 4 * height + tmp_h;
+      for (int w = 0; w < remain_ww_rem; w++) {
+        *data_out_ptr1 = *ptr_din_row++;
+        data_out_ptr0 += height;
+      }
+    }
+    // remian
+    for (int h = nh * 8; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        const float16_t* data_in_ptr = ptr_in + h * width + w;
+        float16_t* data_out_ptr = ptr_out + w * height + h;
+        *data_out_ptr = *data_in_ptr;
+      }
+    }
+  }
+}
+#endif
 
 std::vector<int> get_stride(const paddle::lite::DDimLite& dims) {
   std::vector<int> data_stride{0};
@@ -260,8 +598,19 @@ void TransposeCompute::Run() {
     transpose_mat(din, dout, _trans_num, _trans_w, _trans_h);
     return;
   }
+#ifdef ENABLE_ARM_FP16
+  if (input->precision() == PRECISION(kFP16) && trans_mat) {
+    const lite_api::float16_t* din = input->data<lite_api::float16_t>();
+    lite_api::float16_t* dout = output->mutable_data<lite_api::float16_t>();
+    transpose_mat(din, dout, _trans_num, _trans_w, _trans_h);
+    return;
+  }
+#endif
 
   switch (input->precision()) {
+    case PRECISION(kInt8):
+      TransposeCompute_<int8_t>(axis, input, output);
+      break;
     case PRECISION(kInt32):
       TransposeCompute_<int32_t>(axis, input, output);
       break;
@@ -270,7 +619,7 @@ void TransposeCompute::Run() {
       break;
 #ifdef ENABLE_ARM_FP16
     case PRECISION(kFP16):
-      TransposeCompute_<__fp16>(axis, input, output);
+      TransposeCompute_<lite_api::float16_t>(axis, input, output);
       break;
 #endif
     case PRECISION(kFloat):

@@ -41,7 +41,7 @@ void CollectInputOutputScales(
   for (auto* in_var_node : op_node->inlinks) {
     CHECK(in_var_node->IsArg());
     auto in_var_name = in_var_node->arg()->name;
-    CHECK(op_info->HasInputScale(in_var_name));
+    if (!op_info->HasInputScale(in_var_name)) continue;
     auto in_scales = op_info->GetInputScale(in_var_name);
     CHECK_EQ(in_scales.size(), 1);
     auto in_scale = in_scales[0];
@@ -60,7 +60,7 @@ void CollectInputOutputScales(
   for (auto* out_var_node : op_node->outlinks) {
     CHECK(out_var_node->IsArg());
     auto out_var_name = out_var_node->arg()->name;
-    CHECK(op_info->HasOutputScale(out_var_name));
+    if (!op_info->HasOutputScale(out_var_name)) continue;
     auto out_scales = op_info->GetOutputScale(out_var_name);
     CHECK_EQ(out_scales.size(), 1);
     auto out_scale = out_scales[0];
@@ -164,4 +164,4 @@ void RestrictQuantizedOpWithSameInputOutputScalePass::Apply(
 REGISTER_MIR_PASS(
     restrict_quantized_op_with_same_input_output_scale_pass,
     paddle::lite::mir::RestrictQuantizedOpWithSameInputOutputScalePass)
-    .BindTargets({TARGET(kRKNPU)});
+    .BindTargets({TARGET(kRKNPU), TARGET(kNNAdapter)});

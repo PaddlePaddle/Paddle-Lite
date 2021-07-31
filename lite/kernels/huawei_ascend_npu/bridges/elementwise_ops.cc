@@ -217,6 +217,15 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     INPUT_UPDATE(elt_op, x1, x_node);
     INPUT_UPDATE(elt_op, x2, y_node);
     OUTPUT_UPDATE(elt_op, y, elt_node);
+  } else if (op_type == "elementwise_min" ||
+             op_type == "fusion_elementwise_min_activation") {
+    elt_node = graph->Add<ge::op::Minimum>(out_name);
+    auto elt_op = elt_node->data<ge::op::Minimum>();
+    elt_op->set_input_x1(*x_node->data());
+    elt_op->set_input_x2(*y_node->data());
+    INPUT_UPDATE(elt_op, x1, x_node);
+    INPUT_UPDATE(elt_op, x2, y_node);
+    OUTPUT_UPDATE(elt_op, y, elt_node);
   } else {
     LOG(WARNING) << "[NPU] Unsupported op type: " << op_type;
     return FAILED;
@@ -241,7 +250,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       op_type == "fusion_elementwise_sub_activation" ||
       op_type == "fusion_elementwise_mul_activation" ||
       op_type == "fusion_elementwise_div_activation" ||
-      op_type == "fusion_elementwise_max_activation") {
+      op_type == "fusion_elementwise_max_activation" ||
+      op_type == "fusion_elementwise_min_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
     if (act_type == "leaky_relu") {
       auto act_node = graph->Add<ge::op::LeakyRelu>(out_name);
@@ -292,6 +302,10 @@ REGISTER_SUBGRAPH_BRIDGE(
     kHuaweiAscendNPU,
     paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
+    elementwise_min,
+    kHuaweiAscendNPU,
+    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_add_activation,
     kHuaweiAscendNPU,
     paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
@@ -309,5 +323,9 @@ REGISTER_SUBGRAPH_BRIDGE(
     paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_max_activation,
+    kHuaweiAscendNPU,
+    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    fusion_elementwise_min_activation,
     kHuaweiAscendNPU,
     paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);

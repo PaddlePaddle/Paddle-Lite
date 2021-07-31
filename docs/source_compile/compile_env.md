@@ -171,7 +171,7 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 ```shell
 # 1. Install basic software
 apt update
-apt-get install -y --no-install-recomends \
+apt-get install -y --no-install-recommends \
   gcc g++ make wget python unzip patchelf python-dev
 
 # 2. install cmake 3.10 or above
@@ -194,6 +194,7 @@ sudo make install
 - cmake（Android编译请使用3.10版本，IOS编译请使用3.15版本）
 - 编译Android: Android NDK (支持ndk-r17c及之后的所有ndk版本)
 - 编译IOS: XCode(Version 10.1)
+- 编译Arm MacOS:XCode (Version >=12.2beta)
 
 ```bash
 # 1. Install basic software
@@ -206,7 +207,7 @@ brew install  curl gcc git make unzip wget
 #     tar zxf ./cmake-3.10.2-Darwin-x86_64.tar.gz
 #     mv cmake-3.10.2-Darwin-x86_64/CMake.app/Contents/ ./3.10.2
 #     ln -s /usr/local/Cellar/cmake/3.10.2/bin/cmake /usr/local/bin/cmake
-# （2）在mac环境编译 Paddle-Lite 的IOS版本，需要安装cmake 3.15
+# （2）在mac环境编译 Paddle-Lite 的IOS和Arm MacOS版本，需要安装cmake 3.15
 #     mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/
 #     cd /usr/local/Cellar/cmake/
 #     wget https://cmake.org/files/v3.15/cmake-3.15.2-Darwin-x86_64.tar.gz

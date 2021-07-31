@@ -88,6 +88,15 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     if (opdesc.HasAttr("approximate")) {
       param_.gelu_approximate = opdesc.GetAttr<bool>("approximate");
     }
+  } else if (opdesc.Type() == "erf") {
+    param_.active_type = lite_api::ActivationType::kErf;
+  } else if (opdesc.Type() == "sign") {
+    param_.active_type = lite_api::ActivationType::kSign;
+  } else if (opdesc.Type() == "softplus") {
+    param_.active_type = lite_api::ActivationType::kSoftPlus;
+  } else if (opdesc.Type() == "mish") {
+    param_.active_type = lite_api::ActivationType::kMish;
+    param_.threshold = opdesc.GetAttr<float>("threshold");
   }
 
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
@@ -100,6 +109,24 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
+#ifdef LITE_BUILD_EXTRA
+REGISTER_LITE_OP(square, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(relu_clipped, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(swish, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(exp, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(abs, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(hard_sigmoid, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(sqrt, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(softsign, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(gelu, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(hard_swish, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(reciprocal, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(mish, paddle::lite::operators::ActivationOp);
+#endif  // LITE_BUILD_EXTRA
+
 // Baisc activation ops
 REGISTER_LITE_OP(sigmoid, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(tanh, paddle::lite::operators::ActivationOp);
@@ -109,3 +136,5 @@ REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(thresholded_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(elu, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(erf, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(softplus, paddle::lite::operators::ActivationOp);

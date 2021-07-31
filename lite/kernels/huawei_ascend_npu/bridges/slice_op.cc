@@ -65,15 +65,18 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     size_vec[axis] = ends[i] - starts[i];
   }
 
-  // Cast node
-  auto slice_node = graph->Add<ge::op::SliceD>(out_name);
-  auto slice_op = slice_node->data<ge::op::SliceD>();
+  auto offsets_node = graph->Add(input_name + "/offsets", offset_vec);
+  auto size_node = graph->Add(input_name + "/size", size_vec);
+
+  auto slice_node = graph->Add<ge::op::Slice>(out_name);
+  auto slice_op = slice_node->data<ge::op::Slice>();
   slice_op->set_input_x(*input_node->data());
-  slice_op->set_attr_offsets(
-      ge::Operator::OpListInt(offset_vec.begin(), offset_vec.end()));
-  slice_op->set_attr_size(
-      ge::Operator::OpListInt(size_vec.begin(), size_vec.end()));
+  slice_op->set_input_offsets(*offsets_node->data());
+  slice_op->set_input_size(*size_node->data());
+
   INPUT_UPDATE(slice_op, x, input_node);
+  INPUT_UPDATE(slice_op, offsets, offsets_node);
+  INPUT_UPDATE(slice_op, size, size_node);
   OUTPUT_UPDATE(slice_op, y, slice_node);
 
   return REBUILD_WHEN_SHAPE_CHANGED;

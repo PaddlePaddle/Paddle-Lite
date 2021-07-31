@@ -19,9 +19,6 @@
 #include <string>
 #include <vector>
 
-#if defined(_MSC_VER)
-#include "lite/backends/x86/port.h"
-#endif
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
@@ -76,9 +73,33 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void DepthwiseConv2d();
   void Conv2dCommon();
   void Conv2d1x1Mali();
+  void Conv2d1x1FC();
   void OIHW2OHWIO4I4(
       void* src, void* dst, size_t O, size_t I, size_t H, size_t W);
+  // Change the travelsal order of the weight matrix in the following way:
+  // The matrix is segmented to blocks of 4x4. If (any) dimension of the matrix
+  // size is not divisible by 4, then pad with zeros. Each block is stored
+  // contigously. The 16 elements within a block are ordered as 4 elements of
+  // the first column, 4 elems of the second, etc. Blocks then traversed as
+  // columns first, rows last. As an example, an 8x8 matrix would be traversed
+  // as below.
+  //
+  //  |  0  4  8 12 32 36 40 44 |
+  //  |  1  5  9 13 33 37 41 45 |
+  //  |  2  6 10 14 34 38 42 46 |
+  //  |  3  7 11 15 35 39 43 47 |
+  //  | 16 20 24 28 48 52 56 60 |
+  //  | 17 21 25 29 49 53 57 61 |
+  //  | 18 22 26 30 50 54 58 62 |
+  //  | 19 23 27 31 51 55 59 63 |
+  //
+  // The benefit of doing this is that reading contigous 16 elements gives a 4x4
+  // block of the matrix, where the first 4 elements is the first row of the
+  // block, second 4 elements is the second row of the block, etc. Subsequent
+  // blocks contain elements of the same 4 columns.
+  void OI2IOO4I4(void* src, void* dst, size_t O, size_t I);
   void AssignDataFromCPUToGPU(const Tensor* tensor_cpu_p, Tensor* tensor_gpu_p);
+  bool UseFcReplaceConv();
 
   param_t* conv_param_{nullptr};
 
@@ -109,6 +130,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int nh_blk_ = 1;
 
   const cl::Image2D* input_image_p_{nullptr};
+  const cl::Image2D* second_input_image_p_{nullptr};
   const cl::Image2D* filter_image_p_{nullptr};
   const cl::Image2D* bias_image_p_{nullptr};
   const cl::Image2D* alpha_image_p_{nullptr};
@@ -137,6 +159,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   int offset_w_{-1};
   int offset_h_{-1};
   int groups_{-1};
+  std::string fuse_eltwise_op_type_;
   bool relu_fused_{false};
   bool has_bias_{false};
   bool is_mali_{false};
@@ -181,11 +204,10 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   cl_int status_;
   cl::NDRange local_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-  cl::NDRange local_work_size_wino1_ =
-      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
-  cl::NDRange local_work_size_wino2_ =
-      cl::NDRange{static_cast<size_t>(1), static_cast<size_t>(1)};
-
+  cl::NDRange local_work_size_wino1_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange local_work_size_wino2_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
 };
 

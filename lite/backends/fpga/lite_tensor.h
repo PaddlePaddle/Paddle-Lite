@@ -20,8 +20,8 @@
 #include <numeric>
 #include <string>
 #include <vector>
-
 #include "lite/backends/fpga/KD/tensor.hpp"
+#include "lite/core/dim.h"
 #include "lite/core/memory.h"
 
 namespace paddle {
@@ -32,63 +32,6 @@ class TensorLite;
 
 using DDim = lite::DDimLite;
 using Tensor = lite::TensorLite;
-
-class DDimLite {
- public:
-  using value_type = int64_t;
-
-  DDimLite() = default;
-
-  explicit DDimLite(const std::vector<value_type> &x) { ConstructFrom(x); }
-
-  void ConstructFrom(const std::vector<value_type> &x) { data_ = x; }
-
-  value_type operator[](int offset) const { return data_[offset]; }
-  value_type &operator[](int offset) { return data_[offset]; }
-  std::vector<int64_t> Vectorize() const { return data_; }
-
-  size_t size() const { return data_.size(); }
-  bool empty() const { return data_.empty(); }
-
-  value_type production() const;
-
-  const std::vector<value_type> &data() const { return data_; }
-  value_type count(int start, int end) const;
-
-  DDimLite Slice(int start, int end) const;
-
-  DDimLite Flatten2D(int col) const {
-    return DDimLite(std::vector<value_type>(
-        {Slice(0, col).production(), Slice(col, size()).production()}));
-  }
-
-  std::string repr() const;
-
-  friend std::ostream &operator<<(std::ostream &os, const DDimLite &dims) {
-    os << dims.repr();
-    return os;
-  }
-
-  friend bool operator==(const DDimLite &a, const DDimLite &b) {
-    if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
-  friend bool operator!=(const DDimLite &a, const DDimLite &b) {
-    if (a.size() != b.size()) return true;
-    for (size_t i = 0; i < a.size(); i++) {
-      if (a[i] != b[i]) return true;
-    }
-    return false;
-  }
-
- private:
-  std::vector<value_type> data_;
-};
-
 using LoD = std::vector<std::vector<uint64_t>>;
 
 // A light-weight tensor implementation.

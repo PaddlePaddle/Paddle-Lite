@@ -25,11 +25,14 @@ lite_cc_library(mir_passes
       fusion/conv_bn_fuse_pass.cc
       fusion/conv_conv_fuse_pass.cc
       fusion/conv_scale_fuse_pass.cc
+      fusion/conv_elementwise_tree_fuse_pass.cc
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc
       fusion/scale_activation_fuse_pass.cc
+      fusion/fpga_concat_fuse_pass.cc
       fusion/inplace_fuse_pass.cc
+      fusion/__xpu__conv2d_affine_channel_fuse_pass.cc
       fusion/__xpu__resblock_reduction_fuse_pass.cc
       fusion/__xpu__concat_conv2d_fuse_pass.cc
       fusion/__xpu__resblock_normal_fuse_pass.cc
@@ -56,6 +59,8 @@ lite_cc_library(mir_passes
       fusion/__xpu__squeeze_excitation_fuse_pass.cc
       fusion/__xpu__graph_dedup_pass.cc
       fusion/__xpu__bigru_fuse_pass.cc
+      fusion/__xpu__conv_pixel_shuffle_fuse_pass.cc
+      fusion/__xpu__dynamic_lstm_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/scaleacts_fuse_pass.cc
@@ -70,6 +75,7 @@ lite_cc_library(mir_passes
       elimination/remove_tf_redundant_ops_pass.cc
       elimination/remove_scale1_pass.cc
       elimination/ssd_boxes_calc_offline_pass.cc
+      fix_mismatched_precision_pass.cc
       adaptive_1x1_pool2d_convert_global_pass.cc
       elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.cc
       control_flow_op_shared_inputs_and_outputs_place_sync_pass.cc
@@ -91,6 +97,7 @@ lite_cc_library(mir_passes
       mlu_postprocess_pass.cc
       weight_quantization_preprocess_pass.cc
       quantized_op_attributes_inference_pass.cc
+      quantization_parameters_propagation_pass.cc
       restrict_quantized_op_with_same_input_output_scale_pass.cc
       post_quant_dynamic_pass.cc
       fp16_attribute_pass.cc

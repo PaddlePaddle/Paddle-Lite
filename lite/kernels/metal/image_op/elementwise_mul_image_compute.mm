@@ -44,8 +44,8 @@ void ElementwiseMulImageCompute::PrepareForRun() {
 }
 
 void ElementwiseMulImageCompute::Run() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
@@ -104,11 +104,15 @@ void ElementwiseMulImageCompute::setup_without_mps() {
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(element_params), &element_params);
 
-    // inputy来源：4维-参数来自于上一个输入 3维-参数来自于外部tensor
+    // input source: 4 dims-from last tensor, 3 dims-from out tensor
     function_name_ = "elementwise_mul";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
+}
+
+ElementwiseMulImageCompute::~ElementwiseMulImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

@@ -128,8 +128,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
-    op->CheckShape();
-    op->InferShape();
+    CHECK(op->CheckShape());
+    CHECK(op->InferShape());
     std::string op_type = op->op_info()->Type();
     if (!bridges.Exists(op_type, TARGET(kHuaweiAscendNPU))) {
       return false;
@@ -211,6 +211,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
 }
 
 bool DeviceProgram::ShareBufferWithOriginTensors(
+    Scope* exec_scope,
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
     std::vector<Tensor*>* origin_itensors,
@@ -245,25 +246,45 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
     CHECK_EQ((*origin_itensors)[i]->dims().production(),
              device_idims_[i].production());
 
-    // reset tensor desc
-    ATC_CALL((*device_itensors)[i]->SetTensorDesc(
-        device_idims_[i].GetGeTensorDesc()));
-    // copy data from origin to device
-    ATC_CALL((*device_itensors)[i]->SetData(
-        reinterpret_cast<uint8_t*>((*origin_itensors)[i]->raw_data()),
-        (*origin_itensors)[i]->memory_size()));
-
     VLOG(3)
         << "[HUAWEI_ASCEND_NPU] Init the input tensors for the device program "
            "and share their buffers with the origin input tensors";
 
-    // Share data buf between device_itensor and origin_itensor
-    std::shared_ptr<Buffer> buffer = std::make_shared<Buffer>(
-        reinterpret_cast<void*>((*device_itensors)[i]->GetData()),
-        lite_api::TargetType::kHost,
-        (*device_itensors)[i]->GetSize());
-    (*origin_itensors)[i]->ResetBuffer(buffer,
-                                       (*device_itensors)[i]->GetSize());
+    Variable* var = exec_scope->FindVar(input_names[i] + "/device_tensor");
+    if (var != nullptr) {
+      std::shared_ptr<ge::Tensor>* device_tensor_ptr =
+          var->GetMutable<std::shared_ptr<ge::Tensor>>();
+      if (device_tensor_ptr != nullptr) {
+        (*device_itensors)[i] = *device_tensor_ptr;
+        continue;
+      }
+      LOG(WARNING)
+          << "[HUAWEI_ASCEND_NPU] Get device input tensor in scope failed!";
+      return false;
+    } else {
+      // reset tensor desc
+      ATC_CALL((*device_itensors)[i]->SetTensorDesc(
+          device_idims_[i].GetGeTensorDesc()));
+      // copy data from origin to device
+      ATC_CALL((*device_itensors)[i]->SetData(
+          reinterpret_cast<uint8_t*>((*origin_itensors)[i]->raw_data()),
+          (*origin_itensors)[i]->memory_size()));
+
+      // Share data buf between device_itensor and origin_itensor
+      std::shared_ptr<Buffer> buffer = std::make_shared<Buffer>(
+          reinterpret_cast<void*>((*device_itensors)[i]->GetData()),
+          lite_api::TargetType::kHost,
+          (*device_itensors)[i]->GetSize());
+      (*origin_itensors)[i]->ResetBuffer(buffer,
+                                         (*device_itensors)[i]->GetSize());
+
+      if (exec_scope->FindVar(input_names[i] + "/device_tensor") == nullptr) {
+        std::shared_ptr<ge::Tensor>* device_tensor_ptr =
+            exec_scope->Var(input_names[i] + "/device_tensor")
+                ->GetMutable<std::shared_ptr<ge::Tensor>>();
+        *device_tensor_ptr = (*device_itensors)[i];
+      }
+    }
   }
   for (size_t i = 0; i < output_names.size(); i++) {
     (*origin_otensors)[i]->set_precision(origin_otypes_[i]);
@@ -283,6 +304,7 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
 }
 
 bool DeviceProgram::SharedBufferWithOutputTensors(
+    Scope* exec_scope,
     const std::vector<std::string>& output_names,
     std::vector<Tensor*>* origin_otensors,
     std::vector<std::shared_ptr<ge::Tensor>>* device_otensors) {
@@ -303,6 +325,13 @@ bool DeviceProgram::SharedBufferWithOutputTensors(
         (*device_otensors)[i]->GetSize());
     (*origin_otensors)[i]->ResetBuffer(buffer,
                                        (*device_otensors)[i]->GetSize());
+
+    if (exec_scope->FindVar(output_names[i] + "/device_tensor") == nullptr) {
+      std::shared_ptr<ge::Tensor>* device_tensor_ptr =
+          exec_scope->Var(output_names[i] + "/device_tensor")
+              ->GetMutable<std::shared_ptr<ge::Tensor>>();
+      *device_tensor_ptr = (*device_otensors)[i];
+    }
   }
   return true;
 }
@@ -390,7 +419,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
   }
   auto device_program = device_programs_[origin_idims_];
   CHECK(device_program && device_program->model_client_);
-  return device_program->ShareBufferWithOriginTensors(input_names_,
+  return device_program->ShareBufferWithOriginTensors(exec_scope_,
+                                                      input_names_,
                                                       output_names_,
                                                       &origin_itensors_,
                                                       &origin_otensors_,
@@ -409,11 +439,13 @@ bool SubgraphEngine::LaunchDeviceProgram() {
   if (!device_program->model_client_) {
     return LaunchOriginProgram();
   }
+
   if (!device_program->ZeroCopyRun(&device_itensors_, &device_otensors_)) {
     return false;
   }
+
   if (!device_program->SharedBufferWithOutputTensors(
-          output_names_, &origin_otensors_, &device_otensors_)) {
+          exec_scope_, output_names_, &origin_otensors_, &device_otensors_)) {
     return false;
   }
   return true;

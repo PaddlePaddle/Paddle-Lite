@@ -49,6 +49,9 @@ void ElementwiseAddImageCompute::PrepareForRun() {
 
   if (y->dims().size() == 4) {
     kernel_func_name_ = "elementwise_add";  // y: ImageDefault
+    if (y->dims()[0] == 1 && y->dims()[2] == 1 && y->dims()[3] == 1) {
+      kernel_func_name_ = "elementwise_add_n1h1w1";
+    }
     if ((axis == -1) && (y->dims()[3] > x->dims()[3])) {
       build_options_ += " -DBROADCAST";
     }
@@ -192,6 +195,19 @@ void ElementwiseAddImageCompute::Run() {
   if (kernel_func_name_ == "elementwise_add") {
     int output_w = y_dims[3];
     int output_h = y_dims[2];
+    status = kernel.setArg(0, *x_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(1, *y_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(2, *out_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(3, output_h);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(4, output_w);
+    CL_CHECK_FATAL(status);
+  } else if (kernel_func_name_ == "elementwise_add_n1h1w1") {
+    int output_w = out->dims()[3];
+    int output_h = out->dims()[2];
     status = kernel.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(1, *y_img);

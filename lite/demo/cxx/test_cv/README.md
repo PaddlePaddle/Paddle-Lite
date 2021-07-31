@@ -17,6 +17,8 @@ example:
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxvf mobilenet_v1.tar.gz
 ./lite/tools/build.sh build_optimize_tool
+# 如果在arm64架构的MacOS下编译Opt工具失败，试着将上一条指令改为
+#"arch -x86_64 ./lite/tools/build.sh build_optimize_tool"
 ./build.opt/lite/api/opt
 --optimize_out_type=naive_buffer 
 --optimize_out=model_dir 

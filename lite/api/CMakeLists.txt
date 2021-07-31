@@ -11,11 +11,11 @@ endif()
 
 set(light_lib_DEPS light_api paddle_api paddle_api_light)
 
-if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_BM OR LITE_WITH_HUAWEI_ASCEND_NPU OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
+if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_SW OR LITE_WITH_BM OR LITE_WITH_HUAWEI_ASCEND_NPU OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
-    add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto op_registry fbs_headers)
+    add_dependencies(paddle_full_api_shared framework_proto op_registry fbs_headers)
     target_link_libraries(paddle_full_api_shared framework_proto op_registry)
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
@@ -47,11 +47,11 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   APU_DEPS ${apu_kernels}
                   RKNPU_DEPS ${rknpu_kernels}
                   IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+                  NNADAPTER_DEPS ${nnadapter_kernels}
                   INTEL_FPGA_DEPS ${intel_fpga_kernels}
                   HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
                   )
 
-    add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
     if(WIN32)
         target_link_libraries(paddle_light_api_shared shlwapi.lib)
     endif()
@@ -59,7 +59,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
    if(${HOST_SYSTEM} MATCHES "macosx" AND NOT (ARM_TARGET_LANG STREQUAL "clang"))
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/exported_symbols.lds")
         set(LINK_FLAGS "-Wl,-exported_symbols_list ${LINK_MAP_FILE}")
-        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
+        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND :)
         add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
         set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_full_api_shared custom_linker_map)
@@ -68,7 +68,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
    elseif(NOT WIN32)
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
         set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
-        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
+        add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND :)
         add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
         set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_full_api_shared custom_linker_map)
@@ -99,7 +99,7 @@ else()
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
     add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
-    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers)
+    add_dependencies(PADDLELITE_OBJS fbs_headers)
     if (IOS)
         # only sttaic lib is produced for IOS platform.
         add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
@@ -166,6 +166,7 @@ if (WITH_TESTING)
       RKNPU_DEPS ${rknpu_kernels}
       BM_DEPS ${bm_kernels}
       MLU_DEPS ${mlu_kernels}
+      NNADAPTER_DEPS ${nnadapter_kernels}
       HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
       APU_DEPS ${apu_kernels})
 
@@ -199,6 +200,11 @@ if(LITE_WITH_HUAWEI_ASCEND_NPU)
     set(cxx_api_deps ${cxx_api_deps} ${huawei_ascend_npu_deps})
 endif()
 
+if(LITE_WITH_NNADAPTER)
+    set(light_api_deps ${light_api_deps} ${nnadapter_deps})
+    set(cxx_api_deps ${cxx_api_deps} ${nnadapter_deps})
+endif()
+
 list(LENGTH ops num_ops)
 list(LENGTH x86_kernels num_x86_kernels)
 list(LENGTH cuda_kernels num_cuda_kernels)
@@ -216,6 +222,7 @@ list(LENGTH bm_kernels num_bm_kernels)
 list(LENGTH mlu_kernels num_mlu_kernels)
 list(LENGTH huawei_ascend_npu_kernels num_huawei_ascend_npu_kernels)
 list(LENGTH imagination_nna_kernels num_imagination_nna_kernels)
+list(LENGTH nnadapter_kernels num_nnadapter_kernels)
 
 message(STATUS "Collected ${num_ops} ops")
 message(STATUS "Collected ${num_x86_kernels} X86 kernels")
@@ -234,6 +241,7 @@ message(STATUS "Collected ${num_bm_kernels} BM kernels")
 message(STATUS "Collected ${num_mlu_kernels} MLU kernels")
 message(STATUS "Collected ${num_huawei_ascend_npu_kernels} HUAWEI_ASCEND_NPU kernels")
 message(STATUS "Collected ${num_imagination_nna_kernels} IMAGINATION_NNA kernels")
+message(STATUS "Collected ${num_nnadapter_kernels} NNADAPTER kernels")
 
 # for full api
 if (NOT LITE_ON_TINY_PUBLISH)
@@ -252,6 +260,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
                         RKNPU_DEPS ${rknpu_kernels}
                         BM_DEPS ${bm_kernels}
                         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+                        NNADAPTER_DEPS ${nnadapter_kernels}
                         CL_DEPS ${opencl_kernels}
                         METAL_DEPS ${metal_kernels}
                         FPGA_DEPS ${fpga_kernels}
@@ -283,6 +292,7 @@ lite_cc_library(light_api SRCS light_api.cc
         INTEL_FPGA_DEPS ${intel_fpga_kernels}
         BM_DEPS ${bm_kernels}
         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+        NNADAPTER_DEPS ${nnadapter_kernels}
         MLU_DEPS ${mlu_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
 
@@ -370,7 +380,7 @@ if(WITH_TESTING)
 endif()
 
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
-    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${apu_kernels} ${fpga_kernels} ${intel_fpga_kernels})
+    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${apu_kernels} ${fpga_kernels} ${intel_fpga_kernels} ${nndapter_kernels})
 
     lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -480,6 +490,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         FPGA_DEPS ${fpga_kernels}
         INTEL_FPGA_DEPS ${intel_fpga_kernels}
         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+        NNADAPTER_DEPS ${nnadapter_kernels}
         BM_DEPS ${bm_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     # The final inference library for just MobileConfig.
@@ -495,7 +506,7 @@ endif()
 # TODO(Superjomn) support latter.
 if(NOT WITH_COVERAGE)
     lite_cc_test(test_light_api SRCS light_api_test.cc
-        DEPS light_api program mir_passes paddle_api_light
+        DEPS paddle_api_full paddle_api_light
         CL_DEPS ${opencl_kernels}
         METAL_DEPS ${metal_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -505,7 +516,7 @@ if(NOT WITH_COVERAGE)
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
     lite_cc_test(test_apis SRCS apis_test.cc
-        DEPS cxx_api light_api ${ops} paddle_api_light
+        DEPS paddle_api_full paddle_api_light
         CL_DEPS ${opencl_kernels}
         METAL_DEPS ${metal_kernels}
         X86_DEPS ${x86_kernels}
@@ -527,8 +538,9 @@ endif()
 if (LITE_WITH_PYTHON)
     add_subdirectory(python)
     # add library for opt_base
-    lite_cc_library(opt_base SRCS opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc DEPS kernel op optimizer mir_passes utils)
-    add_dependencies(opt_base supported_kernel_op_info_h framework_proto all_kernel_faked_cc kernel_list_h)
+    lite_cc_library(opt_base SRCS opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
+        DEPS kernel op optimizer mir_passes utils)
+    add_dependencies(opt_base framework_proto)
 endif()
 
 if (LITE_ON_TINY_PUBLISH)
@@ -539,9 +551,9 @@ endif()
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
-    lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
+    lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
         DEPS gflags kernel op optimizer mir_passes utils ${host_kernels})
-    add_dependencies(opt op_list_h kernel_list_h all_kernel_faked_cc supported_kernel_op_info_h)
+    add_dependencies(opt all_kernel_faked)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
 if(NOT WITH_COVERAGE)

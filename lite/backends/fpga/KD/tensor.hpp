@@ -25,6 +25,8 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+#include "lite/utils/logging.h"
+
 #include "lite/backends/fpga/KD/dl_engine.hpp"
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
@@ -421,8 +423,10 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
+      VLOG(4) << "open file error for " << path;
       return;
     }
+
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;
@@ -441,6 +445,7 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
+      VLOG(4) << "open file error for " << path;
       return;
     }
     int num = shape_->numel();
@@ -461,8 +466,10 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
+      VLOG(4) << "open file error for " << path;
       return;
     }
+
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;

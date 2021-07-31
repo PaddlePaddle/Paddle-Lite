@@ -59,6 +59,9 @@
 // Thread local storage will be ignored because the linker for iOS 8 does not
 // support it.
 #define LITE_THREAD_LOCAL
+#elif defined(LITE_WITH_SW)
+// sw does not support thread_local
+#define LITE_THREAD_LOCAL
 #elif defined(__cplusplus) && (__cplusplus >= 201103)
 #define LITE_THREAD_LOCAL thread_local
 #elif defined(_WIN32)

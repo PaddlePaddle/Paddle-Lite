@@ -111,6 +111,9 @@ class LITE_API PaddlePredictor {
   // Get output names
   virtual std::vector<std::string> GetParamNames();
 
+  /// Release all tmp tensor to compress the size of the memory pool.
+  virtual bool TryShrinkMemory() = 0;
+
   // Get Input by name
   virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;
 
@@ -150,6 +153,15 @@ class LITE_API ConfigBase {
   // Set the cached npu/xpu/rknpu/apu offline model from the buffers
   std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
       subgraph_model_cache_buffers_{};
+  // The selected NNAdapter devices to build and run the model.
+  std::vector<std::string> nnadapter_device_names_{};
+  // The NNAdapter context properties for device configuration, model
+  // compilation and execution
+  std::string nnadapter_context_properties_{};
+  // The directory to find and store the compiled NNAdapter models.
+  std::string nnadapter_model_cache_dir_{""};
+  // The buffers for loading the compiled NNAdapter models from memory.
+  std::map<std::string, std::vector<char>> nnadapter_model_cache_buffers_{};
   int device_id_{0};
   int x86_math_num_threads_ = 1;
 
@@ -200,6 +212,42 @@ class LITE_API ConfigBase {
   const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>&
   subgraph_model_cache_buffers() const {
     return subgraph_model_cache_buffers_;
+  }
+  // Check if the NNAdapter device is valid.
+  bool check_nnadapter_device_name(const std::string& nnadapter_device_name);
+  // Choose the NNAdapter devices to build and run the model.
+  void set_nnadapter_device_names(
+      const std::vector<std::string>& nnadapter_device_names) {
+    nnadapter_device_names_ = nnadapter_device_names;
+  }
+  const std::vector<std::string>& nnadapter_device_names() const {
+    return nnadapter_device_names_;
+  }
+  // Set the context properties by key-value map for NNAdapter device
+  // configuration, model compilation and execution
+  // Such as "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0;"
+  void set_nnadapter_context_properties(
+      const std::string& nnadapter_context_properties) {
+    nnadapter_context_properties_ = nnadapter_context_properties;
+  }
+  const std::string& nnadapter_context_properties() const {
+    return nnadapter_context_properties_;
+  }
+  // Enable caching and set the directory to search and store the compiled
+  // NNAdapter models in the file system.
+  void set_nnadapter_model_cache_dir(
+      const std::string& nnadapter_model_cache_dir) {
+    nnadapter_model_cache_dir_ = nnadapter_model_cache_dir;
+  }
+  const std::string& nnadapter_model_cache_dir() const {
+    return nnadapter_model_cache_dir_;
+  }
+  // Set the buffers for loading the compiled NNAdapter models from memory.
+  void set_nnadapter_model_cache_buffers(const std::string& key,
+                                         const std::vector<char>& buffer);
+  const std::map<std::string, std::vector<char>>&
+  nnadapter_model_cache_buffers() const {
+    return nnadapter_model_cache_buffers_;
   }
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }

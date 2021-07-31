@@ -34,8 +34,13 @@ if (LITE_BUILD_TAILOR)
         list(FIND tailored_kernel_files ${src} _index_1)
         get_filename_component(filename ${src} NAME_WE)
         set(suffix "for_strip")
+        set(kernel_src_file "${kernel_tailor_src_dir}/${filename}_${target}_${suffix}.cc")
+        if (${target} STREQUAL "metal")
+            set(kernel_src_file "${kernel_tailor_src_dir}/${filename}_${target}_${suffix}.mm")
+        endif()
         if (${_index_1} EQUAL -1)
             file(WRITE ${kernel_tailor_src_dir}/${filename}_${target}_${suffix}.cc "")
+            file(WRITE ${kernel_src_file} "")
             # If kernel file name is `conv_compute.cc`, need copy conv_depthwise.cc, conv_winograd.cc,
             # conv_direct.cc and conv_gemmlike.cc into build dir, and rename it by adding a suffix.
             if (${filename} STREQUAL "conv_compute")
@@ -51,7 +56,7 @@ if (LITE_BUILD_TAILOR)
             execute_process(
                 COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_tailored_kernel.py
                 ${src}
-                ${kernel_tailor_src_dir}/${filename}_${target}_${suffix}.cc
+                ${kernel_src_file}
                 ${op_name}
                 ${device_target}
                 ${data_type}
@@ -67,7 +72,7 @@ if (LITE_BUILD_TAILOR)
                 execute_process(
                     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_tailored_kernel.py
                     ${src}
-                    ${kernel_tailor_src_dir}/${filename}_${target}_${suffix}.cc
+                    ${kernel_src_file}
                     ${op_name}
                     ${device_target}
                     ${data_type}
@@ -98,3 +103,4 @@ add_subdirectory(metal)
 add_subdirectory(huawei_ascend_npu)
 add_subdirectory(imagination_nna)
 add_subdirectory(intel_fpga)
+add_subdirectory(nnadapter)

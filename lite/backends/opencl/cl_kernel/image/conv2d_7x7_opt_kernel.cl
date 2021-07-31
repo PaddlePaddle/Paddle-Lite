@@ -40,6 +40,9 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
   const int item_ch_id = get_global_id(0);
   const int item_w_id = get_global_id(1);
   const int item_h_id = get_global_id(2);
+  if (item_ch_id >= item_ch || item_w_id >= item_w || item_h_id >= item_h) {
+    return;
+  }
 
   // out_width_id_per_blk and out_batch_id
   int out_w_base_id = item_ch_id * out_w;
@@ -58,7 +61,6 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
   int in_w_id4 = in_w_id3 + item_w * stride;
 
 #ifdef BIASE_CH
-
   CL_DTYPE4 output[5];
   output[0] =
       READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(item_ch_id, 0));
@@ -66,44 +68,11 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
   output[2] = output[0];
   output[3] = output[0];
   output[4] = output[0];
-
-#elif defined(BIASE_ELE)
-
-  CL_DTYPE4 output[5];
-  output[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                            bias,
-                            SAMPLER,
-                            (int2)(out_w_base_id + out_w_id0, item_h_id));
-  if (out_w_id1 < out_w) {
-    output[1] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                              bias,
-                              SAMPLER,
-                              (int2)(out_w_base_id + out_w_id1, item_h_id));
-  }
-  if (out_w_id2 < out_w) {
-    output[2] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                              bias,
-                              SAMPLER,
-                              (int2)(out_w_base_id + out_w_id2, item_h_id));
-  }
-  if (out_w_id3 < out_w) {
-    output[3] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                              bias,
-                              SAMPLER,
-                              (int2)(out_w_base_id + out_w_id3, item_h_id));
-  }
-  if (out_w_id4 < out_w) {
-    output[4] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                              bias,
-                              SAMPLER,
-                              (int2)(out_w_base_id + out_w_id4, item_h_id));
-  }
 #else
   CL_DTYPE4 output[5] = {0.0f};
 #endif
 
   CL_DTYPE4 filter[4] = {0.0f};
-  CL_DTYPE4 filter_trans[4] = {0.0f};
   CL_DTYPE4 input[5] = {0.0f};
 
   int filter_h_val0 = item_ch_id * 4 * filter_h;
@@ -116,8 +85,8 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
 
     const int in_w_base_id = mul24(ch, in_w);
 
-    int filter_w_val = ch * filter_w;
-
+    int filter_w_val = ch << 2;
+    int filter_h_val = mul24(item_ch_id, 49);
     for (int h = 0; h < filter_h; h++) {
       int in_h_val =
           select(in_h_id + h, -1, (in_h_id + h < 0 || in_h_id + h >= in_h));
@@ -139,47 +108,22 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
                                -1,
                                (in_w_id4 + w < 0 || in_w_id4 + w >= in_w));
 
-        filter[0] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR,
-                          filter_image,
-                          SAMPLER,
-                          (int2)(filter_w_val + w,
-                                 filter_h_val0 + h));  // in_ch:0-3,out_ch:0
-        filter[1] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR,
-                          filter_image,
-                          SAMPLER,
-                          (int2)(filter_w_val + w,
-                                 filter_h_val1 + h));  // in_ch:0-3,out_ch:1
-        filter[2] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR,
-                          filter_image,
-                          SAMPLER,
-                          (int2)(filter_w_val + w,
-                                 filter_h_val2 + h));  // in_ch:0-3,out_ch:2
-        filter[3] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR,
-                          filter_image,
-                          SAMPLER,
-                          (int2)(filter_w_val + w,
-                                 filter_h_val3 + h));  // in_ch:0-3,out_ch:3
-
-        filter_trans[0] = (CL_DTYPE4)(filter[0].x,
-                                      filter[1].x,
-                                      filter[2].x,
-                                      filter[3].x);  // in_ch:0,out_ch:0-3
-        filter_trans[1] = (CL_DTYPE4)(filter[0].y,
-                                      filter[1].y,
-                                      filter[2].y,
-                                      filter[3].y);  // in_ch:1,out_ch:0-3
-        filter_trans[2] = (CL_DTYPE4)(filter[0].z,
-                                      filter[1].z,
-                                      filter[2].z,
-                                      filter[3].z);  // in_ch:2,out_ch:0-3
-        filter_trans[3] = (CL_DTYPE4)(filter[0].w,
-                                      filter[1].w,
-                                      filter[2].w,
-                                      filter[3].w);  // in_ch:3,out_ch:0-3
+        filter[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                  filter_image,
+                                  SAMPLER,
+                                  (int2)(filter_w_val, filter_h_val));
+        filter[1] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                  filter_image,
+                                  SAMPLER,
+                                  (int2)(filter_w_val + 1, filter_h_val));
+        filter[2] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                  filter_image,
+                                  SAMPLER,
+                                  (int2)(filter_w_val + 2, filter_h_val));
+        filter[3] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                  filter_image,
+                                  SAMPLER,
+                                  (int2)(filter_w_val + 3, filter_h_val++));
 
         input[0] = READ_IMG_TYPE(
             CL_DTYPE_CHAR, input_image, SAMPLER, (int2)(in_w_val0, in_h_val));
@@ -192,32 +136,32 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
         input[4] = READ_IMG_TYPE(
             CL_DTYPE_CHAR, input_image, SAMPLER, (int2)(in_w_val4, in_h_val));
 
-        output[0] = mad(input[0].x, filter_trans[0], output[0]);
-        output[1] = mad(input[1].x, filter_trans[0], output[1]);
-        output[2] = mad(input[2].x, filter_trans[0], output[2]);
-        output[3] = mad(input[3].x, filter_trans[0], output[3]);
-        output[4] = mad(input[4].x, filter_trans[0], output[4]);
+        output[0] = mad(input[0].x, filter[0], output[0]);
+        output[1] = mad(input[1].x, filter[0], output[1]);
+        output[2] = mad(input[2].x, filter[0], output[2]);
+        output[3] = mad(input[3].x, filter[0], output[3]);
+        output[4] = mad(input[4].x, filter[0], output[4]);
 
         if (ch_surplus < 3) {
-          output[0] = mad(input[0].y, filter_trans[1], output[0]);
-          output[1] = mad(input[1].y, filter_trans[1], output[1]);
-          output[2] = mad(input[2].y, filter_trans[1], output[2]);
-          output[3] = mad(input[3].y, filter_trans[1], output[3]);
-          output[4] = mad(input[4].y, filter_trans[1], output[4]);
+          output[0] = mad(input[0].y, filter[1], output[0]);
+          output[1] = mad(input[1].y, filter[1], output[1]);
+          output[2] = mad(input[2].y, filter[1], output[2]);
+          output[3] = mad(input[3].y, filter[1], output[3]);
+          output[4] = mad(input[4].y, filter[1], output[4]);
         }
         if (ch_surplus < 2) {
-          output[0] = mad(input[0].z, filter_trans[2], output[0]);
-          output[1] = mad(input[1].z, filter_trans[2], output[1]);
-          output[2] = mad(input[2].z, filter_trans[2], output[2]);
-          output[3] = mad(input[3].z, filter_trans[2], output[3]);
-          output[4] = mad(input[4].z, filter_trans[2], output[4]);
+          output[0] = mad(input[0].z, filter[2], output[0]);
+          output[1] = mad(input[1].z, filter[2], output[1]);
+          output[2] = mad(input[2].z, filter[2], output[2]);
+          output[3] = mad(input[3].z, filter[2], output[3]);
+          output[4] = mad(input[4].z, filter[2], output[4]);
         }
         if (ch_surplus < 1) {
-          output[0] = mad(input[0].w, filter_trans[3], output[0]);
-          output[1] = mad(input[1].w, filter_trans[3], output[1]);
-          output[2] = mad(input[2].w, filter_trans[3], output[2]);
-          output[3] = mad(input[3].w, filter_trans[3], output[3]);
-          output[4] = mad(input[4].w, filter_trans[3], output[4]);
+          output[0] = mad(input[0].w, filter[3], output[0]);
+          output[1] = mad(input[1].w, filter[3], output[1]);
+          output[2] = mad(input[2].w, filter[3], output[2]);
+          output[3] = mad(input[3].w, filter[3], output[3]);
+          output[4] = mad(input[4].w, filter[3], output[4]);
         }
       }
     }
@@ -342,6 +286,9 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
   const int item_ch_id = get_global_id(0);
   const int item_w_id = get_global_id(1);
   const int item_h_id = get_global_id(2);
+  if (item_ch_id >= item_ch || item_w_id >= item_w || item_h_id >= item_h) {
+    return;
+  }
 
   // out_width_id_per_blk and out_batch_id
   int out_batch_id = item_h_id / in_h;
@@ -369,38 +316,6 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
   output[2] = output[0];
   output[3] = output[0];
   output[4] = output[0];
-
-#elif defined(BIASE_ELE)
-
-  CL_DTYPE4 output[5];
-  output[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                            bias,
-                            SAMPLER,
-                            (int2)(out_w_base_id + out_w_id0, item_h_id));
-  if (out_w_id1 < out_w) {
-    output[1] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                              bias,
-                              SAMPLER,
-                              (int2)(out_w_base_id + out_w_id1, item_h_id));
-  }
-  if (out_w_id2 < out_w) {
-    output[2] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                              bias,
-                              SAMPLER,
-                              (int2)(out_w_base_id + out_w_id2, item_h_id));
-  }
-  if (out_w_id3 < out_w) {
-    output[3] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                              bias,
-                              SAMPLER,
-                              (int2)(out_w_base_id + out_w_id3, item_h_id));
-  }
-  if (out_w_id4 < out_w) {
-    output[4] = READ_IMG_TYPE(CL_DTYPE_CHAR,
-                              bias,
-                              SAMPLER,
-                              (int2)(out_w_base_id + out_w_id4, item_h_id));
-  }
 #else
   CL_DTYPE4 output[5] = {0.0f};
 #endif
@@ -419,7 +334,8 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
 
     const int in_w_base_id = mul24(ch, in_w);
 
-    int filter_w_val = ch * filter_w;
+    int filter_w_val = ch << 2;
+    int filter_h_val = mul24(item_ch_id, 49);
 
     for (int h = 0; h < filter_h; h++) {
       int in_h_val = select(
@@ -445,47 +361,22 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
                                -1,
                                (in_w_id4 + w < 0 || in_w_id4 + w >= in_w));
 
-        filter[0] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR,
-                          filter_image,
-                          SAMPLER,
-                          (int2)(filter_w_val + w,
-                                 filter_h_val0 + h));  // in_ch:0-3,out_ch:0
-        filter[1] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR,
-                          filter_image,
-                          SAMPLER,
-                          (int2)(filter_w_val + w,
-                                 filter_h_val1 + h));  // in_ch:0-3,out_ch:1
-        filter[2] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR,
-                          filter_image,
-                          SAMPLER,
-                          (int2)(filter_w_val + w,
-                                 filter_h_val2 + h));  // in_ch:0-3,out_ch:2
-        filter[3] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR,
-                          filter_image,
-                          SAMPLER,
-                          (int2)(filter_w_val + w,
-                                 filter_h_val3 + h));  // in_ch:0-3,out_ch:3
-
-        filter_trans[0] = (CL_DTYPE4)(filter[0].x,
-                                      filter[1].x,
-                                      filter[2].x,
-                                      filter[3].x);  // in_ch:0,out_ch:0-3
-        filter_trans[1] = (CL_DTYPE4)(filter[0].y,
-                                      filter[1].y,
-                                      filter[2].y,
-                                      filter[3].y);  // in_ch:1,out_ch:0-3
-        filter_trans[2] = (CL_DTYPE4)(filter[0].z,
-                                      filter[1].z,
-                                      filter[2].z,
-                                      filter[3].z);  // in_ch:2,out_ch:0-3
-        filter_trans[3] = (CL_DTYPE4)(filter[0].w,
-                                      filter[1].w,
-                                      filter[2].w,
-                                      filter[3].w);  // in_ch:3,out_ch:0-3
+        filter[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                  filter_image,
+                                  SAMPLER,
+                                  (int2)(filter_w_val, filter_h_val));
+        filter[1] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                  filter_image,
+                                  SAMPLER,
+                                  (int2)(filter_w_val + 1, filter_h_val));
+        filter[2] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                  filter_image,
+                                  SAMPLER,
+                                  (int2)(filter_w_val + 2, filter_h_val));
+        filter[3] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                  filter_image,
+                                  SAMPLER,
+                                  (int2)(filter_w_val + 3, filter_h_val++));
 
         input[0] = READ_IMG_TYPE(
             CL_DTYPE_CHAR, input_image, SAMPLER, (int2)(in_w_val0, in_h_val));
@@ -498,25 +389,25 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
         input[4] = READ_IMG_TYPE(
             CL_DTYPE_CHAR, input_image, SAMPLER, (int2)(in_w_val4, in_h_val));
 
-        output[0] = mad(input[0].x, filter_trans[0], output[0]);
-        output[1] = mad(input[1].x, filter_trans[0], output[1]);
-        output[2] = mad(input[2].x, filter_trans[0], output[2]);
-        output[3] = mad(input[3].x, filter_trans[0], output[3]);
-        output[4] = mad(input[4].x, filter_trans[0], output[4]);
+        output[0] = mad(input[0].x, filter[0], output[0]);
+        output[1] = mad(input[1].x, filter[0], output[1]);
+        output[2] = mad(input[2].x, filter[0], output[2]);
+        output[3] = mad(input[3].x, filter[0], output[3]);
+        output[4] = mad(input[4].x, filter[0], output[4]);
 
         if (ch_surplus < 3) {
-          output[0] = mad(input[0].y, filter_trans[1], output[0]);
-          output[1] = mad(input[1].y, filter_trans[1], output[1]);
-          output[2] = mad(input[2].y, filter_trans[1], output[2]);
-          output[3] = mad(input[3].y, filter_trans[1], output[3]);
-          output[4] = mad(input[4].y, filter_trans[1], output[4]);
+          output[0] = mad(input[0].y, filter[1], output[0]);
+          output[1] = mad(input[1].y, filter[1], output[1]);
+          output[2] = mad(input[2].y, filter[1], output[2]);
+          output[3] = mad(input[3].y, filter[1], output[3]);
+          output[4] = mad(input[4].y, filter[1], output[4]);
         }
         if (ch_surplus < 2) {
-          output[0] = mad(input[0].z, filter_trans[2], output[0]);
-          output[1] = mad(input[1].z, filter_trans[2], output[1]);
-          output[2] = mad(input[2].z, filter_trans[2], output[2]);
-          output[3] = mad(input[3].z, filter_trans[2], output[3]);
-          output[4] = mad(input[4].z, filter_trans[2], output[4]);
+          output[0] = mad(input[0].z, filter[2], output[0]);
+          output[1] = mad(input[1].z, filter[2], output[1]);
+          output[2] = mad(input[2].z, filter[2], output[2]);
+          output[3] = mad(input[3].z, filter[2], output[3]);
+          output[4] = mad(input[4].z, filter[2], output[4]);
         }
         if (ch_surplus < 1) {
           output[0] = mad(input[0].w, filter_trans[3], output[0]);
@@ -620,5 +511,145 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
                    output_image,
                    (int2)(out_w_base_id + out_w_id4, item_h_id),
                    output[4]);
+  }
+}
+
+__kernel void conv2d_7x7_opt_mali(__private const int item_ch,
+                                  __private const int item_w,
+                                  __private const int item_h,
+                                  __read_only image2d_t input_image,
+                                  __global CL_DTYPE4 *filter_buf,
+                                  __global CL_DTYPE4 *bias,
+                                  __write_only image2d_t output_image,
+                                  __private const int stride,
+                                  __private const int pad,
+                                  __private const int dilation,
+                                  __private const int batch,
+                                  __private const int in_ch,
+                                  __private const int in_w,
+                                  __private const int in_h,
+                                  __private const int out_w,
+                                  __private const int out_h,
+                                  __read_only image2d_t prelu_alpha) {
+  // filter
+  const int filter_w = 7;
+  const int filter_h = 7;
+
+  // item_id
+  const int item_ch_id = get_global_id(0);
+  const int item_w_id = 2 * get_global_id(1);
+  const int item_h_id = get_global_id(2);
+  if (item_ch_id >= item_ch || item_w_id >= item_w || item_h_id >= item_h) {
+    return;
+  }
+
+  // out_width_id_per_blk and out_batch_id
+  int out_w_base_id = item_ch_id * out_w;
+  int out_w_id0 = item_w_id;
+  int out_w_id1 = out_w_id0 + 1;
+
+  // in_width_id_per_blk and in_height_id_per_batch
+  int in_h_id = (item_h_id % out_h) * stride - pad;
+  int in_w_id0 = item_w_id * stride - pad;
+  int in_w_id1 = (item_w_id + 1) * stride - pad;
+  ;
+
+#ifdef BIASE_CH
+  CL_DTYPE4 output[2];
+  output[0] = (bias + item_ch_id)[0];
+  output[1] = output[0];
+#else
+  CL_DTYPE4 output[2] = {0.0f};
+#endif
+
+  CL_DTYPE4 filter[2] = {0.0f};
+  CL_DTYPE4 input[2] = {0.0f};
+
+  for (int ch = 0; ch < (in_ch + 3) / 4; ch++) {
+    const int in_w_base_id = mul24(ch, in_w);
+
+    int filter_w_val = ch << 2;
+    int filter_h_val = mul24(item_ch_id, 49);
+    __global CL_DTYPE4 *filter_ptr =
+        filter_buf + ((in_ch + 3) >> 2) * 4 * filter_h_val + filter_w_val;
+
+    for (int h = 0; h < filter_h; h++) {
+      int in_h_val =
+          select(in_h_id + h, -1, (in_h_id + h < 0 || in_h_id + h >= in_h));
+
+      for (int w = 0; w < filter_w; w++) {
+        int in_w_val0 = select(in_w_base_id + in_w_id0 + w,
+                               -1,
+                               (in_w_id0 + w < 0 || in_w_id0 + w >= in_w));
+        int in_w_val1 = select(in_w_base_id + in_w_id1 + w,
+                               -1,
+                               (in_w_id1 + w < 0 || in_w_id1 + w >= in_w));
+
+        input[0] = READ_IMG_TYPE(
+            CL_DTYPE_CHAR, input_image, SAMPLER, (int2)(in_w_val0, in_h_val));
+        input[1] = READ_IMG_TYPE(
+            CL_DTYPE_CHAR, input_image, SAMPLER, (int2)(in_w_val1, in_h_val));
+
+        output[0] = mad(input[0].x, filter_ptr[0], output[0]);
+        output[1] = mad(input[1].x, filter_ptr[0], output[1]);
+
+        output[0] = mad(input[0].y, filter_ptr[1], output[0]);
+        output[1] = mad(input[1].y, filter_ptr[1], output[1]);
+
+        output[0] = mad(input[0].z, filter_ptr[2], output[0]);
+        output[1] = mad(input[1].z, filter_ptr[2], output[1]);
+
+        output[0] = mad(input[0].w, filter_ptr[3], output[0]);
+        output[1] = mad(input[1].w, filter_ptr[3], output[1]);
+
+        filter_ptr += ((in_ch + 3) >> 2) * 4;
+      }
+    }
+  }
+
+  CL_DTYPE4 alpha[2];
+#ifdef PRELU_CH  //{
+  alpha[0] =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(item_ch_id, 0));
+  alpha[1] = alpha[0];
+//}
+#elif defined(PRELU_ELE)  //{
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                           prelu_alpha,
+                           SAMPLER,
+                           (int2)(out_w_base_id + out_w_id0, item_h_id));
+  if (out_w_id1 < out_w) {
+    alpha[1] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                             prelu_alpha,
+                             SAMPLER,
+                             (int2)(out_w_base_id + out_w_id1, item_h_id));
+  }
+//}
+#elif defined(PRELU_ALL)  //{
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha[0].y = alpha[0].x;
+  alpha[0].z = alpha[0].x;
+  alpha[0].w = alpha[0].x;
+  alpha[1] = alpha[0];
+//}
+#endif
+  output[0] = activation_type4(output[0], alpha[0]);
+  output[1] = activation_type4(output[1], alpha[1]);
+
+#ifdef SCALE_ACTIVATION
+  output[0] = fuse_scale(output[0], 1.f, 0.f, 0.f);
+  output[1] = fuse_scale(output[1], 1.f, 0.f, 0.f);
+
+#endif
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR,
+                 output_image,
+                 (int2)(out_w_base_id + out_w_id0, item_h_id),
+                 output[0]);
+  if (out_w_id1 < out_w) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR,
+                   output_image,
+                   (int2)(out_w_base_id + out_w_id1, item_h_id),
+                   output[1]);
   }
 }

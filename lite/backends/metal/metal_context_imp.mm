@@ -14,12 +14,19 @@
 
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/kernels/metal/image_op/fetch_image_compute.h"
+
+// debug macro
+//#define METAL_DEBUG_GPU_CAPTURE
+//#define METAL_DEBUG_ONE_COMMANDBUFFER
 
 extern NSString* cString2NSString(std::string cStr) {
     return [NSString stringWithCString:cStr.c_str() encoding:[NSString defaultCStringEncoding]];
 }
 
-@interface MetalContextImp ()
+@interface MetalContextImp () {
+    std::vector<paddle::lite::kernels::metal::FetchImageCompute *> _fetch_vector;
+}
 @property (strong, nonatomic) id<MTLDevice> device;
 @property (strong, nonatomic) id<MTLLibrary> library;
 @property (strong, nonatomic) id<MTLCommandQueue> commandQueue;
@@ -30,46 +37,39 @@ extern NSString* cString2NSString(std::string cStr) {
 
 @implementation MetalContextImp
 
-+ (id<MTLDevice>)device {
-    static id<MTLDevice> device = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        device = MTLCreateSystemDefaultDevice();
-    });
-    return device;
-}
-
-+ (id<MTLLibrary>)library:(NSString*)path {
-    static id<MTLLibrary> library = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        if (path) {
-            library = [self.device newLibraryWithFile:path error:NULL];
-        }
-        if (nil == library) {
-            LOG(INFO) << "Can't load metallib: "
-                      << [path cStringUsingEncoding:NSUTF8StringEncoding];
-        }
-    });
-    return library;
-}
-
 #pragma mark - external
 
 - (instancetype)init {
     self = [super init];
     if (self) {
-        _device = self.class.device;
-        _commandQueue = [_device newCommandQueue];
-        _commandBuffer = [_commandQueue commandBuffer];
+        _fetch_vector = {};
         _waitings = [NSMutableArray array];
         _caches = [NSMutableDictionary dictionary];
+        _device = MTLCreateSystemDefaultDevice();
+        _commandQueue = [_device newCommandQueue];
+#if defined (METAL_DEBUG_GPU_CAPTURE)
+        // At least one command buffer must be created and
+        //committed within the boundaries of a GPU Capture.
+        [self startCapture];
+#endif
+        _commandBuffer = [_commandQueue commandBuffer];
     }
     return self;
 }
 
+- (void)dealloc {
+    _fetch_vector.clear();
+}
+
 - (void)setMetalPath:(std::string)path {
-    _library = [self.class library:cString2NSString(path)];
+    NSString *pathStr = cString2NSString(path);
+    if (pathStr) {
+        _library = [self.device newLibraryWithFile:pathStr error:NULL];
+    }
+    if (nil == _library) {
+        LOG(INFO) << "Can't load metallib: "
+                  << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
+    }
 }
 
 #pragma mark data
@@ -142,31 +142,51 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 - (void)commit {
+#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+
+#else
     [_commandBuffer commit];
     [_waitings addObject:_commandBuffer];
     _commandBuffer = [_commandQueue commandBuffer];
-}
-
-- (void)waitUntilCompleted {
-    [_commandBuffer commit];
-    [_commandBuffer waitUntilCompleted];
-    _commandBuffer = [_commandQueue commandBuffer];
+#endif
 }
 
 // mps
 - (id<MTLCommandBuffer>)commandBuffer {
+#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+    return _commandBuffer;
+#else
     id<MTLCommandBuffer> result = [_commandQueue commandBuffer];
     assert(nil != result);
     return result;
+#endif
 }
 
 // mps
 - (void)commit:(id<MTLCommandBuffer>)cmdBuf {
     assert(nil != cmdBuf);
+#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+
+#else
     [cmdBuf commit];
+    [_waitings addObject:cmdBuf];
+#endif
 }
 
 - (void)waitAllCompleted {
+#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+    [_commandBuffer commit];
+#if defined (METAL_DEBUG_GPU_CAPTURE)
+    [self stopCapture];
+#endif
+    [_commandBuffer waitUntilCompleted];
+    _commandBuffer = [_commandQueue commandBuffer];
+
+#else
+    
+#if defined (METAL_DEBUG_GPU_CAPTURE)
+    [self stopCapture];
+#endif
     for (id<MTLCommandBuffer> buffer in _waitings) {
         if (buffer.status >= MTLCommandBufferStatusCompleted) {
             continue;
@@ -177,6 +197,21 @@ extern NSString* cString2NSString(std::string cStr) {
         }
     }
     [_waitings removeAllObjects];
+#endif
+}
+
+#pragma mark c++ external
+
+- (void)add_fetch_kernel_ptr:(void *)ptr {
+    paddle::lite::kernels::metal::FetchImageCompute *fetch =
+        static_cast<paddle::lite::kernels::metal::FetchImageCompute *>(ptr);
+    _fetch_vector.push_back(fetch);
+}
+
+- (void)fetch_data_from_gpu {
+    for (auto item : _fetch_vector) {
+        item->fetch_data_from_gpu();
+    }
 }
 
 #pragma mark dispatch
@@ -198,8 +233,8 @@ extern NSString* cString2NSString(std::string cStr) {
         width = MIN(width, outTexture.width);
         height = pipline.threadExecutionWidth / width;
         height = MIN(height, outTexture.height);
-        groupWidth = (outTexture.width / 4 + width - 1) / width;
-        groupHeight = (outTexture.height / 1 + height - 1) / height;
+        groupWidth = (outTexture.width / 2 + width - 1) / width;
+        groupHeight = (outTexture.height / 2 + height - 1) / height;
     } else {
         width = pipline.threadExecutionWidth;
         width = MIN(width, outTexture.width);
@@ -268,6 +303,24 @@ extern NSString* cString2NSString(std::string cStr) {
         _caches[name] = result;
     }
     return result;
+}
+
+#pragma mark - capture
+
+- (void)startCapture {
+    MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+    MTLCaptureDescriptor* captureDescriptor = [[MTLCaptureDescriptor alloc] init];
+    captureDescriptor.captureObject = self.device;
+
+    NSError *error;
+    if (![captureManager startCaptureWithDescriptor: captureDescriptor error:&error]) {
+        NSLog(@"Failed to start capture, error %@", error);
+    }
+}
+
+- (void)stopCapture {
+    MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+    [captureManager stopCapture];
 }
 
 @end

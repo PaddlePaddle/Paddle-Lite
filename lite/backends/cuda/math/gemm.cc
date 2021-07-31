@@ -139,7 +139,7 @@ class cublasTypeWrapper<half> {
   static const cudaDataType_t type = CUDA_R_16F;
 };
 
-#if (CUBLAS_VER_MAJOR * 10 + CUBLAS_VER_MINOR) >= 101
+#if (CUBLAS_VER_MAJOR * 10 + CUBLAS_VER_MINOR) == 101
 
 template <typename PTypeIn, typename PTypeOut>
 bool LtGemm<PTypeIn, PTypeOut>::init(const bool trans_a,

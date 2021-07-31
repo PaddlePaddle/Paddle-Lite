@@ -25,145 +25,229 @@
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
+#ifdef LITE_WITH_FPGA
+#include "lite/backends/fpga/monitor.hpp"
+#endif
 
 namespace paddle {
 namespace lite {
-
 #ifndef LITE_ON_TINY_PUBLISH
-void RuntimeProgram::SaveToProgram(
-    std::shared_ptr<cpp::ProgramDesc> program_desc) {
-  LOG(INFO) << "Into SaveToProgram";
-  CHECK(program_desc);
+namespace {
+// Verify the validity of ProgramDesc
+void CheckProgramDescValidity(std::shared_ptr<cpp::ProgramDesc> program_desc,
+                              int inst_block_size) {
+  CHECK(program_desc) << "Error, program_desc is nullptr";
   auto block_size = program_desc->BlocksSize();
-  CHECK_GT(block_size, 0) << "No block found!";
+  CHECK_GT(block_size, 0) << "No block exists in current program_desc";
   // TODD(hong19860320) Only support updating the block desc which already
   // exists in the origin program desc
-  CHECK_LE(block_size, instructions_.size())
-      << "Invalid block size, expected (0," << instructions_.size()
-      << "] but got " << block_size;
-  for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
-    auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
-    // Record all of the origin vars in the origin block
-    std::map<std::string, cpp::VarDesc> origin_var_maps;
-    auto var_size = block_desc->VarsSize();
-    for (size_t var_idx = 0; var_idx < var_size; ++var_idx) {
-      auto v = block_desc->GetVar<cpp::VarDesc>(var_idx);
-      origin_var_maps.emplace(v->Name(), *v);
-    }
-    // Update the ops and vars for each block according to the instructions
-    block_desc->ClearVars();
-    block_desc->ClearOps();
-    std::set<std::string> already_added_vars;
-    for (auto& inst : instructions_[block_idx]) {
-      auto* op = const_cast<OpLite*>(inst.op());
-      auto* op_info = op->op_info();
-      auto op_type = op_info->Type();
-      auto* kernel = inst.mutable_kernel();
-      auto* scope = op->scope();
-      // Update the origin vars which are referred by the instructions
-      // Add the new vars which are created in the passes and referred by the
-      // instructions
-      auto var_names = op_info->input_names();
-      auto out_names = op_info->output_names();
-      // Combine input and output vars and delete the duplicates
-      var_names.insert(var_names.end(), out_names.begin(), out_names.end());
-      std::stable_sort(var_names.begin(), var_names.end());
-      var_names.erase(std::unique(var_names.begin(), var_names.end()),
-                      var_names.end());
-      for (auto& var_name : var_names) {
-        if (already_added_vars.count(var_name)) continue;
-        auto* v = block_desc->AddVar<cpp::VarDesc>();
-        v->SetName(var_name);
-        auto it = origin_var_maps.find(var_name);
-        auto* var = scope->FindVar(var_name);
-        if (it != origin_var_maps.end() && (it->second.Persistable())) {
-          v->SetType(it->second.GetType());
-          v->SetPersistable(it->second.Persistable());
-          if (it->second.GetType() == cpp::VarDesc::Type::LOD_TENSOR) {
-            if (var != nullptr) {
-              auto tensor = var->GetMutable<Tensor>();
-              if (tensor != nullptr && tensor->persistable()) {
-                v->SetPersistable(tensor->persistable());
-              }
-            }
-          }
-          if (var_name != "feed" && var_name != "fetch") {
-            v->SetShape(it->second.GetShape());
-            v->SetDataType(it->second.GetDataType());
-          }
-        } else {
-          std::string arg_name;
-          const Type* decl_type;
-          if (op_info->GetInputArgname(var_name, &arg_name)) {
-            decl_type = kernel->GetInputDeclType(arg_name);
-          } else {
-            op_info->GetOutputArgname(var_name, &arg_name);
-            decl_type = kernel->GetOutputDeclType(arg_name);
-          }
-          if (decl_type->IsTensor() && var->IsType<lite::Tensor>()) {
-            v->SetType(cpp::VarDesc::Type::LOD_TENSOR);
-            auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
-            v->SetPersistable(tensor->persistable());
-            if (var_name != "feed" && var_name != "fetch") {
-              v->SetShape(tensor->dims().data());
-              auto precision = tensor->precision();
-              switch (precision) {
-#define SET_DATATYPE(precision__, data_type) \
-  case PrecisionType::precision__:           \
-    v->SetDataType(data_type);               \
-    break
-                SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
-                SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
-                SET_DATATYPE(kUnk, VarDescAPI::VarDataType::FP32);
-                SET_DATATYPE(kFP16, VarDescAPI::VarDataType::FP16);
-                SET_DATATYPE(kInt8, VarDescAPI::VarDataType::INT8);
-                SET_DATATYPE(kInt16, VarDescAPI::VarDataType::INT16);
-                SET_DATATYPE(kInt32, VarDescAPI::VarDataType::INT32);
-                SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
-#undef SET_DATATYPE
-                default:
-                  LOG(WARNING) << "Unknown precision type "
-                               << PrecisionToStr(precision) << " for var "
-                               << var_name << " in op " << op_type;
-              }
-            }
-          } else if (decl_type->IsTensorList() ||
-                     var->IsType<std::vector<lite::Tensor>>()) {
-            // Set persistable=false for tensor array
-            v->SetType(cpp::VarDesc::Type::LOD_TENSOR_ARRAY);
-            v->SetPersistable(false);
-          } else {
-            LOG(WARNING) << "Unsupported decl type " << *decl_type
-                         << " for var " << var_name << " in op " << op_type;
-          }
-        }
-        already_added_vars.insert(var_name);
-      }
-      // Replace all of origin ops with the instructions
-      auto op_desc = block_desc->AddOp<cpp::OpDesc>();
-      *op_desc = *op_info;
-      op_desc->SetAttr(kKernelTypeAttr, kernel->SerializedKernelType());
-      if (op_type == "subgraph" && !op_info->GetAttr<int32_t>("sub_block")) {
-        // It's a new subgraph op when its sub_block_idx = 0, Now we add its
-        // subblock desc to the program desc, Then update its sub_block_idx to
-        // the index of block desc of the program desc.
-        auto subgraph_op = static_cast<operators::SubgraphOp*>(op);
-        auto sub_program_desc = subgraph_op->GetProgramDesc();
-        CHECK(sub_program_desc);
-        auto sub_block_desc = program_desc->AddBlock<cpp::BlockDesc>();
-        *sub_block_desc = *sub_program_desc->GetBlock<cpp::BlockDesc>(0);
-        subgraph_op->SetProgramDesc(program_desc);
-        op_desc->SetAttr<int32_t>("sub_block", program_desc->BlocksSize() - 1);
-        // Attach op and kernel again to update the new block_idx and
-        // program_desc
-        subgraph_op->Attach(*op_desc, scope);
-        subgraph_op->AttachKernel(kernel);
-        // Update the pointer of block desc after a new subblock desc is added
-        block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+  CHECK_LE(block_size, inst_block_size) << "Invalid block size, expected (0,"
+                                        << inst_block_size << "] but got "
+                                        << block_size;
+}
+
+std::map<std::string, cpp::VarDesc> ClearBlockDescInfo(
+    cpp::BlockDesc* block_desc) {
+  std::map<std::string, cpp::VarDesc> origin_var_maps;
+  auto var_size = block_desc->VarsSize();
+  for (size_t var_idx = 0; var_idx < var_size; ++var_idx) {
+    auto v = block_desc->GetVar<cpp::VarDesc>(var_idx);
+    origin_var_maps.emplace(v->Name(), *v);
+  }
+  // Update the ops and vars for each block according to the instructions
+  block_desc->ClearVars();
+  block_desc->ClearOps();
+  return origin_var_maps;
+}
+
+void UpdatePersistableVarDesc(cpp::VarDesc* var,
+                              const cpp::VarDesc& previous_var_desc,
+                              const std::string& var_name,
+                              Scope* scope) {
+  var->SetType(previous_var_desc.GetType());
+  var->SetPersistable(previous_var_desc.Persistable());
+  if (previous_var_desc.GetType() == cpp::VarDesc::Type::LOD_TENSOR) {
+    if (var != nullptr) {
+      auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
+      if (tensor != nullptr && tensor->persistable()) {
+        var->SetPersistable(tensor->persistable());
       }
     }
   }
-  LOG(INFO) << "SaveToProgram done";
+  if (var_name != "feed" && var_name != "fetch") {
+    var->SetShape(previous_var_desc.GetShape());
+    var->SetDataType(previous_var_desc.GetDataType());
+  }
+}
+
+void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
+                                 const std::string& var_name,
+                                 const std::string& op_type,
+                                 Scope* scope) {
+  var->SetType(cpp::VarDesc::Type::LOD_TENSOR);
+  auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
+  var->SetPersistable(tensor->persistable());
+  if (var_name != "feed" && var_name != "fetch") {
+    var->SetShape(tensor->dims().data());
+    auto precision = tensor->precision();
+    switch (precision) {
+#define SET_DATATYPE(precision__, data_type) \
+  case PrecisionType::precision__:           \
+    var->SetDataType(data_type);             \
+    break
+      SET_DATATYPE(kBool, VarDescAPI::VarDataType::BOOL);
+      SET_DATATYPE(kFP16, VarDescAPI::VarDataType::FP16);
+      SET_DATATYPE(kFloat, VarDescAPI::VarDataType::FP32);
+      SET_DATATYPE(kFP64, VarDescAPI::VarDataType::FP64);
+      SET_DATATYPE(kUInt8, VarDescAPI::VarDataType::UINT8);
+      SET_DATATYPE(kInt8, VarDescAPI::VarDataType::INT8);
+      SET_DATATYPE(kInt16, VarDescAPI::VarDataType::INT16);
+      SET_DATATYPE(kInt32, VarDescAPI::VarDataType::INT32);
+      SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
+      SET_DATATYPE(kUnk, VarDescAPI::VarDataType::FP32);
+#undef SET_DATATYPE
+      default:
+        LOG(FATAL) << "Unknown precision type " << PrecisionToStr(precision)
+                   << " for var " << var_name << " in op " << op_type;
+    }
+  }
+}
+
+void UpdateVarDescFromTensorListInfo(cpp::VarDesc* var,
+                                     const std::string& var_name,
+                                     const std::string& op_type,
+                                     Scope* scope) {
+  var->SetType(cpp::VarDesc::Type::LOD_TENSOR_ARRAY);
+  var->SetPersistable(false);
+}
+
+void UpdateVarDescFromStepScopeInfo(cpp::VarDesc* var,
+                                    const std::string& var_name,
+                                    const std::string& op_type,
+                                    Scope* scope) {
+  var->SetType(cpp::VarDesc::Type::STEP_SCOPES);
+  var->SetPersistable(false);
+}
+
+const Type* GetVariableDeclTypeFromOpInfo(const std::string& var_name,
+                                          const OpInfo* op_info,
+                                          KernelBase* kernel) {
+  std::string arg_name;
+  const Type* decl_type;
+  if (op_info->GetInputArgname(var_name, &arg_name)) {
+    decl_type = kernel->GetInputDeclType(arg_name);
+  } else {
+    op_info->GetOutputArgname(var_name, &arg_name);
+    decl_type = kernel->GetOutputDeclType(arg_name);
+  }
+  return decl_type;
+}
+
+void AddOpDescFromOpInfo(std::shared_ptr<cpp::ProgramDesc> program_desc,
+                         size_t block_idx,
+                         Instruction* inst) {
+  auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+  auto op_desc = block_desc->AddOp<cpp::OpDesc>();
+  auto* op = const_cast<OpLite*>(inst->op());
+  auto* kernel = inst->mutable_kernel();
+
+  auto* op_info = op->op_info();
+  *op_desc = *op_info;
+  op_desc->SetAttr(kKernelTypeAttr, kernel->SerializedKernelType());
+  auto* scope = op->scope();
+  auto op_type = op_info->Type();
+  // Update subgraph op
+  if (op_type == "subgraph" && !op_info->GetAttr<int32_t>("sub_block")) {
+    // It's a new subgraph op when its sub_block_idx = 0, Now we add its
+    // subblock desc to the program desc, Then update its sub_block_idx to
+    // the index of block desc of the program desc.
+    auto subgraph_op = static_cast<operators::SubgraphOp*>(op);
+    auto sub_program_desc = subgraph_op->GetProgramDesc();
+    CHECK(sub_program_desc);
+    auto sub_block_desc = program_desc->AddBlock<cpp::BlockDesc>();
+    *sub_block_desc = *sub_program_desc->GetBlock<cpp::BlockDesc>(0);
+    subgraph_op->SetProgramDesc(program_desc);
+    op_desc->SetAttr<int32_t>("sub_block", program_desc->BlocksSize() - 1);
+    // Attach op and kernel again to update the new block_idx and
+    // program_desc
+    subgraph_op->Attach(*op_desc, scope);
+    subgraph_op->AttachKernel(kernel);
+    // Update the pointer of block desc after a new subblock desc is added
+    block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+  }
+}
+
+void AddVariableDescFromOpInfo(
+    std::shared_ptr<cpp::ProgramDesc> program_desc,
+    size_t block_idx,
+    Instruction* inst,
+    std::set<std::string>* already_added_vars,
+    const std::map<std::string, cpp::VarDesc>& origin_var_maps) {
+  auto* block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+
+  auto* op = const_cast<OpLite*>(inst->op());
+  auto* kernel = inst->mutable_kernel();
+  auto* op_info = op->op_info();
+  auto* scope = op->scope();
+  auto op_type = op_info->Type();
+
+  // Update the origin vars which are referred by the instructions
+  // Add the new vars which are created in the passes and referred by the
+  // instructions
+  auto var_names = op_info->input_names();
+  auto out_names = op_info->output_names();
+  // Combine input and output vars and delete the duplicates
+  var_names.insert(var_names.end(), out_names.begin(), out_names.end());
+  std::stable_sort(var_names.begin(), var_names.end());
+  var_names.erase(std::unique(var_names.begin(), var_names.end()),
+                  var_names.end());
+  for (auto& var_name : var_names) {
+    if (already_added_vars->count(var_name)) continue;
+    auto* v = block_desc->AddVar<cpp::VarDesc>();
+    v->SetName(var_name);
+
+    auto* var = scope->FindVar(var_name);
+    auto it = origin_var_maps.find(var_name);
+
+    if (it != origin_var_maps.end() && (it->second.Persistable())) {
+      UpdatePersistableVarDesc(v, it->second, var_name, scope);
+    } else {
+      auto* decl_type =
+          GetVariableDeclTypeFromOpInfo(var_name, op_info, kernel);
+      if (decl_type->IsTensor() && var->IsType<lite::Tensor>()) {
+        UpdateVarDescFromTensorInfo(v, var_name, op_type, scope);
+      } else if (decl_type->IsTensorList() ||
+                 var->IsType<std::vector<lite::Tensor>>()) {
+        UpdateVarDescFromTensorListInfo(v, var_name, op_type, scope);
+      } else if (decl_type->IsStepScope() &&
+                 var->IsType<std::vector<lite::Scope*>>()) {
+        UpdateVarDescFromStepScopeInfo(v, var_name, op_type, scope);
+      } else {
+        LOG(FATAL) << "Unsupported decl type " << *decl_type << " for var "
+                   << var_name << " in op " << op_type;
+      }
+    }
+    already_added_vars->insert(var_name);
+  }
+}
+
+}  // namespace
+
+void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
+    std::shared_ptr<cpp::ProgramDesc> program_desc) {
+  CheckProgramDescValidity(program_desc, instructions_.size());
+  size_t block_size = program_desc->BlocksSize();
+  for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
+    std::set<std::string> already_added_vars;
+    const std::map<std::string, cpp::VarDesc> origin_var_maps =
+        ClearBlockDescInfo(program_desc->GetBlock<cpp::BlockDesc>(block_idx));
+    for (auto& inst : instructions_[block_idx]) {
+      AddVariableDescFromOpInfo(
+          program_desc, block_idx, &inst, &already_added_vars, origin_var_maps);
+      // Replace all of origin ops with the instructions
+      AddOpDescFromOpInfo(program_desc, block_idx, &inst);
+    }
+  }
 }
 #endif
 
@@ -307,9 +391,14 @@ RuntimeProgram::RuntimeProgram(
           ContextScheduler::Global().NewContext(kernel->target()));
     }
 #elif LITE_WITH_METAL
-    std::unique_ptr<KernelContext> ctx(new KernelContext());
-    (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
-    kernel->SetContext(std::move(ctx));
+    if (kernel->target() == TARGET(kMetal)) {
+      std::unique_ptr<KernelContext> ctx(new KernelContext());
+      (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
+      kernel->SetContext(std::move(ctx));
+    } else {
+      kernel->SetContext(
+          ContextScheduler::Global().NewContext(kernel->target()));
+    }
 #else
     if (kernel != nullptr) {
       kernel->SetContext(
@@ -360,7 +449,13 @@ void RuntimeProgram::Run() {
   cmd_ctx->CreateCommandBuffer(this);
 #endif
 
+#ifdef LITE_WITH_FPGA
+  Monitor& monitor = Monitor::get_instance();
+  monitor.inferStart();
+#endif
+
   int idx = -1;
+
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
@@ -380,7 +475,15 @@ void RuntimeProgram::Run() {
     }
 #endif
 
+#ifdef LITE_WITH_FPGA
+    monitor.preRun(inst);
+#endif
+
     inst.Run();
+
+#ifdef LITE_WITH_FPGA
+    monitor.postRun(inst);
+#endif
 
 #ifdef LITE_WITH_OPENCL
     // delegate flush judgement to specify target , it is too heavy for Inst
@@ -539,6 +642,8 @@ void Program::PrepareWorkspace(
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+        } else if (var_type == lite::VarDescAPI::Type::STEP_SCOPES) {
+          var->GetMutable<std::vector<lite::Scope*>>();
         }
       } else {
         if (var_name == "feed" || var_name == "fetch") continue;

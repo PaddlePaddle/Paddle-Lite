@@ -91,17 +91,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       first_epoch_for_reinit_ = false;
       const auto& out_dims = param.output->dims();
 
-      x_img_ = DATA_GPU(param.x);
-      auto out_image_shape = InitImageDimInfoWith(out_dims);
-#ifdef LITE_WITH_LOG
-      VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
-              << out_image_shape["height"];
-#endif
-      out_img_ = MUTABLE_DATA_GPU(param.output,
-                                  out_image_shape["width"],
-                                  out_image_shape["height"],
-                                  nullptr);
-
       auto& context = ctx_->As<OpenCLContext>();
       CHECK(context.cl_context() != nullptr);
 
@@ -214,8 +203,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       VLOG(4) << "global_pooling: " << global_pooling;
       VLOG(4) << "pooling_type: " << pooling_type;
       VLOG(4) << "strides: " << strides[0] << "  " << strides[1];
-      VLOG(4) << "ksize: " << ksize[0] << "  " << ksize[1] << "  " << ksize[2]
-              << "  " << ksize[3];
+      VLOG(4) << "ksize: " << ksize[0] << "  " << ksize[1];
       VLOG(4) << "paddings: " << paddings[0] << "  " << paddings[1] << "  "
               << paddings[2] << "  " << paddings[3];
       VLOG(4) << "global_work_size: " << static_cast<int>(global_work_size_[0])
@@ -233,8 +221,20 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
+    const auto& param = *param_.get_mutable<param_t>();
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
+
+    x_img_ = DATA_GPU(param.x);
+    auto out_image_shape = InitImageDimInfoWith(param.output->dims());
+#ifdef LITE_WITH_LOG
+    VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
+            << out_image_shape["height"];
+#endif
+    out_img_ = MUTABLE_DATA_GPU(param.output,
+                                out_image_shape["width"],
+                                out_image_shape["height"],
+                                nullptr);
 
     cl_int status;
     int arg_idx = 0;

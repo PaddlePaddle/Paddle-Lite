@@ -298,7 +298,15 @@ void LightPredictor::DequantizeWeight() {
 typedef __fp16 float16_t;
 void LightPredictor::WeightFP32ToFP16() {
   std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
-  std::vector<std::string> fp16_ops{"conv2d", "depthwise_conv2d", "fc"};
+  std::vector<std::string> fp16_ops{"conv2d",
+                                    "depthwise_conv2d",
+                                    "conv2d_transpose",
+                                    "fc",
+                                    "gru",
+                                    "sequence_conv",
+                                    "elementwise_add",
+                                    "elementwise_mul",
+                                    "prelu"};
   for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
     auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
     for (size_t k = 0; k < block->OpsSize(); ++k) {
@@ -340,6 +348,37 @@ void LightPredictor::CheckInputValid() {
                    << PrecisionToStr(GetInput(idx)->precision()) << ").";
     }
   }
+}
+
+bool LightPredictor::TryShrinkMemory() {
+#ifdef LITE_WITH_ARM
+  // Clear ArmL3Cache
+  lite::DeviceInfo::Global().ClearArmL3Cache();
+#endif
+  const std::vector<std::string>& local_var_names =
+      program_->exec_scope()->LocalVarNames();
+  for (auto& var_name : local_var_names) {
+    Variable* var = program_->exec_scope()->FindLocalVar(var_name);
+    if (var->IsType<lite::Tensor>()) {
+      // Clear unpersistable tensors
+      auto* tensor = program_->exec_scope()->FindMutableTensor(var_name);
+      if (!tensor->persistable()) {
+        tensor->clear();
+      }
+    } else if (var->IsType<std::vector<Tensor>>()) {
+      // Clear unpersistable tensor vector
+      auto* tensor_array =
+          program_->exec_scope()->FindMutableTensorList(var_name);
+      for (auto& tensor : *tensor_array) {
+        if (!tensor.persistable()) {
+          tensor.clear();
+        }
+      }
+    } else {
+      continue;
+    }
+  }
+  return true;
 }
 
 }  // namespace lite

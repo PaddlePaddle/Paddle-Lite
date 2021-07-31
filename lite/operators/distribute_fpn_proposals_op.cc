@@ -46,35 +46,29 @@ bool DistributeFpnProposalsOpLite::InferShapeImpl() const {
 
 bool DistributeFpnProposalsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                               lite::Scope *scope) {
-  auto fpn_rois = op_desc.Input("FpnRois").front();
-  param_.fpn_rois = scope->FindVar(fpn_rois)->GetMutable<lite::Tensor>();
+  param_.fpn_rois = scope->FindTensor(op_desc.Input("FpnRois").front());
 
-  if (op_desc.HasInput("RoisNum")) {
-    auto var = scope->FindVar(op_desc.Input("RoisNum").front());
-    if (var != nullptr) {
-      param_.rois_num = var->GetMutable<lite::Tensor>();
-    }
+  if (op_desc.HasInput("RoisNum") && !op_desc.Input("RoisNum").empty()) {
+    param_.rois_num = scope->FindTensor(op_desc.Input("RoisNum").front());
   }
 
   auto multi_fpn_rois = op_desc.Output("MultiFpnRois");
   param_.multi_fpn_rois.clear();
   for (const auto &name : multi_fpn_rois) {
-    param_.multi_fpn_rois.push_back(
-        scope->FindVar(name)->GetMutable<lite::Tensor>());
+    param_.multi_fpn_rois.push_back(scope->FindMutableTensor(name));
   }
 
   if (op_desc.HasOutput("MultiLevelRoIsNum")) {
     auto multi_rois_num = op_desc.Output("MultiLevelRoIsNum");
     param_.multi_rois_num.clear();
     for (const auto &name : multi_rois_num) {
-      param_.multi_rois_num.push_back(
-          scope->FindVar(name)->GetMutable<lite::Tensor>());
+      param_.multi_rois_num.push_back(scope->FindMutableTensor(name));
     }
   }
 
-  auto restore_index = op_desc.Output("RestoreIndex").front();
   param_.restore_index =
-      scope->FindVar(restore_index)->GetMutable<lite::Tensor>();
+      scope->FindMutableTensor(op_desc.Output("RestoreIndex").front());
+
   param_.min_level = op_desc.GetAttr<int>("min_level");
   param_.max_level = op_desc.GetAttr<int>("max_level");
   param_.refer_level = op_desc.GetAttr<int>("refer_level");

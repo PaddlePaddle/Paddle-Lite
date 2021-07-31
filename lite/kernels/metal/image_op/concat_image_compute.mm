@@ -44,8 +44,8 @@ void ConcatImageCompute::PrepareForRun() {
 }
 
 void ConcatImageCompute::Run() {
+    auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
-    auto pipline = (__bridge id<MTLComputePipelineState>)pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     int idx = 0;
@@ -126,7 +126,8 @@ void ConcatImageCompute::setup_without_mps() {
             odm[4 - orank + i] = (int)(output_buffer_->tensor_dim_[i]);
         }
     }
-    ConcatMetalParam concat_params{{odm[0], odm[1], odm[2], odm[3]},
+    ConcatMetalParam concat_params{
+        {odm[0], odm[1], odm[2], odm[3]},
         static_cast<int>(axis),
         0,
         {transpose[0], transpose[1], transpose[2], transpose[3]},
@@ -139,7 +140,11 @@ void ConcatImageCompute::setup_without_mps() {
     function_name_ = "concat_" + std::to_string(orank) + "_" + std::to_string(num) + "_" + v_;
 #endif
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = (__bridge_retained void*)[backend pipline:function_name_];
+    pipline_ = [backend pipline:function_name_];
+}
+
+ConcatImageCompute::~ConcatImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 }  // namespace metal

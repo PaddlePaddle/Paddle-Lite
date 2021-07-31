@@ -22,25 +22,26 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void PixelShuffleCompute::Run() {
+template <class T>
+void PixelShuffleCompute<T>::Run() {
   auto& param = Param<operators::PixelShuffleParam>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  const float* x_data = param.x->data<float>();
+  const T* x_data = param.x->data<T>();
   int upscale_factor = param.upscale_factor;
   auto in_dims = param.x->dims();
 
-  float* output_data = param.output->mutable_data<float>(TARGET(kXPU));
+  T* output_data = param.output->mutable_data<T>(TARGET(kXPU));
 
-  int r = xdnn::pixel_shuffle<float>(ctx.GetRawContext(),
-                                     x_data,
-                                     output_data,
-                                     static_cast<int>(in_dims[0]),
-                                     static_cast<int>(in_dims[1]),
-                                     static_cast<int>(in_dims[2]),
-                                     static_cast<int>(in_dims[3]),
-                                     upscale_factor,
-                                     true);
+  int r = xdnn::pixel_shuffle<T>(ctx.GetRawContext(),
+                                 x_data,
+                                 output_data,
+                                 static_cast<int>(in_dims[0]),
+                                 static_cast<int>(in_dims[1]),
+                                 static_cast<int>(in_dims[2]),
+                                 static_cast<int>(in_dims[3]),
+                                 upscale_factor,
+                                 true);
   CHECK_EQ(r, 0);
 }
 
@@ -53,7 +54,17 @@ REGISTER_LITE_KERNEL(pixel_shuffle,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::PixelShuffleCompute,
+                     paddle::lite::kernels::xpu::PixelShuffleCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(pixel_shuffle,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::PixelShuffleCompute<float16>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

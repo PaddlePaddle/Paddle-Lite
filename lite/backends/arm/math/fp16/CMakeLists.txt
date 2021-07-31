@@ -8,11 +8,14 @@ cc_library(math_arm_fp16 SRCS
     conv3x3_winograd_fp16.cc
     conv3x3s1_direct_fp16.cc
     conv3x3s2_direct_fp16.cc
+    conv_transpose_depthwise_fp16.cc
     elementwise_fp16.cc
+    fill_bias_act_fp16.cc
     funcs_fp16.cc
     gemm_fp16.cc
     gemm_c8_fp16.cc
     gemv_fp16.cc
+    interpolate_fp16.cc
     pad2d_fp16.cc
     pooling_fp16.cc
     sgemm_fp16.cc

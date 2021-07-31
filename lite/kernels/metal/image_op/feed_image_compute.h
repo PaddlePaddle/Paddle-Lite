@@ -44,13 +44,14 @@ class FeedImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+    virtual ~FeedImageCompute();
 
    private:
     std::shared_ptr<MetalBuffer> input_buffer_;
     std::shared_ptr<MetalBuffer> param_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
 
-    void* pipline_;
+    id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
 };

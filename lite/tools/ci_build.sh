@@ -207,7 +207,6 @@ function build_opencl {
     prepare_opencl_source_code $cur_dir $build_dir
 
     cmake_opencl ${os} ${abi} ${lang}
-    make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
 }
 
@@ -1044,7 +1043,7 @@ function cmake_huawei_ascend_npu {
         -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
-        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc7.3.0" \
+        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux" \
         -DCMAKE_BUILD_TYPE=Release
 }
 

@@ -292,7 +292,7 @@ class StructBuilder : public FieldBuilder {
  */
 template <typename Builder>
 class ListBuilder : public FieldBuilder {
-  std::vector<Builder> builders_;
+  std::deque<Builder> builders_;
 
  public:
   explicit ListBuilder(BinaryTable* table) : FieldBuilder(table) {}
@@ -314,15 +314,15 @@ class ListBuilder : public FieldBuilder {
     return &builders_[i];
   }
 
-  typename std::vector<Builder>::iterator begin() { return builders_.begin(); }
+  typename std::deque<Builder>::iterator begin() { return builders_.begin(); }
 
-  typename std::vector<Builder>::iterator end() { return builders_.end(); }
+  typename std::deque<Builder>::iterator end() { return builders_.end(); }
 
-  typename std::vector<Builder>::const_iterator begin() const {
+  typename std::deque<Builder>::const_iterator begin() const {
     return builders_.begin();
   }
 
-  typename std::vector<Builder>::const_iterator end() const {
+  typename std::deque<Builder>::const_iterator end() const {
     return builders_.end();
   }
 

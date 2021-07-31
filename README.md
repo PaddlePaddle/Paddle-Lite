@@ -59,7 +59,7 @@ Paddle Lite提供了C++、Java、Python三种API，并且提供了相应API的�
 	- 各个硬件平台的 Kernel 在代码层和执行层互不干扰，用户不仅可以自由插拔任何硬件，还支持任意系统可见硬件之间的[混合调度](https://paddle-lite.readthedocs.io/zh/latest/introduction/tech_highlights.html#id7)。
 - **轻量级部署**：
 	- Paddle Lite在设计上对图优化模块和执行引擎实现了良好的解耦拆分，移动端可以直接部署执行阶段，无任何第三方依赖。
-	- 包含完整的80个 op+85个 Kernel 的动态库，对于ARMV7只有800K，ARMV8下为1.3M，并可以通过[裁剪预测](https://paddle-lite.readthedocs.io/zh/latest/user_guides/library_tailoring.html)库进一步减小预测库文件大小。
+	- 包含完整的80个 op+85个 Kernel 的动态库，对于ARMV7只有800K，ARMV8下为1.3M，并可以通过[裁剪预测](https://paddle-lite.readthedocs.io/zh/latest/source_compile/library_tailoring.html)库进一步减小预测库文件大小。
 - **高性能：**
 	- 极致的 ARM CPU 性能优化：针对不同微架构特点实现kernel的定制，最大发挥计算性能，在主流模型上展现出领先的速度优势。
 	- 支持 [PaddleSlim模型压缩工具](https://github.com/PaddlePaddle/PaddleSlim)：支持量化训练、离线量化等多种量化方式，最优可在不损失精度的前提下进一步提升模型推理性能。性能数据请参考 [benchmark](https://paddlepaddle.github.io/Paddle-Lite/develop/benchmark/)。
@@ -117,8 +117,9 @@ Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并�
 
 
 ##  交流与反馈
+* AIStuio实训平台端测部署系列课程：https://aistudio.baidu.com/aistudio/course/introduce/22690
 * 欢迎您通过[Github Issues](https://github.com/PaddlePaddle/Paddle-Lite/issues)来提交问题、报告与建议
-* 技术交流QQ群: 一群696965088（已满） ；二群，959308808
+* 技术交流微信群：添加wechat id:baidupaddle，通过后回复关键词「端侧部署」，系统自动邀请加入；技术群QQ群: 一群696965088（已满） ；二群，959308808
 
 <p align="center"><img width="200" height="200"  src="https://user-images.githubusercontent.com/45189361/64117959-1969de80-cdc9-11e9-84f7-e1c2849a004c.jpeg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="200" height="200" margin="500" src="https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/images/qq-group-chat.png"/></p>
 <p align="center">  &#8194;&#8194;&#8194;微信公众号&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;官方技术交流QQ群</p>

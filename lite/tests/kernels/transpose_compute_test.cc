@@ -59,8 +59,12 @@ int CalOffset(const std::vector<int>& strides, const std::vector<int>& index) {
 
 class TransposeComputeTester : public arena::TestCase {
  protected:
-  // common attributes for this op.
+// common attributes for this op.
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  std::string op_type_ = "transpose";
+#else
   std::string op_type_ = "transpose2";
+#endif
   std::string input_ = "x";
   std::string output_ = "out";
   std::string xshape_ = "xshape";
@@ -186,6 +190,8 @@ TEST(Transpose, precision) {
   abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #else
   return;
 #endif

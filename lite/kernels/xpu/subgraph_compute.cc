@@ -100,9 +100,9 @@ bool SubgraphEngine::BuildDeviceProgram() {
     // Prepare the device input tensors which share data with the origin input
     // tensors
     device_itensors_[i].data = nullptr;
-    device_itensors_[i].ctx.device_type =
+    device_itensors_[i].device.device_type =
         subgraph::xpu::CvtDLDeviceType(TARGET(kHost));
-    device_itensors_[i].ctx.device_id = 0;
+    device_itensors_[i].device.device_id = 0;
     device_itensors_[i].ndim = origin_idims_[i].size();
     device_itensors_[i].dtype =
         subgraph::xpu::CvtDLDataType(origin_itensors_[i]->precision());
@@ -141,9 +141,9 @@ bool SubgraphEngine::BuildDeviceProgram() {
         break;
     }
     device_otensors_[i].data = nullptr;
-    device_otensors_[i].ctx.device_type =
+    device_otensors_[i].device.device_type =
         subgraph::xpu::CvtDLDeviceType(TARGET(kHost));
-    device_otensors_[i].ctx.device_id = 0;
+    device_otensors_[i].device.device_id = 0;
     device_otensors_[i].ndim = origin_odims_[i].size();
     device_otensors_[i].dtype = subgraph::xpu::CvtDLDataType(precision);
     device_otensors_[i].shape = const_cast<int64_t*>(

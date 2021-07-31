@@ -76,6 +76,10 @@ class IoCopyHostToMetalTexture
             MetalDebug::SaveOutput(function_name_, output_buffer_);
         }
     };
+        
+    virtual ~IoCopyHostToMetalTexture() {
+        TargetWrapperMetal::FreeImage(output_buffer_);
+    }
 
     std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
         std::unique_ptr<type_infer_handler_t> res(new type_infer_handler_t);
@@ -101,10 +105,10 @@ class IoCopyHostToMetalTexture
         return "Copy IO from HOST to Metal";
     }
 
-    MetalImage* output_buffer_ = nullptr;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> src_buffer_;
 
-    void* pipline_;
+    id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
 };

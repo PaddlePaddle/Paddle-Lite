@@ -15,12 +15,6 @@
 #pragma once
 
 #include <gflags/gflags.h>
-#if !defined(_WIN32)
-#include <sys/time.h>
-#else
-#include "lite/backends/x86/port.h"
-#endif
-#include <time.h>
 #include <cmath>
 #include <fstream>
 #include <memory>
@@ -28,6 +22,7 @@
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/timer.h"
 
 // for eval
 DEFINE_string(model_dir, "", "model dir");
@@ -52,9 +47,7 @@ namespace paddle {
 namespace lite {
 
 inline double GetCurrentUS() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
+  return static_cast<double>(lite::Timer::GetCurrentUS());
 }
 
 template <typename T>

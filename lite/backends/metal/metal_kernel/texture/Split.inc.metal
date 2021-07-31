@@ -20,7 +20,7 @@
 #define CONCAT4_(a, b, c, d) a##_##b##_##c##_##d
 #define CONCAT5_(a, b, c, d, e) a##_##b##_##c##_##d##_##e
 
-#define FUNC(f, r, n, v, p) CONCAT5_(f, r, n, v, p)
+#define FUNC(f, r, n, v) CONCAT4_(f, r, n, v)
 #define VECTOR(p, n) CONCAT2(p, n)
 #define FUNC_R(f, r) CONCAT2_(f, r)
 
@@ -37,7 +37,7 @@
 #endif
 
 #if V == VY
-kernel void FUNC(split, R, N, VV, P)(
+kernel void FUNC(split, R, N, VV)(
     texture2d_array<P, access::read> input [[texture(0)]],
     texture2d_array<P, access::write> out1 [[texture(1)]],
     texture2d_array<P, access::write> out2 [[texture(2)]],
@@ -79,7 +79,7 @@ kernel void FUNC(split, R, N, VV, P)(
 #endif  // V == VY
 
 #if V == VX
-kernel void FUNC(split, R, N, VV, P)(
+kernel void FUNC(split, R, N, VV)(
     texture2d_array<P, access::read> input [[texture(0)]],
     texture2d_array<P, access::write> out1 [[texture(1)]],
     texture2d_array<P, access::write> out2 [[texture(2)]],
@@ -120,7 +120,7 @@ kernel void FUNC(split, R, N, VV, P)(
 #endif  // V == VX
 
 #if V == VZ
-kernel void FUNC(split, R, N, VV, P)(
+kernel void FUNC(split, R, N, VV)(
     texture2d_array<P, access::read> input [[texture(0)]],
     texture2d_array<P, access::write> out1 [[texture(1)]],
     texture2d_array<P, access::write> out2 [[texture(2)]],
@@ -161,7 +161,7 @@ kernel void FUNC(split, R, N, VV, P)(
 #endif  // V == VZ
 
 #if V == VZZ
-kernel void FUNC(split, R, N, VV, P)(
+kernel void FUNC(split, R, N, VV)(
     texture2d_array<P, access::read> input [[texture(0)]],
     texture2d_array<P, access::write> out1 [[texture(1)]],
     texture2d_array<P, access::write> out2 [[texture(2)]],

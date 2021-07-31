@@ -100,7 +100,7 @@ rm ./lite/api/paddle_use_ops.h
   build_opencl
 ```
 
-注：如果要调试cl kernel，假设已经完成上述脚本编译(已生成cmake文件)。调试只需要修改`./lite/backends/opencl/cl_kernel/`下对应的kernel文件，保存后在项目根目录执行`python ./lite/tools/cmake_tools/gen_opencl_code.py ./lite/backends/opencl/cl_kernel ./lite/backends/opencl/opencl_kernels_source.cc`，该命令会自动将修改后，再切到build目录下执行`make publish_inference`或者你要编译的单测的可执行文件名，cl kernel文件的内容会随着编译自动打包到产物包如 .so 中或者对应单测可执行文件中。
+注：如果要调试cl kernel，假设已经完成上述脚本编译(已生成cmake文件)。调试只需要修改`./lite/backends/opencl/cl_kernel/`下对应的kernel文件，保存后在项目根目录执行`python ./lite/tools/cmake_tools/gen_opencl_code.py ./lite/backends/opencl/cl_kernel ./lite/backends/opencl/opencl_kernels_source.cc`，该命令会自动更新`opencl_kernels_source.cc`，然后进入 build 目录（如`build.lite.android.armv8.gcc`）下执行`make publish_inference`或者待编译的单测的可执行文件名（如`make test_fc_image_opencl`），cl kernel文件的内容会随着编译自动打包到产物包如 .so 中或者对应单测可执行文件中。
 
 ### 1.3 编译产物说明
 
@@ -185,7 +185,7 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            /data/local/tmp/opencl/mobilenetv1_light_api \
            /data/local/tmp/opencl/mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb \
            1,3,224,224 \
-           100 10 0 1 1 0" 
+           100 10 0 1 1 0"
            # repeats=100, warmup=10
            # power_mode=0 绑定大核, thread_num=1
            # accelerate_opencl=1 开启 opencl kernel cache & tuning，仅当模型运行在 opencl 后端时该选项才会生效
@@ -263,9 +263,9 @@ macOS x86 平台下分析：
 Windows x86 平台下分析：
 ```
 # 开启性能分析，会打印出每个 op 耗时信息和汇总信息
-.\lite\tools\build_windows.bat with_opencl with_extra with_profile 
+.\lite\tools\build_windows.bat with_opencl with_extra with_profile
 # 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
-.\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile 
+.\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile
 ```
 详细输出信息的说明可查阅[调试工具](../user_guides/debug)。
 

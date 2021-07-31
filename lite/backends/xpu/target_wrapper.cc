@@ -40,7 +40,10 @@ void* TargetWrapperXPU::Malloc(size_t size) {
   return ptr;
 }
 
-void TargetWrapperXPU::Free(void* ptr) { XPU_CALL(xpu_free(ptr)); }
+void TargetWrapperXPU::Free(void* ptr) {
+  XPU_CALL(xpu_wait());
+  XPU_CALL(xpu_free(ptr));
+}
 
 void TargetWrapperXPU::MemcpySync(void* dst,
                                   const void* src,
@@ -48,6 +51,7 @@ void TargetWrapperXPU::MemcpySync(void* dst,
                                   IoDirection dir) {
   switch (dir) {
     case IoDirection::HtoD:
+      XPU_CALL(xpu_wait());
       XPU_CALL(xpu_memcpy(dst, src, size, XPU_HOST_TO_DEVICE));
       break;
     case IoDirection::DtoH:

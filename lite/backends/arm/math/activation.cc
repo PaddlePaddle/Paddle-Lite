@@ -684,7 +684,60 @@ void act_hard_sigmoid<float>(const float* din,
                              const float slope,
                              const float offset,
                              int threads) {
-  for (int64_t i = 0; i < size; ++i) {
+  int cnt_4 = size >> 4;
+  int remain_4 = size & 15;
+
+  float32x4_t vzero_4 = vdupq_n_f32(0.f);
+  float32x4_t vone_4 = vdupq_n_f32(1.f);
+
+  float32x4_t vslope_4 = vdupq_n_f32(slope);
+  float32x4_t voffset_4 = vdupq_n_f32(offset);
+  for (int64_t i = 0; i < cnt_4; ++i) {
+    float32x4_t vr0 = vld1q_f32(din);
+    float32x4_t vr1 = vld1q_f32(din + 4);
+    float32x4_t vr2 = vld1q_f32(din + 8);
+    float32x4_t vr3 = vld1q_f32(din + 12);
+
+    float32x4_t vres0 = vmulq_f32(vr0, vslope_4);  // vr0 * vslope
+    float32x4_t vres1 = vmulq_f32(vr1, vslope_4);  // vr1 * vslope
+    float32x4_t vres2 = vmulq_f32(vr2, vslope_4);  // vr2 * vslope
+    float32x4_t vres3 = vmulq_f32(vr3, vslope_4);  // vr3 * vslope
+
+    vres0 = vaddq_f32(vres0, voffset_4);  // vres0 += offset
+    vres1 = vaddq_f32(vres1, voffset_4);  // vres1 += offset
+    vres2 = vaddq_f32(vres2, voffset_4);  // vres2 += offset
+    vres3 = vaddq_f32(vres3, voffset_4);  // vres3 += offset
+
+    uint32x4_t vm_gt0_0 = vcgtq_f32(vres0, vzero_4);  // vres0 > zero
+    uint32x4_t vm_gt0_1 = vcgtq_f32(vres1, vzero_4);  // vres1 > zero
+    uint32x4_t vm_gt0_2 = vcgtq_f32(vres2, vzero_4);  // vres2 > zero
+    uint32x4_t vm_gt0_3 = vcgtq_f32(vres3, vzero_4);  // vres3 > zero
+
+    uint32x4_t vm_lt1_0 = vcltq_f32(vres0, vone_4);  // vres0 < 1
+    uint32x4_t vm_lt1_1 = vcltq_f32(vres1, vone_4);  // vres1 < 1
+    uint32x4_t vm_lt1_2 = vcltq_f32(vres2, vone_4);  // vres2 < 1
+    uint32x4_t vm_lt1_3 = vcltq_f32(vres3, vone_4);  // vres3 < 1
+
+    float32x4_t vos0 =
+        vbslq_f32(vm_gt0_0, vres0, vzero_4);  // vos0 = vres0 > 0? vres0: 0
+    float32x4_t vos1 = vbslq_f32(vm_gt0_1, vres1, vzero_4);
+    float32x4_t vos2 = vbslq_f32(vm_gt0_2, vres2, vzero_4);
+    float32x4_t vos3 = vbslq_f32(vm_gt0_3, vres3, vzero_4);
+
+    vos0 = vbslq_f32(vm_lt1_0, vos0, vone_4);  // vos0 = vos0 < 1? vres0: 1
+    vos1 = vbslq_f32(vm_lt1_1, vos1, vone_4);
+    vos2 = vbslq_f32(vm_lt1_2, vos2, vone_4);
+    vos3 = vbslq_f32(vm_lt1_3, vos3, vone_4);
+
+    vst1q_f32(dout, vos0);
+    vst1q_f32(dout + 4, vos1);
+    vst1q_f32(dout + 8, vos2);
+    vst1q_f32(dout + 12, vos3);
+
+    dout += 16;
+    din += 16;
+  }
+  for (int64_t i = 0; i < remain_4; ++i) {
     dout[0] = din[0] * slope + offset;
     dout[0] = dout[0] < 1.0f ? dout[0] : 1.0f;
     dout[0] = dout[0] > 0.0f ? dout[0] : 0.0f;
@@ -805,6 +858,42 @@ void act_abs<float>(const float* din, float* dout, int size, int threads) {
     dout++;
   }
 }
+
+template <typename T>
+void erf(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = std::erf(din[0]);
+    din++;
+    dout++;
+  }
+}
+
+template void erf<float>(const float* din, float* dout, int size, int threads);
+
+template <typename T>
+void sign(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = (dout[0] >= (T)0) - ((T)0 >= dout[0]);
+    din++;
+    dout++;
+  }
+}
+
+template void sign<float>(const float* din, float* dout, int size, int threads);
+
+template <typename T>
+void softplus(const T* din, T* dout, int size, int threads) {
+  for (int i = 0; i < size; ++i) {
+    dout[0] = log((T)1. + exp(din[i]));
+    din++;
+    dout++;
+  }
+}
+
+template void softplus<float>(const float* din,
+                              float* dout,
+                              int size,
+                              int threads);
 
 template <>
 void act_thresholded_relu<float>(
@@ -929,7 +1018,111 @@ void act_gelu<float>(
     }
   }
 }
+template <>
+void mish(const float* din, float* dout, int size, float threshold) {
+  int cnt = size >> 4;
+  int remain = size & 15;
+  float32x4_t vthreshold = vdupq_n_f32(threshold);
+  float32x4_t vone = vdupq_n_f32(1.f);
+  float32x4_t minus_vthreshold = vdupq_n_f32(-threshold);
+  for (int64_t i = 0; i < cnt; i++) {
+    float32x4_t vx0 = vld1q_f32(din);
+    float32x4_t vx4 = vld1q_f32(din + 4);
+    float32x4_t vx8 = vld1q_f32(din + 8);
+    float32x4_t vx12 = vld1q_f32(din + 12);
 
+    uint32x4_t gt_0 = vcgtq_f32(vx0, vthreshold);
+    uint32x4_t gt_4 = vcgtq_f32(vx4, vthreshold);
+    uint32x4_t gt_8 = vcgtq_f32(vx8, vthreshold);
+    uint32x4_t gt_12 = vcgtq_f32(vx12, vthreshold);
+
+    uint32x4_t lt_0 = vcltq_f32(vx0, minus_vthreshold);
+    uint32x4_t lt_4 = vcltq_f32(vx4, minus_vthreshold);
+    uint32x4_t lt_8 = vcltq_f32(vx8, minus_vthreshold);
+    uint32x4_t lt_12 = vcltq_f32(vx12, minus_vthreshold);
+
+    float32x4_t data0 = vminq_f32(vx0, vdupq_n_f32(70.00008f));  // e^x
+    float32x4_t data4 = vminq_f32(vx4, vdupq_n_f32(70.00008f));
+    float32x4_t data8 = vminq_f32(vx8, vdupq_n_f32(70.00008f));
+    float32x4_t data12 = vminq_f32(vx12, vdupq_n_f32(70.00008f));
+    data0 = vmaxq_f32(data0, vdupq_n_f32(-70.00008f));
+    data4 = vmaxq_f32(data4, vdupq_n_f32(-70.00008f));
+    data8 = vmaxq_f32(data8, vdupq_n_f32(-70.00008f));
+    data12 = vmaxq_f32(data12, vdupq_n_f32(-70.00008f));
+
+    float32x4_t vleftx0 = exp_ps(data0);
+    float32x4_t vleftx4 = exp_ps(data4);
+    float32x4_t vleftx8 = exp_ps(data8);
+    float32x4_t vleftx12 = exp_ps(data12);
+
+    float32x4_t vmiddlex0 = log_ps(vaddq_f32(vleftx0, vone));  // ln(1+e^x)
+    float32x4_t vmiddlex4 = log_ps(vaddq_f32(vleftx4, vone));
+    float32x4_t vmiddlex8 = log_ps(vaddq_f32(vleftx8, vone));
+    float32x4_t vmiddlex12 = log_ps(vaddq_f32(vleftx12, vone));
+
+    float32x4_t sp0 = vbslq_f32(gt_0, vx0, vmiddlex0);
+    float32x4_t sp4 = vbslq_f32(gt_4, vx4, vmiddlex4);
+    float32x4_t sp8 = vbslq_f32(gt_8, vx8, vmiddlex8);
+    float32x4_t sp12 = vbslq_f32(gt_12, vx12, vmiddlex12);
+
+    sp0 = vbslq_f32(lt_0, vleftx0, sp0);
+    sp4 = vbslq_f32(lt_4, vleftx4, sp4);
+    sp8 = vbslq_f32(lt_8, vleftx8, sp8);
+    sp12 = vbslq_f32(lt_12, vleftx12, sp12);
+
+    sp0 = vminq_f32(sp0, vdupq_n_f32(70.00008f));
+    sp4 = vminq_f32(sp4, vdupq_n_f32(70.00008f));
+    sp8 = vminq_f32(sp8, vdupq_n_f32(70.00008f));
+    sp12 = vminq_f32(sp12, vdupq_n_f32(70.00008f));
+    sp0 = vmaxq_f32(sp0, vdupq_n_f32(-70.00008f));
+    sp4 = vmaxq_f32(sp4, vdupq_n_f32(-70.00008f));
+    sp8 = vmaxq_f32(sp8, vdupq_n_f32(-70.00008f));
+    sp12 = vmaxq_f32(sp12, vdupq_n_f32(-70.00008f));
+
+    float32x4_t exp_sp0 = exp_ps(sp0);
+    float32x4_t exp_sp4 = exp_ps(sp4);
+    float32x4_t exp_sp8 = exp_ps(sp8);
+    float32x4_t exp_sp12 = exp_ps(sp12);
+
+    float32x4_t exp_minussp0 = exp_ps(vnegq_f32(sp0));
+    float32x4_t exp_minussp4 = exp_ps(vnegq_f32(sp4));
+    float32x4_t exp_minussp8 = exp_ps(vnegq_f32(sp8));
+    float32x4_t exp_minussp12 = exp_ps(vnegq_f32(sp12));
+
+    float32x4_t exp_sum0 = vaddq_f32(exp_sp0, exp_minussp0);
+    float32x4_t exp_sum4 = vaddq_f32(exp_sp4, exp_minussp4);
+    float32x4_t exp_sum8 = vaddq_f32(exp_sp8, exp_minussp8);
+    float32x4_t exp_sum12 = vaddq_f32(exp_sp12, exp_minussp12);
+
+    float32x4_t exp_diff0 = vsubq_f32(exp_sp0, exp_minussp0);
+    float32x4_t exp_diff4 = vsubq_f32(exp_sp4, exp_minussp4);
+    float32x4_t exp_diff8 = vsubq_f32(exp_sp8, exp_minussp8);
+    float32x4_t exp_diff12 = vsubq_f32(exp_sp12, exp_minussp12);
+
+    float32x4_t res0 = vmulq_f32(vx0, div_ps(exp_diff0, exp_sum0));
+    float32x4_t res4 = vmulq_f32(vx4, div_ps(exp_diff4, exp_sum4));
+    float32x4_t res8 = vmulq_f32(vx8, div_ps(exp_diff8, exp_sum8));
+    float32x4_t res12 = vmulq_f32(vx12, div_ps(exp_diff12, exp_sum12));
+
+    vst1q_f32(dout, res0);
+    vst1q_f32(dout + 4, res4);
+    vst1q_f32(dout + 8, res8);
+    vst1q_f32(dout + 12, res12);
+    dout += 16;
+    din += 16;
+  }
+  for (int i = 0; i < remain; i++) {
+    float x = din[i];
+    float sp = 0.0f;
+    if (threshold > 0 && x > threshold)
+      sp = x;
+    else if (threshold > 0 && x < -threshold)
+      sp = expf(x);
+    else
+      sp = log1pf(expf(x));
+    dout[i] = x * std::tanh(sp);
+  }
+}
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

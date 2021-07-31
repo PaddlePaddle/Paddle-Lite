@@ -111,7 +111,7 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
-    program_->SaveToProgram(program_desc_);
+    program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
     auto predictor =
@@ -136,7 +136,7 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
-    program_->SaveToProgram(program_desc_);
+    program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
     auto predictor = std::make_shared<Predictor>(
@@ -173,6 +173,13 @@ class LITE_API Predictor {
     lite::TargetWrapperXPU::FreeL3Cache();
 #endif
   }
+
+  /// \brief Release all tmp tensor to compress the size of the memory pool.
+  /// The memory pool is considered to be composed of a list of chunks, if
+  /// the chunk is not occupied, it can be released.
+  ///
+  /// \return a boolean variable.
+  bool TryShrinkMemory();
 
   // Get offset-th col of feed inputs.
   lite::Tensor* GetInput(size_t offset);
@@ -259,6 +266,13 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
 
   void Run() override;
+
+  /// \brief Release all tmp tensor to compress the size of the memory pool.
+  /// The memory pool is considered to be composed of a list of chunks, if
+  /// the chunk is not occupied, it can be released.
+  ///
+  /// \return a boolean variable.
+  bool TryShrinkMemory() override;
 
   std::shared_ptr<lite_api::PaddlePredictor> Clone() override;
 

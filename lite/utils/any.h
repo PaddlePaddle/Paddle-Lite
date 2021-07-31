@@ -28,8 +28,8 @@ namespace lite {
 class Any {
  public:
   inline Any() = default;
-  inline explicit Any(Any&& other);
-  inline explicit Any(const Any& other);
+  inline Any(Any&& other);
+  inline Any(const Any& other);
 
   template <typename T>
   void set();
@@ -44,7 +44,7 @@ class Any {
   T* get_mutable();
 
   template <typename T>
-  inline explicit Any(T&& other);
+  inline Any(T&& other);  // NOLINT
 
   inline ~Any();
 

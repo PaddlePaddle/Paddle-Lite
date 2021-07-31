@@ -68,6 +68,53 @@ ge::DataType CvtPrecisionType(PrecisionType itype) {
   return otype;
 }
 
+void CvtType(const VarDescAPI::VarDataType& itype,
+             ge::DataType* otype,
+             PrecisionType* ptype) {
+  switch (itype) {
+    case VarDescAPI::VarDataType::BOOL:
+      *otype = ge::DT_BOOL;
+      *ptype = PRECISION(kBool);
+      break;
+    case VarDescAPI::VarDataType::INT16:
+      *otype = ge::DT_INT16;
+      *ptype = PRECISION(kInt16);
+      break;
+    case VarDescAPI::VarDataType::INT32:
+      *otype = ge::DT_INT32;
+      *ptype = PRECISION(kInt32);
+      break;
+    case VarDescAPI::VarDataType::INT64:
+      *otype = ge::DT_INT64;
+      *ptype = PRECISION(kInt64);
+      break;
+    case VarDescAPI::VarDataType::FP16:
+      *otype = ge::DT_FLOAT16;
+      *ptype = PRECISION(kFP16);
+      break;
+    case VarDescAPI::VarDataType::FP32:
+      *otype = ge::DT_FLOAT;
+      *ptype = PRECISION(kFloat);
+      break;
+    case VarDescAPI::VarDataType::FP64:
+      *otype = ge::DT_DOUBLE;
+      *ptype = PRECISION(kFP64);
+      break;
+    case VarDescAPI::VarDataType::UINT8:
+      *otype = ge::DT_UINT8;
+      *ptype = PRECISION(kUInt8);
+      break;
+    case VarDescAPI::VarDataType::INT8:
+      *otype = ge::DT_INT8;
+      *ptype = PRECISION(kInt8);
+      break;
+    default:
+      *otype = ge::DT_FLOAT;
+      *ptype = PRECISION(kFloat);
+      break;
+  }
+}
+
 ge::Format CvtDataLayoutType(DataLayoutType itype) {
   ge::Format otype = ge::FORMAT_NCHW;
   switch (itype) {
@@ -90,10 +137,10 @@ ge::Format CvtDataLayoutType(DataLayoutType itype) {
 std::vector<int64_t> CvtShape(const std::vector<int64_t>& in_shape) {
   std::vector<int64_t> out_shape;
   // Padding the shape to 4-dimensions(NCHW)
-  for (size_t i = 0; i < 4 - in_shape.size(); i++) {
+  for (int i = 0; i < 4 - in_shape.size(); i++) {
     out_shape.push_back(1);
   }
-  for (size_t i = 0; i < in_shape.size(); i++) {
+  for (int i = 0; i < in_shape.size(); i++) {
     out_shape.push_back(in_shape[i]);
   }
   return out_shape;

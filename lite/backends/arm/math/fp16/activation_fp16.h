@@ -24,6 +24,23 @@ namespace fp16 {
 template <typename T>
 void act_relu(const T* din, T* dout, int size, int threads);
 
+template <typename T>
+void act_hard_sigmoid(const T* din,
+                      T* dout,
+                      const int size,
+                      const float slope,
+                      const float offset,
+                      int threads);
+
+template <typename T>
+void act_prelu(const T* din,
+               T* dout,
+               int outer_size,
+               int channel_size,
+               int inner_size,
+               std::string mode,
+               const T* alpha_data,
+               int threads);
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

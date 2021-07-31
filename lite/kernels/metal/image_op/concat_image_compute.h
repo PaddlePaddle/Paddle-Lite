@@ -45,15 +45,16 @@ class ConcatImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+    virtual ~ConcatImageCompute();
 
    private:
     void setup_without_mps();
 
     std::vector<const MetalImage*> input_buffers_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
-    void* pipline_;
+    id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
     std::string v_ = "normal";
