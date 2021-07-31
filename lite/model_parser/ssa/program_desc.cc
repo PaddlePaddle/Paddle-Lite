@@ -140,7 +140,15 @@ void PlainProgramDesc::UpdateBlockOp(const std::unique_ptr<BlockDesc>& block) {
   if (block_op) {
     for (auto& input : block->block_inputs()) {
       if (input.lock()->block_idx() != block->idx()) {
-        block_op->AddBlockInput(input);
+        // In a block that has undergone correct static single assignment
+        // processing, if a variable is input and output at the same time,
+        // then it must be the parent block variable that is assigned for
+        // the first time in the child block. To avoid loops in this case,
+        // just treat the variable as an output.
+        if (block->block_outputs().find(input) ==
+            block->block_outputs().end()) {
+          block_op->AddBlockInput(input);
+        }
       }
     }
     for (auto& output : block->block_outputs()) {
