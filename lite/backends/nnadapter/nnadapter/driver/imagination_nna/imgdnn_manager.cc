@@ -457,20 +457,20 @@ imgdnn_network_object ImgdnnManager::CreateNetworkObject(
   imgdnn_err_code error_code;
   const imgdnn_network_object_flags flags = 0;
   // Get the directory of current module
-  std::string cur_dir;
+  std::string cur_dir = ".";
   Dl_info dl_info;
   dladdr(reinterpret_cast<void *>(error_callback), &dl_info);
   if (dl_info.dli_fname) {
-    cur_dir = dl_info.dli_fname;
-    const size_t last_slash_idx = cur_dir.rfind('/');
+    std::string dli_fname = dl_info.dli_fname;
+    const size_t last_slash_idx = dli_fname.rfind('/');
     if (std::string::npos != last_slash_idx) {
-      cur_dir = cur_dir.substr(0, last_slash_idx);
+      cur_dir = dli_fname.substr(0, last_slash_idx);
     }
-    cur_dir += "/";
   }
   const std::string hw_config_path =
-      cur_dir + "nna_config/mirage_hw_config06_23_2_6500_301.json";
-  const std::string map_config_path = cur_dir + "nna_config/mapconfig_q8a.json";
+      cur_dir + "/nna_config/mirage_hw_config06_23_2_6500_301.json";
+  const std::string map_config_path =
+      cur_dir + "/nna_config/mapconfig_q8a.json";
   CheckConfigFileExists(hw_config_path, map_config_path);
   std::string options;
   options += "-h " + hw_config_path;
