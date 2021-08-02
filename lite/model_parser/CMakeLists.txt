@@ -5,6 +5,7 @@ add_subdirectory(base)
 add_subdirectory(general)
 add_subdirectory(naive_buffer)
 add_subdirectory(flatbuffers)
+add_subdirectory(ssa)
 
 #lite_cc_library(runtime_lite SRCS runtime.cc)
 
