@@ -28,6 +28,8 @@
 #include "lite/model_parser/pb/op_version_map.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
+
+#include "lite/model_parser/ssa/program_desc.h"
 #endif
 
 namespace paddle {
@@ -314,6 +316,9 @@ void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
       auto *cpp_block_desc = cpp_desc->AddBlock<cpp::BlockDesc>();            \
       TransformBlockDescAnyToCpp(any_block_desc, cpp_block_desc);             \
     }                                                                         \
+    general::ssa::PlainProgramDesc plain_prog(*cpp_desc);                     \
+    general::ssa::ProgramDescConverter prog_converter(plain_prog);            \
+    *cpp_desc = prog_converter.general_program();                             \
   }                                                                           \
                                                                               \
   template <>                                                                 \

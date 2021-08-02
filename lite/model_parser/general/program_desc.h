@@ -36,6 +36,8 @@ class ProgramDesc : public ProgramDescAPI {
 
   ProgramDesc(const ProgramDesc&);
 
+  ProgramDesc& operator=(const ProgramDesc&);
+
   ProgramDesc(ProgramDesc&&) = default;
 
   void CopyFrom(const ProgramDesc& other);
