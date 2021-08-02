@@ -162,6 +162,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
   if (operand != nullptr) {                                                 \
     operand_label = OperandValueToString(operand);                          \
   }                                                                         \
+  if (!visited_operands.count(operand)) {                                   \
+    dot.AddNode(operand_id, {}, operand_label);                             \
+    visited_operands.insert(operand);                                       \
+  }                                                                         \
   std::vector<Dot::Attr> attrs;                                             \
   auto& attr_args = mode ? output_args : input_args;                        \
   std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown"; \
