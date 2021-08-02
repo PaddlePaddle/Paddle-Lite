@@ -262,6 +262,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_TANH:
+      case NNADAPTER_ABS:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -282,6 +283,41 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_TRANSPOSE:
         input_args = {"input", "perm"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CAST:
+        input_args = {"input", "dtype"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SHAPE:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_ASSIGN:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_LP_NORMALIZATION:
+        input_args = {"input", "axis", "p", "epsilon"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_DEFORMABLE_CONV_2D:
+        input_args = {"input",
+                      "offset",
+                      "mask",
+                      "filter",
+                      "bias",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "group",
+                      "deformable_groups",
+                      "fuse_code",
+                      "dilation_width",
+                      "dilation_height"};
         output_args = {"output"};
         break;
       default:
@@ -397,20 +433,26 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNAdapterOperationType type) {
   std::string name;
   switch (type) {
+    NNADAPTER_TYPE_TO_STRING(ABS)
     NNADAPTER_TYPE_TO_STRING(ADD);
+    NNADAPTER_TYPE_TO_STRING(ASSIGN)
     NNADAPTER_TYPE_TO_STRING(AVERAGE_POOL_2D);
+    NNADAPTER_TYPE_TO_STRING(CAST)
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
+    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D)
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
+    NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION)
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(MUL);
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
     NNADAPTER_TYPE_TO_STRING(RESHAPE);
+    NNADAPTER_TYPE_TO_STRING(SHAPE)
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
     NNADAPTER_TYPE_TO_STRING(SPLIT);

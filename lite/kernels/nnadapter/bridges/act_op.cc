@@ -93,6 +93,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     activation_operation = converter->AddOperation(NNADAPTER_LOG);
   } else if (op_type == "leaky_relu") {
     activation_operation = converter->AddOperation(NNADAPTER_LEAKY_RELU);
+  } else if (op_type == "abs") {
+    activation_operation = converter->AddOperation(NNADAPTER_ABS);
   } else {
     LOG(WARNING) << "Unsupported activation type: " << op_type;
     return FAILED;
@@ -123,5 +125,8 @@ REGISTER_SUBGRAPH_BRIDGE(log,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
+                         kNNAdapter,
+                         paddle::lite::subgraph::nnadapter::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(abs,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);

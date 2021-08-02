@@ -39,8 +39,15 @@ class Converter {
   // Scalar or tensor constant operand with basic type
   NNAdapterOperand* AddBool8ConstantOperand(bool value);
   NNAdapterOperand* AddInt32ConstantOperand(int32_t value);
+  NNAdapterOperand* AddInt64ConstantOperand(int64_t value);
   NNAdapterOperand* AddFloat32ConstantOperand(float value);
+  NNAdapterOperand* AddBool8ConstantOperand(bool* values,
+                                            const DDim& dimensions,
+                                            bool copy = true);
   NNAdapterOperand* AddInt32ConstantOperand(int32_t* values,
+                                            const DDim& dimensions,
+                                            bool copy = true);
+  NNAdapterOperand* AddInt64ConstantOperand(int64_t* values,
                                             const DDim& dimensions,
                                             bool copy = true);
   NNAdapterOperand* AddFloat32ConstantOperand(float* values,
@@ -84,6 +91,13 @@ class Converter {
   // tensor.
   NNAdapterOperand* Converter::AddInt32Operand(Tensor* tensor,
                                                const std::string& name = "");
+  NNAdapterOperand* AddInt32VariableOperand(const DDim& dimensions,
+                                            const std::string& name = "");
+  NNAdapterOperand* AddVariableOperand(
+      const DDim& dimensions,
+      const std::string& name = "",
+      NNAdapterOperandPrecisionCode precision = NNADAPTER_TENSOR_FLOAT32);
+
   // NNAdapter operation
   NNAdapterOperation* AddOperation(NNAdapterOperationType type);
   void SetOperation(NNAdapterOperation* operation,
