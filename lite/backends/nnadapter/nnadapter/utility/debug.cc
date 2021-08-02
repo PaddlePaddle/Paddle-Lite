@@ -156,19 +156,19 @@ class Dot {
 };
 
 NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
-#define APPEND_OPERAND_NODE(mode)                                           \
-  auto operand_id = OperandIdToString(operand);                             \
-  std::string operand_label("nullptr");                                     \
-  if (operand != nullptr) {                                                 \
-    operand_label = OperandValueToString(operand);                          \
-  }                                                                         \
-  if (!visited_operands.count(operand)) {                                   \
-    dot.AddNode(operand_id, {}, operand_label);                             \
-    visited_operands.insert(operand);                                       \
-  }                                                                         \
-  std::vector<Dot::Attr> attrs;                                             \
-  auto& attr_args = mode ? output_args : input_args;                        \
-  std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown"; \
+#define APPEND_OPERAND_NODE(mode)                  \
+  auto operand_id = OperandIdToString(operand);    \
+  std::string operand_label("nullptr");            \
+  if (operand != nullptr) {                        \
+    operand_label = OperandValueToString(operand); \
+  }
+  if (!visited_operands.count(operand)) {
+    dot.AddNode(operand_id, {}, operand_label);
+    visited_operands.insert(operand);
+  }
+  std::vector<Dot::Attr> attrs;
+  auto& attr_args = mode ? output_args : input_args;
+  std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown";
   attrs.emplace_back("label", string_format("%d:%s", i, attr_label.c_str()));
 
   Dot dot;
@@ -265,11 +265,21 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_TANH:
+      case NNADAPTER_ABS:
         input_args = {"input"};
         output_args = {"output"};
         break;
       case NNADAPTER_RESHAPE:
         input_args = {"input", "shape"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_RESIZE_NEAREST:
+        input_args = {"input", "shape", "scales", "align_corners"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_RESIZE_LINEAR:
+        input_args = {
+            "input", "shape", "scales", "align_corners", "align_mode"};
         output_args = {"output"};
         break;
       case NNADAPTER_SOFTMAX:
@@ -287,13 +297,39 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "perm"};
         output_args = {"output"};
         break;
-      case NNADAPTER_RESIZE_NEAREST:
-        input_args = {"input", "shape", "scales", "align_corners"};
+      case NNADAPTER_CAST:
+        input_args = {"input", "dtype"};
         output_args = {"output"};
         break;
-      case NNADAPTER_RESIZE_LINEAR:
-        input_args = {
-            "input", "shape", "scales", "align_corners", "align_mode"};
+      case NNADAPTER_SHAPE:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_ASSIGN:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_LP_NORMALIZATION:
+        input_args = {"input", "axis", "p", "epsilon"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_DEFORMABLE_CONV_2D:
+        input_args = {"input",
+                      "offset",
+                      "mask",
+                      "filter",
+                      "bias",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "group",
+                      "deformable_groups",
+                      "fuse_code",
+                      "dilation_width",
+                      "dilation_height"};
         output_args = {"output"};
         break;
       default:
@@ -410,28 +446,34 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNAdapterOperationType type) {
   std::string name;
   switch (type) {
+    NNADAPTER_TYPE_TO_STRING(ABS)
     NNADAPTER_TYPE_TO_STRING(ADD);
+    NNADAPTER_TYPE_TO_STRING(ASSIGN)
     NNADAPTER_TYPE_TO_STRING(AVERAGE_POOL_2D);
+    NNADAPTER_TYPE_TO_STRING(CAST)
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
+    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D)
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
+    NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION)
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(MUL);
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
     NNADAPTER_TYPE_TO_STRING(RESHAPE);
+    NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
+    NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
+    NNADAPTER_TYPE_TO_STRING(SHAPE)
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
     NNADAPTER_TYPE_TO_STRING(SPLIT);
     NNADAPTER_TYPE_TO_STRING(SUB);
     NNADAPTER_TYPE_TO_STRING(TANH);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
-    NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
-    NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
     default:
       name = "UNKNOWN";
       break;

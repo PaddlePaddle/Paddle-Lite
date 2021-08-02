@@ -99,7 +99,14 @@ void test_norm(Place place, float abs_error) {
 TEST(Norm, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // use fp16
 #elif defined(LITE_WITH_ARM)

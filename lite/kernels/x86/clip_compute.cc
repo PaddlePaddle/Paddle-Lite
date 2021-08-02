@@ -14,8 +14,12 @@
 
 #include "lite/kernels/x86/clip_compute.h"
 
-REGISTER_LITE_KERNEL(
-    clip, kX86, kFloat, kNCHW, paddle::lite::kernels::x86::ClipCompute<float>, def)
+REGISTER_LITE_KERNEL(clip,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::ClipCompute<float>,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Min", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Max", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})

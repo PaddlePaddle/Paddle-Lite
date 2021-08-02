@@ -22,6 +22,7 @@
 #define _USE_MATH_DEFINES
 #endif
 
+#include "lite/backends/x86/math/activation.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
@@ -349,6 +350,25 @@ class RsqrtCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   }
 
   virtual ~RsqrtCompute() = default;
+};
+
+template <typename T>
+class MishCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ActivationParam>();
+    param.Out->template mutable_data<T>();
+    auto x_dims = param.X->dims();
+    auto x_data = param.X->template data<T>();
+    auto output_data = param.Out->template mutable_data<T>();
+    float threshold = param.threshold;
+    lite::x86::math::mish<T>(
+        x_data, output_data, x_dims.production(), threshold);
+  }
+
+  virtual ~MishCompute() = default;
 };
 
 }  // namespace x86

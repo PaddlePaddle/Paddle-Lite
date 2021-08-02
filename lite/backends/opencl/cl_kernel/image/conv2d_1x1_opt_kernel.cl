@@ -2468,15 +2468,19 @@ __kernel void conv2d_1x1_fc(__read_only image2d_t input,
 #ifdef ELT_FUSE
                             __read_only image2d_t second_input_image,
 #endif  // ELT_FUSE
+                            int batch,
                             int in_c_blks,
                             int out_c_blks) {
+  int out_n = get_global_id(2);
   int out_c = get_global_id(0);
   int2 tid = (int2)(get_local_id(0), get_local_id(1));
   CL_DTYPE4 s = (CL_DTYPE4)(0.0f);
+  if (out_n >= batch) return;
 
   if (out_c < out_c_blks) {
     for (int c = tid.y; c < in_c_blks; c += 4) {
-      CL_DTYPE4 v = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(c, 0));
+      CL_DTYPE4 v =
+          READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(c, out_n));
       CL_DTYPE16 w = weights[c * out_c_blks + out_c];
       CL_DTYPE4 partial = v.x * w.s0123;
       partial += v.y * w.s4567;
@@ -2496,20 +2500,22 @@ __kernel void conv2d_1x1_fc(__read_only image2d_t input,
     s += temp[tid.x][1];
     s += temp[tid.x][2];
     s += temp[tid.x][3];
-    int2 output_pos0 = (int2)(out_c, 0);
+    int2 output_pos0 = (int2)(out_c, out_n);
 
 #ifdef BIASE_CH
     CL_DTYPE4 output0 =
-        s + READ_IMG_TYPE(CL_DTYPE_CHAR, biases, SAMPLER, output_pos0);
+        s + READ_IMG_TYPE(CL_DTYPE_CHAR, biases, SAMPLER, (int2)(out_c, 0));
 #else
     CL_DTYPE4 output0 = s;
 #endif
 
     CL_DTYPE4 alpha0;
 #ifdef PRELU_CH
-    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
+    alpha0 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
 #elif defined(PRELU_ELE)
-    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
+    alpha0 =
+        READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
 #elif defined(PRELU_ALL)
     alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
     alpha0.y = alpha0.x;

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/box_clip_compute.h"
+#include "lite/kernels/host/box_clip_compute.h"
+#include <cmath>
 #include <string>
 #include <vector>
-#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
@@ -23,7 +23,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <class T>
 void ClipTiledBoxes(const Tensor& im_info,
@@ -62,7 +62,6 @@ void BoxClipCompute::Run() {
   int64_t n = static_cast<int64_t>(box_lod.size() - 1);
   for (int i = 0; i < n; ++i) {
     Tensor im_info_slice = im_info->Slice<float>(i, i + 1);
-    auto* im_info_slice_data = im_info_slice.data<float>();
     Tensor box_slice = input->Slice<float>(box_lod[i], box_lod[i + 1]);
     Tensor output_slice = output->Slice<float>(box_lod[i], box_lod[i + 1]);
     ClipTiledBoxes<float>(im_info_slice, box_slice, &output_slice);
@@ -70,18 +69,18 @@ void BoxClipCompute::Run() {
   return;
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(box_clip,
-                     kARM,
+                     kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::BoxClipCompute,
+                     paddle::lite::kernels::host::BoxClipCompute,
                      def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("ImInfo", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("ImInfo", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
