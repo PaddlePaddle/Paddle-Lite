@@ -84,7 +84,7 @@ class RangeComputeTester : public arena::TestCase {
 };
 
 template <class T>
-void test_range(Place place, float abs_error = 1e-5) {
+void test_range(Place place, float abs_error) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
 
   std::unique_ptr<arena::TestCase> tester1(
@@ -100,14 +100,22 @@ void test_range(Place place, float abs_error = 1e-5) {
 
 TEST(Range, precision) {
   Place place;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  float abs_error = 1e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-5;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;
 #endif
 
-  test_range<float>(place);
-  test_range<int>(place);
+  test_range<float>(place, abs_error);
+  test_range<int>(place, abs_error);
 }
 
 }  // namespace lite

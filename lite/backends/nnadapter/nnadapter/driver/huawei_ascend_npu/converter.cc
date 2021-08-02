@@ -130,6 +130,12 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       case NNADAPTER_REDUCE_MEAN:
         ConvertReduceMean(operation);
         break;
+      case NNADAPTER_EXPAND:
+        ConvertExpand(operation);
+        break;
+      case NNADAPTER_RANGE:
+        ConvertRange(operation);
+        break;
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("
                              << OperationTypeToString(operation->type)

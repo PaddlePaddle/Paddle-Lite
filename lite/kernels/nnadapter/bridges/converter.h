@@ -76,7 +76,14 @@ class Converter {
                                              const std::string& name = "");
   NNAdapterOperand* AddFloat32VariableOperand(const DDim& dimensions,
                                               const std::string& name = "");
-
+  // Add float operand: distinguish the tensor is const tensor or variable
+  // tensor.
+  NNAdapterOperand* Converter::AddFloat32Operand(Tensor* tensor,
+                                                 const std::string& name = "");
+  // Add int32 operand: distinguish the tensor is const tensor or variable
+  // tensor.
+  NNAdapterOperand* Converter::AddInt32Operand(Tensor* tensor,
+                                               const std::string& name = "");
   // NNAdapter operation
   NNAdapterOperation* AddOperation(NNAdapterOperationType type);
   void SetOperation(NNAdapterOperation* operation,

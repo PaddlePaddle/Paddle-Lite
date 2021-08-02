@@ -803,6 +803,40 @@ typedef enum {
   * Available since version 1.
   */
   NNADAPTER_REDUCE_MEAN = 26,
+
+  /**
+  * Broadcast the input tensor following the given shape(by Numpy-style
+  * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html)
+  *
+  * Inputs:
+  * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+  * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+  * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+  * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the shape you want
+  * to expand to, following the broadcast rule.
+  *
+  * Outputs:
+  * * 0: output, A tensor with the same type as input.
+  *
+  * Available since version 1.
+  */
+  NNADAPTER_EXPAND = 27,
+
+  /**
+  * Outputs a 1-D Tensor with spaced values within a given interval.
+  *
+  * Inputs:
+  * * 0: start, A NNADAPTER_INT32, NNADAPTER_INT64, NNADAPTER_FLOAT32,
+  * NNADAPTER_FLOAT64 scalar.
+  * * 1: end, A scalar with the same type as start.
+  * * 2: step, A scalar with the same type as start.
+  *
+  * Outputs:
+  * * 0: output, A 1-D tensor with the same type as start.
+  *
+  * Available since version 1.
+  */
+  NNADAPTER_RANGE = 28,
 } NNAdapterOperationCode;
 
 /**
