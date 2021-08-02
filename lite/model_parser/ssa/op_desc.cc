@@ -70,11 +70,11 @@ std::weak_ptr<VarDesc> OpDesc::AddOutput(const std::string& param,
   return var_desc;
 }
 
-constexpr char WriteBackOp::type_[];
-constexpr char WriteBackOp::input_lod_deps_[];
-constexpr char WriteBackOp::input_lod_array_deps_[];
-constexpr char WriteBackOp::input_src_[];
-constexpr char WriteBackOp::input_dst_[];
+constexpr char const WriteBackOp::type_[];
+constexpr char const WriteBackOp::input_lod_deps_[];
+constexpr char const WriteBackOp::input_lod_array_deps_[];
+constexpr char const WriteBackOp::input_src_[];
+constexpr char const WriteBackOp::input_dst_[];
 
 WriteBackOp::WriteBackOp(const std::weak_ptr<VarDesc>& src,
                          const std::weak_ptr<VarDesc>& dst,
