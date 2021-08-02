@@ -15,11 +15,14 @@ set BUILD_PLATFORM=x64
 set MSVC_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
 set WITH_OPENCL=OFF
+set BUILD_XTCL=OFF
+set BUILD_TYPE=Release
 set WITH_AVX=ON
 set CMAKE_GENERATOR=Visual Studio 14 2015
 set ARCH=""
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
+set XPU_SDK_ROOT=""
 set THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 
 set workspace=%source_path%
@@ -54,6 +57,10 @@ if /I "%1"=="with_extra" (
     set WITH_STATIC_MKL=ON
 ) else if /I  "%1"=="with_opencl" (
     set WITH_OPENCL=ON
+) else if /I  "%1"=="build_xtcl" (
+    set BUILD_XTCL=ON
+) else if /I  "%1"=="xpu_sdk_root" (
+    set XPU_SDK_ROOT="%2"
 ) else if /I  "%1"=="without_avx" (
     set WITH_AVX=OFF
 ) else if /I  "%1"=="build_for_ci" (
@@ -90,6 +97,8 @@ echo "|  BUILD_PLATFORM=%BUILD_PLATFORM%                                        
 echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                                                  |"
 echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
 echo "|  WITH_OPENCL=%WITH_OPENCL%                                                                          |"
+echo "|  BUILD_XTCL=%BUILD_XTCL%                                                                          |"
+echo "|  XPU_SDK_ROOT=%XPU_SDK_ROOT%                                                                          |"
 echo "|  WITH_AVX=%WITH_AVX%                                                                                |"
 echo "------------------------------------------------------------------------------------------------------|"
 
@@ -160,9 +169,13 @@ if "%CMAKE_GENERATOR%"=="Ninja" (
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
+            -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
+            -DTHIRD_PARTY_BUILD_TYPE=Release ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
+            -DLITE_WITH_XPU=ON ^
             -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
+            -DLITE_WITH_XTCL=%BUILD_XTCL% ^
             -DLITE_BUILD_EXTRA=%BUILD_EXTRA% ^
             -DLITE_WITH_PYTHON=%WITH_PYTHON% ^
             -DWITH_TESTING=%WITH_TESTING%    ^
@@ -170,20 +183,21 @@ if "%CMAKE_GENERATOR%"=="Ninja" (
             -DWITH_STATIC_MKL=%WITH_STATIC_MKL%  ^
             -DLITE_BUILD_TAILOR=%WITH_STRIP%  ^
             -DLITE_OPTMODEL_DIR=%OPTMODEL_DIR%  ^
+	    -DXPU_SDK_ROOT=%XPU_SDK_ROOT%  ^
             -DPYTHON_EXECUTABLE="%python_path%"
 
 if "%BUILD_FOR_CI%"=="ON" (
     call "%vcvarsall_dir%" amd64
-    msbuild /m:%cores% /p:Configuration=Release lite\lite_compile_deps.vcxproj
+    msbuild /m:%cores% /p:Configuration=%BUILD_TYPE% lite\lite_compile_deps.vcxproj
     call:test_server
     cmake ..   -G "%CMAKE_GENERATOR% Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
-    msbuild /m:%cores% /p:Configuration=Release lite\api\opt.vcxproj
+    msbuild /m:%cores% /p:Configuration=%BUILD_TYPE% lite\api\opt.vcxproj
 ) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
-    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
+    msbuild /maxcpucount:%cores% /p:Configuration=%BUILD_TYPE% lite\publish_inference.vcxproj
 ) else (
     call "%vcvarsall_dir%" x86
-    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
+    msbuild /maxcpucount:%cores% /p:Configuration=%BUILD_TYPE% lite\publish_inference.vcxproj
 )
 goto:eof
 
@@ -205,11 +219,13 @@ goto:eof
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
-            -DCMAKE_BUILD_TYPE=Release ^
+            -DLITE_WITH_XPU=ON ^
+            -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
             -DTHIRD_PARTY_BUILD_TYPE=Release ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
             -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
+            -DLITE_WITH_XTCL=%BUILD_XTCL% ^
             -DLITE_BUILD_EXTRA=%BUILD_EXTRA% ^
             -DLITE_WITH_PYTHON=%WITH_PYTHON% ^
             -DWITH_TESTING=%WITH_TESTING%    ^
@@ -217,6 +233,7 @@ goto:eof
             -DWITH_STATIC_MKL=%WITH_STATIC_MKL%  ^
             -DLITE_BUILD_TAILOR=%WITH_STRIP%  ^
             -DLITE_OPTMODEL_DIR=%OPTMODEL_DIR%  ^
+	    -DXPU_SDK_ROOT=%XPU_SDK_ROOT%  ^
             -DPYTHON_EXECUTABLE="%python_path%"
 
     ninja extern_mklml

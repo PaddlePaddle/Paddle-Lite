@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/core/subgraph_engine_base.h"
+#ifdef __linux__
 #include <sys/time.h>
+#endif
 #include <time.h>
 #include <algorithm>
 #include <utility>

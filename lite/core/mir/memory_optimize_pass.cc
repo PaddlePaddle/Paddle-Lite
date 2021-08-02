@@ -19,7 +19,7 @@
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/type_system.h"
-
+#include <cctype>
 namespace paddle {
 namespace lite {
 namespace mir {
