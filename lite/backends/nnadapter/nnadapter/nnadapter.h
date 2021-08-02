@@ -672,6 +672,49 @@ typedef enum {
   NNADAPTER_RESHAPE = 18,
 
   /**
+   * Resizes the input tensor using the nearest interpolation.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
+   * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the target shape
+   * of output exclude dim_N and dim_C.
+   * * 2: scales, a NNADAPTER_TENSOR_FLOAT32 tensor. It indicates the scale of
+   * the output's shape exclude dim_N and dim_C.
+   * * 3: align_corners. A NNADAPTER_BOOL scalar.  If True, the centers of the 4
+   * corner pixels of the input and output tensors are aligned, preserving the
+   * values at the corner pixels.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same type as input.
+   */
+  NNADAPTER_RESIZE_NEAREST = 19,
+
+  /**
+   * Resizes the input tensor using the linear interpolation.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
+   * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the target shape
+   * of output exclude dim_N and dim_C.
+   * * 2: scales, a NNADAPTER_TENSOR_FLOAT32 tensor. It indicates the scale of
+   * the output's shape exclude dim_N and dim_C.
+   * * 3: align_corners, NNADAPTER_BOOL scalar. If True, the centers of the 4
+   * corner pixels of the input and output tensors are aligned, preserving the
+   * values at the corner pixels.
+   * * 4: align_mode, a NNADAPTER_INT32 scalar, optional for linear
+   * interpolation. It can be ‘0’ for src_idx = scale_factor*(dst_indx+0.5)-0.5
+   * , can be ‘1’ for src_idx = scale_factor*dst_index.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same type as input.
+   */
+  NNADAPTER_RESIZE_LINEAR = 20,
+
+  /**
    * Outputs an 1D tensor containing the shape of the input tensor.
    *
    * Inputs:
@@ -682,7 +725,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SHAPE = 19,
+  NNADAPTER_SHAPE = 21,
 
   /**
    * Applies sigmoid activation to the input tensor element-wise.
@@ -699,7 +742,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SIGMOID = 20,
+  NNADAPTER_SIGMOID = 22,
 
   /**
    * Computes the normalized exponential values for the input tensor
@@ -721,7 +764,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SOFTMAX = 21,
+  NNADAPTER_SOFTMAX = 23,
 
   /**
    * Split a tensor into a list of tensors along the given dimension.
@@ -743,7 +786,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SPLIT = 22,
+  NNADAPTER_SPLIT = 24,
 
   /**
    * Performs element-wise binary subtraction(with Numpy-style broadcasting
@@ -762,7 +805,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SUB = 23,
+  NNADAPTER_SUB = 25,
 
   /**
    * Applies the hyperbolic tangent activation to the input tensor element-wise.
@@ -779,7 +822,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_TANH = 24,
+  NNADAPTER_TANH = 26,
 
   /**
    * Transposes the input according to the perm, similar to numpy.transpose
@@ -800,7 +843,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_TRANSPOSE = 25,
+  NNADAPTER_TRANSPOSE = 27,
 } NNAdapterOperationCode;
 
 /**

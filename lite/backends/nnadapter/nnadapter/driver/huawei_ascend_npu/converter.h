@@ -118,6 +118,8 @@ class Program {
   int ConvertCast(hal::Operation* operation);
   int ConvertShape(hal::Operation* operation);
   int ConvertAssign(hal::Operation* operation);
+  int ConvertResizeNearest(hal::Operation* operation);
+  int ConvertResizeLinear(hal::Operation* operation);
   int ConvertLpNormalization(hal::Operation* operation);
   int ConvertDeformableConv2d(hal::Operation* operation);
 
