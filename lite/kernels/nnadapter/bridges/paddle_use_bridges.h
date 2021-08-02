@@ -14,38 +14,38 @@
 
 #pragma once
 
-USE_SUBGRAPH_BRIDGE(
-    conv2d,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-USE_SUBGRAPH_BRIDGE(
-    depthwise_conv2d,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-USE_SUBGRAPH_BRIDGE(
-    fc,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-USE_SUBGRAPH_BRIDGE(
-    softmax,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-USE_SUBGRAPH_BRIDGE(
-    pool2d,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+USE_SUBGRAPH_BRIDGE(conv2d,
+                    kNNAdapter,
+                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                    "npu,amlogic_npu,imagination_nna");
+USE_SUBGRAPH_BRIDGE(depthwise_conv2d,
+                    kNNAdapter,
+                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                    "npu,amlogic_npu,imagination_nna");
+USE_SUBGRAPH_BRIDGE(fc,
+                    kNNAdapter,
+                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                    "npu,amlogic_npu,imagination_nna");
+USE_SUBGRAPH_BRIDGE(softmax,
+                    kNNAdapter,
+                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                    "npu,amlogic_npu,imagination_nna");
+USE_SUBGRAPH_BRIDGE(pool2d,
+                    kNNAdapter,
+                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                    "npu,amlogic_npu,imagination_nna");
 USE_SUBGRAPH_BRIDGE(
     sigmoid,
     kNNAdapter,
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-USE_SUBGRAPH_BRIDGE(
-    relu,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-USE_SUBGRAPH_BRIDGE(
-    relu6,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+USE_SUBGRAPH_BRIDGE(relu,
+                    kNNAdapter,
+                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                    "npu,amlogic_npu,imagination_nna");
+USE_SUBGRAPH_BRIDGE(relu6,
+                    kNNAdapter,
+                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                    "npu,amlogic_npu,imagination_nna");
 USE_SUBGRAPH_BRIDGE(
     tanh,
     kNNAdapter,

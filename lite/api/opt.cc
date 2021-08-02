@@ -165,9 +165,10 @@ std::pair<std::vector<Place>, std::vector<std::string>> ParserValidPlaces(
       valid_places.emplace_back(
           Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else if (target_repr == "imagination_nna") {
-      valid_places.emplace_back(TARGET(kImaginationNNA));
+      valid_places.emplace_back(TARGET(kNNAdapter));
       valid_places.emplace_back(
-          Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
+          TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
+      nnadapter_device_names.emplace_back(target_repr);
     } else if (target_repr == "intel_fpga") {
       valid_places.emplace_back(TARGET(kIntelFPGA));
       valid_places.emplace_back(
