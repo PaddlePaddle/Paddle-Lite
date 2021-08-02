@@ -156,19 +156,15 @@ class Dot {
 };
 
 NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
-#define APPEND_OPERAND_NODE(mode)                  \
-  auto operand_id = OperandIdToString(operand);    \
-  std::string operand_label("nullptr");            \
-  if (operand != nullptr) {                        \
-    operand_label = OperandValueToString(operand); \
-  }
-  if (!visited_operands.count(operand)) {
-    dot.AddNode(operand_id, {}, operand_label);
-    visited_operands.insert(operand);
-  }
-  std::vector<Dot::Attr> attrs;
-  auto& attr_args = mode ? output_args : input_args;
-  std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown";
+#define APPEND_OPERAND_NODE(mode)                                           \
+  auto operand_id = OperandIdToString(operand);                             \
+  std::string operand_label("nullptr");                                     \
+  if (operand != nullptr) {                                                 \
+    operand_label = OperandValueToString(operand);                          \
+  }                                                                         \
+  std::vector<Dot::Attr> attrs;                                             \
+  auto& attr_args = mode ? output_args : input_args;                        \
+  std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown"; \
   attrs.emplace_back("label", string_format("%d:%s", i, attr_label.c_str()));
 
   Dot dot;
