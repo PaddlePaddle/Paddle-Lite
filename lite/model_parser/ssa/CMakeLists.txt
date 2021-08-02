@@ -1,0 +1,7 @@
+if (NOT LITE_ON_TINY_PUBLISH)
+  lite_cc_library(ssa_var SRCS var_desc.cc)
+  lite_cc_library(ssa_op SRCS op_desc.cc DEPS ssa_var)
+  lite_cc_library(ssa_block SRCS block_desc.cc DEPS ssa_op ssa_var)
+  lite_cc_library(ssa_program SRCS program_desc.cc DEPS ssa_block)
+  lite_cc_test(test_ssa_program SRCS ssa_program_test.cc DEPS ssa_program compatible_pb model_parser)
+endif()
