@@ -10,6 +10,7 @@ set(nnadapter_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_util
 lite_cc_library(subgraph_bridge_conv_op_nnadapter SRCS conv_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_act_op_nnadapter SRCS act_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_softmax_op_nnadapter SRCS softmax_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_fill_constant_op_nnadapter SRCS fill_constant_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_pool_op_nnadapter SRCS pool_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_fc_op_nnadapter SRCS fc_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_elementwise_ops_nnadapter SRCS elementwise_ops.cc DEPS ${nnadapter_subgraph_bridge_deps})
@@ -35,6 +36,7 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_conv_op_nnadapter
         subgraph_bridge_act_op_nnadapter
         subgraph_bridge_softmax_op_nnadapter
+        subgraph_bridge_fill_constant_op_nnadapter
         subgraph_bridge_pool_op_nnadapter
         subgraph_bridge_fc_op_nnadapter
         subgraph_bridge_elementwise_ops_nnadapter
