@@ -219,14 +219,14 @@ class WriteBackOp : public OpDescBase {
                 const std::weak_ptr<VarDesc>& desc,
                 int32_t block_idx);
 
-  static constexpr char type_[]{"write_back"};
+  static constexpr char const type_[] = "write_back";
   // In order to adapt to the operator registration system,
   // the dependent parameters are classified by variable types here.
-  static constexpr char input_lod_deps_[]{"Dep_LoDTensor"};
-  static constexpr char input_lod_array_deps_[]{"Dep_LoDTensorArray"};
-  static constexpr char input_src_[]{"Src_LoDTensor"};
+  static constexpr char const input_lod_deps_[] = "Dep_LoDTensor";
+  static constexpr char const input_lod_array_deps_[] = "Dep_LoDTensorArray";
+  static constexpr char const input_src_[] = "Src_LoDTensor";
   // For directed acyclic, input is used as output here.
-  static constexpr char input_dst_[]{"Dst_LoDTensor"};
+  static constexpr char const input_dst_[] = "Dst_LoDTensor";
   general::OpDesc fake_desc_;
 };
 

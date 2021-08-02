@@ -240,6 +240,13 @@ void ProgramDescConverter::InitBlockOps(const BlockDesc& src_block) {
     }
   }
 }
+
+void ConvertToSSA(general::ProgramDesc* prog) {
+  general::ssa::PlainProgramDesc plain_prog(*prog);
+  general::ssa::ProgramDescConverter prog_converter(plain_prog);
+  *prog = prog_converter.general_program();
+}
+
 }  // namespace ssa
 }  // namespace general
 }  // namespace lite
