@@ -20,7 +20,7 @@ namespace huawei_kirin_npu {
 
 std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
     const std::string& model_name,
-    std::vector<char>* model_buffer,
+    std::vector<uint8_t>* model_buffer,
     bool* model_comp,
     int freq_level,
     int framework_type,
@@ -121,7 +121,7 @@ std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<char>* model_buffer) {
+    std::vector<uint8_t>* model_buffer) {
   // Convert a HiAI IR graph to a HiAI OM model
   ge::Graph ir_graph("graph");
   ir_graph.SetInputs(input_operators).SetOutputs(output_operators);

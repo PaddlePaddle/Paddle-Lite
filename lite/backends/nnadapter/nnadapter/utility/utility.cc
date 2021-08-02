@@ -330,4 +330,56 @@ NNADAPTER_EXPORT std::map<std::string, std::string> GetKeyValues(
   return key_values;
 }
 
+NNADAPTER_EXPORT uint32_t CRC32C(const uint8_t* buffer, size_t size) {
+  const uint32_t polynomial = 0x82F63B78;
+  uint32_t result = 0;
+  for (size_t i = 0; i < size; i++) {
+    result ^= buffer[i];
+    for (int j = 0; j < 8; j++) {
+      if (result & 1) {
+        result = (result >> 1) ^ polynomial;
+      } else {
+        result >>= 1;
+      }
+    }
+  }
+  return result;
+}
+
+NNADAPTER_EXPORT bool ReadFile(const std::string& path,
+                               std::vector<uint8_t>* buffer) {
+  FILE* fp = fopen(path.c_str(), "rb");
+  if (!fp) return false;
+  fseek(fp, 0, SEEK_END);
+  size_t size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  buffer->clear();
+  buffer->resize(size);
+  size_t offset = 0;
+  char* ptr = reinterpret_cast<char*>(&(buffer->at(0)));
+  while (offset < size) {
+    size_t already_read = fread(ptr, 1, size - offset, fp);
+    offset += already_read;
+    ptr += already_read;
+  }
+  fclose(fp);
+  return true;
+}
+
+NNADAPTER_EXPORT bool WriteFile(const std::string& path,
+                                const std::vector<uint8_t>& buffer) {
+  FILE* fp = fopen(path.c_str(), "wb");
+  if (!fp) return false;
+  size_t size = buffer.size();
+  size_t offset = 0;
+  const char* ptr = reinterpret_cast<const char*>(&(buffer.at(0)));
+  while (offset < size) {
+    size_t already_written = fwrite(ptr, 1, size - offset, fp);
+    offset += already_written;
+    ptr += already_written;
+  }
+  fclose(fp);
+  return true;
+}
+
 }  // namespace nnadapter

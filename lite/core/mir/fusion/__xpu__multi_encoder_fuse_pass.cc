@@ -870,7 +870,9 @@ class XPUMultiEncoderFuser {
     }
 
     // TODO(mayang02): we could use attr to store FCWeightMax
-    std::string max_name = "encoder_max";
+    std::string max_name = "encoder_max_" + fc_weight_names[0];
+    VLOG(3) << "multi-encoder max weight name: " << max_name;
+    CHECK(graph->RetrieveArgument(max_name) == nullptr);
     auto* max_filter_node = graph->NewArgumentNode(max_name);
     max_filter_node->arg()->is_weight = true;
     max_filter_node->arg()->type = LiteType::GetTensorTy(

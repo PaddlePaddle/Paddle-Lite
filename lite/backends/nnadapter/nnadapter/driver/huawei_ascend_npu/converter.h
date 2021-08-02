@@ -80,6 +80,7 @@ class Program {
               hal::Argument* output_arguments);
 
  private:
+  void Clear();
   // Operand converters
   std::string GetOperatorName(hal::Operand* operand);
   std::shared_ptr<Operator> GetMappedOperator(hal::Operand* operand);
@@ -114,6 +115,11 @@ class Program {
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);
   int ConvertSplit(hal::Operation* operation);
+  int ConvertCast(hal::Operation* operation);
+  int ConvertShape(hal::Operation* operation);
+  int ConvertAssign(hal::Operation* operation);
+  int ConvertLpNormalization(hal::Operation* operation);
+  int ConvertDeformableConv2d(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};
