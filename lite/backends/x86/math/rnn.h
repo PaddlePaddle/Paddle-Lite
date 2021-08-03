@@ -42,8 +42,7 @@ void vector_dot(float* out,
                 const float* v2 = nullptr);
 
 // only add bias
-void fill_bias_fc(
-    float *out, const float *bias, int num, int channel);
+void fill_bias_fc(float* out, const float* bias, int num, int channel);
 
 template <typename T>
 void act_relu(const T* din, T* dout, int size, int threads);
