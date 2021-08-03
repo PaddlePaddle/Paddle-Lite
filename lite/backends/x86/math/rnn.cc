@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if defined(__AVX__)
+#ifdef __AVX__
 #include <immintrin.h>
-#elif defined(__SSE4_2__)
+#endif
+#ifdef __SSE__
 #include <xmmintrin.h>
 #endif
 
@@ -33,7 +34,7 @@ void vector_dot(
 #if defined(__AVX__)
   __m256 vec_in, vec_v1, vec_v2;
 #endif
-#if defined(__SSE4_2__)
+#if defined(__SSE__)
   __m128 vec_in_128, vec_v1_128, vec_v2_128;
 #endif
 
@@ -50,7 +51,7 @@ void vector_dot(
     }
     _mm256_zeroupper();
 #endif
-#if defined(__SSE4_2__)
+#if defined(__SSE__)
     for (; i + 3 < size; i += 4) {
       vec_in_128 = _mm_loadu_ps(in + i);
       vec_v1_128 = _mm_loadu_ps(v1 + i);
@@ -126,6 +127,44 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
 #endif
   for (; i < size; i++) {
     dout[i] = Tanh<float>(din[i]);
+  }
+}
+
+void fill_bias_fc(
+    float *out, const float *bias, int num, int channel) {
+#ifdef __AVX__
+  __m256 vec_bias = {0.f};
+  __m256 vec_data = {0.f};
+#endif
+#ifdef __SSE__
+  __m128 vec_bias_128 = {0.f};
+  __m128 vec_data_128 = {0.f};
+#endif
+  int i = 0;
+
+  for (int j = 0; j < num; j++) {
+    float *ptr = out + j * channel;
+    const float *pbias = bias;
+    i = 0;
+
+#ifdef __AVX__
+    for (; i + 7 < channel; i += 8) {
+      vec_bias = _mm256_loadu_ps(pbias + i);
+      vec_data = _mm256_loadu_ps(ptr + i);
+      _mm256_storeu_ps(ptr + i, _mm256_add_ps(vec_data, vec_bias));
+    }
+    _mm256_zeroupper();
+#endif
+#ifdef __SSE__
+    for (; i + 3 < channel; i += 4) {
+      vec_bias_128 = _mm_loadu_ps(pbias + i);
+      vec_data_128 = _mm_loadu_ps(ptr + i);
+      _mm_storeu_ps(ptr + i, _mm_add_ps(vec_data_128, vec_bias_128));
+    }
+#endif
+    for (; i < channel; i++) {
+      *(ptr + i) = pbias[i] + ptr[i];
+    }
   }
 }
 

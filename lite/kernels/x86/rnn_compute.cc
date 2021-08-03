@@ -20,7 +20,6 @@
 #include "lite/backends/host/math/split.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/concat_and_split.h"
-#include "lite/backends/x86/math/funcs.h"
 #include "lite/backends/x86/math/rnn.h"
 #include "lite/kernels/x86/rnn_compute.h"
 
@@ -101,8 +100,6 @@ void preprocess(X86Context* ctx,
   auto* i_data = input->data<float>();
   auto* w_data = weight.data<float>();
   auto* o_data = cache_input->mutable_data<float>();
-
-  bool flag_act = false;
   auto input_dims = input->dims();
   auto weight_input_dims = weight.dims();
   int m = input_dims[0] * input_dims[1];
@@ -112,8 +109,8 @@ void preprocess(X86Context* ctx,
   paddle::lite::x86::math::Blas<lite::TargetType::kX86> matmul(*ctx);
   matmul.GEMM<float>(
       false, true, m, n, k, 1.f, i_data, k, w_data, k, 0.f, o_data, n);
-  lite::x86::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n, flag_act);
-  lite::x86::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n, flag_act);
+  lite::x86::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n);
+  lite::x86::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n);
 }
 
 void cell(X86Context* ctx,
