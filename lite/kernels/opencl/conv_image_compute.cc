@@ -295,26 +295,39 @@ void ConvImageCompute::PrepareForRun() {
       if (stride_equal && stride_h_ == 1 && dilation_h_ == 1) {
         kernel_func_names_.push_back("depth_conv2d_3x3s1");
         impl_ = &ConvImageCompute::DepthwiseConv2d3x3s1;
+        CLImageConverterForDW converter;
+        const DDim& filter_image_dims =
+            converter.InitImageDimInfoWith(filter_dims);
+        filter_image_h_ = filter_image_dims[1];
+        filter_image_w_ = filter_image_dims[0];
+        tensor_hold_filter_image_->Resize(
+            {1, filter_image_w_, filter_image_h_, 4});
+
+        auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+        converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+        MUTABLE_DATA_GPU(filter_gpu_image_,
+                         filter_image_w_,
+                         filter_image_h_,
+                         filter_image_data);
       } else {
         kernel_func_names_.push_back("depth_conv2d_3x3");
         impl_ = &ConvImageCompute::DepthwiseConv2d3x3;
+        CLImageConverterNWBlock converter;
+        const DDim& filter_image_dims =
+            converter.InitImageDimInfoWith(filter_dims);
+        filter_image_h_ = filter_image_dims[1];
+        filter_image_w_ = filter_image_dims[0];
+        tensor_hold_filter_image_->Resize(
+            {1, filter_image_w_, filter_image_h_, 4});
+
+        auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+        converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+        MUTABLE_DATA_GPU(filter_gpu_image_,
+                         filter_image_w_,
+                         filter_image_h_,
+                         filter_image_data);
       }
       kernel_func_paths_.push_back("image/depthwise_conv2d_kernel.cl");
-
-      CLImageConverterNWBlock converter;
-      const DDim& filter_image_dims =
-          converter.InitImageDimInfoWith(filter_dims);
-      filter_image_h_ = filter_image_dims[1];
-      filter_image_w_ = filter_image_dims[0];
-      tensor_hold_filter_image_->Resize(
-          {1, filter_image_w_, filter_image_h_, 4});
-
-      auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
-      converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
-      MUTABLE_DATA_GPU(filter_gpu_image_,
-                       filter_image_w_,
-                       filter_image_h_,
-                       filter_image_data);
 #endif
     } else if (filter_tensor_c_ == 1 && input_tensor_c_ == output_tensor_c_
 #ifdef DEPTH_CONV_USE_SPL
@@ -1254,7 +1267,7 @@ void ConvImageCompute::SetGlobalWorkSize() {
 
     c_blk_ = c_block;
     w_blk_ = w_blk;
-    nh_blk_ = nh;
+    nh_blk_ = (nh + 1) / 2;
     global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
