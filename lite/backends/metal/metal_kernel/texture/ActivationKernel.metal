@@ -83,6 +83,7 @@ kernel void hard_sigmoid(texture2d_array<float, access::sample> inTexture
   constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
   const float4 input = inTexture.read(gid.xy, gid.z);
   const float4 output = 1.0 / (1.0 + exp(-input));
+  const float4 output = clamp(input * param.scale + param.offset, 0.0, 1.0);
   outTexture.write(output, gid.xy, gid.z);
 }
 
