@@ -79,11 +79,8 @@ class BoxClipComputeTester : public arena::TestCase {
 
 TEST(Boxclip, precision) {
   LOG(INFO) << "test box_clip op";
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-#endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+#if defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+  Place place(TARGET(kHost));
   std::unique_ptr<arena::TestCase> tester(
       new BoxClipComputeTester(place, "def"));
   arena::Arena arena(std::move(tester), place, 2e-5);

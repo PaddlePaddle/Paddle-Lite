@@ -23,6 +23,9 @@ add_kernel(yolo_box_compute_host Host basic SRCS yolo_box_compute.cc DEPS ${lite
 add_kernel(write_back_compute_host Host basic SRCS write_back_compute.cc DEPS ${lite_kernel_deps})
 
 # extra kernels
+add_kernel(reverse_compute_host Host extra SRCS reverse_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(index_select_compute_host Host extra SRCS index_select_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(inverse_compute_host Host extra SRCS inverse_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(deformable_conv_compute_host Host extra SRCS deformable_conv_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(reduce_compute_host Host extra SRCS reduce_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(generate_proposals_compute_host Host extra SRCS generate_proposals_compute.cc DEPS ${lite_kernel_deps})
@@ -95,6 +98,8 @@ add_kernel(distribute_fpn_proposals_compute_host Host extra SRCS distribute_fpn_
 add_kernel(collect_fpn_proposals_compute_host Host extra SRCS collect_fpn_proposals_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(flip_compute_host Host extra SRCS flip_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(unique_with_counts_compute  Host extra SRCS unique_with_counts_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(roi_align_compute Host extra SRCS roi_align_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(box_clip_compute Host extra SRCS box_clip_compute.cc DEPS ${lite_kernel_deps})
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)
