@@ -110,7 +110,7 @@ void conv_transpose_depthwise_s1(const float* dst,
   __m256 vec_zero = _mm256_set1_ps(0.f);
   __m256 vec_width = _mm256_set1_ps(width * 1.0f);
 #endif
-#ifdef __SSE4_1__
+#ifdef __SSE4_1__  // blendv need 4.1
   __m128 vec_zero_128 = _mm_set1_ps(0.f);
   __m128 vec_width_128 = _mm_set1_ps(width * 1.0f);
 #endif
@@ -186,6 +186,7 @@ void conv_transpose_depthwise_s1(const float* dst,
                                       _mm256_loadu_ps(src_addr_h3 + iw));
             _mm256_storeu_ps(src_addr_h3 + iw, vec_dst);
           }
+          _mm256_zeroupper();
 #endif
 #ifdef __SSE4_1__
           for (; i + 3 < output_w; i += 4, iw += 4) {
@@ -414,6 +415,7 @@ void conv_transpose_depthwise_s2(const float* dst,
                 vec_store_mask,
                 _mm256_permute2f128_ps(vec_dst_lo, vec_dst_hi, 0x31));
           }
+          _mm256_zeroupper();
 #endif
 #ifdef __SSE4_1__
           for (; i + 3 < output_w; i += 4, iw += 8) {
