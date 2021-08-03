@@ -71,6 +71,85 @@ kernel void sigmoid_half(texture2d_array<half, access::sample> inTexture
   outTexture.write(half4(output), gid.xy, gid.z);
 }
 
+kernel void hard_sigmoid(texture2d_array<float, access::sample> inTexture
+                    [[texture(0)]],
+                    texture2d_array<float, access::write> outTexture
+                    [[texture(1)]],
+                    constant HardSwishParam &param [[buffer(0)]],
+                    uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size())
+    return;
+  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+  const float4 input = inTexture.read(gid.xy, gid.z);
+  const float4 output = 1.0 / (1.0 + exp(-input));
+  outTexture.write(output, gid.xy, gid.z);
+}
+
+kernel void hard_sigmoid_half(texture2d_array<half, access::sample> inTexture
+                         [[texture(0)]],
+                         texture2d_array<half, access::write> outTexture
+                         [[texture(1)]],
+                         constant HardSwishParam &param [[buffer(0)]],
+                         uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size())
+    return;
+  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+  const float4 input = float4(inTexture.read(gid.xy, gid.z));
+  const float4 output = 1.0 / (1.0 + exp(-input));
+  outTexture.write(half4(output), gid.xy, gid.z);
+}
+
+kernel void swish(texture2d_array<float, access::sample> inTexture
+                    [[texture(0)]],
+                    texture2d_array<float, access::write> outTexture
+                    [[texture(1)]],
+                    uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size())
+    return;
+  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+  const float4 input = inTexture.read(gid.xy, gid.z);
+  const float4 output = input / (1.0 + exp(-input));
+  outTexture.write(output, gid.xy, gid.z);
+}
+
+kernel void swish_half(texture2d_array<half, access::sample> inTexture
+                    [[texture(0)]],
+                    texture2d_array<half, access::write> outTexture
+                    [[texture(1)]],
+                    uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size())
+    return;
+  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+  const float4 input = float4(inTexture.read(gid.xy, gid.z));
+  const float4 output = input / (1.0 + exp(-input));
+  outTexture.write(half4(output), gid.xy, gid.z);
+}
+
+// activation function: hard swish
+// output = input * (min(max(0, input + offset), threshold)) / scale
+// please refer to https://www.paddlepaddle.org.cn/documentation/docs/zh/api_cn/layers_cn/hard_swish_cn.html#hard-swish
+kernel void hard_swish(texture2d_array<float, access::sample> inTexture
+                    [[texture(0)]],
+                    texture2d_array<float, access::write> outTexture
+                    [[texture(1)]],
+                    constant HardSwishParam &param [[buffer(0)]],
+                    uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size())
+    return;
+  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+  const float4 input = inTexture.read(gid.xy, gid.z);
+  const float4 output =
+      input * (fmin(fmax(0.0, input + param.offset), param.threshold)) /
+      param.scale;
+  outTexture.write(output, gid.xy, gid.z);
+}
+
+
 kernel void rsqrt(texture2d_array<float, access::sample> inTexture
                   [[texture(0)]],
                   texture2d_array<float, access::write> outTexture
