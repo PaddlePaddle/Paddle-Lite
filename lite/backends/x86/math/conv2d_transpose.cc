@@ -344,7 +344,7 @@ void conv_transpose_depthwise_s2(const float* dst,
             __m256 vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
             vec_data = (__m256)(
-                _mm256_permute4x64_epi64((__m256i)vec_data, 216));  // 11011000b
+                _mm256_permute4x64_epi64((*(__m256i*)&vec_data), 216));  // 11011000b
             __m256 vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr), vec_weight, vec_data);
             __m256 vec_dst_lo = _mm256_unpacklo_ps(vec_dst, vec_zero);
@@ -363,7 +363,7 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
             vec_data = (__m256)(
-                _mm256_permute4x64_epi64((__m256i)vec_data, 216));  // 11011000b
+                _mm256_permute4x64_epi64((*(__m256i*)&vec_data), 216));  // 11011000b
             vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr + output_w), vec_weight, vec_data);
             vec_dst_lo = _mm256_unpacklo_ps(vec_dst, vec_zero);
@@ -382,7 +382,7 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
             vec_data = (__m256)(
-                _mm256_permute4x64_epi64((__m256i)vec_data, 216));  // 11011000b
+                _mm256_permute4x64_epi64((*(__m256i*)&vec_data), 216));  // 11011000b
             vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr + 2 * output_w), vec_weight, vec_data);
             vec_dst_lo = _mm256_unpacklo_ps(vec_dst, vec_zero);
@@ -401,7 +401,7 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
             vec_data = (__m256)(
-                _mm256_permute4x64_epi64((__m256i)vec_data, 216));  // 11011000b
+                _mm256_permute4x64_epi64((*(__m256i*)&vec_data), 216));  // 11011000b
             vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr + 3 * output_w), vec_weight, vec_data);
             vec_dst_lo = _mm256_unpacklo_ps(vec_dst, vec_zero);
