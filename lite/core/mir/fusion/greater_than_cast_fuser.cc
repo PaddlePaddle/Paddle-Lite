@@ -23,7 +23,7 @@ namespace fusion {
 
 void GreaterThanCastFuser::BuildPattern() {
   // create nodes
-  // fc
+  // greater_than
   PMNode* input_x =
       VarNode("input_x")->assert_is_op_input("greater_than", "X")->AsInput();
   PMNode* input_y =
@@ -35,7 +35,7 @@ void GreaterThanCastFuser::BuildPattern() {
                                  ->assert_is_op_input("cast", "X")
                                  ->AsIntermediate();
 
-  // prelu
+  // cast
   PMNode* cast = OpNode("cast", "cast")->AsIntermediate();
   PMNode* out = VarNode("out")->assert_is_op_output("cast", "Out")->AsOutput();
 

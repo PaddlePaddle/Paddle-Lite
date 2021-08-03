@@ -111,6 +111,7 @@ class GreaterThanComputeImage2D : public KernelLite<TARGET(kOpenCL),
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
+    ch->global_work_size = ch->NDRangeToStr(global_work_size_);
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
   }

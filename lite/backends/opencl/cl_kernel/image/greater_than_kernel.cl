@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,7 +24,11 @@ __kernel void greater_than(__read_only image2d_t input_x,
                                (CL_DTYPE)(input_y),
                                (CL_DTYPE)(input_y));
   CL_DTYPE4 in_x = READ_IMG_TYPE(CL_DTYPE_CHAR, input_x, SAMPLER, (int2)(x, y));
+#ifdef CL_DTYPE_half
+  short4 out_tmp = isgreater(in_x, in_y);
+#else
   int4 out_tmp = isgreater(in_x, in_y);
+#endif
   CL_DTYPE4 out = (CL_DTYPE4)((CL_DTYPE)(out_tmp.x),
                               (CL_DTYPE)(out_tmp.y),
                               (CL_DTYPE)(out_tmp.z),
