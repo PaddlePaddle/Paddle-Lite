@@ -210,7 +210,8 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
   };
 
   if (programs_.empty()) {
-    // check whether binary exist
+    // Check whether binary exist.
+    // `IsFileExists()` will return true if bin_file is a existing dir.
     if (!IsFileExists(bin_file)) {
       LOG(WARNING)
           << "There is no precompiled OpenCL binary[" << bin_file
@@ -220,8 +221,12 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
              "from source.";
     } else {
       LOG(INFO) << "Load opencl kernel bin file: " << bin_file;
+      // Note that deserialize will fail if bin_file is a existing dir.
       bool success = Deserialize(bin_file, &programs_precompiled_binary_);
-      CHECK(success) << "Deserialize failed!";
+      if (!success) {
+        LOG(WARNING) << "Failed to deserialize kernel binary file:" << bin_file;
+        return ret;
+      }
 
       VLOG(3) << "sn_key: " << sn_key_;
       VLOG(3) << "map size: " << programs_precompiled_binary_.size();
@@ -384,7 +389,9 @@ void CLRuntime::SaveProgram() {
     LOG(INFO) << "OpenCL Program existed:" << binary_file;
   } else {
     bool ret = Serialize(binary_file, programs_precompiled_binary_);
-    CHECK(ret) << "Serialize failed for opencl binary_file:" << binary_file;
+    if (!ret) {
+      LOG(WRANING) << "Serialize failed for opencl binary_file:" << binary_file;
+    }
 #ifdef LITE_WITH_LOG
     if (programs_precompiled_binary_.find(sn_key_) !=
         programs_precompiled_binary_.end()) {
@@ -407,7 +414,9 @@ void CLRuntime::SaveTuned() {
     LOG(INFO) << "OpenCL Tuned file existed:" << tuned_file;
   } else {
     bool ret = Serialize(tuned_file, tuned_lwss_map_);
-    CHECK(ret) << "Serialize failed for opencl tuned_file:" << tuned_file;
+    if (!ret) {
+      LOG(WARNING) << "Serialize failed for opencl tuned_file:" << tuned_file;
+    }
     LOG(INFO) << "Tuned file have been serialized to disk successfully: "
               << tuned_file;
   }
@@ -861,10 +870,10 @@ void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
     LOG(INFO) << "Load tuned file: " << tuned_file;
     bool status = Deserialize(tuned_file, &tuned_lwss_map_);
     if (!status) {
-      LOG(ERROR) << "failed to deserialize tuned_file:" << tuned_file;
+      LOG(WARNING) << "Failed to deserialize tuned file:" << tuned_file;
     }
   } else {
-    LOG(INFO) << "Not found tuned file:" << tuned_file;
+    LOG(WARNING) << "Not found tuned file:" << tuned_file;
   }
   command_queue_ = CreateCommandQueue(context());
 }
