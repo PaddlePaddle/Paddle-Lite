@@ -98,14 +98,27 @@ int Compilation::Execute(std::vector<hal::Argument>* input_arguments,
   // Serialize the cache models into the file or memory at the first iteration
   if (model_ && !caches_.empty()) {
     if (!cache_key_.empty() && !cache_dir_.empty()) {
-      std::vector<uint8_t> buffer;
-      if (Serialize(&buffer)) {
-        NNADAPTER_LOG(INFO)
-            << "Serialize the cache models into memory success.";
-        std::string path = cache_dir_ + "/" + cache_key_ +
-                           std::string(NNADAPTER_RUNTIME_CACHE_FILE_EXTENSION);
-        if (WriteFile(path, buffer)) {
-          NNADAPTER_LOG(INFO) << "Write the cache file " << path << " success.";
+      bool skip = false;
+      for (size_t i = 0; i < caches_.size(); i++) {
+        if (!caches_[i].cache.buffer.empty()) continue;
+        skip = true;
+        auto device_name = caches_[i].device_context->device->GetName();
+        NNADAPTER_LOG(WARNING) << "The " << i << "th device '" << device_name
+                               << "' doesn't support model cache!";
+        break;
+      }
+      if (!skip) {
+        std::vector<uint8_t> buffer;
+        if (Serialize(&buffer)) {
+          NNADAPTER_LOG(INFO)
+              << "Serialize the cache models into memory success.";
+          std::string path =
+              cache_dir_ + "/" + cache_key_ +
+              std::string(NNADAPTER_RUNTIME_CACHE_FILE_EXTENSION);
+          if (WriteFile(path, buffer)) {
+            NNADAPTER_LOG(INFO) << "Write the cache file " << path
+                                << " success.";
+          }
         }
       }
     }
