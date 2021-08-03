@@ -31,7 +31,6 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "Converting " << op_type << " ...";
 
   // Get input and output vars and op attributes
-  // X
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
   auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
@@ -40,7 +39,6 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
 
-  // Out
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -49,7 +47,6 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
-  // axes
   std::vector<int> axes = {};
   if (op_info->HasAttr("axes")) {
     axes = op_info->GetAttr<std::vector<int>>("axes");
@@ -59,10 +56,9 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
        op_info->Input("AxesTensor").size() > 0) ||
       (op_info->HasInput("AxesTensorList") &&
        op_info->Input("AxesTensorList").size() > 0)) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] doesn't support AxesTensor";
+    LOG(WARNING) << "AxesTensor or AxesTensorList not supported";
     return FAILED;
   }
-
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
@@ -75,12 +71,10 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
-  // axes operand
+  // Axes operand
   auto axes_operand = converter->AddInt32ConstantOperand(
       &axes[0], DDim({static_cast<int32_t>(axes.size())}));
 
-  // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
     output_operand =
@@ -88,23 +82,8 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
-
-  // XShape operand
-  NNAdapterOperand* xshape_operand = nullptr;
-  if (op_info->HasInput("XShape")) {
-    auto xshape_name = op_info->Input("XShape").front();
-    auto xshape_scale = scope->FindMutableTensor(xshape_name);
-    auto xshape_dims = xshape_scale->dims();
-    if (converter->HasOperand(xshape_name)) {
-      xshape_operand =
-          converter->AddFloat32VariableOperand(xshape_dims, xshape_name);
-    }
-  }
-
   // Unsqueeze operation
-  std::vector<NNAdapterOperand*> input_operands = {
-      input_operand, axes_operand, xshape_operand};
-
+  std::vector<NNAdapterOperand*> input_operands = {input_operand, axes_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   auto unsqueeze_operation = converter->AddOperation(NNADAPTER_UNSQUEEZE);
   converter->SetOperation(
