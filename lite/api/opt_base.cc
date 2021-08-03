@@ -62,7 +62,7 @@ void OptBase::SetPassesInternal(
 void OptBase::SetValidPlaces(const std::string& valid_places) {
   valid_places_.clear();
   auto target_reprs = lite::Split(valid_places, ",");
-  std::vector<std::string> nnadapter_devices;
+  std::vector<std::string> nnadapter_device_names;
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
       if (enable_fp16_) {
@@ -92,8 +92,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kX86));
     } else if (target_repr == "npu") {
       valid_places_.emplace_back(TARGET(kNPU));
-    } else if (target_repr == "huawei_ascend_npu") {
-      valid_places_.emplace_back(TARGET(kHuaweiAscendNPU));
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
     } else if (target_repr == "rknpu") {
@@ -104,9 +102,10 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else if (target_repr == "imagination_nna") {
-      valid_places_.emplace_back(TARGET(kImaginationNNA));
+      valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
-          Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
+          TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "intel_fpga") {
       valid_places_.emplace_back(TARGET(kIntelFPGA));
       valid_places_.emplace_back(
@@ -115,17 +114,27 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.push_back(target_repr);
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "mediatek_apu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
-      nnadapter_devices.push_back(target_repr);
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "huawei_kirin_npu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
-      nnadapter_devices.push_back(target_repr);
+      nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "huawei_ascend_npu") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "amlogic_npu") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -136,8 +145,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
   CHECK(!valid_places_.empty())
       << "At least one target should be set, should set the "
          "command argument 'valid_targets'";
-  if (!nnadapter_devices.empty()) {
-    opt_config_.set_nnadapter_devices(nnadapter_devices);
+  if (!nnadapter_device_names.empty()) {
+    opt_config_.set_nnadapter_device_names(nnadapter_device_names);
   }
 }
 
@@ -275,7 +284,7 @@ void OptBase::PrintHelpInfo() {
       "        "
       "`set_valid_places(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|rknpu|apu|"
       "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu)`"
+      "huawei_kirin_npu|amlogic_npu)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
@@ -337,7 +346,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
       "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
       "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu)`"
+      "kirin_npu|amlogic_npu)`"
       "  Display operators in the input model\n";
   OPT_LOG << "paddlelite opt version:" << opt_version;
   OPT_LOG << help_info;

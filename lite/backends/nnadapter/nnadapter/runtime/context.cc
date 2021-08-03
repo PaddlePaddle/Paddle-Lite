@@ -13,35 +13,54 @@
 // limitations under the License.
 
 #include "runtime/context.h"
+#include <string>
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace runtime {
 
-Context::Context(std::vector<Device*> devices) {
+Context::Context(std::vector<Device*> devices, const std::string& properties)
+    : properties_(properties) {
   for (size_t i = 0; i < devices.size(); i++) {
     auto device = devices[i];
     void* context = nullptr;
-    device->CreateContext(&context);
-    contexts_.emplace_back(context, device);
+    NNADAPTER_CHECK_EQ(device->CreateContext(properties_.c_str(), &context),
+                       NNADAPTER_NO_ERROR);
+    device_contexts_.push_back({context, device});
   }
 }
 
 Context::~Context() {
-  for (size_t i = 0; i < contexts_.size(); i++) {
-    auto device = contexts_[i].second;
-    void* context = contexts_[i].first;
-    device->DestroyContext(context);
+  for (size_t i = 0; i < device_contexts_.size(); i++) {
+    auto device_context = &device_contexts_[i];
+    device_context->device->DestroyContext(device_context->context);
   }
 }
 
-std::pair<void*, Device*> Context::GetFirstDevice() {
-  NNADAPTER_CHECK_GT(contexts_.size(), 0) << "No device found.";
-  auto first_device = contexts_[0];
-  NNADAPTER_CHECK(first_device.second->IsValid())
-      << "Driver for device '" << first_device.second->GetName()
+Context::DeviceContext* Context::GetDeviceContext(const char* name) {
+  for (size_t i = 0; i < device_contexts_.size(); i++) {
+    auto device_context = &device_contexts_[i];
+    if (device_context->device->IsValid()) {
+      if (!strcmp(device_context->device->GetName(), name)) {
+        return device_context;
+      }
+    } else {
+      NNADAPTER_LOG(WARNING) << "Driver for device '" << name << "' not found.";
+    }
+  }
+  return nullptr;
+}
+
+Context::DeviceContext* Context::GetDeviceContext(int index) {
+  NNADAPTER_CHECK_GE(index, 0);
+  NNADAPTER_CHECK_LT(index, device_contexts_.size())
+      << "No device found, expected index < " << device_contexts_.size()
+      << " but recevied " << index;
+  auto device_context = &device_contexts_[index];
+  NNADAPTER_CHECK(device_context->device->IsValid())
+      << "Driver for device '" << device_context->device->GetName()
       << "' not found.";
-  return first_device;
+  return device_context;
 }
 
 }  // namespace runtime

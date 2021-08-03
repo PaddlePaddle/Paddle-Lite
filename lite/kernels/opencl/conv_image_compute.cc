@@ -1519,6 +1519,8 @@ void ConvImageCompute::Conv2d1x1FC() {
     status_ = kernel_.setArg(cnt++, *second_input_image_p_);
     CL_CHECK_FATAL(status_);
   }
+  status_ = kernel_.setArg(cnt++, output_tensor_n_);
+  CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(cnt++, UP_DIV(input_tensor_c_, 4));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(cnt++, UP_DIV(output_tensor_c_, 4));

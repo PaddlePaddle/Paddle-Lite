@@ -41,9 +41,15 @@ int Program::ConvertElementwise(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to rknn tensors and operators
-  auto input0_tensor = ConvertOperand(input0_operand);
-  auto input1_tensor = ConvertOperand(input1_operand);
+  // Convert to rknpu tensors and operators
+  auto input0_tensor = GetMappedTensor(input0_operand);
+  if (!input0_tensor) {
+    input0_tensor = ConvertOperand(input0_operand);
+  }
+  auto input1_tensor = GetMappedTensor(input1_operand);
+  if (!input1_tensor) {
+    input1_tensor = ConvertOperand(input1_operand);
+  }
   auto output_tensor = ConvertOperand(output_operand);
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {input0_tensor,
                                                                 input1_tensor};

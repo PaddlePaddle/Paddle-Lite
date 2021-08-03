@@ -15,6 +15,7 @@
 #pragma once
 
 #include <algorithm>
+#include <map>
 #include <string>
 #include <vector>
 #include "nnadapter.h"  // NOLINT
@@ -177,5 +178,20 @@ void Asymm2SymmData(const uint8_t* input_data,
 
 // Calculate a new axis according to the given permutation
 int32_t TransposeAxis(int32_t axis, const std::vector<int32_t>& permutation);
+
+// Parse and get the key value map from a string
+std::map<std::string, std::string> GetKeyValues(
+    const char* properties,
+    const std::string& delimiter = ";",
+    const std::string& assignment = "=");
+
+// A naive implementation of CRC32C
+uint32_t CRC32C(const uint8_t* buffer, size_t size);
+
+// Read a file and output the data into an uint8_t array
+bool ReadFile(const std::string& path, std::vector<uint8_t>* buffer);
+
+// Write an uint8_t array to a file
+bool WriteFile(const std::string& path, const std::vector<uint8_t>& buffer);
 
 }  // namespace nnadapter

@@ -27,16 +27,16 @@ Device::Device(const std::string& name) {
 
 Device::~Device() { device_ = nullptr; }
 
-int Device::CreateContext(void** context) {
+int Device::CreateContext(const char* properties, void** context) {
   if (device_ && context) {
-    return device_->create_context(context);
+    return device_->second->create_context(device_->first, properties, context);
   }
   return NNADAPTER_INVALID_PARAMETER;
 }
 
 void Device::DestroyContext(void* context) {
   if (device_ && context) {
-    device_->destroy_context(context);
+    device_->second->destroy_context(context);
   }
 }
 
@@ -44,15 +44,16 @@ int Device::CreateProgram(void* context,
                           hal::Model* model,
                           hal::Cache* cache,
                           void** program) {
-  if (device_ && context && model && program) {
-    return device_->create_program(context, model, cache, program);
+  if (device_ && context && (model || (cache && cache->buffer.size())) &&
+      program) {
+    return device_->second->create_program(context, model, cache, program);
   }
   return NNADAPTER_INVALID_PARAMETER;
 }
 
 void Device::DestroyProgram(void* program) {
   if (device_ && program) {
-    return device_->destroy_program(program);
+    return device_->second->destroy_program(program);
   }
 }
 
@@ -62,7 +63,7 @@ int Device::ExecuteProgram(void* program,
                            uint32_t output_count,
                            hal::Argument* output_arguments) {
   if (device_ && program && output_arguments && output_count) {
-    return device_->execute_program(
+    return device_->second->execute_program(
         program, input_count, input_arguments, output_count, output_arguments);
   }
   return NNADAPTER_INVALID_PARAMETER;
@@ -78,6 +79,11 @@ DeviceManager::DeviceManager() {}
 DeviceManager::~DeviceManager() {
   std::lock_guard<std::mutex> lock(mutex_);
   for (size_t i = 0; i < devices_.size(); i++) {
+    auto instance = devices_[i].second.first;
+    auto device = devices_[i].second.second;
+    if (device) {
+      device->close_device(instance);
+    }
     void* library = devices_[i].first;
     if (library) {
       dlclose(library);
@@ -91,19 +97,19 @@ size_t DeviceManager::Count() {
   return devices_.size();
 }
 
-hal::Device* DeviceManager::At(int index) {
+std::pair<void*, hal::Device*>* DeviceManager::At(int index) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (index >= 0 && index < devices_.size()) {
-    return devices_[index].second;
+    return &devices_[index].second;
   }
   return nullptr;
 }
 
-hal::Device* DeviceManager::Find(const char* name) {
+std::pair<void*, hal::Device*>* DeviceManager::Find(const char* name) {
   std::lock_guard<std::mutex> lock(mutex_);
   for (size_t i = 0; i < devices_.size(); i++) {
-    auto device = devices_[i].second;
-    if (strcmp(device->name, name) == 0) {
+    auto device = &devices_[i].second;
+    if (strcmp(device->second->name, name) == 0) {
       return device;
     }
   }
@@ -124,8 +130,16 @@ hal::Device* DeviceManager::Find(const char* name) {
                          << path << ", " << dlerror();
     return nullptr;
   }
-  devices_.emplace_back(library, device);
-  return device;
+  void* instance = nullptr;
+  int result = device->open_device(&instance);
+  if (result != NNADAPTER_NO_ERROR) {
+    NNADAPTER_LOG(ERROR) << "Failed to open device '" << symbol
+                         << "', result=" << result;
+    return nullptr;
+  }
+  devices_.emplace_back(library,
+                        std::pair<void*, hal::Device*>(instance, device));
+  return &devices_.back().second;
 }
 
 }  // namespace runtime

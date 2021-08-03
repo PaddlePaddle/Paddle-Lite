@@ -158,7 +158,10 @@ class Dot {
 NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
 #define APPEND_OPERAND_NODE(mode)                                           \
   auto operand_id = OperandIdToString(operand);                             \
-  auto operand_label = OperandValueToString(operand);                       \
+  std::string operand_label("nullptr");                                     \
+  if (operand != nullptr) {                                                 \
+    operand_label = OperandValueToString(operand);                          \
+  }                                                                         \
   if (!visited_operands.count(operand)) {                                   \
     dot.AddNode(operand_id, {}, operand_label);                             \
     visited_operands.insert(operand);                                       \
@@ -187,45 +190,11 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                 operation_label);
     std::vector<std::string> input_args, output_args;
     switch (operation->type) {
-      case NNADAPTER_CONCAT: {
-        input_args.resize(input_count);
-        for (int i = 0; i < input_count - 1; i++) {
-          input_args[i] = string_format("input%d", i);
-        }
-        input_args[input_count - 1] = "axis";
-        output_args = {"output"};
-      } break;
-      case NNADAPTER_HARD_SIGMOID:
-      case NNADAPTER_HARD_SWISH:
-      case NNADAPTER_RELU:
-      case NNADAPTER_RELU6:
-      case NNADAPTER_SIGMOID:
-      case NNADAPTER_TANH:
-        input_args = {"input"};
-        output_args = {"output"};
-        break;
-      case NNADAPTER_RESHAPE:
-        input_args = {"input", "shape"};
-        output_args = {"output"};
-        break;
-      case NNADAPTER_SOFTMAX:
-        input_args = {"input", "axis"};
-        output_args = {"output"};
-        break;
-      case NNADAPTER_CONV_2D:
-        input_args = {"input",
-                      "filter",
-                      "bias",
-                      "padding_left",
-                      "padding_right",
-                      "padding_top",
-                      "padding_bottom",
-                      "stride_width",
-                      "stride_height",
-                      "group",
-                      "fuse_code",
-                      "dilation_width",
-                      "dilation_height"};
+      case NNADAPTER_ADD:
+      case NNADAPTER_SUB:
+      case NNADAPTER_MUL:
+      case NNADAPTER_DIV:
+        input_args = {"input0", "input1", "fuse_code"};
         output_args = {"output"};
         break;
       case NNADAPTER_AVERAGE_POOL_2D:
@@ -244,23 +213,128 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "count_include_pad"};
         output_args = {"output"};
         break;
+      case NNADAPTER_CONCAT:
+        input_args.resize(input_count);
+        for (int i = 0; i < input_count - 1; i++) {
+          input_args[i] = string_format("input%d", i);
+        }
+        input_args[input_count - 1] = "axis";
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CONV_2D:
+        input_args = {"input",
+                      "filter",
+                      "bias",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "group",
+                      "fuse_code",
+                      "dilation_width",
+                      "dilation_height"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CONV_2D_TRANSPOSE:
+        input_args = {"input",
+                      "filter",
+                      "bias",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "group",
+                      "fuse_code",
+                      "dilation_width",
+                      "dilation_height",
+                      "output_padding_width",
+                      "output_padding_height"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_FULLY_CONNECTED:
         input_args = {"input", "weight", "bias", "fuse_code"};
         output_args = {"output"};
         break;
-      case NNADAPTER_ADD:
-      case NNADAPTER_SUB:
-      case NNADAPTER_MUL:
-      case NNADAPTER_DIV:
-        input_args = {"input0", "input1", "fuse_code"};
+      case NNADAPTER_HARD_SIGMOID:
+      case NNADAPTER_HARD_SWISH:
+      case NNADAPTER_RELU:
+      case NNADAPTER_RELU6:
+      case NNADAPTER_SIGMOID:
+      case NNADAPTER_TANH:
+      case NNADAPTER_ABS:
+        input_args = {"input"};
         output_args = {"output"};
+        break;
+      case NNADAPTER_RESHAPE:
+        input_args = {"input", "shape"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_RESIZE_NEAREST:
+        input_args = {"input", "shape", "scales", "align_corners"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_RESIZE_LINEAR:
+        input_args = {
+            "input", "shape", "scales", "align_corners", "align_mode"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SOFTMAX:
+        input_args = {"input", "axis"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SPLIT:
+        input_args = {"input", "axis", "split"};
+        output_args.resize(output_count);
+        for (size_t i = 0; i < output_count; i++) {
+          output_args[i] = string_format("output%d", i);
+        }
         break;
       case NNADAPTER_TRANSPOSE:
         input_args = {"input", "perm"};
         output_args = {"output"};
         break;
-      default:
+      case NNADAPTER_CAST:
+        input_args = {"input", "dtype"};
+        output_args = {"output"};
         break;
+      case NNADAPTER_SHAPE:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_ASSIGN:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_LP_NORMALIZATION:
+        input_args = {"input", "axis", "p", "epsilon"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_DEFORMABLE_CONV_2D:
+        input_args = {"input",
+                      "offset",
+                      "mask",
+                      "filter",
+                      "bias",
+                      "padding_left",
+                      "padding_right",
+                      "padding_top",
+                      "padding_bottom",
+                      "stride_width",
+                      "stride_height",
+                      "group",
+                      "deformable_groups",
+                      "fuse_code",
+                      "dilation_width",
+                      "dilation_height"};
+        output_args = {"output"};
+        break;
+      default:
+        NNADAPTER_LOG(ERROR) << "unsupported op: "
+                             << static_cast<int>(operation->type);
     }
     for (size_t i = 0; i < input_count; i++) {
       auto* operand = input_operands[i];
@@ -372,21 +446,31 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNAdapterOperationType type) {
   std::string name;
   switch (type) {
+    NNADAPTER_TYPE_TO_STRING(ABS)
     NNADAPTER_TYPE_TO_STRING(ADD);
+    NNADAPTER_TYPE_TO_STRING(ASSIGN)
     NNADAPTER_TYPE_TO_STRING(AVERAGE_POOL_2D);
+    NNADAPTER_TYPE_TO_STRING(CAST)
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
+    NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
+    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D)
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
+    NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION)
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(MUL);
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
     NNADAPTER_TYPE_TO_STRING(RESHAPE);
+    NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
+    NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
+    NNADAPTER_TYPE_TO_STRING(SHAPE)
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
+    NNADAPTER_TYPE_TO_STRING(SPLIT);
     NNADAPTER_TYPE_TO_STRING(SUB);
     NNADAPTER_TYPE_TO_STRING(TANH);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
@@ -534,14 +618,13 @@ NNADAPTER_EXPORT std::string OperandToString(hal::Operand* operand) {
 }
 
 NNADAPTER_EXPORT std::string OperandIdToString(hal::Operand* operand) {
-  return string_format("@0x%X", reinterpret_cast<int64_t>(operand));
+  return string_format("0x%X", reinterpret_cast<int64_t>(operand));
 }
 
-std::string OperandValueToString(hal::Operand* operand) {
+NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
   auto label = OperandIdToString(operand);
   auto& type = operand->type;
   auto buffer = operand->buffer;
-  auto length = operand->length;
   auto is_constant_copy = type.lifetime == NNADAPTER_CONSTANT_COPY;
   auto is_constant_reference = type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
   auto is_constant = is_constant_copy || is_constant_reference;

@@ -44,7 +44,9 @@ enum activation_type_test {
   THRESHOLDED_RELU,
   ELU,
   SOFTSIGN,
-  HARD_SIGMOID
+  HARD_SIGMOID,
+  ABS,
+  MISH
 };
 
 template <class T = float>
@@ -125,7 +127,7 @@ class ActivationComputeTester : public arena::TestCase {
       }
       case PRELU: {
         auto* alpha = scope->FindTensor(prelu_alpha_);
-        const auto* alpha_data = alpha->template data<float>();
+        const auto* alpha_data = alpha->template data<T>();
 
         int num = dims_[0];
         int channel = dims_[1];
@@ -138,8 +140,7 @@ class ActivationComputeTester : public arena::TestCase {
             for (int c = 0; c < channel; c++) {
               auto x_data_cptr = x_data_bptr + c * csize;
               auto output_data_cptr = output_data_bptr + c * csize;
-              float slope =
-                  prelu_mode_ == "all" ? alpha_data[0] : alpha_data[c];
+              T slope = prelu_mode_ == "all" ? alpha_data[0] : alpha_data[c];
               for (int i = 0; i < csize; i++) {
                 output_data_cptr[i] = x_data_cptr[i] > 0.f
                                           ? x_data_cptr[i]
@@ -274,6 +275,26 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case ABS: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = std::fabs(x_data[i]);
+        }
+        break;
+      }
+      case MISH: {
+        for (int i = 0; i < dims_.production(); i++) {
+          float x = x_data[i];
+          float sp = 0.0f;
+          if (threshold_ > 0 && x > threshold_)
+            sp = x;
+          else if (threshold_ > 0 && x < -threshold_)
+            sp = std::exp(x);
+          else
+            sp = std::log1p(std::exp(x));
+          output_data[i] = x * std::tanh(sp);
+        }
+        break;
+      }
       default:
         LOG(FATAL) << "the type of activation " << act_type_ << " is unknow.";
     }
@@ -316,6 +337,9 @@ class ActivationComputeTester : public arena::TestCase {
     if (act_type_ == HARD_SIGMOID) {
       op_desc->SetAttr("slope", hard_sigmoid_slope_);
       op_desc->SetAttr("offset", hard_sigmoid_slope_);
+    }
+    if (act_type_ == MISH) {
+      op_desc->SetAttr("threshold", threshold_);
     }
   }
 
@@ -409,7 +433,16 @@ void TestActPerformance(const Place& place,
 TEST(Activation_relu, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
@@ -540,7 +573,16 @@ TEST(Activation_prelu, precision) {
 TEST(Activation_sigmoid, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
@@ -573,7 +615,16 @@ TEST(Activation_sigmoid, precision) {
 TEST(Activation_tanh, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
@@ -635,7 +686,16 @@ TEST(Activation_swish, precision) {
 TEST(Activation_relu6, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
@@ -671,6 +731,9 @@ TEST(Activation_log, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -816,6 +879,32 @@ TEST(Activation_gelu, precision) {
   }
 }
 
+TEST(Activation_mish, precision) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    TestAct(place,
+            "def",
+            0.0,
+            0.,
+            "all",
+            0.,
+            0.0,
+            DDim(dims),
+            "mish",
+            MISH,
+            abs_error);
+  }
+}
+
 TEST(Activation_hard_swish, precision) {
   Place place;
   float abs_error = 2e-5;
@@ -935,53 +1024,38 @@ TEST(Activation_softsign, precision) {
   }
 }
 
-#if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
-TEST(Activation_relu_fp16, precision) {
-  Place place(TARGET(kARM), PRECISION(kFP16));
+TEST(Activation_abs, precision) {
+  Place place;
   float abs_error = 2e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#else
+  return;
+#endif
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct<float16_t>(place,
-                       "def",
-                       0.01,
-                       6.,
-                       "all",
-                       0.,
-                       1.0,
-                       DDim(dims),
-                       "relu",
-                       RELU,
-                       abs_error);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "abs",
+            ABS,
+            abs_error);
   }
 }
-#endif
-
-#if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
-TEST(Activation_hard_sigmoid_fp16, precision) {
-  Place place(TARGET(kARM), PRECISION(kFP16));
-  float abs_error = 2e-3;
-
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 32, 32},
-                                                     {1, 2, 3, 4},
-                                                     {1, 3, 2, 4},
-                                                     {2, 3, 4},
-                                                     {5, 4},
-                                                     {8}}) {
-    TestAct<float16_t>(place,
-                       "def",
-                       0.01,
-                       6.,
-                       "all",
-                       0.,
-                       1.0,
-                       DDim(dims),
-                       "hard_sigmoid",
-                       HARD_SIGMOID,
-                       abs_error);
-  }
-}
-#endif
 
 #if defined(LITE_WITH_ARM)
 TEST(Activation_hard_sigmoid_fp32, precision) {
@@ -1030,12 +1104,83 @@ TEST(Activation_hard_sigmoid_fp32, performance) {
 }
 #endif
 
-#if defined(LITE_WITH_ARM) & defined(ENABLE_ARM_FP16)
+#if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
+TEST(Activation_relu_fp16, precision) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-5;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    TestAct<float16_t>(place,
+                       "def",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "relu",
+                       RELU,
+                       abs_error);
+  }
+}
+
+TEST(Activation_hard_sigmoid_fp16, precision) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-3;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 32, 32},
+                                                     {1, 2, 3, 4},
+                                                     {1, 3, 2, 4},
+                                                     {2, 3, 4},
+                                                     {5, 4},
+                                                     {8}}) {
+    TestAct<float16_t>(place,
+                       "def",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "hard_sigmoid",
+                       HARD_SIGMOID,
+                       abs_error);
+  }
+}
+
+TEST(Activation_prelu_fp16, precision) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-3;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 2, 3, 4}, {1, 3, 2, 4}, {1, 1, 2, 32}}) {
+    for (auto mode : {"all", "channel", "element"}) {
+      TestAct<float16_t>(place,
+                         "def",
+                         0.01,
+                         6,
+                         mode,
+                         0.,
+                         1.0,
+                         DDim(dims),
+                         "prelu",
+                         PRELU,
+                         abs_error);
+    }
+  }
+}
+
 TEST(Activation_hard_sigmoid_fp16, performance) {
   Place place(TARGET(kARM), PRECISION(kFP16));
   float abs_error = 2e-3;
 
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 32, 544, 544}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 32, 32},
+                                                     {1, 2, 3, 4},
+                                                     {1, 3, 2, 4},
+                                                     {2, 3, 4},
+                                                     {5, 4},
+                                                     {8}}) {
     TestActPerformance<float16_t>(place,
                                   "def",
                                   0.01,
@@ -1049,7 +1194,29 @@ TEST(Activation_hard_sigmoid_fp16, performance) {
                                   abs_error);
   }
 }
-#endif
 
+TEST(Activation_prelu_fp16, performance) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-5;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 32, 32}, {1, 2, 3, 4}, {1, 3, 2, 4}}) {
+    for (auto mode : {"all", "channel", "element"}) {
+      TestActPerformance<float16_t>(place,
+                                    "def",
+                                    0.01,
+                                    6,
+                                    mode,
+                                    0.,
+                                    1.0,
+                                    DDim(dims),
+                                    "prelu",
+                                    PRELU,
+                                    abs_error);
+    }
+  }
+}
+
+#endif
 }  // namespace lite
 }  // namespace paddle

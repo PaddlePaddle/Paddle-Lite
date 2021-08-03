@@ -14,6 +14,7 @@
 
 #include "driver/mediatek_apu/converter.h"
 #include <algorithm>
+#include <utility>
 #include "driver/mediatek_apu/optimizer/propagate_quant_params.h"
 #include "driver/mediatek_apu/optimizer/resolve_op_liminations.h"
 #include "driver/mediatek_apu/optimizer/update_bias_quant_params_and_values.h"
@@ -22,30 +23,52 @@
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
+#include "utility/string.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-Context::Context() {
+Context::Context(void* device, const char* properties) : device_(device) {
   // TODO(hong19860320) create the raw context from NeuronAdapter
 }
 
 Context::~Context() {}
 
-Program::~Program() {
-  if (!execution_) {
+Program::~Program() { Clear(); }
+
+void Program::Clear() {
+  if (execution_) {
     NeuronExecution_free_invoke(execution_);
+    execution_ = nullptr;
   }
-  if (!compilation_) {
+  if (compilation_) {
     NeuronCompilation_free_invoke(compilation_);
+    compilation_ = nullptr;
   }
-  if (!model_) {
+  if (model_) {
     NeuronModel_free_invoke(model_);
+    model_ = nullptr;
   }
+  operand_indexes_.clear();
+  operand_index_ = 0;
+  operand_buffers_.clear();
+  input_zero_points_.clear();
+  output_zero_points_.clear();
+  dump_graph_path_ = "";
+  dump_graph_buffer_ = nullptr;
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
+  Clear();
+  if (model && cache->dir && cache->key) {
+    dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->key);
+  }
+  dump_graph_buffer_ = &cache->buffer;
+  return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
+}
+
+int Program::BuildFromModel(hal::Model* model) {
   // Convert the data layout and quantization parameters of the operands in the
   // NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
@@ -116,6 +139,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   }
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
+  NNADAPTER_VLOG(3) << "Model input count: " << input_count;
   std::vector<uint32_t> input_operand_indexes(input_count);
   input_zero_points_.resize(input_count);
   for (size_t i = 0; i < input_count; i++) {
@@ -126,13 +150,15 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_CHECK(operand_indexes_.find(operand) != operand_indexes_.end())
         << "No Neuron operand found for input operand @0x" << std::hex
         << reinterpret_cast<int64_t>(operand);
-    auto index = operand_indexes_[operand];
+    auto index = operand_indexes_[operand].back();
+    NNADAPTER_CHECK_NE(index, INVALID_INDEX);
     NNADAPTER_VLOG(5) << "Found a Neuron operand " << index
                       << " for input operand @0x" << std::hex
                       << reinterpret_cast<int64_t>(operand);
     input_operand_indexes[i] = index;
   }
   auto output_count = model->output_operands.size();
+  NNADAPTER_VLOG(3) << "Model output count: " << output_count;
   std::vector<uint32_t> output_operand_indexes(output_count);
   output_zero_points_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
@@ -143,7 +169,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_CHECK(operand_indexes_.find(operand) != operand_indexes_.end())
         << "No Neuron operand found for output operand @0x" << std::hex
         << reinterpret_cast<int64_t>(operand);
-    auto index = operand_indexes_[operand];
+    auto index = operand_indexes_[operand].back();
+    NNADAPTER_CHECK_NE(index, INVALID_INDEX);
     NNADAPTER_VLOG(5) << "Found a Neuron operand " << index
                       << " for output operand @0x" << std::hex
                       << reinterpret_cast<int64_t>(operand);
@@ -159,14 +186,14 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NeuronModel_free_invoke(model_);
     NNADAPTER_LOG(FATAL) << "Failed to identify the inputs and outputs("
                          << result << ")!";
-    return result;
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   result = NeuronModel_finish_invoke(model_);
   if (result != NEURON_NO_ERROR) {
     NeuronModel_free_invoke(model_);
     NNADAPTER_LOG(FATAL) << "Failed to finish the Neuron model(" << result
                          << ")!";
-    return result;
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   // Build model
   result = NeuronCompilation_create_invoke(model_, &compilation_);
@@ -174,7 +201,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NeuronModel_free_invoke(model_);
     NNADAPTER_LOG(FATAL) << "Failed to create a Neuron Compilation(" << result
                          << ")!";
-    return result;
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   result = NeuronCompilation_finish_invoke(compilation_);
   if (result != NEURON_NO_ERROR) {
@@ -182,7 +209,28 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NeuronCompilation_free_invoke(compilation_);
     NNADAPTER_LOG(FATAL) << "Failed to compile the Neuron Model(" << result
                          << ")!";
-    return result;
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  if (!dump_graph_path_.empty()) {
+    size_t dump_graph_size = 0;
+    result = NeuronCompilation_getCompiledNetworkSize_invoke(compilation_,
+                                                             &dump_graph_size);
+    if (result == NEURON_NO_ERROR && dump_graph_size > 0) {
+      dump_graph_buffer_->resize(dump_graph_size);
+      result = NeuronCompilation_storeCompiledNetwork_invoke(
+          compilation_, dump_graph_buffer_->data(), dump_graph_size);
+      if (result == NEURON_NO_ERROR) {
+        NNADAPTER_LOG(INFO)
+            << "Serialize the Neuron compiled network into buffer success.";
+      } else {
+        NNADAPTER_LOG(WARNING)
+            << "Failed to serialize the Neuron compiled network into buffer!";
+      }
+    } else {
+      NNADAPTER_LOG(WARNING)
+          << "Failed to query the size of the Neuron compiled network!";
+    }
+    dump_graph_path_ = "";
   }
   // Create an execution for inference
   result = NeuronExecution_create_invoke(compilation_, &execution_);
@@ -191,8 +239,54 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NeuronCompilation_free_invoke(compilation_);
     NNADAPTER_LOG(FATAL) << "Failed to create a Neuron Execution for inference("
                          << result << ")!";
-    return result;
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
+  NNADAPTER_VLOG(3) << "Build success.";
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::BuildFromCache(hal::Cache* cache) {
+  uint32_t version;
+  Neuron_getVersion_invoke(&version);
+  NNADAPTER_VLOG(3) << "Neuron Adapter version: " << version;
+  int result = NeuronModel_restoreFromCompiledNetwork_invoke(
+      &model_, &compilation_, cache->buffer.data(), cache->buffer.size());
+  if (result != NEURON_NO_ERROR) {
+    NNADAPTER_LOG(FATAL)
+        << "Failed to restore the Neuron compiled network from buffer!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  auto input_count = cache->input_types.size();
+  NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+  if (input_count > 0) {
+    input_zero_points_.resize(input_count);
+    for (size_t i = 0; i < input_count; i++) {
+      const auto& type = cache->input_types[i];
+      input_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
+                                  ? type.asymm_per_layer_params.zero_point
+                                  : 0;
+    }
+  }
+  auto output_count = cache->output_types.size();
+  NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+  NNADAPTER_CHECK_GT(output_count, 0);
+  output_zero_points_.resize(output_count);
+  for (size_t i = 0; i < output_count; i++) {
+    const auto& type = cache->output_types[i];
+    output_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
+                                 ? type.asymm_per_layer_params.zero_point
+                                 : 0;
+  }
+  // Create an execution for inference
+  result = NeuronExecution_create_invoke(compilation_, &execution_);
+  if (result != NEURON_NO_ERROR) {
+    NeuronModel_free_invoke(model_);
+    NeuronCompilation_free_invoke(compilation_);
+    NNADAPTER_LOG(FATAL) << "Failed to create a Neuron Execution for inference("
+                         << result << ")!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
 
@@ -233,6 +327,26 @@ int Program::Execute(uint32_t input_count,
                    buffer);
   }
   return NNADAPTER_NO_ERROR;
+}
+
+uint32_t Program::GetMappedIndex(hal::Operand* operand) {
+  auto it = operand_indexes_.find(operand);
+  if (it != operand_indexes_.end()) {
+    return it->second.back();
+  }
+  return INVALID_INDEX;
+}
+
+uint32_t Program::UpdateIndexMap(hal::Operand* operand, uint32_t index) {
+  auto it = operand_indexes_.find(operand);
+  if (it == operand_indexes_.end()) {
+    auto result = operand_indexes_.insert(
+        std::make_pair(operand, std::vector<uint32_t>()));
+    NNADAPTER_CHECK(result.second);
+    it = result.first;
+  }
+  it->second.push_back(index);
+  return index;
 }
 
 uint32_t Program::AddOperand(int32_t* dimensions,
@@ -286,7 +400,7 @@ uint32_t Program::AddOperand(int32_t* dimensions,
   auto index = operand_index_++;
   if (buffer) {
     // Constant operand
-    auto length = PrecisionLength(precision) *
+    auto length = NeuronOperandDataTypeLength(precision) *
                   ProductionOfDimensions(dimensions, dimension_count);
     NNADAPTER_CHECK_EQ(
         NeuronModel_setOperandValue_invoke(model_, index, buffer, length),
@@ -438,41 +552,42 @@ uint32_t Program::AddQuant8VariableOperand(int32_t* dimensions,
                     0);
 }
 
-uint32_t Program::ConvertOperand(hal::Operand* operand) {
-  if (operand_indexes_.find(operand) != operand_indexes_.end()) {
-    return operand_indexes_.at(operand);
-  }
+uint32_t Program::ConvertOperand(hal::Operand* operand,
+                                 std::vector<int32_t> dimensions) {
   auto& type = operand->type;
   auto buffer = operand->buffer;
+  if (dimensions.empty()) {
+    for (uint32_t i = 0; i < type.dimension_count; i++) {
+      dimensions.push_back(type.dimensions[i]);
+    }
+  }
   auto is_constant_copy = type.lifetime == NNADAPTER_CONSTANT_COPY;
   auto is_constant_reference = type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
   auto is_constant = is_constant_copy || is_constant_reference;
-  uint32_t index = 0xFFFFFFFF;
+  uint32_t index = INVALID_INDEX;
   switch (type.precision) {
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER: {
       if (is_constant) {
         index =
             AddQuant8ConstantOperand(reinterpret_cast<uint8_t*>(buffer),
-                                     type.dimensions,
-                                     type.dimension_count,
+                                     &dimensions[0],
+                                     dimensions.size(),
                                      type.asymm_per_layer_params.scale,
                                      type.asymm_per_layer_params.zero_point);
       } else {
         index =
-            AddQuant8VariableOperand(type.dimensions,
-                                     type.dimension_count,
+            AddQuant8VariableOperand(&dimensions[0],
+                                     dimensions.size(),
                                      type.asymm_per_layer_params.scale,
                                      type.asymm_per_layer_params.zero_point);
-        // Only mapping the temporary operand
-        operand_indexes_[operand] = index;
       }
     } break;
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL: {
       NNADAPTER_CHECK(is_constant);
       index =
           AddQuant8ConstantOperand(reinterpret_cast<int8_t*>(buffer),
-                                   type.dimensions,
-                                   type.dimension_count,
+                                   &dimensions[0],
+                                   dimensions.size(),
                                    type.symm_per_channel_params.scales,
                                    type.symm_per_channel_params.scale_count,
                                    type.symm_per_channel_params.channel_dim);
@@ -483,13 +598,13 @@ uint32_t Program::ConvertOperand(hal::Operand* operand) {
       NNADAPTER_CHECK(is_constant);
       if (type.precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER) {
         index = AddQuant32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
-                                          type.dimensions,
-                                          type.dimension_count,
+                                          &dimensions[0],
+                                          dimensions.size(),
                                           type.symm_per_layer_params.scale);
       } else {
         index = AddInt32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
-                                        type.dimensions,
-                                        type.dimension_count);
+                                        &dimensions[0],
+                                        dimensions.size());
       }
     } break;
     default:
@@ -498,7 +613,8 @@ uint32_t Program::ConvertOperand(hal::Operand* operand) {
                            << " for the conversion of Neuron operands.";
       break;
   }
-  NNADAPTER_CHECK_NE(index, 0xFFFFFFFF);
+  NNADAPTER_CHECK_NE(index, INVALID_INDEX);
+  UpdateIndexMap(operand, index);
   return index;
 }
 

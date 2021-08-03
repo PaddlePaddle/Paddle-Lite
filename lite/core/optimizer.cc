@@ -198,6 +198,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__logit_fuse_pass",
        "__xpu__link_previous_out_max_pass",
        "fix_mismatched_precision_pass",
+       "__xpu__dynamic_lstm_fuse_pass",
        "ssd_boxes_calc_offline_pass",
        // Only for fully quantized model, infer the output scale and fix the
        // attribute 'enable_int8' for all of the quantized ops.
@@ -223,7 +224,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "variable_place_inference_pass",  // inference arg/var's
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
        "__fpga_kernel_place_correct_pass",
-       "opencl_kernel_place_correct_pass",
+       // "opencl_kernel_place_correct_pass", // uncommit this pass
        "mlu_postprocess_pass",
        // info(target/precision/layout/device)
        // using kernel info

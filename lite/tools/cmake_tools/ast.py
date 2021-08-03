@@ -493,7 +493,20 @@ class RegisterLiteOpParser(SyntaxParser):
         super(RegisterLiteOpParser, self).__init__(str)
         self.ops = []
 
-    def parse(self):
+    def parse(self, with_extra):
+        extra_command = []
+        while self.cur_pos < len(self.str):
+            start = self.str.find("#ifdef LITE_BUILD_EXTRA", self.cur_pos)
+            if start != -1:
+                self.cur_pos = start
+                end = self.str.find("#endif  // LITE_BUILD_EXTRA", self.cur_pos)
+                if end != -1:
+                    extra_command += extra_command + list(range(start, end + 1))
+                    self.cur_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
+                else:
+                    break
+            else:
+                break
         while self.cur_pos < len(self.str):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
@@ -503,6 +516,10 @@ class RegisterLiteOpParser(SyntaxParser):
                     skip commented code
                     '''
                     self.cur_pos = start + 1
+                    continue
+                # if with_extra == "OFF", extra kernels will not be parsed
+                if with_extra != "ON" and start in extra_command:
+                    self.cur_pos = start + len(self.KEYWORD) -1
                     continue
                 self.cur_pos = start
                 self.ops.append(self.__parse_register())
@@ -622,7 +639,7 @@ class RegisterNNadapterBridgeParser(SyntaxParser):
         self.cur_pos += 1;
 
         assert self.cur_pos < self.N
-        while self.cur != '"':
+        while self.cur != ')':
             if(self.cur == ','):
                 temp = SubgraphBridgeRegistry()
                 temp.op_type = op_type
@@ -631,16 +648,15 @@ class RegisterNNadapterBridgeParser(SyntaxParser):
                 self.token = ''
                 self.cur_pos += 1
             else:
-                self.token += self.cur
+                if(self.cur != '"' and self.cur != ' ' and self.cur != '\n'):
+                    self.token += self.cur
                 self.cur_pos += 1
             assert self.cur_pos < self.N
-        assert self.cur == '"'
+        assert self.cur == ')'
         temp = SubgraphBridgeRegistry()
         temp.op_type = op_type
         temp.target = self.token
         ks.append(temp)
-        self.cur_pos += 1
-
         self.eat_right_parentheses()
         self.eat_spaces()
         self.eat_semicolon()

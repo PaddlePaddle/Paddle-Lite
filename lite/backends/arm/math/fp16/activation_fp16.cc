@@ -161,13 +161,13 @@ void act_hard_sigmoid<float16_t>(const float16_t* din,
       "fcmlt v11.8h, v3.8h, %[vone_8].8h\n"
 
       "ldr q0, [%[din_ptr]], #16\n"
-      "bsl v8.16b, v4.16b, %[vzero_8].16b\n"
+      "bsl v8.16b, v4.16b, %[vone_8].16b\n"
       "ldr q1, [%[din_ptr]], #16\n"
       "ldr q2, [%[din_ptr]], #16\n"
-      "bsl v9.16b, v5.16b, %[vzero_8].16b\n"
-      "bsl v10.16b, v6.16b, %[vzero_8].16b\n"
+      "bsl v9.16b, v5.16b, %[vone_8].16b\n"
+      "bsl v10.16b, v6.16b, %[vone_8].16b\n"
       "ldr q3, [%[din_ptr]], #16\n"
-      "bsl v11.16b, v7.16b, %[vzero_8].16b\n"
+      "bsl v11.16b, v7.16b, %[vone_8].16b\n"
 
       "subs %w[cnt], %w[cnt], #1\n"
       "str q8, [%[dout_ptr]], #16\n"
@@ -239,6 +239,196 @@ void act_hard_sigmoid<float16_t>(const float16_t* din,
     dout[0] = dout[0] > 0.0f ? dout[0] : 0.0f;
     ++din;
     ++dout;
+  }
+}
+template <>
+void act_prelu<float16_t>(const float16_t* din,
+                          float16_t* dout,
+                          int outer_size,
+                          int channel_size,
+                          int inner_size,
+                          std::string mode,
+                          const float16_t* alpha_data,
+                          int threads) {
+  int stride_size = inner_size * channel_size;
+  int cnt = inner_size >> 5;
+  int remain = inner_size & 31;
+  int cnt_8 = remain >> 3;
+  int rem_8 = remain & 7;
+  float16x8_t vzero = vdupq_n_f16(0.f);
+  if (mode == "all" || mode == "channel") {
+    for (int n = 0; n < outer_size; n++) {
+      const float16_t* data_in_batch = din + n * stride_size;
+      float16_t* data_out_batch = dout + n * stride_size;
+#pragma omp parallel for
+      for (int c = 0; c < channel_size; c++) {
+        const float16_t* data_in_c = data_in_batch + c * inner_size;
+        float16_t* data_out_c = data_out_batch + c * inner_size;
+
+        float16_t slope = (mode == "all") ? alpha_data[0] : alpha_data[c];
+        float16x8_t vslope = vdupq_n_f16(slope);
+        int cnt_cnt = cnt;
+        int cnt_8_cnt = cnt_8;
+#ifdef __aarch64__
+        asm volatile(
+            "cmp %w[cnt], #1          \n"
+            "ldr q0, [%[din_ptr]], #16\n"
+            "ldr q1, [%[din_ptr]], #16\n"
+            "ldr q2, [%[din_ptr]], #16\n"
+            "ldr q3, [%[din_ptr]], #16\n"
+            "blt 0f\n"
+            "2: \n"
+            "fcmgt v4.8h,  v0.8h, %[vzero].8h\n"
+            "fmul  v8.8h,  v0.8h, %[vslope].8h\n"
+            "fcmgt v5.8h,  v1.8h, %[vzero].8h\n"
+            "fmul  v9.8h,  v1.8h, %[vslope].8h\n"
+            "fcmgt v6.8h,  v2.8h, %[vzero].8h\n"
+            "fmul  v10.8h, v2.8h, %[vslope].8h\n"
+            "fcmgt v7.8h,  v3.8h, %[vzero].8h\n"
+            "fmul  v11.8h, v3.8h, %[vslope].8h\n"
+            "bif   v0.16b, v8.16b,  v4.16b\n"
+            "bif   v1.16b, v9.16b,  v5.16b\n"
+            "bif   v2.16b, v10.16b, v6.16b\n"
+            "bif   v3.16b, v11.16b, v7.16b\n"
+            "subs  %w[cnt], %w[cnt], #1\n"
+            "stp   q0, q1, [%[dout_ptr]], #32\n"
+            "ldp   q0, q1, [%[din_ptr]], #32\n"
+            "stp   q2, q3, [%[dout_ptr]], #32\n"
+            "ldp   q2, q3, [%[din_ptr]], #32\n"
+            "bne 2b\n"
+            "0: \n"
+            "cmp %w[cnt_8], #1          \n"
+            "sub %[din_ptr], %[din_ptr], #48\n"
+            "blt 1f\n"
+            "3: \n"
+            "subs  %w[cnt_8], %w[cnt_8], #1\n"
+            "fcmgt v4.8h,  v0.8h, %[vzero].8h\n"
+            "fmul  v8.8h,  v0.8h, %[vslope].8h\n"
+            "bif   v0.16b, v8.16b,  v4.16b\n"
+            "str   q0, [%[dout_ptr]], #16\n"
+            "ldr   q0, [%[din_ptr]], #16\n"
+            "bne 3b\n"
+            "1: \n"
+            "sub %[din_ptr], %[din_ptr], #16\n"
+            : [din_ptr] "+r"(data_in_c),
+              [dout_ptr] "+r"(data_out_c),
+              [cnt] "+r"(cnt_cnt),
+              [cnt_8] "+r"(cnt_8_cnt)
+            : [vzero] "w"(vzero), [vslope] "w"(vslope)
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11");
+#else
+#endif  // __aarch64__
+        for (int i = rem_8; i > 0; i--) {
+          *(data_out_c++) =
+              data_in_c[0] > 0.f ? data_in_c[0] : data_in_c[0] * slope;
+          data_in_c++;
+        }
+      }
+    }
+  } else {  // mode = element
+    for (int n = 0; n < outer_size; n++) {
+      const float16_t* data_in_batch = din + n * stride_size;
+      const float16_t* data_alpha_batch = alpha_data + n * stride_size;
+      float16_t* data_out_batch = dout + n * stride_size;
+#pragma omp parallel for
+      for (int c = 0; c < channel_size; c++) {
+        const float16_t* data_in_c = data_in_batch + c * inner_size;
+        const float16_t* data_alpha_c = data_alpha_batch + c * inner_size;
+        float16_t* data_out_c = data_out_batch + c * inner_size;
+        int cnt_cnt = cnt;
+        int cnt_8_cnt = cnt_8;
+#ifdef __aarch64__
+        asm volatile(
+            "cmp %w[cnt], #1          \n"
+            "ldr q0, [%[din_ptr]], #16\n"
+            "ldr q1, [%[din_ptr]], #16\n"
+            "ldr q2, [%[din_ptr]], #16\n"
+            "ldr q3, [%[din_ptr]], #16\n"
+            "blt 0f\n"
+            "2: \n"
+            "ldp q8, q9, [%[alpha_ptr]], #32\n"
+            "fcmgt v4.8h,  v0.8h, %[vzero].8h\n"
+            "ldp q10, q11, [%[alpha_ptr]], #32\n"
+            "fcmgt v5.8h,  v1.8h, %[vzero].8h\n"
+            "fcmgt v6.8h,  v2.8h, %[vzero].8h\n"
+            "fcmgt v7.8h,  v3.8h, %[vzero].8h\n"
+            "fmul  v12.8h, v0.8h, v8.8h\n"
+            "fmul  v13.8h, v1.8h, v9.8h\n"
+            "fmul  v14.8h, v2.8h, v10.8h\n"
+            "fmul  v15.8h, v3.8h, v11.8h\n"
+            "bif   v0.16b, v12.16b,  v4.16b\n"
+            "bif   v1.16b, v13.16b,  v5.16b\n"
+            "bif   v2.16b, v14.16b, v6.16b\n"
+            "bif   v3.16b, v15.16b, v7.16b\n"
+            "subs  %w[cnt], %w[cnt], #1\n"
+            "stp   q0, q1, [%[dout_ptr]], #32\n"
+            "ldp   q0, q1, [%[din_ptr]], #32\n"
+            "stp   q2, q3, [%[dout_ptr]], #32\n"
+            "ldp   q2, q3, [%[din_ptr]], #32\n"
+            "bne 2b\n"
+            "0: \n"
+            "cmp %w[cnt_8], #1          \n"
+            "sub %[din_ptr], %[din_ptr], #48\n"
+            "blt 1f\n"
+            "3: \n"
+            "subs  %w[cnt_8], %w[cnt_8], #1\n"
+            "ldr   q8, [%[alpha_ptr]], #16\n"
+            "fcmgt v4.8h,  v0.8h, %[vzero].8h\n"
+            "fmul  v9.8h,  v0.8h, v8.8h\n"
+            "bif   v0.16b, v9.16b,  v4.16b\n"
+            "str   q0, [%[dout_ptr]], #16\n"
+            "ldr   q0, [%[din_ptr]], #16\n"
+            "bne 3b\n"
+            "1: \n"
+            "sub %[din_ptr], %[din_ptr], #16\n"
+            : [din_ptr] "+r"(data_in_c),
+              [alpha_ptr] "+r"(data_alpha_c),
+              [dout_ptr] "+r"(data_out_c),
+              [cnt] "+r"(cnt_cnt),
+              [cnt_8] "+r"(cnt_8_cnt)
+            : [vzero] "w"(vzero)
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15");
+#else
+#endif  // __aarch64__
+        for (int i = 0; i < rem_8; i++) {
+          data_out_c[0] = data_in_c[0] > 0.f ? data_in_c[0]
+                                             : data_in_c[0] * data_alpha_c[0];
+          data_in_c++;
+          data_alpha_c++;
+          data_out_c++;
+        }
+      }
+    }
   }
 }
 

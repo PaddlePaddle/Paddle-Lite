@@ -39,6 +39,7 @@ class NNAdapterWrapper final {
                                                int32_t* version);
   typedef int (*NNAdapterContext_create_fn)(NNAdapterDevice** devices,
                                             uint32_t num_devices,
+                                            const char* properties,
                                             NNAdapterContext** context);
   typedef void (*NNAdapterContext_destroy_fn)(NNAdapterContext* context);
   typedef int (*NNAdapterModel_create_fn)(NNAdapterModel** model);
@@ -142,11 +143,11 @@ class NNAdapterWrapper final {
   void* library_{nullptr};
 };
 
-inline int NNAdapter_getVersion(uint32_t* version) {
+inline int NNAdapter_getVersion_invoke(uint32_t* version) {
   return NNAdapterWrapper::Global().NNAdapter_getVersion(version);
 }
 
-inline int NNAdapter_getDeviceCount(uint32_t* numDevices) {
+inline int NNAdapter_getDeviceCount_invoke(uint32_t* numDevices) {
   return NNAdapterWrapper::Global().NNAdapter_getDeviceCount(numDevices);
 }
 
@@ -181,9 +182,10 @@ inline int NNAdapterDevice_getVersion_invoke(const NNAdapterDevice* device,
 
 inline int NNAdapterContext_create_invoke(NNAdapterDevice** devices,
                                           uint32_t num_devices,
+                                          const char* properties,
                                           NNAdapterContext** context) {
   return NNAdapterWrapper::Global().NNAdapterContext_create(
-      devices, num_devices, context);
+      devices, num_devices, properties, context);
 }
 
 inline void NNAdapterContext_destroy_invoke(NNAdapterContext* context) {

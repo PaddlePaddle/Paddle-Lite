@@ -20,13 +20,15 @@
 #include "HiAiModelManagerService.h"  // NOLINT
 #include "core/hal/types.h"
 #include "hiai_ir_build.h"  // NOLINT
+#include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
+// Build and load OM model to/from memory
 std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
     const std::string& model_name,
-    std::vector<char>* model_buffer,
+    std::vector<uint8_t>* model_buffer,
     bool* model_comp,
     int freq_level,
     int framework_type,
@@ -35,12 +37,40 @@ std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<char>* model_buffer);
+    std::vector<uint8_t>* model_buffer);
 
+// Convert GE types to strings
+const std::string GEDataTypeToString(ge::DataType data_type);
+const std::string GEFormatToString(ge::Format format);
+const std::string GEShapeToString(ge::Shape shape);
+int64_t ProductionOfGEShape(ge::Shape shape);
+
+// Convert C/C++ POD types to GE data type
+template <typename T>
+ge::DataType GetGEDataType() {
+  NNADAPTER_LOG(FATAL) << "Unable to convert " << typeid(T).name()
+                       << " to ge::DataType";
+}
+template <>
+ge::DataType GetGEDataType<float>();
+template <>
+ge::DataType GetGEDataType<int8_t>();
+template <>
+ge::DataType GetGEDataType<int16_t>();
+template <>
+ge::DataType GetGEDataType<int32_t>();
+template <>
+ge::DataType GetGEDataType<int64_t>();
+template <>
+ge::DataType GetGEDataType<bool>();
+
+// Convert NNAdapter types to GE types
 ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision);
 ge::Format ConvertDataLayout(NNAdapterOperandLayoutCode input_layout);
-std::vector<int64_t> ConvertDimensions(int32_t* input_dimensions,
+std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
                                        uint32_t input_dimensions_count);
+std::vector<int64_t> ConvertDimensions(
+    const std::vector<int32_t>& input_dimensions);
 int32_t ConvertFuseCode(int32_t input_fuse_code);
 
 }  // namespace huawei_kirin_npu

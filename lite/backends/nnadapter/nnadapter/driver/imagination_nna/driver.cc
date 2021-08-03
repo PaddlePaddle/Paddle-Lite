@@ -12,56 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <map>
-#include <vector>
-#include "utility/debug.h"
+#include "driver/imagination_nna/converter.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
-#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace imagination_nna {
 
-class Context {
- public:
-  Context() {}
-  ~Context() {}
-
- private:
-  void* context_{nullptr};
-};
-
-class Program {
- public:
-  explicit Program(Context* context) : context_(context) {}
-  ~Program() {}
-
-  int Build(hal::Model* model, hal::Cache* cache) {
-    std::vector<hal::Operation*> operations =
-        SortOperationsInTopologicalOrder(model);
-    for (auto operation : operations) {
-      switch (operation->type) {
-        case NNADAPTER_CONV_2D:
-        default:
-          NNADAPTER_LOG(FATAL) << "Unsupported operation("
-                               << OperationTypeToString(operation->type)
-                               << ") is found.";
-          break;
-      }
-    }
-    return NNADAPTER_NO_ERROR;
+int OpenDevice(void** device) {
+  auto d = new Device();
+  if (!d) {
+    *device = nullptr;
+    NNADAPTER_LOG(FATAL) << "Failed to open device for imagination_nna.";
+    return NNADAPTER_OUT_OF_MEMORY;
   }
+  *device = reinterpret_cast<void*>(d);
+  return NNADAPTER_NO_ERROR;
+}
 
- private:
-  Context* context_{nullptr};
-  std::map<hal::Operand*, int> nodes_;
-};
+void CloseDevice(void* device) {
+  if (device) {
+    auto d = reinterpret_cast<Device*>(device);
+    delete d;
+  }
+}
 
-int CreateContext(void** context) {
-  if (!context) {
+int CreateContext(void* device, const char* properties, void** context) {
+  if (!device || !context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  auto c = new Context();
+  auto d = reinterpret_cast<Device*>(device);
+  auto c = new Context(d, properties);
   if (!c) {
     *context = nullptr;
     NNADAPTER_LOG(FATAL) << "Failed to create context for imagination_nna.";
@@ -83,7 +64,7 @@ int CreateProgram(void* context,
                   hal::Cache* cache,
                   void** program) {
   NNADAPTER_LOG(INFO) << "Create program for imagination_nna.";
-  if (!context || !(model && cache) || !program) {
+  if (!context || !(model || (cache && cache->buffer.size())) || !program) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   *program = nullptr;
@@ -116,7 +97,8 @@ int ExecuteProgram(void* program,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto p = reinterpret_cast<Program*>(program);
-  return NNADAPTER_NO_ERROR;
+  return p->Execute(
+      input_count, input_arguments, output_count, output_arguments);
 }
 
 }  // namespace imagination_nna
@@ -128,6 +110,8 @@ NNADAPTER_EXPORT nnadapter::hal::Device NNADAPTER_AS_SYM2(
     .vendor = "Imagination",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
+    .open_device = nnadapter::imagination_nna::OpenDevice,
+    .close_device = nnadapter::imagination_nna::CloseDevice,
     .create_context = nnadapter::imagination_nna::CreateContext,
     .destroy_context = nnadapter::imagination_nna::DestroyContext,
     .create_program = nnadapter::imagination_nna::CreateProgram,

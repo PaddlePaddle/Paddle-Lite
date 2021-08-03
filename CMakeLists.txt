@@ -213,8 +213,7 @@ endif()
 
 # for opencl
 if (LITE_WITH_OPENCL)
-    include(external/opencl-headers)
-    include(external/opencl-clhpp)
+    include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
 endif()
 
 # for mobile

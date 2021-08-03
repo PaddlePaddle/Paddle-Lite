@@ -55,6 +55,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertActivation(hal::Operation* operation);
   void ConvertReshape(hal::Operation* operation);
   void ConvertSoftmax(hal::Operation* operation);
+  void ConvertSplit(hal::Operation* operation);
   void ConvertTranspose(hal::Operation* operation);
 
  private:
@@ -273,10 +274,6 @@ void NCHW2NHWCDataLayoutConverter::ConvertFullyConnected(
   auto output_count = output_operands.size();
   NNADAPTER_CHECK_EQ(input_count, 4);
   NNADAPTER_CHECK_EQ(output_count, 1);
-  auto input_operand = input_operands[0];
-  int input_dimension_count = input_operand->type.dimension_count;
-  auto weight_operand = input_operands[1];
-  auto bias_operand = input_operands[2];
   auto output_operand = output_operands[0];
   auto output_dimension_count = output_operand->type.dimension_count;
   // Skip NCHW2NHWC conversion
@@ -343,6 +340,29 @@ void NCHW2NHWCDataLayoutConverter::ConvertSoftmax(hal::Operation* operation) {
   SetPermutation(output_operand, input_permutation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertSplit(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_GE(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto input_dimension_count = input_operand->type.dimension_count;
+  auto axis = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  if (*axis < 0) {
+    *axis += input_dimension_count;
+  }
+  // Recalculate the axis according to the dimorder vector of the input operand
+  auto input_permutation = GetPermutation(input_operand);
+  *axis = TransposeAxis(*axis, input_permutation);
+  for (size_t i = 0; i < output_count; i++) {
+    auto output_operand = output_operands[i];
+    TransposeOperand(output_operand, input_permutation);
+    SetPermutation(output_operand, input_permutation);
+  }
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertTranspose(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -351,12 +371,10 @@ void NCHW2NHWCDataLayoutConverter::ConvertTranspose(hal::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
-  auto input_dimension_count = input_operand->type.dimension_count;
   auto perm_operand = input_operands[1];
   auto perm_count = perm_operand->length / sizeof(int32_t);
   auto perm_data = reinterpret_cast<int32_t*>(perm_operand->buffer);
   auto output_operand = output_operands[0];
-  auto output_dimension_count = output_operand->type.dimension_count;
   // Recalculate the perm according to the dimorder vector of the input operand
   auto input_permutation = GetPermutation(input_operand);
   std::vector<int32_t> perm(perm_data, perm_data + perm_count);
@@ -406,6 +424,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_SIGMOID:
+      case NNADAPTER_ABS:
         ConvertActivation(operation);
         break;
       case NNADAPTER_RESHAPE:
@@ -413,6 +432,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
         break;
       case NNADAPTER_SOFTMAX:
         ConvertSoftmax(operation);
+        break;
+      case NNADAPTER_SPLIT:
+        ConvertSplit(operation);
         break;
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);

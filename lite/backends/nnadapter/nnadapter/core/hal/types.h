@@ -43,12 +43,11 @@ typedef struct Operation {
 } Operation;
 
 typedef struct Cache {
-  std::string cache_key;
-  void* cache_buffer;
-  uint32_t cache_length;
-  std::string cache_dir;
+  const char* key;
+  const char* dir;
   std::vector<NNAdapterOperandType> input_types;
   std::vector<NNAdapterOperandType> output_types;
+  std::vector<uint8_t> buffer;
 } Cache;
 
 typedef struct Model {
@@ -63,7 +62,9 @@ typedef struct Device {
   const char* vendor;
   NNAdapterDeviceType type;
   int32_t version;
-  int (*create_context)(void** context);
+  int (*open_device)(void** device);
+  void (*close_device)(void* device);
+  int (*create_context)(void* device, const char* properties, void** context);
   void (*destroy_context)(void* context);
   int (*create_program)(void* context,
                         Model* model,
