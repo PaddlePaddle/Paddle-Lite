@@ -545,6 +545,10 @@ class Context<TargetType::kX86> {
 
   std::string name() const { return "X86Context"; }
 
+  SSEType sse_level() { return device_sse_level(); }
+  AVXType avx_level() { return device_avx_level(); }
+  FMAType fma_level() { return device_fma_level(); }
+
  private:
   // overall information
   //

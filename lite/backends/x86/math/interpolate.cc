@@ -290,13 +290,14 @@ void bilinear_interp(const float* input_data,
     for (int dy = h_bound; dy < h_out; dy++) {
       int sy = h_in - 1;
       const float* s0 = src + sy * w_in;
-      const float* s1 = s0;
       const float* alphap = alpha;
       float* rows0p = rows0;
       float* rows1p = rows1;
 
       int dx = 0;
 #ifdef __AVX__
+      const float* s1 = s0;
+
       // w_bound loop
       for (; dx + 3 < w_bound; dx += 4) {
         int x0 = xofs[dx];
