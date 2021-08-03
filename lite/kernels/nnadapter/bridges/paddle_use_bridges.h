@@ -114,10 +114,6 @@ USE_SUBGRAPH_BRIDGE(
     flatten2,
     kNNAdapter,
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-USE_SUBGRAPH_BRIDGE(
-    hard_sigmoid,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(hard_sigmoid, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(split, kNNAdapter, "huawei_kirin_npu,huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(cast, kNNAdapter, "huawei_ascend_npu");
