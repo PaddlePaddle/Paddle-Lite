@@ -50,6 +50,7 @@ int Program::ConvertActivation(hal::Operation* operation) {
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
     CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
     CONVERT_UNARY_ACTIVATION(TANH, Tanh);
+    CONVERT_UNARY_ACTIVATION(ABS, Abs);
 #undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "

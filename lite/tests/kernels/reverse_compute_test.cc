@@ -32,12 +32,12 @@ class ReverseComputeTester : public arena::TestCase {
  public:
   ReverseComputeTester(const Place& place,
                        const std::string& alias,
-                       std::vector<int>& axis_,
+                       std::vector<int> axis,
                        int n,
                        int c,
                        int h,
                        int w)
-      : TestCase(place, alias), alias_(alias), axis_(axis_) {
+      : TestCase(place, alias), alias_(alias), axis_(axis) {
     dims_ = DDim(std::vector<int64_t>({n, c, h, w}));
   }
 

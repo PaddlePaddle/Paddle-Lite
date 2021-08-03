@@ -20,9 +20,9 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class RoiAlignCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class RoiAlignCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::RoiAlignParam;
 
@@ -31,7 +31,7 @@ class RoiAlignCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~RoiAlignCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -234,6 +234,7 @@ bool DeviceProgram::SetInputsAndOutputs(std::vector<Tensor*>* origin_itensors,
     switch (precision) {
       TENSOR_MUTABLE_DATA(kInt8, int8_t)
       TENSOR_MUTABLE_DATA(kInt32, int32_t)
+      TENSOR_MUTABLE_DATA(kInt64, int64_t)
       TENSOR_MUTABLE_DATA(kFloat, float)
       default:
         LOG(ERROR) << "Failed to mutable data for the precsion type("

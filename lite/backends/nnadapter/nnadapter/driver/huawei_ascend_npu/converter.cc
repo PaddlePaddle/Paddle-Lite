@@ -120,6 +120,12 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_CONCAT:
           ConvertConcat(operation);
           break;
+        case NNADAPTER_RESIZE_NEAREST:
+          ConvertResizeNearest(operation);
+          break;
+        case NNADAPTER_RESIZE_LINEAR:
+          ConvertResizeLinear(operation);
+          break;
         case NNADAPTER_CONV_2D:
           ConvertConv2D(operation);
           break;
@@ -130,6 +136,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_RELU6:
         case NNADAPTER_SIGMOID:
         case NNADAPTER_TANH:
+        case NNADAPTER_ABS:
           ConvertActivation(operation);
           break;
         case NNADAPTER_RESHAPE:
@@ -146,6 +153,20 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
           break;
         case NNADAPTER_UNSQUEEZE:
           ConvertUnsqueeze(operation);
+        case NNADAPTER_CAST:
+          ConvertCast(operation);
+          break;
+        case NNADAPTER_SHAPE:
+          ConvertShape(operation);
+          break;
+        case NNADAPTER_ASSIGN:
+          ConvertAssign(operation);
+          break;
+        case NNADAPTER_LP_NORMALIZATION:
+          ConvertLpNormalization(operation);
+          break;
+        case NNADAPTER_DEFORMABLE_CONV_2D:
+          ConvertDeformableConv2d(operation);
           break;
         default:
           NNADAPTER_LOG(FATAL) << "Unsupported operation("
