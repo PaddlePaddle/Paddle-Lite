@@ -130,8 +130,7 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
   }
 }
 
-void fill_bias_fc(
-    float *out, const float *bias, int num, int channel) {
+void fill_bias_fc(float* out, const float* bias, int num, int channel) {
 #ifdef __AVX__
   __m256 vec_bias = {0.f};
   __m256 vec_data = {0.f};
@@ -143,8 +142,8 @@ void fill_bias_fc(
   int i = 0;
 
   for (int j = 0; j < num; j++) {
-    float *ptr = out + j * channel;
-    const float *pbias = bias;
+    float* ptr = out + j * channel;
+    const float* pbias = bias;
     i = 0;
 
 #ifdef __AVX__
