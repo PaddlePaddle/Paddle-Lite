@@ -26,21 +26,17 @@ int Program::ConvertUnsqueeze(hal::Operation* operation) {
   auto output_count = output_operands.size();
   NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
-
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-
   // Axes
   auto axes_operand = input_operands[1];
   auto axes_count = axes_operand->length / sizeof(int32_t);
   auto axes_ptr = reinterpret_cast<int32_t*>(axes_operand->buffer);
   std::vector<int> axes(axes_ptr, axes_ptr + axes_count);
-
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
-
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
   if (!input_operator) {
