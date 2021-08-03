@@ -33,6 +33,6 @@ __kernel void greater_than(__read_only image2d_t input_x,
                               (CL_DTYPE)(out_tmp.y),
                               (CL_DTYPE)(out_tmp.z),
                               (CL_DTYPE)(out_tmp.w));
-  out = abs((CL_DTYPE4)(out));
+  out = select(out, -out, out < ((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f)));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
