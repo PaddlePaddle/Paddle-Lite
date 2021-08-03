@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,78 +13,91 @@
 // limitations under the License.
 
 #include "lite/core/subgraph_bridge_registry.h"
-#include "lite/kernels/huawei_ascend_npu/bridges/graph.h"
-#include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
+#include "lite/kernels/nnadapter/bridges/converter.h"
+#include "lite/kernels/nnadapter/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace huawei_ascend_npu {
+namespace nnadapter {
 
-int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph = static_cast<Graph*>(ctx);
+  auto converter = static_cast<Converter*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[HUAWEI_ASCEND_NPU] Converting " + op_type + "...";
+  VLOG(3) << "Converting " << op_type << " ...";
 
-  // Get input, output and op attributes
-  // 1. prepare input1: X node
+  // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
+  auto x_scale_name = "X0_scale";
+  auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
+  auto x_scale =
+      has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
 
-  std::shared_ptr<Node> x_node = nullptr;
-  if (graph->Has(x_name)) {
-    x_node = graph->Get(x_name);
-  } else {
-    x_node = graph->Add(x_name, *x, CvtShape(x_dims));
-  }
-
-  // 2. prepare output:
   auto out_name = op_info->Output("Out").front();
-  auto unsqueeze_node = graph->Add<ge::op::Unsqueeze>(out_name);
+  auto out_scale_name = "Out0_scale";
+  auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
+  auto out_scale =
+      has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
+  auto out = scope->FindMutableTensor(out_name);
+  auto out_dims = out->dims();
 
-  // 3. Deal paddle's param that ascend is not suport.
-  if ((op_info->HasInput("AxesTensor") &&
-       op_info->Input("AxesTensor").size() > 0) ||
-      (op_info->HasInput("AxesTensorList") &&
-       op_info->Input("AxesTensorList").size() > 0)) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] doesn't support AxesTensor";
-    return FAILED;
-  }
-
-  std::vector<int> axes{};
-  // 3. prepare ascend need attributes
+  std::vector<int> axes = {};
   if (op_info->HasAttr("axes")) {
     axes = op_info->GetAttr<std::vector<int>>("axes");
   }
 
-  // 4. pack op
-  auto unsqueeze_op = unsqueeze_node->data<ge::op::Unsqueeze>();
-  unsqueeze_op->set_input_x(*x_node->data());
-  unsqueeze_op->set_attr_axes(
-      ge::Operator::OpListInt(axes.begin(), axes.end()));
-
-  INPUT_UPDATE(unsqueeze_op, x, x_node);
-  OUTPUT_UPDATE(unsqueeze_op, y, unsqueeze_node);
-
+  if ((op_info->HasInput("AxesTensor") &&
+       op_info->Input("AxesTensor").size() > 0) ||
+      (op_info->HasInput("AxesTensorList") &&
+       op_info->Input("AxesTensorList").size() > 0)) {
+    LOG(WARNING) << "AxesTensor or AxesTensorList not supported";
+    return FAILED;
+  }
+  // Input operand
+  NNAdapterOperand* input_operand = nullptr;
+  if (converter->HasOperand(x_name)) {
+    input_operand = converter->GetOperand(x_name);
+  } else {
+    if (has_x_scale) {
+      input_operand =
+          converter->AddQuant8VariableOperand(x_dims, x_scale, x_name);
+    } else {
+      input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
+    }
+  }
+  // Axes operand
+  auto axes_operand = converter->AddInt32ConstantOperand(
+      &axes[0], DDim({static_cast<int32_t>(axes.size())}));
+  NNAdapterOperand* output_operand = nullptr;
+  if (has_out_scale) {
+    output_operand =
+        converter->AddQuant8VariableOperand(out_dims, out_scale, out_name);
+  } else {
+    output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
+  }
+  // Unsqueeze operation
+  std::vector<NNAdapterOperand*> input_operands = {input_operand, axes_operand};
+  std::vector<NNAdapterOperand*> output_operands = {output_operand};
+  auto unsqueeze_operation = converter->AddOperation(NNADAPTER_UNSQUEEZE);
+  converter->SetOperation(
+      unsqueeze_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(
-    unsqueeze,
-    kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::UnsqueezeConverter);
-
-REGISTER_SUBGRAPH_BRIDGE(
-    unsqueeze2,
-    kHuaweiAscendNPU,
-    paddle::lite::subgraph::huawei_ascend_npu::UnsqueezeConverter);
+REGISTER_SUBGRAPH_BRIDGE(unsqueeze,
+                         kNNAdapter,
+                         paddle::lite::subgraph::nnadapter::SqueezeConverter);
+REGISTER_SUBGRAPH_BRIDGE(unsqueeze2,
+                         kNNAdapter,
+                         paddle::lite::subgraph::nnadapter::SqueezeConverter);

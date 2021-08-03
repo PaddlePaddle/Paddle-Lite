@@ -27,12 +27,6 @@ int Program::ConvertUnsqueeze(hal::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
 
-  if (!input_operands[2]) {
-    NNADAPTER_VLOG(5)
-        << "[HUAWEI_ASCEND_NPU] doesn't support unsqueeze2(XShape)";
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
