@@ -24,8 +24,8 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-template <typename T>
-class DepthwiseConv : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class DepthwiseConv : public KernelLite<TARGET(kX86), Ptype> {
  public:
   DepthwiseConv() = default;
   ~DepthwiseConv() {}

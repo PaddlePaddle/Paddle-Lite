@@ -23,7 +23,7 @@ namespace kernels {
 namespace x86 {
 
 template <>
-void DepthwiseConv<float>::Run() {
+void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
 
