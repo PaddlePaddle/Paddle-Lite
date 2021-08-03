@@ -1063,9 +1063,7 @@ TEST(Activation_hard_sigmoid_fp32, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 2e-1;
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  abs_error = 1e-1;
+  abs_error = 1e-2;
 #else
   return;
 #endif
@@ -1102,8 +1100,6 @@ TEST(Activation_hard_sigmoid_fp32, performance) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #else
   return;
@@ -1156,8 +1152,6 @@ TEST(Activation_hard_sigmoid_fp16, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = Place(TARGET(kNNAdapter), PRECISION(kFP16));
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #else
   return;
@@ -1216,8 +1210,6 @@ TEST(Activation_hard_sigmoid_fp16, performance) {
 #if defined(LITE_WITH_NNADAPTER)
   place = Place(TARGET(kNNAdapter), PRECISION(kFP16));
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #else
   return;

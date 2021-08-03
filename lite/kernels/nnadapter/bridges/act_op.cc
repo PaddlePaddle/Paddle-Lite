@@ -29,7 +29,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
-
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -45,7 +44,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
-
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
@@ -58,7 +56,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -67,13 +64,23 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
-
   // Activation operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* activation_operation = nullptr;
   if (op_type == "sigmoid") {
     activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
+  } else if (op_type == "hard_sigmoid") {
+    float alpha = op_info->GetAttr<float>("slope");
+    float beta = op_info->GetAttr<float>("offset");
+    // Alpha operand
+    auto alpha_operand = converter->AddFloat32ConstantOperand(alpha);
+    // Beta operand
+    auto beta_operand = converter->AddFloat32ConstantOperand(beta);
+    // Prepare input_operands
+    input_operands.push_back(alpha_operand);
+    input_operands.push_back(beta_operand);
+    activation_operation = converter->AddOperation(NNADAPTER_HARD_SIGMOID);
   } else if (op_type == "relu") {
     activation_operation = converter->AddOperation(NNADAPTER_RELU);
   } else if (op_type == "relu6") {
@@ -102,16 +109,15 @@ REGISTER_SUBGRAPH_BRIDGE(relu,
 REGISTER_SUBGRAPH_BRIDGE(sigmoid,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(hard_sigmoid,
+                         kNNAdapter,
+                         paddle::lite::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(relu6,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(tanh,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);
-<<<<<<< HEAD
-REGISTER_SUBGRAPH_BRIDGE(hard_sigmoid,
-=======
 REGISTER_SUBGRAPH_BRIDGE(abs,
->>>>>>> 9d0019232715a01f2118be8820e207101a8a0fe0
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);

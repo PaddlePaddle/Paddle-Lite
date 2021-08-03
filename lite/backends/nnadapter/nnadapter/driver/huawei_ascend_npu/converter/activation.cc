@@ -24,15 +24,20 @@ int Program::ConvertActivation(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 1);
-  NNADAPTER_CHECK_EQ(output_count, 1);
+
+  if (operation->type == NNADAPTER_HARD_SIGMOID) {
+    NNADAPTER_CHECK_EQ(input_count, 3);
+    NNADAPTER_CHECK_EQ(output_count, 1);
+  } else {
+    NNADAPTER_CHECK_EQ(input_count, 1);
+    NNADAPTER_CHECK_EQ(output_count, 1);
+  }
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
-
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
   if (!input_operator) {
@@ -40,17 +45,26 @@ int Program::ConvertActivation(hal::Operation* operation) {
   }
   auto act_name = GetOperatorName(output_operand);
   switch (operation->type) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                \
+#define CONVERT_UNARY_ACTIVATION(type, class_name, x, y)          \
   case NNADAPTER_##type: {                                        \
     auto act_op = std::make_shared<ge::op::class_name>(act_name); \
     SET_INPUT(act_op, x, input_operator);                         \
     MAP_OUTPUT(act_op, y, output_operand);                        \
   } break;
-    CONVERT_UNARY_ACTIVATION(SIGMOID, Sigmoid);
-    CONVERT_UNARY_ACTIVATION(RELU, Relu);
-    CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
-    CONVERT_UNARY_ACTIVATION(TANH, Tanh);
-    CONVERT_UNARY_ACTIVATION(ABS, Abs);
+    CONVERT_UNARY_ACTIVATION(SIGMOID, Sigmoid, x, y);
+    CONVERT_UNARY_ACTIVATION(RELU, Relu, x, y);
+    CONVERT_UNARY_ACTIVATION(RELU6, Relu6, x, y);
+    CONVERT_UNARY_ACTIVATION(TANH, Tanh, x, y);
+    CONVERT_UNARY_ACTIVATION(ABS, Abs, x, y);
+    case NNADAPTER_HARD_SIGMOID: {
+      auto act_op = std::make_shared<ge::op::HardSigmoid>(act_name);
+      float alpha = *reinterpret_cast<float*>(input_operands[1]->buffer);
+      float beta = *reinterpret_cast<float*>(input_operands[2]->buffer);
+      act_op->set_attr_alpha(alpha);
+      act_op->set_attr_beta(beta);
+      SET_INPUT(act_op, input_x, input_operator);
+      MAP_OUTPUT(act_op, output_y, output_operand);
+    } break;
 #undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
@@ -58,6 +72,7 @@ int Program::ConvertActivation(hal::Operation* operation) {
                            << " is found.";
       break;
   }
+
   return NNADAPTER_NO_ERROR;
 }
 

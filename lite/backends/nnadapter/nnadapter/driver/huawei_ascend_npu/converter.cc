@@ -135,6 +135,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_RELU:
         case NNADAPTER_RELU6:
         case NNADAPTER_SIGMOID:
+        case NNADAPTER_HARD_SIGMOID:
         case NNADAPTER_TANH:
         case NNADAPTER_ABS:
           ConvertActivation(operation);
