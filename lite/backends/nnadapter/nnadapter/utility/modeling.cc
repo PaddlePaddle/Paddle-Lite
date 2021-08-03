@@ -557,6 +557,7 @@ NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
       << " bytes for the buffer of an operand, out of memory!";
   memset(zero_operand->buffer, 0, zero_operand->length);
   zero_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  input_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
   auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
   // Insert a new ADD operation between a new operand and output_operand
   auto dummy_add_operation = AddOperation(model);
