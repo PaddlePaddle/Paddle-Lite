@@ -42,9 +42,11 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);
   bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);
   bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
-  bool kps_equal = (pad_h == pad_w) && ks_equal;
-  bool flag_dw_3x3 = (kw == 3) && (kh == 3) && (stride == 1 || stride == 2);
-  bool flag_dw_5x5 = (kw == 5) && (kh == 5) && (stride == 1 || stride == 2);
+  bool kps_equal = (paddings[0] == paddings[1]) && ks_equal;
+  bool flag_dw_3x3 =
+      (kernel_h == 3) && (kernel_w == 3) && (stride_h == 1 || stride_h == 2);
+  bool flag_dw_5x5 =
+      (kernel_h == 5) && (kernel_w == 5) && (stride_h == 1 || stride_h == 2);
   // todo add conv_5x5_depthwise implement
   flag_dw_5x5 = false;
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;

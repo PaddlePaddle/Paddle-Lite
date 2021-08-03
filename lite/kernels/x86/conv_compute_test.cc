@@ -33,7 +33,7 @@ TEST(conv_x86, retrive_op) {
 }
 
 TEST(conv2d_x86, init) {
-  Conv2dCompute<float> conv2d;
+  Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)> conv2d;
   ASSERT_EQ(conv2d.precision(), PRECISION(kFloat));
   ASSERT_EQ(conv2d.target(), TARGET(kX86));
 }
