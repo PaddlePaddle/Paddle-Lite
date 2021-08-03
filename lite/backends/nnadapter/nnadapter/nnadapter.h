@@ -859,7 +859,6 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_UNSQUEEZE = 28,
-
 } NNAdapterOperationCode;
 
 /**
