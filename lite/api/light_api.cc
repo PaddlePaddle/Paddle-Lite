@@ -247,7 +247,16 @@ void LightPredictor::DequantizeWeight() {
         auto input_names = op_desc->input_vars();
         for (auto& input_name : input_names) {
           std::string input_scale_name = input_name + "_quant_scale";
-          if (op_desc->HasAttr(input_scale_name)) {  // the input is quantized
+            size_t found = input_name.find("/target_trans");
+            std::string input_scale_name_alias = "";
+            if(found != std::string::npos) {
+                input_scale_name_alias = input_name.substr(0, found) + "_quant_scale";
+            }
+          if (op_desc->HasAttr(input_scale_name) || (!input_scale_name_alias.empty() && op_desc->HasAttr(input_scale_name_alias))) {  // the input is quantized
+              if(!input_scale_name_alias.empty()) {
+                  input_scale_name = input_scale_name_alias;
+                  input_name = input_name.substr(0, found);
+              }
             auto input_tensor =
                 scope_->FindVar(input_name)->GetMutable<lite_metal::Tensor>();
             tmp_tensor.CopyDataFrom(*input_tensor);

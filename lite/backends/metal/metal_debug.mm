@@ -22,7 +22,40 @@
 namespace paddle {
 namespace lite_metal {
 
-void MetalDebug::print_log(const std::string& name, MetalImage* metalImg, int inCount) {
+template <typename T>
+static double compute_mean(const T* in, const size_t length) {
+  double sum = 0.;
+  for (size_t i = 0; i < length; ++i) {
+    sum += in[i];
+  }
+  return sum / length;
+}
+
+template <typename T>
+static double compute_standard_deviation(const T* in,
+                                  const size_t length,
+                                  bool has_mean = false,
+                                  double mean = 10000) {
+  if (!has_mean) {
+    mean = compute_mean<T>(in, length);
+  }
+
+  double variance = 0.;
+  for (size_t i = 0; i < length; ++i) {
+    variance += pow((in[i] - mean), 2);
+  }
+  variance /= length;
+  return sqrt(variance);
+}
+
+template <typename T>
+static void debug_stat(const T* in, const size_t length) {
+  double mean = compute_mean<T>(in, length);
+  double std_dev = compute_standard_deviation<T>(in, length, true, mean);
+  NSLog(@"mean: %f, std-dev: %f", mean, std_dev);
+}
+
+void MetalDebug::print_log(const std::string& name, const MetalImage* metalImg, int inCount) {
     auto size = metalImg->tensor_dim_.production();
     float* data = (float*)TargetWrapperMetal::Malloc(sizeof(float) * size);
     metalImg->template CopyToNCHW<float>(data);
@@ -41,7 +74,10 @@ void MetalDebug::print_log(const std::string& name, MetalImage* metalImg, int in
           log_string = log_string +  std::to_string(metalImg->tensor_dim_[i]) + ", ";
         }
     }
-    print_float(log_string, data, (int)size, inCount);
+    // print_float(log_string, data, (int)size, inCount);
+    NSLog(@"name: %@",
+        [NSString stringWithCString:log_string.c_str() encoding:NSASCIIStringEncoding]);
+    debug_stat<float>(data, (int)size);
     TargetWrapperMetal::Free(data);
 }
 

@@ -17,8 +17,8 @@
 #include "lite/kernels/metal/image_op/fetch_image_compute.h"
 
 // debug macro
-//#define METAL_DEBUG_GPU_CAPTURE
-//#define METAL_DEBUG_ONE_COMMANDBUFFER
+// #define METAL_DEBUG_GPU_CAPTURE
+// #define METAL_DEBUG_ONE_COMMANDBUFFER
 
 extern NSString* cString2NSString(std::string cStr) {
     return [NSString stringWithCString:cStr.c_str() encoding:[NSString defaultCStringEncoding]];
