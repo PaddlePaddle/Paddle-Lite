@@ -458,7 +458,8 @@ std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
   return consumers;
 }
 
-hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand) {
+NNADAPTER_EXPORT hal::Operation* GetOperandProducer(hal::Model* model,
+                                                    hal::Operand* operand) {
   hal::Operation* producer = nullptr;
   for (auto& operation : model->operations) {
     auto& output_operands = operation.output_operands;
@@ -470,6 +471,30 @@ hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand) {
     producer = &operation;
   }
   return producer;
+}
+
+NNADAPTER_EXPORT int GetModelInputOperandIndex(hal::Model* model,
+                                               hal::Operand* operand) {
+  if (IsModelInputOperand(operand)) {
+    for (size_t i = 0; i < model->input_operands.size(); i++) {
+      if (model->input_operands[i] == operand) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+NNADAPTER_EXPORT int GetModelOutputOperandIndex(hal::Model* model,
+                                                hal::Operand* operand) {
+  if (IsModelOutputOperand(operand)) {
+    for (size_t i = 0; i < model->output_operands.size(); i++) {
+      if (model->output_operands[i] == operand) {
+        return i;
+      }
+    }
+  }
+  return -1;
 }
 
 NNADAPTER_EXPORT hal::Operand* AddTransposeOperation(
@@ -513,7 +538,7 @@ NNADAPTER_EXPORT hal::Operand* AddReshapeOperation(hal::Model* model,
 
 NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
                                                  hal::Operand* input_operand) {
-  // Insert a new operand before output_operand
+  // Insert a new operand after input_operand
   auto output_operand = AddOperand(model);
   memcpy(&output_operand->type,
          &input_operand->type,
@@ -542,6 +567,23 @@ NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
   return output_operand;
 }
 
+NNADAPTER_EXPORT hal::Operand* AddUnaryOperation(
+    hal::Model* model,
+    hal::Operand* input_operand,
+    NNAdapterOperationType operation_type) {
+  // Insert a new operand after input_operand
+  auto output_operand = AddOperand(model);
+  memcpy(&output_operand->type,
+         &input_operand->type,
+         sizeof(NNAdapterOperandType));
+  InsertOperand(model, input_operand, output_operand, true);
+  auto unary_operation = AddOperation(model);
+  unary_operation->type = operation_type;
+  unary_operation->input_operands = {input_operand};
+  unary_operation->output_operands = {output_operand};
+  return output_operand;
+}
+
 NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
     hal::Model* model) {
   NNADAPTER_VLOG(5) << "model total operands: " << model->operands.size();
@@ -558,7 +600,10 @@ NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
   for (auto& operation : model->operations) {
     uint32_t count = 0;
     for (auto operand : operation.input_operands) {
-      auto lifetime = operand->type.lifetime;
+      NNAdapterOperandLifetimeCode lifetime{NNADAPTER_CONSTANT_COPY};
+      if (operand != nullptr) {
+        lifetime = operand->type.lifetime;
+      }
       if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||
           lifetime == NNADAPTER_MODEL_OUTPUT) {
         count++;

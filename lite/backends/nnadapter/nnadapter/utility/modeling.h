@@ -127,6 +127,10 @@ std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
 // Find the operation that produced the operand
 hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand);
 
+// Get the index of model input and output operands
+int GetModelInputOperandIndex(hal::Model* model, hal::Operand* operand);
+int GetModelOutputOperandIndex(hal::Model* model, hal::Operand* operand);
+
 // Add a transpose operation, set 'input_operand' as its input operand, create a
 // output operand with the permutated dimensions, and update all of operations
 hal::Operand* AddTransposeOperation(hal::Model* model,
@@ -140,6 +144,10 @@ hal::Operand* AddReshapeOperation(hal::Model* model,
 // Add a dummy add operation, set 'input_operand' as its input operand, create a
 // output operand with the same dimensions, and the addend is a zero operand
 hal::Operand* AddDummyOperation(hal::Model* model, hal::Operand* input_operand);
+// Add a unary operation which has only one input and output operand.
+hal::Operand* AddUnaryOperation(hal::Model* model,
+                                hal::Operand* input_operand,
+                                NNAdapterOperationType operation_type);
 
 // Sort the operations of the specified model in topological order
 std::vector<hal::Operation*> SortOperationsInTopologicalOrder(

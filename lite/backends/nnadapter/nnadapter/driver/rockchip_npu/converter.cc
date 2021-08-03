@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "driver/rockchip_npu/converter.h"
+#include <unistd.h>
 #include <algorithm>
 #include <vector>
 #include "driver/rockchip_npu/optimizer/fix_ops.h"
@@ -33,16 +34,28 @@ Context::Context(void* device, const char* properties) : device_(device) {
 
 Context::~Context() {}
 
-Program::~Program() {
-  if (!execution_) {
-    delete execution_;
-  }
-  if (!graph_) {
-    delete graph_;
-  }
+Program::~Program() { Clear(); }
+
+void Program::Clear() {
+  tensors_.clear();
+  input_info_.clear();
+  output_info_.clear();
+  input_zero_points_.clear();
+  output_zero_points_.clear();
+  dump_graph_path_ = "";
+  dump_graph_buffer_ = nullptr;
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
+  Clear();
+  if (model && cache->dir && cache->key) {
+    dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->key);
+  }
+  dump_graph_buffer_ = &cache->buffer;
+  return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
+}
+
+int Program::BuildFromModel(hal::Model* model) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   UnpackOpFusion(model);
@@ -50,10 +63,18 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a rknpu graph
-  tensors_.clear();
-  graph_ = new rk::nn::Graph();
+  graph_ = std::make_shared<rk::nn::Graph>();
   if (!graph_) {
     return NNADAPTER_OUT_OF_MEMORY;
+  }
+  if (!dump_graph_path_.empty()) {
+    if (graph_->EnableCreateCache(dump_graph_path_) == rk::nn::RK_SUCCESS) {
+      NNADAPTER_VLOG(3) << "Dump the graph to " << dump_graph_path_
+                        << " when the first run";
+    } else {
+      NNADAPTER_LOG(WARNING) << "Failed to dump the graph to "
+                             << dump_graph_path_;
+    }
   }
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
@@ -104,29 +125,40 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   }
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
-  std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors(input_count);
-  input_info_.resize(input_count);
-  input_zero_points_.resize(input_count);
-  for (size_t i = 0; i < input_count; i++) {
-    auto operand = model->input_operands[i];
-    NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
-    input_tensors[i] = tensors_[operand].back();
-    NNADAPTER_CHECK(input_tensors[i]);
-    // Initialize the input info for the execution
-    input_info_[i].index = i;
-    input_info_[i].buf = nullptr;
-    input_info_[i].size = 0;
-    input_info_[i].pass_through = false;
-    input_info_[i].type = ConvertPrecision(operand->type.precision);
-    input_info_[i].layout = ConvertDataLayout(operand->type.layout);
-    input_zero_points_[i] = operand->type.asymm_per_layer_params.zero_point;
+  NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+  std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors;
+  if (input_count > 0) {
+    input_tensors.resize(input_count);
+    input_info_.resize(input_count);
+    input_zero_points_.resize(input_count);
+    for (size_t i = 0; i < input_count; i++) {
+      auto operand = model->input_operands[i];
+      const auto& type = operand->type;
+      NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
+      input_tensors[i] = tensors_[operand].back();
+      NNADAPTER_CHECK(input_tensors[i]);
+      // Initialize the input info for the execution
+      input_info_[i].index = i;
+      input_info_[i].buf = nullptr;
+      input_info_[i].size = 0;
+      input_info_[i].pass_through = false;
+      input_info_[i].type = ConvertPrecision(type.precision);
+      input_info_[i].layout = ConvertDataLayout(type.layout);
+      input_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
+                                  ? type.asymm_per_layer_params.zero_point
+                                  : 0;
+    }
   }
   auto output_count = model->output_operands.size();
-  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors(output_count);
+  NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+  NNADAPTER_CHECK_GT(output_count, 0);
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors;
+  output_tensors.resize(output_count);
   output_info_.resize(output_count);
   output_zero_points_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
+    const auto& type = operand->type;
     NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
     output_tensors[i] = tensors_[operand].back();
     NNADAPTER_CHECK(output_tensors[i]);
@@ -135,14 +167,85 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     output_info_[i].buf = nullptr;
     output_info_[i].size = 0;
     output_info_[i].want_float = false;
-    output_info_[i].type = ConvertPrecision(operand->type.precision);
-    output_info_[i].layout = ConvertDataLayout(operand->type.layout);
-    output_zero_points_[i] = operand->type.asymm_per_layer_params.zero_point;
+    output_info_[i].type = ConvertPrecision(type.precision);
+    output_info_[i].layout = ConvertDataLayout(type.layout);
+    output_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
+                                 ? type.asymm_per_layer_params.zero_point
+                                 : 0;
   }
   graph_->SetInputsOutputs(input_tensors, output_tensors);
   // Create an execution to build the graph to the device-related program.
-  execution_ = new rk::nn::Exection(graph_);
+  execution_ = std::make_shared<rk::nn::Exection>(graph_.get());
   execution_->Build();
+  NNADAPTER_VLOG(3) << "Build success.";
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::BuildFromCache(hal::Cache* cache) {
+  graph_ = std::make_shared<rk::nn::Graph>();
+  if (!graph_) {
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  // Load graph from cache buffer
+  if (graph_->LoadCache(reinterpret_cast<const char*>(cache->buffer.data()),
+                        cache->buffer.size()) != rk::nn::RK_SUCCESS) {
+    NNADAPTER_LOG(FATAL) << "Failed to load cache graph from buffer!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  NNADAPTER_VLOG(3) << "Load cache graph from buffer success.";
+  // Indentify the inputs and outputs
+  auto input_count = cache->input_types.size();
+  NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+  std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors;
+  if (input_count > 0) {
+    input_tensors.resize(input_count);
+    input_info_.resize(input_count);
+    input_zero_points_.resize(input_count);
+    for (size_t i = 0; i < input_count; i++) {
+      // Add a input tensor
+      const auto& type = cache->input_types[i];
+      input_tensors[i] = AddTensor(string_format("model_input_%d", i), &type);
+      NNADAPTER_CHECK(input_tensors[i]);
+      // Initialize the input info for the execution
+      input_info_[i].index = i;
+      input_info_[i].buf = nullptr;
+      input_info_[i].size = 0;
+      input_info_[i].pass_through = false;
+      input_info_[i].type = ConvertPrecision(type.precision);
+      input_info_[i].layout = ConvertDataLayout(type.layout);
+      input_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
+                                  ? type.asymm_per_layer_params.zero_point
+                                  : 0;
+    }
+  }
+  auto output_count = cache->output_types.size();
+  NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+  NNADAPTER_CHECK_GT(output_count, 0);
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors;
+  output_tensors.resize(output_count);
+  output_info_.resize(output_count);
+  output_zero_points_.resize(output_count);
+  for (size_t i = 0; i < output_count; i++) {
+    // Add a output tensor
+    const auto& type = cache->output_types[i];
+    output_tensors[i] = AddTensor(string_format("model_output_%d", i), &type);
+    NNADAPTER_CHECK(output_tensors[i]);
+    // Initialize the output info for the execution
+    output_info_[i].index = i;
+    output_info_[i].buf = nullptr;
+    output_info_[i].size = 0;
+    output_info_[i].want_float = false;
+    output_info_[i].type = ConvertPrecision(type.precision);
+    output_info_[i].layout = ConvertDataLayout(type.layout);
+    output_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
+                                 ? type.asymm_per_layer_params.zero_point
+                                 : 0;
+  }
+  graph_->SetInputsOutputs(input_tensors, output_tensors);
+  // Create an execution to build the graph to the device-related program.
+  execution_ = std::make_shared<rk::nn::Exection>(graph_.get());
+  execution_->Build();
+  NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
 
@@ -180,7 +283,28 @@ int Program::Execute(uint32_t input_count,
                    zero_point,
                    buffer);
   }
+  // Read data from the dump graph file and fill to cache
+  if (!dump_graph_path_.empty()) {
+    if (ReadFile(dump_graph_path_, dump_graph_buffer_)) {
+      NNADAPTER_LOG(INFO) << "Read the dump graph file " << dump_graph_path_
+                          << " success.";
+    } else {
+      NNADAPTER_LOG(INFO) << "Failed to read the dump graph file "
+                          << dump_graph_path_ << "!";
+    }
+    dump_graph_path_ = "";
+  }
   return NNADAPTER_NO_ERROR;
+}
+
+std::string Program::GetTensorName(hal::Operand* operand) {
+  auto operand_id = OperandIdToString(operand);
+  auto index = 0;
+  auto it = tensors_.find(operand);
+  if (it != tensors_.end()) {
+    index = it->second.size();
+  }
+  return operand_id + string_format("_%d", index);
 }
 
 std::shared_ptr<rk::nn::Tensor> Program::GetMappedTensor(
@@ -205,49 +329,172 @@ std::shared_ptr<rk::nn::Tensor> Program::UpdateTensorMap(
   return tensor;
 }
 
-std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
-    hal::Operand* operand, std::vector<int32_t> dimensions) {
+std::shared_ptr<rk::nn::Tensor> Program::AddTensor(
+    const std::string& name,
+    int32_t* dimensions,
+    uint32_t dimension_count,
+    rk::nn::PrecisionType precision,
+    const float* quant_scale,
+    const int32_t* zero_point,
+    void* buffer,
+    rk::nn::DataLayoutType layout) {
+  auto attr = std::make_shared<rk::nn::TensorAttr>();
+  attr->name = name;
+  attr->role = buffer ? rk::nn::TensorRole::CONST : rk::nn::TensorRole::VAR;
+  attr->dims = ConvertDimensions(dimensions, dimension_count);
+  attr->precision = precision;
+  attr->layout = layout;
+  if (quant_scale) {
+    // Quantization types
+    if (precision == rk::nn::PrecisionType::UINT8) {
+      attr->qntBits = 8;
+    } else if (precision == rk::nn::PrecisionType::INT32) {
+      attr->qntBits = 32;
+    } else {
+      NNADAPTER_LOG(FATAL)
+          << "Only UINT8 and INT32 is supported for quantizaion.";
+    }
+    if (zero_point) {
+      attr->qntType = rk::nn::QuantizationType::AFFINE_ASYMMETRIC;
+      attr->qntParamAffineAsymmetric.scale.resize(1);
+      attr->qntParamAffineAsymmetric.scale[0] = *quant_scale;
+      attr->qntParamAffineAsymmetric.zero_point.resize(1);
+      attr->qntParamAffineAsymmetric.zero_point[0] = *zero_point;
+    } else {
+      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
+      attr->qntParamSymmetric.scale.resize(1);
+      attr->qntParamSymmetric.scale[0] = *quant_scale;
+    }
+  } else {
+    // TODO(hong19860320) Supports the normal types, such as float etc.
+    NNADAPTER_LOG(FATAL) << "Only quantizaion types are supported.";
+  }
+  auto tensor = graph_->CreateTensor(attr, buffer);
+  NNADAPTER_CHECK(tensor);
+  return tensor;
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::AddTensor(
+    const std::string& name,
+    const NNAdapterOperandType* type,
+    void* buffer,
+    std::vector<int32_t> dimensions) {
   if (dimensions.empty()) {
-    for (uint32_t i = 0; i < operand->type.dimension_count; i++) {
-      dimensions.push_back(operand->type.dimensions[i]);
+    for (uint32_t i = 0; i < type->dimension_count; i++) {
+      dimensions.push_back(type->dimensions[i]);
     }
   }
-  auto attr = std::make_shared<rk::nn::TensorAttr>();
-  attr->name = string_format("0x%X", operand);
-  attr->role = !IsConstantOperand(operand) ? rk::nn::TensorRole::VAR
-                                           : rk::nn::TensorRole::CONST;
-  attr->dims = ConvertDimensions(&dimensions[0], dimensions.size());
-  attr->precision = ConvertPrecision(operand->type.precision);
-  attr->layout = ConvertDataLayout(operand->type.layout);
-  switch (operand->type.precision) {
+  auto precision = ConvertPrecision(type->precision);
+  auto layout = ConvertDataLayout(type->layout);
+  const float* quant_scale = nullptr;
+  const int32_t* zero_point = nullptr;
+  switch (type->precision) {
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
-      attr->qntBits = 8;
-      attr->qntType = rk::nn::QuantizationType::AFFINE_ASYMMETRIC;
-      attr->qntParamAffineAsymmetric.scale.resize(1);
-      attr->qntParamAffineAsymmetric.scale[0] =
-          operand->type.asymm_per_layer_params.scale;
-      attr->qntParamAffineAsymmetric.zero_point.resize(1);
-      attr->qntParamAffineAsymmetric.zero_point[0] =
-          operand->type.asymm_per_layer_params.zero_point;
+      quant_scale = &type->asymm_per_layer_params.scale;
+      zero_point = &type->asymm_per_layer_params.zero_point;
       break;
     case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-      attr->qntBits = 32;
-      attr->qntType = rk::nn::QuantizationType::AFFINE_ASYMMETRIC;
-      attr->qntParamAffineAsymmetric.scale.resize(1);
-      attr->qntParamAffineAsymmetric.scale[0] =
-          operand->type.symm_per_layer_params.scale;
-      attr->qntParamAffineAsymmetric.zero_point.resize(1);
-      attr->qntParamAffineAsymmetric.zero_point[0] = 0;
+      quant_scale = &type->symm_per_layer_params.scale;
       break;
     default:
-      NNADAPTER_LOG(FATAL) << "Can not convert an operand@0x" << std::hex
-                           << operand << " with precision="
-                           << OperandPrecisionCodeToString(
-                                  operand->type.precision)
-                           << " to rk::nn::Tensor !";
+      NNADAPTER_LOG(FATAL) << "Can not add a rk::nn::Tensor with precision="
+                           << OperandPrecisionCodeToString(type->precision)
+                           << " !";
       break;
   }
-  auto tensor = graph_->CreateTensor(attr, operand->buffer);
+  return AddTensor(name,
+                   dimensions.data(),
+                   dimensions.size(),
+                   precision,
+                   quant_scale,
+                   zero_point,
+                   buffer,
+                   layout);
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::AddConstantTensor(
+    void* values,
+    int32_t* dimensions,
+    uint32_t dimension_count,
+    rk::nn::PrecisionType precision,
+    const float* quant_scale,
+    const int32_t* zero_point) {
+  auto name = GetTensorName(nullptr);
+  auto tensor = AddTensor(name,
+                          dimensions,
+                          dimension_count,
+                          precision,
+                          quant_scale,
+                          zero_point,
+                          values,
+                          rk::nn::DataLayoutType::NCHW);
+  NNADAPTER_CHECK(tensor);
+  UpdateTensorMap(nullptr, tensor);
+  return tensor;
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::AddVariableTensor(
+    const std::string& name,
+    int32_t* dimensions,
+    uint32_t dimension_count,
+    rk::nn::PrecisionType precision,
+    const float* quant_scale,
+    const int32_t* zero_point) {
+  return AddTensor(name,
+                   dimensions,
+                   dimension_count,
+                   precision,
+                   quant_scale,
+                   zero_point,
+                   nullptr,
+                   rk::nn::DataLayoutType::NCHW);
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::AddQuant8ConstantTensor(
+    uint8_t* values,
+    int32_t* dimensions,
+    uint32_t dimension_count,
+    float quant_scale,
+    int32_t zero_point) {
+  return AddConstantTensor(values,
+                           dimensions,
+                           dimension_count,
+                           rk::nn::PrecisionType::UINT8,
+                           &quant_scale,
+                           &zero_point);
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::AddQuant32ConstantTensor(
+    int32_t* values,
+    int32_t* dimensions,
+    uint32_t dimension_count,
+    float quant_scale) {
+  return AddConstantTensor(values,
+                           dimensions,
+                           dimension_count,
+                           rk::nn::PrecisionType::INT32,
+                           &quant_scale,
+                           nullptr);
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::AddQuant8VariableTensor(
+    const std::string& name,
+    int32_t* dimensions,
+    uint32_t dimension_count,
+    float quant_scale,
+    int32_t zero_point) {
+  return AddVariableTensor(name,
+                           dimensions,
+                           dimension_count,
+                           rk::nn::PrecisionType::UINT8,
+                           &quant_scale,
+                           &zero_point);
+}
+
+std::shared_ptr<rk::nn::Tensor> Program::ConvertOperand(
+    hal::Operand* operand, std::vector<int32_t> dimensions) {
+  auto tensor = AddTensor(
+      GetTensorName(operand), &operand->type, operand->buffer, dimensions);
   NNADAPTER_CHECK(tensor);
   // Use to find the tensor based on the pointer of operand
   UpdateTensorMap(operand, tensor);

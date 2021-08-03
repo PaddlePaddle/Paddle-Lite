@@ -20,13 +20,17 @@ namespace general {
 
 template <>
 VarDesc* BlockDesc::GetVar<VarDesc>(int32_t idx) {
-  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
+  CHECK_LT(idx, static_cast<int32_t>(VarsSize())) << "idx >= vars.size()";
   return vars_[idx].get();
 }
 
 template <>
 VarDesc const* BlockDesc::GetVar<VarDesc>(int32_t idx) const {
-  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
+  CHECK_LT(idx, static_cast<int32_t>(VarsSize())) << "idx >= vars.size()";
   return vars_[idx].get();
 }
 
@@ -38,13 +42,17 @@ VarDesc* BlockDesc::AddVar<VarDesc>() {
 
 template <>
 OpDesc* BlockDesc::GetOp<OpDesc>(int32_t idx) {
-  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
+  CHECK_LT(idx, static_cast<int32_t>(OpsSize())) << "idx >= ops.size()";
   return ops_[idx].get();
 }
 
 template <>
 OpDesc const* BlockDesc::GetOp<OpDesc>(int32_t idx) const {
-  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
+  CHECK_LT(idx, static_cast<int32_t>(OpsSize())) << "idx >= ops.size()";
   return ops_[idx].get();
 }
 

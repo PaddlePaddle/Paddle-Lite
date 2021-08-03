@@ -17,83 +17,83 @@
 USE_SUBGRAPH_BRIDGE(
     conv2d,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     depthwise_conv2d,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     fc,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     softmax,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     pool2d,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     sigmoid,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     relu,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     relu6,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     tanh,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     elementwise_add,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     elementwise_sub,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     elementwise_mul,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     elementwise_div,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     fusion_elementwise_add_activation,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     fusion_elementwise_sub_activation,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     fusion_elementwise_mul_activation,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     fusion_elementwise_div_activation,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     scale,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     reshape,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     reshape2,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     transpose,
     kNNAdapter,
@@ -105,13 +105,25 @@ USE_SUBGRAPH_BRIDGE(
 USE_SUBGRAPH_BRIDGE(
     concat,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     flatten,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     flatten2,
     kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu");
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(split, kNNAdapter, "huawei_kirin_npu,huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(cast, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(shape, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(assign, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(assign_value, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(abs, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(norm, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(deformable_conv, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(conv2d_transpose, kNNAdapter, "amlogic_npu");
+USE_SUBGRAPH_BRIDGE(nearest_interp, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(nearest_interp_v2, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(bilinear_interp, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(bilinear_interp_v2, kNNAdapter, "huawei_ascend_npu");

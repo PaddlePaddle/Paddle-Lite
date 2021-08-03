@@ -17,13 +17,9 @@
 #include <map>
 #include <string>
 #include <vector>
-#if defined(_MSC_VER)
-#include "lite/backends/x86/port.h"
-#else
-#include <sys/time.h>
-#endif
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/timer.h"
 
 namespace paddle {
 namespace lite {
@@ -80,9 +76,8 @@ static std::vector<size_t> DefaultGlobalWorkSize(const DDim& tensor_dim,
 }
 
 static const std::string GetTimeStamp() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return std::to_string(time.tv_usec);
+  uint64_t usec = lite::Timer::GetCurrentUS();
+  return std::to_string(usec);
 }
 
 }  // namespace opencl

@@ -16,6 +16,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 #include "driver/rockchip_npu/utility.h"
 
@@ -50,10 +51,64 @@ class Program {
               hal::Argument* output_arguments);
 
  private:
+  void Clear();
+  // Build from model or cache
+  int BuildFromModel(hal::Model* model);
+  int BuildFromCache(hal::Cache* cache);
+
   // Operand converters
+  std::string GetTensorName(hal::Operand* operand);
   std::shared_ptr<rk::nn::Tensor> GetMappedTensor(hal::Operand* operand);
   std::shared_ptr<rk::nn::Tensor> UpdateTensorMap(
       hal::Operand* operand, std::shared_ptr<rk::nn::Tensor> tensor);
+  std::shared_ptr<rk::nn::Tensor> AddTensor(
+      const std::string& name,
+      int32_t* dimensions,
+      uint32_t dimension_count,
+      rk::nn::PrecisionType precision,
+      const float* quant_scale = nullptr,
+      const int32_t* zero_point = nullptr,
+      void* buffer = nullptr,
+      rk::nn::DataLayoutType layout = rk::nn::DataLayoutType::NCHW);
+  std::shared_ptr<rk::nn::Tensor> AddTensor(
+      const std::string& name,
+      const NNAdapterOperandType* type,
+      void* buffer = nullptr,
+      std::vector<int32_t> dimensions = {});
+  std::shared_ptr<rk::nn::Tensor> AddConstantTensor(
+      void* values,
+      int32_t* dimensions,
+      uint32_t dimension_count,
+      rk::nn::PrecisionType precision,
+      const float* quant_scale = nullptr,
+      const int32_t* zero_point = nullptr);
+  std::shared_ptr<rk::nn::Tensor> AddVariableTensor(
+      const std::string& name,
+      int32_t* dimensions,
+      uint32_t dimension_count,
+      rk::nn::PrecisionType precision,
+      const float* quant_scale = nullptr,
+      const int32_t* zero_point = nullptr);
+  // Quant8 constant operand with asymmetric per-layer quantizion
+  std::shared_ptr<rk::nn::Tensor> AddQuant8ConstantTensor(
+      uint8_t* values,
+      int32_t* dimensions,
+      uint32_t dimension_count,
+      float quant_scale,
+      int32_t zero_point);
+  // Quant32 constant operand with symmetric per-layer quantizion
+  std::shared_ptr<rk::nn::Tensor> AddQuant32ConstantTensor(
+      int32_t* values,
+      int32_t* dimensions,
+      uint32_t dimension_count,
+      float quant_scale);
+  // Quant8 variable operand with asymmetric per-layer quantizion
+  std::shared_ptr<rk::nn::Tensor> AddQuant8VariableTensor(
+      const std::string& name,
+      int32_t* dimensions,
+      uint32_t dimension_count,
+      float quant_scale,
+      int32_t zero_point);
   std::shared_ptr<rk::nn::Tensor> ConvertOperand(
       hal::Operand* operand, std::vector<int32_t> dimensions = {});
 
@@ -73,12 +128,14 @@ class Program {
   // Map NNAdapter operand to rknpu tensor
   std::map<hal::Operand*, std::vector<std::shared_ptr<rk::nn::Tensor>>>
       tensors_;
-  rk::nn::Graph* graph_{nullptr};
-  rk::nn::Exection* execution_{nullptr};
+  std::shared_ptr<rk::nn::Graph> graph_{nullptr};
+  std::shared_ptr<rk::nn::Exection> execution_{nullptr};
   std::vector<rk::nn::InputInfo> input_info_;
   std::vector<rk::nn::OutputInfo> output_info_;
   std::vector<int32_t> input_zero_points_;
   std::vector<int32_t> output_zero_points_;
+  std::string dump_graph_path_;
+  std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };
 
 }  // namespace rockchip_npu

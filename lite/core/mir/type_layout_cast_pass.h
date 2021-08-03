@@ -14,12 +14,12 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/mir/pass.h"
 #include "lite/core/op_registry.h"
-
 namespace paddle {
 namespace lite {
 namespace mir {
@@ -28,13 +28,17 @@ class TypeLayoutTransformPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
-  void ComplementInputs(SSAGraph* graph, Node* inst_node, Node* in);
+  void ComplementInputs(SSAGraph* graph,
+                        Node* inst_node,
+                        Node* in,
+                        std::map<std::string, Node*>* copied_nodes);
 
   void AddLayoutInst(const Type& from,
                      const Type& to,
                      Node* in,
                      SSAGraph* graph,
                      Node* inst_node,
+                     std::map<std::string, Node*>* copied_nodes,
                      const std::vector<Place>& valid_places);
 
   void SetValidPlaces(const std::vector<Place>& valid_places);

@@ -18,7 +18,15 @@ lite_cc_library(subgraph_bridge_reshape_op_nnadapter SRCS reshape_op.cc DEPS ${n
 lite_cc_library(subgraph_bridge_transpose_op_nnadapter SRCS transpose_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_concat_op_nnadapter SRCS concat_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_flatten_op_nnadapter SRCS flatten_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_interpolate_op_nnadapter SRCS interpolate_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_split_op_nnadapter SRCS split_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_cast_op_nnadapter SRCS cast_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_shape_op_nnadapter SRCS shape_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_norm_op_nnadapter SRCS norm_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_assign_value_op_nnadapter SRCS assign_value_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_assign_op_nnadapter SRCS assign_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_deformable_conv_nnadapter SRCS deformable_conv_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_conv_transpose_op_nnadapter SRCS conv_transpose_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
         subgraph_bridge_registry
@@ -35,7 +43,15 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_transpose_op_nnadapter
         subgraph_bridge_concat_op_nnadapter
         subgraph_bridge_flatten_op_nnadapter
+        subgraph_bridge_interpolate_op_nnadapter
         subgraph_bridge_split_op_nnadapter
+        subgraph_bridge_cast_op_nnadapter
+        subgraph_bridge_shape_op_nnadapter
+        subgraph_bridge_norm_op_nnadapter
+        subgraph_bridge_assign_op_nnadapter
+        subgraph_bridge_assign_value_op_nnadapter
+        subgraph_bridge_deformable_conv_nnadapter
+        subgraph_bridge_conv_transpose_op_nnadapter
         CACHE INTERNAL "nnadapter_subgraph_bridges")
 
 message(STATUS "+++++ nnadapter_subgraph_bridges: ${nnadapter_subgraph_bridges}")
