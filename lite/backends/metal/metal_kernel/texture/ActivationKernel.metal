@@ -150,6 +150,22 @@ kernel void hard_swish(texture2d_array<float, access::sample> inTexture
   outTexture.write(output, gid.xy, gid.z);
 }
 
+kernel void hard_swish_half(texture2d_array<half, access::sample> inTexture
+                    [[texture(0)]],
+                    texture2d_array<half, access::write> outTexture
+                    [[texture(1)]],
+                    constant HardSwishParam &param [[buffer(0)]],
+                    uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size())
+    return;
+  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+  const float4 input = float4(inTexture.read(gid.xy, gid.z));
+  const float4 output =
+      input * (fmin(fmax(0.0, input + param.offset), param.threshold)) /
+      param.scale;
+  outTexture.write(half4(output), gid.xy, gid.z);
+}
 
 kernel void rsqrt(texture2d_array<float, access::sample> inTexture
                   [[texture(0)]],
