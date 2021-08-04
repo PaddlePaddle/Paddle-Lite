@@ -909,7 +909,14 @@ TEST(Activation_hard_swish, precision) {
   Place place;
   float abs_error = 2e-5;
 
-#if defined(LITE_WITH_OPENCL)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return
+#endif
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)

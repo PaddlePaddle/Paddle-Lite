@@ -82,6 +82,39 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     activation_operation = converter->AddOperation(NNADAPTER_TANH);
   } else if (op_type == "abs") {
     activation_operation = converter->AddOperation(NNADAPTER_ABS);
+  } else if (op_type == "hard_swish") {
+    // Split paddle operator to hard_swish and mul
+    float offset = op_info->GetAttr<float>("offset");
+    float threshold = op_info->GetAttr<float>("threshold");
+    float scale = op_info->GetAttr<float>("scale");
+    float mul_factor = threshold / scale;
+    // Prepare data
+    auto offset_operand = converter->AddFloat32ConstantOperand(offset);
+    auto threshold_operand = converter->AddFloat32ConstantOperand(threshold);
+    input_operands.push_back(offset_operand);
+    input_operands.push_back(threshold_operand);
+    // Immediate operand
+    auto immediate_operand = converter->AddFloat32VariableOperand(x_dims);
+    std::vector<NNAdapterOperand*> immediate_output_operands = {
+        immediate_operand};
+    // Hard_swish operator
+    activation_operation = converter->AddOperation(NNADAPTER_HARD_SWISH);
+    converter->SetOperation(
+        activation_operation, &input_operands, &immediate_output_operands);
+    // Mul operand
+    auto mul_operand = converter->AddFloat32ConstantOperand(
+        &mul_factor, DDim({static_cast<int64_t>(1)}));
+    // Fuse code operand
+    auto fuse_code_operand =
+        converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
+    std::vector<NNAdapterOperand*> mul_input_operands = {
+        immediate_operand, mul_operand, fuse_code_operand};
+    // Elementwise mul operator
+    auto elementwise_mul = converter->AddOperation(NNADAPTER_MUL);
+    converter->SetOperation(
+        elementwise_mul, &mul_input_operands, &output_operands);
+
+    return REBUILD_WHEN_SHAPE_CHANGED;
   } else {
     LOG(WARNING) << "Unsupported activation type: " << op_type;
     return FAILED;
