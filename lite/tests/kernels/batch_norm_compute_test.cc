@@ -148,10 +148,10 @@ class BatchNormComputeTest : public arena::TestCase {
     fill_data_rand(variance.data(), 0.f, 1.f, scale_dim.production());
 
     SetCommonTensor(input_, dims_, din.data());
-    SetCommonTensor(scale_, scale_dim, scale.data());
-    SetCommonTensor(bias_, scale_dim, bias.data());
-    SetCommonTensor(mean_, scale_dim, mean.data());
-    SetCommonTensor(variance_, scale_dim, variance.data());
+    SetCommonTensor(scale_, scale_dim, scale.data(), {}, true);
+    SetCommonTensor(bias_, scale_dim, bias.data(), {}, true);
+    SetCommonTensor(mean_, scale_dim, mean.data(), {}, true);
+    SetCommonTensor(variance_, scale_dim, variance.data(), {}, true);
   }
 };
 

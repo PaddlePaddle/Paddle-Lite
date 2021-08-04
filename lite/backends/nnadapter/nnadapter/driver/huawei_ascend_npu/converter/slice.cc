@@ -31,29 +31,29 @@ int Program::ConvertSlice(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
   auto input_dimension_count = input_operand->type.dimension_count;
   auto input_dimensions = input_operand->type.dimensions;
-
+  // Axes
   auto axes_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "axes_operand: " << OperandToString(axes_operand);
+  auto axes_count = axes_operand->length / sizeof(int32_t);
   auto axes = reinterpret_cast<int32_t*>(axes_operand->buffer);
-  NNADAPTER_CHECK_EQ(axes_operand->type.dimension_count, 1);
-  auto axes_size = axes_operand->type.dimensions[0];
-  NNADAPTER_CHECK_LE(axes_size, input_dimension_count);
-
+  for (uint32_t i = 0; i < axes_count; i++) {
+    NNADAPTER_VLOG(5) << "axes[" << i << "]=" << axes[i];
+  }
+  // Starts
   auto starts_operand = input_operands[2];
-  NNADAPTER_VLOG(5) << "starts_operand: " << OperandToString(starts_operand);
+  auto starts_count = starts_operand->length / sizeof(int32_t);
   auto starts = reinterpret_cast<int32_t*>(starts_operand->buffer);
-  NNADAPTER_CHECK_EQ(starts_operand->type.dimension_count, 1);
-  auto starts_size = starts_operand->type.dimensions[0];
-
+  for (uint32_t i = 0; i < starts_count; i++) {
+    NNADAPTER_VLOG(5) << "starts[" << i << "]=" << starts[i];
+  }
+  // Ends
   auto ends_operand = input_operands[3];
-  NNADAPTER_VLOG(5) << "ends_operand: " << OperandToString(ends_operand);
+  auto ends_count = starts_operand->length / sizeof(int32_t);
   auto ends = reinterpret_cast<int32_t*>(ends_operand->buffer);
-  NNADAPTER_CHECK_EQ(ends_operand->type.dimension_count, 1);
-  auto ends_size = ends_operand->type.dimensions[0];
-
-  NNADAPTER_CHECK_EQ(axes_size, starts_size);
-  NNADAPTER_CHECK_EQ(starts_size, ends_size);
-
+  for (uint32_t i = 0; i < ends_count; i++) {
+    NNADAPTER_VLOG(5) << "ends[" << i << "]=" << ends[i];
+  }
+  NNADAPTER_CHECK_EQ(axes_count, starts_count);
+  NNADAPTER_CHECK_EQ(starts_count, ends_count);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
@@ -64,15 +64,10 @@ int Program::ConvertSlice(hal::Operation* operation) {
     input_operator = ConvertOperand(input_operand);
   }
 
-  auto axes_operator = GetMappedOperator(axes_operand);
-  if (!axes_operator) {
-    axes_operator = ConvertOperand(axes_operand);
-  }
-
-  std::vector<int> offsets_vec(axes_size, 0);
-  std::vector<int> size_vec(axes_size, 0);
+  std::vector<int> offsets_vec(axes_count, 0);
+  std::vector<int> size_vec(axes_count, 0);
   // Get begin/offset based on axes and starts
-  for (int i = 0; i < axes_size; i++) {
+  for (int i = 0; i < axes_count; i++) {
     auto axis = axes[i];
     NNADAPTER_CHECK_LE(axis, input_dimension_count);
     NNADAPTER_CHECK_LE(starts[i], input_dimensions[axis]);

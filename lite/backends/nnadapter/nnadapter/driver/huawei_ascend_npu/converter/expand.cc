@@ -29,10 +29,9 @@ int Program::ConvertExpand(hal::Operation* operation) {
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-
+  // Shape
   auto shape_operand = input_operands[1];
   NNADAPTER_VLOG(5) << "shape_operand: " << OperandToString(shape_operand);
-
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);

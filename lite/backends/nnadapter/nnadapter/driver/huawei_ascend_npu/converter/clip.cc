@@ -29,13 +29,12 @@ int Program::ConvertClip(hal::Operation* operation) {
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-
+  // Min
   auto min_operand = input_operands[1];
   NNADAPTER_VLOG(5) << "min_operand: " << OperandToString(min_operand);
-
+  // Max
   auto max_operand = input_operands[2];
   NNADAPTER_VLOG(5) << "max_operand: " << OperandToString(max_operand);
-
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);

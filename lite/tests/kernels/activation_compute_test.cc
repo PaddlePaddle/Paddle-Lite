@@ -481,8 +481,6 @@ TEST(Activation_leaky_relu, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  abs_error = 1e-2;
 #else
   return;
 #endif

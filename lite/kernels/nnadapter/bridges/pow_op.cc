@@ -54,8 +54,8 @@ int PowConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       &factor, DDim({static_cast<int64_t>(1)}));
 
   // Output operand
-  NNAdapterOperand* output_operand = nullptr;
-  output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
+  NNAdapterOperand* output_operand =
+      converter->AddFloat32VariableOperand(out_dims, out_name);
 
   // Activation operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand_0,

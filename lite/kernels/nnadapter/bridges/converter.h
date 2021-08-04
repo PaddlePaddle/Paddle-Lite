@@ -41,6 +41,7 @@ class Converter {
   NNAdapterOperand* AddInt32ConstantOperand(int32_t value);
   NNAdapterOperand* AddInt64ConstantOperand(int64_t value);
   NNAdapterOperand* AddFloat32ConstantOperand(float value);
+  NNAdapterOperand* AddFloat64ConstantOperand(double value);
   NNAdapterOperand* AddBool8ConstantOperand(bool* values,
                                             const DDim& dimensions,
                                             bool copy = true);
@@ -51,6 +52,9 @@ class Converter {
                                             const DDim& dimensions,
                                             bool copy = true);
   NNAdapterOperand* AddFloat32ConstantOperand(float* values,
+                                              const DDim& dimensions,
+                                              bool copy = true);
+  NNAdapterOperand* AddFloat64ConstantOperand(double* values,
                                               const DDim& dimensions,
                                               bool copy = true);
   // Quant8 constant operand with symmetric per-layer quantizion
@@ -83,16 +87,28 @@ class Converter {
                                              const std::string& name = "");
   NNAdapterOperand* AddFloat32VariableOperand(const DDim& dimensions,
                                               const std::string& name = "");
-  // Add float operand: distinguish the tensor is const tensor or variable
-  // tensor.
-  NNAdapterOperand* Converter::AddFloat32Operand(Tensor* tensor,
-                                                 const std::string& name = "");
-  // Add int32 operand: distinguish the tensor is const tensor or variable
-  // tensor.
-  NNAdapterOperand* Converter::AddInt32Operand(Tensor* tensor,
-                                               const std::string& name = "");
+  NNAdapterOperand* AddFloat64VariableOperand(const DDim& dimensions,
+                                              const std::string& name = "");
   NNAdapterOperand* AddInt32VariableOperand(const DDim& dimensions,
                                             const std::string& name = "");
+  NNAdapterOperand* AddInt64VariableOperand(const DDim& dimensions,
+                                            const std::string& name = "");
+  // Add float operand: distinguish the tensor is const tensor or variable
+  // tensor.
+  NNAdapterOperand* AddFloat32Operand(Tensor* tensor,
+                                      const std::string& name = "");
+  // Add float64 operand: distinguish the tensor is const tensor or variable
+  // tensor.
+  NNAdapterOperand* AddFloat64Operand(Tensor* tensor,
+                                      const std::string& name = "");
+  // Add int32 operand: distinguish the tensor is const tensor or variable
+  // tensor.
+  NNAdapterOperand* AddInt32Operand(Tensor* tensor,
+                                    const std::string& name = "");
+  // Add int64 operand: distinguish the tensor is const tensor or variable
+  // tensor.
+  NNAdapterOperand* AddInt64Operand(Tensor* tensor,
+                                    const std::string& name = "");
   NNAdapterOperand* AddVariableOperand(
       const DDim& dimensions,
       const std::string& name = "",

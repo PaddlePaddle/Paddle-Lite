@@ -29,14 +29,13 @@ int Program::ConvertReduceMean(hal::Operation* operation) {
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-
+  // Axes
   auto axes_operand = input_operands[1];
   NNADAPTER_VLOG(5) << "axes_operand: " << OperandToString(axes_operand);
-
+  // Keep_dim
   auto keep_dim_operand = input_operands[2];
-  NNADAPTER_VLOG(5) << "keep_dim_operand: "
-                    << OperandToString(keep_dim_operand);
-
+  auto keep_dim = *reinterpret_cast<int8_t*>(keep_dim_operand->buffer);
+  NNADAPTER_VLOG(5) << "keep_dim: " << keep_dim;
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
@@ -51,8 +50,6 @@ int Program::ConvertReduceMean(hal::Operation* operation) {
   if (!axes_operator) {
     axes_operator = ConvertOperand(axes_operand);
   }
-
-  bool keep_dim = *reinterpret_cast<bool*>(keep_dim_operand->buffer);
 
   auto reduce_mean_name = GetOperatorName(output_operand);
   auto reduce_mean_op = std::make_shared<ge::op::ReduceMean>(reduce_mean_name);

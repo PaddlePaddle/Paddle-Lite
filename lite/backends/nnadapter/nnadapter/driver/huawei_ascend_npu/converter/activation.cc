@@ -72,10 +72,10 @@ int Program::ConvertLeakyRelu(hal::Operation* operation) {
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-
+  // Alpha
   auto alpha_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "alpha_operand: " << OperandToString(alpha_operand);
   float alpha = *reinterpret_cast<float*>(alpha_operand->buffer);
+  NNADAPTER_VLOG(5) << "alpha: " << alpha;
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
@@ -90,7 +90,6 @@ int Program::ConvertLeakyRelu(hal::Operation* operation) {
   act_op->set_attr_negative_slope(alpha);
   SET_INPUT(act_op, x, input_operator);
   MAP_OUTPUT(act_op, y, output_operand);
-
   return NNADAPTER_NO_ERROR;
 }
 

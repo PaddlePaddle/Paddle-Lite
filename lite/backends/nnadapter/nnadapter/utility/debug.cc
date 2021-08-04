@@ -262,8 +262,33 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_TANH:
+      case NNADAPTER_LOG:
       case NNADAPTER_ABS:
         input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_LEAKY_RELU:
+        input_args = {"input", "alpha"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SLICE:
+        input_args = {"input", "axes", "start", "ends"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CLIP:
+        input_args = {"input", "min", "max"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_POW:
+        input_args = {"input", "factor"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_REDUCE_MEAN:
+        input_args = {"input", "axes", "keep_dim"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_EXPAND:
+        input_args = {"input", "shape"};
         output_args = {"output"};
         break;
       case NNADAPTER_RESHAPE:
@@ -299,6 +324,14 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_LP_NORMALIZATION:
         input_args = {"input", "axis", "p", "epsilon"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_RANGE:
+        input_args = {"start", "ends", "step"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_BATCH_NORMALIZATION:
+        input_args = {"input", "scale", "bias", "mean", "variance", "epsilon"};
         output_args = {"output"};
         break;
       case NNADAPTER_DEFORMABLE_CONV_2D:
@@ -451,6 +484,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(MUL);
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
+    NNADAPTER_TYPE_TO_STRING(RANGE);
     NNADAPTER_TYPE_TO_STRING(RESHAPE);
     NNADAPTER_TYPE_TO_STRING(SHAPE)
     NNADAPTER_TYPE_TO_STRING(SIGMOID);

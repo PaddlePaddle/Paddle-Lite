@@ -26,16 +26,15 @@ int Program::ConvertRange(hal::Operation* operation) {
   auto output_count = output_operands.size();
   NNADAPTER_CHECK_EQ(input_count, 3);
   NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
+  // Start
   auto start_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(start_operand);
-
+  NNADAPTER_VLOG(5) << "start_operand: " << OperandToString(start_operand);
+  // Limit
   auto limit_operand = input_operands[1];
   NNADAPTER_VLOG(5) << "limit_operand: " << OperandToString(limit_operand);
-
+  // Delta
   auto delta_operand = input_operands[2];
   NNADAPTER_VLOG(5) << "delta_operand: " << OperandToString(delta_operand);
-
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
@@ -45,12 +44,10 @@ int Program::ConvertRange(hal::Operation* operation) {
   if (!start_operator) {
     start_operator = ConvertOperand(start_operand);
   }
-
   auto limit_operator = GetMappedOperator(limit_operand);
   if (!limit_operator) {
     limit_operator = ConvertOperand(limit_operand);
   }
-
   auto delta_operator = GetMappedOperator(delta_operand);
   if (!delta_operator) {
     delta_operator = ConvertOperand(delta_operand);

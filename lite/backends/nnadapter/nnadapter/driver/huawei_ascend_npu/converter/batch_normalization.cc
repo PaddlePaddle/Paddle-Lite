@@ -29,22 +29,23 @@ int Program::ConvertBatchNormalization(hal::Operation* operation) {
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-
+  // Scale
   auto scale_operand = input_operands[1];
   NNADAPTER_VLOG(5) << "scale_operand: " << OperandToString(scale_operand);
-
+  // Bias
   auto bias_operand = input_operands[2];
   NNADAPTER_VLOG(5) << "bias_operand: " << OperandToString(bias_operand);
-
+  // Mean
   auto mean_operand = input_operands[3];
   NNADAPTER_VLOG(5) << "mean_operand: " << OperandToString(mean_operand);
-
+  // Variance
   auto variance_operand = input_operands[4];
   NNADAPTER_VLOG(5) << "variance_operand: "
                     << OperandToString(variance_operand);
-
+  // Epsilon
   auto epsilon_operand = input_operands[5];
-  NNADAPTER_VLOG(5) << "epsilon_operand: " << OperandToString(epsilon_operand);
+  auto epsilon = *reinterpret_cast<float*>(epsilon_operand->buffer);
+  NNADAPTER_VLOG(5) << "epsilon :" << epsilon;
 
   // Output
   auto output_operand = output_operands[0];
@@ -76,7 +77,6 @@ int Program::ConvertBatchNormalization(hal::Operation* operation) {
     variance_operator = ConvertOperand(variance_operand);
   }
 
-  auto epsilon = *reinterpret_cast<float*>(epsilon_operand->buffer);
   auto batch_norm_name = GetOperatorName(output_operand);
   auto batch_norm_op = std::make_shared<ge::op::BatchNorm>(batch_norm_name);
   batch_norm_op->set_attr_epsilon(epsilon);

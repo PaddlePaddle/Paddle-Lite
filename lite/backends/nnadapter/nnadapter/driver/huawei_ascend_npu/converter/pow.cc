@@ -27,24 +27,24 @@ int Program::ConvertPow(hal::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
-  auto input_operand_0 = input_operands[0];
-  NNADAPTER_VLOG(5) << "input0: " << OperandToString(input_operand_0);
-
-  auto input_operand_1 = input_operands[1];
-  NNADAPTER_VLOG(5) << "input1: " << OperandToString(input_operand_1);
-
+  auto input_operand = input_operands[0];
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
+  // Factor
+  auto factor_operand = input_operands[1];
+  NNADAPTER_VLOG(5) << "factor: " << OperandToString(factor_operand);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to GE operators
-  auto input_operator_0 = GetMappedOperator(input_operand_0);
+  auto input_operator_0 = GetMappedOperator(input_operand);
   if (!input_operator_0) {
-    input_operator_0 = ConvertOperand(input_operand_0);
+    input_operator_0 = ConvertOperand(input_operand);
   }
-  auto input_operator_1 = GetMappedOperator(input_operand_1);
+
+  auto input_operator_1 = GetMappedOperator(factor_operand);
   if (!input_operator_1) {
-    input_operator_1 = ConvertOperand(input_operand_1);
+    input_operator_1 = ConvertOperand(factor_operand);
   }
 
   auto pow_name = GetOperatorName(output_operand);

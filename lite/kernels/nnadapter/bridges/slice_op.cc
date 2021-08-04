@@ -72,18 +72,15 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  // axes operand
+  // Axes operand
   NNAdapterOperand* axes_operand = converter->AddInt32ConstantOperand(
       &axes[0], DDim({static_cast<int64_t>(axes.size())}));
-
-  // starts operand
+  // Starts operand
   NNAdapterOperand* starts_operand = converter->AddInt32ConstantOperand(
       &starts[0], DDim({static_cast<int64_t>(starts.size())}));
-
-  // ends operand
+  // Ends operand
   NNAdapterOperand* ends_operand = converter->AddInt32ConstantOperand(
       &ends[0], DDim({static_cast<int64_t>(ends.size())}));
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -99,7 +96,6 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* slice_operation =
       converter->AddOperation(NNADAPTER_SLICE);
-
   converter->SetOperation(slice_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
