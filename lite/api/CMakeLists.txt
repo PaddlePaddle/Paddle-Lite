@@ -551,7 +551,7 @@ endif()
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
-    lite_cc_binary(opt SRCS opt.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
+    lite_cc_binary(opt SRCS opt.cc opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
         DEPS gflags kernel op optimizer mir_passes utils ${host_kernels})
     add_dependencies(opt all_kernel_faked)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
