@@ -342,7 +342,7 @@ void conv_transpose_depthwise_s2(const float* dst,
             __m256 vec_data_lo = _mm256_loadu_ps(src_addr_h0 + iw);
             __m256 vec_data_hi = _mm256_loadu_ps(src_addr_h0 + iw + 8);
             __m256 vec_data =
-                _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
+                _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 136);  // 0x88
             __m256i vec_tmp_data =
                 _mm256_permute4x64_epi64(_mm256_castps_si256(vec_data),
                                          216);  // 11011000b
@@ -363,7 +363,7 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data_lo = _mm256_loadu_ps(src_addr_h1 + iw);
             vec_data_hi = _mm256_loadu_ps(src_addr_h1 + iw + 8);
             vec_data =
-                _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
+                _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 136);  // 0x88
             vec_tmp_data =
                 _mm256_permute4x64_epi64(_mm256_castps_si256(vec_data),
                                          216);  // 11011000b
@@ -385,7 +385,7 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data_lo = _mm256_loadu_ps(src_addr_h2 + iw);
             vec_data_hi = _mm256_loadu_ps(src_addr_h2 + iw + 8);
             vec_data =
-                _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
+                _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 136);  // 0x88
             vec_tmp_data =
                 _mm256_permute4x64_epi64(_mm256_castps_si256(vec_data),
                                          216);  // 11011000b
@@ -406,7 +406,7 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data_lo = _mm256_loadu_ps(src_addr_h3 + iw);
             vec_data_hi = _mm256_loadu_ps(src_addr_h3 + iw + 8);
             vec_data =
-                _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
+                _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 136);  // 0x88
             vec_tmp_data =
                 _mm256_permute4x64_epi64(_mm256_castps_si256(vec_data),
                                          216);  // 11011000b
