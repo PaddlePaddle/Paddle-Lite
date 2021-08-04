@@ -406,6 +406,9 @@ class LITE_API CxxConfig : public ConfigBase {
   bool quant_model() const { return quant_model_; }
   void set_quant_type(QuantType quant_type) { quant_type_ = quant_type; }
   QuantType quant_type() const { return quant_type_; }
+
+  void set_sparse_threshold(float threshold) { threshold_ = threshold; }
+  float sparse_threshold const { return threshold; }
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip
