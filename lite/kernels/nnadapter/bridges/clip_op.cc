@@ -80,10 +80,10 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
               : converter->AddFloat32VariableOperand(min_dims, min_name);
     }
   } else {
-    float minValue =
+    float min_value =
         op_info->HasAttr("min") ? op_info->GetAttr<float>("min") : 0.0f;
     min_operand = converter->AddFloat32ConstantOperand(
-        &minValue, DDim({static_cast<int64_t>(1)}));
+        &min_value, DDim({static_cast<int64_t>(1)}));
   }
 
   // Max operand
@@ -106,10 +106,10 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
               : converter->AddFloat32VariableOperand(max_dims, max_name);
     }
   } else {
-    float maxValue =
+    float max_value =
         op_info->HasAttr("max") ? op_info->GetAttr<float>("max") : 0.0f;
     max_operand = converter->AddFloat32ConstantOperand(
-        &maxValue, DDim({static_cast<int64_t>(1)}));
+        &max_value, DDim({static_cast<int64_t>(1)}));
   }
 
   // Output operand

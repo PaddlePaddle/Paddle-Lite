@@ -37,20 +37,19 @@ int Program::ConvertPow(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to GE operators
-  auto input_operator_0 = GetMappedOperator(input_operand);
-  if (!input_operator_0) {
-    input_operator_0 = ConvertOperand(input_operand);
+  auto input_operator = GetMappedOperator(input_operand);
+  if (!input_operator) {
+    input_operator = ConvertOperand(input_operand);
   }
-
-  auto input_operator_1 = GetMappedOperator(factor_operand);
-  if (!input_operator_1) {
-    input_operator_1 = ConvertOperand(factor_operand);
+  auto factor_operator = GetMappedOperator(factor_operand);
+  if (!factor_operator) {
+    factor_operator = ConvertOperand(factor_operand);
   }
 
   auto pow_name = GetOperatorName(output_operand);
   auto pow_op = std::make_shared<ge::op::Pow>(pow_name);
-  SET_INPUT(pow_op, x1, input_operator_0);
-  SET_INPUT(pow_op, x2, input_operator_1);
+  SET_INPUT(pow_op, x1, input_operator);
+  SET_INPUT(pow_op, x2, factor_operator);
   MAP_OUTPUT(pow_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }

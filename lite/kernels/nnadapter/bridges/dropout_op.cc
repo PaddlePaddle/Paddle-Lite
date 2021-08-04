@@ -60,6 +60,7 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
+  // Prob operand
   auto dropout_implementation =
       op_info->GetAttr<std::string>("dropout_implementation");
   auto scale = 1 - op_info->GetAttr<float>("dropout_prob");
@@ -67,8 +68,6 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     scale = 1.f;
     return FAILED;
   }
-
-  // prob operand
   NNAdapterOperand* prob_operand = converter->AddFloat32ConstantOperand(
       &scale, DDim({static_cast<int64_t>(1)}));
 

@@ -12,47 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/imagination_nna/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace imagination_nna {
 
-int Program::ConvertExpand(hal::Operation* operation) {
+int Program::ConvertActivation(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 2);
+  NNADAPTER_CHECK_EQ(input_count, 1);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-  // Shape
-  auto shape_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "shape_operand: " << OperandToString(shape_operand);
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
   // Output
   auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
-  if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+  // Convert to imgdnn tensors and operators
+  auto input_tensor = GetMappedTensor(input_operand);
+  if (!input_tensor) {
+    input_tensor = ConvertOperand(input_operand);
   }
-  auto shape_operator = GetMappedOperator(shape_operand);
-  if (!shape_operator) {
-    shape_operator = ConvertOperand(shape_operand);
+  imgdnn_tensor output_tensor;
+  if (operation->type == NNADAPTER_RELU) {
+    output_tensor =
+        imgdnn_mgr_.CreateReLULayer(input_tensor, true, 0.0, false, 0.0, false);
+  } else if (operation->type == NNADAPTER_RELU6) {
+    output_tensor =
+        imgdnn_mgr_.CreateReLULayer(input_tensor, true, 0.0, true, 6.0, false);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported activation unary operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
   }
-
-  auto expand_name = GetOperatorName(output_operand);
-  auto expand_op = std::make_shared<ge::op::Expand>(expand_name);
-  SET_INPUT(expand_op, x, input_operator);
-  SET_INPUT(expand_op, shape, shape_operator);
-  MAP_OUTPUT(expand_op, y, output_operand);
+  UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace imagination_nna
 }  // namespace nnadapter

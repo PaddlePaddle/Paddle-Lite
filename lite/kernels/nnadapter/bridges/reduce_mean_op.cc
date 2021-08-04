@@ -47,7 +47,7 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
-  // Input0 operand
+  // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
     input_operand = converter->GetOperand(x_name);
@@ -60,12 +60,12 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  // axes operand
+  // Axes operand
   std::vector<int> dim = op_info->GetAttr<std::vector<int>>("dim");
   NNAdapterOperand* axes_operand = converter->AddInt32ConstantOperand(
       &dim[0], DDim({static_cast<int64_t>(dim.size())}));
 
-  // keep_dim operand: keep_dim: default 1
+  // Keep_dim operand: keep_dim: default 1
   bool keep_dim =
       op_info->HasAttr("keep_dim") ? op_info->GetAttr<bool>("keep_dim") : true;
   NNAdapterOperand* keep_dim_operand =

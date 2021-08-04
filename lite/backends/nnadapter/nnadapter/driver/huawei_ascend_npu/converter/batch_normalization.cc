@@ -46,7 +46,6 @@ int Program::ConvertBatchNormalization(hal::Operation* operation) {
   auto epsilon_operand = input_operands[5];
   auto epsilon = *reinterpret_cast<float*>(epsilon_operand->buffer);
   NNADAPTER_VLOG(5) << "epsilon :" << epsilon;
-
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
@@ -56,22 +55,18 @@ int Program::ConvertBatchNormalization(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-
   auto scale_operator = GetMappedOperator(scale_operand);
   if (!scale_operator) {
     scale_operator = ConvertOperand(scale_operand);
   }
-
   auto offset_operator = GetMappedOperator(bias_operand);
   if (!offset_operator) {
     offset_operator = ConvertOperand(bias_operand);
   }
-
   auto mean_operator = GetMappedOperator(mean_operand);
   if (!mean_operator) {
     mean_operator = ConvertOperand(mean_operand);
   }
-
   auto variance_operator = GetMappedOperator(variance_operand);
   if (!variance_operator) {
     variance_operator = ConvertOperand(variance_operand);

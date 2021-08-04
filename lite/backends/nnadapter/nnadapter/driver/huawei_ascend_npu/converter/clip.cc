@@ -44,12 +44,10 @@ int Program::ConvertClip(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-
   auto min_operator = GetMappedOperator(min_operand);
   if (!min_operator) {
     min_operator = ConvertOperand(min_operand);
   }
-
   auto max_operator = GetMappedOperator(max_operand);
   if (!max_operator) {
     max_operator = ConvertOperand(max_operand);

@@ -45,7 +45,6 @@ int Program::ConvertReduceMean(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-
   auto axes_operator = GetMappedOperator(axes_operand);
   if (!axes_operator) {
     axes_operator = ConvertOperand(axes_operand);

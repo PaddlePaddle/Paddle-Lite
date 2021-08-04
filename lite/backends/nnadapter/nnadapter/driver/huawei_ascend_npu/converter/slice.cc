@@ -74,7 +74,6 @@ int Program::ConvertSlice(hal::Operation* operation) {
     offsets_vec[axis] = starts[i];
     size_vec[axis] = ends[i] - starts[i];
   }
-
   auto offsets_operator = AddInt32ConstantOperator(offsets_vec);
   auto size_operator = AddInt32ConstantOperator(size_vec);
 
