@@ -121,6 +121,7 @@ USE_SUBGRAPH_BRIDGE(assign, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(assign_value, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(abs, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(norm, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(fill_constant, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(deformable_conv, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(conv2d_transpose, kNNAdapter, "amlogic_npu");
 USE_SUBGRAPH_BRIDGE(nearest_interp, kNNAdapter, "huawei_ascend_npu");
