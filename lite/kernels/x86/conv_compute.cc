@@ -37,12 +37,9 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
   bool dw_kernel = (input_channel == groups && output_channel == groups);
-  bool pads_equal =
-      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
-  bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);
   bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);
   bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
-  bool kps_equal = (paddings[0] == paddings[1]) && ks_equal;
+  bool kps_equal = (paddings[0] == paddings[2]) && ks_equal;
   bool flag_dw_3x3 =
       (kernel_h == 3) && (kernel_w == 3) && (stride_h == 1 || stride_h == 2);
   bool flag_dw_5x5 =
@@ -52,7 +49,7 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
 
   /// select conv impl
-  if (dw_kernel && ks_equal && no_dilation && flag_dw && (groups & 3) == 0) {
+  if (dw_kernel && kps_equal && no_dilation && flag_dw && (groups & 3) == 0) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
   }
 
