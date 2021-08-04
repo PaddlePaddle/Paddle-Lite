@@ -47,11 +47,11 @@ const std::string ATCErrorToString(uint32_t error);
 
 // Build and load OM model to/from memory
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
-    const std::vector<char>& model_buffer, int device_id = 0);
+    const std::vector<uint8_t>& model_buffer, int device_id = 0);
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<char>* model_buffer);
+    std::vector<uint8_t>* model_buffer);
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);

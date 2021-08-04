@@ -458,7 +458,8 @@ std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
   return consumers;
 }
 
-hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand) {
+NNADAPTER_EXPORT hal::Operation* GetOperandProducer(hal::Model* model,
+                                                    hal::Operand* operand) {
   hal::Operation* producer = nullptr;
   for (auto& operation : model->operations) {
     auto& output_operands = operation.output_operands;
@@ -470,6 +471,30 @@ hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand) {
     producer = &operation;
   }
   return producer;
+}
+
+NNADAPTER_EXPORT int GetModelInputOperandIndex(hal::Model* model,
+                                               hal::Operand* operand) {
+  if (IsModelInputOperand(operand)) {
+    for (size_t i = 0; i < model->input_operands.size(); i++) {
+      if (model->input_operands[i] == operand) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+NNADAPTER_EXPORT int GetModelOutputOperandIndex(hal::Model* model,
+                                                hal::Operand* operand) {
+  if (IsModelOutputOperand(operand)) {
+    for (size_t i = 0; i < model->output_operands.size(); i++) {
+      if (model->output_operands[i] == operand) {
+        return i;
+      }
+    }
+  }
+  return -1;
 }
 
 NNADAPTER_EXPORT hal::Operand* AddTransposeOperation(
@@ -575,7 +600,10 @@ NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
   for (auto& operation : model->operations) {
     uint32_t count = 0;
     for (auto operand : operation.input_operands) {
-      auto lifetime = operand->type.lifetime;
+      NNAdapterOperandLifetimeCode lifetime{NNADAPTER_CONSTANT_COPY};
+      if (operand != nullptr) {
+        lifetime = operand->type.lifetime;
+      }
       if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||
           lifetime == NNADAPTER_MODEL_OUTPUT) {
         count++;

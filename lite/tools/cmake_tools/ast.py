@@ -639,7 +639,7 @@ class RegisterNNadapterBridgeParser(SyntaxParser):
         self.cur_pos += 1;
 
         assert self.cur_pos < self.N
-        while self.cur != '"':
+        while self.cur != ')':
             if(self.cur == ','):
                 temp = SubgraphBridgeRegistry()
                 temp.op_type = op_type
@@ -648,16 +648,15 @@ class RegisterNNadapterBridgeParser(SyntaxParser):
                 self.token = ''
                 self.cur_pos += 1
             else:
-                self.token += self.cur
+                if(self.cur != '"' and self.cur != ' ' and self.cur != '\n'):
+                    self.token += self.cur
                 self.cur_pos += 1
             assert self.cur_pos < self.N
-        assert self.cur == '"'
+        assert self.cur == ')'
         temp = SubgraphBridgeRegistry()
         temp.op_type = op_type
         temp.target = self.token
         ks.append(temp)
-        self.cur_pos += 1
-
         self.eat_right_parentheses()
         self.eat_spaces()
         self.eat_semicolon()

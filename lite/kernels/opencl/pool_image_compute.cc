@@ -203,8 +203,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       VLOG(4) << "global_pooling: " << global_pooling;
       VLOG(4) << "pooling_type: " << pooling_type;
       VLOG(4) << "strides: " << strides[0] << "  " << strides[1];
-      VLOG(4) << "ksize: " << ksize[0] << "  " << ksize[1] << "  " << ksize[2]
-              << "  " << ksize[3];
+      VLOG(4) << "ksize: " << ksize[0] << "  " << ksize[1];
       VLOG(4) << "paddings: " << paddings[0] << "  " << paddings[1] << "  "
               << paddings[2] << "  " << paddings[3];
       VLOG(4) << "global_work_size: " << static_cast<int>(global_work_size_[0])

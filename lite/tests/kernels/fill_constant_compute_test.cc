@@ -190,10 +190,16 @@ void TestFillConstantShapeTensorList(Place place, float abs_error) {
 }
 
 TEST(fill_constant, precision) {
-  LOG(INFO) << "test fill_constant op";
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)

@@ -866,6 +866,7 @@ void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
   } else {
     LOG(INFO) << "Not found tuned file:" << tuned_file;
   }
+  command_queue_ = CreateCommandQueue(context());
 }
 
 bool CLRuntime::HasTunedLocalWorkSizeMap(const std::string& key,
