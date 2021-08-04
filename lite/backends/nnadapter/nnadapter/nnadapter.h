@@ -461,8 +461,7 @@ typedef enum {
    *
    * Inputs:
    * * 0: shape, A NNADAPTER_TENSOR_INT32 tensor.
-   * * 1: input1, A tensor with the same type as input0.
-   * * 2: value, A NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
+   * * 1: value, A NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
    * NNADAPTER_BOOL scalar.
    *
    * Outputs:
