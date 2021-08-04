@@ -27,26 +27,26 @@ int Program::ConvertResizeLinear(hal::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 5);
   NNADAPTER_CHECK_EQ(output_count, 1);
 
-  // input
+  // Input
   auto* input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // shape
+  // Shape
   auto* shape_operand = input_operands[1];
   if (shape_operand != nullptr) {
     NNADAPTER_VLOG(5) << "shape: " << OperandToString(shape_operand);
   }
-  // scales
+  // Scales
   auto* scales_operand = input_operands[2];
   if (scales_operand != nullptr) {
     NNADAPTER_VLOG(5) << "scales: " << OperandToString(scales_operand);
   }
-  // align_corners
+  // Align_corners
   auto* align_corners_operand = input_operands[3];
   NNADAPTER_VLOG(5) << "align_corners: "
                     << OperandToString(align_corners_operand);
   bool align_corners =
       reinterpret_cast<bool*>(align_corners_operand->buffer)[0];
-  // align_mode
+  // Align_mode
   auto* align_mode_operand = input_operands[4];
   if (align_mode_operand != nullptr) {
     NNADAPTER_VLOG(5) << "align_mode: " << OperandToString(align_mode_operand);
@@ -58,7 +58,7 @@ int Program::ConvertResizeLinear(hal::Operation* operation) {
     return NNADAPTER_INVALID_PARAMETER;
   }
 
-  // output
+  // Output
   auto* output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 

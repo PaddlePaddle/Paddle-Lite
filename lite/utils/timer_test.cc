@@ -43,7 +43,7 @@ TEST(timer, basic) {
   };
 
   paddle::lite::Timer timer;
-  for (float base = 10.f; base < 100.f; base += 25.f) {
+  for (float base = 60.f; base < 100.f; base += 25.f) {
     timer.Start();
     timer.SleepInMs(base);
     float duration_ms = timer.Stop();

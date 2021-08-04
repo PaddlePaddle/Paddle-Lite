@@ -138,7 +138,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_ABS = 0,
+  NNADAPTER_ABS,
 
   /**
    * Performs element-wise binary addition(with Numpy-style broadcasting
@@ -157,7 +157,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_ADD = 1,
+  NNADAPTER_ADD,
 
   /**
    * Copy the input to the output.
@@ -172,7 +172,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_ASSIGN = 2,
+  NNADAPTER_ASSIGN,
 
   /**
    * Applies a 2-D average pooling across the input according to kernel sizes,
@@ -216,7 +216,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_AVERAGE_POOL_2D = 3,
+  NNADAPTER_AVERAGE_POOL_2D,
 
   /**
    * The operator casts the elements of `input` to a data type specified
@@ -236,7 +236,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_CAST = 4,
+  NNADAPTER_CAST,
 
   /**
    * Concatenates a list of tensors into a single tensor along the given
@@ -256,7 +256,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_CONCAT = 5,
+  NNADAPTER_CONCAT,
 
   /**
    * Performs a normal or depthwise 2-D convolution operation.
@@ -315,7 +315,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_CONV_2D = 6,
+  NNADAPTER_CONV_2D,
 
   /**
    * Performs the transpose of 2-D convolution operation(also called
@@ -372,7 +372,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_CONV_2D_TRANSPOSE = 7,
+  NNADAPTER_CONV_2D_TRANSPOSE,
 
   /**
    * Compute 2-D deformable convolution on 4-D input.
@@ -435,7 +435,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_DEFORMABLE_CONV_2D = 8,
+  NNADAPTER_DEFORMABLE_CONV_2D,
 
   /**
    * Performs element-wise binary division(with Numpy-style broadcasting
@@ -454,7 +454,23 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_DIV = 9,
+  NNADAPTER_DIV,
+
+  /**
+   * Return a Tensor with the 'shape' and 'value'.
+   *
+   * Inputs:
+   * * 0: shape, A NNADAPTER_TENSOR_INT32 tensor.
+   * * 1: input1, A tensor with the same type as input0.
+   * * 2: value, A NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
+   * NNADAPTER_BOOL scalar.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the 'shape' and 'value'.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_FILL,
 
   /**
    * Add a fully connected layer.
@@ -490,7 +506,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_FULLY_CONNECTED = 10,
+  NNADAPTER_FULLY_CONNECTED,
 
   /**
    * Applies the hard-sigmoid activation to the input tensor element-wise.
@@ -507,7 +523,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_HARD_SIGMOID = 11,
+  NNADAPTER_HARD_SIGMOID,
 
   /**
    * Applies the hard-swish activation to the input tensor element-wise.
@@ -524,7 +540,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_HARD_SWISH = 12,
+  NNADAPTER_HARD_SWISH,
 
   /**
    * Applies the Lp Normalization to the input tensor element-wise.
@@ -549,7 +565,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_LP_NORMALIZATION = 13,
+  NNADAPTER_LP_NORMALIZATION,
 
   /**
    * Applies a 2-D max pooling across the input according to kernel sizes,
@@ -593,7 +609,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_MAX_POOL_2D = 14,
+  NNADAPTER_MAX_POOL_2D,
 
   /**
    * Performs element-wise binary multiplication(with Numpy-style broadcasting
@@ -612,7 +628,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_MUL = 15,
+  NNADAPTER_MUL,
 
   /**
    * Applies rectified linear activation to the input tensor element-wise.
@@ -629,7 +645,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_RELU = 16,
+  NNADAPTER_RELU,
 
   /**
    * Applies rectified linear 6 activation to the input tensor element-wise.
@@ -646,7 +662,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_RELU6 = 17,
+  NNADAPTER_RELU6,
 
   /**
    * Reshapes a tensor similar to numpy.reshape.
@@ -669,7 +685,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_RESHAPE = 18,
+  NNADAPTER_RESHAPE,
 
   /**
    * Resizes the input tensor using the nearest interpolation.
@@ -689,7 +705,7 @@ typedef enum {
    * Outputs:
    * * 0: output, A tensor with the same type as input.
    */
-  NNADAPTER_RESIZE_NEAREST = 19,
+  NNADAPTER_RESIZE_NEAREST,
 
   /**
    * Resizes the input tensor using the linear interpolation.
@@ -712,7 +728,7 @@ typedef enum {
    * Outputs:
    * * 0: output, A tensor with the same type as input.
    */
-  NNADAPTER_RESIZE_LINEAR = 20,
+  NNADAPTER_RESIZE_LINEAR,
 
   /**
    * Outputs an 1D tensor containing the shape of the input tensor.
@@ -725,7 +741,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SHAPE = 21,
+  NNADAPTER_SHAPE,
 
   /**
    * Applies sigmoid activation to the input tensor element-wise.
@@ -742,7 +758,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SIGMOID = 22,
+  NNADAPTER_SIGMOID,
 
   /**
    * Computes the normalized exponential values for the input tensor
@@ -764,7 +780,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SOFTMAX = 23,
+  NNADAPTER_SOFTMAX,
 
   /**
    * Split a tensor into a list of tensors along the given dimension.
@@ -786,7 +802,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SPLIT = 24,
+  NNADAPTER_SPLIT,
 
   /**
    * Performs element-wise binary subtraction(with Numpy-style broadcasting
@@ -805,7 +821,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_SUB = 25,
+  NNADAPTER_SUB,
 
   /**
    * Applies the hyperbolic tangent activation to the input tensor element-wise.
@@ -822,7 +838,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_TANH = 26,
+  NNADAPTER_TANH,
 
   /**
    * Transposes the input according to the perm, similar to numpy.transpose
@@ -843,7 +859,7 @@ typedef enum {
    *
    * Available since version 1.
    */
-  NNADAPTER_TRANSPOSE = 27,
+  NNADAPTER_TRANSPOSE,
 } NNAdapterOperationCode;
 
 /**

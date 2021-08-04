@@ -31,6 +31,20 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
+// Parts of the following code in this file refs to
+// https://github.com/mjp9527/MegEngine/blob/master/dnn/src/x86/utils.cpp
+/**
+ * \file dnn/src/x86/utils.cpp
+ * MegEngine is Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * Copyright (c) 2014-2021 Megvii Inc. All rights reserved.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT ARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ */
+
 #ifdef LITE_WITH_LINUX
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -49,6 +63,13 @@
 
 #ifdef ARM_WITH_OMP
 #include <omp.h>
+#endif
+
+#ifdef LITE_WITH_X86
+#ifdef _WIN32
+// For __cpuid
+#include <intrin.h>
+#endif
 #endif
 
 #include <algorithm>
@@ -1277,6 +1298,154 @@ void Device<TARGET(kCUDA)>::CreateStream() {
     exec_stream_.push_back(exec_stream);
     io_stream_.push_back(io_stream);
   }
+}
+
+#endif
+
+#ifdef LITE_WITH_X86
+
+#define uint32_t unsigned int
+
+struct CPUID {
+  uint32_t eax, ebx, ecx, edx;
+  CPUID() {
+#if defined(_WIN32)
+    int cpuInfo[4];
+    __cpuid(cpuInfo, 1);
+    eax = cpuInfo[0];
+    ebx = cpuInfo[1];
+    ecx = cpuInfo[2];
+    edx = cpuInfo[3];
+#else
+    asm volatile("cpuid\n"
+                 : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+                 : "a"(1)
+                 : "cc");
+#endif
+  }
+} cpuid;
+
+bool bit(unsigned x, unsigned y) { return (x >> y) & 1; }
+
+bool feature_detect_avx2() {
+  uint32_t eax, ebx, ecx, edx;
+
+// check cpu support
+#if defined(_WIN32)
+  int cpuInfo[4];
+  __cpuid(cpuInfo, 7);
+  eax = cpuInfo[0];
+  ebx = cpuInfo[1];
+  ecx = cpuInfo[2];
+  edx = cpuInfo[3];
+#else
+  asm volatile("cpuid\n"
+               : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+               : "a"(7), "c"(0)
+               : "cc");
+#endif
+
+  if (!(bit(ebx, 3) && bit(ebx, 5) && bit(ebx, 8))) return false;
+
+// check os support ymm or xmm
+#if defined(_WIN32)
+  eax = _xgetbv(0);
+#else
+  asm volatile("xgetbv" : "=a"(eax), "=d"(edx) : "c"(0));
+#endif
+
+  return (eax & 6) == 6;
+}
+
+bool feature_detect_vnni() {
+  uint32_t eax, ebx, ecx, edx;
+
+// check cpu support
+#if defined(_WIN32)
+  int cpuInfo[4];
+  __cpuid(cpuInfo, 7);
+  eax = cpuInfo[0];
+  ebx = cpuInfo[1];
+  ecx = cpuInfo[2];
+  edx = cpuInfo[3];
+#else
+  asm volatile("cpuid\n"
+               : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+               : "a"(7), "c"(0)
+               : "cc");
+#endif
+  // avx512f  ---> 16 ebx
+  // avx512dq ---> 17 ebx
+  // avx512bw ---> 30 ebx
+  // avx512vl ---> 31 ebx
+  // avx512vnni --->11 ecx
+  if (!(bit(ebx, 16) && bit(ebx, 17) && bit(ebx, 30) && bit(ebx, 31) &&
+        bit(ecx, 11)))
+    return false;
+
+// check os support ymm and xmm
+#if defined(_WIN32)
+  eax = _xgetbv(0);
+#else
+  asm volatile("xgetbv" : "=a"(eax), "=d"(edx) : "c"(0));
+#endif
+
+  return (eax & 6) == 6;
+}
+
+bool feature_detect_avx_fma(int ftr) {
+  // see Detecting Availability and Support in
+  // https://software.intel.com/en-us/articles/introduction-to-intel-advanced-vector-extensions
+
+  // check CPU support
+  if (!(bit(cpuid.ecx, 27) && bit(cpuid.ecx, ftr))) return false;
+
+  // check OS support
+  uint32_t edx, eax;
+#if defined(_WIN32)
+  eax = _xgetbv(0);
+#else
+  asm volatile("xgetbv" : "=a"(eax), "=d"(edx) : "c"(0));
+#endif
+
+  return (eax & 6) == 6;
+}
+
+SSEType device_sse_level() {
+  if (bit(cpuid.ecx, 20))
+    return SSEType::ISA_SSE4_2;
+  else if (bit(cpuid.ecx, 19))
+    return SSEType::ISA_SSE4_1;
+  else if (bit(cpuid.ecx, 0))
+    return SSEType::ISA_SSE3;
+  else if (bit(cpuid.edx, 26))
+    return SSEType::ISA_SSE2;
+  else if (bit(cpuid.edx, 25))
+    return SSEType::ISA_SSE;
+  else
+    return SSEType::SSE_NONE;
+}
+
+AVXType device_avx_level() {
+#ifdef LITE_WITH_AVX
+  if (feature_detect_vnni())
+    return AVXType::ISA_VNNI;
+  else if (feature_detect_avx2())
+    return AVXType::ISA_AVX2;
+  else if (feature_detect_avx_fma(28))
+    return AVXType::ISA_AVX;
+  else
+#endif
+    return AVXType::AVX_NONE;
+}
+
+FMAType device_fma_level() {
+#ifdef LITE_WITH_AVX
+  if (feature_detect_avx_fma(12))
+    return FMAType::ISA_FMA;
+  else
+#endif
+    return FMAType::FMA_NONE;
 }
 
 #endif
