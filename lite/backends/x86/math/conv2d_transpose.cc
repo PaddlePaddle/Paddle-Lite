@@ -12,8 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "lite/backends/x86/math/conv2d_transpose.h"
 #include <string.h>
-#include "lite/core/op_registry.h"
+#include "lite/backends/x86/math/avx_mathfuns.h"
 
 #ifdef __AVX__
 #include <immintrin.h>
@@ -106,7 +107,7 @@ void conv_transpose_depthwise_s1(const float* dst,
   const int oc_plane_size = output_h * output_w;
   const int rr_plane_size = kernel_h * kernel_w;
 
-#if defined(__AVX2__)
+#ifdef __AVX__
   __m256 vec_zero = _mm256_set1_ps(0.f);
   __m256 vec_width = _mm256_set1_ps(width * 1.0f);
 #endif
@@ -145,7 +146,7 @@ void conv_transpose_depthwise_s1(const float* dst,
           int iw = -pad_w0 + kx * dilation_w;
           int i = 0;
 
-#ifdef __AVX2__
+#ifdef __AVX__
           for (; i + 7 < output_w; i += 8, iw += 8) {
             int dst_offset = dst_z + dst_y + i;
             const float* dst_addr = dst + dst_offset;
@@ -160,8 +161,8 @@ void conv_transpose_depthwise_s1(const float* dst,
             // select weight
             __m256 vec_iw = _mm256_loadu_ps(&iw_data[0]);
             __m256 vec_mask = _mm256_and_ps(
-                _mm256_cmp_ps(vec_iw, vec_zero, (int)13),
-                _mm256_cmp_ps(vec_iw, vec_width, (int)1));  // GE:13  LT:1
+                _mm256_cmp_ps(vec_iw, vec_zero, 13),
+                _mm256_cmp_ps(vec_iw, vec_width, 1));  // GE:13  LT:1
             __m256 vec_weight = _mm256_set1_ps(weight_addr[0]);
             vec_weight = _mm256_blendv_ps(vec_zero, vec_weight, vec_mask);
 
@@ -186,7 +187,6 @@ void conv_transpose_depthwise_s1(const float* dst,
                                       _mm256_loadu_ps(src_addr_h3 + iw));
             _mm256_storeu_ps(src_addr_h3 + iw, vec_dst);
           }
-          _mm256_zeroupper();
 #endif
 #ifdef __SSE4_1__
           for (; i + 3 < output_w; i += 4, iw += 4) {
@@ -317,7 +317,7 @@ void conv_transpose_depthwise_s2(const float* dst,
           int iw = -pad_w0 + kx * dilation_w;
           int i = 0;
 
-#ifdef __AVX2__
+#ifdef __AVX2__  // _mm256_permute4x64_epi64 need avx2
           for (; i + 7 < output_w; i += 8, iw += 16) {
             int dst_offset = dst_z + dst_y + i;
             const float* dst_addr = dst + dst_offset;
@@ -333,8 +333,8 @@ void conv_transpose_depthwise_s2(const float* dst,
             // select weight
             __m256 vec_iw = _mm256_loadu_ps(&iw_data[0]);
             __m256 vec_mask = _mm256_and_ps(
-                _mm256_cmp_ps(vec_iw, vec_zero, (int)13),
-                _mm256_cmp_ps(vec_iw, vec_width, (int)1));  // GE:13  LT:1
+                _mm256_cmp_ps(vec_iw, vec_zero, 13),
+                _mm256_cmp_ps(vec_iw, vec_width, 1));  // GE:13  LT:1
             __m256 vec_weight = _mm256_set1_ps(weight_addr[0]);
             vec_weight = _mm256_blendv_ps(vec_zero, vec_weight, vec_mask);
 
@@ -343,8 +343,10 @@ void conv_transpose_depthwise_s2(const float* dst,
             __m256 vec_data_hi = _mm256_loadu_ps(src_addr_h0 + iw + 8);
             __m256 vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
-            vec_data = (__m256)(_mm256_permute4x64_epi64((*(__m256i*)&vec_data),
-                                                         216));  // 11011000b
+            __m256i vec_tmp_data = _mm256_permute4x64_epi64(
+                _mm256_castps_si256(vec_data),
+                216);  // 11011000b
+            vec_data = _mm256_castsi256_ps(vec_tmp_data);
             __m256 vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr), vec_weight, vec_data);
             __m256 vec_dst_lo = _mm256_unpacklo_ps(vec_dst, vec_zero);
@@ -362,8 +364,11 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data_hi = _mm256_loadu_ps(src_addr_h1 + iw + 8);
             vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
-            vec_data = (__m256)(_mm256_permute4x64_epi64((*(__m256i*)&vec_data),
-                                                         216));  // 11011000b
+            vec_tmp_data = _mm256_permute4x64_epi64(
+                _mm256_castps_si256(vec_data),
+                216);  // 11011000b
+            vec_data = _mm256_castsi256_ps(vec_tmp_data);
+
             vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr + output_w), vec_weight, vec_data);
             vec_dst_lo = _mm256_unpacklo_ps(vec_dst, vec_zero);
@@ -381,8 +386,10 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data_hi = _mm256_loadu_ps(src_addr_h2 + iw + 8);
             vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
-            vec_data = (__m256)(_mm256_permute4x64_epi64((*(__m256i*)&vec_data),
-                                                         216));  // 11011000b
+            vec_tmp_data = _mm256_permute4x64_epi64(
+                _mm256_castps_si256(vec_data),
+                216);  // 11011000b
+            vec_data = _mm256_castsi256_ps(vec_tmp_data);
             vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr + 2 * output_w), vec_weight, vec_data);
             vec_dst_lo = _mm256_unpacklo_ps(vec_dst, vec_zero);
@@ -400,8 +407,10 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data_hi = _mm256_loadu_ps(src_addr_h3 + iw + 8);
             vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
-            vec_data = (__m256)(_mm256_permute4x64_epi64((*(__m256i*)&vec_data),
-                                                         216));  // 11011000b
+            vec_tmp_data = _mm256_permute4x64_epi64(
+                _mm256_castps_si256(vec_data),
+                216);  // 11011000b
+            vec_data = _mm256_castsi256_ps(vec_tmp_data);
             vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr + 3 * output_w), vec_weight, vec_data);
             vec_dst_lo = _mm256_unpacklo_ps(vec_dst, vec_zero);
@@ -415,7 +424,6 @@ void conv_transpose_depthwise_s2(const float* dst,
                 vec_store_mask,
                 _mm256_permute2f128_ps(vec_dst_lo, vec_dst_hi, 0x31));
           }
-          _mm256_zeroupper();
 #endif
 #ifdef __SSE4_1__
           for (; i + 3 < output_w; i += 4, iw += 8) {

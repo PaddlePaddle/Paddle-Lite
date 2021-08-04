@@ -353,13 +353,13 @@ void TestConvTransposeBiasRelu(Place place, float abs_error = 2e-5) {
   }
 }
 
+// X86 not support fuse_relu yet
 void TestConvDepthWiseS1(Place place, float abs_error = 2e-5) {
   for (auto dims : std::vector<std::vector<int64_t>>{{5, 15, 19, 19},
                                                      {5, 15, 21, 19},
                                                      {5, 15, 27, 27},
                                                      {5, 15, 19, 29}}) {
-    for (auto bias : std::vector<std::string>{"", "bias"}) {
-      for (bool fuse_relu : {true, false}) {
+  
         std::unique_ptr<arena::TestCase> tester(
             new ConvTransposeComputeTester(place,
                                            "def",
@@ -372,13 +372,10 @@ void TestConvDepthWiseS1(Place place, float abs_error = 2e-5) {
                                            {1, 1},
                                            "",
                                            {},
-                                           {},
-                                           bias,
-                                           fuse_relu));
+                                           {}));
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
-      }
-    }
+      
   }
 }
 
@@ -387,8 +384,7 @@ void TestConvDepthWiseS2(Place place, float abs_error = 2e-5) {
                                                      {5, 15, 14, 14},
                                                      {5, 15, 11, 14},
                                                      {5, 15, 15, 14}}) {
-    for (auto bias : std::vector<std::string>{"", "bias"}) {
-      for (bool fuse_relu : {true, false}) {
+   
         std::unique_ptr<arena::TestCase> tester(
             new ConvTransposeComputeTester(place,
                                            "def",
@@ -401,13 +397,10 @@ void TestConvDepthWiseS2(Place place, float abs_error = 2e-5) {
                                            {1, 1},
                                            "",
                                            {},
-                                           {},
-                                           bias,
-                                           fuse_relu));
+                                           {}));
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
-      }
-    }
+     
   }
 }
 
@@ -434,8 +427,8 @@ TEST(Conv_transpose, precision) {
 
   // TestConvTransposeBiasRelu(place, abs_error);
 
-  // TestConvDepthWiseS1(place, abs_error);
-  // TestConvDepthWiseS2(place, abs_error);
+  TestConvDepthWiseS1(place, abs_error);
+  TestConvDepthWiseS2(place, abs_error);
   return;
 #else
   return;
