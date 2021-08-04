@@ -12,57 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <map>
-#include <vector>
-#include "utility/debug.h"
+#include "driver/imagination_nna/converter.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
-#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace imagination_nna {
-
-class Device {
- public:
-  Device() {}
-  ~Device() {}
-};
-
-class Context {
- public:
-  explicit Context(void* device, const char* properties) : device_(device) {}
-  ~Context() {}
-
- private:
-  void* device_{nullptr};
-  void* context_{nullptr};
-};
-
-class Program {
- public:
-  explicit Program(Context* context) : context_(context) {}
-  ~Program() {}
-
-  int Build(hal::Model* model, hal::Cache* cache) {
-    std::vector<hal::Operation*> operations =
-        SortOperationsInTopologicalOrder(model);
-    for (auto operation : operations) {
-      switch (operation->type) {
-        case NNADAPTER_CONV_2D:
-        default:
-          NNADAPTER_LOG(FATAL) << "Unsupported operation("
-                               << OperationTypeToString(operation->type)
-                               << ") is found.";
-          break;
-      }
-    }
-    return NNADAPTER_NO_ERROR;
-  }
-
- private:
-  Context* context_{nullptr};
-  std::map<hal::Operand*, int> nodes_;
-};
 
 int OpenDevice(void** device) {
   auto d = new Device();
@@ -142,7 +97,8 @@ int ExecuteProgram(void* program,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto p = reinterpret_cast<Program*>(program);
-  return NNADAPTER_NO_ERROR;
+  return p->Execute(
+      input_count, input_arguments, output_count, output_arguments);
 }
 
 }  // namespace imagination_nna
