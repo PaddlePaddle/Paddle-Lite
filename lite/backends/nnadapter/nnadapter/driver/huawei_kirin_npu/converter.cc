@@ -192,22 +192,24 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   auto input_count = input_sizes.size();
-  auto output_count = output_sizes.size();
   NNADAPTER_CHECK_EQ(input_dimensions.size(), input_count);
-  NNADAPTER_CHECK_EQ(output_dimensions.size(), output_count);
-  input_tensors_.resize(input_count);
-  output_tensors_.resize(output_count);
-  for (size_t i = 0; i < input_count; i++) {
-    auto n = input_dimensions[i].GetNumber();
-    auto c = input_dimensions[i].GetChannel();
-    auto h = input_dimensions[i].GetHeight();
-    auto w = input_dimensions[i].GetWidth();
-    NNADAPTER_VLOG(3) << "HiAI input tensors[" << i << "]: " << n << "," << c
-                      << "," << h << "," << w;
-    NNADAPTER_CHECK_EQ(input_sizes[i], n * c * h * w);
-    input_tensors_[i].reset(new hiai::AiTensor);
-    input_tensors_[i]->Init(&(input_dimensions[i]));
+  if (input_count > 0) {
+    input_tensors_.resize(input_count);
+    for (size_t i = 0; i < input_count; i++) {
+      auto n = input_dimensions[i].GetNumber();
+      auto c = input_dimensions[i].GetChannel();
+      auto h = input_dimensions[i].GetHeight();
+      auto w = input_dimensions[i].GetWidth();
+      NNADAPTER_VLOG(3) << "HiAI input tensors[" << i << "]: " << n << "," << c
+                        << "," << h << "," << w;
+      NNADAPTER_CHECK_EQ(input_sizes[i], n * c * h * w);
+      input_tensors_[i].reset(new hiai::AiTensor);
+      input_tensors_[i]->Init(&(input_dimensions[i]));
+    }
   }
+  auto output_count = output_sizes.size();
+  NNADAPTER_CHECK_EQ(output_dimensions.size(), output_count);
+  output_tensors_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto n = output_dimensions[i].GetNumber();
     auto c = output_dimensions[i].GetChannel();

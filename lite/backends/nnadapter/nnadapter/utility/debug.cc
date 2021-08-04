@@ -259,6 +259,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "weight", "bias", "fuse_code"};
         output_args = {"output"};
         break;
+      case NNADAPTER_FILL:
+        input_args = {"shape", "value"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_RELU:
@@ -456,6 +460,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D)
     NNADAPTER_TYPE_TO_STRING(DIV);
+    NNADAPTER_TYPE_TO_STRING(FILL);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
