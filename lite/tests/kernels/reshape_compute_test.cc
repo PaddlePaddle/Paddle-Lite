@@ -24,7 +24,8 @@ namespace lite {
 class ReshapeComputeTester : public arena::TestCase {
  protected:
 // common attributes for this op.
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU) || \
+    defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   std::string op_type_ = "reshape";
 #else
   std::string op_type_ = "reshape2";
@@ -205,7 +206,14 @@ TEST(Reshape, precision) {
   LOG(INFO) << "test Reshape op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)

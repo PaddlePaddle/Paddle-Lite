@@ -59,9 +59,9 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int64_t K = input_dims.Slice(in_num_col_dims, input_dims.size()).production();
   int64_t N = w_dims[1];
   CHECK_EQ(K * N, w_dims.production());
-  CHECK_EQ(out_dims.size(), 2);
-  CHECK_EQ(out_dims[0], M);
-  CHECK_EQ(out_dims[1], N);
+  // CHECK_EQ(out_dims.size(), 2);
+  // CHECK_EQ(out_dims[0], M);
+  // CHECK_EQ(out_dims[1], N);
   VLOG(5) << "input dims: " << input_dims << " w dims: " << w_dims
           << " out_dims: " << out_dims << " M: " << M << " K: " << K
           << " N: " << N;
