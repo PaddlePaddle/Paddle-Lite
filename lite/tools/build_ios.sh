@@ -8,7 +8,7 @@ set -e
 # armv7 or armv8, default armv8.
 ARCH=armv8
 # ON or OFF, default OFF.
-WITH_EXTRA=ON
+WITH_EXTRA=OFF
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
 # controls whether to hide log information, default is ON.
