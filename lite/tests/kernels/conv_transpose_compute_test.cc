@@ -359,23 +359,21 @@ void TestConvDepthWiseS1(Place place, float abs_error = 2e-5) {
                                                      {5, 15, 21, 19},
                                                      {5, 15, 27, 27},
                                                      {5, 15, 19, 29}}) {
-  
-        std::unique_ptr<arena::TestCase> tester(
-            new ConvTransposeComputeTester(place,
-                                           "def",
-                                           DDim(dims),
-                                           1,
-                                           {3, 3},
-                                           {1, 1},
-                                           {0, 0},
-                                           dims[1],
-                                           {1, 1},
-                                           "",
-                                           {},
-                                           {}));
-        arena::Arena arena(std::move(tester), place, abs_error);
-        arena.TestPrecision();
-      
+    std::unique_ptr<arena::TestCase> tester(
+        new ConvTransposeComputeTester(place,
+                                       "def",
+                                       DDim(dims),
+                                       1,
+                                       {3, 3},
+                                       {1, 1},
+                                       {0, 0},
+                                       dims[1],
+                                       {1, 1},
+                                       "",
+                                       {},
+                                       {}));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
   }
 }
 
@@ -384,23 +382,21 @@ void TestConvDepthWiseS2(Place place, float abs_error = 2e-5) {
                                                      {5, 15, 14, 14},
                                                      {5, 15, 11, 14},
                                                      {5, 15, 15, 14}}) {
-   
-        std::unique_ptr<arena::TestCase> tester(
-            new ConvTransposeComputeTester(place,
-                                           "def",
-                                           DDim(dims),
-                                           1,
-                                           {3, 3},
-                                           {2, 2},
-                                           {0, 0},
-                                           dims[1],
-                                           {1, 1},
-                                           "",
-                                           {},
-                                           {}));
-        arena::Arena arena(std::move(tester), place, abs_error);
-        arena.TestPrecision();
-     
+    std::unique_ptr<arena::TestCase> tester(
+        new ConvTransposeComputeTester(place,
+                                       "def",
+                                       DDim(dims),
+                                       1,
+                                       {3, 3},
+                                       {2, 2},
+                                       {0, 0},
+                                       dims[1],
+                                       {1, 1},
+                                       "",
+                                       {},
+                                       {}));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
   }
 }
 

@@ -343,9 +343,9 @@ void conv_transpose_depthwise_s2(const float* dst,
             __m256 vec_data_hi = _mm256_loadu_ps(src_addr_h0 + iw + 8);
             __m256 vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
-            __m256i vec_tmp_data = _mm256_permute4x64_epi64(
-                _mm256_castps_si256(vec_data),
-                216);  // 11011000b
+            __m256i vec_tmp_data =
+                _mm256_permute4x64_epi64(_mm256_castps_si256(vec_data),
+                                         216);  // 11011000b
             vec_data = _mm256_castsi256_ps(vec_tmp_data);
             __m256 vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr), vec_weight, vec_data);
@@ -364,9 +364,9 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data_hi = _mm256_loadu_ps(src_addr_h1 + iw + 8);
             vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
-            vec_tmp_data = _mm256_permute4x64_epi64(
-                _mm256_castps_si256(vec_data),
-                216);  // 11011000b
+            vec_tmp_data =
+                _mm256_permute4x64_epi64(_mm256_castps_si256(vec_data),
+                                         216);  // 11011000b
             vec_data = _mm256_castsi256_ps(vec_tmp_data);
 
             vec_dst = _mm256_fmadd_ps(
@@ -386,9 +386,9 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data_hi = _mm256_loadu_ps(src_addr_h2 + iw + 8);
             vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
-            vec_tmp_data = _mm256_permute4x64_epi64(
-                _mm256_castps_si256(vec_data),
-                216);  // 11011000b
+            vec_tmp_data =
+                _mm256_permute4x64_epi64(_mm256_castps_si256(vec_data),
+                                         216);  // 11011000b
             vec_data = _mm256_castsi256_ps(vec_tmp_data);
             vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr + 2 * output_w), vec_weight, vec_data);
@@ -407,9 +407,9 @@ void conv_transpose_depthwise_s2(const float* dst,
             vec_data_hi = _mm256_loadu_ps(src_addr_h3 + iw + 8);
             vec_data =
                 _mm256_shuffle_ps(vec_data_lo, vec_data_hi, 34952);  // 0x8888
-            vec_tmp_data = _mm256_permute4x64_epi64(
-                _mm256_castps_si256(vec_data),
-                216);  // 11011000b
+            vec_tmp_data =
+                _mm256_permute4x64_epi64(_mm256_castps_si256(vec_data),
+                                         216);  // 11011000b
             vec_data = _mm256_castsi256_ps(vec_tmp_data);
             vec_dst = _mm256_fmadd_ps(
                 _mm256_loadu_ps(dst_addr + 3 * output_w), vec_weight, vec_data);
