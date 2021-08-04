@@ -52,9 +52,20 @@ NNAdapterOperand* Converter::AddInt32ConstantOperand(int32_t value) {
       DDim(std::vector<int64_t>({})), NNADAPTER_INT32, nullptr, 0, 0, &value);
 }
 
+NNAdapterOperand* Converter::AddInt64ConstantOperand(int64_t value) {
+  return AddOperand(
+      DDim(std::vector<int64_t>({})), NNADAPTER_INT64, nullptr, 0, 0, &value);
+}
+
 NNAdapterOperand* Converter::AddFloat32ConstantOperand(float value) {
   return AddOperand(
       DDim(std::vector<int64_t>({})), NNADAPTER_FLOAT32, nullptr, 0, 0, &value);
+}
+
+NNAdapterOperand* Converter::AddBool8ConstantOperand(bool* values,
+                                                     const DDim& dimensions,
+                                                     bool copy) {
+  return AddOperand(dimensions, NNADAPTER_BOOL8, nullptr, 0, 0, values, copy);
 }
 
 NNAdapterOperand* Converter::AddInt32ConstantOperand(int32_t* values,
@@ -62,6 +73,13 @@ NNAdapterOperand* Converter::AddInt32ConstantOperand(int32_t* values,
                                                      bool copy) {
   return AddOperand(
       dimensions, NNADAPTER_TENSOR_INT32, nullptr, 0, 0, values, copy);
+}
+
+NNAdapterOperand* Converter::AddInt64ConstantOperand(int64_t* values,
+                                                     const DDim& dimensions,
+                                                     bool copy) {
+  return AddOperand(
+      dimensions, NNADAPTER_TENSOR_INT64, nullptr, 0, 0, values, copy);
 }
 
 NNAdapterOperand* Converter::AddFloat32ConstantOperand(float* values,
@@ -142,16 +160,21 @@ NNAdapterOperand* Converter::AddQuant8VariableOperand(const DDim& dimensions,
                     name);
 }
 
+NNAdapterOperand* Converter::AddVariableOperand(
+    const DDim& dimensions,
+    const std::string& name,
+    NNAdapterOperandPrecisionCode precision) {
+  return AddOperand(dimensions, precision, nullptr, 0, 0, nullptr, false, name);
+}
+
 NNAdapterOperand* Converter::AddFloat32VariableOperand(
     const DDim& dimensions, const std::string& name) {
-  return AddOperand(dimensions,
-                    NNADAPTER_TENSOR_FLOAT32,
-                    nullptr,
-                    0,
-                    0,
-                    nullptr,
-                    false,
-                    name);
+  return AddVariableOperand(dimensions, name, NNADAPTER_TENSOR_FLOAT32);
+}
+
+NNAdapterOperand* Converter::AddInt32VariableOperand(const DDim& dimensions,
+                                                     const std::string& name) {
+  return AddVariableOperand(dimensions, name, NNADAPTER_TENSOR_INT32);
 }
 
 NNAdapterOperation* Converter::AddOperation(NNAdapterOperationType type) {

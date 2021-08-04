@@ -101,9 +101,10 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else if (target_repr == "imagination_nna") {
-      valid_places_.emplace_back(TARGET(kImaginationNNA));
+      valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
-          Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
+          TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "intel_fpga") {
       valid_places_.emplace_back(TARGET(kIntelFPGA));
       valid_places_.emplace_back(

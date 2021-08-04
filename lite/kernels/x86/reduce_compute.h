@@ -52,6 +52,13 @@ struct MaxFunctor {
   }
 };
 
+struct MinFunctor {
+  template <typename X, typename Y, typename Dim>
+  void operator()(X* x, Y* y, const Dim& dim) {
+    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->minimum(dim);
+  }
+};
+
 #define HANDLE_DIM(NDIM, RDIM, FUNCTOR)                                \
   if (ndim == NDIM && rdim == RDIM) {                                  \
     paddle::lite::kernels::x86::                                       \

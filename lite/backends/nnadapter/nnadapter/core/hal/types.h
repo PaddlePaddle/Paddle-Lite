@@ -43,12 +43,11 @@ typedef struct Operation {
 } Operation;
 
 typedef struct Cache {
-  std::string cache_key;
-  void* cache_buffer;
-  uint32_t cache_length;
-  std::string cache_dir;
+  const char* key;
+  const char* dir;
   std::vector<NNAdapterOperandType> input_types;
   std::vector<NNAdapterOperandType> output_types;
+  std::vector<uint8_t> buffer;
 } Cache;
 
 typedef struct Model {

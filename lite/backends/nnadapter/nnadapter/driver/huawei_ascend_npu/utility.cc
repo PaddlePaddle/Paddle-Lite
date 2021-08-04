@@ -118,7 +118,7 @@ const std::string ATCErrorToString(uint32_t error) {
 }
 
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
-    const std::vector<char>& model_buffer, int device_id) {
+    const std::vector<uint8_t>& model_buffer, int device_id) {
   if (model_buffer.size() == 0) {
     NNADAPTER_LOG(ERROR) << "model_buffer size should not be 0!";
     return nullptr;
@@ -137,7 +137,7 @@ std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<char>* model_buffer) {
+    std::vector<uint8_t>* model_buffer) {
   // Convert the CANN IR graph to the CANN om model
   ge::Graph ir_graph("graph");
   // Set input operator attr index if node size > 1
@@ -340,42 +340,54 @@ ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
   ge::DataType output_precision = ge::DT_FLOAT;
   switch (input_precision) {
     case NNADAPTER_TENSOR_BOOL8:
+    case NNADAPTER_BOOL8:
       output_precision = ge::DT_BOOL;
       break;
     case NNADAPTER_TENSOR_INT8:
+    case NNADAPTER_INT8:
       output_precision = ge::DT_INT8;
       break;
     case NNADAPTER_TENSOR_INT16:
+    case NNADAPTER_INT16:
       output_precision = ge::DT_INT16;
       break;
     case NNADAPTER_TENSOR_INT32:
+    case NNADAPTER_INT32:
       output_precision = ge::DT_INT32;
       break;
     case NNADAPTER_TENSOR_INT64:
+    case NNADAPTER_INT64:
       output_precision = ge::DT_INT64;
       break;
     case NNADAPTER_TENSOR_UINT8:
+    case NNADAPTER_UINT8:
       output_precision = ge::DT_UINT8;
       break;
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
       output_precision = ge::DT_QUINT8;
       break;
     case NNADAPTER_TENSOR_UINT16:
+    case NNADAPTER_UINT16:
       output_precision = ge::DT_UINT16;
       break;
     case NNADAPTER_TENSOR_UINT32:
+    case NNADAPTER_UINT32:
       output_precision = ge::DT_UINT32;
       break;
     case NNADAPTER_TENSOR_UINT64:
+    case NNADAPTER_UINT64:
       output_precision = ge::DT_UINT64;
       break;
     case NNADAPTER_TENSOR_FLOAT16:
+    case NNADAPTER_FLOAT16:
       output_precision = ge::DT_FLOAT16;
       break;
     case NNADAPTER_TENSOR_FLOAT32:
+    case NNADAPTER_FLOAT32:
       output_precision = ge::DT_FLOAT;
       break;
     case NNADAPTER_TENSOR_FLOAT64:
+    case NNADAPTER_FLOAT64:
       output_precision = ge::DT_DOUBLE;
       break;
     default:

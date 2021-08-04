@@ -18,8 +18,11 @@ add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
 set(DRIVER_NAME ${NNADAPTER_DRIVER_PREFIX}_${DEVICE_NAME})
 add_definitions(-DNNADAPTER_DRIVER_NAME=${DRIVER_NAME})
 
-set(DRIVER_SRCS driver.cc)
-set(DRIVER_DEPS ${NNADAPTER_UTILITIES} ${${DEVICE_NAME}_deps})
+include(dependencies.cmake)
+
+aux_source_directory(./converter CONVERTERS)
+set(DRIVER_SRCS imgdnn_manager.cc utility.cc ${CONVERTERS} converter.cc driver.cc)
+set(DRIVER_DEPS ${NNADAPTER_UTILITIES} nnadapter_optimizer_symm2asymm ${${DEVICE_NAME}_deps})
 
 add_library(${DRIVER_NAME} SHARED ${DRIVER_SRCS})
 target_link_libraries(${DRIVER_NAME} "-Wl,--start-group" ${DRIVER_DEPS} "-Wl,--end-group")

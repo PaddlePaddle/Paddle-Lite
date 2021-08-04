@@ -40,7 +40,7 @@ class CLContext {
       p.second.reset();
     }
     CLRuntime::Global()->program_map().clear();
-    LOG(INFO) << "release cl::Program, cl::Kernel finished.";
+    VLOG(4) << "release cl::Program, cl::Kernel finished.";
   }
 
   cl::CommandQueue &GetCommandQueue();
