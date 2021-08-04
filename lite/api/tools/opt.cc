@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
-#include "lite/api/opt_base.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
+#include "lite/api/tools/opt_base.h"
 
 DEFINE_string(model_dir,
               "",
@@ -71,6 +71,7 @@ int main(int argc, char** argv) {
   // If there is none input argument, print help info.
   if (argc < 2) {
     opt.PrintExecutableBinHelpInfo();
+    return 0;
   }
   google::ParseCommandLineFlags(&argc, &argv, false);
 
