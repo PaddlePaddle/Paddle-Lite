@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "lite/operators/gather_op.h"
 #include <algorithm>
 #include "lite/core/op_registry.h"
@@ -20,68 +21,69 @@ namespace lite {
 namespace operators {
 
 bool GatherOp::CheckShape() const {
+  LOG(INFO) << "check shape";
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Index);
   CHECK_OR_FALSE(param_.Out);
+
+  auto index_dims = param_.Index->dims();
+  if (index_dims.size() == 2) {
+    CHECK_EQ(index_dims[1], 1)
+        << "The last dim of index should be 1 when it is 2D, but we get "
+        << index_dims[1];
+  } else {
+    CHECK_EQ(index_dims.size(), 1)
+        << "The index should be 1D, when it is not 2D, but we get "
+        << index_dims.size();
+  }
+
   return true;
 }
 
 bool GatherOp::InferShapeImpl() const {
-  if (param_.Axis != nullptr) {
-    int axis_index = 0;
-    if (param_.Axis->precision() == PRECISION(kInt32)) {
-      auto *axis_data = param_.Axis->data<int32_t>();
-      axis_index = axis_data[0];
-    } else if (param_.Axis->precision() == PRECISION(kInt64)) {
-      auto *axis_data = param_.Axis->data<int64_t>();
-      axis_index = axis_data[0];
-    } else {
-      LOG(FATAL) << "Axis unsupport data type: "
-                 << lite_api::PrecisionToStr(param_.Axis->precision());
-    }
-    int index_size = param_.Index->numel();
-    auto input_dim = param_.X->dims();
+  LOG(INFO) << "InferShapeImpl";
 
-    int inner_dim_size = 1;
-    int outer_dim_size = 1;
+  auto axis = param_.axis;
+  auto input_dim = param_.X->dims();
+  auto index_dims = param_.Index->dims();
+  if (param_.Axis != nullptr || axis == 0) {
+    // if has Axis, we can not obtain correct shape of output
+    int batch_size = index_dims[0];
+    DDim output_dims(input_dim);
+    output_dims[0] = batch_size;
+    param_.Out->Resize(output_dims);
+  } else {
+    int index_size = index_dims[0];
     std::vector<int64_t> out_dim_vec;
-    for (int i = 0; i < axis_index; i++) {
-      inner_dim_size *= input_dim[i];
+    for (int i = 0; i < axis; i++) {
       out_dim_vec.push_back(input_dim[i]);
     }
     out_dim_vec.push_back(index_size);
-    for (int i = axis_index + 1; i < input_dim.size(); i++) {
-      outer_dim_size *= input_dim[i];
+    for (int i = axis + 1; i < input_dim.size(); i++) {
       out_dim_vec.push_back(input_dim[i]);
     }
-    param_.Out->Resize(out_dim_vec);
-    return true;
-  } else {
-    auto index_dims = param_.Index->dims();
-    CHECK(index_dims.size() == 1 ||
-          (index_dims.size() == 2 && index_dims[1] == 1))
-        << "index dims unmatch";
-    int batch_size = index_dims[0];
-    auto out_dims = param_.X->dims();
-    out_dims[0] = batch_size;
-    param_.Out->Resize(out_dims);
-    return true;
+    param_.Out->Resize(DDims(out_dim_vec));
   }
+
+  return true;
 }
 
 bool GatherOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+  LOG(INFO) << "AttachImpl";
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Index = scope->FindTensor(opdesc.Input("Index").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   if (opdesc.HasInput("Axis") && !opdesc.Input("Axis").empty()) {
+    LOG(INFO) << "AXIS exist";
     auto axis = opdesc.Input("Axis").front();
+    LOG(INFO) << "xxx";
     param_.Axis = scope->FindTensor(axis);
-    CHECK_EQ(param_.Axis->numel(), 1) << "value Axis size must be 1, but get"
-                                      << param_.Axis->numel();
   }
+  param_.axis = opdesc.GetAttr<int>("axis");
   CHECK(param_.X) << "X is null";
   CHECK(param_.Index) << "index is null";
   CHECK(param_.Out) << "out is null";
+
   return true;
 }
 

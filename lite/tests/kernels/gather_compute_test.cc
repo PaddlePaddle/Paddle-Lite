@@ -28,11 +28,13 @@ class GatherComputeTest : public arena::TestCase {
   std::string op_type_ = "gather";
   std::string x_ = "x";
   std::string index_ = "index";
+  std::string axis_tensor_ = "Axis";
   std::string axis_ = "axis";
   std::string out_ = "out";
   DDim x_dims_{{5, 4, 2, 3}};
   DDim index_dims_{{2, 1}};
   DDim axis_dims_{{1}};
+  bool is_use_axis_tensor_ = false;
 
  public:
   GatherComputeTest(const Place& place,
@@ -48,14 +50,14 @@ class GatherComputeTest : public arena::TestCase {
   void RunBaseline(Scope* scope) override {
     auto x = scope->FindTensor(x_);
     auto index = scope->FindTensor(index_);
-    auto axis = scope->FindTensor(axis_);
+    auto axis_tensor = scope->FindTensor(axis_tensor_);
     auto x_dims = x->dims();
     auto index_dims = index->dims();
     CHECK(index_dims.size() == 1 ||
           (index_dims.size() == 2 && index_dims[1] == 1));
     CHECK_EQ(index_dims.size(), 1);
     if (axis_dims_.production() == 1) {
-      auto* axis_data = axis->template data<A>();
+      auto* axis_data = axis_tensor->template data<A>();
       auto* index_data = index->template data<R>();
       auto* input_data = x->template data<T>();
 
@@ -123,9 +125,10 @@ class GatherComputeTest : public arena::TestCase {
     op_desc->SetType(op_type_);
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("Index", {index_});
-    if (axis_dims_.production() == 1) {
-      op_desc->SetInput("Axis", {axis_});
+    if (is_use_axis_tensor_) {
+      op_desc->SetInput("Axis", {axis_tensor_});
     }
+    op_desc->SetAttr("axis", axis_);
     op_desc->SetOutput("Out", {out_});
   }
 
@@ -144,7 +147,9 @@ class GatherComputeTest : public arena::TestCase {
     }
     SetCommonTensor(x_, x_dims_, x.data());
     SetCommonTensor(index_, index_dims_, index.data());
-    SetCommonTensor(axis_, axis_dims_, axis.data());
+    if (is_use_axis_tensor_) {
+      SetCommonTensor(axis_tensor_, axis_dims_, axis.data());
+    }
   }
 };
 
@@ -185,10 +190,10 @@ TEST(Gather, precision) {
   return;
 #endif
 
-  for (auto x_dims : std::vector<std::vector<int64_t>>{
-           {5, 7, 10, 12}, {8, 12, 16}, {12, 17}}) {
+  for (auto x_dims :
+       std::vector<std::vector<int64_t>>{{5, 7, 10, 12}, {8, 12, 16}}) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
-      for (auto axis_dims : std::vector<std::vector<int64_t>>{{1}, {0}}) {
+      for (auto axis_dims : std::vector<std::vector<int64_t>>{{2}, {0}}) {
 #if ((defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)) || \
      defined(LITE_WITH_NPU) || defined(LITE_WITH_HUAWEI_ASCEND_NPU))
         axis_dims = {{0}};

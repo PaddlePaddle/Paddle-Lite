@@ -1666,6 +1666,7 @@ struct GatherParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Index{};
   const lite::Tensor* Axis{nullptr};
+  int axis{0};
   lite::Tensor* Out{};
 };
 
