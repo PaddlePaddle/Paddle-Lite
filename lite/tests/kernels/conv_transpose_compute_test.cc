@@ -328,8 +328,8 @@ void TestConvTransposeOutputPadding(Place place, float abs_error = 2e-5) {
 
 void TestConvTransposeBiasRelu(Place place, float abs_error = 2e-5) {
   for (auto dims : std::vector<std::vector<int64_t>>{{5, 6, 11, 12}}) {
-    for (auto bias : std::vector<std::string>{"bias"}) {
-      for (bool fuse_relu : {true}) {
+    for (auto bias : std::vector<std::string>{"", "bias"}) {
+      for (bool fuse_relu : {false, true}) {
         if (bias.empty() && fuse_relu) continue;
         std::unique_ptr<arena::TestCase> tester(
             new ConvTransposeComputeTester(place,
@@ -412,17 +412,15 @@ TEST(Conv_transpose, precision) {
   return;
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
-  // TestConvTransposeKsize(place, abs_error);
-  // TestConvTransposeStrides(place, abs_error);
-  // TestConvTransposePaddings(place, abs_error);
-  // TestConvTransposeGroups(place, abs_error);
-  // TestConvTransposeDilations(place, abs_error);
-  // TestConvTransposePaddingAlgorithm(place, abs_error);
-  // TestConvTransposeOutputSize(place, abs_error);
-  // TestConvTransposeOutputPadding(place, abs_error);
-
-  // TestConvTransposeBiasRelu(place, abs_error);
-
+  TestConvTransposeKsize(place, abs_error);
+  TestConvTransposeStrides(place, abs_error);
+  TestConvTransposePaddings(place, abs_error);
+  TestConvTransposeGroups(place, abs_error);
+  TestConvTransposeDilations(place, abs_error);
+  TestConvTransposePaddingAlgorithm(place, abs_error);
+  TestConvTransposeOutputSize(place, abs_error);
+  TestConvTransposeOutputPadding(place, abs_error);
+  // TestConvTransposeBiasRelu(place, abs_error);  // not support fuse yet
   TestConvDepthWiseS1(place, abs_error);
   TestConvDepthWiseS2(place, abs_error);
   return;
