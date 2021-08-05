@@ -23,8 +23,7 @@ namespace host {
 template <typename IndexType, typename DataType>
 void GatherFunc(const operators::GatherParam& param) {
   auto src_dims = param.X->dims();
-  auto index_dims = param.Index->dims();
-  auto index_size = index_dims[0];
+  auto index_size = param.Index->dims()[0];
   auto* p_src = param.X->data<DataType>();
   const IndexType* p_index = param.Index->data<IndexType>();
   auto* p_output = param.Out->mutable_data<DataType>();
