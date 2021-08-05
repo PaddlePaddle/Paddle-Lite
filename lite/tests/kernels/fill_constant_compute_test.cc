@@ -98,8 +98,15 @@ class FillConstantComputeTester : public arena::TestCase {
         FillConstData<int64_t>(scope);
         break;
       }
-      default: {
+      case static_cast<int>(VarDescAPI::VarDataType::FP32): {
         FillConstData<float>(scope);
+        break;
+      }
+      default: {
+        LOG(FATAL) << "Attribute dtype in fill_constant op test"
+                      "must be 0[bool] or 1[int16] or 2[int32] or "
+                      "3[int64] or 5[fp32] for baseline: "
+                   << dtype_;
         break;
       }
     }
@@ -190,7 +197,7 @@ void TestFillConstantValue(Place place, float abs_error) {
   }
 
 #if defined(LITE_WITH_XPU)
-  std::vector<bool> values_bool{true, false, false};
+  std::vector<bool> values_bool{true, false};
   for (auto value : values_bool) {
     std::unique_ptr<arena::TestCase> tester(new FillConstantComputeTester(
         place,
