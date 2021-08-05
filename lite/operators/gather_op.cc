@@ -62,7 +62,7 @@ bool GatherOp::InferShapeImpl() const {
     for (int i = axis + 1; i < input_dim.size(); i++) {
       out_dim_vec.push_back(input_dim[i]);
     }
-    param_.Out->Resize(DDims(out_dim_vec));
+    param_.Out->Resize(DDim(out_dim_vec));
   }
 
   return true;

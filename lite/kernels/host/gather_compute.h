@@ -16,13 +16,15 @@
 #include <stdint.h>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
 
 template <typename IndexType, typename AxisType>
-class GatherCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+class GatherCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 

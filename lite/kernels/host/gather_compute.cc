@@ -102,26 +102,65 @@ void GatherCompute<IndexType, AxisType>::Run() {
   }
 
   LOG(INFO) << "axis: " << axis;
+  LOG(INFO) << "in dims: " << param.X->dims();
+  LOG(INFO) << "index dims: " << param.Index->dims();
+  LOG(INFO) << "out dims: " << param.Out->dims();
 
-  const auto& index_type = param.Index->precision();
+  const auto& data_type = param.X->precision();
   if (axis != 0) {
-    if (index_type == PRECISION(kInt32)) {
-      GatherV2Func<IndexType, AxisType, int32_t>(param, axis);
-    } else if (index_type == PRECISION(kInt64)) {
-      LOG(INFO) << "index type: int64";
-      GatherV2Func<IndexType, AxisType, int64_t>(param, axis);
-    } else {
-      LOG(FATAL) << "unsupport data type of Index tensor: "
-                 << lite_api::PrecisionToStr(index_type);
+    switch (data_type) {
+      case PRECISION(kFloat):
+        GatherV2Func<IndexType, AxisType, float>(param, axis);
+        break;
+#ifdef ENABLE_ARM_FP16
+      case PRECISION(kFP16):
+        GatherV2Func<IndexType, AxisType, lite_api::float16_t>(param, axis);
+        break;
+#endif
+      case PRECISION(kInt8):
+        GatherV2Func<IndexType, AxisType, int8_t>(param, axis);
+        break;
+      case PRECISION(kInt16):
+        GatherV2Func<IndexType, AxisType, int16_t>(param, axis);
+        break;
+      case PRECISION(kInt32):
+        GatherV2Func<IndexType, AxisType, int32_t>(param, axis);
+        break;
+      case PRECISION(kInt64):
+        GatherV2Func<IndexType, AxisType, int64_t>(param, axis);
+        break;
+      default:
+        LOG(FATAL) << "unsupport data type: "
+                   << lite_api::PrecisionToStr(data_type);
     }
     return;
   }
 
   if (param.X->numel() == 0) return;
-  if (index_type == PRECISION(kInt32)) {
-    GatherFunc<IndexType, int32_t>(param);
-  } else if (index_type == PRECISION(kInt64)) {
-    GatherFunc<IndexType, int64_t>(param);
+  switch (data_type) {
+    case PRECISION(kFloat):
+      GatherFunc<IndexType, float>(param);
+      break;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      GatherFunc<IndexType, lite_api::float16_t>(param);
+      break;
+#endif
+    case PRECISION(kInt8):
+      GatherFunc<IndexType, int8_t>(param);
+      break;
+    case PRECISION(kInt16):
+      GatherFunc<IndexType, int16_t>(param);
+      break;
+    case PRECISION(kInt32):
+      GatherFunc<IndexType, int32_t>(param);
+      break;
+    case PRECISION(kInt64):
+      GatherFunc<IndexType, int64_t>(param);
+      break;
+    default:
+      LOG(FATAL) << "unsupport data type: "
+                 << lite_api::PrecisionToStr(data_type);
   }
 }
 
@@ -130,36 +169,62 @@ void GatherCompute<IndexType, AxisType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt32Int32, int32int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+REGISTER_LITE_KERNEL(gather, kHost, kAny, kAny, GatherInt32Int32, int32int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("Axis",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt64Int64, int64int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+REGISTER_LITE_KERNEL(gather, kHost, kAny, kAny, GatherInt64Int64, int64int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("Axis",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
-REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt64Int32, int64int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+
+REGISTER_LITE_KERNEL(gather, kHost, kAny, kAny, GatherInt64Int32, int64int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("Axis",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
-REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt32Int64, int32int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+
+REGISTER_LITE_KERNEL(gather, kHost, kAny, kAny, GatherInt32Int64, int32int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("Axis",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();

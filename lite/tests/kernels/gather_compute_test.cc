@@ -41,11 +41,13 @@ class GatherComputeTest : public arena::TestCase {
                     const std::string& alias,
                     const DDim& x_dims,
                     const DDim& index_dims,
-                    const DDim& axis_dims)
+                    const DDim& axis_dims,
+                    const bool use_axis_tensor,
+                    const int axis)
       : TestCase(place, alias),
         x_dims_(x_dims),
         index_dims_(index_dims),
-        axis_dims_(axis_dims) {}
+        axis_dims_(axis_dims) is_use_axis_tensor(use_axis_tensor) axis_(axis) {}
 
   void RunBaseline(Scope* scope) override {
     auto x = scope->FindTensor(x_);
@@ -193,30 +195,42 @@ TEST(Gather, precision) {
   for (auto x_dims :
        std::vector<std::vector<int64_t>>{{5, 7, 10, 12}, {8, 12, 16}}) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
-      for (auto axis_dims : std::vector<std::vector<int64_t>>{{2}, {0}}) {
+      for (auto has_axis_tensor : {false, true}) {
+        for (auto axis : {0, 1, 2}) {
 #if ((defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)) || \
      defined(LITE_WITH_NPU) || defined(LITE_WITH_HUAWEI_ASCEND_NPU))
-        axis_dims = {{0}};
-        TestGather<float, int32_t, int32_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "def");
+          axis_dims = {{0}};
+          TestGather<float, int32_t, int32_t>(
+              x_dims, index_dims, axis_dims, place, abs_error, "def");
 #else
-        TestGather<float, int64_t, int64_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "int64int64");
-        TestGather<float, int32_t, int32_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "int32int32");
-        TestGather<float, int32_t, int64_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "int32int64");
-        TestGather<float, int64_t, int32_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "int64int32");
-        TestGather<int64_t, int64_t, int64_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "int64int64");
-        TestGather<int64_t, int32_t, int32_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "int32int32");
-        TestGather<int64_t, int32_t, int64_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "int32int64");
-        TestGather<int64_t, int64_t, int32_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "int64int32");
+          TestGather<float, int64_t, int64_t>(x_dims,
+                                              index_dims,
+                                              has_axis_tensor,
+                                              axis,
+                                              place,
+                                              abs_error,
+                                              "int64int64");
+          TestGather<float, int32_t, int32_t>(x_dims,
+                                              index_dims,
+                                              has_axis_tensor,
+                                              axis,
+                                              place,
+                                              abs_error,
+                                              "int32int32");
+          TestGather<float, int32_t, int64_t>(
+              x_dims, index_dims, axis_dims, place, abs_error, "int32int64");
+          TestGather<float, int64_t, int32_t>(
+              x_dims, index_dims, axis_dims, place, abs_error, "int64int32");
+          TestGather<int64_t, int64_t, int64_t>(
+              x_dims, index_dims, axis_dims, place, abs_error, "int64int64");
+          TestGather<int64_t, int32_t, int32_t>(
+              x_dims, index_dims, axis_dims, place, abs_error, "int32int32");
+          TestGather<int64_t, int32_t, int64_t>(
+              x_dims, index_dims, axis_dims, place, abs_error, "int32int64");
+          TestGather<int64_t, int64_t, int32_t>(
+              x_dims, index_dims, axis_dims, place, abs_error, "int64int32");
 #endif
+        }
       }
     }
   }
