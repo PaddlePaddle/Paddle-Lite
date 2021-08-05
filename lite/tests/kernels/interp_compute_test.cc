@@ -433,7 +433,7 @@ void TestInterpAlignCorners(Place place, float abs_error = 2e-5) {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (bool align_corners : {true, false}) {
       std::unique_ptr<arena::TestCase> tester(new NearestInterpComputeTester(
-          place, "def", DDim(x_dims), "nearest", 0.4, -1, -1, align_corners));
+          place, "def", DDim(x_dims), "nearest", -1, 4, 4, align_corners));
       arena::Arena arena(std::move(tester), place, abs_error);
       arena.TestPrecision();
     }
@@ -529,6 +529,18 @@ TEST(Interp, precision) {
   TestInterpAlignCorners(place, abs_error);
   TestInterpAlignMode(place, abs_error);
 }
+
+#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+TEST(Interp_nnadapter_huawei_ascend_npu, precision) {
+  Place place = TARGET(kNNAdapter);
+  float abs_error = 1e-2;
+
+  TestInterpOuthw(place, abs_error);
+  TestInterpSizetensor(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+}
+#endif
 
 }  // namespace lite
 }  // namespace paddle

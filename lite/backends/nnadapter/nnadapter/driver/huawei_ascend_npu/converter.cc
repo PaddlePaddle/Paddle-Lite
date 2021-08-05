@@ -120,11 +120,20 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_CONCAT:
           ConvertConcat(operation);
           break;
+        case NNADAPTER_RESIZE_NEAREST:
+          ConvertResizeNearest(operation);
+          break;
+        case NNADAPTER_RESIZE_LINEAR:
+          ConvertResizeLinear(operation);
+          break;
         case NNADAPTER_CONV_2D:
           ConvertConv2D(operation);
           break;
         case NNADAPTER_FULLY_CONNECTED:
           ConvertFullyConnected(operation);
+          break;
+        case NNADAPTER_FILL:
+          ConvertFill(operation);
           break;
         case NNADAPTER_RELU:
         case NNADAPTER_RELU6:
