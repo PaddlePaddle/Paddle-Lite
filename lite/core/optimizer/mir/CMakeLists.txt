@@ -103,32 +103,6 @@ lite_cc_library(mir_passes
       fp16_attribute_pass.cc
   DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
-# lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS
-        #mir_ssa_graph scope op
-        #fc_op
-        #${host_kernels}
-        #mir_passes
-        #mir_pass_manager
-        #program_fake_utils
-        #)
-# lite_cc_test(test_variable_place_infrence_pass SRCS variable_place_inference_pass_test.cc
-#   DEPS
-#       mul_op
-#       feed_op
-#       fetch_op
-#       io_copy_op
-#       ${host_kernels}
-#       mir_passes
-#       mir_pass_manager
-#       optimizer
-#       program_fake_utils
-#       target_wrapper_host
-#   PROFILE_DEPS basic_profiler
-#   CUDA_DEPS target_wrapper_cuda kernels_cuda
-#   ARM_DEPS mul_compute_arm
-#   X86_DEPS mul_compute_x86
-# )
-
 set(pattern_deps mir_node mir_ssa_graph op)
 if (WITH_TESTING)
   list(APPEND pattern_deps gtest)
@@ -144,13 +118,3 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     return()
 endif()
 lite_cc_test(test_mir_pass_manager SRCS pass_manager_test.cc DEPS mir_pass_manager mir_passes)
-
-
-# TODO(wz) replace framework/proto to lite proto.
-if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-    # it depends on the fluid/framework/proto, that is too heavy for mobile execution.
-    # TODO(wz) enable it latter.
-    # lite_cc_test(test_pattern_matcher_high_api SRCS pattern_matcher_high_api_test.cc DEPS
-    #     pattern_matcher_high_api proto_desc mir_pass_manager fc_op mul_op elementwise_ops
-    #     mir_passes compatible_pb program ${ops})
-endif()
