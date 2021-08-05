@@ -22,42 +22,44 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void FillConstantCompute::Run() {
+template <typename T>
+int FillConstantCompute::FillConstData() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   int write_size = param.out->numel();
-  int r = 0;
-  switch (param.dtype) {
-    case 1: {
-      auto data = param.out->mutable_data<int16_t>(TARGET(kXPU));
-      r = xdnn::constant<int16_t>(ctx.GetRawContext(),
+  T value = static_cast<T>(param.value);
+  if (param.value_tensor) {
+    value = param.value_tensor->template mutable_data<T>()[0];
+  }
+  auto data = param.out->mutable_data<T>(TARGET(kXPU));
+  return xdnn::constant<T>(ctx.GetRawContext(),
                                   data,
                                   write_size,
-                                  static_cast<int16_t>(param.value));
+                                  value);
+}
+
+void FillConstantCompute::Run() {
+  auto& param = this->Param<param_t>();
+  int r = 0;
+  switch (param.dtype) {
+    case 0: {
+      r = FillConstData<bool>();
+      break;
+    }
+    case 1: {
+      r = FillConstData<int16_t>();
       break;
     }
     case 2: {
-      auto data = param.out->mutable_data<int32_t>(TARGET(kXPU));
-      r = xdnn::constant<int32_t>(ctx.GetRawContext(),
-                                  data,
-                                  write_size,
-                                  static_cast<int32_t>(param.value));
+      r = FillConstData<int>();
       break;
     }
     case 3: {
-      auto data = param.out->mutable_data<int64_t>(TARGET(kXPU));
-      r = xdnn::constant<int64_t>(ctx.GetRawContext(),
-                                  data,
-                                  write_size,
-                                  static_cast<int64_t>(param.value));
+      r = FillConstData<int64_t>();
       break;
     }
     case 5: {
-      auto data = param.out->mutable_data<float>(TARGET(kXPU));
-      r = xdnn::constant<float>(ctx.GetRawContext(),
-                                data,
-                                write_size,
-                                static_cast<float>(param.value));
+      r = FillConstData<float>();
       break;
     }
     default: {
@@ -84,6 +86,8 @@ REGISTER_LITE_KERNEL(fill_constant,
                      def)
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("ValueTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("ShapeTensorList",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
