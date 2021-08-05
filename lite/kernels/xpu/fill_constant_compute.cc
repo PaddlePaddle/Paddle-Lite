@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/fill_constant_compute.h"
+
 #include <iostream>
+
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -27,15 +29,13 @@ int FillConstantCompute::FillConstData() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   int write_size = param.out->numel();
+
   T value = static_cast<T>(param.value);
   if (param.value_tensor) {
     value = param.value_tensor->template mutable_data<T>()[0];
   }
   auto data = param.out->mutable_data<T>(TARGET(kXPU));
-  return xdnn::constant<T>(ctx.GetRawContext(),
-                                  data,
-                                  write_size,
-                                  value);
+  return xdnn::constant<T>(ctx.GetRawContext(), data, write_size, value);
 }
 
 void FillConstantCompute::Run() {
