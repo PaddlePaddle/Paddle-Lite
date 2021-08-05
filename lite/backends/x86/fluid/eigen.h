@@ -15,8 +15,8 @@ limitations under the License. */
 #pragma once
 
 #include <vector>
-#include "lite/core/tensor.h"
 #include "lite/backends/x86/fluid/float16.h"
+#include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
 #include "unsupported/Eigen/CXX11/Tensor"
 

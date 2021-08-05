@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/op_registry.h"
 #include "lite/backends/x86/fluid/eigen.h"
+#include "lite/core/op_registry.h"
 #include "lite/kernels/x86/activation_compute.h"
 #include "lite/utils/macros.h"
 

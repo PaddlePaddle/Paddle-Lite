@@ -22,12 +22,12 @@
 #define _USE_MATH_DEFINES
 #endif
 
+#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/backends/x86/math/activation.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
-#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {

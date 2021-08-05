@@ -16,9 +16,9 @@ limitations under the License. */
 
 #include <algorithm>
 #include <vector>
+#include "lite/backends/x86/fluid/lod.h"
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
-#include "lite/backends/x86/fluid/lod.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {

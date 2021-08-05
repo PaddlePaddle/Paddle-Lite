@@ -19,8 +19,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/variable.h"
 #include "lite/backends/x86/fluid/rw_lock.h"
+#include "lite/core/variable.h"
 
 namespace paddle {
 namespace lite {

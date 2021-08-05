@@ -16,11 +16,11 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <vector>
+#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/operators/relu_op.h"
 
 namespace paddle {
@@ -165,7 +165,7 @@ void slice_compute(const lite::Tensor* in,
 
   // resize out_dims
   if (decrease_axis.size() > 0) {
-    if (decrease_axis.size() == (size_t)in_dims.size()) {
+    if (decrease_axis.size() == static_cast<size_t>(in_dims.size())) {
       std::vector<int64_t> vec_origin_out_shape(decrease_axis.size(), 1);
       // lite::DDim dims(vec_origin_out_shape);
       out->Resize(vec_origin_out_shape);

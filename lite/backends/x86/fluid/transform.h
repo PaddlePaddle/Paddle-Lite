@@ -17,8 +17,8 @@ limitations under the License. */
 #include <algorithm>
 #include <type_traits>
 
-#include "lite/core/op_lite.h"
 #include "lite/backends/x86/fluid/hostdevice.h"
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
