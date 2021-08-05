@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
@@ -97,7 +98,7 @@ class FillConstantComputeTester : public arena::TestCase {
         FillConstData<int64_t>(scope);
         break;
       }
-      default:{
+      default: {
         FillConstData<float>(scope);
         break;
       }
@@ -105,7 +106,7 @@ class FillConstantComputeTester : public arena::TestCase {
   }
 
   template <typename T>
-  void FillConstData(Scope* scope){
+  void FillConstData(Scope* scope) {
     if (!tensor_value_.empty()) {
       value_ = tensor_value_[0];
     }
