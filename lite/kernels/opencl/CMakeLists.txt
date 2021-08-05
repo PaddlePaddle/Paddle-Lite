@@ -42,6 +42,7 @@ add_kernel(batch_norm_opencl_image OPENCL basic SRCS batch_norm_image_compute.cc
 add_kernel(reduce_mean_opencl_image OPENCL basic SRCS reduce_mean_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(clip_opencl_image OPENCL basic SRCS clip_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(softmax_opencl_image OPENCL basic SRCS softmax_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 
@@ -120,6 +121,12 @@ lite_cc_test(test_box_coder_image_opencl SRCS box_coder_image_compute_test.cc
 
 lite_cc_test(test_trigonometric_image_opencl SRCS trigonometric_image_compute_test.cc
              DEPS trigonometric_opencl_image op_registry program context)
+
+lite_cc_test(test_fc_image_opencl SRCS fc_image_compute_test.cc
+             DEPS fc_opencl_image op_registry program context)
+
+lite_cc_test(test_softmax_image_opencl SRCS softmax_image_compute_test.cc
+             DEPS softmax_opencl_image op_registry program context)
 
 ######################
 # buffer kernel      #

@@ -44,7 +44,8 @@ int Device::CreateProgram(void* context,
                           hal::Model* model,
                           hal::Cache* cache,
                           void** program) {
-  if (device_ && context && model && program) {
+  if (device_ && context && (model || (cache && cache->buffer.size())) &&
+      program) {
     return device_->second->create_program(context, model, cache, program);
   }
   return NNADAPTER_INVALID_PARAMETER;

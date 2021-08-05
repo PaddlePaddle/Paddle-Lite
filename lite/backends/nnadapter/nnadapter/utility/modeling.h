@@ -127,6 +127,10 @@ std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
 // Find the operation that produced the operand
 hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand);
 
+// Get the index of model input and output operands
+int GetModelInputOperandIndex(hal::Model* model, hal::Operand* operand);
+int GetModelOutputOperandIndex(hal::Model* model, hal::Operand* operand);
+
 // Add a transpose operation, set 'input_operand' as its input operand, create a
 // output operand with the permutated dimensions, and update all of operations
 hal::Operand* AddTransposeOperation(hal::Model* model,

@@ -64,7 +64,7 @@ int CreateProgram(void* context,
                   hal::Cache* cache,
                   void** program) {
   NNADAPTER_LOG(INFO) << "Create program for amlogic_npu.";
-  if (!context || !(model && cache) || !program) {
+  if (!context || !(model || (cache && cache->buffer.size())) || !program) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   *program = nullptr;
