@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/ssa_graph.h"
+#include "lite/core/optimizer/mir/ssa_graph.h"
 #include <gtest/gtest.h>
 #include <memory>
 #include "lite/api/paddle_use_passes.h"
-#include "lite/core/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program_fake_utils.h"
 #include "paddle/fluid/framework/program_desc.h"

@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/mlu_postprocess_pass.h"
+#include "lite/core/optimizer/mir/mlu_postprocess_pass.h"
 #include <list>
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/graph_visualize_pass.h"
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/subgraph/subgraph_detector.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/subgraph/subgraph_detector.h"
 #include "lite/operators/subgraph_op.h"
 #include "lite/utils/macros.h"
 

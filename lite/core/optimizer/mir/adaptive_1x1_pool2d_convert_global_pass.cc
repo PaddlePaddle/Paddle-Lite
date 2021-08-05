@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/adaptive_1x1_pool2d_convert_global_pass.h"
+#include "lite/core/optimizer/mir/adaptive_1x1_pool2d_convert_global_pass.h"
 #include <set>
-#include "lite/core/mir/graph_visualize_pass.h"
-#include "lite/core/mir/pass.h"
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/pattern_matcher.h"
 #include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {

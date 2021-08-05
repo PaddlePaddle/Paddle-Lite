@@ -19,7 +19,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "lite/core/mir/pass.h"
+#include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
 

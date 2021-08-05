@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/quantized_op_attributes_inference_pass.h"
+#include "lite/core/optimizer/mir/quantized_op_attributes_inference_pass.h"
 #include <algorithm>
 #include <list>
 #include <map>
@@ -20,8 +20,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/graph_visualize_pass.h"
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {

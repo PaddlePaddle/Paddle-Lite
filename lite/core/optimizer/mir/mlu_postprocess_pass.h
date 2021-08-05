@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "lite/core/mir/pass.h"
+#include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {

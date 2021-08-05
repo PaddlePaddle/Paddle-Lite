@@ -14,8 +14,8 @@
 
 #include <memory>
 #include <string>
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {

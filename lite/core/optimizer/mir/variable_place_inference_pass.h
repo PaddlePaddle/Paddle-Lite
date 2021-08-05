@@ -17,7 +17,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "lite/core/mir/pass.h"
+#include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {

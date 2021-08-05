@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include "lite/core/mir/graph_visualize_pass.h"
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/ssa_graph.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/ssa_graph.h"
 #include "paddle/fluid/framework/program_desc.h"
 
 namespace paddle {

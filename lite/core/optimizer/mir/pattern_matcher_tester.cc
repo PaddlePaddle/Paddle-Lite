@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/pattern_matcher.h"
 
 #include <gtest/gtest.h>
 

@@ -14,7 +14,7 @@
 
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_passes.h"
-#include "lite/core/optimizer.h"
+#include "lite/core/optimizer/optimizer.h"
 #include "lite/core/program_fake_utils.h"
 #include "lite/kernels/cuda/use_kernels.h"
 #include "lite/kernels/host/use_kernels.h"

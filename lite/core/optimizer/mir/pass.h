@@ -19,8 +19,8 @@
 #include <string>
 #include <vector>
 
-#include "lite/core/mir/node.h"
-#include "lite/core/mir/ssa_graph.h"
+#include "lite/core/optimizer/mir/node.h"
+#include "lite/core/optimizer/mir/ssa_graph.h"
 #include "lite/utils/varient.h"
 
 namespace paddle {

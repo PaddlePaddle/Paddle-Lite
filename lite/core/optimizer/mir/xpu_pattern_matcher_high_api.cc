@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/xpu_pattern_matcher_high_api.h"
+#include "lite/core/optimizer/mir/xpu_pattern_matcher_high_api.h"
 #include <set>
 #include "lite/utils/cp_logging.h"
 

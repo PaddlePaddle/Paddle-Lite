@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fpga_kernel_place_correct_pass.h"
+#include "lite/core/optimizer/mir/fpga_kernel_place_correct_pass.h"
 #include <memory>
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {

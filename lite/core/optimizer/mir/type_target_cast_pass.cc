@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/type_target_cast_pass.h"
+#include "lite/core/optimizer/mir/type_target_cast_pass.h"
 #include <list>
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/graph_visualize_pass.h"
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/type_precision_cast_pass.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/type_precision_cast_pass.h"
 #include "lite/utils/string.h"
 
 namespace paddle {

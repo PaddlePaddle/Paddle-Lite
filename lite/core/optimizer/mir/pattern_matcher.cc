@@ -17,8 +17,8 @@
 #include <string>
 #include <vector>
 
-#include "lite/core/mir/dot.h"
-#include "lite/core/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/dot.h"
+#include "lite/core/optimizer/mir/pattern_matcher.h"
 #include "lite/core/op_lite.h"
 #include "lite/utils/string.h"
 

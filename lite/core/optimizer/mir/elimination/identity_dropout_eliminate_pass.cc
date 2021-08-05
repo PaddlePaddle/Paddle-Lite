@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/pass.h"
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/optimizer/mir/pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {

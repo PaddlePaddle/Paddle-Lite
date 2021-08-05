@@ -18,7 +18,7 @@
 #include <set>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/pattern_matcher.h"
+#include "lite/core/optimizer/mir/pattern_matcher.h"
 
 namespace paddle {
 namespace lite {

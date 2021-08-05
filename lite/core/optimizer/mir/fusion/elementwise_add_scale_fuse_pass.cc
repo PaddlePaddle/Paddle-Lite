@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/elementwise_add_scale_fuse_pass.h"
+#include "lite/core/optimizer/mir/fusion/elementwise_add_scale_fuse_pass.h"
 #include <memory>
 #include <vector>
-#include "lite/core/mir/fusion/elementwise_add_scale_fuser.h"
-#include "lite/core/mir/graph_visualize_pass.h"
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/fusion/elementwise_add_scale_fuser.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {

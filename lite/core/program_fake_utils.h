@@ -18,7 +18,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/ssa_graph.h"
+#include "lite/core/optimizer/mir/ssa_graph.h"
 #include "lite/core/op_registry.h"
 #include "paddle/fluid/framework/program_desc.h"
 

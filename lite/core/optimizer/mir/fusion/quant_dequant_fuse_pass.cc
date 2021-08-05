@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/quant_dequant_fuse_pass.h"
+#include "lite/core/optimizer/mir/fusion/quant_dequant_fuse_pass.h"
 #include <list>
 #include <memory>
 #include <utility>
 #include <vector>
 #include "lite/api/paddle_place.h"
-#include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/fusion/quant_dequant_op_fuser.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {

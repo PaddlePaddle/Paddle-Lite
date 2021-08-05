@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/mir/pass.h"
+#include "lite/core/optimizer/mir/pass.h"
 #include "lite/kernels/host/conditional_block_compute.h"
 #include "lite/kernels/host/while_compute.h"
 

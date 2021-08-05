@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/elementwise_add_activation_fuse_pass.h"
+#include "lite/core/optimizer/mir/fusion/elementwise_add_activation_fuse_pass.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_passes.h"
-#include "lite/core/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"

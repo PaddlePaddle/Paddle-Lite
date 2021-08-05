@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
+#include "lite/core/optimizer/mir/fusion/quant_dequant_op_fuser.h"
 
 #include <algorithm>
 #include <cmath>

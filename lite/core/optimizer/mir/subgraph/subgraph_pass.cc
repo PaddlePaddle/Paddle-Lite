@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/subgraph/subgraph_pass.h"
+#include "lite/core/optimizer/mir/subgraph/subgraph_pass.h"
 #include <memory>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/subgraph/subgraph_detector.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/subgraph/subgraph_detector.h"
 #include "lite/utils/env.h"
 
 namespace paddle {

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 #include <gtest/gtest.h>
 #include <memory>
-#include "lite/core/mir/graph_visualize_pass.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
 #include "paddle/fluid/framework/program_desc.h"

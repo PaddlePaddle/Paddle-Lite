@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/node.h"
+#include "lite/core/optimizer/mir/node.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {

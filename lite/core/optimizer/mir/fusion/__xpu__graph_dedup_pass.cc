@@ -15,8 +15,8 @@
 #include <memory>
 #include <set>
 #include <vector>
-#include "lite/core/mir/pass_registry.h"
-#include "lite/core/mir/xpu_pattern_matcher_high_api.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/xpu_pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
