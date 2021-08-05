@@ -230,17 +230,17 @@ void sgemm_prepack_c4_common(int M,
             "ld1r   {v28.2s}, [%[b]], #4\n"
 
             "fmla  v9.2s,  v1.2s, v5.2s   \n"
-            "fmla  v10.2s, v1.2s, v25.2s   \n"
             "ld1   {v3.2s},  [%[a]], #8\n"
-            "fmla  v17.2s, v0.2s, v5.2s   \n"
-            "fmla  v18.2s, v0.2s, v25.2s   \n"
+            "fmla  v10.2s, v1.2s, v25.2s   \n"
             "ld1   {v30.2s}, [%[a]], #8\n"
+            "fmla  v17.2s, v0.2s, v5.2s   \n"
+            "ld1   {v4.2s},  [%[a]], #8\n"
+            "fmla  v18.2s, v0.2s, v25.2s   \n"
+            "ld1   {v31.2s}, [%[a]], #8\n"
             "fmla  v9.2s,  v2.2s, v6.2s   \n"
             "fmla  v10.2s, v2.2s, v26.2s   \n"
-            "ld1   {v4.2s},  [%[a]], #8\n"
             "fmla  v17.2s, v29.2s, v6.2s   \n"
             "fmla  v18.2s, v29.2s, v26.2s   \n"
-            "ld1   {v31.2s}, [%[a]], #8\n"
             "fmla  v9.2s, v3.2s, v7.2s    \n"
             "fmla  v10.2s, v3.2s, v27.2s   \n"
             "fmla  v17.2s, v30.2s, v7.2s    \n"
@@ -284,6 +284,7 @@ void sgemm_prepack_c4_common(int M,
             "ld1r   {v26.2s}, [%[b]], #4 \n"
             "ld1r   {v27.2s}, [%[b]], #4\n"
             "ld1r   {v28.2s}, [%[b]], #4\n"
+
             "fmla  v13.2s,  v1.2s, v5.2s   \n"
             "fmla  v14.2s, v1.2s, v25.2s   \n"
             "fmla  v21.2s, v0.2s, v5.2s   \n"
@@ -323,15 +324,15 @@ void sgemm_prepack_c4_common(int M,
             "fmla  v16.2s, v3.2s, v27.2s   \n"
             "fmla  v23.2s, v30.2s, v7.2s    \n"
             "fmla  v24.2s, v30.2s, v27.2s   \n"
+            "ld1   {v1.2s}, [%[a]], #8 \n"
             "fmla  v15.2s, v4.2s, v8.2s    \n"
+            "ld1   {v0.2s}, [%[a]], #8 \n"
             "fmla  v16.2s, v4.2s, v28.2s   \n"
+            "ld1   {v2.2s}, [%[a]], #8 \n"
             "fmla  v23.2s, v31.2s, v8.2s    \n"
+            "ld1   {v29.2s},[%[a]], #8 \n"
             "fmla  v24.2s, v31.2s, v28.2s   \n"
             "subs  %w[cnt], %w[cnt], #1     \n"
-            "ld1   {v1.2s}, [%[a]], #8 \n"
-            "ld1   {v0.2s}, [%[a]], #8 \n"
-            "ld1   {v2.2s}, [%[a]], #8 \n"
-            "ld1   {v29.2s},[%[a]], #8 \n"
             "bne   1b\n"
 
             //"sub  %[b], %[b], #8       \n"
@@ -372,8 +373,6 @@ void sgemm_prepack_c4_common(int M,
             "st1   {v23.2s}, [%[c]], #8  \n"
             "st1   {v16.2s}, [%[c]], #8  \n"
             "st1   {v24.2s}, [%[c]], #8  \n"
-
-
 
             : [a] "+r"(ablock_ptr),
               [b] "+r"(bblock),
@@ -873,7 +872,6 @@ void sgemm_prepack_c4_small(int M,
         "ld1r  {v6.2s},  [%[b]], #4\n"
         "ld1r  {v3.2s},  [%[b]], #4\n"
         "ld1r  {v7.2s},  [%[b]], #4\n"
-
         "ld1  {v16.2s}, [%[a]], #8\n"
         "ld1  {v28.2s}, [%[a]], #8\n"
         "ld1  {v17.2s}, [%[a]], #8\n"
@@ -882,7 +880,6 @@ void sgemm_prepack_c4_small(int M,
         "ld1  {v30.2s}, [%[a]], #8\n"
         "ld1  {v19.2s}, [%[a]], #8\n"
         "ld1  {v31.2s}, [%[a]], #8\n"
-
         "fmla v8.2s,  v16.2s, v0.2s \n"
         "fmla v20.2s, v28.2s, v0.2s \n"
         "fmla v9.2s,  v16.2s, v2.2s \n"
@@ -902,7 +899,6 @@ void sgemm_prepack_c4_small(int M,
         "fmla v20.2s,  v31.2s,v5.2s \n"
         "fmla v9.2s,  v19.2s, v7.2s \n"
         "fmla v21.2s,  v31.2s,v7.2s \n"
-
         "ld1r  {v0.2s},  [%[b]], #4\n"
         "ld1r  {v4.2s},  [%[b]], #4\n"
         "ld1r  {v1.2s},  [%[b]], #4\n"
@@ -911,7 +907,6 @@ void sgemm_prepack_c4_small(int M,
         "ld1r  {v6.2s},  [%[b]], #4\n"
         "ld1r  {v3.2s},  [%[b]], #4\n"
         "ld1r  {v7.2s},  [%[b]], #4\n"
-
         "fmla v10.2s, v16.2s, v0.2s \n"
         "fmla v22.2s, v28.2s, v0.2s \n"
         "fmla v11.2s, v16.2s, v2.2s \n"
@@ -1388,14 +1383,158 @@ void sgemm_prepack_c4_small(int M,
       const float* b_ptr = b;
       // clang-format off
       asm volatile(
-        "0:\n"
-        /* load a0, a1 */
-        "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-        /* load b0, b1 */
-        "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
+
+        "1:\n"
         /* load b2, b3 */
-        "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
         /* load a2, a3 */
+        "ld1r  {v0.2s},  [%[b]], #4\n"
+        "ld1r  {v4.2s},  [%[b]], #4\n"
+        "ld1r  {v1.2s},  [%[b]], #4\n"
+        "ld1r  {v5.2s},  [%[b]], #4\n"
+        "ld1r  {v2.2s},  [%[b]], #4\n"
+        "ld1r  {v6.2s},  [%[b]], #4\n"
+        "ld1r  {v3.2s},  [%[b]], #4\n"
+        "ld1r  {v7.2s},  [%[b]], #4\n"
+        "ld1  {v16.2s}, [%[a]], #8\n"
+        "ld1  {v28.2s}, [%[a]], #8\n"
+        "ld1  {v17.2s}, [%[a]], #8\n"
+        "ld1  {v29.2s}, [%[a]], #8\n"
+        "ld1  {v18.2s}, [%[a]], #8\n"
+        "ld1  {v30.2s}, [%[a]], #8\n"
+        "ld1  {v19.2s}, [%[a]], #8\n"
+        "ld1  {v31.2s}, [%[a]], #8\n"
+        "fmla v8.2s,  v16.2s, v0.2s \n"
+        "fmla v20.2s, v28.2s, v0.2s \n"
+        "fmla v9.2s,  v16.2s, v2.2s \n"
+        "fmla v21.2s, v28.2s, v2.2s \n"
+       // "prfm pldl1keep, [%[b]]       \n"
+        "fmla v8.2s,   v17.2s, v4.2s \n"
+        "fmla v20.2s,  v29.2s, v4.2s \n"
+        "fmla v9.2s,   v17.2s, v6.2s \n"
+        "fmla v21.2s,  v29.2s, v6.2s \n"
+        "fmla v8.2s,   v18.2s, v1.2s \n"
+        "fmla v20.2s,  v30.2s, v1.2s \n"
+        "fmla v9.2s,   v18.2s, v3.2s \n"
+        "fmla v21.2s,  v30.2s, v3.2s \n"
+        "fmla v8.2s,  v19.2s, v5.2s \n"
+        "fmla v20.2s,  v31.2s,v5.2s \n"
+        "fmla v9.2s,  v19.2s, v7.2s \n"
+        "fmla v21.2s,  v31.2s,v7.2s \n"
+
+        "ld1r  {v0.2s},  [%[b]], #4\n"
+        "ld1r  {v4.2s},  [%[b]], #4\n"
+        "ld1r  {v1.2s},  [%[b]], #4\n"
+        "ld1r  {v5.2s},  [%[b]], #4\n"
+        "ld1r  {v2.2s},  [%[b]], #4\n"
+        "ld1r  {v6.2s},  [%[b]], #4\n"
+        "ld1r  {v3.2s},  [%[b]], #4\n"
+        "ld1r  {v7.2s},  [%[b]], #4\n"
+        "fmla v10.2s, v16.2s, v0.2s \n"
+        "fmla v22.2s, v28.2s, v0.2s \n"
+        "fmla v11.2s, v16.2s, v2.2s \n"
+        "fmla v23.2s, v28.2s, v2.2s \n"
+        "fmla v10.2s,  v17.2s, v4.2s \n"
+        "fmla v22.2s,  v29.2s, v4.2s \n"
+        "fmla v11.2s,  v17.2s, v6.2s \n"
+        "fmla v23.2s,  v29.2s, v6.2s \n"
+        "fmla v10.2s,  v18.2s, v1.2s \n"
+        "fmla v22.2s,  v30.2s, v1.2s \n"
+        "fmla v11.2s,  v18.2s, v3.2s \n"
+        "fmla v23.2s,  v30.2s, v3.2s \n"
+        "fmla v10.2s,  v19.2s, v5.2s \n"
+        "fmla v22.2s,  v31.2s, v5.2s \n"
+        "fmla v11.2s,  v19.2s, v7.2s \n"
+        "fmla v23.2s,  v31.2s, v7.2s \n"
+
+        "ld1r  {v4.2s},  [%[b]], #4\n"
+        "ld1r  {v0.2s},  [%[b]], #4\n"
+        "ld1r  {v5.2s},  [%[b]], #4\n"
+        "ld1r  {v1.2s},  [%[b]], #4\n"
+        "ld1r  {v6.2s},  [%[b]], #4\n"
+        "ld1r  {v2.2s},  [%[b]], #4\n"
+        "ld1r  {v7.2s},  [%[b]], #4\n"
+        "ld1r  {v3.2s},  [%[b]], #4\n"
+        "fmla v12.2s, v16.2s, v4.2s \n"
+        "fmla v24.2s, v28.2s, v4.2s \n"
+        "fmla v13.2s, v16.2s, v6.2s \n"
+        "fmla v25.2s, v28.2s, v6.2s \n"
+        "fmla v12.2s, v17.2s, v0.2s \n"
+        "fmla v24.2s, v29.2s, v0.2s \n"
+        "fmla v13.2s, v17.2s, v2.2s \n"
+        "fmla v25.2s, v29.2s, v2.2s \n"
+        "fmla v12.2s, v18.2s, v5.2s \n"
+        "fmla v24.2s, v30.2s, v5.2s \n"
+        "fmla v13.2s, v18.2s, v7.2s \n"
+        "fmla v25.2s, v30.2s, v7.2s \n"
+        "fmla v12.2s, v19.2s, v1.2s \n"
+        "fmla v24.2s, v31.2s, v1.2s \n"
+        "fmla v13.2s, v19.2s, v3.2s \n"
+        "fmla v25.2s, v31.2s, v3.2s \n"
+
+        "ld1r  {v4.2s},  [%[b]], #4\n"
+        "ld1r  {v0.2s},  [%[b]], #4\n"
+        "ld1r  {v5.2s},  [%[b]], #4\n"
+        "ld1r  {v1.2s},  [%[b]], #4\n"
+        "ld1r  {v6.2s},  [%[b]], #4\n"
+        "ld1r  {v2.2s},  [%[b]], #4\n"
+        "ld1r  {v7.2s},  [%[b]], #4\n"
+        "ld1r  {v3.2s},  [%[b]], #4\n"
+
+        "fmla v14.2s, v16.2s, v4.2s \n"
+        "fmla v26.2s, v28.2s, v4.2s \n"
+        "fmla v15.2s, v16.2s, v6.2s \n"
+        "fmla v27.2s, v28.2s, v6.2s \n"
+        "fmla v14.2s, v17.2s, v0.2s \n"
+        "fmla v26.2s, v29.2s, v0.2s \n"
+        "fmla v15.2s, v17.2s, v2.2s \n"
+        "fmla v27.2s, v29.2s, v2.2s \n"
+        "fmla v14.2s, v18.2s, v5.2s \n"
+        "fmla v26.2s, v30.2s, v5.2s \n"
+        "fmla v15.2s, v18.2s, v7.2s \n"
+        "fmla v27.2s, v30.2s, v7.2s \n"
+        "fmla v14.2s, v19.2s, v1.2s \n"
+        "sub  %[b],   %[b],   #128    \n"
+        "fmla v26.2s, v31.2s, v1.2s \n"
+        "fmla v15.2s, v19.2s, v3.2s \n"
+        "add  %[b],   %[b],   %[ldb]  \n"
+        "fmla v27.2s, v31.2s, v3.2s \n"
+        "subs %w[cnt], %w[cnt], #1    \n"
+        "bne  1b                      \n"
+        "2:\n"
+        "st1  {v8.2s }, [%[c]], #8 \n"
+        "st1  {v20.2s}, [%[c]], #8 \n"
+        "st1  {v9.2s }, [%[c]], #8 \n"
+        "st1  {v21.2s}, [%[c]], #8 \n"
+        "st1  {v10.2s}, [%[c]], #8 \n"
+        "st1  {v22.2s}, [%[c]], #8 \n"
+        "st1  {v11.2s}, [%[c]], #8 \n"
+        "st1  {v23.2s}, [%[c]], #8 \n"
+        "st1  {v12.2s}, [%[c]], #8 \n"
+        "st1  {v24.2s}, [%[c]], #8 \n"
+        "st1  {v13.2s}, [%[c]], #8 \n"
+        "st1  {v25.2s}, [%[c]], #8 \n"
+        "st1  {v14.2s}, [%[c]], #8 \n"
+        "st1  {v26.2s}, [%[c]], #8 \n"
+        "st1  {v15.2s}, [%[c]], #8 \n"
+        "st1  {v27.2s}, [%[c]], #8 \n"
+        : [a] "+r" (a_ptr),
+          [b] "+r" (b_ptr),
+          [c] "+r" (C),
+          [cnt] "+r" (cnt)
+        : [ldb]  "r" (ldb_byte)
+        //  [vbias] "w" (vbias),
+        //  [vzero] "w" (vzero)
+        : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
+          "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18",
+          "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", 
+          "v28", "v29", "v30", "v31", "w0", "cc", "memory"
+
+
+/*
+        "0:\n"
+        "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+        "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
+        "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
         "fmul v8.4s,  v16.4s, v0.s[0] \n"
         "fmul v9.4s,  v16.4s, v1.s[0] \n"
         "fmul v10.4s, v16.4s, v2.s[0] \n"
@@ -1406,13 +1545,11 @@ void sgemm_prepack_c4_small(int M,
         "fmla v9.4s,  v17.4s, v1.s[1] \n"
         "fmla v10.4s, v17.4s, v2.s[1] \n"
         "fmla v11.4s, v17.4s, v3.s[1] \n"
-        /* load b4, b5 */
         "ld1  {v4.4s, v5.4s}, [%[b]], #32 \n"
         "fmla v8.4s,  v18.4s, v0.s[2] \n"
         "fmla v9.4s,  v18.4s, v1.s[2] \n"
         "fmla v10.4s, v18.4s, v2.s[2] \n"
         "fmla v11.4s, v18.4s, v3.s[2] \n"
-        /* load b6, b7 */
         "ld1  {v6.4s, v7.4s}, [%[b]], #32 \n"
         "fmla v8.4s,  v19.4s, v0.s[3] \n"
         "fmla v9.4s,  v19.4s, v1.s[3] \n"
@@ -1428,13 +1565,11 @@ void sgemm_prepack_c4_small(int M,
         "fmla v13.4s, v17.4s, v5.s[1] \n"
         "fmla v14.4s, v17.4s, v6.s[1] \n"
         "fmla v15.4s, v17.4s, v7.s[1] \n"
-        /* load a0, a1 */
         "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
         "fmla v12.4s, v18.4s, v4.s[2] \n"
         "fmla v13.4s, v18.4s, v5.s[2] \n"
         "fmla v14.4s, v18.4s, v6.s[2] \n"
         "fmla v15.4s, v18.4s, v7.s[2] \n"
-        /* load b0, b1 */
         "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
         "fmla v12.4s, v19.4s, v4.s[3] \n"
         "fmla v13.4s, v19.4s, v5.s[3] \n"
@@ -1442,27 +1577,24 @@ void sgemm_prepack_c4_small(int M,
         "fmla v15.4s, v19.4s, v7.s[3] \n"
         "subs %w[cnt], %w[cnt], #1    \n"
         "beq  2f                      \n"
+
         "1:\n"
-        /* load b2, b3 */
         "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
         "fmla v8.4s,  v16.4s, v0.s[0] \n"
         "fmla v9.4s,  v16.4s, v1.s[0] \n"
         "fmla v10.4s, v16.4s, v2.s[0] \n"
         "fmla v11.4s, v16.4s, v3.s[0] \n"
-        /* load a2, a3 */
         "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
         "prfm pldl1keep, [%[b]]       \n"
         "fmla v8.4s,  v17.4s, v0.s[1] \n"
         "fmla v9.4s,  v17.4s, v1.s[1] \n"
         "fmla v10.4s, v17.4s, v2.s[1] \n"
         "fmla v11.4s, v17.4s, v3.s[1] \n"
-        /* load b4, b5 */
         "ld1  {v4.4s, v5.4s}, [%[b]], #32 \n"
         "fmla v8.4s,  v18.4s, v0.s[2] \n"
         "fmla v9.4s,  v18.4s, v1.s[2] \n"
         "fmla v10.4s, v18.4s, v2.s[2] \n"
         "fmla v11.4s, v18.4s, v3.s[2] \n"
-        /* load b6, b7 */
         "ld1  {v6.4s, v7.4s}, [%[b]], #32 \n"
         "fmla v8.4s,  v19.4s, v0.s[3] \n"
         "fmla v9.4s,  v19.4s, v1.s[3] \n"
@@ -1478,13 +1610,11 @@ void sgemm_prepack_c4_small(int M,
         "fmla v13.4s, v17.4s, v5.s[1] \n"
         "fmla v14.4s, v17.4s, v6.s[1] \n"
         "fmla v15.4s, v17.4s, v7.s[1] \n"
-        /* load a0, a1 */
         "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
         "fmla v12.4s, v18.4s, v4.s[2] \n"
         "fmla v13.4s, v18.4s, v5.s[2] \n"
         "fmla v14.4s, v18.4s, v6.s[2] \n"
         "fmla v15.4s, v18.4s, v7.s[2] \n"
-        /* load b0, b1 */
         "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
         "fmla v12.4s, v19.4s, v4.s[3] \n"
         "fmla v13.4s, v19.4s, v5.s[3] \n"
@@ -1504,6 +1634,7 @@ void sgemm_prepack_c4_small(int M,
         : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
           "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18",
           "v19", "cc", "memory"
+          */
       );
       b += 4 * 8;
     }
