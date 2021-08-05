@@ -22,8 +22,8 @@
 #include <string>
 #include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/optimizer/mir/node.h"
 #include "lite/core/op_lite.h"
+#include "lite/core/optimizer/mir/node.h"
 #include "lite/core/program.h"
 
 namespace paddle {

@@ -17,10 +17,10 @@
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/paddle_use_passes.h"
+#include "lite/core/op_registry.h"
 #include "lite/core/optimizer/mir/fusion/conv_activation_fuse_pass.h"
 #include "lite/core/optimizer/mir/fusion/conv_elementwise_fuse_pass.h"
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
-#include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
 #include "paddle/fluid/framework/program_desc.h"

@@ -16,8 +16,8 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include "lite/api/paddle_use_passes.h"
-#include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/program_fake_utils.h"
 #include "paddle/fluid/framework/program_desc.h"
 
