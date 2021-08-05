@@ -75,14 +75,35 @@ class OpDesc : public OpDescBase {
  public:
   OpDesc() = default;
   OpDesc(const general::OpDesc& raw_desc,
-         const RootVarScope& scope,
+         const RootVarScope* scope,
          int32_t block_idx);
 
- private:
+ protected:
   std::weak_ptr<VarDesc> AddInput(const std::string& param,
                                   const std::weak_ptr<VarDesc>& desc);
   std::weak_ptr<VarDesc> AddOutput(const std::string& param,
                                    const std::weak_ptr<VarDesc>& desc);
+
+ private:
+  void InitOpDesc(const general::OpDesc& raw_desc,
+                  const RootVarScope& scope,
+                  int32_t block_idx);
+};
+
+class WriteToArrayOpDesc : public OpDesc {
+ public:
+  WriteToArrayOpDesc() = default;
+  WriteToArrayOpDesc(const general::OpDesc& raw_desc,
+                     RootVarScope* mutable_scope,
+                     int32_t block_idx)
+      : OpDesc(raw_desc, mutable_scope, block_idx) {
+    ProcessTensorArrayOp(raw_desc, mutable_scope, block_idx);
+  }
+
+ private:
+  void ProcessTensorArrayOp(const general::OpDesc& raw_desc,
+                            RootVarScope* mutable_scope,
+                            int32_t block_idx);
 };
 
 // In order to modify the block operator, we need to know the specific
@@ -213,6 +234,8 @@ class WriteBackOp : public OpDescBase {
   const general::OpDesc& src_raw_desc() const override { return fake_desc_; }
 
   std::string type() const override { return type_; }
+
+  std::vector<std::weak_ptr<VarDesc>> input_lod_deps() const;
 
  private:
   void AddInput(const std::string& param,

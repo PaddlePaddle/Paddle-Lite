@@ -79,8 +79,13 @@ void PlainProgramDesc::InsertOpOfBlock(const general::BlockDesc& block_desc) {
           op->extra_inputs().cbegin(), op->extra_inputs().cend(), true);
       dst_block->AddOp(std::move(op));
     } else {
-      std::unique_ptr<OpDescBase> op{
-          new OpDesc{*raw_op, *(dst_block->scope()), block_idx}};
+      std::unique_ptr<OpDescBase> op;
+      if (raw_op->Type() == "write_to_array") {
+        op.reset(new WriteToArrayOpDesc(
+            *raw_op, dst_block->mutable_scope(), block_idx));
+      } else {
+        op.reset(new OpDesc(*raw_op, dst_block->scope(), block_idx));
+      }
       const auto& inputs = ConvertToSet(op->inputs());
       const auto& outputs = ConvertToSet(op->outputs());
       dst_block->AddOp(std::move(op));
@@ -129,8 +134,13 @@ void PlainProgramDesc::InsertWriteBackOp(
       pair.second.lock()->ResetBlockIdx(pair.first.lock()->block_idx());
       std::unique_ptr<OpDescBase> op{
           new WriteBackOp{pair.second, pair.first, block->idx()}};
+      // Since tensor array does not meet the conditions of static single
+      // assignment, it is not listed as a dependent input of the while op.
+      auto input_lod_deps =
+          static_cast<WriteBackOp*>(op.get())->input_lod_deps();
       block->AddOp(std::move(op));
       block->AddBlockInputs(&pair.first, &pair.first + 1);
+      block->AddBlockInputs(input_lod_deps.begin(), input_lod_deps.end());
     }
   }
 }
@@ -145,6 +155,10 @@ void PlainProgramDesc::UpdateBlockOp(const std::unique_ptr<BlockDesc>& block) {
         // then it must be the parent block variable that is assigned for
         // the first time in the child block. To avoid loops in this case,
         // just treat the variable as an output.
+        //
+        // TensorArray is an exception, it allows multiple writes, so its
+        // dependencies are limited by redundant variables, and the redundant
+        // inputs are deleted.
         if (block->block_outputs().find(input) ==
             block->block_outputs().end()) {
           block_op->AddBlockInput(input);

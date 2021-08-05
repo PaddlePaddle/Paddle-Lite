@@ -37,9 +37,16 @@ std::set<std::weak_ptr<VarDesc>, VarDescLT> ConvertToSet(
 }
 
 OpDesc::OpDesc(const general::OpDesc& raw_desc,
-               const RootVarScope& scope,
+               const RootVarScope* scope,
                int32_t block_idx)
     : OpDescBase{raw_desc} {
+  CHECK(scope);
+  InitOpDesc(*raw_desc_, *scope, block_idx);
+}
+
+void OpDesc::InitOpDesc(const general::OpDesc& raw_desc,
+                        const RootVarScope& scope,
+                        int32_t block_idx) {
   for (const auto& param : raw_desc.InputArgumentNames()) {
     for (const auto& var : raw_desc.inputs().at(param)) {
       auto root_var = scope.GetRootVarDesc(var).lock();
@@ -68,6 +75,25 @@ std::weak_ptr<VarDesc> OpDesc::AddOutput(const std::string& param,
   auto var_desc = desc.lock()->Written(*this);
   outputs_[param].emplace_back(var_desc);
   return var_desc;
+}
+
+void WriteToArrayOpDesc::ProcessTensorArrayOp(const general::OpDesc& raw_desc,
+                                              RootVarScope* mutable_scope,
+                                              int32_t block_idx) {
+  CHECK(mutable_scope);
+  CHECK_EQ(raw_desc.outputs().at("Out").size(), 1);
+  const auto& var_name = raw_desc.outputs().at("Out").at(0);
+
+  const std::string asso_var_name{var_name + ".AssociatedVar"};
+  if (!mutable_scope->HasRootVarDesc(asso_var_name)) {
+    general::VarDesc asso_var(asso_var_name);
+    asso_var.SetType(VarDescAPI::Type::LOD_TENSOR);
+    asso_var.SetPersistable(false);
+    mutable_scope->AddRootVar(block_idx, std::move(asso_var));
+  }
+  auto root_var = mutable_scope->GetRootVarDesc(asso_var_name).lock();
+  const auto& var_desc = AddOutput("AssociatedOut", root_var->latest());
+  UpdateVarBlockIdx(var_desc, block_idx);
 }
 
 constexpr char const WriteBackOp::type_[];
@@ -103,6 +129,13 @@ void WriteBackOp::AddInput(const std::string& param,
                            int32_t block_idx) {
   inputs_[param].emplace_back(desc);
   UpdateVarBlockIdx(desc, block_idx);
+}
+
+std::vector<std::weak_ptr<VarDesc>> WriteBackOp::input_lod_deps() const {
+  if (inputs().count(input_lod_deps_)) {
+    return inputs().at(input_lod_deps_);
+  }
+  return {};
 }
 
 }  // namespace ssa
