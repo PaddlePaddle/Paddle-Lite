@@ -19,7 +19,7 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "lite/fluid/eigen.h"
+#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/operators/dropout_op.h"
 
 namespace paddle {

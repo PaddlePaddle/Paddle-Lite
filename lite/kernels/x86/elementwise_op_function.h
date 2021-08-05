@@ -18,9 +18,9 @@ limitations under the License. */
 #include <iterator>
 #include <vector>
 #include "lite/backends/x86/math/math_function.h"
-#include "lite/fluid/eigen.h"
-#include "lite/fluid/for_range.h"
-#include "lite/fluid/transform.h"
+#include "lite/backends/x86/fluid/eigen.h"
+#include "lite/backends/x86/fluid/for_range.h"
+#include "lite/backends/x86/fluid/transform.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/variant.h"
 

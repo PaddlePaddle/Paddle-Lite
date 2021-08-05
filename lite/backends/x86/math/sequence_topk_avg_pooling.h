@@ -16,7 +16,7 @@ limitations under the License. */
 #include <vector>
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
-#include "lite/fluid/data_type.h"
+#include "lite/backends/x86/fluid/data_type.h"
 
 namespace paddle {
 namespace lite {

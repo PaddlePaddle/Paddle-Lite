@@ -18,7 +18,7 @@ limitations under the License. */
 
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
-#include "lite/fluid/eigen.h"
+#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {

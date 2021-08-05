@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/backends/x86/math/sampler.h"
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
-#include "lite/fluid/eigen.h"
+#include "lite/backends/x86/fluid/eigen.h"
 
 namespace paddle {
 namespace lite {

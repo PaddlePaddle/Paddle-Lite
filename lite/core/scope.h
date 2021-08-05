@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 #include "lite/core/variable.h"
-#include "lite/fluid/rw_lock.h"
+#include "lite/backends/x86/fluid/rw_lock.h"
 
 namespace paddle {
 namespace lite {

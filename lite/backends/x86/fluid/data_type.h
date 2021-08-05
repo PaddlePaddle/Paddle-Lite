@@ -16,7 +16,7 @@ limitations under the License. */
 #include <string>
 #include <typeindex>
 #include "lite/core/framework.pb.h"
-#include "lite/fluid/float16.h"
+#include "lite/backends/x86/fluid/float16.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {

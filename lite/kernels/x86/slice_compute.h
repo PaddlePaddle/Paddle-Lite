@@ -20,7 +20,7 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/fluid/eigen.h"
+#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/operators/relu_op.h"
 
 namespace paddle {
