@@ -390,7 +390,7 @@ void CLRuntime::SaveProgram() {
   } else {
     bool ret = Serialize(binary_file, programs_precompiled_binary_);
     if (!ret) {
-      LOG(WRANING) << "Serialize failed for opencl binary_file:" << binary_file;
+      LOG(WARNING) << "Serialize failed for opencl binary_file:" << binary_file;
     }
 #ifdef LITE_WITH_LOG
     if (programs_precompiled_binary_.find(sn_key_) !=
