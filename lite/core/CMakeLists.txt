@@ -1,4 +1,4 @@
-if (WITH_TESTING)
+lite_cc_liraryif (WITH_TESTING)
   lite_cc_library(lite_gtest_main SRCS lite_gtest_main.cc DEPS gtest gflags)
 endif ()
 lite_cc_library (target_wrapper SRCS target_wrapper.cc
@@ -156,8 +156,7 @@ lite_cc_library (program SRCS program.cc
 )
 
 if (NOT LITE_ON_TINY_PUBLISH)
-  lite_cc_library (optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)
-  add_subdirectory (mir)
+  add_subdirectory (optimizer)
   add_subdirectory (profile)
   add_subdirectory (arena)
 endif()
@@ -187,7 +186,6 @@ lite_cc_test (test_kernel SRCS kernel_test.cc DEPS kernel target_wrapper any)
 lite_cc_test (test_op SRCS op_lite_test.cc DEPS op)
 lite_cc_test (test_tensor SRCS lite_tensor_test.cc DEPS tensor)
 lite_cc_test (test_type_system SRCS type_system_test.cc DEPS type_system utils)
-# lite_cc_test (test_optimizer SRCS optimizer_test.cc DEPS mir_pass_manager program_fake_utils mir_passes optimizer fc_op)
 lite_cc_test (test_types SRCS types_test.cc DEPS types)
 lite_cc_test (test_memory SRCS memory_test.cc DEPS memory)
 lite_cc_test (test_context SRCS context_test.cc DEPS context)
