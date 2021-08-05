@@ -1,4 +1,4 @@
-lite_cc_liraryif (WITH_TESTING)
+if (WITH_TESTING)
   lite_cc_library(lite_gtest_main SRCS lite_gtest_main.cc DEPS gtest gflags)
 endif ()
 lite_cc_library (target_wrapper SRCS target_wrapper.cc
