@@ -40,6 +40,27 @@ void FeedImageCompute::PrepareForRun() {
 #else
     output_buffer_ = param.out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
+    last_input_dims_ = input_dims;
+}
+
+void FeedImageCompute::Run() {
+    @autoreleasepool {
+        const auto& param = this->Param<param_t>();
+        auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+        NSArray *resizeAry = [backend getResizeInput:param.col];
+        if (resizeAry) {
+            run_preprocess_without_mps();
+        } else {
+            run_without_mps();
+        }
+    }
+}
+
+void FeedImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
+
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
     auto input_c = input_dims[1];
     if (input_c == 1) {
         function_name_ = "buf_to_tex";
@@ -72,6 +93,66 @@ void FeedImageCompute::Run() {
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+void FeedImageCompute::setup_preprocess_without_mps() {
+    if (lanczos_) {
+        return;
+    }
+    const auto& param = this->Param<param_t>();
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+
+    NSArray *dims = [[backend getResizeInput:param.col] objectAtIndex:1];
+    if (dims.count == 0) {
+        Tensor& input_tensor = param.feed_list->at(param.col);
+        auto input_dims = input_tensor.dims();
+        NSMutableArray *dimsAry = [NSMutableArray arrayWithCapacity:3];
+        for (int i = 0; i < input_dims.size(); i++) {
+            [dimsAry addObject:@(input_dims[i])];
+        }
+        dims = dimsAry;
+    }
+    resize_texture = [backend lanczosTextureCreate:dims];
+    lanczos_ = (__bridge_retained void*)[backend lanczosScalePtrCreate];
+    function_name_ = "texture2d_to_2d_array";
+    pipline_ = [backend pipline:function_name_];
+}
+
+void FeedImageCompute::run_preprocess_without_mps() {
+    const auto& param = this->Param<param_t>();
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+
+    setup_preprocess_without_mps();
+    
+    do{
+        auto cmdbuf = [backend commandBuffer];
+        id<MTLTexture> inTexture = [[backend getResizeInput:param.col] objectAtIndex:0];
+        [(__bridge MPSImageLanczosScale*)lanczos_ encodeToCommandBuffer:cmdbuf
+                                                          sourceTexture:inTexture
+                                                     destinationTexture:resize_texture];
+        [backend commit:cmdbuf];
+    } while (0);
+    
+    do {
+        auto pipline = pipline_;
+        auto outTexture = output_buffer_->image();
+
+        auto encoder = [backend commandEncoder];
+        [encoder setTexture:resize_texture atIndex:(0)];
+        [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+
+        [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+        [backend commit];
+    } while (0);
+    
+}
+
+void FeedImageCompute::release_memory() {
+    if(lanczos_) {
+        CFRelease(lanczos_);
+        lanczos_ = nullptr;
+    }
+    TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
 FeedImageCompute::~FeedImageCompute() {

@@ -414,11 +414,22 @@ RuntimeProgram::RuntimeProgram(
 #ifdef LITE_WITH_METAL
 void RuntimeProgram::ConfigMetalContext(std::string lib_path,
                                         bool use_mps,
-                                        bool use_aggressive) {
+                                        bool use_aggressive,
+                                        void* device) {
   MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
+  context->set_metal_device(device);
   context->set_metal_path(lib_path);
   context->set_use_mps(use_mps);
   context->set_use_aggressive(use_aggressive);
+}
+
+void RuntimeProgram::ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) {
+  MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
+  context->resize_input(index, texture, shape);
+}
+
+void RuntimeProgram::SetMetalDebug(bool debug) {
+    metal_debug_ = debug;
 }
 
 void RuntimeProgram::SaveOutput() {
@@ -447,7 +458,7 @@ void RuntimeProgram::Run() {
 
 #ifdef LITE_WITH_METAL
   MetalContext* cmd_ctx = (*metal_ctx_).As<MTLContext>().context();
-  cmd_ctx->CreateCommandBuffer(this);
+  cmd_ctx->set_program(this);
 #endif
 
 #ifdef LITE_WITH_FPGA
@@ -503,7 +514,10 @@ void RuntimeProgram::Run() {
 
 #ifdef LITE_WITH_METAL
   MetalContext* wait_ctx = (*metal_ctx_).As<MTLContext>().context();
-  wait_ctx->WaitAllCompleted();
+  wait_ctx->wait_all_completed();
+  if (metal_debug_) {
+    SaveOutput();
+  }
 #endif
 
 #ifdef LITE_WITH_PROFILE

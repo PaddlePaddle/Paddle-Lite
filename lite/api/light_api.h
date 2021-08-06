@@ -98,7 +98,15 @@ class LITE_API LightPredictor {
   void ConfigMetalContext(const lite_api::MobileConfig& config) {
     program_->ConfigMetalContext(config.metal_lib_path(),
                                  config.metal_use_mps(),
-                                 config.metal_use_aggressive());
+                                 config.metal_use_aggressive(),
+                                 config.metal_device());
+  }
+  void ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) {
+    program_->ResizeInput(index, texture, shape);
+  }
+   
+  void SetMetalDebug(bool debug) {
+    program_->SetMetalDebug(debug);
   }
 #endif
 
@@ -167,6 +175,14 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   ///
   /// \return a boolean variable.
   bool TryShrinkMemory() override;
+    
+#ifdef LITE_WITH_METAL
+  /// console every op output
+  void SetMetalDebug(bool debug) override;
+    
+  /// pre-process resize input texture to dims
+  void ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) override;
+#endif
 
  private:
   std::unique_ptr<lite::LightPredictor> raw_predictor_;

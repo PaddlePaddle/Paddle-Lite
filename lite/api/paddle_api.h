@@ -130,6 +130,12 @@ class LITE_API PaddlePredictor {
       const std::string& model_dir,
       LiteModelType model_type = LiteModelType::kProtobuf,
       bool record_info = false);
+    
+  /// console every op output
+  virtual void SetMetalDebug(bool debug) = 0;
+    
+  /// pre-process resize input texture to dims
+  virtual void ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) = 0;
 
   virtual ~PaddlePredictor() = default;
 
@@ -174,8 +180,9 @@ class LITE_API ConfigBase {
   int x86_math_num_threads_ = 1;
 
   std::string metal_path_;
-  bool metal_use_mps_;
-  bool metal_use_aggressive_;
+  bool metal_use_mps_{false};
+  bool metal_use_aggressive_{false};
+  void* metal_device_{nullptr};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -283,10 +290,12 @@ class LITE_API ConfigBase {
   void set_metal_lib_path(const std::string& path);
   void set_metal_use_mps(bool flag);
   void set_metal_use_aggressive(bool flag);
+  void set_metal_device(void* device);
 
   std::string metal_lib_path() const { return metal_path_; }
   bool metal_use_mps() const { return metal_use_mps_; }
   bool metal_use_aggressive() const { return metal_use_aggressive_; }
+  void* metal_device() const { return metal_device_; }
 };
 
 class LITE_API CxxModelBuffer {
