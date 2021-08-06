@@ -28,11 +28,14 @@ extern NSString* cString2NSString(std::string cStr) {
     std::vector<paddle::lite_metal::kernels::metal::FetchImageCompute *> _fetch_vector;
 }
 @property (strong, nonatomic) id<MTLDevice> device;
+@property (strong, nonatomic) NSString* libraryPath;
 @property (strong, nonatomic) id<MTLLibrary> library;
 @property (strong, nonatomic) id<MTLCommandQueue> commandQueue;
 @property (strong, nonatomic) id<MTLCommandBuffer> commandBuffer;
 @property (strong, nonatomic) NSMutableArray<id<MTLCommandBuffer>>* waitings;
 @property (strong, nonatomic) NSMutableDictionary<NSString*, id<MTLComputePipelineState>>* caches;
+@property (strong, nonatomic) NSMutableDictionary<NSString*, NSArray*>* resizeInputs;
+
 @end
 
 @implementation MetalContextImp
@@ -45,6 +48,7 @@ extern NSString* cString2NSString(std::string cStr) {
         _fetch_vector = {};
         _waitings = [NSMutableArray array];
         _caches = [NSMutableDictionary dictionary];
+        _resizeInputs = [NSMutableDictionary dictionaryWithCapacity:3];
         _device = MTLCreateSystemDefaultDevice();
         _commandQueue = [_device newCommandQueue];
 #if defined (METAL_DEBUG_GPU_CAPTURE)
@@ -64,12 +68,73 @@ extern NSString* cString2NSString(std::string cStr) {
 - (void)setMetalPath:(std::string)path {
     NSString *pathStr = cString2NSString(path);
     if (pathStr) {
-        _library = [self.device newLibraryWithFile:pathStr error:NULL];
+        self.libraryPath = pathStr;
+        self.library = [self.device newLibraryWithFile:pathStr error:NULL];
     }
     if (nil == _library) {
         LOG(INFO) << "Can't load metallib: "
                   << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
     }
+}
+
+- (void)setMetalDevice:(void *)device {
+    if (!device) {
+        return;
+    }
+    id<MTLDevice> mtl = (__bridge id<MTLDevice>)device;
+    if (mtl) {
+        self.device = mtl;
+        self.commandQueue = [_device newCommandQueue];
+#if defined (METAL_DEBUG_GPU_CAPTURE)
+        [self startCapture];
+#endif
+        self.commandBuffer = [self.commandQueue commandBuffer];
+    }
+    if (self.libraryPath) {
+        [self setMetalPath:self.libraryPath.UTF8String];
+    }
+}
+
+#pragma mark pre-process
+
+- (void)resizeInput:(int64_t)index texture:(void *)texture dims:(std::vector<int64_t>&)dims  {
+    id<MTLTexture> inTexture = (__bridge id<MTLTexture>)texture;
+    if (inTexture) {
+        NSMutableArray *dimsAry = [NSMutableArray arrayWithCapacity:3];
+        for (int i = 0; i < dims.size(); i++) {
+            [dimsAry addObject:@(dims[i])];
+        }
+        [self.resizeInputs setObject:@[inTexture, dimsAry] forKey:@(index).stringValue];
+    }
+}
+
+- (NSArray *)getResizeInput:(int64_t)index {
+    if (index < self.resizeInputs.allKeys.count) {
+        NSArray *resizeAry = [self.resizeInputs objectForKey:@(index).stringValue];
+        if (resizeAry) {
+            return resizeAry;
+        }
+    }
+    return nil;
+}
+
+- (MPSImageLanczosScale *)lanczosScalePtrCreate {
+    MPSImageLanczosScale *lanczos = [[MPSImageLanczosScale alloc] initWithDevice:self.device];
+    return lanczos;
+}
+
+- (id<MTLTexture>)lanczosTextureCreate:(NSArray *)dims {
+    MTLTextureDescriptor *textureDesc = [[MTLTextureDescriptor alloc] init];
+    textureDesc.textureType = MTLTextureType2D;
+    textureDesc.width = [dims[3] intValue];
+    textureDesc.height = [dims[2] intValue];
+    textureDesc.depth = ([dims[1] intValue] + 3) / 4;
+    textureDesc.pixelFormat = MTLPixelFormatRGBA16Float;
+    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;;
+    textureDesc.storageMode = MTLStorageModeShared;
+    
+    id<MTLTexture> texture = [self.device newTextureWithDescriptor:textureDesc];
+    return texture;
 }
 
 #pragma mark data
@@ -90,29 +155,38 @@ extern NSString* cString2NSString(std::string cStr) {
     return image;
 }
 
-- (id<MTLHeap>)newHeapForTexDesc:(MTLTextureDescriptor*)desc {
-    NSInteger size = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
-    MTLHeapDescriptor* heapDesc = [[MTLHeapDescriptor alloc] init];
-    heapDesc.size = size;
-    heapDesc.storageMode = MTLStorageModeShared;
-    return [_device newHeapWithDescriptor:heapDesc];
-}
-
-- (bool)isNeedNewHeap:(id<MTLHeap>)heap texDesc:(MTLTextureDescriptor*)desc {
-    NSInteger hSize = heap.size;
-    NSInteger tSize = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
-    if (hSize >= tSize) {
-        return false;
-    } else {
-        return true;
+- (id<MTLHeap>)newHeapForTexDesc:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0)) {
+    if (@available(iOS 10.0, *)) {
+        NSInteger size = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
+        MTLHeapDescriptor* heapDesc = [[MTLHeapDescriptor alloc] init];
+        heapDesc.size = size;
+        heapDesc.storageMode = MTLStorageModeShared;
+        return [_device newHeapWithDescriptor:heapDesc];
     }
+    return nil;
 }
 
-- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap {
-    id<MTLTexture> image = [heap newTextureWithDescriptor:desc];
-    [image makeAliasable];
-    assert(nil != image);
-    return image;
+- (bool)isNeedNewHeap:(id<MTLHeap>)heap texDesc:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0)) {
+    if (@available(iOS 10.0, *)) {
+        NSInteger hSize = heap.size;
+        NSInteger tSize = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
+        if (hSize >= tSize) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    return false;
+}
+
+- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
+    if (@available(iOS 10.0, *)) {
+        id<MTLTexture> image = [heap newTextureWithDescriptor:desc];
+        [image makeAliasable];
+        assert(nil != image);
+        return image;
+    }
+    return nil;
 }
 
 #pragma mark enqueue
@@ -308,19 +382,23 @@ extern NSString* cString2NSString(std::string cStr) {
 #pragma mark - capture
 
 - (void)startCapture {
-    MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
-    MTLCaptureDescriptor* captureDescriptor = [[MTLCaptureDescriptor alloc] init];
-    captureDescriptor.captureObject = self.device;
+    if (@available(iOS 13.0, *)) {
+        MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+        MTLCaptureDescriptor* captureDescriptor = [[MTLCaptureDescriptor alloc] init];
+        captureDescriptor.captureObject = self.device;
 
-    NSError *error;
-    if (![captureManager startCaptureWithDescriptor: captureDescriptor error:&error]) {
-        NSLog(@"Failed to start capture, error %@", error);
+        NSError *error;
+        if (![captureManager startCaptureWithDescriptor: captureDescriptor error:&error]) {
+            NSLog(@"Failed to start capture, error %@", error);
+        }
     }
 }
 
 - (void)stopCapture {
-    MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
-    [captureManager stopCapture];
+    if (@available(iOS 13.0, *)) {
+        MTLCaptureManager* captureManager = [MTLCaptureManager sharedCaptureManager];
+        [captureManager stopCapture];
+    }
 }
 
 @end

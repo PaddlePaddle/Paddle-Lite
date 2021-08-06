@@ -360,6 +360,13 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+void ConfigBase::set_metal_device(void* device) {
+#ifdef LITE_WITH_METAL
+  metal_device_ = device;
+#endif
+  return;
+}
+
 void ConfigBase::set_metal_lib_path(const std::string &path) {
 #ifdef LITE_WITH_METAL
   metal_path_ = path;

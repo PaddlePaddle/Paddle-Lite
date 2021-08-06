@@ -260,7 +260,13 @@ class LITE_API RuntimeProgram {
 #ifdef LITE_WITH_METAL
   void ConfigMetalContext(std::string lib_path,
                           bool use_mps = false,
-                          bool use_aggressive = false);
+                          bool use_aggressive = false,
+                          void* device = nullptr);
+    
+  void ResizeInput(int64_t index, void* texture,
+                   std::vector<int64_t>& shape);
+    
+  void SetMetalDebug(bool debug);
 #endif
 
  private:
@@ -269,6 +275,7 @@ class LITE_API RuntimeProgram {
   Scope* exec_scope_{};
 
 #ifdef LITE_WITH_METAL
+  bool metal_debug_{false};
   std::unique_ptr<KernelContext> metal_ctx_{nullptr};
 #endif
 

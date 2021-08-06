@@ -53,6 +53,10 @@ class FeedImageCompute
     
     void run_without_mps();
     void setup_without_mps();
+        
+    void run_preprocess_without_mps();
+    void setup_preprocess_without_mps();
+        
    private:
     std::shared_ptr<MetalBuffer> input_buffer_;
     std::shared_ptr<MetalBuffer> param_buffer_;
@@ -62,6 +66,9 @@ class FeedImageCompute
     std::string function_name_;
     MetalContext* metal_context_;
     DDim last_input_dims_{};
+
+    void* lanczos_{nullptr};
+    id<MTLTexture> resize_texture;
 };
 
 }  // namespace metal

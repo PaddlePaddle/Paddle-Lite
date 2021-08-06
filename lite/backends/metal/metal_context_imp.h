@@ -25,7 +25,14 @@ extern NSString* cString2NSString(std::string cStr);
 @interface MetalContextImp : NSObject
 @property (strong, nonatomic, readonly) id<MTLDevice> device;
 
+- (void)setMetalDevice:(void *)device;
 - (void)setMetalPath:(std::string)path;
+
+//pre-process
+- (void)resizeInput:(int64_t)index texture:(void *)texture dims:(std::vector<int64_t>&)dims;
+- (NSArray *)getResizeInput:(int64_t)index;
+- (MPSImageLanczosScale *)lanczosScalePtrCreate;
+- (id<MTLTexture>)lanczosTextureCreate:(NSArray *)dims;
 
 - (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size access:(paddle::lite_metal::METAL_ACCESS_FLAG)access;
 - (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size
@@ -33,9 +40,9 @@ extern NSString* cString2NSString(std::string cStr);
                           access:(paddle::lite_metal::METAL_ACCESS_FLAG)access;
 - (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc;
 
-- (id<MTLHeap>)newHeapForTexDesc:(MTLTextureDescriptor*)desc;
-- (bool)isNeedNewHeap:(id<MTLHeap>)heap texDesc:(MTLTextureDescriptor*)desc;
-- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap;
+- (id<MTLHeap>)newHeapForTexDesc:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0));
+- (bool)isNeedNewHeap:(id<MTLHeap>)heap texDesc:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0));
+- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0));
 
 // for MPS
 - (id<MTLCommandBuffer>)commandBuffer;
