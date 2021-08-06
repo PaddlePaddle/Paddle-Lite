@@ -31,6 +31,43 @@ void Conv2dImageCompute::PrepareForRun() {
     auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
+    init_memory();
+    init_for_run();
+}
+
+void Conv2dImageCompute::ReInitWhenNeeded() {
+    const auto& param = this->Param<param_t>();
+    auto input_dims = param.x->dims();
+
+    if (last_input_dims_ != input_dims) {
+        release_memory();
+        init_memory();
+        
+        if (use_mps_) {
+            if (@available(iOS 11.3, *)) {
+                if (mps_input_image_) {
+                    CFRelease(mps_input_image_);
+                    mps_input_image_ = nullptr;
+                }
+                if (mps_output_image_) {
+                    CFRelease(mps_output_image_);
+                    mps_output_image_ = nullptr;
+                }
+                auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+                auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+                // MPS算子输入输出
+                mps_input_image_ =
+                    (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
+                                                               featureChannels:input_c];
+                mps_output_image_ =
+                    (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
+                                                               featureChannels:output_c];
+            }
+        }
+    }
+}
+
+void Conv2dImageCompute::init_memory() {
     const auto& param = this->Param<param_t>();
     auto input_dims = param.x->dims();
     auto filter_dims = param.filter->dims();
@@ -40,18 +77,6 @@ void Conv2dImageCompute::PrepareForRun() {
     int filter_c = static_cast<int>(filter_dims[1]);
     int input_c = static_cast<int>(input_dims[1]);
     is_depthwise_ = filter_c == 1 && filter_n == input_c;
-
-    activate_type_ = 0;
-    if (param.activation_param.has_active) {
-        switch (param.activation_param.active_type) {
-            case lite_metal_api::ActivationType::kRelu:
-            case lite_metal_api::ActivationType::kRelu6:
-            case lite_metal_api::ActivationType::kLeakyRelu: {
-                activate_type_ = (uint16_t)param.activation_param.active_type;
-            } break;
-            default: { LOG(FATAL) << "Conv2d: cannot support the activate type"; } break;
-        }
-    }
 
 #ifdef LITE_WITH_METAL_FULL
 #else
@@ -72,6 +97,11 @@ void Conv2dImageCompute::PrepareForRun() {
         blank_host = nullptr;
     }
 #endif
+    last_input_dims_ = input_dims;
+}
+
+void Conv2dImageCompute::init_for_run() {
+    const auto& param = this->Param<param_t>();
 
     function_name_ =
         KernelFunctionName(param, metal_context_->use_winograde(), metal_context_->use_quadruple());
@@ -302,8 +332,20 @@ void Conv2dImageCompute::setup_without_mps() {
                 bias_buffer_->transpose_[3]}};
     } else {
     }
+    //activate
+    uint16_t activate_type = 0;
+    if (param.activation_param.has_active) {
+        switch (param.activation_param.active_type) {
+            case lite_metal_api::ActivationType::kRelu:
+            case lite_metal_api::ActivationType::kRelu6:
+            case lite_metal_api::ActivationType::kLeakyRelu: {
+                activate_type = (uint16_t)param.activation_param.active_type;
+            } break;
+            default: { LOG(FATAL) << "Conv2d: cannot support the activate type"; } break;
+        }
+    }
     // relu
-    ActivationMetalParam activation_params{(unsigned short)activate_type_, 0.0, 0.0, 0.0, 0.0};
+    ActivationMetalParam activation_params{(unsigned short)activate_type, 0.0, 0.0, 0.0, 0.0};
     switch (param.activation_param.active_type) {
         case lite_metal_api::ActivationType::kIndentity:
         case lite_metal_api::ActivationType::kRelu:
@@ -527,7 +569,12 @@ bool Conv2dImageCompute::canMPSAddByElement() {
     return false;
 }
 
-Conv2dImageCompute::~Conv2dImageCompute() {
+void Conv2dImageCompute::release_memory() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+    TargetWrapperMetal::FreeImage(blank_buffer_);
+}
+
+void Conv2dImageCompute::release_mps_memory() {
     if (mps_conv_op_) {
         CFRelease(mps_conv_op_);
         mps_conv_op_ = nullptr;
@@ -540,8 +587,11 @@ Conv2dImageCompute::~Conv2dImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
-    TargetWrapperMetal::FreeImage(output_buffer_);
-    TargetWrapperMetal::FreeImage(blank_buffer_);
+}
+
+Conv2dImageCompute::~Conv2dImageCompute() {
+    release_memory();
+    release_mps_memory();
 }
 
 }  // namespace metal

@@ -40,12 +40,19 @@ class FeedImageCompute
 
    public:
     void PrepareForRun() override;
+    void ReInitWhenNeeded() override;
     void Run() override;
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
     virtual ~FeedImageCompute();
 
+   private:
+    void init_memory();
+    void release_memory();
+    
+    void run_without_mps();
+    void setup_without_mps();
    private:
     std::shared_ptr<MetalBuffer> input_buffer_;
     std::shared_ptr<MetalBuffer> param_buffer_;
@@ -54,6 +61,7 @@ class FeedImageCompute
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
+    DDim last_input_dims_{};
 };
 
 }  // namespace metal

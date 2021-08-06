@@ -30,6 +30,23 @@ void ElementwiseAddImageCompute::PrepareForRun() {
     auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
+    init_memory();
+    init_for_run();
+}
+
+void ElementwiseAddImageCompute::ReInitWhenNeeded() {
+    const auto& param = this->Param<param_t>();
+    auto input_dims = param.X->dims();
+
+    if (last_input_dims_ != input_dims) {
+        release_memory();
+        release_mps_memory();
+        init_memory();
+        init_for_run();
+    }
+}
+
+void ElementwiseAddImageCompute::init_memory() {
     const auto& param = this->Param<param_t>();
     auto output_dims = param.Out->dims();
     auto input_dims = param.X->dims();
@@ -40,7 +57,10 @@ void ElementwiseAddImageCompute::PrepareForRun() {
     input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
     input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
 #endif
+    last_input_dims_ = input_dims;
+}
 
+void ElementwiseAddImageCompute::init_for_run() {
     // use MPS or not
     bool should_use_mps = false;
     if (@available(iOS 11.3, *)) {
@@ -200,7 +220,11 @@ void ElementwiseAddImageCompute::setup_with_mps() {
     }
 }
 
-ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
+void ElementwiseAddImageCompute::release_memory() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
+void ElementwiseAddImageCompute::release_mps_memory() {
     if (mps_add_op_) {
         CFRelease(mps_add_op_);
         mps_add_op_ = nullptr;
@@ -217,7 +241,11 @@ ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
-    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
+ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
+    release_memory();
+    release_mps_memory();
 }
 
 }  // namespace metal
