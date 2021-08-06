@@ -40,6 +40,7 @@ class FetchImageCompute
 
    public:
     void PrepareForRun() override;
+    void ReInitWhenNeeded() override;
     void Run() override;
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_.get());
@@ -51,9 +52,14 @@ class FetchImageCompute
     void run_without_mps();
     void setup_without_mps();
 
+   private:
+    void init_for_run();
+    void init_memory();
+
     const MetalImage* input_buffer_;
     std::shared_ptr<MetalBuffer> output_buffer_;
     std::shared_ptr<MetalBuffer> params_buffer_;
+    DDim last_input_dims_{};
 
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;

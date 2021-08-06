@@ -30,30 +30,49 @@ void FetchImageCompute::PrepareForRun() {
     auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
+    init_memory();
+    setup_without_mps();
+    
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    [backend add_fetch_kernel_ptr:this];
+}
+
+void FetchImageCompute::ReInitWhenNeeded() {
     const auto& param = this->Param<param_t>();
+    auto input_dims = param.input->dims();
+
+    if (last_input_dims_ != input_dims) {
+        init_memory();
+        setup_without_mps();
+    }
+}
+
+void FetchImageCompute::init_memory() {
+    const auto& param = this->Param<param_t>();
+    auto input_dims = param.input->dims();
+    
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.input->data<MetalHalf, MetalImage>();
 #endif
-
-    // output
+    // output list
     auto* fetch_list = param.fetch_list;
     if (param.col >= fetch_list->size()) {
         fetch_list->resize(param.col + 1);
     }
+    //output cpu date
     Tensor* output_tensor = &fetch_list->at(param.col);
+    output_tensor->clear();
     auto count = param.input->dims().production();
-    auto size = count * sizeof(float);
+    auto size = (size_t)count * sizeof(float);
     auto output_dims = DDimLite({count});
     output_tensor->Resize(output_dims);
     auto data = output_tensor->template mutable_data<float>(TARGET(kHost), size);
     TargetWrapperMetal::MemsetSync(data, 0, size);
-    // output: MTLBuffer(ps: output layout is NCHW)
+    //output gpu buffer
     output_buffer_ = make_shared<MetalBuffer>(metal_context_, output_dims, size);
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    [backend add_fetch_kernel_ptr:this];
     
-    setup_without_mps();
+    last_input_dims_ = input_dims;
 }
 
 void FetchImageCompute::Run() {
@@ -84,7 +103,7 @@ void FetchImageCompute::fetch_data_from_gpu() {
     auto data = output_tensor->data<float>();
     auto size = param.input->dims().production();
     float* buf = (float*)[output_buffer_->buffer() contents];
-    TargetWrapperMetal::MemcpySync((void*)data, (void*)buf, size * sizeof(float));
+    TargetWrapperMetal::MemcpySync((void*)data, (void*)buf, (size_t)(size * sizeof(float)));
 }
 
 void FetchImageCompute::setup_without_mps() {
