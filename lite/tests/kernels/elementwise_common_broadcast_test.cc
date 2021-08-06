@@ -20,8 +20,8 @@
 
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/test/arena/framework.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 
 template <class T>
