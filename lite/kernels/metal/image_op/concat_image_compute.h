@@ -48,6 +48,7 @@ class ConcatImageCompute
     virtual ~ConcatImageCompute();
 
    private:
+    void run_without_mps();
     void setup_without_mps();
 
     std::vector<const MetalImage*> input_buffers_;

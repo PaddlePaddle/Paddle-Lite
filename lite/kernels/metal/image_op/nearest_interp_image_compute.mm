@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/pad2d_image_compute.h"
+#include "lite/kernels/metal/image_op/nearest_interp_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -21,79 +21,77 @@
 using namespace std;
 
 namespace paddle {
-namespace lite {
+namespace lite_metal {
 namespace kernels {
 namespace metal {
 
-void Pad2dImageCompute::PrepareForRun() {
+void NearestInterpImageCompute::PrepareForRun() {
     auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
     auto output_dims = param.Out->dims();
-
 #ifdef LITE_WITH_METAL_FULL
 #else
-    input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
+    input_buffer_ = param.X->data<MetalHalf, MetalImage>();
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     setup_without_mps();
 }
 
-void Pad2dImageCompute::Run() {
+void NearestInterpImageCompute::Run() {
     @autoreleasepool {
         run_without_mps();
     }
 }
 
-void Pad2dImageCompute::run_without_mps() {
+void NearestInterpImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
-    [encoder setTexture:input_buffer_x_->image() atIndex:(0)];
-    [encoder setTexture:output_buffer_->image() atIndex:(1)];
-    [encoder setBuffer:params_buffer_->buffer() offset:(0) atIndex:(0)];
+    [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
 }
 
-void Pad2dImageCompute::setup_without_mps() {
+void NearestInterpImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
 
-    short mode = 0;
-    if (param.mode == "reflect") {
-        mode = 1;
-    } else if (param.mode == "edge") {
-        mode = 2;
-    } else if (param.mode == "constant") {
-        mode = 0;
-    } else {
-        LOG(FATAL) << "pad2d: only supports : 1.same shapes 2.by channel.";
-    }
-    
-    Pad2dParam pad_params = {
-        static_cast<uint16_t>(param.paddings[0]),
-        static_cast<uint16_t>(param.paddings[1]),
-        static_cast<uint16_t>(param.paddings[2]),
-        static_cast<uint16_t>(param.paddings[3]),
-        param.pad_value,
-        static_cast<uint16_t>(mode)
-    };
-    params_buffer_ =
-        std::make_shared<MetalBuffer>(metal_context_, sizeof(pad_params), &pad_params);
+    int input_h = static_cast<int>(input_buffer_->pad_to_four_dim_[2]);
+    int input_w = static_cast<int>(input_buffer_->pad_to_four_dim_[3]);
+    int output_h = static_cast<int>(output_buffer_->pad_to_four_dim_[2]);
+    int output_w = static_cast<int>(output_buffer_->pad_to_four_dim_[3]);
 
-    // input y: 4-dims come from last output; 3-dims come from tensor input;
-    function_name_ = "pad2d";
+    float ratio_w = 1.0f;
+    float ratio_h = 1.0f;
+    float align_delta = 0.0f;
+    if (param.align_corners) {
+        ratio_w = (float(input_w) - 1.0f) / (float(output_w) - 1.0f);
+        ratio_h = (float(input_h) - 1.0f) / (float(output_h) - 1.0f);
+        align_delta = 0.5f;
+    } else {
+        ratio_w = float(input_w) / float(output_w);
+        ratio_h = float(input_h) / float(output_h);
+        align_delta = 0.0;
+    }
+
+    NearestInterpMetalParam interp_param{ratio_h, ratio_w, align_delta};
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(interp_param), &interp_param);
+
+    function_name_ = "nearest_interp";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
 }
 
-Pad2dImageCompute::~Pad2dImageCompute() {
+NearestInterpImageCompute::~NearestInterpImageCompute() {
     TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
@@ -102,30 +100,42 @@ Pad2dImageCompute::~Pad2dImageCompute() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(pad2d,
+REGISTER_LITE_KERNEL(nearest_interp,
     kMetal,
     kFloat,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::Pad2dImageCompute,
+    paddle::lite_metal::kernels::metal::NearestInterpImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
             DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("OutSize",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindInput("SizeTensor",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindInput("Scale",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
             DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(pad2d,
+REGISTER_LITE_KERNEL(nearest_interp,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
-    paddle::lite::kernels::metal::Pad2dImageCompute,
+    paddle::lite_metal::kernels::metal::NearestInterpImageCompute,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("OutSize",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindInput("SizeTensor",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindInput("Scale",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
