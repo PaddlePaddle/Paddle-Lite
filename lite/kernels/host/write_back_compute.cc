@@ -38,6 +38,9 @@ void WriteBackCompute::Run() {
     y->CopyDataFrom(*x);
   } else if (x_target == TARGET(kXPU) || y_target == TARGET(kXPU)) {
 #ifdef LITE_WITH_XPU
+    y->set_precision(x->precision());
+    y->Resize(x->dims());
+    y->set_lod(x->lod());
     if (is_host(x_target)) {
       auto mem_size = x->memory_size();
       VLOG(4) << "host to xpu, copy size " << mem_size;
@@ -56,12 +59,15 @@ void WriteBackCompute::Run() {
       }
     } else {
       auto mem_size = x->memory_size();
-      int r = xdnn::copy<int8_t>(
-          TargetWrapperXPU::GetRawContext(),
-          reinterpret_cast<const int8_t*>(x->raw_data()),
-          reinterpret_cast<int8_t*>(y->mutable_data(TARGET(kXPU), mem_size)),
-          mem_size);
-      CHECK_EQ(r, 0);
+      VLOG(4) << "xpu to xpu, copy size " << mem_size;
+      if (mem_size > 0) {
+        int r = xdnn::copy<int8_t>(
+            TargetWrapperXPU::GetRawContext(),
+            reinterpret_cast<const int8_t*>(x->raw_data()),
+            reinterpret_cast<int8_t*>(y->mutable_data(TARGET(kXPU), mem_size)),
+            mem_size);
+        CHECK_EQ(r, 0);
+      }
     }
 #endif
   } else {
