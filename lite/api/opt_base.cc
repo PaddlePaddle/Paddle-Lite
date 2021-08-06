@@ -54,6 +54,10 @@ void OptBase::SetQuantType(const std::string& quant_type) {
   }
 }
 
+void OptBase::SetSparseThreshold(float sparse_threshold) {
+  opt_config_.set_sparse_threshold(sparse_threshold);
+} 
+
 void OptBase::SetPassesInternal(
     const std::vector<std::string>& passes_internal) {
   opt_config_.set_passes_internal(passes_internal);

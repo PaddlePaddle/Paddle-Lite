@@ -66,6 +66,9 @@ DEFINE_string(quant_type,
               "Set the quant_type for post_quant_dynamic, "
               "and it should be QUANT_INT8 or QUANT_INT16 for now.");
 DEFINE_bool(enable_fp16, false, "Set kernel_type run in FP16.");
+DEFINE_double(sparse_threshold,
+             0.5,
+             "Set 0.5 as the lower bound for the sparse conv pass.");
 DEFINE_bool(record_tailoring_info,
             false,
             "Record kernels and operators information of the optimized model "
@@ -217,7 +220,8 @@ void RunOptimize(const std::string& model_dir,
                  const std::vector<std::string>& nnadapter_device_names,
                  bool record_tailoring_info,
                  bool quant_model,
-                 const std::string& quant_type) {
+                 const std::string& quant_type,
+                 float sparse_threshold) {
   if (!model_file.empty() && !param_file.empty()) {
     LOG(WARNING)
         << "Load combined-param model. Option model_dir will be ignored";
@@ -239,6 +243,7 @@ void RunOptimize(const std::string& model_dir,
   } else {
     OPT_LOG_FATAL << "Unsupported quant type: " << quant_type;
   }
+  config.set_sparse_threshold(sparse_threshold);
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   LiteModelType model_type;
@@ -366,6 +371,8 @@ void PrintHelpInfo() {
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
+      "  Arguments of sparse convolution:\n"
+      "        `--sparse_threshold=(float)`\n"
       "  Arguments of enable_fp16 in opt: \n"
       "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
@@ -524,7 +531,8 @@ void Main() {
                 valid_places.second,
                 FLAGS_record_tailoring_info,
                 FLAGS_quant_model,
-                FLAGS_quant_type);
+                FLAGS_quant_type,
+                FLAGS_sparse_threshold);
     return;
   }
 
@@ -567,7 +575,8 @@ void Main() {
                 valid_places.second,
                 FLAGS_record_tailoring_info,
                 FLAGS_quant_model,
-                FLAGS_quant_type);
+                FLAGS_quant_type,
+                FLAGS_sparse_threshold);
     OPT_LOG << "Transformation done. ";
   }
 

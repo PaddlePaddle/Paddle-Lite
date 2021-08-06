@@ -51,9 +51,12 @@ class SparseConvDetectPass : public ProgramPass {
   void CopyOutputScaleFromOpInfo(cpp::OpDesc* op_desc,
                                  OpInfo* op_info,
                                  const std::string& name);
+  void SetSparseThreshold(float sparse_threshold) {
+    sparse_threshold_ = sparse_threshold;
+  }
 
  private:
-  float thread_hold_{0.4f};
+  float sparse_threshold_{0.5f};
 };
 
 }  // namespace mir

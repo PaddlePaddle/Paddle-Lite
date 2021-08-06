@@ -212,10 +212,10 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       float sparse_zero_percent =
           static_cast<float>(zero_num) / static_cast<float>(weight_num);
       VLOG(4) << "sparse zero num percent: " << sparse_zero_percent;
-      if (sparse_zero_percent < thread_hold_) {
+      if (sparse_zero_percent < sparse_threshold_) {
         VLOG(4) << "The sparse degree of the sparse conv must be greater than "
-                   "thread_hold: "
-                << thread_hold_;
+                   "sparse_threshold_: "
+                << sparse_threshold_;
         continue;
       }
       auto nonzeros_output_name =
