@@ -58,9 +58,11 @@ int BatchNormalizationConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto mean_name = op_info->Input("Mean").front();
   auto mean = scope->FindMutableTensor(mean_name);
   auto mean_dims = mean->dims();
+  // Variance
   auto variance_name = op_info->Input("Variance").front();
   auto variance = scope->FindMutableTensor(variance_name);
   auto variance_dims = variance->dims();
+  // Epsilon
   float epsilon = op_info->GetAttr<float>("epsilon");
 
   // Input operand

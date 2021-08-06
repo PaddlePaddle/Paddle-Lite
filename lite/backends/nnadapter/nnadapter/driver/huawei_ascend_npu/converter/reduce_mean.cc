@@ -49,10 +49,7 @@ int Program::ConvertReduceMean(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-  auto axes_operator = GetMappedOperator(axes_operand);
-  if (!axes_operator) {
-    axes_operator = ConvertOperand(axes_operand);
-  }
+  auto axes_operator = ConvertOperand(axes_operand);
   auto reduce_mean_name = GetOperatorName(output_operand);
   auto reduce_mean_op = std::make_shared<ge::op::ReduceMean>(reduce_mean_name);
   reduce_mean_op->set_attr_keep_dims(keep_dim);

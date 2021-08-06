@@ -64,19 +64,10 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasInput("Min") && op_info->Input("Min").size() > 0) {
     auto min_name = op_info->Input("Min").front();
     auto min_tensor = scope->FindMutableTensor(min_name);
-    auto min_dims = min_tensor->dims();
-    auto min_scale_name = "Min0_scale";
-    auto has_min_scale = op_info->HasInputScale(min_scale_name, true);
-    auto min_scale =
-        has_min_scale ? op_info->GetInputScale(min_scale_name, true)[0] : 0.f;
     if (converter->HasOperand(min_name)) {
       min_operand = converter->GetOperand(min_name);
     } else {
-      min_operand =
-          has_min_scale
-              ? converter->AddQuant8VariableOperand(
-                    min_dims, min_scale, min_name)
-              : converter->AddFloat32VariableOperand(min_dims, min_name);
+      min_operand = converter->AddOperand(min_tensor, min_name);
     }
   } else {
     float min_value =
@@ -89,19 +80,10 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasInput("Max") && op_info->Input("Max").size() > 0) {
     auto max_name = op_info->Input("Max").front();
     auto max_tensor = scope->FindMutableTensor(max_name);
-    auto max_dims = max_tensor->dims();
-    auto max_scale_name = "Max0_scale";
-    auto has_max_scale = op_info->HasInputScale(max_scale_name, true);
-    auto max_scale =
-        has_max_scale ? op_info->GetInputScale(max_scale_name, true)[0] : 0.f;
     if (converter->HasOperand(max_name)) {
       max_operand = converter->GetOperand(max_name);
     } else {
-      max_operand =
-          has_max_scale
-              ? converter->AddQuant8VariableOperand(
-                    max_dims, max_scale, max_name)
-              : converter->AddFloat32VariableOperand(max_dims, max_name);
+      max_operand = converter->AddOperand(max_tensor, max_name);
     }
   } else {
     float max_value =

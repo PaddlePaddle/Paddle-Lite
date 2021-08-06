@@ -55,22 +55,10 @@ int Program::ConvertBatchNormalization(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-  auto scale_operator = GetMappedOperator(scale_operand);
-  if (!scale_operator) {
-    scale_operator = ConvertOperand(scale_operand);
-  }
-  auto offset_operator = GetMappedOperator(bias_operand);
-  if (!offset_operator) {
-    offset_operator = ConvertOperand(bias_operand);
-  }
-  auto mean_operator = GetMappedOperator(mean_operand);
-  if (!mean_operator) {
-    mean_operator = ConvertOperand(mean_operand);
-  }
-  auto variance_operator = GetMappedOperator(variance_operand);
-  if (!variance_operator) {
-    variance_operator = ConvertOperand(variance_operand);
-  }
+  auto scale_operator = ConvertOperand(scale_operand);
+  auto offset_operator = ConvertOperand(bias_operand);
+  auto mean_operator = ConvertOperand(mean_operand);
+  auto variance_operator = ConvertOperand(variance_operand);
   auto batch_norm_name = GetOperatorName(output_operand);
   auto batch_norm_op = std::make_shared<ge::op::BatchNorm>(batch_norm_name);
   batch_norm_op->set_attr_epsilon(epsilon);

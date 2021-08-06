@@ -90,7 +90,7 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
-  // slice operation
+  // Slice operation
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand, axes_operand, starts_operand, ends_operand, steps_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};

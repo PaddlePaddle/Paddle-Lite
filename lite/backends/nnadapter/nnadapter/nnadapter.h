@@ -229,16 +229,16 @@ typedef enum {
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
    * * 1: scale, A 1-D tensor with shape [C]. 1) If input's type is
-   * NNADAPTER_TENSOR_FLOAT16 or NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * NNADAPTER_TENSOR_FLOAT32, its type must be the
    * same type.
    * * 2: bias, A 1-D tensor with shape [C]. 1) If input's type is
-   * NNADAPTER_TENSOR_FLOAT16 or NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * NNADAPTER_TENSOR_FLOAT32, its type must be the
    * same type.
    * * 3: mean, A 1-D tensor with shape [C]. 1) If input's type is
-   * NNADAPTER_TENSOR_FLOAT16 or NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * NNADAPTER_TENSOR_FLOAT32, its type must be the
    * same type.
    * * 4: var, A 1-D tensor with shape [C]. 1) If input's type is
-   * NNADAPTER_TENSOR_FLOAT16 or NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * NNADAPTER_TENSOR_FLOAT32, its type must be the
    * same type.
    * * 5: epsilon, A NNADAPTER_FLOAT32 scalar. Defaults to 1e-5. The small value
    * added to the variance to prevent division by zero.
@@ -319,7 +319,7 @@ typedef enum {
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
    * H_in, W_in].
-   * * 1: filter, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 1: filter, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor.
    *      1) For a normal convolution, the filter's shape is [C_out, C_in,
@@ -331,8 +331,8 @@ typedef enum {
    * output, filter_height and filter_width is the filter's kernel size in the
    * 'H' and 'W' dimension.
    * * 2: bias, A 1-D tensor with shape [C_out].
-   *      1) If input's type is NNADAPTER_TENSOR_FLOAT16 or
-   * NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
+   *      1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
    *      2) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER, its
    * type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER, and bias_scale
    * == input_scale * filter_scale.
@@ -378,15 +378,15 @@ typedef enum {
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
    * H_in, W_in].
-   * * 1: filter, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 1: filter, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor. The filter's shape
    * is [C_out, C_in, filter_height, filter_width], where C_out and C_in is the
    * number of the channels of output and input, filter_height and filter_width
    * is the filter's kernel size in the 'H' and 'W' dimension.
    * * 2: bias, A 1-D tensor with shape [C_out].
-   *      1) If input's type is NNADAPTER_TENSOR_FLOAT16 or
-   * NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
+   *      1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
    *      2) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER, its
    * type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER, and bias_scale
    * == input_scale * filter_scale.
@@ -437,7 +437,7 @@ typedef enum {
    * It's shape is [N, 2 * deformable_groups * H_f * W_f, H_in, W_in]
    * * 2: mask, A tensor with the same type as input.
    * It's shape is [N, deformable_groups * H_f * W_f, H_in, W_in]
-   * * 3: filter, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 3: filter, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor.
    *      1) For a normal convolution, the filter's shape is [C_out, C_in,
@@ -449,8 +449,8 @@ typedef enum {
    * output, filter_height and filter_width is the filter's kernel size in the
    * 'H' and 'W' dimension.
    * * 4: bias, A 1-D tensor with shape [C_out].
-   *      1) If input's type is NNADAPTER_TENSOR_FLOAT16 or
-   * NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
+   *      1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
    *      2) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER, its
    * type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER, and bias_scale
    * == input_scale * filter_scale.
@@ -558,8 +558,8 @@ typedef enum {
    * num_units represents the number of output units, which also means the
    * feature size of output.
    * * 2: bias, A 1-D tensor with shape [num_units].
-   *      1) If input's type is NNADAPTER_TENSOR_FLOAT16 or
-   * NNADAPTER_TENSOR_FLOAT32, its type must be the same type.
+   *      1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
    *      2) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER, its
    * type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER, and bias_scale
    * == input_scale * weight_scale.
@@ -908,7 +908,7 @@ typedef enum {
    *     output = 1 / (1 + exp(-input))
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
@@ -959,7 +959,7 @@ typedef enum {
    *     output = exp(input) / reduce_sum(exp(input), axis=axis, keepdims=true)
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: axis, A NNADAPTER_INT32 scalar. Defaults to 1. It represents the
@@ -1001,7 +1001,7 @@ typedef enum {
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
    * Inputs:
-   * * 0: input0, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: input1, A tensor with the same type as input0.
@@ -1021,7 +1021,7 @@ typedef enum {
    *     output = tanh(input)
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
@@ -1039,7 +1039,7 @@ typedef enum {
    * of output will be (2, 1, 3).
    *
    * Inputs:
-   * * 0: input0, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input0, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: perm, An optional 1-D NNADAPTER_TENSOR_INT32 tensor, reverse the

@@ -63,18 +63,18 @@ int Program::ConvertSlice(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-  std::vector<int> offsets_vec(axes_count, 0);
-  std::vector<int> size_vec(axes_count, 0);
+  std::vector<int> offsets(axes_count, 0);
+  std::vector<int> size(axes_count, 0);
   // Get begin/offset based on axes and starts
   for (int i = 0; i < axes_count; i++) {
     auto axis = axes[i];
     NNADAPTER_CHECK_LE(axis, input_dimension_count);
     NNADAPTER_CHECK_LE(starts[i], input_dimensions[axis]);
-    offsets_vec[axis] = starts[i];
-    size_vec[axis] = ends[i] - starts[i];
+    offsets[axis] = starts[i];
+    size[axis] = ends[i] - starts[i];
   }
-  auto offsets_operator = AddInt32ConstantOperator(offsets_vec);
-  auto size_operator = AddInt32ConstantOperator(size_vec);
+  auto offsets_operator = AddInt32ConstantOperator(offsets);
+  auto size_operator = AddInt32ConstantOperator(size);
   auto slice_name = GetOperatorName(output_operand);
   auto slice_op = std::make_shared<ge::op::Slice>(slice_name);
   SET_INPUT(slice_op, x, input_operator);

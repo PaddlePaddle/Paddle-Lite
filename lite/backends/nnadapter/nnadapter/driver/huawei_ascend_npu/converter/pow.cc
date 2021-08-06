@@ -42,10 +42,7 @@ int Program::ConvertPow(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-  auto factor_operator = GetMappedOperator(factor_operand);
-  if (!factor_operator) {
-    factor_operator = ConvertOperand(factor_operand);
-  }
+  auto factor_operator = ConvertOperand(factor_operand);
   auto pow_name = GetOperatorName(output_operand);
   auto pow_op = std::make_shared<ge::op::Pow>(pow_name);
   SET_INPUT(pow_op, x1, input_operator);

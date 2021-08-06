@@ -63,10 +63,11 @@ int ExpandConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasInput("Shape") && op_info->Input("Shape").size() > 0) {
     auto shape_name = op_info->Input("Shape").front();
     auto shape_tensor = scope->FindMutableTensor(shape_name);
-    auto shape_dims = shape_tensor->dims();
-    int32_t* shape_data =
-        reinterpret_cast<int32_t*>(shape_tensor->mutable_data<int32_t>());
-    shape_operand = converter->AddInt32ConstantOperand(shape_data, shape_dims);
+    if (converter->HasOperand(shape_name)) {
+      shape_operand = converter->GetOperand(shape_name);
+    } else {
+      shape_operand = converter->AddOperand(shape_tensor, shape_name);
+    }
   } else {
     std::vector<int> shape = op_info->GetAttr<std::vector<int>>("shape");
     shape_operand = converter->AddInt32ConstantOperand(
