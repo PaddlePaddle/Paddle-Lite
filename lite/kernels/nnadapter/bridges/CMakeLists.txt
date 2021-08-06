@@ -28,7 +28,8 @@ lite_cc_library(subgraph_bridge_assign_value_op_nnadapter SRCS assign_value_op.c
 lite_cc_library(subgraph_bridge_assign_op_nnadapter SRCS assign_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_deformable_conv_nnadapter SRCS deformable_conv_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_conv_transpose_op_nnadapter SRCS conv_transpose_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-
+lite_cc_library(subgraph_bridge_hard_swish_op_nnadapter SRCS hard_swish_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_hard_sigmoid_op_nnadapter SRCS hard_sigmoid_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 set(nnadapter_subgraph_bridges
         subgraph_bridge_registry
         subgraph_bridge_utility_nnadapter
@@ -54,6 +55,8 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_assign_value_op_nnadapter
         subgraph_bridge_deformable_conv_nnadapter
         subgraph_bridge_conv_transpose_op_nnadapter
+        subgraph_bridge_hard_swish_op_nnadapter
+        subgraph_bridge_hard_sigmoid_op_nnadapter
         CACHE INTERNAL "nnadapter_subgraph_bridges")
 
 message(STATUS "+++++ nnadapter_subgraph_bridges: ${nnadapter_subgraph_bridges}")

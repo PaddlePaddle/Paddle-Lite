@@ -171,6 +171,12 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_DEFORMABLE_CONV_2D:
           ConvertDeformableConv2d(operation);
           break;
+        case NNADAPTER_HARD_SWISH:
+          ConvertHardSwish(operation);
+          break;
+        case NNADAPTER_HARD_SIGMOID:
+          ConvertHardSigmoid(operation);
+          break;
         default:
           NNADAPTER_LOG(FATAL) << "Unsupported operation("
                                << OperationTypeToString(operation->type)

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int HardSwishConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -45,7 +45,10 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
-
+  float offset = op_info->GetAttr<float>("offset");
+  float threshold = op_info->GetAttr<float>("threshold");
+  float scale = op_info->GetAttr<float>("scale");
+  float mul_factor = threshold / scale;
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
@@ -58,7 +61,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -67,27 +69,44 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
-
   // Activation operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* activation_operation = nullptr;
-  if (op_type == "sigmoid") {
-    activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
-  } else if (op_type == "relu") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU);
-  } else if (op_type == "relu6") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU6);
-  } else if (op_type == "tanh") {
-    activation_operation = converter->AddOperation(NNADAPTER_TANH);
-  } else if (op_type == "abs") {
-    activation_operation = converter->AddOperation(NNADAPTER_ABS);
+  NNAdapterOperation* hardswish_operation = nullptr;
+  // Prepare data
+  auto offset_operand = converter->AddFloat32ConstantOperand(offset);
+  auto threshold_operand = converter->AddFloat32ConstantOperand(threshold);
+  input_operands.push_back(offset_operand);
+  input_operands.push_back(threshold_operand);
+  // If mul_factor not equal to 1.0, split paddle operator to hard_swish and mul
+  if (mul_factor == 1.0) {
+    // Hard_swish operator
+    hardswish_operation = converter->AddOperation(NNADAPTER_HARD_SWISH);
+    converter->SetOperation(
+        hardswish_operation, &input_operands, &output_operands);
   } else {
-    LOG(WARNING) << "Unsupported activation type: " << op_type;
-    return FAILED;
+    // Immediate operand
+    auto immediate_operand = converter->AddFloat32VariableOperand(x_dims);
+    std::vector<NNAdapterOperand*> immediate_output_operands = {
+        immediate_operand};
+    // Hard_swish operator
+    hardswish_operation = converter->AddOperation(NNADAPTER_HARD_SWISH);
+    converter->SetOperation(
+        hardswish_operation, &input_operands, &immediate_output_operands);
+    // Mul operand
+    auto mul_operand = converter->AddFloat32ConstantOperand(
+        &mul_factor, DDim({static_cast<int64_t>(1)}));
+    // Fuse code operand
+    auto fuse_code_operand =
+        converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
+    std::vector<NNAdapterOperand*> mul_input_operands = {
+        immediate_operand, mul_operand, fuse_code_operand};
+    // Elementwise mul operator
+    auto elementwise_mul = converter->AddOperation(NNADAPTER_MUL);
+    converter->SetOperation(
+        elementwise_mul, &mul_input_operands, &output_operands);
   }
-  converter->SetOperation(
-      activation_operation, &input_operands, &output_operands);
+
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -96,18 +115,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu,
+REGISTER_SUBGRAPH_BRIDGE(hard_swish,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(sigmoid,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu6,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(abs,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+                         paddle::lite::subgraph::nnadapter::HardSwishConverter);

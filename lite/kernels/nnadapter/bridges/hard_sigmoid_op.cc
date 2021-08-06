@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int HardSigmoidConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -29,7 +29,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
-
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -45,7 +44,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
-
+  float alpha = op_info->GetAttr<float>("slope");
+  float beta = op_info->GetAttr<float>("offset");
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
@@ -58,7 +58,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -67,27 +66,20 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
-
+  // Alpha operand
+  auto alpha_operand = converter->AddFloat32ConstantOperand(alpha);
+  // Beta operand
+  auto beta_operand = converter->AddFloat32ConstantOperand(beta);
   // Activation operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand};
+  std::vector<NNAdapterOperand*> input_operands = {
+      input_operand, alpha_operand, beta_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* activation_operation = nullptr;
-  if (op_type == "sigmoid") {
-    activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
-  } else if (op_type == "relu") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU);
-  } else if (op_type == "relu6") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU6);
-  } else if (op_type == "tanh") {
-    activation_operation = converter->AddOperation(NNADAPTER_TANH);
-  } else if (op_type == "abs") {
-    activation_operation = converter->AddOperation(NNADAPTER_ABS);
-  } else {
-    LOG(WARNING) << "Unsupported activation type: " << op_type;
-    return FAILED;
-  }
+  NNAdapterOperation* hardsigmoid_operation = nullptr;
+
+  hardsigmoid_operation = converter->AddOperation(NNADAPTER_HARD_SIGMOID);
   converter->SetOperation(
-      activation_operation, &input_operands, &output_operands);
+      hardsigmoid_operation, &input_operands, &output_operands);
+
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -96,18 +88,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(sigmoid,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu6,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(abs,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    hard_sigmoid,
+    kNNAdapter,
+    paddle::lite::subgraph::nnadapter::HardSigmoidConverter);

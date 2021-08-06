@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,12 +19,13 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertActivation(hal::Operation* operation) {
+int Program::ConvertHardSigmoid(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 1);
+
+  NNADAPTER_CHECK_EQ(input_count, 3);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
@@ -32,32 +33,20 @@ int Program::ConvertActivation(hal::Operation* operation) {
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
-
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
   auto act_name = GetOperatorName(output_operand);
-  switch (operation->type) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                \
-  case NNADAPTER_##type: {                                        \
-    auto act_op = std::make_shared<ge::op::class_name>(act_name); \
-    SET_INPUT(act_op, x, input_operator);                         \
-    MAP_OUTPUT(act_op, y, output_operand);                        \
-  } break;
-    CONVERT_UNARY_ACTIVATION(SIGMOID, Sigmoid);
-    CONVERT_UNARY_ACTIVATION(RELU, Relu);
-    CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
-    CONVERT_UNARY_ACTIVATION(TANH, Tanh);
-    CONVERT_UNARY_ACTIVATION(ABS, Abs);
-#undef CONVERT_UNARY_ACTIVATION
-    default:
-      NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
-                           << OperationTypeToString(operation->type)
-                           << " is found.";
-      break;
-  }
+  auto act_op = std::make_shared<ge::op::HardSigmoid>(act_name);
+  float alpha = *reinterpret_cast<float*>(input_operands[1]->buffer);
+  float beta = *reinterpret_cast<float*>(input_operands[2]->buffer);
+  act_op->set_attr_alpha(alpha);
+  act_op->set_attr_beta(beta);
+  SET_INPUT(act_op, input_x, input_operator);
+  MAP_OUTPUT(act_op, output_y, output_operand);
+
   return NNADAPTER_NO_ERROR;
 }
 
