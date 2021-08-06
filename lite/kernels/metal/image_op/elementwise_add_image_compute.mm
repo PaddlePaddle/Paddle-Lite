@@ -43,7 +43,7 @@ void ElementwiseAddImageCompute::PrepareForRun() {
 
     // use MPS or not
     bool should_use_mps = false;
-    if (@available(iOS 10.0, *)) {
+    if (@available(iOS 11.3, *)) {
         if (metal_context_->use_mps()) {
             should_use_mps = true;
         }
@@ -56,12 +56,7 @@ void ElementwiseAddImageCompute::PrepareForRun() {
     }
 // X Y output
 #ifdef LITE_WITH_METAL_FULL
-    if ([input_buffer_x_->image() pixelFormat] == MTLPixelFormatRGBA32Float &&
-        [input_buffer_y_->image() pixelFormat] == MTLPixelFormatRGBA32Float &&
-        [output_buffer_->image() pixelFormat] == MTLPixelFormatRGBA32Float) {
-    } else {
-        should_use_mps = false;
-    }
+
 #else
     if ([input_buffer_x_->image() pixelFormat] == MTLPixelFormatRGBA16Float &&
         [input_buffer_y_->image() pixelFormat] == MTLPixelFormatRGBA16Float &&
@@ -80,10 +75,12 @@ void ElementwiseAddImageCompute::PrepareForRun() {
 }
 
 void ElementwiseAddImageCompute::Run() {
-    if (use_mps_) {
-        run_with_mps();
-    } else {
-        run_without_mps();
+    @autoreleasepool {
+        if (use_mps_) {
+            run_with_mps();
+        } else {
+            run_without_mps();
+        }
     }
 }
 
@@ -171,32 +168,36 @@ void ElementwiseAddImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_add_op_) {
-        [((__bridge MPSCNNAdd*)mps_add_op_)
-            encodeToCommandBuffer:cmdbuf
-                     primaryImage:(__bridge MPSImage*)mps_input_image_
-                   secondaryImage:(__bridge MPSImage*)mps_input_image_y_
-                 destinationImage:(__bridge MPSImage*)mps_output_image_];
+        if (@available(iOS 11.3, *)) {
+            [((__bridge MPSCNNAdd*)mps_add_op_)
+                encodeToCommandBuffer:cmdbuf
+                         primaryImage:(__bridge MPSImage*)mps_input_image_
+                       secondaryImage:(__bridge MPSImage*)mps_input_image_y_
+                     destinationImage:(__bridge MPSImage*)mps_output_image_];
+        }
     }
     [backend commit:cmdbuf];
 }
 
 void ElementwiseAddImageCompute::setup_with_mps() {
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    //
-    mps_add_op_ = (__bridge_retained void*)[[MPSCNNAdd alloc] initWithDevice:backend.device];
-    // MPS算子输入输出
-    auto input_x_c = MAX(4, static_cast<int>(input_buffer_x_->tensor_dim_[1]));
-    auto input_y_c = MAX(4, static_cast<int>(input_buffer_y_->tensor_dim_[1]));
-    auto output_c = MAX(4, static_cast<int>(output_buffer_->tensor_dim_[1]));
-    mps_input_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_x_->image()
-                                                   featureChannels:input_x_c];
-    mps_input_image_y_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_y_->image()
-                                                   featureChannels:input_y_c];
-    mps_output_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
-                                                   featureChannels:output_c];
+    if (@available(iOS 11.3, *)) {
+        auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+        //
+        mps_add_op_ = (__bridge_retained void*)[[MPSCNNAdd alloc] initWithDevice:backend.device];
+        // MPS算子输入输出
+        auto input_x_c = MAX(4, static_cast<int>(input_buffer_x_->tensor_dim_[1]));
+        auto input_y_c = MAX(4, static_cast<int>(input_buffer_y_->tensor_dim_[1]));
+        auto output_c = MAX(4, static_cast<int>(output_buffer_->tensor_dim_[1]));
+        mps_input_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_x_->image()
+                                                       featureChannels:input_x_c];
+        mps_input_image_y_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_y_->image()
+                                                       featureChannels:input_y_c];
+        mps_output_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
+                                                       featureChannels:output_c];
+    }
 }
 
 ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {

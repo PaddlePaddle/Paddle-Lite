@@ -38,13 +38,23 @@ void SigmoidImageCompute::PrepareForRun() {
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
+    setup_without_mps();
+}
+
+void SigmoidImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void SigmoidImageCompute::setup_without_mps() {
     function_name_ = "sigmoid";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
 }
 
-void SigmoidImageCompute::Run() {
+void SigmoidImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();

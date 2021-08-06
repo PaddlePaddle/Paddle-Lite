@@ -126,10 +126,12 @@ void Conv2dImageCompute::PrepareForRun() {
 }
 
 void Conv2dImageCompute::Run() {
-    if (use_mps_) {
-        run_with_mps();
-    } else {
-        run_without_mps();
+    @autoreleasepool {
+        if (use_mps_) {
+            run_with_mps();
+        } else {
+            run_without_mps();
+        }
     }
 }
 
@@ -381,10 +383,12 @@ void Conv2dImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_conv_op_) {
-        [((__bridge MPSCNNConvolution*)mps_conv_op_)
-            encodeToCommandBuffer:cmdbuf
-                      sourceImage:(__bridge MPSImage*)mps_input_image_
-                 destinationImage:(__bridge MPSImage*)mps_output_image_];
+        if (@available(iOS 11.3, *)) {
+            [((__bridge MPSCNNConvolution*)mps_conv_op_)
+                encodeToCommandBuffer:cmdbuf
+                          sourceImage:(__bridge MPSImage*)mps_input_image_
+                     destinationImage:(__bridge MPSImage*)mps_output_image_];
+        }        
     }
     [backend commit:cmdbuf];
 }

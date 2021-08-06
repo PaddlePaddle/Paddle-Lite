@@ -57,10 +57,12 @@ void SoftmaxImageCompute::PrepareForRun() {
 }
 
 void SoftmaxImageCompute::Run() {
-    if (use_mps_) {
-        run_with_mps();
-    } else {
-        run_without_mps();
+    @autoreleasepool {
+        if (use_mps_) {
+            run_with_mps();
+        } else {
+            run_without_mps();
+        }
     }
 }
 
@@ -135,29 +137,33 @@ void SoftmaxImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_softmax_op_) {
-        [((__bridge MPSCNNSoftMax*)mps_softmax_op_)
-            encodeToCommandBuffer:cmdbuf
-                      sourceImage:(__bridge MPSImage*)mps_input_image_
-                 destinationImage:(__bridge MPSImage*)mps_output_image_];
+        if (@available(iOS 10.0, *)) {
+            [((__bridge MPSCNNSoftMax*)mps_softmax_op_)
+                encodeToCommandBuffer:cmdbuf
+                          sourceImage:(__bridge MPSImage*)mps_input_image_
+                     destinationImage:(__bridge MPSImage*)mps_output_image_];
+        }
     }
     [backend commit:cmdbuf];
 }
 
 void SoftmaxImageCompute::setup_with_mps() {
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    //
-    mps_softmax_op_ =
-        (__bridge_retained void*)[[MPSCNNSoftMax alloc] initWithDevice:backend.device];
-    ((__bridge MPSCNNSoftMax*)mps_softmax_op_).edgeMode = MPSImageEdgeModeZero;
-    // MPS in and out
-    auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
-    auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
-    mps_input_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
-                                                   featureChannels:input_c];
-    mps_output_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
-                                                   featureChannels:output_c];
+    if (@available(iOS 10.0, *)) {
+        auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+        //
+        mps_softmax_op_ =
+            (__bridge_retained void*)[[MPSCNNSoftMax alloc] initWithDevice:backend.device];
+        ((__bridge MPSCNNSoftMax*)mps_softmax_op_).edgeMode = MPSImageEdgeModeZero;
+        // MPS in and out
+        auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+        auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+        mps_input_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
+                                                       featureChannels:input_c];
+        mps_output_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
+                                                       featureChannels:output_c];
+    }
 }
 
 SoftmaxImageCompute::~SoftmaxImageCompute() {

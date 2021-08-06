@@ -57,6 +57,12 @@ void FetchImageCompute::PrepareForRun() {
 }
 
 void FetchImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void FetchImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto inTexture = input_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();

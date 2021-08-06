@@ -46,6 +46,7 @@ class ElementwiseMulImageCompute
     virtual ~ElementwiseMulImageCompute();
 
    private:
+    void run_without_mps();
     void setup_without_mps();
 
     MetalImage* output_buffer_{nullptr};

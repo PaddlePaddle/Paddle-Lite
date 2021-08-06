@@ -45,6 +45,9 @@ class ExpImageCompute
     virtual ~ExpImageCompute();
 
    private:
+    void run_without_mps();
+    void setup_without_mps();
+
     const MetalImage* input_buffer_;
     MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> param_buffer_;
