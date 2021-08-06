@@ -20,6 +20,7 @@ namespace lite {
 namespace x86 {
 namespace math {
 
+#ifdef __AVX__
 // From: https://stackoverflow.com/a/25627536
 static inline void transpose8_ps(__m256& row0,  // NOLINT
                                  __m256& row1,  // NOLINT
@@ -58,6 +59,59 @@ static inline void transpose8_ps(__m256& row0,  // NOLINT
   row7 = _mm256_permute2f128_ps(__tt3, __tt7, 0x31);
 }
 
+static inline void transpose4x8_ps(__m256& row0,  // NOLINT
+                                   __m256& row1,  // NOLINT
+                                   __m256& row2,  // NOLINT
+                                   __m256& row3   // NOLINT
+                                   ) {
+  // vtmp0=a0b0a2b2a4b4a6b6
+  __m256 vtmp0 = _mm256_unpacklo_ps(row0, row1);
+  // vtmp1=a1b1a3b3a5b5a7b7
+  __m256 vtmp1 = _mm256_unpackhi_ps(row0, row1);
+  // vtmp2=c0d0c2d2c4d4c6d6
+  __m256 vtmp2 = _mm256_unpacklo_ps(row2, row3);
+  // vtmp3=c1d1c3d3c5d5c7d7
+  __m256 vtmp3 = _mm256_unpackhi_ps(row2, row3);
+  // vres0=a0b0c0d0a4b4c4d4
+  __m256 vres0 = _mm256_shuffle_ps(vtmp0, vtmp2, 0xaa);  // 0xaa=[01,00,01,00]
+  // vres1=a2b2c2d2a6b6c6d6
+  __m256 vres1 = _mm256_shuffle_ps(vtmp0, vtmp2, 0xdd);  // 0xaa=[11,10,11,10]
+  // vres2=a1b1c1d1a5b5c5d5
+  __m256 vres2 = _mm256_shuffle_ps(vtmp1, vtmp3, 0xaa);  // 0xaa=[01,00,01,00]
+  // vres3=a3b3c3d3a7b7c7d7
+  __m256 vres3 = _mm256_shuffle_ps(vtmp1, vtmp3, 0xdd);  // 0xaa=[11,10,11,10]
+  // row0=a0b0c0d0a1b1c1d1
+  row0 = _mm256_permute2f128_ps(vres0, vres2, 0x20);
+  // row1=a2b2c2d2a3b3c3d3
+  row1 = _mm256_permute2f128_ps(vres1, vres3, 0x20);
+  // row2=a4b4c4d4a5b5c5d5
+  row2 = _mm256_permute2f128_ps(vres0, vres2, 0x31);
+  // row3=a6b6c6d6a7b7c7d7
+  row3 = _mm256_permute2f128_ps(vres1, vres3, 0x31);
+}
+#endif
+
+inline void act_acquire(lite_api::ActivationType act,
+                        int& flag_act,       // NOLINT
+                        float& local_alpha,  // NOLINT
+                        float six,
+                        float alpha) {
+  switch (act) {
+    case lite_api::ActivationType::kRelu:
+      flag_act = 0x01;
+      break;
+    case lite_api::ActivationType::kRelu6:
+      flag_act = 0x02;
+      local_alpha = six;
+      break;
+    case lite_api::ActivationType::kLeakyRelu:
+      flag_act = 0x03;
+      local_alpha = alpha;
+      break;
+    default:
+      break;
+  }
+}
 // input  [bs, ic, ih, iw] => [bs, ic/8, ih, iw, 8]
 // filter [oc, 01, ih, iw] => [01, ic/8, ih, iw, 8] for depthwise
 void pack8_m256(lite::Tensor* input,

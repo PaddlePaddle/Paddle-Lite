@@ -46,9 +46,8 @@ inline bool IsExpand(const std::vector<int64_t>& filter_dim,
   }
   return !(filter_1 && strides_1 && padding_0 && dilation_1);
 }
-
-template <typename T>
-class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class Conv2dCompute : public KernelLite<TARGET(kX86), Ptype> {
  public:
   virtual void PrepareForRun();
 
@@ -231,7 +230,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
  private:
   using param_t = operators::ConvParam;
-  KernelLite<TARGET(kX86), PRECISION(kFloat)>* impl_{nullptr};
+  KernelLite<TARGET(kX86), Ptype>* impl_{nullptr};
 };
 
 }  // namespace x86

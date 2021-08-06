@@ -23,7 +23,7 @@ namespace kernels {
 namespace x86 {
 
 template <>
-void DepthwiseConv<float>::Run() {
+void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
 
@@ -97,9 +97,7 @@ void DepthwiseConv<float>::Run() {
                                                  param.bias,
                                                  has_act,
                                                  act_type);
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_depthwise_3x3s1_m256";
-#endif
+      KERNEL_FUNC_NAME("conv_depthwise_3x3s1_m256")
     } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
                stride_w == 2 && dilation_h == 1 && dilation_w == 1) {
       lite::x86::math::conv_depthwise_3x3s2_m256(&input_padding_,
@@ -108,9 +106,7 @@ void DepthwiseConv<float>::Run() {
                                                  param.bias,
                                                  has_act,
                                                  act_type);
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_depthwise_3x3s2_m256";
-#endif
+      KERNEL_FUNC_NAME("conv_depthwise_3x3s2_m256")
     } else {
       lite::x86::math::conv_depthwise_m256(&input_padding_,
                                            &output_pack_,
@@ -122,9 +118,7 @@ void DepthwiseConv<float>::Run() {
                                            dilation_w,
                                            has_act,
                                            act_type);
-#ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_depthwise_m256";
-#endif
+      KERNEL_FUNC_NAME("conv_depthwise_m256")
     }
   } else if (pack_size == 4) {
     lite::x86::math::conv_depthwise_m128(&input_padding_,
@@ -137,9 +131,7 @@ void DepthwiseConv<float>::Run() {
                                          dilation_w,
                                          has_act,
                                          act_type);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_depthwise_m128";
-#endif
+    KERNEL_FUNC_NAME("conv_depthwise_m128")
   }
 
   // [bs, oh, ow, oc] => [bs, oc, oh, ow]
@@ -150,13 +142,7 @@ void DepthwiseConv<float>::Run() {
   }
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void DepthwiseConv<float>::SetProfileRuntimeKernelInfo(
-    paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
+PROFILE_INFO(kFloat, kFloat)
 
 }  // namespace x86
 }  // namespace kernels

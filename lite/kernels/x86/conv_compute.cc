@@ -22,8 +22,7 @@ namespace kernels {
 namespace x86 {
 
 template <>
-void Conv2dCompute<float>::PrepareForRun() {
-#ifdef LITE_WITH_AVX
+void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   const int input_channel = param.x->dims()[1];
@@ -54,7 +53,6 @@ void Conv2dCompute<float>::PrepareForRun() {
     impl_->PrepareForRun();
     is_first_epoch_ = false;
   }
-#endif
 }
 
 }  // namespace x86
@@ -62,29 +60,30 @@ void Conv2dCompute<float>::PrepareForRun() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(conv2d,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::Conv2dCompute<float>,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("SecondInput", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kX86))})
+typedef paddle::lite::kernels::arm::Conv2dCompute<PRECISION(kFloat),
+                                                  PRECISION(kFloat)>
+    ConvFp32;
+
+REGISTER_LITE_KERNEL(conv2d, kX86, kFloat, kNCHW, ConvFp32, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindInput("SecondInput",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
-REGISTER_LITE_KERNEL(depthwise_conv2d,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::Conv2dCompute<float>,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kX86))})
+REGISTER_LITE_KERNEL(depthwise_conv2d, kX86, kFloat, kNCHW, ConvFp32, def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();

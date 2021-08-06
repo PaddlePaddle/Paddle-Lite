@@ -28,6 +28,7 @@ v8sf pow256_ps(v8sf x, v8sf y);
 v8sf sin256_ps(v8sf x);
 v8sf cos256_ps(v8sf x);
 void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
