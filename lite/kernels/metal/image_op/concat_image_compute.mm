@@ -44,6 +44,12 @@ void ConcatImageCompute::PrepareForRun() {
 }
 
 void ConcatImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void ConcatImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -62,7 +68,7 @@ void ConcatImageCompute::Run() {
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
 }
-
+    
 void ConcatImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     int num = (int)param.x.size();
