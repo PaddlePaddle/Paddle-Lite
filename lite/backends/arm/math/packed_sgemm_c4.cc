@@ -3848,7 +3848,8 @@ void sgemm_prepack_c4(int M,
     sgemm_prepack_c4_common(
         M, N, K, A_packed, B, C, bias, has_bias, has_relu, ctx);
   } else {
-    sgemm_prepack_c4_small(M, N, K, A_packed, B, C, ctx);
+    sgemm_prepack_c4_small(
+        M, N, K, A_packed, B, C, bias, has_bias, has_relu, ctx);
   }
 }
 
