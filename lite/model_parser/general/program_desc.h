@@ -38,6 +38,8 @@ class ProgramDesc : public ProgramDescAPI {
 
   ProgramDesc(ProgramDesc&&) = default;
 
+  ProgramDesc& operator=(const ProgramDesc&);
+
   void CopyFrom(const ProgramDesc& other);
 
   const std::vector<std::unique_ptr<BlockDesc>>& blocks() const {

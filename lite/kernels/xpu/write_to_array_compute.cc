@@ -70,7 +70,7 @@ REGISTER_LITE_KERNEL(write_to_array,
                 {LiteType::GetTensorListTy(TARGET(kXPU),
                                            PRECISION(kAny),
                                            DATALAYOUT(kAny))})
-    .BindOutput("FakeAssociatedOut",
+    .BindOutput("AssociatedOut",
                 {LiteType::GetTensorListTy(TARGET(kXPU),
                                            PRECISION(kAny),
                                            DATALAYOUT(kAny))})
