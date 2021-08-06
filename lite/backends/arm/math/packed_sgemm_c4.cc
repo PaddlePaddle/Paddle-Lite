@@ -1230,11 +1230,11 @@ void sgemm_prepack_c4_small(int M,
     const float* b = B;
     int n = N;
 #ifdef __aarch64__
+    // clang-format off
     for (; n > 7; n -= 8) {
       int cnt = kcnt;
       const float* a_ptr = A_packed;
       const float* b_ptr = b;
-      // clang-format off
       if (ctx->arch() == kA35) {
         asm volatile(
           /* load a0, a1 */
@@ -1802,6 +1802,7 @@ void sgemm_prepack_c4_small(int M,
       }
       b += 4;
     }
+// clang-format on
 #else
     for (; n > 7; n -= 8) {
       int cnt = kcnt;
@@ -2039,13 +2040,31 @@ void sgemm_prepack_c4_small(int M,
     const float* b = B;
     int n = N;
 #ifdef __aarch64__
+    // clang-format off
     for (; n > 7; n -= 8) {
       int cnt = kcnt;
       const float* a_ptr = A_packed;
       const float* b_ptr = b;
-      // clang-format off
       if (ctx->arch() == kA35) {
         asm volatile(
+          "mov w0, #0             \n"
+          "dup v0.4s, w0          \n"
+          "mov  v8.16b,   v0.16b \n"
+          "mov  v9.16b,   v0.16b \n"
+          "mov  v10.16b,  v0.16b \n"
+          "mov  v11.16b,  v0.16b \n"
+          "mov  v12.16b,  v0.16b \n"
+          "mov  v13.16b,  v0.16b \n"
+          "mov  v14.16b,  v0.16b \n"
+          "mov  v15.16b,  v0.16b \n"
+          "mov  v20.16b,  v0.16b \n"
+          "mov  v21.16b,  v0.16b \n"
+          "mov  v22.16b,  v0.16b \n"
+          "mov  v23.16b,  v0.16b \n"
+          "mov  v24.16b,  v0.16b \n"
+          "mov  v25.16b,  v0.16b \n"
+          "mov  v26.16b,  v0.16b \n"
+          "mov  v27.16b,  v0.16b \n"
           "ld1  {v16.2s}, [%[a]], #8\n"
           "ld1  {v28.2s}, [%[a]], #8\n"
           "ld1  {v17.2s}, [%[a]], #8\n"
@@ -2057,7 +2076,6 @@ void sgemm_prepack_c4_small(int M,
           "1:\n"
           /* load b2, b3 */
           /* load a2, a3 */
-
           "ld1r  {v2.2s},  [%[b]], #4\n"
           "fmla v8.2s,  v16.2s, v0.2s \n"
           "ld1r  {v6.2s},  [%[b]], #4\n"
@@ -2066,23 +2084,23 @@ void sgemm_prepack_c4_small(int M,
           "fmla v9.2s,  v16.2s, v2.2s \n"
           "ld1r  {v7.2s},  [%[b]], #4\n"
           "fmla v21.2s, v28.2s, v2.2s \n"
-          "ld1  {v18.2s}, [%[a]], #8\n"
           "fmla v8.2s,   v17.2s, v4.2s \n"
-          "ld1  {v30.2s}, [%[a]], #8\n"
           "fmla v20.2s,  v29.2s, v4.2s \n"
-          "ld1  {v19.2s}, [%[a]], #8\n"
+          "ld1  {v18.2s}, [%[a]], #8\n"
           "fmla v9.2s,   v17.2s, v6.2s \n"
-          "ld1  {v31.2s}, [%[a]], #8\n"
+          "ld1  {v30.2s}, [%[a]], #8\n"
           "fmla v21.2s,  v29.2s, v6.2s \n"
-          "ld1r  {v0.2s},  [%[b]], #4\n"
+          "ld1  {v19.2s}, [%[a]], #8\n"
           "fmla v8.2s,   v18.2s, v1.2s \n"
-          "ld1r  {v4.2s},  [%[b]], #4\n"
+          "ld1  {v31.2s}, [%[a]], #8\n"
           "fmla v20.2s,  v30.2s, v1.2s \n"
-          "ld1r  {v1.2s},  [%[b]], #4\n"
           "fmla v9.2s,   v18.2s, v3.2s \n"
           "fmla v21.2s,  v30.2s, v3.2s \n"
+          "ld1r  {v0.2s},  [%[b]], #4\n"
           "fmla v8.2s,  v19.2s, v5.2s \n"
+          "ld1r  {v4.2s},  [%[b]], #4\n"
           "fmla v20.2s,  v31.2s,v5.2s \n"
+          "ld1r  {v1.2s},  [%[b]], #4\n"
           "fmla v9.2s,  v19.2s, v7.2s \n"
           "ld1r  {v5.2s},  [%[b]], #4\n"
           "fmla v21.2s,  v31.2s,v7.2s \n"
@@ -2196,8 +2214,6 @@ void sgemm_prepack_c4_small(int M,
             [c] "+r" (C),
             [cnt] "+r" (cnt)
           : [ldb]  "r" (ldb_byte)
-          //  [vbias] "w" (vbias),
-          //  [vzero] "w" (vzero)
           : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
             "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18",
             "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", 
@@ -2331,6 +2347,16 @@ void sgemm_prepack_c4_small(int M,
       const float* b_ptr = b;
       if (ctx->arch() == kA35) {
         asm volatile(
+          "mov w0, #0             \n"
+          "dup v0.4s, w0          \n"
+          "mov  v8.16b,   v0.16b \n"
+          "mov  v9.16b,   v0.16b \n"
+          "mov  v10.16b,  v0.16b \n"
+          "mov  v11.16b,  v0.16b \n"
+          "mov  v20.16b,  v0.16b \n"
+          "mov  v21.16b,  v0.16b \n"
+          "mov  v22.16b,  v0.16b \n"
+          "mov  v23.16b,  v0.16b \n"
           "ld1r  {v0.2s},  [%[b]], #4\n"
           "ld1r  {v4.2s},  [%[b]], #4\n"
           "ld1r  {v1.2s},  [%[b]], #4\n"
@@ -2502,6 +2528,10 @@ void sgemm_prepack_c4_small(int M,
       const float* b_ptr = b;
       if (ctx->arch() == kA35) {
         asm volatile(
+          "mov w0, #0             \n"
+          "dup v0.4s, w0          \n"
+          "mov  v8.16b,   v0.16b \n"
+          "mov  v20.16b,  v0.16b \n"
           "1:\n"
           "ld1r  {v0.2s},  [%[b]], #4\n"
           "ld1r  {v4.2s},  [%[b]], #4\n"
@@ -2537,7 +2567,7 @@ void sgemm_prepack_c4_small(int M,
             [cnt] "+r" (cnt)
           : [ldb]  "r" (ldb_byte)
           : "v0", "v8", "v9", "v16", "v17", 
-            "v18", "v19", "cc", "memory"
+            "v18", "v19", "cc", "w0", "memory"
         );
       } else {
          asm volatile(
@@ -2588,6 +2618,7 @@ void sgemm_prepack_c4_small(int M,
       }
       b += 4;
     }
+// clang-format on
 #else
     for (; n > 7; n -= 8) {
       int cnt = kcnt;
@@ -3817,8 +3848,7 @@ void sgemm_prepack_c4(int M,
     sgemm_prepack_c4_common(
         M, N, K, A_packed, B, C, bias, has_bias, has_relu, ctx);
   } else {
-    sgemm_prepack_c4_small(
-        M, N, K, A_packed, B, C, bias, has_bias, has_relu, ctx);
+    sgemm_prepack_c4_small(M, N, K, A_packed, B, C, ctx);
   }
 }
 
