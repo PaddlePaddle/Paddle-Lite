@@ -53,6 +53,9 @@ REGISTER_LITE_KERNEL(write_to_array,
                 {LiteType::GetTensorListTy(TARGET(kHost),
                                            PRECISION(kAny),
                                            DATALAYOUT(kAny))})
+    // The WriteToArray operator has no input TensorArray variable, so its
+    // data dependence cannot be deduced in graph analysis. Therefore, add
+    // an output AssociatedOut to indicate data dependencies.
     .BindOutput("AssociatedOut",
                 {LiteType::GetTensorListTy(TARGET(kHost),
                                            PRECISION(kAny),
