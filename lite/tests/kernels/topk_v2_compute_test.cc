@@ -77,7 +77,7 @@ class TopkV2ComputeTester : public arena::TestCase {
         vec.push_back(std::make_pair(x_data[glb_in_off + j * inner_size], j));
       }
       std::partial_sort(
-            vec.begin(), vec.begin() + k_, vec.end(), comp_func<T1, T2>);
+          vec.begin(), vec.begin() + k_, vec.end(), comp_func<T1, T2>);
       for (int j = 0; j < k_; j++) {
         for (int k = 0; k < inner_size; k++) {
           int cur_off = glb_in_off + vec[j].second * inner_size + k;
@@ -112,11 +112,11 @@ void test_topk_v2(Place place, float abs_error) {
     for (int axis : {-1, -2}) {
       for (int k : {2, 5}) {
         std::cout << "start case " << caseNum++ << ":" << std::endl;
-        auto axis_valid = ((axis >= (-1 * (int)x_shape.size())) && (axis < (int)x_shape.size()));
+        auto axis_valid = ((axis >= (-1 * (int)x_shape.size())) &&
+                           (axis < (int)x_shape.size()));
         if (!axis_valid) {
-          LOG(INFO) << "the axis of topk_v2 must be ["
-                    << (-1 * x_shape.size()) << ", " << x_shape.size()
-                    << "but you set axis is" << axis;
+          LOG(INFO) << "the axis of topk_v2 must be [" << (-1 * x_shape.size())
+                    << ", " << x_shape.size() << "but you set axis is" << axis;
           continue;
         }
         if (axis < 0) {
@@ -138,9 +138,9 @@ void test_topk_v2(Place place, float abs_error) {
 
 TEST(Topk, precision) {
   Place place;
-  float abs_error = 2e-5;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kHost);
+  float abs_error = 2e-5;
   test_topk_v2<float, int64_t>(place, abs_error);
 #else
   return;

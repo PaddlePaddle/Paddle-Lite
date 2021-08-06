@@ -44,7 +44,7 @@ void TopkV2Compute::Run() {
   int inner_size = x_dims.count(axis + 1, dim_size);
   int sum_size = axis_size * inner_size;
   int out_sum_size = k * inner_size;
-  
+
   for (int i = 0; i < outer_size; i++) {
     int glb_in_off = i * sum_size;
     int glb_out_off = i * out_sum_size;
@@ -52,8 +52,7 @@ void TopkV2Compute::Run() {
     for (int j = 0; j < axis_size; j++) {
       vec.push_back(std::make_pair(x_data[glb_in_off + j * inner_size], j));
     }
-    std::partial_sort(
-          vec.begin(), vec.begin() + k, vec.end(), comp_func);
+    std::partial_sort(vec.begin(), vec.begin() + k, vec.end(), comp_func);
     for (int j = 0; j < k; j++) {
       for (int k = 0; k < inner_size; k++) {
         int cur_off = glb_in_off + vec[j].second * inner_size + k;
