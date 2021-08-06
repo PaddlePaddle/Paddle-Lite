@@ -71,7 +71,6 @@ int Program::ConvertBatchNormalization(hal::Operation* operation) {
   if (!variance_operator) {
     variance_operator = ConvertOperand(variance_operand);
   }
-
   auto batch_norm_name = GetOperatorName(output_operand);
   auto batch_norm_op = std::make_shared<ge::op::BatchNorm>(batch_norm_name);
   batch_norm_op->set_attr_epsilon(epsilon);

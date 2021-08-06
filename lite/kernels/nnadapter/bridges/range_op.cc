@@ -12,39 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
-
 namespace paddle {
 namespace lite {
 namespace subgraph {
 namespace nnadapter {
-
-static void AddOperandByTensor(Converter* converter,
-                               NNAdapterOperand** insert_operand,
-                               Tensor* tensor,
-                               const std::string& tensor_name) {
-  auto tensor_precision = tensor->precision();
-  switch (tensor_precision) {
-    case PRECISION(kInt32): {
-      *insert_operand = converter->AddInt32Operand(tensor, tensor_name);
-      break;
-    }
-    case PRECISION(kInt64): {
-      *insert_operand = converter->AddInt64Operand(tensor, tensor_name);
-      break;
-    }
-    case PRECISION(kFP64): {
-      *insert_operand = converter->AddFloat64Operand(tensor, tensor_name);
-      break;
-    }
-    case PRECISION(kFloat):
-    default: {
-      *insert_operand = converter->AddFloat32Operand(tensor, tensor_name);
-    }
-  }
-}
 
 int RangeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
@@ -58,13 +33,10 @@ int RangeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get input and output vars and op attributes
   auto start_name = op_info->Input("Start").front();
   auto start = scope->FindMutableTensor(start_name);
-
   auto ends_name = op_info->Input("End").front();
   auto ends = scope->FindMutableTensor(ends_name);
-
   auto step_name = op_info->Input("Step").front();
   auto step = scope->FindMutableTensor(step_name);
-
   auto out_name = op_info->Output("Out").front();
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
@@ -74,26 +46,27 @@ int RangeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (converter->HasOperand(start_name)) {
     start_operand = converter->GetOperand(start_name);
   } else {
-    AddOperandByTensor(converter, &start_operand, start, start_name);
+    start_operand = converter->AddOperand(start, start_name);
   }
   // Ends operand
   NNAdapterOperand* ends_operand = nullptr;
   if (converter->HasOperand(ends_name)) {
     ends_operand = converter->GetOperand(ends_name);
   } else {
-    AddOperandByTensor(converter, &ends_operand, ends, ends_name);
+    ends_operand = converter->AddOperand(ends, ends_name);
   }
   // Step operand
   NNAdapterOperand* step_operand = nullptr;
   if (converter->HasOperand(step_name)) {
     step_operand = converter->GetOperand(step_name);
   } else {
-    AddOperandByTensor(converter, &step_operand, step, step_name);
+    step_operand = converter->AddOperand(step, step_name);
   }
-
   // Output operand
-  NNAdapterOperand* output_operand = nullptr;
-  AddOperandByTensor(converter, &output_operand, out, out_name);
+  NNAdapterOperandPrecisionCode out_type =
+      Precision2NNAdapterTensorPrecisionCode(start->precision());
+  NNAdapterOperand* output_operand =
+      converter->AddVariableOperand(out_dims, out_name, out_type);
 
   // Range operation
   std::vector<NNAdapterOperand*> input_operands = {

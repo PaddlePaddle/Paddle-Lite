@@ -52,7 +52,6 @@ int Program::ConvertRange(hal::Operation* operation) {
   if (!delta_operator) {
     delta_operator = ConvertOperand(delta_operand);
   }
-
   auto range_name = GetOperatorName(output_operand);
   auto range_op = std::make_shared<ge::op::Range>(range_name);
   SET_INPUT(range_op, start, start_operator);

@@ -941,6 +941,9 @@ typedef enum {
    * NNADAPTER_TENSOR_INT32 tensor.
    * * 3: ends, ends indices of corresponding axis in `axes`, A
    * NNADAPTER_TENSOR_INT32 tensor.
+   * * 4: steps, A NNADAPTER_TENSOR_INT32  1-D tensor, 1-D tensor of slice step
+   * of corresponding axis in `axes`. Negative value means slicing backward.
+   * 'steps' cannot be 0. Defaults to 1.
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.

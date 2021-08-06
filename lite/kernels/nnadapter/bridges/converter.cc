@@ -172,6 +172,47 @@ NNAdapterOperand* Converter::AddQuant8VariableOperand(const DDim& dimensions,
                     name);
 }
 
+NNAdapterOperand* Converter::AddConstantOperand(const Tensor* tensor) {
+  auto tensor_precision = tensor->precision();
+  void* tensor_data_buf = const_cast<void*>(tensor->raw_data());
+  bool is_scalar = tensor->data_size() == 1 ? true : false;
+  if (is_scalar) {
+    auto nnadapter_scalar_precison =
+        Precision2NNAdapterScalarPrecisionCode(tensor_precision);
+    return AddOperand(DDim(std::vector<int64_t>({})),
+                      nnadapter_scalar_precison,
+                      nullptr,
+                      0,
+                      0,
+                      tensor_data_buf);
+  }
+  auto nnadapter_tensor_precison =
+      Precision2NNAdapterTensorPrecisionCode(tensor_precision);
+  auto tensor_dims = tensor->dims();
+  return AddOperand(tensor_dims,
+                    nnadapter_tensor_precison,
+                    nullptr,
+                    0,
+                    0,
+                    tensor_data_buf,
+                    true);
+}
+
+NNAdapterOperand* Converter::AddOperand(const Tensor* tensor,
+                                        const std::string& name) {
+  auto tensor_precision = tensor->precision();
+  bool is_const_tensor = tensor->persistable();
+  auto dims = tensor->dims();
+  if (is_const_tensor) {
+    return AddConstantOperand(tensor);
+  } else {
+    auto nnadapter_tensor_precison =
+        Precision2NNAdapterTensorPrecisionCode(tensor_precision);
+    auto dims = tensor->dims();
+    return AddVariableOperand(dims, name, nnadapter_tensor_precison);
+  }
+}
+
 NNAdapterOperand* Converter::AddVariableOperand(
     const DDim& dimensions,
     const std::string& name,
@@ -197,78 +238,6 @@ NNAdapterOperand* Converter::AddInt32VariableOperand(const DDim& dimensions,
 NNAdapterOperand* Converter::AddInt64VariableOperand(const DDim& dimensions,
                                                      const std::string& name) {
   return AddVariableOperand(dimensions, name, NNADAPTER_TENSOR_INT64);
-}
-
-NNAdapterOperand* Converter::AddFloat32Operand(Tensor* tensor,
-                                               const std::string& name) {
-  bool is_const_tensor = tensor->persistable();
-  auto dims = tensor->dims();
-  if (is_const_tensor) {
-    bool is_scalar = tensor->data_size() == 1 ? true : false;
-    if (is_scalar) {
-      float tensor_data = *reinterpret_cast<float*>(tensor->raw_data());
-      return AddFloat32ConstantOperand(tensor_data);
-    } else {
-      float* tensor_data = reinterpret_cast<float*>(tensor->raw_data());
-      return AddFloat32ConstantOperand(tensor_data, dims);
-    }
-  } else {
-    return AddFloat32VariableOperand(dims, name);
-  }
-}
-
-NNAdapterOperand* Converter::AddFloat64Operand(Tensor* tensor,
-                                               const std::string& name) {
-  bool is_const_tensor = tensor->persistable();
-  auto dims = tensor->dims();
-  if (is_const_tensor) {
-    bool is_scalar = tensor->data_size() == 1 ? true : false;
-    if (is_scalar) {
-      double tensor_data = *reinterpret_cast<double*>(tensor->raw_data());
-      return AddFloat64ConstantOperand(tensor_data);
-    } else {
-      double* tensor_data = reinterpret_cast<double*>(tensor->raw_data());
-      return AddFloat64ConstantOperand(tensor_data, dims);
-    }
-  } else {
-    return AddFloat64VariableOperand(dims, name);
-  }
-}
-
-NNAdapterOperand* Converter::AddInt32Operand(Tensor* tensor,
-                                             const std::string& name) {
-  bool is_const_tensor = tensor->persistable();
-  auto dims = tensor->dims();
-  if (is_const_tensor) {
-    bool is_scalar = tensor->data_size() == 1 ? true : false;
-    if (is_scalar) {
-      int32_t tensor_data = *reinterpret_cast<int32_t*>(tensor->raw_data());
-      return AddInt32ConstantOperand(tensor_data);
-    } else {
-      int32_t* tensor_data = reinterpret_cast<int32_t*>(tensor->raw_data());
-      return AddInt32ConstantOperand(tensor_data, dims);
-    }
-  } else {
-    return AddInt32VariableOperand(dims, name);
-  }
-}
-
-NNAdapterOperand* Converter::AddInt64Operand(Tensor* tensor,
-                                             const std::string& name) {
-  bool is_const_tensor = tensor->persistable();
-  auto dims = tensor->dims();
-  if (is_const_tensor) {
-    bool is_scalar = tensor->data_size() == 1 ? true : false;
-    if (is_scalar) {
-      int64_t tensor_data = *reinterpret_cast<int64_t*>(tensor->raw_data());
-      return AddInt64ConstantOperand(tensor_data);
-    } else {
-      int64_t* tensor_data = reinterpret_cast<int64_t*>(tensor->raw_data());
-      return AddInt64ConstantOperand(tensor_data, dims);
-    }
-  } else {
-    return AddInt64VariableOperand(dims, name);
-  }
 }
 
 NNAdapterOperation* Converter::AddOperation(NNAdapterOperationType type) {

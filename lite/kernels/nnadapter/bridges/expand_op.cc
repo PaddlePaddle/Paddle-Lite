@@ -38,7 +38,6 @@ int ExpandConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -47,7 +46,7 @@ int ExpandConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
-  // Input0 operand
+  // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
     input_operand = converter->GetOperand(x_name);
@@ -59,7 +58,6 @@ int ExpandConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
   // Shape operand
   NNAdapterOperand* shape_operand = nullptr;
   if (op_info->HasInput("Shape") && op_info->Input("Shape").size() > 0) {
@@ -74,7 +72,6 @@ int ExpandConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     shape_operand = converter->AddInt32ConstantOperand(
         &shape[0], DDim({static_cast<int64_t>(shape.size())}));
   }
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -84,13 +81,12 @@ int ExpandConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
-  // Clip operation
+  // Expand operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand,
                                                    shape_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* expand_operation =
       converter->AddOperation(NNADAPTER_EXPAND);
-
   converter->SetOperation(expand_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

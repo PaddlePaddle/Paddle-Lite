@@ -34,35 +34,30 @@ int PowConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-
   auto out_name = op_info->Output("Out").front();
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
-  // Input0 operand
-  NNAdapterOperand* input_operand_0 = nullptr;
+  // Input operand
+  NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
-    input_operand_0 = converter->GetOperand(x_name);
+    input_operand = converter->GetOperand(x_name);
   } else {
-    input_operand_0 = converter->AddFloat32VariableOperand(x_dims, x_name);
+    input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
   }
-
-  // Input1 operand
+  // Factor operand
   auto factor = op_info->GetAttr<float>("factor");
-  NNAdapterOperand* input_operand_1 = nullptr;
-  input_operand_1 = converter->AddFloat32ConstantOperand(
+  NNAdapterOperand* factor_operand = converter->AddFloat32ConstantOperand(
       &factor, DDim({static_cast<int64_t>(1)}));
-
   // Output operand
   NNAdapterOperand* output_operand =
       converter->AddFloat32VariableOperand(out_dims, out_name);
 
-  // Activation operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand_0,
-                                                   input_operand_1};
+  // Pow operation
+  std::vector<NNAdapterOperand*> input_operands = {input_operand,
+                                                   factor_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* pow_operation = converter->AddOperation(NNADAPTER_POW);
-
   converter->SetOperation(pow_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

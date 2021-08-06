@@ -26,12 +26,17 @@ int Program::ConvertExpand(hal::Operation* operation) {
   auto output_count = output_operands.size();
   NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
+
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
   // Shape
   auto shape_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "shape_operand: " << OperandToString(shape_operand);
+  auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  int shape_size = shape_operand->length / sizeof(int32_t);
+  for (int i = 0; i < shape_size; i++) {
+    NNADAPTER_VLOG(5) << "shape[" << i << "]: " << shape_data[i];
+  }
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
@@ -45,7 +50,6 @@ int Program::ConvertExpand(hal::Operation* operation) {
   if (!shape_operator) {
     shape_operator = ConvertOperand(shape_operand);
   }
-
   auto expand_name = GetOperatorName(output_operand);
   auto expand_op = std::make_shared<ge::op::Expand>(expand_name);
   SET_INPUT(expand_op, x, input_operator);

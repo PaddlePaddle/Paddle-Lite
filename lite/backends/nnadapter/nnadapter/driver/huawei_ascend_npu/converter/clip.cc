@@ -52,7 +52,6 @@ int Program::ConvertClip(hal::Operation* operation) {
   if (!max_operator) {
     max_operator = ConvertOperand(max_operand);
   }
-
   auto clip_name = GetOperatorName(output_operand);
   auto clip_op = std::make_shared<ge::op::ClipByValue>(clip_name);
   SET_INPUT(clip_op, x, input_operator);

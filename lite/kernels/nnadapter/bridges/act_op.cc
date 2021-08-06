@@ -30,9 +30,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
 
-  std::vector<NNAdapterOperand*> input_operands{};
-  std::vector<NNAdapterOperand*> output_operands{};
-
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -61,14 +58,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-  input_operands.push_back(input_operand);
-
-  if (op_type == "leaky_relu") {
-    auto alpha = op_info->GetAttr<float>("alpha");
-    NNAdapterOperand* alpha_operand =
-        converter->AddFloat32ConstantOperand(alpha);
-    input_operands.push_back(alpha_operand);
-  }
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -77,9 +66,10 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
-  output_operands.push_back(output_operand);
 
   // Activation operation
+  std::vector<NNAdapterOperand*> input_operands{input_operand};
+  std::vector<NNAdapterOperand*> output_operands{output_operand};
   NNAdapterOperation* activation_operation = nullptr;
   if (op_type == "sigmoid") {
     activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
@@ -92,6 +82,10 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else if (op_type == "log") {
     activation_operation = converter->AddOperation(NNADAPTER_LOG);
   } else if (op_type == "leaky_relu") {
+    auto alpha = op_info->GetAttr<float>("alpha");
+    NNAdapterOperand* alpha_operand =
+        converter->AddFloat32ConstantOperand(alpha);
+    input_operands.push_back(alpha_operand);
     activation_operation = converter->AddOperation(NNADAPTER_LEAKY_RELU);
   } else if (op_type == "abs") {
     activation_operation = converter->AddOperation(NNADAPTER_ABS);

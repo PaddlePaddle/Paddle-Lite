@@ -30,7 +30,7 @@ int BatchNormalizationConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
 
-  // Get input and output vars and op attributes
+  // Input
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
   auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
@@ -38,7 +38,7 @@ int BatchNormalizationConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-
+  // Output
   auto out_name = op_info->Output("Y").front();
   auto out_scale_name = "Y0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -46,15 +46,15 @@ int BatchNormalizationConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
-
+  // Scale
   auto scale_name = op_info->Input("Scale").front();
   auto scale = scope->FindMutableTensor(scale_name);
   auto scale_dims = scale->dims();
+  // Bias
   auto bias_name = op_info->Input("Bias").front();
   auto bias = scope->FindMutableTensor(bias_name);
   auto bias_dims = bias->dims();
-  printf("scale_dims_size:%u \n", (uint8_t)scale_dims.size());
-  printf("scale_dims:%s\n", scale_dims.repr().c_str());
+  // Mean
   auto mean_name = op_info->Input("Mean").front();
   auto mean = scope->FindMutableTensor(mean_name);
   auto mean_dims = mean->dims();
@@ -75,31 +75,25 @@ int BatchNormalizationConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
   // Scale operand
   float* scale_data = reinterpret_cast<float*>(scale->mutable_data<float>());
   NNAdapterOperand* scale_operand =
       converter->AddFloat32ConstantOperand(scale_data, scale_dims);
-
   // Bias operand
   float* bias_data = reinterpret_cast<float*>(bias->mutable_data<float>());
   NNAdapterOperand* bias_operand =
       converter->AddFloat32ConstantOperand(bias_data, bias_dims);
-
   // Mean operand
   float* mean_data = reinterpret_cast<float*>(mean->mutable_data<float>());
   NNAdapterOperand* mean_operand =
       converter->AddFloat32ConstantOperand(mean_data, mean_dims);
-
   // Variance operand
   float* variance_data =
       reinterpret_cast<float*>(variance->mutable_data<float>());
   NNAdapterOperand* variance_operand =
       converter->AddFloat32ConstantOperand(variance_data, variance_dims);
-
   // epsilon operand
   auto epsilon_operand = converter->AddFloat32ConstantOperand(epsilon);
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -119,7 +113,6 @@ int BatchNormalizationConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* batch_norm_operation =
       converter->AddOperation(NNADAPTER_BATCH_NORMALIZATION);
-
   converter->SetOperation(
       batch_norm_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;

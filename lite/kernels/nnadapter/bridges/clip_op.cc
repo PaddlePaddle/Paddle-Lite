@@ -30,7 +30,7 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
 
-  // Get input and output vars and op attributes
+  // Input
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
   auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
@@ -38,7 +38,7 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-
+  // Output
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -47,7 +47,7 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
-  // Input0 operand
+  // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
     input_operand = converter->GetOperand(x_name);
@@ -59,7 +59,6 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
   // Min operand
   NNAdapterOperand* min_operand = nullptr;
   if (op_info->HasInput("Min") && op_info->Input("Min").size() > 0) {
@@ -85,7 +84,6 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     min_operand = converter->AddFloat32ConstantOperand(
         &min_value, DDim({static_cast<int64_t>(1)}));
   }
-
   // Max operand
   NNAdapterOperand* max_operand = nullptr;
   if (op_info->HasInput("Max") && op_info->Input("Max").size() > 0) {
@@ -111,7 +109,6 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     max_operand = converter->AddFloat32ConstantOperand(
         &max_value, DDim({static_cast<int64_t>(1)}));
   }
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -126,7 +123,6 @@ int ClipConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand, min_operand, max_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* clip_operation = converter->AddOperation(NNADAPTER_CLIP);
-
   converter->SetOperation(clip_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

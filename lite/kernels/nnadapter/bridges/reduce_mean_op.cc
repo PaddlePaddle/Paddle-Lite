@@ -38,7 +38,6 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -59,18 +58,15 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
   // Axes operand
   std::vector<int> dim = op_info->GetAttr<std::vector<int>>("dim");
   NNAdapterOperand* axes_operand = converter->AddInt32ConstantOperand(
       &dim[0], DDim({static_cast<int64_t>(dim.size())}));
-
   // Keep_dim operand: keep_dim: default 1
   bool keep_dim =
       op_info->HasAttr("keep_dim") ? op_info->GetAttr<bool>("keep_dim") : true;
   NNAdapterOperand* keep_dim_operand =
       converter->AddBool8ConstantOperand(keep_dim);
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -86,7 +82,6 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* reduce_mean_operation =
       converter->AddOperation(NNADAPTER_REDUCE_MEAN);
-
   converter->SetOperation(
       reduce_mean_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;

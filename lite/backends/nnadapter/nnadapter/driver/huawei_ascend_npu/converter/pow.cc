@@ -31,7 +31,8 @@ int Program::ConvertPow(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
   // Factor
   auto factor_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "factor: " << OperandToString(factor_operand);
+  auto factor = *reinterpret_cast<float*>(factor_operand->buffer);
+  NNADAPTER_VLOG(5) << "factor: " << factor;
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
@@ -45,7 +46,6 @@ int Program::ConvertPow(hal::Operation* operation) {
   if (!factor_operator) {
     factor_operator = ConvertOperand(factor_operand);
   }
-
   auto pow_name = GetOperatorName(output_operand);
   auto pow_op = std::make_shared<ge::op::Pow>(pow_name);
   SET_INPUT(pow_op, x1, input_operator);

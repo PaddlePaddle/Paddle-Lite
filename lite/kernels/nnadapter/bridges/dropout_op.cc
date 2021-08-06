@@ -38,7 +38,6 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -47,7 +46,7 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
-  // Input0 operand
+  // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
     input_operand = converter->GetOperand(x_name);
@@ -59,7 +58,6 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
   // Prob operand
   auto dropout_implementation =
       op_info->GetAttr<std::string>("dropout_implementation");
@@ -70,11 +68,9 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   NNAdapterOperand* prob_operand = converter->AddFloat32ConstantOperand(
       &scale, DDim({static_cast<int64_t>(1)}));
-
   // Fuse code operand
   auto fuse_code_operand =
       converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -89,7 +85,6 @@ int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand, prob_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* mul_operation = converter->AddOperation(NNADAPTER_MUL);
-
   converter->SetOperation(mul_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
