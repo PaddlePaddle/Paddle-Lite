@@ -77,8 +77,8 @@ class GemmLikeConv : public KernelLite<TARGET(kX86), Ptype> {
       //! im2col gemmlike conv
       flag_1x1gemm_ = false;
     }
-
-    if (!flag_trans_weights_ && n > 1 && m > 1) {
+    // todo: GEMV support (n > 1 && m > 1)
+    if (!flag_trans_weights_) {
       lite::x86::math::trans_gemm_weights<Ptype>(
           *(param.filter), weights_, param.groups, &ctx);
       flag_trans_weights_ = true;

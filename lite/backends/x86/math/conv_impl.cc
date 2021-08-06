@@ -15,6 +15,7 @@
 #include "lite/backends/x86/math/conv_impl.h"
 #include <immintrin.h>
 #include <algorithm>
+#include "lite/backends/x86/math/gemm_fp32.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
@@ -347,9 +348,9 @@ void conv1x1s1_gemm(const float* i_data,
   int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
-  if (n > 1 && m > 1) {
-    weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
-  }
+  // if (n > 1 && m > 1) {
+  weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  // }
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
     // dC
@@ -362,7 +363,7 @@ void conv1x1s1_gemm(const float* i_data,
           static_cast<const float*>(weights) + g * weights_size_per_group;
       const float* bias_group = static_cast<const float*>(bias) + g * m;
 
-      if (n == 1) {
+      /*if (n == 1) {
         sgemv(weights_group,
               din_group,
               dout_group,
@@ -399,22 +400,22 @@ void conv1x1s1_gemm(const float* i_data,
               ctx,
               act_param.Relu_clipped_coef,
               act_param.Leaky_relu_alpha);
-      } else {
-        sgemm_prepack(false,
-                      m,
-                      n,
-                      k,
-                      weights_group,
-                      din_group,
-                      n,
-                      0.f,
-                      dout_group,
-                      n,
-                      bias_group,
-                      flag_bias,
-                      act_param,
-                      ctx);
-      }
+      } else {*/
+      gemm_prepack(false,
+                   m,
+                   n,
+                   k,
+                   weights_group,
+                   din_group,
+                   n,
+                   0.f,
+                   dout_group,
+                   n,
+                   bias_group,
+                   flag_bias,
+                   act_param,
+                   ctx);
+      //}
     }
   }
 }
@@ -449,9 +450,9 @@ void conv_im2col_gemm(const float* i_data,
   int weights_size_per_group = m * k;
 
   auto act_param = param.activation_param;
-  if (n > 1 && m > 1) {
-    weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
-  }
+  // if (n > 1 && m > 1) {
+  weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  // }
 
   float* tmp_work_space =
       ctx->workspace_data<float>() + ctx->llc_size() / sizeof(float);
@@ -483,7 +484,7 @@ void conv_im2col_gemm(const float* i_data,
                     dilations[0],
                     dilations[1],
                     dB);
-      if (n == 1) {
+      /*if (n == 1) {
         sgemv(weights_group,
               dB,
               dout_group,
@@ -519,23 +520,23 @@ void conv_im2col_gemm(const float* i_data,
               ctx,
               act_param.Relu_clipped_coef,
               act_param.Leaky_relu_alpha);
-      } else {
-        int ldb = n;
-        sgemm_prepack(false,
-                      m,
-                      n,
-                      k,
-                      weights_group,
-                      dB,
-                      ldb,
-                      0.f,
-                      dout_group,
-                      n,
-                      bias_group,
-                      flag_bias,
-                      act_param,
-                      ctx);
-      }
+      } else {*/
+      int ldb = n;
+      gemm_prepack(false,
+                   m,
+                   n,
+                   k,
+                   weights_group,
+                   dB,
+                   ldb,
+                   0.f,
+                   dout_group,
+                   n,
+                   bias_group,
+                   flag_bias,
+                   act_param,
+                   ctx);
+      //}
     }
   }
 }

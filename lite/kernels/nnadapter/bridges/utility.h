@@ -153,6 +153,15 @@ void Transpose(const T* input,
   }
 }
 
+NNAdapterOperandPrecisionCode FluidDataType2NNAdapterTensorPrecisionCode(
+    int dtype_code);
+
+NNAdapterOperandPrecisionCode FluidDataType2NNAdapterScalarPrecisionCode(
+    int dtype_code);
+
+NNAdapterOperandPrecisionCode Precision2NNAdapterTensorPrecisionCode(
+    PrecisionType precision);
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite

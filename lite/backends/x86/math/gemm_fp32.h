@@ -78,7 +78,6 @@ void gemm_prepack(bool is_transB,
                   bool has_bias,
                   const operators::ActivationParam act_param,
                   X86Context* ctx);
-
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
