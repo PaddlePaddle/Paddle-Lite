@@ -279,8 +279,8 @@ typedef enum {
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: min, A scalar with the same type as input
-   * * 2: max, A scalar with the same type as input
+   * * 1: min, A 1-D tensor with the same type as input with shape[1].
+   * * 2: max, A 1-D tensor with the same type as input with shape[1].
    *
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.
@@ -753,10 +753,11 @@ typedef enum {
   * Outputs a 1-D Tensor with spaced values within a given interval.
   *
   * Inputs:
-  * * 0: start, A NNADAPTER_INT32, NNADAPTER_INT64, NNADAPTER_FLOAT32,
-  * NNADAPTER_FLOAT64 scalar.
-  * * 1: end, A scalar with the same type as start.
-  * * 2: step, A scalar with the same type as start.
+  * * 0: start, A NNADAPTER_TENSOR_FLOAT32,
+  * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+  * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape[1].
+  * * 1: end, A tensor with the same shape and type as start.
+  * * 2: step, A tensor with the same shape and type as start.
   *
   * Outputs:
   * * 0: output, A 1-D tensor with the same type as start.

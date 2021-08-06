@@ -174,28 +174,12 @@ NNAdapterOperand* Converter::AddQuant8VariableOperand(const DDim& dimensions,
 
 NNAdapterOperand* Converter::AddConstantOperand(const Tensor* tensor) {
   auto tensor_precision = tensor->precision();
-  void* tensor_data_buf = const_cast<void*>(tensor->raw_data());
-  bool is_scalar = tensor->data_size() == 1 ? true : false;
-  if (is_scalar) {
-    auto nnadapter_scalar_precison =
-        Precision2NNAdapterScalarPrecisionCode(tensor_precision);
-    return AddOperand(DDim(std::vector<int64_t>({})),
-                      nnadapter_scalar_precison,
-                      nullptr,
-                      0,
-                      0,
-                      tensor_data_buf);
-  }
+  void* tensor_data = const_cast<void*>(tensor->raw_data());
   auto nnadapter_tensor_precison =
       Precision2NNAdapterTensorPrecisionCode(tensor_precision);
   auto tensor_dims = tensor->dims();
-  return AddOperand(tensor_dims,
-                    nnadapter_tensor_precison,
-                    nullptr,
-                    0,
-                    0,
-                    tensor_data_buf,
-                    true);
+  return AddOperand(
+      tensor_dims, nnadapter_tensor_precison, nullptr, 0, 0, tensor_data, true);
 }
 
 NNAdapterOperand* Converter::AddOperand(const Tensor* tensor,
