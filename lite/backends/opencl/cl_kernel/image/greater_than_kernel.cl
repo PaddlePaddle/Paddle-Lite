@@ -19,19 +19,27 @@ __kernel void greater_than(__read_only image2d_t input_x,
                            __write_only image2d_t output) {
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
-  CL_DTYPE4 in_y = (CL_DTYPE4)((CL_DTYPE)(input_y),
-                               (CL_DTYPE)(input_y),
-                               (CL_DTYPE)(input_y),
-                               (CL_DTYPE)(input_y));
   CL_DTYPE4 in_x = READ_IMG_TYPE(CL_DTYPE_CHAR, input_x, SAMPLER, (int2)(x, y));
-  CL_DTYPE4 ones = (CL_DTYPE4)(1.0);
   CL_DTYPE4 out;
-#ifdef CL_DTYPE_half
-  short4 is_greater = in_x > in_y;
-  out = as_half4(as_short4(ones) & is_greater);
-#else
-  int4 is_greater = in_x > in_y;
-  out = as_float4(as_int4(ones) & is_greater);
-#endif
+  if (in_x.x > ((CL_DTYPE)(input_y))) {
+    out.x = ((CL_DTYPE)(1.0));
+  } else {
+    out.x = ((CL_DTYPE)(0.0));
+  }
+  if (in_x.y > ((CL_DTYPE)(input_y))) {
+    out.y = ((CL_DTYPE)(1.0));
+  } else {
+    out.y = ((CL_DTYPE)(0.0));
+  }
+  if (in_x.z > ((CL_DTYPE)(input_y))) {
+    out.z = ((CL_DTYPE)(1.0));
+  } else {
+    out.z = ((CL_DTYPE)(0.0));
+  }
+  if (in_x.w > ((CL_DTYPE)(input_y))) {
+    out.w = ((CL_DTYPE)(1.0));
+  } else {
+    out.w = ((CL_DTYPE)(0.0));
+  }
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
