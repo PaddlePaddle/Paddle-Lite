@@ -177,6 +177,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_HARD_SIGMOID:
           ConvertHardSigmoid(operation);
           break;
+        case NNADAPTER_UNSQUEEZE:
+          ConvertUnsqueeze(operation);
+          break;
         default:
           NNADAPTER_LOG(FATAL) << "Unsupported operation("
                                << OperationTypeToString(operation->type)

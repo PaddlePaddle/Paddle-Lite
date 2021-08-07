@@ -125,6 +125,7 @@ class Program {
   int ConvertDeformableConv2d(hal::Operation* operation);
   int ConvertHardSwish(hal::Operation* operation);
   int ConvertHardSigmoid(hal::Operation* operation);
+  int ConvertUnsqueeze(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};

@@ -860,6 +860,25 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_TRANSPOSE,
+
+  /**
+   * Remove dimensions of input which size is 1
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT16, NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axes, A NNADAPTER_TENSOR_INT32 tensor. It indicating the dimensions
+   * to be inserted. It should be in range [-R, R), where R is the rank of
+   * input,
+   * negative value works the same way as axis+ndim(input)+1.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_UNSQUEEZE,
 } NNAdapterOperationCode;
 
 /**
