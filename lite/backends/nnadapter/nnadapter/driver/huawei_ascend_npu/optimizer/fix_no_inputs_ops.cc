@@ -26,8 +26,8 @@ namespace huawei_ascend_npu {
 void FixNoInputsOps(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
-  int input_count = model->input_operands.size();
-  int output_count = model->output_operands.size();
+  auto input_count = model->input_operands.size();
+  auto output_count = model->output_operands.size();
   if (input_count == 0 && operations.size() == 0) {
     for (uint32_t i = 0; i < output_count; i++) {
       auto output_operand = model->output_operands[i];
