@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "driver/imagination_nna/imgdnn_manager.h"
 #include "driver/imagination_nna/utility.h"
@@ -99,12 +100,12 @@ class Program {
   Context* context_{nullptr};
   // Map NNAdapter operand to imgdnn tensor
   std::map<hal::Operand*, std::vector<imgdnn_tensor>> tensors_;
-  std::vector<int32_t> input_zero_points_;
-  std::vector<int32_t> output_zero_points_;
+  std::vector<NNAdapterOperandType> input_types_;
+  std::vector<NNAdapterOperandType> output_types_;
   std::vector<imgdnn_input> input_info_;
   std::vector<imgdnn_output> output_info_;
-  std::vector<imgdnn_memory> input_memory_;
-  std::vector<imgdnn_memory> output_memory_;
+  std::vector<std::pair<imgdnn_memory, size_t>> input_memory_;
+  std::vector<std::pair<imgdnn_memory, size_t>> output_memory_;
   ImgdnnManager imgdnn_mgr_;
 };
 
