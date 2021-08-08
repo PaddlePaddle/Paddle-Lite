@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,13 +13,23 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-#include "core/hal/types.h"
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace x86 {
 
-namespace nnadapter {
-namespace huawei_ascend_npu {
+class RnnCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  void Run() override;
 
-void FixNoInputsOps(hal::Model* model);
+  virtual ~RnnCompute() = default;
+};
 
-}  // namespace huawei_ascend_npu
-}  // namespace nnadapter
+}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

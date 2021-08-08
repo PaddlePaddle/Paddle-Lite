@@ -32,3 +32,22 @@ REGISTER_LITE_KERNEL(batch_norm,
     .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(sync_batch_norm,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::BatchNormCompute<float>,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Mean", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Variance", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("VarianceOut", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();

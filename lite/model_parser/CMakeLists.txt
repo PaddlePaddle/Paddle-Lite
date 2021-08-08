@@ -21,7 +21,8 @@ endif()
 
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(compatible_pb SRCS compatible_pb.cc
-      DEPS ${cpp_wrapper} ${naive_wrapper} ${pb_wrapper} framework_proto fbs_io)
+      DEPS ${cpp_wrapper} ${naive_wrapper} ${pb_wrapper} framework_proto
+fbs_io ssa_program)
 else()
     lite_cc_library(compatible_pb SRCS compatible_pb.cc DEPS ${cpp_wrapper} ${naive_wrapper} fbs_io)
 endif()

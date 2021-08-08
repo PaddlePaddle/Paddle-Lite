@@ -20,6 +20,11 @@ namespace general {
 
 ProgramDesc::ProgramDesc(const ProgramDesc& other) { CopyFrom(other); }
 
+ProgramDesc& ProgramDesc::operator=(const ProgramDesc& other) {
+  CopyFrom(other);
+  return *this;
+}
+
 void ProgramDesc::CopyFrom(const ProgramDesc& other) {
   version_ = other.Version();
   blocks_.clear();
