@@ -88,6 +88,7 @@ class CLRuntime {
 // note(ysh329): entered this func means:
 //  1. opencl_lib_found must be true
 //  2. dlsym_success must be true
+//  3. opencl compiler support online compiling
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
 #endif
@@ -107,6 +108,19 @@ class CLRuntime {
     bool support_fp16 = support_half();
     is_device_avaliable_for_opencl_ =
         check_fp16_valid ? support_fp16 : is_device_avaliable_for_opencl_;
+
+    // Test opencl compiler valid.
+    // Here we just use a cl source kernel and build options to verify it.
+    const std::string file_name = "image/layout_kernel.cl";
+    const std::string build_option =
+        " -DCL_DTYPE_float -DCL_DTYPE_FLOAT_FORCE -cl-fast-relaxed-math "
+        "-cl-mad-enable ";
+    STL::stringstream program_key_ss;
+    program_key_ss << file_name << build_option;
+    const std::string program_key = program_key_ss.str();
+    bool ret = CheckFromSourceValid(file_name, program_key, build_option);
+    is_device_avaliable_for_opencl_ = is_device_avaliable_for_opencl_ && ret;
+
     return is_device_avaliable_for_opencl_;
   }
 
@@ -177,6 +191,9 @@ class CLRuntime {
   bool CheckFromSource(const std::string& file_name,
                        const std::string& program_key,
                        const std::string& build_option);
+  bool CheckFromSourceValid(const std::string& file_name,
+                            const std::string& program_key,
+                            const std::string& build_option);
 
   void SaveProgram();
 

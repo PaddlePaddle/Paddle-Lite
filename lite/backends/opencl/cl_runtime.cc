@@ -523,6 +523,27 @@ std::string CLRuntime::GetSN(const std::string options) {
   return sn_ss.str();
 }
 
+bool CLRuntime::CheckFromSourceValid(const std::string& file_name,
+                                     const std::string& program_key,
+                                     const std::string& build_option) {
+  auto ptr = CreateProgramFromSource(context(), file_name);
+  auto program = ptr.get();
+
+  status_ = program->build({device()}, build_option.c_str());
+
+  if (status_ != CL_SUCCESS) {
+    if (program->getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device()) ==
+        CL_BUILD_ERROR) {
+      std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(device());
+      LOG(WARNING) << lite::string_format(
+          "Program build error: %s Fall back to cpu mode!", log.c_str());
+    }
+    return false;
+  }
+
+  return true;
+}
+
 std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
     const cl::Context& context) {
   auto event =
