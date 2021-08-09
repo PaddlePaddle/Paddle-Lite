@@ -109,8 +109,10 @@ class CLRuntime {
     is_device_avaliable_for_opencl_ =
         check_fp16_valid ? support_fp16 : is_device_avaliable_for_opencl_;
 
-    // Test opencl compiler valid.
+    // Test opencl compiler validation.
     // Here we just use a cl source kernel and build options to verify it.
+    // Online compiling may crash on macOS 10.15.7. The error is Compile Server
+    // Error.
     const std::string file_name = "image/layout_kernel.cl";
     const std::string build_option =
         " -DCL_DTYPE_float -DCL_DTYPE_FLOAT_FORCE -cl-fast-relaxed-math "
