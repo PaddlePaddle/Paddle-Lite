@@ -110,17 +110,11 @@ class CLRuntime {
         check_fp16_valid ? support_fp16 : is_device_avaliable_for_opencl_;
 
     // Test opencl compiler validation.
-    // Here we just use a cl source kernel and build options to verify it.
+    // Here we just use a cl source kernel to verify it.
     // Online compiling may crash on macOS 10.15.7. The error is Compile Server
     // Error.
     const std::string file_name = "image/layout_kernel.cl";
-    const std::string build_option =
-        " -DCL_DTYPE_float -DCL_DTYPE_FLOAT_FORCE -cl-fast-relaxed-math "
-        "-cl-mad-enable ";
-    STL::stringstream program_key_ss;
-    program_key_ss << file_name << build_option;
-    const std::string program_key = program_key_ss.str();
-    bool ret = CheckFromSourceValid(file_name, program_key, build_option);
+    bool ret = CreateProgramFromSourceValid(context(), file_name);
     is_device_avaliable_for_opencl_ = is_device_avaliable_for_opencl_ && ret;
 
     return is_device_avaliable_for_opencl_;
@@ -185,6 +179,9 @@ class CLRuntime {
   std::unique_ptr<cl::Program> CreateProgramFromSource(
       const cl::Context& context, std::string file_name);
 
+  bool CreateProgramFromSourceValid(const cl::Context& context,
+                                    std::string file_name);
+
   bool CheckFromCache(const std::string& program_key);
 
   bool CheckFromPrecompiledBinary(const std::string& program_key,
@@ -193,9 +190,6 @@ class CLRuntime {
   bool CheckFromSource(const std::string& file_name,
                        const std::string& program_key,
                        const std::string& build_option);
-  bool CheckFromSourceValid(const std::string& file_name,
-                            const std::string& program_key,
-                            const std::string& build_option);
 
   void SaveProgram();
 

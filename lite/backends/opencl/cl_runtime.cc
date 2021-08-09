@@ -365,6 +365,30 @@ std::unique_ptr<cl::Program> CLRuntime::CreateProgramFromSource(
   return std::move(prog);
 }
 
+bool CLRuntime::CreateProgramFromSourceValid(const cl::Context& context,
+                                             std::string file_name) {
+  auto cl_file = opencl_kernels_files.find(file_name);
+  std::string content(cl_file->second.begin(), cl_file->second.end());
+  cl::Program::Sources sources;
+  sources.push_back(content);
+  auto prog =
+      std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
+#ifdef LITE_WITH_LOG
+  VLOG(4) << "OpenCL kernel file name: " << file_name;
+  VLOG(4) << "Program source size: " << content.size();
+#endif
+  if (status_ != CL_SUCCESS) {
+    LOG(WARNING) << string_format(
+        "OpenCL error with code %s happened in file %s at line %d. "
+        "Exiting.\n",
+        opencl_error_to_str(status_),
+        __FILE__,
+        __LINE__);
+    return false;
+  }
+  return true;
+}
+
 bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   status_ = program->build({device()}, options.c_str());
   CL_CHECK_ERROR(status_);
@@ -521,27 +545,6 @@ std::string CLRuntime::GetSN(const std::string options) {
   sn_ss << aarch_info << lite_version << options << platform_info
         << device_version << driver_version << place_holder;
   return sn_ss.str();
-}
-
-bool CLRuntime::CheckFromSourceValid(const std::string& file_name,
-                                     const std::string& program_key,
-                                     const std::string& build_option) {
-  auto ptr = CreateProgramFromSource(context(), file_name);
-  auto program = ptr.get();
-
-  status_ = program->build({device()}, build_option.c_str());
-
-  if (status_ != CL_SUCCESS) {
-    if (program->getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device()) ==
-        CL_BUILD_ERROR) {
-      std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(device());
-      LOG(WARNING) << lite::string_format(
-          "Program build error: %s Fall back to cpu mode!", log.c_str());
-    }
-    return false;
-  }
-
-  return true;
 }
 
 std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
