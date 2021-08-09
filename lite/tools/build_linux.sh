@@ -82,7 +82,8 @@ readonly workspace=$PWD/$(dirname $0)/../../
 readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DCMAKE_BUILD_TYPE=Release \
                             -DWITH_MKLDNN=OFF \
-                            -DWITH_TESTING=OFF"
+                            -DWITH_TESTING=OFF \
+                            -DPLATFORM=linux"
 # mutable options for linux compiling.
 function init_cmake_mutable_options {
     if [ "$WITH_PYTHON" = "ON" -a "$WITH_TINY_PUBLISH" = "ON" ]; then

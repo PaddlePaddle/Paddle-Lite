@@ -72,7 +72,8 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
                                -DLITE_WITH_X86=OFF \
                                -DWITH_TESTING=OFF \
-                               -DARM_TARGET_OS=android"
+                               -DARM_TARGET_OS=android \
+                               -DPLATFORM=android"
 # on mac environment, we should expand the maximum file num to compile successfully
 os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then

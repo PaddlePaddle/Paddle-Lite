@@ -78,7 +78,8 @@ function build_mlu {
         -DLITE_WITH_PYTHON=OFF \
         -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
         -DWITH_TESTING=${WITH_TESTING} \
-        -DNEUWARE_HOME=${NEUWARE_HOME}
+        -DNEUWARE_HOME=${NEUWARE_HOME} \
+        -DPLATFORM=mlu
 
     make $TARGET_NAME -j$NUM_CORES_FOR_COMPILE
 

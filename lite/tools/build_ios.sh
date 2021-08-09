@@ -86,7 +86,8 @@ function make_ios {
             -DLITE_BUILD_EXTRA=$WITH_EXTRA \
             -DLITE_WITH_CV=$WITH_CV \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
-            -DARM_TARGET_OS=$os
+            -DARM_TARGET_OS=$os \
+            -DPLATFORM=ios
 
     make publish_inference -j$NUM_PROC
     cd -

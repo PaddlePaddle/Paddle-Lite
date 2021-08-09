@@ -96,6 +96,7 @@ function build_npu {
         -DARM_TARGET_LANG=${ARM_LANG} \
         -DLITE_WITH_RKNPU=ON \
         -DRKNPU_DDK_ROOT=${DDK_ROOT}
+        -DPLATFORM=rknpu
 
     make $TARGET_NAME -j2
 
