@@ -1,5 +1,5 @@
 if (WITH_TESTING)
-  lite_cc_library(lite_gtest_main SRCS lite_gtest_main.cc DEPS gtest gflags)
+  add_subdirectory (test)
 endif ()
 lite_cc_library (target_wrapper SRCS target_wrapper.cc
   DEPS target_wrapper_host place fbs_headers
@@ -159,7 +159,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library (optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)
   add_subdirectory (mir)
   add_subdirectory (profile)
-  add_subdirectory (arena)
+
 endif()
 
 if (LITE_WITH_XCODE)
