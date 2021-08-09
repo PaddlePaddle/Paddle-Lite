@@ -162,8 +162,8 @@ class LITE_API ConfigBase {
   std::string nnadapter_model_cache_dir_{""};
   // The buffers for loading the compiled NNAdapter models from memory.
   std::map<std::string, std::vector<char>> nnadapter_model_cache_buffers_{};
-  // The configuration file or buffer for the NNAdapter subgraph partition, its
-  // format is shown as below:
+  // The custom configuration file or buffer for the NNAdapter subgraph
+  // partition, here is an example:
   // op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
   // op_type::out_var_name_0
   // op_type:in_var_name_0
