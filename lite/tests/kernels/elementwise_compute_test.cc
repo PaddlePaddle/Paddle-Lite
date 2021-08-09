@@ -246,8 +246,12 @@ void TestElt(Place place,
     return;
   }
 #endif
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU) || \
-    defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  if (elt_type == std::string("div") {
+    return;
+  }
+#endif
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   if (elt_type == std::string("div") || elt_type == std::string("max") ||
       elt_type == std::string("min")) {
     return;

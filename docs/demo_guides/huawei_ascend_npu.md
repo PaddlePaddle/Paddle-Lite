@@ -34,7 +34,7 @@ Paddle Lite已支持华为昇腾NPU（Ascend310）在x86和Arm服务器上进行
 
 ### 已支持（或部分支持）的Paddle算子
 
-可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h]获得最新的算子支持列表。
+可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
 ## 参考示例演示
 
@@ -68,7 +68,7 @@ $ reboot
 $ npu-smi info
 ```
 
-- 更多系统和详细信息见昇腾硬件产品文档（https://www.hiascend.com/document?tag=hardware）
+- 更多系统和详细信息见[昇腾硬件产品文档](https://www.hiascend.com/document?tag=hardware)
 
 ### 准备本地编译环境
 
@@ -221,7 +221,7 @@ $ npu-smi info
 
 - 如果需要更改测试模型为resnet50，可以改成**MODEL_NAME=resnet50_fp32_224**；
 
-- 如果需要更改测试图片，请将图片拷贝到**PaddleLite-linux-demo/image_classification_demo/assets/images**目录下，修改并执行**convert_to_raw_image.py**生成相应的RGB Raw图像，最后修改run.sh的IMAGE_NAME即可；
+- 如果需要更改测试图片，请将图片拷贝到**PaddleLite-generic-demo/image_classification_demo/assets/images**目录下，修改并执行**convert_to_raw_image.py**生成相应的RGB Raw图像，最后修改run.sh的IMAGE_NAME即可；
 
 - 如果需要重新编译示例程序，直接运行
 
@@ -256,22 +256,22 @@ $ npu-smi info
 
   ```shell
   # 替换 include 目录：
-  $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/* PaddleLite-generic-demo/libs/PaddleLite/amd64/include/
+  $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
   # 替换 NNAdapter相关so：
-  $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/amd64/lib/huawei_ascend_npu/
+  $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/huawei_ascend_npu/
   # 替换 libpaddle_full_api_shared.so
-  $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/amd64/lib/
+  $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
   ```
 
 - 替换库文件和头文件（for arm64）
 
   ```shell
   # 替换 include 目录：
-  $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/include/* PaddleLite-generic-demo/libs/PaddleLite/arm64/include/
+  $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
   # 替换 NNAdapter相关so：
-  $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/arm64/lib/huawei_ascend_npu/
+  $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/huawei_ascend_npu/
   # 替换 libpaddle_full_api_shared.so
-  $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/arm64/lib/
+  $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
   ```
 
   备注：替换库文件和头文件后需要重新编译示例程序
