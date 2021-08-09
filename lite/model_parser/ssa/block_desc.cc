@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/program_fake_utils.h"
-#include "lite/core/op_registry.h"
+#include "lite/model_parser/ssa/block_desc.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {}  // namespace mir
+namespace general {
+namespace ssa {
+
+BlockDesc::BlockDesc(const general::BlockDesc& current, BlockDesc* parent) {
+  idx_ = current.Idx();
+  if (parent) {
+    scope_.reset(new RootVarScope{current, parent->mutable_scope()});
+    parent_ = parent;
+    parent_->SetKid(this);
+  } else {
+    scope_.reset(new RootVarScope{current, nullptr});
+  }
+}
+}  // namespace ssa
+}  // namespace general
 }  // namespace lite
 }  // namespace paddle

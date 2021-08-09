@@ -49,7 +49,8 @@ class InverseComputeTester : public arena::TestCase {
   }
   template <typename T>
   void GaussInv(const T* x, T* out, int rows, int cols) {
-    T* temp = reinterpret_cast<T*>(malloc(2 * rows * cols * sizeof(T)));
+    T* temp = reinterpret_cast<T*>(
+        TargetMalloc(TARGET(kHost), 2 * rows * cols * sizeof(T)));
     for (int i = 0; i < 2 * rows * cols; i++) temp[i] = 0;
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) temp[i * 2 * cols + j] = x[i * cols + j];
@@ -78,7 +79,7 @@ class InverseComputeTester : public arena::TestCase {
     for (int i = 0; i < rows; i++)
       for (int j = 0; j < cols; j++)
         out[i * cols + j] = temp[i * 2 * cols + j + cols];
-    free(temp);
+    TargetFree(TARGET(kHost), temp);
   }
 
   template <typename indtype>

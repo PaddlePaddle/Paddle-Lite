@@ -16,6 +16,7 @@
 #include <map>
 #include <utility>
 #include "driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -99,6 +100,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FixMultipleOutputsOps(model);
+    FixNoInputsOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     std::vector<hal::Operation*> operations =
@@ -120,11 +122,20 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_CONCAT:
           ConvertConcat(operation);
           break;
+        case NNADAPTER_RESIZE_NEAREST:
+          ConvertResizeNearest(operation);
+          break;
+        case NNADAPTER_RESIZE_LINEAR:
+          ConvertResizeLinear(operation);
+          break;
         case NNADAPTER_CONV_2D:
           ConvertConv2D(operation);
           break;
         case NNADAPTER_FULLY_CONNECTED:
           ConvertFullyConnected(operation);
+          break;
+        case NNADAPTER_FILL:
+          ConvertFill(operation);
           break;
         case NNADAPTER_RELU:
         case NNADAPTER_RELU6:
