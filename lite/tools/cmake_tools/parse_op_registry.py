@@ -28,7 +28,7 @@ tailored = sys.argv[4]
 with_extra = sys.argv[5]
 out_lines = [
     '#pragma once',
-    '#include "paddle_lite_factory_helper.h"',
+    '#include "lite/api/paddle_lite_factory_helper.h"',
     '',
 ]
 
