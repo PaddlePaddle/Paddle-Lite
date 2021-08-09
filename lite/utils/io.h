@@ -150,7 +150,7 @@ static bool ReadFile(const std::string& filename, std::vector<T>* contents) {
   FILE* fp = fopen(filename.c_str(), "rb");
   if (!fp) return false;
   fseek(fp, 0, SEEK_END);
-  size_t size = ftell(fp);
+  size_t size = ftell(fp) / sizeof(T);
   fseek(fp, 0, SEEK_SET);
   contents->clear();
   contents->resize(size);
