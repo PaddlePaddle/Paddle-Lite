@@ -50,6 +50,7 @@ add_kernel(uniform_random_compute_host Host extra SRCS uniform_random_compute.cc
 add_kernel(matrix_nms_compute_host Host extra SRCS matrix_nms_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sin_compute_host Host extra SRCS sin_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(cos_compute_host Host extra SRCS cos_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(cos_sim_compute_host Host extra SRCS cos_sim_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(crop_compute_host Host extra SRCS crop_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(crop_tensor_compute_host Host extra SRCS crop_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(sequence_pad_compute_host Host extra SRCS sequence_pad_compute.cc DEPS ${lite_kernel_deps} math_host)

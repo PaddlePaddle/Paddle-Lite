@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,28 +13,31 @@
 // limitations under the License.
 
 #pragma once
-
 #include <memory>
 #include <string>
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
-namespace fusion {
 
-class InplaceFuser : public FuseBase {
+/*
+Some op's inputs/outputs' precision is not correct due to unknown reasons.
+For example: multiclass_nms2's output(Index) should be int32, but it is int64 in
+specific models. We should update it to int32 by this pass.
+*/
+class FixMismatchedPrecisionPass : public ProgramPass {
  public:
-  explicit InplaceFuser(const std::string& type) : type_(type) {}
-
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
-  std::string type_;
+  void FixMismatchedPrecision(
+      const std::unique_ptr<SSAGraph>& graph,
+      const std::string target_op_type,
+      const std::string target_arg_name,
+      const lite_api::PrecisionType target_precision_type);
 };
 
-}  // namespace fusion
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
