@@ -29,7 +29,7 @@ enable_arm_fp16 = sys.argv[6]
 
 out_lines = [
     '#pragma once',
-    '#include "lite/api/paddle_lite_factory_helper.h"',
+    '#include "paddle_lite_factory_helper.h"',
     '',
 ]
 minlines = set()
