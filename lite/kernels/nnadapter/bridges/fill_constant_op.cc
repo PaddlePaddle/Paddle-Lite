@@ -35,12 +35,10 @@ NNAdapterOperand* CastInt64OperandToInt32(Converter* converter,
       input_operand = converter->GetOperand(input_name);
     } else {
       input_operand = converter->AddVariableOperand(
-          input_dims,
-          input_name,
-          NNAdapterOperandPrecisionCode::NNADAPTER_TENSOR_INT64);
+          input_dims, input_name, NNADAPTER_TENSOR_INT64);
     }
     auto dtype_operand = converter->AddInt32ConstantOperand(
-        static_cast<int32_t>(NNAdapterOperandPrecisionCode::NNADAPTER_INT32));
+        static_cast<int32_t>(NNADAPTER_INT32));
     output_operand =
         converter->AddInt32VariableOperand(input_dims, output_name);
     std::vector<NNAdapterOperand*> input_operands = {input_operand,
