@@ -908,7 +908,6 @@ TEST(Activation_mish, precision) {
 TEST(Activation_hard_swish, precision) {
   Place place;
   float abs_error = 2e-5;
-
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -1064,10 +1063,9 @@ TEST(Activation_abs, precision) {
   }
 }
 
-#if defined(LITE_WITH_ARM)
 TEST(Activation_hard_sigmoid_fp32, precision) {
   Place place;
-  float abs_error;
+  float abs_error = 2e-5;
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -1077,7 +1075,6 @@ TEST(Activation_hard_sigmoid_fp32, precision) {
 #endif
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-  abs_error = 2e-5;
 #else
   return;
 #endif
@@ -1101,12 +1098,10 @@ TEST(Activation_hard_sigmoid_fp32, precision) {
                    abs_error);
   }
 }
-#endif
 
-#if defined(LITE_WITH_ARM)
 TEST(Activation_hard_sigmoid_fp32, performance) {
   Place place;
-  float abs_error;
+  float abs_error = 2e-5;
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -1116,7 +1111,6 @@ TEST(Activation_hard_sigmoid_fp32, performance) {
 #endif
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-  abs_error = 2e-5;
 #else
   return;
 #endif
@@ -1135,7 +1129,6 @@ TEST(Activation_hard_sigmoid_fp32, performance) {
                               abs_error);
   }
 }
-#endif
 
 #if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
 TEST(Activation_relu_fp16, precision) {
@@ -1159,7 +1152,8 @@ TEST(Activation_relu_fp16, precision) {
 }
 
 TEST(Activation_hard_sigmoid_fp16, precision) {
-  float abs_error;
+  Place place;
+  float abs_error = 2e-3;
 #if defined(LITE_WITH_NNADAPTER)
   place = Place(TARGET(kNNAdapter), PRECISION(kFP16));
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -1169,7 +1163,6 @@ TEST(Activation_hard_sigmoid_fp16, precision) {
 #endif
 #elif defined(LITE_WITH_ARM)
   place = Place(TARGET(kARM), PRECISION(kFP16));
-  abs_error = 2e-3;
 #else
   return;
 #endif
@@ -1217,7 +1210,8 @@ TEST(Activation_prelu_fp16, precision) {
 }
 
 TEST(Activation_hard_sigmoid_fp16, performance) {
-  float abs_error;
+  Place place;
+  float abs_error = 2e-3;
 #if defined(LITE_WITH_NNADAPTER)
   place = Place(TARGET(kNNAdapter), PRECISION(kFP16));
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
@@ -1227,7 +1221,6 @@ TEST(Activation_hard_sigmoid_fp16, performance) {
 #endif
 #elif defined(LITE_WITH_ARM)
   place = Place(TARGET(kARM), PRECISION(kFP16));
-  abs_error = 2e-3;
 #else
   return;
 #endif

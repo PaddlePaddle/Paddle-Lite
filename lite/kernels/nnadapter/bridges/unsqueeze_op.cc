@@ -45,12 +45,10 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
-
-  std::vector<int> axes = {};
+  std::vector<int> axes;
   if (op_info->HasAttr("axes")) {
     axes = op_info->GetAttr<std::vector<int>>("axes");
   }
-
   if ((op_info->HasInput("AxesTensor") &&
        op_info->Input("AxesTensor").size() > 0) ||
       (op_info->HasInput("AxesTensorList") &&
@@ -58,6 +56,7 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     LOG(WARNING) << "AxesTensor or AxesTensorList not supported";
     return FAILED;
   }
+
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
@@ -81,6 +80,7 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
+
   // Unsqueeze operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand, axes_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};

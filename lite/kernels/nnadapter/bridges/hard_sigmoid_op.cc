@@ -29,7 +29,8 @@ int HardSigmoidConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
-  // Get input and output vars and op attributes
+
+  // Get input, output and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
   auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
@@ -46,6 +47,7 @@ int HardSigmoidConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_dims = out->dims();
   float alpha = op_info->GetAttr<float>("slope");
   float beta = op_info->GetAttr<float>("offset");
+
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
@@ -70,16 +72,15 @@ int HardSigmoidConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto alpha_operand = converter->AddFloat32ConstantOperand(alpha);
   // Beta operand
   auto beta_operand = converter->AddFloat32ConstantOperand(beta);
+
   // Activation operation
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand, alpha_operand, beta_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* hardsigmoid_operation = nullptr;
-
   hardsigmoid_operation = converter->AddOperation(NNADAPTER_HARD_SIGMOID);
   converter->SetOperation(
       hardsigmoid_operation, &input_operands, &output_operands);
-
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

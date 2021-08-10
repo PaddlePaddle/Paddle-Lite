@@ -24,7 +24,6 @@ int Program::ConvertHardSigmoid(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-
   NNADAPTER_CHECK_EQ(input_count, 3);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
@@ -33,6 +32,13 @@ int Program::ConvertHardSigmoid(hal::Operation* operation) {
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  // Alpha
+  auto alpha = *reinterpret_cast<float*>(input_operands[1]->buffer);
+  NNADAPTER_VLOG(5) << "aplha=" << alpha;
+  // Beta
+  auto beta = *reinterpret_cast<float*>(input_operands[2]->buffer);
+  NNADAPTER_VLOG(5) << "beta=" << beta;
+
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
   if (!input_operator) {
@@ -40,13 +46,10 @@ int Program::ConvertHardSigmoid(hal::Operation* operation) {
   }
   auto act_name = GetOperatorName(output_operand);
   auto act_op = std::make_shared<ge::op::HardSigmoid>(act_name);
-  float alpha = *reinterpret_cast<float*>(input_operands[1]->buffer);
-  float beta = *reinterpret_cast<float*>(input_operands[2]->buffer);
   act_op->set_attr_alpha(alpha);
   act_op->set_attr_beta(beta);
   SET_INPUT(act_op, input_x, input_operator);
   MAP_OUTPUT(act_op, output_y, output_operand);
-
   return NNADAPTER_NO_ERROR;
 }
 

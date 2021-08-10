@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
@@ -49,6 +50,7 @@ int HardSwishConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   float threshold = op_info->GetAttr<float>("threshold");
   float scale = op_info->GetAttr<float>("scale");
   float mul_factor = threshold / scale;
+
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
@@ -69,44 +71,35 @@ int HardSwishConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
-  // Activation operation
+
+  // Hard-swish operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* hardswish_operation = nullptr;
   // Prepare data
   auto offset_operand = converter->AddFloat32ConstantOperand(offset);
   auto threshold_operand = converter->AddFloat32ConstantOperand(threshold);
   input_operands.push_back(offset_operand);
   input_operands.push_back(threshold_operand);
-  // If mul_factor not equal to 1.0, split paddle operator to hard_swish and mul
-  if (mul_factor == 1.0) {
-    // Hard_swish operator
-    hardswish_operation = converter->AddOperation(NNADAPTER_HARD_SWISH);
-    converter->SetOperation(
-        hardswish_operation, &input_operands, &output_operands);
-  } else {
-    // Immediate operand
-    auto immediate_operand = converter->AddFloat32VariableOperand(x_dims);
-    std::vector<NNAdapterOperand*> immediate_output_operands = {
-        immediate_operand};
-    // Hard_swish operator
-    hardswish_operation = converter->AddOperation(NNADAPTER_HARD_SWISH);
-    converter->SetOperation(
-        hardswish_operation, &input_operands, &immediate_output_operands);
-    // Mul operand
-    auto mul_operand = converter->AddFloat32ConstantOperand(
+  // y = MUL(HARD_SWISH(x, alpha=1/threshold, beta=offset/threshold), threshold
+  // / scale);
+  auto hardswish_operation = converter->AddOperation(NNADAPTER_HARD_SWISH);
+  converter->SetOperation(
+      hardswish_operation, &input_operands, &output_operands);
+  if (fabs(mul_factor - 1.0f) >= 1e-5f) {
+    auto mul_factor_operand = converter->AddFloat32ConstantOperand(
         &mul_factor, DDim({static_cast<int64_t>(1)}));
     // Fuse code operand
     auto fuse_code_operand =
         converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
-    std::vector<NNAdapterOperand*> mul_input_operands = {
-        immediate_operand, mul_operand, fuse_code_operand};
-    // Elementwise mul operator
-    auto elementwise_mul = converter->AddOperation(NNADAPTER_MUL);
+    auto immediate_operand =
+        converter->AddFloat32VariableOperand(x_dims, out_name);
+    std::vector<NNAdapterOperand*> mul_inputs_operands = {
+        output_operand, mul_factor_operand, fuse_code_operand};
+    std::vector<NNAdapterOperand*> mul_output_operands = {immediate_operand};
+    auto mul_operation = converter->AddOperation(NNADAPTER_MUL);
     converter->SetOperation(
-        elementwise_mul, &mul_input_operands, &output_operands);
+        mul_operation, &mul_output_operands, &mul_output_operands);
   }
-
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
