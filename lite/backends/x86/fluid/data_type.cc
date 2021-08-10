@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
-#include "lite/fluid/data_type.h"
+#include "lite/backends/x86/fluid/data_type.h"
 #include <stdint.h>
 #include <map>
 #include <string>

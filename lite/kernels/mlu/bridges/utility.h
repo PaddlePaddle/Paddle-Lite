@@ -22,9 +22,9 @@
 #include <vector>
 
 #include "lite/backends/mlu/mlu_utils.h"
+#include "lite/backends/x86/fluid/float16.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
-#include "lite/fluid/float16.h"
 
 namespace paddle {
 namespace lite {

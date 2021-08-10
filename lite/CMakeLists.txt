@@ -31,7 +31,6 @@ add_subdirectory(operators)
 add_subdirectory(kernels)
 add_subdirectory(core)
 add_subdirectory(model_parser)
-add_subdirectory(fluid)
 add_subdirectory(api)
 
 if (NOT LITE_ON_TINY_PUBLISH)
