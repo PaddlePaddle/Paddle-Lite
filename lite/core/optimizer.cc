@@ -176,15 +176,15 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__resnet_cbam_fuse_pass",
        "__xpu__conv2d_affine_channel_fuse_pass",
        "__xpu__conv2d_fuse_pass",
-       "__xpu__squeeze_excitation_fuse_pass",
-       "__xpu__resblock_reduction_fuse_pass",
-       "__xpu__resblock_normal_fuse_pass",
-       "__xpu__resblock_darknet_fuse_pass",
-       "__xpu__conv2d_concat_pool2d_fuse_pass",
-       "__xpu__consecutive_conv2d_fuse_pass",
-       "__xpu__conv2d_pool2d_fuse_pass",
-       "__xpu__concat_conv2d_fuse_pass",
-       "__xpu__consecutive_block_fuse_pass",
+       // "__xpu__squeeze_excitation_fuse_pass",
+       // "__xpu__resblock_reduction_fuse_pass",
+       // "__xpu__resblock_normal_fuse_pass",
+       // "__xpu__resblock_darknet_fuse_pass",
+       // "__xpu__conv2d_concat_pool2d_fuse_pass",
+       // "__xpu__consecutive_conv2d_fuse_pass",
+       // "__xpu__conv2d_pool2d_fuse_pass",
+       // "__xpu__concat_conv2d_fuse_pass",
+       // "__xpu__consecutive_block_fuse_pass",
        "__xpu__sfa_head_meanstd_fuse_pass",
        "__xpu__sfa_head_moment_fuse_pass",
        "__xpu__mmdnn_fuse_pass",
@@ -264,7 +264,8 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "argument_type_display_pass",
        "lite_inplace_fuse_pass",
 #if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
-       "memory_optimize_pass"
+       "memory_optimize_pass",
+       "xpu_memory_optimize_pass"
 #endif
       }};
 

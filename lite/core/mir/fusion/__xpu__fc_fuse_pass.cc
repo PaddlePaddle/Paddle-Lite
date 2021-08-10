@@ -134,7 +134,7 @@ class XPUFcFuser : public FuseBase {
         "in_num_col_dims",
         matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
 
-    std::string max_output_name = output_name + "_max";
+    std::string max_output_name = output_name + "_xpu_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));

@@ -55,13 +55,24 @@ namespace fusion {
 /*                       |                          */
 /*                     out_Output                   */
 
-class XPULinkMaxFuser : public FuseBase {
+class XPULinkConvMaxFuser : public FuseBase {
  public:
-  explicit XPULinkMaxFuser(const std::string& op_type) { op_type_ = op_type; }
+  explicit XPULinkConvMaxFuser(bool with_branch) { with_branch_ = with_branch; }
   void BuildPattern() override {
-    auto* input = VarNode("input")->assert_is_op_input(op_type_, "Input");
-    auto* xpu_fusion_op = OpNode("xpu_fusion_op", op_type_);
-    *input >> *xpu_fusion_op;
+    auto* input =
+        VarNode("input")->assert_is_op_input("__xpu__conv2d", "Input");
+    auto* xpu_fusion_op =
+        OpNode("xpu_fusion_op", "__xpu__conv2d")
+            ->assert_op_attr<bool>("has_branch", with_branch_);
+
+    PMNode* branch = nullptr;
+    if (with_branch_) {
+      branch = VarNode("branch")->assert_is_op_input("__xpu__conv2d", "Branch");
+      *input >> *xpu_fusion_op;
+      *branch >> *xpu_fusion_op;
+    } else {
+      *input >> *xpu_fusion_op;
+    }
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
@@ -70,7 +81,7 @@ class XPULinkMaxFuser : public FuseBase {
     auto xpu_op = xpu_op_instruct->op();
 
     // try to find input_max
-    std::string max_input_name = matched.at("input")->arg()->name + "_max";
+    std::string max_input_name = matched.at("input")->arg()->name + "_xpu_max";
     auto* max_input_node = graph->RetrieveArgument(max_input_name);
     if (max_input_node != nullptr &&
         (!op_desc.HasAttr("has_input_max") ||
@@ -83,7 +94,35 @@ class XPULinkMaxFuser : public FuseBase {
   }
 
  private:
-  std::string op_type_;
+  bool with_branch_;
+};
+
+class XPULinkFcMaxFuser : public FuseBase {
+ public:
+  void BuildPattern() override {
+    auto* input = VarNode("input")->assert_is_op_input("__xpu__fc", "Input");
+    auto* xpu_fusion_op = OpNode("xpu_fusion_op", "__xpu__fc");
+
+    *input >> *xpu_fusion_op;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    auto xpu_op_instruct = matched.at("xpu_fusion_op")->stmt();
+    auto op_desc = *xpu_op_instruct->mutable_op_info();
+    auto xpu_op = xpu_op_instruct->op();
+
+    // try to find input_max
+    std::string max_input_name = matched.at("input")->arg()->name + "_xpu_max";
+    auto* max_input_node = graph->RetrieveArgument(max_input_name);
+    if (max_input_node != nullptr &&
+        (!op_desc.HasAttr("has_input_max") ||
+         !op_desc.GetAttr<bool>("has_input_max"))) {
+      op_desc.SetInput("InputMax", {max_input_name});
+      op_desc.SetAttr("has_input_max", true);
+      xpu_op_instruct->ResetOp(op_desc, xpu_op->valid_places());
+      DirectedLink(max_input_node, matched.at("xpu_fusion_op"));
+    }
+  }
 };
 
 }  // namespace fusion
@@ -93,11 +132,12 @@ class XPULinkMaxPass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
 
-    for (auto op_type :
-         {"__xpu__fc", "__xpu__conv2d", "__xpu__block_fuse_op"}) {
-      fusion::XPULinkMaxFuser fuser(op_type);
-      fuser(graph.get());
+    for (auto with_branch : {true, false}) {
+      fusion::XPULinkConvMaxFuser conv_fuser(with_branch);
+      conv_fuser(graph.get());
     }
+    fusion::XPULinkFcMaxFuser fc_fuser;
+    fc_fuser(graph.get());
   }
 };
 
