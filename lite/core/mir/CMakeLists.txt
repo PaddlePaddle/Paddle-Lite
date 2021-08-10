@@ -69,6 +69,7 @@ lite_cc_library(mir_passes
       fusion/elementwise_add_scale_fuse_pass.cc
       fusion/flatten_fc_fuse_pass.cc
       fusion/fc_prelu_fuse_pass.cc
+      fusion/greater_than_cast_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
