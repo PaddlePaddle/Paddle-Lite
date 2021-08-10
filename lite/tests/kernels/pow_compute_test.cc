@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -57,7 +57,7 @@ class PowComputeTester : public arena::TestCase {
     std::vector<float> data(dims_.production());
 
     for (int i = 0; i < dims_.production(); i++) {
-      data[i] = (i + 1) * 1.01;
+      data[i] = (i + 1) * 0.1;
     }
 
     SetCommonTensor(input_, dims_, data.data());
@@ -76,8 +76,14 @@ void test_pow(Place place, float abs_error) {
 TEST(Pow, precision) {
   float abs_error = 2e-4;
   Place place;
-
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-1;
+#else
+  return;
+#endif
+#elif LITE_WITH_HUAWEI_ASCEND_NPU
   abs_error = 1e-1;
   place = TARGET(kHuaweiAscendNPU);
 #elif defined(LITE_WITH_X86)

@@ -14,9 +14,9 @@
 
 #include "lite/kernels/x86/grid_sampler_compute.h"
 #include <string>
+#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/backends/x86/math/math_function.h"
 #include "lite/core/op_registry.h"
-#include "lite/fluid/eigen.h"
 
 namespace paddle {
 namespace lite {

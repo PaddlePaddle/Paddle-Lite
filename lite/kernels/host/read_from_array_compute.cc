@@ -25,7 +25,7 @@ void ReadFromArrayCompute::Run() {
   CHECK_EQ(param.I->numel(), 1) << "I should have only one element";
   int id = param.I->data<int64_t>()[0];
   int in_num = param.X->size();
-  CHECK_LE(id, in_num) << "id is not valid";
+  CHECK_LT(id, in_num) << "id is not valid";
 
   param.Out->Resize((*param.X)[id].dims());
   param.Out->CopyDataFrom((*param.X)[id]);

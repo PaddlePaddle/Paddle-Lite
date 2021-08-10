@@ -37,22 +37,22 @@ static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY =
     "cache_%d_model_buffer";
 
 Compilation::Compilation(Model* model,
-                         const char* cache_key,
+                         const char* cache_token,
                          void* cache_buffer,
                          uint32_t cache_length,
                          const char* cache_dir,
                          Context* context)
     : model_(model),
-      cache_key_(cache_key),
+      cache_token_(cache_token),
       cache_dir_(cache_dir),
       context_(context),
       completed_(false) {
   // Deserialize the cache models from the file or memory
   if (!model_) {
     std::vector<uint8_t> buffer;
-    if (!cache_key_.empty() && !cache_dir_.empty() &&
+    if (!cache_token_.empty() && !cache_dir_.empty() &&
         (!cache_buffer || !cache_length)) {
-      std::string path = cache_dir_ + "/" + cache_key_ +
+      std::string path = cache_dir_ + "/" + cache_token_ +
                          std::string(NNADAPTER_RUNTIME_CACHE_FILE_EXTENSION);
       if (ReadFile(path, &buffer)) {
         NNADAPTER_LOG(INFO) << "Read the cache file " << path << " success.";
@@ -97,7 +97,7 @@ int Compilation::Execute(std::vector<hal::Argument>* input_arguments,
   }
   // Serialize the cache models into the file or memory at the first iteration
   if (model_ && !caches_.empty()) {
-    if (!cache_key_.empty() && !cache_dir_.empty()) {
+    if (!cache_token_.empty() && !cache_dir_.empty()) {
       bool skip = false;
       for (size_t i = 0; i < caches_.size(); i++) {
         if (!caches_[i].cache.buffer.empty()) continue;
@@ -113,7 +113,7 @@ int Compilation::Execute(std::vector<hal::Argument>* input_arguments,
           NNADAPTER_LOG(INFO)
               << "Serialize the cache models into memory success.";
           std::string path =
-              cache_dir_ + "/" + cache_key_ +
+              cache_dir_ + "/" + cache_token_ +
               std::string(NNADAPTER_RUNTIME_CACHE_FILE_EXTENSION);
           if (WriteFile(path, buffer)) {
             NNADAPTER_LOG(INFO) << "Write the cache file " << path
@@ -145,7 +145,8 @@ int Compilation::Finish() {
       auto device_context = submodels[i].first;
       auto submodel = submodels[i].second;
       caches_[i].device_context = device_context;
-      caches_[i].cache.key = cache_key_.empty() ? nullptr : cache_key_.c_str();
+      caches_[i].cache.token =
+          cache_token_.empty() ? nullptr : cache_token_.c_str();
       caches_[i].cache.dir = cache_dir_.empty() ? nullptr : cache_dir_.c_str();
       NNADAPTER_CHECK_EQ(
           device_context->device->CreateProgram(device_context->context,
@@ -353,7 +354,7 @@ bool Compilation::Deserialize(void* buffer, uint64_t size) {
   if (num_caches > 0) {
     caches_.resize(num_caches);
     for (size_t i = 0; i < num_caches; i++) {
-      caches_[i].cache.key = cache_key_.c_str();
+      caches_[i].cache.token = cache_token_.c_str();
       caches_[i].cache.dir = cache_dir_.c_str();
       caches_[i].cache.input_types.clear();
       caches_[i].cache.output_types.clear();

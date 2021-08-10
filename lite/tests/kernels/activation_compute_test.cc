@@ -17,7 +17,7 @@
 #include <string>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
@@ -477,7 +477,14 @@ TEST(Activation_relu, precision) {
 TEST(Activation_leaky_relu, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
@@ -728,7 +735,14 @@ TEST(Activation_relu6, precision) {
 TEST(Activation_log, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)

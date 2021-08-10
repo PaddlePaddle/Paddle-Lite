@@ -105,6 +105,7 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
       SET_DATATYPE(kInt32, VarDescAPI::VarDataType::INT32);
       SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
       SET_DATATYPE(kUnk, VarDescAPI::VarDataType::FP32);
+      SET_DATATYPE(kAny, VarDescAPI::VarDataType::FP32);
 #undef SET_DATATYPE
       default:
         LOG(FATAL) << "Unknown precision type " << PrecisionToStr(precision)

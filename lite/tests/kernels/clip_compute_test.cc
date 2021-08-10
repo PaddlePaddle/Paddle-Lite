@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -106,7 +106,14 @@ TEST(Clip, precision) {
   LOG(INFO) << "test clip op";
   Place place;
   float abs_err = 2e-5;
-#if defined(LITE_WITH_OPENCL)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_err = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_err = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)

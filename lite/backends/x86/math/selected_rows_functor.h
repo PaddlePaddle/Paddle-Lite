@@ -16,11 +16,11 @@ limitations under the License. */
 #include <map>
 #include <vector>
 
+#include "lite/backends/x86/fluid/eigen.h"
+#include "lite/backends/x86/fluid/selected_rows.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/math_function.h"
 #include "lite/core/context.h"
-#include "lite/fluid/eigen.h"
-#include "lite/fluid/selected_rows.h"
 
 #define INLINE_FOR2(sizei, sizej)     \
   for (int64_t i = 0; i < sizei; i++) \
