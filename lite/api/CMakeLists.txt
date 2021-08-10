@@ -1,7 +1,7 @@
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 # A trick to generate the paddle_use_kernels.h
 execute_process(
-    COMMAND copy ${CMAKE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h ${CMAKE_BINARY_DIR})
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h ${CMAKE_BINARY_DIR}/lite/api/)
 
 execute_process(
     COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
