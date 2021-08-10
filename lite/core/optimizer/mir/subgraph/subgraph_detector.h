@@ -63,8 +63,12 @@ class SubgraphDetector {
     void UnionFindCombine(node_dat_t* candidate);
   };
 
-  SubgraphDetector(SSAGraph* graph, const SubgraphTeller& teller)
-      : graph_(graph), teller_(teller) {}
+  SubgraphDetector(SSAGraph* graph,
+                   const SubgraphTeller& teller,
+                   const std::string& subgraph_partition_configs = "")
+      : graph_(graph),
+        teller_(teller),
+        subgraph_partition_configs_(subgraph_partition_configs) {}
   std::vector<std::vector<Node*>> operator()();
 
   void FlexibleDFS(const node_set_t& source,
@@ -72,7 +76,8 @@ class SubgraphDetector {
                    const std::function<bool(const node_dat_t*)>& enter,
                    const std::function<bool(const node_dat_t*)>& leave);
 
-  std::set<Node*> GetExcludedNodesFromConfigFile();
+  std::set<Node*> GetExcludedNodesFromSubgraphPartitionConfigs(
+      const std::string& subgraph_partition_configs);
 
   void InitNodes(node_map_t* nodes);
 
@@ -81,6 +86,7 @@ class SubgraphDetector {
  protected:
   SSAGraph* graph_{nullptr};
   SubgraphTeller teller_;
+  const std::string& subgraph_partition_configs_;
 };
 
 /*
@@ -92,14 +98,19 @@ class SubgraphFuser {
  public:
   SubgraphFuser(SSAGraph* graph,
                 const SubgraphTeller& teller,
-                int min_subgraph_size)
-      : graph_(graph), teller_(teller), min_subgraph_size_{min_subgraph_size} {}
+                int min_subgraph_size,
+                const std::string& subgraph_partition_configs = "")
+      : graph_(graph),
+        teller_(teller),
+        min_subgraph_size_{min_subgraph_size},
+        subgraph_partition_configs_(subgraph_partition_configs) {}
   void operator()();
 
   // Remove the op nodes of the subgraphs and replace with the subgraph ops.
   void ReplaceNodesWithSubgraphs(SSAGraph* graph,
                                  const SubgraphTeller& teller,
-                                 int min_subgraph_size);
+                                 int min_subgraph_size,
+                                 const std::string& subgraph_partition_configs);
   // Create a subgraph node with a block desc to wrap the original op nodes of
   // the subgraph
   void InsertNewNode(SSAGraph* graph,
@@ -110,6 +121,7 @@ class SubgraphFuser {
   SSAGraph* graph_{nullptr};
   SubgraphTeller teller_;
   int min_subgraph_size_;
+  const std::string& subgraph_partition_configs_;
 };
 
 void ExtractInputsOutputs(const std::vector<Node*>& op_nodes,

@@ -162,6 +162,9 @@ NNAdapterOperandPrecisionCode FluidDataType2NNAdapterScalarPrecisionCode(
 NNAdapterOperandPrecisionCode Precision2NNAdapterTensorPrecisionCode(
     PrecisionType precision);
 
+NNAdapterOperandPrecisionCode Precision2NNAdapterScalarPrecisionCode(
+    PrecisionType precision);
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite

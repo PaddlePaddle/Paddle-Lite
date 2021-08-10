@@ -85,6 +85,9 @@ lite_cc_library(fuse_flatten_fc
 lite_cc_library(fuse_fc_prelu
         SRCS fc_prelu_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_greater_than_cast
+        SRCS greater_than_cast_fuser.cc
+        DEPS pattern_matcher_high_api)
 
 set(mir_fusers
     fuse_reshape2_matmul
@@ -116,6 +119,7 @@ set(mir_fusers
     fuse_conv_scale
     fuse_conv_elementwise_tree
     fuse_fpga_concat
+    fuse_greater_than_cast
     CACHE INTERNAL "fusers")
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)

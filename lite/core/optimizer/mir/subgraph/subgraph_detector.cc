@@ -226,17 +226,12 @@ void SubgraphDetector::FlexibleDFS(
   }
 }
 
-std::set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
-  // get exclude nodes from config file
+std::set<Node *> SubgraphDetector::GetExcludedNodesFromSubgraphPartitionConfigs(
+    const std::string &subgraph_partition_configs) {
+  // Get the excluded nodes from the custom partition configurations
   std::set<Node *> excluded_nodes;
-  std::string config_file_path =
-      GetStringFromEnv(SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE);
-  if (!IsFileExists(config_file_path)) {
-    return excluded_nodes;
-  }
-  std::vector<std::string> lines = ReadLines(config_file_path);
-
-  for (std::string line : lines) {
+  std::vector<std::string> lines = Split(subgraph_partition_configs, "\n");
+  for (const auto &line : lines) {
     if (line.empty()) continue;
     std::vector<std::string> node_info = Split(line, ":");
     std::string op_type = node_info.at(0);
@@ -301,7 +296,8 @@ std::set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
 
 void SubgraphDetector::InitNodes(node_map_t *nodes) {
   // Initialize and mark the subgraph detector nodes based on teller.
-  std::set<Node *> excluded_nodes = GetExcludedNodesFromConfigFile();
+  auto excluded_nodes =
+      GetExcludedNodesFromSubgraphPartitionConfigs(subgraph_partition_configs_);
   for (auto &it : *nodes) {
     for (auto &in_node : it.first->inlinks) {
       it.second->inlinks.push_back((*nodes)[in_node]);
@@ -547,11 +543,13 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   GraphSafeRemoveNodes(graph, nodes2rm);
 }
 
-void SubgraphFuser::ReplaceNodesWithSubgraphs(SSAGraph *graph,
-                                              const SubgraphTeller &teller,
-                                              int min_subgraph_size) {
+void SubgraphFuser::ReplaceNodesWithSubgraphs(
+    SSAGraph *graph,
+    const SubgraphTeller &teller,
+    int min_subgraph_size,
+    const std::string &subgraph_partition_configs) {
   std::vector<std::vector<Node *>> subgraphs =
-      SubgraphDetector(graph, teller)();
+      SubgraphDetector(graph, teller, subgraph_partition_configs)();
   SubgraphVisualizer(graph, subgraphs)();
   for (size_t subgraph_idx = 0; subgraph_idx < subgraphs.size();
        subgraph_idx++) {
@@ -562,7 +560,8 @@ void SubgraphFuser::ReplaceNodesWithSubgraphs(SSAGraph *graph,
 }
 
 void SubgraphFuser::operator()() {
-  ReplaceNodesWithSubgraphs(graph_, teller_, min_subgraph_size_);
+  ReplaceNodesWithSubgraphs(
+      graph_, teller_, min_subgraph_size_, subgraph_partition_configs_);
 }
 
 void ExtractInputsOutputs(const std::vector<Node *> &op_nodes,

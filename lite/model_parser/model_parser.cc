@@ -35,6 +35,7 @@
 #include "lite/model_parser/naive_buffer/var_desc.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
+#include "lite/model_parser/ssa/program_desc.h"
 #endif
 #include "lite/utils/io.h"
 namespace paddle {
@@ -238,6 +239,7 @@ void LoadModelPb(const std::string &model_dir,
   pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   TransformProgramDescAnyToCpp(pb_prog, cpp_prog);
+  general::ssa::ConvertToSSA(cpp_prog);
 
   // Load params data from file.
   // NOTE: Only main block be used now.

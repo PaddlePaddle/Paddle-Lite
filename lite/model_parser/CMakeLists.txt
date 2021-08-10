@@ -7,8 +7,6 @@ add_subdirectory(naive_buffer)
 add_subdirectory(flatbuffers)
 add_subdirectory(ssa)
 
-#lite_cc_library(runtime_lite SRCS runtime.cc)
-
 #TODO(Superjomn) enable it again.
 if(NOT LITE_ON_MOBILE AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_test(test_model_parser SRCS model_parser_test.cc
@@ -21,7 +19,8 @@ endif()
 
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(compatible_pb SRCS compatible_pb.cc
-      DEPS ${cpp_wrapper} ${naive_wrapper} ${pb_wrapper} framework_proto fbs_io)
+      DEPS ${cpp_wrapper} ${naive_wrapper} ${pb_wrapper} framework_proto
+fbs_io ssa_program)
 else()
     lite_cc_library(compatible_pb SRCS compatible_pb.cc DEPS ${cpp_wrapper} ${naive_wrapper} fbs_io)
 endif()

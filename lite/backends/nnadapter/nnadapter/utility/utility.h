@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <sys/time.h>
 #include <algorithm>
 #include <map>
 #include <string>
@@ -37,6 +38,8 @@ bool IsInt8SymmPerChannelQuantization(NNAdapterOperandPrecisionCode type);
 bool IsUInt32AsymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerLayerQuantization(NNAdapterOperandPrecisionCode type);
 bool IsInt32SymmPerChannelQuantization(NNAdapterOperandPrecisionCode type);
+int64_t GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type);
+int64_t GetOperandTypeBufferLength(const NNAdapterOperandType& type);
 
 // Caculate the production of the given dimensions
 int64_t ProductionOfDimensions(const int32_t* input_dimensions,
@@ -193,5 +196,11 @@ bool ReadFile(const std::string& path, std::vector<uint8_t>* buffer);
 
 // Write an uint8_t array to a file
 bool WriteFile(const std::string& path, const std::vector<uint8_t>& buffer);
+
+inline int64_t GetCurrentUS() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1000000LL * (int64_t)time.tv_sec + (int64_t)time.tv_usec;
+}
 
 }  // namespace nnadapter

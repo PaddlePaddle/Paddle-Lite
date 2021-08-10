@@ -148,6 +148,9 @@ class ActivationComputeImageDefault
       case 8:
         kernel_func_name_ = "exp_act";
         break;
+      case 9:
+        kernel_func_name_ = "abs_act";
+        break;
       case 10:
         kernel_func_name_ = "hard_swish";
         scale_ = act_param_->hard_swish_scale;
@@ -494,6 +497,24 @@ REGISTER_LITE_KERNEL(
     kImageDefault,
     paddle::lite::kernels::opencl::ActivationComputeImageDefault,
     ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// abs
+REGISTER_LITE_KERNEL(
+    abs,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

@@ -24,8 +24,8 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-template <typename T>
-class DepthwiseConv : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class DepthwiseConv : public KernelLite<TARGET(kX86), Ptype> {
  public:
   DepthwiseConv() = default;
   ~DepthwiseConv() {}
@@ -38,6 +38,18 @@ class DepthwiseConv : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   }
 
   std::string kernel_func_name_{"NotImplForConvDepthwise"};
+#define PROFILE_INFO(dtype1, dtype2)                                        \
+  template <>                                                               \
+  void DepthwiseConv<PRECISION(dtype1), PRECISION(dtype2)>::                \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
+  }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
+
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
 
  private:
