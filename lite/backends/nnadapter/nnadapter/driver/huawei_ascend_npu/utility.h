@@ -80,9 +80,12 @@ template <>
 ge::DataType GetGEDataType<bool>();
 
 // Convert ACL types to GE types
-ge::DataType ConvertACLDataType(aclDataType data_type);
-ge::Format ConvertACLFormat(aclFormat format);
-std::vector<int64_t> ConvertACLDimensions(aclmdlIODims dims);
+ge::DataType ConvertACLDataType(aclDataType input_data_type);
+ge::Format ConvertACLFormat(aclFormat input_format);
+std::vector<int64_t> ConvertACLDimensions(const aclmdlIODims& input_dimensions);
+void ConvertACLDimensions(const aclmdlIODims& input_dimensions,
+                          int32_t* output_dimensions,
+                          uint32_t* output_dimensions_count);
 
 // Convert NNAdapter types to GE types
 ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision);

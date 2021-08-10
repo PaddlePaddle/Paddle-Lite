@@ -129,6 +129,8 @@ class Program {
   std::shared_ptr<hiai::AiModelMngerClient> model_client_{nullptr};
   std::vector<std::shared_ptr<hiai::AiTensor>> input_tensors_{};
   std::vector<std::shared_ptr<hiai::AiTensor>> output_tensors_{};
+  std::vector<NNAdapterOperandType> input_types_;
+  std::vector<NNAdapterOperandType> output_types_;
 };
 
 // Set one of dynamic inputs of a ge::Operator and update its tensor desc

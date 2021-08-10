@@ -35,7 +35,7 @@ class Compilation {
     void* program;
   } Program;
   Compilation(Model* model,
-              const char* cache_key,
+              const char* cache_token,
               void* cache_buffer,
               uint32_t cache_length,
               const char* cache_dir,
@@ -58,7 +58,7 @@ class Compilation {
 
  private:
   Model* model_{nullptr};
-  std::string cache_key_;
+  std::string cache_token_;
   std::string cache_dir_;
   std::vector<Cache> caches_;
   std::vector<Program> programs_;
