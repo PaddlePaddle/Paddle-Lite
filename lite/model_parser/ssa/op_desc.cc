@@ -92,7 +92,7 @@ void WriteToArrayOpDesc::ProcessTensorArrayOp(const general::OpDesc& raw_desc,
     mutable_scope->AddRootVar(block_idx, std::move(asso_var));
   }
   auto root_var = mutable_scope->GetRootVarDesc(asso_var_name).lock();
-  const auto& var_desc = AddOutput("AssociatedOut", root_var->latest());
+  const auto& var_desc = AddOutput("FakeAssociatedOut", root_var->latest());
   UpdateVarBlockIdx(var_desc, block_idx);
 }
 
@@ -106,7 +106,7 @@ void ReadFromArrayOpDesc::ProcessTensorArrayOp(const general::OpDesc& raw_desc,
   const std::string asso_var_name{var_name + ".AssociatedVar"};
   CHECK(scope->HasRootVarDesc(asso_var_name));
   auto root_var = scope->GetRootVarDesc(asso_var_name).lock();
-  const auto& var_desc = AddInput("FakeAssociatedIn", root_var->latest());
+  const auto& var_desc = AddInput("FakeAssociatedX", root_var->latest());
   UpdateVarBlockIdx(var_desc, block_idx);
 }
 

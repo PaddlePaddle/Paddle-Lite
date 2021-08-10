@@ -57,6 +57,10 @@ REGISTER_LITE_KERNEL(read_from_array,
                {LiteType::GetTensorListTy(TARGET(kXPU),
                                           PRECISION(kAny),
                                           DATALAYOUT(kAny))})
+    .BindInput("FakeAssociatedX",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindInput("I",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kInt64),
