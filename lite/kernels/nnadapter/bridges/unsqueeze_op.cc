@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -49,9 +49,7 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("axes")) {
     axes = op_info->GetAttr<std::vector<int>>("axes");
   }
-  if ((op_info->HasInput("AxesTensor") &&
-       op_info->Input("AxesTensor").size() > 0) ||
-      (op_info->HasInput("AxesTensorList") &&
+  if ((op_info->HasInput("AxesTensorList") &&
        op_info->Input("AxesTensorList").size() > 0)) {
     LOG(WARNING) << "AxesTensor or AxesTensorList not supported";
     return FAILED;
@@ -97,7 +95,7 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
 REGISTER_SUBGRAPH_BRIDGE(unsqueeze,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::SqueezeConverter);
+                         paddle::lite::subgraph::nnadapter::UnsqueezeConverter);
 REGISTER_SUBGRAPH_BRIDGE(unsqueeze2,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::SqueezeConverter);
+                         paddle::lite::subgraph::nnadapter::UnsqueezeConverter);

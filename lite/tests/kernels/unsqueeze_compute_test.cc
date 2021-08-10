@@ -238,6 +238,9 @@ void test_unsqueeze(Place place, float abs_error = 2e-5) {
           if (input_axes_flag != 1) continue;
           if (dims.size() + axes.size() > 4) continue;
 #endif
+#ifdef LITE_WITH_NNADAPTER
+          if (input_axes_flag != 1) continue;
+#endif
           std::unique_ptr<arena::TestCase> tester(new UnsqueezeComputeTester(
               place, "def", axes, DDim(dims), input_axes_flag, inplace));
           arena::Arena arena(std::move(tester), place, abs_error);
