@@ -94,11 +94,20 @@ RootVarScope::RootVarScope(const general::BlockDesc& current,
                            RootVarScope* parent) {
   parent_ = parent;
   if (parent) {
-    parent->SetKidScope(*this);
+    parent->AddKidScope(this);
   }
   for (size_t i = 0; i < current.VarsSize(); ++i) {
     const general::VarDesc* raw_var{current.GetVar<general::VarDesc>(i)};
     AddRootVar(current.Idx(), *raw_var);
+    // Add accompanying variables indicating dependencies for the lod tensor
+    // array type, both of which are located on the same level of scope.
+    if (raw_var->GetType() == VarDescAPI::Type::LOD_TENSOR_ARRAY) {
+      const std::string asso_var_name{raw_var->Name() + ".AssociatedVar"};
+      general::VarDesc asso_var(asso_var_name);
+      asso_var.SetType(VarDescAPI::Type::LOD_TENSOR);
+      asso_var.SetPersistable(false);
+      AddRootVar(current.Idx(), std::move(asso_var));
+    }
   }
 }
 
@@ -130,6 +139,15 @@ bool RootVarScope::HasRootVarDesc(const std::string& name) const {
     return parent_->HasRootVarDesc(name);
   }
   return false;
+}
+
+RootVarScope* RootVarScope::GetMutableScopeOfRootVar(const std::string& name) {
+  if (root_vars_.find(name) != root_vars_.end()) {
+    return this;
+  } else if (parent_) {
+    return parent_->GetMutableScopeOfRootVar(name);
+  }
+  return nullptr;
 }
 
 std::weak_ptr<VarDesc> RootVarScope::GetRootVarDesc(

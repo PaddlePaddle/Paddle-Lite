@@ -136,14 +136,23 @@ class RootVarScope {
 
   const RootVarScope* parent() const { return parent_; }
 
-  const RootVarScope* kid() const { return kid_; }
+  const std::vector<RootVarScope*>& kids() const { return kids_; }
 
  protected:
-  void SetKidScope(const RootVarScope& kid) { kid_ = &kid; }
+  void AddKidScope(RootVarScope* kid) {
+    CHECK(kid);
+    kids_.emplace_back(kid);
+  }
+
+  RootVarScope* GetMutableScopeOfRootVar(const std::string& name);
+
+  const std::map<std::string, std::shared_ptr<VarDesc>>& GetRootVarsMap() {
+    return root_vars_;
+  }
 
  private:
-  const RootVarScope* kid_{nullptr};
-  const RootVarScope* parent_{nullptr};
+  std::vector<RootVarScope*> kids_;
+  RootVarScope* parent_{nullptr};
   std::map<std::string, std::shared_ptr<VarDesc>> root_vars_;
 };
 
