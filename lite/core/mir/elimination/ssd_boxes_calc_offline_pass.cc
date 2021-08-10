@@ -15,6 +15,7 @@
 #include "lite/core/mir/elimination/ssd_boxes_calc_offline_pass.h"
 #include <algorithm>
 #include <cmath>
+#include <list>
 #include <memory>
 #include <set>
 #include <vector>
@@ -223,6 +224,16 @@ void SSDBoxesCalcOfflinePass::RemoveConcatPattern(
     }
     return true;
   };
+  auto check_input_inlink = [](const std::string& var_name,
+                               const std::list<Node*>& in_nodes) -> bool {
+    for (const auto& var_node : in_nodes) {
+      CHECK(var_node->IsArg());
+      if (var_node->AsArg().name == var_name) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   for (auto& node : graph->StmtTopologicalOrder()) {
     if (node->AsStmt().picked_kernel().op_type() != "concat") continue;
@@ -234,12 +245,16 @@ void SSDBoxesCalcOfflinePass::RemoveConcatPattern(
     auto op_desc = concat_instruct.mutable_op_info();
 
     std::vector<lite::Tensor*> inputs_tensors;
-
-    for (auto* in_var_node : node->inlinks) {
-      auto concat_in_tensor =
-          scope->FindVar(in_var_node->AsArg().name)->GetMutable<lite::Tensor>();
-      inputs_tensors.push_back(concat_in_tensor);
+    // Read the input tensor array in the original order
+    const auto& input_var_names = op_desc->Input("X");
+    for (const auto& input_var_name : input_var_names) {
+      if (check_input_inlink(input_var_name, node->inlinks)) {
+        auto concat_in_tensor =
+            scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
+        inputs_tensors.push_back(concat_in_tensor);
+      }
     }
+    CHECK_GE(inputs_tensors.size(), 1);
 
     // Get concat's output tensor
     auto output_var = scope->FindVar(op_desc->Output("Out").front());
