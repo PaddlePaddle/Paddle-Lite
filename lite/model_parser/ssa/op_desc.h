@@ -75,7 +75,7 @@ class OpDesc : public OpDescBase {
  public:
   OpDesc() = default;
   OpDesc(const general::OpDesc& raw_desc,
-         const RootVarScope* scope,
+         const RootVarScope& scope,
          int32_t block_idx);
 
  protected:
@@ -94,15 +94,31 @@ class WriteToArrayOpDesc : public OpDesc {
  public:
   WriteToArrayOpDesc() = default;
   WriteToArrayOpDesc(const general::OpDesc& raw_desc,
-                     RootVarScope* mutable_scope,
+                     const RootVarScope& scope,
                      int32_t block_idx)
-      : OpDesc(raw_desc, mutable_scope, block_idx) {
-    ProcessTensorArrayOp(raw_desc, mutable_scope, block_idx);
+      : OpDesc(raw_desc, scope, block_idx) {
+    ProcessTensorArrayOp(raw_desc, scope, block_idx);
   }
 
  private:
   void ProcessTensorArrayOp(const general::OpDesc& raw_desc,
-                            RootVarScope* mutable_scope,
+                            const RootVarScope& scope,
+                            int32_t block_idx);
+};
+
+class ReadFromArrayOpDesc : public OpDesc {
+ public:
+  ReadFromArrayOpDesc() = default;
+  ReadFromArrayOpDesc(const general::OpDesc& raw_desc,
+                      const RootVarScope& scope,
+                      int32_t block_idx)
+      : OpDesc(raw_desc, scope, block_idx) {
+    ProcessTensorArrayOp(raw_desc, scope, block_idx);
+  }
+
+ private:
+  void ProcessTensorArrayOp(const general::OpDesc& raw_desc,
+                            const RootVarScope& scope,
                             int32_t block_idx);
 };
 
