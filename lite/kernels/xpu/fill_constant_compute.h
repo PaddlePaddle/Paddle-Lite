@@ -24,6 +24,9 @@ class FillConstantCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
  public:
   using param_t = operators::FillConstantParam;
 
+  template <typename T>
+  int FillConstData();
+
   virtual void Run();
 
   virtual ~FillConstantCompute() = default;

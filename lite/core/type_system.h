@@ -25,7 +25,7 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
-#include "lite/core/op_version/kernel_version.h"
+#include "lite/core/kernel_version.h"
 #include "lite/core/tensor.h"
 #include "lite/core/version.h"
 #include "lite/utils/all.h"

@@ -131,8 +131,8 @@ class Program {
   NeuronModel* model_{nullptr};
   NeuronCompilation* compilation_{nullptr};
   NeuronExecution* execution_{nullptr};
-  std::vector<int32_t> input_zero_points_;
-  std::vector<int32_t> output_zero_points_;
+  std::vector<NNAdapterOperandType> input_types_;
+  std::vector<NNAdapterOperandType> output_types_;
   std::string dump_graph_path_;
   std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };

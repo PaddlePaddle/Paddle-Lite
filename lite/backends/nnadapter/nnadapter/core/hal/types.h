@@ -30,10 +30,8 @@ typedef struct Operand {
 
 typedef struct Argument {
   int index;
-  uint32_t dimension_count;
-  int32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
-  void* buffer;
-  uint32_t length;
+  void* memory;
+  void* (*access)(void* memory, NNAdapterOperandType* type);
 } Argument;
 
 typedef struct Operation {
@@ -43,7 +41,7 @@ typedef struct Operation {
 } Operation;
 
 typedef struct Cache {
-  const char* key;
+  const char* token;
   const char* dir;
   std::vector<NNAdapterOperandType> input_types;
   std::vector<NNAdapterOperandType> output_types;
@@ -58,10 +56,12 @@ typedef struct Model {
 } Model;
 
 typedef struct Device {
+  // Properties
   const char* name;
   const char* vendor;
   NNAdapterDeviceType type;
   int32_t version;
+  // Interfaces
   int (*open_device)(void** device);
   void (*close_device)(void* device);
   int (*create_context)(void* device, const char* properties, void** context);

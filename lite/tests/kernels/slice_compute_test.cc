@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -275,7 +275,14 @@ void test_slice_tensor_list(Place place) {
 }
 
 TEST(Slice, precision) {
-#if defined(LITE_WITH_OPENCL)
+#if defined(LITE_WITH_NNADAPTER)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  Place place = TARGET(kNNAdapter);
+  test_slice(place);
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
   Place place = TARGET(kOpenCL);
   test_slice(place);
   test_slice_tensor(place);

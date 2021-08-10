@@ -38,18 +38,16 @@ Program::~Program() { Clear(); }
 
 void Program::Clear() {
   tensors_.clear();
-  input_info_.clear();
-  output_info_.clear();
-  input_zero_points_.clear();
-  output_zero_points_.clear();
+  input_types_.clear();
+  output_types_.clear();
   dump_graph_path_ = "";
   dump_graph_buffer_ = nullptr;
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
-  if (model && cache->dir && cache->key) {
-    dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->key);
+  if (model && cache->dir && cache->token) {
+    dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->token);
   }
   dump_graph_buffer_ = &cache->buffer;
   return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
@@ -129,49 +127,28 @@ int Program::BuildFromModel(hal::Model* model) {
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors;
   if (input_count > 0) {
     input_tensors.resize(input_count);
-    input_info_.resize(input_count);
-    input_zero_points_.resize(input_count);
+    input_types_.resize(input_count);
     for (size_t i = 0; i < input_count; i++) {
       auto operand = model->input_operands[i];
       const auto& type = operand->type;
       NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
       input_tensors[i] = tensors_[operand].back();
       NNADAPTER_CHECK(input_tensors[i]);
-      // Initialize the input info for the execution
-      input_info_[i].index = i;
-      input_info_[i].buf = nullptr;
-      input_info_[i].size = 0;
-      input_info_[i].pass_through = false;
-      input_info_[i].type = ConvertPrecision(type.precision);
-      input_info_[i].layout = ConvertDataLayout(type.layout);
-      input_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
-                                  ? type.asymm_per_layer_params.zero_point
-                                  : 0;
+      input_types_[i] = type;
     }
   }
   auto output_count = model->output_operands.size();
   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
   NNADAPTER_CHECK_GT(output_count, 0);
-  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors;
-  output_tensors.resize(output_count);
-  output_info_.resize(output_count);
-  output_zero_points_.resize(output_count);
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors(output_count);
+  output_types_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
     const auto& type = operand->type;
     NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
     output_tensors[i] = tensors_[operand].back();
     NNADAPTER_CHECK(output_tensors[i]);
-    // Initialize the output info for the execution
-    output_info_[i].index = i;
-    output_info_[i].buf = nullptr;
-    output_info_[i].size = 0;
-    output_info_[i].want_float = false;
-    output_info_[i].type = ConvertPrecision(type.precision);
-    output_info_[i].layout = ConvertDataLayout(type.layout);
-    output_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
-                                 ? type.asymm_per_layer_params.zero_point
-                                 : 0;
+    output_types_[i] = type;
   }
   graph_->SetInputsOutputs(input_tensors, output_tensors);
   // Create an execution to build the graph to the device-related program.
@@ -199,50 +176,25 @@ int Program::BuildFromCache(hal::Cache* cache) {
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors;
   if (input_count > 0) {
     input_tensors.resize(input_count);
-    input_info_.resize(input_count);
-    input_zero_points_.resize(input_count);
+    input_types_ = cache->input_types;
     for (size_t i = 0; i < input_count; i++) {
-      // Add a input tensor
       const auto& type = cache->input_types[i];
       input_tensors[i] = AddTensor(string_format("model_input_%d", i), &type);
       NNADAPTER_CHECK(input_tensors[i]);
-      // Initialize the input info for the execution
-      input_info_[i].index = i;
-      input_info_[i].buf = nullptr;
-      input_info_[i].size = 0;
-      input_info_[i].pass_through = false;
-      input_info_[i].type = ConvertPrecision(type.precision);
-      input_info_[i].layout = ConvertDataLayout(type.layout);
-      input_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
-                                  ? type.asymm_per_layer_params.zero_point
-                                  : 0;
     }
   }
   auto output_count = cache->output_types.size();
   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
   NNADAPTER_CHECK_GT(output_count, 0);
-  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors;
-  output_tensors.resize(output_count);
-  output_info_.resize(output_count);
-  output_zero_points_.resize(output_count);
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors(output_count);
+  output_types_ = cache->output_types;
   for (size_t i = 0; i < output_count; i++) {
-    // Add a output tensor
     const auto& type = cache->output_types[i];
     output_tensors[i] = AddTensor(string_format("model_output_%d", i), &type);
     NNADAPTER_CHECK(output_tensors[i]);
-    // Initialize the output info for the execution
-    output_info_[i].index = i;
-    output_info_[i].buf = nullptr;
-    output_info_[i].size = 0;
-    output_info_[i].want_float = false;
-    output_info_[i].type = ConvertPrecision(type.precision);
-    output_info_[i].layout = ConvertDataLayout(type.layout);
-    output_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
-                                 ? type.asymm_per_layer_params.zero_point
-                                 : 0;
   }
   graph_->SetInputsOutputs(input_tensors, output_tensors);
-  // Create an execution to build the graph to the device-related program.
+  // Create an execution to build the graph to the device-specific program.
   execution_ = std::make_shared<rk::nn::Exection>(graph_.get());
   execution_->Build();
   NNADAPTER_VLOG(3) << "Build success.";
@@ -253,35 +205,70 @@ int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
-  NNADAPTER_CHECK_EQ(input_info_.size(), input_count);
-  NNADAPTER_CHECK_EQ(output_info_.size(), output_count);
+  NNADAPTER_CHECK_EQ(input_types_.size(), input_count);
+  NNADAPTER_CHECK_EQ(output_types_.size(), output_count);
+  std::vector<rk::nn::InputInfo> input_info(input_count);
+  std::vector<rk::nn::OutputInfo> output_info(output_count);
   for (uint32_t i = 0; i < input_count; i++) {
-    auto& argument = input_arguments[i];
-    auto buffer = reinterpret_cast<uint8_t*>(argument.buffer);
-    auto zero_point = input_zero_points_[argument.index];
-    Symm2AsymmData(reinterpret_cast<const int8_t*>(argument.buffer),
-                   argument.length,
-                   zero_point,
-                   buffer);
-    input_info_[argument.index].buf = argument.buffer;
-    input_info_[argument.index].size = argument.length;
+    auto& arg = input_arguments[i];
+    NNADAPTER_CHECK_GE(arg.index, 0);
+    NNADAPTER_CHECK_LT(arg.index, input_count);
+    NNADAPTER_CHECK(arg.memory);
+    NNADAPTER_CHECK(arg.access);
+    auto type = &input_types_[arg.index];
+    auto buffer = arg.access(arg.memory, type);
+    NNADAPTER_CHECK(buffer);
+    auto length = GetOperandTypeBufferLength(*type);
+    if (IsUInt8AsymmPerLayerQuantization(type->precision)) {
+      Symm2AsymmData(reinterpret_cast<const int8_t*>(buffer),
+                     length,
+                     type->asymm_per_layer_params.zero_point,
+                     reinterpret_cast<uint8_t*>(buffer));
+    }
+    // Initialize the input info for the execution
+    input_info[arg.index].index = arg.index;
+    input_info[arg.index].buf = buffer;
+    input_info[arg.index].size = length;
+    input_info[arg.index].pass_through = false;
+    input_info[arg.index].type = ConvertPrecision(type->precision);
+    input_info[arg.index].layout = ConvertDataLayout(type->layout);
   }
   for (uint32_t i = 0; i < output_count; i++) {
-    auto& argument = output_arguments[i];
-    output_info_[argument.index].buf = argument.buffer;
-    output_info_[argument.index].size = argument.length;
+    auto& arg = output_arguments[i];
+    NNADAPTER_CHECK_GE(arg.index, 0);
+    NNADAPTER_CHECK_LT(arg.index, output_count);
+    NNADAPTER_CHECK(arg.memory);
+    NNADAPTER_CHECK(arg.access);
+    auto type = &output_types_[arg.index];
+    // TODO(hong19860320) Get the dimensions of the outputs from rknpu_ddk
+    // according to the dynamic dimensions of the inputs, fill them to 'type'
+    // and call the 'access' function to re-allocate the host output memory
+    auto buffer = arg.access(arg.memory, type);
+    NNADAPTER_CHECK(buffer);
+    auto length = GetOperandTypeBufferLength(*type);
+    // Initialize the output info for the execution
+    output_info[arg.index].index = arg.index;
+    output_info[arg.index].buf = buffer;
+    output_info[arg.index].size = length;
+    output_info[arg.index].want_float = false;
+    output_info[arg.index].type = ConvertPrecision(type->precision);
+    output_info[arg.index].layout = ConvertDataLayout(type->layout);
   }
-  NNADAPTER_CHECK_EQ(execution_->SetInputs(input_info_), rk::nn::RK_SUCCESS);
+  auto start_time = GetCurrentUS();
+  NNADAPTER_CHECK_EQ(execution_->SetInputs(input_info), rk::nn::RK_SUCCESS);
   NNADAPTER_CHECK_EQ(execution_->Run(), rk::nn::RK_SUCCESS);
-  NNADAPTER_CHECK_EQ(execution_->GetOutputs(output_info_), rk::nn::RK_SUCCESS);
+  NNADAPTER_CHECK_EQ(execution_->GetOutputs(output_info), rk::nn::RK_SUCCESS);
+  NNADAPTER_VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
   for (uint32_t i = 0; i < output_count; i++) {
-    auto& argument = output_arguments[i];
-    auto buffer = reinterpret_cast<int8_t*>(argument.buffer);
-    auto zero_point = output_zero_points_[argument.index];
-    Asymm2SymmData(reinterpret_cast<const uint8_t*>(argument.buffer),
-                   argument.length,
-                   zero_point,
-                   buffer);
+    auto type = &output_types_[i];
+    auto buffer = output_info[i].buf;
+    auto length = output_info[i].size;
+    if (IsUInt8AsymmPerLayerQuantization(type->precision)) {
+      Asymm2SymmData(reinterpret_cast<const uint8_t*>(buffer),
+                     length,
+                     type->asymm_per_layer_params.zero_point,
+                     reinterpret_cast<int8_t*>(buffer));
+    }
   }
   // Read data from the dump graph file and fill to cache
   if (!dump_graph_path_.empty()) {
