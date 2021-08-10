@@ -113,6 +113,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         std::string new_shape_name = shape_name + "_int32";
         shape_operand = CastInt64OperandToInt32(
             converter, scope, shape_name, new_shape_name);
+        break;
       };
       case PRECISION(kInt32): {
         if (converter->HasOperand(shape_name)) {
@@ -121,6 +122,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           shape_operand =
               converter->AddInt32VariableOperand(shape_dims, shape_name);
         }
+        break;
       };
       default:
         LOG(ERROR) << "Unsupported shape data type: "
@@ -187,7 +189,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
              !op_info->GetAttr<std::string>("str_value").empty()) {
     LOG(WARNING) << "Not support str_value now.";
     return FAILED;
-  } else if (op_info->HasInput("value")) {
+  } else if (op_info->HasAttr("value")) {
     float value = op_info->GetAttr<float>("value");
     int dtype = op_info->GetAttr<int>("dtype");
     value_precision = FluidDataType2NNAdapterTensorPrecisionCode(dtype);
