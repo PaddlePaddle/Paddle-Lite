@@ -37,11 +37,10 @@ std::set<std::weak_ptr<VarDesc>, VarDescLT> ConvertToSet(
 }
 
 OpDesc::OpDesc(const general::OpDesc& raw_desc,
-               const RootVarScope* scope,
+               const RootVarScope& scope,
                int32_t block_idx)
     : OpDescBase{raw_desc} {
-  CHECK(scope);
-  InitOpDesc(*raw_desc_, *scope, block_idx);
+  InitOpDesc(*raw_desc_, scope, block_idx);
 }
 
 void OpDesc::InitOpDesc(const general::OpDesc& raw_desc,
@@ -78,34 +77,27 @@ std::weak_ptr<VarDesc> OpDesc::AddOutput(const std::string& param,
 }
 
 void WriteToArrayOpDesc::ProcessTensorArrayOp(const general::OpDesc& raw_desc,
-                                              RootVarScope* mutable_scope,
+                                              const RootVarScope& scope,
                                               int32_t block_idx) {
-  CHECK(mutable_scope);
   CHECK_EQ(raw_desc.outputs().at("Out").size(), 1);
   const auto& var_name = raw_desc.outputs().at("Out").at(0);
 
   const std::string asso_var_name{var_name + ".AssociatedVar"};
-  if (!mutable_scope->HasRootVarDesc(asso_var_name)) {
-    general::VarDesc asso_var(asso_var_name);
-    asso_var.SetType(VarDescAPI::Type::LOD_TENSOR);
-    asso_var.SetPersistable(false);
-    mutable_scope->AddRootVar(block_idx, std::move(asso_var));
-  }
-  auto root_var = mutable_scope->GetRootVarDesc(asso_var_name).lock();
+  CHECK(scope.HasRootVarDesc(asso_var_name));
+  auto root_var = scope.GetRootVarDesc(asso_var_name).lock();
   const auto& var_desc = AddOutput("FakeAssociatedOut", root_var->latest());
   UpdateVarBlockIdx(var_desc, block_idx);
 }
 
 void ReadFromArrayOpDesc::ProcessTensorArrayOp(const general::OpDesc& raw_desc,
-                                               const RootVarScope* scope,
+                                               const RootVarScope& scope,
                                                int32_t block_idx) {
-  CHECK(scope);
   CHECK_EQ(raw_desc.inputs().at("X").size(), 1);
   const auto& var_name = raw_desc.inputs().at("X").at(0);
 
   const std::string asso_var_name{var_name + ".AssociatedVar"};
-  CHECK(scope->HasRootVarDesc(asso_var_name));
-  auto root_var = scope->GetRootVarDesc(asso_var_name).lock();
+  CHECK(scope.HasRootVarDesc(asso_var_name));
+  auto root_var = scope.GetRootVarDesc(asso_var_name).lock();
   const auto& var_desc = AddInput("FakeAssociatedX", root_var->latest());
   UpdateVarBlockIdx(var_desc, block_idx);
 }

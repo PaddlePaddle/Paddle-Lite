@@ -81,13 +81,13 @@ void PlainProgramDesc::InsertOpOfBlock(const general::BlockDesc& block_desc) {
     } else {
       std::unique_ptr<OpDescBase> op;
       if (raw_op->Type() == "write_to_array") {
-        op.reset(new WriteToArrayOpDesc(
-            *raw_op, dst_block->mutable_scope(), block_idx));
+        op.reset(
+            new WriteToArrayOpDesc(*raw_op, *dst_block->scope(), block_idx));
       } else if (raw_op->Type() == "read_from_array") {
         op.reset(
-            new ReadFromArrayOpDesc(*raw_op, dst_block->scope(), block_idx));
+            new ReadFromArrayOpDesc(*raw_op, *dst_block->scope(), block_idx));
       } else {
-        op.reset(new OpDesc(*raw_op, dst_block->scope(), block_idx));
+        op.reset(new OpDesc(*raw_op, *dst_block->scope(), block_idx));
       }
       const auto& inputs = ConvertToSet(op->inputs());
       const auto& outputs = ConvertToSet(op->outputs());
@@ -208,8 +208,8 @@ void ProgramDescConverter::InitBlocks() {
     if (block->parent()) {
       dst_block->SetParentIdx(block->parent()->idx());
     }
-    if (block->kid()) {
-      dst_block->SetForwardBlockIdx(block->kid()->idx());
+    if (block->kids().size()) {
+      dst_block->SetForwardBlockIdx(block->kids().front()->idx());
     }
   }
   for (auto& block : src_desc_->blocks()) {
