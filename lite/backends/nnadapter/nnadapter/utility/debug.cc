@@ -269,8 +269,33 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_TANH:
+      case NNADAPTER_LOG:
       case NNADAPTER_ABS:
         input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_LEAKY_RELU:
+        input_args = {"input", "alpha"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SLICE:
+        input_args = {"input", "axes", "start", "ends"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CLIP:
+        input_args = {"input", "min", "max"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_POW:
+        input_args = {"input", "factor"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_REDUCE_MEAN:
+        input_args = {"input", "axes", "keep_dim"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_EXPAND:
+        input_args = {"input", "shape"};
         output_args = {"output"};
         break;
       case NNADAPTER_RESHAPE:
@@ -315,6 +340,14 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_LP_NORMALIZATION:
         input_args = {"input", "axis", "p", "epsilon"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_RANGE:
+        input_args = {"start", "ends", "step"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_BATCH_NORMALIZATION:
+        input_args = {"input", "scale", "bias", "mean", "variance", "epsilon"};
         output_args = {"output"};
         break;
       case NNADAPTER_DEFORMABLE_CONV_2D:
@@ -454,26 +487,35 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(ADD);
     NNADAPTER_TYPE_TO_STRING(ASSIGN)
     NNADAPTER_TYPE_TO_STRING(AVERAGE_POOL_2D);
+    NNADAPTER_TYPE_TO_STRING(BATCH_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(CAST)
+    NNADAPTER_TYPE_TO_STRING(CLIP)
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D)
     NNADAPTER_TYPE_TO_STRING(DIV);
+    NNADAPTER_TYPE_TO_STRING(EXPAND);
     NNADAPTER_TYPE_TO_STRING(FILL);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
+    NNADAPTER_TYPE_TO_STRING(LEAKY_RELU)
+    NNADAPTER_TYPE_TO_STRING(LOG)
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION)
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(MUL);
+    NNADAPTER_TYPE_TO_STRING(POW);
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
+    NNADAPTER_TYPE_TO_STRING(RANGE);
+    NNADAPTER_TYPE_TO_STRING(REDUCE_MEAN);
     NNADAPTER_TYPE_TO_STRING(RESHAPE);
     NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
     NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
     NNADAPTER_TYPE_TO_STRING(SHAPE)
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
+    NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
     NNADAPTER_TYPE_TO_STRING(SPLIT);
     NNADAPTER_TYPE_TO_STRING(SUB);

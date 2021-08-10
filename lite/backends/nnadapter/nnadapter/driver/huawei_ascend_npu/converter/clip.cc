@@ -19,46 +19,45 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertActivation(hal::Operation* operation) {
+int Program::ConvertClip(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 1);
+  NNADAPTER_CHECK_EQ(input_count, 3);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
+  NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
+  // Min
+  auto min_operand = input_operands[1];
+  NNADAPTER_VLOG(5) << "min_operand: " << OperandToString(min_operand);
+  // Max
+  auto max_operand = input_operands[2];
+  NNADAPTER_VLOG(5) << "max_operand: " << OperandToString(max_operand);
   // Output
   auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
 
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-  auto act_name = GetOperatorName(output_operand);
-  switch (operation->type) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                \
-  case NNADAPTER_##type: {                                        \
-    auto act_op = std::make_shared<ge::op::class_name>(act_name); \
-    SET_INPUT(act_op, x, input_operator);                         \
-    MAP_OUTPUT(act_op, y, output_operand);                        \
-  } break;
-    CONVERT_UNARY_ACTIVATION(SIGMOID, Sigmoid);
-    CONVERT_UNARY_ACTIVATION(RELU, Relu);
-    CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
-    CONVERT_UNARY_ACTIVATION(TANH, Tanh);
-    CONVERT_UNARY_ACTIVATION(LOG, Log);
-    CONVERT_UNARY_ACTIVATION(ABS, Abs);
-#undef CONVERT_UNARY_ACTIVATION
-    default:
-      NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
-                           << OperationTypeToString(operation->type)
-                           << " is found.";
-      break;
+  auto min_operator = GetMappedOperator(min_operand);
+  if (!min_operator) {
+    min_operator = ConvertOperand(min_operand);
   }
+  auto max_operator = GetMappedOperator(max_operand);
+  if (!max_operator) {
+    max_operator = ConvertOperand(max_operand);
+  }
+  auto clip_name = GetOperatorName(output_operand);
+  auto clip_op = std::make_shared<ge::op::ClipByValue>(clip_name);
+  SET_INPUT(clip_op, x, input_operator);
+  SET_INPUT(clip_op, clip_value_min, min_operator);
+  SET_INPUT(clip_op, clip_value_max, max_operator);
+  MAP_OUTPUT(clip_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

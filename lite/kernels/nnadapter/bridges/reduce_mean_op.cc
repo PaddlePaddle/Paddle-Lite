@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -58,6 +58,15 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
+  // Axes operand
+  std::vector<int> dim = op_info->GetAttr<std::vector<int>>("dim");
+  NNAdapterOperand* axes_operand = converter->AddInt32ConstantOperand(
+      &dim[0], DDim({static_cast<int64_t>(dim.size())}));
+  // Keep_dim operand: keep_dim: default 1
+  bool keep_dim =
+      op_info->HasAttr("keep_dim") ? op_info->GetAttr<bool>("keep_dim") : true;
+  NNAdapterOperand* keep_dim_operand =
+      converter->AddBool8ConstantOperand(keep_dim);
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -67,28 +76,14 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
-  // Activation operation
-  std::vector<NNAdapterOperand*> input_operands{input_operand};
-  std::vector<NNAdapterOperand*> output_operands{output_operand};
-  NNAdapterOperation* activation_operation = nullptr;
-  if (op_type == "sigmoid") {
-    activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
-  } else if (op_type == "relu") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU);
-  } else if (op_type == "relu6") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU6);
-  } else if (op_type == "tanh") {
-    activation_operation = converter->AddOperation(NNADAPTER_TANH);
-  } else if (op_type == "log") {
-    activation_operation = converter->AddOperation(NNADAPTER_LOG);
-  } else if (op_type == "abs") {
-    activation_operation = converter->AddOperation(NNADAPTER_ABS);
-  } else {
-    LOG(WARNING) << "Unsupported activation type: " << op_type;
-    return FAILED;
-  }
+  // ReduceMean operation
+  std::vector<NNAdapterOperand*> input_operands = {
+      input_operand, axes_operand, keep_dim_operand};
+  std::vector<NNAdapterOperand*> output_operands = {output_operand};
+  NNAdapterOperation* reduce_mean_operation =
+      converter->AddOperation(NNADAPTER_REDUCE_MEAN);
   converter->SetOperation(
-      activation_operation, &input_operands, &output_operands);
+      reduce_mean_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -97,21 +92,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(sigmoid,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu6,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(log,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(abs,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    reduce_mean,
+    kNNAdapter,
+    paddle::lite::subgraph::nnadapter::ReduceMeanConverter);

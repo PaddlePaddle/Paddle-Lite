@@ -19,16 +19,20 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertActivation(hal::Operation* operation) {
+int Program::ConvertPow(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 1);
+  NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
+  // Factor
+  auto factor_operand = input_operands[1];
+  auto factor = *reinterpret_cast<float*>(factor_operand->buffer);
+  NNADAPTER_VLOG(5) << "factor: " << factor;
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
@@ -38,27 +42,12 @@ int Program::ConvertActivation(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-  auto act_name = GetOperatorName(output_operand);
-  switch (operation->type) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                \
-  case NNADAPTER_##type: {                                        \
-    auto act_op = std::make_shared<ge::op::class_name>(act_name); \
-    SET_INPUT(act_op, x, input_operator);                         \
-    MAP_OUTPUT(act_op, y, output_operand);                        \
-  } break;
-    CONVERT_UNARY_ACTIVATION(SIGMOID, Sigmoid);
-    CONVERT_UNARY_ACTIVATION(RELU, Relu);
-    CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
-    CONVERT_UNARY_ACTIVATION(TANH, Tanh);
-    CONVERT_UNARY_ACTIVATION(LOG, Log);
-    CONVERT_UNARY_ACTIVATION(ABS, Abs);
-#undef CONVERT_UNARY_ACTIVATION
-    default:
-      NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
-                           << OperationTypeToString(operation->type)
-                           << " is found.";
-      break;
-  }
+  auto factor_operator = ConvertOperand(factor_operand);
+  auto pow_name = GetOperatorName(output_operand);
+  auto pow_op = std::make_shared<ge::op::Pow>(pow_name);
+  SET_INPUT(pow_op, x1, input_operator);
+  SET_INPUT(pow_op, x2, factor_operator);
+  MAP_OUTPUT(pow_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

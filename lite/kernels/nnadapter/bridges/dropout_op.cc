@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int DropoutConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -58,6 +58,19 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
+  // Prob operand
+  auto dropout_implementation =
+      op_info->GetAttr<std::string>("dropout_implementation");
+  auto scale = 1 - op_info->GetAttr<float>("dropout_prob");
+  if (dropout_implementation == "upscale_in_train") {
+    scale = 1.f;
+    return FAILED;
+  }
+  NNAdapterOperand* prob_operand = converter->AddFloat32ConstantOperand(
+      &scale, DDim({static_cast<int64_t>(1)}));
+  // Fuse code operand
+  auto fuse_code_operand =
+      converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -67,28 +80,12 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
-  // Activation operation
-  std::vector<NNAdapterOperand*> input_operands{input_operand};
-  std::vector<NNAdapterOperand*> output_operands{output_operand};
-  NNAdapterOperation* activation_operation = nullptr;
-  if (op_type == "sigmoid") {
-    activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
-  } else if (op_type == "relu") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU);
-  } else if (op_type == "relu6") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU6);
-  } else if (op_type == "tanh") {
-    activation_operation = converter->AddOperation(NNADAPTER_TANH);
-  } else if (op_type == "log") {
-    activation_operation = converter->AddOperation(NNADAPTER_LOG);
-  } else if (op_type == "abs") {
-    activation_operation = converter->AddOperation(NNADAPTER_ABS);
-  } else {
-    LOG(WARNING) << "Unsupported activation type: " << op_type;
-    return FAILED;
-  }
-  converter->SetOperation(
-      activation_operation, &input_operands, &output_operands);
+  // Mul operation
+  std::vector<NNAdapterOperand*> input_operands = {
+      input_operand, prob_operand, fuse_code_operand};
+  std::vector<NNAdapterOperand*> output_operands = {output_operand};
+  NNAdapterOperation* mul_operation = converter->AddOperation(NNADAPTER_MUL);
+  converter->SetOperation(mul_operation, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -97,21 +94,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu,
+REGISTER_SUBGRAPH_BRIDGE(dropout,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(sigmoid,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(relu6,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(log,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(abs,
-                         kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ActConverter);
+                         paddle::lite::subgraph::nnadapter::DropoutConverter);
