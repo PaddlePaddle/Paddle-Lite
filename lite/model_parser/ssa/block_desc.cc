@@ -24,7 +24,7 @@ BlockDesc::BlockDesc(const general::BlockDesc& current, BlockDesc* parent) {
   if (parent) {
     scope_.reset(new RootVarScope{current, parent->mutable_scope()});
     parent_ = parent;
-    parent_->SetKid(this);
+    parent_->AddKid(this);
   } else {
     scope_.reset(new RootVarScope{current, nullptr});
   }
