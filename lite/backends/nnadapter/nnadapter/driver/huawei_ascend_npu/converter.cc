@@ -112,6 +112,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_ADD:
         case NNADAPTER_SUB:
         case NNADAPTER_MUL:
+        case NNADAPTER_DIV:
+        case NNADAPTER_MAX:
+        case NNADAPTER_MIN:
           ConvertElementwise(operation);
           break;
         case NNADAPTER_AVERAGE_POOL_2D:

@@ -280,7 +280,7 @@ TEST(FcOP, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
-  // TODO(shentanyue) enable later
+  // TODO(shentanyue) fix bug
   return;
 #else
   return;
