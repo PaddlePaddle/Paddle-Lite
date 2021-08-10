@@ -154,6 +154,7 @@ $ npu-smi info
                 - libmklml_intel.so # Intel MKL库
                 - libmklml_gnu.so # GNU MKL库
                 - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
+                - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
             - arm64
               - include # PaddleLite头文件
               - lib
@@ -167,16 +168,14 @@ $ npu-smi info
 
 - 进入PaddleLite-generic-demo/image_classification_demo/shell/；
 
-- 按照以下命令比较mobilenet_v1_fp32_224模型的性能和结果；
+- 执行以下命令比较mobilenet_v1_fp32_224模型的性能和结果；
 
   ```shell
   运行mobilenet_v1_fp32_224模型
-  $ vi run.sh
-  	将MODEL_NAME设置为mobilenet_v1_fp32_224
   	
   For amd64
   (intel x86 cpu only)
-  $ ./run.sh linux amd64
+  $ ./run.sh mobilenet_v1_fp32_224 linux amd64
       warmup: 1 repeat: 1, average: 44.949001 ms, max: 44.949001 ms, min: 44.949001 ms
       results: 3
       Top0  tabby, tabby cat - 0.529132
@@ -186,7 +185,7 @@ $ npu-smi info
       Prediction time: 44.949001 ms
       Postprocess time: 0.171000 ms
   (intel x86 cpu + ascend npu)
-  $ ./run.sh linux amd64 huawei_ascend_npu
+  $ ./run.sh mobilenet_v1_fp32_224 linux amd64 huawei_ascend_npu
       warmup: 1 repeat: 1, average: 2.079000 ms, max: 2.079000 ms, min: 2.079000 ms
       results: 3
       Top0  tabby, tabby cat - 0.529785
@@ -198,7 +197,7 @@ $ npu-smi info
   
   For arm64
   (鲲鹏920 cpu only)
-  $ ./run.sh linux arm64
+  $ ./run.sh mobilenet_v1_fp32_224 linux arm64
       warmup: 1 repeat: 1, average: 34.160999 ms, max: 34.160999 ms, min: 34.160999 ms
       results: 3
       Top0  tabby, tabby cat - 0.529131
@@ -208,7 +207,7 @@ $ npu-smi info
       Prediction time: 34.160999 ms
       Postprocess time: 0.081000 ms
   (鲲鹏920 cpu + ascend npu)
-  $ ./run.sh linux arm64 huawei_ascend_npu
+  $ ./run.sh mobilenet_v1_fp32_224 linux arm64 huawei_ascend_npu
       warmup: 1 repeat: 1, average: 1.555000 ms, max: 1.555000 ms, min: 1.555000 ms
       results: 3
       Top0  tabby, tabby cat - 0.529785
@@ -219,7 +218,14 @@ $ npu-smi info
       Postprocess time: 0.093000 ms
   ```
 
-- 如果需要更改测试模型为resnet50，可以改成**MODEL_NAME=resnet50_fp32_224**；
+- 如果需要更改测试模型为resnet50，可以将run.sh里的MODEL_NAME改成resnet50_fp32_224，或执行命令：
+
+  ```shell
+  (intel x86 cpu + ascend npu)
+  $ ./run.sh resnet50_fp32_224 linux amd64 huawei_ascend_npu
+  (鲲鹏920 cpu + ascend npu)
+  $ ./run.sh resnet50_fp32_224 linux arm64 huawei_ascend_npu
+  ```
 
 - 如果需要更改测试图片，请将图片拷贝到**PaddleLite-generic-demo/image_classification_demo/assets/images**目录下，修改并执行**convert_to_raw_image.py**生成相应的RGB Raw图像，最后修改run.sh的IMAGE_NAME即可；
 
