@@ -247,7 +247,7 @@ void TestElt(Place place,
   }
 #endif
 #if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  if (elt_type == std::string("div") {
+  if (elt_type == std::string("div")) {
     return;
   }
 #endif
