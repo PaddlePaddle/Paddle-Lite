@@ -19,7 +19,6 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-// todo (shentanyue)  e.g.fix assign_value op unit test
 void FixNoInputsOps(hal::Model* model);
 
 }  // namespace huawei_ascend_npu

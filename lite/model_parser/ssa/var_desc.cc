@@ -98,9 +98,21 @@ RootVarScope::RootVarScope(const general::BlockDesc& current,
   }
   for (size_t i = 0; i < current.VarsSize(); ++i) {
     const general::VarDesc* raw_var{current.GetVar<general::VarDesc>(i)};
-    root_vars_[raw_var->Name()] =
-        std::make_shared<VarDesc>(current.Idx(), raw_var);
+    AddRootVar(current.Idx(), *raw_var);
   }
+}
+
+void RootVarScope::AddRootVar(int32_t block_idx,
+                              const general::VarDesc& raw_var) {
+  CHECK_EQ(root_vars_.count(raw_var.Name()), 0);
+  root_vars_[raw_var.Name()] = std::make_shared<VarDesc>(block_idx, &raw_var);
+}
+
+void RootVarScope::AddRootVar(int32_t block_idx, general::VarDesc&& raw_var) {
+  CHECK_EQ(root_vars_.count(raw_var.Name()), 0);
+  auto var_name = raw_var.Name();
+  root_vars_[var_name] =
+      std::make_shared<VarDesc>(block_idx, std::move(raw_var));
 }
 
 std::vector<std::weak_ptr<VarDesc>> RootVarScope::GetRootVars() const {
@@ -111,16 +123,24 @@ std::vector<std::weak_ptr<VarDesc>> RootVarScope::GetRootVars() const {
   return vars;
 }
 
+bool RootVarScope::HasRootVarDesc(const std::string& name) const {
+  if (root_vars_.find(name) != root_vars_.end()) {
+    return true;
+  } else if (parent_) {
+    return parent_->HasRootVarDesc(name);
+  }
+  return false;
+}
+
 std::weak_ptr<VarDesc> RootVarScope::GetRootVarDesc(
     const std::string& name) const {
   if (root_vars_.find(name) != root_vars_.end()) {
     return root_vars_.at(name);
   } else if (parent_) {
     return parent_->GetRootVarDesc(name);
-  } else {
-    LOG(FATAL) << "can not find root var in the current block and root block.";
-    return {};
   }
+  LOG(FATAL) << "can not find root var in the current block and root block.";
+  return {};
 }
 
 }  // namespace ssa

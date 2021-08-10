@@ -242,6 +242,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                        act_param,
                                        &ctx);
       }
+
       if (!flag_1x1s1p1) {
         lite::arm::math::col2im<float>(col_data,
                                        chout,

@@ -530,8 +530,7 @@ typedef enum {
    *
    * Inputs:
    * * 0: shape, A NNADAPTER_TENSOR_INT32 tensor.
-   * * 1: input1, A tensor with the same type as input0.
-   * * 2: value, A NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
+   * * 1: value, A NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
    * NNADAPTER_BOOL scalar.
    *
    * Outputs:
@@ -1346,11 +1345,11 @@ int NNAdapterModel_identifyInputsAndOutputs(NNAdapterModel* model,
                                             NNAdapterOperand** output_operands);
 
 /**
- * Compile the model to the hardware-related binary program or load the cached
+ * Compile the model to the device-specific binary program or load the cached
  * binary program from memory or file system.
- * If cache_key, cache_buffer and cache_length is specified, load the binary
+ * If cache_token, cache_buffer and cache_length is specified, load the binary
  * program from memory directly.
- * If cache_key and cache_dir is specified, find and load the cached binary
+ * If cache_token and cache_dir is specified, find and load the cached binary
  * program from the cache files directly.
  * If no cache parameter is specified or the cache files are not found, then
  * compile the given model to the binary program of target devices.
@@ -1358,7 +1357,7 @@ int NNAdapterModel_identifyInputsAndOutputs(NNAdapterModel* model,
  * Available since version 1.
  */
 int NNAdapterCompilation_create(NNAdapterModel* model,
-                                const char* cache_key,
+                                const char* cache_token,
                                 void* cache_buffer,
                                 uint32_t cache_length,
                                 const char* cache_dir,
@@ -1407,27 +1406,57 @@ int NNAdapterExecution_create(NNAdapterCompilation* compilation,
  */
 void NNAdapterExecution_destroy(NNAdapterExecution* execution);
 /**
- * Set the real dimensions and buffer of the model inputs.
+ * Set the input memory and the function used to access it.
+ *
+ * typedef struct {
+ *   NNAdapterOperandPrecisionCode precision;
+ *   uint32_t dimension_count;
+ *   int32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+ *   void* buffer;
+ *   size_t length;
+ * } Memory;
+ *
+ * void* access_input_memory(void* memory, NNAdapterOperandType* type) {
+ *   Memory* handle = static_cast<Memory*>(memory);
+ *   // Return the dimensions and the host buffer to driver HAL
+ *   memcpy(type->dimensions, handle->dimensions, handle->dimension_count);
+ *   return handle->buffer;
+ * }
  *
  * Available since version 1.
  */
 int NNAdapterExecution_setInput(NNAdapterExecution* execution,
                                 int32_t index,
-                                const int32_t* dimensions,
-                                uint32_t dimension_count,
-                                void* buffer,
-                                uint32_t length);
+                                void* memory,
+                                void* (*access)(void* memory,
+                                                NNAdapterOperandType* type));
 /**
- * Set the real dimensions and buffer of the model outputs.
+ * Set the output memory and the function used to access it.
+ *
+ * void* access_output_memory(void* memory, NNAdapterOperandType* type) {
+ *   Memory* handle = static_cast<Memory*>(memory);
+ *   // Get the buffer length according to the type->precision and
+ * type->dimensions
+ *   size_t request_length = GetBufferLength(type);
+ *   if (request_length > handle->length) {
+ *     free(handle->buffer);
+ *     handle->buffer = malloc(request_length);
+ *     assert(handle->buffer);
+ *     handle->length = request_length;
+ *   }
+ *   // Tell the output dimensions to user and return the host buffer to driver
+ * HAL
+ *   memcpy(handle->dimensions, type->dimensions, type->dimension_count);
+ *   return handle->buffer;
+ * }
  *
  * Available since version 1.
  */
 int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
                                  int32_t index,
-                                 const int32_t* dimensions,
-                                 uint32_t dimension_count,
-                                 void* buffer,
-                                 uint32_t length);
+                                 void* memory,
+                                 void* (*access)(void* memory,
+                                                 NNAdapterOperandType* type));
 /**
  * Start to run the execution synchronously.
  *

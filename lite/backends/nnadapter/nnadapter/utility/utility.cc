@@ -95,6 +95,58 @@ NNADAPTER_EXPORT bool IsInt32SymmPerChannelQuantization(
   return type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
 }
 
+NNADAPTER_EXPORT int64_t
+GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
+  switch (type) {
+    case NNADAPTER_BOOL8:
+    case NNADAPTER_INT8:
+    case NNADAPTER_UINT8:
+    case NNADAPTER_TENSOR_BOOL8:
+    case NNADAPTER_TENSOR_INT8:
+    case NNADAPTER_TENSOR_UINT8:
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+      return 1;
+    case NNADAPTER_INT16:
+    case NNADAPTER_UINT16:
+    case NNADAPTER_FLOAT16:
+    case NNADAPTER_TENSOR_INT16:
+    case NNADAPTER_TENSOR_UINT16:
+    case NNADAPTER_TENSOR_FLOAT16:
+      return 2;
+    case NNADAPTER_INT32:
+    case NNADAPTER_UINT32:
+    case NNADAPTER_FLOAT32:
+    case NNADAPTER_TENSOR_INT32:
+    case NNADAPTER_TENSOR_UINT32:
+    case NNADAPTER_TENSOR_FLOAT32:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
+      return 4;
+    case NNADAPTER_INT64:
+    case NNADAPTER_UINT64:
+    case NNADAPTER_FLOAT64:
+    case NNADAPTER_TENSOR_INT64:
+    case NNADAPTER_TENSOR_UINT64:
+    case NNADAPTER_TENSOR_FLOAT64:
+      return 8;
+    default:
+      NNADAPTER_LOG(ERROR) << "Failed to get the length of type("
+                           << static_cast<int>(type) << ").";
+      break;
+  }
+  return 0;
+}
+
+NNADAPTER_EXPORT int64_t
+GetOperandTypeBufferLength(const NNAdapterOperandType& type) {
+  auto production =
+      ProductionOfDimensions(type.dimensions, type.dimension_count);
+  return GetOperandPrecisionDataLength(type.precision) * production;
+}
+
 NNADAPTER_EXPORT int64_t ProductionOfDimensions(
     const int32_t* input_dimensions, uint32_t input_dimension_count) {
   int64_t production = 1;

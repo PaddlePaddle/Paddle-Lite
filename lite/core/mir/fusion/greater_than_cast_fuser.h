@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/program_fake_utils.h"
-#include "lite/core/op_registry.h"
+#pragma once
+
+#include <memory>
+#include <string>
+#include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {}  // namespace mir
+namespace mir {
+namespace fusion {
+
+class GreaterThanCastFuser : public FuseBase {
+ public:
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+};
+
+}  // namespace fusion
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

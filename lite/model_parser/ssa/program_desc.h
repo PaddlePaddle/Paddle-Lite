@@ -74,6 +74,8 @@ class ProgramDescConverter {
   const PlainProgramDesc* src_desc_;
 };
 
+void ConvertToSSA(general::ProgramDesc* prog);
+
 }  // namespace ssa
 }  // namespace general
 }  // namespace lite

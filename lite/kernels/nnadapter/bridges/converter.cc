@@ -31,7 +31,7 @@ NNAdapterOperand* Converter::GetOperand(std::string name) {
 
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperand* operand,
                                         const std::string& name) {
-  CHECK(!operand);
+  CHECK(operand);
   CHECK(!name.empty());
   operands_[name] = operand;
   return operand;

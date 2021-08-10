@@ -18,7 +18,7 @@
 
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 // this function is modified from
 // lite/tests/kernels/anchor_generator_compute_test.cc

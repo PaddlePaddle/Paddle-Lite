@@ -328,12 +328,21 @@ ge::Format ConvertACLFormat(aclFormat input_format) {
   return output_format;
 }
 
-std::vector<int64_t> ConvertACLDimensions(aclmdlIODims input_dims) {
-  std::vector<int64_t> output_dims(input_dims.dimCount);
-  for (size_t i = 0; i < input_dims.dimCount; i++) {
-    output_dims[i] = static_cast<int64_t>(input_dims.dims[i]);
+std::vector<int64_t> ConvertACLDimensions(
+    const aclmdlIODims& input_dimensions) {
+  std::vector<int64_t> output_dimensions(input_dimensions.dimCount);
+  for (size_t i = 0; i < input_dimensions.dimCount; i++) {
+    output_dimensions[i] = static_cast<int64_t>(input_dimensions.dims[i]);
   }
-  return output_dims;
+  return output_dimensions;
+}
+
+void ConvertACLDimensions(const aclmdlIODims& input_dimensions,
+                          int32_t* output_dimensions,
+                          uint32_t* output_dimensions_count) {
+  for (size_t i = 0; i < input_dimensions.dimCount; i++) {
+    output_dimensions[i] = static_cast<int32_t>(input_dimensions.dims[i]);
+  }
 }
 
 ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {

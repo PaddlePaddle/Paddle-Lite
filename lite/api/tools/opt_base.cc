@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/api/opt_base.h"
-#include "all_kernel_faked.cc"  // NOLINT
+#include "lite/api/tools/opt_base.h"
 
 namespace paddle {
 namespace lite_api {
