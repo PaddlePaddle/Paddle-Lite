@@ -83,6 +83,9 @@ void PlainProgramDesc::InsertOpOfBlock(const general::BlockDesc& block_desc) {
       if (raw_op->Type() == "write_to_array") {
         op.reset(new WriteToArrayOpDesc(
             *raw_op, dst_block->mutable_scope(), block_idx));
+      } else if (raw_op->Type() == "read_from_array") {
+        op.reset(
+            new ReadFromArrayOpDesc(*raw_op, dst_block->scope(), block_idx));
       } else {
         op.reset(new OpDesc(*raw_op, dst_block->scope(), block_idx));
       }

@@ -96,6 +96,20 @@ void WriteToArrayOpDesc::ProcessTensorArrayOp(const general::OpDesc& raw_desc,
   UpdateVarBlockIdx(var_desc, block_idx);
 }
 
+void ReadFromArrayOpDesc::ProcessTensorArrayOp(const general::OpDesc& raw_desc,
+                                               const RootVarScope* scope,
+                                               int32_t block_idx) {
+  CHECK(scope);
+  CHECK_EQ(raw_desc.inputs().at("X").size(), 1);
+  const auto& var_name = raw_desc.inputs().at("X").at(0);
+
+  const std::string asso_var_name{var_name + ".AssociatedVar"};
+  CHECK(scope->HasRootVarDesc(asso_var_name));
+  auto root_var = scope->GetRootVarDesc(asso_var_name).lock();
+  const auto& var_desc = AddInput("FakeAssociatedIn", root_var->latest());
+  UpdateVarBlockIdx(var_desc, block_idx);
+}
+
 constexpr char const WriteBackOp::type_[];
 constexpr char const WriteBackOp::input_lod_deps_[];
 constexpr char const WriteBackOp::input_lod_array_deps_[];

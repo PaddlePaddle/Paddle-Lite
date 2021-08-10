@@ -106,6 +106,22 @@ class WriteToArrayOpDesc : public OpDesc {
                             int32_t block_idx);
 };
 
+class ReadFromArrayOpDesc : public OpDesc {
+ public:
+  ReadFromArrayOpDesc() = default;
+  ReadFromArrayOpDesc(const general::OpDesc& raw_desc,
+                      const RootVarScope* scope,
+                      int32_t block_idx)
+      : OpDesc(raw_desc, scope, block_idx) {
+    ProcessTensorArrayOp(raw_desc, scope, block_idx);
+  }
+
+ private:
+  void ProcessTensorArrayOp(const general::OpDesc& raw_desc,
+                            const RootVarScope* scope,
+                            int32_t block_idx);
+};
+
 // In order to modify the block operator, we need to know the specific
 // input name. Because its format is not uniform, so register here.
 
