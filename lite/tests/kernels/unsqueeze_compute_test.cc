@@ -16,7 +16,7 @@
 #include <string>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 namespace paddle {
 namespace lite {
 
@@ -297,9 +297,7 @@ TEST(unsqueeze2, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  // abs_error = 1e-2;
-  // TODO(liusiyuan04): Stuff [Can not ignore output 'XShape', bugfix needed.]
-  return;
+  abs_error = 1e-2;
 #else
   return;
 #endif

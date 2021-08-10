@@ -414,13 +414,14 @@ bool ConfigBase::check_nnadapter_device_name(
 }
 
 void ConfigBase::set_nnadapter_model_cache_buffers(
-    const std::string &key, const std::vector<char> &buffer) {
+    const std::string &model_cache_token,
+    const std::vector<char> &model_cache_buffer) {
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
-  CHECK(!key.empty());
-  CHECK(!buffer.empty());
-  CHECK_EQ(nnadapter_model_cache_buffers_.count(key), 0);
-  nnadapter_model_cache_buffers_[key] = buffer;
+  CHECK(!model_cache_token.empty());
+  CHECK(!model_cache_buffer.empty());
+  CHECK_EQ(nnadapter_model_cache_buffers_.count(model_cache_token), 0);
+  nnadapter_model_cache_buffers_[model_cache_token] = model_cache_buffer;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_nnadapter_model_cache_buffers' is ignored, please "

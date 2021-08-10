@@ -58,7 +58,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -69,8 +68,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Activation operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand};
-  std::vector<NNAdapterOperand*> output_operands = {output_operand};
+  std::vector<NNAdapterOperand*> input_operands{input_operand};
+  std::vector<NNAdapterOperand*> output_operands{output_operand};
   NNAdapterOperation* activation_operation = nullptr;
   if (op_type == "sigmoid") {
     activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
@@ -80,6 +79,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     activation_operation = converter->AddOperation(NNADAPTER_RELU6);
   } else if (op_type == "tanh") {
     activation_operation = converter->AddOperation(NNADAPTER_TANH);
+  } else if (op_type == "log") {
+    activation_operation = converter->AddOperation(NNADAPTER_LOG);
   } else if (op_type == "abs") {
     activation_operation = converter->AddOperation(NNADAPTER_ABS);
   } else {
@@ -106,6 +107,9 @@ REGISTER_SUBGRAPH_BRIDGE(relu6,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(tanh,
+                         kNNAdapter,
+                         paddle::lite::subgraph::nnadapter::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(log,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(abs,

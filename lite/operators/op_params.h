@@ -1231,6 +1231,7 @@ struct CompareParam : ParamBase {
   const lite::Tensor* Y{};
   bool force_cpu{0};
   int axis{-1};
+  bool fuse_greater_than{0};
   lite::Tensor* Out{};
 };
 

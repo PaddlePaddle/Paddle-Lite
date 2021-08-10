@@ -116,6 +116,14 @@ class Program {
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);
   int ConvertSplit(hal::Operation* operation);
+  int ConvertPow(hal::Operation* operation);
+  int ConvertBatchNormalization(hal::Operation* operation);
+  int ConvertClip(hal::Operation* operation);
+  int ConvertLeakyRelu(hal::Operation* operation);
+  int ConvertSlice(hal::Operation* operation);
+  int ConvertReduceMean(hal::Operation* operation);
+  int ConvertExpand(hal::Operation* operation);
+  int ConvertRange(hal::Operation* operation);
   int ConvertCast(hal::Operation* operation);
   int ConvertShape(hal::Operation* operation);
   int ConvertAssign(hal::Operation* operation);
@@ -132,6 +140,8 @@ class Program {
   // Map NNAdapter operand to GE operator
   std::map<hal::Operand*, std::vector<std::shared_ptr<Operator>>> operators_;
   std::shared_ptr<AclModelClient> model_client_{nullptr};
+  std::vector<NNAdapterOperandType> input_types_;
+  std::vector<NNAdapterOperandType> output_types_;
 };
 
 // Set one of dynamic inputs of a ge::Operator and update its tensor desc

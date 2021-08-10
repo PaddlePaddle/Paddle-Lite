@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
@@ -148,10 +148,10 @@ class BatchNormComputeTest : public arena::TestCase {
     fill_data_rand(variance.data(), 0.f, 1.f, scale_dim.production());
 
     SetCommonTensor(input_, dims_, din.data());
-    SetCommonTensor(scale_, scale_dim, scale.data());
-    SetCommonTensor(bias_, scale_dim, bias.data());
-    SetCommonTensor(mean_, scale_dim, mean.data());
-    SetCommonTensor(variance_, scale_dim, variance.data());
+    SetCommonTensor(scale_, scale_dim, scale.data(), {}, true);
+    SetCommonTensor(bias_, scale_dim, bias.data(), {}, true);
+    SetCommonTensor(mean_, scale_dim, mean.data(), {}, true);
+    SetCommonTensor(variance_, scale_dim, variance.data(), {}, true);
   }
 };
 
@@ -159,7 +159,14 @@ TEST(BatchNorm, precision) {
   LOG(INFO) << "test BatchNorm op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_OPENCL)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 3e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)

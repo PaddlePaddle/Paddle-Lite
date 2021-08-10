@@ -83,8 +83,8 @@ static hal::Operand* AddOperand(hal::Model* model,
   }
   if (buffer) {
     // Constant operand
-    operand->length =
-        OperandPrecisionLength(precision) * ProductionOfDimensions(dimensions);
+    operand->length = GetOperandPrecisionDataLength(precision) *
+                      ProductionOfDimensions(dimensions);
     if (copy) {
       operand->buffer = malloc(operand->length);
       NNADAPTER_CHECK(operand->buffer != nullptr)
@@ -358,7 +358,7 @@ NNADAPTER_EXPORT void TransposeOperand(hal::Operand* operand,
     auto transform_buffer = malloc(operand->length);
     NNADAPTER_CHECK(transform_buffer) << "Out of memory!";
     auto dimensions = operand->type.dimensions;
-    int bytes = OperandPrecisionLength(operand->type.precision);
+    int bytes = GetOperandPrecisionDataLength(operand->type.precision);
     switch (bytes) {
       OPERAND_TRANSPOSE_DATA(1, int8_t);
       OPERAND_TRANSPOSE_DATA(2, int16_t);
@@ -550,7 +550,8 @@ NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
       &zero_operand->type, &input_operand->type, sizeof(NNAdapterOperandType));
   zero_operand->type.dimension_count = 1;
   zero_operand->type.dimensions[0] = 1;
-  zero_operand->length = OperandPrecisionLength(zero_operand->type.precision);
+  zero_operand->length =
+      GetOperandPrecisionDataLength(zero_operand->type.precision);
   zero_operand->buffer = malloc(zero_operand->length);
   NNADAPTER_CHECK(zero_operand->buffer != nullptr)
       << "Failed to allocate " << zero_operand->length

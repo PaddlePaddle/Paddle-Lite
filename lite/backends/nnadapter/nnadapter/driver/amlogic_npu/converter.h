@@ -51,6 +51,7 @@ class Program {
               hal::Argument* output_arguments);
 
  private:
+  void Clear();
   // Operand converters
   std::string GetTensorName(hal::Operand* operand);
   std::shared_ptr<aml::nn::Tensor> GetMappedTensor(hal::Operand* operand);
@@ -76,12 +77,10 @@ class Program {
   // Map NNAdapter operand to amlnpu tensor
   std::map<hal::Operand*, std::vector<std::shared_ptr<aml::nn::Tensor>>>
       tensors_;
-  aml::nn::Graph* graph_{nullptr};
-  aml::nn::Exection* execution_{nullptr};
-  std::vector<aml::nn::InputInfo> input_info_;
-  std::vector<aml::nn::OutputInfo> output_info_;
-  std::vector<int32_t> input_zero_points_;
-  std::vector<int32_t> output_zero_points_;
+  std::shared_ptr<aml::nn::Graph> graph_{nullptr};
+  std::shared_ptr<aml::nn::Exection> execution_{nullptr};
+  std::vector<NNAdapterOperandType> input_types_;
+  std::vector<NNAdapterOperandType> output_types_;
 };
 
 }  // namespace amlogic_npu
