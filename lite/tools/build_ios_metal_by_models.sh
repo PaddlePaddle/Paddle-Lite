@@ -58,8 +58,8 @@ cd $workspace
 # step 5. pack compiling results and optimized models
 result_name=iOS_lib
 rm -rf $result_name && mkdir $result_name
-cp -rf build.ios_with_metal.ios.armv7/inference_lite_lib.ios.armv7.metal $result_name/armv7
-cp -rf build.ios_with_metal.ios64.armv8/inference_lite_lib.ios64.armv8.metal $result_name/armv8
+cp -rf build.ios.metal.ios.armv7/inference_lite_lib.ios.armv7.metal $result_name/armv7
+cp -rf build.ios.metal.ios64.armv8/inference_lite_lib.ios64.armv8.metal $result_name/armv8
 cp build.opt/lite/api/opt $result_name/
 mv build.opt/lite/api/optimized_model $result_name
 

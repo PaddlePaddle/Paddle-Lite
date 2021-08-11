@@ -61,7 +61,7 @@ function make_ios {
     fi
 
     if [ "${WITH_METAL}" == "ON" ]; then
-        build_dir=$workspace/build.ios_with_metal.${os}.${arch}
+        build_dir=$workspace/build.ios.metal.${os}.${arch}
     else
         build_dir=$workspace/build.ios.${os}.${arch}
     fi
