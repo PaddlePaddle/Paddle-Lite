@@ -160,6 +160,15 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_DEFORMABLE_CONV_2D:
           ConvertDeformableConv2d(operation);
           break;
+        case NNADAPTER_HARD_SWISH:
+          ConvertHardSwish(operation);
+          break;
+        case NNADAPTER_HARD_SIGMOID:
+          ConvertHardSigmoid(operation);
+          break;
+        case NNADAPTER_UNSQUEEZE:
+          ConvertUnsqueeze(operation);
+          break;
         case NNADAPTER_POW:
           ConvertPow(operation);
           break;

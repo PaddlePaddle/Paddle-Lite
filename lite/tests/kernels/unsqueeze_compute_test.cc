@@ -238,6 +238,9 @@ void test_unsqueeze(Place place, float abs_error = 2e-5) {
           if (input_axes_flag != 1) continue;
           if (dims.size() + axes.size() > 4) continue;
 #endif
+#ifdef LITE_WITH_NNADAPTER
+          if (input_axes_flag != 1) continue;
+#endif
           std::unique_ptr<arena::TestCase> tester(new UnsqueezeComputeTester(
               place, "def", axes, DDim(dims), input_axes_flag, inplace));
           arena::Arena arena(std::move(tester), place, abs_error);
@@ -269,7 +272,14 @@ void test_unsqueeze2(Place place, float abs_error = 2e-5) {
 TEST(unsqueeze, precision) {
   Place place;
   float abs_error = 2e-5;
-#ifdef LITE_WITH_NPU
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
@@ -278,6 +288,8 @@ TEST(unsqueeze, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
+#else
+  return;
 #endif
   test_unsqueeze(place, abs_error);
 }
@@ -285,7 +297,14 @@ TEST(unsqueeze, precision) {
 TEST(unsqueeze2, precision) {
   Place place;
   float abs_error = 2e-5;
-#ifdef LITE_WITH_NPU
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
@@ -294,6 +313,8 @@ TEST(unsqueeze2, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
+#else
+  return;
 #endif
 
   test_unsqueeze2(place, abs_error);
