@@ -14,7 +14,7 @@
 
 #include "lite/kernels/host/cos_sim_compute.h"
 #include <cmath>
-#include "lite/fluid/for_range.h"
+#include "lite/backends/x86/fluid/for_range.h"
 
 namespace paddle {
 namespace lite {

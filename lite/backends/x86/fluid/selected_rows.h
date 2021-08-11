@@ -21,9 +21,9 @@ limitations under the License. */
 #include <utility>
 #include <vector>
 
+#include "lite/backends/x86/fluid/rw_lock.h"
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
-#include "lite/fluid/rw_lock.h"
 #include "lite/model_parser/model_parser.h"
 namespace paddle {
 namespace lite {

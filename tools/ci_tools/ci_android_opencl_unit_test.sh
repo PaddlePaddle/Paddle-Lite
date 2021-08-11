@@ -102,7 +102,6 @@ function build_opencl {
       -DLITE_WITH_CV=OFF \
       -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
 
-  make opencl_clhpp -j$NUM_PROC
   make lite_compile_deps -j$NUM_PROC
   cd - > /dev/null
 }
