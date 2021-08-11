@@ -14,8 +14,8 @@
 
 #pragma once
 #include <vector>
+#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/core/op_registry.h"
-#include "lite/fluid/eigen.h"
 
 namespace paddle {
 namespace lite {

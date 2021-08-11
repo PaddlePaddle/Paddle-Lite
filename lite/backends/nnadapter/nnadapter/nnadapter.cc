@@ -259,7 +259,7 @@ NNADAPTER_EXPORT int NNAdapterModel_identifyInputsAndOutputs(
 
 NNADAPTER_EXPORT int NNAdapterCompilation_create(
     NNAdapterModel* model,
-    const char* cache_key,
+    const char* cache_token,
     void* cache_buffer,
     uint32_t cache_length,
     const char* cache_dir,
@@ -271,7 +271,7 @@ NNADAPTER_EXPORT int NNAdapterCompilation_create(
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
   auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
   auto c = new nnadapter::runtime::Compilation(
-      m, cache_key, cache_buffer, cache_length, cache_dir, x);
+      m, cache_token, cache_buffer, cache_length, cache_dir, x);
   if (c == nullptr) {
     *compilation = nullptr;
     return NNADAPTER_OUT_OF_MEMORY;
@@ -334,30 +334,28 @@ NNADAPTER_EXPORT void NNAdapterExecution_destroy(
   }
 }
 
-NNADAPTER_EXPORT int NNAdapterExecution_setInput(NNAdapterExecution* execution,
-                                                 int32_t index,
-                                                 const int32_t* dimensions,
-                                                 uint32_t dimension_count,
-                                                 void* buffer,
-                                                 uint32_t length) {
+NNADAPTER_EXPORT int NNAdapterExecution_setInput(
+    NNAdapterExecution* execution,
+    int32_t index,
+    void* memory,
+    void* (*access)(void* memory, NNAdapterOperandType* type)) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto e = reinterpret_cast<nnadapter::runtime::Execution*>(execution);
-  return e->SetInput(index, dimensions, dimension_count, buffer, length);
+  return e->SetInput(index, memory, access);
 }
 
-NNADAPTER_EXPORT int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
-                                                  int32_t index,
-                                                  const int32_t* dimensions,
-                                                  uint32_t dimension_count,
-                                                  void* buffer,
-                                                  uint32_t length) {
+NNADAPTER_EXPORT int NNAdapterExecution_setOutput(
+    NNAdapterExecution* execution,
+    int32_t index,
+    void* memory,
+    void* (*access)(void* memory, NNAdapterOperandType* type)) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto e = reinterpret_cast<nnadapter::runtime::Execution*>(execution);
-  return e->SetOutput(index, dimensions, dimension_count, buffer, length);
+  return e->SetOutput(index, memory, access);
 }
 
 NNADAPTER_EXPORT int NNAdapterExecution_compute(NNAdapterExecution* execution) {

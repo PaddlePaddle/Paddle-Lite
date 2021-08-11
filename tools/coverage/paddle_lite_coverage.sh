@@ -23,7 +23,7 @@ function gen_full_html_report() {
         '/Paddle-Lite/lite/api/*' \
         '/Paddle-Lite/lite/backends/*' \
         '/Paddle-Lite/lite/core/*' \
-        '/Paddle-Lite/lite/fluid/*' \
+        '/Paddle-Lite/lite/backends/x86/fluid/*' \
         '/Paddle-Lite/lite/gen_code/*' \
         '/Paddle-Lite/lite/kernels/*' \
         '/Paddle-Lite/lite/model_parser/*' \
@@ -38,7 +38,7 @@ function gen_full_html_report() {
     lcov --remove coverage-full.info \
         '/Paddle-Lite/lite/tests/*' \
         '/Paddle-Lite/lite/demo/*' \
-        '/Paddle-Lite/lite/fluid/*_test*' \
+        '/Paddle-Lite/lite/backends/x86/fluid/*_test*' \
         '/Paddle-Lite/lite/model_parser/*_test*' \
         '/Paddle-Lite/lite/kernels/*/*test*' \
         '/Paddle-Lite/lite/kernels/*/bridges/*test*' \

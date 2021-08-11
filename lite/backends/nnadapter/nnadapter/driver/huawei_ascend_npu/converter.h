@@ -107,6 +107,7 @@ class Program {
   // Operation converters
   int ConvertConv2D(hal::Operation* operation);
   int ConvertFullyConnected(hal::Operation* operation);
+  int ConvertFill(hal::Operation* operation);
   int ConvertPool2D(hal::Operation* operation);
   int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
@@ -115,12 +116,32 @@ class Program {
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);
   int ConvertSplit(hal::Operation* operation);
+  int ConvertPow(hal::Operation* operation);
+  int ConvertBatchNormalization(hal::Operation* operation);
+  int ConvertClip(hal::Operation* operation);
+  int ConvertLeakyRelu(hal::Operation* operation);
+  int ConvertSlice(hal::Operation* operation);
+  int ConvertReduceMean(hal::Operation* operation);
+  int ConvertExpand(hal::Operation* operation);
+  int ConvertRange(hal::Operation* operation);
+  int ConvertCast(hal::Operation* operation);
+  int ConvertShape(hal::Operation* operation);
+  int ConvertAssign(hal::Operation* operation);
+  int ConvertResizeNearest(hal::Operation* operation);
+  int ConvertResizeLinear(hal::Operation* operation);
+  int ConvertLpNormalization(hal::Operation* operation);
+  int ConvertDeformableConv2d(hal::Operation* operation);
+  int ConvertHardSwish(hal::Operation* operation);
+  int ConvertHardSigmoid(hal::Operation* operation);
+  int ConvertUnsqueeze(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};
   // Map NNAdapter operand to GE operator
   std::map<hal::Operand*, std::vector<std::shared_ptr<Operator>>> operators_;
   std::shared_ptr<AclModelClient> model_client_{nullptr};
+  std::vector<NNAdapterOperandType> input_types_;
+  std::vector<NNAdapterOperandType> output_types_;
 };
 
 // Set one of dynamic inputs of a ge::Operator and update its tensor desc

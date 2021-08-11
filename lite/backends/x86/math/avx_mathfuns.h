@@ -28,6 +28,12 @@ v8sf pow256_ps(v8sf x, v8sf y);
 v8sf sin256_ps(v8sf x);
 v8sf cos256_ps(v8sf x);
 void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
+
+// FMA support
+#ifndef __AVX2__
+#define _mm256_fmadd_ps(a, b, c) _mm256_add_ps(c, _mm256_mul_ps(a, b))
+#endif
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

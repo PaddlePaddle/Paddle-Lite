@@ -274,13 +274,13 @@ class Context<TargetType::kNNAdapter> {
 
   std::string name() const { return "NNAdapterContext"; }
 
-  static void SetNNAdapterModelCacheDir(
-      Scope* scope, const std::string& nnadapter_model_cache_dir) {
+  static void SetNNAdapterModelCacheDir(Scope* scope,
+                                        const std::string& model_cache_dir) {
     auto var = scope->Var("NNADAPTER_MODEL_CACHE_DIR");
     CHECK(var);
     auto data = var->GetMutable<std::string>();
     CHECK(data);
-    *data = nnadapter_model_cache_dir;
+    *data = model_cache_dir;
   }
 
   static std::string NNAdapterModelCacheDir(Scope* scope) {
@@ -291,39 +291,37 @@ class Context<TargetType::kNNAdapter> {
 
   static void SetNNAdapterModelCacheBuffers(
       Scope* scope,
-      const std::map<std::string, std::vector<char>>&
-          nnadapter_model_cache_buffers) {
-    for (const auto& nnadapter_model_cache_buffer :
-         nnadapter_model_cache_buffers) {
-      auto& key = nnadapter_model_cache_buffer.first;
+      const std::map<std::string, std::vector<char>>& model_cache_buffers) {
+    for (const auto& model_cache_buffer : model_cache_buffers) {
+      auto& key = model_cache_buffer.first;
       auto var = scope->Var("NNADAPTER_MODEL_CACHE_BUFFERS_" + key);
       CHECK(var);
       auto data = var->GetMutable<std::vector<char>>();
       CHECK(data);
-      *data = nnadapter_model_cache_buffer.second;
+      *data = model_cache_buffer.second;
     }
   }
 
-  static bool NNAdapterModelCacheBuffers(Scope* scope,
-                                         const std::string& key,
-                                         std::vector<char>* buffer) {
-    CHECK(buffer);
-    buffer->clear();
-    auto var = scope->FindVar("NNADAPTER_MODEL_CACHE_BUFFERS_" + key);
+  static bool NNAdapterModelCacheBuffers(
+      Scope* scope,
+      const std::string& model_cache_token,
+      std::vector<char>* model_cache_buffer) {
+    CHECK(model_cache_buffer);
+    model_cache_buffer->clear();
+    auto var =
+        scope->FindVar("NNADAPTER_MODEL_CACHE_BUFFERS_" + model_cache_token);
     if (!var) return false;
     auto data = var->GetMutable<std::vector<char>>();
-    *buffer = *data;
+    *model_cache_buffer = *data;
     // Reset to reduce memory consumption
     std::vector<char>().swap(*data);
     return true;
   }
 
 #ifdef LITE_WITH_NNADAPTER
-  static bool CheckNNAdapterDeviceName(
-      const std::string& nnadapter_device_name) {
+  static bool CheckNNAdapterDeviceName(const std::string& device_name) {
     NNAdapterDevice* device = nullptr;
-    int result =
-        NNAdapterDevice_acquire_invoke(nnadapter_device_name.c_str(), &device);
+    int result = NNAdapterDevice_acquire_invoke(device_name.c_str(), &device);
     bool found = result == NNADAPTER_NO_ERROR && device != nullptr;
     if (found) {
       NNAdapterDevice_release_invoke(device);
@@ -333,12 +331,12 @@ class Context<TargetType::kNNAdapter> {
 #endif
 
   static void SetNNAdapterDeviceNames(
-      Scope* scope, const std::vector<std::string>& nnadapter_device_names) {
+      Scope* scope, const std::vector<std::string>& device_names) {
     auto var = scope->Var("NNADAPTER_DEVICE_NAMES");
     CHECK(var);
     auto data = var->GetMutable<std::vector<std::string>>();
     CHECK(data);
-    *data = nnadapter_device_names;
+    *data = device_names;
   }
 
   static std::vector<std::string> NNAdapterDeviceNames(Scope* scope) {
@@ -348,16 +346,46 @@ class Context<TargetType::kNNAdapter> {
   }
 
   static void SetNNAdapterContextProperties(
-      Scope* scope, const std::string& nnadapter_context_properties) {
+      Scope* scope, const std::string& context_properties) {
     auto var = scope->Var("NNADAPTER_CONTEXT_PROPERTIES");
     CHECK(var);
     auto data = var->GetMutable<std::string>();
     CHECK(data);
-    *data = nnadapter_context_properties;
+    *data = context_properties;
   }
 
   static std::string NNAdapterContextProperties(Scope* scope) {
     auto var = scope->FindVar("NNADAPTER_CONTEXT_PROPERTIES");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterSubgraphPartitionConfigPath(
+      Scope* scope, const std::string& subgraph_partition_config_path) {
+    auto var = scope->Var("NNADAPTER_SUBGRAPH_PARTITION_CONFIG_PATH");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_partition_config_path;
+  }
+
+  static std::string NNAdapterSubgraphPartitionConfigPath(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_SUBGRAPH_PARTITION_CONFIG_PATH");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterSubgraphPartitionConfigBuffer(
+      Scope* scope, const std::string& subgraph_partition_config_buffer) {
+    auto var = scope->Var("NNADAPTER_SUBGRAPH_PARTITION_CONFIG_BUFFER");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_partition_config_buffer;
+  }
+
+  static std::string NNAdapterSubgraphPartitionConfigBuffer(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_SUBGRAPH_PARTITION_CONFIG_BUFFER");
     if (!var) return "";
     return var->Get<std::string>();
   }
@@ -544,6 +572,10 @@ class Context<TargetType::kX86> {
   void CopySharedTo(X86Context* ctx) {}
 
   std::string name() const { return "X86Context"; }
+
+  SSEType sse_level() { return device_sse_level(); }
+  AVXType avx_level() { return device_avx_level(); }
+  FMAType fma_level() { return device_fma_level(); }
 
  private:
   // overall information

@@ -259,6 +259,160 @@ int PrecisionLength(NNAdapterOperandPrecisionCode precision) {
   return 0;
 }
 
+NNAdapterOperandPrecisionCode FluidDataType2NNAdapterTensorPrecisionCode(
+    int dtype_code) {
+  NNAdapterOperandPrecisionCode precision_code = NNADAPTER_TENSOR_FLOAT32;
+  switch (dtype_code) {
+    case 0:  // BOOL = 0;
+      precision_code = NNADAPTER_TENSOR_BOOL8;
+      break;
+    case 1:  // INT16 = 1
+      precision_code = NNADAPTER_TENSOR_INT16;
+      break;
+    case 2:  // INT32 = 2
+      precision_code = NNADAPTER_TENSOR_INT32;
+      break;
+    case 3:  // INT64 = 3
+      precision_code = NNADAPTER_TENSOR_INT64;
+      break;
+    case 4:  // FP16 = 4
+      precision_code = NNADAPTER_TENSOR_FLOAT16;
+      break;
+    case 5:  // FP32 = 5
+      precision_code = NNADAPTER_TENSOR_FLOAT32;
+      break;
+    case 6:  // FP64 = 6
+      precision_code = NNADAPTER_TENSOR_FLOAT64;
+      break;
+    case 20:  // UINT8 = 20
+      precision_code = NNADAPTER_TENSOR_UINT8;
+      break;
+    case 21:  // INT8 = 21
+      precision_code = NNADAPTER_TENSOR_INT8;
+      break;
+    default:
+      LOG(FATAL) << "Unsupported data type: " << dtype_code;
+      break;
+  }
+  return precision_code;
+}
+
+NNAdapterOperandPrecisionCode FluidDataType2NNAdapterScalarPrecisionCode(
+    int dtype_code) {
+  NNAdapterOperandPrecisionCode precision_code = NNADAPTER_FLOAT32;
+  switch (dtype_code) {
+    case 0:                              // BOOL = 0;
+      precision_code = NNADAPTER_BOOL8;  // NNADAPTER_BOOL8 = 0
+      break;
+    case 1:                              // INT16 = 1
+      precision_code = NNADAPTER_INT16;  // NNADAPTER_INT16 = 3
+      break;
+    case 2:                              // INT32 = 2
+      precision_code = NNADAPTER_INT32;  // NNADAPTER_INT32 = 6
+      break;
+    case 3:                              // INT64 = 3
+      precision_code = NNADAPTER_INT64;  // NNADAPTER_INT64 = 7
+      break;
+    case 4:                                // FP16 = 4
+      precision_code = NNADAPTER_FLOAT16;  // NNADAPTER_FLOAT16 = 9
+      break;
+    case 5:                                // FP32 = 5
+      precision_code = NNADAPTER_FLOAT32;  // NNADAPTER_FLOAT32 = 10
+      break;
+    case 6:                                // FP64 = 6
+      precision_code = NNADAPTER_FLOAT64;  // NNADAPTER_FLOAT64 = 11
+      break;
+    case 20:                             // UINT8 = 20
+      precision_code = NNADAPTER_UINT8;  // NNADAPTER_UINT8 = 2
+      break;
+    case 21:                            // INT8 = 21
+      precision_code = NNADAPTER_INT8;  // NNADAPTER_INT8 = 1
+      break;
+    default:
+      LOG(FATAL) << "Unsupported data type: " << dtype_code;
+      break;
+  }
+  return precision_code;
+}
+
+NNAdapterOperandPrecisionCode Precision2NNAdapterTensorPrecisionCode(
+    PrecisionType precision) {
+  NNAdapterOperandPrecisionCode precision_code = NNADAPTER_TENSOR_FLOAT32;
+  switch (precision) {
+    case PRECISION(kFloat):
+      precision_code = NNADAPTER_TENSOR_FLOAT32;
+      break;
+    case PRECISION(kInt8):
+      precision_code = NNADAPTER_TENSOR_INT8;
+      break;
+    case PRECISION(kInt32):
+      precision_code = NNADAPTER_TENSOR_INT32;
+      break;
+    case PRECISION(kFP16):
+      precision_code = NNADAPTER_TENSOR_FLOAT16;
+      break;
+    case PRECISION(kBool):
+      precision_code = NNADAPTER_TENSOR_BOOL8;
+      break;
+    case PRECISION(kInt64):
+      precision_code = NNADAPTER_TENSOR_INT64;
+      break;
+    case PRECISION(kInt16):
+      precision_code = NNADAPTER_TENSOR_INT16;
+      break;
+    case PRECISION(kUInt8):
+      precision_code = NNADAPTER_TENSOR_UINT16;
+      break;
+    case PRECISION(kFP64):
+      precision_code = NNADAPTER_TENSOR_FLOAT64;
+      break;
+    default:
+      LOG(FATAL) << "Unsupported data type: "
+                 << lite_api::PrecisionToStr(precision);
+      break;
+  }
+  return precision_code;
+}
+
+NNAdapterOperandPrecisionCode Precision2NNAdapterScalarPrecisionCode(
+    PrecisionType precision) {
+  NNAdapterOperandPrecisionCode precision_code = NNADAPTER_FLOAT32;
+  switch (precision) {
+    case PRECISION(kFloat):
+      precision_code = NNADAPTER_FLOAT32;
+      break;
+    case PRECISION(kInt8):
+      precision_code = NNADAPTER_INT8;
+      break;
+    case PRECISION(kInt32):
+      precision_code = NNADAPTER_INT32;
+      break;
+    case PRECISION(kFP16):
+      precision_code = NNADAPTER_FLOAT16;
+      break;
+    case PRECISION(kBool):
+      precision_code = NNADAPTER_BOOL8;
+      break;
+    case PRECISION(kInt64):
+      precision_code = NNADAPTER_INT64;
+      break;
+    case PRECISION(kInt16):
+      precision_code = NNADAPTER_INT16;
+      break;
+    case PRECISION(kUInt8):
+      precision_code = NNADAPTER_UINT16;
+      break;
+    case PRECISION(kFP64):
+      precision_code = NNADAPTER_FLOAT64;
+      break;
+    default:
+      LOG(FATAL) << "Unsupported data type: "
+                 << lite_api::PrecisionToStr(precision);
+      break;
+  }
+  return precision_code;
+}
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite

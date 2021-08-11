@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -132,7 +132,14 @@ void TestCast(Place place, float abs_error, int in_dtype, int out_dtype) {
 TEST(Cast, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
@@ -145,11 +152,13 @@ TEST(Cast, precision) {
 
 // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
 // SIZE_T = 19;UINT8 = 20;INT8 = 21;
-#if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_HUAWEI_ASCEND_NPU) && \
+    !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   TestCast(place, abs_error, 20, 5);
 #endif
   TestCast(place, abs_error, 2, 5);
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU) || \
+    defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   TestCast(place, abs_error, 3, 5);
   TestCast(place, abs_error, 5, 3);
 #endif

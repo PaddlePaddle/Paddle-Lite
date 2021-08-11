@@ -31,15 +31,11 @@ add_subdirectory(operators)
 add_subdirectory(kernels)
 add_subdirectory(core)
 add_subdirectory(model_parser)
-add_subdirectory(fluid)
 add_subdirectory(api)
 
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(tests)
     add_subdirectory(tools)
-endif()
-if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT LITE_ON_TINY_PUBLISH)
-  add_subdirectory(gen_code)
 endif()
 
 if (WITH_TESTING)
@@ -368,12 +364,10 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                 COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                 COMMAND cp "${CMAKE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-                COMMAND cp "${CMAKE_BINARY_DIR}/lite/gen_code/paddle_code_generator" "${INFER_LITE_PUBLISH_ROOT}/bin"
                 COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/cv/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                 )
             if(NOT IOS)
-                add_dependencies(publish_inference_cxx_lib paddle_code_generator)
                 add_dependencies(publish_inference_cxx_lib bundle_full_api)
                 add_dependencies(publish_inference_cxx_lib bundle_light_api)
                 add_dependencies(publish_inference_cxx_lib test_model_bin)

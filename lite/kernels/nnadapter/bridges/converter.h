@@ -39,11 +39,22 @@ class Converter {
   // Scalar or tensor constant operand with basic type
   NNAdapterOperand* AddBool8ConstantOperand(bool value);
   NNAdapterOperand* AddInt32ConstantOperand(int32_t value);
+  NNAdapterOperand* AddInt64ConstantOperand(int64_t value);
   NNAdapterOperand* AddFloat32ConstantOperand(float value);
+  NNAdapterOperand* AddFloat64ConstantOperand(double value);
+  NNAdapterOperand* AddBool8ConstantOperand(bool* values,
+                                            const DDim& dimensions,
+                                            bool copy = true);
   NNAdapterOperand* AddInt32ConstantOperand(int32_t* values,
                                             const DDim& dimensions,
                                             bool copy = true);
+  NNAdapterOperand* AddInt64ConstantOperand(int64_t* values,
+                                            const DDim& dimensions,
+                                            bool copy = true);
   NNAdapterOperand* AddFloat32ConstantOperand(float* values,
+                                              const DDim& dimensions,
+                                              bool copy = true);
+  NNAdapterOperand* AddFloat64ConstantOperand(double* values,
                                               const DDim& dimensions,
                                               bool copy = true);
   // Quant8 constant operand with symmetric per-layer quantizion
@@ -76,7 +87,18 @@ class Converter {
                                              const std::string& name = "");
   NNAdapterOperand* AddFloat32VariableOperand(const DDim& dimensions,
                                               const std::string& name = "");
-
+  NNAdapterOperand* AddFloat64VariableOperand(const DDim& dimensions,
+                                              const std::string& name = "");
+  NNAdapterOperand* AddInt32VariableOperand(const DDim& dimensions,
+                                            const std::string& name = "");
+  NNAdapterOperand* AddInt64VariableOperand(const DDim& dimensions,
+                                            const std::string& name = "");
+  NNAdapterOperand* AddVariableOperand(
+      const DDim& dimensions,
+      const std::string& name = "",
+      NNAdapterOperandPrecisionCode precision = NNADAPTER_TENSOR_FLOAT32);
+  NNAdapterOperand* AddConstantOperand(const Tensor* tensor);
+  NNAdapterOperand* AddOperand(const Tensor* tensor, const std::string& name);
   // NNAdapter operation
   NNAdapterOperation* AddOperation(NNAdapterOperationType type);
   void SetOperation(NNAdapterOperation* operation,

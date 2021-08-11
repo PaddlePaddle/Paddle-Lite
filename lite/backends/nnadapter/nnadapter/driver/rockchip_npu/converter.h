@@ -130,10 +130,8 @@ class Program {
       tensors_;
   std::shared_ptr<rk::nn::Graph> graph_{nullptr};
   std::shared_ptr<rk::nn::Exection> execution_{nullptr};
-  std::vector<rk::nn::InputInfo> input_info_;
-  std::vector<rk::nn::OutputInfo> output_info_;
-  std::vector<int32_t> input_zero_points_;
-  std::vector<int32_t> output_zero_points_;
+  std::vector<NNAdapterOperandType> input_types_;
+  std::vector<NNAdapterOperandType> output_types_;
   std::string dump_graph_path_;
   std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };

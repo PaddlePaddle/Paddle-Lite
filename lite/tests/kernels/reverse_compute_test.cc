@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -32,14 +32,9 @@ class ReverseComputeTester : public arena::TestCase {
  public:
   ReverseComputeTester(const Place& place,
                        const std::string& alias,
-                       std::vector<int>& axis_,
-                       int n,
-                       int c,
-                       int h,
-                       int w)
-      : TestCase(place, alias), alias_(alias), axis_(axis_) {
-    dims_ = DDim(std::vector<int64_t>({n, c, h, w}));
-  }
+                       std::vector<int> axis,
+                       DDim dims)
+      : TestCase(place, alias), alias_(alias), axis_(axis), dims_(dims) {}
 
   template <typename indtype>
   void ReverseAB(indtype* x, int size, int a, int b) {
@@ -116,8 +111,9 @@ void TestReverse(const Place& place) {
           for (int w : {9, 18}) {
             std::vector<std::string> alias_vec{"fp32"};
             for (std::string alias : alias_vec) {
+              DDim dims{{n, c, h, w}};
               std::unique_ptr<arena::TestCase> tester(
-                  new ReverseComputeTester(place, alias, axis, n, c, h, w));
+                  new ReverseComputeTester(place, alias, axis, dims));
               arena::Arena arena(std::move(tester), place, 2e-5);
               arena.TestPrecision();
             }

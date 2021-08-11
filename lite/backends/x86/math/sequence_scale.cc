@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/sequence_scale.h"
-#include "lite/fluid/lod.h"
+#include "lite/backends/x86/fluid/lod.h"
 
 namespace paddle {
 namespace lite {
