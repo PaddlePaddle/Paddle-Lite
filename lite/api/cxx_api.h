@@ -21,7 +21,7 @@
 #include <vector>
 #include "lite/api/paddle_api.h"
 #include "lite/core/op_lite.h"
-#include "lite/core/optimizer.h"
+#include "lite/core/optimizer/optimizer.h"
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
