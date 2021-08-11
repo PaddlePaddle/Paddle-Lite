@@ -66,6 +66,8 @@ USE_SUBGRAPH_BRIDGE(
     elementwise_div,
     kNNAdapter,
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+USE_SUBGRAPH_BRIDGE(elementwise_max, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(elementwise_min, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(
     fusion_elementwise_add_activation,
     kNNAdapter,
@@ -82,6 +84,12 @@ USE_SUBGRAPH_BRIDGE(
     fusion_elementwise_div_activation,
     kNNAdapter,
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_min_activation,
+                    kNNAdapter,
+                    "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_max_activation,
+                    kNNAdapter,
+                    "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(
     scale,
     kNNAdapter,
