@@ -55,9 +55,11 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
   InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
   InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
 
+  exec_scope_ = program.exec_scope();
+  
   ApplyPasses(&graphs_);
 
-  exec_scope_ = program.exec_scope();
+  
 
   return GenRuntimeProgram(&graphs_);
 }
@@ -114,7 +116,7 @@ void Optimizer::ApplyPasses(
     } else {
       // Check the pass whether it is supported for processing subblocks
       if (kSubblockUnsupportedPasses.count(pass->name())) {
-        pass->Apply((*graphes)[kRootBlockIdx]);
+        pass->Apply((*graphes)[kRootBlockIdx], exec_scope_);
       } else {
         for (auto& graph : *graphes) {
           pass->Apply(graph);

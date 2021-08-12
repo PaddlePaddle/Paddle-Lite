@@ -21,6 +21,7 @@ add_kernel(argmax_compute_host Host basic SRCS argmax_compute.cc DEPS ${lite_ker
 add_kernel(assign_value_compute_host Host basic SRCS assign_value_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(yolo_box_compute_host Host basic SRCS yolo_box_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(write_back_compute_host Host basic SRCS write_back_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(memory_optimize_compute_host Host basic SRCS memory_optimize_compute.cc DEPS ${lite_kernel_deps})
 
 # extra kernels
 add_kernel(reverse_compute_host Host extra SRCS reverse_compute.cc DEPS ${lite_kernel_deps} math_host)

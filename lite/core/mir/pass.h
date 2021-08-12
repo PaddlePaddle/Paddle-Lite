@@ -43,6 +43,9 @@ class Pass {
 
   virtual void Apply(const std::unique_ptr<SSAGraph>& graph) = 0;
 
+  virtual void Apply(const std::unique_ptr<SSAGraph>& graph, Scope* exec_scope) { };
+
+
   void set_name(const std::string& name) { name_ = name; }
   const std::string& name() const { return name_; }
 
