@@ -56,7 +56,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         target_link_libraries(paddle_light_api_shared shlwapi.lib)
     endif()
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${huawei_ascend_npu_kernels} ${rknpu_kernels} ${apu_kernels})
-   if(${HOST_SYSTEM} MATCHES "macosx" AND NOT (ARM_TARGET_LANG STREQUAL "clang"))
+   if(${HOST_SYSTEM} MATCHES "macosx" AND NOT (ARM_TARGET_OS STREQUAL "android"))
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/exported_symbols.lds")
         set(LINK_FLAGS "-Wl,-exported_symbols_list ${LINK_MAP_FILE}")
         add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND :)
