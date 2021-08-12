@@ -243,7 +243,37 @@ void MemoryOptimizePass::MakeReusePlan(
 }
 
 void MemoryOptimizePass::PerformReusePlan(
-    SSAGraph* graph, const std::map<std::string, std::string>& reuse_table) {
+    SSAGraph* graph,
+    const std::map<std::string, std::string>& reuse_table,
+    Scope* exec_scope) {
+  Place valid_places(
+      TargetType::kHost, PrecisionType::kAny, DataLayoutType::kAny);
+
+  std::vector<std::string> memory_reuse_table;
+  for (auto it = reuse_table.begin(); it != reuse_table.end(); it++) {
+    memory_reuse_table.emplace_back(it->first);
+    memory_reuse_table.emplace_back(it->second);
+  }
+
+  std::list<mir::Node>& node_storage = graph->mutable_nodes();
+  node_storage.insert(node_storage.begin(), mir::Node());
+  auto& new_node = node_storage.front();
+
+  std::shared_ptr<OpLite> memory_optimize_op =
+      LiteOpRegistry::Global().Create("memory_optimize");
+  memory_optimize_op->SetValidPlaces({valid_places});
+  cpp::OpDesc opdesc;
+  opdesc.SetType("memory_optimize");
+  opdesc.SetAttr<std::vector<std::string>>("memory_reuse_table",
+                                           memory_reuse_table);
+  memory_optimize_op->Attach(opdesc, exec_scope);
+
+  auto kernels = memory_optimize_op->CreateKernels({valid_places});
+
+  new_node.AsStmt(
+      memory_optimize_op->Type(), std::move(kernels), memory_optimize_op);
+
+  /*
   int node_append_idx = 0;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
@@ -316,9 +346,11 @@ void MemoryOptimizePass::PerformReusePlan(
     }
     graph->CheckValid();
   }
+  */
 }
 
-void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph,
+                               Scope* exec_scope) {
 #ifdef LITE_WITH_XPU
   const char* xpu_mem_optimize = std::getenv("XPU_MEMORY_OPTIMIZE");
   if (xpu_mem_optimize == nullptr || std::strlen(xpu_mem_optimize) != 1 ||
@@ -342,7 +374,7 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto& ele : lifecycles) {
     std::map<std::string, std::string> node2cluster;
     MakeReusePlan(ele.second, &node2cluster);
-    PerformReusePlan(graph.get(), node2cluster);
+    PerformReusePlan(graph.get(), node2cluster, exec_scope);
   }
 }
 
@@ -351,7 +383,11 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
-    .BindTargets({TARGET(kARM), TARGET(kOpenCL), TARGET(kXPU)})
+    .BindTargets({TARGET(kARM),
+                  TARGET(kHost),
+                  TARGET(kX86),
+                  TARGET(kOpenCL),
+                  TARGET(kXPU)})
     .ExcludeTargets({TARGET(kNPU),
                      TARGET(kBM),
                      TARGET(kRKNPU),

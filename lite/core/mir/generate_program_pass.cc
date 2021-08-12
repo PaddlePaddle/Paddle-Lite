@@ -40,10 +40,15 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   insts_.emplace_back();
+  Node* memory_optimize_node{nullptr};
   for (auto& item : nodes_in_order) {
     if (item->IsStmt()) {
       auto& stmt = item->AsStmt();
       VLOG(4) << stmt;
+      if (stmt.op_type() == "memory_optimize") {
+        memory_optimize_node = item;
+        continue;
+      }
 #ifdef LITE_WITH_CUDA
       if (stmt.kernels().front()->target() == TargetType::kCUDA) {
         stmt.kernels()
@@ -61,6 +66,12 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       insts_.back().emplace_back(stmt.op(), std::move(stmt.kernels().front()));
     }
   }
+
+  CHECK(memory_optimize_node);
+  insts_.back().insert(
+      insts_.back().begin(),
+      Instruction(memory_optimize_node->AsStmt().op(),
+                  std::move(memory_optimize_node->AsStmt().kernels().front())));
 
   // Update precision info after opt optimizations are operated.
   std::vector<std::string> skip_ops = {

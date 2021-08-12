@@ -38,7 +38,8 @@ class MemoryOptimizePass : public ProgramPass {
  public:
   using lifecycle_t = std::pair<int, int>;
   using lifecycle_map_t = std::map<std::string, lifecycle_t>;
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  void Apply(const std::unique_ptr<SSAGraph>& graph, Scope* exec_scope);
+  void Apply(const std::unique_ptr<SSAGraph>& graph) {}
 
  private:
   void CollectLifeCycleByDevice(
@@ -46,7 +47,8 @@ class MemoryOptimizePass : public ProgramPass {
   void MakeReusePlan(const lifecycle_map_t& lifecycles,
                      std::map<std::string, std::string>* node2cluster);
   void PerformReusePlan(SSAGraph* graph,
-                        const std::map<std::string, std::string>& reuse_table);
+                        const std::map<std::string, std::string>& reuse_table,
+                        Scope* exec_scope);
 
  private:
   int max_lifecycle_{-1};
