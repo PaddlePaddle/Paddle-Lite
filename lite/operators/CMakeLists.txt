@@ -57,6 +57,7 @@ add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
 add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
 add_operator(write_back_op basic SRCS write_back_op.cc DEPS ${op_DEPS})
 add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc DEPS ${op_DEPS})
+add_operator(memory_optimize_op basic SRCS memory_optimize_op.cc DEPS ${op_DEPS})
 
 add_operator(pow_op extra SRCS pow_op.cc DEPS ${op_DEPS})
 add_operator(sign_op extra SRCS sign_op.cc DEPS ${op_DEPS})

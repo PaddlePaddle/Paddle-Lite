@@ -113,6 +113,11 @@ struct SubgraphParam : ParamBase {
   Scope* exec_scope{nullptr};
 };
 
+struct MemoryOptimizeparam : ParamBase {
+  std::vector<std::string> memory_reuse_table;
+  Scope* exec_scope{nullptr};
+};
+
 /// -------------------------- NN operators ------------------------------------
 
 struct FcParam : ParamBase {
