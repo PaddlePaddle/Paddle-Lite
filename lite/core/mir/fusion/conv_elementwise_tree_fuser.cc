@@ -33,10 +33,9 @@ void ConvElementwiseTreeFuser::BuildPattern() {
                                 ->AsInput();
 
   // create intermediate nodes
-  auto* conv_output = VarNode("conv_output")
-                          ->assert_is_op_output(conv_type_, "Output")
-                          ->assert_is_op_input(elementwise_type_, "Y")
-                          ->AsIntermediate();
+  conv_output_ = VarNode("conv_output")
+                     ->assert_is_op_output(conv_type_, "Output")
+                     ->assert_is_op_input(elementwise_type_, "Y");
 
   // create op nodes
   auto elementwise_teller = [](const Node* node) -> bool {
@@ -55,12 +54,10 @@ void ConvElementwiseTreeFuser::BuildPattern() {
     return (axis == -1) && (!fuse_scale) &&
            ((!has_act_type) || (has_act_type && act_type == "relu"));
   };
-  auto* conv =
-      OpNode("conv", conv_type_)->assert_is_op(conv_type_)->AsIntermediate();
-  auto* elementwise = OpNode("elementwise", elementwise_type_)
-                          ->assert_is_op(elementwise_type_)
-                          ->assert_node_satisfied(elementwise_teller)
-                          ->AsIntermediate();
+  conv_ = OpNode("conv", conv_type_)->assert_is_op(conv_type_);
+  elementwise_ = OpNode("elementwise", elementwise_type_)
+                     ->assert_is_op(elementwise_type_)
+                     ->assert_node_satisfied(elementwise_teller);
 
   // create output node
   auto* elementwise_output = VarNode("elementwise_output")
@@ -81,8 +78,8 @@ void ConvElementwiseTreeFuser::BuildPattern() {
                            ->AsInput();
     conv_inputs.push_back(conv_alpha);
   }
-  conv->LinksFrom(conv_inputs).LinksTo({conv_output});
-  elementwise->LinksFrom({elementwise_input, conv_output})
+  conv_->LinksFrom(conv_inputs).LinksTo({conv_output_});
+  elementwise_->LinksFrom({elementwise_input, conv_output_})
       .LinksTo({elementwise_output});
 }
 
@@ -136,7 +133,9 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
             << conv_filter_dims << ". Skip this pass!";
     return;
   }
-
+  conv_output_->AsIntermediate();
+  conv_->AsIntermediate();
+  elementwise_->AsIntermediate();
   auto op_desc = GenOpDesc(matched);
   auto conv_op_new = LiteOpRegistry::Global().Create(conv_type_);
   auto conv_op_old = matched.at("conv")->stmt()->op();
