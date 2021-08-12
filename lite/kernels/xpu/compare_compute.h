@@ -23,8 +23,9 @@ namespace xpu {
 
 typedef enum { LESS_THAN = 0 } CompareType;
 
-template <int CompType, typename T>
-class CompareCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
+template <int CompType, PrecisionType PType, typename T>
+class CompareCompute
+    : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
 

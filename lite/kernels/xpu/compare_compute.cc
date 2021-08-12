@@ -23,11 +23,11 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <int CompType, typename T>
-void CompareCompute<CompType, T>::CompareData(const T* x,
-                                              const T* y,
-                                              bool* z,
-                                              int len) {
+template <int CompType, PrecisionType PType, typename T>
+void CompareCompute<CompType, PType, T>::CompareData(const T* x,
+                                                     const T* y,
+                                                     bool* z,
+                                                     int len) {
   auto& ctx = this->ctx_->template As<XPUContext>();
   int r = 0;
   switch (CompType) {
@@ -46,8 +46,8 @@ void CompareCompute<CompType, T>::CompareData(const T* x,
   CHECK_EQ(r, 0);
 }
 
-template <int CompType, typename T>
-void CompareCompute<CompType, T>::Run() {
+template <int CompType, PrecisionType PType, typename T>
+void CompareCompute<CompType, PType, T>::Run() {
   auto& param = this->template Param<operators::CompareParam>();
   const size_t x_size = param.X->numel();
   const size_t y_size = param.Y->numel();
@@ -67,8 +67,10 @@ void CompareCompute<CompType, T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using less_than_float = paddle::lite::kernels::xpu::
-    CompareCompute<paddle::lite::kernels::xpu::CompareType::LESS_THAN, float>;
+using less_than_float = paddle::lite::kernels::xpu::CompareCompute<
+    paddle::lite::kernels::xpu::CompareType::LESS_THAN,
+    PRECISION(kFloat),
+    float>;
 REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
@@ -82,34 +84,36 @@ REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_float, def)
     .BindPaddleOpVersion("less_than", 1)
     .Finalize();
 
-// using less_than_int32 = paddle::lite::kernels::xpu::CompareCompute<
-//     paddle::lite::kernels::xpu::CompareType::LESS_THAN,
-//     int32_t>;
-// REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_int32, def)
-//     .BindInput("X",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kXPU), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
-//     .BindInput("Y",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kXPU), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
-//     .BindOutput("Out",
-//                 {LiteType::GetTensorTy(
-//                     TARGET(kXPU), PRECISION(kBool), DATALAYOUT(kAny), -1)})
-//     .BindPaddleOpVersion("less_than", 1)
-//     .Finalize();
+using less_than_int32 = paddle::lite::kernels::xpu::CompareCompute<
+    paddle::lite::kernels::xpu::CompareType::LESS_THAN,
+    PRECISION(kInt32),
+    int>;
+REGISTER_LITE_KERNEL(less_than, kXPU, kInt32, kAny, less_than_int32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kXPU), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(
+                   TARGET(kXPU), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kXPU), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindPaddleOpVersion("less_than", 1)
+    .Finalize();
 
-// using less_than_int64 = paddle::lite::kernels::xpu::CompareCompute<
-//     paddle::lite::kernels::xpu::CompareType::LESS_THAN,
-//     int64_t>;
-// REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_int64, def)
-//     .BindInput("X",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kXPU), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
-//     .BindInput("Y",
-//                {LiteType::GetTensorTy(
-//                    TARGET(kXPU), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
-//     .BindOutput("Out",
-//                 {LiteType::GetTensorTy(
-//                     TARGET(kXPU), PRECISION(kBool), DATALAYOUT(kAny), -1)})
-//     .BindPaddleOpVersion("less_than", 1)
-//     .Finalize();
+using less_than_int64 = paddle::lite::kernels::xpu::CompareCompute<
+    paddle::lite::kernels::xpu::CompareType::LESS_THAN,
+    PRECISION(kInt64),
+    int64_t>;
+REGISTER_LITE_KERNEL(less_than, kXPU, kInt64, kAny, less_than_int64, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kXPU), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(
+                   TARGET(kXPU), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kXPU), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindPaddleOpVersion("less_than", 1)
+    .Finalize();
