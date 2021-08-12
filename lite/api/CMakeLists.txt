@@ -5,8 +5,13 @@ else()
 endif()
 
 if (LITE_ON_TINY_PUBLISH)
+  if(ARM_TARGET_LANG STREQUAL "clang")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+    set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
+  else()
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+  endif()
 endif()
 
 set(light_lib_DEPS light_api paddle_api paddle_api_light)
