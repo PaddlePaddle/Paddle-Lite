@@ -54,13 +54,11 @@ namespace lite {
 
 // Malloc memory for a specific Target. All the targets should be an element in
 // the `switch` here.
-LITE_API void* TargetMalloc(TargetType target, size_t size);
+void* TargetMalloc(TargetType target, size_t size);
 
 // Free memory for a specific Target. All the targets should be an element in
 // the `switch` here.
-void LITE_API TargetFree(TargetType target,
-                         void* data,
-                         std::string free_flag = "");
+void TargetFree(TargetType target, void* data, std::string free_flag = "");
 
 // Copy a buffer from host to another target.
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size);

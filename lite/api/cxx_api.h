@@ -41,7 +41,7 @@ std::vector<std::string> GetAllOps();
 /*
  * Predictor for inference, input a model, it will optimize and execute it.
  */
-class LITE_API Predictor {
+class Predictor {
  public:
   // Create an empty predictor.
   Predictor() {

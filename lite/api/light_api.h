@@ -38,7 +38,7 @@ namespace lite {
  * The light weight predictor, mainly for mobile. It loads an optimized model,
  * and will not depend on the MIR or perform latter optimization.
  */
-class LITE_API LightPredictor {
+class LightPredictor {
  public:
   // constructor function of LightPredictor, `lite_model_file` refers to data in
   // model file or buffer,`model_from_memory` refers to whther to load model
