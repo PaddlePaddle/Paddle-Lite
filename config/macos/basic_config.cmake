@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## Setting Cmake Env
-set(CMAKE_CXX_STANDARD 11)
+## Setting Cmake Env ##
+if(LITE_WITH_XTCL)
+  set(CMAKE_CXX_STANDARD 14)
+else()
+  set(CMAKE_CXX_STANDARD 11)
+endif()
 
 ## Setting OS
 set(OS_LIST "android" "armlinux" "ios" "ios64" "armmacos")
@@ -54,7 +58,9 @@ else()
   endif()
 endif()
 
-include(cross_compiling/ios)
+if(ARM_TARGET_OS STREQUAL "armmacos")
+  include(cross_compiling/armmacos)
+endif()
 include(cross_compiling/host)
 
 ## Setting Lib Type
@@ -81,11 +87,18 @@ endif()
 
 ## Build Type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
+    if(WIN32)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
+        FORCE)
+    else()
+    
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
+            FORCE)
+    endif()
 endif()
-if(NOT THIRD_PARTY_BUILD_TYPE)
-    set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
-endif()
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 ## TODO: Double check needed
 set(WITH_GPU OFF CACHE STRING
@@ -105,3 +118,13 @@ set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
 
 ## TODO: Double check needed
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
+
+## Others
+if (LITE_WITH_PYTHON)
+    include(external/python)    # download, build, install python
+    include(external/pybind11)    # download, build, install pybind11
+endif()
+
+if (LITE_WITH_OPENCL)
+    include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
+endif()

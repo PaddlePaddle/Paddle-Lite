@@ -13,11 +13,7 @@
 # limitations under the License.
 
 ## Setting Cmake Env ##
-if(LITE_WITH_XTCL)
-  set(CMAKE_CXX_STANDARD 14)
-else()
-  set(CMAKE_CXX_STANDARD 11)
-endif()
+set(CMAKE_CXX_STANDARD 11)
 
 ## Setting OS
 set(OS_LIST "android" "armlinux" "ios" "ios64" "armmacos")
@@ -58,9 +54,7 @@ else()
   endif()
 endif()
 
-if(ARM_TARGET_OS STREQUAL "armmacos")
-  include(cross_compiling/armmacos)
-endif()
+include(cross_compiling/android)
 include(cross_compiling/host)
 
 ## Setting Lib Type
@@ -87,13 +81,24 @@ endif()
 
 ## Build Type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
+    if(WIN32)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
+        FORCE)
+    else()
+    
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
+            FORCE)
+    endif()
 endif()
-if(NOT THIRD_PARTY_BUILD_TYPE)
-    set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
-endif()
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-##
+## Python Setting
+set(LITE_WITH_PYTHON OFF CACHE STRING
+"Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+
+## TODO: Double check needed
 set(WITH_GPU OFF CACHE STRING
 "Disable GPU when cross-compiling for Android and iOS" FORCE)
 set(WITH_DSO OFF CACHE STRING
@@ -105,9 +110,14 @@ set(WITH_RDMA OFF CACHE STRING
 set(WITH_MKL OFF CACHE STRING
 "Disable MKL when cross-compiling for Android and iOS" FORCE)
 
-## Third Party
+## Third party
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
         "A path setting third party libraries download & build directories.")
 
 ## TODO: Double check needed
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
+
+## Others
+if (LITE_WITH_OPENCL)
+    include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
+endif()

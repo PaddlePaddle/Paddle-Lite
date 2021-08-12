@@ -22,11 +22,45 @@ set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(system)
-include(new_build_config/${PLATFORM}_config.cmake)
-
+include(${PADDLE_SOURCE_DIR}/config/${PLATFORM}/basic_config.cmake)
 project(paddle CXX C)
+message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: "
+        "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: "
+        "${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
+message(STATUS "AR tools: ${CMAKE_AR}")
 
-include(new_build_config/compile_options.cmake)
+if(NOT APPLE)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
+endif()
+
+if(WIN32)
+    option(MSVC_STATIC_CRT "use static C Runtime library by default" ON)
+
+    set(CMAKE_SUPPRESS_REGENERATION ON)
+    set(CMAKE_STATIC_LIBRARY_PREFIX lib)
+    add_definitions("/DGOOGLE_GLOG_DLL_DECL=")
+
+    if(MSVC_STATIC_CRT)
+      set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MTd")
+      set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} /bigobj /MT")
+      set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /bigobj /MTd")
+      set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} /bigobj /MT")
+    else(MSVC_STATIC_CRT)
+      set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MDd")
+      set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} /bigobj /MD")
+      set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /bigobj /MDd")
+      set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} /bigobj /MD")
+    endif(MSVC_STATIC_CRT)
+
+    add_compile_options(/wd4068 /wd4129 /wd4244 /wd4267 /wd4297 /wd4530 /wd4577 /wd4819 /wd4838)
+    add_compile_options(/MP)
+    message(STATUS "Using parallel compiling (/MP)")
+    set(PADDLE_LINK_FLAGS "/IGNORE:4006 /IGNORE:4098 /IGNORE:4217 /IGNORE:4221")
+    set(CMAKE_STATIC_LINKER_FLAGS  "${CMAKE_STATIC_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
+endif()
 
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     find_package(CUDA QUIET)
@@ -103,23 +137,6 @@ include_directories("${PADDLE_SOURCE_DIR}")
 set(LITE_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}")
 include_directories("${LITE_GENERATED_INCLUDE_DIR}")
 
-if (LITE_WITH_PYTHON)
-    include(external/python)    # download, build, install python
-    include(external/pybind11)    # download, build, install pybind11
-endif()
-
-if(LITE_WITH_RKNPU)
-   include(device/rknpu)
-endif()
-
-if(LITE_WITH_IMAGINATION_NNA)
-	include(device/imagination_nna)
-endif()
-
-if(LITE_WITH_INTEL_FPGA)
-	include(device/intel_fpga)
-endif()
-
 # flatbuffer module for loading model
 if(LITE_UPDATE_FBS_HEAD)
     include(external/flatbuffers)
@@ -131,11 +148,6 @@ else()
             COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/tune_cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
             )
-endif()
-
-# for opencl
-if (LITE_WITH_OPENCL)
-    include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
 endif()
 
 # for mobile
@@ -223,6 +235,10 @@ include(version)            # set PADDLE_VERSION
 if(NOT APPLE)
   include(flags)
 endif()
+
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+
 
 if(APPLE)
     if(NOT DEFINED ENABLE_ARC)

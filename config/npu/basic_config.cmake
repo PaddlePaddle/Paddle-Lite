@@ -81,11 +81,18 @@ endif()
 
 ## Build Type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
+    if(WIN32)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
+        FORCE)
+    else()
+    
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
+            FORCE)
+    endif()
 endif()
-if(NOT THIRD_PARTY_BUILD_TYPE)
-    set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
-endif()
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 ## TODO: Double check needed
 set(WITH_GPU OFF CACHE STRING

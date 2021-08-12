@@ -107,7 +107,7 @@ function build_npu {
         -DARM_TARGET_ARCH_ABI=${ARM_ABI} \
         -DARM_TARGET_LANG=${ARM_LANG} \
         -DANDROID_STL_TYPE=${ANDROID_STL} \
-        -DNPU_DDK_ROOT=${DDK_ROOT}
+        -DNPU_DDK_ROOT=${DDK_ROOT} \
         -DPLATFORM=npu
 
     make $TARGET_NAME -j2

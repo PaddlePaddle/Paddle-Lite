@@ -12,12 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## Setting Cmake Env ##
-if(LITE_WITH_XTCL)
-  set(CMAKE_CXX_STANDARD 14)
-else()
-  set(CMAKE_CXX_STANDARD 11)
-endif()
+## Setting Cmake Env
+set(CMAKE_CXX_STANDARD 11)
 
 ## Setting OS
 set(OS_LIST "android" "armlinux" "ios" "ios64" "armmacos")
@@ -58,8 +54,7 @@ else()
   endif()
 endif()
 
-## TODO 确认这里是否可能是android
-include(cross_compiling/armlinux)
+include(cross_compiling/ios)
 include(cross_compiling/host)
 
 ## Setting Lib Type
@@ -86,11 +81,22 @@ endif()
 
 ## Build Type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
+    if(WIN32)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
+        FORCE)
+    else()
+    
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
+            FORCE)
+    endif()
 endif()
-if(NOT THIRD_PARTY_BUILD_TYPE)
-    set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
-endif()
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+
+## Python Setting
+set(LITE_WITH_PYTHON OFF CACHE STRING
+"Disable PYTHON when cross-compiling for Android and iOS" FORCE)
 
 ## TODO: Double check needed
 set(WITH_GPU OFF CACHE STRING
