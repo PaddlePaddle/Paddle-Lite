@@ -16,7 +16,7 @@
 
 #include <memory>
 #include <string>
-#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
+#include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
@@ -45,6 +45,9 @@ class ConvElementwiseTreeFuser : public FuseBase {
   bool conv_has_bias_{false};
   bool conv_has_prelu_alpha_{false};
   std::string elementwise_type_{""};
+  PMNode* conv_output_;
+  PMNode* conv_;
+  PMNode* elementwise_;
 };
 
 }  // namespace fusion
