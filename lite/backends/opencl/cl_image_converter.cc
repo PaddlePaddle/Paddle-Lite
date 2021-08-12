@@ -186,9 +186,13 @@ void CLImageConverterFolder::NCHWToImage(float *tensor,
     size_t width = image_dim[0];
 
     for (size_t h = 0; h < tdim[0]; h++) {
-      for (size_t w = 0; w < tdim[1]; w++) {
-        image[(h * width + w / 4) * 4 + (w % 4)] =
-            Float2Half(tensor[h * tdim[1] + w]);
+      for (size_t w = 0; w < width * 4; w++) {
+        if (w < tdim[1]) {
+          image[(h * width + w / 4) * 4 + (w % 4)] =
+              Float2Half(tensor[h * tdim[1] + w]);
+        } else {
+          image[(h * width + w / 4) * 4 + (w % 4)] = Float2Half(0.f);
+        }
       }
     }
   }
