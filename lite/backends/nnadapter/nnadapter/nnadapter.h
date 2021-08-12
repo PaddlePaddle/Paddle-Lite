@@ -183,22 +183,21 @@ typedef enum {
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
    * H_in, W_in].
-   * * 1: padding_width_left, A NNADAPTER_INT32 scalar.
-   * * 2: padding_width_right, A NNADAPTER_INT32 scalar.
-   * * 3: padding_height_top, A NNADAPTER_INT32 scalar.
-   * * 4: padding_height_bottom, A NNADAPTER_INT32 scalar.
-   * * 5: stride_width, A NNADAPTER_INT32 scalar.
-   * * 6: stride_height, A NNADAPTER_INT32 scalar.
-   * * 7: filter_width, A NNADAPTER_INT32 scalar, filter_width=W_in and
-   * filter_height=H_in represents a global 2-D average pooling.
-   * * 8: filter_height, A NNADAPTER_INT32 scalar, filter_width=W_in and
-   * filter_height=H_in represents a global 2-D average pooling.
-   * * 9: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+   * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
+   * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
+   * NNAdapterPadCode values.
+   * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
+   * height_bottom, width_left, width_right}, or with shape[0] and no data.
+   * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * {kernel_height, kernel_width}.
+   * * 4: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * {height_stride, width_stride}.
+   * * 5: ceil_mode, A NNADAPTER_BOOL8 scalar, whether to use ceil or floor
+   * (default) to compute the output shape. Defaults to false
+   * * 6: count_include_pad, A NNADAPTER_BOOL8 scalar, whether include pad
+   * pixels when calculating values for the edges. Defaults to false
+   * * 7: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
-   * * 10: ceil_mode, A NNADAPTER_BOOL8 scalar, whether to use ceil or floor
-   * (default) to compute the output shape. Defaults to false.
-   * * 11: count_include_pad, A NNADAPTER_BOOL8 scalar, whether include pad
-   * pixels when calculating values for the edges. Defaults to false.
    *
    * Outputs:
    * * 0: output, The output 4-D tensor with shape [N, C_out, H_out, W_out], its
@@ -697,22 +696,21 @@ typedef enum {
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
    * H_in, W_in].
-   * * 1: padding_width_left, A NNADAPTER_INT32 scalar.
-   * * 2: padding_width_right, A NNADAPTER_INT32 scalar.
-   * * 3: padding_height_top, A NNADAPTER_INT32 scalar.
-   * * 4: padding_height_bottom, A NNADAPTER_INT32 scalar.
-   * * 5: stride_width, A NNADAPTER_INT32 scalar.
-   * * 6: stride_height, A NNADAPTER_INT32 scalar.
-   * * 7: filter_width, A NNADAPTER_INT32 scalar, filter_width=W_in and
-   * filter_height=H_in represents a global 2-D max pooling.
-   * * 8: filter_height, A NNADAPTER_INT32 scalar, filter_width=W_in and
-   * filter_height=H_in represents a global 2-D max pooling.
-   * * 9: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
-   * values.
-   * * 10: ceil_mode, A NNADAPTER_BOOL8 scalar, whether to use ceil or floor
+   * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
+   * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
+   * NNAdapterPadCode values.
+   * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
+   * height_bottom, width_left, width_right}, or with shape[0] and no data.
+   * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * {kernel_height, kernel_width}.
+   * * 4: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * {height_stride, width_stride}.
+   * * 5: ceil_mode, A NNADAPTER_BOOL8 scalar, whether to use ceil or floor
    * (default) to compute the output shape. Defaults to false.
-   * * 11: count_include_pad, A NNADAPTER_BOOL8 scalar, whether include pad
-   * pixels when calculating values for the edges. Defaults to false.
+   * * 6: return_indices, A NNADAPTER_BOOL8 scalar, whether to return index of
+   * output. Defaults to false.
+   * * 7: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+   * values.
    *
    * Outputs:
    * * 0: output, The output 4-D tensor with shape [N, C_out, H_out, W_out], its
@@ -727,6 +725,8 @@ typedef enum {
    * filter_height) / stride_height + 1)
    *         W_out = ceil((W_in + padding_width_left + padding_width_right -
    * filter_width) / stride_width + 1)
+   * * 1: indices, a NNADAPTER_TENSOR_INT64 tensor, with the same shape as
+   * output, indicates the indices of the current feature map.
    *
    * Available since version 1.
    */
@@ -1126,6 +1126,21 @@ typedef enum {
   /** Fused ReLU6 activation function. */
   NNADAPTER_FUSED_RELU6 = 3,
 } NNAdapterFuseCode;
+
+/**
+ * Pad types.
+ *
+ * Available since version 1.
+ */
+typedef enum {
+  /** Use explicit pads. */
+  NNADAPTER_PAD_NONE = 0,
+  /** Results in padding evenly to the left/right or up/down of the input such
+     that output has the same height/width dimension as the input.*/
+  NNADAPTER_PAD_SAME = 1,
+  /** No padding. */
+  NNADAPTER_PAD_VALID = 2,
+} NNAdapterPadCode;
 
 /**
  * Device codes.

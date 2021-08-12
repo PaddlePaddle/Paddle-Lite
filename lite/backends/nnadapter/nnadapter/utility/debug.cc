@@ -200,20 +200,26 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_AVERAGE_POOL_2D:
+        input_args = {"input",
+                      "auto_pad",
+                      "pads",
+                      "kernel_shape",
+                      "strides",
+                      "ceil_mode",
+                      "count_include_pad",
+                      "fuse_code"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_MAX_POOL_2D:
         input_args = {"input",
-                      "padding_left",
-                      "padding_right",
-                      "padding_top",
-                      "padding_bottom",
-                      "stride_width",
-                      "stride_height",
-                      "filter_width",
-                      "filter_height",
-                      "fuse_code",
+                      "auto_pad",
+                      "pads",
+                      "kernel_shape",
+                      "strides",
                       "ceil_mode",
-                      "count_include_pad"};
-        output_args = {"output"};
+                      "return_indices",
+                      "fuse_code"};
+        output_args = {"output", "indices"};
         break;
       case NNADAPTER_CONCAT:
         input_args.resize(input_count);

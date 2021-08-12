@@ -101,33 +101,39 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  // Paddings and strides operands
-  auto padding_width_left_operand =
-      converter->AddInt32ConstantOperand(paddings[2]);
-  auto padding_width_right_operand =
-      converter->AddInt32ConstantOperand(paddings[3]);
-  auto padding_height_top_operand =
-      converter->AddInt32ConstantOperand(paddings[0]);
-  auto padding_height_bottom_operand =
-      converter->AddInt32ConstantOperand(paddings[1]);
-  auto stride_width_operand = converter->AddInt32ConstantOperand(strides[1]);
-  auto stride_height_operand = converter->AddInt32ConstantOperand(strides[0]);
-  auto filter_width_operand =
-      converter->AddInt32ConstantOperand(global_pooling ? x_dims[3] : ksize[1]);
-  auto filter_height_operand =
-      converter->AddInt32ConstantOperand(global_pooling ? x_dims[2] : ksize[0]);
+  // Auto_pad operand
+  auto auto_pad_operand = converter->AddInt32ConstantOperand(
+      static_cast<int32_t>(PaddingAlgorithm2PadCode(padding_algorithm)));
+
+  // Pads operand(optional)
+  auto pads_operand = converter->AddInt32ConstantOperand(
+      paddings.data(), DDim({static_cast<int64_t>(paddings.size())}));
+
+  // Kernel_shape operand
+  if (global_pooling) {
+    ksize[0] = x_dims[2];
+    ksize[1] = x_dims[3];
+  }
+  auto kernel_shape_operand = converter->AddInt32ConstantOperand(
+      ksize.data(), DDim({static_cast<int64_t>(ksize.size())}));
+
+  // Strides operand
+  auto strides_operand = converter->AddInt32ConstantOperand(
+      strides.data(), DDim({static_cast<int64_t>(strides.size())}));
+
+  // Ceil_mode(optional)
+  auto ceil_mode_operand = converter->AddBool8ConstantOperand(ceil_mode);
+
+  // Count_include_pad(optional), only for avg_pool
+  auto count_include_pad_operand =
+      converter->AddBool8ConstantOperand(!exclusive);
+
+  // Return_indices(optional), only for max_pool
+  auto return_indices_operand = converter->AddBool8ConstantOperand(false);
 
   // Fuse code operand
   auto fuse_code_operand =
       converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
-
-  // ceil_mode(optional)
-  auto ceil_mode_operand = converter->AddBool8ConstantOperand(ceil_mode);
-
-  // count_include_pad(optional)
-  bool count_include_pad = !exclusive;
-  auto count_include_pad_operand =
-      converter->AddBool8ConstantOperand(count_include_pad);
 
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
@@ -141,23 +147,23 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // 2-D Pooling operation
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand,
-      padding_width_left_operand,
-      padding_width_right_operand,
-      padding_height_top_operand,
-      padding_height_bottom_operand,
-      stride_width_operand,
-      stride_height_operand,
-      filter_width_operand,
-      filter_height_operand,
-      fuse_code_operand,
+      auto_pad_operand,
+      pads_operand,
+      kernel_shape_operand,
+      strides_operand,
       ceil_mode_operand,
-      count_include_pad_operand};
+      fuse_code_operand,
+  };
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* pool2d_operation = nullptr;
   if (pooling_type == "max") {
     pool2d_operation = converter->AddOperation(NNADAPTER_MAX_POOL_2D);
+    input_operands.insert(input_operands.begin() + 6, return_indices_operand);
+    output_operands.push_back(nullptr);
   } else if (pooling_type == "avg") {
     pool2d_operation = converter->AddOperation(NNADAPTER_AVERAGE_POOL_2D);
+    input_operands.insert(input_operands.begin() + 6,
+                          count_include_pad_operand);
   } else {
     LOG(WARNING) << "Unsupported pooling type: " << pooling_type;
     return FAILED;

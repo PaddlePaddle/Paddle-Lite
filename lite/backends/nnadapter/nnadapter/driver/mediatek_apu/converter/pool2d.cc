@@ -24,49 +24,74 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 12);
-  NNADAPTER_CHECK_EQ(output_count, 1);
+  NNADAPTER_CHECK_EQ(input_count, 8);
+  auto operation_type = operation->type;
+  if (operation_type == NNADAPTER_AVERAGE_POOL_2D) {
+    NNADAPTER_CHECK_EQ(output_count, 1);
+  } else if (operation_type == NNADAPTER_MAX_POOL_2D) {
+    NNADAPTER_CHECK_EQ(output_count, 2);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
+  }
+
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Paddings
-  auto padding_width_left =
-      *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
-  auto padding_width_right =
-      *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
-  auto padding_height_top =
-      *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
-  auto padding_height_bottom =
-      *reinterpret_cast<int32_t*>(input_operands[4]->buffer);
-  NNADAPTER_VLOG(5) << "paddings=[" << padding_width_left << ","
-                    << padding_width_right << "," << padding_height_top << ","
-                    << padding_height_bottom << "]";
+  // Auto pad: AscendNPU does not support auto_pad.
+  // Pads: Pads are transed according to auto_pad, so pads are used.
+  uint32_t pads_size =
+      input_operands[2]->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(pads_size, 4U);
+  auto pads_buffer = reinterpret_cast<int32_t*>(input_operands[2]->buffer);
+  auto pad_height_top = pads_buffer[0];
+  auto pad_height_bottom = pads_buffer[1];
+  auto pad_width_left = pads_buffer[2];
+  auto pad_width_right = pads_buffer[3];
+  NNADAPTER_VLOG(5) << "paddings = [" << pad_height_top << ", "
+                    << pad_height_bottom << ", " << pad_width_left << ", "
+                    << pad_width_right << "]";
+  // Kernel shape
+  uint32_t kernel_shape_size =
+      input_operands[3]->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(kernel_shape_size, 2U);
+  auto kernel_buffer = reinterpret_cast<int32_t*>(input_operands[3]->buffer);
+  auto kernel_height = kernel_buffer[0];
+  auto kernel_width = kernel_buffer[1];
+  NNADAPTER_VLOG(5) << "kernel = [" << kernel_height << ", " << kernel_width
+                    << "]";
+  bool global_pooling = kernel_height == input_operand->type.dimensions[2] &&
+                        kernel_width == input_operand->type.dimensions[3];
+  NNADAPTER_VLOG(5) << "global_pooling = " << global_pooling;
   // Strides
-  auto stride_width = *reinterpret_cast<int32_t*>(input_operands[5]->buffer);
-  auto stride_height = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
-  NNADAPTER_VLOG(5) << "strides=[" << stride_width << "," << stride_height
+  uint32_t strides_size =
+      input_operands[4]->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(strides_size, 2U);
+  auto strides_buffer = reinterpret_cast<int32_t*>(input_operands[4]->buffer);
+  auto stride_height = strides_buffer[0];
+  auto stride_width = strides_buffer[1];
+  NNADAPTER_VLOG(5) << "strides = [" << stride_height << ", " << stride_width
                     << "]";
-  // Filter
-  auto filter_width = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);
-  auto filter_height = *reinterpret_cast<int32_t*>(input_operands[8]->buffer);
-  NNADAPTER_VLOG(5) << "filter=[" << filter_width << "," << filter_height
-                    << "]";
-  bool global_pooling = filter_width == input_operand->type.dimensions[3] &&
-                        filter_height == input_operand->type.dimensions[2];
-  // Fuse code
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);
-  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
   // Ceil mode
-  bool ceil_mode = *reinterpret_cast<int8_t*>(input_operands[10]->buffer);
-  NNADAPTER_VLOG(5) << "ceil_mode=" << ceil_mode;
-  NNADAPTER_CHECK_EQ(ceil_mode, false)
-      << "Neuron Aadapter doesn't suppport ceil_mode=true";
-  // Count include pad
-  bool count_include_pad =
-      *reinterpret_cast<int8_t*>(input_operands[11]->buffer);
-  NNADAPTER_VLOG(5) << "count_include_pad=" << count_include_pad;
-  NNADAPTER_CHECK_EQ(count_include_pad, false)
-      << "Neuron Aadapter doesn't support count_include_pad=true";
+  bool ceil_mode = *reinterpret_cast<bool*>(input_operands[5]->buffer);
+  NNADAPTER_VLOG(5) << "ceil_mode = " << ceil_mode;
+  // Count include pad(for avg_pool) or return indices(for max_pool)
+  bool flag = *reinterpret_cast<bool*>(input_operands[6]->buffer);
+  NNADAPTER_VLOG(5) << "count_include_pad/return_indices = " << flag;
+  if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
+    NNADAPTER_CHECK(!flag) << "Only support count_include_pad = false.";
+  } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
+    NNADAPTER_CHECK(!flag) << "Only support return_indices = false.";
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
+  }
+  // Fuse code
+  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);
+  NNADAPTER_VLOG(5) << "fuse_code = " << fuse_code;
+
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
@@ -76,11 +101,10 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   if (input_index == INVALID_INDEX) {
     input_index = ConvertOperand(input_operand);
   }
-  auto padding_width_left_index = AddInt32ConstantOperand(padding_width_left);
-  auto padding_width_right_index = AddInt32ConstantOperand(padding_width_right);
-  auto padding_height_top_index = AddInt32ConstantOperand(padding_height_top);
-  auto padding_height_bottom_index =
-      AddInt32ConstantOperand(padding_height_bottom);
+  auto padding_width_left_index = AddInt32ConstantOperand(pad_width_left);
+  auto padding_width_right_index = AddInt32ConstantOperand(pad_width_right);
+  auto padding_height_top_index = AddInt32ConstantOperand(pad_height_top);
+  auto padding_height_bottom_index = AddInt32ConstantOperand(pad_height_bottom);
   auto stride_width_index = AddInt32ConstantOperand(stride_width);
   auto stride_height_index = AddInt32ConstantOperand(stride_height);
   auto filter_width_index = AddInt32ConstantOperand(filter_width);
