@@ -20,16 +20,31 @@ namespace arm {
 namespace math {
 
 enum class MaxMinType : bool { kMin = false, kMax = true };
+
 template <typename DataType>
-void reduce_first_of_two(const float* src,
-                         float* dst,
+void reduce_one_line(const DataType* src,
+                     DataType* dst,
+                     int size,
+                     MaxMinType max_min_selector) {
+  DataType tmp = src[0];
+  for (int i = 0; i < size; i++) {
+    if ((tmp <= src[i]) ^ static_cast<bool>(max_min_selector)) {
+      tmp = src[i];
+    }
+  }
+  *dst = tmp;
+}
+
+template <typename DataType>
+void reduce_first_of_two(const DataType* src,
+                         DataType* dst,
                          int first_in,
                          int second_in,
                          MaxMinType compare_functor);
 
 template <typename DataType>
-void reduce_second_of_two(const float* src,
-                          float* dst,
+void reduce_second_of_two(const DataType* src,
+                          DataType* dst,
                           int first_in,
                           int second_in,
                           MaxMinType max_min_selector);

@@ -1233,6 +1233,9 @@ struct CompareParam : ParamBase {
   int axis{-1};
   bool fuse_greater_than{0};
   lite::Tensor* Out{};
+
+  std::string xName = "";
+  std::string yName = "";
 };
 
 struct WhileParam : ParamBase {
@@ -1458,6 +1461,9 @@ struct CastParam : ParamBase {
 
 struct SliceParam : ParamBase {
   const lite::Tensor* X{nullptr};
+  const std::vector<lite::Tensor>* XTensorList{nullptr};
+  std::vector<lite::Tensor>* OutTensorList{nullptr};
+
   lite::Tensor* Out{nullptr};
   std::vector<int> axes{};
   std::vector<int> starts{};
@@ -1622,6 +1628,7 @@ struct ExpandV2Param : ParamBase {
   std::vector<lite::Tensor*> expand_shapes_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> shape{};
+  std::string outName;
 };
 
 /// ----------------------- expand as operators ----------------------

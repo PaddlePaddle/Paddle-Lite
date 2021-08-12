@@ -25,6 +25,7 @@ namespace operators {
 
 class AssignOpLite : public OpLite {
  public:
+  std::string outname = "";
   AssignOpLite() {}
   explicit AssignOpLite(const std::string &op_type) : OpLite(op_type) {}
 

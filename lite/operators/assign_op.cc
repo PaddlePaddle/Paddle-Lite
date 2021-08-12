@@ -30,10 +30,20 @@ bool AssignOpLite::InferShapeImpl() const {
   if (param_.X) {
     param_.Out->Resize(param_.X->dims());
   } else if (param_.X_array) {
-    param_.Out_array->resize(param_.Out_array->size());
+    param_.Out_array->resize(param_.X_array->size());
+    for (int i = 0; i < param_.Out_array->size(); i++) {
+      auto tensor = param_.Out_array->at(i);
+      tensor.Resize(param_.X_array->at(i).dims());
+    }
   } else {
     LOG(FATAL) << "x or x_array must be set.";
   }
+  LOG(INFO) << "assign outname:" << this->outname;
+  if (this->outname == "expand_1.tmp_0__Mangled_1") {
+    LOG(INFO) << "assign expand_1.tmp_0 out shape " << param_.Out->dims();
+  }
+
+  // if (this->outname)
   return true;
 }
 
@@ -41,7 +51,7 @@ bool AssignOpLite::InferShapeImpl() const {
 bool AssignOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto x_name = op_desc.Input("X").front();
   auto out_name = op_desc.Output("Out").front();
-
+  this->outname = out_name;
   auto x_var = scope->FindVar(x_name);
   if (x_var->IsType<Tensor>()) {
     param_.X = scope->FindTensor(x_name);

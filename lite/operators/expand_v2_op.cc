@@ -84,6 +84,9 @@ bool ExpandV2OpLite::InferShapeImpl() const {
     out_dims[i] *= repeat_times_[i];
   }
   param_.Out->Resize(out_dims);
+  if (param_.outName == "expand_1.tmp_0") {
+    LOG(INFO) << "expand_1.tmp_0 out shape:" << param_.Out->dims();
+  }
 
   return true;
 }
@@ -109,6 +112,8 @@ bool ExpandV2OpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   }
 
   param_.shape = opdesc.GetAttr<std::vector<int>>("shape");
+  LOG(INFO) << "expand out name:" << Out_name;
+  param_.outName = Out_name;
   return true;
 }
 

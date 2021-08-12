@@ -83,6 +83,12 @@ bool CompareOp::InferShapeImpl() const {
     std::vector<int64_t> x_dims_array(max_dim);
     std::vector<int64_t> y_dims_array(max_dim);
     std::vector<int64_t> out_dims_array(max_dim);
+    if (axis == 1 && max_dim == 1) {
+      LOG(INFO) << dim_x;
+      LOG(INFO) << dim_y;
+      LOG(INFO) << param_.xName;
+      LOG(INFO) << param_.yName;
+    }
     GetBroadcastDimsArrays(dim_x,
                            dim_y,
                            x_dims_array.data(),
@@ -108,6 +114,10 @@ bool CompareOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   }
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
+
+  param_.xName = opdesc.Input("X").front();
+  param_.yName = opdesc.Input("Y").front();
+
   CHECK(param_.X);
   CHECK(param_.Y);
   CHECK(param_.Out);

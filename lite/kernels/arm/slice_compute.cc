@@ -23,6 +23,45 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+inline void DealTensorArray(const operators::SliceParam& param,
+                            const std::vector<int64_t>& starts,
+                            const std::vector<int64_t>& ends,
+                            bool out_is_array) {
+  auto in_array = param.XTensorList;
+  // If the input is LoDTensorArray, the rank of input is 1.
+  int64_t in_size = in_array->size();
+  int64_t start = starts[0] < 0 ? (starts[0] + in_size) : starts[0];
+  int64_t end = ends[0] < 0 ? (ends[0] + in_size) : ends[0];
+
+  start = std::max(start, static_cast<int64_t>(0));
+  end = std::max(end, static_cast<int64_t>(0));
+  end = std::min(end, in_size);
+
+  CHECK_GT(end, start) << "end should greater than start";
+  int64_t out_size = end - start;
+
+  if (out_is_array) {
+    auto out_array = param.OutTensorList;
+    out_array->resize(out_size);
+    for (int i = 0; i < out_size; ++i) {
+      auto* out_tensor = &out_array->at(i);
+      auto in_tensor = in_array->at(i + start);
+      out_tensor->set_lod(in_tensor.lod());
+      if (in_tensor.memory_size() > 0) {
+        out_tensor->CopyDataFrom(in_tensor);
+      } else {
+        VLOG(4) << "WARNING: The input tensor 'x_tensor' holds no memory, so "
+                   "nothing has been written to output array["
+                << i << "].";
+      }
+    }
+  } else {
+    auto out_tensor = param.Out;
+    auto in_tensor = in_array->at(start);
+    out_tensor->CopyDataFrom(in_tensor);
+  }
+}
+
 inline std::vector<int64_t> get_new_data_from_tensorlist(
     const std::vector<lite::Tensor*>& list_new_data_tensor) {
   // get tensor
@@ -36,9 +75,10 @@ inline std::vector<int64_t> get_new_data_from_tensorlist(
     } else if (tensor->precision() == PrecisionType::kInt64) {
       vec_new_data.push_back(static_cast<int64_t>(*tensor->data<int64_t>()));
     } else {
-      LOG(FATAL) << "slice StartsTensor or EndsTensor :The dtype of Tensor "
-                    "must be int32 "
-                    "or int64";
+      vec_new_data.push_back(static_cast<int64_t>(*tensor->data<int32_t>()));
+      LOG(WARNING) << "slice StartsTensor or EndsTensor :The dtype of Tensor "
+                      "must be int32 "
+                      "or int64";
     }
   }
   return vec_new_data;
@@ -57,9 +97,13 @@ inline std::vector<int64_t> get_new_data_from_tensor(
     vec_new_data =
         std::vector<int64_t>(new_data, new_data + new_data_tensor->numel());
   } else {
-    LOG(FATAL) << "slice StartsTensor or EndsTensor :The dtype of Tensor must "
-                  "be int32 "
-                  "or int64";
+    auto* new_data = new_data_tensor->data<int32_t>();
+    vec_new_data =
+        std::vector<int64_t>(new_data, new_data + new_data_tensor->numel());
+    LOG(WARNING)
+        << "slice StartsTensor or EndsTensor :The dtype of Tensor must "
+           "be int32 "
+           "or int64";
   }
   return vec_new_data;
 }
@@ -109,6 +153,13 @@ void SliceCompute<T, PType>::Run() {
         << "The size of ends must be equal to the size of axes.";
     out_dims = in_dims;
     int64_t dim_value, start, end;
+
+    if (param.X == nullptr && param.XTensorList != nullptr) {
+      DealTensorArray(param,
+                      starts,
+                      ends,
+                      (param.Out == nullptr && param.OutTensorList != nullptr));
+    }
     for (size_t i = 0; i < axes.size(); ++i) {
       dim_value = out_dims[axes[i]];
       if (dim_value > 0) {

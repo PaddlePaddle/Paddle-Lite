@@ -117,30 +117,21 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   }
   printf("flag_in: %d, flag_out: %d \n", flag_in, flag_out);
 
-  for (int j = 0; j < input_shapes.size(); ++j) {
-    auto input_tensor = predictor->GetInput(j);
-    input_tensor->Resize(input_shapes[j]);
-    auto input_data = input_tensor->mutable_data<float>();
-    int input_num = 1;
-    for (int i = 0; i < input_shapes[j].size(); ++i) {
-      input_num *= input_shapes[j][i];
-    }
-    FILE* fp_r = nullptr;
-    if (flag_in) {
-      std::string in_txt = FLAGS_in_txt + std::to_string(j + 1) + ".txt";
-      fp_r = fopen(in_txt.c_str(), "r");
-    }
-    for (int i = 0; i < input_num; ++i) {
-      if (flag_in) {
-        fscanf(fp_r, "%f\n", &input_data[i]);
-      } else {
-        input_data[i] = 1.f;
-      }
-    }
-    if (flag_in) {
-      fclose(fp_r);
-    }
-  }
+  auto input_tensor = predictor->GetInput(0);
+  input_tensor->Resize(std::vector<int64_t>{1, 40});
+  auto input_data = input_tensor->mutable_data<int64_t>();
+
+  std::vector<int64_t> tmp = {521,  100, 178,  1817, 389,  1615, 137,  1503,
+                              1568, 137, 1628, 811,  93,   183,  1320, 98,
+                              83,   427, 183,  1215, 2517, 645,  619,  27,
+                              9,    191, 568,  496,  235,  12,   23,   24,
+                              9,    9,   9,    9,    28,   12,   30,   17};
+  memcpy(input_data, tmp.data(), 40 * sizeof(int64_t));
+
+  input_tensor = predictor->GetInput(1);
+  input_tensor->Resize(std::vector<int64_t>{1});
+  input_data = input_tensor->mutable_data<int64_t>();
+  input_data[0] = 40;
 
   for (int i = 0; i < warmup_times; ++i) {
     predictor->Run();
