@@ -67,6 +67,68 @@ int SparseConvDetectPass::ComputeSparseWeight(
   return first_ic;
 }
 
+template <typename T>
+int SparseConvDetectPass::ComputeSparseWeight(
+    const lite::Tensor* w_tensor,
+    const int M,
+    const int K,
+    const int N,
+    const int num_nonzeroes,
+    const int num_build_nonzeroes,
+    lite::Tensor* nonzero_output_tensor,
+    lite::Tensor* oc_nonzeros_tensor,
+    lite::Tensor* diffs_tensor) {
+  const T* weights = w_tensor->data<T>();
+  T* nonzero_output = nonzero_output_tensor->mutable_data<T>();
+  auto* oc_nonzeros = oc_nonzeros_tensor->mutable_data<uint32_t>();
+  auto* diffs = diffs_tensor->mutable_data<int32_t>();
+  std::vector<int32_t> act_diffs;
+  act_diffs.resize(num_nonzeroes);
+  int first_ic = 0, last_ic = 0;
+  bool first_nonzero = true;
+  int nonzero_index = 0, diff_index = 0;
+  for (int ocb = 0; ocb < M; ocb++) {
+    oc_nonzeros[ocb] = 0;
+    for (int ic = 0; ic < K; ic++) {
+      if (weights[ocb * K + ic] != static_cast<T>(0)) {
+        nonzero_output[nonzero_index++] = weights[ocb * K + ic];
+        if (first_nonzero) {
+          first_ic = ic;
+        } else {
+          const int diff = (ic - last_ic) * sizeof(T);
+          act_diffs[diff_index++] = diff * N;
+        }
+        first_nonzero = false;
+        last_ic = ic;
+        oc_nonzeros[ocb] += 1;
+      }
+    }
+    if (oc_nonzeros[ocb] % 4 != 0) {
+      int extra_zeros = 4 - (oc_nonzeros[ocb] % 4);
+      for (int j = 0; j < extra_zeros; j++) {
+        nonzero_output[nonzero_index++] = 0;
+      }
+    }
+  }
+  if (!first_nonzero) {
+    const int diff = (first_ic - last_ic) * sizeof(T);
+    act_diffs[diff_index++] = diff * N;
+  }
+  int left_index = 0, right_index = 0;
+  for (int ocb = 0; ocb < M; ocb++) {
+    for (int i = 0; i < oc_nonzeros[ocb]; i++) {
+      diffs[right_index++] = act_diffs[left_index++];
+    }
+    if (oc_nonzeros[ocb] % 4 != 0) {
+      int extra_zeros = 4 - (oc_nonzeros[ocb] % 4);
+      for (int j = 0; j < extra_zeros; j++) {
+        diffs[right_index++] = 0;
+      }
+    }
+  }
+  return first_ic;
+}
+
 template int SparseConvDetectPass::ComputeSparseWeight<float>(
     const lite::Tensor* w_tensor,
     const int M,
@@ -87,6 +149,28 @@ template int SparseConvDetectPass::ComputeSparseWeight<int8_t>(
     lite::Tensor* oc_nonzeros_tensor,
     lite::Tensor* diffs_tensor);
 
+template int SparseConvDetectPass::ComputeSparseWeight<float>(
+    const lite::Tensor* w_tensor,
+    const int M,
+    const int K,
+    const int N,
+    const int num_nonzeroes,
+    const int num_build_nonzeroes,
+    lite::Tensor* nonzero_output_tensor,
+    lite::Tensor* oc_nonzeros_tensor,
+    lite::Tensor* diffs_tensor);
+
+template int SparseConvDetectPass::ComputeSparseWeight<int8_t>(
+    const lite::Tensor* w_tensor,
+    const int M,
+    const int K,
+    const int N,
+    const int num_nonzeroes,
+    const int num_build_nonzeroes,
+    lite::Tensor* nonzero_output_tensor,
+    lite::Tensor* oc_nonzeros_tensor,
+    lite::Tensor* diffs_tensor);
+
 template <typename T>
 int SparseConvDetectPass::ComputeSparseZeros(const lite::Tensor* weights,
                                              const int num) {
@@ -100,10 +184,47 @@ int SparseConvDetectPass::ComputeSparseZeros(const lite::Tensor* weights,
   return zero_num;
 }
 
+template <typename T>
+int SparseConvDetectPass::ComputeSparseZeros(const lite::Tensor* weights,
+                                             int* num_build_nonzeroes,
+                                             const int height,
+                                             const int width) {
+  const T* data = weights->data<T>();
+  int num_nonzeroes = 0;
+  int num_nonzeroes_act = 0;
+  for (int i = 0; i < height; i++) {
+    int line_nonzeroes = 0;
+    for (int j = 0; j < width; j++) {
+      if (data[i * width + j] != static_cast<T>(0)) {
+        line_nonzeroes++;
+      }
+    }
+    if (line_nonzeroes % 4 == 0) {
+      num_nonzeroes += line_nonzeroes;
+    } else {
+      num_nonzeroes += line_nonzeroes + 4 - (line_nonzeroes % 4);
+    }
+    num_nonzeroes_act += line_nonzeroes;
+  }
+  *num_build_nonzeroes = num_nonzeroes;
+  return height * width - num_nonzeroes_act;
+}
+
 template int SparseConvDetectPass::ComputeSparseZeros<float>(
     const lite::Tensor* weights, const int num);
 template int SparseConvDetectPass::ComputeSparseZeros<int8_t>(
     const lite::Tensor* weights, const int num);
+
+template int SparseConvDetectPass::ComputeSparseZeros<float>(
+    const lite::Tensor* weights,
+    int* num_build_nonzeroes,
+    const int height,
+    const int width);
+template int SparseConvDetectPass::ComputeSparseZeros<int8_t>(
+    const lite::Tensor* weights,
+    int* num_build_nonzeroes,
+    const int height,
+    const int width);
 
 void SparseConvDetectPass::CopyAttrFromOpInfo(cpp::OpDesc* op_desc,
                                               OpInfo* op_info,
@@ -202,8 +323,11 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         continue;
       }
       int zero_num;
+      int num_build_nonzeroes = 0;
       if (use_fp32) {
-        zero_num = ComputeSparseZeros<float>(&w_tensor, weight_num);
+        // zero_num = ComputeSparseZeros<float>(&w_tensor, weight_num);
+        zero_num = ComputeSparseZeros<float>(
+            &w_tensor, &num_build_nonzeroes, ch_out, ch_in);
       } else if (use_int8) {
         zero_num = ComputeSparseZeros<int8_t>(&w_tensor, weight_num);
       }
@@ -214,7 +338,7 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       VLOG(4) << "sparse zero num percent: " << sparse_zero_percent;
       if (sparse_zero_percent < sparse_threshold_) {
         VLOG(4) << "The sparse degree of the sparse conv must be greater than "
-                   "sparse_threshold_: "
+                   "sparse_threshold: "
                 << sparse_threshold_;
         continue;
       }
@@ -236,16 +360,34 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
           scope->Var(nonzeros_output_name)->GetMutable<Tensor>();
       auto* oc_nonzeros_t = scope->Var(oc_nonzeros_name)->GetMutable<Tensor>();
       auto* ic_diffs_t = scope->Var(ic_diffs_name)->GetMutable<Tensor>();
-      nonzeros_output_t->Resize({nonzero_num});
-      oc_nonzeros_t->Resize({ch_out});
-      ic_diffs_t->Resize({nonzero_num});
+      // nonzeros_output_t->Resize({nonzero_num});
+      // oc_nonzeros_t->Resize({ch_out});
+      // ic_diffs_t->Resize({nonzero_num});
+      if (use_fp32) {
+        nonzeros_output_t->Resize({num_build_nonzeroes});
+        oc_nonzeros_t->Resize({ch_out});
+        ic_diffs_t->Resize({num_build_nonzeroes});
+      } else if (use_int8) {
+        nonzeros_output_t->Resize({nonzero_num});
+        oc_nonzeros_t->Resize({ch_out});
+        ic_diffs_t->Resize({nonzero_num});
+      }
       int first_ic;
       if (use_fp32) {
+        // first_ic = ComputeSparseWeight<float>(&w_tensor,
+        //                                       ch_out,
+        //                                       ch_in,
+        //                                       im_size,
+        //                                       nonzero_num,
+        //                                       nonzeros_output_t,
+        //                                       oc_nonzeros_t,
+        //                                       ic_diffs_t);
         first_ic = ComputeSparseWeight<float>(&w_tensor,
                                               ch_out,
                                               ch_in,
                                               im_size,
                                               nonzero_num,
+                                              num_build_nonzeroes,
                                               nonzeros_output_t,
                                               oc_nonzeros_t,
                                               ic_diffs_t);
