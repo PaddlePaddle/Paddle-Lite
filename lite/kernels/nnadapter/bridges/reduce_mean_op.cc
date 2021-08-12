@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
-
 namespace paddle {
 namespace lite {
 namespace subgraph {
@@ -59,7 +59,17 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
   // Axes operand
+  bool reduce_all = false;
+  if (op_info->HasAttr("reduce_all")) {
+    reduce_all = op_info->GetAttr<bool>("reduce_all");
+  }
   std::vector<int> dim = op_info->GetAttr<std::vector<int>>("dim");
+  if (reduce_all) {
+    dim.clear();
+    for (int i = 0; i < x_dims.size(); i++) {
+      dim.push_back(i);
+    }
+  }
   NNAdapterOperand* axes_operand = converter->AddInt32ConstantOperand(
       &dim[0], DDim({static_cast<int64_t>(dim.size())}));
   // Keep_dim operand: keep_dim: default 1
