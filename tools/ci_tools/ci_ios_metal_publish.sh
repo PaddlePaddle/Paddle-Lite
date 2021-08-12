@@ -37,7 +37,7 @@ function publish_inference_lib {
   # Remove Compiling Cache
   rm -rf build*
   # Compiling inference library
-  ./lite/tools/build_ios_with_metal.sh --arch=$arch --with_extra=$with_extra
+  ./lite/tools/build_ios.sh --with_metal=ON --arch=$arch --with_extra=$with_extra
   # Checking results: cplus and java inference lib.
   if [ -d build*/inference*/lib ]; then
     cxx_results=$(ls build*/inference*/lib | wc -l)
@@ -48,7 +48,7 @@ function publish_inference_lib {
   # Error message.
   echo "**************************************************************************************"
   echo -e "* iOS metal-based compiling task failed on the following instruction:"
-  echo -e "*     ./lite/tools/build_ios_with_metal.sh --arch=$arch --with_extra=ON"
+  echo -e "*     ./lite/tools/build_ios.sh --arch=$arch --with_metal=ON --with_extra=ON"
   echo "**************************************************************************************"
   exit 1
 }
