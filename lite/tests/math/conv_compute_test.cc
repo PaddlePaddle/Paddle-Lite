@@ -74,9 +74,6 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
       paddle::lite::kernels::x86::Conv2dCompute<PRECISION(kFloat),
                                                 PRECISION(kFloat)>
           conv;
-      std::unique_ptr<paddle::lite::KernelContext> ctx1(
-          new paddle::lite::KernelContext);
-      auto& ctx = ctx1->As<paddle::lite::X86Context>();
 #endif
 
       /// set param and context
