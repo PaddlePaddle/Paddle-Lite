@@ -39,7 +39,7 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Auto pad: AscendNPU does not support auto_pad.
+  // Auto pad: not support auto_pad.
   // Pads: Pads are transed according to auto_pad, so pads are used.
   uint32_t pads_size =
       input_operands[2]->length / static_cast<uint32_t>(sizeof(int32_t));
@@ -107,8 +107,8 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   auto padding_height_bottom_index = AddInt32ConstantOperand(pad_height_bottom);
   auto stride_width_index = AddInt32ConstantOperand(stride_width);
   auto stride_height_index = AddInt32ConstantOperand(stride_height);
-  auto filter_width_index = AddInt32ConstantOperand(filter_width);
-  auto filter_height_index = AddInt32ConstantOperand(filter_height);
+  auto filter_width_index = AddInt32ConstantOperand(kernel_width);
+  auto filter_height_index = AddInt32ConstantOperand(kernel_height);
   auto fuse_code_index = AddInt32ConstantOperand(ConvertFuseCode(fuse_code));
   auto output_index = ConvertOperand(output_operand);
   std::vector<uint32_t> input_indexes = {input_index,

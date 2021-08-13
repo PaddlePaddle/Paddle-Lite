@@ -40,7 +40,7 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Auto pad: AscendNPU does not support auto_pad.
+  // Auto pad: not support auto_pad.
   // Pads: Pads are transed according to auto_pad, so pads are used.
   uint32_t pads_size =
       input_operands[2]->length / static_cast<uint32_t>(sizeof(int32_t));
@@ -134,7 +134,7 @@ int Program::ConvertPool2D(hal::Operation* operation) {
                                                       strides,
                                                       pad_to_begin,
                                                       pad_to_end,
-                                                      count_include_pad,
+                                                      flag,
                                                       pool_type);
   UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

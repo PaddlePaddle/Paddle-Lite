@@ -48,9 +48,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_dims = out->dims();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
-  auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
+  std::vector<int> ksize = op_info->GetAttr<std::vector<int>>("ksize");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
-  auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
   // Check pooling mode
   if (pooling_type == "max" || pooling_type == "avg") {
   } else {
@@ -111,8 +111,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Kernel_shape operand
   if (global_pooling) {
-    ksize[0] = x_dims[2];
-    ksize[1] = x_dims[3];
+    ksize[0] = static_cast<int32_t>(x_dims[2]);
+    ksize[1] = static_cast<int32_t>(x_dims[3]);
   }
   auto kernel_shape_operand = converter->AddInt32ConstantOperand(
       ksize.data(), DDim({static_cast<int64_t>(ksize.size())}));
