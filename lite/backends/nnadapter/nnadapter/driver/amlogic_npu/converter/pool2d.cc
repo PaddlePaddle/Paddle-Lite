@@ -24,6 +24,7 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 8);
   auto operation_type = operation->type;
   if (operation_type == NNADAPTER_AVERAGE_POOL_2D) {
     NNADAPTER_CHECK_EQ(output_count, 1);
