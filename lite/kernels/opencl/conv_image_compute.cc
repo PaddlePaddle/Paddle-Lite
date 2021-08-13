@@ -801,21 +801,59 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
 
     local_work_size_ = cl::NDRange(32, 4, 1);
   } else if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1") {
+    auto& context = ctx_->As<OpenCLContext>();
+    std::stringstream kernel_key;
     auto tuned_map_key = GenerateTunedKey();
-    cl::NDRange lws_in_map = cl::NullRange;
-    // if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
-    //                                                   &lws_in_map)) {
-    //   local_work_size_ = lws_in_map;
-    //   return;
-    // }
+    std::vector<int> tuned_in_map(10);
+    if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
+                                                      &tuned_in_map)) {
+      CHECK_EQ(tuned_in_map.size(), 7);
+      local_work_size_ = cl::NDRange{static_cast<size_t>(tuned_in_map[0]),
+                                     static_cast<size_t>(tuned_in_map[1]),
+                                     static_cast<size_t>(tuned_in_map[2])};
+      global_work_size_ = cl::NDRange{static_cast<size_t>(tuned_in_map[3]),
+                                      static_cast<size_t>(tuned_in_map[4]),
+                                      static_cast<size_t>(tuned_in_map[5])};
+      int func_id = tuned_in_map[6];
+      if (func_id == 0) {
+      } else if (func_id == 1) {
+        kernel_func_names_[0] = "conv2d_1x1_h1w5c1";
+        w_blk_ = UP_DIV(default_w_blk_, 5);
+      } else if (func_id == 2) {
+        kernel_func_names_[0] = "conv2d_1x1_h1w7c1";
+        w_blk_ = UP_DIV(default_w_blk_, 7);
+      } else if (func_id == 3) {
+        kernel_func_names_[0] = "conv2d_1x1_h1w2c1";
+        w_blk_ = UP_DIV(default_w_blk_, 2);
+      } else if (func_id == 4) {
+        kernel_func_names_[0] = "conv2d_1x1_h2w2c1";
+        w_blk_ = UP_DIV(default_w_blk_, 2);
+        nh_blk_ = UP_DIV(default_nh_blk_, 2);
+      } else if (func_id == 5) {
+        kernel_func_names_[0] = "conv2d_1x1_h2w2c2";
+        c_blk_ = UP_DIV(default_c_blk_, 2);
+        w_blk_ = UP_DIV(default_w_blk_, 2);
+        nh_blk_ = UP_DIV(default_nh_blk_, 2);
+      } else {
+        LOG(FATAL) << "unsupported kernel id : " << func_id;
+      }
+      context.cl_context()->AddKernel(kernel_func_names_[0],
+                                      kernel_func_paths_[0],
+                                      build_options_[0],
+                                      time_stamp_);
+      kernel_key.str("");
+      kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
+      kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+      return;
+    }
+    int final_kernel_id = 0;
+    int kernel_id = 0;
     std::string final_kernel_func_name = "conv2d_1x1_h1w4c1";
     cl::NDRange final_global_work_size = cl::NDRange{
         static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
     cl::NDRange final_local_work_size = cl::NDRange{
         static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
     double final_lws_time = DBL_MAX;
-    auto& context = ctx_->As<OpenCLContext>();
-    std::stringstream kernel_key;
     int kernel_num;
     if (CLRuntime::Global()->auto_tune() <= 0) {
       kernel_num = 1;
@@ -825,6 +863,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     for (size_t i = 0; i < kernel_num; i++) {
       if (i == 1) {
         kernel_func_names_[0] = "conv2d_1x1_h1w5c1";
+        kernel_id = 1;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(default_c_blk_),
                         static_cast<size_t>(UP_DIV(default_w_blk_, 5)),
@@ -836,6 +875,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       }
       if (i == 2) {
         kernel_func_names_[0] = "conv2d_1x1_h1w7c1";
+        kernel_id = 2;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(default_c_blk_),
                         static_cast<size_t>(UP_DIV(default_w_blk_, 7)),
@@ -847,6 +887,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       }
       if (i == 3) {
         kernel_func_names_[0] = "conv2d_1x1_h1w2c1";
+        kernel_id = 3;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(default_c_blk_),
                         static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
@@ -858,6 +899,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       }
       if (i == 4) {
         kernel_func_names_[0] = "conv2d_1x1_h2w2c1";
+        kernel_id = 4;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(default_c_blk_),
                         static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
@@ -869,6 +911,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       }
       if (i == 5) {
         kernel_func_names_[0] = "conv2d_1x1_h2w2c2";
+        kernel_id = 5;
         global_work_size_ =
             cl::NDRange{static_cast<size_t>(UP_DIV(default_c_blk_, 2)),
                         static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
@@ -919,6 +962,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       }
       if (final_lws_time > min_lws_time) {
         final_kernel_func_name = kernel_func_names_[0];
+        final_kernel_id = kernel_id;
         final_global_work_size = global_work_size_;
         final_local_work_size = min_lws;
         final_lws_time = min_lws_time;
@@ -948,7 +992,16 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       w_blk_ = UP_DIV(default_w_blk_, 2);
       nh_blk_ = UP_DIV(default_nh_blk_, 2);
     }
-    // CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,local_work_size_);
+
+    std::vector<int> tune_vec;
+    tune_vec.push_back(static_cast<int>(local_work_size_[0]));
+    tune_vec.push_back(static_cast<int>(local_work_size_[1]));
+    tune_vec.push_back(static_cast<int>(local_work_size_[2]));
+    tune_vec.push_back(static_cast<int>(global_work_size_[0]));
+    tune_vec.push_back(static_cast<int>(global_work_size_[1]));
+    tune_vec.push_back(static_cast<int>(global_work_size_[2]));
+    tune_vec.push_back(final_kernel_id);
+    CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key, tune_vec);
   } else if (is_wino_) {
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
@@ -963,12 +1016,23 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     kernel_output_trans_ = context.cl_context()->GetKernel(kernel_key.str());
 
     auto tuned_map_key = GenerateTunedKey();
-    cl::NDRange lws_in_map = cl::NullRange;
-    // if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
-    //                                                   &lws_in_map)) {
-    //   local_work_size_ = lws_in_map;
-    //   return;
-    // }
+    std::vector<int> tuned_in_map;
+    if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
+                                                      &tuned_in_map)) {
+      CHECK_EQ(tuned_in_map.size(), 9);
+      local_work_size_ = cl::NDRange{static_cast<size_t>(tuned_in_map[0]),
+                                     static_cast<size_t>(tuned_in_map[1]),
+                                     static_cast<size_t>(tuned_in_map[2])};
+      local_work_size_wino1_ =
+          cl::NDRange{static_cast<size_t>(tuned_in_map[3]),
+                      static_cast<size_t>(tuned_in_map[4]),
+                      static_cast<size_t>(tuned_in_map[5])};
+      local_work_size_wino2_ =
+          cl::NDRange{static_cast<size_t>(tuned_in_map[6]),
+                      static_cast<size_t>(tuned_in_map[7]),
+                      static_cast<size_t>(tuned_in_map[8])};
+      return;
+    }
 
     size_t max_work_group_size = 0;
     kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
@@ -1055,8 +1119,18 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     }
     local_work_size_wino2_ = min_lws;
 
-    // CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,
-    // local_work_size_);
+    std::vector<int> tune_vec;
+    tune_vec.push_back(static_cast<int>(local_work_size_[0]));
+    tune_vec.push_back(static_cast<int>(local_work_size_[1]));
+    tune_vec.push_back(static_cast<int>(local_work_size_[2]));
+    tune_vec.push_back(static_cast<int>(local_work_size_wino1_[0]));
+    tune_vec.push_back(static_cast<int>(local_work_size_wino1_[1]));
+    tune_vec.push_back(static_cast<int>(local_work_size_wino1_[2]));
+    tune_vec.push_back(static_cast<int>(local_work_size_wino2_[0]));
+    tune_vec.push_back(static_cast<int>(local_work_size_wino2_[1]));
+    tune_vec.push_back(static_cast<int>(local_work_size_wino2_[2]));
+    CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key, tune_vec);
+
   } else {
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
@@ -1064,10 +1138,13 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
 
     auto tuned_map_key = GenerateTunedKey();
-    cl::NDRange lws_in_map = cl::NullRange;
+    std::vector<int> tuned_in_map;
     if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
-                                                      &lws_in_map)) {
-      local_work_size_ = lws_in_map;
+                                                      &tuned_in_map)) {
+      CHECK_EQ(tuned_in_map.size(), 3);
+      local_work_size_ = cl::NDRange{static_cast<size_t>(tuned_in_map[0]),
+                                     static_cast<size_t>(tuned_in_map[1]),
+                                     static_cast<size_t>(tuned_in_map[2])};
       return;
     }
 
@@ -1125,8 +1202,11 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     LOG(INFO) << "======= finish ========";
 #endif
     local_work_size_ = min_lws;
-    CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,
-                                                  local_work_size_);
+    std::vector<int> tune_vec;
+    tune_vec.push_back(static_cast<int>(local_work_size_[0]));
+    tune_vec.push_back(static_cast<int>(local_work_size_[1]));
+    tune_vec.push_back(static_cast<int>(local_work_size_[2]));
+    CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key, tune_vec);
   }
 }
 

@@ -210,9 +210,11 @@ class CLRuntime {
 
   double GetSubmitTime(const cl::Event& event);
 
-  bool HasTunedLocalWorkSizeMap(const std::string& key, cl::NDRange* lws);
+  bool HasTunedLocalWorkSizeMap(const std::string& key,
+                                std::vector<int>* tuned_value);
 
-  void SetTunedLocalWorkSizeMap(const std::string& key, const cl::NDRange lws);
+  void SetTunedLocalWorkSizeMap(const std::string& key,
+                                const std::vector<int>& tune_vct);
 
  private:
   CLRuntime() { Init(); }
@@ -287,10 +289,10 @@ class CLRuntime {
 
   // tuned param
   bool Serialize(const std::string file_name,
-                 const std::map<std::string, cl::NDRange>& map_data);
+                 const std::map<std::string, std::vector<int>>& map_data);
 
   bool Deserialize(const std::string file_name,
-                   std::map<std::string, cl::NDRange>* map_ptr);
+                   std::map<std::string, std::vector<int>>* map_ptr);
 
   std::map<std::string, size_t> device_info_;
 
@@ -329,7 +331,7 @@ class CLRuntime {
 
   std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::map<std::string, cl::Program::Binaries> programs_precompiled_binary_;
-  std::map<std::string, cl::NDRange> tuned_lwss_map_;
+  std::map<std::string, std::vector<int>> tuned_lwss_map_;
   std::vector<std::string> binary_path_name_;
   std::vector<std::string> tuned_path_name_;
   // magic number for precompiled binary
