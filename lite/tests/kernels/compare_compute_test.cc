@@ -235,7 +235,7 @@ TEST(Compare_OP_ARM, precision) {
   TestCompare<int32_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
   TestCompare<int64_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
 }
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
 TEST(Compare_OP_XPU, precision) {
   Place place{TARGET(kXPU)};
   float abs_error = 1e-5;
