@@ -29,6 +29,8 @@
 #ifdef ENABLE_ARM_FP16
 typedef __fp16 float16_t;
 #endif
+#else
+#include "lite/kernels/x86/conv_compute.h"
 #endif  // LITE_WITH_ARM
 
 DEFINE_int32(power_mode,
