@@ -29,7 +29,7 @@ skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
 # if operating in mac env, we should expand the maximum file num
 os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then
-   ulimit -n 1024
+   ulimit -n 4096
 fi
 
 ####################################################################################################
