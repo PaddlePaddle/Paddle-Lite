@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,26 +21,20 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-typedef enum { LOGICAL_NOT = 0, LOGICAL_AND = 1 } LogicalType;
-
-template <int LogicType>
+template <class T, class Functor>
 class BinaryLogicalCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny)> {
  public:
   void Run() override;
-
-  // void LogicalData(const T* x, const T* y, bool* z, int len);
 
   virtual ~BinaryLogicalCompute() = default;
 };
 
-template <int LogicType>
+template <class T, class Functor>
 class UnaryLogicalCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny)> {
  public:
   void Run() override;
-
-  // void LogicalData(const T* x, const T* y, bool* z, int len);
 
   virtual ~UnaryLogicalCompute() = default;
 };
