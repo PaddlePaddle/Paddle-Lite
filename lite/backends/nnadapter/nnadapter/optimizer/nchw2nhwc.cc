@@ -222,7 +222,7 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 13);
+  NNADAPTER_CHECK_EQ(input_count, 9);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
   auto input_dimension_count = input_operand->type.dimension_count;

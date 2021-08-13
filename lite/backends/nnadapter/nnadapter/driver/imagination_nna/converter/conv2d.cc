@@ -25,7 +25,7 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 13);
+  NNADAPTER_CHECK_EQ(input_count, 9);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
@@ -41,35 +41,43 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   // Bias
   auto bias_operand = input_operands[2];
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);
-  // Paddings
-  auto padding_width_left =
-      *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
-  auto padding_width_right =
-      *reinterpret_cast<int32_t*>(input_operands[4]->buffer);
-  auto padding_height_top =
-      *reinterpret_cast<int32_t*>(input_operands[5]->buffer);
-  auto padding_height_bottom =
-      *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
-  NNADAPTER_VLOG(5) << "paddings=[" << padding_width_left << ","
-                    << padding_width_right << "," << padding_height_top << ","
-                    << padding_height_bottom << "]";
+  // Auto pad: not support auto_pad.
+  // Pads: Pads are transed according to auto_pad, so pads are used.
+  uint32_t pads_size =
+      input_operands[4]->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(pads_size, 4U);
+  auto pads_buffer = reinterpret_cast<int32_t*>(input_operands[4]->buffer);
+  auto pad_height_top = pads_buffer[0];
+  auto pad_height_bottom = pads_buffer[1];
+  auto pad_width_left = pads_buffer[2];
+  auto pad_width_right = pads_buffer[3];
+  NNADAPTER_VLOG(5) << "paddings = [" << pad_height_top << ", "
+                    << pad_height_bottom << ", " << pad_width_left << ", "
+                    << pad_width_right << "]";
   // Strides
-  auto stride_width = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);
-  auto stride_height = *reinterpret_cast<int32_t*>(input_operands[8]->buffer);
-  NNADAPTER_VLOG(5) << "strides=[" << stride_width << "," << stride_height
+  uint32_t strides_size =
+      input_operands[5]->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(strides_size, 2U);
+  auto strides_buffer = reinterpret_cast<int32_t*>(input_operands[5]->buffer);
+  auto stride_height = strides_buffer[0];
+  auto stride_width = strides_buffer[1];
+  NNADAPTER_VLOG(5) << "strides = [" << stride_height << ", " << stride_width
                     << "]";
   // Group
-  auto group = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);
-  NNADAPTER_VLOG(5) << "group=" << group;
-  // Fuse code
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[10]->buffer);
-  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
+  auto group = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
+  NNADAPTER_VLOG(5) << "group = " << group;
   // Dilations
-  auto dilation_width = *reinterpret_cast<int32_t*>(input_operands[11]->buffer);
-  auto dilation_height =
-      *reinterpret_cast<int32_t*>(input_operands[12]->buffer);
-  NNADAPTER_VLOG(5) << "dilations=[" << dilation_width << "," << dilation_height
-                    << "]";
+  uint32_t dilations_size =
+      input_operands[7]->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(dilations_size, 2U);
+  auto dilations_buffer = reinterpret_cast<int32_t*>(input_operands[7]->buffer);
+  auto dilation_height = dilations_buffer[0];
+  auto dilation_width = dilations_buffer[1];
+  NNADAPTER_VLOG(5) << "dilations = [" << dilation_height << ", "
+                    << dilation_width << "]";
+  // Fuse code
+  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[8]->buffer);
+  NNADAPTER_VLOG(5) << "fuse_code = " << fuse_code;
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
@@ -91,13 +99,11 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   unsigned int strides[2] = {static_cast<unsigned int>(stride_height),
                              static_cast<unsigned int>(stride_width)};
   // Top and left
-  unsigned int pad_to_begin[2] = {
-      static_cast<unsigned int>(padding_height_top),
-      static_cast<unsigned int>(padding_width_left)};
+  unsigned int pad_to_begin[2] = {static_cast<unsigned int>(pad_height_top),
+                                  static_cast<unsigned int>(pad_width_left)};
   // Bottom and right
-  unsigned int pad_to_end[2] = {
-      static_cast<unsigned int>(padding_height_bottom),
-      static_cast<unsigned int>(padding_width_right)};
+  unsigned int pad_to_end[2] = {static_cast<unsigned int>(pad_height_bottom),
+                                static_cast<unsigned int>(pad_width_right)};
   unsigned int dilations[2] = {static_cast<unsigned int>(dilation_height),
                                static_cast<unsigned int>(dilation_width)};
   NNADAPTER_CHECK(

@@ -339,20 +339,22 @@ typedef enum {
    *      3) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL,
    * its type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL, and
    * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
-   * * 3: padding_width_left, A NNADAPTER_INT32 scalar.
-   * * 4: padding_width_right, A NNADAPTER_INT32 scalar.
-   * * 5: padding_height_top, A NNADAPTER_INT32 scalar.
-   * * 6: padding_height_bottom, A NNADAPTER_INT32 scalar.
-   * * 7: stride_width, A NNADAPTER_INT32 scalar.
-   * * 8: stride_height, A NNADAPTER_INT32 scalar.
-   * * 9: group, A NNADAPTER_INT32 scalar.
+   * * 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
+   * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
+   * NNAdapterPadCode.
+   * * 4: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
+   * height_bottom, width_left, width_right}, or with shape[0] and no data.
+   * * 5: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * {height_stride, width_stride}.
+   * * 6: group, A NNADAPTER_INT32 scalar.
    *      1) For a normal convolution, group must be 1.
    *      2) For a depthwise convolution, the formula should be satisfied:
    * group=C_out=C_in.
-   * * 10: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+   * * 7: dilations, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * {dilations_height, dilations_width}.
+   * * 8: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
-   * * 11: dilation_width, A NNADAPTER_INT32 scalar. Defaults to 1.
-   * * 12: dilation_height, A NNADAPTER_INT32 scalar. Defaults to 1.
+   *
    *
    * Outputs:
    * * 0: output, The output 4-D tensor with shape [N, C_out, H_out, W_out], its
@@ -1126,6 +1128,21 @@ typedef enum {
   /** Fused ReLU6 activation function. */
   NNADAPTER_FUSED_RELU6 = 3,
 } NNAdapterFuseCode;
+
+/**
+ * Pad types.
+ *
+ * Available since version 1.
+ */
+typedef enum {
+  /** Use explicit pads. */
+  NNADAPTER_PAD_NONE = 0,
+  /** Results in padding evenly to the left/right or up/down of the input such
+     that output has the same height/width dimension as the input.*/
+  NNADAPTER_PAD_SAME = 1,
+  /** No padding. */
+  NNADAPTER_PAD_VALID = 2,
+} NNAdapterPadCode;
 
 /**
  * Device codes.
