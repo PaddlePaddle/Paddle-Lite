@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,15 +21,11 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-typedef enum { LESS_THAN = 0 } CompareType;
-
-template <int CompType, PrecisionType PType, typename T>
+template <PrecisionType PType, class T, class Functor>
 class CompareCompute
     : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
-
-  void CompareData(const T* x, const T* y, bool* z, int len);
 
   virtual ~CompareCompute() = default;
 };

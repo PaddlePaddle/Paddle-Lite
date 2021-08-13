@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,39 +21,28 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <int CompType, PrecisionType PType, typename T>
-void CompareCompute<CompType, PType, T>::CompareData(const T* x,
-                                                     const T* y,
-                                                     bool* z,
-                                                     int len) {
-  auto& ctx = this->ctx_->template As<XPUContext>();
-  int r = 0;
-  switch (CompType) {
-    case CompareType::LESS_THAN: {
-      r = xdnn::less_than<T>(ctx.GetRawContext(), x, y, z, len);
-      break;
-    }
-    default: {
-      LOG(FATAL) << "CompareType in compare_compute kernel "
-                    "only supports less_than[0] for xpu at this moment,"
-                    "now it is "
-                 << CompType;
-      break;
-    }
+template <typename T>
+struct LessThanFunctor {
+  inline int operator()(
+      xdnn::Context* ctx, const T* x, const T* y, bool* z, int len) const {
+    return xdnn::less_than<T>(ctx, x, y, z, len);
   }
-  CHECK_EQ(r, 0);
-}
+};
 
-template <int CompType, PrecisionType PType, typename T>
-void CompareCompute<CompType, PType, T>::Run() {
+template <PrecisionType PType, class T, class Functor>
+void CompareCompute<PType, T, Functor>::Run() {
   auto& param = this->template Param<operators::CompareParam>();
   const size_t x_size = param.X->numel();
   const size_t y_size = param.Y->numel();
   bool* z = param.Out->template mutable_data<bool>(TARGET(kXPU));
   const auto* x = param.X->template data<T>();
   const auto* y = param.Y->template data<T>();
+
+  auto& ctx = this->ctx_->template As<XPUContext>();
   if (x_size == y_size) {
-    CompareData(x, y, z, x_size);
+    Functor comp_func;
+    int r = comp_func(ctx.GetRawContext(), x, y, z, x_size);
+    CHECK_EQ(r, 0);
   } else {
     LOG(FATAL) << "CompareCompute only supports x_size == y_size for "
                   "xpu at this moment, however them are not equal now";
@@ -66,9 +55,9 @@ void CompareCompute<CompType, PType, T>::Run() {
 }  // namespace paddle
 
 using less_than_float = paddle::lite::kernels::xpu::CompareCompute<
-    paddle::lite::kernels::xpu::CompareType::LESS_THAN,
     PRECISION(kFloat),
-    float>;
+    float,
+    paddle::lite::kernels::xpu::LessThanFunctor<float>>;
 REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
@@ -83,9 +72,9 @@ REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_float, def)
     .Finalize();
 
 using less_than_int32 = paddle::lite::kernels::xpu::CompareCompute<
-    paddle::lite::kernels::xpu::CompareType::LESS_THAN,
     PRECISION(kInt32),
-    int>;
+    int,
+    paddle::lite::kernels::xpu::LessThanFunctor<int>>;
 REGISTER_LITE_KERNEL(less_than, kXPU, kInt32, kAny, less_than_int32, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
@@ -100,9 +89,9 @@ REGISTER_LITE_KERNEL(less_than, kXPU, kInt32, kAny, less_than_int32, def)
     .Finalize();
 
 using less_than_int64 = paddle::lite::kernels::xpu::CompareCompute<
-    paddle::lite::kernels::xpu::CompareType::LESS_THAN,
     PRECISION(kInt64),
-    int64_t>;
+    int64_t,
+    paddle::lite::kernels::xpu::LessThanFunctor<int64_t>>;
 REGISTER_LITE_KERNEL(less_than, kXPU, kInt64, kAny, less_than_int64, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
