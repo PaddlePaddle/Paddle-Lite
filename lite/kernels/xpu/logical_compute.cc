@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/logical_compute.h"
+#include <functional>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,8 +22,23 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <int LogicType>
-void BinaryLogicalCompute<LogicType>::Run() {
+template <typename T>
+struct LogicalAndFunctor {
+  inline int operator()(
+      xdnn::Context* ctx, const T* x, const T* y, T* z, int len) const {
+    return xdnn::logical_and<T>(ctx, x, y, z, len);
+  }
+};
+
+template <typename T>
+struct LogicalNotFunctor {
+  inline int operator()(xdnn::Context* ctx, const T* x, T* z, int len) const {
+    return xdnn::logical_not<T>(ctx, x, z, len);
+  }
+};
+
+template <class T, class Functor>
+void BinaryLogicalCompute<T, Functor>::Run() {
   auto& param = this->template Param<operators::LogicalParam>();
   const size_t count = param.X->numel();
   bool* z = param.Out->template mutable_data<bool>(TARGET(kXPU));
@@ -30,45 +46,21 @@ void BinaryLogicalCompute<LogicType>::Run() {
   const auto* y = param.Y->template data<bool>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  int r = 0;
-  switch (LogicType) {
-    case LogicalType::LOGICAL_AND: {
-      r = xdnn::logical_and<bool>(ctx.GetRawContext(), x, y, z, count);
-      break;
-    }
-    default: {
-      LOG(FATAL) << "LogicalType in logical_compute kernel "
-                    "only supports logical_and[1] for xpu at this moment,"
-                    "now it is "
-                 << LogicType;
-      break;
-    }
-  }
+  Functor binary_logic_func;
+  int r = binary_logic_func(ctx.GetRawContext(), x, y, z, count);
   CHECK_EQ(r, 0);
 }
 
-template <int LogicType>
-void UnaryLogicalCompute<LogicType>::Run() {
+template <class T, class Functor>
+void UnaryLogicalCompute<T, Functor>::Run() {
   auto& param = this->template Param<operators::LogicalParam>();
   const size_t count = param.X->numel();
   bool* z = param.Out->template mutable_data<bool>(TARGET(kXPU));
   const auto* x = param.X->template data<bool>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  int r = 0;
-  switch (LogicType) {
-    case LogicalType::LOGICAL_NOT: {
-      r = xdnn::logical_not<bool>(ctx.GetRawContext(), x, z, count);
-      break;
-    }
-    default: {
-      LOG(FATAL) << "LogicalType in logical_compute kernel "
-                    "only supports logical_not[0] for xpu at this moment,"
-                    "now it is "
-                 << LogicType;
-      break;
-    }
-  }
+  Functor unary_logic_func;
+  int r = unary_logic_func(ctx.GetRawContext(), x, z, count);
   CHECK_EQ(r, 0);
 }
 
@@ -77,13 +69,11 @@ void UnaryLogicalCompute<LogicType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(logical_and,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::BinaryLogicalCompute<
-                         paddle::lite::kernels::xpu::LogicalType::LOGICAL_AND>,
-                     def)
+using LogicalAnd = paddle::lite::kernels::xpu::BinaryLogicalCompute<
+    bool,
+    paddle::lite::kernels::xpu::LogicalAndFunctor<bool>>;
+
+REGISTER_LITE_KERNEL(logical_and, kXPU, kFloat, kAny, LogicalAnd, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kBool),
@@ -98,13 +88,11 @@ REGISTER_LITE_KERNEL(logical_and,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(logical_not,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::UnaryLogicalCompute<
-                         paddle::lite::kernels::xpu::LogicalType::LOGICAL_NOT>,
-                     def)
+using LogicalNot = paddle::lite::kernels::xpu::UnaryLogicalCompute<
+    bool,
+    paddle::lite::kernels::xpu::LogicalNotFunctor<bool>>;
+
+REGISTER_LITE_KERNEL(logical_not, kXPU, kFloat, kAny, LogicalNot, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kBool),
