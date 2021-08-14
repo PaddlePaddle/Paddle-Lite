@@ -22,8 +22,8 @@
 
 #define FP32_ABS_DIFF (5e-4)
 #define FP32_RELATIVE_DIFF (1e-3)
-#define FP16_ABS_DIFF (6e-2)
-#define FP16_RELATIVE_DIFF (6e-2)
+#define FP16_ABS_DIFF (8e-2)
+#define FP16_RELATIVE_DIFF (8e-2)
 
 // #define PRINT_RESULT
 
