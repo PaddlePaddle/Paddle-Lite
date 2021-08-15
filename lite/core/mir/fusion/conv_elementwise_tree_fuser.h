@@ -45,6 +45,9 @@ class ConvElementwiseTreeFuser : public FuseBase {
   bool conv_has_bias_{false};
   bool conv_has_prelu_alpha_{false};
   std::string elementwise_type_{""};
+  PMNode* conv_output_;
+  PMNode* conv_;
+  PMNode* elementwise_;
 };
 
 }  // namespace fusion
