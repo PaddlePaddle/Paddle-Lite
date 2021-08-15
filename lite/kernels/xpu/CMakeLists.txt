@@ -85,6 +85,7 @@ else()
   add_kernel(correlation_compute_xpu XPU extra SRCS correlation_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(logical_compute_xpu XPU extra SRCS logical_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(compare_compute_xpu XPU extra SRCS compare_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(is_empty_compute_xpu XPU extra SRCS is_empty_compute.cc DEPS ${lite_kernel_deps})
 
   # extra(fused kernel)
   add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc DEPS ${lite_kernel_deps})
