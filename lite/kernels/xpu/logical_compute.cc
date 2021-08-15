@@ -37,8 +37,8 @@ struct LogicalNotFunctor {
   }
 };
 
-template <class T, class Functor>
-void BinaryLogicalCompute<T, Functor>::Run() {
+template <class Functor>
+void BinaryLogicalCompute<Functor>::Run() {
   auto& param = this->template Param<operators::LogicalParam>();
   const size_t count = param.X->numel();
   bool* z = param.Out->template mutable_data<bool>(TARGET(kXPU));
@@ -51,8 +51,8 @@ void BinaryLogicalCompute<T, Functor>::Run() {
   CHECK_EQ(r, 0);
 }
 
-template <class T, class Functor>
-void UnaryLogicalCompute<T, Functor>::Run() {
+template <class Functor>
+void UnaryLogicalCompute<Functor>::Run() {
   auto& param = this->template Param<operators::LogicalParam>();
   const size_t count = param.X->numel();
   bool* z = param.Out->template mutable_data<bool>(TARGET(kXPU));
@@ -70,7 +70,6 @@ void UnaryLogicalCompute<T, Functor>::Run() {
 }  // namespace paddle
 
 using LogicalAnd = paddle::lite::kernels::xpu::BinaryLogicalCompute<
-    bool,
     paddle::lite::kernels::xpu::LogicalAndFunctor<bool>>;
 
 REGISTER_LITE_KERNEL(logical_and, kXPU, kFloat, kAny, LogicalAnd, def)
@@ -89,7 +88,6 @@ REGISTER_LITE_KERNEL(logical_and, kXPU, kFloat, kAny, LogicalAnd, def)
     .Finalize();
 
 using LogicalNot = paddle::lite::kernels::xpu::UnaryLogicalCompute<
-    bool,
     paddle::lite::kernels::xpu::LogicalNotFunctor<bool>>;
 
 REGISTER_LITE_KERNEL(logical_not, kXPU, kFloat, kAny, LogicalNot, def)

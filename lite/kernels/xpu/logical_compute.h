@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T, class Functor>
+template <class Functor>
 class BinaryLogicalCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny)> {
  public:
@@ -30,7 +30,7 @@ class BinaryLogicalCompute
   virtual ~BinaryLogicalCompute() = default;
 };
 
-template <class T, class Functor>
+template <class Functor>
 class UnaryLogicalCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny)> {
  public:
