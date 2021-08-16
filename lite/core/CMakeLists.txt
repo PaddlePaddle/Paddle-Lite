@@ -1,3 +1,7 @@
+FILE(GLOB PROFILE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/profile/*.cc)
+list(REMOVE_ITEM PROFILE_SRC *test*)
+message(STATUS ${PROFILE_SRC})
+message(STATUS "-------------------")
 if (WITH_TESTING)
   add_subdirectory (test)
 endif ()
