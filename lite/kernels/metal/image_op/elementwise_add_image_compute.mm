@@ -184,7 +184,7 @@ void ElementwiseAddImageCompute::setup_with_mps() {
         auto backend = (__bridge MetalContextImp*)metal_context_->backend();
         //
         mps_add_op_ = (__bridge_retained void*)[[MPSCNNAdd alloc] initWithDevice:backend.device];
-        // MPS算子输入输出
+        // MPS input
         auto input_x_c = MAX(4, static_cast<int>(input_buffer_x_->tensor_dim_[1]));
         auto input_y_c = MAX(4, static_cast<int>(input_buffer_y_->tensor_dim_[1]));
         auto output_c = MAX(4, static_cast<int>(output_buffer_->tensor_dim_[1]));

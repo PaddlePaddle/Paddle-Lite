@@ -68,7 +68,7 @@ void ConcatImageCompute::run_without_mps() {
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
 }
-    
+
 void ConcatImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     int num = (int)param.x.size();
@@ -132,8 +132,7 @@ void ConcatImageCompute::setup_without_mps() {
             odm[4 - orank + i] = (int)(output_buffer_->tensor_dim_[i]);
         }
     }
-    ConcatMetalParam concat_params{
-        {odm[0], odm[1], odm[2], odm[3]},
+    ConcatMetalParam concat_params{{odm[0], odm[1], odm[2], odm[3]},
         static_cast<int>(axis),
         0,
         {transpose[0], transpose[1], transpose[2], transpose[3]},
