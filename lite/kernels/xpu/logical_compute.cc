@@ -22,18 +22,22 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>
 struct LogicalAndFunctor {
-  inline int operator()(
-      xdnn::Context* ctx, const T* x, const T* y, T* z, int len) const {
-    return xdnn::logical_and<T>(ctx, x, y, z, len);
+  inline int operator()(xdnn::Context* ctx,
+                        const bool* x,
+                        const bool* y,
+                        bool* z,
+                        int len) const {
+    return xdnn::logical_and<bool>(ctx, x, y, z, len);
   }
 };
 
-template <typename T>
 struct LogicalNotFunctor {
-  inline int operator()(xdnn::Context* ctx, const T* x, T* z, int len) const {
-    return xdnn::logical_not<T>(ctx, x, z, len);
+  inline int operator()(xdnn::Context* ctx,
+                        const bool* x,
+                        bool* z,
+                        int len) const {
+    return xdnn::logical_not<bool>(ctx, x, z, len);
   }
 };
 
@@ -70,7 +74,7 @@ void UnaryLogicalCompute<Functor>::Run() {
 }  // namespace paddle
 
 using LogicalAnd = paddle::lite::kernels::xpu::BinaryLogicalCompute<
-    paddle::lite::kernels::xpu::LogicalAndFunctor<bool>>;
+    paddle::lite::kernels::xpu::LogicalAndFunctor>;
 
 REGISTER_LITE_KERNEL(logical_and, kXPU, kFloat, kAny, LogicalAnd, def)
     .BindInput("X",
@@ -88,7 +92,7 @@ REGISTER_LITE_KERNEL(logical_and, kXPU, kFloat, kAny, LogicalAnd, def)
     .Finalize();
 
 using LogicalNot = paddle::lite::kernels::xpu::UnaryLogicalCompute<
-    paddle::lite::kernels::xpu::LogicalNotFunctor<bool>>;
+    paddle::lite::kernels::xpu::LogicalNotFunctor>;
 
 REGISTER_LITE_KERNEL(logical_not, kXPU, kFloat, kAny, LogicalNot, def)
     .BindInput("X",
