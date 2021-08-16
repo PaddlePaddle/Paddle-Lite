@@ -1,7 +1,7 @@
 if (WITH_TESTING)
-    lite_cc_library(subgraph_detector SRCS subgraph_detector.cc DEPS mir_pass types subgraph_op gtest gflags)
+    lite_cc_library(subgraph_detector SRCS subgraph_detector.cc DEPS mir_pass types ops gtest gflags)
 else()
-    lite_cc_library(subgraph_detector SRCS subgraph_detector.cc DEPS mir_pass types subgraph_op)
+    lite_cc_library(subgraph_detector SRCS subgraph_detector.cc DEPS mir_pass types ops)
 endif()
 
 lite_cc_library(subgraph_pass

@@ -28,6 +28,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(system)
+include(functions)
 include(cross_compiling/preproject)
 
 project(paddle CXX C)
