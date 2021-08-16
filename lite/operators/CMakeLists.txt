@@ -238,23 +238,23 @@ set(__lite_cc_files ${__lite_cc_files} ${OPS_SRC} CACHE INTERNAL "")
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)
-        lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS one_hot_op memory scope ${op_deps} one_hot_compute_host)
+        lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS ops memory scope ${op_deps} one_hot_compute_host)
     endif()
     lite_cc_test(test_fc_op SRCS fc_op_test.cc
-                DEPS fc_op memory
+                DEPS ops memory
                 X86_DEPS fc_compute_x86
                 ARM_DEPS fc_compute_arm)
     lite_cc_test(test_pool_op SRCS pool_op_test.cc
-                DEPS pool_op memory
+                DEPS ops memory
                 ARM_DEPS pool_compute_arm)
-    lite_cc_test(test_scale_op SRCS scale_op_test.cc DEPS scale_op memory)
-    lite_cc_test(test_softmax_op SRCS softmax_op_test.cc DEPS softmax_op memory)
+    lite_cc_test(test_scale_op SRCS scale_op_test.cc DEPS ops memory)
+    lite_cc_test(test_softmax_op SRCS softmax_op_test.cc DEPS ops memory)
     #lite_cc_test(test_reshape_op SRCS reshape_op_test.cc DEPS reshape_op memory)
-    lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc DEPS batch_norm_op memory)
-    lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS concat_op memory scope)
-    lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS calib_op memory ARM_DEPS calib_compute_arm)
-    lite_cc_test(test_transpose_op SRCS transpose_op_test.cc DEPS transpose_op memory)
+    lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc DEPS ops memory)
+    lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS ops memory scope)
+    lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS ops memory ARM_DEPS calib_compute_arm)
+    lite_cc_test(test_transpose_op SRCS transpose_op_test.cc DEPS ops memory)
     lite_cc_test(test_fusion_elementwise_activation_ops
                  SRCS fusion_elementwise_activation_ops_test.cc
-                 DEPS fusion_elementwise_activation_ops memory)
+                 DEPS ops memory)
 endif()
