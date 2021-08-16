@@ -37,25 +37,35 @@ void ActivationImageCompute::PrepareForRun() {
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
-    function_name_ = "sigmoid";
-    if (param.has_active) {
-        if (param.active_type == lite_api::ActivationType::kSigmoid) {
+
+    int active_type = static_cast<int>(param.active_type);
+    switch (active_type) {
+        case 5:
             function_name_ = "sigmoid";
-        } else if (param.active_type == lite_api::ActivationType::kSwish) {
+            break;
+        case 7:
             function_name_ = "swish";
-        } else if (param.active_type == lite_api::ActivationType::kHardSigmoid) {
-            HardSigmoidMetalParam metal_param{param.hard_sigmoid_slope, param.hard_sigmoid_offset};
-            param_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
-            function_name_ = "hard_sigmoid";
-        } else if (param.active_type == lite_api::ActivationType::kHardSwish) {
+            break;
+        case 10: {
             HardSwishMetalParam metal_param{
                 param.hard_swish_offset, param.hard_swish_threshold, param.hard_swish_scale};
-            param_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
-            function_name_ = "hard_swish";
-        } else {
-            LOG(FATAL) << "[metal] unsupported Activation type";
+            param_buffer_ =
+                std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
         }
+            function_name_ = "hard_swish";
+            break;
+        case 14: {
+            HardSigmoidMetalParam metal_param{param.hard_sigmoid_slope, param.hard_sigmoid_offset};
+            param_buffer_ =
+                std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
+        }
+            function_name_ = "hard_sigmoid";
+            break;
+        default:
+            LOG(FATAL) << "[metal] unsupported Activation type";
+            return;
     }
+
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
