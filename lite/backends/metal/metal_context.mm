@@ -21,7 +21,6 @@ namespace lite {
 MetalContext::MetalContext() {
     mContext = (__bridge_retained void*)[[MetalContextImp alloc] init];
     if (mContext) {
-
     }
 }
 
@@ -48,10 +47,7 @@ void MetalContext::set_metal_path(std::string path) {
 }
 
 void MetalContext::resize_input(int64_t index, void* texture, std::vector<int64_t>& shape) {
-    [(__bridge MetalContextImp*)mContext resizeInput:index
-                                             texture:texture
-                                                dims:shape];
+    [(__bridge MetalContextImp*)mContext resizeInput:index texture:texture dims:shape];
 }
-
 }
 }

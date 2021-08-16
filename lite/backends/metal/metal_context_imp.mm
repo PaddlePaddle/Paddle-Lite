@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/backends/metal/metal_context_imp.h"
-#include "lite/utils/cp_logging.h"
 #include "lite/kernels/metal/image_op/fetch_image_compute.h"
+#include "lite/utils/cp_logging.h"
 
 // debug macro
 //#define METAL_DEBUG_GPU_CAPTURE
@@ -25,7 +25,7 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 @interface MetalContextImp () {
-    std::vector<paddle::lite::kernels::metal::FetchImageCompute *> _fetch_vector;
+    std::vector<paddle::lite::kernels::metal::FetchImageCompute*> _fetch_vector;
 }
 @property (strong, nonatomic) id<MTLDevice> device;
 @property (strong, nonatomic) NSString* libraryPath;
@@ -51,9 +51,9 @@ extern NSString* cString2NSString(std::string cStr) {
         _resizeInputs = [NSMutableDictionary dictionaryWithCapacity:3];
         _device = MTLCreateSystemDefaultDevice();
         _commandQueue = [_device newCommandQueue];
-#if defined (METAL_DEBUG_GPU_CAPTURE)
+#if defined(METAL_DEBUG_GPU_CAPTURE)
         // At least one command buffer must be created and
-        //committed within the boundaries of a GPU Capture.
+        // committed within the boundaries of a GPU Capture.
         [self startCapture];
 #endif
         _commandBuffer = [_commandQueue commandBuffer];
@@ -66,18 +66,17 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 - (void)setMetalPath:(std::string)path {
-    NSString *pathStr = cString2NSString(path);
+    NSString* pathStr = cString2NSString(path);
     if (pathStr) {
         self.libraryPath = pathStr;
         self.library = [self.device newLibraryWithFile:pathStr error:NULL];
     }
     if (nil == _library) {
-        LOG(INFO) << "Can't load metallib: "
-                  << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
+        LOG(INFO) << "Can't load metallib: " << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
     }
 }
 
-- (void)setMetalDevice:(void *)device {
+- (void)setMetalDevice:(void*)device {
     if (!device) {
         return;
     }
@@ -85,7 +84,7 @@ extern NSString* cString2NSString(std::string cStr) {
     if (mtl) {
         self.device = mtl;
         self.commandQueue = [_device newCommandQueue];
-#if defined (METAL_DEBUG_GPU_CAPTURE)
+#if defined(METAL_DEBUG_GPU_CAPTURE)
         [self startCapture];
 #endif
         self.commandBuffer = [self.commandQueue commandBuffer];
@@ -97,20 +96,20 @@ extern NSString* cString2NSString(std::string cStr) {
 
 #pragma mark pre-process
 
-- (void)resizeInput:(int64_t)index texture:(void *)texture dims:(std::vector<int64_t>&)dims  {
+- (void)resizeInput:(int64_t)index texture:(void*)texture dims:(std::vector<int64_t>&)dims {
     id<MTLTexture> inTexture = (__bridge id<MTLTexture>)texture;
     if (inTexture) {
-        NSMutableArray *dimsAry = [NSMutableArray arrayWithCapacity:3];
+        NSMutableArray* dimsAry = [NSMutableArray arrayWithCapacity:3];
         for (int i = 0; i < dims.size(); i++) {
             [dimsAry addObject:@(dims[i])];
         }
-        [self.resizeInputs setObject:@[inTexture, dimsAry] forKey:@(index).stringValue];
+        [self.resizeInputs setObject:@[ inTexture, dimsAry ] forKey:@(index).stringValue];
     }
 }
 
-- (NSArray *)getResizeInput:(int64_t)index {
+- (NSArray*)getResizeInput:(int64_t)index {
     if (index < self.resizeInputs.allKeys.count) {
-        NSArray *resizeAry = [self.resizeInputs objectForKey:@(index).stringValue];
+        NSArray* resizeAry = [self.resizeInputs objectForKey:@(index).stringValue];
         if (resizeAry) {
             return resizeAry;
         }
@@ -118,21 +117,22 @@ extern NSString* cString2NSString(std::string cStr) {
     return nil;
 }
 
-- (MPSImageLanczosScale *)lanczosScalePtrCreate {
-    MPSImageLanczosScale *lanczos = [[MPSImageLanczosScale alloc] initWithDevice:self.device];
+- (MPSImageLanczosScale*)lanczosScalePtrCreate {
+    MPSImageLanczosScale* lanczos = [[MPSImageLanczosScale alloc] initWithDevice:self.device];
     return lanczos;
 }
 
-- (id<MTLTexture>)lanczosTextureCreate:(NSArray *)dims {
-    MTLTextureDescriptor *textureDesc = [[MTLTextureDescriptor alloc] init];
+- (id<MTLTexture>)lanczosTextureCreate:(NSArray*)dims {
+    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
     textureDesc.textureType = MTLTextureType2D;
     textureDesc.width = [dims[3] intValue];
     textureDesc.height = [dims[2] intValue];
     textureDesc.depth = ([dims[1] intValue] + 3) / 4;
     textureDesc.pixelFormat = MTLPixelFormatRGBA16Float;
-    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;;
+    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+    ;
     textureDesc.storageMode = MTLStorageModeShared;
-    
+
     id<MTLTexture> texture = [self.device newTextureWithDescriptor:textureDesc];
     return texture;
 }
@@ -166,7 +166,8 @@ extern NSString* cString2NSString(std::string cStr) {
     return nil;
 }
 
-- (bool)isNeedNewHeap:(id<MTLHeap>)heap texDesc:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0)) {
+- (bool)isNeedNewHeap:(id<MTLHeap>)heap
+              texDesc:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0)) {
     if (@available(iOS 10.0, *)) {
         NSInteger hSize = heap.size;
         NSInteger tSize = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
@@ -179,7 +180,8 @@ extern NSString* cString2NSString(std::string cStr) {
     return false;
 }
 
-- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
+- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc
+                                      heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
     if (@available(iOS 10.0, *)) {
         id<MTLTexture> image = [heap newTextureWithDescriptor:desc];
         [image makeAliasable];
@@ -216,7 +218,7 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 - (void)commit {
-#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+#if defined(METAL_DEBUG_ONE_COMMANDBUFFER)
 
 #else
     [_commandBuffer commit];
@@ -227,7 +229,7 @@ extern NSString* cString2NSString(std::string cStr) {
 
 // mps
 - (id<MTLCommandBuffer>)commandBuffer {
-#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+#if defined(METAL_DEBUG_ONE_COMMANDBUFFER)
     return _commandBuffer;
 #else
     id<MTLCommandBuffer> result = [_commandQueue commandBuffer];
@@ -239,7 +241,7 @@ extern NSString* cString2NSString(std::string cStr) {
 // mps
 - (void)commit:(id<MTLCommandBuffer>)cmdBuf {
     assert(nil != cmdBuf);
-#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+#if defined(METAL_DEBUG_ONE_COMMANDBUFFER)
 
 #else
     [cmdBuf commit];
@@ -248,17 +250,17 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 - (void)waitAllCompleted {
-#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+#if defined(METAL_DEBUG_ONE_COMMANDBUFFER)
     [_commandBuffer commit];
-#if defined (METAL_DEBUG_GPU_CAPTURE)
+#if defined(METAL_DEBUG_GPU_CAPTURE)
     [self stopCapture];
 #endif
     [_commandBuffer waitUntilCompleted];
     _commandBuffer = [_commandQueue commandBuffer];
 
 #else
-    
-#if defined (METAL_DEBUG_GPU_CAPTURE)
+
+#if defined(METAL_DEBUG_GPU_CAPTURE)
     [self stopCapture];
 #endif
     for (id<MTLCommandBuffer> buffer in _waitings) {
@@ -276,9 +278,9 @@ extern NSString* cString2NSString(std::string cStr) {
 
 #pragma mark c++ external
 
-- (void)add_fetch_kernel_ptr:(void *)ptr {
-    paddle::lite::kernels::metal::FetchImageCompute *fetch =
-        static_cast<paddle::lite::kernels::metal::FetchImageCompute *>(ptr);
+- (void)add_fetch_kernel_ptr:(void*)ptr {
+    paddle::lite::kernels::metal::FetchImageCompute* fetch =
+        static_cast<paddle::lite::kernels::metal::FetchImageCompute*>(ptr);
     _fetch_vector.push_back(fetch);
 }
 
@@ -387,8 +389,8 @@ extern NSString* cString2NSString(std::string cStr) {
         MTLCaptureDescriptor* captureDescriptor = [[MTLCaptureDescriptor alloc] init];
         captureDescriptor.captureObject = self.device;
 
-        NSError *error;
-        if (![captureManager startCaptureWithDescriptor: captureDescriptor error:&error]) {
+        NSError* error;
+        if (![captureManager startCaptureWithDescriptor:captureDescriptor error:&error]) {
             NSLog(@"Failed to start capture, error %@", error);
         }
     }
