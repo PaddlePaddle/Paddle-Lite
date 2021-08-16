@@ -182,7 +182,7 @@ class DeformableConvComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::cout << "start data..." << std::endl;
+    std::cout << "start prepare data..." << std::endl;
     // input
     std::vector<float> din(input_dims_.production());
     fill_data_rand(din.data(), -1.f, 1.f, input_dims_.production());
@@ -222,13 +222,13 @@ class DeformableConvComputeTester : public arena::TestCase {
     // bias
     DDim bias_dims(std::vector<int64_t>{out_channels_});
     std::vector<float> dbias(bias_dims.production());
-    fill_data_rand(din.data(), -1.f, 1.f, bias_dims.production());
+    fill_data_rand(dbias.data(), -1.f, 1.f, bias_dims.production());
     SetCommonTensor(bias_, bias_dims, dbias.data(), {}, true);
   }
 };
 
 void TestConvKsize(Place place, float abs_error = 2e-5) {
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 12, 12}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 1, 12, 12}}) {
     for (auto out_channels : {3, 6}) {
       for (auto ksize : {1, 3, 5, 7}) {
         std::unique_ptr<arena::TestCase> tester(new DeformableConvComputeTester(
@@ -250,8 +250,6 @@ TEST(Deformable_conv, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
-  // TODO(shentanyue)
-  return;
 #else
   return;
 #endif
