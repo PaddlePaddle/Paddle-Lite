@@ -18,6 +18,12 @@ Paddle Lite已支持在比特大陆的Sophon BM1682/BM1684处理器上进行预�
 ### 已支持的Paddle模型
 
 - [Mobilenet](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz)
+- [Yolov3]
+- [Mobilenet-ssd]
+- [Inceptionv4]
+- [Vgg16]
+- [DarkNet-YOLOv3]
+- [PyramidBox]
 
 ### 已支持（或部分支持）的Paddle算子
 
