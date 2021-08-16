@@ -18,9 +18,7 @@
 #include <vector>
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/conv_bias.h"
-#ifdef LITE_WITH_AVX
 #include "lite/backends/x86/math/conv_utils.h"
-#endif
 #include "lite/backends/x86/math/im2col.h"
 #include "lite/backends/x86/math/vol2col.h"
 #include "lite/core/kernel.h"
@@ -61,10 +59,24 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), Ptype> {
   virtual void Run();
 
 #ifdef LITE_WITH_PROFILE
+  std::string kernel_func_name_{"Conv2d"};
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = "NotImplForConv";
   }
+
+#define PROFILE_INFO(dtype1, dtype2)                                        \
+  template <>                                                               \
+  void Conv2dCompute<PRECISION(dtype1), PRECISION(dtype2)>::                \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
+  }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
+
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
 
   ~Conv2dCompute() {
@@ -76,6 +88,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), Ptype> {
  private:
   using param_t = operators::ConvParam;
   KernelLite<TARGET(kX86), Ptype>* impl_{nullptr};
+  bool flag_1x1gemm_{false};
 };
 
 }  // namespace x86
