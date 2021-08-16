@@ -203,15 +203,5 @@ class Program {
         dst, std::make_shared<Operator>(src, tensor_desc, #name, index));      \
   })
 
-#define MAP_CREATE_DYNAMIC_OUTPUT(src, name, index, dst)                       \
-  ({                                                                           \
-    auto shape = ge::Shape();                                                  \
-    auto format = ge::FORMAT_NCHW;                                             \
-    auto dtype = ConvertPrecision(dst->type.precision);                        \
-    auto tensor_desc = std::make_shared<ge::TensorDesc>(shape, format, dtype); \
-    UpdateOperatorMap(                                                         \
-        dst, std::make_shared<Operator>(src, tensor_desc, #name, index));      \
-  })
-
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
