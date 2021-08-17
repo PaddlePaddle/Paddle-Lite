@@ -146,20 +146,24 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       const float* col_data_group = din_data + g * group_size_coldata;
       const float* weights_group = weights + g * group_size_weights;
       float* dout_group = dout_batch + g * group_size_out;
-
-      matmul.GEMM<float>(false,
-                         false,
-                         m,
-                         n,
-                         k,
-                         1.f,
-                         weights_group,
-                         k,
-                         col_data_group,
-                         n,
-                         0.f,
-                         dout_group,
-                         n);
+      if (n == 1) {
+        matmul.GEMV<float>(
+            false, m, k, 1.f, weights_group, col_data_group, 0.f, dout_group);
+      } else {
+        matmul.GEMM<float>(false,
+                           false,
+                           m,
+                           n,
+                           k,
+                           1.f,
+                           weights_group,
+                           k,
+                           col_data_group,
+                           n,
+                           0.f,
+                           dout_group,
+                           n);
+      }
     }
     // bias and activate
     lite::x86::math::fill_bias_act(
