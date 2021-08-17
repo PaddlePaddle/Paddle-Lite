@@ -68,19 +68,18 @@ NNAdapterOperand* GenerateInputOperand(Converter* converter,
     input_operand = converter->GetOperand(input_name);
   } else {
     if (has_input_scale) {
-      input_operand = input_persistable
-                          ? converter->AddQuant8ConstantOperand(
-                                reinterpret_cast<int8_t*>(input->raw_data()),
-                                input_dims,
-                                input_scale)
-                          : converter->AddQuant8VariableOperand(
-                                input_dims, input_scale, input_name);
-    } else {
       input_operand =
           input_persistable
-              ? converter->AddFloat32ConstantOperand(
-                    reinterpret_cast<float*>(input->raw_data()), input_dims)
-              : converter->AddFloat32VariableOperand(input_dims, input_name);
+              ? converter->AddQuant8ConstantOperand(
+                    input->mutable_data<int8_t>(), input_dims, input_scale)
+              : converter->AddQuant8VariableOperand(
+                    input_dims, input_scale, input_name);
+    } else {
+      input_operand = input_persistable
+          ? converter->AddFloat32ConstantOperand(input->mutable_data<float>(),
+                                                 input_dims),
+      input_dims)
+          : converter->AddFloat32VariableOperand(input_dims, input_name);
     }
   }
   return input_operand;
