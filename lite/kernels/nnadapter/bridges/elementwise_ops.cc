@@ -75,11 +75,11 @@ NNAdapterOperand* GenerateInputOperand(Converter* converter,
               : converter->AddQuant8VariableOperand(
                     input_dims, input_scale, input_name);
     } else {
-      input_operand = input_persistable
-          ? converter->AddFloat32ConstantOperand(input->mutable_data<float>(),
-                                                 input_dims),
-      input_dims)
-          : converter->AddFloat32VariableOperand(input_dims, input_name);
+      input_operand =
+          input_persistable
+              ? converter->AddFloat32ConstantOperand(
+                    input->mutable_data<float>(), input_dims)
+              : converter->AddFloat32VariableOperand(input_dims, input_name);
     }
   }
   return input_operand;
