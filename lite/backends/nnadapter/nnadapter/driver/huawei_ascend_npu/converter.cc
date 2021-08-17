@@ -66,12 +66,12 @@ Program::~Program() { Clear(); }
 void Program::Clear() {
   operators_.clear();
   model_client_ = nullptr;
+  input_types_.clear();
+  output_types_.clear();
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
-  std::vector<int64_t> input_sizes;
-  std::vector<int64_t> output_sizes;
   std::vector<uint8_t> model_content;
   std::vector<uint8_t>* model_buffer = nullptr;
   if (!cache->buffer.empty()) {
@@ -79,23 +79,11 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     model_buffer = &cache->buffer;
     auto input_count = cache->input_types.size();
     NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-    if (input_count > 0) {
-      input_sizes.resize(input_count);
-      for (size_t i = 0; i < input_count; i++) {
-        const auto& type = cache->input_types[i];
-        input_sizes[i] =
-            ProductionOfDimensions(type.dimensions, type.dimension_count);
-      }
-    }
+    input_types_ = cache->input_types;
     auto output_count = cache->output_types.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
-    output_sizes.resize(output_count);
-    for (size_t i = 0; i < output_count; i++) {
-      const auto& type = cache->output_types[i];
-      output_sizes[i] =
-          ProductionOfDimensions(type.dimensions, type.dimension_count);
-    }
+    output_types_ = cache->output_types;
   } else {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
@@ -113,6 +101,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_SUB:
         case NNADAPTER_MUL:
         case NNADAPTER_DIV:
+        case NNADAPTER_MAX:
+        case NNADAPTER_MIN:
           ConvertElementwise(operation);
           break;
         case NNADAPTER_AVERAGE_POOL_2D:
@@ -142,6 +132,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_SIGMOID:
         case NNADAPTER_TANH:
         case NNADAPTER_ABS:
+        case NNADAPTER_LOG:
           ConvertActivation(operation);
           break;
         case NNADAPTER_RESHAPE:
@@ -171,6 +162,39 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_DEFORMABLE_CONV_2D:
           ConvertDeformableConv2d(operation);
           break;
+        case NNADAPTER_HARD_SWISH:
+          ConvertHardSwish(operation);
+          break;
+        case NNADAPTER_HARD_SIGMOID:
+          ConvertHardSigmoid(operation);
+          break;
+        case NNADAPTER_UNSQUEEZE:
+          ConvertUnsqueeze(operation);
+          break;
+        case NNADAPTER_POW:
+          ConvertPow(operation);
+          break;
+        case NNADAPTER_BATCH_NORMALIZATION:
+          ConvertBatchNormalization(operation);
+          break;
+        case NNADAPTER_CLIP:
+          ConvertClip(operation);
+          break;
+        case NNADAPTER_SLICE:
+          ConvertSlice(operation);
+          break;
+        case NNADAPTER_REDUCE_MEAN:
+          ConvertReduceMean(operation);
+          break;
+        case NNADAPTER_EXPAND:
+          ConvertExpand(operation);
+          break;
+        case NNADAPTER_RANGE:
+          ConvertRange(operation);
+          break;
+        case NNADAPTER_LEAKY_RELU:
+          ConvertLeakyRelu(operation);
+          break;
         default:
           NNADAPTER_LOG(FATAL) << "Unsupported operation("
                                << OperationTypeToString(operation->type)
@@ -184,28 +208,26 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     std::vector<ge::Operator> input_operators;
     if (input_count > 0) {
       input_operators.resize(input_count);
-      input_sizes.resize(input_count);
+      input_types_.resize(input_count);
       for (size_t i = 0; i < input_count; i++) {
         auto operand = model->input_operands[i];
         NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
         input_operators[i] = *operators_[operand].back()->op();
-        input_sizes[i] = ProductionOfDimensions(operand->type.dimensions,
-                                                operand->type.dimension_count);
+        input_types_[i] = operand->type;
       }
     }
     auto output_count = model->output_operands.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
     std::vector<ge::Operator> output_operators(output_count);
-    output_sizes.resize(output_count);
+    output_types_.resize(output_count);
     for (size_t i = 0; i < output_count; i++) {
       auto operand = model->output_operands[i];
       NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
       output_operators[i] = *operators_[operand].back()->op();
-      output_sizes[i] = ProductionOfDimensions(operand->type.dimensions,
-                                               operand->type.dimension_count);
+      output_types_[i] = operand->type;
     }
-    if (cache->key && cache->dir) {
+    if (cache->token && cache->dir) {
       model_buffer = &cache->buffer;
     } else {
       model_buffer = &model_content;
@@ -238,21 +260,47 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
                             "description of input and output tensors!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
-  auto input_count = input_sizes.size();
-  auto output_count = output_sizes.size();
+  auto input_count = input_types_.size();
   NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
-  NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
   for (size_t i = 0; i < input_count; i++) {
-    auto shape = input_tensor_descs[i].GetShape();
+    auto type = &input_types_[i];
+    auto dimensions = input_tensor_descs[i].GetShape();
     NNADAPTER_VLOG(3) << "CANN input tensors[" << i
-                      << "]: " << GEShapeToString(shape);
-    NNADAPTER_CHECK_EQ(input_sizes[i], ProductionOfGEShape(shape));
+                      << "]: " << GEShapeToString(dimensions) << " "
+                      << DimensionsToString(type->dimensions,
+                                            type->dimension_count);
+    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimension_count);
+    for (size_t j = 0; j < type->dimension_count; j++) {
+      auto dimension = type->dimensions[j];
+      if (dimension != -1) {
+        // Check if the dimension of the model inputs is not dynamic
+        NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
+            << "The " << j << "th dimension of the " << i
+            << "th input does not match, expect " << dimension
+            << " but recevied " << dimensions.GetDim(j);
+      }
+    }
   }
+  auto output_count = output_types_.size();
+  NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
   for (size_t i = 0; i < output_count; i++) {
-    auto shape = output_tensor_descs[i].GetShape();
+    auto type = &output_types_[i];
+    auto dimensions = output_tensor_descs[i].GetShape();
     NNADAPTER_VLOG(3) << "CANN output tensors[" << i
-                      << "]: " << GEShapeToString(shape);
-    NNADAPTER_CHECK_EQ(output_sizes[i], ProductionOfGEShape(shape));
+                      << "]: " << GEShapeToString(dimensions) << " "
+                      << DimensionsToString(type->dimensions,
+                                            type->dimension_count);
+    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimension_count);
+    for (size_t j = 0; j < type->dimension_count; j++) {
+      auto dimension = type->dimensions[j];
+      if (dimension != -1) {
+        // Check if the dimension of the model outputs is not dynamic
+        NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
+            << "The " << j << "th dimension of the " << i
+            << "th input does not match, expect " << dimension
+            << " but recevied " << dimensions.GetDim(j);
+      }
+    }
   }
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
@@ -262,8 +310,12 @@ int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
-  NNADAPTER_CHECK(model_client_->Process(
-      input_count, input_arguments, output_count, output_arguments));
+  NNADAPTER_CHECK(model_client_->Process(input_count,
+                                         &input_types_,
+                                         input_arguments,
+                                         output_count,
+                                         &output_types_,
+                                         output_arguments));
   return NNADAPTER_NO_ERROR;
 }
 
@@ -315,7 +367,7 @@ std::shared_ptr<Operator> Program::AddConstantOperator(
   auto tensor = std::make_shared<ge::Tensor>();
   tensor->SetTensorDesc(*tensor_desc);
   tensor->SetData(reinterpret_cast<const uint8_t*>(values),
-                  num_values * OperandPrecisionLength(precision));
+                  num_values * GetOperandPrecisionDataLength(precision));
   op->set_attr_value(*tensor);
   auto constant_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
   UpdateOperatorMap(nullptr, constant_operator);

@@ -96,7 +96,8 @@ int Program::ConvertPool2D(hal::Operation* operation) {
                                                    padding_width_left}));
   pool2d_op->set_attr_stride(
       ge::Operator::OpListInt({stride_height, stride_width}));
-  if (ceil_mode) {
+  // "0" (ceil mode) or "1" (floor mode). Defaults to "0"
+  if (!ceil_mode) {
     pool2d_op->set_attr_ceil_mode(1);
   }
   SET_INPUT(pool2d_op, x, input_operator);

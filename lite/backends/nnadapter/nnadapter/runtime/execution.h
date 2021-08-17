@@ -24,15 +24,11 @@ class Execution {
  public:
   explicit Execution(Compilation* compilation) : compilation_(compilation) {}
   int SetInput(int32_t index,
-               const int32_t* dimensions,
-               uint32_t dimension_count,
-               void* buffer,
-               uint32_t length);
+               void* memory,
+               void* (*access)(void* memory, NNAdapterOperandType* type));
   int SetOutput(int32_t index,
-                const int32_t* dimensions,
-                uint32_t dimensionCount,
-                void* buffer,
-                uint32_t length);
+                void* memory,
+                void* (*access)(void* memory, NNAdapterOperandType* type));
   int Compute();
 
  private:

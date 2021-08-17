@@ -40,22 +40,24 @@ void Program::Clear() {
   tensors_.clear();
   input_info_.clear();
   output_info_.clear();
-  input_zero_points_.clear();
-  output_zero_points_.clear();
+  input_types_.clear();
+  output_types_.clear();
   for (size_t i = 0; i < input_memory_.size(); i++) {
-    imgdnn_mgr_.DestroyMemory(input_memory_[i]);
+    if (input_memory_[i].first) {
+      imgdnn_mgr_.DestroyMemory(input_memory_[i].first);
+    }
   }
   input_memory_.clear();
   for (size_t i = 0; i < output_memory_.size(); i++) {
-    imgdnn_mgr_.DestroyMemory(output_memory_[i]);
+    if (output_memory_[i].first) {
+      imgdnn_mgr_.DestroyMemory(output_memory_[i].first);
+    }
   }
   output_memory_.clear();
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
-  std::vector<int64_t> input_sizes;
-  std::vector<int64_t> output_sizes;
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   ConvertQuantizationSymmToAsymm(model);
@@ -96,39 +98,28 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   std::vector<imgdnn_tensor> input_tensors;
   if (input_count > 0) {
     input_tensors.resize(input_count);
-    input_sizes.resize(input_count);
-    input_zero_points_.resize(input_count);
+    input_types_.resize(input_count);
     for (size_t i = 0; i < input_count; i++) {
       auto operand = model->input_operands[i];
       const auto& type = operand->type;
       NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
       input_tensors[i] = tensors_[operand].back();
       NNADAPTER_CHECK(input_tensors[i]);
-      input_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
-                                  ? type.asymm_per_layer_params.zero_point
-                                  : 0;
-      input_sizes[i] =
-          ProductionOfDimensions(type.dimensions, type.dimension_count);
+      input_types_[i] = type;
     }
   }
   auto output_count = model->output_operands.size();
   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
   NNADAPTER_CHECK_GT(output_count, 0);
-  std::vector<imgdnn_tensor> output_tensors;
-  output_tensors.resize(output_count);
-  output_sizes.resize(output_count);
-  output_zero_points_.resize(output_count);
+  std::vector<imgdnn_tensor> output_tensors(output_count);
+  output_types_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto operand = model->output_operands[i];
     const auto& type = operand->type;
     NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
     output_tensors[i] = tensors_[operand].back();
     NNADAPTER_CHECK(output_tensors[i]);
-    output_zero_points_[i] = IsUInt8AsymmPerLayerQuantization(type.precision)
-                                 ? type.asymm_per_layer_params.zero_point
-                                 : 0;
-    output_sizes[i] =
-        ProductionOfDimensions(type.dimensions, type.dimension_count);
+    output_types_[i] = type;
   }
   imgdnn_mgr_.CreateNetworkObject(input_tensors.size(),
                                   input_tensors.data(),
@@ -142,32 +133,20 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   NNADAPTER_CHECK_EQ(input_count, num_inputs);
   if (input_count > 0) {
     input_info_.resize(input_count);
-    input_memory_.resize(input_count);
+    input_memory_.resize(input_count,
+                         std::pair<imgdnn_memory, size_t>(nullptr, 0));
     imgdnn_mgr_.GetNetworkObjectInputs(
         input_count, input_info_.data(), nullptr);
-    for (size_t i = 0; i < input_count; i++) {
-      auto input_desc = imgdnn_mgr_.GetInputDescriptor(input_info_[i]);
-      NNADAPTER_CHECK_EQ(input_sizes[i],
-                         imgdnn_mgr_.GetDescriptorSize(&input_desc));
-      input_memory_[i] = imgdnn_mgr_.AllocateMemory(input_sizes[i]);
-      imgdnn_mgr_.AddBindingInput(input_info_[i], input_memory_[i]);
-    }
   }
   uint32_t num_outputs;
   imgdnn_mgr_.GetNetworkObjectOutputs(
       std::numeric_limits<unsigned int>::max(), nullptr, &num_outputs);
   NNADAPTER_CHECK_EQ(output_count, num_outputs);
   output_info_.resize(output_count);
-  output_memory_.resize(output_count);
+  output_memory_.resize(output_count,
+                        std::pair<imgdnn_memory, size_t>(nullptr, 0));
   imgdnn_mgr_.GetNetworkObjectOutputs(
       output_count, output_info_.data(), nullptr);
-  for (size_t i = 0; i < output_count; i++) {
-    auto output_desc = imgdnn_mgr_.GetOutputDescriptor(output_info_[i]);
-    NNADAPTER_CHECK_EQ(output_sizes[i],
-                       imgdnn_mgr_.GetDescriptorSize(&output_desc));
-    output_memory_[i] = imgdnn_mgr_.AllocateMemory(output_sizes[i]);
-    imgdnn_mgr_.AddBindingOutput(output_info_[i], output_memory_[i]);
-  }
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
@@ -176,30 +155,88 @@ int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
-  NNADAPTER_CHECK_EQ(input_info_.size(), input_count);
-  NNADAPTER_CHECK_EQ(output_info_.size(), output_count);
+  NNADAPTER_CHECK_EQ(input_types_.size(), input_count);
+  NNADAPTER_CHECK_EQ(output_types_.size(), output_count);
   for (uint32_t i = 0; i < input_count; i++) {
-    auto& argument = input_arguments[i];
-    auto buffer = reinterpret_cast<int8_t*>(argument.buffer);
-    auto zero_point = input_zero_points_[argument.index];
-    auto input_desc =
-        imgdnn_mgr_.GetInputDescriptor(input_info_[argument.index]);
-    NNADAPTER_CHECK_EQ(argument.length,
-                       imgdnn_mgr_.GetDescriptorSize(&input_desc));
-    auto locked_buffer = static_cast<uint8_t*>(imgdnn_mgr_.LockMemory(
-        input_memory_[argument.index], IMGDNN_LOCK_ACCESS_WRITE_ONLY));
-    Symm2AsymmData(buffer, argument.length, zero_point, locked_buffer);
-    imgdnn_mgr_.UnlockMemory(input_memory_[argument.index]);
+    auto& arg = input_arguments[i];
+    NNADAPTER_CHECK_GE(arg.index, 0);
+    NNADAPTER_CHECK_LT(arg.index, input_count);
+    NNADAPTER_CHECK(arg.memory);
+    NNADAPTER_CHECK(arg.access);
+    auto type = &input_types_[arg.index];
+    auto host_ptr = arg.access(arg.memory, type);
+    NNADAPTER_CHECK(host_ptr);
+    auto length = GetOperandTypeBufferLength(*type);
+    auto& input_memory = input_memory_[arg.index];
+    if (!input_memory.first || input_memory.second < length) {
+      if (input_memory.first) {
+        imgdnn_mgr_.DestroyMemory(input_memory.first);
+      }
+      input_memory.first = imgdnn_mgr_.AllocateMemory(length);
+      NNADAPTER_CHECK(input_memory.first);
+      input_memory.second = length;
+      imgdnn_mgr_.AddBindingInput(input_info_[arg.index], input_memory.first);
+    }
+    auto device_ptr = imgdnn_mgr_.LockMemory(input_memory.first,
+                                             IMGDNN_LOCK_ACCESS_WRITE_ONLY);
+    if (IsUInt8AsymmPerLayerQuantization(type->precision)) {
+      Symm2AsymmData(reinterpret_cast<const int8_t*>(host_ptr),
+                     length,
+                     type->asymm_per_layer_params.zero_point,
+                     reinterpret_cast<uint8_t*>(device_ptr));
+    } else {
+      memcpy(host_ptr, device_ptr, length);
+    }
+    imgdnn_mgr_.UnlockMemory(input_memory.first);
   }
-  imgdnn_mgr_.ExecuteNetworkObject(true, 0, nullptr, nullptr);
+  std::vector<std::pair<size_t, std::pair<void*, imgdnn_memory>>>
+      output_buffers(output_count);
   for (uint32_t i = 0; i < output_count; i++) {
-    auto& argument = output_arguments[i];
-    auto buffer = reinterpret_cast<int8_t*>(argument.buffer);
-    auto zero_point = output_zero_points_[argument.index];
-    auto locked_buffer = static_cast<uint8_t*>(imgdnn_mgr_.LockMemory(
-        output_memory_[argument.index], IMGDNN_LOCK_ACCESS_READ_ONLY));
-    Asymm2SymmData(locked_buffer, argument.length, zero_point, buffer);
-    imgdnn_mgr_.UnlockMemory(output_memory_[argument.index]);
+    auto& arg = output_arguments[i];
+    NNADAPTER_CHECK_GE(arg.index, 0);
+    NNADAPTER_CHECK_LT(arg.index, output_count);
+    NNADAPTER_CHECK(arg.memory);
+    NNADAPTER_CHECK(arg.access);
+    auto type = &output_types_[arg.index];
+    // TODO(hong19860320) Get the dimensions of the outputs from imgdnn
+    // according to the dynamic dimensions of the inputs, fill them to 'type'
+    // and call the 'access' function to re-allocate the host output memory
+    auto host_ptr = arg.access(arg.memory, type);
+    NNADAPTER_CHECK(host_ptr);
+    auto length = GetOperandTypeBufferLength(*type);
+    auto& output_memory = output_memory_[arg.index];
+    if (!output_memory.first || output_memory.second < length) {
+      if (output_memory.first) {
+        imgdnn_mgr_.DestroyMemory(output_memory.first);
+      }
+      output_memory.first = imgdnn_mgr_.AllocateMemory(length);
+      NNADAPTER_CHECK(output_memory.first);
+      output_memory.second = length;
+      imgdnn_mgr_.AddBindingOutput(output_info_[arg.index],
+                                   output_memory.first);
+    }
+    output_buffers[arg.index].first = length;
+    output_buffers[arg.index].second.first = host_ptr;
+    output_buffers[arg.index].second.second = output_memory.first;
+  }
+  auto start_time = GetCurrentUS();
+  imgdnn_mgr_.ExecuteNetworkObject(true, 0, nullptr, nullptr);
+  NNADAPTER_VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
+  for (uint32_t i = 0; i < output_count; i++) {
+    auto type = &output_types_[i];
+    auto host_ptr = output_buffers[i].second.first;
+    auto length = output_buffers[i].first;
+    auto device_ptr = imgdnn_mgr_.LockMemory(output_buffers[i].second.second,
+                                             IMGDNN_LOCK_ACCESS_READ_ONLY);
+    if (IsUInt8AsymmPerLayerQuantization(type->precision)) {
+      Asymm2SymmData(reinterpret_cast<const uint8_t*>(device_ptr),
+                     length,
+                     type->asymm_per_layer_params.zero_point,
+                     reinterpret_cast<int8_t*>(host_ptr));
+    } else {
+      memcpy(device_ptr, host_ptr, length);
+    }
+    imgdnn_mgr_.UnlockMemory(output_buffers[i].second.second);
   }
   return NNADAPTER_NO_ERROR;
 }
