@@ -328,18 +328,10 @@ function(cc_library TARGET_NAME)
       if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${source}.h)
         list(APPEND cc_library_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/${source}.h)
       endif()
-      if(${source_file} MATCHES "__generated_code__.cc")
-        list(APPEND full_path_src ${source_file})
-      elseif(${source_file} MATCHES "arm_for_strip.cc" OR
-             ${source_file} MATCHES "host_for_strip.cc" OR
-             ${source_file} MATCHES "opencl_for_strip.cc" OR
-             ${source_file} MATCHES "metal_for_strip.mm" OR
-             ${source_file} MATCHES "x86_for_strip.cc")
+      if(${source_file} MATCHES ${CMAKE_CURRENT_SOURCE_DIR})
         list(APPEND full_path_src ${source_file})
       else()
-        if(NOT ${source_file} MATCHES "/")
-          list(APPEND full_path_src ${CMAKE_CURRENT_SOURCE_DIR}/${source_file})
-        endif()
+        list(APPEND full_path_src ${CMAKE_CURRENT_SOURCE_DIR}/${source_file})
       endif()
     endforeach()
     set(__lite_cc_files ${__lite_cc_files} ${full_path_src} CACHE INTERNAL "")
