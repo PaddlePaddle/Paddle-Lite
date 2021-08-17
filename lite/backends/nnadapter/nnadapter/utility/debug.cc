@@ -194,6 +194,8 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_SUB:
       case NNADAPTER_MUL:
       case NNADAPTER_DIV:
+      case NNADAPTER_MAX:
+      case NNADAPTER_MIN:
         input_args = {"input0", "input1", "fuse_code"};
         output_args = {"output"};
         break;

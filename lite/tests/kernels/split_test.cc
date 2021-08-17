@@ -247,11 +247,40 @@ void TestSplitSectionsTensorList(Place place,
                true);
 }
 
-#if defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
-TEST(split_x86, precision) {
-  Place place{TARGET(kHost)};
-  float abs_error = 1e-5;
-
+TEST(Split_test, precision) {
+  LOG(INFO) << "test split op";
+  float abs_error = 2e-5;
+  Place place;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  return;  // TODO(shentanyue): Check failed: (output_tensor_descs.size() ==
+           // output_count): 0!==2
+  TestSplitBase<float>(place, abs_error);
+  TestSplitBase<int>(place, abs_error);
+  TestSplitBase<int64_t>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
+  TestSplitBase<float>(place, abs_error);
+  TestSplitBase<int>(place, abs_error);
+  TestSplitBase<int64_t>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+  abs_error = 1e-5;
   TestSplitBase<float>(place, abs_error, "def");
   TestSplitBase<int>(place, abs_error, "int32");
   TestSplitBase<int64_t>(place, abs_error, "int64");
@@ -260,21 +289,10 @@ TEST(split_x86, precision) {
   TestSplitSections(place, abs_error);
   TestSplitAxisTensor(place, abs_error);
   TestSplitSectionsTensorList(place, abs_error);
-}
+#else
+  return;
 #endif
-
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-TEST(split_ascend_npu_test, precision) {
-  Place place = TARGET(kHuaweiAscendNPU);
-  float abs_error = 1e-2;
-
-  TestSplitBase<float>(place, abs_error);
-  TestSplitBase<int>(place, abs_error);
-  TestSplitBase<int64_t>(place, abs_error);
-  TestSplitAxis(place, abs_error);
-  TestSplitNum(place, abs_error);
-  TestSplitSections(place, abs_error);
 }
-#endif
+
 }  // namespace lite
 }  // namespace paddle

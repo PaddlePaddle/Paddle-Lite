@@ -670,6 +670,25 @@ typedef enum {
   NNADAPTER_LP_NORMALIZATION,
 
   /**
+   * Performs element-wise binary maximum(with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: input1, A tensor with the same type as input0.
+   * * 2: fuse_code, A NNADAPTER_INT32 scalar, Specifies the activation to the
+   * result, must be one of NNAdapterFuseCode values.
+   *
+   * Outputs:
+   * * 0: output, The result with the same type as two inputs.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_MAX,
+
+  /**
    * Applies a 2-D max pooling across the input according to kernel sizes,
    * stride sizes, and pad lengths.
    *
@@ -712,6 +731,25 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_MAX_POOL_2D,
+
+  /**
+   * Performs element-wise binary minimum(with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: input1, A tensor with the same type as input0.
+   * * 2: fuse_code, A NNADAPTER_INT32 scalar, Specifies the activation to the
+   * result, must be one of NNAdapterFuseCode values.
+   *
+   * Outputs:
+   * * 0: output, The result with the same type as two inputs.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_MIN,
 
   /**
    * Performs element-wise binary multiplication(with Numpy-style broadcasting
