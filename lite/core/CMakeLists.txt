@@ -37,7 +37,7 @@ if (LITE_WITH_FPGA)
 endif ()
 
 if(WITH_TESTING)
-  set(CORE_SRC ${CORE_SRC} ${TESTER_SRC})
+  lite_cc_library(core_tester SRCS ${TESTER_SRC} DEPS gtest gflags)
   set(CORE_DEPS ${CORE_DEPS} gtest gflags)
 endif()
 
