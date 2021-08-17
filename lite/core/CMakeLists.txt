@@ -47,9 +47,9 @@ if(LITE_WITH_TEST)
 endif()
 
 if(NOT LITE_ON_TINY_PUBLISH)
-  proto_library (framework_proto SRCS framework.proto)
-  lite_cc_library(core_optimizer SRCS ${OPTIMIZER_SRC})
-  add_dependencies(core core_optimizer framework_proto)
+  proto_library(framework_proto SRCS framework.proto)
+  lite_cc_library(core_optimizer SRCS ${OPTIMIZER_SRC} DEPS framework_proto)
+  add_dependencies(core core_optimizer)
 endif()
 
 if (LITE_WITH_PROFILE)
