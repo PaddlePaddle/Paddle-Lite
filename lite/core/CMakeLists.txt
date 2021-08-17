@@ -43,7 +43,6 @@ endif()
 if(NOT LITE_ON_TINY_PUBLISH)
   proto_library(framework_proto SRCS framework.proto)
   set(CORE_SRC ${CORE_SRC} ${OPTIMIZER_SRC})
-  set(CORE_DEPS ${CORE_DEPS} framework_proto)
 endif()
 
 if (LITE_WITH_PROFILE)
