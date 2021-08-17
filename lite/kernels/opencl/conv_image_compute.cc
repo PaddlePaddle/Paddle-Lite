@@ -804,7 +804,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
     auto tuned_map_key = GenerateTunedKey();
-    std::vector<int> tuned_in_map(10);
+    std::vector<int> tuned_in_map;
     if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
                                                       &tuned_in_map)) {
       CHECK_EQ(tuned_in_map.size(), 7);
@@ -1212,13 +1212,14 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
 
 std::string ConvImageCompute::GenerateTunedKey() {
   std::stringstream key;
-  key << kernel_func_names_[0] << ",x:" << input_tensor_n_ << "x"
-      << input_tensor_c_ << "x" << input_tensor_h_ << "x" << input_tensor_w_
-      << ",w:" << filter_tensor_n_ << "x" << filter_tensor_c_ << "x"
-      << filter_tensor_h_ << "x" << filter_tensor_w_ << ",b:" << bias_image_h_
-      << "x" << bias_image_w_ << ",pad:" << pad_up_ << pad_down_ << pad_left_
-      << pad_right_ << ",dil:" << dilation_h_ << dilation_w_
-      << ",s:" << stride_h_ << stride_w_ << ",g:" << groups_
+  key << kernel_func_names_[0] << "," << build_options_[0]
+      << ",x:" << input_tensor_n_ << "x" << input_tensor_c_ << "x"
+      << input_tensor_h_ << "x" << input_tensor_w_ << ",w:" << filter_tensor_n_
+      << "x" << filter_tensor_c_ << "x" << filter_tensor_h_ << "x"
+      << filter_tensor_w_ << ",b:" << bias_image_h_ << "x" << bias_image_w_
+      << ",pad:" << pad_up_ << pad_down_ << pad_left_ << pad_right_
+      << ",dil:" << dilation_h_ << dilation_w_ << ",s:" << stride_h_
+      << stride_w_ << ",g:" << groups_
       << ",act:" << static_cast<int>(conv_param_->activation_param.active_type);
   return key.str();
 }
