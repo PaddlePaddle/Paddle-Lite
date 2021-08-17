@@ -166,7 +166,7 @@ add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc DEPS 
 #             DEPS conv_opencl op_registry program context)
 
 #lite_cc_test(test_im2col_buffer_opencl SRCS im2col_buffer_test.cc
-#             DEPS tensor cl_context cl_wrapper cl_target_wrapper)
+#             DEPS core cl_context cl_wrapper cl_target_wrapper)
 
 #lite_cc_test(test_depthwise_conv2d_buffer_opencl SRCS depthwise_conv2d_buffer_compute_test.cc
 #             DEPS depthwise_conv2d_opencl op_registry program context)

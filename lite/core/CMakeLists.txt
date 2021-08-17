@@ -29,7 +29,7 @@ endif ()
 
 #add_library(core STATIC ${CORE_BASE_SRC})
 lite_cc_library(core SRCS ${CORE_BASE_SRC}
-  DEPS target_wrapper_host place fbs_headers lite_tensor_fpga
+  DEPS target_wrapper_host place fbs_headers  ${tensor_extra_deps}
   X86_DEPS target_wrapper_x86 eigen3
   CUDA_DEPS target_wrapper_cuda cuda_context
   XPU_DEPS target_wrapper_xpu
@@ -52,7 +52,7 @@ if(NOT LITE_ON_TINY_PUBLISH)
   add_dependencies(core core_optimizer framework_proto)
 endif()
 
-if (NOT LITE_WITH_PROFILE)
+if (LITE_WITH_PROFILE)
   lite_cc_library(core_profiler SRCS ${PROFILE_SRC} DEPS gflags)
   add_dependencies(core core_profiler)
 endif()
@@ -106,11 +106,11 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   return ()
 endif ()
 
-lite_cc_test (test_scope SRCS scope_test.cc DEPS scope)
+lite_cc_test (test_scope SRCS scope_test.cc DEPS core)
 lite_cc_test (test_kernel SRCS kernel_test.cc DEPS kernel target_wrapper any)
-lite_cc_test (test_op SRCS op_lite_test.cc DEPS op)
-lite_cc_test (test_tensor SRCS lite_tensor_test.cc DEPS tensor)
+lite_cc_test (test_op SRCS op_lite_test.cc DEPS core)
+lite_cc_test (test_tensor SRCS lite_tensor_test.cc DEPS core)
 lite_cc_test (test_type_system SRCS type_system_test.cc DEPS type_system utils)
 lite_cc_test (test_types SRCS types_test.cc DEPS types)
-lite_cc_test (test_memory SRCS memory_test.cc DEPS memory)
-lite_cc_test (test_context SRCS context_test.cc DEPS context)
+lite_cc_test (test_memory SRCS memory_test.cc DEPS core)
+lite_cc_test (test_context SRCS context_test.cc DEPS core)

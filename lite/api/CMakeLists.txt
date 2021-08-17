@@ -215,7 +215,7 @@ endif()
 
 if (WITH_TESTING)
     lite_cc_library(lite_api_test_helper SRCS lite_api_test_helper.cc
-      DEPS scope optimizer target_wrapper_host model_parser program
+      DEPS core optimizer target_wrapper_host model_parser core
            ${ops} ${host_kernels}
       CUDA_DEPS ${cuda_kernels}
       X86_DEPS ${x86_kernels}
@@ -303,10 +303,10 @@ message(STATUS "Collected ${num_nnadapter_kernels} NNADAPTER kernels")
 # for full api
 if (NOT LITE_ON_TINY_PUBLISH)
     set(cxx_api_deps
-    scope optimizer target_wrapper_host model_parser program)
+    target_wrapper_host model_parser core)
     lite_cc_library(cxx_api
                         SRCS cxx_api.cc
-                        DEPS ${cxx_api_deps} ${ops} ${host_kernels} program
+                        DEPS ${cxx_api_deps} ${ops} ${host_kernels}
                         X86_DEPS ${x86_kernels}
                         CUDA_DEPS ${cuda_kernels}
                         ARM_DEPS ${arm_kernels}
@@ -327,14 +327,14 @@ endif()
 
 # for light api
 set(light_api_deps
-    scope target_wrapper_host model_parser program)
+    target_wrapper_host model_parser core)
 if(LITE_WITH_CUDA)
     get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
     set(light_api_deps ${light_api_deps} target_wrapper_cuda)
 endif()
 lite_cc_library(light_api SRCS light_api.cc
-        DEPS scope target_wrapper_host model_parser
-            ${light_api_deps} ${ops} ${host_kernels} program
+        DEPS core target_wrapper_host
+            ${light_api_deps} ${ops} ${host_kernels}
         CUDA_DEPS ${cuda_kernels}
         X86_DEPS ${x86_kernels}
         ARM_DEPS ${arm_kernels}
@@ -526,7 +526,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
    #    FPGA_DEPS ${fpga_kernels})
 endif()
 
-lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params tensor device_info)
+lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params core)
 
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.

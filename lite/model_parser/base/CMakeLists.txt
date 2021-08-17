@@ -12,6 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-lite_cc_library(model_base_io SRCS io.cc DEPS memory)
+lite_cc_library(model_base_io SRCS io.cc DEPS core)
 
 set(model_base model_base_io PARENT_SCOPE)
