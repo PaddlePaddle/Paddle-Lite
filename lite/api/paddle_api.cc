@@ -360,7 +360,7 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
-void ConfigBase::set_metal_device(void* device) {
+void ConfigBase::set_metal_device(void *device) {
 #ifdef LITE_WITH_METAL
   metal_device_ = device;
 #endif

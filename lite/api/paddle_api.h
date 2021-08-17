@@ -130,12 +130,14 @@ class LITE_API PaddlePredictor {
       const std::string& model_dir,
       LiteModelType model_type = LiteModelType::kProtobuf,
       bool record_info = false);
-    
+
   /// console every op output
   virtual void SetMetalDebug(bool debug) = 0;
-    
+
   /// pre-process resize input texture to dims
-  virtual void ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) = 0;
+  virtual void ResizeInput(int64_t index,
+                           void* texture,
+                           std::vector<int64_t>& shape) = 0;
 
   virtual ~PaddlePredictor() = default;
 

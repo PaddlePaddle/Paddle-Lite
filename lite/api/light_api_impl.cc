@@ -172,7 +172,9 @@ void LightPredictorImpl::SetMetalDebug(bool debug) {
   return raw_predictor_->SetMetalDebug(debug);
 }
 
-void LightPredictorImpl::ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) {
+void LightPredictorImpl::ResizeInput(int64_t index,
+                                     void* texture,
+                                     std::vector<int64_t>& shape) {
   return raw_predictor_->ResizeInput(index, texture, shape);
 }
 #endif

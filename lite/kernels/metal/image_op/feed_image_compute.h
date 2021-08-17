@@ -49,13 +49,13 @@ class FeedImageCompute
    private:
     void init_memory();
     void release_memory();
-    
+
     void run_without_mps();
     void setup_without_mps();
-        
+
     void run_preprocess_without_mps();
     void setup_preprocess_without_mps();
-        
+
    private:
     std::shared_ptr<MetalBuffer> input_buffer_;
     std::shared_ptr<MetalBuffer> param_buffer_;

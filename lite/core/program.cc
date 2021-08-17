@@ -423,14 +423,14 @@ void RuntimeProgram::ConfigMetalContext(std::string lib_path,
   context->set_use_aggressive(use_aggressive);
 }
 
-void RuntimeProgram::ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) {
+void RuntimeProgram::ResizeInput(int64_t index,
+                                 void* texture,
+                                 std::vector<int64_t>& shape) {
   MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
   context->resize_input(index, texture, shape);
 }
 
-void RuntimeProgram::SetMetalDebug(bool debug) {
-    metal_debug_ = debug;
-}
+void RuntimeProgram::SetMetalDebug(bool debug) { metal_debug_ = debug; }
 
 void RuntimeProgram::SaveOutput() {
   auto& insts = instructions_[kRootBlockIdx];

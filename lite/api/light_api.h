@@ -104,10 +104,8 @@ class LITE_API LightPredictor {
   void ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) {
     program_->ResizeInput(index, texture, shape);
   }
-   
-  void SetMetalDebug(bool debug) {
-    program_->SetMetalDebug(debug);
-  }
+
+  void SetMetalDebug(bool debug) { program_->SetMetalDebug(debug); }
 #endif
 
  private:
@@ -175,13 +173,15 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   ///
   /// \return a boolean variable.
   bool TryShrinkMemory() override;
-    
+
 #ifdef LITE_WITH_METAL
   /// console every op output
   void SetMetalDebug(bool debug) override;
-    
+
   /// pre-process resize input texture to dims
-  void ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) override;
+  void ResizeInput(int64_t index,
+                   void* texture,
+                   std::vector<int64_t>& shape) override;
 #endif
 
  private:

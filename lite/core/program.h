@@ -268,10 +268,9 @@ class LITE_API RuntimeProgram {
                           bool use_mps = false,
                           bool use_aggressive = false,
                           void* device = nullptr);
-    
-  void ResizeInput(int64_t index, void* texture,
-                   std::vector<int64_t>& shape);
-    
+
+  void ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape);
+
   void SetMetalDebug(bool debug);
 #endif
 
