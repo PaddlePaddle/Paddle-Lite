@@ -872,7 +872,6 @@ void im2col_s2<float>(const float* data_im,
       (width + pad_left + pad_right - (dilation_w * (kernel_w - 1) + 1)) / 2 +
       1;
   const int in_channel_size = height * width;
-  const int out_channel_size = output_h * output_w;
   const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
   memset(data_col, 0, output_plane_size * channels * sizeof(float));
 #pragma omp parallel for
@@ -903,14 +902,13 @@ void im2col_s2<float>(const float* data_im,
           const float* data_im_ptr = data_im + data_im_offset;
           float* data_col_ptr = data_col + data_col_offset;
           for (; ow + 3 < ow_end; ow += 4, iw += 8) {
+            // a0a1a2a3
             __m128 vtmp0 = _mm_loadu_ps(data_im_ptr + iw);
+            // a4a5a6a7
             __m128 vtmp1 = _mm_loadu_ps(data_im_ptr + iw + 4);
-            __m128 vres;
-            vres[0] = vtmp0[0];
-            vres[1] = vtmp0[2];
-            vres[2] = vtmp1[0];
-            vres[3] = vtmp1[2];
-            _mm_storeu_ps(data_col_ptr + ow, vres);
+            // a0a2a4a6
+            _mm_storeu_ps(data_col_ptr + ow,
+                          _mm_shuffle_ps(vtmp0, vtmp1, 0x88));
           }
           for (; ow < ow_end; ++ow, iw += 2) {
             data_col[data_col_offset + ow] = data_im[data_im_offset + iw];
