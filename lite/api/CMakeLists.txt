@@ -215,7 +215,7 @@ endif()
 
 if (WITH_TESTING)
     lite_cc_library(lite_api_test_helper SRCS lite_api_test_helper.cc
-      DEPS core optimizer target_wrapper_host model_parser
+      DEPS core target_wrapper_host model_parser
            ${ops} ${host_kernels}
       CUDA_DEPS ${cuda_kernels}
       X86_DEPS ${x86_kernels}
