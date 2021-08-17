@@ -27,9 +27,36 @@ if (LITE_WITH_FPGA)
   set (tensor_extra_deps lite_tensor_fpga)
 endif ()
 
-#add_library(core STATIC ${CORE_BASE_SRC})
-lite_cc_library(core SRCS ${CORE_BASE_SRC}
-  DEPS target_wrapper_host place fbs_headers  ${tensor_extra_deps}
+
+set(CORE_SRC ${CORE_BASE_SRC})
+set(CORE_DEPS "")
+
+if (LITE_WITH_FPGA)
+  set (CORE_DEPS ${CORE_DEPS} lite_tensor_fpga)
+endif ()
+
+if(LITE_WITH_TEST)
+  set(CORE_SRC ${CORE_SRC} ${TESTER_SRC})
+  set(CORE_DEPS ${CORE_DEPS} gtest gflags)
+endif()
+
+if(NOT LITE_ON_TINY_PUBLISH)
+  proto_library(framework_proto SRCS framework.proto)
+  set(CORE_SRC ${CORE_SRC} ${OPTIMIZER_SRC})
+  set(CORE_DEPS ${CORE_DEPS} framework_proto)
+endif()
+
+if (LITE_WITH_PROFILE)
+  set(CORE_SRC ${CORE_SRC} ${PROFILE_SRC})
+  set(CORE_DEPS ${CORE_DEPS} gflags)
+endif()
+
+if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU OR LITE_WITH_IMAGINATION_NNA OR LITE_WITH_NNADAPTER)
+  set(CORE_SRC  ${CORE_SRC} ${SUBGRAPH_SRC})
+endif ()
+
+lite_cc_library(core SRCS ${CORE_SRC}
+  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS} 
   X86_DEPS target_wrapper_x86 eigen3
   CUDA_DEPS target_wrapper_cuda cuda_context
   XPU_DEPS target_wrapper_xpu
@@ -40,29 +67,6 @@ lite_cc_library(core SRCS ${CORE_BASE_SRC}
   BM_DEPS target_wrapper_bm
   MLU_DEPS target_wrapper_mlu
   NNADAPTER_DEPS nnadapter_wrapper)
-
-if(LITE_WITH_TEST)
-  lite_cc_library(core_tester SRCS ${TESTER_SRC} DEPS gtest gflags)
-  add_dependencies(core core_tester)
-endif()
-
-if(NOT LITE_ON_TINY_PUBLISH)
-  proto_library(framework_proto SRCS framework.proto)
-  lite_cc_library(core_optimizer SRCS ${OPTIMIZER_SRC} DEPS framework_proto)
-  add_dependencies(core core_optimizer)
-endif()
-
-if (LITE_WITH_PROFILE)
-  lite_cc_library(core_profiler SRCS ${PROFILE_SRC} DEPS gflags)
-  add_dependencies(core core_profiler)
-endif()
-
-if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU OR LITE_WITH_IMAGINATION_NNA OR LITE_WITH_NNADAPTER)
-  lite_cc_library(core_subgraph
-    SRCS subgraph_bridge_registry.cc subgraph_engine_base.cc)
-  add_dependencies(core core_subgraph)
-endif ()
-
 
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
@@ -98,7 +102,9 @@ configure_file (version.h.in version.h)
 
 
 
-
+add_subdirectory(optimizer)
+add_subdirectory(profile)
+add_subdirectory(test)
 
 
 # for mobile, unnecessary to compile the following testings.
