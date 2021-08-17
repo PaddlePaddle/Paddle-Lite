@@ -2235,11 +2235,11 @@ using SinParam = TrigonometricParam;
 using CosParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* out{};
-  lite::Tensor* xshape;
-  int start_axis;
-  int stop_axis;
+  const lite::Tensor* x{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* xshape{nullptr};
+  int start_axis{1};
+  int stop_axis{1};
 };
 
 struct LoDArrayLengthParam : ParamBase {
@@ -2385,6 +2385,14 @@ struct ArgsortParam : ParamBase {
 
   int axis{-1};
   bool descending{false};
+};
+
+struct CosSimParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* x_norm{nullptr};
+  lite::Tensor* y_norm{nullptr};
 };
 
 struct WriteBackParam : ParamBase {

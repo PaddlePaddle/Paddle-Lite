@@ -80,6 +80,7 @@ USE_MIR_PASS(control_flow_op_shared_inputs_and_outputs_place_sync_pass);
 USE_MIR_PASS(lite_scale_activation_fuse_pass);
 USE_MIR_PASS(lite_instance_norm_activation_fuse_pass);
 USE_MIR_PASS(ssd_boxes_calc_offline_pass);
+USE_MIR_PASS(fix_mismatched_precision_pass);
 USE_MIR_PASS(lite_flatten_fc_fuse_pass);
 USE_MIR_PASS(lite_fc_prelu_fuse_pass);
 USE_MIR_PASS(__xpu__graph_dedup_pass);
