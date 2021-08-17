@@ -57,7 +57,7 @@ lite_cc_library(subgraph_bridge_utility_mlu SRCS utility.cc DEPS ${mlu_builder_l
 lite_cc_library(subgraph_bridge_tensor_mlu SRCS tensor.cc DEPS ${mlu_builder_libs} subgraph_bridge_utility_mlu)
 lite_cc_library(subgraph_bridge_graph_mlu SRCS graph.cc DEPS subgraph_bridge_utility_mlu subgraph_bridge_tensor_mlu)
 
-set(mlu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_mlu subgraph_bridge_graph_mlu)
+set(mlu_subgraph_bridge_deps core subgraph_bridge_utility_mlu subgraph_bridge_graph_mlu)
 
 lite_cc_library(subgraph_bridge_act_op_mlu SRCS act_op.cc DEPS ${mlu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_batch_norm_op_mlu SRCS batch_norm_op.cc DEPS ${mlu_subgraph_bridge_deps})

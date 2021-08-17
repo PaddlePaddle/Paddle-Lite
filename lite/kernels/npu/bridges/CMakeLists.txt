@@ -44,7 +44,7 @@ endif()
 lite_cc_library(subgraph_bridge_utility_npu SRCS utility.cc DEPS ${npu_builder_libs} tensor)
 lite_cc_library(subgraph_bridge_graph_npu SRCS graph.cc DEPS subgraph_bridge_utility_npu)
 
-set(npu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_npu subgraph_bridge_graph_npu)
+set(npu_subgraph_bridge_deps core subgraph_bridge_utility_npu subgraph_bridge_graph_npu)
 
 lite_cc_library(subgraph_bridge_fc_op_npu SRCS fc_op.cc DEPS ${npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_conv_op_npu SRCS conv_op.cc DEPS ${npu_subgraph_bridge_deps})
