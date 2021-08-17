@@ -360,7 +360,7 @@ set(LITE_DEMO_INSTALL_DIR "${THIRD_PARTY_PATH}/inference_demo" CACHE STRING
 if(WITH_TESTING)
     if(NOT WITH_COVERAGE)
         lite_cc_test(test_cxx_api SRCS cxx_api_test.cc
-           DEPS cxx_api mir_passes lite_api_test_helper
+           DEPS cxx_api lite_api_test_helper
            ${ops} ${host_kernels}
            X86_DEPS ${x86_kernels}
            CUDA_DEPS ${cuda_kernels}
@@ -386,50 +386,50 @@ if(WITH_TESTING)
     if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
         if(LITE_WITH_X86)
             lite_cc_test(test_googlenet SRCS test_googlenet_lite.cc
-               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               DEPS lite_api_test_helper paddle_api_full paddle_api_light gflags utils
                ${ops} ${host_kernels} ${x86_kernels}
                ARGS --model_dir=${LITE_MODEL_DIR}/googlenet)
             add_dependencies(test_googlenet extern_lite_download_GoogleNet_inference_tar_gz)
             lite_cc_test(test_mobilenetv1_lite_x86 SRCS test_mobilenetv1_lite_x86.cc
-               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               DEPS lite_api_test_helper paddle_api_full paddle_api_light gflags utils
                ${ops} ${host_kernels} ${x86_kernels}
                ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1)
             if(LITE_WITH_METAL)
                 lite_cc_test(test_mobilenetv1_lite_metal SRCS test_mobilenetv1_lite_metal.cc
-                        DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+                        DEPS lite_api_test_helper paddle_api_full paddle_api_light gflags utils
                         METAL_DEPS ${metal_kernels}
                         ${ops} ${host_kernels} ${x86_kernels}
                         ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 --metal_dir=${CMAKE_BINARY_DIR}/lite/backends/metal/lite.metallib)
             endif()
             add_dependencies(test_mobilenetv1_lite_x86 extern_lite_download_mobilenet_v1_tar_gz)
             lite_cc_test(test_mobilenetv2_lite_x86 SRCS test_mobilenetv2_lite_x86.cc
-               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               DEPS lite_api_test_helper paddle_api_full paddle_api_light gflags utils
                ${ops} ${host_kernels} ${x86_kernels}
                ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v2_relu)
             add_dependencies(test_mobilenetv2_lite_x86 extern_lite_download_mobilenet_v2_relu_tar_gz)
             lite_cc_test(test_inceptionv4_lite_x86 SRCS test_inceptionv4_lite_x86.cc
-               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               DEPS lite_api_test_helper paddle_api_full paddle_api_light gflags utils
                ${ops} ${host_kernels} ${x86_kernels}
                ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4_simple)
             add_dependencies(test_inceptionv4_lite_x86 extern_lite_download_inception_v4_simple_tar_gz)
             lite_cc_test(test_resnet50_lite_x86 SRCS test_resnet50_lite_x86.cc
-               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               DEPS lite_api_test_helper paddle_api_full paddle_api_light gflags utils
                ${ops} ${host_kernels} ${x86_kernels}
                ARGS --model_dir=${LITE_MODEL_DIR}/resnet50)
             add_dependencies(test_resnet50_lite_x86 extern_lite_download_resnet50_tar_gz)
             lite_cc_test(test_step_rnn_lite_x86 SRCS test_step_rnn_lite_x86.cc
-               DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+               DEPS lite_api_test_helper paddle_api_full paddle_api_light gflags utils
                ${ops} ${host_kernels} ${x86_kernels}
                ARGS --model_dir=${LITE_MODEL_DIR}/step_rnn)
             add_dependencies(test_step_rnn_lite_x86 extern_lite_download_step_rnn_tar_gz)
         endif()
         if(LITE_WITH_BM)
            lite_cc_test(test_classify_lite_bm SRCS test_classify_lite_bm.cc
-              DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+              DEPS lite_api_test_helper paddle_api_full paddle_api_light gflags utils
               ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
               ARGS --model_dir=${LITE_MODEL_DIR}/classify)
            lite_cc_test(test_yolov3_lite_bm SRCS test_yolov3_lite_bm.cc
-              DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+              DEPS lite_api_test_helper paddle_api_full paddle_api_light gflags utils
               ${ops} ${host_kernels} ${bm_kernels} ${bm_bridges}
               ARGS --model_dir=${LITE_MODEL_DIR}/yolov3)
         endif()
@@ -437,7 +437,7 @@ if(WITH_TESTING)
 endif()
 
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
-    set(lite_model_test_DEPS cxx_api mir_passes ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${apu_kernels} ${fpga_kernels} ${intel_fpga_kernels} ${nndapter_kernels})
+    set(lite_model_test_DEPS cxx_api ${ops} ${host_kernels} ${arm_kernels} ${npu_kernels} ${apu_kernels} ${fpga_kernels} ${intel_fpga_kernels} ${nndapter_kernels})
 
     lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -609,7 +609,7 @@ endif()
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
-        DEPS gflags kernel op optimizer mir_passes utils ${host_kernels})
+        DEPS gflags kernel op optimizer utils ${host_kernels})
     add_dependencies(opt all_kernel_faked)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
@@ -753,5 +753,5 @@ endif()
 
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc
     #X86_DEPS operator
-    #DEPS light_api model_parser target_wrapper_host mir_passes
+    #DEPS light_api model_parser target_wrapper_host
     #ARM_DEPS ${arm_kernels}) NPU_DEPS ${npu_kernels})
