@@ -408,7 +408,7 @@ typedef enum {
    * group=C_out=C_in.
    * * 7: dilations, a NNADAPTER_INT32 tensor, with shape [2] and data
    * {dilations_height, dilations_width}.
-   * * 8: output_pads, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 8: output_padding, a NNADAPTER_INT32 tensor, with shape [2] and data
    * {output_pad_height, output_pad_width}, or shape[0] and no data.
    * * 9: output_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
    * {output_height, output_width}, or shape[0] and no data.
