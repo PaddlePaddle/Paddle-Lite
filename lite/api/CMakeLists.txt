@@ -36,7 +36,7 @@ execute_process(
     RESULT_VARIABLE result)
 
 file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
-if (LITE_ON_MODEL_OPTIMIZE_TOOL)
+if (LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   add_library(all_kernel_faked OBJECT ${all_kernel_faked_src})
   add_dependencies(all_kernel_faked op kernel type_system)
 endif()

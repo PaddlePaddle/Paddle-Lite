@@ -506,9 +506,6 @@ void RuntimeProgram::Run() {
   wait_ctx->WaitAllCompleted();
 #endif
 
-#ifdef LITE_WITH_PROFILE
-  LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
-#endif
 #ifdef LITE_WITH_PRECISION_PROFILE
   LOG(INFO) << "\n"
             << precision_profiler_summary

@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <chrono>  // NOLINT
 #include <thread>  // NOLINT
+#include "lite/core/profile/basic_profiler.cc"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
