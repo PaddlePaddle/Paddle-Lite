@@ -15,7 +15,6 @@
 #include "dropout_image_compute.h"
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
@@ -25,8 +24,7 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void DropoutImageCompute<P, PTYPE>::PrepareForRun() {
+void DropoutImageCompute::PrepareForRun() {
     auto& context = this->ctx_->template As<ContextMetal>();
     metal_context_ = (MetalContext*)context.context();
     auto device = metal_context_->GetDefaultDevice();

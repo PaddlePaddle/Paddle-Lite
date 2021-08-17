@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_KERNELS_METAL_IMAGE_OP_DROPOUT_IMAGE_COMPUTE_H_
-#define LITE_KERNELS_METAL_IMAGE_OP_DROPOUT_IMAGE_COMPUTE_H_
+#pragma once
 
 #include <memory>
 
@@ -33,9 +32,8 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class DropoutImageCompute
-    : public KernelLite<TARGET(kMetal), PTYPE, DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat) , DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::DropoutParam;
 
    public:
@@ -47,11 +45,11 @@ class DropoutImageCompute
 
    private:
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> param_buffer_;
-    std::shared_ptr<MetalKernel> kernel_;
-    std::shared_ptr<MetalQueue> queue_;
-    std::shared_ptr<MetalEncoder> encoder_;
+
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
     MetalContext* metal_context_;
 };
 
@@ -59,5 +57,3 @@ class DropoutImageCompute
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-#endif  // LITE_KERNELS_METAL_IMAGE_OP_DROPOUT_IMAGE_COMPUTE_H_
