@@ -3,7 +3,6 @@ if(LITE_WITH_FPGA OR LITE_WITH_BM OR LITE_WITH_MLU OR (NOT LITE_WITH_X86 AND NOT
 endif()
 
 set(test_kernel_deps
-    arena_framework
     ${lite_ops}
     ${host_kernels}
     ${arm_kernels}
@@ -33,9 +32,9 @@ lite_cc_test(test_kernel_decode_bboxes_compute SRCS decode_bboxes_compute_test.c
 lite_cc_test(test_kernel_box_coder_compute SRCS box_coder_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_activation_compute SRCS activation_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_argmax_compute SRCS argmax_compute_test.cc DEPS ${test_kernel_deps})
-lite_cc_test(test_kernel_inverse_compute SRCS inverse_compute_test.cc DEPS arena_framework ${test_kernel_deps})
-lite_cc_test(test_kernel_reverse_compute SRCS reverse_compute_test.cc DEPS arena_framework ${test_kernel_deps})
-lite_cc_test(test_kernel_index_select_compute SRCS index_select_compute_test.cc DEPS arena_framework ${test_kernel_deps})
+lite_cc_test(test_kernel_inverse_compute SRCS inverse_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_reverse_compute SRCS reverse_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_index_select_compute SRCS index_select_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_axpy_compute SRCS axpy_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_norm_compute SRCS norm_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_cast_compute SRCS cast_compute_test.cc DEPS ${test_kernel_deps})
@@ -138,7 +137,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_pad3d_compute SRCS pad3d_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_select_input_compute SRCS select_input_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_pow_compute SRCS pow_compute_test.cc DEPS ${test_kernel_deps})
-    # lite_cc_test(test_kernel_tensor_array_to_tensor_compute SRCS tensor_array_to_tensor_compute_test.cc DEPS arena_framework ${test_kernel_deps})
+    # lite_cc_test(test_kernel_tensor_array_to_tensor_compute SRCS tensor_array_to_tensor_compute_test.cc DEPS ${test_kernel_deps})
     # TODO: fix tensor_array_to_tensor unittest
     
     # for training kernel
