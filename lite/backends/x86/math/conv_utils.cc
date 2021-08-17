@@ -838,7 +838,7 @@ void im2col_s1<float>(const float* data_im,
           }
 #else
           for (; ow + 3 < ow_end; ow += 4, iw += 4) {
-            __m128 vtmp = _mm_load_ps(data_im_ptr + iw);
+            __m128 vtmp = _mm_loadu_ps(data_im_ptr + iw);
             _mm_storeu_ps(data_col_ptr + ow, vtmp);
           }
 #endif
@@ -903,8 +903,8 @@ void im2col_s2<float>(const float* data_im,
           const float* data_im_ptr = data_im + data_im_offset;
           float* data_col_ptr = data_col + data_col_offset;
           for (; ow + 3 < ow_end; ow += 4, iw += 8) {
-            __m128 vtmp0 = _mm_load_ps(data_im_ptr + iw);
-            __m128 vtmp1 = _mm_load_ps(data_im_ptr + iw + 4);
+            __m128 vtmp0 = _mm_loadu_ps(data_im_ptr + iw);
+            __m128 vtmp1 = _mm_loadu_ps(data_im_ptr + iw + 4);
             __m128 vres;
             vres[0] = vtmp0[0];
             vres[1] = vtmp0[2];

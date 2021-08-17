@@ -21,25 +21,24 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
-#define INIT_PARAM                                   \
-  auto& param = this->Param<param_t>();              \
-  auto x_dims = param.x->dims();                     \
-  auto w_dims = param.filter->dims();                \
-  auto o_dims = param.output->dims();                \
-  int win = x_dims[3];                               \
-  int hin = x_dims[2];                               \
-  int chin = x_dims[1];                              \
-  int num = x_dims[0];                               \
-  int wout = o_dims[3];                              \
-  int hout = o_dims[2];                              \
-  int chout = o_dims[1];                             \
-  int kw = w_dims[3];                                \
-  int kh = w_dims[2];                                \
-  int group = param.groups;                          \
-  /* deconv weights layout: chin * chout * kh * kw*/ \
-  int m = chout * kw * kh / group;                   \
-  int n = hout * wout;                               \
-  int k = chin / group;
+#define INIT_PARAM                      \
+  auto& param = this->Param<param_t>(); \
+  auto x_dims = param.x->dims();        \
+  auto w_dims = param.filter->dims();   \
+  auto o_dims = param.output->dims();   \
+  int win = x_dims[3];                  \
+  int hin = x_dims[2];                  \
+  int chin = x_dims[1];                 \
+  int num = x_dims[0];                  \
+  int wout = o_dims[3];                 \
+  int hout = o_dims[2];                 \
+  int chout = o_dims[1];                \
+  int kw = w_dims[3];                   \
+  int kh = w_dims[2];                   \
+  int group = param.groups;             \
+  int m = chout / group;                \
+  int n = hout * wout;                  \
+  int k = chin * kw * kh / group;
 
 template <>
 void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
@@ -97,8 +96,8 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& ctx = ctx_->As<X86Context>();
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
-  int group_size_out = wout * hout * chout / group;
-  int group_size_weights = chin / group * chout / group * kw * kh;
+  int group_size_out = m * n;
+  int group_size_weights = m * k;
   int group_size_coldata = n * k;
   int channel_in_size = chin * hin * win;
   int channel_out_size = chout * hout * wout;
@@ -144,7 +143,7 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     }
 
     for (int g = 0; g < group; g++) {
-      const float* coldata_group = din_data + g * group_size_coldata;
+      const float* col_data_group = din_data + g * group_size_coldata;
       const float* weights_group = weights + g * group_size_weights;
       float* dout_group = dout_batch + g * group_size_out;
 
@@ -156,7 +155,7 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                          1.f,
                          weights_group,
                          k,
-                         coldata_group,
+                         col_data_group,
                          n,
                          0.f,
                          dout_group,
