@@ -10,94 +10,94 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 
 举例PaddleLite在ARM上部署模型，如果模型中某个算子没有ARM端Kernel，但是有Host端Kerenel，那么模型优化阶段该算子会选择Host端Kerenel，该模型还是可以顺利部署。
 
-| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU | 颖脉NNA | 英特尔FPGA |
-|-:|-|-|-|-|-|-|-|-|-|-|-|-|
+| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU | 颖脉NNA | 英特尔FPGA | 比特大陆 
+|-:|-|-|-|-|-|-|-|-|-|-|-|-|-|
 | affine_channel | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
 | affine_grid | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
 | arg_max | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| assign_value | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| batch_norm | 　 | Y | 　 | Y | 　 | 　 | Y | Y | Y | 　 |　 |　 |
-| bilinear_interp | 　 | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 |　 |　 |
-| box_coder | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |　 |　 |
+| assign_value | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 | Y |
+| batch_norm | 　 | Y | 　 | Y | 　 | 　 | Y | Y | Y | 　 |　 |　 | Y |
+| bilinear_interp | 　 | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 |　 |　 | Y |
+| box_coder | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |　 |　 | Y |
 | calib | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 | 　 |　 |　 |
-| cast | 　 | Y | 　 | Y | 　 | 　 | 　 | Y | 　 | 　 |　 |　 |
-| concat | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | Y |　|　 |
-| conv2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　Y | Y |
-| conv2d_transpose | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | Y |　 |　 |
-| density_prior_box | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| depthwise_conv2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　Y | Y |
-| depthwise_conv2d_transpose | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| dropout | 　 | Y | Y | Y | Y | Y | Y | Y | 　 | 　 |　 |　 |
-| elementwise_add | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　 |　 |
-| elementwise_div | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | Y | 　 |　 |　 |
+| cast | 　 | Y | 　 | Y | 　 | 　 | 　 | Y | 　 | 　 |　 |　 | Y |
+| concat | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | Y |　|　 | Y |
+| conv2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　Y | Y | Y |
+| conv2d_transpose | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | Y |　 |　 | Y |
+| density_prior_box | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 | Y |
+| depthwise_conv2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　Y | Y | Y |
+| depthwise_conv2d_transpose | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 | Y |
+| dropout | 　 | Y | Y | Y | Y | Y | Y | Y | 　 | 　 |　 |　 | Y |
+| elementwise_add | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　 |　 | Y |
+| elementwise_div | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | Y | 　 |　 |　 | Y |
 | elementwise_max | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
 | elementwise_mod | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| elementwise_mul | 　 | Y | Y | Y | Y | Y | Y | 　 | Y | Y |　 |　 |
+| elementwise_mul | 　 | Y | Y | Y | Y | Y | Y | 　 | Y | Y |　 |　 | Y |
 | elementwise_pow | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| elementwise_sub | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | 　 |　 |　 |
+| elementwise_sub | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | 　 |　 |　 | Y |
 | elu | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
 | expand | Y | 　 | 　 | 　 | Y | 　 | Y | 　 | 　 | 　 |　 |　 |
 | expand_as | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
 | fc | 　 | Y | Y | Y | Y | Y | Y | 　 | Y | Y |　Y |　 |
 | feed | Y | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 | 　 |　 |　 |
 | fetch | Y | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 |　 |　 |
-| fill_constant | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
+| fill_constant | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 | Y |
 | fill_constant_batch_size_like | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| flatten | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | Y | 　 |　 |　 |
-| flatten2 | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | Y | 　 |　 |　 |
-| fusion_elementwise_add_activation | 　 | 　 | Y | Y | Y | Y | Y | 　 | 　 | Y  |　 |　 |
-| fusion_elementwise_div_activation | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
-| fusion_elementwise_max_activation | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| fusion_elementwise_mul_activation | 　 | 　 | Y | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
-| fusion_elementwise_sub_activation | 　 | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 |　 |　 |
+| flatten | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | Y | 　 |　 |　 | Y |
+| flatten2                          | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | Y | 　 |　 |　 | Y |
+| fusion_elementwise_add_activation |   | 　 | Y  | Y | Y | Y | 　 | 　 | Y  |　 |　 |
+| fusion_elementwise_div_activation |   | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
+| fusion_elementwise_max_activation |   | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
+| fusion_elementwise_mul_activation |   | 　 | Y | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
+| fusion_elementwise_sub_activation |   | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 |　 |　 |
 | grid_sampler | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |　 |　 |
 | instance_norm | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 |　 |　 |
 | io_copy | 　 | 　 | Y | 　 | Y | Y | 　 | 　 | 　 | 　 |　 |　 |
 | io_copy_once | 　 | 　 | Y | 　 | Y | Y | 　 | 　 | 　 | 　 |　 |　 |
 | layout | 　 | 　 | Y | Y | Y | Y | 　 | 　 | 　 | 　 |　 |　 |
-| leaky_relu | 　 | Y | Y | Y | Y | 　 | Y | 　 | 　 | 　 |　 |　 |
-| matmul | 　 | Y | Y | Y | 　 | 　 | Y | Y | 　 | 　 |　 |　 |
-| mul | 　 | Y | Y | Y | 　 | 　 | Y | Y | 　 | 　 |　 |　 |
-| multiclass_nms | Y | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 |　 |　 |
-| multiclass_nms2 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| nearest_interp | 　 | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 |　 |　 |
+| leaky_relu | 　 | Y | Y | Y | Y | 　 | Y | 　 | 　 | 　 |　 |　 | Y |
+| matmul | 　 | Y | Y | Y | 　 | 　 | Y | Y | 　 | 　 |　 |　 | Y |
+| mul | 　 | Y | Y | Y | 　 | 　 | Y | Y | 　 | 　 |　 |　 | Y |
+| multiclass_nms | Y | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 |　 |　 | Y |
+| multiclass_nms2 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 | Y |
+| nearest_interp | 　 | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 |　 |　 | Y |
 | pad2d | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | Y | 　 |　 |　 |
-| pool2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　Y |　 |
+| pool2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　Y |　 | Y |
 | prelu | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| prior_box | 　 | 　 | 　 | Y | 　 | Y | 　 | 　 | 　 | 　 |　 |　 |
+| prior_box | 　 | 　 | 　 | Y | 　 | Y | 　 | 　 | 　 | 　 |　 |　 | Y |
 | range | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| reduce_mean | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
-| relu | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | Y |　Y |　 |
+| reduce_mean | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 | Y |
+| relu | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | Y |　Y |　 | Y |
 | relu6 | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | Y | 　 |　 |　 |
-| reshape | Y | Y | 　 | 　 | Y | 　 | Y | Y | 　 | 　 |　 |　 |
-| reshape2 | Y | Y | 　 | 　 | Y | 　 | Y | Y | Y | 　 |　 |　 |
-| scale | 　 | Y | Y | Y | Y | Y | Y | Y | Y | 　 |　 |　 |
+| reshape | Y | Y | 　 | 　 | Y | 　 | Y | Y | 　 | 　 |　 |　 | Y |
+| reshape2 | Y | Y | 　 | 　 | Y | 　 | Y | Y | Y | 　 |　 |　 | Y |
+| scale | 　 | Y | Y | Y | Y | Y | Y | Y | Y | 　 |　 |　 | Y |
 | search_fc | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
 | sequence_topk_avg_pooling | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
 | shuffle_channel | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
-| sigmoid | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | 　 |　 |　 |
-| slice | 　 | Y | 　 | Y | Y | 　 | 　 | Y | 　 | 　 |　 |　 |
-| softmax | 　 | Y | Y | Y | 　 | 　 | Y | Y | Y | Y |　 |　 |
-| split | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
-| squeeze | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
-| squeeze2 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 |
+| sigmoid | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | 　 |　 |　 | Y |
+| slice | 　 | Y | 　 | Y | Y | 　 | 　 | Y | 　 | 　 |　 |　 | Y |
+| softmax | 　 | Y | Y | Y | 　 | 　 | Y | Y | Y | Y |　 |　 | Y |
+| split | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 | Y |
+| squeeze | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 | Y |
+| squeeze2 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |　 | Y |
 | stack | 　 | Y | 　 | Y | 　 | 　 | 　 | Y | 　 | 　 |　 |　 |
 | subgraph | 　 | 　 | 　 | 　 | 　 | 　 | Y | Y | Y | Y |　 |　 |
 | tanh | 　 | Y | Y | Y | Y | 　 | Y | Y | 　 | 　 |　 |　 |
 | thresholded_relu | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
-| transpose | 　 | Y | Y | Y | Y | 　 | Y | Y | 　 | 　 |　 |　 |
-| transpose2 | 　 | Y | Y | Y | Y | 　 | Y | Y | Y | 　 |　 |　 |
+| transpose | 　 | Y | Y | Y | Y | 　 | Y | Y | 　 | 　 |　 |　 | Y |
+| transpose2 | 　 | Y | Y | Y | Y | 　 | Y | Y | Y | 　 |　 |　 | Y |
 | unsqueeze | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
 | unsqueeze2 | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |　 |　 |
-| yolo_box | 　 | 　 | Y | Y | 　 | 　 | 　 | Y | 　 | 　 |　 |　 |
+| yolo_box | 　 | 　 | Y | Y | 　 | 　 | 　 | Y | 　 | 　 |　 |　 | Y |
 
 
 ### 附加算子
 
 附加算子共计131个，需要在编译时打开`--with_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
 
-| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU | 英特尔FPGA |
-|-:|-|-|-|-|-|-|-|-|-|-|-|
+| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU | 英特尔FPGA | 比特大陆
+|-:|-|-|-|-|-|-|-|-|-|-|-|-|
 | abs | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | anchor_generator | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | assign | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
@@ -135,9 +135,9 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 | group_norm | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | gru | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 | 　 | 　 |
 | gru_unit | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| hard_sigmoid | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 | 　 |
-| hard_swish | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| im2sequence | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| hard_sigmoid | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 | 　 | Y |
+| hard_swish | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y |
+| im2sequence | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y |
 | increment | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 | 　 |
 | is_empty | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | layer_norm | 　 | Y | 　 | Y | 　 | 　 | Y | Y | 　 | 　 | 　 |
@@ -156,11 +156,11 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 | lrn | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |
 | lstm | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | match_matrix_tensor | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| max_pool2d_with_index | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| max_pool2d_with_index | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y |
 | mean | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | merge_lod_tensor | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | negative | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| norm | 　 | 　 | 　 | Y | 　 | Y | 　 | 　 | 　 | 　 | 　 |
+| norm | 　 | 　 | 　 | Y | 　 | Y | 　 | 　 | 　 | 　 | 　 | Y |
 | not_equal | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | one_hot | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | pixel_shuffle | Y | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |
@@ -169,9 +169,9 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 | print | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | read_from_array | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | reciprocal | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| reduce_max | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| reduce_max | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y |
 | reduce_prod | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| reduce_sum | 　 | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |
+| reduce_sum | 　 | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | Y |
 | relu_clipped | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 | 　 |
 | retinanet_detection_output | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | roi_align | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
@@ -200,13 +200,13 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 | sequence_reverse_embedding | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | sequence_softmax | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | sequence_unpad |  Y　|  | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| shape | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| shape | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y |
 | sign | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | softsign | 　 | Y | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 |
 | split_lod_tensor | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| sqrt | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 |
-| square | 　 | Y | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 | 　 |
-| swish | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| sqrt | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | Y |
+| square | 　 | Y | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 | 　 | Y |
+| swish | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | Y |
 | top_k | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | topk_pooling | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | uniform_random | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
