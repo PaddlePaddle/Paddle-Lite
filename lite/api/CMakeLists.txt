@@ -36,9 +36,9 @@ execute_process(
     RESULT_VARIABLE result)
 
 file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
-if (LITE_ON_MODEL_OPTIMIZE_TOOL)
+if (LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   add_library(all_kernel_faked OBJECT ${all_kernel_faked_src})
-  add_dependencies(all_kernel_faked op kernel type_system)
+  add_dependencies(all_kernel_faked core)
 endif()
 
 # create headfile to restore ops info sorted by suppported platforms
@@ -596,7 +596,7 @@ if (LITE_WITH_PYTHON)
     add_subdirectory(python)
     # add library for opt_base
     lite_cc_library(opt_base SRCS tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
-        DEPS kernel op optimizer mir_passes utils)
+        DEPS core utils)
     add_dependencies(opt_base framework_proto all_kernel_faked)
 endif()
 
