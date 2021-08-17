@@ -35,7 +35,7 @@ if (LITE_WITH_FPGA)
   set (CORE_DEPS ${CORE_DEPS} lite_tensor_fpga)
 endif ()
 
-if(LITE_WITH_TEST)
+if(WITH_TESTING)
   set(CORE_SRC ${CORE_SRC} ${TESTER_SRC})
   set(CORE_DEPS ${CORE_DEPS} gtest gflags)
 endif()
