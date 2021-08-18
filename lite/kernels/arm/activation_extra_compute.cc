@@ -335,21 +335,21 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using float_erf = paddle::lite::kernels::arm::ErfCompute<float>;
-REGISTER_LITE_KERNEL(erf, kARM, kAny, kNCHW, float_erf, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+REGISTER_LITE_KERNEL(erf, kARM, kFloat, kNCHW, float_erf, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
 using float_sign = paddle::lite::kernels::arm::SignCompute<float>;
-REGISTER_LITE_KERNEL(sign, kARM, kAny, kNCHW, float_sign, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+REGISTER_LITE_KERNEL(sign, kARM, kFloat, kNCHW, float_sign, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
 using float_softplus = paddle::lite::kernels::arm::SoftPlusCompute<float>;
-REGISTER_LITE_KERNEL(softplus, kARM, kAny, kNCHW, float_softplus, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+REGISTER_LITE_KERNEL(softplus, kARM, kFloat, kNCHW, float_softplus, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
 using float_mish = paddle::lite::kernels::arm::MishCompute<float>;
