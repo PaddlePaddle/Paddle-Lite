@@ -18,6 +18,7 @@
 #include <vector>
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/conv_bias.h"
+#include "lite/kernels/x86/conv_direct.h"
 #ifdef LITE_WITH_AVX
 #include "lite/backends/x86/math/conv_utils.h"
 #endif

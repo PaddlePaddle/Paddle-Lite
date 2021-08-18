@@ -30,11 +30,22 @@ void Conv2dCompute<float>::PrepareForRun() {
   const int output_channel = param.filter->dims()[0];
   const int groups = param.groups;
 
+  const int ih = param.x->dims()[2];
+  const int iw = param.x->dims()[3];
+  const int chout = param.filter->dims()[0];
+  const int chin = param.filter->dims()[1];
   const int kernel_h = param.filter->dims()[2];
   const int kernel_w = param.filter->dims()[3];
 
   const int stride_h = param.strides[0];
   const int stride_w = param.strides[1];
+
+  bool nodilations = true;
+  for (auto ele : *(param.dilations))
+    if (ele != 1) nodilations = false;
+
+  auto paddings = *param.paddings;
+  bool paddings_equal = (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
 
   if (input_channel == groups && output_channel == groups &&
       (groups & 3) == 0) {
@@ -46,6 +57,11 @@ void Conv2dCompute<float>::PrepareForRun() {
       impl_ = new DepthwiseConv<float>;
       VLOG(3) << "invoking conv_depthwise_3x3s2";
     }
+  } else if (chin * chout < 4 * ih * iw && chout % 8 == 0 && groups == 1 &&
+             kernel_h == 3 && kernel_w == 3 && nodilations &&
+             stride_h == 2 && stride_w == 2 && paddings_equal) {
+    impl_ = new DirectConv<float>();
+    VLOG(3) << "invoking directConv  3x3s2";
   }
 
   if (impl_) {
