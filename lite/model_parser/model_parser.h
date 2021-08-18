@@ -24,9 +24,9 @@
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 #endif
 #include "lite/api/paddle_api.h"
+#include "lite/core/model/base/io.h"
 #include "lite/core/scope.h"
 #include "lite/core/variable.h"
-#include "lite/core/model/base/io.h"
 #include "lite/model_parser/compatible_pb.h"
 
 namespace paddle {

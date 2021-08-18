@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 #include "lite/backends/huawei_ascend_npu/utils.h"
-#include "lite/core/op_lite.h"
 #include "lite/core/model/base/var_desc.h"
+#include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
 
 namespace paddle {

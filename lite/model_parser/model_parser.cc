@@ -20,11 +20,11 @@
 #include <utility>
 
 #include "lite/api/paddle_api.h"
+#include "lite/core/model/base/apis.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
 #include "lite/core/version.h"
-#include "lite/core/model/base/apis.h"
 #include "lite/model_parser/flatbuffers/io.h"
 #include "lite/model_parser/pb/tensor_io.h"
 #ifndef LITE_ON_TINY_PUBLISH

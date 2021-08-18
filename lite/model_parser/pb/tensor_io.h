@@ -18,9 +18,9 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/scope.h"
 #include "lite/core/model/base/io.h"
 #include "lite/core/model/base/param_desc.h"
+#include "lite/core/scope.h"
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/model_parser/pb/param_desc.h"
 #endif  // LITE_ON_TINY_PUBLISH
