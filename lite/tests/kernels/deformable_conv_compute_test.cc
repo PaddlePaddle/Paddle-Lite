@@ -228,7 +228,7 @@ class DeformableConvComputeTester : public arena::TestCase {
 };
 
 void TestConvKsize(Place place, float abs_error = 2e-5) {
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 1, 12, 12}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 12, 12}}) {
     for (auto out_channels : {3, 6}) {
       for (auto ksize : {1, 3, 5, 7}) {
         std::unique_ptr<arena::TestCase> tester(new DeformableConvComputeTester(

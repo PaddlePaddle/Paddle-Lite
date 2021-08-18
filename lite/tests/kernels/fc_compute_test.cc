@@ -54,17 +54,6 @@ DDim ComputeOutDim(const DDim& dim_in, const DDim& wdim, int in_num_col_dim) {
   return DDim(out_dim);
 }
 
-DDim ComputeAscendOutDim(const DDim& dim_in,
-                         const DDim& wdim,
-                         int in_num_col_dim) {
-  std::vector<int64_t> out_dim = {1, 1};
-  for (int i = 0; i < in_num_col_dim; ++i) {
-    out_dim[0] *= dim_in[i];
-  }
-  out_dim[1] = wdim[1];
-  return DDim(out_dim);
-}
-
 class FcOPTest : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -172,9 +161,6 @@ class FcOPTest : public arena::TestCase {
     if (flag_bias && with_relu_) {
       Relu(out_data, m, n);
     }
-#endif
-#ifdef NNADAPTER_WITH_HUAWEI_ASCEND_NPU
-    out->Resize(ComputeAscendOutDim(x->dims(), w->dims(), in_num_col_dims_));
 #endif
   }
 
