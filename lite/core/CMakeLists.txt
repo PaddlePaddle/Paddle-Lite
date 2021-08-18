@@ -7,7 +7,8 @@ LIST(REMOVE_ITEM PROFILE_SRC ${UNIT_TEST_SRC})
 
 # tester source code
 FILE(GLOB_RECURSE TESTER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test/*.cc)
-LIST(REMOVE_ITEM TESTER_SRC ${UNIT_TEST_SRC})
+FILE(GLOB_RECURSE TESTER_UNIT_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test/*test.cc)
+LIST(REMOVE_ITEM TESTER_SRC ${TESTER_UNIT_TEST_SRC})
 
 # optimizer source code
 FILE(GLOB_RECURSE OPTIMIZER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/optimizer/*.cc)
@@ -35,15 +36,14 @@ if (LITE_WITH_FPGA)
   set (CORE_DEPS ${CORE_DEPS} lite_tensor_fpga)
 endif ()
 
-if(LITE_WITH_TEST)
-  set(CORE_SRC ${CORE_SRC} ${TESTER_SRC})
+if(WITH_TESTING)
+  lite_cc_library(core_tester SRCS ${TESTER_SRC} DEPS gtest gflags)
   set(CORE_DEPS ${CORE_DEPS} gtest gflags)
 endif()
 
 if(NOT LITE_ON_TINY_PUBLISH)
   proto_library(framework_proto SRCS framework.proto)
   set(CORE_SRC ${CORE_SRC} ${OPTIMIZER_SRC})
-  set(CORE_DEPS ${CORE_DEPS} framework_proto)
 endif()
 
 if (LITE_WITH_PROFILE)
@@ -56,7 +56,7 @@ if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_W
 endif ()
 
 lite_cc_library(core SRCS ${CORE_SRC}
-  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS} 
+  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS} cpp_op_desc
   X86_DEPS target_wrapper_x86 eigen3
   CUDA_DEPS target_wrapper_cuda cuda_context
   XPU_DEPS target_wrapper_xpu
