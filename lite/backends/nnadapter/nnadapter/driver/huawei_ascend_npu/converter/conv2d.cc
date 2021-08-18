@@ -105,10 +105,10 @@ int Program::ConvertConv2D(hal::Operation* operation) {
     auto depthwise_conv_op =
         std::make_shared<ge::op::DepthwiseConv2D>(conv_name);
     depthwise_conv_op->set_attr_pads(
-        ge::Operator::OpListInt({padding_height_bottom,
-                                 padding_height_top,
-                                 padding_width_right,
-                                 padding_width_left}));
+        ge::Operator::OpListInt({padding_height_top,
+                                 padding_height_bottom,
+                                 padding_width_left,
+                                 padding_width_right}));
     depthwise_conv_op->set_attr_dilations(
         ge::Operator::OpListInt({1, 1, dilation_height, dilation_width}));
     depthwise_conv_op->set_attr_strides(
@@ -121,10 +121,10 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   } else {
     auto normal_conv_op = std::make_shared<ge::op::Conv2D>(conv_name);
     normal_conv_op->set_attr_pads(
-        ge::Operator::OpListInt({padding_height_bottom,
-                                 padding_height_top,
-                                 padding_width_right,
-                                 padding_width_left}));
+        ge::Operator::OpListInt({padding_height_top,
+                                 padding_height_bottom,
+                                 padding_width_left,
+                                 padding_width_right}));
     normal_conv_op->set_attr_dilations(
         ge::Operator::OpListInt({1, 1, dilation_height, dilation_width}));
     normal_conv_op->set_attr_strides(

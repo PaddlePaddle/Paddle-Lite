@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
@@ -259,7 +259,8 @@ void TestConvGroups(Place place, float abs_error = 2e-5) {
        std::vector<std::vector<int64_t>>{{1, 6, 3, 4}, {5, 12, 7, 8}}) {
     for (auto out_channels : {2, 3, 6}) {
       for (auto groups : {2, 3, 6}) {
-#if (defined LITE_WITH_NPU) || (defined LITE_WITH_HUAWEI_ASCEND_NPU)
+#if (defined LITE_WITH_NPU) || (defined LITE_WITH_HUAWEI_ASCEND_NPU) || \
+    (defined NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
         if (out_channels % groups != 0) continue;
 #endif
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
@@ -388,7 +389,9 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
                                 "relu"));
       arena::Arena arena0(std::move(tester0), place, abs_error);
       arena0.TestPrecision();
-
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+      continue;
+#endif
       std::unique_ptr<arena::TestCase> tester1(
           new ConvComputeTester(place,
                                 "def",
@@ -413,12 +416,19 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
 TEST(Conv2d, precision) {
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 5e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
+  abs_error = 5e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 1e-2;

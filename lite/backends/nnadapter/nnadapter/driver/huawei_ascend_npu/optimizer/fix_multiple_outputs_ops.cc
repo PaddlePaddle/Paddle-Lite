@@ -32,6 +32,7 @@ void FixMultipleOutputsOps(hal::Model* model) {
     auto& output_operands = operation->output_operands;
     auto output_count = output_operands.size();
     switch (operation->type) {
+      case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_SPLIT: {
         for (uint32_t i = 0; i < output_count; i++) {
           auto output_operand = output_operands[i];

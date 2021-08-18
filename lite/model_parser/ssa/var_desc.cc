@@ -94,13 +94,34 @@ RootVarScope::RootVarScope(const general::BlockDesc& current,
                            RootVarScope* parent) {
   parent_ = parent;
   if (parent) {
-    parent->SetKidScope(*this);
+    parent->AddKidScope(this);
   }
   for (size_t i = 0; i < current.VarsSize(); ++i) {
     const general::VarDesc* raw_var{current.GetVar<general::VarDesc>(i)};
-    root_vars_[raw_var->Name()] =
-        std::make_shared<VarDesc>(current.Idx(), raw_var);
+    AddRootVar(current.Idx(), *raw_var);
+    // Add accompanying variables indicating dependencies for the lod tensor
+    // array type, both of which are located on the same level of scope.
+    if (raw_var->GetType() == VarDescAPI::Type::LOD_TENSOR_ARRAY) {
+      const std::string asso_var_name{raw_var->Name() + ".AssociatedVar"};
+      general::VarDesc asso_var(asso_var_name);
+      asso_var.SetType(VarDescAPI::Type::LOD_TENSOR);
+      asso_var.SetPersistable(false);
+      AddRootVar(current.Idx(), std::move(asso_var));
+    }
   }
+}
+
+void RootVarScope::AddRootVar(int32_t block_idx,
+                              const general::VarDesc& raw_var) {
+  CHECK_EQ(root_vars_.count(raw_var.Name()), 0);
+  root_vars_[raw_var.Name()] = std::make_shared<VarDesc>(block_idx, &raw_var);
+}
+
+void RootVarScope::AddRootVar(int32_t block_idx, general::VarDesc&& raw_var) {
+  CHECK_EQ(root_vars_.count(raw_var.Name()), 0);
+  auto var_name = raw_var.Name();
+  root_vars_[var_name] =
+      std::make_shared<VarDesc>(block_idx, std::move(raw_var));
 }
 
 std::vector<std::weak_ptr<VarDesc>> RootVarScope::GetRootVars() const {
@@ -111,16 +132,33 @@ std::vector<std::weak_ptr<VarDesc>> RootVarScope::GetRootVars() const {
   return vars;
 }
 
+bool RootVarScope::HasRootVarDesc(const std::string& name) const {
+  if (root_vars_.find(name) != root_vars_.end()) {
+    return true;
+  } else if (parent_) {
+    return parent_->HasRootVarDesc(name);
+  }
+  return false;
+}
+
+RootVarScope* RootVarScope::GetMutableScopeOfRootVar(const std::string& name) {
+  if (root_vars_.find(name) != root_vars_.end()) {
+    return this;
+  } else if (parent_) {
+    return parent_->GetMutableScopeOfRootVar(name);
+  }
+  return nullptr;
+}
+
 std::weak_ptr<VarDesc> RootVarScope::GetRootVarDesc(
     const std::string& name) const {
   if (root_vars_.find(name) != root_vars_.end()) {
     return root_vars_.at(name);
   } else if (parent_) {
     return parent_->GetRootVarDesc(name);
-  } else {
-    LOG(FATAL) << "can not find root var in the current block and root block.";
-    return {};
   }
+  LOG(FATAL) << "can not find root var in the current block and root block.";
+  return {};
 }
 
 }  // namespace ssa

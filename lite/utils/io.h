@@ -14,13 +14,17 @@
 
 #pragma once
 
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
+#if defined(_MSC_VER)
+#include "dirent.h"
+#else
+#include <dirent.h>
+#endif
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
@@ -124,8 +128,10 @@ static std::vector<std::string> ListDir(const std::string& path,
   return paths;
 }
 
-static bool ReadFile(const std::string& filename, std::vector<char>* contents) {
-  FILE* fp = fopen(filename.c_str(), "rb");
+static bool ReadFile(const std::string& filename,
+                     std::vector<char>* contents,
+                     bool binary = true) {
+  FILE* fp = fopen(filename.c_str(), binary ? "rb" : "r");
   if (!fp) return false;
   fseek(fp, 0, SEEK_END);
   size_t size = ftell(fp);
@@ -148,14 +154,14 @@ static bool ReadFile(const std::string& filename, std::vector<T>* contents) {
   FILE* fp = fopen(filename.c_str(), "rb");
   if (!fp) return false;
   fseek(fp, 0, SEEK_END);
-  size_t size = ftell(fp);
+  size_t size = ftell(fp) / sizeof(T);
   fseek(fp, 0, SEEK_SET);
   contents->clear();
   contents->resize(size);
   size_t offset = 0;
   T* ptr = reinterpret_cast<T*>(&(contents->at(0)));
   while (offset < size) {
-    size_t already_read = fread(ptr, 1, size - offset, fp);
+    size_t already_read = fread(ptr, sizeof(T), size - offset, fp);
     offset += already_read;
     ptr += already_read;
   }
@@ -164,8 +170,9 @@ static bool ReadFile(const std::string& filename, std::vector<T>* contents) {
 }
 
 static bool WriteFile(const std::string& filename,
-                      const std::vector<char>& contents) {
-  FILE* fp = fopen(filename.c_str(), "wb");
+                      const std::vector<char>& contents,
+                      bool binary = true) {
+  FILE* fp = fopen(filename.c_str(), binary ? "wb" : "w");
   if (!fp) return false;
   size_t size = contents.size();
   size_t offset = 0;
@@ -188,7 +195,7 @@ static bool WriteFile(const std::string& filename,
   size_t offset = 0;
   const T* ptr = reinterpret_cast<const T*>(&(contents.at(0)));
   while (offset < size) {
-    size_t already_written = fwrite(ptr, 1, size - offset, fp);
+    size_t already_written = fwrite(ptr, sizeof(T), size - offset, fp);
     offset += already_written;
     ptr += already_written;
   }

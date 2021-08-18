@@ -39,7 +39,7 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const std::vector<std::string> linear_interp_ops{"bilinear_interp",
                                                    "bilinear_interp_v2"};
 
-  // input operand
+  // Input operand
   auto x_name = op_info->Input("X").front();
   NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
@@ -49,13 +49,13 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         scope->FindTensor(x_name)->dims(), x_name);
   }
 
-  // shape operand
+  // Shape operand
   NNAdapterOperand* shape_operand = nullptr;
-  // priority: SizeTensor(tensor) > OutSize(tensor) > out_d/out_h/out_w(attr)
+  // Priority: SizeTensor(tensor) > OutSize(tensor) > out_d/out_h/out_w(attr)
   if (op_info->HasInput("SizeTensor") &&
       !op_info->Input("SizeTensor").empty()) {
-    // use concat to generate shape_operand
-    // concat inputs
+    // Use concat to generate shape_operand
+    // Concat inputs
     auto shape_names = op_info->Input("SizeTensor");
     std::vector<NNAdapterOperand*> shape_operands;
     for (size_t i = 0; i < shape_names.size(); i++) {
@@ -76,16 +76,16 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       shape_operands.push_back(one_shape_operand);
     }
 
-    // concat axis
+    // Concat axis
     auto* axis_operand = converter->AddInt32ConstantOperand(0);
     shape_operands.push_back(axis_operand);
 
-    // concat output
+    // Concat output
     std::string shape_name = x_name + "_shape";
     shape_operand = converter->AddInt32VariableOperand(
         DDim({static_cast<int64_t>(shape_names.size())}), shape_name);
 
-    // concat operation
+    // Concat operation
     std::vector<NNAdapterOperand*> output_operands = {shape_operand};
     auto concat_operation = converter->AddOperation(NNADAPTER_CONCAT);
     converter->SetOperation(
@@ -119,15 +119,15 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
             << " doesn't have 'SizeTensor', 'OutSize' or 'out_h/out_w'.";
   }
 
-  // scales operand
+  // Scales operand
   NNAdapterOperand* scales_operand = nullptr;
-  // priority: Scale(tensor) > scale/scales(attr)
+  // Priority: Scale(tensor) > scale/scales(attr)
   if (op_info->HasInput("Scale") && !op_info->Input("Scale").empty()) {
     auto scales_name = op_info->Input("Scale").front();
     if (std::find(ops_has_one_scale.begin(),
                   ops_has_one_scale.end(),
                   op_type) != ops_has_one_scale.end()) {
-      // use concat to generate scales_operand
+      // Use concat to generate scales_operand
       // TODO(zhupengyang): use tile to replace later.
       NNAdapterOperand* scale_operand = nullptr;
       if (converter->HasOperand(scales_name)) {
@@ -188,12 +188,12 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     return FAILED;
   }
 
-  // align_corners operand
+  // Align_corners operand
   bool align_corners = op_info->GetAttr<bool>("align_corners");
   auto align_corners_operand =
       converter->AddBool8ConstantOperand(align_corners);
 
-  // align_mode operand(only linear_interp has align_mode)
+  // Align_mode operand(only linear_interp has align_mode)
   std::vector<NNAdapterOperand*> input_operands{
       input_operand, shape_operand, scales_operand, align_corners_operand};
   if (std::find(linear_interp_ops.begin(), linear_interp_ops.end(), op_type) !=
@@ -206,12 +206,12 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     input_operands.push_back(align_mode_operand);
   }
 
-  // output operand
+  // Output operand
   auto out_name = op_info->Output("Out").front();
   auto* output_operand = converter->AddFloat32VariableOperand(
       scope->FindTensor(out_name)->dims(), out_name);
 
-  // resize_nearest operation
+  // Resize_nearest operation
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* resize_operation = nullptr;
   if (std::find(nearest_interp_ops.begin(),

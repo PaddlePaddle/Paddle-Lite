@@ -31,7 +31,7 @@
 #include "lite/core/program.h"
 #include "lite/utils/io.h"
 #ifdef LITE_WITH_X86
-#include "lite/fluid/float16.h"
+#include "lite/backends/x86/fluid/float16.h"
 #endif
 
 #ifdef LITE_WITH_OPENCL

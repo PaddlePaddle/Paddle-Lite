@@ -18,6 +18,7 @@
 #include <memory>
 #include <set>
 #include <utility>
+#include <vector>
 
 #include "lite/model_parser/general/block_desc.h"
 #include "lite/model_parser/ssa/op_desc.h"
@@ -52,9 +53,9 @@ class BlockDesc {
 
   const BlockDesc* parent() const { return parent_; }
 
-  const BlockDesc* kid() const { return kid_; }
+  const std::vector<BlockDesc*>& kids() const { return kids_; }
 
-  void SetKid(BlockDesc* desc) { kid_ = desc; }
+  void AddKid(BlockDesc* desc) { kids_.emplace_back(desc); }
 
   void SetBlockOpDesc(BlockOpDesc* op) {
     CHECK(op);
@@ -90,7 +91,7 @@ class BlockDesc {
   }
 
  private:
-  BlockDesc* kid_{nullptr};
+  std::vector<BlockDesc*> kids_;
   BlockDesc* parent_{nullptr};
   // The root variable scope serves as a symbol table here.
   std::unique_ptr<RootVarScope> scope_;

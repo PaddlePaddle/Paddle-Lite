@@ -37,12 +37,12 @@ void Program::Clear() {
   model_client_ = nullptr;
   input_tensors_.clear();
   output_tensors_.clear();
+  input_types_.clear();
+  output_types_.clear();
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
-  std::vector<int64_t> input_sizes;
-  std::vector<int64_t> output_sizes;
   std::vector<uint8_t> model_content;
   std::vector<uint8_t>* model_buffer = nullptr;
   if (!cache->buffer.empty()) {
@@ -50,23 +50,11 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     model_buffer = &cache->buffer;
     auto input_count = cache->input_types.size();
     NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-    if (input_count > 0) {
-      input_sizes.resize(input_count);
-      for (size_t i = 0; i < input_count; i++) {
-        const auto& type = cache->input_types[i];
-        input_sizes[i] =
-            ProductionOfDimensions(type.dimensions, type.dimension_count);
-      }
-    }
+    input_types_ = cache->input_types;
     auto output_count = cache->output_types.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
-    output_sizes.resize(output_count);
-    for (size_t i = 0; i < output_count; i++) {
-      const auto& type = cache->output_types[i];
-      output_sizes[i] =
-          ProductionOfDimensions(type.dimensions, type.dimension_count);
-    }
+    output_types_ = cache->output_types;
   } else {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
@@ -129,28 +117,26 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     std::vector<ge::Operator> input_operators;
     if (input_count > 0) {
       input_operators.resize(input_count);
-      input_sizes.resize(input_count);
+      input_types_.resize(input_count);
       for (size_t i = 0; i < input_count; i++) {
         auto operand = model->input_operands[i];
         NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
         input_operators[i] = *operators_[operand].back()->op();
-        input_sizes[i] = ProductionOfDimensions(operand->type.dimensions,
-                                                operand->type.dimension_count);
+        input_types_[i] = operand->type;
       }
     }
     auto output_count = model->output_operands.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
     std::vector<ge::Operator> output_operators(output_count);
-    output_sizes.resize(output_count);
+    output_types_.resize(output_count);
     for (size_t i = 0; i < output_count; i++) {
       auto operand = model->output_operands[i];
       NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
       output_operators[i] = *operators_[operand].back()->op();
-      output_sizes[i] = ProductionOfDimensions(operand->type.dimensions,
-                                               operand->type.dimension_count);
+      output_types_[i] = operand->type;
     }
-    if (cache->key && cache->dir) {
+    if (cache->token && cache->dir) {
       model_buffer = &cache->buffer;
     } else {
       model_buffer = &model_content;
@@ -191,23 +177,28 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
                             "dimensions of input and output tensors!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
-  auto input_count = input_sizes.size();
-  auto output_count = output_sizes.size();
+  auto input_count = input_types_.size();
   NNADAPTER_CHECK_EQ(input_dimensions.size(), input_count);
-  NNADAPTER_CHECK_EQ(output_dimensions.size(), output_count);
-  input_tensors_.resize(input_count);
-  output_tensors_.resize(output_count);
-  for (size_t i = 0; i < input_count; i++) {
-    auto n = input_dimensions[i].GetNumber();
-    auto c = input_dimensions[i].GetChannel();
-    auto h = input_dimensions[i].GetHeight();
-    auto w = input_dimensions[i].GetWidth();
-    NNADAPTER_VLOG(3) << "HiAI input tensors[" << i << "]: " << n << "," << c
-                      << "," << h << "," << w;
-    NNADAPTER_CHECK_EQ(input_sizes[i], n * c * h * w);
-    input_tensors_[i].reset(new hiai::AiTensor);
-    input_tensors_[i]->Init(&(input_dimensions[i]));
+  if (input_count > 0) {
+    input_tensors_.resize(input_count);
+    for (size_t i = 0; i < input_count; i++) {
+      auto n = input_dimensions[i].GetNumber();
+      auto c = input_dimensions[i].GetChannel();
+      auto h = input_dimensions[i].GetHeight();
+      auto w = input_dimensions[i].GetWidth();
+      NNADAPTER_VLOG(3) << "HiAI input tensors[" << i << "]: " << n << "," << c
+                        << "," << h << "," << w;
+      NNADAPTER_CHECK_EQ(
+          ProductionOfDimensions(input_types_[i].dimensions,
+                                 input_types_[i].dimension_count),
+          n * c * h * w);
+      input_tensors_[i].reset(new hiai::AiTensor);
+      input_tensors_[i]->Init(&(input_dimensions[i]));
+    }
   }
+  auto output_count = output_types_.size();
+  NNADAPTER_CHECK_EQ(output_dimensions.size(), output_count);
+  output_tensors_.resize(output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto n = output_dimensions[i].GetNumber();
     auto c = output_dimensions[i].GetChannel();
@@ -215,7 +206,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     auto w = output_dimensions[i].GetWidth();
     NNADAPTER_VLOG(3) << "HiAI output tensors[" << i << "]: " << n << "," << c
                       << "," << h << "," << w;
-    NNADAPTER_CHECK_EQ(output_sizes[i], n * c * h * w);
+    NNADAPTER_CHECK_EQ(ProductionOfDimensions(output_types_[i].dimensions,
+                                              output_types_[i].dimension_count),
+                       n * c * h * w);
     output_tensors_[i].reset(new hiai::AiTensor);
     output_tensors_[i]->Init(&(output_dimensions[i]));
   }
@@ -227,25 +220,48 @@ int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
+  NNADAPTER_CHECK_EQ(input_types_.size(), input_count);
+  NNADAPTER_CHECK_EQ(output_types_.size(), output_count);
   for (uint32_t i = 0; i < input_count; i++) {
-    auto& argument = input_arguments[i];
-    std::memcpy(input_tensors_[argument.index]->GetBuffer(),
-                argument.buffer,
-                argument.length);
+    auto& arg = input_arguments[i];
+    NNADAPTER_CHECK_GE(arg.index, 0);
+    NNADAPTER_CHECK_LT(arg.index, input_count);
+    NNADAPTER_CHECK(arg.memory);
+    NNADAPTER_CHECK(arg.access);
+    auto type = &input_types_[arg.index];
+    auto buffer = arg.access(arg.memory, type);
+    NNADAPTER_CHECK(buffer);
+    auto length = GetOperandTypeBufferLength(*type);
+    // TODO(hong19860320) Re-initialize the input tensors when the dimensions of
+    // inputs are changed if dynamic shape is supported
+    NNADAPTER_CHECK_EQ(length, input_tensors_[arg.index]->GetSize());
+    memcpy(input_tensors_[arg.index]->GetBuffer(), buffer, length);
   }
   std::string key = "model_name";  // Note: key seems must be model_name
   hiai::AiContext model_context;
   model_context.AddPara(key, model_name_);
   int istamp;
+  auto start_time = GetCurrentUS();
   NNADAPTER_CHECK_EQ(
       model_client_->Process(
           model_context, input_tensors_, output_tensors_, 1000, istamp),
       hiai::AI_SUCCESS);
+  NNADAPTER_VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
   for (uint32_t i = 0; i < output_count; i++) {
-    auto& argument = output_arguments[i];
-    std::memcpy(argument.buffer,
-                output_tensors_[argument.index]->GetBuffer(),
-                argument.length);
+    auto& arg = output_arguments[i];
+    NNADAPTER_CHECK_GE(arg.index, 0);
+    NNADAPTER_CHECK_LT(arg.index, output_count);
+    NNADAPTER_CHECK(arg.memory);
+    NNADAPTER_CHECK(arg.access);
+    auto type = &output_types_[arg.index];
+    // TODO(hong19860320) Get the dimensions of the outputs from HiAI according
+    // to the dynamic dimensions of inputs, fill them to 'type' and call the
+    // 'access' function to re-allocate the host output memory
+    auto buffer = arg.access(arg.memory, type);
+    NNADAPTER_CHECK(buffer);
+    auto length = GetOperandTypeBufferLength(*type);
+    NNADAPTER_CHECK_EQ(length, output_tensors_[arg.index]->GetSize());
+    memcpy(buffer, output_tensors_[arg.index]->GetBuffer(), length);
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -298,7 +314,7 @@ std::shared_ptr<Operator> Program::AddConstantOperator(
   auto tensor = std::make_shared<ge::Tensor>();
   tensor->SetTensorDesc(*tensor_desc);
   tensor->SetData(reinterpret_cast<const uint8_t*>(values),
-                  num_values * OperandPrecisionLength(precision));
+                  num_values * GetOperandPrecisionDataLength(precision));
   op->set_attr_value(tensor);
   auto constant_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
   UpdateOperatorMap(nullptr, constant_operator);

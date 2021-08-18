@@ -14,12 +14,12 @@
 
 #pragma once
 
+#include "lite/backends/x86/fluid/data_type.h"
+#include "lite/backends/x86/fluid/hostdevice.h"
+#include "lite/backends/x86/fluid/transform.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "lite/fluid/data_type.h"
-#include "lite/fluid/hostdevice.h"
-#include "lite/fluid/transform.h"
 
 namespace paddle {
 namespace lite {

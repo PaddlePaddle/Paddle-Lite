@@ -78,11 +78,48 @@ class OpDesc : public OpDescBase {
          const RootVarScope& scope,
          int32_t block_idx);
 
- private:
+ protected:
   std::weak_ptr<VarDesc> AddInput(const std::string& param,
                                   const std::weak_ptr<VarDesc>& desc);
   std::weak_ptr<VarDesc> AddOutput(const std::string& param,
                                    const std::weak_ptr<VarDesc>& desc);
+
+ private:
+  void InitOpDesc(const general::OpDesc& raw_desc,
+                  const RootVarScope& scope,
+                  int32_t block_idx);
+};
+
+class WriteToArrayOpDesc : public OpDesc {
+ public:
+  WriteToArrayOpDesc() = default;
+  WriteToArrayOpDesc(const general::OpDesc& raw_desc,
+                     const RootVarScope& scope,
+                     int32_t block_idx)
+      : OpDesc(raw_desc, scope, block_idx) {
+    ProcessTensorArrayOp(raw_desc, scope, block_idx);
+  }
+
+ private:
+  void ProcessTensorArrayOp(const general::OpDesc& raw_desc,
+                            const RootVarScope& scope,
+                            int32_t block_idx);
+};
+
+class ReadFromArrayOpDesc : public OpDesc {
+ public:
+  ReadFromArrayOpDesc() = default;
+  ReadFromArrayOpDesc(const general::OpDesc& raw_desc,
+                      const RootVarScope& scope,
+                      int32_t block_idx)
+      : OpDesc(raw_desc, scope, block_idx) {
+    ProcessTensorArrayOp(raw_desc, scope, block_idx);
+  }
+
+ private:
+  void ProcessTensorArrayOp(const general::OpDesc& raw_desc,
+                            const RootVarScope& scope,
+                            int32_t block_idx);
 };
 
 // In order to modify the block operator, we need to know the specific
@@ -214,19 +251,21 @@ class WriteBackOp : public OpDescBase {
 
   std::string type() const override { return type_; }
 
+  std::vector<std::weak_ptr<VarDesc>> input_lod_deps() const;
+
  private:
   void AddInput(const std::string& param,
                 const std::weak_ptr<VarDesc>& desc,
                 int32_t block_idx);
 
-  static constexpr char type_[]{"write_back"};
+  static constexpr char const type_[] = "write_back";
   // In order to adapt to the operator registration system,
   // the dependent parameters are classified by variable types here.
-  static constexpr char input_lod_deps_[]{"Dep_LoDTensor"};
-  static constexpr char input_lod_array_deps_[]{"Dep_LoDTensorArray"};
-  static constexpr char input_src_[]{"Src_LoDTensor"};
+  static constexpr char const input_lod_deps_[] = "Dep_LoDTensor";
+  static constexpr char const input_lod_array_deps_[] = "Dep_LoDTensorArray";
+  static constexpr char const input_src_[] = "Src_LoDTensor";
   // For directed acyclic, input is used as output here.
-  static constexpr char input_dst_[]{"Dst_LoDTensor"};
+  static constexpr char const input_dst_[] = "Dst_LoDTensor";
   general::OpDesc fake_desc_;
 };
 

@@ -17,10 +17,10 @@ limitations under the License. */
 #include <algorithm>
 #include <iterator>
 #include <vector>
+#include "lite/backends/x86/fluid/eigen.h"
+#include "lite/backends/x86/fluid/for_range.h"
+#include "lite/backends/x86/fluid/transform.h"
 #include "lite/backends/x86/math/math_function.h"
-#include "lite/fluid/eigen.h"
-#include "lite/fluid/for_range.h"
-#include "lite/fluid/transform.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/variant.h"
 
@@ -311,11 +311,31 @@ void ElementwiseComputeEx(const lite::Context<Target> &ctx,
   TransformFunctor<Functor, T, Target, OutType> functor(x, y, z, ctx, func);
   auto x_dims = x->dims();
   auto y_dims_untrimed = y->dims();
-  CHECK_GE(x_dims.size(), y_dims_untrimed.size())
-      << "Rank of first input must >= rank of second input.";
   if (x_dims == y_dims_untrimed) {
     functor.Run();
     return;
+  }
+  int pre, n, post, mid_flag = 0;
+  if (x_dims.size() < y_dims_untrimed.size()) {
+    TransformFunctor<Functor, T, Target, OutType> functor2(y, x, z, ctx, func);
+    axis = (axis == -1 ? y_dims_untrimed.size() - x_dims.size() : axis);
+    CHECK(axis >= 0 && axis < static_cast<int>(y_dims_untrimed.size()))
+        << "Axis should be in range [0, y_dims)";
+    auto x_dims_untrimed = trim_trailing_singular_dims(x_dims);
+    axis = (x_dims_untrimed.size() == 0) ? y_dims_untrimed.size() : axis;
+    get_mid_dims(
+        y_dims_untrimed, x_dims_untrimed, axis, &pre, &n, &post, &mid_flag);
+    if (mid_flag) {
+      functor2.RunMidRowWise(n, pre, post);
+      return;
+    }
+    if (post == 1) {
+      functor2.RunRowWise(n, pre);
+      return;
+    } else {
+      functor2.RunMidWise(n, pre, post);
+      return;
+    }
   }
 
   axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
@@ -323,8 +343,8 @@ void ElementwiseComputeEx(const lite::Context<Target> &ctx,
       << "Axis should be in range [0, x_dims)";
   auto y_dims = trim_trailing_singular_dims(y_dims_untrimed);
   axis = (y_dims.size() == 0) ? x_dims.size() : axis;
-  int pre, n, post, mid_flag = 0;
   get_mid_dims(x_dims, y_dims, axis, &pre, &n, &post, &mid_flag);
+
   if (mid_flag) {
     functor.RunMidRowWise(n, pre, post);
     return;
