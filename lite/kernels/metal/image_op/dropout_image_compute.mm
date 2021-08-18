@@ -27,7 +27,7 @@ namespace metal {
 void DropoutImageCompute::PrepareForRun() {
     auto& context = ctx_->AS<MTLContext>();
     metal_context_ = static_cast<MetalContext*>(context.context());
-    
+
     const auto& param = this->Param<param_t>();
     auto output_dims = param.output->dims();
     auto input_dims = param.x->dims();
@@ -47,7 +47,8 @@ void DropoutImageCompute::PrepareForRun() {
     }
 
     DropoutMetalParam metal_param{scale};
-    param_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
+    param_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
     function_name_ = "dropout";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -77,7 +78,12 @@ DropoutImageCompute::~DropoutImageCompute() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(dropout, kMetal, kFloat, kMetalTexture2DArray, paddle::lite::kernels::metal::DropoutImageCompute, def)
+REGISTER_LITE_KERNEL(dropout,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::DropoutImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -89,7 +95,12 @@ REGISTER_LITE_KERNEL(dropout, kMetal, kFloat, kMetalTexture2DArray, paddle::lite
     .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(dropout, kMetal, kFP16, kMetalTexture2DArray, paddle::lite::kernels::metal::DropoutImageCompute, def)
+REGISTER_LITE_KERNEL(dropout,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::DropoutImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
