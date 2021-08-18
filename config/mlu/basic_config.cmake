@@ -54,7 +54,8 @@ else()
   endif()
 endif()
 
-include(cross_compiling/armlinux)
+## TODO 确认这里是否可是android
+include(cross_compiling/android)
 include(cross_compiling/host)
 
 ## Setting Lib Type
@@ -86,7 +87,7 @@ if(NOT CMAKE_BUILD_TYPE)
         "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
         FORCE)
     else()
-    
+
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
             "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
             FORCE)
@@ -112,6 +113,3 @@ set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
 
 ## TODO: Double check needed
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
-
-## Others
-include(device/rknpu)
