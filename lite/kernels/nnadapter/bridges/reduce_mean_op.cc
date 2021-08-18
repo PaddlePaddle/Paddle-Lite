@@ -16,6 +16,7 @@
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
+
 namespace paddle {
 namespace lite {
 namespace subgraph {
