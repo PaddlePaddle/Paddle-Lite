@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -56,6 +56,10 @@ enum ActivationType : ushort {
   PRELU = 3,
   LEAKY_RELU = 4,
   HARD_SIGMOID = 5,
+};
+
+struct DropoutParam {
+  float scale;
 };
 
 struct MetalActivationParam {

@@ -25,7 +25,7 @@ add_kernel(softmax_metal_image METAL basic SRCS image_op/softmax_image_compute.m
 add_kernel(concat_metal_image METAL basic SRCS image_op/concat_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(bilinear_interp_metal_image METAL basic SRCS image_op/bilinear_interp_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(scale_metal_image METAL basic SRCS image_op/scale_image_compute.mm DEPS metal_target_wrapper)
-# add_kernel(dropout_metal_image METAL basic SRCS image_op/dropout_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(dropout_metal_image METAL basic SRCS image_op/dropout_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(fc_metal_image METAL basic SRCS image_op/fc_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(feed_metal_image METAL basic SRCS image_op/feed_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(sigmoid_metal_image METAL basic SRCS image_op/sigmoid_image_compute.mm DEPS metal_target_wrapper)
