@@ -15,6 +15,7 @@
 #include "lite/kernels/x86/conv_compute.h"
 #include <utility>
 #include "lite/kernels/x86/conv_depthwise.h"
+#include "lite/kernels/x86/conv_direct.h"
 
 namespace paddle {
 namespace lite {
@@ -56,7 +57,6 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   for (auto ele : *(param.dilations))
     if (ele != 1) nodilations = false;
 
-  auto paddings = *param.paddings;
   bool paddings_equal = (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
 
   /// select conv impl

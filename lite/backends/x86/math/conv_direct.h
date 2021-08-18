@@ -27,7 +27,7 @@ void conv_trans_weights_numc(const float* din,
                              int chout,int chin,
                              int wh, int ww, int block);
 
-void conv_direct_3x3s2_m256(const float* i_data,
+void conv_direct_3x3s2(const float* i_data,
                             const float* trans_weight,
                             float* trans_out,
                             int bs,

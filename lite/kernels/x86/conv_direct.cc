@@ -62,7 +62,7 @@ void DirectConv<float>::Run() {
   }
   else{
     auto act_param = param.activation_param;
-    lite::x86::math::conv_direct_3x3s2_m256(i_data,
+    lite::x86::math::conv_direct_3x3s2(i_data,
                                           weights_.data<float>(),
                                           trans_out_.mutable_data<float>(),
                                           bs, ic, ih, iw,

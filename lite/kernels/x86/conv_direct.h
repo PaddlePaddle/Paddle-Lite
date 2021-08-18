@@ -41,7 +41,11 @@ class DirectConv : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual void PrepareForRun() 
   {
     auto& param = this->template Param <param_t>();
+#ifdef __AVX__
     constexpr int block = 8;
+#else
+    constexpr int block = 4;
+#endif
     int oc = param.filter->dims()[0];
     int ic = param.filter->dims()[1];
     int wh = param.filter->dims()[2];
@@ -62,7 +66,7 @@ class DirectConv : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       trans_in_.Resize({1, ih, iw, ic});
       trans_in_.mutable_data<float>();
     } else {
-      // [chout, chin, wh, ww] -> [chout / cblock, chin, wh, ww, cblock]
+      // [chout, chin, wh, ww] -> [chout / block, chin, wh, ww, block]
       weights_.Resize({cround / block, ic, wh, ww, block});
       auto filter_data = param.filter->template data<float>();
       auto weights_w_data = weights_.mutable_data<float>();
@@ -72,7 +76,7 @@ class DirectConv : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     // prepare the temp space for output
     int oh = param.output->dims()[2];
     int ow = param.output->dims()[3];
-    trans_out_.Resize({1, oc_expand_ / 8, oh, ow, 8});
+    trans_out_.Resize({1, oc_expand_ / block, oh, ow, block});
     trans_out_.mutable_data<float>();
   }
 
