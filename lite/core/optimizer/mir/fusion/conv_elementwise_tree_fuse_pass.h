@@ -56,6 +56,8 @@ namespace mir {
 //   fusion_elementwise_add_activation.
 // * The input tensor dims of elementwise_add/fusion_elementwise_add_activation
 //   must be equal to that of conv2d_1x1.
+// * The output tensor of conv2d_1x1 must be Y of
+//   elementwise_add/fusion_elementwise_add_activation.
 // * Only support opencl target by now.
 
 class ConvElementwiseTreeFusePass : public ProgramPass {
