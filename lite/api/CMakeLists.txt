@@ -609,7 +609,7 @@ endif()
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
-        DEPS gflags kernel op optimizer utils ${host_kernels})
+        DEPS gflags kernel op optimizer utils ${host_kernels} core)
     add_dependencies(opt all_kernel_faked)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
@@ -639,7 +639,7 @@ endif()
 
 # Some bins
 if(NOT IOS)
-    lite_cc_binary(test_model_bin SRCS tools/model_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+    lite_cc_binary(test_model_bin SRCS tools/model_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -658,7 +658,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     
-    lite_cc_binary(test_model_detection_bin SRCS model_test_detection.cc DEPS paddle_api_full paddle_api_light gflags utils
+    lite_cc_binary(test_model_detection_bin SRCS model_test_detection.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -677,7 +677,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     
-    lite_cc_binary(test_model_classify_bin SRCS model_test_classify.cc DEPS paddle_api_full paddle_api_light gflags utils
+    lite_cc_binary(test_model_classify_bin SRCS model_test_classify.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -696,7 +696,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
 
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils
+    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -714,7 +714,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     
-    lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+    lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -733,7 +733,7 @@ if(NOT IOS)
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})
 
-    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils
+    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
