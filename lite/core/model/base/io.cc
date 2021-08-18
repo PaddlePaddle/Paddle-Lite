@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/base/io.h"
+#include "lite/core/model/base/io.h"
 
 namespace paddle {
 namespace lite {

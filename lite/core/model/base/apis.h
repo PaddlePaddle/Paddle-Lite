@@ -14,12 +14,12 @@
 
 #pragma once
 
-#include "lite/model_parser/base/block_desc.h"
-#include "lite/model_parser/base/op_desc.h"
-#include "lite/model_parser/base/op_version_map.h"
-#include "lite/model_parser/base/param_desc.h"
-#include "lite/model_parser/base/program_desc.h"
-#include "lite/model_parser/base/proto_desc.h"
-#include "lite/model_parser/base/traits.h"
-#include "lite/model_parser/base/var_desc.h"
+#include "lite/core/model/base/block_desc.h"
+#include "lite/core/model/base/op_desc.h"
+#include "lite/core/model/base/op_version_map.h"
+#include "lite/core/model/base/param_desc.h"
+#include "lite/core/model/base/program_desc.h"
+#include "lite/core/model/base/proto_desc.h"
+#include "lite/core/model/base/traits.h"
+#include "lite/core/model/base/var_desc.h"
 #include "lite/utils/all.h"

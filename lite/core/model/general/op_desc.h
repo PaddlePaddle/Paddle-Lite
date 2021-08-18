@@ -17,7 +17,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/model_parser/base/apis.h"
+#include "lite/core/model/base/apis.h"
 #include "lite/utils/any.h"
 #include "lite/utils/varient.h"
 

@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/general/var_desc.h"
+#include "lite/core/model/general/var_desc.h"

@@ -1,8 +1,8 @@
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(pb)
 endif()
-add_subdirectory(base)
-add_subdirectory(general)
+#add_subdirectory(base)
+#add_subdirectory(general)
 add_subdirectory(naive_buffer)
 add_subdirectory(flatbuffers)
 add_subdirectory(ssa)
@@ -11,10 +11,10 @@ add_subdirectory(ssa)
 
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(compatible_pb SRCS compatible_pb.cc
-      DEPS ${cpp_wrapper} ${naive_wrapper} ${pb_wrapper} framework_proto
+      DEPS ${naive_wrapper} ${pb_wrapper} framework_proto
 fbs_io ssa_program)
 else()
-    lite_cc_library(compatible_pb SRCS compatible_pb.cc DEPS ${cpp_wrapper} ${naive_wrapper} fbs_io)
+    lite_cc_library(compatible_pb SRCS compatible_pb.cc DEPS ${naive_wrapper} fbs_io)
 endif()
 
 lite_cc_library(model_parser SRCS model_parser.cc DEPS
@@ -41,7 +41,6 @@ if (LITE_WITH_CUDA AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(compatibility SRCS compatibility.cc DEPS
         core
         compatible_pb
-        ${cpp_wrapper}
         ${naive_wrapper})
     lite_cc_test(test_compatibility SRCS compatibility_test.cc DEPS compatibility leaky_relu_compute_cuda)
 endif()

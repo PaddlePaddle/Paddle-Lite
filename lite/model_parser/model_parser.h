@@ -26,7 +26,7 @@
 #include "lite/api/paddle_api.h"
 #include "lite/core/scope.h"
 #include "lite/core/variable.h"
-#include "lite/model_parser/base/io.h"
+#include "lite/core/model/base/io.h"
 #include "lite/model_parser/compatible_pb.h"
 
 namespace paddle {

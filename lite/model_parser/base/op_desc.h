@@ -15,7 +15,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "lite/model_parser/base/traits.h"
+#include "lite/core/model/base/traits.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 

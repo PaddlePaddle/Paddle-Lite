@@ -15,7 +15,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "lite/model_parser/base/io.h"
+#include "lite/core/model/base/io.h"
 #include "lite/model_parser/flatbuffers/program_desc.h"
 
 namespace paddle {

@@ -18,7 +18,7 @@
 #include "gtest/gtest.h"
 #include "lite/core/framework.pb.h"
 #include "lite/model_parser/compatible_pb.h"
-#include "lite/model_parser/general/program_desc.h"
+#include "lite/core/model/general/program_desc.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/ssa/program_desc.h"
 

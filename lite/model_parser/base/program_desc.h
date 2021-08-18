@@ -16,7 +16,7 @@
 
 #include <map>
 #include <string>
-#include "lite/model_parser/base/traits.h"
+#include "lite/core/model/base/traits.h"
 #include "lite/utils/cp_logging.h"
 namespace paddle {
 namespace lite {

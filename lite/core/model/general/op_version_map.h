@@ -16,9 +16,9 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "lite/model_parser/base/apis.h"
-#include "lite/model_parser/general/op_desc.h"
-#include "lite/model_parser/general/var_desc.h"
+#include "lite/core/model/base/apis.h"
+#include "lite/core/model/general/op_desc.h"
+#include "lite/core/model/general/var_desc.h"
 
 namespace paddle {
 namespace lite {

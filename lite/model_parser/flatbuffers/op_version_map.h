@@ -16,7 +16,7 @@
 
 #include <map>
 #include <string>
-#include "lite/model_parser/base/apis.h"
+#include "lite/core/model/base/apis.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 
 namespace paddle {
