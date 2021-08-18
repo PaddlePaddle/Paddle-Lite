@@ -56,7 +56,7 @@ if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_W
 endif ()
 
 lite_cc_library(core SRCS ${CORE_SRC}
-  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS} cpp_op_desc
+  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS}
   X86_DEPS target_wrapper_x86 eigen3
   CUDA_DEPS target_wrapper_cuda cuda_context
   XPU_DEPS target_wrapper_xpu
