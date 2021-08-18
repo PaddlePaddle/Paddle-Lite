@@ -15,26 +15,32 @@
 #pragma once
 
 #include <memory>
-#include <string>
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
-namespace fusion {
+namespace kernels {
+namespace xpu {
 
-class InplaceFuser : public FuseBase {
+class XPUMmdnnSearchAttention2Compute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  explicit InplaceFuser(const std::string& type) : type_(type) {}
+  using param_t = operators::XPUMmdnnSearchAttentionParam;
 
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+  void PrepareForRun() override;
+
+  void Run() override;
 
  private:
-  std::string type_;
+  XPUScratchPadGuard input_max_xpu_guard_;
+  XPUScratchPadGuard weight_max_xpu_guard_;
+  XPUScratchPadGuard output_max_xpu_guard_;
+
+  int dim_;
 };
 
-}  // namespace fusion
-}  // namespace mir
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
