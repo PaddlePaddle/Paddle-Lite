@@ -30,7 +30,7 @@ lite_cc_library(subgraph_bridge_conv_transpose_op_apu SRCS conv_transpose_op.cc 
 
 
 set(apu_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_utility_apu
         subgraph_bridge_conv_op_apu
         subgraph_bridge_elementwise_ops_apu

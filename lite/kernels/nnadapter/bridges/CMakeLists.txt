@@ -42,7 +42,7 @@ lite_cc_library(subgraph_bridge_range_op_nnadapter SRCS range_op.cc DEPS ${nnada
 lite_cc_library(subgraph_bridge_leaky_relu_op_nnadapter SRCS leaky_relu_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_utility_nnadapter
         subgraph_bridge_converter_nnadapter
         subgraph_bridge_conv_op_nnadapter

@@ -22,7 +22,7 @@ lite_cc_library(subgraph_bridge_act_op_imagination_nna SRCS act_op.cc DEPS ${ima
 lite_cc_library(subgraph_bridge_pool_op_imagination_nna SRCS pool_op.cc DEPS ${imagination_nna_subgraph_bridge_deps})
 
 set(imagination_nna_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_utility_imagination_nna
         subgraph_bridge_graph_imagination_nna
         subgraph_bridge_fc_op_imagination_nna

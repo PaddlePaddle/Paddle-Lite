@@ -80,7 +80,7 @@ lite_cc_library(subgraph_bridge_squeeze_op_mlu SRCS squeeze_op.cc DEPS ${subgrap
 lite_cc_library(subgraph_bridge_reshape_op_mlu SRCS reshape_op.cc DEPS ${subgraph_bridge_deps_mlu})
 lite_cc_library(subgraph_bridge_flatten_op_mlu SRCS flatten_op.cc DEPS ${subgraph_bridge_deps_mlu})
 set(mlu_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_utility_mlu
         subgraph_bridge_graph_mlu
         subgraph_bridge_act_op_mlu

@@ -28,7 +28,7 @@ lite_cc_library (subgraph_bridge_cast_op_xpu SRCS cast_op.cc DEPS ${xpu_subgraph
 lite_cc_library (subgraph_bridge_yolo_box_op_xpu SRCS yolo_box_op.cc DEPS ${xpu_subgraph_bridge_deps})
 
 set (xpu_subgraph_bridges
-  subgraph_bridge_registry
+  core
   subgraph_bridge_utility_xpu
   subgraph_bridge_graph_xpu
   subgraph_bridge_act_op_xpu

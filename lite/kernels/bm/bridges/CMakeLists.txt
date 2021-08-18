@@ -74,7 +74,7 @@ lite_cc_library(subgraph_bridge_act_enhance_op_bm SRCS act_enhance_op.cc DEPS ${
 lite_cc_library(subgraph_bridge_im2sequence_op_bm SRCS im2sequence_op.cc DEPS ${bm_subgraph_bridge_deps})
 
 set(bm_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_graph_bm
         subgraph_bridge_im2sequence_op_bm
         subgraph_bridge_act_op_bm

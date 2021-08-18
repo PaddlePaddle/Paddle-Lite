@@ -41,7 +41,7 @@ if(NOT LITE_WITH_NPU)
   return()
 endif()
 
-lite_cc_library(subgraph_bridge_utility_npu SRCS utility.cc DEPS ${npu_builder_libs} tensor)
+lite_cc_library(subgraph_bridge_utility_npu SRCS utility.cc DEPS ${npu_builder_libs} core)
 lite_cc_library(subgraph_bridge_graph_npu SRCS graph.cc DEPS subgraph_bridge_utility_npu)
 
 set(npu_subgraph_bridge_deps core subgraph_bridge_utility_npu subgraph_bridge_graph_npu)
@@ -82,7 +82,7 @@ lite_cc_library(subgraph_bridge_expand_op_npu SRCS expand_op.cc DEPS ${npu_subgr
 
 
 set(npu_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_utility_npu
         subgraph_bridge_graph_npu
         subgraph_bridge_fc_op_npu

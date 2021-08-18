@@ -66,7 +66,7 @@ lite_cc_library(subgraph_bridge_norm_op_huawei_ascend_npu SRCS norm_op.cc DEPS $
 lite_cc_library(subgraph_bridge_pow_op_huawei_ascend_npu SRCS pow_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_log_op_huawei_ascend_npu SRCS log_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 set(huawei_ascend_npu_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_graph_huawei_ascend_npu
         subgraph_bridge_act_op_huawei_ascend_npu
         subgraph_bridge_conv_op_huawei_ascend_npu

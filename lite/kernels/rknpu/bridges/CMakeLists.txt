@@ -40,7 +40,7 @@ lite_cc_library(subgraph_bridge_flatten_ops_rknpu SRCS flatten_op.cc DEPS ${rknp
 lite_cc_library(subgraph_bridge_norm_ops_rknpu SRCS norm_op.cc DEPS ${rknpu_subgraph_bridge_deps})
 
 set(rknpu_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_utility_rknpu
         subgraph_bridge_graph_rknpu
         subgraph_bridge_conv_op_rknpu
