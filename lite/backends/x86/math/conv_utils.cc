@@ -833,7 +833,7 @@ void im2col_s1<float>(const float* data_im,
           float* data_col_ptr = data_col + data_col_offset;
 #ifdef __AVX__
           for (; ow + 7 < ow_end; ow += 8, iw += 8) {
-            __m256 vtmp = _mm256_load_ps(data_im_ptr + iw);
+            __m256 vtmp = _mm256_loadu_ps(data_im_ptr + iw);
             _mm256_storeu_ps(data_col_ptr + ow, vtmp);
           }
 #else
