@@ -333,7 +333,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_SHAPE:
-        input_args = {"input"};
+        input_args = {"input", "dtype"};
         output_args = {"output"};
         break;
       case NNADAPTER_ASSIGN:
