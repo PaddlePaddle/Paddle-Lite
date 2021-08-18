@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## Setting Cmake Env ##
+## Setting Cmake Env
+cmake_minimum_required(VERSION 3.10)
 if(LITE_WITH_XTCL)
   set(CMAKE_CXX_STANDARD 14)
 else()
   set(CMAKE_CXX_STANDARD 11)
 endif()
+set(CMAKE_SYSTEM_NAME Linux)
+set(ARMLINUX TRUE)
 
 ## Setting OS
 set(OS_LIST "android" "armlinux" "ios" "ios64" "armmacos")
@@ -45,6 +48,19 @@ else()
   endif()
 endif()
 
+## ARCH ABI
+set(ARMLINUX_ARCH_ABI_LIST "armv8" "armv7" "armv7hf")
+if(NOT DEFINED ARMLINUX_ARCH_ABI)
+  set(ARMLINUX_ARCH_ABI ${ARM_TARGET_ARCH_ABI})
+  message(STATUS "Setting Target OS to ${ARMLINUX_ARCH_ABI}")
+else()
+  if(NOT ARMLINUX_ARCH_ABI IN_LIST ARMLINUX_ARCH_ABI_LIST)
+    message(FATAL_ERROR "ARMLINUX_ARCH_ABI: ${ARMLINUX_ARCH_ABI} not support!")
+  else()
+    message(STATUS "ARMLINUX_ARCH_ABI OS is ${ARM_TARGET_OS}")
+  endif()
+endif()
+
 ## Setting ToolChain
 set(TOOLCHAIN_LIST "gcc" "clang")
 if(NOT DEFINED ARM_TARGET_LANG)
@@ -57,10 +73,36 @@ else()
     message(STATUS "Target ARCH is ${ARM_TARGET_LANG}")
   endif()
 endif()
+if(ARMLINUX_ARCH_ABI STREQUAL "armv8")
+    set(CMAKE_SYSTEM_PROCESSOR aarch64)
+    set(CMAKE_C_COMPILER "aarch64-linux-gnu-gcc")
+    set(CMAKE_CXX_COMPILER "aarch64-linux-gnu-g++")
+endif()
 
-## TODO 确认这里是否可能是android
-include(cross_compiling/armlinux)
-include(cross_compiling/host)
+if(ARMLINUX_ARCH_ABI STREQUAL "armv7")
+    set(CMAKE_SYSTEM_PROCESSOR arm)
+    set(CMAKE_C_COMPILER "arm-linux-gnueabi-gcc")
+    set(CMAKE_CXX_COMPILER "arm-linux-gnueabi-g++")
+endif()
+
+if(ARMLINUX_ARCH_ABI STREQUAL "armv7hf")
+    set(CMAKE_SYSTEM_PROCESSOR arm)
+    set(CMAKE_C_COMPILER "arm-linux-gnueabihf-gcc")
+    set(CMAKE_CXX_COMPILER "arm-linux-gnueabihf-g++")
+endif()
+
+set(HOST_C_COMPILER $ENV{CC})
+set(HOST_CXX_COMPILER $ENV{CXX})
+
+if(NOT ${HOST_C_COMPILER})
+    set(CMAKE_C_COMPILER ${HOST_C_COMPILER})
+endif()
+
+if(NOT ${HOST_CXX_COMPILER})
+    set(CMAKE_CXX_COMPILER ${HOST_CXX_COMPILER})
+endif()
+message(STATUS "armlinux CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+message(STATUS "armlinux CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
 ## Setting Lib Type
 set(ARM_TARGET_LIB_TYPE_LIST "static" "shared")
@@ -75,7 +117,7 @@ else()
   endif()
 endif()
 
-## Compile C Flags
+## Setting Compiler Flags
 if (LITE_ON_TINY_PUBLISH OR LITE_WITH_LTO)
   if(ARM_TARGET_LANG STREQUAL "gcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
@@ -83,8 +125,9 @@ if (LITE_ON_TINY_PUBLISH OR LITE_WITH_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto=thin")
   endif()
 endif()
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
 
-## Build Type
+## Setting Build Type
 if(NOT CMAKE_BUILD_TYPE)
     if(WIN32)
         set(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -111,23 +154,25 @@ set(WITH_RDMA OFF CACHE STRING
 set(WITH_MKL OFF CACHE STRING
 "Disable MKL when cross-compiling for Android and iOS" FORCE)
 
-## Third Party
-set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
-        "A path setting third party libraries download & build directories.")
-
-## TODO: Double check needed
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
-
-## Others
+## Setting Python
 if (LITE_WITH_PYTHON)
     include(external/python)    # download, build, install python
     include(external/pybind11)    # download, build, install pybind11
 endif()
 
+## Third Party
+set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
+        "A path setting third party libraries download & build directories.")
+
+## Setting Opencl
+if (LITE_WITH_OPENCL)
+  include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
+endif()
+
+# TODO: move to config folder
 if(LITE_WITH_IMAGINATION_NNA)
 	include(device/imagination_nna)
 endif()
 
-if (LITE_WITH_OPENCL)
-    include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
-endif()
+## Definitions
+add_definitions(-DLITE_WITH_LINUX)
