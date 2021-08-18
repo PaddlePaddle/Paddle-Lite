@@ -12,24 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "lite/kernels/x86/conv_direct.h"
-#include "lite/backends/x86/math/conv_direct.h"
-#include "lite/backends/x86/math/conv_bias.h"
 #include <cmath>
+#include "lite/backends/x86/math/conv_bias.h"
+#include "lite/backends/x86/math/conv_direct.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
 
-// 转换权重的版本而且输出也转换权重
 template <>
-void DirectConv<float>::Run() {
-  
+void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   CHECK_EQ(param.strides[0], 2);
   CHECK_EQ(param.strides[1], 2);
-  //auto& ctx = this->ctx_->template As<X86Context>();
+  // auto& ctx = this->ctx_->template As<X86Context>();
 
   const auto* i_data = param.x->data<float>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
@@ -42,33 +39,32 @@ void DirectConv<float>::Run() {
   const int ph = (*(param.paddings))[0];
   const int pw = (*(param.paddings))[2];
 
-  int iw = x_dims[3];  
+  int iw = x_dims[3];
   int ih = x_dims[2];
   int ic = x_dims[1];
   int bs = x_dims[0];
   int oc = o_dims[1];
   int oh = o_dims[2];
   int ow = o_dims[3];
-  
+
   memset(o_data, 0, sizeof(float) * oc * oh * ow * bs);
-  if (ic == 3 && 0)
-  {
-    lite::x86::math::conv_direct_3x3s2_forcin3_m256(i_data, trans_in_.mutable_data<float>(),
-                                                    weights_.data<float>(),
-                                                    trans_out_.mutable_data<float>(),
-                                                    bs, ic, ih, iw,
-                                                    oc, oc_expand_, o_data,
-                                                    oh, ow, ph, pw);
-  }
-  else{
-    auto act_param = param.activation_param;
-    lite::x86::math::conv_direct_3x3s2_m256(i_data,
-                                          weights_.data<float>(),
-                                          trans_out_.mutable_data<float>(),
-                                          bs, ic, ih, iw,
-                                          oc, oc_expand_, o_data, oh, ow, ph, pw,
-                                          b_data,  act_param.active_type);
-  }
+
+  auto act_param = param.activation_param;
+  lite::x86::math::conv_direct_3x3s2(i_data,
+                                     weights_.data<float>(),
+                                     bs,
+                                     ic,
+                                     ih,
+                                     iw,
+                                     oc,
+                                     oc_expand_,
+                                     o_data,
+                                     oh,
+                                     ow,
+                                     ph,
+                                     pw,
+                                     b_data,
+                                     act_param.active_type);
 }
 }  // namespace x86
 }  // namespace kernels

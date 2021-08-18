@@ -17,10 +17,11 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include "lite/backends/x86/math/conv_direct.h"
+#include "lite/backends/x86/math/conv_utils.h"
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
-#include "lite/backends/x86/math/conv_direct.h"
 
 namespace paddle {
 namespace lite {
@@ -30,50 +31,34 @@ namespace x86 {
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
 
 // only support 3x3s2
-template <typename T>
-class DirectConv : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
  public:
   DirectConv() = default;
-  ~DirectConv() {};
+  ~DirectConv(){};
 
   virtual void Run();
 
-  virtual void PrepareForRun() 
-  {
-    auto& param = this->template Param <param_t>();
+  virtual void PrepareForRun() {
+    auto& param = this->template Param<param_t>();
+#ifdef __AVX__
     constexpr int block = 8;
+#else
+    constexpr int block = 4;
+#endif
+
     int oc = param.filter->dims()[0];
     int ic = param.filter->dims()[1];
     int wh = param.filter->dims()[2];
     int ww = param.filter->dims()[3];
-    int ih = param.x->dims()[2];
-    int iw = param.x->dims()[3];
     int cround = ROUNDUP(oc, block);
     oc_expand_ = cround;
-
-    if (0 && ic == 3 && (oc % 4 == 0)) {
-      // [chout, 3, kh, kw] -> [chout / block, kh, kw, 3, block]
-      weights_.Resize({cround / block, wh, ww, ic, block});
-      auto filter_data = param.filter->template data<float>();
-      auto weights_w_data = weights_.mutable_data<float>();
-      lite::x86::math::conv_trans_weights_forcin3(filter_data, weights_w_data, oc, ic, wh, ww, block);
-      
-      // prepare the temp space for input with chin 3
-      trans_in_.Resize({1, ih, iw, ic});
-      trans_in_.mutable_data<float>();
-    } else {
-      // [chout, chin, wh, ww] -> [chout / cblock, chin, wh, ww, cblock]
-      weights_.Resize({cround / block, ic, wh, ww, block});
-      auto filter_data = param.filter->template data<float>();
-      auto weights_w_data = weights_.mutable_data<float>();
-      lite::x86::math::conv_trans_weights_numc(filter_data, weights_w_data, oc, ic, wh, ww, block);
-    }
-
-    // prepare the temp space for output
-    int oh = param.output->dims()[2];
-    int ow = param.output->dims()[3];
-    trans_out_.Resize({1, oc_expand_ / 8, oh, ow, 8});
-    trans_out_.mutable_data<float>();
+    // [chout, chin, wh, ww] -> [chout / block, chin, wh, ww, block]
+    weights_.Resize({cround / block, ic, wh, ww, block});
+    auto filter_data = param.filter->template data<float>();
+    auto weights_w_data = weights_.mutable_data<float>();
+    lite::x86::math::conv_trans_weights_numc(
+        filter_data, weights_w_data, oc, ic, wh, ww, block);
   }
 
 #ifdef LITE_WITH_PROFILE
@@ -89,7 +74,6 @@ class DirectConv : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   using param_t = operators::ConvParam;
   Tensor weights_;
   Tensor bias_;
-  Tensor trans_out_;
   Tensor trans_in_;
   bool flag_trans_weights_{false};
   bool flag_trans_bias_{false};

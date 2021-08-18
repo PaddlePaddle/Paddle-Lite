@@ -15,6 +15,7 @@
 #include "lite/kernels/x86/conv_compute.h"
 #include <utility>
 #include "lite/kernels/x86/conv_depthwise.h"
+#include "lite/kernels/x86/conv_direct.h"
 
 namespace paddle {
 namespace lite {
@@ -56,16 +57,18 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   for (auto ele : *(param.dilations))
     if (ele != 1) nodilations = false;
 
-  auto paddings = *param.paddings;
-  bool paddings_equal = (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]);
+  bool pad_all_equal = (paddings[0] == paddings[1]) &&
+                       (paddings[1] == paddings[2]) &&
+                       (paddings[2] == paddings[3]);
+  bool flag_p01 = (paddings[0] == 0 || paddings[0] == 1);
 
   /// select conv impl
   if (dw_kernel && kps_equal && no_dilation && flag_dw && (groups & 3) == 0) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
   } else if (chin * chout < 4 * ih * iw && chout % 8 == 0 && groups == 1 &&
-             kernel_h == 3 && kernel_w == 3 && nodilations &&
-             stride_h == 2 && stride_w == 2 && paddings_equal) {
-    impl_ = new DirectConv<float>();
+             kernel_h == 3 && stride_h == 2 && nodilations && kps_equal &&
+             pad_all_equal && flag_p01) {
+    impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>();
     VLOG(3) << "invoking directConv  3x3s2";
   }
 

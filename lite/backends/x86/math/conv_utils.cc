@@ -20,42 +20,68 @@ namespace lite {
 namespace x86 {
 namespace math {
 
-// From: https://stackoverflow.com/a/25627536
-static inline void transpose8_ps(__m256& row0,  // NOLINT
-                                 __m256& row1,  // NOLINT
-                                 __m256& row2,  // NOLINT
-                                 __m256& row3,  // NOLINT
-                                 __m256& row4,  // NOLINT
-                                 __m256& row5,  // NOLINT
-                                 __m256& row6,  // NOLINT
-                                 __m256& row7   // NOLINT
-                                 ) {
-  __m256 __t0, __t1, __t2, __t3, __t4, __t5, __t6, __t7;
-  __m256 __tt0, __tt1, __tt2, __tt3, __tt4, __tt5, __tt6, __tt7;
-  __t0 = _mm256_unpacklo_ps(row0, row1);
-  __t1 = _mm256_unpackhi_ps(row0, row1);
-  __t2 = _mm256_unpacklo_ps(row2, row3);
-  __t3 = _mm256_unpackhi_ps(row2, row3);
-  __t4 = _mm256_unpacklo_ps(row4, row5);
-  __t5 = _mm256_unpackhi_ps(row4, row5);
-  __t6 = _mm256_unpacklo_ps(row6, row7);
-  __t7 = _mm256_unpackhi_ps(row6, row7);
-  __tt0 = _mm256_shuffle_ps(__t0, __t2, _MM_SHUFFLE(1, 0, 1, 0));
-  __tt1 = _mm256_shuffle_ps(__t0, __t2, _MM_SHUFFLE(3, 2, 3, 2));
-  __tt2 = _mm256_shuffle_ps(__t1, __t3, _MM_SHUFFLE(1, 0, 1, 0));
-  __tt3 = _mm256_shuffle_ps(__t1, __t3, _MM_SHUFFLE(3, 2, 3, 2));
-  __tt4 = _mm256_shuffle_ps(__t4, __t6, _MM_SHUFFLE(1, 0, 1, 0));
-  __tt5 = _mm256_shuffle_ps(__t4, __t6, _MM_SHUFFLE(3, 2, 3, 2));
-  __tt6 = _mm256_shuffle_ps(__t5, __t7, _MM_SHUFFLE(1, 0, 1, 0));
-  __tt7 = _mm256_shuffle_ps(__t5, __t7, _MM_SHUFFLE(3, 2, 3, 2));
-  row0 = _mm256_permute2f128_ps(__tt0, __tt4, 0x20);
-  row1 = _mm256_permute2f128_ps(__tt1, __tt5, 0x20);
-  row2 = _mm256_permute2f128_ps(__tt2, __tt6, 0x20);
-  row3 = _mm256_permute2f128_ps(__tt3, __tt7, 0x20);
-  row4 = _mm256_permute2f128_ps(__tt0, __tt4, 0x31);
-  row5 = _mm256_permute2f128_ps(__tt1, __tt5, 0x31);
-  row6 = _mm256_permute2f128_ps(__tt2, __tt6, 0x31);
-  row7 = _mm256_permute2f128_ps(__tt3, __tt7, 0x31);
+// tranpose [chout, chin, wh, ww] to [chout/block,chin,wh,ww,block]
+// dout space should be allocated before calling conv_trans_weights_numc
+void conv_trans_weights_numc(const float* din,
+                             float* dout,  // dout has been expanded
+                             int chout,
+                             int chin,
+                             int wh,
+                             int ww,
+                             int block) {
+  // dout is [chout_expand / block , chin, wh, ww, block]
+  int chout_expand = (chout + block - 1) / block * block;
+  memset(dout, 0.f, sizeof(float) * chout_expand * chin * wh * ww);
+
+  const float* from_address = din;
+  int wchwb = chin * wh * ww * block;
+  int whwb = wh * ww * block;
+  int wwb = ww * block;
+
+  for (int wn_i = 0; wn_i < chout; wn_i++) {
+    for (int wc_i = 0; wc_i < chin; wc_i++) {
+      for (int wh_i = 0; wh_i < wh; wh_i++) {
+        for (int ww_i = 0; ww_i < ww; ww_i++) {
+          int dst_index = wn_i / block * wchwb + wc_i * whwb + wh_i * wwb +
+                          ww_i * block + wn_i % block;
+          dout[dst_index] = *from_address;
+          from_address++;
+        }
+      }
+    }
+  }
+}
+
+// tranpose [chout,chin,wh,ww] to [chout/block,wh,ww,chin,block]
+// this function is different from conv_trans_weights_numc just
+// in that we make chw->hwc
+void conv_trans_weights_numc_c3(const float* din,
+                                float* dout,
+                                int chout,
+                                int chin,
+                                int wh,
+                                int ww,
+                                int block) {
+  CHECK_EQ(chin, 3);
+  int chout_expand = (chout + block - 1) / block * block;
+  memset(
+      dout, 0, sizeof(float) * chout_expand / block * wh * ww * chin * block);
+
+  const float* from_address = din;
+  for (int wn_i = 0; wn_i < chout; wn_i++) {
+    for (int wc_i = 0; wc_i < chin; wc_i++)  // chin=3!
+    {
+      for (int wh_i = 0; wh_i < wh; wh_i++) {
+        for (int ww_i = 0; ww_i < ww; ww_i++) {
+          int dst_index = wn_i / block * wh * ww * chin * block +
+                          wh_i * ww * chin * block + ww_i * chin * block +
+                          wc_i * block + wn_i % block;
+          dout[dst_index] = *from_address;
+          from_address++;
+        }
+      }
+    }
+  }
 }
 
 // input  [bs, ic, ih, iw] => [bs, ic/8, ih, iw, 8]
