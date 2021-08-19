@@ -332,31 +332,17 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v28.8h, v21.8h, v12.h[5]\n"\
   "fmla v29.8h, v21.8h, v13.h[5]\n"\
   "fmla v30.8h, v21.8h, v14.h[5]\n"\
-  "fmla v31.8h, v21.8h, v15.h[5]\n"\
-  /* c2*/\
-  "fmla v24.8h, v22.8h, v8.h[6]\n" \
-  "fmla v25.8h, v22.8h, v9.h[6]\n" \
-  "fmla v26.8h, v22.8h, v10.h[6]\n"\
-  "fmla v27.8h, v22.8h, v11.h[6]\n"\
-  "fmla v28.8h, v22.8h, v12.h[6]\n"\
-  "fmla v29.8h, v22.8h, v13.h[6]\n"\
-  "fmla v30.8h, v22.8h, v14.h[6]\n"\
-  "fmla v31.8h, v22.8h, v15.h[6]\n"
+  "fmla v31.8h, v21.8h, v15.h[5]\n"
 
 #define COMPUTE_C3                   \
-  /*"ldp    q8, q9,   [%[r0]], #32\n"*/  \
-  "ldr   q8,  [%[r0], #0x00]\n"      \
-  "ldr   q17,       [%[wc], #0x00]\n"\
+  "ldr   q8,  [%[r0]]\n"             \
+  "ldr   q17, [%[wc]]\n"             \
   "ldr   q9,  [%[r0], #0x10]\n"      \
   "ldr   q18,       [%[wc], #0x10]\n"\
-  /*"ldp    q17, q18, [%[wc]], #32\n"*/  \
-  /*"ldp    q10, q11, [%[r0]], #32\n"*/  \
   "ldr   q10,  [%[r0], #0x20]\n"      \
   "ldr   q19,       [%[wc], #0x20]\n"\
   "ldr   q11,  [%[r0], #0x30]\n"      \
   "ldr   q20,       [%[wc], #0x30]\n"\
-  /*"ldp    q19, q20, [%[wc]], #32\n"*/  \
-  /*"ldp    q12, q13, [%[r0]], #32\n"*/  \
   "ldr   q12,  [%[r0], #0x40]\n"      \
   "1:      \n"                       \
   /* line 0 0 c0*/                   \
@@ -364,17 +350,14 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "ldr   q13,  [%[r0], #0x50]\n"     \
   "fmul v25.8h, %[w0].8h, v9.h[0]\n" \
   "ldr   q14,  [%[r0], #0x60]\n"     \
-  /*"ldp  q14, q15, [%[r0]], #32\n"*/    \
   "fmul v26.8h, %[w0].8h, v10.h[0]\n"\
   "ldr   q15,  [%[r0], #0x70]\n"     \
   "fmul v27.8h, %[w0].8h, v11.h[0]\n"\
-  "ldr   q16,  [%[r0], #0x80]\n"     \
   "fmul v28.8h, %[w0].8h, v12.h[0]\n"\
   "ldr   q21,       [%[wc], #0x40]\n"\
   "fmul v29.8h, %[w0].8h, v13.h[0]\n"\
   "ldr   q22,       [%[wc], #0x50]\n"\
   "fmul v30.8h, %[w0].8h, v14.h[0]\n"\
-  "ldr   q23,       [%[wc], #0x60]\n"\
   "fmul v31.8h, %[w0].8h, v15.h[0]\n"\
   "add  %[r0],  %[r0],    #0x80\n"   \
   /* c1*/\
@@ -423,15 +406,16 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v30.8h, %[w5].8h, v14.h[6]\n"\
   "fmla v31.8h, %[w5].8h, v15.h[6]\n"\
   /* line 0 02 c0*/                  \
-  "ldr    q8,   [%[r1]]\n"           \
+  "ldr   q7,  [%[r0], #0x00]\n"      \
   "fmla v24.8h, %[w6].8h, v9.h[0]\n" \
   "fmla v25.8h, %[w6].8h, v10.h[0]\n"\
+  "ldr    q8,   [%[r1]]\n"           \
   "fmla v26.8h, %[w6].8h, v11.h[0]\n"\
   "fmla v27.8h, %[w6].8h, v12.h[0]\n"\
   "fmla v28.8h, %[w6].8h, v13.h[0]\n"\
   "fmla v29.8h, %[w6].8h, v14.h[0]\n"\
   "fmla v30.8h, %[w6].8h, v15.h[0]\n"\
-  "fmla v31.8h, %[w6].8h, v16.h[0]\n"\
+  "fmla v31.8h, %[w6].8h, v7.h[0]\n"\
   /* c1*/\
   "fmla v24.8h, %[w7].8h, v9.h[1]\n" \
   "fmla v25.8h, %[w7].8h, v10.h[1]\n"\
@@ -440,7 +424,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v28.8h, %[w7].8h, v13.h[1]\n"\
   "fmla v29.8h, %[w7].8h, v14.h[1]\n"\
   "fmla v30.8h, %[w7].8h, v15.h[1]\n"\
-  "fmla v31.8h, %[w7].8h, v16.h[1]\n"\
+  "fmla v31.8h, %[w7].8h, v7.h[1]\n"\
   /* c2*/\
   "fmla v24.8h, %[w8].8h, v9.h[2]\n" \
   "ldr    q9,   [%[r1], #0x10]\n"    \
@@ -456,105 +440,124 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "ldr    q14,   [%[r1], #0x60]\n"   \
   "fmla v30.8h, %[w8].8h, v15.h[2]\n"\
   "ldr    q15,   [%[r1], #0x70]\n"   \
-  "fmla v31.8h, %[w8].8h, v16.h[2]\n"\
-  "ldr    q16,   [%[r1], #0x80]\n"   \
+  "fmla v31.8h, %[w8].8h, v7.h[2]\n" \
   "add   %[r1],  %[r1],  #0x80\n"    \
   /* line 1 */ \
   COMPUTE_LINE \
-  /* 02 c0*/\
-  "ldr   q17,   [%[wc], #0x70]\n"  \
-  "fmla v24.8h, v23.8h, v9.h[0]\n" \
-  "fmla v25.8h, v23.8h, v10.h[0]\n"\
-  "fmla v26.8h, v23.8h, v11.h[0]\n"\
-  "fmla v27.8h, v23.8h, v12.h[0]\n"\
-  "fmla v28.8h, v23.8h, v13.h[0]\n"\
-  "fmla v29.8h, v23.8h, v14.h[0]\n"\
-  "fmla v30.8h, v23.8h, v15.h[0]\n"\
-  "fmla v31.8h, v23.8h, v16.h[0]\n"\
-  /* c1*/\
-  "ldr   q18,   [%[wc], #0x80]\n"  \
-  "fmla v24.8h, v17.8h, v9.h[1]\n" \
-  "ldr   q19,   [%[wc], #0xb0]\n"  \
-  "fmla v25.8h, v17.8h, v10.h[1]\n"\
-  "ldr   q20,   [%[wc], #0xc0]\n"  \
-  "fmla v26.8h, v17.8h, v11.h[1]\n"\
-  "ldr   q21,   [%[wc], #0xd0]\n"  \
-  "fmla v27.8h, v17.8h, v12.h[1]\n"\
-  "ldr   q22,   [%[wc], #0xe0]\n"  \
-  "fmla v28.8h, v17.8h, v13.h[1]\n"\
-  "fmla v29.8h, v17.8h, v14.h[1]\n"\
-  "ldr   q23,   [%[wc], #0xf0]\n"  \
-  "fmla v30.8h, v17.8h, v15.h[1]\n"\
-  "fmla v31.8h, v17.8h, v16.h[1]\n"\
   /* c2*/\
-  "ldr    q8,   [%[r2], #0x00]\n"  \
-  "fmla v24.8h, v18.8h, v9.h[2]\n" \
-  "ldr    q9,   [%[r2], #0x10]\n"  \
-  "fmla v25.8h, v18.8h, v10.h[2]\n"\
-  "ldr    q10,  [%[r2], #0x20]\n"  \
-  "fmla v26.8h, v18.8h, v11.h[2]\n"\
-  "ldr    q11,  [%[r2], #0x30]\n"  \
-  "fmla v27.8h, v18.8h, v12.h[2]\n"\
-  "ldr    q12,  [%[r2], #0x40]\n"  \
-  "fmla v28.8h, v18.8h, v13.h[2]\n"\
-  "ldr    q13,  [%[r2], #0x50]\n"  \
-  "fmla v29.8h, v18.8h, v14.h[2]\n"\
-  "ldr    q14,  [%[r2], #0x60]\n"  \
-  "fmla v30.8h, v18.8h, v15.h[2]\n"\
-  "ldr    q15,  [%[r2], #0x70]\n"  \
-  "fmla v31.8h, v18.8h, v16.h[2]\n"\
-  "ldr    q16,  [%[r2], #0x80]\n"  \
-  "add   %[r2],  %[r2],  #0x80\n"  \
-  "ldr   q17,   [%[wc], #0x90]\n"  \
-  /* line 2 */ \
-  "ldr   q18,   [%[wc], #0xa0]\n"  \
-  COMPUTE_LINE \
+  "ldr   q17,   [%[wc], #0x60]\n"  \
+  "fmla v24.8h, v22.8h, v8.h[6]\n" \
+  "fmla v25.8h, v22.8h, v9.h[6]\n" \
+  "fmla v26.8h, v22.8h, v10.h[6]\n"\
+  "fmla v27.8h, v22.8h, v11.h[6]\n"\
+  "ldr    q7,   [%[r1]]\n"         \
+  "fmla v28.8h, v22.8h, v12.h[6]\n"\
+  "fmla v29.8h, v22.8h, v13.h[6]\n"\
+  "fmla v30.8h, v22.8h, v14.h[6]\n"\
+  "fmla v31.8h, v22.8h, v15.h[6]\n"\
   /* 02 c0*/\
-  "ldr   q17,   [%[wc], #0x100]\n"  \
-  "fmla v24.8h, v23.8h, v9.h[0]\n" \
-  "fmla v25.8h, v23.8h, v10.h[0]\n"\
-  "fmla v26.8h, v23.8h, v11.h[0]\n"\
-  "fmla v27.8h, v23.8h, v12.h[0]\n"\
-  "fmla v28.8h, v23.8h, v13.h[0]\n"\
-  "fmla v29.8h, v23.8h, v14.h[0]\n"\
-  "fmla v30.8h, v23.8h, v15.h[0]\n"\
-  "fmla v31.8h, v23.8h, v16.h[0]\n"\
+  "ldr   q18,   [%[wc], #0x70]\n"  \
+  "fmla v24.8h, v17.8h, v9.h[0]\n" \
+  "fmla v25.8h, v17.8h, v10.h[0]\n"\
+  "fmla v26.8h, v17.8h, v11.h[0]\n"\
+  "fmla v27.8h, v17.8h, v12.h[0]\n"\
+  "fmla v28.8h, v17.8h, v13.h[0]\n"\
+  "fmla v29.8h, v17.8h, v14.h[0]\n"\
+  "fmla v30.8h, v17.8h, v15.h[0]\n"\
+  "fmla v31.8h, v17.8h, v7.h[0]\n"\
   /* c1*/\
-  "ldr   q18,   [%[wc], #0x110]\n" \
-  "fmla v24.8h, v17.8h, v9.h[1]\n" \
-  "fmla v25.8h, v17.8h, v10.h[1]\n"\
-  "ldr   q19,   [%[wc], #0x20]\n"  \
-  "fmla v26.8h, v17.8h, v11.h[1]\n"\
+  "ldr   q19,   [%[wc], #0x80]\n"  \
+  "fmla v24.8h, v18.8h, v9.h[1]\n" \
+  "ldr   q17,   [%[wc], #0x90]\n"  \
+  "fmla v25.8h, v18.8h, v10.h[1]\n"\
+  "ldr   q20,   [%[wc], #0xc0]\n"  \
+  "fmla v26.8h, v18.8h, v11.h[1]\n"\
+  "ldr   q21,   [%[wc], #0xd0]\n"  \
+  "fmla v27.8h, v18.8h, v12.h[1]\n"\
+  "ldr   q22,   [%[wc], #0xe0]\n"  \
+  "fmla v28.8h, v18.8h, v13.h[1]\n"\
+  "fmla v29.8h, v18.8h, v14.h[1]\n"\
+  "fmla v30.8h, v18.8h, v15.h[1]\n"\
+  "fmla v31.8h, v18.8h, v7.h[1]\n"\
+  /* c2*/\
+  "ldr   q18,   [%[wc], #0xa0]\n"  \
+  "ldr    q8,   [%[r2], #0x00]\n"  \
+  "fmla v24.8h, v19.8h, v9.h[2]\n" \
+  "ldr    q9,   [%[r2], #0x10]\n"  \
+  "fmla v25.8h, v19.8h, v10.h[2]\n"\
+  "ldr    q10,  [%[r2], #0x20]\n"  \
+  "fmla v26.8h, v19.8h, v11.h[2]\n"\
+  "ldr    q11,  [%[r2], #0x30]\n"  \
+  "fmla v27.8h, v19.8h, v12.h[2]\n"\
+  "ldr    q12,  [%[r2], #0x40]\n"  \
+  "fmla v28.8h, v19.8h, v13.h[2]\n"\
+  "ldr    q13,  [%[r2], #0x50]\n"  \
+  "fmla v29.8h, v19.8h, v14.h[2]\n"\
+  "ldr    q14,  [%[r2], #0x60]\n"  \
+  "fmla v30.8h, v19.8h, v15.h[2]\n"\
+  "ldr    q15,  [%[r2], #0x70]\n"  \
+  "fmla v31.8h, v19.8h, v7.h[2]\n" \
+  "add   %[r2],  %[r2],  #0x80\n"  \
+  /* line 2 */ \
+  "ldr   q19,   [%[wc], #0xb0]\n"  \
+  COMPUTE_LINE \
+  /* c2*/\
+  "ldr   q17,   [%[wc], #0xf0]\n"  \
+  "fmla v24.8h, v22.8h, v8.h[6]\n" \
+  "fmla v25.8h, v22.8h, v9.h[6]\n" \
+  "fmla v26.8h, v22.8h, v10.h[6]\n"\
+  "fmla v27.8h, v22.8h, v11.h[6]\n"\
+  "ldr    q7,   [%[r2]]\n"         \
+  "fmla v28.8h, v22.8h, v12.h[6]\n"\
+  "fmla v29.8h, v22.8h, v13.h[6]\n"\
+  "fmla v30.8h, v22.8h, v14.h[6]\n"\
+  "fmla v31.8h, v22.8h, v15.h[6]\n"\
+  /* 02 c0*/\
+  "ldr   q18,   [%[wc], #0x100]\n"  \
+  "fmla v24.8h, v17.8h, v9.h[0]\n" \
+  "fmla v25.8h, v17.8h, v10.h[0]\n"\
+  "fmla v26.8h, v17.8h, v11.h[0]\n"\
+  "fmla v27.8h, v17.8h, v12.h[0]\n"\
+  "fmla v28.8h, v17.8h, v13.h[0]\n"\
+  "fmla v29.8h, v17.8h, v14.h[0]\n"\
+  "fmla v30.8h, v17.8h, v15.h[0]\n"\
+  "fmla v31.8h, v17.8h, v7.h[0]\n"\
+  /* c1*/\
+  "ldr   q19,   [%[wc], #0x110]\n" \
+  "fmla v24.8h, v18.8h, v9.h[1]\n" \
+  "fmla v25.8h, v18.8h, v10.h[1]\n"\
+  "fmla v26.8h, v18.8h, v11.h[1]\n"\
   "ldr   q20,   [%[wc], #0x30]\n"  \
-  "fmla v27.8h, v17.8h, v12.h[1]\n"\
-  "fmla v28.8h, v17.8h, v13.h[1]\n"\
-  "fmla v29.8h, v17.8h, v14.h[1]\n"\
-  "fmla v30.8h, v17.8h, v15.h[1]\n"\
-  "fmla v31.8h, v17.8h, v16.h[1]\n"\
+  "fmla v27.8h, v18.8h, v12.h[1]\n"\
+  "fmla v28.8h, v18.8h, v13.h[1]\n"\
+  "fmla v29.8h, v18.8h, v14.h[1]\n"\
+  "fmla v30.8h, v18.8h, v15.h[1]\n"\
+  "fmla v31.8h, v18.8h, v7.h[1]\n"\
   "ldr    q8,   [%[r0], #0x00]\n"  \
-  "fmla v24.8h, v18.8h, v9.h[2]\n" \
+  "fmla v24.8h, v19.8h, v9.h[2]\n" \
   "ldr    q9,   [%[r0], #0x10]\n"  \
-  "fmla v25.8h, v18.8h, v10.h[2]\n"\
+  "fmla v25.8h, v19.8h, v10.h[2]\n"\
   "ldr    q10,  [%[r0], #0x20]\n"  \
-  "fmla v26.8h, v18.8h, v11.h[2]\n"\
+  "fmla v26.8h, v19.8h, v11.h[2]\n"\
   "ldr    q11,  [%[r0], #0x30]\n"  \
-  "fmla v27.8h, v18.8h, v12.h[2]\n"\
+  "fmla v27.8h, v19.8h, v12.h[2]\n"\
   "ldr    q12,  [%[r0], #0x40]\n"  \
   "subs  %w[cnt], %w[cnt], #1\n"   \
-  "str  q24, [%[ptr_out0], #0x00\n"\
-  "fmla v28.8h, v18.8h, v13.h[2]\n"\
-  "str  q25, [%[ptr_out0], #0x10\n"\
-  "fmla v29.8h, v18.8h, v14.h[2]\n"\
-  "str  q26, [%[ptr_out0], #0x20\n"\
-  "fmla v30.8h, v18.8h, v15.h[2]\n"\
-  "str  q27, [%[ptr_out0], #0x30\n"\
-  "fmla v31.8h, v18.8h, v16.h[2]\n"\
-  "str  q28, [%[ptr_out0], #0x40\n"\
+  "str  q24, [%[ptr_out0], #0x00]\n"\
+  "fmla v28.8h, v19.8h, v13.h[2]\n"\
+  "str  q25, [%[ptr_out0], #0x10]\n"\
+  "fmla v29.8h, v19.8h, v14.h[2]\n"\
+  "str  q26, [%[ptr_out0], #0x20]\n"\
+  "fmla v30.8h, v19.8h, v15.h[2]\n"\
+  "str  q27, [%[ptr_out0], #0x30]\n"\
+  "fmla v31.8h, v19.8h, v7.h[2]\n"\
+  "str  q28, [%[ptr_out0], #0x40]\n"\
   "ldr   q17,   [%[wc], #0x00]\n"  \
-  "str  q29, [%[ptr_out0], #0x50\n"\
+  "str  q29, [%[ptr_out0], #0x50]\n"\
   "ldr   q18,   [%[wc], #0x10]\n"  \
-  "str  q30, [%[ptr_out0], #0x60\n"\
-  "str  q31, [%[ptr_out0], #0x70\n"\
+  "str  q30, [%[ptr_out0], #0x60]\n"\
+  "ldr   q19,   [%[wc], #0x20]\n"  \
+  "str  q31, [%[ptr_out0], #0x70]\n"\
   "add  %[ptr_out0], %[ptr_out0], #0x80\n"\
   "bne  1b\n"
 #else
@@ -855,11 +858,11 @@ void conv_3x3s2_direct_fp16_c3(const float16_t* i_data,
           const float16_t* wc00 = wc0 + 72;
           asm volatile(COMPUTE_C3
                        : [cnt] "+r"(cnt),
-                         [r0] "+r"(r0),
-                         [r1] "+r"(r1),
-                         [r2] "+r"(r2),
+                         [r0] "+r"(inr0),
+                         [r1] "+r"(inr1),
+                         [r2] "+r"(inr2),
                          [wc] "+r"(wc00),
-                         [ptr_out0] "+r"(ptr_out0)
+                         [ptr_out0] "+r"(pre_out0)
                        : [w0] "w"(w0),
                          [w1] "w"(w1),
                          [w2] "w"(w2),
@@ -877,16 +880,15 @@ void conv_3x3s2_direct_fp16_c3(const float16_t* i_data,
                          "v11",
                          "v12",
                          "v13",
-                         "v14"
+                         "v14",
                          "v15",
-                         "v16",
+                         "v7",
                          "v17",
                          "v18",
                          "v19",
                          "v20",
                          "v21",
                          "v22",
-                         "v23",
                          "v24",
                          "v25",
                          "v26",
