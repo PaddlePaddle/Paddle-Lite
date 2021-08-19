@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "dropout_image_compute.h"
-#include "lite/backends/metal/metal_debug.h"
+#include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
@@ -25,20 +25,17 @@ namespace kernels {
 namespace metal {
 
 void DropoutImageCompute::PrepareForRun() {
-    auto& context = ctx_->AS<MTLContext>();
-    metal_context_ = static_cast<MetalContext*>(context.context());
+    auto& context = ctx_->As<MTLContext>();
+    metal_context_ = (MetalContext*)(context.context());
 
     const auto& param = this->Param<param_t>();
     auto output_dims = param.output->dims();
     auto input_dims = param.x->dims();
 
-    const auto& param = this->template Param<param_t>();
-    auto output_dims = param.output->dims();
-
 #ifdef LITE_WITH_METAL_FULL
 #else
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
-    input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+    input_buffer_ = param.x->data<MetalHalf, MetalImage>();
 #endif
     float prob_data = param.dropout_prob;
     float scale = 1.0f;
@@ -63,7 +60,7 @@ void DropoutImageCompute::Run() {
     auto encoder = [backend commandEncoder];
     [encoder setTexture:input_buffer_->image() atIndex:(0)];
     [encoder setTexture:output_buffer_->image() atIndex:(1)];
-    [encoder setBuffer:params_buffer_->buffer() offset:(0) atIndex:(0)];
+    [encoder setBuffer:param_buffer_->buffer() offset:(0) atIndex:(0)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];

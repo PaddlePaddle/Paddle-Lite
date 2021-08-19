@@ -42,6 +42,7 @@ class DropoutImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput("dropout", output_buffer_);
     };
+    virtual ~DropoutImageCompute();
 
    private:
     const MetalImage* input_buffer_;
