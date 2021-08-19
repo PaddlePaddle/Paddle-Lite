@@ -1,3 +1,60 @@
+#----------------------------------------------- NOT CHANGE ---------------------------------------
+# A trick to generate the paddle_use_kernels.h
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h ${CMAKE_BINARY_DIR}/lite/api/)
+
+execute_process(
+    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
+    ${kernels_src_list}
+    ${CMAKE_BINARY_DIR}/lite/api/paddle_use_kernels.h
+    "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
+    ${LITE_BUILD_TAILOR}
+    ${LITE_BUILD_EXTRA}
+    ${LITE_WITH_ARM82_FP16}
+    RESULT_VARIABLE result)
+# A trick to generate the paddle_use_ops.h
+execute_process(
+    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_op_registry.py
+    ${ops_src_list}
+    ${CMAKE_BINARY_DIR}/lite/api/paddle_use_ops.h
+    "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
+    ${LITE_BUILD_TAILOR}
+    ${LITE_BUILD_EXTRA}
+    RESULT_VARIABLE result)
+
+#-------------------------------opt----------------------------------------------------------------
+# tricks to create headfiles for opt
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/all_kernel_faked_dir)
+execute_process(
+    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
+    ${kernels_src_list}
+    ${fake_kernels_src_list}
+    ${CMAKE_BINARY_DIR}/all_kernel_faked_dir
+    ${CMAKE_BINARY_DIR}/all_kernel_faked.h
+    ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
+    ${CMAKE_BINARY_DIR}/kernel_src_map.h
+    RESULT_VARIABLE result)
+
+file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
+if (LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
+  add_library(all_kernel_faked OBJECT ${all_kernel_faked_src})
+  add_dependencies(all_kernel_faked op kernel type_system)
+endif()
+
+# create headfile to restore ops info sorted by suppported platforms
+execute_process(
+    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
+    ${kernels_src_list}
+    ${fake_kernels_src_list}
+    ${ops_src_list}
+    ${subgraph_bridges_src_list}
+    ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
+    RESULT_VARIABLE result)
+#--------------------------------------------------------------------------------------------------
+
+
+
+
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
   lite_cc_library(place SRCS paddle_place.cc DEPS logging)
 else()
@@ -56,7 +113,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         target_link_libraries(paddle_light_api_shared shlwapi.lib)
     endif()
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${huawei_ascend_npu_kernels} ${rknpu_kernels} ${apu_kernels})
-   if(${HOST_SYSTEM} MATCHES "macosx" AND NOT (ARM_TARGET_LANG STREQUAL "clang"))
+   if(${HOST_SYSTEM} MATCHES "macosx" AND NOT (ARM_TARGET_OS STREQUAL "android"))
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/exported_symbols.lds")
         set(LINK_FLAGS "-Wl,-exported_symbols_list ${LINK_MAP_FILE}")
         add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND :)
