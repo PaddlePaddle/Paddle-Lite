@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,28 +13,34 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
 #include <string>
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
-namespace fusion {
+namespace operators {
 
-class InplaceFuser : public FuseBase {
+class CosSimOp : public OpLite {
  public:
-  explicit InplaceFuser(const std::string& type) : type_(type) {}
+  CosSimOp() {}
+  explicit CosSimOp(const std::string &op_type) : OpLite(op_type) {}
 
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "cos_sim"; }
 
  private:
-  std::string type_;
+  mutable CosSimParam param_;
 };
 
-}  // namespace fusion
-}  // namespace mir
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

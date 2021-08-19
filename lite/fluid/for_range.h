@@ -21,15 +21,8 @@ namespace fluid {
 
 template <lite::TargetType Target>
 struct ForRange {
-  ForRange(const lite::Context<Target>& dev_ctx, size_t limit);
-
-  template <typename Function>
-  void operator()(Function func) const;
-};
-
-template <>
-struct ForRange<lite::TargetType::kX86> {
-  ForRange(lite::X86Context& dev_ctx, size_t limit) : limit_(limit) {}
+  ForRange(const lite::Context<Target>& dev_ctx, size_t limit)
+      : limit_(limit) {}
 
   template <typename Function>
   void operator()(Function func) const {

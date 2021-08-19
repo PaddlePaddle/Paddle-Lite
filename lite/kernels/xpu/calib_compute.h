@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,28 +13,26 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
-#include <string>
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/kernel.h"
+#include "lite/operators/calib_op.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
-namespace fusion {
+namespace kernels {
+namespace xpu {
 
-class InplaceFuser : public FuseBase {
+template <typename InType, typename OutType>
+class CalibCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
-  explicit InplaceFuser(const std::string& type) : type_(type) {}
+  using param_t = operators::CalibParam;
 
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+  void Run() override;
 
- private:
-  std::string type_;
+  ~CalibCompute() override{};
 };
 
-}  // namespace fusion
-}  // namespace mir
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
