@@ -46,8 +46,8 @@ function gen_full_html_report() {
         '/Paddle-Lite/lite/api/*test*' \
         '/Paddle-Lite/lite/core/*_test*' \
         '/Paddle-Lite/lite/core/*/*test*' \
-        '/Paddle-Lite/lite/core/mir/*/*_test*' \
-        '/Paddle-Lite/lite/core/mir/*_test*' \
+        '/Paddle-Lite/lite/core/optimizer/mir/*/*_test*' \
+        '/Paddle-Lite/lite/core/optimizer/mir/*_test*' \
         '/Paddle-Lite/lite/backends/x86/*/*test*' \
         '/Paddle-Lite/lite/backends/opencl/*test*' \
         '/Paddle-Lite/lite/operators/*test*' \

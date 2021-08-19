@@ -549,19 +549,15 @@ void loadb(float16_t *out,
   uint16_t *outptr_row = outptr;
   int rem_cnt = right_remain >> 2;
   int rem_rem = right_remain & 3;
-
-  int cnt_num = (x_len >= 16) ? 16 : (x_len >= 4 ? 4 : 1);
-  int stride_out = cnt_num * y_len * 2;
-  int stride = y_len << 3;  // 4 * y_len * 2
-  // rem_cnt > 0 ? (16 - 4) : (16 - 1)
-  int stride_w = (rem_cnt > 0) ? 24 : 30;  // (16 - 4) * 2
-  int stride_w2 = 6;                       // (4 - 1) * 2;
-  if (y_len >= 4) {
-    stride_w = stride_w << 2;    // stride_w * 4
-    stride_w2 = stride_w2 << 2;  // stride_w2 * 4
-  }
   int cnt_y = 4 * (y_len / 4);
-  int stride_k = y_len << 1;
+  int cnt_16 = (cnt > 0) ? 16 : 0;
+  int cnt_4 = (rem_cnt > 0) ? 4 : 0;
+  int cnt_1 = (rem_rem > 0) ? 1 : 0;
+  int stride_16 = cnt_16 * y_len;
+  int stride_4 = cnt_4 * y_len;
+  int stride_1 = cnt_1 * y_len;
+  int stride_w_4 = stride_16 * cnt;
+  int stride_w_1 = stride_w_4 + stride_4 * rem_cnt;
 
 #pragma omp parallel for
   for (int y = 0; y < y_len - 3; y += 4) {
@@ -570,13 +566,9 @@ void loadb(float16_t *out,
     const uint16_t *ptr2 = ptr1 + ldin;
     const uint16_t *ptr3 = ptr2 + ldin;
 
-    uint16_t *outptr_row_col = outptr_row + y * cnt_num;
-    int cnt_col = cnt;
-    bool y_line = (y > 0 && cnt > 0);
-    int cnt_rem_num = rem_cnt;
-    int rem_rem_rem = rem_rem;
-    int temp = y_line ? stride_w * (y / 4) : 0;
-    int temp2 = (y > 0 && rem_cnt > 0) ? stride_w2 * (y / 4) : 0;
+    uint16_t *outptr_row_col = outptr_row + y * cnt_16;
+    uint16_t *outptr_row_4 = outptr_row + stride_w_4 + y * cnt_4;
+    uint16_t *outptr_row_1 = outptr_row + stride_w_1 + y * cnt_1;
     if (cnt > 0) {
       for (int i = 0; i < cnt; i++) {
         uint16x8_t v0 = vld1q_u16(ptr0);
@@ -599,9 +591,8 @@ void loadb(float16_t *out,
         ptr3 += 16;
         vst1q_u16(outptr_row_col + 48, v3);
         vst1q_u16(outptr_row_col + 56, v31);
-        outptr_row_col += (stride_out / 2);
+        outptr_row_col += stride_16;
       }
-      outptr_row_col -= (temp / 2);
     }
     if (rem_cnt > 0) {
       for (int i = 0; i < rem_cnt; i++) {
@@ -610,24 +601,23 @@ void loadb(float16_t *out,
         uint16x4_t v2 = vld1_u16(ptr2);
         uint16x4_t v3 = vld1_u16(ptr3);
         ptr0 += 4;
-        vst1_u16(outptr_row_col, v0);
+        vst1_u16(outptr_row_4, v0);
         ptr1 += 4;
-        vst1_u16(outptr_row_col + 4, v1);
+        vst1_u16(outptr_row_4 + 4, v1);
         ptr2 += 4;
-        vst1_u16(outptr_row_col + 8, v2);
+        vst1_u16(outptr_row_4 + 8, v2);
         ptr3 += 4;
-        vst1_u16(outptr_row_col + 12, v3);
-        outptr_row_col += (stride / 2);
+        vst1_u16(outptr_row_4 + 12, v3);
+        outptr_row_4 += stride_4;
       }
-      outptr_row_col -= (temp2 / 2);
     }
     if (rem_rem > 0) {
       for (int i = 0; i < rem_rem; i++) {
-        outptr_row_col[0] = *ptr0++;
-        outptr_row_col[1] = *ptr1++;
-        outptr_row_col[2] = *ptr2++;
-        outptr_row_col[3] = *ptr3++;
-        outptr_row_col += (stride_k / 2);
+        outptr_row_1[0] = *ptr0++;
+        outptr_row_1[1] = *ptr1++;
+        outptr_row_1[2] = *ptr2++;
+        outptr_row_1[3] = *ptr3++;
+        outptr_row_1 += stride_1;
       }
     }
   }
@@ -635,17 +625,9 @@ void loadb(float16_t *out,
 #pragma omp parallel for
   for (int y = cnt_y; y < y_len; ++y) {
     const uint16_t *ptr0 = inptr + y * ldin;
-    uint16_t *outptr_row_col = outptr_row + y * cnt_num;
-    int cnt_col = cnt;
-    bool y_line = (y > 0 && cnt > 0);
-    int cnt_rem_num = rem_cnt;
-    int rem_rem_rem = rem_rem;
-    // (y - cnt_y) * (16 - 4) * 2 || (y - cnt_y) * (16 - 1) * 2
-    int valid_w = rem_cnt > 0 ? 24 : 30;
-    int temp = y_line ? (stride_w * (y / 4) + (y - cnt_y) * valid_w) : 0;
-    // (y - cnt_y) * (4 - 1) * 2
-    int temp2 =
-        (y > 0 && rem_cnt > 0) ? (stride_w2 * (y / 4) + (y - cnt_y) * 6) : 0;
+    uint16_t *outptr_row_col = outptr_row + y * cnt_16;
+    uint16_t *outptr_row_4 = outptr_row + stride_w_4 + y * cnt_4;
+    uint16_t *outptr_row_1 = outptr_row + stride_w_1 + y * cnt_1;
     if (cnt > 0) {
       for (int i = 0; i < cnt; i++) {
         uint16x8_t v0 = vld1q_u16(ptr0);
@@ -653,23 +635,21 @@ void loadb(float16_t *out,
         ptr0 += 16;
         vst1q_u16(outptr_row_col, v0);
         vst1q_u16(outptr_row_col + 8, v1);
-        outptr_row_col += (stride_out / 2);
+        outptr_row_col += stride_16;
       }
-      outptr_row_col -= (temp / 2);
     }
     if (rem_cnt > 0) {
       for (int i = 0; i < rem_cnt; i++) {
         uint16x4_t v0 = vld1_u16(ptr0);
         ptr0 += 4;
-        vst1_u16(outptr_row_col, v0);
-        outptr_row_col += (stride / 2);
+        vst1_u16(outptr_row_4, v0);
+        outptr_row_4 += stride_4;
       }
-      outptr_row_col -= (temp2 / 2);
     }
     if (rem_rem > 0) {
       for (int i = 0; i < rem_rem; i++) {
-        *outptr_row_col = *ptr0++;
-        outptr_row_col += (stride_k / 2);
+        *outptr_row_1 = *ptr0++;
+        outptr_row_1 += stride_1;
       }
     }
   }

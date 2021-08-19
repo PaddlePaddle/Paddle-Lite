@@ -21,7 +21,7 @@
 #include <vector>
 #include "lite/api/cxx_api.h"
 #include "lite/api/light_api.h"
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 
 DEFINE_string(model_dir, "", "");
 DEFINE_string(optimized_model, "", "");

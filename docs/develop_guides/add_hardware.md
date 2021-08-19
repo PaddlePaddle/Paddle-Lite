@@ -24,7 +24,7 @@
 
   ![](https://user-images.githubusercontent.com/9973393/102598007-5c82c900-4156-11eb-936a-260d8e5d7538.png)
 
-  该步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/mir/ssa_graph.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/mir/ssa_graph.cc)
+  该步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/ssa_graph.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/ssa_graph.cc)
 
 - **图分析和优化** 将一系列pass（优化器，用于描述一个计算图优化生成另一个计算图的算法过程）按照一定的顺序依次应用到每个块对应的计算图的过程，包括量化信息处理、算子融合、Kernel选择、类型转化、上下文创建、内存复用优化和子图检测等，实现不同设备的适配、高效的计算和更少的内存占用。其中，算子融合作为一种行之有效的优化策略，普遍存在于各种推理框架中，它通过相邻算子间的融合，减少访存和计算量，有效提高模型的整体性能，例如前一步骤的计算图中，conv_bn_fuse_pass、conv_activation_fuse_pass分别以conv2d+batch_norm和conv2d+relu为pattern，先后搜索整个计算图并完成融合，如下图所示，conv2d+batch_norm+relu结构，经过前面的pass处理后只保留了1个conv2d算子。
 
@@ -32,13 +32,13 @@
 
   该步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir)
   
-  - Pass的注册方法、管理机制可以参考文档[新增Pass](./add_new_pass)；[Pass列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer.h#L87)是指按照规定的顺序处理的Pass的集合，它使用std::vector<<std::string>>存储，每个元素代表已注册到框架的Pass的名称，如果需要在Pass列表中新增一个Pass，只需在合适的位置增加一个字符串即可，例如，为了可视化conv_bn_fuse_pass优化后的计算图，可以在它后面增加一个名为[graph_visualize_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/mir/graph_visualize_pass.cc)的特殊Pass，用于在log中生成以DOT文本的表示计算图结构。
+  - Pass的注册方法、管理机制可以参考文档[新增Pass](./add_new_pass)；[Pass列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/optimizer.h#L87)是指按照规定的顺序处理的Pass的集合，它使用std::vector<<std::string>>存储，每个元素代表已注册到框架的Pass的名称，如果需要在Pass列表中新增一个Pass，只需在合适的位置增加一个字符串即可，例如，为了可视化conv_bn_fuse_pass优化后的计算图，可以在它后面增加一个名为[graph_visualize_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/mir/graph_visualize_pass.cc)的特殊Pass，用于在log中生成以DOT文本的表示计算图结构。
 
     ```cpp
-    diff --git a/lite/core/optimizer.h b/lite/core/optimizer.h
+    diff --git a/lite/core/optimizer/optimizer.h b/lite/core/optimizer/optimizer.h
     index 678db707..fb0be753 100644
-    --- a/lite/core/optimizer.h
-    +++ b/lite/core/optimizer.h
+    --- a/lite/core/optimizer/optimizer.h
+    +++ b/lite/core/optimizer/optimizer.h
     @@ -85,6 +85,7 @@ class Optimizer {
           "weight_quantization_preprocess_pass",  //
           "lite_conv_elementwise_fuse_pass",      // conv-elemwise-bn
@@ -49,9 +49,9 @@
           // TODO(Superjomn) Refine the fusion related design to select fusion
     ```
 
-- **运行时程序的生成和执行** 按照拓扑顺序遍历优化后的计算图，生成算子和Kernel列表的过程，它基于[generate_program_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/mir/generate_program_pass.cc)实现。具体地，只遍历计算图中的算子节点，提取所携带的算子和Kernel（经过static_kernel_pick_pass选取的、适合目标硬件的、最优的Kernel）对象，以[Instruction](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.h)封装后按顺序依次存放到[RuntimeProgram](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.h)对象。运行时程序的执行也非常简单，即依次遍历RuntimeProgram对象存储的每个Instruction，调用其算子对象的CheckShape和InfereShape方法，最后执行Kernel对象的Launch方法。
+- **运行时程序的生成和执行** 按照拓扑顺序遍历优化后的计算图，生成算子和Kernel列表的过程，它基于[generate_program_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/generate_program_pass.cc)实现。具体地，只遍历计算图中的算子节点，提取所携带的算子和Kernel（经过static_kernel_pick_pass选取的、适合目标硬件的、最优的Kernel）对象，以[Instruction](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.h)封装后按顺序依次存放到[RuntimeProgram](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.h)对象。运行时程序的执行也非常简单，即依次遍历RuntimeProgram对象存储的每个Instruction，调用其算子对象的CheckShape和InfereShape方法，最后执行Kernel对象的Launch方法。
 
-  该步骤的具体实现：https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/mir/generate_program_pass.cc 和 https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.cc
+  该步骤的具体实现：https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/generate_program_pass.cc 和 https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.cc
 
 ## 硬件接入方式
 - 按照层次硬件提供给开发者的接口一般可以分为两类：
@@ -90,7 +90,7 @@
 
 - **什么是子图？** 将计算图依据某种规则分割为多个部分，每个部分都被称为一个子图，它包含一个或多个算子和变量，规则一般依据硬件支持能力而定。
 
-- **框架如何实现子图检测和融合？** 在"PaddleLite是如何工作的？"章节中的"图分析和优化"步骤曾提到了[子图检测Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/mir/subgraph/subgraph_pass.cc)，它依据硬件对Paddle算子的支持情况，将每个块对应的计算图分别进行分割，生成一个或多个子图，如下图所示，具体包括以下三个步骤：
+- **框架如何实现子图检测和融合？** 在"PaddleLite是如何工作的？"章节中的"图分析和优化"步骤曾提到了[子图检测Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/subgraph/subgraph_pass.cc)，它依据硬件对Paddle算子的支持情况，将每个块对应的计算图分别进行分割，生成一个或多个子图，如下图所示，具体包括以下三个步骤：
 
   ![](https://user-images.githubusercontent.com/9973393/102796707-9fa89a80-43e9-11eb-913b-d954238994cf.png)
 
@@ -100,7 +100,7 @@
 
   - **子图融合** 为了减少硬件与Host端过多的数据拷贝而带来的额外开销，如果某个子图的算子过少，则删除该子图，即它所包含的所有算子都不会放在目标硬件上执行，然后对保留下来的子图进行算子融合，具体是利用一个子图算子代替该子图包含的所有算子，但所有算子信息将以新的块（Block desc）的形式保存在程序（Program desc）中，块索引则以属性的形式保存子图算子中。
 
-  - 由于子图检测代码较为通用，在硬件接入的过程中无需做过多的修改，只需参照着增加对应硬件的subgraph pass即可。具体可参考HuaweiKirinNPUSubgraphPass和BaiduXPUSubgraphPass的实现：[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/mir/subgraph/subgraph_pass.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/mir/subgraph/subgraph_pass.cc)
+  - 由于子图检测代码较为通用，在硬件接入的过程中无需做过多的修改，只需参照着增加对应硬件的subgraph pass即可。具体可参考HuaweiKirinNPUSubgraphPass和BaiduXPUSubgraphPass的实现：[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/subgraph/subgraph_pass.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/subgraph/subgraph_pass.cc)
   
 - **框架如何执行子图？** 当计算图被分割成若干普通算子和多个子图算子后（如上图的第四幅图所示，包含4个普通算子Op1、Op2、Op3和Op10，1个子图算子Op1），通过"运行时程序的生成和执行"步骤将普通算子（Kernel）和子图算子（Kernel，参考[Huawei Kirin NPU subgraph op kernel](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/subgraph_compute.h)或[Baidu XPU subgraph op kernel](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/xpu/subgraph_compute.h)）保存在运行时程序中，当运行时程序执行时，如果遇到子图算子，则执行如下步骤：
 
@@ -151,13 +151,13 @@
     (use "git checkout -- <file>..." to discard changes in working directory)
     (commit or discard the untracked or modified content in submodules)
 
-          modified:   lite/core/optimizer.h
+          modified:   lite/core/optimizer/optimizer.h
 
   $ git diff
-  diff --git a/lite/core/optimizer.h b/lite/core/optimizer.h
+  diff --git a/lite/core/optimizer/optimizer.h b/lite/core/optimizer/optimizer.h
   index 00e9e07..1b273af 100644
-  --- a/lite/core/optimizer.h
-  +++ b/lite/core/optimizer.h
+  --- a/lite/core/optimizer/optimizer.h
+  +++ b/lite/core/optimizer/optimizer.h
   @@ -55,7 +55,8 @@ class Optimizer {
 
        if (passes.empty()) {
@@ -169,14 +169,14 @@
   ```
   - 提交代码：git add命令添加需要修改的文件，放弃提交可用git reset命令，放弃修改可使用git checkout -- [file_name]命令，每次代码提交时都需要填写说明，以便让他人知道这次提交做了哪些修改，可通过git commit命令完成，修改提交说明可通过git commit --amend命令；为了触发CI，提交说明最后结束前必须回车换行，然后添加test=develop，如果本次提交的Pull request仅修改doc目录下的文档，则额外加上test=document_fix加快CI流水线。
   ```
-  $ git add lite/core/optimizer.h
+  $ git add lite/core/optimizer/optimizer.h
 
   $ git status
   On branch hongming/print_ssa_graph
   Changes to be committed:
     (use "git reset HEAD <file>..." to unstage)
 
-          modified:   lite/core/optimizer.h
+          modified:   lite/core/optimizer/optimizer.h
 
   $ git commit -m "Add graph_visualze pass to output ssa graph
   > test=develop"
