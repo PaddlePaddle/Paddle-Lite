@@ -156,7 +156,7 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode(
     uint32_t quant_channel_dim = 0) {
   LOG(FATAL) << "Unable to convert a POD type(" << typeid(T).name()
              << ") to a NNAdapter precision code";
-  return NNADAPTER_UNKNOWN;
+  return static_cast<NNAdapterOperandPrecisionCode>(NNADAPTER_UNKNOWN);
 }
 template <>
 NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<bool>(

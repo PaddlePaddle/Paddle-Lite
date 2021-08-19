@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/nnadapter/utility.h"
+#include <math.h>
 
 namespace paddle {
 namespace lite {
@@ -60,7 +61,7 @@ bool IsValidSymmPerChannelQuantParams(const std::vector<float>& quant_scales,
   for (size_t i = 1; i < quant_scale_count; i++) {
     auto cur_quant_scale = quant_scales[i];
     if (cur_quant_scale <= 0.f) return false;
-    if (std::fabs(cur_quant_scale - ref_quant_scale) > threshold) {
+    if (fabs(cur_quant_scale - ref_quant_scale) > threshold) {
       return true;
     }
   }
