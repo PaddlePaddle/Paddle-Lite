@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/rnn_compute.h"
+#include "lite/backends/x86/math/rnn.h"
 #include <cmath>
 #include <memory>
 #include <string>
@@ -20,7 +20,6 @@
 #include "lite/backends/host/math/split.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/concat_and_split.h"
-#include "lite/backends/x86/math/rnn.h"
 #include "lite/kernels/x86/rnn_compute.h"
 
 namespace paddle {
@@ -28,26 +27,27 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-#define RUN_LSTM_LAYER(x, y, z, w) \
-  runLSTMLayer(&ctx,               \
-               input_temp_holder,  \
-               parameter_lists[x], \
-               init_h_unbind,      \
-               init_c_unbind,      \
-               sequence_length,    \
-               &last_h_unbind,     \
-               &last_c_unbind,     \
-               y,                  \
-               x,                  \
-               &gate_value,        \
-               z,                  \
-               w)
+#define RUN_RNN_LAYER(x, y, z, w) \
+  RunRnnLayer(&ctx,               \
+              input_temp_holder,  \
+              parameter_lists[x], \
+              init_h_unbind,      \
+              init_c_unbind,      \
+              sequence_length,    \
+              &last_h_unbind,     \
+              &last_c_unbind,     \
+              y,                  \
+              x,                  \
+              &gate_value,        \
+              z,                  \
+              w,                  \
+              mode)
 
-void reset_parameter_vector(const std::vector<Tensor*>& raw_params_vec,
-                            const int& num_layers,
-                            const int& gate_num,
-                            const bool& is_bidirec,
-                            std::vector<std::vector<Tensor>>* params_vec) {
+static void reset_parameter_vector(const std::vector<Tensor*>& raw_params_vec,
+                                   const int& num_layers,
+                                   const int& gate_num,
+                                   const bool& is_bidirec,
+                                   std::vector<std::vector<Tensor>>* params_vec) {
   // the parameter raw seuquence is [FWhi, FWhh, BWhi, BWhh] * num_layers
   // + [FBhi, FBhh, BBhi, BBhh] * num_layers, we will reset the parameter to
   // ([FWhi, FWhh, FBhi, FBhh] + [BWhi, BWhh, BBhi, BBhh]) * num_layers
@@ -75,19 +75,30 @@ void reset_parameter_vector(const std::vector<Tensor*>& raw_params_vec,
   }
 }
 
-void SwapPoniter(Tensor** a, Tensor** b) {
+static void SwapPoniter(Tensor** a, Tensor** b) {
   Tensor* c = *a;
   *a = *b;
   *b = c;
 }
 
-void preprocess(X86Context* ctx,
-                const Tensor* input,
-                const Tensor& weight,
-                const Tensor& bias_ih,
-                const Tensor& bias_hh,
-                Tensor* cache_input,
-                bool is_test) {
+/******************************************************
+input:
+    ctx:context,
+    input:(3D)time_step, batch, input_size,
+    weight:(2D)hidden_size, input_size,
+    bias_ih,
+    bias_hh,
+    mode:LSTM, GRU
+output:
+    cache_input:(3D)time_step, batch, hidden_size
+*******************************************************/
+static void preprocess(X86Context* ctx,
+                       const Tensor* input,
+                       const Tensor& weight,
+                       const Tensor& bias_ih,
+                       const Tensor& bias_hh,
+                       std::string mode,
+                       Tensor* cache_input) {
   const int& hidden_size = weight.dims()[0];
   int time_step = input->dims()[0];
   int batch = input->dims()[1];
@@ -106,23 +117,172 @@ void preprocess(X86Context* ctx,
   int k = input_dims[2];
   int n = weight_input_dims[0];
 
-  paddle::lite::x86::math::Blas<lite::TargetType::kX86> matmul(*ctx);
+  lite::x86::math::Blas<lite::TargetType::kX86> matmul(*ctx);
   matmul.GEMM<float>(
       false, true, m, n, k, 1.f, i_data, k, w_data, k, 0.f, o_data, n);
   lite::x86::math::fill_bias_fc(o_data, bias_ih.data<float>(), m, n);
-  lite::x86::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n);
+
+  if("GRU" == mode) {
+    Tensor bias_tmp_hh;
+    bias_tmp_hh.Resize(bias_hh.dims());
+    auto bias_ptr = bias_tmp_hh.mutable_data<float>();
+    auto bias_src = bias_hh.data<float>();
+    int bias_offt = bias_hh.numel() / 3 * 2;
+    std::memcpy(bias_ptr, bias_src, bias_offt * sizeof(float));
+    std::memset(bias_ptr + bias_offt, 0, (bias_hh.numel() - bias_offt) * sizeof(float));
+    lite::x86::math::fill_bias_fc(o_data, bias_tmp_hh.data<float>(), m, n);
+  } else {
+    lite::x86::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n);
+  }
 }
 
-void cell(X86Context* ctx,
-          Tensor* input,
-          Tensor* weight_hh,
-          Tensor* init_h,
-          Tensor* init_c,
-          Tensor* last_h,
-          Tensor* last_c,
-          Tensor* last_c_act,
-          Tensor* output,
-          const Tensor* bias_hh) {
+/******************************************************
+input:
+    ctx:context,
+    init_h:(2D),
+    init_c:(2D),
+    mask_tensor:(1D)input->dims()[1],
+    mode:LSTM, GRU
+output:
+    output:(2D)output->dims()[1], output->dims()[2],
+    last_h:(2D),
+    last_c:(2D)
+*******************************************************/
+static void postprocess(X86Context* ctx, 
+                        Tensor* output,
+                        const Tensor* init_h, 
+                        const Tensor* init_c, 
+                        Tensor* last_h,
+                        Tensor* last_c, 
+                        const Tensor& mask_tensor,
+                        std::string mode) {
+  Tensor mask_broadcast_1;
+  mask_broadcast_1.Resize(mask_tensor.dims());
+  auto mask_ptr_1 = mask_broadcast_1.mutable_data<float>();
+  auto mask_ptr = mask_tensor.data<float>();
+  auto out_ptr = output->mutable_data<float>();
+  auto cur_h_ptr = last_h->mutable_data<float>();
+  auto pre_h_ptr = init_h->data<float>();
+  int offset = 0;
+
+  // out = out * mask_broadcast
+  // curr_h = out * mask_broadcast + pre_h * (1 - mask_broadcast);
+  for(int i = 0; i < output->dims()[0]; i++) {
+    mask_ptr_1[i] = 1 - mask_ptr[i];
+    for(int j = 0; j < output->dims()[1]; j++) {
+      offset = i * output->dims()[1] + j;
+      out_ptr[offset] *= mask_ptr[i];
+      cur_h_ptr[offset] = out_ptr[offset] + pre_h_ptr[offset] * mask_ptr_1[i];
+    }
+  }
+  if ("LSTM" == mode) {
+    auto pre_c_ptr = init_c->data<float>();
+    auto cur_c_ptr = last_c->mutable_data<float>();
+
+    //curr_c = curr_c * mask_broadcast + pre_c * (1 - mask_broadcast);
+    for(int i = 0; i < output->dims()[0]; i++) {
+      for(int j = 0; j < output->dims()[1]; j++) {
+        offset = i * output->dims()[1] + j;
+        cur_c_ptr[offset] = cur_c_ptr[offset] * mask_ptr[i] + 
+                            pre_c_ptr[offset] * mask_ptr_1[i];
+      }
+    }
+  }
+}
+
+static DDim get_stride(const DDim& ddim) {
+  DDim strides;
+  strides[ddim.size() - 1] = 1;
+  for (int i = ddim.size() - 2; i >= 0; --i) {
+    strides[i] = strides[i + 1] * ddim[i + 1];
+  }
+  return strides;
+}
+
+template<typename T>
+static void TransposeNormal(const Tensor& in, 
+                            Tensor* out,
+                            const std::vector<int>& axis) {
+  const int rank = axis.size();
+  auto in_stride = get_stride(in.dims());
+  auto out_stride = get_stride(out->dims());
+  const T* in_ptr = in.data<T>();
+  T* out_ptr = out->mutable_data<T>();
+
+  auto transpose_helper = [&](int64_t beg, int64_t end) {
+    for (int64_t out_idx = beg; out_idx < end; ++out_idx) {
+      int64_t in_idx = 0;
+      int64_t tmp_idx = out_idx;
+      // calculate the input index
+      for (int i = 0; i < rank; ++i) {
+        const int64_t coordinate = tmp_idx / out_stride[i];
+        tmp_idx -= coordinate * out_stride[i];
+        in_idx += coordinate * in_stride[axis[i]];
+      }
+      out_ptr[out_idx] = in_ptr[in_idx];
+    }
+  };
+  transpose_helper(0, out->numel());
+}
+
+/******************************************************
+input:
+    sequence_length,
+    is_reverse
+output:
+    mask_matrix,
+    min_seq_len
+******************************************************/
+static void create_mask_matrix(const Tensor* sequence_length, 
+                               Tensor* mask_matrix,
+                               const bool& is_reverse, 
+                               int* min_seq_len) {
+  // Tensor to vector<int>
+  std::vector<int> seq_len_vec;
+  seq_len_vec.resize(sequence_length->numel());
+  std::memcpy(&seq_len_vec[0], sequence_length->data<int>(),
+    sequence_length->numel() * sizeof(int));
+
+  const int& table_width = mask_matrix->dims()[0];
+  Tensor temp;
+  DDimLite dims(std::vector<int64_t>{mask_matrix->dims()[1], mask_matrix->dims()[0]});
+  temp.Resize(dims);
+  float* data_temp = temp.mutable_data<float>();
+  std::fill(data_temp, data_temp + mask_matrix->numel(), 1.f);
+  *min_seq_len = table_width;
+  for (unsigned int i = 0; i < seq_len_vec.size(); i++) {
+    // reset the mask matrix
+    *min_seq_len = std::min(seq_len_vec[i], *min_seq_len);
+    if (seq_len_vec[i] == table_width) {
+      continue;
+    }
+    if (is_reverse) {
+      std::fill(data_temp + i * table_width,
+                data_temp + (i + 1) * table_width - seq_len_vec[i],
+                0.f);
+    } else {
+      std::fill(data_temp + i * table_width + seq_len_vec[i],
+                data_temp + (i + 1) * table_width, 
+                0.f);
+    }
+  }
+  mask_matrix->mutable_data<float>();
+  std::vector<int> trans_vec;
+  trans_vec.emplace_back(1);
+  trans_vec.emplace_back(0);
+  TransposeNormal<float>(temp, mask_matrix, trans_vec);
+}
+
+static void lstm_cell(X86Context* ctx,
+                      Tensor* input,
+                      Tensor* weight_hh,
+                      Tensor* init_h,
+                      Tensor* init_c,
+                      Tensor* last_h,
+                      Tensor* last_c,
+                      Tensor* last_c_act,
+                      Tensor* output,
+                      const Tensor* bias_hh) {
   auto h_dims = init_h->dims();
   auto weight_input_dims = weight_hh->dims();
   int m = h_dims[0];
@@ -136,7 +296,7 @@ void cell(X86Context* ctx,
   tmp_gate.Resize(input->dims());
   auto tmp_data = tmp_gate.mutable_data<float>();
 
-  paddle::lite::x86::math::Blas<lite::TargetType::kX86> matmul(*ctx);
+  lite::x86::math::Blas<lite::TargetType::kX86> matmul(*ctx);
   matmul.GEMM<float>(
       false, true, m, n, k, 1.f, h_data, k, w_data, k, 0.f, tmp_data, n);
   for (int i = 0; i < input->dims()[0] * input->dims()[1]; i++) {
@@ -183,19 +343,75 @@ void cell(X86Context* ctx,
                                                       1);
 }
 
-void runLSTMLayer(X86Context* ctx,
-                  const Tensor* input,
-                  std::vector<Tensor> vec,
-                  std::vector<Tensor> init_h,
-                  std::vector<Tensor> init_c,
-                  const Tensor* sequence_length,
-                  std::vector<Tensor>* last_h_ptr,
-                  std::vector<Tensor>* last_c_ptr,
-                  Tensor* output,
-                  int layer_idx,
-                  Tensor* gate_value,
-                  bool is_bidirect,
-                  int offset) {
+static void gru_cell(X86Context* ctx,
+                     Tensor* input,
+                     Tensor* weight_hh,
+                     Tensor* init_h,
+                     Tensor* init_c,
+                     Tensor* last_h,
+                     Tensor* last_c,
+                     Tensor* last_c_act,
+                     Tensor* output,
+                     const Tensor* bias_hh,
+                     Tensor* weight_hh_gru) {
+  auto h_dims = init_h->dims();
+  auto weight_gru_dims = weight_hh_gru->dims();
+  int m = h_dims[0];
+  int k = h_dims[1];
+  int n = weight_gru_dims[0];
+  auto i_data = input->data<float>();
+  auto w_gru = weight_hh_gru->data<float>();
+  auto h_data = init_h->data<float>();
+
+  Tensor tmp_gate;
+  tmp_gate.Resize(input->dims());
+  auto tmp_data = tmp_gate.mutable_data<float>();
+
+  lite::x86::math::Blas<lite::TargetType::kX86> matmul(*ctx);
+  matmul.GEMM<float>(
+      false, true, m, n, k, 1.f, h_data, k, w_gru, k, 0.f, tmp_data, n);
+  for (int i = 0; i < input->dims()[0] * input->dims()[1]; i++) {
+    tmp_data[i] += i_data[i];
+  }
+
+  size_t frame_size = init_h->dims()[1];
+  size_t batch_size = init_h->dims()[0];
+
+  lite::x86::math::GRUMetaValue<float> gru_value;
+  gru_value.gate_weight = weight_hh->data<float>();
+  gru_value.state_weight = weight_hh->data<float>() + 2 * frame_size * frame_size;
+  gru_value.reset_bias = bias_hh->data<float>() + 2 * frame_size;
+
+  gru_value.gate_value = tmp_data;
+  gru_value.reset_output_value = last_c->mutable_data<float>();
+  gru_value.output_value = output->mutable_data<float>();
+  gru_value.prev_out_value = init_h->data<float>();
+
+  auto gate_act = lite_api::ActivationType::kSigmoid_v2;
+  auto cand_act = lite_api::ActivationType::kTanh_v2;
+
+  lite::x86::math::RnnGruUnitFunctorV2<float>::compute(ctx, 
+                                                       gru_value, 
+                                                       frame_size, 
+                                                       batch_size, 
+                                                       cand_act, 
+                                                       gate_act);
+}
+
+static void RunRnnLayer(X86Context* ctx,
+                       const Tensor* input,
+                       std::vector<Tensor> vec,
+                       std::vector<Tensor> init_h,
+                       std::vector<Tensor> init_c,
+                       const Tensor* sequence_length,
+                       std::vector<Tensor>* last_h_ptr,
+                       std::vector<Tensor>* last_c_ptr,
+                       Tensor* output,
+                       int layer_idx,
+                       Tensor* gate_value,
+                       bool is_bidirect,
+                       int offset,
+                       std::string mode) {
   bool is_reverse = false;
   if (is_bidirect) {
     layer_idx = 2 * layer_idx + offset;
@@ -209,26 +425,25 @@ void runLSTMLayer(X86Context* ctx,
              input,
              vec[0 + offset * 4],
              vec[2 + offset * 4],
-             vec[3 + offset * 4],
-             gate_value,
-             true);
+             vec[3 + offset * 4],       
+             mode,
+             gate_value);
+
   std::vector<Tensor> input_tensors, output_tensors;
   std::vector<Tensor *> input_tensors_t, output_tensors_t;
-  std::vector<int> stride1, stride2;
-  input_tensors.resize(gate_value->dims()[0]);  // time_step
+  std::vector<int> stride1, stride2, stride3;
+  input_tensors.resize(gate_value->dims()[0]);
   output_tensors.resize(output->dims()[0]);
 
-  // alloc input
+  // unbind
   for (int i = 0; i < gate_value->dims()[0]; i++) {
     stride1.push_back(1);
-    int dim1 = gate_value->dims()[1];  // batch
-    int dim2 = gate_value->dims()[2];  // hidden
+    int dim1 = gate_value->dims()[1];
+    int dim2 = gate_value->dims()[2];
     DDimLite dims(std::vector<int64_t>{dim1, dim2});
     input_tensors[i].Resize(dims);
     input_tensors_t.push_back(&input_tensors[i]);
   }
-
-  // alloc output
   for (int i = 0; i < output->dims()[0]; i++) {
     stride2.push_back(1);
     int dim1 = output->dims()[1];
@@ -237,32 +452,55 @@ void runLSTMLayer(X86Context* ctx,
     output_tensors[i].Resize(dims);
     output_tensors_t.push_back(&output_tensors[i]);
   }
-
   lite::host::math::split(
       gate_value->data<float>(), input_tensors_t, 0, stride1);
   lite::host::math::split(output->data<float>(), output_tensors_t, 0, stride2);
   auto sd = output->mutable_data<float>();
 
   if (is_reverse) {
+    // don't need to reverse input_tensors_t becauese of unuseful
     std::reverse(input_tensors.begin(), input_tensors.end());
   }
   bool has_sequence_length = false;
-  /*
-    TODO has_sequence_length
-  */
-
+  if (sequence_length != nullptr) {
+      has_sequence_length = true;
+  }
+  // unbind
+  Tensor mask_matrix;
+  std::vector<Tensor> mask_vec;
+  std::vector<Tensor *>mask_tensor_list;
   int mask_min_length = time_step;
+
+  // to be verifying!
+  if(has_sequence_length) {
+    mask_matrix.Resize(DDimLite({time_step, input->dims()[1]}));
+    create_mask_matrix(sequence_length, 
+                       &mask_matrix, 
+                       is_reverse,
+                       &mask_min_length);
+    for(int i = 0; i < time_step; i++) {
+      stride3.push_back(1);
+      DDimLite ddims(std::vector<int64_t>{input->dims()[1]});
+      mask_vec[i].Resize(ddims);
+      mask_tensor_list.push_back(&mask_vec[i]);
+    }
+    lite::host::math::split(
+        mask_matrix.data<float>(), mask_tensor_list, 0, stride3);
+  }
   if (is_reverse) {
     mask_min_length = mask_min_length - time_step + 1;
   }
-  bool has_allocate_mem_c = false;
+
   bool has_use_last_h_holder = false;
   const int& reverse_flag = is_reverse ? -1 : 1;
+  bool has_allocate_mem_c = false;
+
+  // define the init_h holder for the swap
   Tensor init_h_temp;
+  init_h_temp.Resize(init_h[layer_idx].dims());
   init_h_temp.CopyDataFrom(init_h[layer_idx]);
   Tensor* init_h_holder = &init_h_temp;
   Tensor* last_h_holder = nullptr;
-
   if (0 < mask_min_length) {
     last_h_holder = &(output_tensors[0]);
   } else {
@@ -275,38 +513,79 @@ void runLSTMLayer(X86Context* ctx,
   Tensor init_c_temp;
   Tensor* last_c_holder = nullptr;
   Tensor last_c_temp;
-  last_c_holder = &(*last_c_ptr)[layer_idx];
-  init_c_temp_holder = &init_c[layer_idx];
+
+  if("LSTM" == mode) {
+    last_c_holder = &(*last_c_ptr)[layer_idx];
+    init_c_temp_holder = &init_c[layer_idx];
+  } else if("GRU" == mode) {
+    // for reset output value
+    last_c_temp.Resize(init_h[layer_idx].dims());
+    last_c_temp.mutable_data<float>();
+    last_c_holder = &last_c_temp;
+  }
+
+  Tensor weight_hh_tmp;  // for gru
+  std::vector<Tensor> weight_hh_tmp_ubind;
+  std::vector<Tensor *> weight_hh_tmp_ubind_t;
+  std::vector<int> stride_w;
+  if ("GRU" == mode) {
+    weight_hh_tmp.Resize(vec[1 + offset * 4].dims());
+    weight_hh_tmp.mutable_data<float>();
+    weight_hh_tmp.CopyDataFrom(vec[1 + offset * 4]);
+    int size = weight_hh_tmp.numel() / 3;
+    std::memset(weight_hh_tmp.mutable_data<float>() + size * 2, 0, size * sizeof(float));
+  }
 
   for (int i = 0; i < time_step; i++) {
     bool in_mask = (reverse_flag * i) >= mask_min_length;
     if (i > 0) {
       if (!has_allocate_mem_c) {
-        init_c_temp.Resize(init_h[layer_idx].dims());
-        init_c_temp.mutable_data<float>();
-        init_c_holder = &init_c_temp;
+        if(("LSTM" == mode) || ("GRU" == mode)) {
+          init_c_temp.Resize(init_h[layer_idx].dims());
+          init_c_temp.mutable_data<float>();
+          init_c_holder = &init_c_temp;
+        }
         has_allocate_mem_c = true;
       }
       SwapPoniter(&init_c_holder, &last_c_holder);
       init_c_temp_holder = init_c_holder;
     }
 
-    // LSTMCELL
-    cell(ctx,
-         &input_tensors[i],
-         &vec[1 + offset * 4],
-         init_h_holder,
-         init_c_temp_holder,
-         last_h_holder,
-         last_c_holder,
-         nullptr,
-         &output_tensors[i],
-         &vec[3 + offset * 4]);
+    if("LSTM" == mode) {
+      lstm_cell(ctx,
+                &input_tensors[i],
+                &vec[1 + offset * 4],
+                init_h_holder,
+                init_c_temp_holder,
+                last_h_holder,
+                last_c_holder,
+                nullptr,
+                &output_tensors[i],
+                &vec[3 + offset * 4]);
+    } else if("GRU" == mode) {
+      gru_cell(ctx,
+               &input_tensors[i],
+               &vec[1 + offset * 4],
+               init_h_holder,
+               init_c_temp_holder,
+               last_h_holder,
+               last_c_holder,
+               nullptr,
+               &output_tensors[i],
+               &vec[3 + offset * 4],
+               &weight_hh_tmp);
+    }
 
+    // to be verifying! 
     if (in_mask) {
-      /*
-        TODO in_mask
-      */
+      postprocess(ctx, 
+                  &output_tensors[i], 
+                  init_h_holder,
+                  init_c_temp_holder, 
+                  last_h_holder, 
+                  last_c_holder,
+                  mask_vec[i],
+                  mode);
     }
 
     // prepare next step
@@ -322,6 +601,9 @@ void runLSTMLayer(X86Context* ctx,
       SwapPoniter(&init_h_holder, &last_h_holder);
     }
   }
+
+  // unbind vector and source are not in the same address, need copy
+  // different from paddle
   if (is_reverse) {
     std::reverse(output_tensors.begin(), output_tensors.end());
   }
@@ -339,7 +621,7 @@ void runLSTMLayer(X86Context* ctx,
   } else {
     (*last_h_ptr)[layer_idx].CopyDataFrom(output_tensors[time_step - 1]);
   }
-  if (time_step % 2 == 0) {
+  if ((0 == (time_step % 2)) && ("LSTM" == mode)) {
     (*last_c_ptr)[layer_idx].CopyDataFrom(*last_c_holder);
   }
 }
@@ -356,12 +638,24 @@ void RnnCompute::Run() {
   bool is_bidirec = param.is_bidirec;
   int num_layers = param.num_layers;
   const Tensor* sequence_length = param.SequenceLength;
+  int gate_num = 0;
+
+  if ("LSTM" == mode) {
+    gate_num = 4;
+  } else if ("GRU" == mode) {
+    gate_num = 3;
+  } else {
+    LOG(FATAL) << "X86 RNN ERROR: unsupport mode except gru and lstm,"
+                  " present mode is "
+               << mode;
+    return;
+  }
 
   state[0]->mutable_data<float>();
-  state[1]->mutable_data<float>();
-
-  // lstmCell begin
-  int gate_num = 4;
+  if("LSTM" == mode) {
+    state[1]->mutable_data<float>();
+  }
+  // reset the parameter to sorted order and allocate the memory
   std::vector<std::vector<Tensor>> parameter_lists;
   parameter_lists.reserve(num_layers);
   reset_parameter_vector(
@@ -371,35 +665,60 @@ void RnnCompute::Run() {
   Tensor temp, gate_value;
   bool has_allocate_mem = false;
 
-  std::vector<Tensor> init_h_unbind, init_c_unbind, last_h_unbind,
-      last_c_unbind;
-  std::vector<Tensor *> init_h_unbind_t, init_c_unbind_t, last_h_unbind_t,
-      last_c_unbind_t;
-  init_h_unbind.resize(4);
-  init_c_unbind.resize(pre_state[1]->dims()[0]);
+  std::vector<Tensor> init_h_unbind, init_c_unbind, 
+        last_h_unbind, last_c_unbind;
+  std::vector<Tensor *> init_h_unbind_t, init_c_unbind_t, 
+        last_h_unbind_t, last_c_unbind_t;
+  init_h_unbind.resize(pre_state[0]->dims()[0]);
   last_h_unbind.resize(state[0]->dims()[0]);
-  last_c_unbind.resize(state[1]->dims()[0]);
-  std::vector<int> stride;
+
+  if("LSTM" == mode) {
+    init_c_unbind.resize(pre_state[1]->dims()[0]);
+    last_c_unbind.resize(state[1]->dims()[0]);
+  }
+  std::vector<int> stride1, stride2;
+
+  // unbind
   for (int i = 0; i < pre_state[0]->dims()[0]; i++) {
-    stride.push_back(1);
+    stride1.push_back(1);
     int dim1 = pre_state[0]->dims()[1];
     int dim2 = pre_state[0]->dims()[2];
     DDimLite dims(std::vector<int64_t>{dim1, dim2});
     init_h_unbind[i].Resize(dims);
-    init_c_unbind[i].Resize(dims);
     last_h_unbind[i].Resize(dims);
-    last_c_unbind[i].Resize(dims);
     init_h_unbind_t.push_back(&init_h_unbind[i]);
-    init_c_unbind_t.push_back(&init_c_unbind[i]);
     last_h_unbind_t.push_back(&last_h_unbind[i]);
-    last_c_unbind_t.push_back(&last_c_unbind[i]);
   }
   lite::host::math::split(
-      pre_state[0]->data<float>(), init_h_unbind_t, 0, stride);
-  lite::host::math::split(
-      pre_state[1]->data<float>(), init_c_unbind_t, 0, stride);
-  lite::host::math::split(state[0]->data<float>(), last_h_unbind_t, 0, stride);
-  lite::host::math::split(state[1]->data<float>(), last_c_unbind_t, 0, stride);
+      pre_state[0]->data<float>(), init_h_unbind_t, 0, stride1);
+  lite::host::math::split(state[0]->data<float>(), last_h_unbind_t, 0, stride1);
+
+  if("LSTM" == mode) {
+    for (int i = 0; i < pre_state[1]->dims()[0]; i++) {
+      stride2.push_back(1);
+      int dim1 = pre_state[1]->dims()[1];
+      int dim2 = pre_state[1]->dims()[2];
+      DDimLite dims(std::vector<int64_t>{dim1, dim2});
+      init_c_unbind[i].Resize(dims);
+      last_c_unbind[i].Resize(dims);
+      init_c_unbind_t.push_back(&init_c_unbind[i]);
+      last_c_unbind_t.push_back(&last_c_unbind[i]);
+    }
+    lite::host::math::split(
+        pre_state[1]->data<float>(), init_c_unbind_t, 0, stride2);
+    lite::host::math::split(state[1]->data<float>(), last_c_unbind_t, 0, stride2);
+  }
+
+  std::vector<Tensor> output_vec(2);
+  int time_step = input->dims()[0];
+  int batch_size = input->dims()[1];
+  int hidden_size = output->dims()[2];
+  if (is_bidirec) {
+    for (int i = 0; i < 2; ++i) {
+      output_vec[i].Resize({time_step, batch_size, hidden_size / 2});
+      output_vec[i].mutable_data<float>();
+    }
+  }
 
   for (int i = 0; i < num_layers; i++) {
     if (i > 0) {
@@ -418,25 +737,52 @@ void RnnCompute::Run() {
     }
 
     if (is_bidirec) {
-      std::vector<Tensor> output_vec(2);
-      int time_step = input->dims()[0];
-      int batch_size = input->dims()[1];
-      int hidden_size = output->dims()[2];
-      for (int i = 0; i < 2; ++i) {
-        output_vec[i].Resize({time_step, batch_size, hidden_size / 2});
-        output_vec[i].mutable_data<float>();
-      }
-
-      RUN_LSTM_LAYER(i, &output_vec[0], true, 0);
-      RUN_LSTM_LAYER(i, &output_vec[1], true, 1);
-
-      paddle::lite::x86::math::ConcatFunctor<lite::TargetType::kX86, float>
+      RUN_RNN_LAYER(i, &output_vec[0], true, 0);
+      RUN_RNN_LAYER(i, &output_vec[1], true, 1);
+      lite::x86::math::ConcatFunctor<lite::TargetType::kX86, float>
           concat_x86;
-      concat_x86(ctx, output_vec, 2, output);
+      concat_x86(ctx, output_vec, 2, output_holder);
     } else {
-      RUN_LSTM_LAYER(i, output_holder, false, 0);
+      RUN_RNN_LAYER(i, output_holder, false, 0);
     }
   }
+  // output_holder != output
+  if (num_layers % 2 == 0) {
+    output->CopyDataFrom(*output_holder);
+  }
+
+
+  /////////////////////log input output///////////////////
+  double tmp = 0.0;
+  for(int i=0;i<input->numel();i++)
+  {
+    tmp+=input->data<float>()[i];
+  }
+  tmp = tmp / input->numel();
+  std::cout<<"\n-------------in----------------\n"
+  <<tmp<<" "
+  <<input->dims()[0]<<" "<<input->dims()[1]<<" "<<input->dims()[2]<<" "
+  <<"\n-----------------------------\n";
+  tmp = 0.0;
+  for(int i=0;i<pre_state[0]->numel();i++)
+  {
+    tmp+=pre_state[0]->data<float>()[i];
+  }
+  tmp = tmp / pre_state[0]->numel();
+  std::cout<<"\n-------------sts----------------\n"
+  <<tmp<<" "
+  <<pre_state[0]->dims()[0]<<" "<<pre_state[0]->dims()[1]<<" "<<pre_state[0]->dims()[2]<<" "
+  <<"\n-----------------------------\n";
+  tmp = 0.0;
+  for(int i=0;i<output->numel();i++)
+  {
+    tmp+=output->data<float>()[i];
+  }
+  tmp = tmp / output->numel();
+  std::cout<<"\n--------------out---------------\n"
+  <<tmp<<" "
+  <<output->dims()[0]<<" "<<output->dims()[1]<<" "<<output->dims()[2]<<" "
+  <<"\n-----------------------------\n";
 }
 
 }  // namespace x86
