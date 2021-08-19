@@ -15,9 +15,9 @@
 #pragma once
 
 #include <string>
-#include "lite/core/tensor.h"
-#include "lite/utils/log/logging.h"
 #include "lite/backends/x86/math/blas.h"
+#include "lite/core/tensor.h"
+#include "lite/utils/logging.h"
 
 namespace paddle {
 namespace lite {
@@ -38,13 +38,13 @@ struct LstmMetaValue {
 
 template <typename T>
 struct GRUMetaValue {
-  const T *gate_weight;
-  const T *state_weight;
-  const T *reset_bias;
-  T *gate_value;
-  T *reset_output_value;
-  T *output_value;
-  const T *prev_out_value;
+  const T* gate_weight;
+  const T* state_weight;
+  const T* reset_bias;
+  T* gate_value;
+  T* reset_output_value;
+  T* output_value;
+  const T* prev_out_value;
 };
 
 // if v2 isn't null: out[i] = in[i] + v1[i] * v2[i];
@@ -104,8 +104,7 @@ void activation(const T* din,
       act_relu(din, dout, size, threads);
       break;
     default:
-      LOG(FATAL) << "unsupport activation type:" 
-                 << static_cast<int>(act_type);
+      LOG(FATAL) << "unsupport activation type:" << static_cast<int>(act_type);
       break;
   }
 }
@@ -179,51 +178,56 @@ struct RnnLstmUnitFunctor {
 template <typename T>
 struct RnnGruUnitFunctorV2 {
   static void compute(X86Context* ctx,
-                      GRUMetaValue<T> value, 
-                      int frame_size, 
+                      GRUMetaValue<T> value,
+                      int frame_size,
                       int batch_size,
                       lite_api::ActivationType active_node,
                       lite_api::ActivationType active_gate) {
-
     if (value.prev_out_value) {
       lite::x86::math::Blas<lite::TargetType::kX86> matmul(*ctx);
-      matmul.GEMM<float>(false, 
-                         true, 
-                         batch_size, 
-                         frame_size, 
-                         frame_size, 
-                         1.f, 
-                         value.prev_out_value, 
-                         frame_size, 
-                         value.state_weight, 
-                         frame_size, 
+      matmul.GEMM<float>(false,
+                         true,
+                         batch_size,
+                         frame_size,
+                         frame_size,
+                         1.f,
+                         value.prev_out_value,
+                         frame_size,
+                         value.state_weight,
+                         frame_size,
                          0.f,
-                         value.reset_output_value, 
+                         value.reset_output_value,
                          frame_size);
     }
-    
+
     auto value_reset_gate = value.gate_value;
     auto value_update_gate = value.gate_value + frame_size;
     auto value_reset_output = value.reset_output_value;
     auto value_reset_bias = value.reset_bias;
     for (int b = 0; b < batch_size; b++) {
-      activation(value_reset_gate, value_reset_gate, 
-        frame_size, lite_api::ActivationType::kSigmoid_v2, 1);
-      activation(value_update_gate, value_update_gate, 
-        frame_size, lite_api::ActivationType::kSigmoid_v2, 1);
-      for(int i = 0; i < frame_size; i++) {
-        value_reset_output[i] = (value_reset_output[i] + value_reset_bias[i]) 
-                               * value_reset_gate[i];
+      activation(value_reset_gate,
+                 value_reset_gate,
+                 frame_size,
+                 lite_api::ActivationType::kSigmoid_v2,
+                 1);
+      activation(value_update_gate,
+                 value_update_gate,
+                 frame_size,
+                 lite_api::ActivationType::kSigmoid_v2,
+                 1);
+      for (int i = 0; i < frame_size; i++) {
+        value_reset_output[i] =
+            (value_reset_output[i] + value_reset_bias[i]) * value_reset_gate[i];
       }
       value_reset_gate += frame_size * 3;
       value_update_gate += frame_size * 3;
       value_reset_output += frame_size;
     }
 
-    T *cell_state_value = value.gate_value + 2 * frame_size;
-    T *reset_output_value = value.reset_output_value;
+    T* cell_state_value = value.gate_value + 2 * frame_size;
+    T* reset_output_value = value.reset_output_value;
     for (int b = 0; b < batch_size; ++b) {
-      for(int f = 0; f < frame_size; f++) {
+      for (int f = 0; f < frame_size; f++) {
         cell_state_value[f] += reset_output_value[f];
       }
       cell_state_value += frame_size * 3;
@@ -235,14 +239,18 @@ struct RnnGruUnitFunctorV2 {
     auto value_output = value.output_value;
     auto value_prev_out = value.prev_out_value;
     for (int b = 0; b < batch_size; b++) {
-      activation(value_frame_state, value_frame_state, 
-        frame_size, lite_api::ActivationType::kTanh_v2, 1);
-      for(int i = 0; i < frame_size; i++) {
+      activation(value_frame_state,
+                 value_frame_state,
+                 frame_size,
+                 lite_api::ActivationType::kTanh_v2,
+                 1);
+      for (int i = 0; i < frame_size; i++) {
         value_output[i] = (1.f - value_update_gate[i]) * value_frame_state[i];
       }
       if (value.prev_out_value) {
-        for(int i = 0; i < frame_size; i++) {
-          value_output[i] = value_output[i] + value_update_gate[i] * value_prev_out[i];
+        for (int i = 0; i < frame_size; i++) {
+          value_output[i] =
+              value_output[i] + value_update_gate[i] * value_prev_out[i];
         }
       }
       value_update_gate += frame_size * 3;
