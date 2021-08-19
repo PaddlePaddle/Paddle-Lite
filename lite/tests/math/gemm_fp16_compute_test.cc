@@ -126,16 +126,16 @@ bool test_sgemm_fp16(bool tra,
   auto dbias_fp32 = tbias_fp32.mutable_data<float>();
   auto dc_basic_fp32 = tc_basic_fp32.mutable_data<float>();
 
-  // fill_data_rand<float16_t>(da, -1.f, 1.f, size_a);
-  fill_data_const<float16_t>(da, 1.f, size_a);
+  fill_data_rand<float16_t>(da, -1.f, 1.f, size_a);
+  // fill_data_const<float16_t>(da, 1.f, size_a);
   fp16_to_float(da, da_fp32, size_a);
 
-  // fill_data_rand<float16_t>(db, -1.f, 1.f, size_b);
-  fill_data_const<float16_t>(db, 1.f, size_b);
+  fill_data_rand<float16_t>(db, -1.f, 1.f, size_b);
+  // fill_data_const<float16_t>(db, 1.f, size_b);
   fp16_to_float(db, db_fp32, size_a);
 
-  // fill_data_rand<float16_t>(dbias, -1.f, 1.f, m);
-  fill_data_const<float16_t>(dbias, -1.f, m);
+  fill_data_rand<float16_t>(dbias, -1.f, 1.f, m);
+  // fill_data_const<float16_t>(dbias, -1.f, m);
   fp16_to_float(dbias, dbias_fp32, m);
 
   // fill_data_rand<float16_t>(dc, -1.f, 1.f, size_c);
@@ -240,6 +240,14 @@ bool test_sgemm_fp16(bool tra,
         &ctx);
     t0.Stop();
   }
+  LOG(INFO) << "M: " << m << ", N: " << n << ", K: " << k
+            << ", power_mode: " << cls << ", threads: " << ths
+            << ", GOPS: " << ops * 1e-9f
+            << " GOPS, avg time: " << t0.LapTimes().Avg()
+            << " ms, min time: " << t0.LapTimes().Min()
+            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
+            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
+            << " GOPs";
   if (FLAGS_check_result) {
     double max_ratio = 0;
     double max_diff = 0;

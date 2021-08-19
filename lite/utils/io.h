@@ -14,13 +14,17 @@
 
 #pragma once
 
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
+#if defined(_MSC_VER)
+#include "dirent.h"
+#else
+#include <dirent.h>
+#endif
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
