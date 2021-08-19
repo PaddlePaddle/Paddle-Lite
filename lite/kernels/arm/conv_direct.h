@@ -184,8 +184,15 @@ inline bool direct_conv_trans_weights<PRECISION(kFP16), PRECISION(kFP16)>(
   wout->Resize({cround, ic, kh, kw});
   auto w_in_data = win->data<float16_t>();
   auto transed_w_data = wout->mutable_data<float16_t>();
-  lite::arm::math::conv_trans_weights_numc(
-      w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
+  if (ic == 3 && stride == 2 && (oc % 4 == 0)) {
+    // [chout, 3, kh, kw] -> [chout / cblock, kh, kw, 3, cblock]
+    lite::arm::math::conv_trans_weights_c4toc12(
+        w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
+  } else {
+    // [chout, chin, kh, kw] -> [chout / n, chin, kh, kw, n]
+    lite::arm::math::conv_trans_weights_numc(
+        w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
+  }
   return false;
 }
 #endif
@@ -266,3 +273,4 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+

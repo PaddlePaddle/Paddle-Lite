@@ -61,7 +61,7 @@ inline bool prepack_input_nxw(const float16_t* din,
                               float16_t* zero_ptr) {
   int n = he - hs;
   if (n <= 0) {
-    LOG(ERROR) << "hei_n is more than zero";
+    LOG(ERROR) << "input height is more than zero";
     return false;
   }
   int w0 = ws < 0 ? 0 : ws;
@@ -105,6 +105,160 @@ inline bool prepack_input_nxw(const float16_t* din,
     din += size_c;
   }
   return true;
+}
+
+/**
+ * @brief C4 transpose process
+ * input: N 4 H W, output: N 1 H W 4
+ * @param din input ptr
+ * @param dout output ptr
+ * @param cs channel start
+ * @param ce channel end
+ * @param hs height start
+ * @param he height end
+ * @param ws width start
+ * @param we width end
+ * @param channel  number of channel, require: channel <=4
+ * @param width number of width
+ * @param height number of height
+ * @param zero_ptr
+ */
+inline void prepack_input_nxwc4(const float16_t* din,
+                                float16_t* dout,
+                                int cs,
+                                int ce,
+                                int hs,
+                                int he,
+                                int ws,
+                                int we,
+                                int channel,
+                                int width,
+                                int height,
+                                float16_t* zero_ptr) {
+  int n = he - hs;
+  if (n <= 0) {
+    LOG(ERROR) << "input height is more than zero";
+  }
+  int size_w = we - ws;
+  int w0 = ws < 0 ? 0 : ws;
+  int w1 = we > width ? width : we;
+  int valid_w = w1 - w0;
+  int pad_l = ws < 0 ? -ws : 0;
+  int pad_r = we > width ? we - width : 0;
+  int size_c = width * height;
+
+  int valid_cnt = valid_w >> 3;
+  int remain = valid_w & 7;
+
+  for (int h = hs; h < he; ++h) {
+    const float16_t* ptr_c0 = din + h * width + cs * size_c;
+    const float16_t* ptr_c1 = ptr_c0 + size_c;
+    const float16_t* ptr_c2 = ptr_c1 + size_c;
+    const float16_t* ptr_c3 = ptr_c2 + size_c;
+    if (h < 0 || h >= height) {
+      memset(dout, 0, 4 * size_w * sizeof(float16_t));
+      dout += size_w * 4;
+      continue;
+    } else if (cs + 4 > channel) {
+      switch (cs + 4 - channel) {
+        case 3:
+          ptr_c1 = zero_ptr;
+        case 2:
+          ptr_c2 = zero_ptr;
+        case 1:
+          ptr_c3 = zero_ptr;
+        default:
+          break;
+      }
+    }
+    if (pad_l) {
+      memset(dout, 0, pad_l * 4 * sizeof(float16_t));
+      dout += pad_l * 4;
+    }
+    if (valid_cnt) {
+      int cnt = valid_cnt;
+#ifdef __aarch64__
+      asm volatile(
+          /* main loop */
+          "1:\n"
+          "ldr q0,    [%[r0]], #16\n"
+          "ldr q1,    [%[r1]], #16\n"
+          "ldr q2,    [%[r2]], #16\n"
+          "ldr q3,    [%[r3]], #16\n"
+          // a0b0a2b2a4b4a6b6
+          "trn1 v8.8h,  v0.8h, v1.8h\n"
+          // a1b1a3b3a5b5a7b7
+          "trn2 v9.8h,  v0.8h, v1.8h\n"
+          "trn1 v10.8h, v2.8h, v3.8h\n"
+          "trn2 v11.8h, v2.8h, v3.8h\n"
+
+          // a0b0c0d0a4b4c4d4
+          "trn1 v0.4s,  v8.4s, v10.4s\n"
+          // a2b2c2d2a6b6c6d6
+          "trn2 v1.4s,  v8.4s, v10.4s\n"
+          // a1b1c1d1
+          "trn1 v2.4s,  v9.4s, v11.4s\n"
+          // a3b3c3d3
+          "trn2 v3.4s,  v9.4s, v11.4s\n"
+
+          "trn1 v8.2d,  v0.2d, v2.2d\n"  // 0 1
+          "trn1 v9.2d,  v1.2d, v3.2d\n"  // 2 3
+          "trn2 v10.2d, v0.2d, v2.2d\n"  // 4 5
+          "trn2 v11.2d, v1.2d, v3.2d\n"  // 6 7
+          "str q8, [%[ptr_out]], #16\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "str q9, [%[ptr_out]], #16\n"
+          "str q10, [%[ptr_out]], #16\n"
+          "str q11, [%[ptr_out]], #16\n"
+          "bne    1b\n"
+          : [cnt] "+r"(cnt),
+            [r0] "+r"(ptr_c0),
+            [r1] "+r"(ptr_c1),
+            [r2] "+r"(ptr_c2),
+            [r3] "+r"(ptr_c3),
+            [ptr_out] "+r"(dout)
+          :
+          : "cc", "memory", "v0", "v1", "v2", "v3", "v8", "v9", "v10", "v11");
+#else
+      asm volatile(
+          /* main loop */
+          "1:\n"
+          "vld1.32 {d0-d1},  [%[r0]]!\n"
+          "vld1.32 {d2-d3},  [%[r1]]!\n"
+          "vld1.32 {d4-d5},  [%[r2]]!\n"
+          "vld1.32 {d6-d7},  [%[r3]]!\n"
+          "vtrn.16   q0, q1\n"
+          "vtrn.16   q2, q3\n"
+          "vtrn.32  q0, q2\n"
+          "vtrn.32  q1, q3\n"
+          "vtrn.64  q0, q2\n"
+          "vtrn.64  q1, q3\n"
+          "subs %[cnt], #1\n"
+          "vst1.32 {d0-d3}, [%[ptr_out]]!\n"
+          "vst1.32 {d4-d7}, [%[ptr_out]]!\n"
+          "bne    1b\n"
+          : [cnt] "+r"(cnt),
+            [r0] "+r"(ptr_c0),
+            [r1] "+r"(ptr_c1),
+            [r2] "+r"(ptr_c2),
+            [r3] "+r"(ptr_c3),
+            [ptr_out] "+r"(dout)
+          :
+          : "cc", "memory", "q0", "q1", "q2", "q3");
+#endif  // __aarch64__
+    }
+    for (int i = 0; i < remain; ++i) {
+      dout[0] = *(ptr_c0++);
+      dout[1] = *(ptr_c1++);
+      dout[2] = *(ptr_c2++);
+      dout[3] = *(ptr_c3++);
+      dout += 4;
+    }
+    if (pad_r) {
+      memset(dout, 0, pad_r * 4 * sizeof(float16_t));
+      dout += pad_r * 4;
+    }
+  }
 }
 
 // clang-format off
@@ -599,6 +753,48 @@ inline void prepack_input_nxwc8_fp16_dw(const float16_t* din,
             "v13",
             "v14",
             "v15");
+#else
+      asm volatile(
+          /* main loop */
+          "1:\n"
+          "vld1.32 {d0-d1},  [%[r0]]!\n"
+          "vld1.32 {d2-d3},  [%[r1]]!\n"
+          "vld1.32 {d4-d5},  [%[r2]]!\n"
+          "vld1.32 {d6-d7},  [%[r3]]!\n"
+          "vld1.32 {d8-d9},  [%[r4]]!\n"
+          "vld1.32 {d10-d11},  [%[r5]]!\n"
+          "vld1.32 {d12-d13},  [%[r6]]!\n"
+          "vld1.32 {d14-d15},  [%[r7]]!\n"
+          "vtrn.16   q0, q1\n"
+          "vtrn.16   q2, q3\n"
+          "vtrn.16   q4, q5\n"
+          "vtrn.16   q6, q7\n"
+          "vtrn.32  q0, q2\n"
+          "vtrn.32  q1, q3\n"
+          "vtrn.32  q4, q6\n"
+          "vtrn.32  q5, q7\n"
+          "vtrn.64  q0, q4\n"
+          "vtrn.64  q2, q6\n"
+          "vtrn.64  q1, q5\n"
+          "vtrn.64  q3, q7\n"
+          "subs %[cnt], #1\n"
+          "vst1.32 {d0-d3}, [%[ptr_out]]!\n"
+          "vst1.32 {d4-d7}, [%[ptr_out]]!\n"
+          "vst1.32 {d8-d11}, [%[ptr_out]]!\n"
+          "vst1.32 {d12-d15}, [%[ptr_out]]!\n"
+          "bne    1b\n"
+          : [cnt] "+r"(cnt),
+            [r0] "+r"(ptr_c0),
+            [r1] "+r"(ptr_c1),
+            [r2] "+r"(ptr_c2),
+            [r3] "+r"(ptr_c3),
+            [r4] "+r"(ptr_c4),
+            [r5] "+r"(ptr_c5),
+            [r6] "+r"(ptr_c6),
+            [r7] "+r"(ptr_c7),
+            [ptr_out] "+r"(dout)
+          :
+          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
 #endif  // __aarch64__
     }
     for (int i = 0; i < remain; ++i) {
@@ -624,3 +820,4 @@ inline void prepack_input_nxwc8_fp16_dw(const float16_t* din,
 }  // namespace arm
 }  // namespace lite
 }  // namespace paddle
+
