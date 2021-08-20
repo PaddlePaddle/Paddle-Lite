@@ -40,7 +40,6 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
   auto filter_precison = filter_tensor->precision();
   auto filter_dims = filter_tensor->dims();
   auto output_channel_size = filter_dims[0];
-  auto filter_channel_size = filter_dims[1];
   auto output_name = op->Output("Output").front();
   auto output_scale_name = "Output0_scale";
   std::vector<float> output_scales;
