@@ -15,7 +15,7 @@
 #include <bmcompiler_if.h>
 #include <math.h>
 #include <user_bmcpu_common.h>
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
 

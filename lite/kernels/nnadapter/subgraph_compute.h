@@ -22,7 +22,7 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/core/types.h"
 
 namespace paddle {

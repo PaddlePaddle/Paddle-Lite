@@ -54,80 +54,80 @@ add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc DEPS ${cl_kerne
 # image kernel test  #
 ######################
 lite_cc_test(test_activation_image_opencl SRCS activation_image_compute_test.cc
-             DEPS activation_opencl_image layout_opencl_image op_registry program context)
+             DEPS activation_opencl_image layout_opencl_image core)
 
 lite_cc_test(test_conv_image_opencl SRCS conv_image_compute_test.cc
-             DEPS conv_opencl_image op_registry program context)
+             DEPS conv_opencl_image core)
 
 lite_cc_test(test_depthwise_conv2d_image_opencl SRCS depthwise_conv2d_image_compute_test.cc
-             DEPS conv_opencl_image op_registry program context)
+             DEPS conv_opencl_image core)
 
 lite_cc_test(test_conv_transpose_image_opencl SRCS conv_transpose_image_compute_test.cc
-             DEPS conv_transpose_opencl_image op_registry program context)
+             DEPS conv_transpose_opencl_image core)
 
 lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_test.cc
-             DEPS nearest_interp_opencl_image layout_opencl_image op_registry program context)
+             DEPS nearest_interp_opencl_image layout_opencl_image core)
 
 lite_cc_test(test_pool_image_opencl SRCS pool_image_compute_test.cc
-             DEPS pool_opencl_image op_registry program context)
+             DEPS pool_opencl_image core)
 
 lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
-             DEPS reshape_opencl_image op_registry program context)
+             DEPS reshape_opencl_image core)
 
 lite_cc_test(test_transpose_image_opencl SRCS transpose_image_compute_test.cc
-             DEPS transpose_opencl_image layout_opencl_image op_registry program context)
+             DEPS transpose_opencl_image layout_opencl_image core)
 
 lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
-             DEPS concat_opencl_image layout_opencl_image op_registry program context)
+             DEPS concat_opencl_image layout_opencl_image core)
 
 #lite_cc_test(test_elementwise_mul_image_opencl SRCS elementwise_mul_image_compute_test.cc
-#             DEPS elementwise_mul_opencl_image op_registry program context)
+#             DEPS elementwise_mul_opencl_image core)
 
 lite_cc_test(test_layout_image_opencl SRCS layout_image_compute_test.cc
-             DEPS layout_opencl_image op_registry program context)
+             DEPS layout_opencl_image core)
 
 lite_cc_test(test_pixel_shuffle_image_opencl SRCS pixel_shuffle_image_compute_test.cc
-             DEPS pixel_shuffle_opencl_image op_registry program context)
+             DEPS pixel_shuffle_opencl_image core)
 
 lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
-             DEPS expand_opencl_image op_registry program context)
+             DEPS expand_opencl_image core)
 
 lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
-             DEPS elementwise_add_opencl_image op_registry program context)
+             DEPS elementwise_add_opencl_image core)
 lite_cc_test(test_elementwise_sub_image_opencl SRCS elementwise_sub_image_compute_test.cc
-             DEPS elementwise_sub_opencl_image fusion_elementwise_sub_activation_opencl_image op_registry program context)
+             DEPS elementwise_sub_opencl_image fusion_elementwise_sub_activation_opencl_image core)
 
 lite_cc_test(test_grid_sampler_image_opencl SRCS grid_sampler_image_compute_test.cc
-             DEPS grid_sampler_opencl_image op_registry program context)
+             DEPS grid_sampler_opencl_image core)
 
 lite_cc_test(test_lrn_image_opencl SRCS lrn_image_compute_test.cc
-             DEPS lrn_opencl_image op_registry program context)
+             DEPS lrn_opencl_image core)
 
 lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_compute_test.cc
-             DEPS bilinear_interp_opencl_image op_registry program context)
+             DEPS bilinear_interp_opencl_image core)
 #lite_cc_test(test_slice_image_opencl SRCS slice_image_compute_test.cc
-#             DEPS slice_opencl_image op_registry program context)
+#             DEPS slice_opencl_image core)
 
 #lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
-#             DEPS instance_norm_opencl_image op_registry program context)
+#             DEPS instance_norm_opencl_image core)
 
 lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
-             DEPS dropout_opencl_image op_registry program context)
+             DEPS dropout_opencl_image core)
 
 lite_cc_test(test_pad2d_image_opencl SRCS pad2d_image_compute_test.cc
-             DEPS pad2d_opencl_image layout_opencl_image op_registry program context)
+             DEPS pad2d_opencl_image layout_opencl_image core)
 
 lite_cc_test(test_box_coder_image_opencl SRCS box_coder_image_compute_test.cc
-             DEPS box_coder_opencl_image op_registry program context)
+             DEPS box_coder_opencl_image core)
 
 lite_cc_test(test_trigonometric_image_opencl SRCS trigonometric_image_compute_test.cc
-             DEPS trigonometric_opencl_image op_registry program context)
+             DEPS trigonometric_opencl_image core)
 
 lite_cc_test(test_fc_image_opencl SRCS fc_image_compute_test.cc
-             DEPS fc_opencl_image op_registry program context)
+             DEPS fc_opencl_image core)
 
 lite_cc_test(test_softmax_image_opencl SRCS softmax_image_compute_test.cc
-             DEPS softmax_opencl_image op_registry program context)
+             DEPS softmax_opencl_image core)
 
 ######################
 # buffer kernel      #
@@ -160,31 +160,31 @@ add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc DEPS 
 # buffer kernel test #
 ######################
 #lite_cc_test(test_activation_buffer_opencl SRCS activation_buffer_compute_test.cc
-#             DEPS activation_opencl op_registry program context)
+#             DEPS activation_opencl core)
 
 #lite_cc_test(test_conv_buffer_opencl SRCS conv_buffer_compute_test.cc
-#             DEPS conv_opencl op_registry program context)
+#             DEPS conv_opencl core)
 
 #lite_cc_test(test_im2col_buffer_opencl SRCS im2col_buffer_test.cc
 #             DEPS core cl_context cl_wrapper cl_target_wrapper)
 
 #lite_cc_test(test_depthwise_conv2d_buffer_opencl SRCS depthwise_conv2d_buffer_compute_test.cc
-#             DEPS depthwise_conv2d_opencl op_registry program context)
+#             DEPS depthwise_conv2d_opencl core)
 
 #lite_cc_test(test_pool_buffer_opencl SRCS pool_buffer_compute_test.cc
-#             DEPS pool_opencl op_registry program context)
+#             DEPS pool_opencl core)
 
 #lite_cc_test(test_concat_buffer_opencl SRCS concat_buffer_compute_test.cc
-#             DEPS concat_opencl_buffer op_registry program context)
+#             DEPS concat_opencl_buffer core)
 
 lite_cc_test(test_fc_buffer_opencl SRCS fc_buffer_compute_test.cc
-             DEPS fc_opencl_buffer op_registry program context)
+             DEPS fc_opencl_buffer core)
 
 #lite_cc_test(test_mul_buffer_opencl SRCS mul_buffer_compute_test.cc
-#             DEPS mul_opencl op_registry program context)
+#             DEPS mul_opencl core)
 
 #lite_cc_test(test_elementwise_add_buffer_opencl SRCS elementwise_add__buffer_compute_test.cc
-#             DEPS elementwise_add_opencl op_registry program context)
+#             DEPS elementwise_add_opencl core)
 
 lite_cc_test(test_io_copy_buffer_opencl SRCS io_copy_buffer_compute_test.cc
-             DEPS io_copy_opencl_buffer op_registry program context)
+             DEPS io_copy_opencl_buffer core)

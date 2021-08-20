@@ -19,8 +19,8 @@
 #include <vector>
 #include "lite/backends/imagination_nna/imgdnn_manager.h"
 #include "lite/core/kernel.h"
-#include "lite/core/subgraph_bridge_registry.h"
-#include "lite/core/subgraph_engine_base.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_engine_base.h"
 #include "lite/kernels/imagination_nna/bridges/graph.h"
 
 namespace paddle {
