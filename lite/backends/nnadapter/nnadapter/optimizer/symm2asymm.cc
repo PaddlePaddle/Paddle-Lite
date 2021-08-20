@@ -64,8 +64,8 @@ static void PropagateAsymmZeroPoint(hal::Operand* reference_operand,
   auto& target_type = target_operand->type;
   auto reference_precision = reference_type.precision;
   auto target_precision = target_type.precision;
-  if (IsAsymmPerLayerQuantization(reference_precision) &&
-      IsAsymmPerLayerQuantization(target_precision)) {
+  if (IsAsymmPerLayerQuantType(reference_precision) &&
+      IsAsymmPerLayerQuantType(target_precision)) {
     target_type.asymm_per_layer_params.zero_point =
         reference_type.asymm_per_layer_params.zero_point;
   } else {
