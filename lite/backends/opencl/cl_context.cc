@@ -266,7 +266,6 @@ CLContext::DefaultLocalWorkSize(const cl::NDRange &gws,
     }
     ly_src = (ly_src & 0x01) ? 1 : ly_src >> 1;
   } while (ly_src > 1);
-
   return lws_set;
 }
 
