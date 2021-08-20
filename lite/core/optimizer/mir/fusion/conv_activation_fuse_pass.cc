@@ -102,4 +102,5 @@ REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
     .ExcludeTargets({TARGET(kMLU)})
+    .ExcludeTargets({TARGET(kNNAdapter)})
     .BindKernel("conv2d");
