@@ -30,7 +30,7 @@ static void UnpackConv2D(hal::Model* model, hal::Operation* operation) {
   auto output_count = output_operands.size();
   NNADAPTER_CHECK_EQ(input_count, 9);
   NNADAPTER_CHECK_EQ(output_count, 1);
-  auto fuse_code = reinterpret_cast<int32_t*>(input_operands[9]->buffer);
+  auto fuse_code = reinterpret_cast<int32_t*>(input_operands[8]->buffer);
   auto output_operand = output_operands[0];
   // Unpack RELU6
   if (*fuse_code == NNADAPTER_FUSED_RELU6) {
