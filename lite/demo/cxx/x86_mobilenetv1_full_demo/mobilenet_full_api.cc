@@ -158,6 +158,7 @@ void RunModel(std::string model_dir,
     config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
                              Place{TARGET(kHost), PRECISION(kFloat)}});
     std::cout << "OpenCL is not valid on your device. Fallback to cpu."
+              << std::endl;
   } else {
     // opencl tune option
     // CL_TUNE_NONE: 0

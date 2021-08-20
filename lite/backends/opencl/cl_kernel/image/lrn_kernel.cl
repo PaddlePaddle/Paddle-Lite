@@ -154,6 +154,10 @@ __kernel void lrn(__read_only image2d_t input,
   if (out_c3 < out_C) {
     out_val.w = input.w / (pow(k + alpha * (square1), beta));
   }
-  CL_DTYPE4 out_data = CONVERT_TYPE_TO(out_val, CL_DTYPE4);
+#ifdef CL_DTYPE_half
+  CL_DTYPE4 out_data = convert_half4(out_val);
+#else
+  CL_DTYPE4 out_data = out_val;
+#endif
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos, out_data);
 }

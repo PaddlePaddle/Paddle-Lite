@@ -374,6 +374,45 @@ NNAdapterOperandPrecisionCode Precision2NNAdapterTensorPrecisionCode(
   return precision_code;
 }
 
+NNAdapterOperandPrecisionCode Precision2NNAdapterScalarPrecisionCode(
+    PrecisionType precision) {
+  NNAdapterOperandPrecisionCode precision_code = NNADAPTER_FLOAT32;
+  switch (precision) {
+    case PRECISION(kFloat):
+      precision_code = NNADAPTER_FLOAT32;
+      break;
+    case PRECISION(kInt8):
+      precision_code = NNADAPTER_INT8;
+      break;
+    case PRECISION(kInt32):
+      precision_code = NNADAPTER_INT32;
+      break;
+    case PRECISION(kFP16):
+      precision_code = NNADAPTER_FLOAT16;
+      break;
+    case PRECISION(kBool):
+      precision_code = NNADAPTER_BOOL8;
+      break;
+    case PRECISION(kInt64):
+      precision_code = NNADAPTER_INT64;
+      break;
+    case PRECISION(kInt16):
+      precision_code = NNADAPTER_INT16;
+      break;
+    case PRECISION(kUInt8):
+      precision_code = NNADAPTER_UINT16;
+      break;
+    case PRECISION(kFP64):
+      precision_code = NNADAPTER_FLOAT64;
+      break;
+    default:
+      LOG(FATAL) << "Unsupported data type: "
+                 << lite_api::PrecisionToStr(precision);
+      break;
+  }
+  return precision_code;
+}
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite

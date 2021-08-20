@@ -20,4 +20,5 @@ else ()
 endif ()
 
 add_subdirectory (jit)
+add_subdirectory(fluid)
 add_subdirectory (math)

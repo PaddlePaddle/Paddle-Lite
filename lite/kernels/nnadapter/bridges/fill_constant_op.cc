@@ -35,19 +35,16 @@ NNAdapterOperand* CastInt64OperandToInt32(Converter* converter,
       input_operand = converter->GetOperand(input_name);
     } else {
       input_operand = converter->AddVariableOperand(
-          input_dims,
-          input_name,
-          NNAdapterOperandPrecisionCode::NNADAPTER_TENSOR_INT64);
+          input_dims, input_name, NNADAPTER_TENSOR_INT64);
     }
     auto dtype_operand = converter->AddInt32ConstantOperand(
-        static_cast<int32_t>(NNAdapterOperandPrecisionCode::NNADAPTER_INT32));
+        static_cast<int32_t>(NNADAPTER_INT32));
     output_operand =
         converter->AddInt32VariableOperand(input_dims, output_name);
     std::vector<NNAdapterOperand*> input_operands = {input_operand,
                                                      dtype_operand};
     std::vector<NNAdapterOperand*> output_operands = {output_operand};
-    auto cast_operation = converter->AddOperation(NNADAPTER_CAST);
-    converter->SetOperation(cast_operation, &input_operands, &output_operands);
+    converter->AddOperation(NNADAPTER_CAST, &input_operands, &output_operands);
   }
   return output_operand;
 }
@@ -83,9 +80,8 @@ NNAdapterOperand* ConcatOperands(Converter* converter,
         output_name,
         precision);
     std::vector<NNAdapterOperand*> output_operands = {output_operand};
-    auto concat_operation = converter->AddOperation(NNADAPTER_CONCAT);
-    converter->SetOperation(
-        concat_operation, &input_operands, &output_operands);
+    converter->AddOperation(
+        NNADAPTER_CONCAT, &input_operands, &output_operands);
   }
   return output_operand;
 }
@@ -115,6 +111,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         std::string new_shape_name = shape_name + "_int32";
         shape_operand = CastInt64OperandToInt32(
             converter, scope, shape_name, new_shape_name);
+        break;
       };
       case PRECISION(kInt32): {
         if (converter->HasOperand(shape_name)) {
@@ -123,6 +120,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           shape_operand =
               converter->AddInt32VariableOperand(shape_dims, shape_name);
         }
+        break;
       };
       default:
         LOG(ERROR) << "Unsupported shape data type: "
@@ -189,7 +187,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
              !op_info->GetAttr<std::string>("str_value").empty()) {
     LOG(WARNING) << "Not support str_value now.";
     return FAILED;
-  } else if (op_info->HasInput("value")) {
+  } else if (op_info->HasAttr("value")) {
     float value = op_info->GetAttr<float>("value");
     int dtype = op_info->GetAttr<int>("dtype");
     value_precision = FluidDataType2NNAdapterTensorPrecisionCode(dtype);
@@ -236,8 +234,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {shape_operand,
                                                    value_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto fill_operation = converter->AddOperation(NNADAPTER_FILL);
-  converter->SetOperation(fill_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_FILL, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

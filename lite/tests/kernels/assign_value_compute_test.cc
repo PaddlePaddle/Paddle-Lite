@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 using paddle::lite::core::FluidType;
 
@@ -148,6 +148,8 @@ TEST(AssignValue, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+  // TODO(shentanyue)
+  return;
 #else
   return;
 #endif

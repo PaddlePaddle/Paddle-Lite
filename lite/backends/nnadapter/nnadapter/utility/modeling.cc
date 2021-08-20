@@ -55,26 +55,19 @@ static hal::Operand* AddOperand(hal::Model* model,
     // Quant type
     if (quant_scale_count > 1) {
       // Symmetric per-channel quantization
-      NNADAPTER_CHECK(
-          !zero_point &&
-          (precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
-           precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL));
+      NNADAPTER_CHECK(!zero_point && IsSymmPerChannelQuantType(precision));
       operand->type.symm_per_channel_params.scales = quant_scales;
       operand->type.symm_per_channel_params.scale_count = quant_scale_count;
       operand->type.symm_per_channel_params.channel_dim = quant_channel_dim;
     } else {
       if (zero_point) {
         // Asymmetric per-layer quantization
-        NNADAPTER_CHECK(
-            precision == NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER ||
-            precision == NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER);
+        NNADAPTER_CHECK(IsAsymmPerLayerQuantType(precision));
         operand->type.asymm_per_layer_params.scale = quant_scales[0];
         operand->type.asymm_per_layer_params.zero_point = zero_point[0];
       } else {
         // Symmetric per-layer quantization
-        NNADAPTER_CHECK(
-            precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ||
-            precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER);
+        NNADAPTER_CHECK(IsSymmPerLayerQuantType(precision));
         operand->type.symm_per_layer_params.scale = quant_scales[0];
       }
     }
@@ -83,8 +76,8 @@ static hal::Operand* AddOperand(hal::Model* model,
   }
   if (buffer) {
     // Constant operand
-    operand->length =
-        OperandPrecisionLength(precision) * ProductionOfDimensions(dimensions);
+    operand->length = GetOperandPrecisionDataLength(precision) *
+                      ProductionOfDimensions(dimensions);
     if (copy) {
       operand->buffer = malloc(operand->length);
       NNADAPTER_CHECK(operand->buffer != nullptr)
@@ -358,7 +351,7 @@ NNADAPTER_EXPORT void TransposeOperand(hal::Operand* operand,
     auto transform_buffer = malloc(operand->length);
     NNADAPTER_CHECK(transform_buffer) << "Out of memory!";
     auto dimensions = operand->type.dimensions;
-    int bytes = OperandPrecisionLength(operand->type.precision);
+    int bytes = GetOperandPrecisionDataLength(operand->type.precision);
     switch (bytes) {
       OPERAND_TRANSPOSE_DATA(1, int8_t);
       OPERAND_TRANSPOSE_DATA(2, int16_t);
@@ -550,7 +543,8 @@ NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
       &zero_operand->type, &input_operand->type, sizeof(NNAdapterOperandType));
   zero_operand->type.dimension_count = 1;
   zero_operand->type.dimensions[0] = 1;
-  zero_operand->length = OperandPrecisionLength(zero_operand->type.precision);
+  zero_operand->length =
+      GetOperandPrecisionDataLength(zero_operand->type.precision);
   zero_operand->buffer = malloc(zero_operand->length);
   NNADAPTER_CHECK(zero_operand->buffer != nullptr)
       << "Failed to allocate " << zero_operand->length

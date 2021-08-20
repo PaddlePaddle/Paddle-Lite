@@ -152,29 +152,36 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
-  // ADD, SUB, MUL and DIV operation
+  // ADD, SUB, MUL, DIV, MAX and MIN operation
   std::vector<NNAdapterOperand*> input_operands = {
       input0_operand, input1_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperation* elementwise_operation = nullptr;
+  NNAdapterOperationType eltwise_operation_type;
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {
-    elementwise_operation = converter->AddOperation(NNADAPTER_ADD);
+    eltwise_operation_type = NNADAPTER_ADD;
   } else if (op_type == "elementwise_sub" ||
              op_type == "fusion_elementwise_sub_activation") {
-    elementwise_operation = converter->AddOperation(NNADAPTER_SUB);
+    eltwise_operation_type = NNADAPTER_SUB;
   } else if (op_type == "elementwise_mul" ||
              op_type == "fusion_elementwise_mul_activation") {
-    elementwise_operation = converter->AddOperation(NNADAPTER_MUL);
+    eltwise_operation_type = NNADAPTER_MUL;
   } else if (op_type == "elementwise_div" ||
              op_type == "fusion_elementwise_div_activation") {
-    elementwise_operation = converter->AddOperation(NNADAPTER_DIV);
+    eltwise_operation_type = NNADAPTER_DIV;
+  } else if (op_type == "elementwise_max" ||
+             op_type == "fusion_elementwise_max_activation") {
+    eltwise_operation_type = NNADAPTER_MAX;
+  } else if (op_type == "elementwise_min" ||
+             op_type == "fusion_elementwise_min_activation") {
+    eltwise_operation_type = NNADAPTER_MIN;
   } else {
     LOG(WARNING) << "Unsupported elementwise op type: " << op_type;
     return FAILED;
   }
-  converter->SetOperation(
-      elementwise_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      eltwise_operation_type, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -200,6 +207,14 @@ REGISTER_SUBGRAPH_BRIDGE(
     kNNAdapter,
     paddle::lite::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
+    elementwise_max,
+    kNNAdapter,
+    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    elementwise_min,
+    kNNAdapter,
+    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_add_activation,
     kNNAdapter,
     paddle::lite::subgraph::nnadapter::ElementwiseConverter);
@@ -213,5 +228,13 @@ REGISTER_SUBGRAPH_BRIDGE(
     paddle::lite::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_div_activation,
+    kNNAdapter,
+    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    fusion_elementwise_min_activation,
+    kNNAdapter,
+    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    fusion_elementwise_max_activation,
     kNNAdapter,
     paddle::lite::subgraph::nnadapter::ElementwiseConverter);

@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -385,6 +385,14 @@ TEST(ReduceMean, precision) {
 #endif
 #if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
   place = Place(TARGET(kXPU));
+#endif
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_err = 1e-1;
+#else
+  return;
+#endif
 #endif
   test_reduce_mean(place, abs_err);
 }

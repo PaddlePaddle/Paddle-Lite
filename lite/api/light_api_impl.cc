@@ -84,6 +84,12 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
       raw_predictor_->scope(), config.nnadapter_model_cache_dir());
   Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
       raw_predictor_->scope(), config.nnadapter_model_cache_buffers());
+  Context<TargetType::kNNAdapter>::SetNNAdapterSubgraphPartitionConfigPath(
+      raw_predictor_->scope(),
+      config.nnadapter_subgraph_partition_config_path());
+  Context<TargetType::kNNAdapter>::SetNNAdapterSubgraphPartitionConfigBuffer(
+      raw_predictor_->scope(),
+      config.nnadapter_subgraph_partition_config_buffer());
 #endif
 
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU

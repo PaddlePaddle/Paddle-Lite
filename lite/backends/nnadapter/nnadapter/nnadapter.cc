@@ -20,8 +20,19 @@
 #include "runtime/device.h"
 #include "runtime/execution.h"
 #include "runtime/model.h"
+#include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
+
+#define REGISTER_OPERATION(__op_type__, __func_name__, ...) \
+  extern int __func_name__(nnadapter::hal::Operation* operation);
+namespace nnadapter {
+namespace operation {
+#include "core/operation/all.h"  // NOLINT
+#undef __NNADAPTER_CORE_OPERATION_ALL_H__
+}  // namespace operation
+}  // namespace nnadapter
+#undef REGISTER_OPERATION
 
 #ifdef __cplusplus
 extern "C" {
@@ -182,10 +193,10 @@ NNADAPTER_EXPORT int NNAdapterModel_addOperand(NNAdapterModel* model,
   return result;
 }
 
-NNADAPTER_EXPORT int NNAdapterModel_setOperand(NNAdapterOperand* operand,
-                                               void* buffer,
-                                               uint32_t length,
-                                               bool copy) {
+NNADAPTER_EXPORT int NNAdapterModel_setOperandValue(NNAdapterOperand* operand,
+                                                    void* buffer,
+                                                    uint32_t length,
+                                                    bool copy) {
   if (!operand || !buffer || !length) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -203,32 +214,33 @@ NNADAPTER_EXPORT int NNAdapterModel_setOperand(NNAdapterOperand* operand,
   return NNADAPTER_NO_ERROR;
 }
 
+NNADAPTER_EXPORT int NNAdapterModel_getOperandType(
+    NNAdapterOperand* operand, NNAdapterOperandType** type) {
+  if (!operand || !type) {
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  auto o = reinterpret_cast<nnadapter::hal::Operand*>(operand);
+  *type = &o->type;
+  return NNADAPTER_NO_ERROR;
+}
+
 NNADAPTER_EXPORT int NNAdapterModel_addOperation(
     NNAdapterModel* model,
     NNAdapterOperationType type,
+    uint32_t input_count,
+    NNAdapterOperand** input_operands,
+    uint32_t output_count,
+    NNAdapterOperand** output_operands,
     NNAdapterOperation** operation) {
-  if (!model || !operation) {
+  if (!model || !operation || !output_count || !output_operands) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
   nnadapter::hal::Operation* o = nullptr;
   int result = m->AddOperation(type, &o);
-  if (result == NNADAPTER_NO_ERROR) {
-    *operation = reinterpret_cast<NNAdapterOperation*>(o);
+  if (result != NNADAPTER_NO_ERROR) {
+    return result;
   }
-  return result;
-}
-
-NNADAPTER_EXPORT int NNAdapterModel_setOperation(
-    NNAdapterOperation* operation,
-    uint32_t input_count,
-    NNAdapterOperand** input_operands,
-    uint32_t output_count,
-    NNAdapterOperand** output_operands) {
-  if (!operation) {
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  auto o = reinterpret_cast<nnadapter::hal::Operation*>(operation);
   o->input_operands.resize(input_count);
   for (uint32_t i = 0; i < input_count; i++) {
     o->input_operands[i] =
@@ -239,6 +251,21 @@ NNADAPTER_EXPORT int NNAdapterModel_setOperation(
     o->output_operands[i] =
         reinterpret_cast<nnadapter::hal::Operand*>(output_operands[i]);
   }
+  switch (type) {
+#define REGISTER_OPERATION(__op_type__, __func_name__) \
+  case NNADAPTER_##__op_type__:                        \
+    nnadapter::operation::__func_name__(o);            \
+    break;
+#include "core/operation/all.h"  // NOLINT
+#undef __NNADAPTER_CORE_OPERATION_ALL_H__
+#undef REGISTER_OPERATION
+    default:
+      NNADAPTER_LOG(WARNING) << "Unsupported operation("
+                             << nnadapter::OperationTypeToString(type)
+                             << ") is found.";
+      break;
+  }
+  *operation = reinterpret_cast<NNAdapterOperation*>(o);
   return NNADAPTER_NO_ERROR;
 }
 
@@ -259,7 +286,7 @@ NNADAPTER_EXPORT int NNAdapterModel_identifyInputsAndOutputs(
 
 NNADAPTER_EXPORT int NNAdapterCompilation_create(
     NNAdapterModel* model,
-    const char* cache_key,
+    const char* cache_token,
     void* cache_buffer,
     uint32_t cache_length,
     const char* cache_dir,
@@ -271,7 +298,7 @@ NNADAPTER_EXPORT int NNAdapterCompilation_create(
   auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
   auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
   auto c = new nnadapter::runtime::Compilation(
-      m, cache_key, cache_buffer, cache_length, cache_dir, x);
+      m, cache_token, cache_buffer, cache_length, cache_dir, x);
   if (c == nullptr) {
     *compilation = nullptr;
     return NNADAPTER_OUT_OF_MEMORY;
@@ -334,30 +361,28 @@ NNADAPTER_EXPORT void NNAdapterExecution_destroy(
   }
 }
 
-NNADAPTER_EXPORT int NNAdapterExecution_setInput(NNAdapterExecution* execution,
-                                                 int32_t index,
-                                                 const int32_t* dimensions,
-                                                 uint32_t dimension_count,
-                                                 void* buffer,
-                                                 uint32_t length) {
+NNADAPTER_EXPORT int NNAdapterExecution_setInput(
+    NNAdapterExecution* execution,
+    int32_t index,
+    void* memory,
+    void* (*access)(void* memory, NNAdapterOperandType* type)) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto e = reinterpret_cast<nnadapter::runtime::Execution*>(execution);
-  return e->SetInput(index, dimensions, dimension_count, buffer, length);
+  return e->SetInput(index, memory, access);
 }
 
-NNADAPTER_EXPORT int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
-                                                  int32_t index,
-                                                  const int32_t* dimensions,
-                                                  uint32_t dimension_count,
-                                                  void* buffer,
-                                                  uint32_t length) {
+NNADAPTER_EXPORT int NNAdapterExecution_setOutput(
+    NNAdapterExecution* execution,
+    int32_t index,
+    void* memory,
+    void* (*access)(void* memory, NNAdapterOperandType* type)) {
   if (!execution) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto e = reinterpret_cast<nnadapter::runtime::Execution*>(execution);
-  return e->SetOutput(index, dimensions, dimension_count, buffer, length);
+  return e->SetOutput(index, memory, access);
 }
 
 NNADAPTER_EXPORT int NNAdapterExecution_compute(NNAdapterExecution* execution) {

@@ -108,6 +108,8 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> output_names{};
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
+  std::vector<float> input_data_scales{};
+  std::vector<float> output_data_scales{};
   int block_idx{-1};
   std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
   Scope* exec_scope{nullptr};
@@ -1231,6 +1233,7 @@ struct CompareParam : ParamBase {
   const lite::Tensor* Y{};
   bool force_cpu{0};
   int axis{-1};
+  bool fuse_greater_than{0};
   lite::Tensor* Out{};
 };
 

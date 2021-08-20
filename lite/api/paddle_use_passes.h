@@ -87,6 +87,7 @@ USE_MIR_PASS(ssd_boxes_calc_offline_pass);
 USE_MIR_PASS(fix_mismatched_precision_pass);
 USE_MIR_PASS(lite_flatten_fc_fuse_pass);
 USE_MIR_PASS(lite_fc_prelu_fuse_pass);
+USE_MIR_PASS(lite_greater_than_cast_fuse_pass);
 USE_MIR_PASS(__xpu__graph_dedup_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_cbam_fuse_pass);

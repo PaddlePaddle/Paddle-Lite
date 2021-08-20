@@ -48,19 +48,20 @@ class NNAdapterWrapper final {
   typedef int (*NNAdapterModel_addOperand_fn)(NNAdapterModel* model,
                                               const NNAdapterOperandType* type,
                                               NNAdapterOperand** operand);
-  typedef int (*NNAdapterModel_setOperand_fn)(NNAdapterOperand* operand,
-                                              void* buffer,
-                                              uint32_t length,
-                                              bool copy);
-  typedef int (*NNAdapterModel_addOperation_fn)(NNAdapterModel* model,
-                                                NNAdapterOperationType type,
-                                                NNAdapterOperation** operation);
-  typedef int (*NNAdapterModel_setOperation_fn)(
-      NNAdapterOperation* operation,
+  typedef int (*NNAdapterModel_setOperandValue_fn)(NNAdapterOperand* operand,
+                                                   void* buffer,
+                                                   uint32_t length,
+                                                   bool copy);
+  typedef int (*NNAdapterModel_getOperandType_fn)(NNAdapterOperand* operand,
+                                                  NNAdapterOperandType** type);
+  typedef int (*NNAdapterModel_addOperation_fn)(
+      NNAdapterModel* model,
+      NNAdapterOperationType type,
       uint32_t input_count,
       NNAdapterOperand** input_operands,
       uint32_t output_count,
-      NNAdapterOperand** output_operands);
+      NNAdapterOperand** output_operands,
+      NNAdapterOperation** operation);
   typedef int (*NNAdapterModel_identifyInputsAndOutputs_fn)(
       NNAdapterModel* model,
       uint32_t input_count,
@@ -69,7 +70,7 @@ class NNAdapterWrapper final {
       NNAdapterOperand** output_operands);
   typedef int (*NNAdapterCompilation_create_fn)(
       NNAdapterModel* model,
-      const char* cache_key,
+      const char* cache_token,
       void* cache_buffer,
       uint32_t cache_length,
       const char* cache_dir,
@@ -88,18 +89,16 @@ class NNAdapterWrapper final {
   typedef int (*NNAdapterExecution_create_fn)(NNAdapterCompilation* compilation,
                                               NNAdapterExecution** execution);
   typedef void (*NNAdapterExecution_destroy_fn)(NNAdapterExecution* execution);
-  typedef int (*NNAdapterExecution_setInput_fn)(NNAdapterExecution* execution,
-                                                int32_t index,
-                                                const int32_t* dimensions,
-                                                uint32_t dimension_count,
-                                                void* buffer,
-                                                uint32_t length);
-  typedef int (*NNAdapterExecution_setOutput_fn)(NNAdapterExecution* execution,
-                                                 int32_t index,
-                                                 const int32_t* dimensions,
-                                                 uint32_t dimension_count,
-                                                 void* buffer,
-                                                 uint32_t length);
+  typedef int (*NNAdapterExecution_setInput_fn)(
+      NNAdapterExecution* execution,
+      int32_t index,
+      void* memory,
+      void* (*access)(void* memory, NNAdapterOperandType* type));
+  typedef int (*NNAdapterExecution_setOutput_fn)(
+      NNAdapterExecution* execution,
+      int32_t index,
+      void* memory,
+      void* (*access)(void* memory, NNAdapterOperandType* type));
   typedef int (*NNAdapterExecution_compute_fn)(NNAdapterExecution* execution);
 
 #define NNADAPTER_DECLARE_FUNCTION(name) name##_fn name;
@@ -118,9 +117,9 @@ class NNAdapterWrapper final {
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_destroy)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_finish)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_addOperand)
-  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperand)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperandValue)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_getOperandType)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_addOperation)
-  NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_setOperation)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterModel_identifyInputsAndOutputs)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_create)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_destroy)
@@ -211,29 +210,35 @@ inline int NNAdapterModel_addOperand_invoke(NNAdapterModel* model,
       model, type, operand);
 }
 
-inline int NNAdapterModel_setOperand_invoke(NNAdapterOperand* operand,
-                                            void* buffer,
-                                            uint32_t length,
-                                            bool copy) {
-  return NNAdapterWrapper::Global().NNAdapterModel_setOperand(
+inline int NNAdapterModel_setOperandValue_invoke(NNAdapterOperand* operand,
+                                                 void* buffer,
+                                                 uint32_t length,
+                                                 bool copy) {
+  return NNAdapterWrapper::Global().NNAdapterModel_setOperandValue(
       operand, buffer, length, copy);
 }
 
-inline int NNAdapterModel_addOperation_invoke(NNAdapterModel* model,
-                                              NNAdapterOperationType type,
-                                              NNAdapterOperation** operation) {
-  return NNAdapterWrapper::Global().NNAdapterModel_addOperation(
-      model, type, operation);
+inline int NNAdapterModel_getOperandType_invoke(NNAdapterOperand* operand,
+                                                NNAdapterOperandType** type) {
+  return NNAdapterWrapper::Global().NNAdapterModel_getOperandType(operand,
+                                                                  type);
 }
 
-inline int NNAdapterModel_setOperation_invoke(
-    NNAdapterOperation* operation,
+inline int NNAdapterModel_addOperation_invoke(
+    NNAdapterModel* model,
+    NNAdapterOperationType type,
     uint32_t input_count,
     NNAdapterOperand** input_operands,
     uint32_t output_count,
-    NNAdapterOperand** output_operands) {
-  return NNAdapterWrapper::Global().NNAdapterModel_setOperation(
-      operation, input_count, input_operands, output_count, output_operands);
+    NNAdapterOperand** output_operands,
+    NNAdapterOperation** operation) {
+  return NNAdapterWrapper::Global().NNAdapterModel_addOperation(model,
+                                                                type,
+                                                                input_count,
+                                                                input_operands,
+                                                                output_count,
+                                                                output_operands,
+                                                                operation);
 }
 
 inline int NNAdapterModel_identifyInputsAndOutputs_invoke(
@@ -248,14 +253,14 @@ inline int NNAdapterModel_identifyInputsAndOutputs_invoke(
 
 inline int NNAdapterCompilation_create_invoke(
     NNAdapterModel* model,
-    const char* cache_key,
+    const char* cache_token,
     void* cache_buffer,
     uint32_t cache_length,
     const char* cache_dir,
     NNAdapterContext* context,
     NNAdapterCompilation** compilation) {
   return NNAdapterWrapper::Global().NNAdapterCompilation_create(model,
-                                                                cache_key,
+                                                                cache_token,
                                                                 cache_buffer,
                                                                 cache_length,
                                                                 cache_dir,
@@ -293,24 +298,22 @@ inline void NNAdapterExecution_destroy_invoke(NNAdapterExecution* execution) {
   NNAdapterWrapper::Global().NNAdapterExecution_destroy(execution);
 }
 
-inline int NNAdapterExecution_setInput_invoke(NNAdapterExecution* execution,
-                                              int32_t index,
-                                              const int32_t* dimensions,
-                                              uint32_t dimension_count,
-                                              void* buffer,
-                                              uint32_t length) {
+inline int NNAdapterExecution_setInput_invoke(
+    NNAdapterExecution* execution,
+    int32_t index,
+    void* memory,
+    void* (*access)(void* memory, NNAdapterOperandType* type)) {
   return NNAdapterWrapper::Global().NNAdapterExecution_setInput(
-      execution, index, dimensions, dimension_count, buffer, length);
+      execution, index, memory, access);
 }
 
-inline int NNAdapterExecution_setOutput_invoke(NNAdapterExecution* execution,
-                                               int32_t index,
-                                               const int32_t* dimensions,
-                                               uint32_t dimension_count,
-                                               void* buffer,
-                                               uint32_t length) {
+inline int NNAdapterExecution_setOutput_invoke(
+    NNAdapterExecution* execution,
+    int32_t index,
+    void* memory,
+    void* (*access)(void* memory, NNAdapterOperandType* type)) {
   return NNAdapterWrapper::Global().NNAdapterExecution_setOutput(
-      execution, index, dimensions, dimension_count, buffer, length);
+      execution, index, memory, access);
 }
 
 inline int NNAdapterExecution_compute_invoke(NNAdapterExecution* execution) {

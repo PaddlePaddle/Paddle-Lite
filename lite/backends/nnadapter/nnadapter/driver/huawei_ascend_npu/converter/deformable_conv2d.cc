@@ -100,12 +100,10 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-
   auto offset_operator = GetMappedOperator(offset_operand);
   if (!offset_operator) {
     offset_operator = ConvertOperand(offset_operand);
   }
-
   auto mask_operator = GetMappedOperator(mask_operand);
   if (!mask_operator) {
     mask_operator = ConvertOperand(mask_operand);
