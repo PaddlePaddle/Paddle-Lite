@@ -123,7 +123,7 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   unsigned int pad_to_end[2] = {static_cast<unsigned int>(pad_height_bottom),
                                 static_cast<unsigned int>(pad_width_right)};
   NNADAPTER_CHECK(
-      IsUInt8AsymmPerLayerQuantization(output_operand->type.precision));
+      IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));
   imgdnn_quant_param output_quant_param;
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =

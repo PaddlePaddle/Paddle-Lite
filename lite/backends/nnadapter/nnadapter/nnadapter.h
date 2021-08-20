@@ -19,6 +19,7 @@
 #include <sys/cdefs.h>
 
 enum { NNADAPTER_VERSION = 1 };
+enum { NNADAPTER_UNKNOWN = -1 };
 
 /**
  * Result codes.
@@ -34,6 +35,7 @@ typedef enum {
 } NNAdapterResultCode;
 
 enum { NNADAPTER_MAX_SIZE_OF_DIMENSIONS = 8 };
+enum { NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS = 8 };
 
 /**
  * Operand precision codes.
@@ -72,7 +74,8 @@ typedef enum {
   NNADAPTER_TENSOR_FLOAT32 = 22,
   NNADAPTER_TENSOR_FLOAT64 = 23,
   /**
-   * A tensor of 8 bit signed integers that represent real numbers.
+   * A tensor of 8/16/32 bit signed/unsigned integers that represent real
+   * numbers.
    * - scale: a 32 bit floating point value greater than zero.
    *
    * The formula is:
@@ -81,9 +84,12 @@ typedef enum {
   NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER = 24,
   NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL = 25,
   NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER = 26,
-  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER = 27,
-  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL = 28,
-  NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER = 29,
+  NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER = 27,
+  NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL = 28,
+  NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER = 29,
+  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER = 30,
+  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL = 31,
+  NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER = 32,
 } NNAdapterOperandPrecisionCode;
 
 /**
@@ -1219,9 +1225,23 @@ typedef struct NNAdapterOperandType {
 
   /**
    * The dimensions of the tensor.
-   * -1 means Any for supporting dynamic shape.
+   * Use NNADAPTER_UNKNOWN for dynamic shape.
    */
   int32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+
+  /**
+   * The gear count of dynamic dimensions.
+   *
+   */
+  uint32_t dynamic_dimension_count;
+
+  /**
+   * The dynamic dimensions of the tensor.
+   * Should not contains NNADAPTER_UNKNOWN because it requires the real
+   * dimensions.
+   */
+  int32_t dynamic_dimensions[NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS]
+                            [NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
 
   /**
    * The quantization parameters.
@@ -1383,28 +1403,30 @@ int NNAdapterModel_addOperand(NNAdapterModel* model,
  *
  * Available since version 1.
  */
-int NNAdapterModel_setOperand(NNAdapterOperand* operand,
-                              void* buffer,
-                              uint32_t length,
-                              bool copy);
+int NNAdapterModel_setOperandValue(NNAdapterOperand* operand,
+                                   void* buffer,
+                                   uint32_t length,
+                                   bool copy);
 /**
- * Add an operation to a model.
+ * Get the type of an operand.
+ *
+ * Available since version 1.
+ */
+int NNAdapterModel_getOperandType(NNAdapterOperand* operand,
+                                  NNAdapterOperandType** type);
+/**
+ * Add an operation to a model, and set the input and output operands of the
+ * specified operation.
  *
  * Available since version 1.
  */
 int NNAdapterModel_addOperation(NNAdapterModel* model,
                                 NNAdapterOperationType type,
-                                NNAdapterOperation** operation);
-/**
- * Set the input and output operands of the specified operation.
- *
- * Available since version 1.
- */
-int NNAdapterModel_setOperation(NNAdapterOperation* operation,
                                 uint32_t input_count,
                                 NNAdapterOperand** input_operands,
                                 uint32_t output_count,
-                                NNAdapterOperand** output_operands);
+                                NNAdapterOperand** output_operands,
+                                NNAdapterOperation** operation);
 /**
  * Indentify the input and output operands of the specified model.
  *

@@ -15,7 +15,9 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
+#include <vector>
 #include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
@@ -46,7 +48,7 @@ struct NodeInfo {
 
 class FpgaConcatFuser : public FuseBase {
  public:
-  explicit FpgaConcatFuser() {}
+  FpgaConcatFuser() {}
   size_t operator()(SSAGraph* graph);
   // pure virtual function must has implementation although it is useless here
   void BuildPattern() override{};
@@ -54,17 +56,17 @@ class FpgaConcatFuser : public FuseBase {
 
  private:
   std::vector<std::vector<NodeInfo>> PatternMatch(SSAGraph* graph);
-  void ExtractInputsOutputs(std::vector<NodeInfo>& patterns,
+  void ExtractInputsOutputs(const std::vector<NodeInfo>& patterns,
                             std::set<Node*>* input_var_nodes,
                             std::set<Node*>* weight_var_nodes,
                             std::set<Node*>* output_var_nodes);
   void InsertNewNode(SSAGraph* graph,
-                     std::vector<std::vector<NodeInfo>>& patterns);
+                     const std::vector<std::vector<NodeInfo>>& patterns);
   void DeleteInterNodes(SSAGraph* graph,
-                        std::vector<std::vector<NodeInfo>>& patterns);
+                        const std::vector<std::vector<NodeInfo>>& patterns);
   std::vector<std::vector<NodeInfo>> select_candidate(
       std::vector<NodeInfo> subgraph);
-  void fuse_accumulate(std::vector<std::vector<NodeInfo>>& groups);
+  void fuse_accumulate(std::vector<std::vector<NodeInfo>>* groups);
   bool enable_fuse(Node* varnode);
   int enable_jump(Node* opnode);
   std::string DebugPatternInfo(const std::vector<NodeInfo>& pattern);

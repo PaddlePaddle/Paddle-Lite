@@ -72,8 +72,7 @@ int ShapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Shape operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto shape_operation = converter->AddOperation(NNADAPTER_SHAPE);
-  converter->SetOperation(shape_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_SHAPE, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
