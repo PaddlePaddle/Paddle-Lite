@@ -22,7 +22,7 @@ namespace nnadapter {
 namespace imagination_nna {
 
 int Program::ConvertPool2D(hal::Operation* operation) {
-  POOL2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to imgdnn tensors and operators
   auto input_tensor = GetMappedTensor(input_operand);

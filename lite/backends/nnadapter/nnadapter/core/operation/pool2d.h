@@ -17,7 +17,7 @@
 namespace nnadapter {
 namespace operation {
 
-#define POOL2D_OPERATION_EXTRACT_INPUTS_OUTPUTS                                \
+#define POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS                               \
   auto& input_operands = operation->input_operands;                            \
   auto& output_operands = operation->output_operands;                          \
   auto input_count = input_operands.size();                                    \

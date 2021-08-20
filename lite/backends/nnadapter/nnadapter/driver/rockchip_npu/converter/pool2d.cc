@@ -21,7 +21,7 @@ namespace nnadapter {
 namespace rockchip_npu {
 
 int ConvertPool2D(Converter* converter, hal::Operation* operation) {
-  POOL2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to rknpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);

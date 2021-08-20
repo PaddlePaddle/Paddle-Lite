@@ -21,7 +21,7 @@ namespace nnadapter {
 namespace huawei_kirin_npu {
 
 int Program::ConvertPool2D(hal::Operation* operation) {
-  POOL2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);

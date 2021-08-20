@@ -21,7 +21,7 @@ namespace nnadapter {
 namespace mediatek_apu {
 
 int Program::ConvertPool2D(hal::Operation* operation) {
-  POOL2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
   auto input_index = GetMappedIndex(input_operand);
