@@ -53,4 +53,8 @@ REGISTER_LITE_KERNEL(write_to_array,
                 {LiteType::GetTensorListTy(TARGET(kHost),
                                            PRECISION(kAny),
                                            DATALAYOUT(kAny))})
+    .BindOutput("FakeAssociatedOut",
+                {LiteType::GetTensorListTy(TARGET(kHost),
+                                           PRECISION(kAny),
+                                           DATALAYOUT(kAny))})
     .Finalize();
