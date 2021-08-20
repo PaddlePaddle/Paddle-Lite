@@ -28,6 +28,13 @@ v8sf pow256_ps(v8sf x, v8sf y);
 v8sf sin256_ps(v8sf x);
 v8sf cos256_ps(v8sf x);
 void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
+
+#ifndef __AVX2__
+#define _mm256_permutevar8x32_ps(a, b)  _mm256_setr_ps(*((float*)(&a) + *((int*)(&b))), *((float*)(&a) + *((int*)(&b) + 1)), \
+                                                        *((float*)(&a) + *((int*)(&b) + 2)), *((float*)(&a) + *((int*)(&b) + 3)), \
+                                                        *((float*)(&a) + *((int*)(&b) + 4)), *((float*)(&a) + *((int*)(&b) + 5)), \
+                                                        *((float*)(&a) + *((int*)(&b) + 6)), *((float*)(&a) + *((int*)(&b) + 7)))
+#endif
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

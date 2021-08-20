@@ -15,6 +15,7 @@
 #include "lite/kernels/x86/conv_depthwise.h"
 #include "lite/backends/x86/math/conv_depthwise_pack4.h"
 #include "lite/backends/x86/math/conv_depthwise_pack8.h"
+#include "lite/backends/x86/math/conv_depthwise_direct.h"
 #include "lite/backends/x86/math/conv_utils.h"
 
 namespace paddle {
@@ -31,6 +32,40 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   CHECK_EQ(input_dims.size(), 4UL);
   int batch_size = param.x->dims()[0];
   int input_channel = param.x->dims()[1];
+
+  if ((*param.paddings)[0] == 1) {
+    const auto* i_data = param.x->data<float>();
+    const auto* w_data = param.filter->data<float>();
+    const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+    auto* o_data = param.output->mutable_data<float>();
+
+    auto x_dims = param.x->dims();
+    auto w_dims = param.filter->dims();
+    auto o_dims = param.output->dims();
+
+    int iw = x_dims[3];
+    int ih = x_dims[2];
+    int ic = x_dims[1];
+    int bs = x_dims[0];
+    int oh = o_dims[2];
+    int ow = o_dims[3];
+    int oc = o_dims[1];
+
+    lite::x86::math::conv_depthwise_direct(i_data,
+                                            o_data,
+                                            bs,
+                                            oc,
+                                            oh,
+                                            ow,
+                                            ic,
+                                            ih,
+                                            iw,
+                                            w_data,
+                                            b_data,
+                                            param);
+    KERNEL_FUNC_NAME("conv_depthwise_direct")
+    return;
+  }
 
   const int pack_size =
       input_channel % 8 == 0 ? 8 : input_channel % 4 == 0 ? 4 : 1;
