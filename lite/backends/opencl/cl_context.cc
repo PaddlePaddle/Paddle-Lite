@@ -269,7 +269,7 @@ CLContext::DefaultLocalWorkSize(const cl::NDRange &gws,
   } while (ly_src > 1);
   if (tune_type == lite_api::CL_TUNE_NONE && lws_set.empty()) {
     lws_set.insert(
-          (reverse ? cl::NDRange{lz, ly, lx} : cl::NDRange{lx, ly, lz}));
+        (reverse ? cl::NDRange{lz, ly, lx} : cl::NDRange{lx, ly, lz}));
   }
   return lws_set;
 }
