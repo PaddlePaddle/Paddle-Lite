@@ -37,7 +37,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     // fp32 is two time longer than that under fp16.
     // So here we set thres_k higher as speed is the hightest priority by
     // default.
-    const int thres_k{1024};
+    const int thres_k = 1024;
     bool precision_forced_to_fp32 = false;
     const bool enable_fp16 =
         CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
