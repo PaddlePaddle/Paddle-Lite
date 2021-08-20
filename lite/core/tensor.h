@@ -24,6 +24,11 @@
 #include "lite/backends/metal/target_wrapper.h"
 #endif  // LITE_WITH_METAL
 
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#include "lite/backends/xpu/xpu_buffer.h"
+#endif  // LITE_WITH_XPU
+
 #include <algorithm>
 #include <functional>  // for multiplies
 #include <memory>
@@ -46,7 +51,7 @@ using LoD = std::vector<std::vector<uint64_t>>;
 // A light-weight tensor implementation.
 class TensorLite {
  public:
-  TensorLite() : buffer_(std::make_shared<Buffer>()) {}
+  TensorLite() {}
   explicit TensorLite(std::shared_ptr<Buffer> buffer) : buffer_(buffer) {}
 
   template <typename DType, typename DimT, TargetType Target>
@@ -57,60 +62,12 @@ class TensorLite {
         dst, data, dim.production() * sizeof(DType), IoDirection::HtoD);
   }
 
-#ifdef LITE_WITH_XPU
-  template <typename R>
-  const R *get_xpu_data() const {
-    if (target_ != TargetType::kXPU) {
-      LOG(FATAL) << "Wrong Target: kXPU";
-    }
-    if (xpu_l3_cache_block_ != nullptr &&
-        xpu_l3_cache_block_->in_use_ == true) {
-      return reinterpret_cast<const R *>(
-          static_cast<char *>(xpu_l3_cache_block_->data()) + offset_);
-    } else {
-      return reinterpret_cast<const R *>(static_cast<char *>(buffer_->data()) +
-                                         offset_);
-    }
-  }
-
-  template <typename R>
-  R *get_xpu_mutable_data() {
-    if (target_ != TargetType::kXPU) {
-      LOG(FATAL) << "Wrong Target: kXPU";
-    }
-    if (xpu_l3_cache_block_ == nullptr) {
-      return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
-                                   offset_);
-    } else {
-      xpu_l3_cache_block_->record(memory_size_);
-      if (memory_size_ <= xpu_l3_cache_block_->size()) {
-        VLOG(4) << "TRUE, Acquire Size is " << memory_size_ << ", L3 Size is "
-                << xpu_l3_cache_block_->size();
-        xpu_l3_cache_block_->in_use_ = true;
-        return reinterpret_cast<R *>(
-            static_cast<char *>(xpu_l3_cache_block_->data()) + offset_);
-      } else {
-        VLOG(4) << "False, Acquire Size is " << memory_size_ << ", L3 Size is "
-                << xpu_l3_cache_block_->size();
-        xpu_l3_cache_block_->in_use_ = false;
-        return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
-                                     offset_);
-      }
-    }
-  }
-#endif
-
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   const R *data() const {
-#ifdef LITE_WITH_XPU
-    if (target_ == TargetType::kXPU) {
-      return get_xpu_data<R>();
-    }
-#endif
     return reinterpret_cast<const R *>(static_cast<char *>(buffer_->data()) +
                                        offset_);
   }
@@ -137,14 +94,15 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   R *mutable_data() {
+    if(!buffer_) {
+      if(target_ == TargetType::kXPU) 
+        buffer_.reset(new lite::xpu::XPUBuffer());
+      else
+        buffer_.reset(new Buffer());
+    }
     precision_ = lite_api::PrecisionTypeTrait<T>::Type();
     memory_size_ = dims_.production() * sizeof(T);
     buffer_->ResetLazy(target_, memory_size_);
-#ifdef LITE_WITH_XPU
-    if (target_ == TargetType::kXPU) {
-      return get_xpu_mutable_data<R>();
-    }
-#endif
     return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
                                  offset_);
   }
@@ -208,13 +166,14 @@ class TensorLite {
   R *mutable_data(TargetType target, size_t memory_size) {
     precision_ = lite_api::PrecisionTypeTrait<T>::Type();
     memory_size_ = memory_size;
-    buffer_->ResetLazy(target, memory_size_);
     target_ = target;
-#ifdef LITE_WITH_XPU
-    if (target_ == TargetType::kXPU) {
-      return get_xpu_mutable_data<R>();
+    if(!buffer_) {
+      if(target_ == TargetType::kXPU) 
+        buffer_.reset(new lite::xpu::XPUBuffer());
+      else
+        buffer_.reset(new Buffer());
     }
-#endif
+    buffer_->ResetLazy(target, memory_size_);
     return reinterpret_cast<R *>(static_cast<char *>(buffer_->data()) +
                                  offset_);
   }
@@ -223,22 +182,11 @@ class TensorLite {
   void *mutable_data(TargetType target, size_t memory_size);
 
   const void *raw_data() const {
-#ifdef LITE_WITH_XPU
-    if (target_ == TargetType::kXPU) {
-      return get_xpu_data<char>();
-    }
-#endif
     return static_cast<char *>(
         (static_cast<char *>(buffer_->data()) + offset_));
   }
 
   void *raw_data() {
-#ifdef LITE_WITH_XPU
-    if (target_ == TargetType::kXPU) {
-      return const_cast<void *>(
-          reinterpret_cast<const void *>(get_xpu_data<char>()));
-    }
-#endif
     return static_cast<char *>(
         (static_cast<char *>(buffer_->data()) + offset_));
   }
@@ -277,18 +225,6 @@ class TensorLite {
     return os;
   }
 
-  void SetXPUL3CacheBlock(std::string tensor_name) {
-    if (lite::TargetWrapperXPU::l3_block_dict.count(tensor_name)) {
-      XPUL3CacheBlock *block_ptr_ =
-          &lite::TargetWrapperXPU::l3_block_dict[tensor_name];
-      if (xpu_l3_cache_block_ != nullptr && xpu_l3_cache_block_ != block_ptr_) {
-        LOG(FATAL) << "Two Different Tensor Map to the same L3 Cache";
-      } else {
-        xpu_l3_cache_block_ = block_ptr_;
-      }
-    }
-  }
-
  private:
   TargetType target_{TargetType::kHost};
   // precision_ and persistable_ are only used for persistable vars.
@@ -300,14 +236,13 @@ class TensorLite {
   bool persistable_{false};
 
   DDimLite dims_;
-  std::shared_ptr<Buffer> buffer_;
+  std::shared_ptr<Buffer> buffer_{nullptr};
   LoD lod_;
   size_t memory_size_{};
 
   /// @brief Buffer may be shared with other tensors
   size_t offset_{0};
 
-  XPUL3CacheBlock *xpu_l3_cache_block_{nullptr};
 };
 
 template <typename T>

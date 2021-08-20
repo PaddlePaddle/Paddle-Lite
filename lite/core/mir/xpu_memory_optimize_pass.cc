@@ -298,91 +298,6 @@ void XPUMemoryOptimizePass::MakeReusePlan(
   }
 }
 
-void XPUMemoryOptimizePass::PerformReusePlan(
-    SSAGraph* graph, const std::map<std::string, std::string>& reuse_table) {
-  int node_append_idx = 0;
-  for (auto& op_node : graph->StmtTopologicalOrder()) {
-    if (!op_node->IsStmt()) continue;
-    auto& stmt = op_node->AsStmt();
-    auto* op_info = stmt.mutable_op_info();
-    auto* scope = stmt.op()->scope();
-    std::map<std::string, std::vector<std::string>> in_args, out_args;
-    // replace the op's input according the reuse table.
-    for (auto argument : op_info->inputs()) {
-      for (const auto& x : argument.second) {
-        auto name = x;
-        if (reuse_table.count(x) && reuse_table.at(x) != x) {
-          name = reuse_table.at(x);
-        }
-        if (reuse_table.count(x) && reuse_table.at(x) == x) {
-          auto* reuse_tensor = scope->FindMutableTensor(x);
-          reuse_tensor->SetXPUL3CacheBlock(x);
-        }
-        in_args[argument.first].push_back(name);
-        VLOG(4) << op_info->Type() << " input " << x << " -> " << name;
-      }
-    }
-
-    // modify the graph
-    for (Node* input_node : op_node->inlinks) {
-      CHECK(input_node->IsArg()) << "The op node's inputs should be var node.";
-      std::string name = input_node->AsArg().name;
-      if (reuse_table.count(name) && reuse_table.at(name) != name) {
-        auto replace_name = reuse_table.at(name);
-        input_node->AsArg().name =
-            replace_name + "(" + paddle::lite::to_string(node_append_idx) + ")";
-        node_append_idx++;
-      }
-    }
-
-    // replace the op's output according the reuse table.
-    for (auto argument : op_info->outputs()) {
-      for (const auto& x : argument.second) {
-        auto name = x;
-        if (reuse_table.count(x) && reuse_table.at(x) != x) {
-          name = reuse_table.at(x);
-        }
-        if (reuse_table.count(x) && reuse_table.at(x) == x) {
-          auto* reuse_tensor = scope->FindMutableTensor(x);
-          reuse_tensor->SetXPUL3CacheBlock(x);
-        }
-        out_args[argument.first].push_back(name);
-        VLOG(4) << op_info->Type() << " output " << x << " -> " << name;
-      }
-    }
-
-    // modify the graph
-    for (Node* out_node : op_node->outlinks) {
-      CHECK(out_node->IsArg()) << "The op node's outputs should be var node.";
-      std::string name = out_node->AsArg().name;
-      if (reuse_table.count(name) && reuse_table.at(name) != name) {
-        auto replace_name = reuse_table.at(name);
-        out_node->AsArg().name =
-            replace_name + "(" + paddle::lite::to_string(node_append_idx) + ")";
-        node_append_idx++;
-      }
-    }
-
-    for (auto& arg : in_args) {
-      op_info->SetInput(arg.first, arg.second);
-    }
-    for (auto& arg : out_args) {
-      op_info->SetOutput(arg.first, arg.second);
-    }
-
-    auto original_selected_kernel = std::move(stmt.kernels().front());
-    auto updated_op_info = *stmt.mutable_op_info();
-    stmt.ResetOp(updated_op_info, graph->valid_places());
-    stmt.kernels().clear();
-    stmt.kernels().emplace_back(std::move(original_selected_kernel));
-    for (auto& kernel : stmt.kernels()) {
-      VLOG(4) << "kernel info: " << kernel->name();
-      stmt.op()->AttachKernel(kernel.get());
-    }
-    graph->CheckValid();
-  }
-}
-
 void XPUMemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // const char* xpu_mem_optimize = std::getenv("XPU_MEMORY_OPTIMIZE");
   // if (xpu_mem_optimize == nullptr || std::strlen(xpu_mem_optimize) != 1 ||
@@ -408,7 +323,6 @@ void XPUMemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     }
     std::map<std::string, std::string> node2cluster;
     MakeReusePlan(ele.second, &node2cluster);
-    PerformReusePlan(graph.get(), node2cluster);
   }
 }
 

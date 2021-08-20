@@ -45,8 +45,6 @@ class XPUMemoryOptimizePass : public ProgramPass {
       std::map<std::string, lifecycle_map_t>* lifecycles, SSAGraph*);
   void MakeReusePlan(const lifecycle_map_t& lifecycles,
                      std::map<std::string, std::string>* node2cluster);
-  void PerformReusePlan(SSAGraph* graph,
-                        const std::map<std::string, std::string>& reuse_table);
 
  private:
   int max_lifecycle_{-1};

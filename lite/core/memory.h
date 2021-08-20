@@ -130,12 +130,12 @@ class Buffer {
   Buffer(void* data, TargetType target, size_t size)
       : space_(size), data_(data), own_data_(false), target_(target) {}
 
-  void* data() const { return data_; }
+  virtual void* data() const { return data_; }
   TargetType target() const { return target_; }
   size_t space() const { return space_; }
   bool own_data() const { return own_data_; }
 
-  void ResetLazy(TargetType target, size_t size) {
+  virtual void ResetLazy(TargetType target, size_t size) {
     if (target != target_ || space_ < size) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       Free();
@@ -224,7 +224,7 @@ class Buffer {
     TargetCopy(target_, data_, other.data_, nbytes);
   }
 
-  ~Buffer() { Free(); }
+  virtual ~Buffer() { Free(); }
 
   Buffer() = default;
   Buffer(const Buffer&) = delete;
@@ -232,7 +232,6 @@ class Buffer {
 
  private:
   // memory it actually malloced.
-  size_t space_{0};
   bool cl_use_image2d_{false};   // only used for OpenCL Image2D
   size_t cl_image2d_width_{0};   // only used for OpenCL Image2D
   size_t cl_image2d_height_{0};  // only used for OpenCL Image2D
@@ -245,6 +244,8 @@ class Buffer {
   bool pad_when_one_c_{false};
   std::vector<int> image_transpose_;
 
+protected:
+  size_t space_{0};
   void* data_{nullptr};
   bool own_data_{true};
   TargetType target_{TargetType::kHost};
