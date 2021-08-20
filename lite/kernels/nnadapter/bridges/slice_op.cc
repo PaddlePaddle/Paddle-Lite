@@ -105,9 +105,7 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand, axes_operand, starts_operand, ends_operand, steps_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* slice_operation =
-      converter->AddOperation(NNADAPTER_SLICE);
-  converter->SetOperation(slice_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_SLICE, &input_operands, &output_operands);
 
   // Use squeeze to process decrease_axis(attr)
   if (!decrease_axis.empty()) {
@@ -121,9 +119,8 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         output_operand, squeeze_axes_operand};
     std::vector<NNAdapterOperand*> squeeze_output_operands = {
         squeeze_output_operand};
-    auto squeeze_operation = converter->AddOperation(NNADAPTER_SQUEEZE);
-    converter->SetOperation(
-        squeeze_operation, &squeeze_input_operands, &squeeze_output_operands);
+    converter->AddOperation(
+        NNADAPTER_SQUEEZE, &squeeze_input_operands, &squeeze_output_operands);
   }
 
   return REBUILD_WHEN_SHAPE_CHANGED;
