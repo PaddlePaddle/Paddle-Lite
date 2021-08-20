@@ -76,9 +76,8 @@ int TransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Reshape operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand, perm_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto transpose_operation = converter->AddOperation(NNADAPTER_TRANSPOSE);
-  converter->SetOperation(
-      transpose_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_TRANSPOSE, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

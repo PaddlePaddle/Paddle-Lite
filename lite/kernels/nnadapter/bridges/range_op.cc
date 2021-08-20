@@ -72,9 +72,7 @@ int RangeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {
       start_operand, ends_operand, step_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* range_operation =
-      converter->AddOperation(NNADAPTER_RANGE);
-  converter->SetOperation(range_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_RANGE, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

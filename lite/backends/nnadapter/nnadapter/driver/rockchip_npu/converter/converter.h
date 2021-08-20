@@ -23,44 +23,23 @@
 namespace nnadapter {
 namespace rockchip_npu {
 
-class Device {
+class Converter {
  public:
-  Device() {}
-  ~Device() {}
-};
+  explicit Converter(
+      rk::nn::Graph* graph,
+      std::map<hal::Operand*, std::vector<std::shared_ptr<rk::nn::Tensor>>>*
+          tensors)
+      : graph_(graph), tensors_(tensors) {}
+  ~Converter() {}
 
-class Context {
- public:
-  explicit Context(void* device, const char* properties);
-  ~Context();
-
- private:
-  void* device_{nullptr};
-  void* context_{nullptr};
-};
-
-class Program {
- public:
-  explicit Program(Context* context) : context_(context) {}
-  ~Program();
-
-  int Build(hal::Model* model, hal::Cache* cache);
-  int Execute(uint32_t input_count,
-              hal::Argument* input_arguments,
-              uint32_t output_count,
-              hal::Argument* output_arguments);
-
- private:
-  void Clear();
-  // Build from model or cache
-  int BuildFromModel(hal::Model* model);
-  int BuildFromCache(hal::Cache* cache);
-
-  // Operand converters
+  // Convert a NNAdapter model to rknn graph and tensors
+  int Apply(hal::Model* model);
+  // Mapping a rknn tensor to a NNAdapter operand
   std::string GetTensorName(hal::Operand* operand);
   std::shared_ptr<rk::nn::Tensor> GetMappedTensor(hal::Operand* operand);
   std::shared_ptr<rk::nn::Tensor> UpdateTensorMap(
       hal::Operand* operand, std::shared_ptr<rk::nn::Tensor> tensor);
+  // Create and add a named or anonymous rknn tensor into the tensor pool
   std::shared_ptr<rk::nn::Tensor> AddTensor(
       const std::string& name,
       int32_t* dimensions,
@@ -109,31 +88,21 @@ class Program {
       uint32_t dimension_count,
       float quant_scale,
       int32_t zero_point);
+  // Convert a NNAdapter operand to a rknn tensor
   std::shared_ptr<rk::nn::Tensor> ConvertOperand(
       hal::Operand* operand, std::vector<int32_t> dimensions = {});
-
-  // Operation converters
-  int ConvertConv2D(hal::Operation* operation);
-  int ConvertFullyConnected(hal::Operation* operation);
-  int ConvertPool2D(hal::Operation* operation);
-  int ConvertElementwise(hal::Operation* operation);
-  int ConvertSoftmax(hal::Operation* operation);
-  int ConvertActivation(hal::Operation* operation);
-  int ConvertReshape(hal::Operation* operation);
-  int ConvertTranspose(hal::Operation* operation);
-  int ConvertConcat(hal::Operation* operation);
+  // Add a rknn operator into rknn graph
+  std::shared_ptr<rk::nn::Operator> AddOperator(
+      rk::nn::OperatorType type,
+      std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors,
+      std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors,
+      void* attrs,
+      std::string name = "");
 
  private:
-  Context* context_{nullptr};
-  // Map NNAdapter operand to rknpu tensor
-  std::map<hal::Operand*, std::vector<std::shared_ptr<rk::nn::Tensor>>>
+  rk::nn::Graph* graph_{nullptr};
+  std::map<hal::Operand*, std::vector<std::shared_ptr<rk::nn::Tensor>>>*
       tensors_;
-  std::shared_ptr<rk::nn::Graph> graph_{nullptr};
-  std::shared_ptr<rk::nn::Exection> execution_{nullptr};
-  std::vector<NNAdapterOperandType> input_types_;
-  std::vector<NNAdapterOperandType> output_types_;
-  std::string dump_graph_path_;
-  std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };
 
 }  // namespace rockchip_npu

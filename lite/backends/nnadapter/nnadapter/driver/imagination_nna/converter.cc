@@ -179,7 +179,7 @@ int Program::Execute(uint32_t input_count,
     }
     auto device_ptr = imgdnn_mgr_.LockMemory(input_memory.first,
                                              IMGDNN_LOCK_ACCESS_WRITE_ONLY);
-    if (IsUInt8AsymmPerLayerQuantization(type->precision)) {
+    if (IsUInt8AsymmPerLayerQuantType(type->precision)) {
       Symm2AsymmData(reinterpret_cast<const int8_t*>(host_ptr),
                      length,
                      type->asymm_per_layer_params.zero_point,
@@ -228,7 +228,7 @@ int Program::Execute(uint32_t input_count,
     auto length = output_buffers[i].first;
     auto device_ptr = imgdnn_mgr_.LockMemory(output_buffers[i].second.second,
                                              IMGDNN_LOCK_ACCESS_READ_ONLY);
-    if (IsUInt8AsymmPerLayerQuantization(type->precision)) {
+    if (IsUInt8AsymmPerLayerQuantType(type->precision)) {
       Asymm2SymmData(reinterpret_cast<const uint8_t*>(device_ptr),
                      length,
                      type->asymm_per_layer_params.zero_point,

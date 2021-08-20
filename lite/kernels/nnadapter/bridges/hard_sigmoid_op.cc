@@ -77,10 +77,8 @@ int HardSigmoidConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand, alpha_operand, beta_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* hardsigmoid_operation = nullptr;
-  hardsigmoid_operation = converter->AddOperation(NNADAPTER_HARD_SIGMOID);
-  converter->SetOperation(
-      hardsigmoid_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_HARD_SIGMOID, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
