@@ -155,20 +155,21 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       fuse_code_operand,
   };
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* pool2d_operation = nullptr;
+  NNAdapterOperationType pool2d_operation_type;
   if (pooling_type == "max") {
-    pool2d_operation = converter->AddOperation(NNADAPTER_MAX_POOL_2D);
+    pool2d_operation_type = NNADAPTER_MAX_POOL_2D;
     input_operands.insert(input_operands.begin() + 6, return_indices_operand);
     output_operands.push_back(nullptr);
   } else if (pooling_type == "avg") {
-    pool2d_operation = converter->AddOperation(NNADAPTER_AVERAGE_POOL_2D);
+    pool2d_operation_type = NNADAPTER_AVERAGE_POOL_2D;
     input_operands.insert(input_operands.begin() + 6,
                           count_include_pad_operand);
   } else {
     LOG(WARNING) << "Unsupported pooling type: " << pooling_type;
     return FAILED;
   }
-  converter->SetOperation(pool2d_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      pool2d_operation_type, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
