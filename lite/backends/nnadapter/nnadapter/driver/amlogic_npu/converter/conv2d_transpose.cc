@@ -24,7 +24,7 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 15);
+  NNADAPTER_CHECK_EQ(input_count, 11);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
@@ -40,46 +40,76 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   // Bias
   auto bias_operand = input_operands[2];
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);
-  // Paddings
-  auto padding_width_left =
-      *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
-  auto padding_width_right =
-      *reinterpret_cast<int32_t*>(input_operands[4]->buffer);
-  auto padding_height_top =
-      *reinterpret_cast<int32_t*>(input_operands[5]->buffer);
-  auto padding_height_bottom =
-      *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
-  NNADAPTER_VLOG(5) << "paddings=[" << padding_width_left << ","
-                    << padding_width_right << "," << padding_height_top << ","
-                    << padding_height_bottom << "]";
+  // Auto pad: not support auto_pad.
+  // Pads: Pads are transed according to auto_pad, so pads are used.
+  uint32_t pads_size =
+      input_operands[4]->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(pads_size, 4U);
+  auto pads_buffer = reinterpret_cast<int32_t*>(input_operands[4]->buffer);
+  auto pad_height_top = pads_buffer[0];
+  auto pad_height_bottom = pads_buffer[1];
+  auto pad_width_left = pads_buffer[2];
+  auto pad_width_right = pads_buffer[3];
+  NNADAPTER_VLOG(5) << "paddings = [" << pad_height_top << ", "
+                    << pad_height_bottom << ", " << pad_width_left << ", "
+                    << pad_width_right << "]";
   // Strides
-  auto stride_width = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);
-  auto stride_height = *reinterpret_cast<int32_t*>(input_operands[8]->buffer);
-  NNADAPTER_VLOG(5) << "strides=[" << stride_width << "," << stride_height
+  uint32_t strides_size =
+      input_operands[5]->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(strides_size, 2U);
+  auto strides_buffer = reinterpret_cast<int32_t*>(input_operands[5]->buffer);
+  auto stride_height = strides_buffer[0];
+  auto stride_width = strides_buffer[1];
+  NNADAPTER_VLOG(5) << "strides = [" << stride_height << ", " << stride_width
                     << "]";
   // Group
-  auto group = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);
-  NNADAPTER_VLOG(5) << "group=" << group;
+  auto group = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
+  NNADAPTER_VLOG(5) << "group = " << group;
+  // Dilations
+  uint32_t dilations_size =
+      input_operands[7]->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(dilations_size, 2U);
+  auto dilations_buffer = reinterpret_cast<int32_t*>(input_operands[7]->buffer);
+  auto dilation_height = dilations_buffer[0];
+  auto dilation_width = dilations_buffer[1];
+  NNADAPTER_VLOG(5) << "dilations = [" << dilation_height << ", "
+                    << dilation_width << "]";
+  // Output_padding
+  int output_padding_height = 0;
+  int output_padding_width = 0;
+  if (input_operands[8] != nullptr) {
+    uint32_t output_padding_size =
+        input_operands[8]->length / static_cast<uint32_t>(sizeof(int32_t));
+    NNADAPTER_CHECK_EQ(output_padding_size, 2U);
+    auto output_padding_buffer =
+        reinterpret_cast<int32_t*>(input_operands[8]->buffer);
+    auto output_padding_height = output_padding_buffer[0];
+    auto output_padding_width = output_padding_buffer[1];
+  }
+  NNADAPTER_VLOG(5) << "output_padding = [" << output_padding_height << ", "
+                    << output_padding_width << "]";
+  if (output_padding_height != 0 || output_padding_width != 0) {
+    NNADAPTER_LOG(WARNING)
+        << "Only support output_padding_height/output_padding_width == 0.";
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  // Output_shape
+  int output_shape_height = -1;
+  int output_shape_width = -1;
+  if (input_operands[9] != nullptr) {
+    uint32_t output_shape_size =
+        input_operands[9]->length / static_cast<uint32_t>(sizeof(int32_t));
+    NNADAPTER_CHECK_EQ(output_shape_size, 2U);
+    auto output_shape_buffer =
+        reinterpret_cast<int32_t*>(input_operands[9]->buffer);
+    auto output_shape_height = output_shape_buffer[0];
+    auto output_shape_width = output_shape_buffer[1];
+  }
+  NNADAPTER_VLOG(5) << "output_shape = [" << output_shape_height << ", "
+                    << output_shape_width << "]";
   // Fuse code
   auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[10]->buffer);
   NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
-  // Dilations
-  auto dilation_width = *reinterpret_cast<int32_t*>(input_operands[11]->buffer);
-  auto dilation_height =
-      *reinterpret_cast<int32_t*>(input_operands[12]->buffer);
-  NNADAPTER_VLOG(5) << "dilations=[" << dilation_width << "," << dilation_height
-                    << "]";
-  // Output paddings
-  auto output_padding_width =
-      *reinterpret_cast<int32_t*>(input_operands[13]->buffer);
-  auto output_padding_height =
-      *reinterpret_cast<int32_t*>(input_operands[14]->buffer);
-  NNADAPTER_VLOG(5) << "output_padding=[" << output_padding_width << ","
-                    << output_padding_height << "]";
-  NNADAPTER_CHECK_EQ(output_padding_width, 0)
-      << "amlnpu_ddk doesn't support output_padding_width != 0";
-  NNADAPTER_CHECK_EQ(output_padding_height, 0)
-      << "amlnpu_ddk doesn't support output_padding_height != 0";
 
   // Output
   auto output_operand = output_operands[0];
@@ -110,15 +140,15 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   attr.ksize[1] = filter_width;
   attr.stride[0] = stride_width;
   attr.stride[1] = stride_height;
-  attr.pad[0] = padding_width_left;
-  attr.pad[1] = padding_width_right;
-  attr.pad[2] = padding_height_top;
-  attr.pad[3] = padding_height_bottom;
+  attr.pad[0] = pad_height_top;
+  attr.pad[1] = pad_height_bottom;
+  attr.pad[2] = pad_width_left;
+  attr.pad[3] = pad_width_right;
   attr.group = group;
   attr.multiplier = 0;
   attr.weights = filter_channel_size;
-  attr.dilation[0] = dilation_width;
-  attr.dilation[1] = dilation_height;
+  attr.dilation[0] = dilation_height;
+  attr.dilation[1] = dilation_width;
   attr.pad_type = aml::nn::PadType::AUTO;
   // fuse RELU ?
   if (fuse_code != NNADAPTER_FUSED_NONE) {
