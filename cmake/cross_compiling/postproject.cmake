@@ -107,7 +107,7 @@ endif()
 
 if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math -Ofast -Os -fomit-frame-pointer")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -ffunction-sections")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -Wl,--exclude-libs,ALL -fvisibility-inlines-hidden -ffunction-sections")
     if(NOT ARMMACOS)
     check_linker_flag(-Wl,--gc-sections)
     endif()

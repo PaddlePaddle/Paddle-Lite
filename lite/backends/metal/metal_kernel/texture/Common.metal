@@ -171,6 +171,17 @@ struct ReshapeParam {
   int32_t otrans[4];
 };
 
+struct HardSigmoidParam {
+    float slope;
+    float offset;
+};
+
+struct HardSwishParam {
+    float offset;
+    float threshold;
+    float scale;
+};
+
 #pragma mark -
 
 inline void xyzn2abcd_1(int xyzn[4], int abcd[4]) {

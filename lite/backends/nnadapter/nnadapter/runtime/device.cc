@@ -22,7 +22,7 @@ namespace nnadapter {
 namespace runtime {
 
 Device::Device(const std::string& name) {
-  device_ = DeviceManager::Global().Find(name.c_str());
+  device_ = DeviceManager::get().Find(name.c_str());
 }
 
 Device::~Device() { device_ = nullptr; }
@@ -69,9 +69,9 @@ int Device::ExecuteProgram(void* program,
   return NNADAPTER_INVALID_PARAMETER;
 }
 
-DeviceManager& DeviceManager::Global() {
-  static DeviceManager manager;
-  return manager;
+DeviceManager& DeviceManager::get() {
+  static DeviceManager instance;
+  return instance;
 }
 
 DeviceManager::DeviceManager() {}

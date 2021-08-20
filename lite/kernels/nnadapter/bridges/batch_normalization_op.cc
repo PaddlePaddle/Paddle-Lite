@@ -113,10 +113,8 @@ int BatchNormalizationConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                                    variance_operand,
                                                    epsilon_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* batch_norm_operation =
-      converter->AddOperation(NNADAPTER_BATCH_NORMALIZATION);
-  converter->SetOperation(
-      batch_norm_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_BATCH_NORMALIZATION, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
