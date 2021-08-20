@@ -80,8 +80,7 @@ int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Squeeze operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand, axes_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto squeeze_operation = converter->AddOperation(NNADAPTER_SQUEEZE);
-  converter->SetOperation(squeeze_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_SQUEEZE, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
