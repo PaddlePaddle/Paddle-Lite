@@ -38,6 +38,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     // So here we set thres_k higher as speed is the hightest priority by
     // default.
     const int thres_k{1024};
+    bool precision_forced_to_fp32 = false;
     const bool enable_fp16 =
         CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
     if (enable_fp16) {
@@ -45,7 +46,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       if (k_ > thres_k) {
         CLRuntime::Global()->set_precision(lite_api::CL_PRECISION_FP32);
         build_options_ += " -DCL_DTYPE_half -DCL_DTYPE_FLOAT_FORCE ";
-        precision_forced_to_fp32_ = true;
+        precision_forced_to_fp32 = true;
       }
     }
 
@@ -125,7 +126,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     }
 
     // reset to original fp16 precision
-    if (precision_forced_to_fp32_) {
+    if (precision_forced_to_fp32) {
       CLRuntime::Global()->set_precision(lite_api::CL_PRECISION_FP16);
     }
   }
@@ -286,7 +287,6 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
 
  private:
   int m_, n_, k_, k_blks_, n_blks_;
-  bool precision_forced_to_fp32_{false};
   std::string kernel_func_name_{};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
