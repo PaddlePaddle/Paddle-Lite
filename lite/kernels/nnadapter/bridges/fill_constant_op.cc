@@ -102,7 +102,8 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                        new_shape_name,
                        Precision2NNAdapterTensorPrecisionCode(shape_precision));
   } else if (op_info->HasAttr("shape")) {
-    auto shape = op_info->GetAttr<std::vector<int64_t>>("shape");
+    std::vector<int64_t> shape =
+        op_info->GetAttr<std::vector<int64_t>>("shape");
     shape_operand = converter->AddInt64ConstantOperand(
         shape.data(), DDim({static_cast<int64_t>(shape.size())}));
   } else {
