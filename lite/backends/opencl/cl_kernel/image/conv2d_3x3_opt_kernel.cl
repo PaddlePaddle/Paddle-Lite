@@ -547,8 +547,8 @@ __kernel void conv2d_3x3_opt_mali(__private const int item_ch,
   const int item_ch_id = get_global_id(0);
   const int item_w_id = 2 * get_global_id(1);
   const int item_h_id = get_global_id(2);
-  if (item_ch_id >= item_ch || get_global_id(1) >= item_w ||
-      item_h_id >= item_h) {
+  if (get_global_id(0) >= item_ch || get_global_id(1) >= item_w ||
+      get_global_id(2) >= item_h) {
     return;
   }
 
