@@ -20,8 +20,8 @@ add_definitions(-DNNADAPTER_DRIVER_NAME=${DRIVER_NAME})
 
 include(dependencies.cmake)
 
-aux_source_directory(./converter CONVERTERS)
-aux_source_directory(./optimizer OPTIMIZERS)
+aux_source_directory(converter CONVERTERS)
+aux_source_directory(optimizer OPTIMIZERS)
 set(DRIVER_SRCS neuron_adapter_wrapper.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} converter.cc driver.cc)
 set(DRIVER_DEPS ${NNADAPTER_UTILITIES} nnadapter_optimizer_symm2asymm nnadapter_optimizer_nchw2nhwc ${${DEVICE_NAME}_deps})
 
