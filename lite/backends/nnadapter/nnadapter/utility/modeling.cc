@@ -55,26 +55,19 @@ static hal::Operand* AddOperand(hal::Model* model,
     // Quant type
     if (quant_scale_count > 1) {
       // Symmetric per-channel quantization
-      NNADAPTER_CHECK(
-          !zero_point &&
-          (precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
-           precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL));
+      NNADAPTER_CHECK(!zero_point && IsSymmPerChannelQuantType(precision));
       operand->type.symm_per_channel_params.scales = quant_scales;
       operand->type.symm_per_channel_params.scale_count = quant_scale_count;
       operand->type.symm_per_channel_params.channel_dim = quant_channel_dim;
     } else {
       if (zero_point) {
         // Asymmetric per-layer quantization
-        NNADAPTER_CHECK(
-            precision == NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER ||
-            precision == NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER);
+        NNADAPTER_CHECK(IsAsymmPerLayerQuantType(precision));
         operand->type.asymm_per_layer_params.scale = quant_scales[0];
         operand->type.asymm_per_layer_params.zero_point = zero_point[0];
       } else {
         // Symmetric per-layer quantization
-        NNADAPTER_CHECK(
-            precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ||
-            precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER);
+        NNADAPTER_CHECK(IsSymmPerLayerQuantType(precision));
         operand->type.symm_per_layer_params.scale = quant_scales[0];
       }
     }

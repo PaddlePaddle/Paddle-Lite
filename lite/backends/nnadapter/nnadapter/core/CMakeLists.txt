@@ -11,3 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+aux_source_directory(operation OPERATIONS)
+add_library(nnadapter_core_operations STATIC ${OPERATIONS})
+
+set(NNADAPTER_CORE nnadapter_core_operations CACHE INTERNAL "")
