@@ -32,6 +32,7 @@ class DeformableConvComputeTester : public arena::TestCase {
   std::string mask_ = "mask";
   std::string filter_ = "filter";
   std::string output_ = "output";
+  std::string bias_ = "bias";
 
   DDim input_dims_;
 
@@ -44,9 +45,9 @@ class DeformableConvComputeTester : public arena::TestCase {
   int groups_ = 1;
   std::vector<int> dilations_{1, 1};
   std::string padding_algorithm_ = "";
+  bool with_bias_ = false;
   bool with_act_ = false;
   std::string act_type_ = "relu";
-  std::string bias_ = "bias";
   bool flag_modulated_ = true;
 
  public:
@@ -60,9 +61,9 @@ class DeformableConvComputeTester : public arena::TestCase {
                               int groups = 1,
                               std::vector<int> dilations = {1, 1},
                               std::string padding_algorithm = "",
+                              bool with_bias = false,
                               bool with_act = false,
                               std::string act_type = "relu",
-                              std::string bias = "",
                               bool flag_modulated = true)
       : TestCase(place, alias),
         input_dims_(input_dims),
@@ -73,9 +74,9 @@ class DeformableConvComputeTester : public arena::TestCase {
         groups_(groups),
         dilations_(dilations),
         padding_algorithm_(padding_algorithm),
+        with_bias_(with_bias),
         with_act_(with_act),
         act_type_(act_type),
-        bias_(bias),
         flag_modulated_(flag_modulated) {}
 
   void RunBaseline(Scope* scope) override {
@@ -108,7 +109,10 @@ class DeformableConvComputeTester : public arena::TestCase {
     const Tensor* mask = scope->FindTensor(mask_);
     const Tensor* offset = scope->FindTensor(offset_);
     const Tensor* filter = scope->FindTensor(filter_);
-    const Tensor* bias = scope->FindTensor(bias_);
+    const Tensor* bias = nullptr;
+    if (with_bias_) {
+      bias = scope->FindTensor(bias_);
+    }
 
     auto input_dims = input->dims();
     auto filter_dims = filter->dims();
@@ -161,7 +165,9 @@ class DeformableConvComputeTester : public arena::TestCase {
     op_desc->SetInput("Mask", {mask_});
     op_desc->SetInput("Filter", {filter_});
     op_desc->SetInput("Offset", {offset_});
-    op_desc->SetInput("Bias", {bias_});
+    if (with_bias_) {
+      op_desc->SetInput("Bias", {bias_});
+    }
     op_desc->SetOutput("Output", {output_});
     op_desc->SetAttr("strides", strides_);
     op_desc->SetAttr("paddings", paddings_);
@@ -210,34 +216,157 @@ class DeformableConvComputeTester : public arena::TestCase {
         input_dims_[0], 2 * ksize_[0] * ksize_[1], h_out, w_out});
     std::vector<float> doffset(offset_dims.production());
     fill_data_rand(doffset.data(), -1.f, 1.f, offset_dims.production());
-    SetCommonTensor(offset_, offset_dims, doffset.data(), {}, true);
+    SetCommonTensor(offset_, offset_dims, doffset.data(), {});
 
     // mask
     DDim mask_dims(std::vector<int64_t>{
         input_dims_[0], ksize_[0] * ksize_[1], h_out, w_out});
     std::vector<float> dmask(mask_dims.production());
     fill_data_rand(dmask.data(), -1.f, 1.f, mask_dims.production());
-    SetCommonTensor(mask_, mask_dims, dmask.data(), {}, true);
+    SetCommonTensor(mask_, mask_dims, dmask.data(), {});
 
     // bias
-    DDim bias_dims(std::vector<int64_t>{out_channels_});
-    std::vector<float> dbias(bias_dims.production());
-    fill_data_rand(dbias.data(), -1.f, 1.f, bias_dims.production());
-    SetCommonTensor(bias_, bias_dims, dbias.data(), {}, true);
+    if (with_bias_) {
+      DDim bias_dims(std::vector<int64_t>{out_channels_});
+      std::vector<float> dbias(bias_dims.production());
+      fill_data_rand(dbias.data(), -1.f, 1.f, bias_dims.production());
+      SetCommonTensor(bias_, bias_dims, dbias.data(), {}, true);
+    }
   }
 };
 
 void TestConvKsize(Place place, float abs_error = 2e-5) {
-  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 12, 12}}) {
+  for (auto dims :
+       std::vector<std::vector<int64_t>>{{1, 3, 12, 12}, {5, 4, 17, 18}}) {
     for (auto out_channels : {3, 6}) {
       for (auto ksize : {1, 3, 5, 7}) {
         std::unique_ptr<arena::TestCase> tester(new DeformableConvComputeTester(
             place, "def", DDim(dims), out_channels, {ksize, ksize}));
         arena::Arena arena(std::move(tester), place, abs_error);
-        std::cout << "TestPrecision start:" << std::endl;
-        std::cout << "ksize:" << ksize << std::endl;
         arena.TestPrecision();
       }
+    }
+  }
+}
+
+void TestConvGroups(Place place, float abs_error = 2e-5) {
+  for (auto dims :
+       std::vector<std::vector<int64_t>>{{1, 6, 3, 4}, {5, 12, 7, 8}}) {
+    for (auto out_channels : {2, 3, 6}) {
+      for (auto groups : {2, 3, 6}) {
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+        if (out_channels % groups != 0) continue;
+#endif
+        std::unique_ptr<arena::TestCase> tester(
+            new DeformableConvComputeTester(place,
+                                            "def",
+                                            DDim(dims),
+                                            out_channels,
+                                            {3, 3},
+                                            {1, 1},
+                                            {0, 0},
+                                            groups));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision();
+      }
+    }
+  }
+}
+
+void TestConvDilations(Place place, float abs_error = 2e-5) {
+  for (auto dims :
+       std::vector<std::vector<int64_t>>{{1, 2, 5, 6}, {5, 6, 9, 10}}) {
+    for (auto out_channels : {1, 3}) {
+      for (auto dilations : std::vector<std::vector<int>>{{2, 2}, {1, 2}}) {
+        std::unique_ptr<arena::TestCase> tester(
+            new DeformableConvComputeTester(place,
+                                            "def",
+                                            DDim(dims),
+                                            out_channels,
+                                            {3, 3},
+                                            {1, 1},
+                                            {0, 0},
+                                            1,
+                                            dilations));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision();
+      }
+    }
+  }
+}
+
+void TestConvStrides(Place place, float abs_error = 2e-5) {
+  for (auto dims :
+       std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {5, 6, 7, 8}}) {
+    for (auto out_channels : {1, 3}) {
+      for (auto strides :
+           std::vector<std::vector<int>>{{2, 2}, {3, 3}, {1, 2}, {3, 1}}) {
+        std::unique_ptr<arena::TestCase> tester(new DeformableConvComputeTester(
+            place, "def", DDim(dims), out_channels, {3, 3}, strides));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision();
+      }
+    }
+  }
+}
+
+void TestConvPaddings(Place place, float abs_error = 2e-5) {
+  for (auto dims :
+       std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {5, 6, 7, 8}}) {
+    for (auto out_channels : {1, 3}) {
+      for (auto paddings :
+           std::vector<std::vector<int>>{{1, 1}, {0, 0}, {2, 2}}) {
+        std::unique_ptr<arena::TestCase> tester(new DeformableConvComputeTester(
+            place, "def", DDim(dims), out_channels, {3, 3}, {1, 1}, paddings));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision();
+      }
+    }
+  }
+}
+
+void TestConvBias(Place place, float abs_error = 2e-5) {
+  for (auto dims :
+       std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {5, 6, 7, 8}}) {
+    for (auto out_channels : {1, 3}) {
+      std::unique_ptr<arena::TestCase> tester(
+          new DeformableConvComputeTester(place,
+                                          "def",
+                                          DDim(dims),
+                                          out_channels,
+                                          {3, 3},
+                                          {1, 1},
+                                          {0, 0},
+                                          1,
+                                          {1, 1},
+                                          "",
+                                          true));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision();
+    }
+  }
+}
+
+void TestConvAct(Place place, float abs_error = 2e-5) {
+  for (auto dims :
+       std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {5, 6, 7, 8}}) {
+    for (auto out_channels : {1, 3}) {
+      std::unique_ptr<arena::TestCase> tester(
+          new DeformableConvComputeTester(place,
+                                          "def",
+                                          DDim(dims),
+                                          out_channels,
+                                          {3, 3},
+                                          {1, 1},
+                                          {0, 0},
+                                          1,
+                                          {1, 1},
+                                          "",
+                                          false,
+                                          true,
+                                          "relu"));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision();
     }
   }
 }
@@ -249,7 +378,7 @@ TEST(Deformable_conv, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
+  abs_error = 3e-2;
 #else
   return;
 #endif
@@ -264,6 +393,12 @@ TEST(Deformable_conv, precision) {
 #endif
 
   TestConvKsize(place, abs_error);
+  TestConvGroups(place, abs_error);
+  TestConvDilations(place, abs_error);
+  TestConvStrides(place, abs_error);
+  TestConvPaddings(place, abs_error);
+  TestConvBias(place, abs_error);
+  TestConvAct(place, abs_error);
 }
 
 }  // namespace lite
