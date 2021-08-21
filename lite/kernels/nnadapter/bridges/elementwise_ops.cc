@@ -154,8 +154,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     for (int i = 0; i < max_rank; i++) {
       matched &= (x_dims[i] == y_dims[i] || x_dims[i] == 1 || y_dims[i] == 1);
     }
-    CHECK(matched) << "Incompatible broadcasting for x " << x->dims().repr()
-                   << " y " << y->dims().repr();
+    CHECK(matched) << "Incompatible broadcasting for x_dims: " << x->dims()
+                   << ", y_dims: " << y->dims();
     input0_operand =
         GenerateInputOperand(converter, x, x_name, has_x_scale, x_scale);
     input1_operand =

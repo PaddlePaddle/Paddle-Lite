@@ -188,7 +188,6 @@ class DeformableConvComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::cout << "start prepare data..." << std::endl;
     // input
     std::vector<float> din(input_dims_.production());
     fill_data_rand(din.data(), -1.f, 1.f, input_dims_.production());
