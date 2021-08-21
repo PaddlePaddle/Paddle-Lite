@@ -15,8 +15,6 @@
 #include "lite/core/optimizer/mir/fusion/fpga_concat_fuser.h"
 #include <map>
 #include <memory>
-#include <set>
-#include <vector>
 #include "lite/core/optimizer/mir/pattern_matcher.h"
 #include "lite/operators/subgraph_op.h"
 
@@ -75,8 +73,8 @@ bool FpgaConcatFuser::enable_fuse(Node* varnode) {
 }
 
 void FpgaConcatFuser::fuse_accumulate(
-    std::vector<std::vector<NodeInfo>>& groups) {
-  for (auto& group : groups) {
+    std::vector<std::vector<NodeInfo>>* groups) {
+  for (auto& group : *groups) {
     int total_output_channel = 0;
     int start_offset = 0;
     std::vector<int> ori_channel;
@@ -130,7 +128,7 @@ std::vector<std::vector<NodeInfo>> FpgaConcatFuser::select_candidate(
         return item.size() == 1;
       });
   groups.erase(iter, groups.end());
-  fuse_accumulate(groups);
+  fuse_accumulate(&groups);
   return groups;
 }
 
@@ -192,7 +190,7 @@ size_t FpgaConcatFuser::operator()(SSAGraph* graph) {
   return num_patterns;
 }
 
-void FpgaConcatFuser::ExtractInputsOutputs(std::vector<NodeInfo>& pattern,
+void FpgaConcatFuser::ExtractInputsOutputs(const std::vector<NodeInfo>& pattern,
                                            std::set<Node*>* input_var_nodes,
                                            std::set<Node*>* weight_var_nodes,
                                            std::set<Node*>* output_var_nodes) {
@@ -221,7 +219,7 @@ void FpgaConcatFuser::ExtractInputsOutputs(std::vector<NodeInfo>& pattern,
 // in order to be consistent with graph, concat op with op to be concat are
 // wrapped into sub graph
 void FpgaConcatFuser::InsertNewNode(
-    SSAGraph* graph, std::vector<std::vector<NodeInfo>>& patterns) {
+    SSAGraph* graph, const std::vector<std::vector<NodeInfo>>& patterns) {
   // each pattern with a subgraph_op
   for (auto& subgraph_nodeinfos : patterns) {
     cpp::OpDesc subgraph_op_desc;
@@ -333,7 +331,7 @@ void FpgaConcatFuser::InsertNewNode(
 }
 
 void FpgaConcatFuser::DeleteInterNodes(
-    SSAGraph* graph, std::vector<std::vector<NodeInfo>>& patterns) {
+    SSAGraph* graph, const std::vector<std::vector<NodeInfo>>& patterns) {
   std::set<const Node*> nodes2rm;
   for (auto each_pattern : patterns) {
     for (auto node_info : each_pattern) {

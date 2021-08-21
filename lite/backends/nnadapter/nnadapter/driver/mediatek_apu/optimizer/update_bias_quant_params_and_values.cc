@@ -30,22 +30,21 @@ static void UpdateBiasScaleWithInputScaleXWeightScale(
   auto& input_type = input_operand->type;
   auto& weight_type = weight_operand->type;
   auto& bias_type = bias_operand->type;
-  bool is_symm_per_layer =
-      IsInt8SymmPerLayerQuantization(input_type.precision) &&
-      IsInt8SymmPerLayerQuantization(weight_type.precision) &&
-      IsInt32SymmPerLayerQuantization(bias_type.precision);
+  bool is_symm_per_layer = IsInt8SymmPerLayerQuantType(input_type.precision) &&
+                           IsInt8SymmPerLayerQuantType(weight_type.precision) &&
+                           IsInt32SymmPerLayerQuantType(bias_type.precision);
   bool is_symm_per_channel =
-      IsInt8SymmPerLayerQuantization(input_type.precision) &&
-      IsInt8SymmPerChannelQuantization(weight_type.precision) &&
-      IsInt32SymmPerChannelQuantization(bias_type.precision);
+      IsInt8SymmPerLayerQuantType(input_type.precision) &&
+      IsInt8SymmPerChannelQuantType(weight_type.precision) &&
+      IsInt32SymmPerChannelQuantType(bias_type.precision);
   bool is_asymm_per_layer =
-      IsUInt8AsymmPerLayerQuantization(input_type.precision) &&
-      IsUInt8AsymmPerLayerQuantization(weight_type.precision) &&
-      IsInt32SymmPerLayerQuantization(bias_type.precision);
+      IsUInt8AsymmPerLayerQuantType(input_type.precision) &&
+      IsUInt8AsymmPerLayerQuantType(weight_type.precision) &&
+      IsInt32SymmPerLayerQuantType(bias_type.precision);
   bool is_asymm_per_channel =
-      IsUInt8AsymmPerLayerQuantization(input_type.precision) &&
-      IsInt8SymmPerChannelQuantization(weight_type.precision) &&
-      IsInt32SymmPerChannelQuantization(bias_type.precision);
+      IsUInt8AsymmPerLayerQuantType(input_type.precision) &&
+      IsInt8SymmPerChannelQuantType(weight_type.precision) &&
+      IsInt32SymmPerChannelQuantType(bias_type.precision);
   NNADAPTER_CHECK(is_symm_per_layer || is_symm_per_channel ||
                   is_asymm_per_layer || is_asymm_per_channel);
   if (is_symm_per_layer || is_asymm_per_layer) {

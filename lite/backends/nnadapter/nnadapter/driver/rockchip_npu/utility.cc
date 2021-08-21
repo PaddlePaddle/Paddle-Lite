@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace rockchip_npu {
 
-rk::nn::PrecisionType ConvertPrecision(
+rk::nn::PrecisionType ConvertToRknnPrecisionType(
     NNAdapterOperandPrecisionCode input_precision) {
   rk::nn::PrecisionType output_precision = rk::nn::PrecisionType::UNKNOWN;
   switch (input_precision) {
@@ -75,7 +75,7 @@ rk::nn::PrecisionType ConvertPrecision(
   return output_precision;
 }
 
-rk::nn::DataLayoutType ConvertDataLayout(
+rk::nn::DataLayoutType ConvertToRknnDataLayoutType(
     NNAdapterOperandLayoutCode input_layout) {
   rk::nn::DataLayoutType output_layout = rk::nn::DataLayoutType::UNKNOWN;
   switch (input_layout) {
@@ -95,13 +95,99 @@ rk::nn::DataLayoutType ConvertDataLayout(
   return output_layout;
 }
 
-std::vector<int32_t> ConvertDimensions(int32_t* input_dimensions,
-                                       uint32_t input_dimensions_count) {
+std::vector<int32_t> ConvertToRknnDimensions(int32_t* input_dimensions,
+                                             uint32_t input_dimensions_count) {
   std::vector<int32_t> output_dimensions(input_dimensions_count);
   memcpy(&output_dimensions[0],
          input_dimensions,
          input_dimensions_count * sizeof(int32_t));
   return output_dimensions;
+}
+
+std::shared_ptr<rk::nn::Tensor> CreateRknnTensor(
+    rk::nn::Graph* graph,
+    const std::string& name,
+    int32_t* dimensions,
+    uint32_t dimension_count,
+    rk::nn::PrecisionType precision,
+    const float* quant_scale,
+    const int32_t* zero_point,
+    void* buffer,
+    rk::nn::DataLayoutType layout) {
+  auto attr = std::make_shared<rk::nn::TensorAttr>();
+  attr->name = name;
+  attr->role = buffer ? rk::nn::TensorRole::CONST : rk::nn::TensorRole::VAR;
+  attr->dims = ConvertToRknnDimensions(dimensions, dimension_count);
+  attr->precision = precision;
+  attr->layout = layout;
+  if (quant_scale) {
+    // Quantization types
+    if (precision == rk::nn::PrecisionType::UINT8) {
+      attr->qntBits = 8;
+    } else if (precision == rk::nn::PrecisionType::INT32) {
+      attr->qntBits = 32;
+    } else {
+      NNADAPTER_LOG(FATAL)
+          << "Only UINT8 and INT32 is supported for quantizaion.";
+    }
+    if (zero_point) {
+      attr->qntType = rk::nn::QuantizationType::AFFINE_ASYMMETRIC;
+      attr->qntParamAffineAsymmetric.scale.resize(1);
+      attr->qntParamAffineAsymmetric.scale[0] = *quant_scale;
+      attr->qntParamAffineAsymmetric.zero_point.resize(1);
+      attr->qntParamAffineAsymmetric.zero_point[0] = *zero_point;
+    } else {
+      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
+      attr->qntParamSymmetric.scale.resize(1);
+      attr->qntParamSymmetric.scale[0] = *quant_scale;
+    }
+  } else {
+    // TODO(hong19860320) Supports the normal types, such as float etc.
+    NNADAPTER_LOG(FATAL) << "Only quantizaion types are supported.";
+  }
+  auto tensor = graph->CreateTensor(attr, buffer);
+  NNADAPTER_CHECK(tensor);
+  return tensor;
+}
+
+std::shared_ptr<rk::nn::Tensor> CreateRknnTensor(
+    rk::nn::Graph* graph,
+    const std::string& name,
+    const NNAdapterOperandType* type,
+    void* buffer,
+    std::vector<int32_t> dimensions) {
+  if (dimensions.empty()) {
+    for (uint32_t i = 0; i < type->dimension_count; i++) {
+      dimensions.push_back(type->dimensions[i]);
+    }
+  }
+  auto precision = ConvertToRknnPrecisionType(type->precision);
+  auto layout = ConvertToRknnDataLayoutType(type->layout);
+  const float* quant_scale = nullptr;
+  const int32_t* zero_point = nullptr;
+  switch (type->precision) {
+    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+      quant_scale = &type->asymm_per_layer_params.scale;
+      zero_point = &type->asymm_per_layer_params.zero_point;
+      break;
+    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
+      quant_scale = &type->symm_per_layer_params.scale;
+      break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Can not add a rk::nn::Tensor with precision="
+                           << OperandPrecisionCodeToString(type->precision)
+                           << " !";
+      break;
+  }
+  return CreateRknnTensor(graph,
+                          name,
+                          dimensions.data(),
+                          dimensions.size(),
+                          precision,
+                          quant_scale,
+                          zero_point,
+                          buffer,
+                          layout);
 }
 
 }  // namespace rockchip_npu

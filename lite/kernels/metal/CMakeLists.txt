@@ -10,6 +10,7 @@ message(STATUS "compile with lite Metal kernels")
 #####################
 # image kernel      #
 #####################
+add_kernel(activation_metal_image METAL basic SRCS image_op/activation_image_compute.mm DEPS metal_target_wrapper)
 # add_kernel(batch_norm_metal_image METAL basic SRCS image_op/batch_norm_image_compute.mm METAL_DEPS metal_target_wrapper)
 add_kernel(relu_metal_image METAL basic SRCS image_op/relu_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(pool_metal_image METAL basic SRCS image_op/pool_image_compute.mm DEPS metal_target_wrapper)
@@ -28,7 +29,7 @@ add_kernel(scale_metal_image METAL basic SRCS image_op/scale_image_compute.mm DE
 # add_kernel(dropout_metal_image METAL basic SRCS image_op/dropout_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(fc_metal_image METAL basic SRCS image_op/fc_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(feed_metal_image METAL basic SRCS image_op/feed_image_compute.mm DEPS metal_target_wrapper)
-add_kernel(sigmoid_metal_image METAL basic SRCS image_op/sigmoid_image_compute.mm DEPS metal_target_wrapper)
+#add_kernel(sigmoid_metal_image METAL basic SRCS image_op/sigmoid_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(nearest_interp_metal_image METAL basic SRCS image_op/nearest_interp_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(io_copy_metal_image METAL basic SRCS image_op/io_copy_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(exp_metal_image METAL basic SRCS image_op/exp_image_compute.mm DEPS metal_target_wrapper)

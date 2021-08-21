@@ -82,9 +82,8 @@ int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Unsqueeze operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand, axes_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto unsqueeze_operation = converter->AddOperation(NNADAPTER_UNSQUEEZE);
-  converter->SetOperation(
-      unsqueeze_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_UNSQUEEZE, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

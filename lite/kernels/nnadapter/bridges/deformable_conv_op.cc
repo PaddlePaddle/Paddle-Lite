@@ -286,10 +286,8 @@ int DeformableConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       dilation_width_operand,
       dilation_height_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto deformable_conv2d_operation =
-      converter->AddOperation(NNADAPTER_DEFORMABLE_CONV_2D);
-  converter->SetOperation(
-      deformable_conv2d_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_DEFORMABLE_CONV_2D, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
