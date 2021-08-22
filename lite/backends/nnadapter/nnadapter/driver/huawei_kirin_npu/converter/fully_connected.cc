@@ -84,7 +84,7 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   // Reshape the output tensor to origin shape
   auto output_reshape_name = GetOperatorName(output_operand) + "/reshape";
   auto output_reshape_op =
-      std::make_shared<ge::op::Reshape>(output_reshape_name);
+      std::make_shared<hiai::op::Reshape>(output_reshape_name);
   std::vector<int32_t> out_shape;
   for (uint32_t i = 0; i < output_operand->type.dimension_count; i++) {
     auto dimension = output_operand->type.dimensions[i];

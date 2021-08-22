@@ -22,7 +22,9 @@ namespace subgraph {
 namespace nnadapter {
 
 NNAdapterOperand* ReshapeOperands(Converter* converter,
+                                  const OpInfo* op_info,
                                   const std::string& input_name,
+                                  std::string input_scale_name,
                                   const DDim& input_dims,
                                   std::vector<int32_t> shape_data,
                                   const std::string& output_name) {
@@ -46,12 +48,21 @@ NNAdapterOperand* ReshapeOperands(Converter* converter,
 
     input_operands.push_back(shape_operand);
     // Reshape output
-    output_operand = converter->AddFloat32VariableOperand(
-        DDim({static_cast<int64_t>(shape_data.size())}), output_name);
+    auto has_out_scale = op_info->HasInputScale(input_scale_name, true);
+    auto out_scale =
+        has_out_scale ? op_info->GetInputScale(input_scale_name, true)[0] : 0.f;
+    if (has_out_scale) {
+      output_operand = converter->AddQuant8VariableOperand(
+          DDim({static_cast<int64_t>(shape_data.size())}),
+          out_scale,
+          output_name);
+    } else {
+      output_operand = converter->AddFloat32VariableOperand(
+          DDim({static_cast<int64_t>(shape_data.size())}), output_name);
+    }
     std::vector<NNAdapterOperand*> output_operands = {output_operand};
-    auto reshape_operation = converter->AddOperation(NNADAPTER_RESHAPE);
-    converter->SetOperation(
-        reshape_operation, &input_operands, &output_operands);
+    converter->AddOperation(
+        NNADAPTER_RESHAPE, &input_operands, &output_operands);
   }
   return output_operand;
 }
@@ -170,8 +181,13 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       for (int i = 0; i < y_rank; i++) {
         y_shape[i + axis] = y_dims[i];
       }
-      NNAdapterOperand* y_reshape_operand =
-          ReshapeOperands(converter, y_name, y_dims, y_shape, new_y_shape_name);
+      NNAdapterOperand* y_reshape_operand = ReshapeOperands(converter,
+                                                            op_info,
+                                                            y_name,
+                                                            y_scale_name,
+                                                            y_dims,
+                                                            y_shape,
+                                                            new_y_shape_name);
       input1_operand = y_reshape_operand;
       input0_operand =
           GenerateInputOperand(converter, x, x_name, has_x_scale, x_scale);
@@ -179,8 +195,13 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       for (int i = 0; i < x_rank; i++) {
         x_shape[i + axis] = x_dims[i];
       }
-      NNAdapterOperand* x_reshape_operand =
-          ReshapeOperands(converter, x_name, x_dims, x_shape, new_x_shape_name);
+      NNAdapterOperand* x_reshape_operand = ReshapeOperands(converter,
+                                                            op_info,
+                                                            x_name,
+                                                            x_scale_name,
+                                                            x_dims,
+                                                            x_shape,
+                                                            new_x_shape_name);
       input0_operand = x_reshape_operand;
       input1_operand =
           GenerateInputOperand(converter, y, y_name, has_y_scale, y_scale);
@@ -214,7 +235,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {
       input0_operand, input1_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* elementwise_operation = nullptr;
   NNAdapterOperationType eltwise_operation_type;
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {

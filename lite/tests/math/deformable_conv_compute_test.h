@@ -345,5 +345,4 @@ void deformable_conv_compute_basic(const Tensor* input,
   }
   output->ShareDataWith(output_buffer);
   output->Resize(DDim(output_shape_vec));
-  std::cout << "end math conv basic..." << std::endl;
 }
