@@ -20,18 +20,18 @@ namespace x86 {
 namespace math {
 
 void conv_depthwise_direct(const float* din,
-                        float* dout,
-                        int num,
-                        int ch_out,
-                        int h_out,
-                        int w_out,
-                        int ch_in,
-                        int h_in,
-                        int w_in,
-                        const float* weights,
-                        const float* bias,
-                        const operators::ConvParam& param) {
-                            auto paddings = *param.paddings;
+                           float* dout,
+                           int num,
+                           int ch_out,
+                           int h_out,
+                           int w_out,
+                           int ch_in,
+                           int h_in,
+                           int w_in,
+                           const float* weights,
+                           const float* bias,
+                           const operators::ConvParam& param) {
+  auto paddings = *param.paddings;
   auto act_param = param.activation_param;
   const int pad_w = paddings[2];
   int stride = param.strides[1];
@@ -41,45 +41,43 @@ void conv_depthwise_direct(const float* din,
 
   if (kernel_h == 3) {
     if (stride == 1) {
-      if (pad == 1) { //TODO pad = 0
+      if (pad == 1) {  // TODO pad = 0
         conv_depthwise_3x3s1_p1_direct(din,
-                                        dout,
-                                        num,
-                                        ch_out,
-                                        h_out,
-                                        w_out,
-                                        ch_in,
-                                        h_in,
-                                        w_in,
-                                        weights,
-                                        bias,
-                                        pad,
-                                        flag_bias,
-                                        act_param);
+                                       dout,
+                                       num,
+                                       ch_out,
+                                       h_out,
+                                       w_out,
+                                       ch_in,
+                                       h_in,
+                                       w_in,
+                                       weights,
+                                       bias,
+                                       pad,
+                                       flag_bias,
+                                       act_param);
       }
     } else if (stride == 2) {
-      if (pad == 1) {//TODO pad = 0
+      if (pad == 1) {  // TODO pad = 0
         conv_depthwise_3x3s2_p1_direct(din,
-                                        dout,
-                                        num,
-                                        ch_out,
-                                        h_out,
-                                        w_out,
-                                        ch_in,
-                                        h_in,
-                                        w_in,
-                                        weights,
-                                        bias,
-                                        pad,
-                                        flag_bias,
-                                        act_param);
+                                       dout,
+                                       num,
+                                       ch_out,
+                                       h_out,
+                                       w_out,
+                                       ch_in,
+                                       h_in,
+                                       w_in,
+                                       weights,
+                                       bias,
+                                       pad,
+                                       flag_bias,
+                                       act_param);
       }
     }
-  }     
-
-
+  }
 }
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
-}  // namespace paddl    
+}  // namespace paddl

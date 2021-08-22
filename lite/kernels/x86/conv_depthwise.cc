@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/conv_depthwise.h"
+#include "lite/backends/x86/math/conv_depthwise_direct.h"
 #include "lite/backends/x86/math/conv_depthwise_pack4.h"
 #include "lite/backends/x86/math/conv_depthwise_pack8.h"
-#include "lite/backends/x86/math/conv_depthwise_direct.h"
 #include "lite/backends/x86/math/conv_utils.h"
 
 namespace paddle {
@@ -51,18 +51,8 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     int ow = o_dims[3];
     int oc = o_dims[1];
 
-    lite::x86::math::conv_depthwise_direct(i_data,
-                                            o_data,
-                                            bs,
-                                            oc,
-                                            oh,
-                                            ow,
-                                            ic,
-                                            ih,
-                                            iw,
-                                            w_data,
-                                            b_data,
-                                            param);
+    lite::x86::math::conv_depthwise_direct(
+        i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param);
     KERNEL_FUNC_NAME("conv_depthwise_direct")
     return;
   }

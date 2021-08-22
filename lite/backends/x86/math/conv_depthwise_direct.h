@@ -50,17 +50,17 @@ void conv_depthwise_3x3s2_p1_direct(const float* din,
                                     bool flag_bias,
                                     const operators::ActivationParam act_param);
 void conv_depthwise_direct(const float* din,
-                            float* dout,
-                            int num,
-                            int ch_out,
-                            int h_out,
-                            int w_out,
-                            int ch_in,
-                            int h_in,
-                            int w_in,
-                            const float* weights,
-                            const float* bias,
-                            const operators::ConvParam& param);                        
+                           float* dout,
+                           int num,
+                           int ch_out,
+                           int h_out,
+                           int w_out,
+                           int ch_in,
+                           int h_in,
+                           int w_in,
+                           const float* weights,
+                           const float* bias,
+                           const operators::ConvParam& param);
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

@@ -414,15 +414,27 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
 }
 
 void TestConvDepthwise(Place place, float abs_error = 2e-5) {
-  for (int64_t n : {1,2,3,4}) {
-    for (int64_t win = 3; win < 30 ; win++) {
-      std :: vector<int64_t> dims{n, 32, win, win};  
-      for (auto stride : {1,2}) {
+  for (int64_t n : {1, 2, 3, 4}) {
+    for (int64_t win = 3; win < 30; win++) {
+      std::vector<int64_t> dims{n, 32, win, win};
+      for (auto stride : {1, 2}) {
         for (auto pad : {1}) {
           for (auto bias : {false, true}) {
             for (auto act : {"relu", "leaky_relu"}) {
-              std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
-                  place, "def", DDim(dims), 32, 3, {stride, stride}, {pad, pad}, 32, {1, 1}, "", bias, true, act));
+              std::unique_ptr<arena::TestCase> tester(
+                  new ConvComputeTester(place,
+                                        "def",
+                                        DDim(dims),
+                                        32,
+                                        3,
+                                        {stride, stride},
+                                        {pad, pad},
+                                        32,
+                                        {1, 1},
+                                        "",
+                                        bias,
+                                        true,
+                                        act));
               arena::Arena arena(std::move(tester), place, abs_error);
               arena.TestPrecision();
             }
