@@ -33,24 +33,28 @@ NNAdapterOperand* ReshapeOperands(Converter* converter,
     output_operand = converter->GetOperand(output_name);
   } else {
     // Reshape inputs
+    auto has_out_scale = op_info->HasInputScale(input_scale_name, true);
+    auto out_scale =
+        has_out_scale ? op_info->GetInputScale(input_scale_name, true)[0] : 0.f;
     std::vector<NNAdapterOperand*> input_operands;
     NNAdapterOperand* input_operand = nullptr;
     if (converter->HasOperand(input_name)) {
       input_operand = converter->GetOperand(input_name);
     } else {
-      input_operand =
-          converter->AddFloat32VariableOperand(input_dims, input_name);
+      if (has_out_scale) {
+        input_operand = converter->AddQuant8VariableOperand(
+            input_dims, out_scale, input_name);
+      } else {
+        input_operand =
+            converter->AddFloat32VariableOperand(input_dims, input_name);
+      }
     }
     input_operands.push_back(input_operand);
     // Reshape shape
     auto shape_operand = converter->AddInt32ConstantOperand(
         &shape_data[0], DDim({static_cast<int64_t>(shape_data.size())}));
-
     input_operands.push_back(shape_operand);
     // Reshape output
-    auto has_out_scale = op_info->HasInputScale(input_scale_name, true);
-    auto out_scale =
-        has_out_scale ? op_info->GetInputScale(input_scale_name, true)[0] : 0.f;
     if (has_out_scale) {
       output_operand = converter->AddQuant8VariableOperand(
           DDim({static_cast<int64_t>(shape_data.size())}),
