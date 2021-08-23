@@ -521,8 +521,8 @@ typedef enum {
   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-  * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the shape you want
-  * to expand to, following the broadcast rule.
+  * * 1: shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor. It
+  * indicates the shape you want to expand to, following the broadcast rule.
   *
   * Outputs:
   * * 0: output, A tensor with the same type as input.
@@ -535,8 +535,8 @@ typedef enum {
    * Return a Tensor with the 'shape' and 'value'.
    *
    * Inputs:
-   * * 0: shape, A NNADAPTER_TENSOR_INT32 tensor.
-   * * 1: value, A NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
+   * * 0: shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor.
+   * * 1: value, a NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
    * NNADAPTER_BOOL scalar.
    *
    * Outputs:
@@ -876,11 +876,11 @@ typedef enum {
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: shape, An 1-D NNADAPTER_TENSOR_INT32 shape tensor which specifies the
-   * new shape, At most one dimension of the new shape can be -1. In this case,
-   * the value is inferred from the size of the tensor and the remaining
-   * dimensions. A dimension could also be 0, in which case the actual dimension
-   * value is unchanged.
+   * * 1: shape, an 1-D NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 shape
+   * tensor which specifies the new shape, At most one dimension of the new
+   * shape can be -1. In this case, the value is inferred from the size of the
+   * tensor and the remaining dimensions. A dimension could also be 0, in which
+   * case the actual dimension value is unchanged.
    *
    * Outputs:
    * * 0: output, A tensor with a new shape, and its type and data is same as
@@ -897,8 +897,8 @@ typedef enum {
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
-   * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the target shape
-   * of output exclude dim_N and dim_C.
+   * * 1: shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor. It
+   * indicates the target shape of output exclude dim_N and dim_C.
    * * 2: scales, a NNADAPTER_TENSOR_FLOAT32 tensor. It indicates the scale of
    * the output's shape exclude dim_N and dim_C.
    * * 3: align_corners. A NNADAPTER_BOOL scalar.  If True, the centers of the 4
@@ -917,8 +917,8 @@ typedef enum {
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
-   * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the target shape
-   * of output exclude dim_N and dim_C.
+   * * 1: shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor. It
+   * indicates the target shape of output exclude dim_N and dim_C.
    * * 2: scales, a NNADAPTER_TENSOR_FLOAT32 tensor. It indicates the scale of
    * the output's shape exclude dim_N and dim_C.
    * * 3: align_corners, NNADAPTER_BOOL scalar. If True, the centers of the 4
@@ -938,6 +938,8 @@ typedef enum {
    *
    * Inputs:
    * * 0: input, A NNADAPTER_TENSOR_INT32 tensor.
+   * * 1: dtype, a NNADAPTER_INT32 scalar, the value of NNADAPTER_TENSOR_INT32
+   * or NNADAPTER_TENSOR_INT64. Specifies the dtype of the result.
    *
    * Outputs:
    * * 0: output, A NNADAPTER_TENSOR_INT32 tensor.
