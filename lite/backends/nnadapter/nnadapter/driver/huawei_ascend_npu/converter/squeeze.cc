@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertShape(hal::Operation* operation) {
+int Program::ConvertSqueeze(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -29,11 +29,21 @@ int Program::ConvertShape(hal::Operation* operation) {
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Dtype
-  auto dtype_operand = input_operands[1];
-  auto dtype = static_cast<NNAdapterOperandPrecisionCode>(
-      reinterpret_cast<int32_t*>(dtype_operand->buffer)[0]);
-  NNADAPTER_VLOG(5) << "dtype: " << OperandPrecisionCodeToString(dtype);
+  // Axes
+  auto axes_operand = input_operands[1];
+  std::vector<int> axes;
+  if (axes_operand != nullptr) {
+    auto axes_count =
+        axes_operand->length / static_cast<uint32_t>(sizeof(int32_t));
+    auto axes_data = reinterpret_cast<int32_t*>(axes_operand->buffer);
+    axes = std::vector<int>(axes_data, axes_data + axes_count);
+    for (uint32_t i = 0; i < axes_count; i++) {
+      NNADAPTER_VLOG(5) << "axes[" << i << "] = " << axes_data[i];
+    }
+  } else {
+    NNADAPTER_VLOG(5) << "axes is empty.";
+  }
+
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
@@ -43,21 +53,11 @@ int Program::ConvertShape(hal::Operation* operation) {
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-  auto shape_name = GetOperatorName(output_operand);
-  auto shape_op = std::make_shared<ge::op::Shape>(shape_name);
-  switch (dtype) {
-    case NNADAPTER_TENSOR_INT32:
-      shape_op->set_attr_dtype(ge::DT_INT32);
-      break;
-    case NNADAPTER_TENSOR_INT64:
-      shape_op->set_attr_dtype(ge::DT_INT64);
-      break;
-    default:
-      NNADAPTER_LOG(ERROR) << "Unsupported output data type: "
-                           << OperandPrecisionCodeToString(dtype);
-  }
-  SET_INPUT(shape_op, x, input_operator);
-  MAP_OUTPUT(shape_op, y, output_operand);
+  auto squeeze_name = GetOperatorName(output_operand);
+  auto squeeze_op = std::make_shared<ge::op::Squeeze>(squeeze_name);
+  squeeze_op->set_attr_axis(ge::Operator::OpListInt(axes.begin(), axes.end()));
+  SET_INPUT(squeeze_op, x, input_operator);
+  MAP_OUTPUT(squeeze_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

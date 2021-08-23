@@ -69,7 +69,7 @@ int UnsqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   // Axes operand
   auto axes_operand = converter->AddInt32ConstantOperand(
-      &axes[0], DDim({static_cast<int32_t>(axes.size())}));
+      &axes[0], DDim({static_cast<int64_t>(axes.size())}));
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {

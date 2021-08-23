@@ -13,30 +13,12 @@
  limitations under the License. */
 
 #include <metal_stdlib>
+#include "Common.metal"
 using namespace metal;
 
-struct DropoutParam {
-  float scale;
-};
-
-kernel void dropout_half(texture2d_array<half, access::sample> inTexture
-                         [[texture(0)]],
-                         texture2d_array<half, access::write> outTexture
-                         [[texture(1)]],
-                         constant DropoutParam &pm [[buffer(0)]],
-                         uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
-  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const half4 input = inTexture.read(gid.xy, gid.z);
-  const float4 dropout = (float4)input * pm.scale;
-  outTexture.write(half4(dropout), gid.xy, gid.z);
-}
-
-kernel void dropout(texture2d_array<float, access::sample> inTexture
+kernel void dropout(texture2d_array<ftype, access::sample> inTexture
                     [[texture(0)]],
-                    texture2d_array<float, access::write> outTexture
+                    texture2d_array<ftype, access::write> outTexture
                     [[texture(1)]],
                     constant DropoutParam &pm [[buffer(0)]],
                     uint3 gid [[thread_position_in_grid]]) {
@@ -44,7 +26,7 @@ kernel void dropout(texture2d_array<float, access::sample> inTexture
       gid.z >= outTexture.get_array_size())
     return;
   constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const float4 input = inTexture.read(gid.xy, gid.z);
-  const float4 dropout = (float4)input * pm.scale;
-  outTexture.write(float4(dropout), gid.xy, gid.z);
+  const ftype4 input = inTexture.read(gid.xy, gid.z);
+  const ftype4 dropout = (ftype4)input * pm.scale;
+  outTexture.write(dropout, gid.xy, gid.z);
 }

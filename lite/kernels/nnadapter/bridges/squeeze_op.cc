@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph/subgraph_bridge_registry.h"
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-int ShapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int SqueezeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto converter = static_cast<Converter*>(ctx);
@@ -30,25 +30,15 @@ int ShapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
 
-  // Get input and output
-  auto x_name = op_info->Input("Input").front();
-  auto x_scale_name = "Input0_scale";
+  // Input operand
+  NNAdapterOperand* input_operand = nullptr;
+  auto x_name = op_info->Input("X").front();
+  auto x_scale_name = "X0_scale";
   auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
   auto x_scale =
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
-  auto x = scope->FindMutableTensor(x_name);
+  auto x = scope->FindTensor(x_name);
   auto x_dims = x->dims();
-
-  auto out_name = op_info->Output("Out").front();
-  auto out_scale_name = "Out0_scale";
-  auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
-  auto out_scale =
-      has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
-  auto out = scope->FindMutableTensor(out_name);
-  auto out_dims = out->dims();
-
-  // Input operand
-  NNAdapterOperand* input_operand = nullptr;
   if (converter->HasOperand(x_name)) {
     input_operand = converter->GetOperand(x_name);
   } else {
@@ -56,28 +46,41 @@ int ShapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand =
           converter->AddQuant8VariableOperand(x_dims, x_scale, x_name);
     } else {
-      input_operand = converter->AddInt32VariableOperand(x_dims, x_name);
+      input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
 
-  // Dtype operand
-  NNAdapterOperand* dtype_operand = converter->AddInt32ConstantOperand(
-      static_cast<int32_t>(NNADAPTER_TENSOR_INT32));
+  // Axes operand
+  NNAdapterOperand* axes_operand = nullptr;
+  std::vector<int> axes;
+  if (op_info->HasAttr("axes")) {
+    axes = op_info->GetAttr<std::vector<int>>("axes");
+  }
+  if (!axes.empty()) {
+    axes_operand = converter->AddInt32ConstantOperand(
+        axes.data(), DDim({static_cast<int64_t>(axes.size())}));
+  }
 
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
+  auto out_scale_name = "Out0_scale";
+  auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
+  auto out_scale =
+      has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
+  auto out_name = op_info->Output("Out").front();
+  auto out = scope->FindMutableTensor(out_name);
+  auto out_dims = out->dims();
   if (has_out_scale) {
     output_operand =
         converter->AddQuant8VariableOperand(out_dims, out_scale, out_name);
   } else {
-    output_operand = converter->AddInt32VariableOperand(out_dims, out_name);
+    output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
-  // Shape operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand,
-                                                   dtype_operand};
+  // Squeeze operation
+  std::vector<NNAdapterOperand*> input_operands = {input_operand, axes_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  converter->AddOperation(NNADAPTER_SHAPE, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_SQUEEZE, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
@@ -86,6 +89,9 @@ int ShapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(shape,
+REGISTER_SUBGRAPH_BRIDGE(squeeze,
                          kNNAdapter,
-                         paddle::lite::subgraph::nnadapter::ShapeConverter);
+                         paddle::lite::subgraph::nnadapter::SqueezeConverter);
+REGISTER_SUBGRAPH_BRIDGE(squeeze2,
+                         kNNAdapter,
+                         paddle::lite::subgraph::nnadapter::SqueezeConverter);
