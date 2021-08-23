@@ -156,7 +156,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {
       input0_operand, input1_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* elementwise_operation = nullptr;
   NNAdapterOperationType eltwise_operation_type;
   if (op_type == "elementwise_add" ||
       op_type == "fusion_elementwise_add_activation") {

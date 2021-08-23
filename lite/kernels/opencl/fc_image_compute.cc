@@ -26,9 +26,29 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
  public:
   void PrepareForRun() override {
     auto& param = this->Param<operators::FcParam>();
+    const auto x_dims = param.input->dims();
     const auto w_t = param.w;
     const auto bias_t = param.bias;
     has_bias_ = (bias_t == nullptr) ? false : true;
+
+    // Runtime precision can be forced to fp32 to avoid the loss of accuracy
+    // when K is larger than thres_k.
+    // But this will increase the running time of fc because running time under
+    // fp32 is two time longer than that under fp16.
+    // So here we set thres_k higher as speed is the hightest priority by
+    // default.
+    const int thres_k = 1024;
+    bool precision_forced_to_fp32 = false;
+    const bool enable_fp16 =
+        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+    if (enable_fp16) {
+      k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
+      if (k_ > thres_k) {
+        CLRuntime::Global()->set_precision(lite_api::CL_PRECISION_FP32);
+        build_options_ += " -DCL_DTYPE_half -DCL_DTYPE_FLOAT_FORCE ";
+        precision_forced_to_fp32 = true;
+      }
+    }
 
     // convert weights from cpu to gpu
     auto w_cpu_t = std::unique_ptr<Tensor>(new Tensor);
@@ -104,6 +124,11 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
                        alpha_image_data);
       alpha_img_ = DATA_GPU(alpha_gpu_t_);
     }
+
+    // reset to original fp16 precision
+    if (precision_forced_to_fp32) {
+      CLRuntime::Global()->set_precision(lite_api::CL_PRECISION_FP16);
+    }
   }
 
   void ReInitWhenNeeded() override {
@@ -127,7 +152,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       k_blks_ = UP_DIV(k_, 4);
       n_blks_ = UP_DIV(n_, 4);
 
-      kernel_func_name_ = "conv2d_1x1_fc";
+      kernel_func_name_ = "fc";
 #ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
       VLOG(4) << "x_dims:" << x_dims;
@@ -139,10 +164,8 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
       auto& context = ctx_->As<OpenCLContext>();
-      context.cl_context()->AddKernel(kernel_func_name_,
-                                      "image/conv2d_1x1_opt_kernel.cl",
-                                      build_options_,
-                                      time_stamp_);
+      context.cl_context()->AddKernel(
+          kernel_func_name_, "image/fc_kernel.cl", build_options_, time_stamp_);
       STL::stringstream kernel_key;
       kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
       kernel_ = context.cl_context()->GetKernel(kernel_key.str());
