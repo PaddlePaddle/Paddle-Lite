@@ -60,18 +60,21 @@ int ExpandConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   // Shape operand
   NNAdapterOperand* shape_operand = nullptr;
-  if (op_info->HasInput("Shape") && op_info->Input("Shape").size() > 0) {
+  if (op_info->HasInput("Shape") && !op_info->Input("Shape").empty()) {
     auto shape_name = op_info->Input("Shape").front();
-    auto shape_tensor = scope->FindMutableTensor(shape_name);
+    auto shape_tensor = scope->FindTensor(shape_name);
     if (converter->HasOperand(shape_name)) {
       shape_operand = converter->GetOperand(shape_name);
     } else {
       shape_operand = converter->AddOperand(shape_tensor, shape_name);
     }
+  } else if (op_info->HasInput("expand_shapes_tensor") &&
+             !op_info->Input("expand_shapes_tensor").empty()) {
+    LOG(ERROR) << "Not support expand_shapes_tensor now.";
   } else {
     std::vector<int> shape = op_info->GetAttr<std::vector<int>>("shape");
     shape_operand = converter->AddInt32ConstantOperand(
-        &shape[0], DDim({static_cast<int64_t>(shape.size())}));
+        shape.data(), DDim({static_cast<int64_t>(shape.size())}));
   }
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
@@ -86,9 +89,7 @@ int ExpandConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {input_operand,
                                                    shape_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* expand_operation =
-      converter->AddOperation(NNADAPTER_EXPAND);
-  converter->SetOperation(expand_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_EXPAND, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

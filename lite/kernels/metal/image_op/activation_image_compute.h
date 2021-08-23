@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_KERNELS_METAL_IMAGE_OP_BILINEAR_INTERP_IMAGE_COMPUTE_H_
-#define LITE_KERNELS_METAL_IMAGE_OP_BILINEAR_INTERP_IMAGE_COMPUTE_H_
+#pragma once
 
 #include <memory>
 
@@ -33,9 +32,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class BilinearInterpImageCompute
+class ActivationImageCompute
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
-    using param_t = operators::InterpolateParam;
+    using param_t = operators::ActivationParam;
 
    public:
     void PrepareForRun() override;
@@ -43,14 +42,12 @@ class BilinearInterpImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
-    virtual ~BilinearInterpImageCompute();
+    virtual ~ActivationImageCompute();
 
    private:
-    void setup_without_mps();
-
     const MetalImage* input_buffer_;
     MetalImage* output_buffer_{nullptr};
-    std::shared_ptr<MetalBuffer> params_buffer_;
+    std::shared_ptr<MetalBuffer> param_buffer_;
 
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
@@ -61,5 +58,3 @@ class BilinearInterpImageCompute
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-#endif  // LITE_KERNELS_METAL_IMAGE_OP_BILINEAR_INTERP_IMAGE_COMPUTE_H_

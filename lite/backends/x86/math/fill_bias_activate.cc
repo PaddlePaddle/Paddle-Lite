@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "lite/backends/x86/math/fill_bias_activate.h"
 #include <string.h>
 #include "lite/core/op_registry.h"
 
@@ -30,8 +31,7 @@ namespace math {
 static void activate_relu_inplace(float *data, int len, float alpha, int mode) {
   int i = 0;
 
-  if (0 == mode)  // relu
-  {
+  if (0 == mode) {  // relu
 #ifdef __AVX__
     __m256 vec_zero = _mm256_set1_ps(0.f);
     for (; i + 7 < len; i += 8) {
@@ -50,8 +50,7 @@ static void activate_relu_inplace(float *data, int len, float alpha, int mode) {
     for (; i < len; i++) {
       data[i] = data[i] > 0.f ? data[i] : 0.f;
     }
-  } else  // relu6
-  {
+  } else {  // relu6
 #ifdef __AVX__
     __m256 vec_zero = _mm256_set1_ps(0.f);
     __m256 vec_alph = _mm256_set1_ps(alpha);
@@ -102,8 +101,7 @@ static void activate_relu_inplace_bias(float *data,
   __m128 vec_alph_128 = _mm_set1_ps(alpha);
 #endif
 
-  if (0 == mode)  // relu
-  {
+  if (0 == mode) {  // relu
     for (j = 0; j < channel; j++) {
       i = 0;
       tmp_data = data + j * channel_size;
@@ -129,8 +127,7 @@ static void activate_relu_inplace_bias(float *data,
         tmp_data[i] = tmp_data[i] > 0.f ? tmp_data[i] : 0.f;
       }
     }
-  } else  // relu6
-  {
+  } else {  // relu6
     for (j = 0; j < channel; j++) {
       i = 0;
       tmp_data = data + j * channel_size;

@@ -152,8 +152,8 @@ void ConvImageCompute::PrepareForRun() {
   //   impl_ = &ConvImageCompute::Conv2d1x1Mali;
 
   if (UseFcReplaceConv()) {
-    kernel_func_names_.push_back("conv2d_1x1_fc");
-    kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
+    kernel_func_names_.push_back("fc");
+    kernel_func_paths_.push_back("image/fc_kernel.cl");
 
     filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
     auto tensor_hold_filter_buffer = std::unique_ptr<Tensor>(new Tensor);
@@ -793,7 +793,7 @@ void ConvImageCompute::PrepareForRun() {
 #define SHOW_EACH_LWS_TIME
 #undef SHOW_EACH_LWS_TIME
 void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
-  if (kernel_func_names_[0] == "conv2d_1x1_fc") {
+  if (kernel_func_names_[0] == "fc") {
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
     kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
@@ -1204,7 +1204,7 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                   static_cast<size_t>(w_blk_),
                                   static_cast<size_t>(nh_blk_)};
 
-  if (kernel_func_names_[0] == "conv2d_1x1_fc") {
+  if (kernel_func_names_[0] == "fc") {
     c_blk_ = ROUND_UP(global_work_size_[0], 32);
     global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
                                     4 * static_cast<size_t>(w_blk_),

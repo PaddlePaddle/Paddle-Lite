@@ -161,6 +161,11 @@ struct InstanceNormReluMetalParam {
     uint16_t hasReluOp;
 };
 
+struct HardSigmoidMetalParam {
+    float slope;
+    float offset;
+};
+
 struct HardSwishMetalParam {
     float offset;
     float threshold;

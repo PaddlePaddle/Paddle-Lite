@@ -91,10 +91,8 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand, axes_operand, keep_dim_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* reduce_mean_operation =
-      converter->AddOperation(NNADAPTER_REDUCE_MEAN);
-  converter->SetOperation(
-      reduce_mean_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_REDUCE_MEAN, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

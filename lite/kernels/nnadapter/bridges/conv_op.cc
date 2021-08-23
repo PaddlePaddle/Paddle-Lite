@@ -268,9 +268,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       dilation_width_operand,
       dilation_height_operand};
   std::vector<NNAdapterOperand*> output_operands = {immediate_operand};
-  auto conv2d_operation = converter->AddOperation(NNADAPTER_CONV_2D);
-  converter->SetOperation(conv2d_operation, &input_operands, &output_operands);
-
+  converter->AddOperation(NNADAPTER_CONV_2D, &input_operands, &output_operands);
   // Activation operation without fusion
   if (!conv_with_act_fusion) {
     NNAdapterOperand* activation_operation{nullptr};

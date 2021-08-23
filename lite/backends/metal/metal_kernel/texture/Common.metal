@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -56,6 +56,10 @@ enum ActivationType : ushort {
   PRELU = 3,
   LEAKY_RELU = 4,
   HARD_SIGMOID = 5,
+};
+
+struct DropoutParam {
+  float scale;
 };
 
 struct MetalActivationParam {
@@ -165,6 +169,17 @@ struct ReshapeParam {
   int32_t itrans[4];
   int32_t odim[4];
   int32_t otrans[4];
+};
+
+struct HardSigmoidParam {
+    float slope;
+    float offset;
+};
+
+struct HardSwishParam {
+    float offset;
+    float threshold;
+    float scale;
 };
 
 #pragma mark -
