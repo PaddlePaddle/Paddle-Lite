@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,30 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
+
+class BilinearInterpImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::InterpolateParam;
+
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
+    };
+    virtual ~BilinearInterpImageCompute();
+
+   private:
+    void setup_without_mps();
+
+    const MetalImage* input_buffer_;
+    MetalImage* output_buffer_{nullptr};
+    std::shared_ptr<MetalBuffer> params_buffer_;
+
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
+};
 
 class NearestInterpImageCompute
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {

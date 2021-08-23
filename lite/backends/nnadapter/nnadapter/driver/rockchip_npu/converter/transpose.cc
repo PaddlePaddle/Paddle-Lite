@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/rockchip_npu/converter.h"
+#include "driver/rockchip_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace rockchip_npu {
 
-int Program::ConvertTranspose(hal::Operation* operation) {
+int ConvertTranspose(Converter* converter, hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -45,18 +45,18 @@ int Program::ConvertTranspose(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to rknpu tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto output_tensor = ConvertOperand(output_operand);
+  auto output_tensor = converter->ConvertOperand(output_operand);
   rk::nn::PermuteAttr attr;
   for (uint32_t i = 0; i < perm_count; i++) {
     attr.perm.push_back(perm_data[i]);
   }
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {input_tensor};
   std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors = {output_tensor};
-  graph_->AddOperator(
+  converter->AddOperator(
       rk::nn::OperatorType::PERMUTE, input_tensors, output_tensors, &attr);
   return NNADAPTER_NO_ERROR;
 }

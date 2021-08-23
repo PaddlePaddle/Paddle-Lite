@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/rockchip_npu/converter.h"
+#include "driver/rockchip_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace rockchip_npu {
 
-int Program::ConvertPool2D(hal::Operation* operation) {
+int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -71,11 +71,11 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to rknpu tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto output_tensor = ConvertOperand(output_operand);
+  auto output_tensor = converter->ConvertOperand(output_operand);
   rk::nn::PoolAttr attr;
   attr.ksize[0] = filter_width;
   attr.ksize[1] = filter_height;
@@ -101,7 +101,7 @@ int Program::ConvertPool2D(hal::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  graph_->AddOperator(
+  converter->AddOperator(
       rk::nn::OperatorType::POOL, input_tensors, output_tensors, &attr);
   return NNADAPTER_NO_ERROR;
 }

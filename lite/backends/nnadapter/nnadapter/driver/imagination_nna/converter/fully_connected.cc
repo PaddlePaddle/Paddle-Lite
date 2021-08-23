@@ -67,7 +67,7 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
                 weight_operand->type.dimensions,
                 transpose_weight_dimensions.data());
   NNADAPTER_CHECK(
-      IsUInt8AsymmPerLayerQuantization(weight_operand->type.precision));
+      IsUInt8AsymmPerLayerQuantType(weight_operand->type.precision));
   auto transpose_weight_tensor = AddQuant8ConstantTensor(
       transpose_weight_data.data(),
       transpose_weight_dimensions.data(),
@@ -78,7 +78,7 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   auto bias_tensor =
       ConvertOperand(bias_operand, {1, bias_operand->type.dimensions[0]});
   NNADAPTER_CHECK(
-      IsUInt8AsymmPerLayerQuantization(output_operand->type.precision));
+      IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));
   imgdnn_quant_param output_quant_param;
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =
