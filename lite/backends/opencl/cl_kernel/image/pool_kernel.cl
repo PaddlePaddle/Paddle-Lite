@@ -239,6 +239,7 @@ __kernel void pool_local(__read_only image2d_t input,
 #endif // POOL_AVG
 }
 
+/*
 __kernel void pool_max(__read_only image2d_t input,
                        __write_only image2d_t output,
                        __private const int in_height,
@@ -428,3 +429,4 @@ __kernel void pool_max_global(__read_only image2d_t input,
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c, out_nh), max_value);
 }
+*/

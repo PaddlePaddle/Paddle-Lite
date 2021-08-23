@@ -268,7 +268,7 @@ void ConvImageCompute::PrepareForRun() {
       } else {
         kernel_func_names_.push_back("conv2d_1x1_opt");
       }
-      kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
+      kernel_func_paths_.push_back("image/conv2d_1x1_kernel.cl");
 
       CLImageConverterNWBlock converter;
       const DDim& filter_image_dims =
