@@ -68,7 +68,7 @@ function publish_inference_lib {
 
       # Here is a temporary solution for pip bug on macOS,
       # When compile a python module installer on mac whose system is higher than 11,
-      # the reuslted installer can not be installed on current machine.
+      # the resulted installer can not be installed on current machine.
       installer_name=$(ls)
       macOS10_installer_name=$(ls | sed 's/11/10/g')
       mv $installer_name $macOS10_installer_name && cd -
