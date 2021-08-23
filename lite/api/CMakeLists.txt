@@ -1,3 +1,7 @@
+if(MSVC)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+endif()
+
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 # A trick to generate the paddle_use_kernels.h
 execute_process(
