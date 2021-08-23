@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -87,9 +87,8 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
     // Concat operation
     std::vector<NNAdapterOperand*> output_operands = {shape_operand};
-    auto concat_operation = converter->AddOperation(NNADAPTER_CONCAT);
-    converter->SetOperation(
-        concat_operation, &shape_operands, &output_operands);
+    converter->AddOperation(
+        NNADAPTER_CONCAT, &shape_operands, &output_operands);
   } else if (op_info->HasInput("OutSize") &&
              !op_info->Input("OutSize").empty()) {
     auto shape_name = op_info->Input("OutSize").front();
@@ -148,9 +147,8 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       scales_operand =
           converter->AddFloat32VariableOperand(DDim({2}), scales_name + "_all");
       std::vector<NNAdapterOperand*> output_operands{scales_operand};
-      auto concat_operation = converter->AddOperation(NNADAPTER_CONCAT);
-      converter->SetOperation(
-          concat_operation, &input_operands, &output_operands);
+      converter->AddOperation(
+          NNADAPTER_CONCAT, &input_operands, &output_operands);
     } else {
       if (converter->HasOperand(scales_name)) {
         scales_operand = converter->GetOperand(scales_name);
@@ -213,20 +211,21 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Resize_nearest operation
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* resize_operation = nullptr;
+  NNAdapterOperationType resize_operation_type;
   if (std::find(nearest_interp_ops.begin(),
                 nearest_interp_ops.end(),
                 op_type) != nearest_interp_ops.end()) {
-    resize_operation = converter->AddOperation(NNADAPTER_RESIZE_NEAREST);
+    resize_operation_type = NNADAPTER_RESIZE_NEAREST;
   } else if (std::find(linear_interp_ops.begin(),
                        linear_interp_ops.end(),
                        op_type) != linear_interp_ops.end()) {
-    resize_operation = converter->AddOperation(NNADAPTER_RESIZE_LINEAR);
+    resize_operation_type = NNADAPTER_RESIZE_LINEAR;
   } else {
     LOG(WARNING) << "unsupported op_type: " << op_type;
     return FAILED;
   }
-  converter->SetOperation(resize_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      resize_operation_type, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

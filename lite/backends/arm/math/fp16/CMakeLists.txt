@@ -22,4 +22,4 @@ cc_library(math_arm_fp16 SRCS
     softmax_fp16.cc
     type_trans_fp16.cc
     shuffle_channel_fp16.cc
-    DEPS ${lite_kernel_deps} context tensor)
+    DEPS ${lite_kernel_deps} core)

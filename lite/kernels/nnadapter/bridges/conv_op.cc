@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/conv_op.h"
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -246,8 +246,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       dilation_width_operand,
       dilation_height_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto conv2d_operation = converter->AddOperation(NNADAPTER_CONV_2D);
-  converter->SetOperation(conv2d_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_CONV_2D, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

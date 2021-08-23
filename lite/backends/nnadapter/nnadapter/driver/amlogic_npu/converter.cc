@@ -157,7 +157,7 @@ int Program::Execute(uint32_t input_count,
     auto buffer = arg.access(arg.memory, type);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(*type);
-    if (IsUInt8AsymmPerLayerQuantization(type->precision)) {
+    if (IsUInt8AsymmPerLayerQuantType(type->precision)) {
       Symm2AsymmData(reinterpret_cast<const int8_t*>(buffer),
                      length,
                      type->asymm_per_layer_params.zero_point,
@@ -202,7 +202,7 @@ int Program::Execute(uint32_t input_count,
     auto type = &output_types_[i];
     auto buffer = output_info[i].buf;
     auto length = output_info[i].size;
-    if (IsUInt8AsymmPerLayerQuantization(type->precision)) {
+    if (IsUInt8AsymmPerLayerQuantType(type->precision)) {
       Asymm2SymmData(reinterpret_cast<const uint8_t*>(buffer),
                      length,
                      type->asymm_per_layer_params.zero_point,

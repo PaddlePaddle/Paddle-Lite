@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -81,10 +81,8 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand, axis_operand, p_operand, epsilon_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto lp_normalization_operation =
-      converter->AddOperation(NNADAPTER_LP_NORMALIZATION);
-  converter->SetOperation(
-      lp_normalization_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_LP_NORMALIZATION, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

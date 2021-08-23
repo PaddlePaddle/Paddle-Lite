@@ -224,20 +224,19 @@ NNAdapterOperand* Converter::AddInt64VariableOperand(const DDim& dimensions,
   return AddVariableOperand(dimensions, name, NNADAPTER_TENSOR_INT64);
 }
 
-NNAdapterOperation* Converter::AddOperation(NNAdapterOperationType type) {
+NNAdapterOperation* Converter::AddOperation(
+    NNAdapterOperationType type,
+    std::vector<NNAdapterOperand*>* input_operands,
+    std::vector<NNAdapterOperand*>* output_operands) {
   NNAdapterOperation* operation = nullptr;
-  NNAdapterModel_addOperation_invoke(model_, type, &operation);
-  return operation;
-}
-
-void Converter::SetOperation(NNAdapterOperation* operation,
-                             std::vector<NNAdapterOperand*>* input_operands,
-                             std::vector<NNAdapterOperand*>* output_operands) {
-  NNAdapterModel_setOperation_invoke(operation,
+  NNAdapterModel_addOperation_invoke(model_,
+                                     type,
                                      input_operands->size(),
-                                     &((*input_operands)[0]),
+                                     input_operands->data(),
                                      output_operands->size(),
-                                     &((*output_operands)[0]));
+                                     output_operands->data(),
+                                     &operation);
+  return operation;
 }
 
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
@@ -258,11 +257,11 @@ NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
   return operand;
 }
 
-void Converter::SetOperand(NNAdapterOperand* operand,
-                           void* buffer,
-                           size_t length,
-                           bool copy) {
-  NNAdapterModel_setOperand_invoke(operand, buffer, length, copy);
+void Converter::SetOperandValue(NNAdapterOperand* operand,
+                                void* buffer,
+                                size_t length,
+                                bool copy) {
+  NNAdapterModel_setOperandValue_invoke(operand, buffer, length, copy);
 }
 
 NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
@@ -303,7 +302,7 @@ NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
     // Constant operand
     auto length =
         PrecisionLength(precision) * (!is_scalar ? dimensions.production() : 1);
-    SetOperand(operand, buffer, length, copy);
+    SetOperandValue(operand, buffer, length, copy);
   } else {
     // Variable/Input/Output operand
   }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -176,8 +176,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand, weight_operand, bias_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto fc_operation = converter->AddOperation(NNADAPTER_FULLY_CONNECTED);
-  converter->SetOperation(fc_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_FULLY_CONNECTED, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

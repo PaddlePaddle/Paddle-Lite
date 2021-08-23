@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/pool_op.h"
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -153,16 +153,17 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       ceil_mode_operand,
       count_include_pad_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  NNAdapterOperation* pool2d_operation = nullptr;
+  NNAdapterOperationType pool2d_operation_type;
   if (pooling_type == "max") {
-    pool2d_operation = converter->AddOperation(NNADAPTER_MAX_POOL_2D);
+    pool2d_operation_type = NNADAPTER_MAX_POOL_2D;
   } else if (pooling_type == "avg") {
-    pool2d_operation = converter->AddOperation(NNADAPTER_AVERAGE_POOL_2D);
+    pool2d_operation_type = NNADAPTER_AVERAGE_POOL_2D;
   } else {
     LOG(WARNING) << "Unsupported pooling type: " << pooling_type;
     return FAILED;
   }
-  converter->SetOperation(pool2d_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      pool2d_operation_type, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

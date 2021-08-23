@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -70,25 +70,25 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Activation operation
   std::vector<NNAdapterOperand*> input_operands{input_operand};
   std::vector<NNAdapterOperand*> output_operands{output_operand};
-  NNAdapterOperation* activation_operation = nullptr;
+  NNAdapterOperationType unary_act_operation_type;
   if (op_type == "sigmoid") {
-    activation_operation = converter->AddOperation(NNADAPTER_SIGMOID);
+    unary_act_operation_type = NNADAPTER_SIGMOID;
   } else if (op_type == "relu") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU);
+    unary_act_operation_type = NNADAPTER_RELU;
   } else if (op_type == "relu6") {
-    activation_operation = converter->AddOperation(NNADAPTER_RELU6);
+    unary_act_operation_type = NNADAPTER_RELU6;
   } else if (op_type == "tanh") {
-    activation_operation = converter->AddOperation(NNADAPTER_TANH);
+    unary_act_operation_type = NNADAPTER_TANH;
   } else if (op_type == "log") {
-    activation_operation = converter->AddOperation(NNADAPTER_LOG);
+    unary_act_operation_type = NNADAPTER_LOG;
   } else if (op_type == "abs") {
-    activation_operation = converter->AddOperation(NNADAPTER_ABS);
+    unary_act_operation_type = NNADAPTER_ABS;
   } else {
     LOG(WARNING) << "Unsupported activation type: " << op_type;
     return FAILED;
   }
-  converter->SetOperation(
-      activation_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      unary_act_operation_type, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
