@@ -22,10 +22,10 @@ namespace mediatek_apu {
 
 int Program::ConvertConv2D(hal::Operation* operation) {
   CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // nhwc
+  // Datelayout is nhwc in mediatek_apu, so some attrs should be update.
   input_channel_size = input_operand->type.dimensions[3];
-  filter_height = filter_operand->type.dimensions[1];
-  filter_width = filter_operand->type.dimensions[2];
+  bool is_depthwise_mode = (group != 1 && input_channel_size == group);
+  NNADAPTER_VLOG(5) << "update depthwise mode(" << is_depthwise_mode << ").";
   NNADAPTER_CHECK_EQ(dilation_height, 1);
   NNADAPTER_CHECK_EQ(dilation_width, 1);
 
